@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobil_application/Model/Enums/room_status.dart';
 import 'package:mobil_application/Model/roomModel.dart';
 import 'package:mobil_application/Controllers/roomController.dart';
+import 'package:mobil_application/Widgets/RoomNotes.dart';
 import 'package:mobil_application/Widgets/StatusIcon.dart';
 import 'package:mobil_application/theme.dart';
 
@@ -36,6 +37,7 @@ class RoomView extends StatelessWidget {
                     ),
                   ),
                 ),
+              RoomNotes(roomNumber: room.number),
             ],
           ),
         ),

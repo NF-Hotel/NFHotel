@@ -21,17 +21,19 @@ class RoomOverview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Rooms'),
+        leading: AuthSession.isAdmin
+            ? IconButton(
+                icon: const Icon(Icons.admin_panel_settings),
+                tooltip: 'Administration',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdministrationPanel()),
+                ),
+              )
+            : null,
+        centerTitle: true,
+        title: Text(AuthSession.displayName, overflow: TextOverflow.ellipsis),
         actions: [
-          if (AuthSession.isAdmin)
-            IconButton(
-              icon: const Icon(Icons.admin_panel_settings),
-              tooltip: 'Administration',
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AdministrationPanel()),
-              ),
-            ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Log out',

@@ -14,6 +14,8 @@ const _roles = ['admin', 'cleaner', 'technician'];
 class _AdministrationPanelState extends State<AdministrationPanel> {
   final _repo = UserRepository();
   final _formKey = GlobalKey<FormState>();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _creating = false;
@@ -29,6 +31,8 @@ class _AdministrationPanelState extends State<AdministrationPanel> {
 
   @override
   void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -39,6 +43,8 @@ class _AdministrationPanelState extends State<AdministrationPanel> {
 
     setState(() => _creating = true);
     final res = await _repo.register(
+      _firstNameController.text.trim(),
+      _lastNameController.text.trim(),
       _emailController.text,
       _passwordController.text,
     );
@@ -46,6 +52,8 @@ class _AdministrationPanelState extends State<AdministrationPanel> {
     setState(() => _creating = false);
 
     if (res.statusCode == 200) {
+      _firstNameController.clear();
+      _lastNameController.clear();
       _emailController.clear();
       _passwordController.clear();
       _loadUsers();
@@ -76,6 +84,66 @@ class _AdministrationPanelState extends State<AdministrationPanel> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not load users (${res.statusCode})')),
       );
+    }
+  }
+
+  Future<void> _editName(AdminUser user) async {
+    final firstController = TextEditingController(text: user.firstName);
+    final lastController = TextEditingController(text: user.lastName);
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit name'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: firstController,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(labelText: 'First name'),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: lastController,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(labelText: 'Last name'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    final firstName = firstController.text.trim();
+    final lastName = lastController.text.trim();
+    if (saved != true ||
+        (firstName == user.firstName && lastName == user.lastName)) {
+      return;
+    }
+    if (!mounted) return;
+    if (firstName.isEmpty || lastName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('First and last name are required')),
+      );
+      return;
+    }
+
+    final res = await _repo.updateName(user.id, firstName, lastName);
+    if (!mounted) return;
+    if (res.statusCode == 200) {
+      _loadUsers();
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not update name')));
     }
   }
 
@@ -245,6 +313,32 @@ class _AdministrationPanelState extends State<AdministrationPanel> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             TextFormField(
+                              controller: _firstNameController,
+                              textCapitalization: TextCapitalization.words,
+                              textInputAction: TextInputAction.next,
+                              decoration: const InputDecoration(
+                                labelText: 'First name',
+                              ),
+                              validator: (value) =>
+                                  (value == null || value.trim().isEmpty)
+                                  ? 'Required'
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _lastNameController,
+                              textCapitalization: TextCapitalization.words,
+                              textInputAction: TextInputAction.next,
+                              decoration: const InputDecoration(
+                                labelText: 'Last name',
+                              ),
+                              validator: (value) =>
+                                  (value == null || value.trim().isEmpty)
+                                  ? 'Required'
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
@@ -309,13 +403,21 @@ class _AdministrationPanelState extends State<AdministrationPanel> {
                         itemBuilder: (context, i) {
                           final user = _users[i];
                           return ListTile(
-                            title: Text(user.email),
-                            subtitle: Text(user.role),
+                            title: Text(user.fullName),
+                            subtitle: Text('${user.email}\n${user.role}'),
+                            isThreeLine: true,
                             // one menu instead of 4 icon buttons, which left no room for the email on phones
                             trailing: PopupMenuButton<VoidCallback>(
                               tooltip: 'Actions',
                               onSelected: (action) => action(),
                               itemBuilder: (context) => [
+                                PopupMenuItem(
+                                  value: () => _editName(user),
+                                  child: const ListTile(
+                                    leading: Icon(Icons.person),
+                                    title: Text('Edit name'),
+                                  ),
+                                ),
                                 PopupMenuItem(
                                   value: () => _editEmail(user),
                                   child: const ListTile(

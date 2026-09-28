@@ -7,6 +7,7 @@ import 'package:flutter_login/flutter_login.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../theme.dart';
+import 'NameSetupScreen.dart';
 import 'RoomList.dart';
 
 //Fandt flutter_login https://pub.dev/packages/flutter_login#-installing-tab-
@@ -47,7 +48,11 @@ class LoginScreen extends StatelessWidget {
         Navigator.of(
           context,
         ).pushReplacement(
-          MaterialPageRoute(builder: (context) => const RoomOverview()),
+          MaterialPageRoute(
+            builder: (context) => AuthSession.hasName
+                ? const RoomOverview()
+                : const NameSetupScreen(),
+          ),
         );
       },
       hideForgotPasswordButton: true, // no recovery endpoint in LoginApi; admins reset passwords in the admin panel
