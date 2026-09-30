@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -40,7 +41,7 @@ app.MapPost("/auth/register", async (RegisterRequest req, NpgsqlDataSource db) =
         return Results.BadRequest("First and last name are required");
 
     await using var conn = await db.OpenConnectionAsync();
-    var hash = BCrypt.Net.BCrypt.HashPassword(req.Password);
+    var hash = HashPassword(req.Password);
     try
     {
         await conn.ExecuteAsync(
@@ -61,8 +62,13 @@ app.MapPost("/auth/login", async (LoginRequest req, NpgsqlDataSource db, IConfig
         "SELECT id AS Id, password_hash AS PasswordHash, role AS Role, first_name AS FirstName, last_name AS LastName FROM auth.users WHERE email = @Email",
         new { req.Email });
 
-    if (user is null || !BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
+    if (user is null || !VerifyPassword(req.Password, user.PasswordHash))
         return Results.Unauthorized();
+
+    // old bcrypt hashes are upgraded on successful login, since they can't be converted without the password
+    if (user.PasswordHash.StartsWith("$2"))
+        await conn.ExecuteAsync("UPDATE auth.users SET password_hash = @Hash WHERE id = @Id",
+            new { Hash = HashPassword(req.Password), user.Id });
 
     return Results.Ok(new { accessToken = CreateToken(config, user.Id, req.Email, user.Role, user.FirstName, user.LastName) });
 });
@@ -134,7 +140,7 @@ admin.MapPut("/{id:long}/name", async (long id, UpdateNameRequest req, NpgsqlDat
 admin.MapPut("/{id:long}/password", async (long id, UpdatePasswordRequest req, NpgsqlDataSource db) =>
 {
     await using var conn = await db.OpenConnectionAsync();
-    var hash = BCrypt.Net.BCrypt.HashPassword(req.Password);
+    var hash = HashPassword(req.Password);
     var rows = await conn.ExecuteAsync(
         "UPDATE auth.users SET password_hash = @Hash WHERE id = @Id",
         new { Hash = hash, Id = id });
@@ -255,6 +261,30 @@ static string CreateToken(IConfiguration config, long id, string email, string r
     signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
 
     return new JwtSecurityTokenHandler().WriteToken(token);
+}
+
+// PBKDF2-HMAC-SHA256, stored as "pbkdf2-sha256$iterations$salt$hash"
+static string HashPassword(string password)
+{
+    const int iterations = 600_000;
+    var salt = RandomNumberGenerator.GetBytes(16);
+    var hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA256, 32);
+    return $"pbkdf2-sha256${iterations}${Convert.ToBase64String(salt)}${Convert.ToBase64String(hash)}";
+}
+
+static bool VerifyPassword(string password, string stored)
+{
+    // legacy bcrypt hashes, still in the database until each user logs in once
+    if (stored.StartsWith("$2"))
+        return BCrypt.Net.BCrypt.Verify(password, stored);
+
+    var parts = stored.Split('$');
+    if (parts.Length != 4 || parts[0] != "pbkdf2-sha256")
+        return false;
+    var expected = Convert.FromBase64String(parts[3]);
+    var actual = Rfc2898DeriveBytes.Pbkdf2(password, Convert.FromBase64String(parts[2]),
+        int.Parse(parts[1]), HashAlgorithmName.SHA256, expected.Length);
+    return CryptographicOperations.FixedTimeEquals(actual, expected);
 }
 
 record LoginRequest(string Email, string Password);

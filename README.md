@@ -218,7 +218,7 @@ For development, it is also recommended to have:
 Clone the project from GitHub:
 
 ```bash
-git clone https://github.com/ZanjiOfficial/NFHotel.git
+git clone https://github.com/NF-Hotel/NFHotel.git
 ```
 
 Navigate into the project:
@@ -504,4 +504,4 @@ For questions regarding the project or its use, please contact the development t
 
 The source code is available on GitHub:
 
-**https://github.com/ZanjiOfficial/NFHotel**
+**https://github.com/NF-Hotel/NFHotel**
