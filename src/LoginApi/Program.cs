@@ -268,7 +268,7 @@ static string HashPassword(string password)
 {
     const int iterations = 600_000;
     var salt = RandomNumberGenerator.GetBytes(16);
-    var hash = hash.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA256, 32);
+    var hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA256, 32);
     return $"pbkdf2-sha256${iterations}${Convert.ToBase64String(salt)}${Convert.ToBase64String(hash)}";
 }
 
@@ -282,7 +282,7 @@ static bool VerifyPassword(string password, string stored)
     if (parts.Length != 4 || parts[0] != "pbkdf2-sha256")
         return false;
     var expected = Convert.FromBase64String(parts[3]);
-    var actual = hash.Pbkdf2(password, Convert.FromBase64String(parts[2]),
+    var actual = Rfc2898DeriveBytes.Pbkdf2(password, Convert.FromBase64String(parts[2]),
         int.Parse(parts[1]), HashAlgorithmName.SHA256, expected.Length);
     return CryptographicOperations.FixedTimeEquals(actual, expected);
 }
