@@ -3,8 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../Authentication/auth_session.dart';
-
-const _apiBase = 'http://127.0.0.1:5142';
+import '../api_config.dart';
 
 class AdminUser {
   final int id;
@@ -67,7 +66,7 @@ class UserRepository {
     String password,
   ) async {
     final res = await http.post(
-      Uri.parse('$_apiBase/auth/register'),
+      Uri.parse('$apiBase/auth/register'),
       headers: _authHeaders,
       body: jsonEncode({
         'firstName': firstName.trim(),
@@ -85,14 +84,14 @@ class UserRepository {
 
   Future<http.Response> updateMyName(String firstName, String lastName) =>
       http.put(
-        Uri.parse('$_apiBase/me/name'),
+        Uri.parse('$apiBase/me/name'),
         headers: _authHeaders,
         body: jsonEncode({'firstName': firstName, 'lastName': lastName}),
       );
 
   Future<List<AdminUser>> fetchUsers() async {
     final res =
-        await http.get(Uri.parse('$_apiBase/admin/users'), headers: _authHeaders);
+        await http.get(Uri.parse('$apiBase/admin/users'), headers: _authHeaders);
     _ensureOk(res, 'Could not load users (${res.statusCode})');
     return (jsonDecode(res.body) as List)
         .map((e) => AdminUser.fromJson(e))
@@ -106,7 +105,7 @@ class UserRepository {
       throw UserRepositoryException('First and last name are required');
     }
     final res = await http.put(
-      Uri.parse('$_apiBase/admin/users/$id/name'),
+      Uri.parse('$apiBase/admin/users/$id/name'),
       headers: _authHeaders,
       body: jsonEncode({'firstName': firstName, 'lastName': lastName}),
     );
@@ -115,7 +114,7 @@ class UserRepository {
 
   Future<void> updateEmail(int id, String email) async {
     final res = await http.put(
-      Uri.parse('$_apiBase/admin/users/$id/email'),
+      Uri.parse('$apiBase/admin/users/$id/email'),
       headers: _authHeaders,
       body: jsonEncode({'email': email}),
     );
@@ -128,7 +127,7 @@ class UserRepository {
 
   Future<void> updatePassword(int id, String password) async {
     final res = await http.put(
-      Uri.parse('$_apiBase/admin/users/$id/password'),
+      Uri.parse('$apiBase/admin/users/$id/password'),
       headers: _authHeaders,
       body: jsonEncode({'password': password}),
     );
@@ -137,7 +136,7 @@ class UserRepository {
 
   Future<void> updateRole(int id, String role) async {
     final res = await http.put(
-      Uri.parse('$_apiBase/admin/users/$id/role'),
+      Uri.parse('$apiBase/admin/users/$id/role'),
       headers: _authHeaders,
       body: jsonEncode({'role': role}),
     );
@@ -146,7 +145,7 @@ class UserRepository {
 
   Future<void> deleteUser(int id) async {
     final res = await http.delete(
-      Uri.parse('$_apiBase/admin/users/$id'),
+      Uri.parse('$apiBase/admin/users/$id'),
       headers: _authHeaders,
     );
     _ensureOk(res, 'Could not delete account');

@@ -3,8 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../Authentication/auth_session.dart';
-
-const _apiBase = 'http://127.0.0.1:5142';
+import '../api_config.dart';
 
 class RoomNote {
   final int id;
@@ -44,25 +43,25 @@ class NoteRepository {
       };
 
   Future<http.Response> fetchNotes(int room) =>
-      http.get(Uri.parse('$_apiBase/rooms/$room/notes'), headers: _authHeaders);
+      http.get(Uri.parse('$apiBase/rooms/$room/notes'), headers: _authHeaders);
 
   List<RoomNote> parseNotes(String body) =>
       (jsonDecode(body) as List).map((e) => RoomNote.fromJson(e)).toList();
 
   Future<http.Response> addNote(int room, String body) => http.post(
-        Uri.parse('$_apiBase/rooms/$room/notes'),
+        Uri.parse('$apiBase/rooms/$room/notes'),
         headers: _authHeaders,
         body: jsonEncode({'body': body}),
       );
 
   Future<http.Response> setResolved(int room, int id, bool resolved) => http.put(
-        Uri.parse('$_apiBase/rooms/$room/notes/$id/resolved'),
+        Uri.parse('$apiBase/rooms/$room/notes/$id/resolved'),
         headers: _authHeaders,
         body: jsonEncode({'resolved': resolved}),
       );
 
   Future<http.Response> deleteNote(int room, int id) => http.delete(
-        Uri.parse('$_apiBase/rooms/$room/notes/$id'),
+        Uri.parse('$apiBase/rooms/$room/notes/$id'),
         headers: _authHeaders,
       );
 }
