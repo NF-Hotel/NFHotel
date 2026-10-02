@@ -32,28 +32,56 @@ class AdminUser {
       );
 }
 
+/// Thrown by [UserRepository] when the API rejects a request; [message] is
+/// safe to show to the user as-is.
+class UserRepositoryException implements Exception {
+  final String message;
+  UserRepositoryException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class UserRepository {
   Map<String, String> get _authHeaders => {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${AuthSession.token}',
       };
 
-  Future<http.Response> register(
+  void _ensureOk(
+    http.Response res,
+    String message, {
+    String? conflictMessage,
+  }) {
+    if (res.statusCode == 200) return;
+    if (res.statusCode == 409 && conflictMessage != null) {
+      throw UserRepositoryException(conflictMessage);
+    }
+    throw UserRepositoryException(message);
+  }
+
+  Future<void> register(
     String firstName,
     String lastName,
     String email,
     String password,
-  ) =>
-      http.post(
-        Uri.parse('$_apiBase/auth/register'),
-        headers: _authHeaders,
-        body: jsonEncode({
-          'firstName': firstName,
-          'lastName': lastName,
-          'email': email,
-          'password': password,
-        }),
-      );
+  ) async {
+    final res = await http.post(
+      Uri.parse('$_apiBase/auth/register'),
+      headers: _authHeaders,
+      body: jsonEncode({
+        'firstName': firstName.trim(),
+        'lastName': lastName.trim(),
+        'email': email,
+        'password': password,
+      }),
+    );
+    _ensureOk(
+      res,
+      'Could not create account',
+      conflictMessage: 'Email already registered',
+    );
+  }
 
   Future<http.Response> updateMyName(String firstName, String lastName) =>
       http.put(
@@ -62,37 +90,65 @@ class UserRepository {
         body: jsonEncode({'firstName': firstName, 'lastName': lastName}),
       );
 
-  Future<http.Response> fetchUsers() =>
-      http.get(Uri.parse('$_apiBase/admin/users'), headers: _authHeaders);
+  Future<List<AdminUser>> fetchUsers() async {
+    final res =
+        await http.get(Uri.parse('$_apiBase/admin/users'), headers: _authHeaders);
+    _ensureOk(res, 'Could not load users (${res.statusCode})');
+    return (jsonDecode(res.body) as List)
+        .map((e) => AdminUser.fromJson(e))
+        .toList();
+  }
 
-  List<AdminUser> parseUsers(String body) =>
-      (jsonDecode(body) as List).map((e) => AdminUser.fromJson(e)).toList();
+  Future<void> updateName(int id, String firstName, String lastName) async {
+    firstName = firstName.trim();
+    lastName = lastName.trim();
+    if (firstName.isEmpty || lastName.isEmpty) {
+      throw UserRepositoryException('First and last name are required');
+    }
+    final res = await http.put(
+      Uri.parse('$_apiBase/admin/users/$id/name'),
+      headers: _authHeaders,
+      body: jsonEncode({'firstName': firstName, 'lastName': lastName}),
+    );
+    _ensureOk(res, 'Could not update name');
+  }
 
-  Future<http.Response> updateName(int id, String firstName, String lastName) =>
-      http.put(
-        Uri.parse('$_apiBase/admin/users/$id/name'),
-        headers: _authHeaders,
-        body: jsonEncode({'firstName': firstName, 'lastName': lastName}),
-      );
+  Future<void> updateEmail(int id, String email) async {
+    final res = await http.put(
+      Uri.parse('$_apiBase/admin/users/$id/email'),
+      headers: _authHeaders,
+      body: jsonEncode({'email': email}),
+    );
+    _ensureOk(
+      res,
+      'Could not update email',
+      conflictMessage: 'Email already in use',
+    );
+  }
 
-  Future<http.Response> updateEmail(int id, String email) => http.put(
-        Uri.parse('$_apiBase/admin/users/$id/email'),
-        headers: _authHeaders,
-        body: jsonEncode({'email': email}),
-      );
+  Future<void> updatePassword(int id, String password) async {
+    final res = await http.put(
+      Uri.parse('$_apiBase/admin/users/$id/password'),
+      headers: _authHeaders,
+      body: jsonEncode({'password': password}),
+    );
+    _ensureOk(res, 'Could not update password');
+  }
 
-  Future<http.Response> updatePassword(int id, String password) => http.put(
-        Uri.parse('$_apiBase/admin/users/$id/password'),
-        headers: _authHeaders,
-        body: jsonEncode({'password': password}),
-      );
+  Future<void> updateRole(int id, String role) async {
+    final res = await http.put(
+      Uri.parse('$_apiBase/admin/users/$id/role'),
+      headers: _authHeaders,
+      body: jsonEncode({'role': role}),
+    );
+    _ensureOk(res, 'Could not update role');
+  }
 
-  Future<http.Response> updateRole(int id, String role) => http.put(
-        Uri.parse('$_apiBase/admin/users/$id/role'),
-        headers: _authHeaders,
-        body: jsonEncode({'role': role}),
-      );
-
-  Future<http.Response> deleteUser(int id) =>
-      http.delete(Uri.parse('$_apiBase/admin/users/$id'), headers: _authHeaders);
+  Future<void> deleteUser(int id) async {
+    final res = await http.delete(
+      Uri.parse('$_apiBase/admin/users/$id'),
+      headers: _authHeaders,
+    );
+    _ensureOk(res, 'Could not delete account');
+  }
 }

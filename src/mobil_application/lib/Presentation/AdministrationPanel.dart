@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../Controllers/adminController.dart';
 import '../Repositories/user_repository.dart';
+import '../Widgets/UserDialogs.dart';
 
 class AdministrationPanel extends StatefulWidget {
   const AdministrationPanel({super.key});
@@ -9,10 +11,8 @@ class AdministrationPanel extends StatefulWidget {
   _AdministrationPanelState createState() => _AdministrationPanelState();
 }
 
-const _roles = ['admin', 'cleaner', 'technician'];
-
 class _AdministrationPanelState extends State<AdministrationPanel> {
-  final _repo = UserRepository();
+  final _admin = AdminController();
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -20,17 +20,15 @@ class _AdministrationPanelState extends State<AdministrationPanel> {
   final _passwordController = TextEditingController();
   bool _creating = false;
 
-  List<AdminUser> _users = [];
-  bool _loading = true;
-
   @override
   void initState() {
     super.initState();
-    _loadUsers();
+    _run(_admin.loadUsers);
   }
 
   @override
   void dispose() {
+    _admin.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
@@ -38,246 +36,42 @@ class _AdministrationPanelState extends State<AdministrationPanel> {
     super.dispose();
   }
 
+  /// Runs an action and shows its error as a snackbar. Returns whether it
+  /// succeeded.
+  Future<bool> _run(Future<void> Function() action) async {
+    try {
+      await action();
+      return true;
+    } on UserRepositoryException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+      return false;
+    }
+  }
+
   Future<void> _createAccount() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _creating = true);
-    final res = await _repo.register(
-      _firstNameController.text.trim(),
-      _lastNameController.text.trim(),
-      _emailController.text,
-      _passwordController.text,
+    final ok = await _run(
+      () => _admin.createAccount(
+        _firstNameController.text,
+        _lastNameController.text,
+        _emailController.text,
+        _passwordController.text,
+      ),
     );
     if (!mounted) return;
     setState(() => _creating = false);
 
-    if (res.statusCode == 200) {
+    if (ok) {
       _firstNameController.clear();
       _lastNameController.clear();
       _emailController.clear();
       _passwordController.clear();
-      _loadUsers();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            res.statusCode == 409
-                ? 'Email already registered'
-                : 'Could not create account',
-          ),
-        ),
-      );
-    }
-  }
-
-  Future<void> _loadUsers() async {
-    setState(() => _loading = true);
-    final res = await _repo.fetchUsers();
-    if (!mounted) return;
-    if (res.statusCode == 200) {
-      setState(() {
-        _users = _repo.parseUsers(res.body);
-        _loading = false;
-      });
-    } else {
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not load users (${res.statusCode})')),
-      );
-    }
-  }
-
-  Future<void> _editName(AdminUser user) async {
-    final firstController = TextEditingController(text: user.firstName);
-    final lastController = TextEditingController(text: user.lastName);
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit name'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: firstController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'First name'),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: lastController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Last name'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    final firstName = firstController.text.trim();
-    final lastName = lastController.text.trim();
-    if (saved != true ||
-        (firstName == user.firstName && lastName == user.lastName)) {
-      return;
-    }
-    if (!mounted) return;
-    if (firstName.isEmpty || lastName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('First and last name are required')),
-      );
-      return;
-    }
-
-    final res = await _repo.updateName(user.id, firstName, lastName);
-    if (!mounted) return;
-    if (res.statusCode == 200) {
-      _loadUsers();
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Could not update name')));
-    }
-  }
-
-  Future<void> _editEmail(AdminUser user) async {
-    final controller = TextEditingController(text: user.email);
-    final newEmail = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit email'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(labelText: 'Email'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    if (newEmail == null || newEmail == user.email) return;
-
-    final res = await _repo.updateEmail(user.id, newEmail);
-    if (!mounted) return;
-    if (res.statusCode == 200) {
-      _loadUsers();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            res.statusCode == 409
-                ? 'Email already in use'
-                : 'Could not update email',
-          ),
-        ),
-      );
-    }
-  }
-
-  Future<void> _editPassword(AdminUser user) async {
-    final controller = TextEditingController();
-    final newPassword = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Change password for ${user.email}'),
-        content: TextField(
-          controller: controller,
-          obscureText: true,
-          decoration: const InputDecoration(labelText: 'New password'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    if (newPassword == null || newPassword.isEmpty) return;
-
-    final res = await _repo.updatePassword(user.id, newPassword);
-    if (!mounted) return;
-    if (res.statusCode != 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not update password')),
-      );
-    }
-  }
-
-  Future<void> _editRole(AdminUser user) async {
-    final newRole = await showDialog<String>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: Text('Change role for ${user.email}'),
-        children: _roles
-            .map(
-              (role) => SimpleDialogOption(
-                onPressed: () => Navigator.pop(context, role),
-                child: Text(role),
-              ),
-            )
-            .toList(),
-      ),
-    );
-    if (newRole == null || newRole == user.role) return;
-
-    final res = await _repo.updateRole(user.id, newRole);
-    if (!mounted) return;
-    if (res.statusCode == 200) {
-      _loadUsers();
-    } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Could not update role')));
-    }
-  }
-
-  Future<void> _deleteUser(AdminUser user) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete account'),
-        content: Text('Delete ${user.email}? This cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    final res = await _repo.deleteUser(user.id);
-    if (!mounted) return;
-    if (res.statusCode == 200) {
-      _loadUsers();
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Could not delete account')));
     }
   }
 
@@ -383,83 +177,108 @@ class _AdministrationPanelState extends State<AdministrationPanel> {
                   const SizedBox(height: 32),
                   Text('Users', style: textTheme.headlineSmall),
                   const SizedBox(height: 8),
-                  if (_loading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (_users.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Text('No other users.'),
-                    )
-                  else
-                    Card(
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _users.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (context, i) {
-                          final user = _users[i];
-                          return ListTile(
-                            title: Text(user.fullName),
-                            subtitle: Text('${user.email}\n${user.role}'),
-                            isThreeLine: true,
-                            // one menu instead of 4 icon buttons, which left no room for the email on phones
-                            trailing: PopupMenuButton<VoidCallback>(
-                              tooltip: 'Actions',
-                              onSelected: (action) => action(),
-                              itemBuilder: (context) => [
-                                PopupMenuItem(
-                                  value: () => _editName(user),
-                                  child: const ListTile(
-                                    leading: Icon(Icons.person),
-                                    title: Text('Edit name'),
-                                  ),
-                                ),
-                                PopupMenuItem(
-                                  value: () => _editEmail(user),
-                                  child: const ListTile(
-                                    leading: Icon(Icons.edit),
-                                    title: Text('Edit email'),
-                                  ),
-                                ),
-                                PopupMenuItem(
-                                  value: () => _editPassword(user),
-                                  child: const ListTile(
-                                    leading: Icon(Icons.lock_reset),
-                                    title: Text('Change password'),
-                                  ),
-                                ),
-                                PopupMenuItem(
-                                  value: () => _editRole(user),
-                                  child: const ListTile(
-                                    leading: Icon(Icons.badge),
-                                    title: Text('Change role'),
-                                  ),
-                                ),
-                                PopupMenuItem(
-                                  value: () => _deleteUser(user),
-                                  child: const ListTile(
-                                    leading: Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
-                                    ),
-                                    title: Text('Delete account'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                  ListenableBuilder(
+                    listenable: _admin,
+                    builder: (context, _) => _buildUserList(),
+                  ),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildUserList() {
+    if (_admin.loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_admin.users.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Text('No other users.'),
+      );
+    }
+    return Card(
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: _admin.users.length,
+        separatorBuilder: (_, _) => const Divider(height: 1),
+        itemBuilder: (_, i) {
+          final user = _admin.users[i];
+          return ListTile(
+            title: Text(user.fullName),
+            subtitle: Text('${user.email}\n${user.role}'),
+            isThreeLine: true,
+            // one menu instead of 4 icon buttons, which left no room for the email on phones
+            trailing: PopupMenuButton<Future<void> Function()>(
+              tooltip: 'Actions',
+              onSelected: _run,
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: () async {
+                    final name = await showEditNameDialog(context, user);
+                    if (name != null) {
+                      await _admin.editName(user, name.$1, name.$2);
+                    }
+                  },
+                  child: const ListTile(
+                    leading: Icon(Icons.person),
+                    title: Text('Edit name'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: () async {
+                    final email = await showEditEmailDialog(context, user);
+                    if (email != null) await _admin.editEmail(user, email);
+                  },
+                  child: const ListTile(
+                    leading: Icon(Icons.edit),
+                    title: Text('Edit email'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: () async {
+                    final password = await showEditPasswordDialog(context, user);
+                    if (password != null) {
+                      await _admin.editPassword(user, password);
+                    }
+                  },
+                  child: const ListTile(
+                    leading: Icon(Icons.lock_reset),
+                    title: Text('Change password'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: () async {
+                    final role = await showEditRoleDialog(context, user);
+                    if (role != null) await _admin.editRole(user, role);
+                  },
+                  child: const ListTile(
+                    leading: Icon(Icons.badge),
+                    title: Text('Change role'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: () async {
+                    if (await showDeleteUserDialog(context, user)) {
+                      await _admin.deleteUser(user);
+                    }
+                  },
+                  child: const ListTile(
+                    leading: Icon(Icons.delete, color: Colors.red),
+                    title: Text('Delete account'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
