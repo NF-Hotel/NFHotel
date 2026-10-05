@@ -6,6 +6,11 @@ using NFHotel.Web.Features.Booking;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var builder = WebApplication.CreateBuilder(args);
+
+// Læser Docker Secrets som konfiguration fra filer i containeren.
+builder.Configuration.AddKeyPerFile("/run/secrets", optional: true);
+
 // ----------------------------------------------------------------------
 // COMPOSITION ROOT
 //
