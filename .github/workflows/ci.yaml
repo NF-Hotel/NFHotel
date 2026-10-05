@@ -1,0 +1,23 @@
+#navn
+name: NF Hotel CI
+
+#start workflowet manuelt fra Actions
+on:
+  workflow_dispatch:
+  
+#hent github linux maskine
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      #henter projektets kode med dette værktøk checkout version 7
+      - uses: actions/checkout@v7
+
+      #installer .NET versionen fra global.json.
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      #byg projektet. nuGet packets hentes automatisk.
+      - run: dotnet build NFHotel.sln
