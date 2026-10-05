@@ -10,11 +10,15 @@ class AdminController extends ChangeNotifier {
   List<AdminUser> users = [];
   bool loading = true;
 
+  /// Room number -> ids of the staff designated to it.
+  Map<int, Set<int>> assignments = {};
+
   Future<void> loadUsers() async {
     loading = true;
     notifyListeners();
     try {
       users = await _repo.fetchUsers();
+      assignments = await _repo.fetchRoomAssignments();
     } finally {
       loading = false;
       notifyListeners();
@@ -54,6 +58,16 @@ class AdminController extends ChangeNotifier {
     if (role == user.role) return;
     await _repo.updateRole(user.id, role);
     await loadUsers();
+  }
+
+  List<AdminUser> staffForRoom(int room) => users
+      .where((u) => assignments[room]?.contains(u.id) ?? false)
+      .toList();
+
+  Future<void> assignRoom(int room, Set<int> userIds) async {
+    await _repo.updateRoomAssignments(room, userIds);
+    assignments = await _repo.fetchRoomAssignments();
+    notifyListeners();
   }
 
   Future<void> deleteUser(AdminUser user) async {

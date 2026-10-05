@@ -42,7 +42,7 @@ class RoomTile extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Room ${room.number}',
+                room.name,
                 style: textTheme.titleMedium,
               ),
               const SizedBox(height: 4),

@@ -4,13 +4,38 @@ import 'package:mobil_application/Controllers/roomController.dart';
 import 'package:mobil_application/Presentation/LoginScreen.dart';
 import 'package:mobil_application/Presentation/AdministrationPanel.dart';
 import 'package:mobil_application/Presentation/RoomView.dart';
+import 'package:mobil_application/Repositories/room_repository.dart';
 import 'package:mobil_application/Widgets/RoomTile.dart';
 
-class RoomOverview extends StatelessWidget {
+class RoomOverview extends StatefulWidget {
   const RoomOverview({super.key});
+
+  @override
+  State<RoomOverview> createState() => _RoomOverviewState();
+}
+
+class _RoomOverviewState extends State<RoomOverview> {
+  @override
+  void initState() {
+    super.initState();
+    _loadRooms();
+  }
+
+  Future<void> _loadRooms() async {
+    try {
+      await roomController.loadRooms();
+    } on RoomRepositoryException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    }
+  }
 
   void _logout(BuildContext context) {
     AuthSession.token = null;
+    roomController.clear();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const LoginScreen()),
       (route) => false,
@@ -44,26 +69,44 @@ class RoomOverview extends StatelessWidget {
       body: SafeArea(
         child: ListenableBuilder(
           listenable: roomController,
-          // 2 columns on phones, more on wider screens
-          builder: (context, _) => GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 200,
-              childAspectRatio: 0.9,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-            ),
-            itemCount: roomController.rooms.length,
-            itemBuilder: (context, i) => RoomTile(
-              room: roomController.rooms[i],
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RoomView(room: roomController.rooms[i]),
-                ),
-              ),
-            ),
-          ),
+          builder: (context, _) {
+            final rooms = roomController.rooms;
+            // pull to refresh picks up changes from other phones and new assignments
+            return RefreshIndicator(
+              onRefresh: _loadRooms,
+              child: rooms.isEmpty && roomController.loaded
+                  ? ListView(
+                      padding: const EdgeInsets.all(32),
+                      children: const [
+                        Center(child: Text('No rooms to show.')),
+                      ],
+                    )
+                  // 2 columns on phones, more on wider screens
+                  : GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 200,
+                            childAspectRatio: 0.9,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                          ),
+                      itemCount: rooms.length,
+                      itemBuilder: (context, i) => RoomTile(
+                        room: rooms[i],
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => RoomView(room: rooms[i]),
+                            ),
+                          );
+                          _loadRooms();
+                        },
+                      ),
+                    ),
+            );
+          },
         ),
       ),
     );

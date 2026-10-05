@@ -174,7 +174,141 @@ admin.MapDelete("/{id:long}", async (long id, HttpContext http, NpgsqlDataSource
     return rows == 0 ? Results.NotFound() : Results.Ok();
 });
 
-var notes = app.MapGroup("/rooms/{room:int}/notes").RequireAuthorization();
+// cleaners only see and change the rooms they are designated to
+Func<EndpointFilterInvocationContext, EndpointFilterDelegate, ValueTask<object?>> assignedRoomsOnly = async (ctx, next) =>
+{
+    var http = ctx.HttpContext;
+    if (!http.User.IsInRole("cleaner"))
+        return await next(ctx);
+
+    var currentId = long.Parse(http.User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+    var room = int.Parse((string)http.Request.RouteValues["room"]!);
+    await using var conn = await http.RequestServices.GetRequiredService<NpgsqlDataSource>().OpenConnectionAsync();
+    var assigned = await conn.ExecuteScalarAsync<bool>(
+        "SELECT EXISTS (SELECT 1 FROM room_assignments WHERE room_number = @Room AND user_id = @CurrentId)",
+        new { Room = room, CurrentId = currentId });
+    return assigned ? await next(ctx) : Results.StatusCode(StatusCodes.Status403Forbidden);
+};
+
+var rooms = app.MapGroup("/rooms").RequireAuthorization();
+
+rooms.MapGet("/", async (HttpContext http, NpgsqlDataSource db) =>
+{
+    var currentId = long.Parse(http.User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+    await using var conn = await db.OpenConnectionAsync();
+    var rows = await conn.QueryAsync<RoomRow>(
+        """
+        SELECT r.room_number AS Number, r.name AS Name, r.status AS Status FROM rooms r
+        WHERE NOT @IsCleaner
+           OR EXISTS (SELECT 1 FROM room_assignments a WHERE a.room_number = r.room_number AND a.user_id = @CurrentId)
+        ORDER BY r.room_number
+        """,
+        new { IsCleaner = http.User.IsInRole("cleaner"), CurrentId = currentId });
+    return Results.Ok(rows);
+});
+
+rooms.MapPut("/{room:int}/status", async (int room, UpdateRoomStatusRequest req, NpgsqlDataSource db) =>
+{
+    await using var conn = await db.OpenConnectionAsync();
+    try
+    {
+        var rows = await conn.ExecuteAsync(
+            "UPDATE rooms SET status = @Status WHERE room_number = @Room",
+            new { req.Status, Room = room });
+        return rows == 0 ? Results.NotFound() : Results.Ok();
+    }
+    catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.CheckViolation)
+    {
+        return Results.BadRequest("Invalid status");
+    }
+}).AddEndpointFilter(assignedRoomsOnly);
+
+var adminRooms = app.MapGroup("/admin/rooms").RequireAuthorization(p => p.RequireRole("admin"));
+
+// room_number stays the internal id (notes and assignments point at it); name is what staff see
+adminRooms.MapPost("/", async (RoomNameRequest req, NpgsqlDataSource db) =>
+{
+    if (string.IsNullOrWhiteSpace(req.Name))
+        return Results.BadRequest("Name is required");
+
+    await using var conn = await db.OpenConnectionAsync();
+    try
+    {
+        await conn.ExecuteAsync(
+            "INSERT INTO rooms (room_number, name) SELECT COALESCE(MAX(room_number), 0) + 1, @Name FROM rooms",
+            new { Name = req.Name.Trim() });
+    }
+    catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
+    {
+        // a duplicate name, or two admins adding at the same moment
+        return Results.Conflict("Room name already in use");
+    }
+    return Results.Ok();
+});
+
+adminRooms.MapPut("/{room:int}/name", async (int room, RoomNameRequest req, NpgsqlDataSource db) =>
+{
+    if (string.IsNullOrWhiteSpace(req.Name))
+        return Results.BadRequest("Name is required");
+
+    await using var conn = await db.OpenConnectionAsync();
+    try
+    {
+        var rows = await conn.ExecuteAsync(
+            "UPDATE rooms SET name = @Name WHERE room_number = @Room",
+            new { Name = req.Name.Trim(), Room = room });
+        return rows == 0 ? Results.NotFound() : Results.Ok();
+    }
+    catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
+    {
+        return Results.Conflict("Room name already in use");
+    }
+});
+
+// takes the room's notes and assignments with it, so a later room reusing the number starts clean
+adminRooms.MapDelete("/{room:int}", async (int room, NpgsqlDataSource db) =>
+{
+    await using var conn = await db.OpenConnectionAsync();
+    await using var tx = await conn.BeginTransactionAsync();
+    await conn.ExecuteAsync("DELETE FROM room_notes WHERE room_number = @Room", new { Room = room }, tx);
+    await conn.ExecuteAsync("DELETE FROM room_assignments WHERE room_number = @Room", new { Room = room }, tx);
+    var rows = await conn.ExecuteAsync("DELETE FROM rooms WHERE room_number = @Room", new { Room = room }, tx);
+    if (rows == 0)
+        return Results.NotFound();
+    await tx.CommitAsync();
+    return Results.Ok();
+});
+
+adminRooms.MapGet("/assignments", async (NpgsqlDataSource db) =>
+{
+    await using var conn = await db.OpenConnectionAsync();
+    var rows = await conn.QueryAsync<RoomAssignmentRow>(
+        "SELECT room_number AS RoomNumber, user_id AS UserId FROM room_assignments ORDER BY room_number");
+    return Results.Ok(rows);
+});
+
+// replaces the whole set of staff for one room
+adminRooms.MapPut("/{room:int}/assignments", async (int room, UpdateAssignmentsRequest req, NpgsqlDataSource db) =>
+{
+    await using var conn = await db.OpenConnectionAsync();
+    await using var tx = await conn.BeginTransactionAsync();
+    await conn.ExecuteAsync("DELETE FROM room_assignments WHERE room_number = @Room", new { Room = room }, tx);
+    try
+    {
+        await conn.ExecuteAsync(
+            "INSERT INTO room_assignments (room_number, user_id) SELECT @Room, unnest(@UserIds)",
+            new { Room = room, UserIds = req.UserIds.Distinct().ToArray() }, tx);
+    }
+    catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.ForeignKeyViolation)
+    {
+        return Results.BadRequest("Unknown user");
+    }
+    await tx.CommitAsync();
+    return Results.Ok();
+});
+
+var notes = app.MapGroup("/rooms/{room:int}/notes").RequireAuthorization()
+    .AddEndpointFilter(assignedRoomsOnly);
 
 notes.MapGet("/", async (int room, NpgsqlDataSource db) =>
 {
@@ -299,3 +433,8 @@ record UpdateRoleRequest(string Role);
 record NoteRow(long Id, string Body, string CreatedBy, DateTime CreatedAt, string? ResolvedBy, DateTime? ResolvedAt);
 record CreateNoteRequest(string Body);
 record ResolveNoteRequest(bool Resolved);
+record RoomAssignmentRow(int RoomNumber, long UserId);
+record UpdateAssignmentsRequest(long[] UserIds);
+record RoomRow(int Number, string Name, string Status);
+record RoomNameRequest(string Name);
+record UpdateRoomStatusRequest(string Status);

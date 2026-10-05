@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../Controllers/adminController.dart';
+import '../Controllers/roomController.dart';
+import '../Repositories/room_repository.dart';
 import '../Repositories/user_repository.dart';
+import '../Widgets/RoomDialogs.dart';
 import '../Widgets/UserDialogs.dart';
 
 class AdministrationPanel extends StatefulWidget {
@@ -43,12 +46,18 @@ class _AdministrationPanelState extends State<AdministrationPanel> {
       await action();
       return true;
     } on UserRepositoryException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
-      }
-      return false;
+      _showError(e.message);
+    } on RoomRepositoryException catch (e) {
+      _showError(e.message);
+    }
+    return false;
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -181,11 +190,114 @@ class _AdministrationPanelState extends State<AdministrationPanel> {
                     listenable: _admin,
                     builder: (context, _) => _buildUserList(),
                   ),
+                  const SizedBox(height: 32),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text('Rooms', style: textTheme.headlineSmall),
+                      ),
+                      TextButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add room'),
+                        onPressed: () => _run(() async {
+                          final name = await showRoomNameDialog(context);
+                          if (name != null) await roomController.addRoom(name);
+                        }),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Cleaners can only open the rooms assigned to them.',
+                    style: textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  ListenableBuilder(
+                    listenable: Listenable.merge([_admin, roomController]),
+                    builder: (context, _) => _buildRooms(),
+                  ),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRooms() {
+    if (_admin.loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    // admins see every room anyway, so only staff can be assigned
+    final staff = _admin.users.where((u) => u.role != 'admin').toList();
+    return Card(
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: roomController.rooms.length,
+        separatorBuilder: (_, _) => const Divider(height: 1),
+        itemBuilder: (_, i) {
+          final room = roomController.rooms[i];
+          final assigned = _admin.staffForRoom(room.number);
+          return ListTile(
+            title: Text(room.name),
+            subtitle: Text(
+              assigned.isEmpty
+                  ? 'Unassigned'
+                  : assigned.map((u) => u.fullName).join(', '),
+            ),
+            trailing: PopupMenuButton<Future<void> Function()>(
+              tooltip: 'Actions',
+              onSelected: _run,
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: () async {
+                    final userIds = await showAssignRoomDialog(
+                      context,
+                      room,
+                      staff,
+                      _admin.assignments[room.number] ?? {},
+                    );
+                    if (userIds != null) {
+                      await _admin.assignRoom(room.number, userIds);
+                    }
+                  },
+                  child: const ListTile(
+                    leading: Icon(Icons.group),
+                    title: Text('Assign staff'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: () async {
+                    final name = await showRoomNameDialog(context, room: room);
+                    if (name != null) {
+                      await roomController.renameRoom(room, name);
+                    }
+                  },
+                  child: const ListTile(
+                    leading: Icon(Icons.edit),
+                    title: Text('Rename'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: () async {
+                    if (await showDeleteRoomDialog(context, room)) {
+                      await roomController.deleteRoom(room);
+                    }
+                  },
+                  child: const ListTile(
+                    leading: Icon(Icons.delete, color: Colors.red),
+                    title: Text('Delete room'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

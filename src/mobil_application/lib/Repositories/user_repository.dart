@@ -143,6 +143,31 @@ class UserRepository {
     _ensureOk(res, 'Could not update role');
   }
 
+  /// Room number -> ids of the staff designated to it.
+  Future<Map<int, Set<int>>> fetchRoomAssignments() async {
+    final res = await http.get(
+      Uri.parse('$apiBase/admin/rooms/assignments'),
+      headers: _authHeaders,
+    );
+    _ensureOk(res, 'Could not load room assignments (${res.statusCode})');
+    final assignments = <int, Set<int>>{};
+    for (final row in jsonDecode(res.body) as List) {
+      assignments
+          .putIfAbsent(row['roomNumber'] as int, () => {})
+          .add(row['userId'] as int);
+    }
+    return assignments;
+  }
+
+  Future<void> updateRoomAssignments(int room, Set<int> userIds) async {
+    final res = await http.put(
+      Uri.parse('$apiBase/admin/rooms/$room/assignments'),
+      headers: _authHeaders,
+      body: jsonEncode({'userIds': userIds.toList()}),
+    );
+    _ensureOk(res, 'Could not update room $room');
+  }
+
   Future<void> deleteUser(int id) async {
     final res = await http.delete(
       Uri.parse('$apiBase/admin/users/$id'),
