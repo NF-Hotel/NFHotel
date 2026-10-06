@@ -198,7 +198,13 @@ rooms.MapGet("/", async (HttpContext http, NpgsqlDataSource db) =>
     await using var conn = await db.OpenConnectionAsync();
     var rows = await conn.QueryAsync<RoomRow>(
         """
-        SELECT r.room_number AS Number, r.name AS Name, r.status AS Status FROM rooms r
+        SELECT r.room_number AS Number, r.name AS Name, r.status AS Status,
+               ARRAY(
+                   SELECT COALESCE(NULLIF(trim(concat(u.first_name, ' ', u.last_name)), ''), u.email)
+                   FROM room_assignments a JOIN auth.users u ON u.id = a.user_id
+                   WHERE a.room_number = r.room_number ORDER BY 1
+               ) AS Cleaners
+        FROM rooms r
         WHERE NOT @IsCleaner
            OR EXISTS (SELECT 1 FROM room_assignments a WHERE a.room_number = r.room_number AND a.user_id = @CurrentId)
         ORDER BY r.room_number
@@ -435,6 +441,13 @@ record CreateNoteRequest(string Body);
 record ResolveNoteRequest(bool Resolved);
 record RoomAssignmentRow(int RoomNumber, long UserId);
 record UpdateAssignmentsRequest(long[] UserIds);
-record RoomRow(int Number, string Name, string Status);
+// properties, not a positional record: Npgsql reports text[] as System.Array, which Dapper can't match to a string[] ctor parameter
+record RoomRow
+{
+    public int Number { get; init; }
+    public string Name { get; init; } = "";
+    public string Status { get; init; } = "";
+    public string[] Cleaners { get; init; } = [];
+}
 record RoomNameRequest(string Name);
 record UpdateRoomStatusRequest(string Status);

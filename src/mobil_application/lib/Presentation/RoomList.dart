@@ -53,7 +53,7 @@ class _RoomOverviewState extends State<RoomOverview> {
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const AdministrationPanel()),
-                ),
+                ).then((_) => _loadRooms()), // assignments may have changed
               )
             : null,
         centerTitle: true,

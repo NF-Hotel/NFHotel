@@ -34,6 +34,16 @@ class RoomView extends StatelessWidget {
           builder: (context, _) => ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.person_outline),
+                  title: const Text('Assigned cleaner'),
+                  subtitle: Text(
+                    room.cleaners.isEmpty ? 'Unassigned' : room.cleaners.join(', '),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               for (final status in RoomStatus.values)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
