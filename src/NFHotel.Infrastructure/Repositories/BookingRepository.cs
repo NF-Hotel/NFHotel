@@ -182,7 +182,7 @@ public sealed class BookingRepository : IBookingRepository
     {
         var values = statuses as BookingStatus[] ?? statuses.ToArray();
 
-        return query.Where(booking => values.Contains(booking.Status));
+        return query.Where(booking => Enumerable.Contains(values, booking.Status));
     }
 
     /// <summary>
