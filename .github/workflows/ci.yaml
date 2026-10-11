@@ -1,30 +1,103 @@
-# Navn på workflowet
+# CI: byg, test og kontrollér koden før deployment
 name: NF Hotel CI
 
 on:
-  # Start workflowet manuelt fra Actions
+  # Kan stadig startes manuelt fra Actions
   workflow_dispatch:
-  # Byg automatisk ved oprettelse og opdatering af pull requests til main
+  # Kontrollér ændringer før review og merge
   pull_request:
     branches: [main]
+  # Kontrollér også den samlede kode efter merge
+  push:
+    branches: [main]
 
-# Workflowet behøver kun læseadgang til koden
+# Workflowet har kun brug for læseadgang
 permissions:
   contents: read
 
+# Stop en ældre kørsel, når samme branch eller PR får nye ændringer
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
 jobs:
   build:
-    # Kør jobbet på en Linux-maskine hos GitHub
+    name: Build, tests og sikkerhed
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
 
     steps:
       # Hent projektets kode
-      - uses: actions/checkout@v7
+      - name: Hent kode
+        uses: actions/checkout@v7
 
-      # Installer .NET-versionen fra global.json
-      - uses: actions/setup-dotnet@v6
+      # Brug projektets SDK-version
+      - name: Installer .NET
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
-      # Hent nødvendige NuGet-pakker og byg løsningen
-      - run: dotnet build NFHotel.sln
+      # Scan både direkte og indirekte NuGet-afhængigheder.
+      # Kendte sårbarheder og øvrige restore-advarsler giver fejl.
+      - name: Restore og NuGet-sårbarhedskontrol
+        run: >-
+          dotnet restore NFHotel.sln
+          -p:NuGetAudit=true
+          -p:NuGetAuditMode=all
+          -p:NuGetAuditLevel=low
+          -p:TreatWarningsAsErrors=true
+
+      # Byg med projektets eksisterende analyzer- og kodestilregler
+      - name: Build
+        run: dotnet build NFHotel.sln --configuration Release --no-restore
+
+      # Integrationstestene bruger Testcontainers og starter selv PostgreSQL
+      - name: Kontrollér Docker til integrationstests
+        run: docker info
+
+      # Kør alle tre testprojekter og mål code coverage
+      - name: Tests og coverage
+        run: >-
+          dotnet test NFHotel.sln
+          --configuration Release
+          --no-build
+          --no-restore
+          --logger trx
+          --results-directory TestResults
+          --collect:"XPlat Code Coverage"
+
+      # Gem rapporter også når tests fejler
+      - name: Gem testresultater og coverage
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: TestResults/
+          if-no-files-found: warn
+          retention-days: 14
+
+  formatting:
+    name: Formatering
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Hent kode
+        uses: actions/checkout@v7
+
+      - name: Installer .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore NFHotel.sln
+
+      # Kontrollér formatering efter .editorconfig uden at ændre filer.
+      # Kodestil og analyzers håndteres også af projektets buildindstillinger.
+      - name: Kontrollér formatering
+        run: dotnet format whitespace NFHotel.sln --verify-no-changes --no-restore
