@@ -69,6 +69,7 @@ jobs:
           --logger trx
           --results-directory TestResults
           --collect:"XPlat Code Coverage"
+          --settings .runsettings
 
       # Gem rapporter også når tests fejler
       - name: Gem testresultater og coverage
@@ -101,3 +102,18 @@ jobs:
       # Kodestil og analyzers håndteres også af projektets buildindstillinger.
       - name: Kontrollér formatering
         run: dotnet format whitespace NFHotel.sln --verify-no-changes --no-restore
+
+  container:
+    name: Docker-build
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Hent kode
+        uses: actions/checkout@v7
+
+      # Kontrollér at projektets Dockerfile kan pakke webappen.
+      # Imaget bygges kun lokalt på runneren; det publiceres ikke.
+      - name: Byg Docker-image
+        run: docker build --tag nfhotel:ci .
