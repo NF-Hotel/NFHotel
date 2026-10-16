@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [1593b34] |
 
 ---
 
@@ -64,3 +64,4 @@ Go — every Mandatory criterion passes; the concepts equal those of DM-005. Cri
 [DM-004]: ../../domain-model.md
 [QC-DM-001]: ../../../framework/qc/artifacts/qc-domain-model.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4

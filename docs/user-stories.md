@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-012 Go | [469ff7a] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.06 to US-001.08, the hotel staff stories (MIL-007) | [a29c54a] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.09, the staff sign-in story (MIL-016) | pending |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.09, the staff sign-in story (MIL-016) | [1593b34] |
 
 ---
 
@@ -196,3 +196,4 @@ for US-001.02.
 [MIL-016]: ./milestones/mil-016-backoffice-login.md
 [469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa
 [a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d
+[1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4

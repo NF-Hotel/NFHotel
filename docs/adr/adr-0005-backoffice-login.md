@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-17 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-069 Go | pending |
+| 2026-10-17 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version | [1593b34] |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-069 Go | [1593b34] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -80,3 +80,4 @@ Quality attributes: security improves (authentication, least privilege, defence 
 [BC-001]: ../business-case.md
 [MIL-016]: ../milestones/mil-016-backoffice-login.md
 [ADR-0004]: ./adr-0004-database-api.md
+[1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4

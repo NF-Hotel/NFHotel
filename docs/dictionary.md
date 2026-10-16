@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version | [c74d991] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added Staff member, User name, Role, Password and Active (MIL-016) | pending |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added Staff member, User name, Role, Password and Active (MIL-016) | [1593b34] |
 
 ---
 
@@ -66,3 +66,4 @@ English (en), domain it, as set in the registry.
 [BC-001]: ./business-case.md
 [SA-001]: ./stakeholder-analysis.md
 [c74d991]: https://github.com/NF-Hotel/NFHotel/commit/c74d991b66d29df8c8cfb8d07848abed38ca386d
+[1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4

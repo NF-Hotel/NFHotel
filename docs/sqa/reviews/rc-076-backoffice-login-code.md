@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [f732342] |
 
 ---
 
@@ -89,3 +89,4 @@ Go — all eight criteria of MIL-016 pass and the applicable criteria of QC-CS-0
 [MIL-016]: ../../milestones/mil-016-backoffice-login.md
 [ADR-0005]: ../../adr/adr-0005-backoffice-login.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[f732342]: https://github.com/NF-Hotel/NFHotel/commit/f7323428bab4c7df307bf9797b8de2f59c153f60
