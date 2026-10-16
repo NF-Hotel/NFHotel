@@ -1,4 +1,4 @@
-<title>Frontend-arkæologi</title>
+<title>Frontend archaeology</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -323,72 +323,72 @@
 
   <!-- 1 ------------------------------------------------------------ -->
   <section class="slide title-slide" data-active>
-    <div class="eyebrow">Frontend-guild · 4. semester</div>
-    <h1>Vi fandt fire forretningsregler gemt i en WPF-converter</h1>
-    <p class="lede">Hvordan vi byggede frontend i NFHotel 2.0 — og hvad der viste sig at være det egentlige arbejde.</p>
+    <div class="eyebrow">Frontend guild · 4th semester</div>
+    <h1>We found four business rules hidden in a WPF converter</h1>
+    <p class="lede">How we built the frontend of NFHotel 2.0 — and what turned out to be the real work.</p>
     <div class="fill"></div>
     <div class="agenda">
-      <div><span>01</span>Arven</div>
-      <div><span>02</span>Én regel</div>
-      <div><span>03</span>Systemet før skærmene</div>
-      <div><span>04</span>Grænsen</div>
-      <div><span>05</span>Sådan brugte vi AI</div>
+      <div><span>01</span>The legacy</div>
+      <div><span>02</span>One rule</div>
+      <div><span>03</span>The system before the screens</div>
+      <div><span>04</span>The boundary</div>
+      <div><span>05</span>How we used AI</div>
     </div>
-    <div class="byline">Valdemar · Frontend-guild</div>
+    <div class="byline">Valdemar · Frontend guild</div>
   </section>
 
   <!-- 2 ------------------------------------------------------------ -->
   <section class="slide">
-    <div class="eyebrow">01 · Arven</div>
-    <h2>Vi arvede et WPF-projekt fra en anden gruppe</h2>
+    <div class="eyebrow">01 · The legacy</div>
+    <h2>We inherited a WPF project from another group</h2>
     <div class="figures">
-      <div><div class="fig-n">1.093</div><div class="fig-l">linjer XAML i én view-fil</div></div>
-      <div><div class="fig-n">823</div><div class="fig-l">linjer i én ViewModel</div></div>
-      <div><div class="fig-n">0</div><div class="fig-l">async-metoder i hele dataadgangen</div></div>
-      <div><div class="fig-n">126</div><div class="fig-l">forretningsregler udtrukket</div></div>
+      <div><div class="fig-n">1,093</div><div class="fig-l">lines of XAML in one view file</div></div>
+      <div><div class="fig-n">823</div><div class="fig-l">lines in one ViewModel</div></div>
+      <div><div class="fig-n">0</div><div class="fig-l">async methods in the entire data access</div></div>
+      <div><div class="fig-n">126</div><div class="fig-l">business rules extracted</div></div>
     </div>
-    <p class="body-lg">Opgaven lød "port til Blazor". Men WPF-bindings, converters og code-behind har ingen modstykker i Razor. Der var ikke noget at portere — UI'et skulle skrives forfra.</p>
+    <p class="body-lg">The assignment said "port to Blazor". But WPF bindings, converters and code-behind have no counterparts in Razor. There was nothing to port — the UI had to be written from scratch.</p>
     <div class="fill"></div>
-    <div class="takeaway"><b>Det vi tog med:</b> Kortlæg reglerne før du rører markup. Hvis du ikke ved hvad den gamle skærm gjorde, genskaber du dens fejl.</div>
+    <div class="takeaway"><b>What we took with us:</b> Map the rules before you touch the markup. If you do not know what the old screen did, you recreate its mistakes.</div>
   </section>
 
   <!-- 3 ------------------------------------------------------------ -->
   <section class="slide">
-    <div class="eyebrow">01 · Arven</div>
-    <h2>Fire forretningsregler lå i en farvekonverter</h2>
-    <p class="body-lg">Kalenderen tegnede bookinger som bjælker. Bredden var <code style="font-family:var(--mono);font-size:13px">(EndDate − StartDate).Days</code> — altså antal <em>overnatninger</em>, ikke dage. En bjælke startede midt på ankomstdagen, fordi værelset først er optaget fra middag.</p>
+    <div class="eyebrow">01 · The legacy</div>
+    <h2>Four business rules lived in a colour converter</h2>
+    <p class="body-lg">The calendar drew bookings as bars. The width was <code style="font-family:var(--mono);font-size:13px">(EndDate − StartDate).Days</code> — that is, the number of <em>nights</em>, not days. A bar started in the middle of the arrival day, because the room is only occupied from noon.</p>
     <ul class="plain">
-      <li><b>Ingen af de reglerne stod i domænet.</b> De fandtes kun som tal i en converter, mellem 40 linjers kommentarer hvor nogen tænkte højt.</li>
-      <li><b>Vi opdagede dem fordi vi skulle genskrive UI'et.</b> Havde vi "bare portet", var de forsvundet lydløst.</li>
+      <li><b>None of those rules were in the domain.</b> They existed only as numbers in a converter, between 40 lines of comments where someone was thinking out loud.</li>
+      <li><b>We found them because we had to rewrite the UI.</b> Had we "just ported", they would have vanished silently.</li>
     </ul>
     <div class="fill"></div>
-    <div class="takeaway"><b>Det vi tog med:</b> Frontend-kode er et gemmested for domæneviden. En converter, en <code style="font-family:var(--mono);font-size:13px">*.css</code>-klasse eller en <code style="font-family:var(--mono);font-size:13px">disabled</code>-attribut kan være den eneste dokumentation af en regel.</div>
+    <div class="takeaway"><b>What we took with us:</b> Frontend code is a hiding place for domain knowledge. A converter, a <code style="font-family:var(--mono);font-size:13px">*.css</code> class or a <code style="font-family:var(--mono);font-size:13px">disabled</code> attribute can be the only documentation of a rule.</div>
   </section>
 
   <!-- 4 ------------------------------------------------------------ -->
   <section class="slide">
-    <div class="eyebrow">02 · Én regel</div>
-    <h2>.razor er markup. Punktum.</h2>
-    <p class="body-lg">Al logik ligger i en ViewModel-klasse, injiceret via constructor. Ikke code-behind, ikke <code style="font-family:var(--mono);font-size:13px">@code</code>-blokke med forretningsregler.</p>
+    <div class="eyebrow">02 · One rule</div>
+    <h2>.razor is markup. Full stop.</h2>
+    <p class="body-lg">All logic lives in a ViewModel class, injected via the constructor. Not code-behind, not <code style="font-family:var(--mono);font-size:13px">@code</code> blocks with business rules.</p>
     <div class="cols">
       <div>
-        <div class="col-h">Testen vi bruger</div>
-        <p>Kan en konsol-app kalde det samme use case og få alle regler håndhævet?</p>
-        <p style="margin-top:12px">Er svaret ja, kan et API det også — og mobilappen arver reglerne gratis.</p>
+        <div class="col-h">The test we use</div>
+        <p>Can a console app call the same use case and get every rule enforced?</p>
+        <p style="margin-top:12px">If the answer is yes, an API can too — and the mobile app inherits the rules for free.</p>
       </div>
       <div>
-        <div class="col-h">Hvad det gav</div>
-        <p>Da kundesiden skulle bygges senere, krævede det <b>nul ændringer</b> i forretningslogikken. Et helt nyt publikum, samme services.</p>
+        <div class="col-h">What it gave us</div>
+        <p>When the customer site was built later, it required <b>zero changes</b> in the business logic. A whole new audience, the same services.</p>
       </div>
     </div>
     <div class="fill"></div>
-    <div class="takeaway"><b>Det vi tog med:</b> Reglen er ikke arkitektur-fetich. Den er grunden til at det næste lag kan bygges uden at røre det forrige.</div>
+    <div class="takeaway"><b>What we took with us:</b> The rule is not an architecture fetish. It is the reason the next layer can be built without touching the previous one.</div>
   </section>
 
   <!-- 5 ------------------------------------------------------------ -->
   <section class="slide">
-    <div class="eyebrow">03 · Systemet før skærmene</div>
-    <h2>Vi aftalte 63 CSS-klasser før første linje markup</h2>
+    <div class="eyebrow">03 · The system before the screens</div>
+    <h2>We agreed on 63 CSS classes before the first line of markup</h2>
     <div class="swatches" aria-hidden="true">
       <div class="sw" style="background:#2f4739"></div>
       <div class="sw" style="background:#b08a4f"></div>
@@ -397,121 +397,121 @@
       <div class="sw" style="background:#1c1f1d"></div>
     </div>
     <div class="sw-lab"><span>forest</span><span>brass</span><span>sand</span><span>line</span><span>ink</span></div>
-    <p class="body-lg">Et skrevet spec med farve-tokens, typografi og en udtømmende liste over klassenavne. Ingen Bootstrap, ingen eksterne fonte — appen skal virke offline.</p>
+    <p class="body-lg">A written spec with colour tokens, typography and an exhaustive list of class names. No Bootstrap, no external fonts — the app must work offline.</p>
     <ul class="plain">
-      <li><b>Specset var en kontrakt, ikke inspiration.</b> Tre områder blev bygget parallelt af forskellige folk mod samme klasseliste.</li>
-      <li><b>Ingen opfandt egne klasser.</b> Det blev tjekket maskinelt: hver klasse i markup skulle findes i CSS'en.</li>
+      <li><b>The spec was a contract, not inspiration.</b> Three areas were built in parallel by different people against the same class list.</li>
+      <li><b>Nobody invented their own classes.</b> This was checked mechanically: every class in markup had to exist in the CSS.</li>
     </ul>
     <div class="fill"></div>
-    <div class="takeaway"><b>Det vi tog med:</b> Et designsystem er billigst at skrive før skærmene og dyrest bagefter. Skriv klasselisten ned — så kan flere arbejde samtidig uden at drive fra hinanden.</div>
+    <div class="takeaway"><b>What we took with us:</b> A design system is cheapest to write before the screens and most expensive afterwards. Write the class list down — then several people can work at once without drifting apart.</div>
   </section>
 
   <!-- 6 ------------------------------------------------------------ -->
   <section class="slide">
-    <div class="eyebrow">04 · Grænsen</div>
-    <h2>UI'et må ikke gætte hvad der er lovligt</h2>
+    <div class="eyebrow">04 · The boundary</div>
+    <h2>The UI must not guess what is allowed</h2>
     <div class="pair">
       <div class="snip">
-        <div class="snip-h bad">Fristelsen</div>
+        <div class="snip-h bad">The temptation</div>
 <pre>@<span class="kw">if</span> (booking.Status == Pending
     || booking.Status == Confirmed)
 {
-    &lt;button&gt;Annullér&lt;/button&gt;
+    &lt;button&gt;Cancel&lt;/button&gt;
 }
 
-<span class="cm">// Nu findes tilstandsmaskinen</span>
-<span class="cm">// to steder. De vil drive</span>
-<span class="cm">// fra hinanden.</span></pre>
+<span class="cm">// Now the state machine exists</span>
+<span class="cm">// in two places. They will drift</span>
+<span class="cm">// apart.</span></pre>
       </div>
       <div class="snip">
-        <div class="snip-h good">Det vi gør</div>
+        <div class="snip-h good">What we do</div>
 <pre>@<span class="kw">if</span> (booking.Actions.CanCancel)
 {
-    &lt;button&gt;Annullér&lt;/button&gt;
+    &lt;button&gt;Cancel&lt;/button&gt;
 }
 
-<span class="cm">// Actions kommer fra domænet.</span>
-<span class="cm">// Samme kilde som guarden i</span>
-<span class="cm">// Cancel-metoden selv.</span></pre>
+<span class="cm">// Actions comes from the domain.</span>
+<span class="cm">// Same source as the guard in</span>
+<span class="cm">// the Cancel method itself.</span></pre>
       </div>
     </div>
-    <p>Vi manglede det for rum og fik 11 knapper der altid var synlige — og en service der sagde fra bagefter. Det blev rettet ved at lade domænet svare, ikke ved at kopiere reglerne op i markup.</p>
+    <p>We lacked this for rooms and got 11 buttons that were always visible — and a service that objected afterwards. It was fixed by letting the domain answer, not by copying the rules up into markup.</p>
     <div class="fill"></div>
-    <div class="takeaway"><b>Det vi tog med:</b> Hvis en knap kan give en fejl når man trykker, er UI og domæne uenige. Lad domænet bestemme hvad der tegnes.</div>
+    <div class="takeaway"><b>What we took with us:</b> If a button can give an error when you press it, the UI and the domain disagree. Let the domain decide what is drawn.</div>
   </section>
 
   <!-- 7 ------------------------------------------------------------ -->
   <section class="slide">
-    <div class="eyebrow">04 · Grænsen</div>
-    <h2>Fejlkoder ned, dansk tekst op</h2>
+    <div class="eyebrow">04 · The boundary</div>
+    <h2>Error codes down, Danish text up</h2>
     <div class="cols">
       <div>
-        <div class="col-h">Domænet returnerer</div>
+        <div class="col-h">The domain returns</div>
 <pre>"guest.email_invalid"</pre>
-        <p style="margin-top:14px">En kode. Ingen sprogvalg, ingen formulering, ingen antagelse om hvem der læser.</p>
+        <p style="margin-top:14px">A code. No choice of language, no wording, no assumption about who reads it.</p>
       </div>
       <div>
-        <div class="col-h">UI'et oversætter</div>
-<pre>"Indtast en gyldig e-mail"</pre>
-        <p style="margin-top:14px">Ét sted i frontend med alle danske tekster. Skal systemet på engelsk, er det én fil.</p>
+        <div class="col-h">The UI translates</div>
+<pre>"Enter a valid email"</pre>
+        <p style="margin-top:14px">One place in the frontend with all the Danish texts. If the system needs to be in English, it is one file.</p>
       </div>
     </div>
-    <p>Det gamle system havde engelske brugertekster inde i modellernes <code style="font-family:var(--mono);font-size:13px">Validate()</code> — og sank check-in-fejl i <code style="font-family:var(--mono);font-size:13px">Debug.WriteLine</code>, så brugeren aldrig så dem.</p>
+    <p>The old system had English user texts inside the models' <code style="font-family:var(--mono);font-size:13px">Validate()</code> — and swallowed check-in errors in <code style="font-family:var(--mono);font-size:13px">Debug.WriteLine</code>, so the user never saw them.</p>
     <div class="fill"></div>
-    <div class="takeaway"><b>Det vi tog med:</b> Sprog er præsentation. Ligger teksten i domænet, har du bundet forretningslogikken til ét sprog og én målgruppe.</div>
+    <div class="takeaway"><b>What we took with us:</b> Language is presentation. If the text lives in the domain, you have tied the business logic to one language and one audience.</div>
   </section>
 
   <!-- 8 ------------------------------------------------------------ -->
   <section class="slide">
-    <div class="eyebrow">05 · Sådan brugte vi AI</div>
-    <h2>Specset var kontrakten mellem parallelle agenter</h2>
+    <div class="eyebrow">05 · How we used AI</div>
+    <h2>The spec was the contract between parallel agents</h2>
     <ul class="plain">
-      <li><b>Én agent pr. område, med ejerskab over bestemte mapper.</b> Fundament og designsystem, kundeflow, admin. De rørte aldrig hinandens filer.</li>
-      <li><b>Kontrakten var skrevet i forvejen</b> — klasselisten, komponentnavnene, rutestrukturen. Uden den ville tre parallelle agenter have opfundet tre designsystemer.</li>
-      <li><b>Verifikationen var uafhængig af den der byggede.</b> En agent, der skulle tegne to designdokumenter i samme diagram, fandt at de havde skrevet direkte modsatte regler for hvornår et værelse er optaget.</li>
+      <li><b>One agent per area, owning specific folders.</b> Foundation and design system, customer flow, admin. They never touched each other's files.</li>
+      <li><b>The contract was written in advance</b> — the class list, the component names, the route structure. Without it, three parallel agents would have invented three design systems.</li>
+      <li><b>Verification was independent of whoever built it.</b> An agent that had to draw two design documents in the same diagram found that they had written directly opposite rules for when a room is occupied.</li>
     </ul>
-    <p>Den fejl ville ingen af de to have fundet i sit eget dokument. Den blev synlig fordi nogen skulle bruge dem sammen.</p>
+    <p>Neither of the two would have found that error in its own document. It became visible because someone had to use them together.</p>
     <div class="fill"></div>
-    <div class="takeaway"><b>Det vi tog med:</b> Parallelisering kræver en kontrakt, ikke bare opdeling. Og lad aldrig den der byggede noget være den eneste der efterser det.</div>
+    <div class="takeaway"><b>What we took with us:</b> Parallelising requires a contract, not just a split. And never let whoever built something be the only one who checks it.</div>
   </section>
 
   <!-- 9 ------------------------------------------------------------ -->
   <section class="slide">
-    <div class="eyebrow">05 · Sådan brugte vi AI</div>
-    <h2>Hvad vi ville gøre anderledes</h2>
+    <div class="eyebrow">05 · How we used AI</div>
+    <h2>What we would do differently</h2>
     <ul class="plain">
-      <li><b>Skrive designsystemet endnu tidligere.</b> Vi byggede tre lister i Bootstrap først og kasserede dem. Det var spildt arbejde, ikke research.</li>
-      <li><b>Definere <code style="font-family:var(--mono);font-size:13px">Actions</code> for alle entiteter fra start.</b> Bookinger havde det; rum havde ikke. Forskellen kunne ses direkte i UI-kvaliteten.</li>
-      <li><b>Tage tilgængelighed med i specset, ikke bagefter.</b> Fokusmarkering og labels blev rettet til sidst — det burde have stået i klasselisten.</li>
-      <li><b>Skrive testplanen samtidig med skærmene.</b> Vi skrev den til sidst og opdagede først dér, at der manglede opret-formularer.</li>
+      <li><b>Write the design system even earlier.</b> We first built three lists in Bootstrap and discarded them. That was wasted work, not research.</li>
+      <li><b>Define <code style="font-family:var(--mono);font-size:13px">Actions</code> for all entities from the start.</b> Bookings had it; rooms did not. The difference was visible directly in the UI quality.</li>
+      <li><b>Put accessibility in the spec, not afterwards.</b> Focus markers and labels were fixed at the end — they should have been in the class list.</li>
+      <li><b>Write the test plan at the same time as the screens.</b> We wrote it last and only then discovered that the create forms were missing.</li>
     </ul>
     <div class="fill"></div>
-    <div class="takeaway"><b>Det vi tog med:</b> De fejl der kostede mest, var alle sammen rækkefølgefejl — ikke tekniske fejl.</div>
+    <div class="takeaway"><b>What we took with us:</b> The mistakes that cost the most were all ordering mistakes — not technical ones.</div>
   </section>
 
   <!-- 10 ----------------------------------------------------------- -->
   <section class="slide">
-    <div class="eyebrow">Opsummering</div>
-    <h2>Fire ting I kan tage med til jeres egne projekter</h2>
+    <div class="eyebrow">Summary</div>
+    <h2>Four things you can take to your own projects</h2>
     <ul class="plain">
-      <li><b>Læs den gamle frontend som dokumentation.</b> Regler gemmer sig i converters, disabled-attributter og CSS.</li>
-      <li><b>Skriv klasselisten ned før markup.</b> Det er det der gør parallelt arbejde muligt.</li>
-      <li><b>Lad domænet svare på hvad der er lovligt.</b> Ikke en <code style="font-family:var(--mono);font-size:13px">if</code> i din Razor.</li>
-      <li><b>Hold sprog ude af forretningslogikken.</b> Koder ned, tekst op.</li>
+      <li><b>Read the old frontend as documentation.</b> Rules hide in converters, disabled attributes and CSS.</li>
+      <li><b>Write the class list down before markup.</b> It is what makes parallel work possible.</li>
+      <li><b>Let the domain answer what is allowed.</b> Not an <code style="font-family:var(--mono);font-size:13px">if</code> in your Razor.</li>
+      <li><b>Keep language out of the business logic.</b> Codes down, text up.</li>
     </ul>
     <div class="fill"></div>
-    <div class="takeaway">Det egentlige frontend-arbejde var ikke at få skærmene til at se rigtige ud. Det var at finde ud af <b>hvad</b> de skulle vise — og hvor den viden hørte hjemme.</div>
+    <div class="takeaway">The real frontend work was not making the screens look right. It was finding out <b>what</b> they should show — and where that knowledge belonged.</div>
   </section>
 
 </div>
 
 <nav class="bar">
   <div class="bar-in">
-    <button class="nav-btn" id="prev" aria-label="Forrige slide">←</button>
-    <button class="nav-btn" id="next" aria-label="Næste slide">→</button>
+    <button class="nav-btn" id="prev" aria-label="Previous slide">←</button>
+    <button class="nav-btn" id="next" aria-label="Next slide">→</button>
     <div class="rail" id="rail" role="tablist" aria-label="Slides"></div>
     <div class="count" id="count">1 / 10</div>
-    <span class="hint">Piletaster</span>
+    <span class="hint">Arrow keys</span>
   </div>
 </nav>
 

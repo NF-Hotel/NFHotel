@@ -1209,7 +1209,7 @@ Source documents read that govern the implementation:
 - `/mnt/user-data/uploads/Development/Conventions.md`
 - `/mnt/user-data/uploads/Development/New folder/NFHotel/docs/BusinessRules.md`
 - `/mnt/user-data/uploads/Development/New folder/NFHotel/docs/Analysis.md`
-- `/mnt/user-data/uploads/Development/New folder/NFHotel/docs/Fase1-Scope.md`
+- `/mnt/user-data/uploads/Development/New folder/NFHotel/docs/Phase1-Scope.md`
 - `/mnt/user-data/uploads/Development/New folder/NFHotel-Refactor-Plan.md`
 
 The five files to be written first, in this order (planned paths under the solution root):

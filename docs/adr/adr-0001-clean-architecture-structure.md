@@ -54,7 +54,7 @@ splitting it lets the entity part live in `Domain` as the skill requires.
 We follow option 1. The key is `Entity<TKey>`, an abstract base class with the
 property `Id`, and `Booking`, `Guest` and `Room` derive from it with `int` keys.
 The layer folders are those of the skill, plus `Domain/Rules` for the static rule
-classes (named `Domain/Rules/BookingRules` in `docs/refactor/Fase1-Scope.md`).
+classes (named `Domain/Rules/BookingRules` in `docs/refactor/Phase1-Scope.md`).
 Entity repositories (`IRepository<TEntity, TKey>`, `IBookingRepository`,
 `IGuestRepository`, `IRoomRepository`) are in `Domain/Repositories`; the
 DTO-returning reads are narrow ports (`IBookingQueries`, `IGuestQueries`,
