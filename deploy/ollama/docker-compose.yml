@@ -1,0 +1,47 @@
+# Ollama, the local model server for the benchmark and the market analysis service.
+# Read by Docker Compose. Settings live in ollama.env (git-ignored); copy
+# ollama.env.example to ollama.env first. Start with:
+#   docker compose --env-file ollama.env up -d
+# No host port is published and the proxy does not route to it. Only containers on
+# the network nfhotel-llm reach it, by the name ollama on port 11434. The network
+# is an ordinary bridge so the container can download models; create it once with:
+#   docker network create nfhotel-llm
+# Models are kept in the volume models. Pull them with OLLAMA_PULL_MODELS in
+# ollama.env (scripts/deploy-services.sh does it) or by hand:
+#   docker compose --env-file ollama.env exec ollama ollama pull <model>
+# It runs on the CPU. For an NVIDIA GPU passed through to the VM (ADR-0003), install
+# the NVIDIA Container Toolkit in the VM and add under the ollama service:
+#   deploy:
+#     resources:
+#       reservations:
+#         devices:
+#           - driver: nvidia
+#             count: all
+#             capabilities: [gpu]
+name: ollama
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    env_file: ${OLLAMA_ENV_FILE:-ollama.env}
+    expose:
+      - "11434"
+    volumes:
+      - models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    networks:
+      - llm
+
+volumes:
+  models:
+
+networks:
+  llm:
+    name: ${NFHOTEL_LLM_NETWORK:-nfhotel-llm}
+    external: true

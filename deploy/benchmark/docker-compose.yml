@@ -1,0 +1,57 @@
+# Local LLM hotel benchmark (NF-Hotel/notebook-benchmark), a marimo notebook behind
+# the nginx proxy. Read by Docker Compose. Settings live in benchmark.env
+# (git-ignored); copy benchmark.env.example first. Start with:
+#   docker compose --env-file benchmark.env up -d --build
+# The model server is deploy/ollama (network nfhotel-llm). No host port is published and the proxy serves it only on its internal listener
+# (127.0.0.1 of the VM), so it is not reachable from the internet.
+name: benchmark
+
+services:
+  benchmark:
+    image: benchmark:local
+    build:
+      context: .
+      args:
+        BENCHMARK_REPO: ${BENCHMARK_REPO:-https://github.com/NF-Hotel/notebook-benchmark.git}
+        BENCHMARK_REF: ${BENCHMARK_REF:-bc6d5ff04ba571e184a0a8bc29ad4b6d4e6255a4}
+    restart: unless-stopped
+    env_file: ${BENCHMARK_ENV_FILE:-benchmark.env}
+    # The notebook has Ollama at localhost:11434 built in: forward that to the
+    # ollama container, then start the notebook.
+    command:
+      - sh
+      - -c
+      - >-
+        socat TCP-LISTEN:11434,fork,reuseaddr TCP:ollama:11434 &
+        exec python -m marimo run notebooks/llm_hotel_benchmark.py
+        --host 0.0.0.0 --port 2719 --headless
+    expose:
+      - "2719"
+    volumes:
+      - results:/opt/benchmark/output
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import socket; socket.create_connection(('127.0.0.1', 2719), 3)
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - proxy
+      - llm
+
+volumes:
+  results:
+
+networks:
+  proxy:
+    name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
+    external: true
+  llm:
+    name: ${NFHOTEL_LLM_NETWORK:-nfhotel-llm}
+    external: true
