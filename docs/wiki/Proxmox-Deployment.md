@@ -91,7 +91,34 @@ Host=postgres;Port=5432;Database=<POSTGRES_DB>;Username=<POSTGRES_USER>;Password
   `docker exec <web> printenv` shows no `ConnectionStrings`, and a call to the API without the token
   answers 401.
 
+- **Schema.** With `Database__MigrateOnStart=true` in `nfhotel-api.env` the API applies the pending
+  Entity Framework migrations when it starts. Running it again changes nothing.
+
 Settings files are git-ignored and never committed.
+
+## Staff sign-in (back office)
+
+The pages under `/admin` need a signed-in member of staff (ADR-0005). The public booking pages do not.
+
+- **Secrets, in `nfhotel-api.env` only.** `Staff__Token__SigningKey` signs the staff tokens (at least
+  32 characters, `openssl rand -base64 48`). `Staff__InitialManager__UserName` and
+  `Staff__InitialManager__Password` (at least 12 characters, `openssl rand -base64 18`) make the
+  first Manager when no staff account exists. The web application never holds them.
+- **First sign-in.** Open `http://<vm>/admin`: it redirects to `/admin/login`. Sign in with the
+  first Manager. A session lasts 8 hours.
+- **More accounts.** Run the command in the API container, with the password in the environment so it
+  never appears on a command line:
+
+```bash
+docker exec -e STAFF_PASSWORD='<at least 12 characters>' nfhotel-api-nfhotel-api-1   dotnet NFHotel.Api.dll create-staff <user name> <Receptionist|Manager|Housekeeping>
+```
+
+- **Roles.** Receptionist: bookings, guests, rooms to read. Manager: everything, including rooms,
+  cleaning status and revenue. Housekeeping: rooms and their cleaning status only.
+- **Wrong passwords.** Five failures of a user name in fifteen minutes stop that name until the
+  window has passed (HTTP 429). Restarting the API clears the count.
+- **Limits.** Without HTTPS at the public port the password crosses the network in clear text and the
+  cookie is not `Secure`. A token cannot be revoked before it expires.
 
 ## Models (Ollama)
 
@@ -124,6 +151,5 @@ Then open `http://analysis.localhost:8081` (market analysis notebook),
   shows it as unavailable.
 - Making port 80 of the VM reachable from the internet (router, firewall, DNS) is outside these
   scripts.
-- The deploy applies no database migrations and the application does not run them at start.
-  Apply the Entity Framework migrations of `NFHotel.Infrastructure` to the new database yourself
-  before first use.
+- The deploy runs no migration itself; the API applies them at start when
+  `Database__MigrateOnStart=true` (see Staff sign-in).

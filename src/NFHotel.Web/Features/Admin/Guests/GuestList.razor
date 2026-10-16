@@ -1,5 +1,6 @@
 @page "/admin/guests"
 @layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.GuestsView)]
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
 @using NFHotel.Web.Features.Admin.Guests

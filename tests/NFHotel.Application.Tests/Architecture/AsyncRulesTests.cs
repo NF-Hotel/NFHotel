@@ -138,7 +138,8 @@ public sealed partial class AsyncRulesTests
         return comment < 0 ? line : line[..comment];
     }
 
-    [GeneratedRegex(@"\.Result\b|\.Wait\s*\(|GetAwaiter\s*\(\s*\)\s*\.GetResult|Task\.Run\s*\(|async\s+void\b")]
+    // Assigning a property named Result (the result of an authorization filter) is not reading the result of a task.
+    [GeneratedRegex(@"\.Result\b(?!\s*=[^=])|\.Wait\s*\(|GetAwaiter\s*\(\s*\)\s*\.GetResult|Task\.Run\s*\(|async\s+void\b")]
     private static partial Regex BlockingCall();
 
     [GeneratedRegex(@"(?:^|\s)(?:public|private|internal|protected)\s+(?:static\s+|override\s+|virtual\s+|sealed\s+)*(?:async\s+)?(?:Task|ValueTask)(?:<(?:[^<>]|<[^<>]*>)*>)?\s+(?<name>\w+)\s*\(", RegexOptions.Multiline)]

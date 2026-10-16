@@ -93,7 +93,7 @@ left to a later milestone.
 | --- | --- | --- | --- | --- |
 | 1 | Amend Business Case and Project Plan | Add objective 19, the scope items, success criterion 22 and the MIL-016 schedule row; review again. | No | |
 | 2 | Record the decisions in ADR-0005 | The six decisions above, with the options considered (ASP.NET Identity, an external identity provider, cookie sessions without JWT). | No | |
-| 3 | Sign in as staff | A staff member signs in with user name and password and signs out; the wireframe of the login page is kept with the use case. | Yes | |
+| 3 | Sign in as staff | A staff member signs in with user name and password and signs out; the wireframe of the login page is kept with the use case. | Yes | UC-004 |
 | 4 | Domain, Application and permission table | Staff account, role, the sign-in use case and the permission check in each back office use case; tests for every role and operation. | No | |
 | 5 | Infrastructure and API | Staff table and migration, hasher, token issuer and validator, login endpoint, 401, 403 and rate limit; tests. | No | |
 | 6 | Web | Login and logout pages, cookie, `/admin/**` authorization, navigation by role, the passport number hidden by role; page tests. | No | |

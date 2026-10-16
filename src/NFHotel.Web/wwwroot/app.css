@@ -1326,3 +1326,30 @@ h1:focus-visible {
         background: var(--paper);
     }
 }
+
+/* The signed-in user at the foot of the side menu (ADR-0005). */
+.admin-nav-user {
+    margin-top: auto;
+    padding: var(--s4) var(--s2) 0;
+    display: grid;
+    gap: var(--s2);
+}
+
+.admin-nav-user p {
+    margin: 0;
+    font-weight: 600;
+    color: #fff;
+}
+
+.admin-nav-user p span {
+    display: block;
+    font-weight: 400;
+    font-size: 0.85em;
+    opacity: 0.8;
+}
+
+.admin-nav-user .btn {
+    color: #dde5df;
+    border-color: #dde5df;
+    justify-self: start;
+}

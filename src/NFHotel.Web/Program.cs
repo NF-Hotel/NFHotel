@@ -4,6 +4,7 @@ using NFHotel.Web.Common;
 using NFHotel.Web.Components;
 using NFHotel.Web.Features.Admin;
 using NFHotel.Web.Features.Booking;
+using NFHotel.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,10 +30,13 @@ builder.Services.AddApiClient(builder.Configuration);
 builder.Services.AddHotelClock(builder.Configuration);
 builder.Services.AddHolidayApi(builder.Configuration);
 
-// Open generic singleton: gives every use case call its own DI scope and thereby its own
-// DbContext (Architecture.md section 8). The runner is stateless — it is the scope it makes
-// that is short-lived, not the runner itself.
-builder.Services.AddSingleton(typeof(IUseCaseRunner<>), typeof(UseCaseRunner<>));
+// Open generic scoped service: gives every use case call its own DI scope (Architecture.md section 8). The runner is
+// stateless, but it belongs to the circuit so that it can hand the staff token of the signed-in user to each call
+// (ADR-0005).
+builder.Services.AddScoped(typeof(IUseCaseRunner<>), typeof(UseCaseRunner<>));
+
+// The staff sign-in: the cookie, one policy per permission, and the source of the staff token (ADR-0005).
+builder.Services.AddStaffSignIn();
 
 // ViewModels are Scoped: in Blazor Server a scope is one SignalR circuit, that is, one user's
 // session in one tab. That is exactly the lifetime the state of the screen should have.
@@ -40,7 +44,7 @@ builder.Services.AddSingleton(typeof(IUseCaseRunner<>), typeof(UseCaseRunner<>))
 // Each UI area registers its own — so adding a screen touches one file,
 // not the composition root.
 builder.Services.AddBookingFeature();   // the customer's booking flow: /book and /booking/{number}
-builder.Services.AddAdminFeature();     // the staff's back office: /admin/**
+builder.Services.AddAdminFeature();     // the staff's back office: /admin/**, behind the sign-in
 
 var app = builder.Build();
 
@@ -53,10 +57,15 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapStaffSignOut();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+/// <summary>The entry point, public so that the integration tests can start the web application.</summary>
+public partial class Program;
