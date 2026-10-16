@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [e66441e] |
 
 ---
 
@@ -74,3 +74,4 @@ Go — all Mandatory criteria pass or are not applicable with a stated reason. S
 [MIL-010]: ../../milestones/mil-010-english-source-comments.md
 [MIL-006]: ../../milestones/mil-006-english-legacy-documents.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[e66441e]: https://github.com/NF-Hotel/NFHotel/commit/e66441ee101e85b3a23b9c6becbfbc8ed5667efa
