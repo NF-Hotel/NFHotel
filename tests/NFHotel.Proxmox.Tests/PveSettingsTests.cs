@@ -1,5 +1,6 @@
 namespace NFHotel.Proxmox.Tests;
 
+/// <summary>Checks that settings load with defaults, name what is missing and never expose the secret.</summary>
 public sealed class PveSettingsTests
 {
     private const string Secret = "top-secret-value";

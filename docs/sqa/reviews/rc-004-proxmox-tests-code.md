@@ -36,7 +36,7 @@
 | 5 | `IDisposable` disposed | Pass | `HttpClient` and responses in `using`; test class implements `Dispose` |
 | 6 | No `.Result`, `.Wait()` or `async void` | Pass | None present |
 | 7 | Specific exceptions, validated boundaries, no empty catch | Pass | `InvalidOperationException` with named settings; no catch blocks |
-| 8 | Public types have XML documentation | Fail | Optional criterion: the three test classes have no `///` comment. Action item 1 |
+| 8 | Public types have XML documentation | Pass | Test classes documented after action item 1 was closed |
 | 9 | Properties not public fields; immutability | Pass | Get-only properties, `readonly` fields |
 | 10 | Money `decimal`; time `DateTimeOffset` | N-A | No money or points in time |
 | 11 | Public async APIs take a `CancellationToken` | Pass | `GetDataAsync(path, ct)` |
@@ -76,7 +76,7 @@ Go — all Mandatory criteria pass or are not applicable with a stated reason. T
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| 1. Add `///` summaries to the three test classes | S01 | 2026-10-31 |
+| 1. Add `///` summaries to the three test classes | S01 | Closed 2026-10-16 |
 | 2. Fill `pve.env` and run `bash scripts/run-proxmox-tests.sh` against the real server; record the result | S01 | 2026-10-17 |
 
 ---

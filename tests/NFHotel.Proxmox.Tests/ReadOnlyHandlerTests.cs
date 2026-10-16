@@ -1,5 +1,6 @@
 namespace NFHotel.Proxmox.Tests;
 
+/// <summary>Proves the HTTP guard refuses every method except GET.</summary>
 public sealed class ReadOnlyHandlerTests
 {
     [Theory]
