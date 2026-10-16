@@ -67,7 +67,7 @@
 
 ## Overall Verdict
 
-Go — all Mandatory criteria pass or are not applicable with a stated reason. Full cycle on 2026-10-16: Proxmox VE container started, API answered, per-run token created, 12 of 12 tests passed (the 3 live ones included), everything removed.
+Go — all Mandatory criteria pass or are not applicable with a stated reason. Full cycle on 2026-10-16: Proxmox VE container started, API answered, root password set from `pve.env` through standard input (`chpasswd`, before the token step), per-run token created, 12 of 12 tests passed (the 3 live ones included), everything removed.
 
 ## Action Items
 

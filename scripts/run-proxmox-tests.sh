@@ -2,9 +2,10 @@
 # Run the read-only Proxmox VE tests against a throwaway Proxmox container.
 #
 # Starts the Proxmox VE container (deploy/proxmox), waits until its API
-# answers, creates a per-run API token in it (scripts/pve-token.sh), runs the
-# tests in a second throwaway container on the same network, and removes both
-# containers and the volumes afterwards. It needs no input. pve.env holds only
+# answers, sets the root password from pve.env, creates a per-run API token in
+# it (scripts/pve-token.sh), runs the tests in a second throwaway container on
+# the same network, and removes both containers and the volumes afterwards. It
+# needs no input. pve.env holds only
 # the root password; the token exists only in this script's environment and is
 # passed to the test container by name, never written to a file.
 #
@@ -38,6 +39,22 @@ compose_proxmox() {
 cleanup() {
   docker rm -f "$TEST_CONTAINER" >/dev/null 2>&1 || true
   compose_proxmox down --volumes --remove-orphans >/dev/null 2>&1 || true
+}
+
+# read_password: the value of PVE_PASSWORD in the env file (no shell evaluation).
+read_password() {
+  sed -n 's/^PVE_PASSWORD=\(.*\)$/\1/p' "$ENV_FILE" | head -n 1
+}
+
+# set_root_password: set root's password from pve.env, through standard input so
+# it never appears on a command line.
+set_root_password() {
+  local password
+  password="$(read_password)"
+  [[ -n "$password" ]] || die "PVE_PASSWORD is empty in $ENV_FILE"
+  printf 'root:%s\n' "$password" |
+    docker exec -i "$PROXMOX_CONTAINER" chpasswd ||
+    die "could not set the root password in the Proxmox container"
 }
 
 has_kvm() {
@@ -93,6 +110,9 @@ main() {
   compose_proxmox up --detach >/dev/null || die "could not start Proxmox"
   echo "Waiting for the Proxmox API (up to $((WAIT_TRIES * 5)) seconds)..."
   wait_for_api || die "the Proxmox API did not answer in time"
+
+  echo "Setting the root password..."
+  set_root_password
 
   echo "Creating a per-run API token..."
   token_exports="$(bash scripts/pve-token.sh --container "$PROXMOX_CONTAINER")" ||
