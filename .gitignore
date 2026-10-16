@@ -435,3 +435,6 @@ secrets.json
 /docs/ai-prompts/
 src/NFHotel.Domain/bin/
 /deploy/market-analysis/market-analysis.toml
+
+# Build output (ArtifactsPath in Directory.Build.props)
+g/
