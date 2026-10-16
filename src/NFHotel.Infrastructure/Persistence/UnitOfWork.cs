@@ -8,23 +8,23 @@ using Npgsql;
 namespace NFHotel.Infrastructure.Persistence;
 
 /// <summary>
-/// Transaktionsgrænsen for en use case (<see cref="IUnitOfWork"/>).
+/// The transaction boundary of a use case (<see cref="IUnitOfWork"/>).
 /// </summary>
 /// <remarks>
-/// Ud over at gemme har typen ét ansvar mere: at oversætte databasens fejl til
-/// Application-lagets undtagelsestyper. Uden den oversættelse ville
-/// <c>PostgresException</c> lække op i services, og afhængighedsretningen ville være brudt
-/// i praksis selv om den holdt på papiret.
+/// Besides saving, the type has one more responsibility: to translate the database's errors to
+/// the exception types of the Application layer. Without that translation
+/// <c>PostgresException</c> would leak up into services, and the dependency direction would be broken
+/// in practice even though it held on paper.
 /// </remarks>
 public sealed class UnitOfWork : IUnitOfWork
 {
     private readonly HotelDbContext _context;
 
     /// <summary>
-    /// Opretter transaktionsgrænsen.
+    /// Creates the transaction boundary.
     /// </summary>
-    /// <param name="context">Konteksten. Skal være <b>samme</b> instans som repositories bruger.</param>
-    /// <exception cref="ArgumentNullException">Kastes hvis <paramref name="context"/> er <c>null</c>.</exception>
+    /// <param name="context">The context. Must be the <b>same</b> instance the repositories use.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="context"/> is <c>null</c>.</exception>
     public UnitOfWork(HotelDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -56,22 +56,22 @@ public sealed class UnitOfWork : IUnitOfWork
     }
 
     /// <summary>
-    /// Oversætter en PostgreSQL-fejl til Application-lagets typer.
+    /// Translates a PostgreSQL error to the types of the Application layer.
     /// </summary>
-    /// <param name="postgres">Den underliggende PostgreSQL-fejl.</param>
-    /// <param name="original">Fejlen der skal bevares som <c>InnerException</c> til loggen.</param>
-    /// <returns>Den oversatte fejl, eller <paramref name="original"/> hvis koden er ukendt.</returns>
+    /// <param name="postgres">The underlying PostgreSQL error.</param>
+    /// <param name="original">The error to keep as <c>InnerException</c> for the log.</param>
+    /// <returns>The translated error, or <paramref name="original"/> if the code is unknown.</returns>
     private static Exception Translate(PostgresException postgres, Exception original) =>
         postgres.SqlState switch
         {
-            // 23P01: exclusion constrainten ex_booking_room_period afviste en dobbeltbooking.
-            // Servicen har allerede spurgt domænet; det her er kapløbet mellem to samtidige
-            // oprettelser der begge så et ledigt rum (B-03).
+            // 23P01: the exclusion constraint ex_booking_room_period rejected a double booking.
+            // The service has already asked the domain; this is the race between two simultaneous
+            // creations that both saw a free room (B-03).
             PostgresErrorCodes.ExclusionViolation => new BookingOverlapConflictException(
                 $"Exclusion constrainten '{postgres.ConstraintName}' afviste bookingen (SQLSTATE {postgres.SqlState}).",
                 original),
 
-            // 23505: fx ux_room_room_number (BR-N-01).
+            // 23505: for example ux_room_room_number (BR-N-01).
             PostgresErrorCodes.UniqueViolation => new UniqueConstraintViolationException(
                 $"Unik-constrainten '{postgres.ConstraintName}' blev brudt (SQLSTATE {postgres.SqlState}).",
                 postgres.ConstraintName ?? string.Empty,

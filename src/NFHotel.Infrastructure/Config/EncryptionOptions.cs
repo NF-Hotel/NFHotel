@@ -4,25 +4,25 @@ namespace NFHotel.Infrastructure.Config;
 /// Indstillinger for feltkryptering (B-09).
 /// </summary>
 /// <remarks>
-/// Nøglen kommer fra <c>dotnet user-secrets</c> i udvikling og fra miljøvariabler eller
-/// pipeline-secrets i drift (D-07) — aldrig fra appsettings.json i versionsstyring.
+/// The key comes from <c>dotnet user-secrets</c> in development and from environment variables or
+/// pipeline secrets in operation (D-07) — never from appsettings.json under version control.
 /// <para>
-/// <b>Appen nægter at starte uden nøgle.</b> Valideringen sker i
-/// <see cref="DependencyInjection.AddInfrastructure"/>, altså allerede når containeren
-/// bygges. Alternativet — at fejle først ved første gæsteopdatering — ville betyde at
-/// pasnumre kunne nå at blive gemt i klartekst uden at nogen opdagede det.
+/// <b>The app refuses to start without a key.</b> The validation happens in
+/// <see cref="DependencyInjection.AddInfrastructure"/>, that is, already when the container
+/// is built. The alternative — failing only at the first guest update — would mean that
+/// passport numbers could be saved in plain text without anyone noticing.
 /// </para>
 /// </remarks>
 public sealed class EncryptionOptions
 {
-    /// <summary>Konfigurationssektionen indstillingerne læses fra.</summary>
+    /// <summary>The configuration section the settings are read from.</summary>
     public const string SectionName = "Encryption";
 
-    /// <summary>Nøglens navn i konfigurationen, uden sektionspræfiks.</summary>
+    /// <summary>The name of the key in the configuration, without section prefix.</summary>
     public const string PassportKeyName = "PassportKey";
 
     /// <summary>
-    /// AES-nøglen, base64-kodet. Skal afkode til 16, 24 eller 32 bytes (AES-128/192/256).
+    /// The AES key, base64-encoded. Must decode to 16, 24 or 32 bytes (AES-128/192/256).
     /// </summary>
     public required string PassportKey { get; init; }
 }

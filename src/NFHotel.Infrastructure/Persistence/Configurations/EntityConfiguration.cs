@@ -6,22 +6,22 @@ using NFHotel.Domain.Entities;
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// Fælles EF Core-mapping for entiteter med <see cref="Entity{TKey}"/>: tabelnavn og nøglekolonne.
+/// Common EF Core mapping for entities with <see cref="Entity{TKey}"/>: table name and key column.
 /// </summary>
 /// <typeparam name="TEntity">Entiteten.</typeparam>
-/// <typeparam name="TKey">Nøglens type.</typeparam>
+/// <typeparam name="TKey">The type of the key.</typeparam>
 /// <remarks>
-/// Nøglekolonnen hedder altid <c>&lt;tabel&gt;_id</c> og databasen genererer værdien. Reglen står
-/// kun her (ADR-0001) og er ikke længere et tilfældigt resultat af snake_case-konventionen:
-/// da nøglen hedder <c>Id</c> på alle entiteter, ville konventionen ellers give <c>id</c>.
-/// En fremmednøgle hedder som den refererede tabels nøgle (<c>room_id</c>). En test over
-/// modellen holder begge regler fast.
+/// The key column is always called <c>&lt;table&gt;_id</c> and the database generates the value. The rule is stated
+/// only here (ADR-0001) and is no longer an accidental result of the snake_case convention:
+/// since the key is called <c>Id</c> on all entities, the convention would otherwise give <c>id</c>.
+/// A foreign key is named like the key of the referenced table (<c>room_id</c>). A test over
+/// the model pins both rules.
 /// </remarks>
 public abstract class EntityConfiguration<TEntity, TKey> : IEntityTypeConfiguration<TEntity>
     where TEntity : Entity<TKey>
     where TKey : notnull
 {
-    /// <summary>Tabellens navn. Nøglekolonnen udledes af det.</summary>
+    /// <summary>The name of the table. The key column is derived from it.</summary>
     protected abstract string TableName { get; }
 
     /// <inheritdoc />
@@ -40,13 +40,13 @@ public abstract class EntityConfiguration<TEntity, TKey> : IEntityTypeConfigurat
         ConfigureEntity(builder);
     }
 
-    /// <summary>Tabellens egne databaseværn, fx check constraints. Standard: ingen.</summary>
+    /// <summary>The table's own database safeguards, for example check constraints. Default: none.</summary>
     /// <param name="table">Tabelbyggeren.</param>
     protected virtual void ConfigureTable(TableBuilder<TEntity> table)
     {
     }
 
-    /// <summary>Entitetens egne kolonner, indekser og relationer.</summary>
+    /// <summary>The entity's own columns, indexes and relations.</summary>
     /// <param name="builder">Entitetsbyggeren.</param>
     protected abstract void ConfigureEntity(EntityTypeBuilder<TEntity> builder);
 }

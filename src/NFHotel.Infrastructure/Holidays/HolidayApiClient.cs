@@ -14,17 +14,17 @@ using NFHotel.Infrastructure.Config;
 namespace NFHotel.Infrastructure.Holidays;
 
 /// <summary>
-/// HTTP-implementeringen af <see cref="IHolidayCalendarClient"/> mod analysetjenestens
+/// The HTTP implementation of <see cref="IHolidayCalendarClient"/> against the analysis service's
 /// <c>/api/v1/holidays</c>.
 /// </summary>
 /// <remarks>
-/// Tjenestens kontrakt (README, "Endpoints"):
+/// The contract of the service (README, "Endpoints"):
 /// <list type="bullet">
-/// <item><c>GET /api/v1/holidays?year=</c> — den eksporterede kalender.</item>
-/// <item><c>POST /api/v1/holidays/update?first_year=&amp;last_year=</c> — generér den forfra.</item>
+/// <item><c>GET /api/v1/holidays?year=</c> — the exported calendar.</item>
+/// <item><c>POST /api/v1/holidays/update?first_year=&amp;last_year=</c> — generate it from scratch.</item>
 /// </list>
-/// Begge kræver headeren <c>X-API-Key</c>. Klienten oversætter alle forventede fejl til
-/// <see cref="Result"/>-koder (A-09) og logger dem; API-nøglen og svarindholdet logges aldrig.
+/// Both require the header <c>X-API-Key</c>. The client translates all expected errors to
+/// <see cref="Result"/> codes (A-09) and logs them; the API key and the response content are never logged.
 /// </remarks>
 public sealed class HolidayApiClient : IHolidayCalendarClient
 {
@@ -32,7 +32,7 @@ public sealed class HolidayApiClient : IHolidayCalendarClient
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        // Tjenesten leverer snake_case (first_year, start_date), og datoer som "2024-04-13".
+        // The service delivers snake_case (first_year, start_date), and dates like "2024-04-13".
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
     };
 
@@ -40,10 +40,10 @@ public sealed class HolidayApiClient : IHolidayCalendarClient
     private readonly HolidayApiOptions _options;
     private readonly ILogger<HolidayApiClient> _logger;
 
-    /// <summary>Opretter klienten. <paramref name="httpClient"/> er konfigureret af <c>AddHolidayApi</c>.</summary>
-    /// <param name="httpClient">Klienten med adresse, timeout og nøgle-header.</param>
-    /// <param name="options">Indstillingerne, bruges til at afgøre om et kald kan forsøges.</param>
-    /// <param name="logger">Logger til forventede fejl.</param>
+    /// <summary>Creates the client. <paramref name="httpClient"/> is configured by <c>AddHolidayApi</c>.</summary>
+    /// <param name="httpClient">The client with address, timeout and key header.</param>
+    /// <param name="options">The settings, used to decide whether a call can be attempted.</param>
+    /// <param name="logger">Logger for expected errors.</param>
     public HolidayApiClient(HttpClient httpClient, HolidayApiOptions options, ILogger<HolidayApiClient> logger)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
@@ -95,7 +95,7 @@ public sealed class HolidayApiClient : IHolidayCalendarClient
         return SendAsync(HttpMethod.Post, url, cancellationToken);
     }
 
-    /// <summary>Sender ét kald og oversætter alle forventede udfald til et <see cref="Result{TValue}"/>.</summary>
+    /// <summary>Sends one call and translates all expected outcomes to a <see cref="Result{TValue}"/>.</summary>
     private async Task<Result<HolidayCalendarDto>> SendAsync(
         HttpMethod method,
         string relativeUrl,
@@ -136,7 +136,7 @@ public sealed class HolidayApiClient : IHolidayCalendarClient
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            // HttpClient.Timeout: kalderen har ikke bedt om annullering, så det er tjenesten der er for langsom.
+            // HttpClient.Timeout: the caller has not asked for cancellation, so it is the service that is too slow.
             _logger.LogWarning("Holiday API {Method} timed out after {Seconds} s.", method, _options.TimeoutSeconds);
 
             return Result<HolidayCalendarDto>.Failure(ErrorCodes.Holidays.Unavailable);
@@ -155,7 +155,7 @@ public sealed class HolidayApiClient : IHolidayCalendarClient
         }
     }
 
-    /// <summary>Oversætter en HTTP-fejlstatus til en fejlkode.</summary>
+    /// <summary>Translates an HTTP error status to an error code.</summary>
     private Result<HolidayCalendarDto> Fail(HttpMethod method, HttpStatusCode status)
     {
         var code = status switch
@@ -179,8 +179,8 @@ public sealed class HolidayApiClient : IHolidayCalendarClient
     }
 
     // ------------------------------------------------------------------
-    // Tjenestens JSON-form (HolidayDocument i domain/schemas.py). Holdes privat, så
-    // Application ikke arver tjenestens feltnavne.
+    // The JSON shape of the service (HolidayDocument in domain/schemas.py). Kept private, so
+    // Application does not inherit the field names of the service.
     // ------------------------------------------------------------------
 
     private sealed record HolidayCalendarWire(

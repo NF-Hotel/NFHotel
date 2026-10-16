@@ -9,11 +9,11 @@ using NFHotel.Infrastructure.Security;
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// EF Core-mapping for <see cref="NFHotel.Domain.Entities.Guest"/>, inklusive kryptering af pasnummer (B-09, D-04).
+/// EF Core mapping for <see cref="NFHotel.Domain.Entities.Guest"/>, including encryption of the passport number (B-09, D-04).
 /// </summary>
 /// <remarks>
-/// Klassen har en afhængighed og registreres derfor eksplicit i
-/// <see cref="HotelDbContext.OnModelCreating"/> frem for via assembly-scanning.
+/// The class has a dependency and is therefore registered explicitly in
+/// <see cref="HotelDbContext.OnModelCreating"/> rather than via assembly scanning.
 /// </remarks>
 public sealed class GuestConfiguration : EntityConfiguration<Guest, int>
 {
@@ -24,7 +24,7 @@ public sealed class GuestConfiguration : EntityConfiguration<Guest, int>
     /// </summary>
     /// <param name="passportEncryptor">Krypteringstjenesten for pasnummer.</param>
     /// <exception cref="ArgumentNullException">
-    /// Kastes hvis <paramref name="passportEncryptor"/> er <c>null</c>.
+    /// Thrown if <paramref name="passportEncryptor"/> is <c>null</c>.
     /// </exception>
     public GuestConfiguration(IStringEncryptor passportEncryptor)
     {
@@ -39,8 +39,8 @@ public sealed class GuestConfiguration : EntityConfiguration<Guest, int>
     /// <inheritdoc />
     protected override void ConfigureEntity(EntityTypeBuilder<Guest> builder)
     {
-        // Længderne spejler domænets konstanter (A-10). Ellers ville en for lang værdi
-        // fejle som DbUpdateException i stedet for som en domænefejl.
+        // The lengths mirror the constants of the domain (A-10). Otherwise a value that is too long
+        // would fail as a DbUpdateException instead of as a domain error.
         builder.Property(guest => guest.FirstName)
             .HasMaxLength(Guest.MaxNameLength)
             .IsRequired();
@@ -61,24 +61,24 @@ public sealed class GuestConfiguration : EntityConfiguration<Guest, int>
             .HasMaxLength(Guest.MaxCountryLength)
             .IsRequired();
 
-        // B-09: krypteret at-rest. Kolonnetypen er text og ikke varchar(50), fordi
-        // nonce + tag + ciffertekst i base64 fylder betydeligt mere end klarteksten.
-        // Længdegrænsen (A-10) håndhæves af Guest.Validate på klarteksten, ikke her.
-        // Casten til den ikke-generiske ValueConverter er nødvendig: egenskaben er
-        // string?, konverteren string→string. EF kalder aldrig konverteren for null, så
-        // NULL forbliver NULL i databasen (T-41).
+        // B-09: encrypted at rest. The column type is text and not varchar(50), because
+        // nonce + tag + ciphertext in base64 take up considerably more than the plain text.
+        // The length limit (A-10) is enforced by the attributes of Guest on the plain text, not here.
+        // The cast to the non-generic ValueConverter is necessary: the property is
+        // string?, the converter string→string. EF never calls the converter for null, so
+        // NULL stays NULL in the database (T-41).
         builder.Property(guest => guest.PassportNumber)
             .HasConversion((ValueConverter)new EncryptedStringConverter(_passportEncryptor))
             .HasColumnType("text");
 
-        // BR-68 og BR-69: gæstesøgning og -sortering. Btree er rigeligt ved dette
-        // datavolumen; bliver ILIKE '%x%' langsom, er et GIN/pg_trgm-indeks næste skridt.
+        // BR-68 and BR-69: guest search and sorting. Btree is plenty at this
+        // data volume; if ILIKE '%x%' becomes slow, a GIN/pg_trgm index is the next step.
         builder.HasIndex(guest => new { guest.LastName, guest.FirstName })
             .HasDatabaseName("ix_guest_last_name_first_name");
 
-        // BEVIDST INTET INDEKS PÅ passport_number. AES-GCM er randomiseret, så samme
-        // pasnummer giver forskellig ciffertekst hver gang — selv et lighedsopslag ville
-        // ikke virke. Ingen af de 126 porterede regler søger eller sorterer på feltet.
+        // DELIBERATELY NO INDEX ON passport_number. AES-GCM is randomised, so the same
+        // passport number gives different ciphertext every time — even an equality lookup would
+        // not work. None of the 126 ported rules searches or sorts on the field.
         builder.Ignore(guest => guest.FullName);
 
         builder.UseXminAsConcurrencyToken();

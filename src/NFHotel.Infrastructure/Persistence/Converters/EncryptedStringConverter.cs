@@ -5,15 +5,15 @@ using NFHotel.Infrastructure.Security;
 namespace NFHotel.Infrastructure.Persistence.Converters;
 
 /// <summary>
-/// Krypterer en streng på vej til databasen og dekrypterer den på vej tilbage (B-09).
+/// Encrypts a string on its way to the database and decrypts it on its way back (B-09).
 /// </summary>
 /// <remarks>
-/// EF Core kalder <b>ikke</b> value converters for <c>null</c>, så <c>NULL</c> forbliver
-/// <c>NULL</c> i databasen. Det er forudsætningen for at et pasnummer kan fjernes igen og
-/// ende som <c>NULL</c> frem for som en krypteret tom streng (T-41).
+/// EF Core does <b>not</b> call value converters for <c>null</c>, so <c>NULL</c> stays
+/// <c>NULL</c> in the database. That is the precondition for a passport number being removable again and
+/// ending as <c>NULL</c> rather than as an encrypted empty string (T-41).
 /// <para>
-/// Konsekvenserne af den randomiserede ciffer er absolutte: kolonnen kan hverken indekseres,
-/// sorteres eller søges på. Se
+/// The consequences of the randomised cipher are absolute: the column can be neither indexed,
+/// sorted nor searched. See
 /// <see cref="Configurations.GuestConfiguration"/>.
 /// </para>
 /// </remarks>
@@ -22,8 +22,8 @@ public sealed class EncryptedStringConverter : ValueConverter<string, string>
     /// <summary>
     /// Opretter konverteren.
     /// </summary>
-    /// <param name="encryptor">Krypteringstjenesten der bærer nøglen.</param>
-    /// <exception cref="ArgumentNullException">Kastes hvis <paramref name="encryptor"/> er <c>null</c>.</exception>
+    /// <param name="encryptor">The encryption service that carries the key.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="encryptor"/> is <c>null</c>.</exception>
     public EncryptedStringConverter(IStringEncryptor encryptor)
         : base(
             plainText => encryptor.Encrypt(plainText),

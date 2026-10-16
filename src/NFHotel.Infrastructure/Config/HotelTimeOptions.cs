@@ -4,23 +4,23 @@ namespace NFHotel.Infrastructure.Config;
 /// Indstillinger for hotellets tidszone (A-05).
 /// </summary>
 /// <remarks>
-/// "I dag" i BR-06, BR-44 og BR-104 er hotellets kalenderdato — ikke serverens og ikke
-/// UTC. Zonen er konfigurerbar, så et testmiljø og en fremtidig anden lokation ikke kræver
-/// en kodeændring.
+/// "Today" in BR-06, BR-44 and BR-104 is the hotel's calendar date — not the server's and not
+/// UTC. The zone is configurable, so a test environment and a future second location do not require
+/// a code change.
 /// </remarks>
 public sealed class HotelTimeOptions
 {
-    /// <summary>Konfigurationssektionen indstillingerne læses fra.</summary>
+    /// <summary>The configuration section the settings are read from.</summary>
     public const string SectionName = "HotelTime";
 
-    /// <summary>Nøglens navn i konfigurationen, uden sektionspræfiks.</summary>
+    /// <summary>The name of the key in the configuration, without section prefix.</summary>
     public const string TimeZoneIdName = "TimeZoneId";
 
-    /// <summary>Tidszonen der bruges hvis konfigurationen ikke siger andet.</summary>
+    /// <summary>The time zone used if the configuration says nothing else.</summary>
     public const string DefaultTimeZoneId = "Europe/Copenhagen";
 
     /// <summary>
-    /// IANA- eller Windows-id for hotellets tidszone, fx <c>Europe/Copenhagen</c>.
+    /// IANA or Windows id of the hotel's time zone, for example <c>Europe/Copenhagen</c>.
     /// </summary>
     public string TimeZoneId { get; init; } = DefaultTimeZoneId;
 }

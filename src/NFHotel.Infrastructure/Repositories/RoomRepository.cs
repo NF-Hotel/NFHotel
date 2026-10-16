@@ -10,11 +10,11 @@ using NFHotel.Infrastructure.Persistence;
 namespace NFHotel.Infrastructure.Repositories;
 
 /// <summary>
-/// EF Core-implementering af <see cref="IRoomRepository"/>.
+/// EF Core implementation of <see cref="IRoomRepository"/>.
 /// </summary>
 /// <remarks>
-/// Filtre er parametre, ikke hardkodede valg: det gamle <c>GetAllByAvailability()</c>
-/// afgjorde selv hvad "tilgængelig" betød (BR-110). Her vælger servicen.
+/// Filters are parameters, not hard-coded choices: the old <c>GetAllByAvailability()</c>
+/// decided itself what "available" meant (BR-110). Here the service chooses.
 /// </remarks>
 public sealed class RoomRepository : Repository<Room, int>, IRoomRepository, IRoomQueries
 {
@@ -22,14 +22,14 @@ public sealed class RoomRepository : Repository<Room, int>, IRoomRepository, IRo
     /// Opretter repositoryet.
     /// </summary>
     /// <param name="context">Konteksten.</param>
-    /// <exception cref="ArgumentNullException">Kastes hvis <paramref name="context"/> er <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="context"/> is <c>null</c>.</exception>
     public RoomRepository(HotelDbContext context)
         : base(context)
     {
     }
 
     // --------------------------------------------------------
-    // LÆSNING — projektioner (A-11)
+    // READING — projections (A-11)
     // --------------------------------------------------------
 
     /// <inheritdoc />
@@ -46,12 +46,12 @@ public sealed class RoomRepository : Repository<Room, int>, IRoomRepository, IRo
                 room.Status,
                 room.HousekeepingStatus,
 
-                // BR-110: samme udtryk som domænets Room.IsBookable. Beregnes i SQL, fordi
-                // rækken ikke materialiseres som entitet på læsestien.
+                // BR-110: the same expression as the domain's Room.IsBookable. Computed in SQL, because
+                // the row is not materialised as an entity on the read path.
                 room.Status == RoomStatus.Available,
 
-                // BR-78, BR-112: sletteguarden bæres op i UI'et som en oplysning, så
-                // advarslen kan vises inden knappen trykkes.
+                // BR-78, BR-112: the delete guard is carried up into the UI as information, so
+                // the warning can be shown before the button is pressed.
                 Context.Bookings.Any(booking => booking.RoomId == room.Id)))
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -71,8 +71,8 @@ public sealed class RoomRepository : Repository<Room, int>, IRoomRepository, IRo
 
         var query = Context.Rooms.AsNoTracking();
 
-        // BR-74, BR-76: null betyder "filtrér ikke på dette". Et tomt filter er derfor
-        // "ryd filter" — der er ingen særskilt use case for det.
+        // BR-74, BR-76: null means "do not filter on this". An empty filter is therefore
+        // "clear filter" — there is no separate use case for it.
         if (filter.Floor is int floor)
         {
             query = query.Where(room => room.Floor == floor);
@@ -156,10 +156,10 @@ public sealed class RoomRepository : Repository<Room, int>, IRoomRepository, IRo
     public void Remove(Room room) => MarkForRemoval(room);
 
     /// <summary>
-    /// Projicerer rum til listerækker, sorteret på værelsesnummer.
+    /// Projects rooms to list rows, sorted by room number.
     /// </summary>
-    /// <param name="query">Forespørgslen der projiceres.</param>
-    /// <returns>Listerækkerne.</returns>
+    /// <param name="query">The query being projected.</param>
+    /// <returns>The list rows.</returns>
     private static IQueryable<RoomListItemDto> ProjectListItems(IQueryable<Room> query) =>
         query
             .OrderBy(room => room.RoomNumber)

@@ -5,13 +5,13 @@ using NFHotel.Infrastructure.Persistence;
 namespace NFHotel.Infrastructure.Repositories;
 
 /// <summary>
-/// Fælles EF Core-implementering af <see cref="IRepository{TEntity, TKey}"/>.
+/// Common EF Core implementation of <see cref="IRepository{TEntity, TKey}"/>.
 /// </summary>
 /// <typeparam name="TEntity">Entiteten.</typeparam>
-/// <typeparam name="TKey">Nøglens type.</typeparam>
+/// <typeparam name="TKey">The type of the key.</typeparam>
 /// <remarks>
-/// Her ligger det de tre repositories havde ens: hent på nøgle og markér ændringer. Hvert
-/// repository tilføjer kun sine egne opslag (ADR-0001). Ingen <c>SaveChanges</c> — det gør
+/// This is what the three repositories had in common: fetch by key and mark changes. Each
+/// repository only adds its own lookups (ADR-0001). No <c>SaveChanges</c> — that is done by
 /// <c>IUnitOfWork</c>.
 /// </remarks>
 public abstract class Repository<TEntity, TKey> : IRepository<TEntity, TKey>
@@ -22,7 +22,7 @@ public abstract class Repository<TEntity, TKey> : IRepository<TEntity, TKey>
     /// Opretter repositoryet.
     /// </summary>
     /// <param name="context">Konteksten.</param>
-    /// <exception cref="ArgumentNullException">Kastes hvis <paramref name="context"/> er <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="context"/> is <c>null</c>.</exception>
     protected Repository(HotelDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -30,7 +30,7 @@ public abstract class Repository<TEntity, TKey> : IRepository<TEntity, TKey>
         Context = context;
     }
 
-    /// <summary>Konteksten alle opslag går gennem.</summary>
+    /// <summary>The context all lookups go through.</summary>
     protected HotelDbContext Context { get; }
 
     /// <inheritdoc />
@@ -56,8 +56,8 @@ public abstract class Repository<TEntity, TKey> : IRepository<TEntity, TKey>
     }
 
     /// <summary>
-    /// Markerer en entitet til sletning. Beskyttet, så kun de repositories hvis entitet må
-    /// slettes (gæst, rum) viser det i deres interface; en booking slettes aldrig (BR-13).
+    /// Marks an entity for deletion. Protected, so only the repositories whose entity may be
+    /// deleted (guest, room) show it in their interface; a booking is never deleted (BR-13).
     /// </summary>
     /// <param name="entity">Entiteten.</param>
     protected void MarkForRemoval(TEntity entity)
