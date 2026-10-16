@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [5b773ec] |
 
 ---
 
@@ -65,3 +65,4 @@ Go for the language conversion only. All six Go criteria of [MIL-006] hold and Q
 
 [MIL-006]: ../../milestones/mil-006-english-legacy-documents.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[5b773ec]: https://github.com/NF-Hotel/NFHotel/commit/5b773ecba695acc455f2765da7801d573d3bc5a5
