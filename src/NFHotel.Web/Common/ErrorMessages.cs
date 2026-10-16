@@ -51,6 +51,7 @@ public static class ErrorMessages
             [ErrorCodes.Booking.RescheduleNotAllowed] = "This booking can't be moved in its current state.",
             [ErrorCodes.Booking.RoomNotAvailable] = "That room is already taken for the selected dates.",
             [ErrorCodes.Booking.RoomNotBookable] = "That room can't be booked right now.",
+            [ErrorCodes.Booking.OverviewPeriodInvalid] = "The end of the period can't be before its start.",
             [ErrorCodes.Booking.GuestSelectionInvalid] = "Pick an existing guest or create a new one — not both.",
             [ErrorCodes.Booking.ConcurrencyConflict] = "Someone else changed this booking. Reload the page and start over.",
 
