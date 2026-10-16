@@ -18,7 +18,8 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 16, the booking service refuses an inverted overview period and a check-in to a room that cannot be let (MIL-013) | [5036584] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 17, asynchronous code where it gives meaning, enforced by architecture tests (MIL-014) | [417a575] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 18, the database is reachable only through an API that is not exposed to the internet (MIL-015) | [9e6d2d4] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 19, Make the back office available only to signed-in staff, with a role per staff me (MIL-016) | [bbef3bf] |
+| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 19, Make the back office available only to signed-in staff, with a role per staff me (MIL-016) | [bbef3bf] |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 20, Serve the one service that the internet reaches only over TLS: HTTP redirects to (MIL-017) | pending |
 
 ---
 
@@ -84,6 +85,7 @@ basis for the hosting decision (Q-31).
 17. Use asynchronous code where it gives meaning, layer by layer from the domain to the web, and keep it that way with architecture tests; behaviour does not change.
 18. Make the database reachable only through an API that is not exposed to the internet: the web application holds a token for the API and neither the database login nor the passport key.
 19. Make the back office available only to signed-in staff, with a role per staff member that limits what each may see and do.
+20. Serve the one service that the internet reaches only over TLS: HTTP redirects to HTTPS and the staff cookie is never sent in clear text.
 
 ## Scope
 
@@ -108,6 +110,7 @@ basis for the hosting decision (Q-31).
 - An audit of asynchronous code per layer in the order domain, application, infrastructure and web, the fixes it finds, and architecture tests for the rules (MIL-014)
 - An internal API in front of PostgreSQL, a client that implements the use-case interfaces over it, the web application switched to the client, the deploy files, and ADR-0004 (MIL-015)
 - Staff accounts, sign-in with a signed token, a permission table per role enforced in the Application layer and the API, the login and logout pages, authorization of the back office pages, the deploy files, and ADR-0005 (MIL-016)
+- TLS termination in nginx, a development certificate script, HTTP to HTTPS redirect, a Secure staff cookie, the deploy files, and ADR-0006 (MIL-017)
 
 ### Out of Scope
 
@@ -167,6 +170,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 20 | Asynchronous code | 0 blocking calls (`.Result`, `.Wait()`, `GetAwaiter().GetResult()`, `Task.Run`, `async void`) in `src/`; every method that returns `Task` ends in `Async`; 0 `async` in entities and value objects; every public asynchronous method of the application and infrastructure takes a `CancellationToken` | `AsyncRulesTests` and a source search per layer in the review record |
 | 21 | Database API | 0 references from the web application to Infrastructure, EF Core or Npgsql; 0 database settings in the web container; the API and PostgreSQL publish no host port; a call without the token gets 401; every method of the three service interfaces gives the same result through the API as directly | An architecture test, `docker inspect` in the VM, the contract test and the deploy check |
 | 22 | Back office login | 0 back office pages or staff endpoints answer without a valid sign-in (redirect to the login, or 401); for every role and operation a test states allowed or refused and equals the Access Control Matrix; Housekeeping gets 403 on bookings, guests and sales; a tampered or expired token is refused; the sixth failed sign-in in the window gets 429 | Permission table tests, API and page tests, and the deploy check in the VM |
+| 23 | TLS at the public port | Port 80 answers only 301 to HTTPS; HTTPS answers with TLS 1.2 or 1.3 and refuses 1.1 and 1.0; the staff cookie has Secure and HttpOnly; 0 private keys in git; only ports 80 and 443 of nginx answer from outside | The smoke test, openssl s_client and the deploy check in the VM |
 
 ## Risks
 
