@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version: market analysis, local AI selection and hosting on Proxmox behind nginx | [fc8ec78] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-013 Go | [469ff7a] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-013 Go | [469ff7a] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the actor Hotel staff and the use cases Manage Bookings, Manage Rooms and Manage Guests (MIL-007) | pending |
 
 ---
 
@@ -22,7 +22,7 @@ The system boundary is the NFHotel platform as the owner and DevOps use it: a
 market analysis that shows diagrams and an AI analysis, a benchmark that
 compares local AI models on time and answer quality, and the hosting of both on
 Proxmox VE virtual machines as Docker containers behind one nginx reverse proxy.
-The hotel booking web application itself (staff and guest flows) is outside this
+The back office of the hotel (staff managing bookings, rooms and guests, added for MIL-007) is inside it; the guest flows and the screens are outside this
 diagram. The two source services are the repositories
 `NF-Hotel/Notebook_Market_Analysis` and `NF-Hotel/notebook-benchmark`.
 
@@ -33,6 +33,7 @@ diagram. The two source services are the repositories
 left to right direction
 actor "Owner" as Owner <<Actor>>
 actor "DevOps" as DevOps <<Actor>>
+actor "Hotel staff" as Staff <<Actor>>
 rectangle "NFHotel platform" <<System>> {
   usecase "View Market Analysis" as UC1
   usecase "Choose Local AI Model" as UC2
@@ -40,12 +41,18 @@ rectangle "NFHotel platform" <<System>> {
   usecase "Run Time and Quality Benchmark" as UC4
   usecase "Run Market Analysis Service" as UC5
   usecase "Compare Models by Time and Quality" as UC6
+  usecase "Manage Bookings" as UC7
+  usecase "Manage Rooms" as UC8
+  usecase "Manage Guests" as UC9
 }
 Owner --> UC1
 Owner --> UC2
 DevOps --> UC3
 DevOps --> UC4
 DevOps --> UC5
+Staff --> UC7
+Staff --> UC8
+Staff --> UC9
 UC2 ..> UC6 : <<include>>
 UC4 ..> UC3 : <<include>>
 UC5 ..> UC3 : <<include>>
@@ -58,6 +65,7 @@ UC5 ..> UC3 : <<include>>
 | --- | --- | --- | --- |
 | Owner | `<<Actor>>` | S01 | View Market Analysis; Choose Local AI Model |
 | DevOps | `<<Actor>>` | S02 | Route Services Through Nginx; Run Time and Quality Benchmark; Run Market Analysis Service |
+| Hotel staff | `<<Actor>>` | S05 | Manage Bookings; Manage Rooms; Manage Guests |
 
 ## Use Case Table
 
@@ -69,23 +77,29 @@ UC5 ..> UC3 : <<include>>
 | Run Time and Quality Benchmark | DevOps | Run the time and answer-quality test as a service on a Proxmox VM behind the proxy | [US-001].04 | Should | Hardware dependent (GPU access from a VM is the main risk) |
 | Run Market Analysis Service | DevOps | Run the market analysis service on a Proxmox VM through Docker Compose behind the proxy | [US-001].05 | Must | Needed before the owner can view the analysis |
 | Compare Models by Time and Quality | Owner | See models side by side by response time and answer quality | [US-001].02 | Should | Part of choosing a model; shown by the benchmark results |
+| Manage Bookings | Hotel staff | Create, confirm, check in, check out, cancel and move bookings without double booking | [US-001].06 | Must | The core of the back office |
+| Manage Rooms | Hotel staff | Keep the rooms, their status and their cleaning state correct | [US-001].07 | Must | Bookings need rooms |
+| Manage Guests | Hotel staff | Find, register, change and delete guests | [US-001].08 | Must | Bookings need guests |
 
 ## Role Matrix
 
-Suggestion for the Product Owner to approve. There are two primary actors, so
+Suggestion for the Product Owner to approve. There are three primary actors, so
 roles follow the actors: the Owner role decides on analysis and model choice;
-the DevOps role operates the services. Data visibility is not covered.
+the DevOps role operates the services; the Hotel staff role runs the back office. Data visibility is not covered.
 
-| Use Case | Owner | DevOps |
-| --- | --- | --- |
-| View Market Analysis | performs | - |
-| Choose Local AI Model | performs | - |
-| Compare Models by Time and Quality | performs | - |
-| Route Services Through Nginx | - | performs |
-| Run Time and Quality Benchmark | - | performs |
-| Run Market Analysis Service | - | performs |
+| Use Case | Owner | DevOps | Hotel staff |
+| --- | --- | --- | --- |
+| View Market Analysis | performs | - | - |
+| Choose Local AI Model | performs | - | - |
+| Compare Models by Time and Quality | performs | - | - |
+| Route Services Through Nginx | - | performs | - |
+| Run Time and Quality Benchmark | - | performs | - |
+| Run Market Analysis Service | - | performs | - |
+| Manage Bookings | - | - | performs |
+| Manage Rooms | - | - | performs |
+| Manage Guests | - | - | performs |
 
-No use case is shared by both roles. Whether DevOps may also view the analysis
+No use case is shared by two roles. Whether DevOps may also view the analysis
 is a question for the Product Owner.
 
 ## Relationships

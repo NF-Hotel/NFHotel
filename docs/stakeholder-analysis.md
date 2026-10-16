@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Accepted after RC-002 Go | [b690b57] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Token role row and revocation rationale changed for the throwaway container | [7c6d8f8] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Token role row and revocation rationale changed for the throwaway container | [7c6d8f8] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added S05, the hotel staff who use the back office (MIL-007) | pending |
 
 ---
 
@@ -30,6 +30,7 @@ stable IDs. The method is a power/interest grid; concerns are mapped to FURPS+.
 | S02 | Other NFHotel 2.0 guilds | Developers of the DevOps, frontend, mobile and cybersecurity tracks | NFHotel 2.0 project | MEDIUM | HIGH | Keep Informed | A proven target environment before they depend on it |
 | S03 | Proxmox VE administrator | Owner of the Proxmox server | NFHotel 2.0 project (held by S01 for now) | HIGH | MEDIUM | Keep Satisfied | The server is never changed or loaded by tests |
 | S04 | Valdamar | Stand-in for the Product Owner; reviewer and approver of the artifacts | NFHotel 2.0 project | HIGH | HIGH | Manage Closely | A clear plan and a result he can accept or reject |
+| S05 | Hotel staff | Receptionists and housekeeping who use the back office to manage bookings, rooms and guests; represented by S01 and S04 until real users are named | NF Hotel | MEDIUM | HIGH | Keep Informed | Rules that stop double booking and wrong status changes, and a screen that shows what is allowed |
 
 ## Power/Interest Classification Rationale
 
@@ -37,6 +38,7 @@ stable IDs. The method is a power/interest grid; concerns are mapped to FURPS+.
 - S02 uses the result but cannot block it: medium power, high interest.
 - S03 can refuse access to the Docker host or stop the container at any time: high power; interest is medium because the tests are small and read-only.
 - S04 (Valdamar) stands in for the Product Owner: he reviews and accepts every artifact, so high power and high interest. S01 and S03 are the same group today (Team 2); the roles stay separate so the Business Case can name who guards the server.
+- S05 uses the back office every day but does not decide the project: medium power, high interest. No real staff member has been named, so S01 and S04 speak for S05 until one is.
 
 ## Primary Concerns and FURPS+ Mapping
 
@@ -47,6 +49,7 @@ stable IDs. The method is a power/interest grid; concerns are mapped to FURPS+.
 | S02 | Clear pass/fail message naming the failing check | Usability |
 | S03 | Read-only access, bounded request time | Reliability, Performance |
 | S04 | Reviewable, traceable artifacts | Maintainability |
+| S05 | No double booking; only allowed actions offered | Functionality, Reliability |
 
 ## Communication Requirements
 
@@ -56,6 +59,7 @@ stable IDs. The method is a power/interest grid; concerns are mapped to FURPS+.
 | S02 | Repository README and test output | On change | Runner usage and token instructions | MIL-001 |
 | S03 | Chat | Once | Root password in `pve.env` only; token created per run | MIL-003 |
 | S04 | Chat | Per milestone | Review records and run summary | MIL-001 |
+| S05 | Through S01 and S04 | On change | The domain rules in the Domain Dictionary and the Domain Model | MIL-007 |
 
 ## Conflicting Interests and Mitigations
 
@@ -75,6 +79,7 @@ stable IDs. The method is a power/interest grid; concerns are mapped to FURPS+.
 | S02 | Clear pass/fail message | Objective 3 |
 | S03 | Read-only access | Objective 4 |
 | S04 | Reviewable, traceable artifacts | Objectives 1-4 |
+| S05 | No double booking; only allowed actions offered | Objective 10 |
 
 ## Sign-Off
 
