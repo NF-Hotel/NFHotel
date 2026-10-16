@@ -12,6 +12,7 @@ namespace NFHotel.Infrastructure.Tests.Security;
 public class AesGcmStringEncryptorTests
 {
 
+    #region Encrypt and decrypt
     // Is a round-trip test that ensures encryption and decryption work correctly.
     // decrypts back to the original value.
     // [Fact] marks the method as an xUnit test.
@@ -74,7 +75,9 @@ public class AesGcmStringEncryptorTests
 
     }
 
+    #endregion
 
+    #region Tampered cipher text
     // Test to ensure that tampered encrypted data cannot be decrypted.
     // This is important to ensure data integrity and security.
     [Fact]
@@ -118,11 +121,9 @@ public class AesGcmStringEncryptorTests
             () => encryptor.Decrypt(tamperedCipherText));
     }
 
+    #endregion
 
-
-
-
-
+    #region Key configuration
     // Test to ensure that a missing encryption key is rejected.
     [Fact]
     public void Constructor_MissingPassportKey_ThrowsInvalidOperationException()
@@ -182,8 +183,9 @@ public class AesGcmStringEncryptorTests
             () => new AesGcmStringEncryptor(options));
     }
 
+    #endregion
 
-
+    #region Invalid input
     // Test for at sikre, at ugyldig Base64-ciphertext afvises.
     [Fact]
     public void Decrypt_InvalidBase64_ThrowsCryptographicException()
@@ -205,6 +207,6 @@ public class AesGcmStringEncryptorTests
             () => encryptor.Decrypt(invalidCipherText));
     }
 
-
+    #endregion
 
 }

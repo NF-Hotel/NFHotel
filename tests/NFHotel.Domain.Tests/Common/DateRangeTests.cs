@@ -10,9 +10,7 @@ namespace NFHotel.Domain.Tests.Common;
 /// </summary>
 public class DateRangeTests
 {
-    // --------------------------------------------------------
-    // INVARIANTS OF THE CONSTRUCTOR (BR-101, BR-102, BR-103)
-    // --------------------------------------------------------
+    #region Invariants of the constructor (BR-101, BR-102, BR-103)
 
     /// <summary>BR-101: the arrival date must not be <c>default</c>.</summary>
     [Fact]
@@ -78,9 +76,9 @@ public class DateRangeTests
         Assert.Equal(1, period.Nights);
     }
 
-    // --------------------------------------------------------
-    // NUMBER OF NIGHTS (BR-109, BR-117)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Number of nights (BR-109, BR-117)
 
     /// <summary>
     /// BR-109, BR-117: the duration is the number of overnight stays, not the number of calendar days touched.
@@ -92,7 +90,7 @@ public class DateRangeTests
     [InlineData("2026-01-28", "2026-02-03", 6)]
     [InlineData("2026-12-30", "2027-01-02", 3)]
     [InlineData("2028-02-27", "2028-03-01", 3)]
-    public void Nights_ReturnsNumberOfOvernightStays(string start, string end, int expectedNights)
+    public void Nights_AnyPeriod_ReturnsNumberOfOvernightStays(string start, string end, int expectedNights)
     {
         // Arrange
         var period = new DateRange(TestDate.Of(start), TestDate.Of(end));
@@ -104,9 +102,9 @@ public class DateRangeTests
         Assert.Equal(expectedNights, nights);
     }
 
-    // --------------------------------------------------------
-    // OVERLAP (BR-39, B-03)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Overlap (BR-39, B-03)
 
     /// <summary>
     /// BR-39: two periods overlap only if they share at least one night. Departure and
@@ -154,7 +152,7 @@ public class DateRangeTests
     [InlineData("2026-01-01", "2026-01-05", "2026-01-05", "2026-01-08")]
     [InlineData("2026-01-01", "2026-01-05", "2026-01-04", "2026-01-08")]
     [InlineData("2026-01-01", "2026-01-31", "2026-01-10", "2026-01-12")]
-    public void Overlaps_IsSymmetric(string startA, string endA, string startB, string endB)
+    public void Overlaps_EitherOrder_IsSymmetric(string startA, string endA, string startB, string endB)
     {
         // Arrange
         var a = new DateRange(TestDate.Of(startA), TestDate.Of(endA));
@@ -168,9 +166,9 @@ public class DateRangeTests
         Assert.Equal(forward, backward);
     }
 
-    // --------------------------------------------------------
-    // CONTAINS AND FUTURE
-    // --------------------------------------------------------
+    #endregion
+
+    #region Contains and future
 
     /// <summary>
     /// The period contains the arrival day, but not the departure day — the same half-open rule
@@ -182,7 +180,7 @@ public class DateRangeTests
     [InlineData("2026-01-04", true)]
     [InlineData("2026-01-05", false)]
     [InlineData("2026-01-06", false)]
-    public void Contains_DepartureDayIsExcluded(string date, bool expected)
+    public void Contains_DepartureDay_IsExcluded(string date, bool expected)
     {
         // Arrange
         var period = new DateRange(TestDate.Of("2026-01-01"), TestDate.Of("2026-01-05"));
@@ -202,7 +200,7 @@ public class DateRangeTests
     [InlineData("2026-01-01", true)]
     [InlineData("2025-12-31", true)]
     [InlineData("2026-01-02", false)]
-    public void StartsOnOrAfter_TodayIsAllowedButYesterdayIsNot(string today, bool expected)
+    public void StartsOnOrAfter_TodayAndYesterday_TodayIsAllowedButYesterdayIsNot(string today, bool expected)
     {
         // Arrange
         var period = new DateRange(TestDate.Of("2026-01-01"), TestDate.Of("2026-01-10"));
@@ -213,4 +211,6 @@ public class DateRangeTests
         // Assert
         Assert.Equal(expected, startsOnOrAfter);
     }
+
+    #endregion
 }
