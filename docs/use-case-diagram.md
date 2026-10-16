@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version: market analysis, local AI selection and hosting on Proxmox behind nginx | [fc8ec78] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version: market analysis, local AI selection and hosting on Proxmox behind nginx | [fc8ec78] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-013 Go | pending |
 
 ---
 
