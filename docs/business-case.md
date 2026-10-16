@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Amended: Proxmox VE is a throwaway Docker container; pve.env holds only the root password; the API token is created per run and kept in environment variables | [7c6d8f8] |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Amended: objectives 6 and 7 for the market analysis service and the benchmark service on Proxmox VMs behind nginx, from US-001 | [469ff7a] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Amended: Proxmox VE is a throwaway Docker container; pve.env holds only the root password; the API token is created per run and kept in environment variables | [7c6d8f8] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objectives 6 and 7 for the market analysis service and the benchmark service on Proxmox VMs behind nginx, from US-001 | pending |
 
 ---
 

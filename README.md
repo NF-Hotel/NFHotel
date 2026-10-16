@@ -386,6 +386,10 @@ The site is then served at `http://localhost:8080` (`NGINX_HTTP_PORT`). To prove
 bash scripts/test-compose-proxy.sh
 ```
 
+### 📊 Market analysis behind the proxy
+
+The market analysis service (`NF-Hotel/Notebook_Market_Analysis`) has its own folder, `deploy/market-analysis`, with a compose file, `market-analysis.env` and a configuration file; see its README. The nginx proxy routes it by host name next to the web application, and `bash scripts/test-compose-proxy.sh` checks all three services through the proxy.
+
 ### 🧪 Proxmox Integration Tests
 
 Read-only tests check the Proxmox VE API. They run unattended against a throwaway Proxmox VE container (`dockurr/proxmox`, privileged, third-party image: use it on your own machine only). The container, a per-run API token and the test container are all removed afterwards.

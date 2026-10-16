@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version: the Must stories US-001.01, US-001.03 and US-001.05 | [469ff7a] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version: the Must stories US-001.01, US-001.03 and US-001.05 | [469ff7a] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-015 Go | pending |
 
 ---
 

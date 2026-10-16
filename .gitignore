@@ -434,3 +434,4 @@ secrets.json
 # AI prompt log (public repository, see framework/process/ai-prompt-log.md)
 /docs/ai-prompts/
 src/NFHotel.Domain/bin/
+/deploy/market-analysis/market-analysis.toml

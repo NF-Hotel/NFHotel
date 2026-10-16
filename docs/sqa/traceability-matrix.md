@@ -35,6 +35,7 @@ updated whenever an artifact instance is created or reviewed.
 | `tests/NFHotel.Proxmox.Tests`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-001] | - | [RC-004] |
 | `deploy/`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-002] | - | [RC-007] |
 | `deploy/proxmox`, `scripts/pve-token.sh`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-003] | - | [RC-011] |
+| `deploy/market-analysis`, `deploy/nginx`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-004] | - | [RC-016] |
 
 ---
 
@@ -57,6 +58,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-013]: ./reviews/rc-013-use-case-diagram.md
 [RC-014]: ./reviews/rc-014-business-case-market-analysis.md
 [RC-015]: ./reviews/rc-015-milestone-004.md
+[RC-016]: ./reviews/rc-016-market-analysis-service.md
 [MIL-004]: ../milestones/mil-004-market-analysis-service.md
 [UCD-001]: ../use-case-diagram.md
 [US-001]: ../user-stories.md
