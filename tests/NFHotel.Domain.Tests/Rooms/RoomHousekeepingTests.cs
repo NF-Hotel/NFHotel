@@ -215,7 +215,7 @@ public class RoomHousekeepingTests
     /// <c>SendToMaintenance</c>. The two states are independent.
     /// </summary>
     [Fact]
-    public void ReportServiceNeeded_DoesNotBlockBookingOnItsOwn()
+    public void ReportServiceNeeded_RoomAvailable_DoesNotBlockBookingOnItsOwn()
     {
         // Arrange
         var room = RoomFactory.Create();

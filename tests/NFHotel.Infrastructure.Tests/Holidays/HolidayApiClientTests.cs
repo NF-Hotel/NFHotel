@@ -152,7 +152,7 @@ public sealed class HolidayApiClientTests
     [InlineData(HttpStatusCode.InternalServerError, ErrorCodes.Holidays.Unavailable)]
     [InlineData(HttpStatusCode.ServiceUnavailable, ErrorCodes.Holidays.Unavailable)]
     [InlineData(HttpStatusCode.NotFound, ErrorCodes.Holidays.UnexpectedResponse)]
-    public async Task ErrorStatuses_AreMappedToErrorCodes(HttpStatusCode status, string expectedCode)
+    public async Task ErrorStatuses_AnyHttpError_AreMappedToErrorCodes(HttpStatusCode status, string expectedCode)
     {
         var handler = StubHandler.Status(status);
 
@@ -164,7 +164,7 @@ public sealed class HolidayApiClientTests
     }
 
     [Fact]
-    public async Task NetworkFailure_IsUnavailable()
+    public async Task NetworkFailure_ServiceUnreachable_IsUnavailable()
     {
         var handler = StubHandler.Throwing(new HttpRequestException("connection refused"));
 
@@ -174,7 +174,7 @@ public sealed class HolidayApiClientTests
     }
 
     [Fact]
-    public async Task Timeout_IsUnavailable()
+    public async Task Timeout_SlowService_IsUnavailable()
     {
         // HttpClient signals its own timeout as TaskCanceledException without the caller's token being cancelled.
         var handler = StubHandler.Throwing(new TaskCanceledException("timeout"));
@@ -185,7 +185,7 @@ public sealed class HolidayApiClientTests
     }
 
     [Fact]
-    public async Task CallerCancellation_IsNotSwallowed()
+    public async Task CallerCancellation_RequestInFlight_IsNotSwallowed()
     {
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
@@ -200,7 +200,7 @@ public sealed class HolidayApiClientTests
     [InlineData("null")]
     [InlineData("""{ "country": "KH", "source": "x", "first_year": 2022, "last_year": 2027 }""")]
     [InlineData("""{ "country": "KH", "first_year": 2022, "last_year": 2027, "holidays": [] }""")]
-    public async Task UnreadableOrIncompleteBody_IsUnexpectedResponse(string body)
+    public async Task UnreadableOrIncompleteBody_AnyBody_IsUnexpectedResponse(string body)
     {
         var handler = StubHandler.Json(body);
 
@@ -213,7 +213,7 @@ public sealed class HolidayApiClientTests
 
     #region Edge case and registration
     [Fact]
-    public async Task EmptyCalendar_IsSuccess()
+    public async Task EmptyCalendar_ServiceReturnsNone_IsSuccess()
     {
         var handler = StubHandler.Json(
             """{ "country": "KH", "source": "x", "first_year": 2022, "last_year": 2027, "holidays": [] }""");
@@ -225,7 +225,7 @@ public sealed class HolidayApiClientTests
     }
 
     [Fact]
-    public async Task Registration_SendsApiKeyHeaderToTheConfiguredBaseUrl()
+    public async Task Registration_ApiKeyConfigured_SendsApiKeyHeaderToTheConfiguredBaseUrl()
     {
         var handler = StubHandler.Json(TwoHolidays);
         var configuration = new ConfigurationBuilder()

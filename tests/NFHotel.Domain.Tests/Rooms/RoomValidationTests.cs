@@ -83,7 +83,7 @@ public class RoomValidationTests
     [InlineData(-1, false)]
     [InlineData(1, true)]
     [InlineData(12, true)]
-    public void Floor_RequiresGreaterThanZero(int floor, bool expected)
+    public void Floor_AnyValue_RequiresGreaterThanZero(int floor, bool expected)
     {
         // Arrange & Act
         var isValid = ErrorsOf(RoomFactory.RoomNumber, floor, RoomSize.Double, RoomFactory.Capacity).Count == 0;
@@ -111,7 +111,7 @@ public class RoomValidationTests
     [InlineData(-1, false)]
     [InlineData(1, true)]
     [InlineData(4, true)]
-    public void Capacity_RequiresGreaterThanZero(int capacity, bool expected)
+    public void Capacity_AnyValue_RequiresGreaterThanZero(int capacity, bool expected)
     {
         // Arrange & Act
         var isValid = ErrorsOf(RoomFactory.RoomNumber, RoomFactory.Floor, RoomSize.Double, capacity).Count == 0;
@@ -149,7 +149,7 @@ public class RoomValidationTests
     [InlineData((RoomSize)3, false)]
     [InlineData((RoomSize)(-1), false)]
     [InlineData((RoomSize)99, false)]
-    public void Size_AcceptsOnlyDefinedEnumValues(RoomSize size, bool expected)
+    public void Size_AnyValue_AcceptsOnlyDefinedEnumValues(RoomSize size, bool expected)
     {
         // Arrange & Act
         var isValid = ErrorsOf(RoomFactory.RoomNumber, RoomFactory.Floor, size, RoomFactory.Capacity).Count == 0;
@@ -284,7 +284,7 @@ public class RoomValidationTests
     [InlineData(HousekeepingStatus.CleaningInProgress)]
     [InlineData(HousekeepingStatus.ServiceRequired)]
     [InlineData(HousekeepingStatus.ServiceInProgress)]
-    public void IsBookable_IsIndependentOfHousekeepingStatus(HousekeepingStatus housekeepingStatus)
+    public void IsBookable_AnyHousekeepingStatus_IsUnaffected(HousekeepingStatus housekeepingStatus)
     {
         // Arrange
         var room = RoomFactory.WithHousekeeping(housekeepingStatus);
@@ -302,7 +302,7 @@ public class RoomValidationTests
     /// values that did not match the enum; here there is one list.
     /// </summary>
     [Fact]
-    public void RoomStatusTransitions_ChangeBookabilityAndAreReversible()
+    public void RoomStatusTransitions_OutOfAndBackToService_ChangeBookabilityAndAreReversible()
     {
         // Arrange
         var room = RoomFactory.Create();
@@ -344,7 +344,7 @@ public class RoomValidationTests
     /// B-04: <c>ReturnToService</c> makes the room bookable again without touching the cleaning state.
     /// </summary>
     [Fact]
-    public void ReturnToService_LeavesHousekeepingStatusUntouched()
+    public void ReturnToService_AnyHousekeepingStatus_LeavesHousekeepingStatusUntouched()
     {
         // Arrange
         var room = RoomFactory.WithHousekeeping(HousekeepingStatus.DepartureCleaningDue);

@@ -126,7 +126,7 @@ public class GuestValidationTests
     [InlineData("valdemar.nfhotel.dk", false)] // intet '@'
     [InlineData("valdemar@nfhoteldk", false)] // intet '.'
     [InlineData("valdemar", false)]
-    public void Email_RequiresBothAtSignAndDot(string email, bool expected)
+    public void Email_AnyShape_RequiresBothAtSignAndDot(string email, bool expected)
     {
         // Arrange & Act
         var isValid = ErrorsOf(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry).Count == 0;

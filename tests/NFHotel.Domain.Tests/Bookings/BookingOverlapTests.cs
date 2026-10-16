@@ -122,7 +122,7 @@ public class BookingOverlapTests
     [InlineData(BookingStatus.CheckedIn, true)]
     [InlineData(BookingStatus.CheckedOut, true)]
     [InlineData(BookingStatus.Cancelled, false)]
-    public void BlocksRoom_OnlyCancelledReleasesTheRoom(BookingStatus status, bool expected)
+    public void BlocksRoom_AnyStatus_OnlyCancelledReleasesTheRoom(BookingStatus status, bool expected)
     {
         // Arrange & Act
         var blocks = status.BlocksRoom();
@@ -141,7 +141,7 @@ public class BookingOverlapTests
     [InlineData(BookingStatus.CheckedIn, true)]
     [InlineData(BookingStatus.CheckedOut, true)]
     [InlineData(BookingStatus.Cancelled, false)]
-    public void Conflicts_ReflectsStatus(BookingStatus status, bool expected)
+    public void Conflicts_AnyStatus_ReflectsStatus(BookingStatus status, bool expected)
     {
         // Arrange
         var existing = BookingFactory.InStatus(status);
@@ -256,7 +256,7 @@ public class BookingOverlapTests
     /// the booked period, but not the actual occupancy.
     /// </summary>
     [Fact]
-    public void Conflicts_ComparesAgainstEffectivePeriodNotBookedPeriod()
+    public void Conflicts_AfterEarlyCheckOut_ComparesAgainstEffectivePeriodNotBookedPeriod()
     {
         // Arrange
         var existing = BookingFactory.CheckedOutOn(TestDate.Of("2026-01-03"));

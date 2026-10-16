@@ -141,7 +141,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
 
 
     [Fact]
-    public async Task NullPassportNumber_ShouldRemainNullInDatabase()
+    public async Task NullPassportNumber_Saved_ShouldRemainNullInDatabase()
     {
         // Arrange
         var guest = Guest.Create(

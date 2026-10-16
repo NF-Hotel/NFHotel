@@ -46,7 +46,7 @@ public class BookingStateMachineTests
     [InlineData(BookingStatus.CheckedIn, false)]
     [InlineData(BookingStatus.CheckedOut, false)]
     [InlineData(BookingStatus.Cancelled, false)]
-    public void CanConfirm_ReflectsStatus(BookingStatus status, bool expected)
+    public void CanConfirm_AnyStatus_ReflectsStatus(BookingStatus status, bool expected)
     {
         // Arrange
         var booking = BookingFactory.InStatus(status);
@@ -132,7 +132,7 @@ public class BookingStateMachineTests
     [InlineData("2025-12-31", false)]
     [InlineData("2026-01-01", true)]
     [InlineData("2026-01-05", true)]
-    public void CanCheckIn_ComparesStartDateToToday(string today, bool expected)
+    public void CanCheckIn_StartDateVersusToday_ComparesStartDateToToday(string today, bool expected)
     {
         // Arrange
         var booking = BookingFactory.Pending();
@@ -228,7 +228,7 @@ public class BookingStateMachineTests
     [InlineData(BookingStatus.CheckedIn, true)]
     [InlineData(BookingStatus.CheckedOut, false)]
     [InlineData(BookingStatus.Cancelled, false)]
-    public void CanCheckOut_ReflectsStatus(BookingStatus status, bool expected)
+    public void CanCheckOut_AnyStatus_ReflectsStatus(BookingStatus status, bool expected)
     {
         // Arrange
         var booking = BookingFactory.InStatus(status);
@@ -391,7 +391,7 @@ public class BookingStateMachineTests
     [InlineData(BookingStatus.CheckedIn, false)]
     [InlineData(BookingStatus.CheckedOut, false)]
     [InlineData(BookingStatus.Cancelled, false)]
-    public void CanCancel_ReflectsStatus(BookingStatus status, bool expected)
+    public void CanCancel_AnyStatus_ReflectsStatus(BookingStatus status, bool expected)
     {
         // Arrange
         var booking = BookingFactory.InStatus(status);
@@ -451,7 +451,7 @@ public class BookingStateMachineTests
     [InlineData(BookingStatus.CheckedIn, false)]
     [InlineData(BookingStatus.CheckedOut, false)]
     [InlineData(BookingStatus.Cancelled, false)]
-    public void CanReschedule_ReflectsStatus(BookingStatus status, bool expected)
+    public void CanReschedule_AnyStatus_ReflectsStatus(BookingStatus status, bool expected)
     {
         // Arrange
         var booking = BookingFactory.InStatus(status);
