@@ -19,7 +19,6 @@ public sealed partial class StructureTests
         "NFHotel.Domain.Entities",
         "NFHotel.Domain.Errors",
         "NFHotel.Domain.Repositories",
-        "NFHotel.Domain.Rules",
         "NFHotel.Domain.ValueObjects",
     ];
 
@@ -54,6 +53,19 @@ public sealed partial class StructureTests
         Assert.True(offenders.Length == 0, $"Typer uden for skillets mapper: {string.Join(", ", offenders)}");
     }
 
+
+    [Fact]
+    public void Domain_HasNoRulesNamespaceOrRulesClass()
+    {
+        var offenders = DomainAssembly.GetTypes()
+            .Where(t => !IsCompilerGenerated(t)
+                && (t.Namespace?.EndsWith(".Rules", StringComparison.Ordinal) == true
+                    || t.Name.EndsWith("Rules", StringComparison.Ordinal)))
+            .Select(t => $"{t.Namespace}.{t.Name}")
+            .ToArray();
+
+        Assert.True(offenders.Length == 0, $"Reglerne hører til entiteter, værdiobjekter og fejl: {string.Join(", ", offenders)}");
+    }
     [Fact]
     public void Repositories_EveryInterface_IsDeclaredInDomain()
     {

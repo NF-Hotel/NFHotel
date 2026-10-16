@@ -4,7 +4,7 @@ using NFHotel.Domain.Entities;
 namespace NFHotel.Application.UseCases.Guests;
 
 /// <summary>
-/// Eksplicit mapping fra <see cref="Guest"/> til gæstens DTO'er (A-14).
+/// Eksplicit mapping fra <see cref="NFHotel.Domain.Entities.Guest"/> til gæstens DTO'er (A-14).
 /// </summary>
 /// <remarks>
 /// Håndskrevet og bevidst uden mapping-bibliotek. Konventionsbaseret mapping ville kopiere

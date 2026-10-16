@@ -6,7 +6,6 @@ using NFHotel.Application.UseCases.Guests;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.Repositories;
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.UseCases.Bookings;
@@ -16,7 +15,7 @@ namespace NFHotel.Application.UseCases.Bookings;
 /// </summary>
 /// <remarks>
 /// Servicen indeholder <b>ingen</b> overlapslogik. Den henter kandidater og spørger
-/// <see cref="BookingRules"/> (A-01, A-04). Fandtes prædikatet også her, ville det være
+/// <see cref="NFHotel.Domain.Entities.Booking"/> (A-01, A-04). Fandtes prædikatet også her, ville det være
 /// tredje kopi efter domænet og databasens exclusion constraint — og de tre ville drive fra
 /// hinanden.
 /// <para>
@@ -27,11 +26,11 @@ public sealed class BookingService : IBookingService
 {
     /// <summary>
     /// De statusser der lægger beslag på et rum. Udledt af domænet
-    /// (<see cref="BookingRules.BlocksRoom"/>), ikke skrevet af som en liste — ellers ville
+    /// (<see cref="NFHotel.Domain.ValueObjects.BookingStatusExtensions.BlocksRoom"/>), ikke skrevet af som en liste — ellers ville
     /// et nyt statustrin skulle huskes to steder.
     /// </summary>
     private static readonly IReadOnlyCollection<BookingStatus> BlockingStatuses =
-        Enum.GetValues<BookingStatus>().Where(BookingRules.BlocksRoom).ToArray();
+        Enum.GetValues<BookingStatus>().Where(BookingStatusExtensions.BlocksRoom).ToArray();
 
     /// <summary>Alle statusser. Bruges når oversigten også skal vise annullerede (BR-13).</summary>
     private static readonly IReadOnlyCollection<BookingStatus> AllStatuses = Enum.GetValues<BookingStatus>();
@@ -166,12 +165,12 @@ public sealed class BookingService : IBookingService
 
             // Overlapsafgørelsen træffes af domænet, aldrig her (A-01, A-04). BR-39's
             // halvåbne interval betyder at afrejse- og ankomstdag samme dag ikke er overlap.
-            if (!BookingRules.BlocksRoom(occupancy.Status))
+            if (!occupancy.Status.BlocksRoom())
             {
                 continue;
             }
 
-            if (BookingRules.Overlaps(new DateRange(occupancy.StartDate, occupancy.EffectiveEndDate), period))
+            if (new DateRange(occupancy.StartDate, occupancy.EffectiveEndDate).Overlaps(period))
             {
                 occupiedRoomIds.Add(occupancy.RoomId);
             }
@@ -396,7 +395,7 @@ public sealed class BookingService : IBookingService
     /// Kører én domæneovergang på en booking og gemmer.
     /// </summary>
     /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="transition">Overgangen — altid præcis ét metodekald på <see cref="Booking"/>.</param>
+    /// <param name="transition">Overgangen — altid præcis ét metodekald på <see cref="NFHotel.Domain.Entities.Booking"/>.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <returns>Bookingens detaljer, eller domænets fejlkode hvis overgangen blev afvist.</returns>
     private async Task<Result<BookingDetailsDto>> TransitionAsync(
@@ -493,7 +492,7 @@ public sealed class BookingService : IBookingService
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <returns><see cref="ErrorCodes.Booking.RoomNotAvailable"/>, eller <c>null</c> hvis rummet er frit.</returns>
     /// <remarks>
-    /// Repositoryet grovfiltrerer; <see cref="BookingRules.Conflicts"/> afgør. Prædikatet
+    /// Repositoryet grovfiltrerer; <see cref="NFHotel.Domain.Entities.Booking.ConflictsWith"/> afgør. Prædikatet
     /// findes derfor kun i domænet — og i databasens exclusion constraint, som er genereret
     /// ud fra samme definition og pinnet af en paritetstest (A-04).
     /// </remarks>
@@ -515,7 +514,7 @@ public sealed class BookingService : IBookingService
 
         foreach (var candidate in candidates)
         {
-            if (BookingRules.Conflicts(candidate, roomId, period))
+            if (candidate.ConflictsWith(roomId, period))
             {
                 return ErrorCodes.Booking.RoomNotAvailable;
             }

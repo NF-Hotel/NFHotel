@@ -1,5 +1,4 @@
 using NFHotel.Domain.Errors;
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.Errors;
@@ -9,7 +8,7 @@ namespace NFHotel.Application.Errors;
 /// </summary>
 /// <remarks>
 /// <b>Domænet ejer sine egne koder.</b> Konstanterne herunder <i>genbruger</i> dem
-/// (<c>= BookingRules.StartDateInPast</c>) frem for at opfinde parallelle koder — så kan de
+/// (<c>= BookingErrors.StartDateInPast</c>) frem for at opfinde parallelle koder — så kan de
 /// to lag ikke drive fra hinanden, og en søgning på koden rammer både reglen og dens
 /// oversættelse.
 /// <para>
@@ -41,19 +40,19 @@ public static class ErrorCodes
         public const string EndNotAfterStart = DateRange.EndNotAfterStart;
 
         /// <summary>Perioden starter før i dag (BR-44, BR-104, BR-108).</summary>
-        public const string StartDateInPast = BookingRules.StartDateInPast;
+        public const string StartDateInPast = BookingErrors.StartDateInPast;
 
         /// <summary>Bookingen mangler en rumreference (BR-45, BR-105).</summary>
-        public const string RoomRequired = BookingRules.RoomRequired;
+        public const string RoomRequired = BookingErrors.RoomRequired;
 
         /// <summary>Bookingen mangler en gæstereference (BR-106).</summary>
-        public const string GuestRequired = BookingRules.GuestRequired;
+        public const string GuestRequired = BookingErrors.GuestRequired;
 
         /// <summary>Udtjekningstidspunktet er ikke efter indtjekningstidspunktet (BR-107).</summary>
-        public const string CheckOutBeforeCheckIn = BookingRules.CheckOutBeforeCheckIn;
+        public const string CheckOutBeforeCheckIn = BookingErrors.CheckOutBeforeCheckIn;
 
         /// <summary>Udtjekningsdatoen ligger før ankomstdatoen.</summary>
-        public const string CheckOutDateBeforeStartDate = BookingRules.CheckOutDateBeforeStartDate;
+        public const string CheckOutDateBeforeStartDate = BookingErrors.CheckOutDateBeforeStartDate;
 
         /// <summary>
         /// Udtjekningsdatoen ligger efter i dag.
@@ -63,7 +62,7 @@ public static class ErrorCodes
         /// rummet indtil da (A-01) — og tastefejlen kan ikke rettes bagefter, fordi en
         /// <c>CheckedOut</c> booking hverken kan omlægges eller annulleres.
         /// </remarks>
-        public const string CheckOutDateInFuture = BookingRules.CheckOutDateInFuture;
+        public const string CheckOutDateInFuture = BookingErrors.CheckOutDateInFuture;
 
         /// <summary>Bookingen må ikke bekræftes fra sin nuværende status (BR-02, BR-121).</summary>
         public const string ConfirmNotAllowed = "booking.confirm.invalid_state";
@@ -104,19 +103,19 @@ public static class ErrorCodes
         public const string NotFound = "room.not_found";
 
         /// <summary>Værelsesnummer mangler (BR-97).</summary>
-        public const string RoomNumberRequired = RoomRules.RoomNumberRequired;
+        public const string RoomNumberRequired = RoomErrors.RoomNumberRequired;
 
         /// <summary>Værelsesnummeret er for langt (A-10, BR-N-03).</summary>
-        public const string RoomNumberTooLong = RoomRules.RoomNumberTooLong;
+        public const string RoomNumberTooLong = RoomErrors.RoomNumberTooLong;
 
         /// <summary>Etagen er ikke større end 0 (BR-98).</summary>
-        public const string FloorInvalid = RoomRules.FloorInvalid;
+        public const string FloorInvalid = RoomErrors.FloorInvalid;
 
         /// <summary>Værelsestypen er ikke en defineret værdi (BR-99).</summary>
-        public const string SizeInvalid = RoomRules.SizeInvalid;
+        public const string SizeInvalid = RoomErrors.SizeInvalid;
 
         /// <summary>Kapaciteten er ikke større end 0 (BR-100).</summary>
-        public const string CapacityInvalid = RoomRules.CapacityInvalid;
+        public const string CapacityInvalid = RoomErrors.CapacityInvalid;
 
         /// <summary>Et andet rum har allerede det værelsesnummer (BR-N-01).</summary>
         public const string RoomNumberAlreadyExists = "room.room_number_already_exists";
@@ -180,40 +179,40 @@ public static class ErrorCodes
         public const string NotFound = "guest.not_found";
 
         /// <summary>Fornavn mangler (BR-52, BR-91).</summary>
-        public const string FirstNameRequired = GuestRules.FirstNameRequired;
+        public const string FirstNameRequired = GuestErrors.FirstNameRequired;
 
         /// <summary>Fornavnet er for langt (A-10, BR-N-03).</summary>
-        public const string FirstNameTooLong = GuestRules.FirstNameTooLong;
+        public const string FirstNameTooLong = GuestErrors.FirstNameTooLong;
 
         /// <summary>Efternavn mangler (BR-53, BR-92).</summary>
-        public const string LastNameRequired = GuestRules.LastNameRequired;
+        public const string LastNameRequired = GuestErrors.LastNameRequired;
 
         /// <summary>Efternavnet er for langt (A-10, BR-N-03).</summary>
-        public const string LastNameTooLong = GuestRules.LastNameTooLong;
+        public const string LastNameTooLong = GuestErrors.LastNameTooLong;
 
         /// <summary>E-mail mangler (BR-93).</summary>
-        public const string EmailRequired = GuestRules.EmailRequired;
+        public const string EmailRequired = GuestErrors.EmailRequired;
 
         /// <summary>E-mailen mangler '@' eller '.' (BR-55, BR-93).</summary>
-        public const string EmailInvalid = GuestRules.EmailInvalid;
+        public const string EmailInvalid = GuestErrors.EmailInvalid;
 
         /// <summary>E-mailen er for lang (A-10, BR-N-03).</summary>
-        public const string EmailTooLong = GuestRules.EmailTooLong;
+        public const string EmailTooLong = GuestErrors.EmailTooLong;
 
         /// <summary>Telefonnummer mangler (BR-54, BR-94).</summary>
-        public const string PhoneNumberRequired = GuestRules.PhoneNumberRequired;
+        public const string PhoneNumberRequired = GuestErrors.PhoneNumberRequired;
 
         /// <summary>Telefonnummeret er for langt (A-10, BR-N-03).</summary>
-        public const string PhoneNumberTooLong = GuestRules.PhoneNumberTooLong;
+        public const string PhoneNumberTooLong = GuestErrors.PhoneNumberTooLong;
 
         /// <summary>Land mangler (BR-56, BR-95).</summary>
-        public const string CountryRequired = GuestRules.CountryRequired;
+        public const string CountryRequired = GuestErrors.CountryRequired;
 
         /// <summary>Landet er for langt (A-10, BR-N-03).</summary>
-        public const string CountryTooLong = GuestRules.CountryTooLong;
+        public const string CountryTooLong = GuestErrors.CountryTooLong;
 
         /// <summary>Pasnummeret er for langt (A-10, BR-N-03).</summary>
-        public const string PassportNumberTooLong = GuestRules.PassportNumberTooLong;
+        public const string PassportNumberTooLong = GuestErrors.PassportNumberTooLong;
 
         /// <summary>Gæsten kan ikke slettes, fordi der findes bookinger på hende (BR-N-02).</summary>
         public const string HasBookings = "guest.has_bookings";

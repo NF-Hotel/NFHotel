@@ -1,6 +1,5 @@
 using System.Globalization;
 
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Infrastructure.Persistence;
@@ -11,11 +10,11 @@ namespace NFHotel.Infrastructure.Persistence;
 /// </summary>
 /// <remarks>
 /// <b>Definitionen findes ét sted (A-04).</b> Overlapsreglen er formuleret i
-/// <see cref="BookingRules"/>, og alt SQL herunder udledes af den:
+/// <see cref="NFHotel.Domain.Entities.Booking"/>, og alt SQL herunder udledes af den:
 /// <list type="bullet">
 /// <item><description>
 /// <see cref="BlockingStatusPredicate"/> genereres ud fra
-/// <see cref="BookingRules.BlocksRoom"/>. Ændrer domænet hvilke statusser der spærrer,
+/// <see cref="NFHotel.Domain.ValueObjects.BookingStatusExtensions.BlocksRoom"/>. Ændrer domænet hvilke statusser der spærrer,
 /// ændrer prædikatet sig med — det kan ikke drive fra hinanden ved et uheld.
 /// </description></item>
 /// <item><description>
@@ -30,8 +29,8 @@ namespace NFHotel.Infrastructure.Persistence;
 /// <para>
 /// <b>Kontrakt til Infrastructure.Tests:</b> paritetstesten skal (1) asserte at
 /// <see cref="BlockingStatuses"/> er identisk med
-/// <c>Enum.GetValues&lt;BookingStatus&gt;().Where(BookingRules.BlocksRoom)</c>, og (2) køre
-/// et sæt kendte periodepar mod både <see cref="BookingRules.Conflicts"/> og en rigtig
+/// <c>Enum.GetValues&lt;BookingStatus&gt;().Where(BookingStatusExtensions.BlocksRoom)</c>, og (2) køre
+/// et sæt kendte periodepar mod både <see cref="NFHotel.Domain.Entities.Booking.ConflictsWith"/> og en rigtig
 /// PostgreSQL med denne constraint, og kræve samme svar. Uden den test er der ingen der
 /// opdager at C# og SQL er blevet uenige om <c>&lt;</c> mod <c>&lt;=</c>.
 /// </para>
@@ -91,16 +90,16 @@ public static class BookingOverlapConstraint
         $"GREATEST({StartDateColumn} + 1, COALESCE({CheckOutDateColumn}, {EndDateColumn}))";
 
     /// <summary>
-    /// De statusser der spærrer rummet, udledt af <see cref="BookingRules.BlocksRoom"/> (A-04).
+    /// De statusser der spærrer rummet, udledt af <see cref="NFHotel.Domain.ValueObjects.BookingStatusExtensions.BlocksRoom"/> (A-04).
     /// </summary>
     public static IReadOnlyList<BookingStatus> BlockingStatuses { get; } =
-        Enum.GetValues<BookingStatus>().Where(BookingRules.BlocksRoom).ToArray();
+        Enum.GetValues<BookingStatus>().Where(BookingStatusExtensions.BlocksRoom).ToArray();
 
     /// <summary>
     /// De statusser der IKKE spærrer rummet. I dag kun <see cref="BookingStatus.Cancelled"/>.
     /// </summary>
     public static IReadOnlyList<BookingStatus> NonBlockingStatuses { get; } =
-        Enum.GetValues<BookingStatus>().Where(status => !BookingRules.BlocksRoom(status)).ToArray();
+        Enum.GetValues<BookingStatus>().Where(status => !status.BlocksRoom()).ToArray();
 
     /// <summary>
     /// Constraintens <c>WHERE</c>-prædikat, fx <c>status &lt;&gt; 4</c>. Genereret ud fra

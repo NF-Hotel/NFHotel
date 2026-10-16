@@ -1,4 +1,3 @@
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.Dto.Bookings;
@@ -7,7 +6,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// Én bookings beslaglæggelse af et rum, til tilgængelighedsopslaget.
 /// </summary>
 /// <remarks>
-/// Bevidst så smal som muligt: kun det <see cref="BookingRules"/> skal bruge for at afgøre
+/// Bevidst så smal som muligt: kun det <see cref="NFHotel.Domain.Entities.Booking"/> skal bruge for at afgøre
 /// om rummet er optaget. Alternativet — at hente alle bookinger i perioden som entiteter og
 /// filtrere i hukommelsen — er præcis den fejl BR-111 beskriver.
 /// <para>
@@ -20,7 +19,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// <param name="RoomId">Rummet der er lagt beslag på.</param>
 /// <param name="StartDate">Første optagne nat.</param>
 /// <param name="EffectiveEndDate">Første ledige dato efter beslaglæggelsen (A-01).</param>
-/// <param name="Status">Bookingens status, så <c>BookingRules.BlocksRoom</c> kan efterprøves.</param>
+/// <param name="Status">Bookingens status, så <c>BookingStatusExtensions.BlocksRoom</c> kan efterprøves.</param>
 public sealed record RoomOccupancyDto(
     int BookingId,
     int RoomId,

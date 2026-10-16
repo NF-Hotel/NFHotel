@@ -1,6 +1,5 @@
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
-using NFHotel.Domain.Rules;
 
 namespace NFHotel.Domain.Tests.Guests;
 
@@ -9,7 +8,7 @@ namespace NFHotel.Domain.Tests.Guests;
 /// samt længdegrænserne fra A-10.
 /// </summary>
 /// <remarks>
-/// Reglerne testes gennem <see cref="GuestRules.Validate"/> (som samler alle fejl, BR-96)
+/// Reglerne testes gennem <see cref="NFHotel.Domain.Entities.Guest.Validate"/> (som samler alle fejl, BR-96)
 /// og gennem <see cref="Guest.Create"/> (som fejler på den første, BR-46). Begge veje deler
 /// prædikater og skal derfor være enige.
 /// </remarks>
@@ -35,10 +34,10 @@ public class GuestValidationTests
     public void Validate_FirstNameIsMissing_ReturnsFirstNameRequired(string? firstName)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(firstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry);
+        var errors = Guest.Validate(firstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry);
 
         // Assert
-        Assert.Equal(GuestRules.FirstNameRequired, Assert.Single(errors));
+        Assert.Equal(GuestErrors.FirstNameRequired, Assert.Single(errors));
     }
 
     /// <summary>BR-53, BR-92: efternavn må hverken være null, tomt eller kun whitespace.</summary>
@@ -49,10 +48,10 @@ public class GuestValidationTests
     public void Validate_LastNameIsMissing_ReturnsLastNameRequired(string? lastName)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(ValidFirstName, lastName, ValidEmail, ValidPhoneNumber, ValidCountry);
+        var errors = Guest.Validate(ValidFirstName, lastName, ValidEmail, ValidPhoneNumber, ValidCountry);
 
         // Assert
-        Assert.Equal(GuestRules.LastNameRequired, Assert.Single(errors));
+        Assert.Equal(GuestErrors.LastNameRequired, Assert.Single(errors));
     }
 
     /// <summary>BR-93: e-mail må hverken være null, tom eller kun whitespace.</summary>
@@ -63,10 +62,10 @@ public class GuestValidationTests
     public void Validate_EmailIsMissing_ReturnsEmailRequired(string? email)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
+        var errors = Guest.Validate(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
 
         // Assert
-        Assert.Equal(GuestRules.EmailRequired, Assert.Single(errors));
+        Assert.Equal(GuestErrors.EmailRequired, Assert.Single(errors));
     }
 
     /// <summary>BR-54, BR-94: telefonnummer må ikke være tomt.</summary>
@@ -77,10 +76,10 @@ public class GuestValidationTests
     public void Validate_PhoneNumberIsMissing_ReturnsPhoneNumberRequired(string? phoneNumber)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
+        var errors = Guest.Validate(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
 
         // Assert
-        Assert.Equal(GuestRules.PhoneNumberRequired, Assert.Single(errors));
+        Assert.Equal(GuestErrors.PhoneNumberRequired, Assert.Single(errors));
     }
 
     /// <summary>
@@ -94,7 +93,7 @@ public class GuestValidationTests
     public void Validate_PhoneNumberHasAnyNonBlankValue_ReturnsNoErrors(string phoneNumber)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
+        var errors = Guest.Validate(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
 
         // Assert
         Assert.Empty(errors);
@@ -108,10 +107,10 @@ public class GuestValidationTests
     public void Validate_CountryIsMissing_ReturnsCountryRequired(string? country)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(ValidFirstName, ValidLastName, ValidEmail, ValidPhoneNumber, country);
+        var errors = Guest.Validate(ValidFirstName, ValidLastName, ValidEmail, ValidPhoneNumber, country);
 
         // Assert
-        Assert.Equal(GuestRules.CountryRequired, Assert.Single(errors));
+        Assert.Equal(GuestErrors.CountryRequired, Assert.Single(errors));
     }
 
     // --------------------------------------------------------
@@ -132,7 +131,7 @@ public class GuestValidationTests
     public void IsValidEmail_RequiresBothAtSignAndDot(string email, bool expected)
     {
         // Arrange & Act
-        var isValid = GuestRules.IsValidEmail(email);
+        var isValid = Guest.IsValidEmail(email);
 
         // Assert
         Assert.Equal(expected, isValid);
@@ -145,10 +144,10 @@ public class GuestValidationTests
     public void Validate_EmailIsMalformed_ReturnsEmailInvalid(string email)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
+        var errors = Guest.Validate(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
 
         // Assert
-        Assert.Equal(GuestRules.EmailInvalid, Assert.Single(errors));
+        Assert.Equal(GuestErrors.EmailInvalid, Assert.Single(errors));
     }
 
     /// <summary>
@@ -163,13 +162,13 @@ public class GuestValidationTests
         var email = new string('a', Guest.MaxEmailLength + 1);
 
         // Act
-        var errors = GuestRules.Validate(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
+        var errors = Guest.Validate(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
 
         // Assert
         Assert.Collection(
             errors,
-            error => Assert.Equal(GuestRules.EmailInvalid, error),
-            error => Assert.Equal(GuestRules.EmailTooLong, error));
+            error => Assert.Equal(GuestErrors.EmailInvalid, error),
+            error => Assert.Equal(GuestErrors.EmailTooLong, error));
     }
 
     // --------------------------------------------------------
@@ -192,7 +191,7 @@ public class GuestValidationTests
         var passportNumber = new string('9', Guest.MaxPassportNumberLength);
 
         // Act
-        var errors = GuestRules.Validate(firstName, lastName, email, phoneNumber, country, passportNumber);
+        var errors = Guest.Validate(firstName, lastName, email, phoneNumber, country, passportNumber);
 
         // Assert
         Assert.Empty(errors);
@@ -214,17 +213,17 @@ public class GuestValidationTests
         var passportNumber = new string('9', Guest.MaxPassportNumberLength + 1);
 
         // Act
-        var errors = GuestRules.Validate(firstName, lastName, email, phoneNumber, country, passportNumber);
+        var errors = Guest.Validate(firstName, lastName, email, phoneNumber, country, passportNumber);
 
         // Assert
         Assert.Collection(
             errors,
-            error => Assert.Equal(GuestRules.FirstNameTooLong, error),
-            error => Assert.Equal(GuestRules.LastNameTooLong, error),
-            error => Assert.Equal(GuestRules.EmailTooLong, error),
-            error => Assert.Equal(GuestRules.PhoneNumberTooLong, error),
-            error => Assert.Equal(GuestRules.CountryTooLong, error),
-            error => Assert.Equal(GuestRules.PassportNumberTooLong, error));
+            error => Assert.Equal(GuestErrors.FirstNameTooLong, error),
+            error => Assert.Equal(GuestErrors.LastNameTooLong, error),
+            error => Assert.Equal(GuestErrors.EmailTooLong, error),
+            error => Assert.Equal(GuestErrors.PhoneNumberTooLong, error),
+            error => Assert.Equal(GuestErrors.CountryTooLong, error),
+            error => Assert.Equal(GuestErrors.PassportNumberTooLong, error));
     }
 
     /// <summary>
@@ -238,7 +237,7 @@ public class GuestValidationTests
     public void Validate_PassportNumberIsOptional_ReturnsNoErrors(string? passportNumber)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(
+        var errors = Guest.Validate(
             ValidFirstName,
             ValidLastName,
             ValidEmail,
@@ -262,16 +261,16 @@ public class GuestValidationTests
     public void Validate_EveryRequiredFieldIsBlank_ReturnsAllErrorsInFieldOrder()
     {
         // Arrange & Act
-        var errors = GuestRules.Validate("  ", null, "", "\t", null);
+        var errors = Guest.Validate("  ", null, "", "\t", null);
 
         // Assert
         Assert.Collection(
             errors,
-            error => Assert.Equal(GuestRules.FirstNameRequired, error),
-            error => Assert.Equal(GuestRules.LastNameRequired, error),
-            error => Assert.Equal(GuestRules.EmailRequired, error),
-            error => Assert.Equal(GuestRules.PhoneNumberRequired, error),
-            error => Assert.Equal(GuestRules.CountryRequired, error));
+            error => Assert.Equal(GuestErrors.FirstNameRequired, error),
+            error => Assert.Equal(GuestErrors.LastNameRequired, error),
+            error => Assert.Equal(GuestErrors.EmailRequired, error),
+            error => Assert.Equal(GuestErrors.PhoneNumberRequired, error),
+            error => Assert.Equal(GuestErrors.CountryRequired, error));
     }
 
     /// <summary>
@@ -287,7 +286,7 @@ public class GuestValidationTests
             () => Guest.Create("  ", "  ", "ugyldig", "  ", "  ", null));
 
         // Assert
-        Assert.Equal(GuestRules.FirstNameRequired, exception.Code);
+        Assert.Equal(GuestErrors.FirstNameRequired, exception.Code);
     }
 
     /// <summary>BR-46: gyldige oplysninger skrives igennem uændret.</summary>
@@ -327,7 +326,7 @@ public class GuestValidationTests
             () => guest.UpdateDetails("Ny", "Person", "ugyldig-email", "87654321", "Sverige", null));
 
         // Assert
-        Assert.Equal(GuestRules.EmailInvalid, exception.Code);
+        Assert.Equal(GuestErrors.EmailInvalid, exception.Code);
         Assert.Equal(ValidFirstName, guest.FirstName);
         Assert.Equal(ValidEmail, guest.Email);
         Assert.Equal(ValidCountry, guest.Country);

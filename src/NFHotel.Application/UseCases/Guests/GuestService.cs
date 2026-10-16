@@ -4,7 +4,6 @@ using NFHotel.Application.Ports;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.Repositories;
-using NFHotel.Domain.Rules;
 
 namespace NFHotel.Application.UseCases.Guests;
 
@@ -12,7 +11,7 @@ namespace NFHotel.Application.UseCases.Guests;
 /// Implementering af gæsternes use cases.
 /// </summary>
 /// <remarks>
-/// Al validering går gennem <see cref="GuestRules"/>. Servicen genimplementerer ikke en
+/// Al validering går gennem <see cref="NFHotel.Domain.Entities.Guest"/>. Servicen genimplementerer ikke en
 /// eneste regel — den samler kun fejlkoderne op og pakker dem i et <see cref="Result"/>.
 /// </remarks>
 public sealed class GuestService : IGuestService
@@ -243,7 +242,7 @@ public sealed class GuestService : IGuestService
     /// <param name="fields">Felterne.</param>
     /// <returns>Fejlkoder i feltrækkefølge. Tom liste betyder gyldig.</returns>
     internal static IReadOnlyList<string> ValidateInternal(GuestFields fields) =>
-        GuestRules.Validate(
+        Guest.Validate(
             fields.FirstName,
             fields.LastName,
             fields.Email,
