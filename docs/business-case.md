@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Amended: Proxmox VE is a throwaway Docker container; pve.env holds only the root password; the API token is created per run and kept in environment variables | [7c6d8f8] |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Amended: objectives 6 and 7 for the market analysis service and the benchmark service on Proxmox VMs behind nginx, from US-001 | pending |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Amended: objectives 6 and 7 for the market analysis service and the benchmark service on Proxmox VMs behind nginx, from US-001 | [469ff7a] |
 
 ---
 
@@ -190,3 +190,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [7c6d8f8]: https://github.com/NF-Hotel/NFHotel/commit/7c6d8f85d2177b9fe9f2d11d175df7f0b8f1b5d5
 [UCD-001]: ./use-case-diagram.md
 [US-001]: ./user-stories.md
+[469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa

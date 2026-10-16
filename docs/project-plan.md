@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Added MIL-003 (throwaway Proxmox container); replaced the real-server risk | [7c6d8f8] |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Added MIL-004 (market analysis service on a Proxmox VM behind nginx) from the Must stories of US-001 | pending |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Added MIL-004 (market analysis service on a Proxmox VM behind nginx) from the Must stories of US-001 | [469ff7a] |
 
 ---
 
@@ -101,3 +101,4 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [4c5c2d3]: https://github.com/NF-Hotel/NFHotel/commit/4c5c2d3c5a8a8c4de7a2c8ee224719de55b62403
 [88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca
 [7c6d8f8]: https://github.com/NF-Hotel/NFHotel/commit/7c6d8f85d2177b9fe9f2d11d175df7f0b8f1b5d5
+[469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa
