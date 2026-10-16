@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version, derived from the rule ledger | [a29c54a] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Added the room rule of the check-in and the period rule of the overview (MIL-013) | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Added the room rule of the check-in and the period rule of the overview (MIL-013) | [109bf1b] |
 
 ---
 
@@ -81,3 +81,4 @@
 [US-001]: ../../user-stories.md
 [SA-001]: ../../stakeholder-analysis.md
 [a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d
+[109bf1b]: https://github.com/NF-Hotel/NFHotel/commit/109bf1b06ce371a66a1ad4fcfa0ac85e84a71d7e

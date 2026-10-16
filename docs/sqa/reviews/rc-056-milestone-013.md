@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [5036584] |
 
 ---
 
@@ -63,3 +63,4 @@ Go — every criterion of QC-MIL-001 passes. Criterion 9 of QC-LANG-001 rests on
 [MIL-013]: ../../milestones/mil-013-booking-guards.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[5036584]: https://github.com/NF-Hotel/NFHotel/commit/5036584e9809a90d8459f07554733917c7129a0e

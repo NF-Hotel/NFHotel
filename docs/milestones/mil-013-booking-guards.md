@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-056 Go | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-056 Go | [5036584] |
 
 ---
 
@@ -101,3 +101,4 @@ and a test that fails without the guard. The findings are:
 [MIL-012]: ./mil-012-test-kinds.md
 [UC-001]: ../use-cases/uc-001/uc.md
 [RC-054]: ../sqa/reviews/rc-054-tests-test-rules.md
+[5036584]: https://github.com/NF-Hotel/NFHotel/commit/5036584e9809a90d8459f07554733917c7129a0e

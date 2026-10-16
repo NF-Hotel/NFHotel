@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [109bf1b] |
 
 ---
 
@@ -76,3 +76,4 @@ Go — every applicable criterion of QC-CS-001 and all nine Go criteria of MIL-0
 [RC-054]: ./rc-054-tests-test-rules.md
 [RC-057]: ./rc-057-use-case-001-booking-guards.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[109bf1b]: https://github.com/NF-Hotel/NFHotel/commit/109bf1b06ce371a66a1ad4fcfa0ac85e84a71d7e

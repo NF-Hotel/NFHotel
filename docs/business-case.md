@@ -15,7 +15,7 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 13, the comments in the source code are in English (MIL-010) | [e67e815] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 14, the tests run on xUnit v3 (MIL-011) | [ef2bd4b] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 15, the tests cover the kinds of behaviour of the coding conventions (MIL-012) | [8200afa] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 16, the booking service refuses an inverted overview period and a check-in to a room that cannot be let (MIL-013) | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 16, the booking service refuses an inverted overview period and a check-in to a room that cannot be let (MIL-013) | [5036584] |
 
 ---
 
@@ -234,3 +234,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [e67e815]: https://github.com/NF-Hotel/NFHotel/commit/e67e8155fd63d307e6783924f956fa49f915edbd
 [ef2bd4b]: https://github.com/NF-Hotel/NFHotel/commit/ef2bd4bda1edbd598228cb0fc043a4f2fc996974
 [8200afa]: https://github.com/NF-Hotel/NFHotel/commit/8200afa457e37ca87a68ab7e34126db1dd85e3d1
+[5036584]: https://github.com/NF-Hotel/NFHotel/commit/5036584e9809a90d8459f07554733917c7129a0e
