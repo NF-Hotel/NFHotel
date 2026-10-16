@@ -18,6 +18,7 @@ public class DomainException : Exception
         : base(code)
     {
         Code = code;
+        Codes = [code];
     }
 
     /// <summary>
@@ -29,6 +30,7 @@ public class DomainException : Exception
         : base(code, innerException)
     {
         Code = code;
+        Codes = [code];
     }
 
     /// <summary>
@@ -36,4 +38,20 @@ public class DomainException : Exception
     /// men eksponeret separat så Application kan mappe uden at læse en besked.
     /// </summary>
     public string Code { get; }
+
+    /// <summary>
+    /// Creates a domain error that carries every error code found, in the order found.
+    /// </summary>
+    /// <param name="codes">The error codes; at least one.</param>
+    public DomainException(IReadOnlyList<string> codes)
+        : base(codes.Count > 0 ? codes[0] : string.Empty)
+    {
+        Codes = codes;
+        Code = codes.Count > 0 ? codes[0] : string.Empty;
+    }
+
+    /// <summary>
+    /// Every error code of this error. Holds one code when the error was made with a single code.
+    /// </summary>
+    public IReadOnlyList<string> Codes { get; private set; } = [];
 }

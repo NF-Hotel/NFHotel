@@ -34,7 +34,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-006] | Milestone | en | it | [BC-001] | - | [RC-022], [RC-023] |
 | [MIL-007] | Milestone | en | it | [BC-001] | [DM-004] | [RC-025] |
 | [MIL-008] | Milestone | en | it | [BC-001], [MIL-005] | - | [RC-038], [RC-039] |
-| [MIL-009] | Milestone | en | it | [BC-001], [ADR-0002], [MIL-008] | - | [RC-041] |
+| [MIL-009] | Milestone | en | it | [BC-001], [ADR-0002], [MIL-008] | - | [RC-041], [RC-043] |
 | [ADR-0002] | ADR | en | it | [BC-001], [ADR-0001], [DM-004] | [MIL-009] | [RC-042] |
 | [ADR-0001] | Architecture Decision Record | - | - | [BC-001] | [MIL-005] | [RC-019] |
 | `src/` (Domain, Application, Infrastructure) | Source code | - | - | [ADR-0001], [MIL-005] | - | [RC-020] |
@@ -102,6 +102,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-040]: ./reviews/rc-040-business-case-validation-attributes.md
 [RC-041]: ./reviews/rc-041-milestone-009.md
 [RC-042]: ./reviews/rc-042-adr-0002.md
+[RC-043]: ./reviews/rc-043-validation-attributes.md
 [DICT-001]: ../dictionary.md
 [UC-001]: ../use-cases/uc-001/uc.md
 [UC-002]: ../use-cases/uc-002/uc.md

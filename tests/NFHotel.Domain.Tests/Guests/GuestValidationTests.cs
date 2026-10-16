@@ -34,7 +34,7 @@ public class GuestValidationTests
     public void Validate_FirstNameIsMissing_ReturnsFirstNameRequired(string? firstName)
     {
         // Arrange & Act
-        var errors = Guest.Validate(firstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry);
+        var errors = ErrorsOf(firstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry);
 
         // Assert
         Assert.Equal(GuestErrors.FirstNameRequired, Assert.Single(errors));
@@ -48,7 +48,7 @@ public class GuestValidationTests
     public void Validate_LastNameIsMissing_ReturnsLastNameRequired(string? lastName)
     {
         // Arrange & Act
-        var errors = Guest.Validate(ValidFirstName, lastName, ValidEmail, ValidPhoneNumber, ValidCountry);
+        var errors = ErrorsOf(ValidFirstName, lastName, ValidEmail, ValidPhoneNumber, ValidCountry);
 
         // Assert
         Assert.Equal(GuestErrors.LastNameRequired, Assert.Single(errors));
@@ -62,7 +62,7 @@ public class GuestValidationTests
     public void Validate_EmailIsMissing_ReturnsEmailRequired(string? email)
     {
         // Arrange & Act
-        var errors = Guest.Validate(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
 
         // Assert
         Assert.Equal(GuestErrors.EmailRequired, Assert.Single(errors));
@@ -76,7 +76,7 @@ public class GuestValidationTests
     public void Validate_PhoneNumberIsMissing_ReturnsPhoneNumberRequired(string? phoneNumber)
     {
         // Arrange & Act
-        var errors = Guest.Validate(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
 
         // Assert
         Assert.Equal(GuestErrors.PhoneNumberRequired, Assert.Single(errors));
@@ -93,7 +93,7 @@ public class GuestValidationTests
     public void Validate_PhoneNumberHasAnyNonBlankValue_ReturnsNoErrors(string phoneNumber)
     {
         // Arrange & Act
-        var errors = Guest.Validate(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
 
         // Assert
         Assert.Empty(errors);
@@ -107,7 +107,7 @@ public class GuestValidationTests
     public void Validate_CountryIsMissing_ReturnsCountryRequired(string? country)
     {
         // Arrange & Act
-        var errors = Guest.Validate(ValidFirstName, ValidLastName, ValidEmail, ValidPhoneNumber, country);
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, ValidEmail, ValidPhoneNumber, country);
 
         // Assert
         Assert.Equal(GuestErrors.CountryRequired, Assert.Single(errors));
@@ -128,10 +128,10 @@ public class GuestValidationTests
     [InlineData("valdemar.nfhotel.dk", false)] // intet '@'
     [InlineData("valdemar@nfhoteldk", false)] // intet '.'
     [InlineData("valdemar", false)]
-    public void IsValidEmail_RequiresBothAtSignAndDot(string email, bool expected)
+    public void Email_RequiresBothAtSignAndDot(string email, bool expected)
     {
         // Arrange & Act
-        var isValid = Guest.IsValidEmail(email);
+        var isValid = ErrorsOf(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry).Count == 0;
 
         // Assert
         Assert.Equal(expected, isValid);
@@ -144,7 +144,7 @@ public class GuestValidationTests
     public void Validate_EmailIsMalformed_ReturnsEmailInvalid(string email)
     {
         // Arrange & Act
-        var errors = Guest.Validate(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
 
         // Assert
         Assert.Equal(GuestErrors.EmailInvalid, Assert.Single(errors));
@@ -162,7 +162,7 @@ public class GuestValidationTests
         var email = new string('a', Guest.MaxEmailLength + 1);
 
         // Act
-        var errors = Guest.Validate(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
 
         // Assert
         Assert.Collection(
@@ -191,7 +191,7 @@ public class GuestValidationTests
         var passportNumber = new string('9', Guest.MaxPassportNumberLength);
 
         // Act
-        var errors = Guest.Validate(firstName, lastName, email, phoneNumber, country, passportNumber);
+        var errors = ErrorsOf(firstName, lastName, email, phoneNumber, country, passportNumber);
 
         // Assert
         Assert.Empty(errors);
@@ -213,7 +213,7 @@ public class GuestValidationTests
         var passportNumber = new string('9', Guest.MaxPassportNumberLength + 1);
 
         // Act
-        var errors = Guest.Validate(firstName, lastName, email, phoneNumber, country, passportNumber);
+        var errors = ErrorsOf(firstName, lastName, email, phoneNumber, country, passportNumber);
 
         // Assert
         Assert.Collection(
@@ -237,7 +237,7 @@ public class GuestValidationTests
     public void Validate_PassportNumberIsOptional_ReturnsNoErrors(string? passportNumber)
     {
         // Arrange & Act
-        var errors = Guest.Validate(
+        var errors = ErrorsOf(
             ValidFirstName,
             ValidLastName,
             ValidEmail,
@@ -261,7 +261,7 @@ public class GuestValidationTests
     public void Validate_EveryRequiredFieldIsBlank_ReturnsAllErrorsInFieldOrder()
     {
         // Arrange & Act
-        var errors = Guest.Validate("  ", null, "", "\t", null);
+        var errors = ErrorsOf("  ", null, "", "\t", null);
 
         // Assert
         Assert.Collection(
@@ -362,4 +362,28 @@ public class GuestValidationTests
     /// uden samtidig at udløse formatfejlen (BR-55).
     /// </summary>
     private static string EmailOfLength(int length) => $"a@b.{new string('c', length - 4)}";
+
+    /// <summary>
+    /// Builds a guest and returns every error code, or an empty list when the guest is valid.
+    /// The rules are attributes on <see cref="Guest"/> (ADR-0002).
+    /// </summary>
+    private static IReadOnlyList<string> ErrorsOf(
+        string? firstName,
+        string? lastName,
+        string? email,
+        string? phoneNumber,
+        string? country,
+        string? passportNumber = null)
+    {
+        try
+        {
+            _ = Guest.Create(firstName!, lastName!, email!, phoneNumber!, country!, passportNumber);
+
+            return [];
+        }
+        catch (DomainException exception)
+        {
+            return exception.Codes;
+        }
+    }
 }

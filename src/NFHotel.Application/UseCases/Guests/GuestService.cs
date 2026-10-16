@@ -241,14 +241,25 @@ public sealed class GuestService : IGuestService
     /// </summary>
     /// <param name="fields">Felterne.</param>
     /// <returns>Fejlkoder i feltrækkefølge. Tom liste betyder gyldig.</returns>
-    internal static IReadOnlyList<string> ValidateInternal(GuestFields fields) =>
-        Guest.Validate(
-            fields.FirstName,
-            fields.LastName,
-            fields.Email,
-            fields.PhoneNumber,
-            fields.Country,
-            fields.PassportNumber);
+    internal static IReadOnlyList<string> ValidateInternal(GuestFields fields)
+    {
+        try
+        {
+            _ = Guest.Create(
+                fields.FirstName,
+                fields.LastName,
+                fields.Email,
+                fields.PhoneNumber,
+                fields.Country,
+                fields.PassportNumber);
+
+            return [];
+        }
+        catch (DomainException exception)
+        {
+            return exception.Codes;
+        }
+    }
 
     /// <summary>
     /// Deler søgeteksten i ord (BR-68). Tom eller kun whitespace giver et tomt sæt, som
