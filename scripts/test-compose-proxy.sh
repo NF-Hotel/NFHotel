@@ -1,0 +1,170 @@
+#!/usr/bin/env bash
+# Smoke test for the nginx proxy and the NFHotel web service (MIL-002 task 6).
+#
+# Starts both Docker Compose services on a private network with throwaway
+# settings, checks the web application through the proxy, then removes every
+# container, image layer reference, network and temporary file it created.
+# It never reads nginx.env or nfhotel-web.env and needs no input. The web
+# application starts without a database, so no PostgreSQL is needed.
+#
+# Usage: test-compose-proxy.sh [--port <host port>] [--keep]
+#   --port  host port for the proxy (default 18480)
+#   --keep  leave the services running after the test (for debugging)
+# Exit:  0 all checks passed; 1 a check or the setup failed; 2 usage error
+# Needs: bash 4+, docker with the compose plugin, curl, openssl
+# Task:  MIL-002 task 6 (docs/milestones/mil-002-nginx-proxy-and-web-compose.md)
+
+set -euo pipefail
+
+readonly NETWORK="nfhotel-smoke-net"
+readonly NGINX_PROJECT="nfhotel-smoke-nginx"
+readonly WEB_PROJECT="nfhotel-smoke-web"
+
+TMP_DIR=""
+TMP_NATIVE=""
+KEEP=0
+PORT=18480
+FAILURES=0
+
+die() {
+  echo "error: $*" >&2
+  exit 1
+}
+
+check() {
+  local name="$1" expected="$2" actual="$3"
+  if [[ "$actual" == "$expected" ]]; then
+    echo "PASS  $name"
+  else
+    echo "FAIL  $name (expected $expected, got $actual)" >&2
+    FAILURES=$((FAILURES + 1))
+  fi
+}
+
+http_status() {
+  local method="$1" path="$2"
+  curl --silent --output /dev/null --write-out '%{http_code}' \
+    --max-time 10 --request "$method" "http://127.0.0.1:${PORT}${path}" ||
+    true
+}
+
+wait_for_status() {
+  local method="$1" path="$2" expected="$3" tries="${4:-30}" status=""
+  while ((tries > 0)); do
+    status="$(http_status "$method" "$path")"
+    [[ "$status" == "$expected" ]] && return 0
+    tries=$((tries - 1))
+    sleep 2
+  done
+  return 1
+}
+
+compose_nginx() {
+  NGINX_ENV_FILE="$TMP_NATIVE/nginx.env" NFHOTEL_PROXY_NETWORK="$NETWORK" \
+    NGINX_BIND=127.0.0.1 NGINX_HTTP_PORT="$PORT" \
+    docker compose --project-name "$NGINX_PROJECT" \
+    --file deploy/nginx/docker-compose.yml "$@"
+}
+
+compose_web() {
+  NFHOTEL_WEB_ENV_FILE="$TMP_NATIVE/nfhotel-web.env" NFHOTEL_PROXY_NETWORK="$NETWORK" \
+    docker compose --project-name "$WEB_PROJECT" \
+    --file deploy/nfhotel-web/docker-compose.yml "$@"
+}
+
+cleanup() {
+  if ((KEEP == 0)); then
+    compose_nginx down --volumes --remove-orphans >/dev/null 2>&1 || true
+    compose_web down --volumes --remove-orphans >/dev/null 2>&1 || true
+    docker network rm "$NETWORK" >/dev/null 2>&1 || true
+  fi
+  [[ -n "$TMP_DIR" ]] && rm -rf "$TMP_DIR"
+}
+
+write_settings() {
+  cat >"$TMP_DIR/nginx.env" <<EOF
+NGINX_SERVER_NAME=_
+UPSTREAM_HOST=nfhotel-web
+UPSTREAM_PORT=8080
+EOF
+  cat >"$TMP_DIR/nfhotel-web.env" <<EOF
+ASPNETCORE_ENVIRONMENT=Production
+ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+ConnectionStrings__HotelDatabase=Host=127.0.0.1;Port=1;Database=smoke;Username=smoke;Password=smoke
+Encryption__PassportKey=$(openssl rand -base64 32)
+HotelTime__TimeZoneId=Europe/Copenhagen
+EOF
+}
+
+main() {
+  local root web_id
+  root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --port)
+        PORT="${2:?usage: $0 [--port <host port>] [--keep]}"
+        shift 2
+        ;;
+      --keep)
+        KEEP=1
+        shift
+        ;;
+      *)
+        echo "usage: $0 [--port <host port>] [--keep]" >&2
+        exit 2
+        ;;
+    esac
+  done
+
+  for tool in docker curl openssl; do
+    command -v "$tool" >/dev/null 2>&1 || die "$tool is not installed or not on PATH"
+  done
+  docker info >/dev/null 2>&1 || die "the docker daemon is not running; start Docker and retry"
+  docker compose version >/dev/null 2>&1 || die "the docker compose plugin is missing"
+
+  cd "$root"
+  TMP_DIR="$(mktemp -d)"
+  # Docker on Windows needs a native path; cygpath exists in Git Bash.
+  TMP_NATIVE="$TMP_DIR"
+  if command -v cygpath >/dev/null 2>&1; then
+    TMP_NATIVE="$(cygpath -m "$TMP_DIR")"
+  fi
+  trap cleanup EXIT
+  write_settings
+
+  docker network create "$NETWORK" >/dev/null
+  echo "Building and starting the web service..."
+  compose_web up --detach --build --wait --wait-timeout 180 >/dev/null ||
+    die "the web service did not become healthy"
+  echo "Starting the proxy..."
+  compose_nginx up --detach --wait --wait-timeout 60 >/dev/null ||
+    die "the proxy did not start"
+
+  wait_for_status GET / 200 || true
+  check "GET / through the proxy" 200 "$(http_status GET /)"
+  check "POST /_blazor/negotiate through the proxy" 200 \
+    "$(http_status POST '/_blazor/negotiate?negotiateVersion=1')"
+
+  web_id="$(compose_web ps --quiet nfhotel-web)"
+  check "web service publishes no host port" "" \
+    "$(docker port "$web_id" 2>/dev/null || true)"
+
+  compose_web stop >/dev/null
+  check "proxy runs while the web service is stopped" true \
+    "$(docker inspect --format '{{.State.Running}}' "$(compose_nginx ps --quiet nginx)")"
+  check "proxy answers 502 while the web service is stopped" 502 \
+    "$(http_status GET /)"
+
+  compose_web start >/dev/null
+  compose_nginx stop >/dev/null
+  check "web service runs while the proxy is stopped" true \
+    "$(docker inspect --format '{{.State.Running}}' "$web_id")"
+
+  if ((FAILURES > 0)); then
+    die "$FAILURES check(s) failed"
+  fi
+  echo "All checks passed."
+}
+
+main "$@"

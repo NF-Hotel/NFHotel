@@ -1,0 +1,34 @@
+# NFHotel web application, reachable only through the nginx proxy (MIL-002
+# task 4). Read by Docker Compose. Settings live in nfhotel-web.env
+# (git-ignored); copy nfhotel-web.env.example to nfhotel-web.env first.
+# Start with:
+#   docker compose --env-file nfhotel-web.env up -d --build
+# The image comes from the repository root Dockerfile (already on main).
+# No host port is published: the proxy reaches the service by name on the
+# shared network (create it once: docker network create nfhotel-proxy).
+# PostgreSQL is not part of this file; the connection string is a setting.
+name: nfhotel-web
+
+services:
+  nfhotel-web:
+    image: nfhotel-web:local
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: ${NFHOTEL_WEB_ENV_FILE:-nfhotel-web.env}
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
+    external: true
