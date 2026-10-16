@@ -24,7 +24,7 @@ updated whenever an artifact instance is created or reviewed.
 
 | Artifact Instance | Type | Language | Domain | Upstream (Backward Link) | Downstream (Forward Link) | Last Reviewed (RC-ID) |
 | --- | --- | --- | --- | --- | --- | --- |
-| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [UCD-001], [US-001] | [RC-021], [RC-024], [RC-037] |
+| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [UCD-001], [US-001] | [RC-021], [RC-024], [RC-037], [RC-040] |
 | [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009], [RC-026] |
 | [MIL-001] | Milestone | en | it | [BC-001] | - | [RC-003] |
 | [MIL-002] | Milestone | en | it | [BC-001] | - | [RC-006] |
@@ -34,6 +34,8 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-006] | Milestone | en | it | [BC-001] | - | [RC-022], [RC-023] |
 | [MIL-007] | Milestone | en | it | [BC-001] | [DM-004] | [RC-025] |
 | [MIL-008] | Milestone | en | it | [BC-001], [MIL-005] | - | [RC-038], [RC-039] |
+| [MIL-009] | Milestone | en | it | [BC-001], [ADR-0002], [MIL-008] | - | [RC-041] |
+| [ADR-0002] | ADR | en | it | [BC-001], [ADR-0001], [DM-004] | [MIL-009] | [RC-042] |
 | [ADR-0001] | Architecture Decision Record | - | - | [BC-001] | [MIL-005] | [RC-019] |
 | `src/` (Domain, Application, Infrastructure) | Source code | - | - | [ADR-0001], [MIL-005] | - | [RC-020] |
 | [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003] | - |
@@ -97,6 +99,9 @@ updated whenever an artifact instance is created or reviewed.
 [RC-037]: ./reviews/rc-037-business-case-domain-folders.md
 [RC-038]: ./reviews/rc-038-milestone-008.md
 [RC-039]: ./reviews/rc-039-domain-rules-in-entities.md
+[RC-040]: ./reviews/rc-040-business-case-validation-attributes.md
+[RC-041]: ./reviews/rc-041-milestone-009.md
+[RC-042]: ./reviews/rc-042-adr-0002.md
 [DICT-001]: ../dictionary.md
 [UC-001]: ../use-cases/uc-001/uc.md
 [UC-002]: ../use-cases/uc-002/uc.md
@@ -108,6 +113,8 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-006]: ../milestones/mil-006-english-legacy-documents.md
 [MIL-007]: ../milestones/mil-007-domain-model.md
 [MIL-008]: ../milestones/mil-008-domain-rules-in-entities.md
+[MIL-009]: ../milestones/mil-009-validation-attributes.md
+[ADR-0002]: ../adr/adr-0002-validation-attributes-on-entities.md
 [ADR-0001]: ../adr/adr-0001-clean-architecture-structure.md
 [MIL-005]: ../milestones/mil-005-clean-architecture.md
 [MIL-004]: ../milestones/mil-004-market-analysis-service.md
