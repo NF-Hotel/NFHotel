@@ -1,18 +1,18 @@
-# Architecture-Domain.md — bilag
+# Architecture-Domain.md — appendix
 
-> Fuldt output fra agenten `design:domain` (Fase 1). **Bilag.** `Architecture.md` har forrang hvor de modsiger hinanden — se især afgørelserne A-01 til A-15.
+> Full output from the agent `design:domain` (Phase 1). **Appendix.** `Architecture.md` takes precedence where they contradict each other — see especially the rulings A-01 to A-15.
 
-# Domænedesign — `NFHotel.Domain`
+# Domain design — `NFHotel.Domain`
 
-> Fase 1, `design:domain`. Read-only designdokument. Ingen kode skrevet.
-> Input: `BusinessRules.md` (126 regler), `Analysis.md` §1, `Conventions.md`, `Decisions.md`, `Fase1-Scope.md`.
-> Præmisser B-01..B-07 er lagt til grund uændret.
+> Phase 1, `design:domain`. Read-only design document. No code written.
+> Input: `BusinessRules.md` (126 rules), `Analysis.md` §1, `Conventions.md`, `Decisions.md`, `Phase1-Scope.md`.
+> Premises B-01..B-07 are taken as given, unchanged.
 
 ---
 
-## 0. Projektstruktur
+## 0. Project structure
 
-Feature-først, ikke type-først (Conventions.md: *"Organisér efter feature først"*, *"Hold namespaces identiske med mappestruktur"*, *"1 public class pr. fil"*).
+Feature-first, not type-first (Conventions.md: *"Organise by feature first"*, *"Keep namespaces identical to the folder structure"*, *"1 public class per file"*).
 
 ```
 NFHotel.Domain/
@@ -23,132 +23,134 @@ NFHotel.Domain/
 ├── Bookings/
 │   ├── Booking.cs
 │   ├── BookingStatus.cs
-│   └── BookingRules.cs              // rene funktioner, ingen state
+│   └── BookingRules.cs              // pure functions, no state
 ├── Guests/
 │   ├── Guest.cs
 │   └── GuestRules.cs
 └── Rooms/
     ├── Room.cs
-    ├── RoomStatus.cs                // bookbarhed
-    ├── HousekeepingStatus.cs        // rengøringsforløb
+    ├── RoomStatus.cs                // bookability
+    ├── HousekeepingStatus.cs        // cleaning process
     ├── RoomSize.cs
     └── RoomRules.cs
 ```
 
-Namespaces: `NFHotel.Domain.Bookings` osv. Ingen `using` mod andre projekter — ingen NuGet-pakker overhovedet. `<Nullable>enable</Nullable>`, `<ImplicitUsings>enable</ImplicitUsings>`, `<TreatWarningsAsErrors>` anbefales for netop dette projekt.
+> Note 2026-10-16: this layout was the Phase 1 design. Since ADR-0001 the folders are `Entities`, `ValueObjects`, `Repositories`, `Errors` and `Rules`; see `Architecture.md` section 2.
 
-**Håndhævelse af "ingen afhængigheder":** ingen `DateTime.Now`/`DateTimeOffset.UtcNow` nogen steder i Domain. Alle regler der har brug for "i dag" får det som parameter. Det er den eneste måde tilstandsmaskinen kan unit-testes deterministisk, og det er en direkte konsekvens af Conventions.md's krav om at Domain ikke må kende til framework/omverden.
+Namespaces: `NFHotel.Domain.Bookings` etc. No `using` towards other projects — no NuGet packages at all. `<Nullable>enable</Nullable>`, `<ImplicitUsings>enable</ImplicitUsings>`, `<TreatWarningsAsErrors>` recommended for exactly this project.
+
+**Enforcement of "no dependencies":** no `DateTime.Now`/`DateTimeOffset.UtcNow` anywhere in Domain. All rules that need "today" get it as a parameter. It is the only way the state machine can be unit-tested deterministically, and it is a direct consequence of Conventions.md's requirement that Domain must not know the framework/outside world.
 
 ---
 
 ## 1. Enums
 
-### 1.1 `BookingStatus` — uændret (B-06)
+### 1.1 `BookingStatus` — unchanged (B-06)
 
 ```csharp
 namespace NFHotel.Domain.Bookings;
 
 /// <summary>
-/// Bookingens livscyklus. Ordinalværdierne 0-4 er bevaret fra det gamle system,
-/// fordi de allerede findes som int i eksisterende data (jf. Fase1-Scope pkt. 4).
-/// Værdierne må aldrig omnummereres uden en datamigrering.
+/// The booking's lifecycle. The ordinal values 0-4 are kept from the old system,
+/// because they already exist as int in existing data (cf. Phase1-Scope item 4).
+/// The values must never be renumbered without a data migration.
 /// </summary>
 public enum BookingStatus
 {
-    /// <summary>Oprettet, men ikke betalingsgaranteret. Startstatus for enhver booking (BR-01).</summary>
+    /// <summary>Created, but not payment-guaranteed. Initial status of every booking (BR-01).</summary>
     Pending = 0,
 
-    /// <summary>Betaling garanteret. Er IKKE en forudsætning for check-in (B-01).</summary>
+    /// <summary>Payment guaranteed. Is NOT a precondition for check-in (B-01).</summary>
     Confirmed = 1,
 
-    /// <summary>Gæsten er tjekket ind.</summary>
+    /// <summary>The guest has checked in.</summary>
     CheckedIn = 2,
 
-    /// <summary>Gæsten er tjekket ud. Frigiver ikke rummet i perioden (B-02).</summary>
+    /// <summary>The guest has checked out. Does not release the room in the period (B-02).</summary>
     CheckedOut = 3,
 
-    /// <summary>Annulleret. Soft-delete — rækken slettes aldrig (BR-13). Eneste status der frigiver rummet (B-02).</summary>
+    /// <summary>Cancelled. Soft delete — the row is never deleted (BR-13). The only status that releases the room (B-02).</summary>
     Cancelled = 4
 }
 ```
 
-### 1.2 `RoomStatus` — bookbarhed (B-04)
+### 1.2 `RoomStatus` — bookability (B-04)
 
-Ordinalværdierne 0-2 bevares fra `Models/Enums/RoomStatus.cs`. Kun **betydningen** indsnævres: enum'en svarer nu udelukkende på spørgsmålet *"må rummet udlejes?"*. Det koster nul datamigrering, og det er hele pointen i F-01 at undgå netop den.
+The ordinal values 0-2 are kept from `Models/Enums/RoomStatus.cs`. Only the **meaning** is narrowed: the enum now answers solely the question *"may the room be let?"*. It costs zero data migration, and avoiding exactly that is the whole point of F-01.
 
 ```csharp
 namespace NFHotel.Domain.Rooms;
 
 /// <summary>
-/// Rummets bookbarhed — udelukkende det der forhindrer udlejning.
-/// Rengøringstilstand hører i <see cref="HousekeepingStatus"/> (B-04).
-/// Ordinalværdierne 0-2 er bevaret fra det gamle system.
+/// The room's bookability — solely what prevents letting.
+/// Cleaning state belongs in <see cref="HousekeepingStatus"/> (B-04).
+/// The ordinal values 0-2 are kept from the old system.
 /// </summary>
 public enum RoomStatus
 {
-    /// <summary>Kan bookes. Siger intet om hvorvidt rummet er rent lige nu.</summary>
+    /// <summary>Can be booked. Says nothing about whether the room is clean right now.</summary>
     Available = 0,
 
-    /// <summary>Taget ud af drift på ubestemt tid (ombygning, omdannet til depot). Administrativ beslutning.</summary>
+    /// <summary>Taken out of operation indefinitely (renovation, converted to storage). An administrative decision.</summary>
     OutOfService = 1,
 
-    /// <summary>Midlertidigt spærret af en fejl der gør rummet ubeboeligt. Forventes at vende tilbage til Available.</summary>
+    /// <summary>Temporarily blocked by a fault that makes the room uninhabitable. Expected to return to Available.</summary>
     Maintenance = 2
 }
 ```
 
-**Hvad der er droppet fra den gamle XAML-dropdown (BR-126 løses her):** `Cleaning` var aldrig en bookbarhedstilstand og flytter til `HousekeepingStatus`. `Maintanance` var en stavefejl for `Maintenance`. `Disabled` er semantisk identisk med `OutOfService` og får ingen egen værdi. Dermed er der ét sæt tilladte værdier, og UI kan bindes direkte til enum'en i stedet for til en hardkodet stringliste.
+**What has been dropped from the old XAML dropdown (BR-126 is resolved here):** `Cleaning` was never a bookability state and moves to `HousekeepingStatus`. `Maintanance` was a typo for `Maintenance`. `Disabled` is semantically identical to `OutOfService` and gets no value of its own. That leaves one set of allowed values, and the UI can bind directly to the enum instead of to a hard-coded string list.
 
-### 1.3 `HousekeepingStatus` — rengørings- og serviceforløb (B-04, D-10)
+### 1.3 `HousekeepingStatus` — cleaning and service process (B-04, D-10)
 
-Ny enum. Ingen eksisterende data at tage hensyn til, så nummereringen er fri; jeg starter på 0 = `Clean`, så `default(HousekeepingStatus)` og databasens `DEFAULT 0` betyder det samme som `RoomStatus.Available`: "intet i vejen".
+A new enum. There is no existing data to consider, so the numbering is free; I start at 0 = `Clean`, so `default(HousekeepingStatus)` and the database's `DEFAULT 0` mean the same as `RoomStatus.Available`: "nothing in the way".
 
 ```csharp
 namespace NFHotel.Domain.Rooms;
 
 /// <summary>
-/// Rummets rengørings- og servicestand. Opdateres af rengøringspersonale og
-/// serviceteknikere (D-10). Påvirker IKKE bookbarhed — et rum kan være
-/// <see cref="RoomStatus.Available"/> og samtidig afvente rengøring (B-04).
+/// The room's cleaning and service state. Updated by cleaning staff and
+/// service technicians (D-10). Does NOT affect bookability — a room can be
+/// <see cref="RoomStatus.Available"/> and at the same time await cleaning (B-04).
 /// </summary>
 public enum HousekeepingStatus
 {
-    /// <summary>Rent og klar til gæst. Startværdi for et nyoprettet rum.</summary>
+    /// <summary>Clean and ready for a guest. Initial value for a newly created room.</summary>
     Clean = 0,
 
-    /// <summary>Beboet rum der afventer daglig rengøring.</summary>
+    /// <summary>Occupied room awaiting daily cleaning.</summary>
     DailyCleaningDue = 1,
 
-    /// <summary>Gæsten er rejst; rummet afventer slutrengøring.</summary>
+    /// <summary>The guest has left; the room awaits final cleaning.</summary>
     DepartureCleaningDue = 2,
 
-    /// <summary>Rengøringspersonalet har kvitteret og er i gang.</summary>
+    /// <summary>The cleaning staff have acknowledged and are working.</summary>
     CleaningInProgress = 3,
 
-    /// <summary>Et problem er rapporteret; rummet afventer servicetekniker.</summary>
+    /// <summary>A problem has been reported; the room awaits a service technician.</summary>
     ServiceRequired = 4,
 
-    /// <summary>Serviceteknikeren har kvitteret og er i gang.</summary>
+    /// <summary>The service technician has acknowledged and is working.</summary>
     ServiceInProgress = 5
 }
 ```
 
-**Hvorfor service ligger i samme enum som rengøring, og ikke i `RoomStatus`:**
-`ServiceRequired` betyder "nogen skal kigge på det" — en dryppende hane, en pære der er gået. Det forhindrer ikke udlejning. Skal rummet spærres, er det en *separat, bevidst* handling: `RoomStatus` sættes til `Maintenance`. Præcis dén adskillelse er det gamle system aldrig fik lavet, og det er derfor `Available/Maintenance/OutOfService` var inkohærent. To enums, to spørgsmål, ingen overlap.
+**Why service is in the same enum as cleaning, and not in `RoomStatus`:**
+`ServiceRequired` means "someone has to look at it" — a dripping tap, a bulb that has gone. It does not prevent letting. If the room must be blocked, it is a *separate, deliberate* action: `RoomStatus` is set to `Maintenance`. Exactly that separation is what the old system never got made, and that is why `Available/Maintenance/OutOfService` was incoherent. Two enums, two questions, no overlap.
 
-**Bevidst udeladt:** et `Inspected`/godkendelsestrin for ejer/manager. D-10 nævner tre aktiviteter (daglig rengøring, service, slutrengøring), ikke et fjerde inspektionstrin. Tilføjes som ny enum-værdi når mobil-guilden beder om det — nye enum-værdier på enden er billige, omnummerering er dyr. Se §8.
+**Deliberately omitted:** an `Inspected`/approval step for owner/manager. D-10 mentions three activities (daily cleaning, service, final cleaning), not a fourth inspection step. Added as a new enum value when the mobile guild asks for it — new enum values at the end are cheap, renumbering is expensive. See §8.
 
-### 1.4 `RoomSize` — ny enum (Fase1-Scope, "billig insurance")
+### 1.4 `RoomSize` — new enum (Phase1-Scope, "cheap insurance")
 
-`RoomSize` er de facto en enum i data (`'Single'/'Double'/'Suite'`) men lever som fri tekst i både C# og SQL (Analysis §1, uklart pkt. 5). Fase1-Scope listerdet eksplicit som billig insurance: *"Lad `RoomSize` blive en enum eller lookup, ikke en fri streng."* Samme arbejde nu, migrering senere.
+`RoomSize` is de facto an enum in data (`'Single'/'Double'/'Suite'`) but lives as free text in both C# and SQL (Analysis §1, unclear item 5). Phase1-Scope lists it explicitly as cheap insurance: *"Let `RoomSize` become an enum or lookup, not a free string."* The same work now, migration later.
 
 ```csharp
 namespace NFHotel.Domain.Rooms;
 
 /// <summary>
-/// Værelsestype. Erstatter det gamle fritekst-felt <c>Room.RoomSize</c>.
-/// Ordinalværdier er nye — der er ingen eksisterende int-data at bevare.
-/// Bliver senere ophæng for <c>RoomType</c> med pris (Fase1-Scope, udskudt).
+/// Room type. Replaces the old free-text field <c>Room.RoomSize</c>.
+/// Ordinal values are new — there is no existing int data to preserve.
+/// Later becomes the anchor for <c>RoomType</c> with a price (Phase1-Scope, postponed).
 /// </summary>
 public enum RoomSize
 {
@@ -158,76 +160,76 @@ public enum RoomSize
 }
 ```
 
-> **Afhængighed til infrastruktur-agenten:** eksisterende `NVARCHAR(20)`-data skal mappes til int i migreringen (`'Single'→0` osv.). Det er ikke mit design, men det skal videregives.
+> **Dependency on the infrastructure agent:** existing `NVARCHAR(20)` data must be mapped to int in the migration (`'Single'→0` etc.). It is not my design, but it must be passed on.
 
 ---
 
 ## 2. Value object: `DateRange`
 
-**Vurdering (KISS-tjek, jf. opgavens pkt. 3):** ja, den bærer sin vægt. Uden den ligger reglen "slutdato skal være strengt efter startdato" fire steder i det gamle system (BR-38, BR-43, BR-88, BR-103), overlapsreglen to steder med to forskellige definitioner (BR-19 vs. BR-39), og `NumberOfNights` beregnes ét sted og reimplementeres i en converter (BR-109 vs. BR-117). Én type samler dem alle.
+**Assessment (KISS check, cf. the task's item 3):** yes, it carries its weight. Without it the rule "end date must be strictly after start date" lies in four places in the old system (BR-38, BR-43, BR-88, BR-103), the overlap rule in two places with two different definitions (BR-19 vs. BR-39), and `NumberOfNights` is computed in one place and reimplemented in a converter (BR-109 vs. BR-117). One type gathers them all.
 
-**Men den persisteres ikke som owned type.** `Booking` beholder `StartDate` og `EndDate` som to `DateOnly`-kolonner præcis som i dag, og eksponerer `Period` som afledt værdi. Det giver reglerne ét hjem uden at pålægge EF-agenten en owned-type-mapping, og uden at ændre kolonnenavne. Value object'et er et *regelsted og en parametertype*, ikke en lagringsstruktur.
+**But it is not persisted as an owned type.** `Booking` keeps `StartDate` and `EndDate` as two `DateOnly` columns exactly as today, and exposes `Period` as a derived value. That gives the rules one home without imposing an owned-type mapping on the EF agent, and without changing column names. The value object is a *place for rules and a parameter type*, not a storage structure.
 
 ```csharp
 namespace NFHotel.Domain.Common;
 
 /// <summary>
-/// En bookingperiode: ankomstdato (inklusiv) til afrejsedato (eksklusiv).
-/// Halvåbent interval — afrejse og ankomst samme dag er ikke overlap (B-03).
-/// Typen kan ikke konstrueres i en ugyldig tilstand.
+/// A booking period: arrival date (inclusive) to departure date (exclusive).
+/// Half-open interval — departure and arrival on the same day is not an overlap (B-03).
+/// The type cannot be constructed in an invalid state.
 /// </summary>
 public readonly record struct DateRange
 {
-    /// <summary>Ankomstdato, inklusiv.</summary>
+    /// <summary>Arrival date, inclusive.</summary>
     public DateOnly Start { get; }
 
-    /// <summary>Afrejsedato, eksklusiv. Altid strengt større end <see cref="Start"/>.</summary>
+    /// <summary>Departure date, exclusive. Always strictly greater than <see cref="Start"/>.</summary>
     public DateOnly End { get; }
 
     /// <summary>
-    /// Opretter en periode.
+    /// Creates a period.
     /// </summary>
-    /// <param name="start">Ankomstdato.</param>
-    /// <param name="end">Afrejsedato. Skal være strengt efter <paramref name="start"/>.</param>
+    /// <param name="start">Arrival date.</param>
+    /// <param name="end">Departure date. Must be strictly after <paramref name="start"/>.</param>
     /// <exception cref="DomainException">
-    /// Kastes hvis en dato er <c>default</c>, eller hvis <paramref name="end"/> ikke er efter
-    /// <paramref name="start"/> (0 nætter er ikke tilladt) — BR-101, BR-102, BR-103.
+    /// Thrown if a date is <c>default</c>, or if <paramref name="end"/> is not after
+    /// <paramref name="start"/> (0 nights is not allowed) — BR-101, BR-102, BR-103.
     /// </exception>
     public DateRange(DateOnly start, DateOnly end);
 
-    /// <summary>Antal overnatninger. Erstatter <c>Booking.NumberOfNights</c> (BR-109, BR-117).</summary>
+    /// <summary>Number of overnight stays. Replaces <c>Booking.NumberOfNights</c> (BR-109, BR-117).</summary>
     public int Nights => End.DayNumber - Start.DayNumber;
 
     /// <summary>
-    /// Halvåben overlapstest: <c>Start &lt; other.End &amp;&amp; End &gt; other.Start</c> (B-03).
-    /// Ren funktion — kræver ingen database.
+    /// Half-open overlap test: <c>Start &lt; other.End &amp;&amp; End &gt; other.Start</c> (B-03).
+    /// Pure function — needs no database.
     /// </summary>
     public bool Overlaps(DateRange other);
 
-    /// <summary>Sand hvis <paramref name="date"/> ligger i intervallet [Start, End).</summary>
+    /// <summary>True if <paramref name="date"/> lies in the interval [Start, End).</summary>
     public bool Contains(DateOnly date);
 
-    /// <summary>Sand hvis perioden starter på eller efter <paramref name="today"/> (BR-104, BR-44).</summary>
+    /// <summary>True if the period starts on or after <paramref name="today"/> (BR-104, BR-44).</summary>
     public bool StartsOnOrAfter(DateOnly today) => Start >= today;
 }
 ```
 
-`readonly record struct` giver værdilighed, `ToString()` og uforanderlighed gratis, uden en klasse-allokering pr. sammenligning i et overlapstjek der kan køre over hundredvis af bookinger.
+`readonly record struct` gives value equality, `ToString()` and immutability for free, without a class allocation per comparison in an overlap check that may run over hundreds of bookings.
 
-**Value objects jeg bevidst IKKE laver:**
+**Value objects I deliberately do NOT make:**
 
-| Kandidat | Hvorfor ikke |
+| Candidate | Why not |
 |---|---|
-| `EmailAddress` | BR-93 er præcis "indeholder `@` og `.`". En VO ville friste til at stramme til regex — det ville bryde paritet med det gamle system og fejle test T-13's søskende. Reglen bor i `GuestRules.IsValidEmail`. |
-| `PassportNumber` | B-07 siger feltet ikke må være søgenøgle og skal kunne krypteres. En VO gør hverken fra eller til for det — den tilføjer kun et lag mellem entiteten og en kolonne som EF-agenten skal kryptere. `string?` er det rigtige. |
-| `RoomNumber` | Ingen regel ud over "ikke tom" (BR-97). En VO for én whitespace-check er ceremoni. |
-| `Money`/`Price` | Der findes ingen pris i domænet (BR-31, Analysis §Sammenfatning). Tilføjes når `RoomType` med pris bygges. |
+| `EmailAddress` | BR-93 is exactly "contains `@` and `.`". A VO would tempt one to tighten to a regex — which would break parity with the old system and fail test T-13's siblings. The rule lives in `GuestRules.IsValidEmail`. |
+| `PassportNumber` | B-07 says the field must not be a search key and must be encryptable. A VO makes no difference either way — it only adds a layer between the entity and a column that the EF agent has to encrypt. `string?` is right. |
+| `RoomNumber` | No rule beyond "not empty" (BR-97). A VO for one whitespace check is ceremony. |
+| `Money`/`Price` | There is no price in the domain (BR-31, Analysis §Summary). Added when `RoomType` with a price is built. |
 
 ---
 
-## 3. Entiteter
+## 3. Entities
 
-Alle tre følger samme mønster: private setters, privat parameterløs konstruktør til EF, statisk `Create`-factory der håndhæver invarianterne, og adfærdsmetoder i stedet for offentlige settere. Det er dét der gør BR-84 ("valideringen ignoreres") strukturelt umulig at gentage.
+All three follow the same pattern: private setters, a private parameterless constructor for EF, a static `Create` factory that enforces the invariants, and behaviour methods instead of public setters. That is what makes BR-84 ("the validation is ignored") structurally impossible to repeat.
 
 ### 3.1 `Booking`
 
@@ -235,107 +237,107 @@ Alle tre følger samme mønster: private setters, privat parameterløs konstrukt
 namespace NFHotel.Domain.Bookings;
 
 /// <summary>
-/// En reservation af ét rum til én gæst i én periode.
-/// Aggregatrod. Kender kun sine egne felter — regler der kræver kendskab til
-/// andre bookinger (fx overlap mod eksisterende) hører i Application-laget.
+/// A reservation of one room for one guest in one period.
+/// Aggregate root. Knows only its own fields — rules that require knowledge of
+/// other bookings (e.g. overlap against existing ones) belong in the Application layer.
 /// </summary>
 public sealed class Booking
 {
     private Booking() { }   // EF
 
-    /// <summary>Primærnøgle. 0 indtil bookingen er persisteret.</summary>
+    /// <summary>Primary key. 0 until the booking is persisted.</summary>
     public int BookingId { get; private set; }
 
-    /// <summary>Ankomstdato uden klokkeslæt (B-05).</summary>
+    /// <summary>Arrival date without time of day (B-05).</summary>
     public DateOnly StartDate { get; private set; }
 
-    /// <summary>Afrejsedato uden klokkeslæt, eksklusiv (B-05).</summary>
+    /// <summary>Departure date without time of day, exclusive (B-05).</summary>
     public DateOnly EndDate { get; private set; }
 
-    /// <summary>Faktisk indtjekningstidspunkt. Null indtil check-in (B-05).</summary>
+    /// <summary>Actual check-in time. Null until check-in (B-05).</summary>
     public DateTimeOffset? CheckInTime { get; private set; }
 
-    /// <summary>Faktisk udtjekningstidspunkt. Null indtil check-ud (B-05).</summary>
+    /// <summary>Actual check-out time. Null until check-out (B-05).</summary>
     public DateTimeOffset? CheckOutTime { get; private set; }
 
-    /// <summary>Bookingens livscyklustilstand. Ændres kun via metoderne på klassen.</summary>
+    /// <summary>The booking's lifecycle state. Changed only via the methods on the class.</summary>
     public BookingStatus Status { get; private set; }
 
-    /// <summary>Fremmednøgle til rummet. Altid &gt; 0 (BR-105).</summary>
+    /// <summary>Foreign key to the room. Always &gt; 0 (BR-105).</summary>
     public int RoomId { get; private set; }
 
-    /// <summary>Fremmednøgle til gæsten. Altid &gt; 0 (BR-106).</summary>
+    /// <summary>Foreign key to the guest. Always &gt; 0 (BR-106).</summary>
     public int GuestId { get; private set; }
 
-    /// <summary>Navigation. Kun udfyldt når kaldet har bedt om den; brug aldrig som guard.</summary>
+    /// <summary>Navigation. Only filled when the call asked for it; never use as a guard.</summary>
     public Room? Room { get; private set; }
 
-    /// <summary>Navigation. Kun udfyldt når kaldet har bedt om den; brug aldrig som guard.</summary>
+    /// <summary>Navigation. Only filled when the call asked for it; never use as a guard.</summary>
     public Guest? Guest { get; private set; }
 
-    /// <summary>Bookingens periode som value object.</summary>
+    /// <summary>The booking's period as a value object.</summary>
     public DateRange Period => new(StartDate, EndDate);
 
-    /// <summary>Antal overnatninger (BR-109, BR-117).</summary>
+    /// <summary>Number of overnight stays (BR-109, BR-117).</summary>
     public int NumberOfNights => Period.Nights;
 
-    /// <summary>Vist bookingnummer, formatet <c>FLZ-000123</c> (BR-109). Afledt, aldrig persisteret.</summary>
+    /// <summary>Displayed booking number, the format <c>FLZ-000123</c> (BR-109). Derived, never persisted.</summary>
     public string BookingNumber => $"{BookingNumberPrefix}{BookingId:D6}";
 
     private const string BookingNumberPrefix = "FLZ-";
 }
 ```
 
-**Beslutninger og begrundelser pr. felt**
+**Decisions and reasons per field**
 
-| Felt | Før | Nu | Hvorfor |
+| Field | Before | Now | Why |
 |---|---|---|---|
-| `BookingID` | `int` | `BookingId` | Conventions.md: ét PK-navnemønster. Løser U-19's casinguoverensstemmelse konsekvent på tværs af alle tre entiteter. |
-| `StartDate`/`EndDate` | `DateTime` | `DateOnly` | B-05. Fjerner U-05 (`DATE` vs. `DATETIME2`) og hele `.Date`-sammenlignings-familien (BR-44, BR-104, BR-108). |
-| `CheckInTime`/`CheckOutTime` | `DateTime?` | `DateTimeOffset?` | B-05. Et faktisk tidsstempel med offset; ingen tvetydighed ved sommertid. |
-| `RoomID`/`GuestID` | `int`, kunne være 0 hvis navigation var sat (BR-105/106) | `int`, altid > 0 | Den gamle "enten navigation eller FK"-regel var et symptom på manglende factory. Domænet kræver FK'en; navigationen er en bekvemmelighed. |
-| `Room`/`Guest` | `Room`/`Guest` (ikke-nullable, men reelt null) | `Room?`/`Guest?` | Conventions.md: nullable reference types. Navigationen *er* null ved lazy/ikke-inkluderet load — typen skal sige sandheden. |
-| `BookingNumber` | afledt string | uændret | U-11: findes kun i kode. Korrekt — det er en visningsidentitet, ikke data. |
-| `NumberOfNights` | `(End - Start).Days`, 0 hvis default | `Period.Nights` | `default` kan ikke længere opstå, fordi `DateRange` afviser den. Særtilfældet forsvinder. |
+| `BookingID` | `int` | `BookingId` | Conventions.md: one PK naming pattern. Resolves U-19's casing discrepancy consistently across all three entities. |
+| `StartDate`/`EndDate` | `DateTime` | `DateOnly` | B-05. Removes U-05 (`DATE` vs. `DATETIME2`) and the whole family of `.Date` comparisons (BR-44, BR-104, BR-108). |
+| `CheckInTime`/`CheckOutTime` | `DateTime?` | `DateTimeOffset?` | B-05. An actual timestamp with offset; no ambiguity at daylight saving time. |
+| `RoomID`/`GuestID` | `int`, could be 0 if navigation was set (BR-105/106) | `int`, always > 0 | The old "either navigation or FK" rule was a symptom of a missing factory. The domain requires the FK; the navigation is a convenience. |
+| `Room`/`Guest` | `Room`/`Guest` (non-nullable, but really null) | `Room?`/`Guest?` | Conventions.md: nullable reference types. The navigation *is* null on lazy/not-included load — the type must tell the truth. |
+| `BookingNumber` | derived string | unchanged | U-11: exists only in code. Correct — it is a display identity, not data. |
+| `NumberOfNights` | `(End - Start).Days`, 0 if default | `Period.Nights` | `default` can no longer occur, because `DateRange` rejects it. The special case disappears. |
 
-**Factory og adfærd**
+**Factory and behaviour**
 
 ```csharp
     /// <summary>
-    /// Opretter en ny booking med status <see cref="BookingStatus.Pending"/> (BR-01, BR-48).
+    /// Creates a new booking with status <see cref="BookingStatus.Pending"/> (BR-01, BR-48).
     /// </summary>
-    /// <param name="period">Bookingperioden. Skal starte på eller efter <paramref name="today"/>.</param>
-    /// <param name="roomId">Rummets id. Skal være større end 0.</param>
-    /// <param name="guestId">Gæstens id. Skal være større end 0.</param>
-    /// <param name="today">Dagens dato i hotellets tidszone. Leveres af kaldet — Domain kender ikke uret.</param>
-    /// <returns>En ny, gyldig booking der endnu ikke er persisteret.</returns>
+    /// <param name="period">The booking period. Must start on or after <paramref name="today"/>.</param>
+    /// <param name="roomId">The room's id. Must be greater than 0.</param>
+    /// <param name="guestId">The guest's id. Must be greater than 0.</param>
+    /// <param name="today">Today's date in the hotel's time zone. Supplied by the caller — Domain does not know the clock.</param>
+    /// <returns>A new, valid booking that is not yet persisted.</returns>
     /// <exception cref="DomainException">
-    /// Ved startdato i fortiden (BR-44, BR-104), manglende rum (BR-45, BR-105)
-    /// eller manglende gæst (BR-106).
+    /// On a start date in the past (BR-44, BR-104), a missing room (BR-45, BR-105)
+    /// or a missing guest (BR-106).
     /// </exception>
     public static Booking Create(DateRange period, int roomId, int guestId, DateOnly today);
 
-    /// <summary>Sand hvis bookingen må bekræftes (BR-02, BR-121).</summary>
+    /// <summary>True if the booking may be confirmed (BR-02, BR-121).</summary>
     public bool CanConfirm => Status == BookingStatus.Pending;
 
-    /// <summary>Sand hvis bookingen må tjekkes ind på den angivne dato (BR-06). Se B-01: Confirmed er ikke et krav.</summary>
+    /// <summary>True if the booking may be checked in on the given date (BR-06). See B-01: Confirmed is not a requirement.</summary>
     public bool CanCheckIn(DateOnly today) =>
         (Status is BookingStatus.Pending or BookingStatus.Confirmed)
         && CheckInTime is null
         && StartDate <= today;
 
-    /// <summary>Sand hvis bookingen må tjekkes ud (BR-09).</summary>
+    /// <summary>True if the booking may be checked out (BR-09).</summary>
     public bool CanCheckOut =>
         Status == BookingStatus.CheckedIn && CheckInTime is not null && CheckOutTime is null;
 
-    /// <summary>Sand hvis bookingen må annulleres (BR-11, BR-122).</summary>
+    /// <summary>True if the booking may be cancelled (BR-11, BR-122).</summary>
     public bool CanCancel => Status is BookingStatus.Pending or BookingStatus.Confirmed;
 
-    /// <summary>Sand hvis bookingens datoer og rum må ændres (BR-14, BR-123).</summary>
+    /// <summary>True if the booking's dates and room may be changed (BR-14, BR-123).</summary>
     public bool CanReschedule => Status is BookingStatus.Pending or BookingStatus.Confirmed;
 ```
 
-De fem `Can*`-medlemmer er den konsolidering BusinessRules.md efterlyser: BR-02/BR-121, BR-11/BR-122 og BR-14/BR-123 var samme regel skrevet både i ViewModel og som XAML-trigger. Nu findes hver af dem ét sted, og både Blazor-UI (til at disable en knap) og Application-servicen (til at afvise et kald) læser fra samme kilde. BR-22 bliver dermed triviel — der er intet at "genberegne", værdierne er properties.
+The five `Can*` members are the consolidation BusinessRules.md asks for: BR-02/BR-121, BR-11/BR-122 and BR-14/BR-123 were the same rule written both in the ViewModel and as an XAML trigger. Now each exists in one place, and both the Blazor UI (to disable a button) and the Application service (to reject a call) read from the same source. BR-22 thus becomes trivial — there is nothing to "recalculate", the values are properties.
 
 ### 3.2 `Room`
 
@@ -343,61 +345,61 @@ De fem `Can*`-medlemmer er den konsolidering BusinessRules.md efterlyser: BR-02/
 namespace NFHotel.Domain.Rooms;
 
 /// <summary>
-/// Et fysisk værelse. Bærer to uafhængige tilstande: bookbarhed
-/// (<see cref="Status"/>) og rengøringsstand (<see cref="Housekeeping"/>) — B-04.
+/// A physical room. Carries two independent states: bookability
+/// (<see cref="Status"/>) and cleaning state (<see cref="Housekeeping"/>) — B-04.
 /// </summary>
 public sealed class Room
 {
     private Room() { }   // EF
 
-    /// <summary>Primærnøgle.</summary>
+    /// <summary>Primary key.</summary>
     public int RoomId { get; private set; }
 
-    /// <summary>Værelsesnummer som tekst, fx "101" eller "12B" (BR-97). Løser U-01 til fordel for C#-typen.</summary>
+    /// <summary>Room number as text, e.g. "101" or "12B" (BR-97). Resolves U-01 in favour of the C# type.</summary>
     public string RoomNumber { get; private set; } = string.Empty;
 
-    /// <summary>Etage. Skal være større end 0 (BR-98).</summary>
+    /// <summary>Floor. Must be greater than 0 (BR-98).</summary>
     public int Floor { get; private set; }
 
-    /// <summary>Værelsestype. Var fri tekst; er nu enum.</summary>
+    /// <summary>Room type. Was free text; is now an enum.</summary>
     public RoomSize Size { get; private set; }
 
-    /// <summary>Antal personer rummet kan rumme. Skal være større end 0 (BR-100).</summary>
+    /// <summary>Number of persons the room can hold. Must be greater than 0 (BR-100).</summary>
     public int Capacity { get; private set; }
 
-    /// <summary>Bookbarhed. Ændres kun via <see cref="TakeOutOfService"/>, <see cref="SendToMaintenance"/> og <see cref="ReturnToService"/>.</summary>
+    /// <summary>Bookability. Changed only via <see cref="TakeOutOfService"/>, <see cref="SendToMaintenance"/> and <see cref="ReturnToService"/>.</summary>
     public RoomStatus Status { get; private set; }
 
-    /// <summary>Rengørings- og servicestand. Ændres kun via housekeeping-metoderne.</summary>
+    /// <summary>Cleaning and service state. Changed only via the housekeeping methods.</summary>
     public HousekeepingStatus Housekeeping { get; private set; }
 
     /// <summary>
-    /// Sand hvis rummet overhovedet må udlejes (BR-110). Afhænger UDELUKKENDE af
-    /// <see cref="Status"/> — rengøringsstand er bevidst ikke med (B-04).
+    /// True if the room may be let at all (BR-110). Depends SOLELY on
+    /// <see cref="Status"/> — cleaning state is deliberately not included (B-04).
     /// </summary>
     public bool IsBookable => Status == RoomStatus.Available;
 }
 ```
 
-`RoomSize` → `Size`: property-navnet `RoomSize` på typen `Room` var stammer-gentagelse (`room.RoomSize`), og typen hedder nu `RoomSize`. `room.Size` af typen `RoomSize` læser bedre. Kolonnenavnet er infrastruktur-agentens beslutning.
+`RoomSize` → `Size`: the property name `RoomSize` on the type `Room` was a stem repetition (`room.RoomSize`), and the type is now called `RoomSize`. `room.Size` of the type `RoomSize` reads better. The column name is the infrastructure agent's decision.
 
 ```csharp
     /// <summary>
-    /// Opretter et nyt rum. Status sættes til <see cref="RoomStatus.Available"/> (BR-81)
-    /// og rengøringsstand til <see cref="HousekeepingStatus.Clean"/>.
+    /// Creates a new room. Status is set to <see cref="RoomStatus.Available"/> (BR-81)
+    /// and cleaning state to <see cref="HousekeepingStatus.Clean"/>.
     /// </summary>
     /// <exception cref="DomainException">
-    /// Ved tomt værelsesnummer (BR-97), etage ≤ 0 (BR-98), ukendt <paramref name="size"/> (BR-99)
-    /// eller kapacitet ≤ 0 (BR-100).
+    /// On an empty room number (BR-97), floor ≤ 0 (BR-98), unknown <paramref name="size"/> (BR-99)
+    /// or capacity ≤ 0 (BR-100).
     /// </exception>
     public static Room Create(string roomNumber, int floor, RoomSize size, int capacity);
 
-    /// <summary>Opdaterer rummets stamdata. Rører hverken status eller rengøringsstand.</summary>
-    /// <exception cref="DomainException">Samme invarianter som <see cref="Create"/>.</exception>
+    /// <summary>Updates the room's master data. Touches neither status nor cleaning state.</summary>
+    /// <exception cref="DomainException">The same invariants as <see cref="Create"/>.</exception>
     public void UpdateDetails(string roomNumber, int floor, RoomSize size, int capacity);
 ```
 
-Bemærk at `Create`/`UpdateDetails` kaster i stedet for at returnere en fejlliste. Det er dét der gør BR-84 umulig at gentage: der findes ingen vej til et persisteret, ugyldigt rum, og repoets `Room.Validate()`-tjek (BR-113) kan udgå.
+Note that `Create`/`UpdateDetails` throw instead of returning an error list. That is what makes BR-84 impossible to repeat: there is no path to a persisted, invalid room, and the repo's `Room.Validate()` check (BR-113) can be dropped.
 
 ### 3.3 `Guest`
 
@@ -405,46 +407,46 @@ Bemærk at `Create`/`UpdateDetails` kaster i stedet for at returnere en fejllist
 namespace NFHotel.Domain.Guests;
 
 /// <summary>
-/// En gæst. Ren domæneentitet — bevidst IKKE en login-/kontoentitet
-/// (Fase1-Scope, "billig insurance").
+/// A guest. A pure domain entity — deliberately NOT a login/account entity
+/// (Phase1-Scope, "cheap insurance").
 /// </summary>
 public sealed class Guest
 {
     private Guest() { }   // EF
 
-    /// <summary>Primærnøgle. Ændres aldrig efter oprettelse (BR-72).</summary>
+    /// <summary>Primary key. Never changed after creation (BR-72).</summary>
     public int GuestId { get; private set; }
 
-    /// <summary>Fornavn. Aldrig tomt eller kun whitespace (BR-91).</summary>
+    /// <summary>First name. Never empty or only whitespace (BR-91).</summary>
     public string FirstName { get; private set; } = string.Empty;
 
-    /// <summary>Efternavn. Aldrig tomt eller kun whitespace (BR-92).</summary>
+    /// <summary>Last name. Never empty or only whitespace (BR-92).</summary>
     public string LastName { get; private set; } = string.Empty;
 
-    /// <summary>E-mail. Indeholder altid både '@' og '.' (BR-93).</summary>
+    /// <summary>E-mail. Always contains both '@' and '.' (BR-93).</summary>
     public string Email { get; private set; } = string.Empty;
 
-    /// <summary>Telefonnummer. Aldrig tomt; intet formatkrav (BR-94).</summary>
+    /// <summary>Phone number. Never empty; no format requirement (BR-94).</summary>
     public string PhoneNumber { get; private set; } = string.Empty;
 
-    /// <summary>Land. Aldrig tomt (BR-95).</summary>
+    /// <summary>Country. Never empty (BR-95).</summary>
     public string Country { get; private set; } = string.Empty;
 
     /// <summary>
-    /// Pasnummer. Valgfrit og uvalideret (BR-57, U-22).
-    /// Behandles som følsomt: må ikke bruges som søge- eller sorteringsnøgle (B-07, D-04).
-    /// Domænet kender ikke krypteringen — den er infrastrukturens ansvar.
+    /// Passport number. Optional and unvalidated (BR-57, U-22).
+    /// Treated as sensitive: must not be used as a search or sort key (B-07, D-04).
+    /// The domain does not know the encryption — it is the infrastructure's responsibility.
     /// </summary>
     public string? PassportNumber { get; private set; }
 
-    /// <summary>Fuldt navn, "Fornavn Efternavn". Bruges af Application-lagets søgning (BR-25, BR-68).</summary>
+    /// <summary>Full name, "First name Last name". Used by the Application layer's search (BR-25, BR-68).</summary>
     public string FullName => $"{FirstName} {LastName}";
 }
 ```
 
 ```csharp
-    /// <summary>Opretter en ny gæst.</summary>
-    /// <exception cref="DomainException">Ved brud på BR-91..BR-95.</exception>
+    /// <summary>Creates a new guest.</summary>
+    /// <exception cref="DomainException">On breach of BR-91..BR-95.</exception>
     public static Guest Create(
         string firstName,
         string lastName,
@@ -454,9 +456,9 @@ public sealed class Guest
         string? passportNumber);
 
     /// <summary>
-    /// Overskriver præcis de seks redigérbare felter. <see cref="GuestId"/> ændres aldrig (BR-72).
+    /// Overwrites exactly the six editable fields. <see cref="GuestId"/> is never changed (BR-72).
     /// </summary>
-    /// <exception cref="DomainException">Ved brud på BR-91..BR-95.</exception>
+    /// <exception cref="DomainException">On breach of BR-91..BR-95.</exception>
     public void UpdateDetails(
         string firstName,
         string lastName,
@@ -466,39 +468,39 @@ public sealed class Guest
         string? passportNumber);
 ```
 
-**`FullName` som computed property er bevidst.** BR-25 og BR-68 søger begge i "fornavn efternavn"; BR-69 sorterer på det. Beregningen hører i Domain, filtreringen og sorteringen i Application. Conventions.md's forbud mod UI-formatering i domænemodeller er ikke brudt: `FullName` er en domæneidentitet, ikke en visningsstreng — der er ingen kultur, intet format, ingen afkortning.
+**`FullName` as a computed property is deliberate.** BR-25 and BR-68 both search in "first name last name"; BR-69 sorts on it. The calculation belongs in Domain, the filtering and sorting in Application. Conventions.md's ban on UI formatting in domain models is not broken: `FullName` is a domain identity, not a display string — there is no culture, no format, no truncation.
 
-**Længdebegrænsninger — ny regel N-01.** Analysis §1 noterer at C# ingen længdekontrol har mod `NVARCHAR(100)`/`(50)`. Jeg foreslår `public const int MaxNameLength = 100;` osv. på `Guest`/`Room` og en guard i `Create`/`UpdateDetails`, så en for lang værdi fejler i Domain i stedet for som en databaseexception. Det er en **ny regel uden BR-id** — flagget her, så ledger-auditen i Fase 3 ikke bogfører den som en uforklaret afvigelse. Konstanterne kan genbruges af EF-konfigurationen (infrastruktur-agentens valg).
+**Length limits — new rule N-01.** Analysis §1 notes that C# has no length check against `NVARCHAR(100)`/`(50)`. I propose `public const int MaxNameLength = 100;` etc. on `Guest`/`Room` and a guard in `Create`/`UpdateDetails`, so a too-long value fails in Domain instead of as a database exception. It is a **new rule without a BR id** — flagged here, so the ledger audit in Phase 3 does not book it as an unexplained deviation. The constants can be reused by the EF configuration (the infrastructure agent's choice).
 
 ---
 
-## 4. Regelklasser (rene funktioner)
+## 4. Rule classes (pure functions)
 
 ```csharp
 namespace NFHotel.Domain.Bookings;
 
 /// <summary>
-/// Statsløse bookingregler. Rene funktioner uden database- eller tidsafhængighed,
-/// så de kan unit-testes direkte (B-03).
+/// Stateless booking rules. Pure functions with no database or time dependency,
+/// so they can be unit-tested directly (B-03).
 /// </summary>
 public static class BookingRules
 {
     /// <summary>
-    /// Halvåben overlapstest mellem to perioder: <c>aStart &lt; bEnd &amp;&amp; aEnd &gt; bStart</c>.
-    /// Afrejse- og ankomstdag samme dag er IKKE overlap (B-03, BR-39).
+    /// Half-open overlap test between two periods: <c>aStart &lt; bEnd &amp;&amp; aEnd &gt; bStart</c>.
+    /// Departure and arrival on the same day is NOT an overlap (B-03, BR-39).
     /// </summary>
     public static bool Overlaps(DateRange a, DateRange b) => a.Overlaps(b);
 
     /// <summary>
-    /// Sand hvis en booking med den angivne status blokerer rummet i sin periode.
-    /// Kun <see cref="BookingStatus.Cancelled"/> frigiver rummet — <see cref="BookingStatus.CheckedOut"/>
-    /// gør ikke (B-02, løser modstriden BR-19 vs. BR-39 til fordel for BR-39).
+    /// True if a booking with the given status blocks the room in its period.
+    /// Only <see cref="BookingStatus.Cancelled"/> releases the room — <see cref="BookingStatus.CheckedOut"/>
+    /// does not (B-02, resolves the contradiction BR-19 vs. BR-39 in favour of BR-39).
     /// </summary>
     public static bool BlocksRoom(BookingStatus status) => status != BookingStatus.Cancelled;
 
     /// <summary>
-    /// Sand hvis en eksisterende booking er i konflikt med den ønskede periode på samme rum.
-    /// Kaldet er ansvarligt for at ekskludere bookingen selv ved redigering (BR-19).
+    /// True if an existing booking conflicts with the desired period on the same room.
+    /// The caller is responsible for excluding the booking itself on editing (BR-19).
     /// </summary>
     public static bool Conflicts(Booking existing, int roomId, DateRange desiredPeriod) =>
         existing.RoomId == roomId
@@ -507,20 +509,20 @@ public static class BookingRules
 }
 ```
 
-`Conflicts` er den ene funktion Application-servicen skal kalde pr. kandidat-booking. Servicen henter bookingerne, Domain afgør om de er i vejen. Dermed findes overlapsdefinitionen præcis ét sted i hele kodebasen — mod to indbyrdes uenige steder i det gamle system.
+`Conflicts` is the one function the Application service must call per candidate booking. The service fetches the bookings, Domain decides whether they are in the way. Thus the overlap definition exists in exactly one place in the whole code base — against two mutually disagreeing places in the old system.
 
 ```csharp
 namespace NFHotel.Domain.Guests;
 
 /// <summary>
-/// Gæstevalidering. <see cref="Guest.Create"/> fejler hurtigt på første brud;
-/// <see cref="Validate"/> samler ALLE fejl, så en formular kan vise dem på én gang (BR-60, BR-96).
-/// Begge veje bruger de samme private prædikater — reglen findes ét sted.
+/// Guest validation. <see cref="Guest.Create"/> fails fast on the first breach;
+/// <see cref="Validate"/> collects ALL errors, so a form can show them at once (BR-60, BR-96).
+/// Both paths use the same private predicates — the rule exists in one place.
 /// </summary>
 public static class GuestRules
 {
-    /// <summary>Samler alle valideringsfejl. Tom liste betyder gyldig.</summary>
-    /// <returns>Fejlbeskeder i feltrækkefølge: fornavn, efternavn, e-mail, telefon, land.</returns>
+    /// <summary>Collects all validation errors. An empty list means valid.</summary>
+    /// <returns>Error messages in field order: first name, last name, e-mail, phone, country.</returns>
     public static IReadOnlyList<string> Validate(
         string? firstName,
         string? lastName,
@@ -529,20 +531,20 @@ public static class GuestRules
         string? country);
 
     /// <summary>
-    /// Sand hvis e-mailen indeholder både '@' og '.' (BR-93, BR-55).
-    /// Bevidst ikke regex — det ville bryde paritet med det gamle system.
+    /// True if the e-mail contains both '@' and '.' (BR-93, BR-55).
+    /// Deliberately not a regex — that would break parity with the old system.
     /// </summary>
     public static bool IsValidEmail(string? email);
 }
 ```
 
-Fejlbeskederne i `Validate` er de engelske strenge fra BR-52..BR-56 ("First name is required." osv.), uændret. **Åbent punkt:** brugervendte tekster i Domain er strengt taget en lokaliseringsbeslutning der hører i UI. Jeg beholder dem for at bevare paritet og fordi det gamle system havde dem i `Guest.Validate()`. Se §8.
+The error messages in `Validate` are the English strings from BR-52..BR-56 ("First name is required." etc.), unchanged. **Open point:** user-facing texts in Domain are strictly speaking a localisation decision that belongs in the UI. I keep them to preserve parity and because the old system had them in `Guest.Validate()`. See §8.
 
-`RoomRules` bliver tilsvarende lille: `IsValidRoomNumber`, `IsValidFloor`, `IsValidCapacity`, `Validate(...)`.
+`RoomRules` becomes correspondingly small: `IsValidRoomNumber`, `IsValidFloor`, `IsValidCapacity`, `Validate(...)`.
 
 ---
 
-## 5. Tilstandsmaskiner
+## 5. State machines
 
 ### 5.1 `BookingStatus`
 
@@ -553,7 +555,7 @@ Fejlbeskederne i `Validate` er de engelske strenge fra BR-52..BR-56 ("First name
               │  ▲                    │  ▲
               │  └─ Reschedule()      │  └─ Reschedule()
               │                       │
-              └──CheckIn()──▶ CheckedIn ◀──CheckIn()──┘      (B-01: Confirmed må springes over)
+              └──CheckIn()──▶ CheckedIn ◀──CheckIn()──┘      (B-01: Confirmed may be skipped)
                                  │
                             CheckOut()
                                  ▼
@@ -562,63 +564,63 @@ Fejlbeskederne i `Validate` er de engelske strenge fra BR-52..BR-56 ("First name
 
 ```csharp
     /// <summary>
-    /// Bekræfter bookingen — betaling er garanteret (BR-02, BR-03, BR-05).
-    /// Bemærk: bekræftelse er ikke en forudsætning for check-in (B-01).
+    /// Confirms the booking — payment is guaranteed (BR-02, BR-03, BR-05).
+    /// Note: confirmation is not a precondition for check-in (B-01).
     /// </summary>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes hvis status ikke er præcis <see cref="BookingStatus.Pending"/>.
+    /// Thrown if the status is not exactly <see cref="BookingStatus.Pending"/>.
     /// </exception>
     public void Confirm();
 
     /// <summary>
-    /// Tjekker gæsten ind (BR-06, BR-07). Tilladt fra både Pending og Confirmed (B-01, T-21).
+    /// Checks the guest in (BR-06, BR-07). Allowed from both Pending and Confirmed (B-01, T-21).
     /// </summary>
-    /// <param name="occurredAt">Det faktiske indtjekningstidspunkt.</param>
+    /// <param name="occurredAt">The actual check-in time.</param>
     /// <param name="today">
-    /// Dagens dato i hotellets tidszone. Leveres separat, fordi omregningen fra et
-    /// tidsstempel til en lokal kalenderdato er en tidszonepolitik der hører i Application-laget.
+    /// Today's date in the hotel's time zone. Supplied separately, because the conversion from a
+    /// timestamp to a local calendar date is a time zone policy that belongs in the Application layer.
     /// </param>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes hvis status hverken er Pending eller Confirmed, hvis <see cref="CheckInTime"/>
-    /// allerede er sat, eller hvis <see cref="StartDate"/> ligger efter <paramref name="today"/>.
+    /// Thrown if the status is neither Pending nor Confirmed, if <see cref="CheckInTime"/>
+    /// is already set, or if <see cref="StartDate"/> is after <paramref name="today"/>.
     /// </exception>
     public void CheckIn(DateTimeOffset occurredAt, DateOnly today);
 
     /// <summary>
-    /// Tjekker gæsten ud (BR-09, BR-10). Frigiver IKKE rummet i perioden (B-02).
+    /// Checks the guest out (BR-09, BR-10). Does NOT release the room in the period (B-02).
     /// </summary>
-    /// <param name="occurredAt">Det faktiske udtjekningstidspunkt. Skal være strengt efter <see cref="CheckInTime"/> (BR-107).</param>
+    /// <param name="occurredAt">The actual check-out time. Must be strictly after <see cref="CheckInTime"/> (BR-107).</param>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes hvis status ikke er <see cref="BookingStatus.CheckedIn"/>, hvis <see cref="CheckOutTime"/>
-    /// allerede er sat, eller hvis <paramref name="occurredAt"/> ikke er efter <see cref="CheckInTime"/>.
+    /// Thrown if the status is not <see cref="BookingStatus.CheckedIn"/>, if <see cref="CheckOutTime"/>
+    /// is already set, or if <paramref name="occurredAt"/> is not after <see cref="CheckInTime"/>.
     /// </exception>
     public void CheckOut(DateTimeOffset occurredAt);
 
     /// <summary>
-    /// Annullerer bookingen (BR-11, BR-13). Soft-delete — rækken slettes aldrig.
-    /// Eneste overgang der frigiver rummet i perioden (B-02).
+    /// Cancels the booking (BR-11, BR-13). Soft delete — the row is never deleted.
+    /// The only transition that releases the room in the period (B-02).
     /// </summary>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes hvis status hverken er Pending eller Confirmed. En CheckedIn/CheckedOut booking kan ikke annulleres.
+    /// Thrown if the status is neither Pending nor Confirmed. A CheckedIn/CheckedOut booking cannot be cancelled.
     /// </exception>
     public void Cancel();
 
     /// <summary>
-    /// Flytter bookingen til en ny periode og/eller et nyt rum (BR-14, BR-17, BR-18, BR-20).
-    /// Kontrollerer IKKE overlap mod andre bookinger — det kræver kendskab til andre
-    /// bookinger og hører derfor i Application-laget (BR-19).
+    /// Moves the booking to a new period and/or a new room (BR-14, BR-17, BR-18, BR-20).
+    /// Does NOT check overlap against other bookings — that requires knowledge of other
+    /// bookings and therefore belongs in the Application layer (BR-19).
     /// </summary>
-    /// <param name="newPeriod">Den nye periode. Skal starte på eller efter <paramref name="today"/> (BR-108).</param>
-    /// <param name="newRoomId">Det nye rums id. Skal være større end 0.</param>
-    /// <param name="today">Dagens dato i hotellets tidszone.</param>
-    /// <exception cref="InvalidStateTransitionException">Kastes hvis status hverken er Pending eller Confirmed.</exception>
-    /// <exception cref="DomainException">Kastes hvis den nye periode starter i fortiden.</exception>
+    /// <param name="newPeriod">The new period. Must start on or after <paramref name="today"/> (BR-108).</param>
+    /// <param name="newRoomId">The new room's id. Must be greater than 0.</param>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
+    /// <exception cref="InvalidStateTransitionException">Thrown if the status is neither Pending nor Confirmed.</exception>
+    /// <exception cref="DomainException">Thrown if the new period starts in the past.</exception>
     public void Reschedule(DateRange newPeriod, int newRoomId, DateOnly today);
 ```
 
-**Guard-tabel**
+**Guard table**
 
-| Metode | Statuskrav | Øvrige guards | BR |
+| Method | Status requirement | Other guards | BR |
 |---|---|---|---|
 | `Confirm()` | `Pending` | — | BR-02, BR-03, BR-05, BR-121 |
 | `CheckIn(...)` | `Pending` ∨ `Confirmed` | `CheckInTime is null`; `StartDate <= today` | BR-06, BR-07, BR-08 |
@@ -626,9 +628,9 @@ Fejlbeskederne i `Validate` er de engelske strenge fra BR-52..BR-56 ("First name
 | `Cancel()` | `Pending` ∨ `Confirmed` | — | BR-11, BR-13, BR-122 |
 | `Reschedule(...)` | `Pending` ∨ `Confirmed` | `newPeriod.Start >= today`; `newRoomId > 0` | BR-14, BR-17, BR-18, BR-20, BR-108, BR-123 |
 
-Ingen metode kan nås fra `CheckedOut` eller `Cancelled` — begge er slutstatusser. Det håndhæves af statuskravene, ikke af en separat tabel.
+No method can be reached from `CheckedOut` or `Cancelled` — both are final statuses. That is enforced by the status requirements, not by a separate table.
 
-**Bemærk om BR-03/BR-08/BR-17:** i det gamle system gentjekkes reglen både i `CanExecute` og i selve handlingen. I den nye model *er* handlingen tjekket — `Confirm()` kaster hvis den ikke må. `Can*`-propertyen findes så UI kan disable knappen på forhånd, men den er ikke sikkerheden. Dermed forsvinder dobbeltimplementeringen uden at reglen svækkes.
+**Note on BR-03/BR-08/BR-17:** in the old system the rule is rechecked both in `CanExecute` and in the action itself. In the new model the action *is* checked — `Confirm()` throws if it is not allowed. The `Can*` property exists so the UI can disable the button in advance, but it is not the safeguard. The double implementation thus disappears without weakening the rule.
 
 ### 5.2 `HousekeepingStatus`
 
@@ -644,316 +646,316 @@ Ingen metode kan nås fra `CheckedOut` eller `Cancelled` — begge er slutstatus
      │  CompleteService()
      └──────────── ServiceInProgress ◀──StartService()── ServiceRequired
                                                               ▲
-                                    ReportServiceNeeded() ────┘  (fra alle andre tilstande)
+                                    ReportServiceNeeded() ────┘  (from all other states)
 ```
 
 ```csharp
-    /// <summary>Markerer at det beboede rum afventer daglig rengøring (D-10).</summary>
-    /// <exception cref="InvalidStateTransitionException">Kastes hvis rummet er under rengøring eller service.</exception>
+    /// <summary>Marks that the occupied room awaits daily cleaning (D-10).</summary>
+    /// <exception cref="InvalidStateTransitionException">Thrown if the room is under cleaning or service.</exception>
     public void MarkDailyCleaningDue();
 
     /// <summary>
-    /// Markerer at rummet afventer slutrengøring efter afrejse (D-10).
-    /// Kaldes typisk af Application-laget umiddelbart efter <see cref="Booking.CheckOut"/>.
+    /// Marks that the room awaits final cleaning after departure (D-10).
+    /// Typically called by the Application layer immediately after <see cref="Booking.CheckOut"/>.
     /// </summary>
-    /// <exception cref="InvalidStateTransitionException">Kastes hvis rummet er under rengøring eller service.</exception>
+    /// <exception cref="InvalidStateTransitionException">Thrown if the room is under cleaning or service.</exception>
     public void MarkDepartureCleaningDue();
 
-    /// <summary>Rengøringspersonalet kvitterer og går i gang.</summary>
+    /// <summary>The cleaning staff acknowledge and start work.</summary>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes medmindre status er DailyCleaningDue eller DepartureCleaningDue.
+    /// Thrown unless the status is DailyCleaningDue or DepartureCleaningDue.
     /// </exception>
     public void StartCleaning();
 
-    /// <summary>Rengøringen er færdig; rummet er klar.</summary>
-    /// <exception cref="InvalidStateTransitionException">Kastes medmindre status er CleaningInProgress.</exception>
+    /// <summary>The cleaning is finished; the room is ready.</summary>
+    /// <exception cref="InvalidStateTransitionException">Thrown unless the status is CleaningInProgress.</exception>
     public void CompleteCleaning();
 
     /// <summary>
-    /// Rapporterer at rummet skal ses af en servicetekniker.
-    /// Spærrer IKKE rummet for booking — det kræver <see cref="SendToMaintenance"/> (B-04).
+    /// Reports that the room must be seen by a service technician.
+    /// Does NOT block the room for booking — that requires <see cref="SendToMaintenance"/> (B-04).
     /// </summary>
-    /// <exception cref="InvalidStateTransitionException">Kastes hvis service allerede er i gang.</exception>
+    /// <exception cref="InvalidStateTransitionException">Thrown if service is already in progress.</exception>
     public void ReportServiceNeeded();
 
-    /// <summary>Serviceteknikeren kvitterer og går i gang.</summary>
-    /// <exception cref="InvalidStateTransitionException">Kastes medmindre status er ServiceRequired.</exception>
+    /// <summary>The service technician acknowledges and starts work.</summary>
+    /// <exception cref="InvalidStateTransitionException">Thrown unless the status is ServiceRequired.</exception>
     public void StartService();
 
     /// <summary>
-    /// Servicen er afsluttet.
+    /// The service is finished.
     /// </summary>
     /// <param name="requiresCleaning">
-    /// Sand hvis arbejdet har efterladt rummet snavset; sætter da status til DepartureCleaningDue
-    /// i stedet for Clean.
+    /// True if the work has left the room dirty; then sets the status to DepartureCleaningDue
+    /// instead of Clean.
     /// </param>
-    /// <exception cref="InvalidStateTransitionException">Kastes medmindre status er ServiceInProgress.</exception>
+    /// <exception cref="InvalidStateTransitionException">Thrown unless the status is ServiceInProgress.</exception>
     public void CompleteService(bool requiresCleaning);
 ```
 
-**Guard-tabel**
+**Guard table**
 
-| Metode | Tilladt fra | Til | Rolle (D-03) |
+| Method | Allowed from | To | Role (D-03) |
 |---|---|---|---|
 | `MarkDailyCleaningDue()` | `Clean`, `DailyCleaningDue`, `ServiceRequired` | `DailyCleaningDue` | System/manager |
 | `MarkDepartureCleaningDue()` | `Clean`, `DailyCleaningDue`, `DepartureCleaningDue`, `ServiceRequired` | `DepartureCleaningDue` | System/manager |
-| `StartCleaning()` | `DailyCleaningDue`, `DepartureCleaningDue` | `CleaningInProgress` | Rengøringspersonale |
-| `CompleteCleaning()` | `CleaningInProgress` | `Clean` | Rengøringspersonale |
-| `ReportServiceNeeded()` | alt undtagen `ServiceInProgress` | `ServiceRequired` | Rengøring, tekniker, manager |
-| `StartService()` | `ServiceRequired` | `ServiceInProgress` | Servicetekniker |
-| `CompleteService(bool)` | `ServiceInProgress` | `Clean` \| `DepartureCleaningDue` | Servicetekniker |
+| `StartCleaning()` | `DailyCleaningDue`, `DepartureCleaningDue` | `CleaningInProgress` | Cleaning staff |
+| `CompleteCleaning()` | `CleaningInProgress` | `Clean` | Cleaning staff |
+| `ReportServiceNeeded()` | everything except `ServiceInProgress` | `ServiceRequired` | Cleaning, technician, manager |
+| `StartService()` | `ServiceRequired` | `ServiceInProgress` | Service technician |
+| `CompleteService(bool)` | `ServiceInProgress` | `Clean` \| `DepartureCleaningDue` | Service technician |
 
-`MarkDailyCleaningDue`/`MarkDepartureCleaningDue` er idempotente fra deres egen tilstand — mobilappen har ingen offline-kø (D-11), men netværksretries kan stadig give dublerede kald.
+`MarkDailyCleaningDue`/`MarkDepartureCleaningDue` are idempotent from their own state — the mobile app has no offline queue (D-11), but network retries can still give duplicate calls.
 
 ### 5.3 `RoomStatus`
 
 ```csharp
-    /// <summary>Tager rummet ud af drift på ubestemt tid. Rummet kan ikke bookes.</summary>
-    /// <exception cref="InvalidStateTransitionException">Kastes hvis rummet allerede er OutOfService.</exception>
+    /// <summary>Takes the room out of operation indefinitely. The room cannot be booked.</summary>
+    /// <exception cref="InvalidStateTransitionException">Thrown if the room is already OutOfService.</exception>
     public void TakeOutOfService();
 
-    /// <summary>Spærrer rummet midlertidigt på grund af en fejl der gør det ubeboeligt.</summary>
-    /// <exception cref="InvalidStateTransitionException">Kastes hvis rummet allerede er Maintenance.</exception>
+    /// <summary>Blocks the room temporarily because of a fault that makes it uninhabitable.</summary>
+    /// <exception cref="InvalidStateTransitionException">Thrown if the room is already Maintenance.</exception>
     public void SendToMaintenance();
 
     /// <summary>
-    /// Gør rummet bookbart igen. Rører ikke rengøringsstanden — et rum kan være
-    /// Available og samtidig afvente rengøring (B-04).
+    /// Makes the room bookable again. Does not touch the cleaning state — a room can be
+    /// Available and at the same time await cleaning (B-04).
     /// </summary>
-    /// <exception cref="InvalidStateTransitionException">Kastes hvis rummet allerede er Available.</exception>
+    /// <exception cref="InvalidStateTransitionException">Thrown if the room is already Available.</exception>
     public void ReturnToService();
 ```
 
-Alle tre overgange er frit tilladte mellem hinanden (kun "ingen ændring" afvises). Der findes ingen forretningsregel der forbyder fx `OutOfService → Maintenance`.
+All three transitions are freely allowed between each other (only "no change" is rejected). There is no business rule that forbids e.g. `OutOfService → Maintenance`.
 
-**Den centrale invariant for hele B-04, og den test der beviser den:**
-`Room.IsBookable` læser kun `Status`. En testcase skal hedde noget i retning af `IsBookable_ShouldBeTrue_WhenStatusIsAvailableAndHousekeepingIsDepartureCleaningDue()`. Hvis den test nogensinde fejler, er splittet ophævet ved et uheld.
+**The central invariant of all of B-04, and the test that proves it:**
+`Room.IsBookable` reads only `Status`. A test case should be called something like `IsBookable_ShouldBeTrue_WhenStatusIsAvailableAndHousekeepingIsDepartureCleaningDue()`. If that test ever fails, the split has been undone by accident.
 
 ---
 
-## 6. Regelplacering — alle 126 BR-id'er
+## 6. Rule placement — all 126 BR ids
 
-### 6.1 Regler der hører i Domain
+### 6.1 Rules that belong in Domain
 
-| BR-id | Hvor i Domain | Metode/medlem |
+| BR id | Where in Domain | Method/member |
 |---|---|---|
-| BR-01 | `Booking` | `Booking.Create` (sætter `Pending`) |
+| BR-01 | `Booking` | `Booking.Create` (sets `Pending`) |
 | BR-02 | `Booking` | `CanConfirm` |
 | BR-03 | `Booking` | `Confirm()` guard |
-| BR-05 (statusdelen) | `Booking` | `Confirm()` |
+| BR-05 (the status part) | `Booking` | `Confirm()` |
 | BR-06 | `Booking` | `CanCheckIn(DateOnly)` |
 | BR-07 | `Booking` | `CheckIn(DateTimeOffset, DateOnly)` |
-| BR-08 (guarddelen) | `Booking` | `CheckIn(...)` guard |
+| BR-08 (the guard part) | `Booking` | `CheckIn(...)` guard |
 | BR-09 | `Booking` | `CanCheckOut` |
-| BR-10 (statusdelen) | `Booking` | `CheckOut(DateTimeOffset)` |
+| BR-10 (the status part) | `Booking` | `CheckOut(DateTimeOffset)` |
 | BR-11 | `Booking` | `CanCancel` |
 | BR-13 | `Booking` | `Cancel()` |
 | BR-14 | `Booking` | `CanReschedule` |
 | BR-17 | `Booking` | `Reschedule(...)` guard |
 | BR-18 | `Booking` / `DateRange` | `Reschedule(...)` + `DateRange` ctor |
-| BR-20 (mutationsdelen) | `Booking` | `Reschedule(...)` |
-| BR-22 (prædikaterne) | `Booking` | `CanConfirm`, `CanCheckIn`, `CanCheckOut`, `CanCancel`, `CanReschedule` |
-| BR-38 | `DateRange` | ctor-invariant (`End > Start`) |
-| BR-39 (prædikatet) | `BookingRules` | `Overlaps`, `BlocksRoom`, `Conflicts` |
-| BR-43 | `DateRange` | ctor-invariant |
+| BR-20 (the mutation part) | `Booking` | `Reschedule(...)` |
+| BR-22 (the predicates) | `Booking` | `CanConfirm`, `CanCheckIn`, `CanCheckOut`, `CanCancel`, `CanReschedule` |
+| BR-38 | `DateRange` | ctor invariant (`End > Start`) |
+| BR-39 (the predicate) | `BookingRules` | `Overlaps`, `BlocksRoom`, `Conflicts` |
+| BR-43 | `DateRange` | ctor invariant |
 | BR-44 | `Booking` | `Create(...)` guard (`period.StartsOnOrAfter(today)`) |
 | BR-45 | `Booking` | `Create(...)` guard (`roomId > 0`) |
-| BR-46 (reglerne) | `GuestRules` | `Validate(...)` |
+| BR-46 (the rules) | `GuestRules` | `Validate(...)` |
 | BR-48 | `Booking` | `Create(...)` |
-| BR-49 (beregningerne) | `Booking` | `NumberOfNights`, `BookingNumber` |
-| BR-52 | `GuestRules` | `Validate(...)` — fornavn |
-| BR-53 | `GuestRules` | `Validate(...)` — efternavn |
-| BR-54 | `GuestRules` | `Validate(...)` — telefon |
+| BR-49 (the calculations) | `Booking` | `NumberOfNights`, `BookingNumber` |
+| BR-52 | `GuestRules` | `Validate(...)` — first name |
+| BR-53 | `GuestRules` | `Validate(...)` — last name |
+| BR-54 | `GuestRules` | `Validate(...)` — phone |
 | BR-55 | `GuestRules` | `IsValidEmail` |
-| BR-56 | `GuestRules` | `Validate(...)` — land |
-| BR-57 | `Guest` | `PassportNumber` som `string?`, ingen guard |
-| BR-60 (aggregeringen) | `GuestRules` | `Validate(...)` returnerer alle fejl |
-| BR-72 | `Guest` | `UpdateDetails(...)` — `GuestId` har ingen setter |
-| BR-81 | `Room` | `Room.Create(...)` sætter `Available` + `Clean` |
-| BR-84 | `Room` | Ophævet strukturelt: `Create`/`UpdateDetails` kaster, resultatet kan ikke ignoreres |
-| BR-88 | `DateRange` | ctor-invariant (erstatter `DateGreaterThanAttribute`) |
+| BR-56 | `GuestRules` | `Validate(...)` — country |
+| BR-57 | `Guest` | `PassportNumber` as `string?`, no guard |
+| BR-60 (the aggregation) | `GuestRules` | `Validate(...)` returns all errors |
+| BR-72 | `Guest` | `UpdateDetails(...)` — `GuestId` has no setter |
+| BR-81 | `Room` | `Room.Create(...)` sets `Available` + `Clean` |
+| BR-84 | `Room` | Undone structurally: `Create`/`UpdateDetails` throw, the result cannot be ignored |
+| BR-88 | `DateRange` | ctor invariant (replaces `DateGreaterThanAttribute`) |
 | BR-91 | `GuestRules` / `Guest` | `Validate(...)` + `Create`/`UpdateDetails` guard |
-| BR-92 | `GuestRules` / `Guest` | do. |
+| BR-92 | `GuestRules` / `Guest` | ditto |
 | BR-93 | `GuestRules` / `Guest` | `IsValidEmail` |
-| BR-94 | `GuestRules` / `Guest` | do. |
-| BR-95 | `GuestRules` / `Guest` | do. |
-| BR-96 | `GuestRules` | `Validate(...)` samler alle fejl |
+| BR-94 | `GuestRules` / `Guest` | ditto |
+| BR-95 | `GuestRules` / `Guest` | ditto |
+| BR-96 | `GuestRules` | `Validate(...)` collects all errors |
 | BR-97 | `RoomRules` / `Room` | `IsValidRoomNumber` + `Create`/`UpdateDetails` |
 | BR-98 | `RoomRules` / `Room` | `IsValidFloor` (`floor > 0`) |
-| BR-99 | `Room` | `RoomSize`-enum + `Enum.IsDefined`-guard |
+| BR-99 | `Room` | `RoomSize` enum + `Enum.IsDefined` guard |
 | BR-100 | `RoomRules` / `Room` | `IsValidCapacity` (`capacity > 0`) |
-| BR-101 | `DateRange` | ctor afviser `default(DateOnly)` |
-| BR-102 | `DateRange` | do. |
-| BR-103 | `DateRange` | ctor-invariant (`End > Start`) |
+| BR-101 | `DateRange` | ctor rejects `default(DateOnly)` |
+| BR-102 | `DateRange` | ditto |
+| BR-103 | `DateRange` | ctor invariant (`End > Start`) |
 | BR-104 | `Booking` | `Create(...)` guard |
 | BR-105 | `Booking` | `Create(...)` guard (`roomId > 0`) |
 | BR-106 | `Booking` | `Create(...)` guard (`guestId > 0`) |
 | BR-107 | `Booking` | `CheckOut(...)` guard |
 | BR-108 | `Booking` | `Reschedule(...)` guard |
 | BR-109 | `Booking` / `DateRange` | `NumberOfNights` (`DateRange.Nights`), `BookingNumber` |
-| BR-110 (prædikatet) | `Room` | `IsBookable` |
-| BR-113 | `Room` | Flyttet fra repo til `Create`/`UpdateDetails` — repoet skal ikke længere validere |
-| BR-117 | `DateRange` | `Nights` (samme beregning som BR-109; dubletten konsolideret) |
-| BR-121 | `Booking` | `CanConfirm` (dublet af BR-02, konsolideret) |
-| BR-122 | `Booking` | `CanCancel` (dublet af BR-11, konsolideret) |
-| BR-123 | `Booking` | `CanReschedule` (dublet af BR-14, konsolideret) |
-| BR-126 | `RoomStatus` + `HousekeepingStatus` | Løst ved splittet (B-04); ét sæt tilladte værdier, UI binder til enum |
+| BR-110 (the predicate) | `Room` | `IsBookable` |
+| BR-113 | `Room` | Moved from repo to `Create`/`UpdateDetails` — the repo no longer has to validate |
+| BR-117 | `DateRange` | `Nights` (same calculation as BR-109; the duplicate consolidated) |
+| BR-121 | `Booking` | `CanConfirm` (duplicate of BR-02, consolidated) |
+| BR-122 | `Booking` | `CanCancel` (duplicate of BR-11, consolidated) |
+| BR-123 | `Booking` | `CanReschedule` (duplicate of BR-14, consolidated) |
+| BR-126 | `RoomStatus` + `HousekeepingStatus` | Resolved by the split (B-04); one set of allowed values, UI binds to the enum |
 
-**64 regler i Domain.**
+**64 rules in Domain.**
 
-### 6.2 Regler der IKKE hører i Domain
+### 6.2 Rules that do NOT belong in Domain
 
-| BR-id | Hører i | Hvorfor |
+| BR id | Belongs in | Why |
 |---|---|---|
-| BR-04 | UI | Bekræftelsesdialog. Ren brugerinteraktion. |
-| BR-05 (persist/reload) | Application | Repository-orkestrering. |
-| BR-08 (ingen dialog) | UI | Fravær af dialog er en UI-beslutning. |
-| BR-10 (persist) | Application | do. |
-| BR-12 | UI | Dialogtekst og Ja/Nej. |
-| BR-15 | UI | Forudfyldning af redigeringsformular. |
-| BR-16 | UI | `IsEditMode` er præsentationstilstand. |
-| BR-19 | Application (kalder `BookingRules.Conflicts`) | Kræver kendskab til *andre* bookinger. Domain leverer prædikatet, servicen leverer datasættet. **B-02: `CheckedOut`-undtagelsen fjernes.** |
-| BR-20 (persist/reload) | Application | do. |
-| BR-21 | UI | Forlader redigeringstilstand. |
-| BR-22 (genberegning) | UI | I Blazor er der ingen `CanExecute` at raise — properties læses ved render. |
-| BR-23 | Application | Query-filter over mange bookinger. |
-| BR-24 | Application | Periodefiltrering af en liste. |
-| BR-25 | Application | Søgning over mange bookinger. Domain leverer `Guest.FullName` og `Room.RoomNumber`. |
-| BR-26 | UI | Automatisk skift af visningsperiode. |
-| BR-27 | UI | Kalenderberegning. |
-| BR-28 | UI | Navigation frem/tilbage. |
-| BR-29 | UI | Kolonneantal. |
-| BR-30 | UI | Overskriftsformatering, kulturafhængig. Conventions.md forbyder UI-formatering i Domain. |
-| BR-31 | Ingen steder (endnu) | Omsætning beregnes aldrig; der findes ingen pris i domænet. Genopstår med `RoomType`+pris (udskudt). |
-| BR-32 | UI | Sortering af tabelvisning. |
-| BR-33 | UI | Genindlæsning efter lukket dialog. |
-| BR-34 | Application | Tilgængelighedsforespørgsel. Domain leverer `Room.IsBookable` + `BookingRules.Conflicts`. |
-| BR-35 | UI | Forudfyldning af formular. |
-| BR-36 | UI | Reaktiv genberegning ved feltændring. |
-| BR-37 | UI | Tom-tilstand for rumlisten. |
-| BR-40 | UI | Fejlbesked ved nul ledige rum. |
-| BR-41 | Application/UI | "Dato er udfyldt" er formularvalidering — med `DateOnly` findes tomheden kun i input-modellen. Domain-modparten er BR-101. |
-| BR-42 | Application/UI | do. (Domain-modpart: BR-102) |
-| BR-47 | Application | Beslutter om gæsten er ny; kræver repository. |
-| BR-49 (kvitteringstekst) | UI | Formatering af beskeden. |
-| BR-50 | UI | 2000 ms auto-luk. |
-| BR-51 | Application/UI | Exception-til-besked-oversættelse. |
-| BR-58 | UI | Knap-aktivering. |
-| BR-59 | UI | Revalidering ved hver ændring. |
-| BR-60 (visningen) | UI | Domain leverer listen, UI viser den. |
-| BR-61 | UI | Bekræftelsesdialog. |
-| BR-62 | Application | Vælger create vs. update; kræver repository. |
-| BR-63 | UI | Titel- og knaptekster. |
-| BR-64 | UI | Annuller uden gem. |
-| BR-65 | UI | Knap-guard på valgt gæst. |
-| BR-66 | UI | Redigering på kopi. I Blazor bliver det en edit-model — ikke domænets ansvar. |
-| BR-67 | UI | Fejlbesked ved manglende valg. |
-| BR-68 | Application | Søgning over mange gæster (AND-logik på ord). |
-| BR-69 | Application | Sortering af liste. |
-| BR-70 | Application | Tom søgning viser alle. |
-| BR-71 | UI | "Ryd gæst" nulstiller formularen. |
-| BR-73 | UI | Dobbelt-guard på event. |
-| BR-74 | Application | Sammensat rumfilter over mange rum. |
-| BR-75 | Application | Udleder distinkte filterværdier fra datasættet. |
-| BR-76 | UI | Nulstilling af filter. |
-| BR-77 | UI | Advarselsdialog ved sletning. |
-| BR-78 | Application | Exception-håndtering fra repository. |
-| BR-79 | UI | Null-parameter-guard i kommando. |
-| BR-80 | UI | Genindlæsning + lukning af sidepanel. |
-| BR-82 | Application | Create vs. update ud fra id. |
-| BR-83 | UI | Titel- og knaptekster. |
-| BR-85 | UI | Startskærm. |
-| BR-86 | UI | Navigation og komponentlevetid. |
-| BR-87 | Bortfalder | `RelayCommand` findes ikke i Blazor. |
-| BR-89 | Bortfalder | `DateGreaterThanAttribute`s interne fejlhåndtering. Attributten slettes; `DateRange` erstatter den. |
-| BR-90 | Bortfalder | "Ikke-DateTime = gyldig". Med `DateOnly` non-nullable kan tilfældet ikke opstå. |
-| BR-110 (filtret) | Infrastructure/Application | Query'en hører i dataadgangslaget; prædikatet i Domain. |
-| BR-111 | Infrastructure | In-memory-filter efter fuldt tabeltræk — skal i øvrigt rettes til et rigtigt `WHERE`. |
-| BR-112 | Application/Infrastructure | FK-guard ved sletning af rum. Skal væk fra `catch (SqlException 547)` og op i en eksplicit forespørgsel. |
-| BR-114 | Application/Infrastructure | Eksistenstjek før update/delete. |
-| BR-115 | Infrastructure | `GetById` returnerer null. Repository-kontrakt. |
-| BR-116 | Infrastructure | SQL-navnesøgning. |
-| BR-118 | UI | Halvdags-tegning i kalenderen. Ren visuel konvention. |
-| BR-119 | UI | Klipning ved periodegrænse. |
-| BR-120 | UI | Filtrering af tidslinje pr. rum. |
-| BR-124 | UI | `IsReadOnly` på felter. |
-| BR-125 | UI | Knap-guard. |
+| BR-04 | UI | Confirmation dialog. Pure user interaction. |
+| BR-05 (persist/reload) | Application | Repository orchestration. |
+| BR-08 (no dialog) | UI | Absence of a dialog is a UI decision. |
+| BR-10 (persist) | Application | Ditto. |
+| BR-12 | UI | Dialog text and Yes/No. |
+| BR-15 | UI | Prefilling of the edit form. |
+| BR-16 | UI | `IsEditMode` is presentation state. |
+| BR-19 | Application (calls `BookingRules.Conflicts`) | Requires knowledge of *other* bookings. Domain supplies the predicate, the service supplies the data set. **B-02: the `CheckedOut` exception is removed.** |
+| BR-20 (persist/reload) | Application | Ditto. |
+| BR-21 | UI | Leaves edit mode. |
+| BR-22 (recalculation) | UI | In Blazor there is no `CanExecute` to raise — properties are read at render. |
+| BR-23 | Application | Query filter over many bookings. |
+| BR-24 | Application | Period filtering of a list. |
+| BR-25 | Application | Search over many bookings. Domain supplies `Guest.FullName` and `Room.RoomNumber`. |
+| BR-26 | UI | Automatic switch of display period. |
+| BR-27 | UI | Calendar calculation. |
+| BR-28 | UI | Forward/back navigation. |
+| BR-29 | UI | Column count. |
+| BR-30 | UI | Heading formatting, culture dependent. Conventions.md forbids UI formatting in Domain. |
+| BR-31 | Nowhere (yet) | Revenue is never calculated; there is no price in the domain. Reappears with `RoomType`+price (postponed). |
+| BR-32 | UI | Sorting of a table view. |
+| BR-33 | UI | Reload after a closed dialog. |
+| BR-34 | Application | Availability query. Domain supplies `Room.IsBookable` + `BookingRules.Conflicts`. |
+| BR-35 | UI | Prefilling of a form. |
+| BR-36 | UI | Reactive recalculation on field change. |
+| BR-37 | UI | Empty state for the room list. |
+| BR-40 | UI | Error message on zero free rooms. |
+| BR-41 | Application/UI | "Date is filled in" is form validation — with `DateOnly` emptiness exists only in the input model. The Domain counterpart is BR-101. |
+| BR-42 | Application/UI | Ditto. (Domain counterpart: BR-102) |
+| BR-47 | Application | Decides whether the guest is new; requires a repository. |
+| BR-49 (receipt text) | UI | Formatting of the message. |
+| BR-50 | UI | 2000 ms auto-close. |
+| BR-51 | Application/UI | Exception-to-message translation. |
+| BR-58 | UI | Button activation. |
+| BR-59 | UI | Revalidation on every change. |
+| BR-60 (the display) | UI | Domain supplies the list, UI shows it. |
+| BR-61 | UI | Confirmation dialog. |
+| BR-62 | Application | Chooses create vs. update; requires a repository. |
+| BR-63 | UI | Title and button texts. |
+| BR-64 | UI | Cancel without saving. |
+| BR-65 | UI | Button guard on a selected guest. |
+| BR-66 | UI | Editing on a copy. In Blazor it becomes an edit model — not the domain's responsibility. |
+| BR-67 | UI | Error message on missing selection. |
+| BR-68 | Application | Search over many guests (AND logic on words). |
+| BR-69 | Application | Sorting of a list. |
+| BR-70 | Application | Empty search shows all. |
+| BR-71 | UI | "Clear guest" resets the form. |
+| BR-73 | UI | Double guard on event. |
+| BR-74 | Application | Composite room filter over many rooms. |
+| BR-75 | Application | Derives distinct filter values from the data set. |
+| BR-76 | UI | Reset of filter. |
+| BR-77 | UI | Warning dialog on deletion. |
+| BR-78 | Application | Exception handling from the repository. |
+| BR-79 | UI | Null-parameter guard in command. |
+| BR-80 | UI | Reload + closing of side panel. |
+| BR-82 | Application | Create vs. update based on id. |
+| BR-83 | UI | Title and button texts. |
+| BR-85 | UI | Start screen. |
+| BR-86 | UI | Navigation and component lifetime. |
+| BR-87 | Lapses | `RelayCommand` does not exist in Blazor. |
+| BR-89 | Lapses | `DateGreaterThanAttribute`'s internal error handling. The attribute is deleted; `DateRange` replaces it. |
+| BR-90 | Lapses | "Non-DateTime = valid". With non-nullable `DateOnly` the case cannot occur. |
+| BR-110 (the filter) | Infrastructure/Application | The query belongs in the data access layer; the predicate in Domain. |
+| BR-111 | Infrastructure | In-memory filter after a full table pull — incidentally to be fixed to a real `WHERE`. |
+| BR-112 | Application/Infrastructure | FK guard on deleting a room. Must move away from `catch (SqlException 547)` and up into an explicit query. |
+| BR-114 | Application/Infrastructure | Existence check before update/delete. |
+| BR-115 | Infrastructure | `GetById` returns null. Repository contract. |
+| BR-116 | Infrastructure | SQL name search. |
+| BR-118 | UI | Half-day drawing in the calendar. A pure visual convention. |
+| BR-119 | UI | Clipping at the period boundary. |
+| BR-120 | UI | Filtering of timeline per room. |
+| BR-124 | UI | `IsReadOnly` on fields. |
+| BR-125 | UI | Button guard. |
 
-**62 regler uden for Domain. 64 + 62 = 126.** ✓
+**62 rules outside Domain. 64 + 62 = 126.** ✓
 
 ---
 
-## 7. Ændringer ift. det gamle domæne
+## 7. Changes relative to the old domain
 
-| Hvad | Før | Nu | Hvorfor |
+| What | Before | Now | Why |
 |---|---|---|---|
-| `Booking.StartDate`/`EndDate` | `DateTime` | `DateOnly` | B-05. Fjerner U-05 og alle `.Date`-sammenligninger. |
-| `Booking.CheckInTime`/`CheckOutTime` | `DateTime?` | `DateTimeOffset?` | B-05. Rigtige tidsstempler med offset. |
-| Tidskilde | `DateTime.Now` inde i ViewModel/model | `DateOnly today` / `DateTimeOffset occurredAt` som parametre | Domain må ikke kende omverdenen; gør tilstandsmaskinen deterministisk testbar. |
-| Overlapsregel | To uenige varianter (BR-19 ekskluderer `CheckedOut`, BR-39 gør ikke) | Én ren funktion `BookingRules.Overlaps`/`Conflicts` | B-02, B-03. Modstriden løses til fordel for den strengeste. |
-| `CheckedOut` frigiver rum | Ja ved redigering, nej ved oprettelse | Nej, aldrig | B-02. Tidlig udtjekning håndteres ved at forkorte `EndDate`. |
-| `RoomStatus` | Available/OutOfService/Maintenance, blandede to spørgsmål | Kun bookbarhed, samme tre ordinaler | B-04, F-01. Nul datamigrering, kohærent betydning. |
-| Rengøringstilstand | Fandtes ikke i enum; kun i XAML-dropdown (`Cleaning`) | Ny `HousekeepingStatus` med 6 værdier | B-04, D-10. Mobilappen har brug for forløbet. |
-| Tilladte rumstatusser | Hardkodet stringliste i XAML, uenig med enum (BR-126) | Kun enums | BR-126 løst. UI binder til enum. |
-| `Room.RoomSize` | `string` fri tekst | `RoomSize`-enum | Fase1-Scope "billig insurance". Gør `RoomType`+pris billig senere. |
-| `Room.RoomNumber` | `string` i C#, `INT` i SQL | `string` | U-01 løst til fordel for C#-typen; understøtter "12B". |
-| PK-navngivning | `Booking.BookingID`, `Booking.RoomID`, `Room.RoomId` | `BookingId`, `RoomId`, `GuestId` overalt | U-19. Conventions.md: ét PK-mønster. |
-| "Rum ELLER FK" | Fejl kun hvis både navigation null OG id 0 (BR-105/106) | FK altid > 0; navigation er `Room?`/`Guest?` | Den gamle regel var et symptom på manglende factory; navigationen er ikke en gyldighedskilde. |
-| Validering | `Validate()` returnerer `List<string>`, kaldes frivilligt, ignoreres i BR-84 | Invarianter i `Create`/`UpdateDetails` der kaster + `*Rules.Validate` til formularer | BR-84 og BR-113 bliver strukturelt umulige. Repoet skal ikke længere validere. |
-| Statusændring | Offentlig setter, sat fra ViewModel | `Confirm()`, `CheckIn()`, `CheckOut()`, `Cancel()`, `Reschedule()` med guards | Fase1-Scope pkt. 1. En konsol-app kan kalde metoderne og få reglerne gratis. |
-| `Can*`-regler | Dubleret i ViewModel og XAML-trigger (BR-02/121, 11/122, 14/123) | Én property pr. regel på `Booking` | Konsolidering som BusinessRules.md efterlyser. |
-| `DateGreaterThanAttribute` | Reflection-baseret attribut, brugt ingen steder | Slettet; `DateRange` erstatter | Conventions.md: slet død kode. BR-89/BR-90 bortfalder. |
-| `NumberOfNights` | Beregnet i model + reimplementeret i converter | `DateRange.Nights`, ét sted | BR-109/BR-117 konsolideret. |
-| `Guest.PassportNumber` | `string`, altid udfyldt i data | `string?`, følsomt, aldrig søgenøgle | B-07, D-04, U-22. |
-| Nullability | Ingen NRT-disciplin | NRT slået til, navigationer nullable | Conventions.md. |
-| Længdekontrol | Ingen (Analysis §1) | `MaxLength`-konstanter + guards (**ny regel N-01**) | Fejl fanges i Domain i stedet for som DB-exception. Flagget som ny regel. |
+| `Booking.StartDate`/`EndDate` | `DateTime` | `DateOnly` | B-05. Removes U-05 and all `.Date` comparisons. |
+| `Booking.CheckInTime`/`CheckOutTime` | `DateTime?` | `DateTimeOffset?` | B-05. Real timestamps with offset. |
+| Time source | `DateTime.Now` inside ViewModel/model | `DateOnly today` / `DateTimeOffset occurredAt` as parameters | Domain must not know the outside world; makes the state machine deterministically testable. |
+| Overlap rule | Two disagreeing variants (BR-19 excludes `CheckedOut`, BR-39 does not) | One pure function `BookingRules.Overlaps`/`Conflicts` | B-02, B-03. The contradiction is resolved in favour of the strictest. |
+| `CheckedOut` releases room | Yes on editing, no on creation | No, never | B-02. Early check-out is handled by shortening `EndDate`. |
+| `RoomStatus` | Available/OutOfService/Maintenance, mixed two questions | Only bookability, the same three ordinals | B-04, F-01. Zero data migration, coherent meaning. |
+| Cleaning state | Did not exist in the enum; only in the XAML dropdown (`Cleaning`) | New `HousekeepingStatus` with 6 values | B-04, D-10. The mobile app needs the process. |
+| Allowed room statuses | Hard-coded string list in XAML, disagreeing with the enum (BR-126) | Enums only | BR-126 resolved. UI binds to the enum. |
+| `Room.RoomSize` | `string` free text | `RoomSize` enum | Phase1-Scope "cheap insurance". Makes `RoomType`+price cheap later. |
+| `Room.RoomNumber` | `string` in C#, `INT` in SQL | `string` | U-01 resolved in favour of the C# type; supports "12B". |
+| PK naming | `Booking.BookingID`, `Booking.RoomID`, `Room.RoomId` | `BookingId`, `RoomId`, `GuestId` everywhere | U-19. Conventions.md: one PK pattern. |
+| "Room OR FK" | Error only if both navigation null AND id 0 (BR-105/106) | FK always > 0; navigation is `Room?`/`Guest?` | The old rule was a symptom of a missing factory; the navigation is not a source of validity. |
+| Validation | `Validate()` returns `List<string>`, called voluntarily, ignored in BR-84 | Invariants in `Create`/`UpdateDetails` that throw + `*Rules.Validate` for forms | BR-84 and BR-113 become structurally impossible. The repo no longer has to validate. |
+| Status change | Public setter, set from ViewModel | `Confirm()`, `CheckIn()`, `CheckOut()`, `Cancel()`, `Reschedule()` with guards | Phase1-Scope item 1. A console app can call the methods and get the rules for free. |
+| `Can*` rules | Duplicated in ViewModel and XAML trigger (BR-02/121, 11/122, 14/123) | One property per rule on `Booking` | Consolidation as BusinessRules.md asks for. |
+| `DateGreaterThanAttribute` | Reflection-based attribute, used nowhere | Deleted; `DateRange` replaces | Conventions.md: delete dead code. BR-89/BR-90 lapse. |
+| `NumberOfNights` | Calculated in model + reimplemented in converter | `DateRange.Nights`, one place | BR-109/BR-117 consolidated. |
+| `Guest.PassportNumber` | `string`, always filled in data | `string?`, sensitive, never a search key | B-07, D-04, U-22. |
+| Nullability | No NRT discipline | NRT switched on, navigations nullable | Conventions.md. |
+| Length checks | None (Analysis §1) | `MaxLength` constants + guards (**new rule N-01**) | Errors are caught in Domain instead of as DB exceptions. Flagged as a new rule. |
 
 ---
 
-## 8. Uklart, modstridende eller bevidst efterladt til nogen andre
+## 8. Unclear, contradictory or deliberately left to someone else
 
-**D-01 — Fejlbeskeder på engelsk i Domain.**
-`GuestRules.Validate` returnerer de gamle engelske strenge ("First name is required."). Det bevarer paritet, men brugervendt tekst i Domain er en lokaliseringsbeslutning der egentlig hører i UI. Alternativet er at returnere fejl*koder* og lade UI oversætte — det er renere, men koster ledger-paritet på BR-52..BR-56 og BR-60. **Skal besluttes før Fase 2.**
+**D-01 — Error messages in English in Domain.**
+`GuestRules.Validate` returns the old English strings ("First name is required."). That preserves parity, but user-facing text in Domain is a localisation decision that really belongs in the UI. The alternative is to return error *codes* and let the UI translate — it is cleaner, but costs ledger parity on BR-52..BR-56 and BR-60. **Must be decided before Phase 2.**
 
-**D-02 — Hvem markerer et rum til slutrengøring efter check-ud?**
-`Booking.CheckOut()` kan ikke kalde `Room.MarkDepartureCleaningDue()` — det er to aggregater, og `Booking.Room` er ofte null. Jeg har lagt koordineringen i Application-laget. Alternativet er en domain event (`BookingCheckedOut`), men det er infrastruktur (dispatcher, handlers) som ikke er besluttet, og som Fase1-Scope ikke beder om. **Anbefaling: Application-service nu, domain events når/hvis der bliver behov for flere lyttere.**
+**D-02 — Who marks a room for final cleaning after check-out?**
+`Booking.CheckOut()` cannot call `Room.MarkDepartureCleaningDue()` — they are two aggregates, and `Booking.Room` is often null. I have put the coordination in the Application layer. The alternative is a domain event (`BookingCheckedOut`), but that is infrastructure (dispatcher, handlers) that has not been decided, and which Phase1-Scope does not ask for. **Recommendation: Application service now, domain events when/if there is a need for more listeners.**
 
-**D-03 — `Floor > 0` (BR-98) forbyder stueetage og kælder.**
-Reglen er bevaret uændret, fordi ingen U-uoverensstemmelse eller præmis dikterer andet. Men et hotel med reception i stueplan kan have værelse 001. **Er det en bevidst regel eller en overset off-by-one?** Bør bekræftes med forretningen.
+**D-03 — `Floor > 0` (BR-98) forbids ground floor and basement.**
+The rule is kept unchanged, because no U discrepancy or premise dictates otherwise. But a hotel with a reception on the ground floor may have room 001. **Is it a deliberate rule or an overlooked off-by-one?** Should be confirmed with the business.
 
-**D-04 — `Confirmed → Cancelled` efter betaling.**
-BR-11 tillader annullering fra `Confirmed`. Med B-01 betyder `Confirmed` "betaling garanteret", så en annullering herfra har en økonomisk konsekvens (refusion). Domænet har ingen pris og kan derfor ikke modellere det. **Overgangen er bevaret som i dag; refusionsregler tilføjes når `Payment` bygges.**
+**D-04 — `Confirmed → Cancelled` after payment.**
+BR-11 allows cancellation from `Confirmed`. With B-01, `Confirmed` means "payment guaranteed", so a cancellation from here has a financial consequence (refund). The domain has no price and therefore cannot model it. **The transition is kept as it is today; refund rules are added when `Payment` is built.**
 
-**D-05 — Tilbageførsel af en fejlagtig check-in/check-ud findes ikke.**
-Der er ingen `UndoCheckIn()` i det gamle system og ingen BR der beder om det. Personalet kan i praksis komme til at tjekke forkert booking ind. **Jeg har ikke opfundet reglen** — men det er sandsynligvis et reelt behov, og `CheckedOut` er i dag en absolut slutstatus.
+**D-05 — Reversal of an erroneous check-in/check-out does not exist.**
+There is no `UndoCheckIn()` in the old system and no BR that asks for it. Staff can in practice end up checking in the wrong booking. **I have not invented the rule** — but it is probably a real need, and `CheckedOut` is today an absolute final status.
 
-**D-06 — Tidlig udtjekning ved at forkorte `EndDate` (B-02) har ingen metode endnu.**
-`Reschedule(...)` kræver `Pending` ∨ `Confirmed` og kan derfor ikke bruges på en `CheckedIn` booking. B-02 siger tidlig udtjekning "håndteres senere". Hvis den skal håndteres i Fase 2, mangler der en `ShortenStay(DateOnly newEndDate)` med statuskrav `CheckedIn`. **Ikke designet, da præmissen udskyder det.**
+**D-06 — Early check-out by shortening `EndDate` (B-02) has no method yet.**
+`Reschedule(...)` requires `Pending` ∨ `Confirmed` and therefore cannot be used on a `CheckedIn` booking. B-02 says early check-out is "handled later". If it is to be handled in Phase 2, a `ShortenStay(DateOnly newEndDate)` with status requirement `CheckedIn` is missing. **Not designed, since the premise postpones it.**
 
-**D-07 — `HousekeepingStatus` har intet inspektions-/godkendelsestrin.**
-D-03 giver "Manager/ejer" adgang til appen, hvilket kunne antyde en godkendelse efter slutrengøring. D-10 nævner det ikke. **Udeladt bevidst.** Tilføjes som `Inspected = 6` når mobil-guilden beder om det — nye værdier på enden er gratis.
+**D-07 — `HousekeepingStatus` has no inspection/approval step.**
+D-03 gives "Manager/owner" access to the app, which could suggest an approval after final cleaning. D-10 does not mention it. **Deliberately omitted.** Added as `Inspected = 6` when the mobile guild asks for it — new values at the end are free.
 
-**D-08 — Hvem sætter `DailyCleaningDue`, og hvornår?**
-Et beboet rum skal formentlig markeres hver morgen. Det kræver enten et scheduled job eller en afledning fra bookinger. **Domain leverer metoden; trigger-mekanismen er ikke min beslutning.**
+**D-08 — Who sets `DailyCleaningDue`, and when?**
+An occupied room should presumably be marked every morning. That requires either a scheduled job or a derivation from bookings. **Domain supplies the method; the trigger mechanism is not my decision.**
 
-**D-09 — Persondata-sletning (D-05).**
-"Persondata opbevares i X år, eller indtil gæsten selv beder om sletning." Det kunne pege på en `Guest.Anonymize()` i Domain (overskriv navn/mail/telefon/pas, behold `GuestId` så bookinghistorik overlever). **Jeg har ikke designet den**, fordi X'erne ikke er fastsat og fordi retention-mekanismen ligger uden for Fase 1's leverance. Men hvis `Anonymize()` skal findes, hører den i Domain — og den kolliderer med invarianten "FirstName må ikke være tom" (BR-91). **Det skal afklares før retention bygges.**
+**D-09 — Personal data deletion (D-05).**
+"Personal data is kept for X years, or until the guest asks for deletion." That could point to a `Guest.Anonymize()` in Domain (overwrite name/mail/phone/passport, keep `GuestId` so booking history survives). **I have not designed it**, because the X values are not fixed and because the retention mechanism lies outside Phase 1's deliverable. But if `Anonymize()` is to exist, it belongs in Domain — and it collides with the invariant "FirstName must not be empty" (BR-91). **It must be clarified before retention is built.**
 
-**D-10 — `RoomSize`-migrering.**
-Enum-omlægningen kræver at eksisterende `NVARCHAR(20)`-værdier mappes til int. Testdata bruger `'Single'/'Double'/'Suite'`, men der er ingen CHECK-constraint, så **ukendte værdier kan findes i produktionsdata.** Videregives til infrastruktur-agenten som et krav om en `default`-strategi (fejl vs. `Single`).
+**D-10 — `RoomSize` migration.**
+The enum conversion requires that existing `NVARCHAR(20)` values be mapped to int. Test data uses `'Single'/'Double'/'Suite'`, but there is no CHECK constraint, so **unknown values may exist in production data.** Passed on to the infrastructure agent as a requirement for a `default` strategy (fail vs. `Single`).
 
 **D-11 — `RoomStatus.OutOfService` vs. `Maintenance`.**
-Det gamle system dokumenterer aldrig forskellen. Jeg har tildelt dem betydningen "administrativt/langvarigt" vs. "teknisk fejl/midlertidigt". **Det er min fortolkning, ikke en fundet regel** — begge blokerer bookbarhed identisk, så en fejlfortolkning har ingen funktionel konsekvens i Fase 1, men den bør bekræftes før mobilappen viser dem forskelligt.
+The old system never documents the difference. I have assigned them the meanings "administrative/long-term" vs. "technical fault/temporary". **That is my interpretation, not a found rule** — both block bookability identically, so a misinterpretation has no functional consequence in Phase 1, but it should be confirmed before the mobile app shows them differently.
 
 ---
 
-## 9. Grænseflade til de øvrige agenter
+## 9. Interface to the other agents
 
-Videregives uden at jeg designer det:
+Passed on without my designing it:
 
-- **Infrastruktur:** entiteterne har private settere og privat parameterløs ctor — EF skal bruge backing fields/`UsePropertyAccessMode`. `DateRange` persisteres **ikke**; `StartDate`/`EndDate` er to almindelige `DateOnly`-kolonner. `PassportNumber` skal krypteres og må ikke indekseres (B-07, D-04). `RoomSize`-datamigrering fra tekst til int. Enum-ordinaler for `BookingStatus` og `RoomStatus` er låst.
-- **Application:** BR-19, BR-34 og BR-110 skal kalde `BookingRules.Conflicts` / `Room.IsBookable` — ikke reimplementere overlap. `today` og `occurredAt` skal leveres til `Booking`-metoderne fra én tidszonepolitik ét sted.
-- **Test:** de 22 tests i `BookingOverviewViewModelTests` (T-20..T-33) kan porteres næsten 1:1 mod `Booking`-metoderne uden mocks, fordi tilstandsmaskinen nu er ren. T-21 (`Pending → CheckedIn`) skal bestå uændret (B-01).
+- **Infrastructure:** the entities have private setters and a private parameterless ctor — EF must use backing fields/`UsePropertyAccessMode`. `DateRange` is **not** persisted; `StartDate`/`EndDate` are two ordinary `DateOnly` columns. `PassportNumber` must be encrypted and must not be indexed (B-07, D-04). `RoomSize` data migration from text to int. The enum ordinals for `BookingStatus` and `RoomStatus` are locked.
+- **Application:** BR-19, BR-34 and BR-110 must call `BookingRules.Conflicts` / `Room.IsBookable` — not reimplement overlap. `today` and `occurredAt` must be supplied to the `Booking` methods from one time zone policy in one place.
+- **Test:** the 22 tests in `BookingOverviewViewModelTests` (T-20..T-33) can be ported almost 1:1 against the `Booking` methods without mocks, because the state machine is now pure. T-21 (`Pending → CheckedIn`) must pass unchanged (B-01).
 
 ---
 
@@ -962,5 +964,5 @@ Videregives uden at jeg designer det:
 - `/mnt/user-data/uploads/Development/New folder/NFHotel/docs/BusinessRules.md`
 - `/mnt/user-data/uploads/Development/New folder/NFHotel/docs/Analysis.md`
 - `/mnt/user-data/uploads/Development/New folder/NFHotel/docs/Decisions.md`
-- `/mnt/user-data/uploads/Development/New folder/NFHotel/docs/Fase1-Scope.md`
+- `/mnt/user-data/uploads/Development/New folder/NFHotel/docs/Phase1-Scope.md`
 - `/mnt/user-data/uploads/Development/Conventions.md`

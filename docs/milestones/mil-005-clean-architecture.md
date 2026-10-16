@@ -56,7 +56,7 @@ to behaviour.
 | Business Case objective / KPI / user story | Reference |
 | --- | --- |
 | New objective 8 of an amended BC-001: the NFHotel source follows the clean architecture structure of the skills | All tasks |
-| `docs/refactor/Fase1-Scope.md`, decisions 1 and 2 (all logic in the application layer, async throughout) | Tasks 4 and 5 keep them |
+| `docs/refactor/Phase1-Scope.md`, decisions 1 and 2 (all logic in the application layer, async throughout) | Tasks 4 and 5 keep them |
 
 ## Ownership
 

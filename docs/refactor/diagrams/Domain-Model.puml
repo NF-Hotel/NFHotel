@@ -1,0 +1,160 @@
+@startuml Domain-Model
+' =====================================================================
+' NFHotel 2.0 — Domain model
+' Generated 2026-09-08 from src/NFHotel.Domain/
+'
+' The business concepts. No technology: no repositories, no DTOs,
+' no methods that exist only for the sake of the implementation.
+' =====================================================================
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam roundCorner 6
+
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #2F4739
+  ArrowColor #2F4739
+  FontColor #1C1F1D
+  AttributeFontColor #5A615C
+  StereotypeFontColor #8A6A34
+}
+skinparam enum {
+  BackgroundColor #F7F5F0
+  BorderColor #B08A4F
+  FontColor #1C1F1D
+  AttributeFontColor #5A615C
+}
+skinparam note {
+  BackgroundColor #F7F5F0
+  BorderColor #DDD9D0
+  FontColor #5A615C
+}
+
+hide methods
+hide circle
+
+title NFHotel 2.0 — Domain model
+
+' ---------------------------------------------------------------------
+' Concepts
+' ---------------------------------------------------------------------
+
+class Booking {
+  Booking number
+  Arrival date
+  Departure date
+  Actual check-out date
+  Check-in time
+  Check-out time
+  Number of nights
+  Effective end date
+}
+
+class Room {
+  Room number
+  Floor
+  Capacity
+}
+
+class Guest {
+  First name
+  Last name
+  Email
+  Phone number
+  Country
+  Passport number
+}
+
+class DateRange <<value object>> {
+  Start
+  End
+  Number of nights
+}
+
+enum BookingStatus {
+  Pending
+  Confirmed
+  Checked in
+  Checked out
+  Cancelled
+}
+
+enum RoomStatus <<bookability>> {
+  Available
+  Out of service
+  Maintenance
+}
+
+enum HousekeepingStatus <<cleaning state>> {
+  Clean
+  Daily cleaning due
+  Departure cleaning due
+  Cleaning in progress
+  Service requested
+  Service in progress
+}
+
+enum RoomSize {
+  Single
+  Double
+  Suite
+}
+
+' ---------------------------------------------------------------------
+' Relations
+' ---------------------------------------------------------------------
+
+Guest "1" -- "0..*" Booking : makes >
+Room  "1" -- "0..*" Booking : is let through >
+
+Booking ..> DateRange : period
+Booking --> BookingStatus : status
+Room --> RoomStatus : bookability
+Room --> HousekeepingStatus : cleaning state
+Room --> RoomSize : type
+
+' ---------------------------------------------------------------------
+' Business rules
+' ---------------------------------------------------------------------
+
+note bottom of Booking
+  **The period is half-open.**
+  A guest leaving on the 5th and one arriving
+  on the 5th do not share the room.
+
+  **Effective end date** is normally the departure
+  date, but on early check-out it is the actual
+  check-out date — so the room is released.
+
+  **Cancelling does not delete.** The booking
+  stays, with status Cancelled.
+end note
+
+note bottom of Room
+  **Bookability and cleaning state are separate.**
+  A room can be available for letting
+  and at the same time need cleaning.
+
+  The old system had one field for both —
+  and it disagreed with its own user interface.
+end note
+
+note as N1
+  **Deliberately not modelled**
+  --
+  **Price** — there is no price model.
+  RoomSize is a category, not a rate.
+  Without a price, revenue cannot be computed.
+
+  **User and role** — authentication is deferred.
+  Today the system does not know who is acting.
+
+  **Payment and invoice** — follow from the price.
+
+  **Extra services** — proposed, not decided.
+end note
+
+@enduml

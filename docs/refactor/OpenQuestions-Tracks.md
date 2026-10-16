@@ -1,186 +1,186 @@
-# Åbne spørgsmål fordelt på valgfag
+# Open Questions by Elective Track
 
-> Opdateret 2026-09-02. Supplement til `OpenQuestions.md` — samme Q-id'er, grupperet efter hvem der ejer beslutningen.
-> Q-01 til Q-32 stammer fra Fase 0-analysen. Q-33 og opefter er nye, rejst af selve fagopdelingen.
+> Updated 2026-09-02. Supplement to `OpenQuestions.md` — same Q-ids, grouped by who owns the decision.
+> Q-01 to Q-32 come from the Phase 0 analysis. Q-33 and up are new, raised by the track split itself.
 >
-> ✅ **11 spørgsmål er besvaret 2026-09-07** — se `Decisions.md` (D-01 til D-11): Q-08, Q-09, Q-33 til Q-41. Beslutningsloggen har forrang over denne fil.
+> ✅ **11 questions were answered 2026-09-07** — see `Decisions.md` (D-01 to D-11): Q-08, Q-09, Q-33 to Q-41. The decision log takes precedence over this file.
 >
-> ⚠️ **Læs `Fase1-Scope.md` først.** Valgfagenes features bygges ikke i denne omgang. De fleste spørgsmål her er **guildernes spørgsmål, når de bygger deres feature** — ikke blokkere for Fase 1. Kun Q-01, Q-02, Q-03 plus fem tekniske konventioner skal besvares før Fase 1. Resten er noteret så de ikke går tabt.
+> ⚠️ **Read `Phase1-Scope.md` first.** The electives' features are not built in this round. Most questions here are **the guilds' questions when they build their feature** — not blockers for Phase 1. Only Q-01, Q-02, Q-03 plus five technical conventions must be answered before Phase 1. The rest are noted so they are not lost.
 
 ---
 
-## ⚠️ Læs først: to ting fagopdelingen afslører
+## ⚠️ Read first: two things the track split reveals
 
-**1. De fire tungeste blokkere tilhører ingen af valgfagene.**
-Q-01 til Q-04 er domænespørgsmål — hvad *er* en booking, hvornår må man checke ind, koster et værelse penge. De kan ikke uddelegeres til en guild, fordi alle fem tracks bygger oven på svaret. De skal afgøres samlet, af hele holdet, før Fase 1. Se afsnittet "Fælles domæne" nederst.
+**1. The four heaviest blockers belong to none of the electives.**
+Q-01 to Q-04 are domain questions — what *is* a booking, when may one check in, does a room cost money. They cannot be delegated to a guild, because all five tracks build on the answer. They must be decided jointly, by the whole team, before Phase 1. See the section "Shared domain" at the bottom.
 
-**2. Mobilapp i Flutter er afklaret — og ændrer målarkitekturen. [opdateret 2026-09-02]**
-Valgfagene er krav, ikke valg. Mobilappen bygges i **Flutter**. Det afgør Q-33 og Q-35, og planens afsnit 3 er opdateret til fem projekter + en `mobile/`-mappe.
+**2. The mobile app in Flutter is settled — and changes the target architecture. [updated 2026-09-02]**
+The electives are requirements, not choices. The mobile app is built in **Flutter**. That settles Q-33 and Q-35, and section 3 of the plan is updated to five projects + a `mobile/` folder.
 
-- **Blazor Server har ingen HTTP-API** — den kører over SignalR mellem browser og server. En mobilapp kan ikke bruge den. `NFHotel.Api` er derfor obligatorisk, ikke valgfri.
-- **Flutter er Dart.** Der kan ikke deles én linje C# med backend'en — modsat .NET MAUI, hvor `Domain` og `Application` kunne refereres direkte. **API-kontrakten er dermed det eneste integrationspunkt**, og skal behandles som et selvstændigt artefakt: OpenAPI-spec fra `Api`, som Dart-klienten genereres fra.
-- **JWT fra start.** Cookies rækker ikke. **Q-08 (Identity) er ikke længere til at udskyde** — den flytter fra "senere" til Fase 1b.
-- **Serialisering skal besluttes bevidst.** Dart og C# er ikke enige om defaults for enums og datoer. Se Q-53 og Q-54.
-- **To CI-pipelines.** .NET og Flutter deler intet ud over spec'en. Se Q-42.
-- **Fase 2 får en agent mere:** `Api` bygges parallelt med Web-featurene, da begge kun afhænger af `Application`.
+- **Blazor Server has no HTTP API** — it runs over SignalR between browser and server. A mobile app cannot use it. `NFHotel.Api` is therefore mandatory, not optional.
+- **Flutter is Dart.** Not one line of C# can be shared with the backend — unlike .NET MAUI, where `Domain` and `Application` could be referenced directly. **The API contract is thus the only integration point**, and must be treated as an independent artifact: an OpenAPI spec from `Api`, from which the Dart client is generated.
+- **JWT from the start.** Cookies are not enough. **Q-08 (Identity) can no longer be postponed** — it moves from "later" to Phase 1b.
+- **Serialisation must be decided deliberately.** Dart and C# do not agree on defaults for enums and dates. See Q-53 and Q-54.
+- **Two CI pipelines.** .NET and Flutter share nothing beyond the spec. See Q-42.
+- **Phase 2 gets one more agent:** `Api` is built in parallel with the Web features, since both depend only on `Application`.
 
 ---
 
 ## DevOps
 
-| Id | Spørgsmål | Hvorfor det haster |
+| Id | Question | Why it is urgent |
 |---|---|---|
-| Q-30 | Testdatabase til `Infrastructure.Tests`: Testcontainers, en fast instans, eller EF InMemory? | **DevOps ejer svaret.** Testcontainers kræver Docker på udvikler- og CI-maskiner — det er en infrastrukturbeslutning, ikke en projektbeslutning |
-| Q-31 | Hosting-mål for database og app | **DevOps ejer svaret.** Projektet kender kun en connection string; topologien låser deployment-diagrammet i Fase 2 |
-| Q-07 | Hvad gør vi med de 40 DB-afhængige repo-tests? | De kan ikke køre i CI som de er |
-| Q-06 | MSTest eller xUnit? | Testprojekternes struktur i Fase 1b |
-| **Q-42** | Hvilken CI-platform, og hvornår sættes den op? | Se note nedenfor om Windows-låsen |
-| **Q-43** | Køres EF-migrations automatisk ved deploy, eller manuelt? | Påvirker `Program.cs` og pipeline |
-| **Q-44** | `git init` i den nye solution — hvornår, og hvilken branch-strategi? | Planen siger: **før første agent skriver noget**. Det er ikke sket endnu |
-| **Q-45** | Hvor mange miljøer? (lokal / staging / prod, eller kun lokal) | Konfigurationsmodel og secrets |
+| Q-30 | Test database for `Infrastructure.Tests`: Testcontainers, a fixed instance, or EF InMemory? | **DevOps owns the answer.** Testcontainers requires Docker on developer and CI machines — an infrastructure decision, not a project decision |
+| Q-31 | Hosting target for database and app | **DevOps owns the answer.** The project knows only a connection string; the topology locks the deployment diagram in Phase 2 |
+| Q-07 | What do we do with the 40 DB-dependent repo tests? | They cannot run in CI as they are |
+| Q-06 | MSTest or xUnit? | Structure of the test projects in Phase 1b |
+| **Q-42** | Which CI platform, and when is it set up? | See the note below about the Windows lock |
+| **Q-43** | Are EF migrations run automatically on deploy, or manually? | Affects `Program.cs` and the pipeline |
+| **Q-44** | `git init` in the new solution — when, and which branch strategy? | The plan says: **before the first agent writes anything**. That has not happened yet |
+| **Q-45** | How many environments? (local / staging / prod, or local only) | Configuration model and secrets |
 
-**Note — CI får to pipelines.** .NET-solutionen og Flutter-appen bygges med hver sin toolchain og deler intet ud over OpenAPI-spec'en. Overvej at lade .NET-pipelinen publicere spec'en som artefakt, så Flutter-pipelinen kan fejle hvis kontrakten er brudt — det er den billigste måde at fange kontraktbrud på.
+**Note — CI gets two pipelines.** The .NET solution and the Flutter app are built with separate toolchains and share nothing beyond the OpenAPI spec. Consider letting the .NET pipeline publish the spec as an artifact, so the Flutter pipeline can fail if the contract is broken — it is the cheapest way to catch contract breaks.
 
-**Note — Windows-låsen forsvinder.** Det gamle testprojekt er `net8.0-windows`, fordi det refererer WPF-projektet direkte. Det binder CI til Windows-runners. Den nye solution har ingen WPF-afhængighed, så alt kan køre på Linux-runners — hurtigere og billigere. Værd at nævne som konkret gevinst.
+**Note — the Windows lock disappears.** The old test project is `net8.0-windows`, because it references the WPF project directly. That ties CI to Windows runners. The new solution has no WPF dependency, so everything can run on Linux runners — faster and cheaper. Worth mentioning as a concrete gain.
 
-**Note — der er ingen `.git` i det gamle projekt** (det er en udpakket zip). Der findes altså ingen historik at arve, og intet diff-spor på det gamle hold. Planens punkt om `git init` før første byggeagent er vigtigere end det lyder: uden det kan I ikke se hvad agenterne har ændret.
+**Note — there is no `.git` in the old project** (it is an unpacked zip). So there is no history to inherit, and no diff trail on the old team. The plan's point about `git init` before the first build agent is more important than it sounds: without it you cannot see what the agents have changed.
 
 ---
 
 ## Cybersecurity
 
-| Id | Spørgsmål | Hvorfor det haster |
+| Id | Question | Why it is urgent |
 |---|---|---|
-| Q-09 | Azure SQL-credentials i klartekst i `Database/README.md:18` | **Skal roteres uanset hvad.** Passwordet er eksponeret i et projekt der er delt mellem grupper |
-| Q-08 | ASP.NET Identity nu eller senere? | ✅ **Afgjort af Flutter: nu.** Tilbage står kun *hvilken* model — Identity + JWT, eller noget lettere. JWT betyder også: token-levetid, refresh, og hvor de gemmes på enheden |
-| **Q-38** | Pasnummer, e-mail, telefon og land er persondata. Hvad er GDPR-holdningen? | Påvirker skema, logning og hvem der kan se hvad |
-| **Q-39** | Hvilken autorisationsmodel? | ✅ **Ikke længere valgfri** — kundesiden kræver minimum rollerne personale og kunde, og at en kunde kun ser sine egne bookinger. Åbent: skal personale underopdeles (receptionist / manager)? |
-| **Q-40** | `dotnet user-secrets` lokalt — og hvad i produktion? (env vars, Key Vault, andet) | Konfigurationsmodel i Fase 1b |
-| **Q-41** | Bookinger soft-deletes (BR-13). Hvad med gæster — ret til sletning? | Konflikt mellem soft-delete og GDPR art. 17 |
+| Q-09 | Azure SQL credentials in plain text in `Database/README.md:18` | **Must be rotated regardless.** The password is exposed in a project shared between groups |
+| Q-08 | ASP.NET Identity now or later? | ✅ **Settled by Flutter: now.** Only *which* model remains — Identity + JWT, or something lighter. JWT also means: token lifetime, refresh, and where they are stored on the device |
+| **Q-38** | Passport number, e-mail, phone and country are personal data. What is the GDPR position? | Affects schema, logging and who can see what |
+| **Q-39** | Which authorisation model? | ✅ **No longer optional** — the customer site requires at least the roles staff and customer, and that a customer sees only their own bookings. Open: should staff be subdivided (receptionist / manager)? |
+| **Q-40** | `dotnet user-secrets` locally — and what in production? (env vars, Key Vault, other) | Configuration model in Phase 1b |
+| **Q-41** | Bookings are soft-deleted (BR-13). What about guests — right to erasure? | Conflict between soft delete and GDPR art. 17 |
 
-**Note — der findes ingen autorisationsmodel overhovedet.** Alle 23 regler i ledgeren af typen "adgang" handler om UI-tilstand (er en booking valgt, er vi i redigeringstilstand), ikke om hvem der er logget ind. Der er intet `User`- eller `Employee`-begreb i domænet. Systemet antager én bruger med fuld adgang til alt — inklusive alle gæsters pasnumre.
+**Note — there is no authorisation model at all.** All 23 rules in the ledger of the "access" type are about UI state (is a booking selected, are we in edit mode), not about who is logged in. There is no `User` or `Employee` concept in the domain. The system assumes one user with full access to everything — including all guests' passport numbers.
 
-**Note — det gamle projekt er faktisk sikkert mod SQL-injection.** Analysen fandt ingen strenginterpolation ind i SQL; alt bruger parametre eller stored procedures. Det ene sted med `$"%{name}%"` (`GuestRepo.cs:130`) bygger en *parameterværdi*, ikke SQL. Det er et rent resultat og værd at nævne i rapporten som en baseline man ikke må forringe. (Den reelle svaghed er `%`/`_` der ikke escapes og virker som wildcards — en funktionel detalje, ikke en sårbarhed.)
+**Note — the old project is actually safe against SQL injection.** The analysis found no string interpolation into SQL; everything uses parameters or stored procedures. The one place with `$"%{name}%"` (`GuestRepo.cs:130`) builds a *parameter value*, not SQL. It is a clean result and worth mentioning in the report as a baseline that must not be degraded. (The real weakness is `%`/`_` not being escaped and acting as wildcards — a functional detail, not a vulnerability.)
 
 ---
 
-## Mobilapp
+## Mobile app
 
-| Id | Spørgsmål | Status |
+| Id | Question | Status |
 |---|---|---|
-| ~~Q-33~~ | Platform | ✅ **Afklaret: Flutter** |
-| ~~Q-35~~ | Skal `NFHotel.Api` med? | ✅ **Afklaret: ja, obligatorisk.** Planens afsnit 3 er opdateret |
-| ~~Q-36~~ | Token-baseret auth fra start? | ✅ **Afklaret: ja, JWT.** Følger af Flutter. Se Q-08 |
-| ~~Q-34~~ | Hvem er brugeren? | ✅ **Afklaret: kun personale.** Hjemmesiden dækker både personale og kunder |
-| **Q-37** | Offline-understøttelse? | Åben. Hvis ja, ændrer det datamodellen (sync, konflikter, lokale id'er) — stor mundfuld |
-| **Q-52** | Genereres Dart-klienten fra OpenAPI-spec'en, eller håndskrives den? | Anbefaling: genereres (`openapi-generator`, `swagger_dart_code_generator`). Ellers driver kontrakten fra hinanden |
-| **Q-53** | Enums over API'et: int eller string? | Dart og C# har forskellige defaults. Hænger sammen med Q-13 (enum-mapping i DB) |
-| **Q-54** | Datoer over API'et: ISO 8601 med eller uden tidszone? | Hænger sammen med Q-05b. `date` og `timestamptz` skal serialiseres forskelligt |
-| **Q-55** | API-versionering fra start (`/api/v1/`) eller senere? | Billigt nu, dyrt senere |
-| **Q-56** | CORS — hvilke origins, og hvordan i dev vs. prod? | Rammer også DevOps (Q-45) |
-| **Q-57** | Hvem ejer API-kontrakten: backend eller mobil-guild? | Procesbeslutning, men den afgør hvem der blokerer hvem i Fase 2 |
-| **Q-58** | Flutter state management: Riverpod, Bloc, Provider? | Mobil-guildens eget valg, men bør besluttes før Fase 2 |
-| **Q-59** | Deles designsystem/farver mellem Blazor og Flutter? | Hænger sammen med Q-47 (komponentbibliotek) |
+| ~~Q-33~~ | Platform | ✅ **Settled: Flutter** |
+| ~~Q-35~~ | Should `NFHotel.Api` be included? | ✅ **Settled: yes, mandatory.** Section 3 of the plan is updated |
+| ~~Q-36~~ | Token-based auth from the start? | ✅ **Settled: yes, JWT.** Follows from Flutter. See Q-08 |
+| ~~Q-34~~ | Who is the user? | ✅ **Settled: staff only.** The website covers both staff and customers |
+| **Q-37** | Offline support? | Open. If yes, it changes the data model (sync, conflicts, local ids) — a big bite |
+| **Q-52** | Is the Dart client generated from the OpenAPI spec, or written by hand? | Recommendation: generated (`openapi-generator`, `swagger_dart_code_generator`). Otherwise the contract drifts apart |
+| **Q-53** | Enums over the API: int or string? | Dart and C# have different defaults. Connected to Q-13 (enum mapping in the DB) |
+| **Q-54** | Dates over the API: ISO 8601 with or without time zone? | Connected to Q-05b. `date` and `timestamptz` must be serialised differently |
+| **Q-55** | API versioning from the start (`/api/v1/`) or later? | Cheap now, expensive later |
+| **Q-56** | CORS — which origins, and how in dev vs. prod? | Also affects DevOps (Q-45) |
+| **Q-57** | Who owns the API contract: backend or mobile guild? | A process decision, but it determines who blocks whom in Phase 2 |
+| **Q-58** | Flutter state management: Riverpod, Bloc, Provider? | The mobile guild's own choice, but should be decided before Phase 2 |
+| **Q-59** | Is the design system/colours shared between Blazor and Flutter? | Connected to Q-47 (component library) |
 
-**Konsekvens af Q-34 (personale-app):** appen genbruger BR-06 til BR-10 direkte fra ledgeren og kræver **ingen nye forretningsregler**. Den demonstrerer stadig hele lagdelingen: Flutter → API → Service → Repository → DB. Mobil-guilden er dermed ikke blokeret af Q-04 (priser) — det er hjemmesidens kundeside derimod. Se afsnittet "Kundesiden" nedenfor.
+**Consequence of Q-34 (staff app):** the app reuses BR-06 to BR-10 directly from the ledger and requires **no new business rules**. It still demonstrates the whole layering: Flutter → API → Service → Repository → DB. The mobile guild is thus not blocked by Q-04 (prices) — the website's customer side, however, is. See the section "The customer side" below.
 
-**API-scope følger med:** `NFHotel.Api` behøver kun personale-endpoints til at starte med. Skal kundesiden på et tidspunkt også bruge API'et (fx hvis I senere vil lave en kunde-app), er det en udvidelse — ikke et redesign, så længe endpoints er autoriseret pr. rolle fra start.
+**API scope follows:** `NFHotel.Api` needs only staff endpoints to begin with. If the customer side should at some point also use the API (for example if you later want a customer app), that is an extension — not a redesign, as long as endpoints are authorised per role from the start.
 
-**Bonus for AI Integration-rapporten:** en Flutter-app oven på det samme `Application`-lag er det stærkest mulige bevis for at Clean Architecture-opdelingen holder. To klienter i to sprog, nul duplikeret forretningslogik, og en ledger der kan auditeres mod begge.
+**Bonus for the AI Integration report:** a Flutter app on top of the same `Application` layer is the strongest possible proof that the Clean Architecture split holds. Two clients in two languages, zero duplicated business logic, and a ledger that can be audited against both.
 
 ---
 
-## ⚠️ Kundesiden — nyt område uden dækning i ledgeren
+## ⚠️ The customer side — a new area with no coverage in the ledger
 
-Hjemmesiden har **to publikummer**: personale og kunder. Det er den største scope-udvidelse indtil nu, og den er ikke synlig i noget Fase 0-materiale.
+The website has **two audiences**: staff and customers. This is the biggest scope extension so far, and it is not visible in any Phase 0 material.
 
-**Alle 126 regler i ledgeren er personale-regler.** Det gamle WPF-projekt var en ren backoffice-app — alle 7 skærme (kalender, gæsteoversigt, rumoversigt, salg, gæstepolitik) er personaleskærme. Der findes **nul** kunderegler i det gamle system, fordi der aldrig har været en kundeflade.
+**All 126 rules in the ledger are staff rules.** The old WPF project was a pure back-office app — all 7 screens (calendar, guest overview, room overview, sales, guest policy) are staff screens. There are **zero** customer rules in the old system, because there was never a customer-facing surface.
 
-Konsekvenser:
+Consequences:
 
-- **Kundesidens forretningsregler kan ikke udledes af det gamle projekt.** De skal defineres fra bunden i Fase 1 og tilføjes ledgeren som en ny serie (fx BR-C-01 og frem), tydeligt adskilt fra de porterede regler. `verify:ledger-audit` i Fase 3 skal kunne skelne "regel bevaret fra gammelt system" fra "regel opfundet nu".
-- **Q-04 (RoomType med pris) er reelt afgjort.** En kunde kan ikke booke uden at se en pris. Prismodellen går fra åbent spørgsmål til forudsætning — og dermed også `SalesService` og omsætningsberegningen (BR-31, der i dag altid returnerer 0).
-- **Q-39 (autorisationsmodel) er ikke længere valgfri.** Minimum to roller: personale og kunde. En kunde må kun se sine egne bookinger — det er en autorisationsregel, ikke en UI-tilstand, og den findes ikke i systemet i dag.
-- **Angrebsfladen bliver offentlig.** Se Cybersecurity-sporet: rate limiting, kontoopregning, booking-spam.
+- **The customer side's business rules cannot be derived from the old project.** They must be defined from scratch in Phase 1 and added to the ledger as a new series (e.g. BR-C-01 onwards), clearly separated from the ported rules. `verify:ledger-audit` in Phase 3 must be able to tell "rule kept from the old system" from "rule invented now".
+- **Q-04 (RoomType with price) is effectively settled.** A customer cannot book without seeing a price. The price model goes from an open question to a precondition — and thereby also `SalesService` and the revenue calculation (BR-31, which today always returns 0).
+- **Q-39 (authorisation model) is no longer optional.** At least two roles: staff and customer. A customer may only see their own bookings — that is an authorisation rule, not a UI state, and it does not exist in the system today.
+- **The attack surface becomes public.** See the Cybersecurity track: rate limiting, account enumeration, booking spam.
 
-| Id | Spørgsmål | Ejer |
+| Id | Question | Owner |
 |---|---|---|
-| **Q-60** | Hvad kan en kunde på hjemmesiden? Søg + book, se egne bookinger, annullere, redigere profil? | Frontend + domæne |
-| **Q-61** | Er `Guest` det samme som en kundekonto, eller er `User` en separat entitet knyttet til `Guest`? | Domæne — **blokerende for Fase 1** |
-| **Q-62** | Må en kunde annullere eller ændre sin egen booking, og hvor tæt på ankomst? | Domæne. Ny regel — findes ikke i ledgeren |
-| **Q-63** | Betaling på kundesiden, eller "betal ved ankomst"? | Domæne. Betaling ville trække `Payment`/`Invoice` ind (planens afsnit 7) |
-| **Q-64** | Blazor render modes: static SSR for offentlige sider + interactive server for personale? | Frontend — se note nedenfor |
-| **Q-65** | Skal kundesiden være offentligt tilgængelig og findbar (SEO)? | Frontend + DevOps |
-| **Q-66** | Kan man booke uden konto (guest checkout), eller kræves login? | Domæne + Cybersecurity |
-| **Q-67** | Rate limiting og bot-beskyttelse på offentlig booking? | Cybersecurity |
-| **Q-68** | Hvem må se pasnumre? Kunden sit eget, personale alles? | Cybersecurity (skærper Q-38) |
-| **Q-69** | E-mailbekræftelser ved booking? | Domæne + DevOps (SMTP i pipeline) |
+| **Q-60** | What can a customer do on the website? Search + book, see own bookings, cancel, edit profile? | Frontend + domain |
+| **Q-61** | Is `Guest` the same as a customer account, or is `User` a separate entity linked to `Guest`? | Domain — **blocking for Phase 1** |
+| **Q-62** | May a customer cancel or change their own booking, and how close to arrival? | Domain. New rule — does not exist in the ledger |
+| **Q-63** | Payment on the customer side, or "pay on arrival"? | Domain. Payment would pull `Payment`/`Invoice` in (section 7 of the plan) |
+| **Q-64** | Blazor render modes: static SSR for public pages + interactive server for staff? | Frontend — see the note below |
+| **Q-65** | Should the customer side be publicly accessible and findable (SEO)? | Frontend + DevOps |
+| **Q-66** | Can you book without an account (guest checkout), or is login required? | Domain + Cybersecurity |
+| **Q-67** | Rate limiting and bot protection on public booking? | Cybersecurity |
+| **Q-68** | Who may see passport numbers? The customer their own, staff everyone's? | Cybersecurity (sharpens Q-38) |
+| **Q-69** | E-mail confirmations on booking? | Domain + DevOps (SMTP in the pipeline) |
 
-**Note — Blazor Server og en offentlig side.** Blazor Server holder en SignalR-forbindelse pr. besøgende. Til 10 samtidige receptionister er det uproblematisk. Til en offentlig kundeside betyder det serverstate pr. anonym besøgende, følsomhed over for dårlige forbindelser, og ingen indeksérbar HTML uden videre. .NET 8+ løser det med render modes pr. komponent: static SSR på de offentlige sider, interactive server på personaleskærmene. Det bør besluttes i Fase 1b, ikke opdages i Fase 2.
+**Note — Blazor Server and a public site.** Blazor Server holds a SignalR connection per visitor. For 10 simultaneous receptionists that is unproblematic. For a public customer site it means server state per anonymous visitor, sensitivity to poor connections, and no indexable HTML out of the box. .NET 8+ solves it with render modes per component: static SSR on the public pages, interactive server on the staff screens. It should be decided in Phase 1b, not discovered in Phase 2.
 
 ---
 
 ## Frontend
 
-*(Valdemars guild)*
+*(Valdemar's guild)*
 
-| Id | Spørgsmål | Hvorfor det haster |
+| Id | Question | Why it is urgent |
 |---|---|---|
-| Q-26 | `GuestPolicy` og `Sales` er tomme skærme med hver sit menupunkt. Bygges eller udgår? | Sales afhænger af Q-04 (priser) |
-| Q-27 | "Payment Status" er hardkodet "Coming soon…" | Afhænger af om `Payment`/`Invoice` kommer med |
-| Q-28 | Tomme tilstande — skal alle 7 skærme have dem i Blazor? | Komponentdesign |
-| Q-17 | Uge- og månedsvisning filtrerer ikke på periode. Fejl eller feature? | Bevares reglen, eller rettes den? |
-| Q-21 | Søgning låser visningen permanent til år | Samme |
-| Q-23 | Enter i gæste-søgefeltet sorterer i stedet for at søge | Samme |
-| Q-24 | "Cancel Booking **Permanently** From System?" modsiger soft-delete | Ordlyd eller adfærd? |
-| Q-25 | CheckIn/CheckOut-fejl er usynlige for brugeren (kun `Debug.WriteLine`) | Skal rettes — status ændres in-memory før fejlen sluges |
-| **Q-46** | Kalender-tidslinjen: hvor havner converter-logikken (BR-117 til BR-120)? | Se note nedenfor |
-| **Q-47** | Komponentbibliotek: MudBlazor, Radzen, eller egne komponenter? | Låser hele Fase 2's Web-arbejde |
-| **Q-48** | Blazor Server er stateful pr. bruger. Hvad sker der når to receptionister booker samme værelse samtidigt? | Realtidsopdatering eller optimistisk låsning |
+| Q-26 | `GuestPolicy` and `Sales` are empty screens, each with its own menu item. Built or dropped? | Sales depends on Q-04 (prices) |
+| Q-27 | "Payment Status" is hard-coded "Coming soon…" | Depends on whether `Payment`/`Invoice` are included |
+| Q-28 | Empty states — should all 7 screens have them in Blazor? | Component design |
+| Q-17 | Week and month views do not filter by period. Bug or feature? | Is the rule kept, or fixed? |
+| Q-21 | Search locks the view permanently to year | Same |
+| Q-23 | Enter in the guest search field sorts instead of searching | Same |
+| Q-24 | "Cancel Booking **Permanently** From System?" contradicts soft delete | Wording or behaviour? |
+| Q-25 | CheckIn/CheckOut errors are invisible to the user (only `Debug.WriteLine`) | Must be fixed — status is changed in memory before the error is swallowed |
+| **Q-46** | Calendar timeline: where does the converter logic (BR-117 to BR-120) end up? | See the note below |
+| **Q-47** | Component library: MudBlazor, Radzen, or own components? | Locks all of Phase 2's Web work |
+| **Q-48** | Blazor Server is stateful per user. What happens when two receptionists book the same room at the same time? | Real-time update or optimistic locking |
 
-**Note — kalenderen er den dyreste komponent.** `BookingOverviewView.xaml` er 1.093 linjer, og fire ægte forretningsregler ligger gemt i dens WPF-convertere: bredden er antal *overnatninger* (BR-117), bookinger tegnes fra midt på check-in-dagen (BR-118), ophold der starter før perioden klippes (BR-119), og bookinger uden rum udelades helt (BR-120). WPF-convertere findes ikke i Blazor — logikken skal et sted hen, og den bør ende i en ViewModel eller en ren beregningsklasse, ikke i Razor-markup. Det er den ene komponent hvor "genskrivning, ikke portering" gør mest ondt.
+**Note — the calendar is the most expensive component.** `BookingOverviewView.xaml` is 1,093 lines, and four real business rules are hidden in its WPF converters: the width is the number of *nights* (BR-117), bookings are drawn from the middle of the check-in day (BR-118), stays that start before the period are clipped (BR-119), and bookings without a room are omitted entirely (BR-120). WPF converters do not exist in Blazor — the logic has to go somewhere, and it should end up in a ViewModel or a pure calculation class, not in Razor markup. It is the one component where "rewrite, not port" hurts most.
 
 ---
 
 ## AI Integration
 
-| Id | Spørgsmål | Hvorfor det haster |
+| Id | Question | Why it is urgent |
 |---|---|---|
-| **Q-49** | Hvad måler I på? Kontekstforbrug, wall-clock, antal fund pr. agent, fejl fanget af verifikationsagenten? | Skal besluttes **før** Fase 1, ellers er der ingen baseline |
-| **Q-50** | Deterministisk `Workflow`-script eller prompt-drevet orkestrering? | Planens afsnit 5. Et script gør fan-out til kode og er lettere at dokumentere |
-| **Q-51** | Er ledger-auditen (Fase 3) det primære bevis på at refaktoreringen er komplet? | Hvis ja, skal ledgeren fryses efter Fase 1 |
+| **Q-49** | What do you measure? Context use, wall-clock, number of findings per agent, errors caught by the verification agent? | Must be decided **before** Phase 1, otherwise there is no baseline |
+| **Q-50** | Deterministic `Workflow` script or prompt-driven orchestration? | Section 5 of the plan. A script makes the fan-out code and is easier to document |
+| **Q-51** | Is the ledger audit (Phase 3) the primary proof that the refactoring is complete? | If yes, the ledger must be frozen after Phase 1 |
 
-**Materiale I allerede har fra Fase 0** — det er værd at skrive ned nu, mens det er friskt:
+**Material you already have from Phase 0** — worth writing down now while it is fresh:
 
-- **Kontekstisolation virkede målbart.** Fem agenter læste hver sit område. `analyse:viewmodels` fandt 90 regler i ét pass uden at have set SQL, tests eller views.
-- **Uafhængig verifikation fangede reelle modsigelser.** `analyse:tests` konkluderede af T-20/T-21 at man kan checke ind uden at bekræfte — og `analyse:viewmodels` nåede uafhængigt samme konklusion fra koden. To agenter uden fælles kontekst der peger på samme hul er stærkere bevis end én agent der læser alt.
-- **Agenterne fandt ting det gamle hold ikke vidste:** to slettede tests (`DELETE TESTS` og `UPDATE TESTS` med tomme huller), 22 uoverensstemmelser mellem model, skema og diagrammer, og at README'en beskriver en anden version af koden end den der ligger der.
-- **Snævre kontrakter gav ærlige svar.** Fire af fem agenter afsluttede med "det kan jeg ikke afgøre inden for mit læseområde" i stedet for at gætte — fx `analyse:repos`, der ikke kunne se hvem der instantierer repositories, og sagde det.
-- **PostgreSQL-skiftet blev billigt.** Beslutningen kom efter analysen og ramte kun ét afsnit i planen og fire spørgsmål — fordi analysen var lagdelt fra start.
+- **Context isolation measurably worked.** Five agents each read their own area. `analyse:viewmodels` found 90 rules in one pass without having seen SQL, tests or views.
+- **Independent verification caught real contradictions.** `analyse:tests` concluded from T-20/T-21 that you can check in without confirming — and `analyse:viewmodels` independently reached the same conclusion from the code. Two agents without shared context pointing to the same hole is stronger evidence than one agent reading everything.
+- **The agents found things the old team did not know:** two deleted tests (`DELETE TESTS` and `UPDATE TESTS` with empty gaps), 22 discrepancies between model, schema and diagrams, and that the README describes a different version of the code than the one that is there.
+- **Narrow contracts gave honest answers.** Four of five agents ended with "I cannot determine that within my reading area" instead of guessing — e.g. `analyse:repos`, which could not see who instantiates repositories, and said so.
+- **The PostgreSQL switch became cheap.** The decision came after the analysis and hit only one section of the plan and four questions — because the analysis was layered from the start.
 
 ---
 
-## Fælles domæne — kan ikke uddelegeres
+## Shared domain — cannot be delegated
 
-Disse fire skal hele holdet afgøre sammen, før Fase 1.
+These four must be decided by the whole team together, before Phase 1.
 
-| Id | Spørgsmål | Hvem det rammer |
+| Id | Question | Who it affects |
 |---|---|---|
-| **Q-01** | Er `Confirmed` en forudsætning for check-in? I dag: nej (BR-06, bekræftet af test T-21) — men dialogen siger "Payment has been received" | Alle. Tilstandsmaskinen er kernen |
-| **Q-02** | Frigiver en `CheckedOut` booking rummet for perioden? To modstridende regler i dag (BR-19 vs. BR-39) | Backend, Frontend, Mobil |
-| **Q-03** | Hvor ligger overlapstjekket, og er det transaktionelt? Der findes **intet** i dag ved oprettelse | Backend, DevOps (DB-constraint) |
-| **Q-04** | Skal `RoomType` med pris ind? | ✅ **Reelt afgjort af kundesiden: ja.** En kunde kan ikke booke uden pris. Tilbage står *hvordan* — pris pr. nat pr. `RoomType`, sæsonpriser, eller noget tredje |
+| **Q-01** | Is `Confirmed` a precondition for check-in? Today: no (BR-06, confirmed by test T-21) — but the dialog says "Payment has been received" | Everyone. The state machine is the core |
+| **Q-02** | Does a `CheckedOut` booking release the room for the period? Two contradicting rules today (BR-19 vs. BR-39) | Backend, Frontend, Mobile |
+| **Q-03** | Where does the overlap check live, and is it transactional? There is **none** today on creation | Backend, DevOps (DB constraint) |
+| **Q-04** | Should `RoomType` with price be included? | ✅ **Effectively settled by the customer side: yes.** A customer cannot book without a price. What remains is *how* — price per night per `RoomType`, seasonal prices, or something else |
 
-**Q-61 er den nye dyreste.** Forholdet mellem `Guest` (en person i en booking) og `User` (nogen der kan logge ind) er fundamentet under både autorisation, kundesiden og JWT-udstedelsen. Vælger I forkert, rammer det Domain, Application, Api og begge klienter.
+**Q-61 is the new most expensive one.** The relationship between `Guest` (a person in a booking) and `User` (someone who can log in) is the foundation under authorisation, the customer side and JWT issuing. If you choose wrongly, it hits Domain, Application, Api and both clients.
 
-**Q-04 er ikke længere et ja/nej, men et hvordan.** Prismodellen ændrer stadig domænemodellen, ER-diagrammet og use case-listen — tre af Fase 1's leverancer.
+**Q-04 is no longer a yes/no, but a how.** The price model still changes the domain model, the ER diagram and the use case list — three of Phase 1's deliverables.
 
 ---
 
-## Restspørgsmål uden fast ejer
+## Remaining questions without a fixed owner
 
-Ikke blokerende, men skal ikke gå tabt. Fuld beskrivelse i `OpenQuestions.md`.
+Not blocking, but must not be lost. Full description in `OpenQuestions.md`.
 
-- **Datamodel:** Q-05 (hvilket gammelt skema er reference), Q-05b (`date` vs. `timestamptz`), Q-10 (`BookingNumber` persisteret eller afledt), Q-11 (pasnummer obligatorisk — overlapper Q-38), Q-12 (dedupliker gæster på e-mail), Q-13 (enum-mapping), Q-14 (casing/navngivning), Q-15 (rumstatusser i XAML matcher ikke enum'en), Q-16 (seed-data)
-- **PostgreSQL:** Q-29 (snake_case via `EFCore.NamingConventions`), Q-32 (brug `jsonb`/arrays eller hold skemaet portabelt)
-- **Adfærdsfejl:** Q-18 (redigeret gæst mister sit id), Q-19 (ny gæst forsvinder ved næste søgning), Q-20 (eksisterende gæsts ændringer gemmes ikke), Q-22 (ingen øvre grænse på check-in)
+- **Data model:** Q-05 (which old schema is the reference), Q-05b (`date` vs. `timestamptz`), Q-10 (`BookingNumber` persisted or derived), Q-11 (passport number mandatory — overlaps Q-38), Q-12 (deduplicate guests on e-mail), Q-13 (enum mapping), Q-14 (casing/naming), Q-15 (room statuses in XAML do not match the enum), Q-16 (seed data)
+- **PostgreSQL:** Q-29 (snake_case via `EFCore.NamingConventions`), Q-32 (use `jsonb`/arrays or keep the schema portable)
+- **Behaviour bugs:** Q-18 (edited guest loses its id), Q-19 (new guest disappears at the next search), Q-20 (existing guest's changes are not saved), Q-22 (no upper limit on check-in)
