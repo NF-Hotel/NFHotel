@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 11, the domain has only the folders of the skill (MIL-008) | [48701b5] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 12, validation attributes on the entities (MIL-009) | [4cab5fc] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 12, validation attributes on the entities (MIL-009) | [4cab5fc] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 13, the comments in the source code are in English (MIL-010) | pending |
 
 ---
 
@@ -71,6 +71,7 @@ basis for the hosting decision (Q-31).
 10. Capture the business concepts of the hotel back office (bookings, rooms, guests) in a Domain Model that follows the framework rules (`QC-DM-001`), so that design and code can be checked against it.
 11. Dissolve the folder `NFHotel.Domain/Rules` so that the domain has only the folders of the `clean-architecture` skill, the rules living with the entities, value objects and errors they guard, with no change of behaviour.
 12. Express the field rules of the entities as attributes on their properties (ADR-0002), so that the entities hold no validation code, with no change of behaviour.
+13. Convert the comments in the source code and the tests from Danish to English, the Product Owner language, without changing any code; the text of the application screens stays as it is.
 
 ## Scope
 
@@ -88,6 +89,7 @@ basis for the hosting decision (Q-31).
 - A Domain Dictionary, three brief use cases and the project Domain Model of the back office, compared with the code (MIL-007); the code is not changed by that milestone.
 - The move of the rules of `NFHotel.Domain/Rules` into the entities, value objects and errors, with the tests and callers updated (MIL-008).
 - Attributes on the properties of `Room` and `Guest` in place of their validation methods, with tests that fix codes, rules and order (MIL-009).
+- The conversion of all comments in `src/` and `tests/` to English, with a check that only comments changed (MIL-010); the text of the application screens, string literals and test data stay as they are.
 
 ### Out of Scope
 
@@ -140,6 +142,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 13 | Domain Model | Every Mandatory criterion of `QC-DM-001` passes; 0 concepts without a source use case or dictionary term | Review record of the Domain Model |
 | 14 | Domain folders | 0 folders in `NFHotel.Domain` other than `Entities`, `ValueObjects`, `Repositories` and `Errors`; error code strings unchanged | `dotnet test` and a folder listing |
 | 15 | Attribute validation | 0 methods named `Validate` or `IsValid…` in `Room` and `Guest`; error codes, rules and their order unchanged | `dotnet test` and a source search |
+| 16 | Source comments in English | 0 Danish letters or words in the comments of `src/` and `tests/`; 0 changed lines that are not comments | Language scan and comment-only diff check in the review record |
 
 ## Risks
 
