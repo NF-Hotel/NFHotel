@@ -1,6 +1,7 @@
-using NFHotel.Domain.Bookings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+using NFHotel.Domain.Entities;
 
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
@@ -16,32 +17,29 @@ namespace NFHotel.Infrastructure.Persistence.Configurations;
 /// migrationen.
 /// </para>
 /// </remarks>
-public sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
+public sealed class BookingConfiguration : EntityConfiguration<Booking, int>
 {
     /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<Booking> builder)
+    protected override string TableName => BookingOverlapConstraint.TableName;
+
+    /// <inheritdoc />
+    protected override void ConfigureTable(TableBuilder<Booking> table)
     {
-        ArgumentNullException.ThrowIfNull(builder);
+        // Databaseværn bag domænets tilstandsmaskine. Det gamle skema havde ingen
+        // constraint, så en vilkårlig int kunne skrives i status-kolonnen.
+        table.HasCheckConstraint(
+            "ck_booking_status_range",
+            $"{BookingOverlapConstraint.StatusColumn} BETWEEN 0 AND 4");
 
-        builder.ToTable(BookingOverlapConstraint.TableName, table =>
-        {
-            // Databaseværn bag domænets tilstandsmaskine. Det gamle skema havde ingen
-            // constraint, så en vilkårlig int kunne skrives i status-kolonnen.
-            table.HasCheckConstraint(
-                "ck_booking_status_range",
-                $"{BookingOverlapConstraint.StatusColumn} BETWEEN 0 AND 4");
+        // BR-103: 0 nætter er ikke en booking. Spejler DateRange-invarianten.
+        table.HasCheckConstraint(
+            "ck_booking_end_after_start",
+            $"{BookingOverlapConstraint.EndDateColumn} > {BookingOverlapConstraint.StartDateColumn}");
+    }
 
-            // BR-103: 0 nætter er ikke en booking. Spejler DateRange-invarianten.
-            table.HasCheckConstraint(
-                "ck_booking_end_after_start",
-                $"{BookingOverlapConstraint.EndDateColumn} > {BookingOverlapConstraint.StartDateColumn}");
-        });
-
-        builder.HasKey(booking => booking.BookingId);
-
-        builder.Property(booking => booking.BookingId)
-            .ValueGeneratedOnAdd();
-
+    /// <inheritdoc />
+    protected override void ConfigureEntity(EntityTypeBuilder<Booking> builder)
+    {
         builder.Property(booking => booking.StartDate)
             .HasColumnType("date")
             .IsRequired();

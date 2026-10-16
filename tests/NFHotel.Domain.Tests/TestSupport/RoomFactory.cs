@@ -1,4 +1,5 @@
-using NFHotel.Domain.Rooms;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Tests.TestSupport;
 

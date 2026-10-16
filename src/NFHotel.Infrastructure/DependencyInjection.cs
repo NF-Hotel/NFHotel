@@ -1,16 +1,18 @@
-using NFHotel.Application.Bookings;
-using NFHotel.Application.Common;
-using NFHotel.Application.Guests;
-using NFHotel.Application.Holidays;
-using NFHotel.Application.Rooms;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.Bookings;
+using NFHotel.Application.UseCases.Guests;
+using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Domain.Repositories;
+using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Holidays;
 using NFHotel.Infrastructure.Persistence;
 using NFHotel.Infrastructure.Repositories;
 using NFHotel.Infrastructure.Security;
 using NFHotel.Infrastructure.Time;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace NFHotel.Infrastructure;
 
@@ -128,8 +130,11 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IBookingRepository, BookingRepository>();
+        services.AddScoped<IBookingQueries, BookingRepository>();
         services.AddScoped<IRoomRepository, RoomRepository>();
+        services.AddScoped<IRoomQueries, RoomRepository>();
         services.AddScoped<IGuestRepository, GuestRepository>();
+        services.AddScoped<IGuestQueries, GuestRepository>();
     }
 
     /// <summary>Registrerer krypteringen. Singleton: nøglen er uforanderlig, og AesGcm laves pr. operation.</summary>

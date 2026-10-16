@@ -31,6 +31,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-004] | Milestone | en | it | [BC-001], [US-001] | - | [RC-015] |
 | [MIL-005] | Milestone | en | it | [BC-001] | - | [RC-018] |
 | [ADR-0001] | Architecture Decision Record | - | - | [BC-001] | [MIL-005] | [RC-019] |
+| `src/` (Domain, Application, Infrastructure) | Source code | - | - | [ADR-0001], [MIL-005] | - | [RC-020] |
 | [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003] | - |
 | [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001] | [RC-013] |
 | [US-001] | User Story | en | it | [UCD-001], [BC-001] | - | [RC-012] |
@@ -64,6 +65,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-017]: ./reviews/rc-017-business-case-clean-architecture.md
 [RC-018]: ./reviews/rc-018-milestone-005.md
 [RC-019]: ./reviews/rc-019-adr-0001.md
+[RC-020]: ./reviews/rc-020-clean-architecture-code.md
 [ADR-0001]: ../adr/adr-0001-clean-architecture-structure.md
 [MIL-005]: ../milestones/mil-005-clean-architecture.md
 [MIL-004]: ../milestones/mil-004-market-analysis-service.md

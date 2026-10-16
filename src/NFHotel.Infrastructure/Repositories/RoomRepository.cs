@@ -1,7 +1,11 @@
-using NFHotel.Application.Rooms;
-using NFHotel.Domain.Rooms;
-using NFHotel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+
+using NFHotel.Application.Dto.Rooms;
+using NFHotel.Application.Ports;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.Repositories;
+using NFHotel.Domain.ValueObjects;
+using NFHotel.Infrastructure.Persistence;
 
 namespace NFHotel.Infrastructure.Repositories;
 
@@ -12,20 +16,16 @@ namespace NFHotel.Infrastructure.Repositories;
 /// Filtre er parametre, ikke hardkodede valg: det gamle <c>GetAllByAvailability()</c>
 /// afgjorde selv hvad "tilgængelig" betød (BR-110). Her vælger servicen.
 /// </remarks>
-public sealed class RoomRepository : IRoomRepository
+public sealed class RoomRepository : Repository<Room, int>, IRoomRepository, IRoomQueries
 {
-    private readonly HotelDbContext _context;
-
     /// <summary>
     /// Opretter repositoryet.
     /// </summary>
     /// <param name="context">Konteksten.</param>
     /// <exception cref="ArgumentNullException">Kastes hvis <paramref name="context"/> er <c>null</c>.</exception>
     public RoomRepository(HotelDbContext context)
+        : base(context)
     {
-        ArgumentNullException.ThrowIfNull(context);
-
-        _context = context;
     }
 
     // --------------------------------------------------------
@@ -34,11 +34,11 @@ public sealed class RoomRepository : IRoomRepository
 
     /// <inheritdoc />
     public async Task<RoomDetailsDto?> GetDetailsAsync(int roomId, CancellationToken cancellationToken = default) =>
-        await _context.Rooms
+        await Context.Rooms
             .AsNoTracking()
-            .Where(room => room.RoomId == roomId)
+            .Where(room => room.Id == roomId)
             .Select(room => new RoomDetailsDto(
-                room.RoomId,
+                room.Id,
                 room.RoomNumber,
                 room.Floor,
                 room.Size,
@@ -52,13 +52,13 @@ public sealed class RoomRepository : IRoomRepository
 
                 // BR-78, BR-112: sletteguarden bæres op i UI'et som en oplysning, så
                 // advarslen kan vises inden knappen trykkes.
-                _context.Bookings.Any(booking => booking.RoomId == room.RoomId)))
+                Context.Bookings.Any(booking => booking.RoomId == room.Id)))
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<RoomListItemDto>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        await ProjectListItems(_context.Rooms.AsNoTracking())
+        await ProjectListItems(Context.Rooms.AsNoTracking())
             .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -69,7 +69,7 @@ public sealed class RoomRepository : IRoomRepository
     {
         ArgumentNullException.ThrowIfNull(filter);
 
-        var query = _context.Rooms.AsNoTracking();
+        var query = Context.Rooms.AsNoTracking();
 
         // BR-74, BR-76: null betyder "filtrér ikke på dette". Et tomt filter er derfor
         // "ryd filter" — der er ingen særskilt use case for det.
@@ -100,12 +100,12 @@ public sealed class RoomRepository : IRoomRepository
     public async Task<IReadOnlyList<AvailableRoomDto>> GetByStatusAsync(
         RoomStatus status,
         CancellationToken cancellationToken = default) =>
-        await _context.Rooms
+        await Context.Rooms
             .AsNoTracking()
             .Where(room => room.Status == status)
             .OrderBy(room => room.RoomNumber)
             .Select(room => new AvailableRoomDto(
-                room.RoomId,
+                room.Id,
                 room.RoomNumber,
                 room.Floor,
                 room.Size,
@@ -115,7 +115,7 @@ public sealed class RoomRepository : IRoomRepository
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<int>> GetDistinctFloorsAsync(CancellationToken cancellationToken = default) =>
-        await _context.Rooms
+        await Context.Rooms
             .AsNoTracking()
             .Select(room => room.Floor)
             .Distinct()
@@ -131,11 +131,11 @@ public sealed class RoomRepository : IRoomRepository
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(roomNumber);
 
-        var query = _context.Rooms.AsNoTracking().Where(room => room.RoomNumber == roomNumber);
+        var query = Context.Rooms.AsNoTracking().Where(room => room.RoomNumber == roomNumber);
 
         if (excludeRoomId is int excludedId)
         {
-            query = query.Where(room => room.RoomId != excludedId);
+            query = query.Where(room => room.Id != excludedId);
         }
 
         return await query.AnyAsync(cancellationToken).ConfigureAwait(false);
@@ -143,7 +143,7 @@ public sealed class RoomRepository : IRoomRepository
 
     /// <inheritdoc />
     public async Task<bool> HasAnyBookingsAsync(int roomId, CancellationToken cancellationToken = default) =>
-        await _context.Bookings
+        await Context.Bookings
             .AsNoTracking()
             .AnyAsync(booking => booking.RoomId == roomId, cancellationToken)
             .ConfigureAwait(false);
@@ -153,34 +153,7 @@ public sealed class RoomRepository : IRoomRepository
     // --------------------------------------------------------
 
     /// <inheritdoc />
-    public async Task<Room?> GetByIdAsync(int roomId, CancellationToken cancellationToken = default) =>
-        await _context.Rooms
-            .FirstOrDefaultAsync(room => room.RoomId == roomId, cancellationToken)
-            .ConfigureAwait(false);
-
-    /// <inheritdoc />
-    public void Add(Room room)
-    {
-        ArgumentNullException.ThrowIfNull(room);
-
-        _context.Rooms.Add(room);
-    }
-
-    /// <inheritdoc />
-    public void Update(Room room)
-    {
-        ArgumentNullException.ThrowIfNull(room);
-
-        _context.Rooms.Update(room);
-    }
-
-    /// <inheritdoc />
-    public void Remove(Room room)
-    {
-        ArgumentNullException.ThrowIfNull(room);
-
-        _context.Rooms.Remove(room);
-    }
+    public void Remove(Room room) => MarkForRemoval(room);
 
     /// <summary>
     /// Projicerer rum til listerækker, sorteret på værelsesnummer.
@@ -191,7 +164,7 @@ public sealed class RoomRepository : IRoomRepository
         query
             .OrderBy(room => room.RoomNumber)
             .Select(room => new RoomListItemDto(
-                room.RoomId,
+                room.Id,
                 room.RoomNumber,
                 room.Floor,
                 room.Size,

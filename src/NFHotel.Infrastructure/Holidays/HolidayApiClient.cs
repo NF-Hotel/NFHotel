@@ -2,9 +2,14 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using NFHotel.Application.Common;
-using NFHotel.Application.Holidays;
+
 using Microsoft.Extensions.Logging;
+
+using NFHotel.Application.Dto.Holidays;
+using NFHotel.Application.Errors;
+using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases;
+using NFHotel.Infrastructure.Config;
 
 namespace NFHotel.Infrastructure.Holidays;
 

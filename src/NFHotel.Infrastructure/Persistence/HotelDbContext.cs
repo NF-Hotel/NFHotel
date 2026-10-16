@@ -1,9 +1,8 @@
-using NFHotel.Domain.Bookings;
-using NFHotel.Domain.Guests;
-using NFHotel.Domain.Rooms;
+using Microsoft.EntityFrameworkCore;
+
+using NFHotel.Domain.Entities;
 using NFHotel.Infrastructure.Persistence.Configurations;
 using NFHotel.Infrastructure.Security;
-using Microsoft.EntityFrameworkCore;
 
 namespace NFHotel.Infrastructure.Persistence;
 

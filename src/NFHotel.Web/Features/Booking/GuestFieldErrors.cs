@@ -1,5 +1,5 @@
-using NFHotel.Application.Common;
-
+using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Booking;

@@ -23,14 +23,14 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "btree_gist");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("NFHotel.Domain.Bookings.Booking", b =>
+            modelBuilder.Entity("NFHotel.Domain.Entities.Booking", b =>
                 {
-                    b.Property<int>("BookingId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("booking_id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BookingId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTimeOffset?>("CheckInTime")
                         .HasColumnType("timestamptz")
@@ -76,7 +76,7 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
 
-                    b.HasKey("BookingId")
+                    b.HasKey("Id")
                         .HasName("pk_booking");
 
                     b.HasIndex("GuestId")
@@ -96,14 +96,14 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("NFHotel.Domain.Guests.Guest", b =>
+            modelBuilder.Entity("NFHotel.Domain.Entities.Guest", b =>
                 {
-                    b.Property<int>("GuestId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("guest_id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("GuestId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Country")
                         .IsRequired()
@@ -145,7 +145,7 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
 
-                    b.HasKey("GuestId")
+                    b.HasKey("Id")
                         .HasName("pk_guest");
 
                     b.HasIndex("LastName", "FirstName")
@@ -154,14 +154,14 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                     b.ToTable("guest", (string)null);
                 });
 
-            modelBuilder.Entity("NFHotel.Domain.Rooms.Room", b =>
+            modelBuilder.Entity("NFHotel.Domain.Entities.Room", b =>
                 {
-                    b.Property<int>("RoomId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("room_id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RoomId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("Capacity")
                         .HasColumnType("integer")
@@ -195,7 +195,7 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
 
-                    b.HasKey("RoomId")
+                    b.HasKey("Id")
                         .HasName("pk_room");
 
                     b.HasIndex("RoomNumber")
@@ -213,16 +213,16 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("NFHotel.Domain.Bookings.Booking", b =>
+            modelBuilder.Entity("NFHotel.Domain.Entities.Booking", b =>
                 {
-                    b.HasOne("NFHotel.Domain.Guests.Guest", "Guest")
+                    b.HasOne("NFHotel.Domain.Entities.Guest", "Guest")
                         .WithMany()
                         .HasForeignKey("GuestId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_booking_guest_guest_id");
 
-                    b.HasOne("NFHotel.Domain.Rooms.Room", "Room")
+                    b.HasOne("NFHotel.Domain.Entities.Room", "Room")
                         .WithMany()
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Restrict)

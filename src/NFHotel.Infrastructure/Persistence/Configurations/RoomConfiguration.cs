@@ -1,6 +1,7 @@
-using NFHotel.Domain.Rooms;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+using NFHotel.Domain.Entities;
 
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
@@ -11,27 +12,22 @@ namespace NFHotel.Infrastructure.Persistence.Configurations;
 /// Længdegrænsen spejler domænets konstant frem for at gentage tallet (A-10): ellers ville
 /// en for lang værdi fejle som <c>DbUpdateException</c> i stedet for som en domænefejl.
 /// </remarks>
-public sealed class RoomConfiguration : IEntityTypeConfiguration<Room>
+public sealed class RoomConfiguration : EntityConfiguration<Room, int>
 {
-    private const string TableName = "room";
+    /// <inheritdoc />
+    protected override string TableName => "room";
 
     /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<Room> builder)
+    protected override void ConfigureTable(TableBuilder<Room> table)
     {
-        ArgumentNullException.ThrowIfNull(builder);
+        // BR-98 og BR-100 som databaseværn bag domæneinvarianten (BR-N-04).
+        table.HasCheckConstraint("ck_room_floor_positive", "floor > 0");
+        table.HasCheckConstraint("ck_room_capacity_positive", "capacity > 0");
+    }
 
-        builder.ToTable(TableName, table =>
-        {
-            // BR-98 og BR-100 som databaseværn bag domæneinvarianten (BR-N-04).
-            table.HasCheckConstraint("ck_room_floor_positive", "floor > 0");
-            table.HasCheckConstraint("ck_room_capacity_positive", "capacity > 0");
-        });
-
-        builder.HasKey(room => room.RoomId);
-
-        builder.Property(room => room.RoomId)
-            .ValueGeneratedOnAdd();
-
+    /// <inheritdoc />
+    protected override void ConfigureEntity(EntityTypeBuilder<Room> builder)
+    {
         // Det gamle skema sagde INT i det ene SQL-sæt og string i C#. Ét skema, én type.
         builder.Property(room => room.RoomNumber)
             .HasMaxLength(Room.MaxRoomNumberLength)

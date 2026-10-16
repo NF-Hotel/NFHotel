@@ -1,5 +1,5 @@
-using NFHotel.Domain.Bookings;
-using NFHotel.Domain.Common;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Tests.TestSupport;
 
@@ -114,15 +114,15 @@ internal static class BookingFactory
     /// </summary>
     /// <param name="booking">Bookingen der skal have et id.</param>
     /// <param name="bookingId">Det id EF Core ellers ville have tildelt.</param>
-    /// <returns>Samme booking, med <see cref="Booking.BookingId"/> sat.</returns>
+    /// <returns>Samme booking, med <see cref="Entity{TKey}.Id"/> sat.</returns>
     /// <remarks>
-    /// <see cref="Booking.BookingId"/> har privat setter, fordi kun EF Core må tildele den
+    /// <see cref="Entity{TKey}.Id"/> har privat setter, fordi kun EF Core må tildele den
     /// (A-15). BR-109's bookingnummerformat kan kun testes med et realistisk id, så
     /// nøglen sættes her via refleksion i stedet for at åbne setteren for produktionskode.
     /// </remarks>
     internal static Booking WithBookingId(Booking booking, int bookingId)
     {
-        var setter = typeof(Booking).GetProperty(nameof(Booking.BookingId))!.GetSetMethod(nonPublic: true)!;
+        var setter = typeof(Booking).GetProperty(nameof(Booking.Id))!.GetSetMethod(nonPublic: true)!;
         setter.Invoke(booking, [bookingId]);
 
         return booking;

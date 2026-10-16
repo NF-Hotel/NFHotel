@@ -1,6 +1,7 @@
-using NFHotel.Application.Common;
-using NFHotel.Application.Rooms;
-using NFHotel.Domain.Rooms;
+using NFHotel.Application.Dto.Rooms;
+using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Admin.Rooms;
@@ -385,18 +386,18 @@ public sealed class RoomListViewModel
         RoomAction action,
         int roomId,
         CancellationToken cancellationToken) => action switch
-    {
-        RoomAction.TakeOutOfService => service.TakeOutOfServiceAsync(roomId, cancellationToken),
-        RoomAction.SendToMaintenance => service.SendToMaintenanceAsync(roomId, cancellationToken),
-        RoomAction.ReturnToService => service.ReturnToServiceAsync(roomId, cancellationToken),
-        RoomAction.MarkDailyCleaningDue => service.MarkDailyCleaningDueAsync(roomId, cancellationToken),
-        RoomAction.MarkDepartureCleaningDue => service.MarkDepartureCleaningDueAsync(roomId, cancellationToken),
-        RoomAction.StartCleaning => service.StartCleaningAsync(roomId, cancellationToken),
-        RoomAction.CompleteCleaning => service.CompleteCleaningAsync(roomId, cancellationToken),
-        RoomAction.ReportServiceNeeded => service.ReportServiceNeededAsync(roomId, cancellationToken),
-        RoomAction.StartService => service.StartServiceAsync(roomId, cancellationToken),
-        RoomAction.CompleteServiceStillDirty => service.CompleteServiceAsync(roomId, requiresCleaning: true, cancellationToken),
-        RoomAction.CompleteServiceClean => service.CompleteServiceAsync(roomId, requiresCleaning: false, cancellationToken),
-        _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ukendt rumhandling.")
-    };
+        {
+            RoomAction.TakeOutOfService => service.TakeOutOfServiceAsync(roomId, cancellationToken),
+            RoomAction.SendToMaintenance => service.SendToMaintenanceAsync(roomId, cancellationToken),
+            RoomAction.ReturnToService => service.ReturnToServiceAsync(roomId, cancellationToken),
+            RoomAction.MarkDailyCleaningDue => service.MarkDailyCleaningDueAsync(roomId, cancellationToken),
+            RoomAction.MarkDepartureCleaningDue => service.MarkDepartureCleaningDueAsync(roomId, cancellationToken),
+            RoomAction.StartCleaning => service.StartCleaningAsync(roomId, cancellationToken),
+            RoomAction.CompleteCleaning => service.CompleteCleaningAsync(roomId, cancellationToken),
+            RoomAction.ReportServiceNeeded => service.ReportServiceNeededAsync(roomId, cancellationToken),
+            RoomAction.StartService => service.StartServiceAsync(roomId, cancellationToken),
+            RoomAction.CompleteServiceStillDirty => service.CompleteServiceAsync(roomId, requiresCleaning: true, cancellationToken),
+            RoomAction.CompleteServiceClean => service.CompleteServiceAsync(roomId, requiresCleaning: false, cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ukendt rumhandling.")
+        };
 }

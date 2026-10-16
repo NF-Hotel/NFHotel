@@ -1,7 +1,10 @@
 @page "/admin/rooms"
 @layout NFHotel.Web.Components.Layout.AdminLayout
 @rendermode InteractiveServer
-@using NFHotel.Domain.Rooms
+@using NFHotel.Domain.Entities
+@using NFHotel.Domain.Errors
+@using NFHotel.Domain.Rules
+@using NFHotel.Domain.ValueObjects
 @using NFHotel.Web.Features.Admin.Rooms
 @inject RoomListViewModel ViewModel
 @inject RoomFormViewModel Form

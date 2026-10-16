@@ -1,8 +1,12 @@
-using NFHotel.Application.Bookings;
-using NFHotel.Application.Common;
-using NFHotel.Application.Guests;
-using NFHotel.Application.Rooms;
-using NFHotel.Domain.Common;
+using NFHotel.Application.Dto.Bookings;
+using NFHotel.Application.Dto.Guests;
+using NFHotel.Application.Dto.Rooms;
+using NFHotel.Application.Errors;
+using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Bookings;
+using NFHotel.Application.UseCases.Guests;
+using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Booking;

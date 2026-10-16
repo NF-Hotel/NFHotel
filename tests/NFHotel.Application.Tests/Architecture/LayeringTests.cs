@@ -1,5 +1,6 @@
 using System.Reflection;
-using NFHotel.Application.Common;
+
+using NFHotel.Application.UseCases;
 
 namespace NFHotel.Application.Tests.Architecture;
 
@@ -12,7 +13,7 @@ namespace NFHotel.Application.Tests.Architecture;
 public sealed class LayeringTests
 {
     private static readonly Assembly ApplicationAssembly = typeof(Result).Assembly;
-    private static readonly Assembly DomainAssembly = typeof(Domain.Bookings.Booking).Assembly;
+    private static readonly Assembly DomainAssembly = typeof(Domain.Entities.Booking).Assembly;
 
     /// <summary>Application må kun kende Domain og BCL — ingen persistens, ingen web.</summary>
     [Theory]

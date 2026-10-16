@@ -1,9 +1,14 @@
-using NFHotel.Application.Bookings;
-using NFHotel.Application.Guests;
-using NFHotel.Application.Rooms;
-using NFHotel.Domain.Bookings;
-using NFHotel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+
+using NFHotel.Application.Dto.Bookings;
+using NFHotel.Application.Dto.Guests;
+using NFHotel.Application.Dto.Rooms;
+using NFHotel.Application.Ports;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.Repositories;
+using NFHotel.Domain.Rules;
+using NFHotel.Domain.ValueObjects;
+using NFHotel.Infrastructure.Persistence;
 
 namespace NFHotel.Infrastructure.Repositories;
 
@@ -21,20 +26,16 @@ namespace NFHotel.Infrastructure.Repositories;
 /// SQL grovfiltrerer kun.
 /// </para>
 /// </remarks>
-public sealed class BookingRepository : IBookingRepository
+public sealed class BookingRepository : Repository<Booking, int>, IBookingRepository, IBookingQueries
 {
-    private readonly HotelDbContext _context;
-
     /// <summary>
     /// Opretter repositoryet.
     /// </summary>
     /// <param name="context">Konteksten.</param>
     /// <exception cref="ArgumentNullException">Kastes hvis <paramref name="context"/> er <c>null</c>.</exception>
     public BookingRepository(HotelDbContext context)
+        : base(context)
     {
-        ArgumentNullException.ThrowIfNull(context);
-
-        _context = context;
     }
 
     // --------------------------------------------------------
@@ -45,7 +46,7 @@ public sealed class BookingRepository : IBookingRepository
     public async Task<BookingReadModel?> GetReadModelAsync(
         int bookingId,
         CancellationToken cancellationToken = default) =>
-        await ProjectReadModels(_context.Bookings.AsNoTracking())
+        await ProjectReadModels(Context.Bookings.AsNoTracking())
             .FirstOrDefaultAsync(readModel => readModel.BookingId == bookingId, cancellationToken)
             .ConfigureAwait(false);
 
@@ -59,7 +60,7 @@ public sealed class BookingRepository : IBookingRepository
     {
         ArgumentNullException.ThrowIfNull(includedStatuses);
 
-        var query = FilterByWindow(_context.Bookings.AsNoTracking(), periodStart, periodEnd);
+        var query = FilterByWindow(Context.Bookings.AsNoTracking(), periodStart, periodEnd);
 
         query = FilterByStatuses(query, includedStatuses);
         query = FilterBySearchText(query, searchText);
@@ -82,13 +83,13 @@ public sealed class BookingRepository : IBookingRepository
     {
         ArgumentNullException.ThrowIfNull(blockingStatuses);
 
-        var query = FilterByWindow(_context.Bookings.AsNoTracking(), periodStart, periodEnd);
+        var query = FilterByWindow(Context.Bookings.AsNoTracking(), periodStart, periodEnd);
 
         query = FilterByStatuses(query, blockingStatuses);
 
         return await query
             .Select(booking => new RoomOccupancyDto(
-                booking.BookingId,
+                booking.Id,
                 booking.RoomId,
                 booking.StartDate,
                 EF.Property<DateOnly>(booking, BookingOverlapConstraint.EffectiveEndDateProperty),
@@ -102,12 +103,6 @@ public sealed class BookingRepository : IBookingRepository
     // --------------------------------------------------------
 
     /// <inheritdoc />
-    public async Task<Booking?> GetByIdAsync(int bookingId, CancellationToken cancellationToken = default) =>
-        await _context.Bookings
-            .FirstOrDefaultAsync(booking => booking.BookingId == bookingId, cancellationToken)
-            .ConfigureAwait(false);
-
-    /// <inheritdoc />
     public async Task<IReadOnlyList<Booking>> GetOverlapCandidatesAsync(
         int roomId,
         DateOnly periodStart,
@@ -119,7 +114,7 @@ public sealed class BookingRepository : IBookingRepository
         ArgumentNullException.ThrowIfNull(blockingStatuses);
 
         var query = FilterByWindow(
-            _context.Bookings.AsNoTracking().Where(booking => booking.RoomId == roomId),
+            Context.Bookings.AsNoTracking().Where(booking => booking.RoomId == roomId),
             periodStart,
             periodEnd);
 
@@ -127,26 +122,10 @@ public sealed class BookingRepository : IBookingRepository
 
         if (excludeBookingId is int excludedId)
         {
-            query = query.Where(booking => booking.BookingId != excludedId);
+            query = query.Where(booking => booking.Id != excludedId);
         }
 
         return await query.ToArrayAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc />
-    public void Add(Booking booking)
-    {
-        ArgumentNullException.ThrowIfNull(booking);
-
-        _context.Bookings.Add(booking);
-    }
-
-    /// <inheritdoc />
-    public void Update(Booking booking)
-    {
-        ArgumentNullException.ThrowIfNull(booking);
-
-        _context.Bookings.Update(booking);
     }
 
     /// <summary>
@@ -221,7 +200,7 @@ public sealed class BookingRepository : IBookingRepository
     /// </remarks>
     private static IQueryable<BookingReadModel> ProjectReadModels(IQueryable<Booking> query) =>
         query.Select(booking => new BookingReadModel(
-            booking.BookingId,
+            booking.Id,
             booking.StartDate,
             booking.EndDate,
             EF.Property<DateOnly>(booking, BookingOverlapConstraint.EffectiveEndDateProperty),
@@ -230,7 +209,7 @@ public sealed class BookingRepository : IBookingRepository
             booking.CheckOutTime,
             booking.CheckOutDate,
             new RoomListItemDto(
-                booking.Room!.RoomId,
+                booking.Room!.Id,
                 booking.Room.RoomNumber,
                 booking.Room.Floor,
                 booking.Room.Size,
@@ -238,7 +217,7 @@ public sealed class BookingRepository : IBookingRepository
                 booking.Room.Status,
                 booking.Room.HousekeepingStatus),
             new GuestListItemDto(
-                booking.Guest!.GuestId,
+                booking.Guest!.Id,
                 booking.Guest.FirstName,
                 booking.Guest.LastName,
                 booking.Guest.FirstName + " " + booking.Guest.LastName,
