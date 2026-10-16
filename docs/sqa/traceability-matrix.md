@@ -33,7 +33,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-005] | Milestone | en | it | [BC-001] | - | [RC-018] |
 | [MIL-006] | Milestone | en | it | [BC-001] | - | [RC-022], [RC-023] |
 | [MIL-007] | Milestone | en | it | [BC-001] | [DM-004] | [RC-025] |
-| [MIL-008] | Milestone | en | it | [BC-001], [MIL-005] | - | [RC-038] |
+| [MIL-008] | Milestone | en | it | [BC-001], [MIL-005] | - | [RC-038], [RC-039] |
 | [ADR-0001] | Architecture Decision Record | - | - | [BC-001] | [MIL-005] | [RC-019] |
 | `src/` (Domain, Application, Infrastructure) | Source code | - | - | [ADR-0001], [MIL-005] | - | [RC-020] |
 | [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003] | - |
@@ -96,6 +96,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-036]: ./reviews/rc-036-domain-model.md
 [RC-037]: ./reviews/rc-037-business-case-domain-folders.md
 [RC-038]: ./reviews/rc-038-milestone-008.md
+[RC-039]: ./reviews/rc-039-domain-rules-in-entities.md
 [DICT-001]: ../dictionary.md
 [UC-001]: ../use-cases/uc-001/uc.md
 [UC-002]: ../use-cases/uc-002/uc.md
