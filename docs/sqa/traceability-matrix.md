@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S04 | Initial version | pending |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S04 | Initial version | [b690b57] |
 
 ---
 
@@ -45,3 +45,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-006]: ./reviews/rc-006-milestone-002.md
 [RC-007]: ./reviews/rc-007-compose-and-smoke-test.md
 [MIL-002]: ../milestones/mil-002-nginx-proxy-and-web-compose.md
+[b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03

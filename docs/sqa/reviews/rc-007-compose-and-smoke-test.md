@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S04 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S04 | Initial version | [b690b57] |
 
 ---
 
@@ -80,3 +80,4 @@ Go — all Mandatory criteria pass or are not applicable with a stated reason. T
 [MIL-002]: ../../milestones/mil-002-nginx-proxy-and-web-compose.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03

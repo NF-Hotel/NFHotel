@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Accepted after RC-001 Go | pending |
-| 2026-10-16 | Accepted | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Amended (accepted after RC-005 Go): objective 5 and scope for running NFHotel as containers (nginx proxy and web service, one compose file and one env file per service); target date for MIL-002 | pending |
+| 2026-10-16 | Deprecated | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Accepted after RC-001 Go | [b690b57] |
+| 2026-10-16 | Accepted | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Amended (accepted after RC-005 Go): objective 5 and scope for running NFHotel as containers (nginx proxy and web service, one compose file and one env file per service); target date for MIL-002 | [b690b57] |
 
 ---
 
@@ -171,3 +171,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 ---
 
 [SA-001]: ./stakeholder-analysis.md
+[b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
