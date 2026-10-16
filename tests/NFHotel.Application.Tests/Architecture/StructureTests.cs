@@ -66,6 +66,31 @@ public sealed partial class StructureTests
 
         Assert.True(offenders.Length == 0, $"Reglerne hører til entiteter, værdiobjekter og fejl: {string.Join(", ", offenders)}");
     }
+
+    [Fact]
+    public void Entities_HaveNoValidateOrIsValidMethods()
+    {
+        var offenders = DomainAssembly.GetTypes()
+            .Where(t => t.Namespace == "NFHotel.Domain.Entities")
+            .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Select(m => (Type: t.Name, Method: m.Name)))
+            .Where(x => x.Method == "Validate" || x.Method.StartsWith("IsValid", StringComparison.Ordinal))
+            .Select(x => $"{x.Type}.{x.Method}")
+            .ToArray();
+
+        Assert.True(offenders.Length == 0, $"The rules are attributes (ADR-0002), not methods: {string.Join(", ", offenders)}");
+    }
+
+    [Fact]
+    public void Domain_ReferencesOnlyTheFrameworkClassLibrary()
+    {
+        var offenders = DomainAssembly.GetReferencedAssemblies()
+            .Select(a => a.Name ?? string.Empty)
+            .Where(n => !n.StartsWith("System", StringComparison.Ordinal) && n is not ("netstandard" or "mscorlib"))
+            .ToArray();
+
+        Assert.True(offenders.Length == 0, $"Domain references more than the framework: {string.Join(", ", offenders)}");
+    }
     [Fact]
     public void Repositories_EveryInterface_IsDeclaredInDomain()
     {
@@ -140,7 +165,8 @@ public sealed partial class StructureTests
 
     private static bool IsCompilerGenerated(Type type) =>
         type.GetCustomAttribute<System.Runtime.CompilerServices.CompilerGeneratedAttribute>() is not null
-        || type.Name.StartsWith('<');
+        || type.Name.StartsWith('<')
+        || (type.DeclaringType is not null && IsCompilerGenerated(type.DeclaringType));
 
     private static bool IsInApplicationFolder(string? ns) =>
         ns is "NFHotel.Application.Errors" or "NFHotel.Application.Ports" or "NFHotel.Application.UseCases"

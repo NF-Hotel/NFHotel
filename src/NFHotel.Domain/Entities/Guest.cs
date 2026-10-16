@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 using NFHotel.Domain.Errors;
 
 namespace NFHotel.Domain.Entities;
@@ -27,24 +29,38 @@ public sealed class Guest : Entity<int>
     /// <summary>Længste tilladte pasnummer (A-10).</summary>
     public const int MaxPassportNumberLength = 50;
 
+    /// <summary>An email has an at sign and a dot, as in BR-52 to BR-56. Stricter formats are not required.</summary>
+    public const string EmailPattern = @"^(?=[\s\S]*@)(?=[\s\S]*\.)[\s\S]*$";
+
     /// <summary>Til EF Core. Brug <see cref="Create"/> i kode.</summary>
     private Guest()
     {
     }
 
     /// <summary>Fornavn. Aldrig tomt eller kun whitespace (BR-91).</summary>
+    [Required(ErrorMessage = GuestErrors.FirstNameRequired)]
+    [StringLength(MaxNameLength, ErrorMessage = GuestErrors.FirstNameTooLong)]
     public string FirstName { get; private set; } = string.Empty;
 
     /// <summary>Efternavn. Aldrig tomt eller kun whitespace (BR-92).</summary>
+    [Required(ErrorMessage = GuestErrors.LastNameRequired)]
+    [StringLength(MaxNameLength, ErrorMessage = GuestErrors.LastNameTooLong)]
     public string LastName { get; private set; } = string.Empty;
 
     /// <summary>E-mail. Indeholder altid både '@' og '.' (BR-93).</summary>
+    [Required(ErrorMessage = GuestErrors.EmailRequired)]
+    [RegularExpression(EmailPattern, ErrorMessage = GuestErrors.EmailInvalid)]
+    [StringLength(MaxEmailLength, ErrorMessage = GuestErrors.EmailTooLong)]
     public string Email { get; private set; } = string.Empty;
 
     /// <summary>Telefonnummer. Aldrig tomt; intet formatkrav (BR-94).</summary>
+    [Required(ErrorMessage = GuestErrors.PhoneNumberRequired)]
+    [StringLength(MaxPhoneNumberLength, ErrorMessage = GuestErrors.PhoneNumberTooLong)]
     public string PhoneNumber { get; private set; } = string.Empty;
 
     /// <summary>Land. Aldrig tomt (BR-95).</summary>
+    [Required(ErrorMessage = GuestErrors.CountryRequired)]
+    [StringLength(MaxCountryLength, ErrorMessage = GuestErrors.CountryTooLong)]
     public string Country { get; private set; } = string.Empty;
 
     /// <summary>
@@ -54,6 +70,7 @@ public sealed class Guest : Entity<int>
     /// Følsomt: må ikke bruges som søge- eller sorteringsnøgle (B-09, D-04). Domænet kender
     /// ikke krypteringen — den er infrastrukturens ansvar.
     /// </remarks>
+    [StringLength(MaxPassportNumberLength, ErrorMessage = GuestErrors.PassportNumberTooLong)]
     public string? PassportNumber { get; private set; }
 
     /// <summary>
@@ -75,7 +92,7 @@ public sealed class Guest : Entity<int>
     /// <returns>En ny, gyldig gæst der endnu ikke er persisteret.</returns>
     /// <exception cref="DomainException">
     /// Ved brud på BR-91 til BR-95 eller en længdegrænse (A-10). Fejlkoden er den første
-    /// kode fra <see cref="Guest.Validate"/>.
+    /// kode; alle koder står i <see cref="DomainException.Codes"/>.
     /// </exception>
     public static Guest Create(
         string firstName,
@@ -122,12 +139,17 @@ public sealed class Guest : Entity<int>
         string country,
         string? passportNumber)
     {
-        var errors = Guest.Validate(firstName, lastName, email, phoneNumber, country, passportNumber);
-
-        if (errors.Count > 0)
+        var candidate = new Guest
         {
-            throw new DomainException(errors[0]);
-        }
+            FirstName = firstName,
+            LastName = lastName,
+            Email = email,
+            PhoneNumber = phoneNumber,
+            Country = country,
+            PassportNumber = passportNumber,
+        };
+
+        EntityValidation.ThrowIfInvalid(candidate);
 
         FirstName = firstName;
         LastName = lastName;
@@ -135,108 +157,5 @@ public sealed class Guest : Entity<int>
         PhoneNumber = phoneNumber;
         Country = country;
         PassportNumber = passportNumber;
-    }
-
-    private const char EmailAtSign = '@';
-    private const char EmailDot = '.';
-
-    /// <summary>
-    /// Afgør om e-mailen er gyldig (BR-55, BR-93).
-    /// </summary>
-    /// <param name="email">E-mailadressen.</param>
-    /// <returns>Sand hvis adressen indeholder både '@' og '.'.</returns>
-    /// <remarks>
-    /// Bevidst ikke regex. BR-93 er præcis "indeholder '@' og '.'", og en strammere regel
-    /// ville bryde paritet med det gamle system.
-    /// </remarks>
-    public static bool IsValidEmail(string? email) =>
-        !string.IsNullOrWhiteSpace(email)
-        && email.Contains(EmailAtSign)
-        && email.Contains(EmailDot);
-
-    /// <summary>
-    /// Samler alle valideringsfejl for en gæst, så en formular kan vise dem på én gang
-    /// (BR-60, BR-96).
-    /// </summary>
-    /// <param name="firstName">Fornavn.</param>
-    /// <param name="lastName">Efternavn.</param>
-    /// <param name="email">E-mail.</param>
-    /// <param name="phoneNumber">Telefonnummer.</param>
-    /// <param name="country">Land.</param>
-    /// <param name="passportNumber">
-    /// Pasnummer. Valgfrit og uvalideret ud over længden (BR-57) — udelades af kald der
-    /// kun validerer de fem obligatoriske felter.
-    /// </param>
-    /// <returns>
-    /// Fejlkoder i feltrækkefølge: fornavn, efternavn, e-mail, telefon, land, pasnummer.
-    /// Tom liste betyder gyldig.
-    /// </returns>
-    public static IReadOnlyList<string> Validate(
-        string? firstName,
-        string? lastName,
-        string? email,
-        string? phoneNumber,
-        string? country,
-        string? passportNumber = null)
-    {
-        var errors = new List<string>();
-
-        AddTextErrors(errors, firstName, Guest.MaxNameLength, GuestErrors.FirstNameRequired, GuestErrors.FirstNameTooLong);
-        AddTextErrors(errors, lastName, Guest.MaxNameLength, GuestErrors.LastNameRequired, GuestErrors.LastNameTooLong);
-        AddEmailErrors(errors, email);
-        AddTextErrors(errors, phoneNumber, Guest.MaxPhoneNumberLength, GuestErrors.PhoneNumberRequired, GuestErrors.PhoneNumberTooLong);
-        AddTextErrors(errors, country, Guest.MaxCountryLength, GuestErrors.CountryRequired, GuestErrors.CountryTooLong);
-
-        if (passportNumber is not null && passportNumber.Length > Guest.MaxPassportNumberLength)
-        {
-            errors.Add(GuestErrors.PassportNumberTooLong);
-        }
-
-        return errors;
-    }
-
-    /// <summary>
-    /// Tilføjer fejlkoder for et obligatorisk tekstfelt: tomt felt eller for lang værdi.
-    /// </summary>
-    private static void AddTextErrors(
-        List<string> errors,
-        string? value,
-        int maxLength,
-        string requiredCode,
-        string tooLongCode)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            errors.Add(requiredCode);
-            return;
-        }
-
-        if (value.Length > maxLength)
-        {
-            errors.Add(tooLongCode);
-        }
-    }
-
-    /// <summary>
-    /// Tilføjer fejlkoder for e-mailfeltet. Adskilt fra <see cref="AddTextErrors"/>, fordi
-    /// e-mailen ud over længden også har et formatkrav (BR-55).
-    /// </summary>
-    private static void AddEmailErrors(List<string> errors, string? email)
-    {
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            errors.Add(GuestErrors.EmailRequired);
-            return;
-        }
-
-        if (!IsValidEmail(email))
-        {
-            errors.Add(GuestErrors.EmailInvalid);
-        }
-
-        if (email.Length > Guest.MaxEmailLength)
-        {
-            errors.Add(GuestErrors.EmailTooLong);
-        }
     }
 }

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.ValueObjects;
 
@@ -30,15 +32,20 @@ public sealed class Room : Entity<int>
     }
 
     /// <summary>Værelsesnummer som tekst, fx "101" eller "12B" (BR-97).</summary>
+    [Required(ErrorMessage = RoomErrors.RoomNumberRequired)]
+    [StringLength(MaxRoomNumberLength, ErrorMessage = RoomErrors.RoomNumberTooLong)]
     public string RoomNumber { get; private set; } = string.Empty;
 
     /// <summary>Etage. Altid større end 0 (BR-98).</summary>
+    [Range(1, int.MaxValue, ErrorMessage = RoomErrors.FloorInvalid)]
     public int Floor { get; private set; }
 
     /// <summary>Værelsestype. Var fri tekst i det gamle system; er nu enum.</summary>
+    [EnumDataType(typeof(RoomSize), ErrorMessage = RoomErrors.SizeInvalid)]
     public RoomSize Size { get; private set; }
 
     /// <summary>Antal personer rummet kan rumme. Altid større end 0 (BR-100).</summary>
+    [Range(1, int.MaxValue, ErrorMessage = RoomErrors.CapacityInvalid)]
     public int Capacity { get; private set; }
 
     /// <summary>
@@ -67,7 +74,7 @@ public sealed class Room : Entity<int>
     /// <exception cref="DomainException">
     /// Ved tomt eller for langt værelsesnummer (BR-97, A-10), etage ≤ 0 (BR-98),
     /// ukendt <paramref name="size"/> (BR-99) eller kapacitet ≤ 0 (BR-100).
-    /// Fejlkoden er den første kode fra <see cref="Room.Validate"/>.
+    /// Fejlkoden er den første kode; alle koder står i <see cref="DomainException.Codes"/>.
     /// </exception>
     public static Room Create(string roomNumber, int floor, RoomSize size, int capacity)
     {
@@ -374,84 +381,19 @@ public sealed class Room : Entity<int>
     /// </summary>
     private void Apply(string roomNumber, int floor, RoomSize size, int capacity)
     {
-        var errors = Room.Validate(roomNumber, floor, size, capacity);
-
-        if (errors.Count > 0)
+        var candidate = new Room
         {
-            throw new DomainException(errors[0]);
-        }
+            RoomNumber = roomNumber,
+            Floor = floor,
+            Size = size,
+            Capacity = capacity,
+        };
+
+        EntityValidation.ThrowIfInvalid(candidate);
 
         RoomNumber = roomNumber;
         Floor = floor;
         Size = size;
         Capacity = capacity;
-    }
-
-    /// <summary>
-    /// Afgør om værelsesnummeret er brugbart (BR-97, A-10).
-    /// </summary>
-    /// <param name="roomNumber">Værelsesnummeret, fx "101" eller "12B".</param>
-    /// <returns>Sand hvis nummeret hverken er tomt, kun whitespace eller for langt.</returns>
-    public static bool IsValidRoomNumber(string? roomNumber) =>
-        !string.IsNullOrWhiteSpace(roomNumber) && roomNumber.Length <= Room.MaxRoomNumberLength;
-
-    /// <summary>
-    /// Afgør om etagen er gyldig (BR-98).
-    /// </summary>
-    /// <param name="floor">Etagen.</param>
-    /// <returns>Sand hvis etagen er større end 0.</returns>
-    public static bool IsValidFloor(int floor) => floor > 0;
-
-    /// <summary>
-    /// Afgør om kapaciteten er gyldig (BR-100).
-    /// </summary>
-    /// <param name="capacity">Antal personer rummet kan rumme.</param>
-    /// <returns>Sand hvis kapaciteten er større end 0.</returns>
-    public static bool IsValidCapacity(int capacity) => capacity > 0;
-
-    /// <summary>
-    /// Afgør om værelsestypen er en defineret enum-værdi (BR-99).
-    /// </summary>
-    /// <param name="size">Værelsestypen.</param>
-    /// <returns>Sand hvis værdien er defineret i <see cref="RoomSize"/>.</returns>
-    public static bool IsValidSize(RoomSize size) => Enum.IsDefined(size);
-
-    /// <summary>
-    /// Samler alle valideringsfejl for et rum, så en formular kan vise dem på én gang.
-    /// </summary>
-    /// <param name="roomNumber">Værelsesnummeret.</param>
-    /// <param name="floor">Etagen.</param>
-    /// <param name="size">Værelsestypen.</param>
-    /// <param name="capacity">Antal personer rummet kan rumme.</param>
-    /// <returns>Fejlkoder i feltrækkefølge: nummer, etage, type, kapacitet. Tom liste betyder gyldig.</returns>
-    public static IReadOnlyList<string> Validate(string? roomNumber, int floor, RoomSize size, int capacity)
-    {
-        var errors = new List<string>();
-
-        if (string.IsNullOrWhiteSpace(roomNumber))
-        {
-            errors.Add(RoomErrors.RoomNumberRequired);
-        }
-        else if (roomNumber.Length > Room.MaxRoomNumberLength)
-        {
-            errors.Add(RoomErrors.RoomNumberTooLong);
-        }
-
-        if (!IsValidFloor(floor))
-        {
-            errors.Add(RoomErrors.FloorInvalid);
-        }
-
-        if (!IsValidSize(size))
-        {
-            errors.Add(RoomErrors.SizeInvalid);
-        }
-
-        if (!IsValidCapacity(capacity))
-        {
-            errors.Add(RoomErrors.CapacityInvalid);
-        }
-
-        return errors;
     }
 }

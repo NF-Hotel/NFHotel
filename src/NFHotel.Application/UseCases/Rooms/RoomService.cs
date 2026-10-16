@@ -131,7 +131,7 @@ public sealed class RoomService : IRoomService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var errors = Room.Validate(request.RoomNumber, request.Floor, request.Size, request.Capacity);
+        var errors = FieldErrors(request.RoomNumber, request.Floor, request.Size, request.Capacity);
 
         if (errors.Count > 0)
         {
@@ -176,7 +176,7 @@ public sealed class RoomService : IRoomService
         ArgumentNullException.ThrowIfNull(request);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.RoomId);
 
-        var errors = Room.Validate(request.RoomNumber, request.Floor, request.Size, request.Capacity);
+        var errors = FieldErrors(request.RoomNumber, request.Floor, request.Size, request.Capacity);
 
         if (errors.Count > 0)
         {
@@ -429,5 +429,28 @@ public sealed class RoomService : IRoomService
             .ConfigureAwait(false);
 
         return Result<RoomDetailsDto>.Success(room.ToDetails(hasBookings));
+    }
+
+    /// <summary>
+    /// Collects every field error of a room by building it. The entity holds the rules as
+    /// attributes (ADR-0002); no room is kept.
+    /// </summary>
+    /// <param name="roomNumber">The room number.</param>
+    /// <param name="floor">The floor.</param>
+    /// <param name="size">The room size.</param>
+    /// <param name="capacity">The capacity.</param>
+    /// <returns>The error codes in field order. An empty list means valid.</returns>
+    private static IReadOnlyList<string> FieldErrors(string roomNumber, int floor, RoomSize size, int capacity)
+    {
+        try
+        {
+            _ = Room.Create(roomNumber, floor, size, capacity);
+
+            return [];
+        }
+        catch (DomainException exception)
+        {
+            return exception.Codes;
+        }
     }
 }
