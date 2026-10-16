@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 12, validation attributes on the entities (MIL-009) | [4cab5fc] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 13, the comments in the source code are in English (MIL-010) | [e67e815] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 14, the tests run on xUnit v3 (MIL-011) | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 14, the tests run on xUnit v3 (MIL-011) | [ef2bd4b] |
 
 ---
 
@@ -224,3 +224,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [48701b5]: https://github.com/NF-Hotel/NFHotel/commit/48701b550cecaf94616bbae64d74a5c872f72d80
 [4cab5fc]: https://github.com/NF-Hotel/NFHotel/commit/4cab5fc64b8358e18f9fec630d27d8bc267e6787
 [e67e815]: https://github.com/NF-Hotel/NFHotel/commit/e67e8155fd63d307e6783924f956fa49f915edbd
+[ef2bd4b]: https://github.com/NF-Hotel/NFHotel/commit/ef2bd4bda1edbd598228cb0fc043a4f2fc996974

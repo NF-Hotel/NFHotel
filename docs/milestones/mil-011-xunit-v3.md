@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-049 Go | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-049 Go | [ef2bd4b] |
 
 ---
 
@@ -80,3 +80,4 @@ code and the code under test keep their behaviour.
 
 [BC-001]: ../business-case.md
 [MIL-010]: ./mil-010-english-source-comments.md
+[ef2bd4b]: https://github.com/NF-Hotel/NFHotel/commit/ef2bd4bda1edbd598228cb0fc043a4f2fc996974

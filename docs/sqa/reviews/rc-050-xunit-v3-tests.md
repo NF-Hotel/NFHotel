@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [f1d6a94] |
 
 ---
 
@@ -71,3 +71,4 @@ Go — every applicable criterion of QC-CS-001 and every Go criterion of MIL-011
 
 [MIL-011]: ../../milestones/mil-011-xunit-v3.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[f1d6a94]: https://github.com/NF-Hotel/NFHotel/commit/f1d6a94b8c5841945f23c7cc6cbc9d5ba09fb479
