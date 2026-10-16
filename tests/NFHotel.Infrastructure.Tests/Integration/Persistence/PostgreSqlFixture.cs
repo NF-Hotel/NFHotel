@@ -32,6 +32,15 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
     // Connection string for the temporary PostgreSQL test database.
     public string ConnectionString => _container.GetConnectionString();
 
+    /// <summary>Opens a new context on the test database, as a separate request would.</summary>
+    public HotelDbContext CreateContext()
+    {
+        var optionsBuilder = new DbContextOptionsBuilder<HotelDbContext>();
+        DependencyInjection.ConfigureHotelDbContext(optionsBuilder, ConnectionString);
+        var encryptor = new AesGcmStringEncryptor(new EncryptionOptions { PassportKey = Convert.ToBase64String(new byte[32]) });
+        return new HotelDbContext(optionsBuilder.Options, encryptor);
+    }
+
     // Starts the PostgreSQL container before the integration tests are run.
     public async ValueTask InitializeAsync()
     {
