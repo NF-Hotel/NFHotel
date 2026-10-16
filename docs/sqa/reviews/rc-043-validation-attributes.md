@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [b6850d3] |
 
 ---
 
@@ -62,3 +62,4 @@ Go — all Mandatory criteria pass or are not applicable with a stated reason. E
 [MIL-009]: ../../milestones/mil-009-validation-attributes.md
 [ADR-0002]: ../../adr/adr-0002-validation-attributes-on-entities.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[b6850d3]: https://github.com/NF-Hotel/NFHotel/commit/b6850d3c9ab7d3ac8d37c2f0bf0cd80c9e35fffc
