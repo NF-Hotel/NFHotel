@@ -1,4 +1,4 @@
-namespace NFHotel.Infrastructure.Config;
+namespace NFHotel.External.Config;
 
 /// <summary>
 /// Indstillinger for hotellets tidszone (A-05).

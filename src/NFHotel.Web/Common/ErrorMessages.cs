@@ -97,6 +97,9 @@ public static class ErrorMessages
             // ----------------------------------------------------------
             // Configuration and key errors are an operations fault: the user cannot fix them, so
             // the text is neutral. The detail is in the log (HolidayApiClient).
+            [ErrorCodes.Api.Unavailable] = "We couldn't reach the hotel system. Please try again in a moment.",
+            [ErrorCodes.Api.Unauthorized] = "The hotel system refused this application. Please tell the administrator.",
+            [ErrorCodes.Api.UnexpectedResponse] = "The hotel system answered something we couldn't use. Please try again.",
             [ErrorCodes.Holidays.NotConfigured] = "Holiday data isn't available right now.",
             [ErrorCodes.Holidays.Unauthorized] = "Holiday data isn't available right now.",
             [ErrorCodes.Holidays.Unavailable] = "We couldn't reach the holiday service. Please try again later.",

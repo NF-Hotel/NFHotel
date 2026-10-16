@@ -13,10 +13,10 @@ using NFHotel.Domain.ValueObjects;
 
 using NSubstitute;
 
-namespace NFHotel.Application.Tests.TestSupport;
+namespace NFHotel.TestSupport;
 
 /// <summary>A clock that stands still: "today" is set by the test, never read from the system.</summary>
-internal sealed class FakeClock : IClock
+public sealed class FakeClock : IClock
 {
     public DateOnly Today { get; set; } = new(2026, 1, 1);
 
@@ -27,7 +27,7 @@ internal sealed class FakeClock : IClock
 }
 
 /// <summary>A unit of work that counts saves and can fail on demand, as the database would.</summary>
-internal sealed class FakeUnitOfWork : IUnitOfWork
+public sealed class FakeUnitOfWork : IUnitOfWork
 {
     public int SaveCount { get; private set; }
 
@@ -46,7 +46,7 @@ internal sealed class FakeUnitOfWork : IUnitOfWork
 }
 
 /// <summary>An in-memory repository: keeps the entities in a list and gives them keys as the database does.</summary>
-internal abstract class InMemoryRepository<TEntity>
+public abstract class InMemoryRepository<TEntity>
     where TEntity : Entity<int>
 {
     private static readonly PropertyInfo IdProperty = typeof(Entity<int>).GetProperty(nameof(Entity<int>.Id))!;
@@ -77,7 +77,7 @@ internal abstract class InMemoryRepository<TEntity>
     }
 }
 
-internal sealed class InMemoryBookingRepository : InMemoryRepository<Booking>, IBookingRepository
+public sealed class InMemoryBookingRepository : InMemoryRepository<Booking>, IBookingRepository
 {
     public Task<IReadOnlyList<Booking>> GetOverlapCandidatesAsync(
         int roomId,
@@ -96,7 +96,7 @@ internal sealed class InMemoryBookingRepository : InMemoryRepository<Booking>, I
     }
 }
 
-internal sealed class InMemoryRoomRepository : InMemoryRepository<Room>, IRoomRepository
+public sealed class InMemoryRoomRepository : InMemoryRepository<Room>, IRoomRepository
 {
     public HashSet<int> RoomIdsWithBookings { get; } = [];
 
@@ -107,7 +107,7 @@ internal sealed class InMemoryRoomRepository : InMemoryRepository<Room>, IRoomRe
         Task.FromResult(RoomIdsWithBookings.Contains(roomId));
 }
 
-internal sealed class InMemoryGuestRepository : InMemoryRepository<Guest>, IGuestRepository
+public sealed class InMemoryGuestRepository : InMemoryRepository<Guest>, IGuestRepository
 {
     public HashSet<int> GuestIdsWithBookings { get; } = [];
 
@@ -122,13 +122,83 @@ internal sealed class InMemoryGuestRepository : InMemoryRepository<Guest>, IGues
 /// Everything a service test needs: a fake clock, in-memory repositories, a fake unit of work and
 /// substitutes for the read-side query ports, wired together and ready to build a service from.
 /// </summary>
-internal sealed class ServiceWorld
+public sealed class ServiceWorld
 {
     public ServiceWorld()
     {
         BookingQueries.GetReadModelAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(call => Task.FromResult(ReadModelOrNull(call.Arg<int>())));
+        ReadSideFromTheRepositories();
     }
+
+    /// <summary>
+    /// Makes the substitutes of the read-side ports answer from the in-memory repositories, so a service that
+    /// reads (lists, searches, details) sees what a service that writes has stored. A test can still override
+    /// any of them with its own <c>Returns</c>.
+    /// </summary>
+    private void ReadSideFromTheRepositories()
+    {
+        GuestQueries.GetDetailsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult(Guests.Items.Where(guest => guest.Id == call.Arg<int>()).Select(GuestDetails).FirstOrDefault()));
+        GuestQueries.SearchAsync(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult<IReadOnlyList<GuestListItemDto>>(Guests.Items
+                .Where(guest => (call.ArgAt<IReadOnlyCollection<string>?>(0) ?? []).All(term => GuestText(guest).Contains(term, StringComparison.OrdinalIgnoreCase)))
+                .Select(GuestListItem)
+                .ToArray()));
+
+        RoomQueries.GetDetailsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult(Rooms.Items.Where(room => room.Id == call.Arg<int>()).Select(RoomDetails).FirstOrDefault()));
+        RoomQueries.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult<IReadOnlyList<RoomListItemDto>>(Rooms.Items.Select(RoomListItem).ToArray()));
+        RoomQueries.GetByFilterAsync(Arg.Any<RoomFilter>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult<IReadOnlyList<RoomListItemDto>>(Rooms.Items
+                .Where(room => Matches(room, call.ArgAt<RoomFilter?>(0) ?? new RoomFilter()))
+                .Select(RoomListItem)
+                .ToArray()));
+        RoomQueries.GetByStatusAsync(Arg.Any<RoomStatus>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult<IReadOnlyList<AvailableRoomDto>>(Rooms.Items
+                .Where(room => room.Status == call.Arg<RoomStatus>())
+                .Select(room => new AvailableRoomDto(room.Id, room.RoomNumber, room.Floor, room.Size, room.Capacity))
+                .ToArray()));
+        RoomQueries.GetDistinctFloorsAsync(Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult<IReadOnlyList<int>>(Rooms.Items.Select(room => room.Floor).Distinct().Order().ToArray()));
+
+        BookingQueries.GetOverviewAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<IReadOnlyCollection<BookingStatus>>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult<IReadOnlyList<BookingReadModel>>(Bookings.Items
+                .Where(booking => (call.ArgAt<IReadOnlyCollection<BookingStatus>?>(2) ?? []).Contains(booking.Status)
+                    && booking.StartDate <= call.ArgAt<DateOnly>(1)
+                    && booking.EffectiveEndDate >= call.ArgAt<DateOnly>(0))
+                .Select(ReadModelFor)
+                .ToArray()));
+        BookingQueries.GetOccupancyAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<IReadOnlyCollection<BookingStatus>>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult<IReadOnlyList<RoomOccupancyDto>>(Bookings.Items
+                .Where(booking => (call.ArgAt<IReadOnlyCollection<BookingStatus>?>(2) ?? []).Contains(booking.Status)
+                    && booking.StartDate < call.ArgAt<DateOnly>(1)
+                    && booking.EffectiveEndDate > call.ArgAt<DateOnly>(0))
+                .Select(booking => new RoomOccupancyDto(booking.Id, booking.RoomId, booking.StartDate, booking.EffectiveEndDate, booking.Status))
+                .ToArray()));
+    }
+
+    private static string GuestText(Guest guest) =>
+        $"{guest.FirstName} {guest.LastName} {guest.Email} {guest.Country}";
+
+    private static GuestDetailsDto GuestDetails(Guest guest) =>
+        new(guest.Id, guest.FirstName, guest.LastName, $"{guest.FirstName} {guest.LastName}", guest.Email, guest.PhoneNumber, guest.Country, guest.PassportNumber);
+
+    private static GuestListItemDto GuestListItem(Guest guest) =>
+        new(guest.Id, guest.FirstName, guest.LastName, $"{guest.FirstName} {guest.LastName}", guest.Email, guest.PhoneNumber, guest.Country, guest.PassportNumber is not null);
+
+    private RoomDetailsDto RoomDetails(Room room) =>
+        new(room.Id, room.RoomNumber, room.Floor, room.Size, room.Capacity, room.Status, room.HousekeepingStatus, room.IsBookable, Rooms.RoomIdsWithBookings.Contains(room.Id));
+
+    private static RoomListItemDto RoomListItem(Room room) =>
+        new(room.Id, room.RoomNumber, room.Floor, room.Size, room.Capacity, room.Status, room.HousekeepingStatus);
+
+    private static bool Matches(Room room, RoomFilter filter) =>
+        (filter.Floor is null || room.Floor == filter.Floor)
+        && (filter.Size is null || room.Size == filter.Size)
+        && (filter.Status is null || room.Status == filter.Status)
+        && (filter.HousekeepingStatus is null || room.HousekeepingStatus == filter.HousekeepingStatus);
 
     public FakeClock Clock { get; } = new();
 

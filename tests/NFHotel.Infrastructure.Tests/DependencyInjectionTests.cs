@@ -22,12 +22,12 @@ public sealed class DependencyInjectionTests
             {
                 ["ConnectionStrings:HotelDatabase"] = "Host=localhost;Database=model-only",
                 ["Encryption:PassportKey"] = Convert.ToBase64String(new byte[32]),
-                ["HotelTime:TimeZoneId"] = "Europe/Copenhagen",
             })
             .Build();
 
         var services = new ServiceCollection();
         services.AddLogging();
+        services.AddSingleton<IClock>(new FixedClock());
         services.AddInfrastructure(configuration);
         return services.BuildServiceProvider(validateScopes: true);
     }
@@ -43,7 +43,6 @@ public sealed class DependencyInjectionTests
     [InlineData(typeof(IGuestQueries))]
     [InlineData(typeof(IRoomQueries))]
     [InlineData(typeof(IUnitOfWork))]
-    [InlineData(typeof(IClock))]
     public void GetRequiredService_EveryPortAndService_IsRegistered(Type serviceType)
     {
         using var provider = BuildProvider();
@@ -53,4 +52,13 @@ public sealed class DependencyInjectionTests
 
         Assert.NotNull(service);
     }
+
+    /// <summary>A clock that stands still: the composition test needs one because the clock is registered by NFHotel.External.</summary>
+    private sealed class FixedClock : IClock
+    {
+        public DateTimeOffset UtcNow => new(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
+        public DateOnly Today => new(2026, 1, 1);
+    }
+
 }

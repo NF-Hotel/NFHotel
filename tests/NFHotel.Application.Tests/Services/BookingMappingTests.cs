@@ -1,6 +1,6 @@
-using NFHotel.Application.Tests.TestSupport;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Domain.Entities;
+using NFHotel.TestSupport;
 
 namespace NFHotel.Application.Tests.Services;
 

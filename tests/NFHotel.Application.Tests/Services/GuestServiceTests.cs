@@ -1,7 +1,7 @@
 using NFHotel.Application.Dto.Guests;
 using NFHotel.Application.Errors;
-using NFHotel.Application.Tests.TestSupport;
 using NFHotel.Domain.Entities;
+using NFHotel.TestSupport;
 
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;

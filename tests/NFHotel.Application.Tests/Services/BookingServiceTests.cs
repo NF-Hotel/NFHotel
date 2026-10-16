@@ -1,8 +1,8 @@
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
-using NFHotel.Application.Tests.TestSupport;
 using NFHotel.Domain.ValueObjects;
+using NFHotel.TestSupport;
 
 using NSubstitute;
 

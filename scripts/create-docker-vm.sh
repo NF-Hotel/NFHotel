@@ -10,7 +10,7 @@
 #   --name <name>        VM name (default: nfhotel-services)
 #   --vmid <id>          VM id (default: the next free id of the cluster)
 #   --cores <n>          vCPUs (default: 4)
-#   --memory <MiB>       memory (default: 8192)
+#   --memory <MiB>       memory (default: 12288)
 #   --disk <GiB>         disk size (default: 60)
 #   --storage <name>     storage for the disk (default: local-lvm)
 #   --snippets <name>    storage that allows snippets (default: local)
@@ -39,7 +39,7 @@ ssh_target=""
 vm_name="nfhotel-services"
 vmid=""
 cores=4
-memory=8192
+memory=12288
 disk_gib=60
 storage="local-lvm"
 snippets_storage="local"
@@ -147,6 +147,7 @@ packages:
   - curl
   - gnupg
   - qemu-guest-agent
+  - git
 runcmd:
   - install -m 0755 -d /etc/apt/keyrings
   - curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
@@ -156,6 +157,7 @@ runcmd:
   - apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
   - systemctl enable --now docker qemu-guest-agent
   - docker network create nfhotel-proxy
+  - docker network create --internal nfhotel-db
 EOF
 }
 

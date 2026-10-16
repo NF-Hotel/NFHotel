@@ -1,4 +1,4 @@
-namespace NFHotel.Infrastructure.Config;
+namespace NFHotel.External.Config;
 
 /// <summary>
 /// Settings for the connection to the analysis service (NF Hotel Analytics API).
