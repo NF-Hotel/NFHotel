@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [US-001] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [US-001] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-006 (legacy project documents in English); open issue about Danish notes closed | [180a268] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-007 (Domain Model of the hotel back office) | [e19063e] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-007 (Domain Model of the hotel back office) | [e19063e] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-008 (domain rules in the entities) | pending |
 
 ---
 
@@ -39,6 +39,7 @@ person ending 2026-10-17.
 | Clean architecture structure for NFHotel | [MIL-005] | 2026-10-19 to 2026-10-30 | 2026-10-30 | S01 | none | Entity base type, layer folders, repositories, key columns and DTO folders, tests green | [Milestone 5][GH-M5] |
 | Legacy project documents in English | [MIL-006] | 2026-10-19 to 2026-10-26 | 2026-10-26 | S01 | none | The notes, presentation and diagrams of `docs/refactor/` in English with English names | [Milestone 6][GH-M6] |
 | Domain Model of the hotel back office | [MIL-007] | 2026-10-26 to 2026-11-06 | 2026-11-06 | S01 | none | Domain Dictionary, three brief use cases and a Domain Model that passes QC-DM-001 | [Milestone 7][GH-M7] |
+| Domain rules live with the data they guard | [MIL-008] | 2026-11-06 to 2026-11-13 | 2026-11-13 | S01 | none | `NFHotel.Domain/Rules` dissolved into entities, value objects and errors; tests green | [Milestone 8][GH-M8] |
 
 ```plantuml
 @startgantt
@@ -57,6 +58,8 @@ Project starts 2026-10-16
 [MIL-006 Go/No-Go] happens 2026-10-26
 [Domain Model] starts 2026-10-26 and ends 2026-11-06
 [MIL-007 Go/No-Go] happens 2026-11-06
+[Domain rules in entities] starts 2026-11-06 and ends 2026-11-13
+[MIL-008 Go/No-Go] happens 2026-11-13
 @endgantt
 ```
 
@@ -75,6 +78,7 @@ Project starts 2026-10-16
 | NFHotel source follows the clean architecture structure (objective 8) | MIL-005 |
 | Legacy documents in English (objective 9) | MIL-006 |
 | Domain Model of the back office (objective 10) | MIL-007 |
+| Domain folders follow the skill (objective 11) | MIL-008 |
 
 ## Dependencies
 
@@ -83,6 +87,7 @@ MIL-001 -> MIL-002 -> MIL-003 -> MIL-004
 MIL-005 (independent of the others)
 MIL-006 (independent of the others)
 MIL-006 -> MIL-007
+MIL-005 -> MIL-008
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -113,6 +118,7 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-005]: ./milestones/mil-005-clean-architecture.md
 [MIL-006]: ./milestones/mil-006-english-legacy-documents.md
 [MIL-007]: ./milestones/mil-007-domain-model.md
+[MIL-008]: ./milestones/mil-008-domain-rules-in-entities.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
@@ -121,6 +127,7 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [GH-M5]: https://github.com/NF-Hotel/NFHotel/milestone/5
 [GH-M6]: https://github.com/NF-Hotel/NFHotel/milestone/6
 [GH-M7]: https://github.com/NF-Hotel/NFHotel/milestone/7
+[GH-M8]: https://github.com/NF-Hotel/NFHotel/milestone/8
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
 [4c5c2d3]: https://github.com/NF-Hotel/NFHotel/commit/4c5c2d3c5a8a8c4de7a2c8ee224719de55b62403
 [88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca
