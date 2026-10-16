@@ -3,15 +3,15 @@ using NFHotel.Domain.Entities;
 namespace NFHotel.Domain.Tests.TestSupport;
 
 /// <summary>
-/// Oversætter en <see cref="HousekeepingTransition"/> til det tilsvarende metodekald på et rum.
+/// Translates a <see cref="HousekeepingTransition"/> to the corresponding method call on a room.
 /// </summary>
 internal static class HousekeepingTransitionInvoker
 {
     /// <summary>
-    /// Udfører overgangen på rummet.
+    /// Performs the transition on the room.
     /// </summary>
-    /// <param name="room">Rummet overgangen udføres på.</param>
-    /// <param name="transition">Overgangen der skal udføres.</param>
+    /// <param name="room">The room the transition is performed on.</param>
+    /// <param name="transition">The transition to perform.</param>
     internal static void Invoke(Room room, HousekeepingTransition transition)
     {
         switch (transition)

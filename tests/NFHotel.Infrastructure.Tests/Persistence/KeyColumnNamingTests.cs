@@ -9,8 +9,8 @@ using NFHotel.Infrastructure.Security;
 namespace NFHotel.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// Holder reglen fra ADR-0001 fast: nøglekolonnen hedder <c>&lt;tabel&gt;_id</c>, og en fremmednøgle
-/// hedder som den refererede tabels nøgle. Testen læser kun EF-modellen og bruger ingen database.
+/// Pins the rule from ADR-0001: the key column is called <c>&lt;table&gt;_id</c>, and a foreign key
+/// is called like the key of the referenced table. The test reads only the EF model and uses no database.
 /// </summary>
 public sealed class KeyColumnNamingTests
 {

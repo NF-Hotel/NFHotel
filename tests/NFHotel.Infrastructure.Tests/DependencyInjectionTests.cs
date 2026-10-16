@@ -10,8 +10,8 @@ using NFHotel.Domain.Repositories;
 namespace NFHotel.Infrastructure.Tests;
 
 /// <summary>
-/// Beviser at composition roden kan bygge hver use case-service og hver port, så en manglende
-/// registrering fanges her og ikke først når en side bruges. Ingen database forbindes.
+/// Proves that the composition root can build every use case service and every port, so a missing
+/// registration is caught here and not first when a page is used. No database is connected.
 /// </summary>
 public sealed class DependencyInjectionTests
 {

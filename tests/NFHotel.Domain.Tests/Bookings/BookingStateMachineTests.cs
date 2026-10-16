@@ -5,27 +5,27 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Domain.Tests.Bookings;
 
 /// <summary>
-/// Bookingens tilstandsmaskine: Confirm, CheckIn, CheckOut, Cancel og Reschedule.
+/// The state machine of the booking: Confirm, CheckIn, CheckOut, Cancel and Reschedule.
 /// </summary>
 /// <remarks>
-/// Genskaber de 22 tests fra det gamle projekts <c>BookingOverviewViewModelTests</c> mod
-/// domænet i stedet for mod en ViewModel (B-10). De gamle tests
+/// Recreates the 22 tests from the old project's <c>BookingOverviewViewModelTests</c> against
+/// the domain instead of against a ViewModel (B-10). The old tests
 /// <c>CanExecuteConfirm_NoSelectedBooking_ReturnsFalse</c>,
-/// <c>FilterBookings_ExcludesCancelledBookings</c> (BR-23) og
-/// <c>SearchText_FiltersBookingsByGuestName</c> (BR-25) er ikke gengivet her: de handler om
-/// markering, filtrering og søgning i en liste, som ligger i Application- og Web-laget.
+/// <c>FilterBookings_ExcludesCancelledBookings</c> (BR-23) and
+/// <c>SearchText_FiltersBookingsByGuestName</c> (BR-25) are not reproduced here: they are about
+/// selection, filtering and searching in a list, which belongs in the Application and Web layers.
 /// <para>
-/// Dækker BR-01..BR-14, BR-17, BR-20, BR-107, BR-108, BR-121, BR-122, BR-123
-/// samt præmis B-01 (walk-in) og A-03 (udtjekningsdato som parameter).
+/// Covers BR-01..BR-14, BR-17, BR-20, BR-107, BR-108, BR-121, BR-122, BR-123
+/// as well as premise B-01 (walk-in) and A-03 (check-out date as parameter).
 /// </para>
 /// </remarks>
 public class BookingStateMachineTests
 {
     // --------------------------------------------------------
-    // BEKRÆFTELSE (BR-02, BR-05, BR-121 — gamle T-20, T-27)
+    // CONFIRMATION (BR-02, BR-05, BR-121 — old T-20, T-27)
     // --------------------------------------------------------
 
-    /// <summary>BR-01, BR-02: en ny booking er <c>Pending</c> og må derfor bekræftes.</summary>
+    /// <summary>BR-01, BR-02: a new booking is <c>Pending</c> and may therefore be confirmed.</summary>
     [Fact]
     public void Confirm_PendingBooking_SetsStatusToConfirmed()
     {
@@ -40,7 +40,7 @@ public class BookingStateMachineTests
     }
 
     /// <summary>
-    /// BR-02, BR-121: bekræftelse er kun mulig fra præcis <c>Pending</c>.
+    /// BR-02, BR-121: confirmation is possible only from exactly <c>Pending</c>.
     /// </summary>
     [Theory]
     [InlineData(BookingStatus.Pending, true)]
@@ -61,8 +61,8 @@ public class BookingStateMachineTests
     }
 
     /// <summary>
-    /// BR-03: reglen gentjekkes i selve handlingen — <c>CanConfirm</c> er ikke bare et
-    /// UI-hint. Kaldes den alligevel, afvises den og status står uændret.
+    /// BR-03: the rule is rechecked in the action itself — <c>CanConfirm</c> is not just a
+    /// UI hint. If it is called anyway, it is rejected and the status is unchanged.
     /// </summary>
     [Theory]
     [InlineData(BookingStatus.Confirmed)]
@@ -86,9 +86,9 @@ public class BookingStateMachineTests
     // --------------------------------------------------------
 
     /// <summary>
-    /// T-21, B-01: walk-in. En <c>Pending</c> booking må tjekke ind på ankomstdagen uden
-    /// først at blive bekræftet — <c>Confirmed</c> betyder "betaling garanteret", ikke
-    /// "må tjekke ind". Denne test er selve begrundelsen for B-01.
+    /// T-21, B-01: walk-in. A <c>Pending</c> booking may check in on the arrival day without
+    /// first being confirmed — <c>Confirmed</c> means "payment guaranteed", not
+    /// "may check in". This test is the very justification for B-01.
     /// </summary>
     [Fact]
     public void CheckIn_PendingBookingOnStartDate_SetsCheckedInWithoutConfirming()
@@ -105,8 +105,8 @@ public class BookingStateMachineTests
     }
 
     /// <summary>
-    /// T-22, BR-06: check-in er lovligt fra både <c>Pending</c> og <c>Confirmed</c>, og
-    /// forbudt fra alle andre statusser.
+    /// T-22, BR-06: check-in is legal from both <c>Pending</c> and <c>Confirmed</c>, and
+    /// forbidden from all other statuses.
     /// </summary>
     [Theory]
     [InlineData(BookingStatus.Pending, true)]
@@ -127,8 +127,8 @@ public class BookingStateMachineTests
     }
 
     /// <summary>
-    /// T-23, BR-06: check-in kræver <c>StartDate &lt;= i dag</c>. Ankomstdagen selv er
-    /// tilladt, dagen før ikke, og en forsinket ankomst må stadig tjekke ind.
+    /// T-23, BR-06: check-in requires <c>StartDate &lt;= today</c>. The arrival day itself is
+    /// allowed, the day before is not, and a late arrival may still check in.
     /// </summary>
     [Theory]
     [InlineData("2025-12-31", false)]
@@ -146,7 +146,7 @@ public class BookingStateMachineTests
         Assert.Equal(expected, canCheckIn);
     }
 
-    /// <summary>BR-06: check-in før ankomstdagen afvises også når man kalder metoden direkte.</summary>
+    /// <summary>BR-06: check-in before the arrival day is rejected even when the method is called directly.</summary>
     [Fact]
     public void CheckIn_BeforeStartDate_ThrowsAndLeavesBookingUntouched()
     {
@@ -164,8 +164,8 @@ public class BookingStateMachineTests
     }
 
     /// <summary>
-    /// BR-06: <c>CheckInTime</c> må ikke overskrives af et gentaget check-in — i modsætning
-    /// til rummets statusmetoder er check-in ikke idempotent (A-08 gælder kun rummet).
+    /// BR-06: <c>CheckInTime</c> must not be overwritten by a repeated check-in — unlike
+    /// the status methods of the room, check-in is not idempotent (A-08 applies only to the room).
     /// </summary>
     [Fact]
     public void CheckIn_WhenAlreadyCheckedIn_ThrowsAndKeepsOriginalCheckInTime()
@@ -182,7 +182,7 @@ public class BookingStateMachineTests
         Assert.Equal(BookingFactory.CheckInMoment, booking.CheckInTime);
     }
 
-    /// <summary>BR-06: en annulleret booking kan ikke tjekke ind (gammel T-test for Cancelled).</summary>
+    /// <summary>BR-06: a cancelled booking cannot check in (old T test for Cancelled).</summary>
     [Fact]
     public void CheckIn_CancelledBooking_ThrowsWithTraceableErrorCode()
     {
@@ -199,11 +199,11 @@ public class BookingStateMachineTests
     }
 
     // --------------------------------------------------------
-    // CHECK-UD (BR-09, BR-10, BR-107 — gammel T-24)
+    // CHECK-OUT (BR-09, BR-10, BR-107 — old T-24)
     // --------------------------------------------------------
 
     /// <summary>
-    /// T-24, BR-09, BR-10, A-03: udtjekning sætter tidspunkt, hotel-lokal dato og status.
+    /// T-24, BR-09, BR-10, A-03: check-out sets time, hotel-local date and status.
     /// </summary>
     [Fact]
     public void CheckOut_CheckedInBooking_SetsCheckedOutWithTimeAndDate()
@@ -221,8 +221,8 @@ public class BookingStateMachineTests
     }
 
     /// <summary>
-    /// BR-09: udtjekning kræver præcis <c>CheckedIn</c> — hverken en booking der aldrig er
-    /// tjekket ind eller en der allerede er tjekket ud må tjekkes ud.
+    /// BR-09: check-out requires exactly <c>CheckedIn</c> — neither a booking that has never been
+    /// checked in nor one that has already been checked out may be checked out.
     /// </summary>
     [Theory]
     [InlineData(BookingStatus.Pending, false)]
@@ -242,7 +242,7 @@ public class BookingStateMachineTests
         Assert.Equal(expected, canCheckOut);
     }
 
-    /// <summary>BR-09: reglen gentjekkes i handlingen.</summary>
+    /// <summary>BR-09: the rule is rechecked in the action.</summary>
     [Theory]
     [InlineData(BookingStatus.Pending)]
     [InlineData(BookingStatus.Confirmed)]
@@ -262,8 +262,8 @@ public class BookingStateMachineTests
     }
 
     /// <summary>
-    /// BR-107: udtjekningstidspunktet skal være strengt efter indtjekningstidspunktet.
-    /// Samme tidspunkt er også for tidligt.
+    /// BR-107: the check-out time must be strictly after the check-in time.
+    /// The same time is also too early.
     /// </summary>
     [Theory]
     [InlineData(0)]
@@ -285,12 +285,12 @@ public class BookingStateMachineTests
     }
 
     /// <summary>
-    /// A-01, A-03: udtjekningsdatoen må ikke ligge før ankomstdagen — ellers ville
-    /// <c>EffectiveEndDate</c> beskrive en periode gæsten aldrig kan have haft.
+    /// A-01, A-03: the check-out date must not lie before the arrival day — otherwise
+    /// <c>EffectiveEndDate</c> would describe a period the guest can never have had.
     /// </summary>
     [Theory]
     [InlineData("2025-12-30")]
-    [InlineData("2025-12-31")] // dagen før ankomsten
+    [InlineData("2025-12-31")] // the day before arrival
     public void CheckOut_CheckOutDateBeforeStartDate_ThrowsAndLeavesBookingUntouched(string checkOutDate)
     {
         // Arrange
@@ -308,14 +308,14 @@ public class BookingStateMachineTests
     }
 
     /// <summary>
-    /// Udtjekningsdatoen må ikke ligge efter "i dag". En dato i fremtiden kan ikke rettes
-    /// bagefter — en <c>CheckedOut</c> booking kan hverken omlægges eller annulleres — og
-    /// ville spærre rummet frem til den via <c>EffectiveEndDate</c> (A-01).
+    /// The check-out date must not lie after "today". A date in the future cannot be corrected
+    /// afterwards — a <c>CheckedOut</c> booking can be neither rescheduled nor cancelled — and
+    /// would block the room until then via <c>EffectiveEndDate</c> (A-01).
     /// </summary>
     [Theory]
-    [InlineData("2026-01-04", "2026-01-03")] // dagen efter i dag
-    [InlineData("2026-01-10", "2026-01-03")] // den bookede afrejsedag, men den er ikke kommet endnu
-    [InlineData("2030-01-01", "2026-01-03")] // tastefejl i årstallet
+    [InlineData("2026-01-04", "2026-01-03")] // the day after today
+    [InlineData("2026-01-10", "2026-01-03")] // the booked departure day, but it has not come yet
+    [InlineData("2030-01-01", "2026-01-03")] // typing mistake in the year
     public void CheckOut_CheckOutDateIsInTheFuture_ThrowsAndLeavesBookingUntouched(
         string checkOutDate,
         string today)
@@ -336,13 +336,13 @@ public class BookingStateMachineTests
     }
 
     /// <summary>
-    /// Grænsen er inklusiv: en udtjekning der registreres samme dag den sker, går igennem.
-    /// Det er normaltilfældet, så en for stram guard ville spærre for al drift.
+    /// The boundary is inclusive: a check-out that is registered the same day it happens goes through.
+    /// That is the normal case, so a too tight guard would block all operation.
     /// </summary>
     [Theory]
-    [InlineData("2026-01-01")] // udtjekning samme dag som ankomsten
-    [InlineData("2026-01-03")] // tidlig udtjekning
-    [InlineData("2026-01-10")] // den bookede afrejsedag
+    [InlineData("2026-01-01")] // check-out on the same day as arrival
+    [InlineData("2026-01-03")] // early check-out
+    [InlineData("2026-01-10")] // the booked departure day
     public void CheckOut_CheckOutDateIsToday_IsAccepted(string today)
     {
         // Arrange
@@ -359,9 +359,9 @@ public class BookingStateMachineTests
     }
 
     /// <summary>
-    /// Rækkefølgen af de to datoguards er fastlagt: en dato der bryder begge — før
-    /// ankomsten OG efter i dag — rapporteres som "før ankomstdatoen". Uden testen kan
-    /// koden bytte dem om, og brugeren får en besked der peger på det forkerte problem.
+    /// The order of the two date guards is fixed: a date that breaks both — before
+    /// the arrival AND after today — is reported as "before the arrival date". Without the test the
+    /// code could swap them, and the user gets a message that points to the wrong problem.
     /// </summary>
     [Fact]
     public void CheckOut_CheckOutDateViolatesBothDateGuards_ReportsBeforeStartDate()
@@ -380,12 +380,12 @@ public class BookingStateMachineTests
     }
 
     // --------------------------------------------------------
-    // ANNULLERING (BR-11, BR-13, BR-122 — gammel T-25)
+    // CANCELLATION (BR-11, BR-13, BR-122 — old T-25)
     // --------------------------------------------------------
 
     /// <summary>
-    /// T-25, BR-11: kun <c>Pending</c> og <c>Confirmed</c> må annulleres. En gæst der er
-    /// tjekket ind eller ud kan ikke fjernes med et museklik.
+    /// T-25, BR-11: only <c>Pending</c> and <c>Confirmed</c> may be cancelled. A guest who has
+    /// checked in or out cannot be removed with a mouse click.
     /// </summary>
     [Theory]
     [InlineData(BookingStatus.Pending, true)]
@@ -405,7 +405,7 @@ public class BookingStateMachineTests
         Assert.Equal(expected, canCancel);
     }
 
-    /// <summary>BR-13: annullering er soft-delete — status skifter, bookingen består.</summary>
+    /// <summary>BR-13: cancellation is a soft delete — the status changes, the booking remains.</summary>
     [Theory]
     [InlineData(BookingStatus.Pending)]
     [InlineData(BookingStatus.Confirmed)]
@@ -422,7 +422,7 @@ public class BookingStateMachineTests
         Assert.Equal(BookingFactory.StandardPeriod, booking.Period);
     }
 
-    /// <summary>BR-11: annullering af en booking der er tjekket ind, ud eller allerede annulleret afvises.</summary>
+    /// <summary>BR-11: cancelling a booking that is checked in, checked out or already cancelled is rejected.</summary>
     [Theory]
     [InlineData(BookingStatus.CheckedIn)]
     [InlineData(BookingStatus.CheckedOut)]
@@ -440,12 +440,12 @@ public class BookingStateMachineTests
     }
 
     // --------------------------------------------------------
-    // OMLÆGNING (BR-14, BR-17, BR-20, BR-108, BR-123 — gammel T-26)
+    // RESCHEDULING (BR-14, BR-17, BR-20, BR-108, BR-123 — old T-26)
     // --------------------------------------------------------
 
     /// <summary>
-    /// T-26, BR-14, BR-123: kun <c>Pending</c> og <c>Confirmed</c> må omlægges.
-    /// Hedder <c>CanReschedule</c> overalt, ikke <c>CanEdit</c> (A-06).
+    /// T-26, BR-14, BR-123: only <c>Pending</c> and <c>Confirmed</c> may be rescheduled.
+    /// Called <c>CanReschedule</c> everywhere, not <c>CanEdit</c> (A-06).
     /// </summary>
     [Theory]
     [InlineData(BookingStatus.Pending, true)]
@@ -465,7 +465,7 @@ public class BookingStateMachineTests
         Assert.Equal(expected, canReschedule);
     }
 
-    /// <summary>BR-20: en godkendt omlægning skriver ny periode og nyt rum.</summary>
+    /// <summary>BR-20: an approved reschedule writes the new period and the new room.</summary>
     [Theory]
     [InlineData(BookingStatus.Pending)]
     [InlineData(BookingStatus.Confirmed)]
@@ -486,7 +486,7 @@ public class BookingStateMachineTests
         Assert.Equal(status, booking.Status);
     }
 
-    /// <summary>BR-17, BR-123: omlægning af en booking der er tjekket ind, ud eller annulleret afvises.</summary>
+    /// <summary>BR-17, BR-123: rescheduling a booking that is checked in, checked out or cancelled is rejected.</summary>
     [Theory]
     [InlineData(BookingStatus.CheckedIn)]
     [InlineData(BookingStatus.CheckedOut)]
@@ -507,8 +507,8 @@ public class BookingStateMachineTests
     }
 
     /// <summary>
-    /// BR-108: den nye periode må ikke starte i fortiden. Bookingen skal stå helt uændret
-    /// bagefter — en afvist omlægning må ikke efterlade halvt skrevne datoer.
+    /// BR-108: the new period must not start in the past. The booking must stand completely unchanged
+    /// afterwards — a rejected reschedule must not leave half-written dates.
     /// </summary>
     [Fact]
     public void Reschedule_NewPeriodStartsInThePast_ThrowsAndLeavesBookingUnchanged()
@@ -527,7 +527,7 @@ public class BookingStateMachineTests
         Assert.Equal(BookingFactory.RoomId, booking.RoomId);
     }
 
-    /// <summary>BR-45, BR-105: omlægning kræver stadig et gyldigt rum.</summary>
+    /// <summary>BR-45, BR-105: rescheduling still requires a valid room.</summary>
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -547,12 +547,12 @@ public class BookingStateMachineTests
     }
 
     // --------------------------------------------------------
-    // HELE FORLØBET
+    // THE WHOLE FLOW
     // --------------------------------------------------------
 
     /// <summary>
-    /// BR-01, BR-06, BR-09: den fulde lykkelige vej Pending → Confirmed → CheckedIn →
-    /// CheckedOut, som er den eneste sti der rører alle fire ikke-annullerede statusser.
+    /// BR-01, BR-06, BR-09: the full happy path Pending → Confirmed → CheckedIn →
+    /// CheckedOut, which is the only path that touches all four non-cancelled statuses.
     /// </summary>
     [Fact]
     public void BookingLifecycle_ConfirmCheckInCheckOut_EndsCheckedOut()

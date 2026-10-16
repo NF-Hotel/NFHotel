@@ -5,14 +5,14 @@ namespace NFHotel.Infrastructure.Tests.Persistence;
 
 /// <summary>
 /// Collection definition for PostgreSQL integration tests.
-/// Definerer en xUnit test-collection med navnet "PostgreSQL".
-// Testklasser i denne collection kan dele den samme PostgreSqlFixture
+/// Defines an xUnit test collection named "PostgreSQL".
+// Test classes in this collection can share the same PostgreSqlFixture
 /// </summary>
 [CollectionDefinition(Name)]
 
-// Opretter collection-klassen.
-// ICollectionFixture<PostgreSqlFixture> fortæller xUnit,
-// at denne collection skal bruge PostgreSqlFixture som fælles fixture.
+// Creates the collection class.
+// ICollectionFixture<PostgreSqlFixture> tells xUnit
+// that this collection must use PostgreSqlFixture as the shared fixture.
 public sealed class PostgreSqlCollection : ICollectionFixture<PostgreSqlFixture>
 {
     public const string Name = "PostgreSQL";

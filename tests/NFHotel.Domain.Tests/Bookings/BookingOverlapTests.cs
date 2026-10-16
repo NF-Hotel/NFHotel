@@ -4,13 +4,13 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Domain.Tests.Bookings;
 
 /// <summary>
-/// Den reviderede overlapsregel A-01: en booking blokerer rummet i
-/// <c>[StartDate, EffectiveEndDate)</c> medmindre den er annulleret.
+/// The revised overlap rule A-01: a booking blocks the room in
+/// <c>[StartDate, EffectiveEndDate)</c> unless it is cancelled.
 /// </summary>
 /// <remarks>
-/// Dækker BR-19 og BR-39 samt afgørelsen A-01. Den oprindelige B-02 spærrede for
-/// genudlejning efter tidlig udtjekning; testene her er den konkrete driftsfejl skrevet
-/// som asserts, så reglen ikke kan drive tilbage.
+/// Covers BR-19 and BR-39 as well as the decision A-01. The original B-02 blocked
+/// re-letting after early check-out; the tests here are that concrete operational fault written
+/// as asserts, so the rule cannot drift back.
 /// <para>
 /// <c>EffectiveEndDate = GREATEST(StartDate + 1, COALESCE(CheckOutDate, EndDate))</c>.
 /// </para>
@@ -24,8 +24,8 @@ public class BookingOverlapTests
     // --------------------------------------------------------
 
     /// <summary>
-    /// A-01: uden udtjekning er den effektive slutdato den bookede slutdato — reglen må
-    /// ikke ændre adfærd for bookinger der endnu ikke er tjekket ud.
+    /// A-01: without a check-out the effective end date is the booked end date — the rule must
+    /// not change behaviour for bookings that have not yet been checked out.
     /// </summary>
     [Theory]
     [InlineData(BookingStatus.Pending)]
@@ -45,16 +45,16 @@ public class BookingOverlapTests
     }
 
     /// <summary>
-    /// A-01: tidlig udtjekning flytter den effektive slutdato frem og frigiver dermed de
-    /// resterende nætter. Gulvet <c>StartDate + 1</c> sikrer mindst én nats belægning,
-    /// også ved udtjekning samme dag som ankomsten.
+    /// A-01: early check-out moves the effective end date forward and thereby releases the
+    /// remaining nights. The floor <c>StartDate + 1</c> ensures at least one night of occupancy,
+    /// even on check-out on the same day as arrival.
     /// </summary>
     [Theory]
-    [InlineData("2026-01-01", "2026-01-02")] // udtjekning samme dag som ankomst → GREATEST-gulvet
-    [InlineData("2026-01-02", "2026-01-02")] // udtjekning dagen efter ankomst → gulvet rammes præcis
-    [InlineData("2026-01-03", "2026-01-03")] // tidlig udtjekning → belægningen slutter den 3.
+    [InlineData("2026-01-01", "2026-01-02")] // check-out on the same day as arrival → the GREATEST floor
+    [InlineData("2026-01-02", "2026-01-02")] // check-out the day after arrival → the floor is hit exactly
+    [InlineData("2026-01-03", "2026-01-03")] // early check-out → the occupancy ends on the 3rd
     [InlineData("2026-01-09", "2026-01-09")]
-    [InlineData("2026-01-10", "2026-01-10")] // udtjekning på den bookede afrejsedag
+    [InlineData("2026-01-10", "2026-01-10")] // check-out on the booked departure day
     public void EffectiveEndDate_AfterCheckOut_IsGreatestOfOneNightAndCheckOutDate(
         string checkOutDate,
         string expectedEffectiveEndDate)
@@ -70,8 +70,8 @@ public class BookingOverlapTests
     }
 
     /// <summary>
-    /// A-01: udtjekning må ALDRIG røre <c>EndDate</c>. Den bookede periode er historik og
-    /// er det eneste sted der stadig kan svare på hvad gæsten faktisk bestilte.
+    /// A-01: check-out must NEVER touch <c>EndDate</c>. The booked period is history and
+    /// is the only place that can still answer what the guest actually ordered.
     /// </summary>
     [Fact]
     public void CheckOut_EarlyDeparture_LeavesBookedEndDateAndNumberOfNightsUntouched()
@@ -91,8 +91,8 @@ public class BookingOverlapTests
     }
 
     /// <summary>
-    /// A-01: udtjekning samme dag som ankomsten giver stadig én nats belægning — ellers
-    /// ville <c>EffectivePeriod</c> være tom og rummet kunne dobbeltbookes samme nat.
+    /// A-01: check-out on the same day as arrival still gives one night of occupancy — otherwise
+    /// <c>EffectivePeriod</c> would be empty and the room could be double-booked the same night.
     /// </summary>
     [Fact]
     public void EffectivePeriod_SameDayCheckOut_StillBlocksOneNight()
@@ -111,12 +111,12 @@ public class BookingOverlapTests
     }
 
     // --------------------------------------------------------
-    // HVILKE STATUSSER BLOKERER (A-01, BR-19)
+    // WHICH STATUSES BLOCK (A-01, BR-19)
     // --------------------------------------------------------
 
     /// <summary>
-    /// A-01: kun annullering frigiver rummet helt. Databasens exclusion constraint bruger
-    /// samme prædikat (<c>WHERE status &lt;&gt; 4</c>), så listen må ikke afvige.
+    /// A-01: only cancellation releases the room completely. The database exclusion constraint uses the
+    /// same predicate (<c>WHERE status &lt;&gt; 4</c>), so the list must not deviate.
     /// </summary>
     [Theory]
     [InlineData(BookingStatus.Pending, true)]
@@ -134,8 +134,8 @@ public class BookingOverlapTests
     }
 
     /// <summary>
-    /// BR-19: en annulleret booking spærrer ikke, alle andre statusser gør — også på en
-    /// periode der ligger midt i den bookede.
+    /// BR-19: a cancelled booking does not block, all other statuses do — also on a
+    /// period that lies in the middle of the booked one.
     /// </summary>
     [Theory]
     [InlineData(BookingStatus.Pending, true)]
@@ -156,7 +156,7 @@ public class BookingOverlapTests
         Assert.Equal(expected, conflicts);
     }
 
-    /// <summary>BR-19: en booking på et andet rum er aldrig i konflikt.</summary>
+    /// <summary>BR-19: a booking on another room is never in conflict.</summary>
     [Fact]
     public void Conflicts_DifferentRoom_ReturnsFalse()
     {
@@ -172,13 +172,13 @@ public class BookingOverlapTests
     }
 
     // --------------------------------------------------------
-    // GENUDLEJNING EFTER TIDLIG UDTJEKNING (A-01, hovedscenariet)
+    // RE-LETTING AFTER EARLY CHECK-OUT (A-01, the main scenario)
     // --------------------------------------------------------
 
     /// <summary>
-    /// A-01, hovedscenariet: booking 1.–10. januar, gæsten rejser den 3. Rummet står tomt
-    /// fra den 3., så en ny booking 4.–8. januar må IKKE afvises. Med den oprindelige
-    /// B-02 ville den have været i konflikt.
+    /// A-01, the main scenario: booking 1–10 January, the guest leaves on the 3rd. The room is empty
+    /// from the 3rd, so a new booking 4–8 January must NOT be rejected. With the original
+    /// B-02 it would have been in conflict.
     /// </summary>
     [Fact]
     public void Conflicts_NewBookingInNightsReleasedByEarlyCheckOut_ReturnsFalse()
@@ -195,18 +195,18 @@ public class BookingOverlapTests
     }
 
     /// <summary>
-    /// A-01: efter udtjekning den 3. januar blokerer bookingen præcis nætterne 1.–2.
-    /// Grænserne testes fra begge sider, så hverken en for løs eller en for stram
-    /// afgrænsning slipper igennem.
+    /// A-01: after check-out on 3 January the booking blocks exactly the nights 1–2.
+    /// The boundaries are tested from both sides, so neither a too loose nor a too tight
+    /// boundary gets through.
     /// </summary>
     [Theory]
-    // Frigivne nætter: ny booking må starte på udtjekningsdagen (halvåbent interval).
+    // Released nights: a new booking may start on the check-out day (half-open interval).
     [InlineData("2026-01-03", "2026-01-08", false)]
     [InlineData("2026-01-04", "2026-01-08", false)]
     [InlineData("2026-01-09", "2026-01-11", false)]
-    // Perioden før ankomsten deler ingen nat, fordi ankomstdagen er ekskluderet i den anden ende.
+    // The period before the arrival shares no night, because the arrival day is excluded at the other end.
     [InlineData("2025-12-28", "2026-01-01", false)]
-    // Stadig belagte nætter: 1. og 2. januar.
+    // Still occupied nights: 1 and 2 January.
     [InlineData("2026-01-01", "2026-01-02", true)]
     [InlineData("2026-01-02", "2026-01-05", true)]
     [InlineData("2025-12-28", "2026-01-02", true)]
@@ -228,14 +228,14 @@ public class BookingOverlapTests
     }
 
     /// <summary>
-    /// BR-39: afrejse- og ankomstdag samme dag er ikke overlap — hverken når den
-    /// eksisterende booking rejser først eller når den ankommer sidst.
+    /// BR-39: departure and arrival on the same day is not an overlap — neither when the
+    /// existing booking leaves first nor when it arrives last.
     /// </summary>
     [Theory]
-    [InlineData("2026-01-10", "2026-01-14", false)] // ny ankomst = eksisterende afrejse
-    [InlineData("2025-12-28", "2026-01-01", false)] // ny afrejse = eksisterende ankomst
-    [InlineData("2026-01-09", "2026-01-14", true)]  // én delt nat
-    [InlineData("2025-12-28", "2026-01-02", true)]  // én delt nat i den anden ende
+    [InlineData("2026-01-10", "2026-01-14", false)] // new arrival = existing departure
+    [InlineData("2025-12-28", "2026-01-01", false)] // new departure = existing arrival
+    [InlineData("2026-01-09", "2026-01-14", true)]  // one shared night
+    [InlineData("2025-12-28", "2026-01-02", true)]  // one shared night at the other end
     public void Conflicts_DepartureDayEqualsArrivalDay_IsNotAnOverlap(
         string desiredStart,
         string desiredEnd,
@@ -253,9 +253,9 @@ public class BookingOverlapTests
     }
 
     /// <summary>
-    /// A-01: konflikttjekket skal måle mod <c>EffectivePeriod</c>, ikke <c>Period</c>.
-    /// Testen fanger den fejl at nogen bytter de to om: den ønskede periode overlapper
-    /// den bookede periode, men ikke den faktiske belægning.
+    /// A-01: the conflict check must measure against <c>EffectivePeriod</c>, not <c>Period</c>.
+    /// The test catches the fault of someone swapping the two: the desired period overlaps
+    /// the booked period, but not the actual occupancy.
     /// </summary>
     [Fact]
     public void Conflicts_ComparesAgainstEffectivePeriodNotBookedPeriod()

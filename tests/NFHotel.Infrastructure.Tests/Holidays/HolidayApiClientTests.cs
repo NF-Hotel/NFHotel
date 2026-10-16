@@ -14,7 +14,7 @@ using NFHotel.Infrastructure.Holidays;
 namespace NFHotel.Infrastructure.Tests.Holidays;
 
 /// <summary>
-/// Tester <see cref="HolidayApiClient"/> mod en falsk HTTP-handler — ingen netværk, ingen kørende tjeneste.
+/// Tests <see cref="HolidayApiClient"/> against a fake HTTP handler — no network, no running service.
 /// </summary>
 public sealed class HolidayApiClientTests
 {
@@ -166,7 +166,7 @@ public sealed class HolidayApiClientTests
     [Fact]
     public async Task Timeout_IsUnavailable()
     {
-        // HttpClient signalerer sin egen timeout som TaskCanceledException uden at kalderens token er annulleret.
+        // HttpClient signals its own timeout as TaskCanceledException without the caller's token being cancelled.
         var handler = StubHandler.Throwing(new TaskCanceledException("timeout"));
 
         var result = await CreateClient(handler).GetAsync();
@@ -254,7 +254,7 @@ public sealed class HolidayApiClientTests
         return new HolidayApiClient(http, options, NullLogger<HolidayApiClient>.Instance);
     }
 
-    /// <summary>Falsk handler: husker det sidste kald og svarer med det den er bedt om.</summary>
+    /// <summary>Fake handler: remembers the last call and answers with what it has been asked to.</summary>
     private sealed class StubHandler : HttpMessageHandler
     {
         private readonly Func<HttpResponseMessage> _respond;

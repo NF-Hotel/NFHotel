@@ -4,34 +4,34 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Domain.Tests.TestSupport;
 
 /// <summary>
-/// Bygger rum i en ønsket rengøringstilstand.
+/// Builds rooms in a desired cleaning state.
 /// </summary>
 /// <remarks>
-/// Tilstandene nås udelukkende gennem de lovlige overgange, så fabrikken ikke kan
-/// producere en tilstand rummet ikke selv kunne have nået.
+/// The states are reached solely through the legal transitions, so the factory cannot
+/// produce a state the room could not itself have reached.
 /// </remarks>
 internal static class RoomFactory
 {
-    /// <summary>Standardværelsesnummer.</summary>
+    /// <summary>Default room number.</summary>
     internal const string RoomNumber = "101";
 
-    /// <summary>Standardetage. Skal være > 0 (BR-98).</summary>
+    /// <summary>Default floor. Must be > 0 (BR-98).</summary>
     internal const int Floor = 1;
 
-    /// <summary>Standardkapacitet. Skal være > 0 (BR-100).</summary>
+    /// <summary>Default capacity. Must be > 0 (BR-100).</summary>
     internal const int Capacity = 2;
 
     /// <summary>
-    /// Opretter et nyt rum: bookbart og rent (BR-81).
+    /// Creates a new room: bookable and clean (BR-81).
     /// </summary>
-    /// <returns>Et gyldigt, ikke-persisteret rum.</returns>
+    /// <returns>A valid, non-persisted room.</returns>
     internal static Room Create() => Room.Create(RoomNumber, Floor, RoomSize.Double, Capacity);
 
     /// <summary>
-    /// Opretter et rum og kører det frem til den ønskede rengøringstilstand.
+    /// Creates a room and runs it to the desired cleaning state.
     /// </summary>
-    /// <param name="status">Den ønskede rengøringstilstand.</param>
-    /// <returns>Et rum i <paramref name="status"/>.</returns>
+    /// <param name="status">The desired cleaning state.</param>
+    /// <returns>A room in <paramref name="status"/>.</returns>
     internal static Room WithHousekeeping(HousekeepingStatus status)
     {
         var room = Create();

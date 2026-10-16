@@ -6,8 +6,8 @@ using NFHotel.Domain.Entities;
 namespace NFHotel.Application.Tests.Architecture;
 
 /// <summary>
-/// Håndhæver mappe- og typestrukturen fra ADR-0001: entiteter på <see cref="Entity{TKey}"/>,
-/// skillets mapper pr. lag, repository-interfaces i Domain og DTO'er i én mappe pr. entitet.
+/// Enforces the folder and type structure from ADR-0001: entities on <see cref="Entity{TKey}"/>,
+/// the folders of the skill per layer, repository interfaces in Domain and DTOs in one folder per entity.
 /// </summary>
 public sealed partial class StructureTests
 {
