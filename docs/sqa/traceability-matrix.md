@@ -25,19 +25,27 @@ updated whenever an artifact instance is created or reviewed.
 | Artifact Instance | Type | Language | Domain | Upstream (Backward Link) | Downstream (Forward Link) | Last Reviewed (RC-ID) |
 | --- | --- | --- | --- | --- | --- | --- |
 | [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [UCD-001], [US-001] | [RC-021], [RC-024] |
-| [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009] |
+| [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009], [RC-026] |
 | [MIL-001] | Milestone | en | it | [BC-001] | - | [RC-003] |
 | [MIL-002] | Milestone | en | it | [BC-001] | - | [RC-006] |
 | [MIL-003] | Milestone | en | it | [BC-001] | - | [RC-010] |
 | [MIL-004] | Milestone | en | it | [BC-001], [US-001] | - | [RC-015] |
 | [MIL-005] | Milestone | en | it | [BC-001] | - | [RC-018] |
 | [MIL-006] | Milestone | en | it | [BC-001] | - | [RC-022], [RC-023] |
-| [MIL-007] | Milestone | en | it | [BC-001] | - | [RC-025] |
+| [MIL-007] | Milestone | en | it | [BC-001] | [DM-004] | [RC-025] |
 | [ADR-0001] | Architecture Decision Record | - | - | [BC-001] | [MIL-005] | [RC-019] |
 | `src/` (Domain, Application, Infrastructure) | Source code | - | - | [ADR-0001], [MIL-005] | - | [RC-020] |
 | [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003] | - |
-| [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001] | [RC-013] |
-| [US-001] | User Story | en | it | [UCD-001], [BC-001] | - | [RC-012] |
+| [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001] | [RC-013], [RC-028] |
+| [US-001] | User Story | en | it | [UCD-001], [BC-001] | - | [RC-012], [RC-027] |
+| [DICT-001] | Domain Dictionary | en | it | [BC-001], [SA-001] | [DM-004] | [RC-029] |
+| [UC-001] | Use Case | en | it | [UCD-001], [US-001], [SA-001] | [DM-001] | [RC-030] |
+| [UC-002] | Use Case | en | it | [UCD-001], [US-001], [SA-001] | [DM-002] | [RC-031] |
+| [UC-003] | Use Case | en | it | [UCD-001], [US-001], [SA-001] | [DM-003] | [RC-032] |
+| [DM-001] | Domain Model | en | it | [UC-001], [UCD-001], [DICT-001] | [DM-004] | [RC-033] |
+| [DM-002] | Domain Model | en | it | [UC-002], [UCD-001], [DICT-001] | [DM-004] | [RC-034] |
+| [DM-003] | Domain Model | en | it | [UC-003], [UCD-001], [DICT-001] | [DM-004] | [RC-035] |
+| [DM-004] | Domain Model | en | it | [UC-001], [UC-002], [UC-003], [DM-001], [DM-002], [DM-003], [DICT-001] | - | [RC-036] |
 | `tests/NFHotel.Proxmox.Tests`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-001] | - | [RC-004] |
 | `deploy/`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-002] | - | [RC-007] |
 | `deploy/proxmox`, `scripts/pve-token.sh`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-003] | - | [RC-011] |
@@ -74,6 +82,25 @@ updated whenever an artifact instance is created or reviewed.
 [RC-023]: ./reviews/rc-023-legacy-documents-english.md
 [RC-024]: ./reviews/rc-024-business-case-domain-model.md
 [RC-025]: ./reviews/rc-025-milestone-007.md
+[RC-026]: ./reviews/rc-026-stakeholder-analysis-hotel-staff.md
+[RC-027]: ./reviews/rc-027-user-stories-hotel-staff.md
+[RC-028]: ./reviews/rc-028-use-case-diagram-hotel-staff.md
+[RC-029]: ./reviews/rc-029-dictionary.md
+[RC-030]: ./reviews/rc-030-use-case-001.md
+[RC-031]: ./reviews/rc-031-use-case-002.md
+[RC-032]: ./reviews/rc-032-use-case-003.md
+[RC-033]: ./reviews/rc-033-domain-model-uc001.md
+[RC-034]: ./reviews/rc-034-domain-model-uc002.md
+[RC-035]: ./reviews/rc-035-domain-model-uc003.md
+[RC-036]: ./reviews/rc-036-domain-model.md
+[DICT-001]: ../dictionary.md
+[UC-001]: ../use-cases/uc-001/uc.md
+[UC-002]: ../use-cases/uc-002/uc.md
+[UC-003]: ../use-cases/uc-003/uc.md
+[DM-001]: ../use-cases/uc-001/dm.md
+[DM-002]: ../use-cases/uc-002/dm.md
+[DM-003]: ../use-cases/uc-003/dm.md
+[DM-004]: ../domain-model.md
 [MIL-006]: ../milestones/mil-006-english-legacy-documents.md
 [MIL-007]: ../milestones/mil-007-domain-model.md
 [ADR-0001]: ../adr/adr-0001-clean-architecture-structure.md

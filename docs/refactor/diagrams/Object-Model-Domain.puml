@@ -1,4 +1,5 @@
 @startuml Object-Model-Domain
+' LEGACY picture: not the framework Domain Model; see docs/domain-model.md (DM-004).
 ' =====================================================================
 ' NFHotel 2.0 — Object model, domain layer
 ' Generated 2026-09-08 from src/NFHotel.Domain/
