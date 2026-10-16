@@ -1,5 +1,7 @@
 # Architecture-Diagrams.md — Phase 1
 
+> **Legacy note.** This is not the framework Domain Model. The project Domain Model is [docs/domain-model.md](../domain-model.md), checked against QC-DM-001 (RC-036). This document is kept as the history of the analysis.
+
 > Appendix to `Architecture.md`. Drawn by `design:diagrams` from the domain and layer designs.
 > The diagrams follow the **revised** overlap rule (A-01) and the rulings A-06 and A-07.
 >

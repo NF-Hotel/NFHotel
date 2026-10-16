@@ -14,12 +14,15 @@ document of a type. `Primary File` may contain a glob (e.g.
 | BC | Business Case | docs/business-case.md | 002 |
 | SA | Stakeholder Analysis | docs/stakeholder-analysis.md | 002 |
 | PP | Project Plan | docs/project-plan.md | 002 |
-| MIL | Milestone / Gateway | docs/milestones/*.md | 007 |
-| RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 023 |
+| MIL | Milestone / Gateway | docs/milestones/*.md | 008 |
+| RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 036 |
 | TM | Traceability Matrix | docs/sqa/traceability-matrix.md | 002 |
 | ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0002 |
 | US | User Story | docs/user-stories.md | 002 |
 | UCD | Use Case Diagram | docs/use-case-diagram.md | 002 |
+| UC | Use Case | docs/use-cases/uc-*/uc.md | 004 |
+| DM | Domain Model | docs/domain-model.md, docs/use-cases/uc-*/dm.md | 005 |
+| DICT | Domain Dictionary | docs/dictionary.md | 002 |
 
 ## Languages
 

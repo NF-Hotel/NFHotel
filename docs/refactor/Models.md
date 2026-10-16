@@ -1,5 +1,7 @@
 # Domain model and object model
 
+> **Legacy note.** This is not the framework Domain Model. The project Domain Model is [docs/domain-model.md](../domain-model.md), checked against QC-DM-001 (RC-036). This document is kept as the history of the analysis.
+
 > Generated 2026-09-08 **from the actual code**, not from the design documents.
 > Sources: `src/NFHotel.Domain/`, `src/NFHotel.Application/`, `src/NFHotel.Infrastructure/`, `src/NFHotel.Web/`.
 >
