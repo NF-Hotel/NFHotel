@@ -7,7 +7,7 @@ namespace NFHotel.Domain.ValueObjects;
 /// </summary>
 /// <remarks>
 /// Half-open interval <c>[Start, End)</c>, so departure and arrival on the same day are not an
-/// overlap (B-03, BR-39). Typen samler reglerne BR-38, BR-43, BR-88, BR-101, BR-102,
+/// overlap (B-03, BR-39). The type gathers the rules BR-38, BR-43, BR-88, BR-101, BR-102,
 /// BR-103, BR-109 and BR-117 in one place.
 /// <para>
 /// Note: <c>default(DateRange)</c> can, as with any struct, be constructed bypassing
@@ -28,7 +28,7 @@ public readonly record struct DateRange
     public const string EndNotAfterStart = "date_range.end_not_after_start";
 
     /// <summary>
-    /// Opretter en periode.
+    /// Creates a period.
     /// </summary>
     /// <param name="start">Arrival date, inclusive.</param>
     /// <param name="end">Departure date, exclusive. Must be strictly after <paramref name="start"/>.</param>

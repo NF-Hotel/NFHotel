@@ -178,19 +178,19 @@ public static class ErrorCodes
         /// <summary>The guest does not exist (BR-115).</summary>
         public const string NotFound = "guest.not_found";
 
-        /// <summary>Fornavn mangler (BR-52, BR-91).</summary>
+        /// <summary>First name is missing (BR-52, BR-91).</summary>
         public const string FirstNameRequired = GuestErrors.FirstNameRequired;
 
         /// <summary>The first name is too long (A-10, BR-N-03).</summary>
         public const string FirstNameTooLong = GuestErrors.FirstNameTooLong;
 
-        /// <summary>Efternavn mangler (BR-53, BR-92).</summary>
+        /// <summary>Last name is missing (BR-53, BR-92).</summary>
         public const string LastNameRequired = GuestErrors.LastNameRequired;
 
         /// <summary>The last name is too long (A-10, BR-N-03).</summary>
         public const string LastNameTooLong = GuestErrors.LastNameTooLong;
 
-        /// <summary>E-mail mangler (BR-93).</summary>
+        /// <summary>Email is missing (BR-93).</summary>
         public const string EmailRequired = GuestErrors.EmailRequired;
 
         /// <summary>The email lacks '@' or '.' (BR-55, BR-93).</summary>
@@ -199,13 +199,13 @@ public static class ErrorCodes
         /// <summary>The email is too long (A-10, BR-N-03).</summary>
         public const string EmailTooLong = GuestErrors.EmailTooLong;
 
-        /// <summary>Telefonnummer mangler (BR-54, BR-94).</summary>
+        /// <summary>Phone number is missing (BR-54, BR-94).</summary>
         public const string PhoneNumberRequired = GuestErrors.PhoneNumberRequired;
 
         /// <summary>The phone number is too long (A-10, BR-N-03).</summary>
         public const string PhoneNumberTooLong = GuestErrors.PhoneNumberTooLong;
 
-        /// <summary>Land mangler (BR-56, BR-95).</summary>
+        /// <summary>Country is missing (BR-56, BR-95).</summary>
         public const string CountryRequired = GuestErrors.CountryRequired;
 
         /// <summary>The country is too long (A-10, BR-N-03).</summary>

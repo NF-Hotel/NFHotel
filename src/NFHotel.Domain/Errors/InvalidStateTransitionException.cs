@@ -35,7 +35,7 @@ public sealed class InvalidStateTransitionException : DomainException
     /// Builds an error for a rejected transition.
     /// </summary>
     /// <param name="entity">The name of the entity in the error code, for example <c>"booking"</c>.</param>
-    /// <param name="transition">Overgangens metodenavn, fx <c>"Confirm"</c>.</param>
+    /// <param name="transition">The method name of the transition, for example <c>"Confirm"</c>.</param>
     /// <param name="currentState">The current state.</param>
     /// <returns>An error with the code <c>"&lt;entity&gt;.&lt;transition&gt;.invalid_state"</c>.</returns>
     public static InvalidStateTransitionException For(string entity, string transition, object currentState)

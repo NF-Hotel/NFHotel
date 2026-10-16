@@ -8,11 +8,11 @@ namespace NFHotel.Application.Dto.Bookings;
 /// A booking with everything the detail screen needs.
 /// </summary>
 /// <param name="BookingId">Bookingens id.</param>
-/// <param name="BookingNumber">Vist bookingnummer (BR-109).</param>
+/// <param name="BookingNumber">Displayed booking number (BR-109).</param>
 /// <param name="StartDate">Arrival date.</param>
 /// <param name="EndDate">Booked departure date (history, A-01).</param>
 /// <param name="EffectiveEndDate">The date up to which the room is actually occupied (A-01).</param>
-/// <param name="Nights">Antal bookede overnatninger.</param>
+/// <param name="Nights">Number of booked nights.</param>
 /// <param name="Status">Bookingens livscyklustilstand.</param>
 /// <param name="CheckInTime">Actual check-in time, or <c>null</c>.</param>
 /// <param name="CheckOutTime">Actual check-out time, or <c>null</c>.</param>

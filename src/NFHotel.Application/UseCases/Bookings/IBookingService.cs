@@ -112,7 +112,7 @@ public interface IBookingService
     Task<Result<BookingDetailsDto>> CheckOutAsync(int bookingId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Annullerer en booking (BR-11, BR-13, BR-122).
+    /// Cancels a booking (BR-11, BR-13, BR-122).
     /// </summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>

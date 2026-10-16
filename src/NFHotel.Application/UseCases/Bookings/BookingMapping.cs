@@ -79,7 +79,7 @@ public static class BookingMapping
     /// Beregner de lovlige handlinger for en booking-entitet (BR-22).
     /// </summary>
     /// <param name="booking">The booking.</param>
-    /// <param name="today">Dagens dato i hotellets tidszone.</param>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
     /// <returns>Handlingerne.</returns>
     public static BookingActionsDto ToActions(this Booking booking, DateOnly today)
     {
@@ -92,7 +92,7 @@ public static class BookingMapping
     /// Maps a read model to a row of the overview.
     /// </summary>
     /// <param name="booking">The read model from the repository.</param>
-    /// <param name="today">Dagens dato i hotellets tidszone.</param>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
     /// <returns>The row, with the legal actions computed.</returns>
     public static BookingListItemDto ToListItem(this BookingReadModel booking, DateOnly today)
     {
@@ -121,7 +121,7 @@ public static class BookingMapping
     /// Maps a read model to the detail view.
     /// </summary>
     /// <param name="booking">The read model from the repository.</param>
-    /// <param name="today">Dagens dato i hotellets tidszone.</param>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
     /// <returns>The detail view, with the legal actions computed.</returns>
     public static BookingDetailsDto ToDetails(this BookingReadModel booking, DateOnly today)
     {

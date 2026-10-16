@@ -5,7 +5,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// </summary>
 /// <remarks>
 /// An enum and not a string: a typo in a column name must be a compiler error, not
-/// en tavst usorteret liste.
+/// a silently unsorted list.
 /// </remarks>
 public enum BookingSortField
 {
@@ -27,6 +27,6 @@ public enum BookingSortField
     /// <summary>Bookingens status.</summary>
     Status = 5,
 
-    /// <summary>Antal overnatninger (BR-117).</summary>
+    /// <summary>Number of nights (BR-117).</summary>
     Nights = 6
 }

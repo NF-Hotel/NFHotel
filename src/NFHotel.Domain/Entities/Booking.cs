@@ -79,7 +79,7 @@ public sealed class Booking : Entity<int>
 
     /// <summary>
     /// The end date up to which the booking actually occupies the room (A-01):
-    /// <c>GREATEST(StartDate + 1 dag, COALESCE(CheckOutDate, EndDate))</c>.
+    /// <c>GREATEST(StartDate + 1 day, COALESCE(CheckOutDate, EndDate))</c>.
     /// </summary>
     /// <remarks>
     /// Early check-out thus releases the remaining nights automatically, without touching
@@ -104,7 +104,7 @@ public sealed class Booking : Entity<int>
     /// </summary>
     public DateRange EffectivePeriod => new(StartDate, EffectiveEndDate);
 
-    /// <summary>Antal bookede overnatninger (BR-109, BR-117).</summary>
+    /// <summary>Number of booked nights (BR-109, BR-117).</summary>
     public int NumberOfNights => Period.Nights;
 
     /// <summary>
@@ -128,7 +128,7 @@ public sealed class Booking : Entity<int>
     /// <summary>
     /// Decides whether the booking may be checked in on the given date (BR-06).
     /// </summary>
-    /// <param name="today">Dagens dato i hotellets tidszone.</param>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
     /// <returns>True if check-in is allowed. Note B-01: <c>Confirmed</c> is not required.</returns>
     public bool CanCheckIn(DateOnly today) =>
         (Status is BookingStatus.Pending or BookingStatus.Confirmed)
@@ -281,7 +281,7 @@ public sealed class Booking : Entity<int>
     /// </summary>
     /// <param name="newPeriod">The new period. Must start on or after <paramref name="today"/> (BR-108).</param>
     /// <param name="newRoomId">The id of the new room. Must be greater than 0.</param>
-    /// <param name="today">Dagens dato i hotellets tidszone.</param>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
     /// <exception cref="InvalidStateTransitionException">
     /// Thrown if the status is neither Pending nor Confirmed.
     /// </exception>
@@ -316,7 +316,7 @@ public sealed class Booking : Entity<int>
         }
     }
 
-    /// <summary>Afviser en manglende rumreference (BR-45, BR-105).</summary>
+    /// <summary>Rejects a missing room reference (BR-45, BR-105).</summary>
     private static void GuardRoomId(int roomId)
     {
         if (roomId <= 0)

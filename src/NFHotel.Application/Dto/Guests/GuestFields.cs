@@ -16,7 +16,7 @@ namespace NFHotel.Application.Dto.Guests;
 /// <param name="FirstName">Fornavn.</param>
 /// <param name="LastName">Efternavn.</param>
 /// <param name="Email">Email. Must contain both '@' and '.' (BR-55, BR-93).</param>
-/// <param name="PhoneNumber">Telefonnummer. Intet formatkrav (BR-94).</param>
+/// <param name="PhoneNumber">Phone number. No format requirement (BR-94).</param>
 /// <param name="Country">Land.</param>
 /// <param name="PassportNumber">Passport number. Optional and not validated beyond its length (BR-57).</param>
 public sealed record GuestFields(

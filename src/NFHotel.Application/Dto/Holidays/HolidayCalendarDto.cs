@@ -7,7 +7,7 @@ namespace NFHotel.Application.Dto.Holidays;
 /// </summary>
 /// <remarks>
 /// The source of the service is the Python package <c>holidays</c>; the calendar is an export, not
-/// sandheden — <see cref="IHolidayCalendarClient.RefreshAsync"/> genererer den forfra.
+/// the truth — <see cref="IHolidayCalendarClient.RefreshAsync"/> generates it from scratch.
 /// </remarks>
 /// <param name="Country">The country code the calendar applies to, for example <c>KH</c>.</param>
 /// <param name="Source">Where the calendar comes from, for example <c>python-holidays 0.104</c>.</param>

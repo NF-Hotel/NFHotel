@@ -320,7 +320,7 @@ public sealed class BookingService : IBookingService
         return await SaveAndDescribeAsync(booking, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>Annullerer en booking (BR-11, BR-13, BR-122).</summary>
+    /// <summary>Cancels a booking (BR-11, BR-13, BR-122).</summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.CancelNotAllowed"/>.</returns>
@@ -330,7 +330,7 @@ public sealed class BookingService : IBookingService
         TransitionAsync(bookingId, static booking => booking.Cancel(), cancellationToken);
 
     /// <summary>
-    /// Flytter en booking (BR-14, BR-17, BR-18, BR-19, BR-20, BR-108, BR-123, B-03).
+    /// Moves a booking (BR-14, BR-17, BR-18, BR-19, BR-20, BR-108, BR-123, B-03).
     /// </summary>
     /// <param name="request">The id of the booking, the new period and the room.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
@@ -660,7 +660,7 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>
-    /// Sorterer oversigten (BR-32).
+    /// Sorts the overview (BR-32).
     /// </summary>
     /// <param name="items">The rows.</param>
     /// <param name="sortBy">The field to sort on.</param>

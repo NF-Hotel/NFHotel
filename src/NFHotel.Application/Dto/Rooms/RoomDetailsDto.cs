@@ -35,7 +35,7 @@ public sealed record RoomDetailsDto(
 {
     /// <summary>
     /// Which transitions are legal right now (A-07), so Web can draw buttons without knowing
-    /// en eneste overgang.
+    /// a single transition.
     /// </summary>
     /// <remarks>
     /// A computed property and not a constructor parameter, because the detail view is fetched as a

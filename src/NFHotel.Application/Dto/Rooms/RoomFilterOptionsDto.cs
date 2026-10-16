@@ -3,7 +3,7 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.Dto.Rooms;
 
 /// <summary>
-/// Valgmulighederne i rumfilteret (BR-75).
+/// The options in the room filter (BR-75).
 /// </summary>
 /// <remarks>
 /// Only floors come from data. Size, status and cleaning state come from enums, which

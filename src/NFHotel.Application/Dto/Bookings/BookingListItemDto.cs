@@ -6,14 +6,14 @@ namespace NFHotel.Application.Dto.Bookings;
 /// A booking as it is shown in the overview.
 /// </summary>
 /// <param name="BookingId">Bookingens id.</param>
-/// <param name="BookingNumber">Vist bookingnummer, fx <c>FLZ-000123</c> (BR-109).</param>
+/// <param name="BookingNumber">Displayed booking number, for example <c>FLZ-000123</c> (BR-109).</param>
 /// <param name="StartDate">Arrival date.</param>
 /// <param name="EndDate">Booked departure date. History — never changed by a check-out (A-01).</param>
 /// <param name="EffectiveEndDate">
 /// The date up to which the booking actually occupies the room (A-01). Differs from
 /// <paramref name="EndDate"/> when the guest has left early.
 /// </param>
-/// <param name="Nights">Antal bookede overnatninger (BR-109, BR-117).</param>
+/// <param name="Nights">Number of booked nights (BR-109, BR-117).</param>
 /// <param name="Status">Bookingens livscyklustilstand.</param>
 /// <param name="CheckInTime">Actual check-in time, or <c>null</c>.</param>
 /// <param name="CheckOutTime">Actual check-out time, or <c>null</c>.</param>

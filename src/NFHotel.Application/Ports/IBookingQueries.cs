@@ -24,7 +24,7 @@ public interface IBookingQueries
     /// Fetches the booking overview for a date window (BR-23, BR-24, BR-25).
     /// </summary>
     /// <param name="periodStart">The first date of the window, inclusive.</param>
-    /// <param name="periodEnd">Vinduets sidste dato, eksklusiv.</param>
+    /// <param name="periodEnd">The last date of the window, exclusive.</param>
     /// <param name="includedStatuses">
     /// The statuses to include. The caller chooses — the repository does not hard-code
     /// "without cancelled".
@@ -46,7 +46,7 @@ public interface IBookingQueries
     /// Fetches the occupations in a date window, for the availability lookup (BR-34, BR-39).
     /// </summary>
     /// <param name="periodStart">The first date of the window, inclusive.</param>
-    /// <param name="periodEnd">Vinduets sidste dato, eksklusiv.</param>
+    /// <param name="periodEnd">The last date of the window, exclusive.</param>
     /// <param name="blockingStatuses">
     /// The statuses that block a room. Comes from <see cref="NFHotel.Domain.ValueObjects.BookingStatusExtensions.BlocksRoom"/>.
     /// </param>

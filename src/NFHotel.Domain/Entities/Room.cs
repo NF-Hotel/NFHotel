@@ -16,7 +16,7 @@ namespace NFHotel.Domain.Entities;
 /// All status methods are idempotent: setting a state the room already has does
 /// nothing and does not throw (A-08). The mobile app has no offline support and
 /// retries over an unstable network — a retry must not give an error to the cleaning staff.
-/// Ulovlige overgange kaster fortsat <see cref="InvalidStateTransitionException"/>.
+/// Illegal transitions still throw <see cref="InvalidStateTransitionException"/>.
 /// </para>
 /// </remarks>
 public sealed class Room : Entity<int>
