@@ -31,7 +31,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-003] | Milestone | en | it | [BC-001] | - | [RC-010] |
 | [MIL-004] | Milestone | en | it | [BC-001], [US-001] | - | [RC-015] |
 | [MIL-005] | Milestone | en | it | [BC-001] | - | [RC-018] |
-| [MIL-006] | Milestone | en | it | [BC-001] | - | [RC-022] |
+| [MIL-006] | Milestone | en | it | [BC-001] | - | [RC-022], [RC-023] |
 | [ADR-0001] | Architecture Decision Record | - | - | [BC-001] | [MIL-005] | [RC-019] |
 | `src/` (Domain, Application, Infrastructure) | Source code | - | - | [ADR-0001], [MIL-005] | - | [RC-020] |
 | [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003] | - |
@@ -70,6 +70,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-020]: ./reviews/rc-020-clean-architecture-code.md
 [RC-021]: ./reviews/rc-021-business-case-english-documents.md
 [RC-022]: ./reviews/rc-022-milestone-006.md
+[RC-023]: ./reviews/rc-023-legacy-documents-english.md
 [MIL-006]: ../milestones/mil-006-english-legacy-documents.md
 [ADR-0001]: ../adr/adr-0001-clean-architecture-structure.md
 [MIL-005]: ../milestones/mil-005-clean-architecture.md
