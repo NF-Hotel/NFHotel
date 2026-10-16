@@ -1,6 +1,6 @@
-using NFHotel.Domain.Bookings;
-using NFHotel.Domain.Common;
+using NFHotel.Domain.Rules;
 using NFHotel.Domain.Tests.TestSupport;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Tests.Bookings;
 

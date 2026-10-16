@@ -1,4 +1,5 @@
-using NFHotel.Application.Guests;
+using NFHotel.Application.Dto.Guests;
+using NFHotel.Application.UseCases.Guests;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Admin.Guests;

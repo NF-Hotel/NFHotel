@@ -1,4 +1,5 @@
-using NFHotel.Application.Common;
+using NFHotel.Application.Ports;
+using NFHotel.Infrastructure.Config;
 
 namespace NFHotel.Infrastructure.Time;
 

@@ -19,22 +19,26 @@ Ikke i denne omgang: API-projektet som kode, Flutter-app, kundeside, auth-implem
 
 ## 2. Projektstruktur
 
+> **Opdateret 2026-10-16 (ADR-0001):** mapperne følger nu skillets struktur (Entities, ValueObjects, Repositories, Errors, Rules i Domain; UseCases, Dto, Ports, Errors i Application). English summary: see `docs/adr/adr-0001-clean-architecture-structure.md`.
+
 ```
 NFHotel.sln
 ├── src/
 │   ├── NFHotel.Domain/          # nul projektreferencer, nul NuGet-pakker
-│   │   ├── Common/                    DateRange, DomainException, InvalidStateTransitionException
-│   │   ├── Bookings/                  Booking, BookingStatus, BookingRules
-│   │   ├── Guests/                    Guest, GuestRules
-│   │   └── Rooms/                     Room, RoomStatus, HousekeepingStatus, RoomSize, RoomRules
-│   ├── NFHotel.Application/     # feature-først; må ikke referere EF Core, Npgsql, ASP.NET
-│   │   ├── Common/                    Result, ErrorCodes, IClock, IUnitOfWork
-│   │   ├── Bookings/                  IBookingService, BookingService, IBookingRepository, DTOer, mapping
-│   │   ├── Rooms/
-│   │   └── Guests/
+│   │   ├── Entities/                  Entity<TKey>, Booking, Guest, Room
+│   │   ├── ValueObjects/              DateRange, BookingStatus, RoomStatus, HousekeepingStatus, RoomSize
+│   │   ├── Repositories/              IRepository<TEntity,TKey>, IBookingRepository, IGuestRepository, IRoomRepository
+│   │   ├── Errors/                    DomainException, InvalidStateTransitionException
+│   │   └── Rules/                     BookingRules, GuestRules, RoomRules
+│   ├── NFHotel.Application/     # må ikke referere EF Core, Npgsql, ASP.NET
+│   │   ├── UseCases/                  Result, services og mapping pr. entitet (Bookings/, Rooms/, Guests/)
+│   │   ├── Dto/                       DTOer og requests, én mappe pr. entitet, én type pr. fil
+│   │   ├── Ports/                     IClock, IUnitOfWork, IHolidayCalendarClient, IBookingQueries, IRoomQueries, IGuestQueries
+│   │   └── Errors/                    ErrorCodes og applikationsfejl
 │   ├── NFHotel.Infrastructure/  # EF Core og Npgsql bor KUN her
-│   │   ├── Persistence/               HotelDbContext, Configurations/, Migrations/
-│   │   ├── Repositories/
+│   │   ├── Persistence/               HotelDbContext, Configurations/ (EntityConfiguration: <tabel>_id), Migrations/
+│   │   ├── Repositories/              Repository<TEntity,TKey> og de tre repositories
+│   │   ├── Config/                    options for kryptering, tid og analysetjenesten
 │   │   ├── Security/                  AesGcmStringEncryptor
 │   │   └── Time/                      SystemClock
 │   └── NFHotel.Web/             # Blazor Server, feature-først, composition root

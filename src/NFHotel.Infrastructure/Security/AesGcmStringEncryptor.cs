@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 
+using NFHotel.Infrastructure.Config;
+
 namespace NFHotel.Infrastructure.Security;
 
 /// <summary>

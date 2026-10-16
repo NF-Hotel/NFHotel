@@ -1,6 +1,7 @@
-using NFHotel.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+
+using NFHotel.Infrastructure.Security;
 
 namespace NFHotel.Infrastructure.Persistence;
 

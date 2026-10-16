@@ -1,7 +1,10 @@
-using NFHotel.Application.Guests;
-using NFHotel.Domain.Guests;
-using NFHotel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+
+using NFHotel.Application.Dto.Guests;
+using NFHotel.Application.Ports;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.Repositories;
+using NFHotel.Infrastructure.Persistence;
 
 namespace NFHotel.Infrastructure.Repositories;
 
@@ -13,20 +16,16 @@ namespace NFHotel.Infrastructure.Repositories;
 /// Feltet er krypteret med en randomiseret ciffer (B-09), så selv et lighedsopslag ville
 /// ramme ciffertekst.
 /// </remarks>
-public sealed class GuestRepository : IGuestRepository
+public sealed class GuestRepository : Repository<Guest, int>, IGuestRepository, IGuestQueries
 {
-    private readonly HotelDbContext _context;
-
     /// <summary>
     /// Opretter repositoryet.
     /// </summary>
     /// <param name="context">Konteksten.</param>
     /// <exception cref="ArgumentNullException">Kastes hvis <paramref name="context"/> er <c>null</c>.</exception>
     public GuestRepository(HotelDbContext context)
+        : base(context)
     {
-        ArgumentNullException.ThrowIfNull(context);
-
-        _context = context;
     }
 
     // --------------------------------------------------------
@@ -37,11 +36,11 @@ public sealed class GuestRepository : IGuestRepository
     public async Task<GuestDetailsDto?> GetDetailsAsync(
         int guestId,
         CancellationToken cancellationToken = default) =>
-        await _context.Guests
+        await Context.Guests
             .AsNoTracking()
-            .Where(guest => guest.GuestId == guestId)
+            .Where(guest => guest.Id == guestId)
             .Select(guest => new GuestDetailsDto(
-                guest.GuestId,
+                guest.Id,
                 guest.FirstName,
                 guest.LastName,
                 guest.FirstName + " " + guest.LastName,
@@ -63,7 +62,7 @@ public sealed class GuestRepository : IGuestRepository
     {
         ArgumentNullException.ThrowIfNull(searchTerms);
 
-        var query = _context.Guests.AsNoTracking();
+        var query = Context.Guests.AsNoTracking();
 
         // BR-68, BR-N-05: AND mellem ord, OR mellem felter. Hvert ord lægges på som sit
         // eget Where, hvilket netop giver AND. Et tomt sæt returnerer alle gæster (BR-70).
@@ -88,9 +87,9 @@ public sealed class GuestRepository : IGuestRepository
         return await query
             .OrderBy(guest => guest.LastName)
             .ThenBy(guest => guest.FirstName)
-            .ThenBy(guest => guest.GuestId)
+            .ThenBy(guest => guest.Id)
             .Select(guest => new GuestListItemDto(
-                guest.GuestId,
+                guest.Id,
                 guest.FirstName,
                 guest.LastName,
                 guest.FirstName + " " + guest.LastName,
@@ -107,14 +106,14 @@ public sealed class GuestRepository : IGuestRepository
 
     /// <inheritdoc />
     public async Task<bool> ExistsAsync(int guestId, CancellationToken cancellationToken = default) =>
-        await _context.Guests
+        await Context.Guests
             .AsNoTracking()
-            .AnyAsync(guest => guest.GuestId == guestId, cancellationToken)
+            .AnyAsync(guest => guest.Id == guestId, cancellationToken)
             .ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<bool> HasAnyBookingsAsync(int guestId, CancellationToken cancellationToken = default) =>
-        await _context.Bookings
+        await Context.Bookings
             .AsNoTracking()
             .AnyAsync(booking => booking.GuestId == guestId, cancellationToken)
             .ConfigureAwait(false);
@@ -124,32 +123,5 @@ public sealed class GuestRepository : IGuestRepository
     // --------------------------------------------------------
 
     /// <inheritdoc />
-    public async Task<Guest?> GetByIdAsync(int guestId, CancellationToken cancellationToken = default) =>
-        await _context.Guests
-            .FirstOrDefaultAsync(guest => guest.GuestId == guestId, cancellationToken)
-            .ConfigureAwait(false);
-
-    /// <inheritdoc />
-    public void Add(Guest guest)
-    {
-        ArgumentNullException.ThrowIfNull(guest);
-
-        _context.Guests.Add(guest);
-    }
-
-    /// <inheritdoc />
-    public void Update(Guest guest)
-    {
-        ArgumentNullException.ThrowIfNull(guest);
-
-        _context.Guests.Update(guest);
-    }
-
-    /// <inheritdoc />
-    public void Remove(Guest guest)
-    {
-        ArgumentNullException.ThrowIfNull(guest);
-
-        _context.Guests.Remove(guest);
-    }
+    public void Remove(Guest guest) => MarkForRemoval(guest);
 }

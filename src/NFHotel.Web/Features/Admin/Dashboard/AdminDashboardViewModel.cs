@@ -1,6 +1,8 @@
-using NFHotel.Application.Bookings;
-using NFHotel.Application.Common;
-using NFHotel.Application.Rooms;
+using NFHotel.Application.Dto.Bookings;
+using NFHotel.Application.Dto.Rooms;
+using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.Bookings;
+using NFHotel.Application.UseCases.Rooms;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Admin.Dashboard;

@@ -1,7 +1,10 @@
 @page "/admin/bookings"
 @layout NFHotel.Web.Components.Layout.AdminLayout
 @rendermode InteractiveServer
-@using NFHotel.Domain.Bookings
+@using NFHotel.Domain.Entities
+@using NFHotel.Domain.Errors
+@using NFHotel.Domain.Rules
+@using NFHotel.Domain.ValueObjects
 @using NFHotel.Web.Features.Admin.Bookings
 @inject BookingListViewModel ViewModel
 @inject BookingFormViewModel Form

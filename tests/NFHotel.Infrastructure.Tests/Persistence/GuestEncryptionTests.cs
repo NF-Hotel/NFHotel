@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 
-
-
-using NFHotel.Infrastructure.Security;
+using NFHotel.Domain.Entities;
+using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Persistence;
-using NFHotel.Domain.Guests;
+using NFHotel.Infrastructure.Security;
 
 namespace NFHotel.Infrastructure.Tests.Persistence;
 
@@ -108,7 +107,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
 
         // Angiver parameterens navn, som skal matche @guestId i SQL-kommandoen.
         guestIdParameter.ParameterName = "@guestId";
-        guestIdParameter.Value = guest.GuestId;
+        guestIdParameter.Value = guest.Id;
 
         // Tilføjer @guestId-parameteren til SQL-kommandoen,
         // så databasen kan bruge værdien når kommandoen udføres.
@@ -130,7 +129,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
 
         // Henter gæsten igen gennem EF Core.
         var loadedGuest = await context.Guests
-            .SingleAsync(g => g.GuestId == guest.GuestId);
+            .SingleAsync(g => g.Id == guest.Id);
 
         // Verificerer EF Core har dekrypteret PassportNumber korrekt.
         Assert.Equal(passportNumber, loadedGuest.PassportNumber);
@@ -195,7 +194,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
         // Opretter en parameter til SQL-kommandoen.
         var guestIdParameter = command.CreateParameter();
         guestIdParameter.ParameterName = "@guestId";
-        guestIdParameter.Value = guest.GuestId;
+        guestIdParameter.Value = guest.Id;
 
         // Tilføjer parameteren til SQL-kommandoen.
         command.Parameters.Add(guestIdParameter);

@@ -1,9 +1,10 @@
-using NFHotel.Domain.Guests;
-using NFHotel.Infrastructure.Persistence.Converters;
-using NFHotel.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+
+using NFHotel.Domain.Entities;
+using NFHotel.Infrastructure.Persistence.Converters;
+using NFHotel.Infrastructure.Security;
 
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
@@ -14,10 +15,8 @@ namespace NFHotel.Infrastructure.Persistence.Configurations;
 /// Klassen har en afhængighed og registreres derfor eksplicit i
 /// <see cref="HotelDbContext.OnModelCreating"/> frem for via assembly-scanning.
 /// </remarks>
-public sealed class GuestConfiguration : IEntityTypeConfiguration<Guest>
+public sealed class GuestConfiguration : EntityConfiguration<Guest, int>
 {
-    private const string TableName = "guest";
-
     private readonly IStringEncryptor _passportEncryptor;
 
     /// <summary>
@@ -35,17 +34,11 @@ public sealed class GuestConfiguration : IEntityTypeConfiguration<Guest>
     }
 
     /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<Guest> builder)
+    protected override string TableName => "guest";
+
+    /// <inheritdoc />
+    protected override void ConfigureEntity(EntityTypeBuilder<Guest> builder)
     {
-        ArgumentNullException.ThrowIfNull(builder);
-
-        builder.ToTable(TableName);
-
-        builder.HasKey(guest => guest.GuestId);
-
-        builder.Property(guest => guest.GuestId)
-            .ValueGeneratedOnAdd();
-
         // Længderne spejler domænets konstanter (A-10). Ellers ville en for lang værdi
         // fejle som DbUpdateException i stedet for som en domænefejl.
         builder.Property(guest => guest.FirstName)

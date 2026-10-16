@@ -1,5 +1,7 @@
 using System.Globalization;
-using NFHotel.Domain.Bookings;
+
+using NFHotel.Domain.Rules;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Infrastructure.Persistence;
 

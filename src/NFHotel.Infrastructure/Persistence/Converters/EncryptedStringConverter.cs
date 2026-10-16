@@ -1,5 +1,6 @@
-using NFHotel.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+
+using NFHotel.Infrastructure.Security;
 
 namespace NFHotel.Infrastructure.Persistence.Converters;
 

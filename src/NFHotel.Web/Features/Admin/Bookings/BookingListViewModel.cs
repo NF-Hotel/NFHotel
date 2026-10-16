@@ -1,6 +1,8 @@
-using NFHotel.Application.Bookings;
-using NFHotel.Application.Common;
-using NFHotel.Domain.Bookings;
+using NFHotel.Application.Dto.Bookings;
+using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Bookings;
+using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Admin.Bookings;
@@ -306,11 +308,11 @@ public sealed class BookingListViewModel
         BookingAction action,
         int bookingId,
         CancellationToken cancellationToken) => action switch
-    {
-        BookingAction.Confirm => service.ConfirmAsync(bookingId, cancellationToken),
-        BookingAction.CheckIn => service.CheckInAsync(bookingId, cancellationToken),
-        BookingAction.CheckOut => service.CheckOutAsync(bookingId, cancellationToken),
-        BookingAction.Cancel => service.CancelAsync(bookingId, cancellationToken),
-        _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ukendt bookinghandling.")
-    };
+        {
+            BookingAction.Confirm => service.ConfirmAsync(bookingId, cancellationToken),
+            BookingAction.CheckIn => service.CheckInAsync(bookingId, cancellationToken),
+            BookingAction.CheckOut => service.CheckOutAsync(bookingId, cancellationToken),
+            BookingAction.Cancel => service.CancelAsync(bookingId, cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ukendt bookinghandling.")
+        };
 }

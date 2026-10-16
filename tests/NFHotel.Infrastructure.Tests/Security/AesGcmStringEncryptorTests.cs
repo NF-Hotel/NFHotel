@@ -1,6 +1,6 @@
-using System;
 using System.Security.Cryptography;
 
+using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Security;
 
 namespace NFHotel.Infrastructure.Tests.Security;
@@ -50,8 +50,8 @@ public class AesGcmStringEncryptorTests
     [Fact]
     public void Encrypt_SamePlainTextTwice_ReturnsDifferentCipherTexts()
     {
-       // Arrange 
-       var key = new byte[32];
+        // Arrange 
+        var key = new byte[32];
 
         var options = new EncryptionOptions
         {
@@ -114,8 +114,8 @@ public class AesGcmStringEncryptorTests
 
         // Act og Assert
         // Forventer, at en CryptographicException kastes, når vi forsøger at dekryptere den manipulerede krypterede tekst.
-          Assert.ThrowsAny<CryptographicException>(
-              () => encryptor.Decrypt(tamperedCipherText));
+        Assert.ThrowsAny<CryptographicException>(
+            () => encryptor.Decrypt(tamperedCipherText));
     }
 
 
@@ -171,7 +171,7 @@ public class AesGcmStringEncryptorTests
         // Arrange
         var key = new byte[10];
 
-        
+
         var options = new EncryptionOptions
         {
             PassportKey = Convert.ToBase64String(key)
@@ -208,6 +208,3 @@ public class AesGcmStringEncryptorTests
 
 
 }
-
-
-

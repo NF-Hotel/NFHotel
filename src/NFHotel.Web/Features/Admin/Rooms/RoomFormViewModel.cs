@@ -1,5 +1,6 @@
-using NFHotel.Application.Rooms;
-using NFHotel.Domain.Rooms;
+using NFHotel.Application.Dto.Rooms;
+using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Admin.Rooms;

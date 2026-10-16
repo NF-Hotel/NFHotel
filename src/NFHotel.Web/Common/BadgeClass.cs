@@ -1,5 +1,4 @@
-using NFHotel.Domain.Bookings;
-using NFHotel.Domain.Rooms;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Web.Common;
 

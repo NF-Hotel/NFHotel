@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Amended: Proxmox VE is a throwaway Docker container; pve.env holds only the root password; the API token is created per run and kept in environment variables | [7c6d8f8] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objectives 6 and 7 for the market analysis service and the benchmark service on Proxmox VMs behind nginx, from US-001 | [469c395] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objectives 6 and 7 for the market analysis service and the benchmark service on Proxmox VMs behind nginx, from US-001 | [469c395] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 8, the NFHotel source follows the clean architecture structure of the skills (MIL-005) | [78eeb18] |
 
 ---
 
@@ -66,6 +66,7 @@ basis for the hosting decision (Q-31).
 5. Run NFHotel as containers: one Docker Compose file and one `<service>.env` file per service, with an nginx reverse proxy in front of the web application.
 6. Run the market analysis service (`NF-Hotel/Notebook_Market_Analysis`) on a Proxmox VM through Docker Compose behind the nginx proxy, so the owner can see the market analysis with diagrams and an AI analysis (US-001.01, US-001.03, US-001.05).
 7. Run the benchmark service (`NF-Hotel/notebook-benchmark`) on a Proxmox VM as a Docker container behind the proxy, so the owner can choose the local AI model by response time against answer quality (US-001.02, US-001.04).
+8. Bring the NFHotel source (`src/`) to the clean architecture structure of the `clean-architecture` and `coding-conventions` skills: a common key base type for every entity, the folders of each layer, repository interfaces in the domain, key columns named `<table>_id`, and DTOs in one folder per entity, with no change of behaviour.
 
 ## Scope
 
@@ -78,6 +79,7 @@ basis for the hosting decision (Q-31).
 - Reuse of the existing root `Dockerfile` for the web application and one Docker Compose file per service (nginx proxy, NFHotel web), each with its own `<service>.env` and a tracked `<service>.env.example`.
 - A smoke test that proves the web application answers through the proxy.
 - The market analysis service and the benchmark service on Proxmox VMs behind the proxy: compose and env files, an nginx route per service and a smoke test (planned in MIL-004 and a later milestone).
+- The restructuring of `NFHotel.Domain`, `NFHotel.Application` and `NFHotel.Infrastructure` and their tests (MIL-005); the Web project only changes where it must to compile.
 
 ### Out of Scope
 
@@ -125,6 +127,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 8 | No token on disk | 0 files containing the API token after a run | A search of the repository and the temporary directory finds no token |
 | 9 | Analysis through the proxy | HTTP 200 for the market analysis through nginx with no host port published by the service | Smoke-test script exit code 0 |
 | 10 | Benchmark results | At least 2 local models measured for response time and answer quality | Result file of one benchmark run |
+| 11 | Clean architecture | 0 architecture-test failures; every entity derives from `Entity<TKey>`; every key column is `<table>_id`; 0 build warnings; the test suite passes as before | `dotnet build` and `dotnet test` |
 
 ## Risks
 
@@ -140,6 +143,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | Proxy does not upgrade WebSocket connections | Blazor Server pages load but are not interactive | The nginx template sets the upgrade headers for `/_blazor`; the smoke test checks the path |
 | GPU is not available inside the Proxmox VM | The benchmark times are not those of the real hardware, or the models cannot run | The result names the machine; GPU passthrough is decided in an ADR before the benchmark service is planned |
 | The analysis application has no charts and no container image yet | The owner sees tables instead of diagrams | A gap task in MIL-004; the image is built from the repository at a pinned ref |
+| A restructuring of many files breaks behaviour | A regression in bookings, guests or rooms | One layer at a time, build and tests after each step, no behaviour change, the PostgreSQL tests run in a container |
 
 ## Assumptions
 
@@ -154,7 +158,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 
 - Docker is the only required tool on the host.
 - The test client is read-only; it runs against a throwaway Proxmox VE container.
-- Target dates 2026-10-17 (MIL-001), 2026-10-18 (MIL-002), 2026-10-19 (MIL-003) and 2026-10-23 (MIL-004); one working session each.
+- Target dates 2026-10-17 (MIL-001), 2026-10-18 (MIL-002), 2026-10-19 (MIL-003), 2026-10-23 (MIL-004) and 2026-10-30 (MIL-005); one working session each.
 - Existing solution conventions apply (.NET 9 SDK per `global.json`).
 
 ## Cost–Benefit Assessment
@@ -168,6 +172,7 @@ Qualitative, because no money changes hands and the effort is one working sessio
 | One more test project in the solution | Reusable unattended infrastructure-test pattern |
 | About half a day for the compose files, image and smoke test | A reproducible way to run NFHotel behind a proxy |
 | About one week for the analysis service on a VM behind the proxy | The owner can see the market analysis |
+| About two weeks for the restructuring and its tests | A source that follows one structure, easier to extend and to review |
 
 ## Stakeholders
 
@@ -192,3 +197,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [US-001]: ./user-stories.md
 [469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa
 [469c395]: https://github.com/NF-Hotel/NFHotel/commit/469c3959b999487820f8ffa1c24aa4866e61cfe7
+[78eeb18]: https://github.com/NF-Hotel/NFHotel/commit/78eeb18cac8d761ebf5267fca5d6b418b04b98c2

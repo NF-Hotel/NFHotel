@@ -1,5 +1,8 @@
-using NFHotel.Application.Common;
 using Microsoft.EntityFrameworkCore;
+
+using NFHotel.Application.Errors;
+using NFHotel.Application.Ports;
+
 using Npgsql;
 
 namespace NFHotel.Infrastructure.Persistence;

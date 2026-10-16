@@ -1,6 +1,6 @@
 using System.Globalization;
 
-using NFHotel.Application.Bookings;
+using NFHotel.Application.UseCases.Bookings;
 
 namespace NFHotel.Web.Features.Booking;
 

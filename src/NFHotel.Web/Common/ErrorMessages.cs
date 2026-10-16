@@ -1,4 +1,5 @@
-using NFHotel.Application.Common;
+using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases;
 
 namespace NFHotel.Web.Common;
 

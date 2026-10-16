@@ -1,5 +1,6 @@
-using NFHotel.Domain.Common;
-using NFHotel.Domain.Guests;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.Errors;
+using NFHotel.Domain.Rules;
 
 namespace NFHotel.Domain.Tests.Guests;
 

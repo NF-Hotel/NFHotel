@@ -1,10 +1,14 @@
 using System.Net;
 using System.Text;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using NFHotel.Application.Common;
-using NFHotel.Application.Holidays;
+
+using NFHotel.Application.Dto.Holidays;
+using NFHotel.Application.Errors;
+using NFHotel.Application.Ports;
+using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Holidays;
 
 namespace NFHotel.Infrastructure.Tests.Holidays;
