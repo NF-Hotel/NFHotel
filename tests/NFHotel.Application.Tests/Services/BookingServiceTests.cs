@@ -843,6 +843,105 @@ public sealed class BookingServiceTests
 
     #endregion
 
+    #region Scenarios from exploratory testing
+
+    /// <summary>Exploratory: a guest who leaves early frees the rest of the stay, and it can be let again (A-01).</summary>
+    [Fact]
+    public async Task CreateAsync_AfterAnEarlyCheckOut_LetsTheRestOfTheStayAgain()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var room = world.AddRoom();
+        var guest = world.AddGuest();
+        var booking = world.AddBooking(room.Id, guest.Id, startOffsetDays: 0, nights: 5);
+        booking.Confirm();
+        booking.CheckIn(world.Clock.UtcNow, world.Clock.Today);
+        world.Clock.Today = world.Clock.Today.AddDays(1);
+        world.Clock.TimeOfDay = TimeSpan.FromHours(9);
+        await world.BookingService().CheckOutAsync(booking.Id, TestContext.Current.CancellationToken);
+        var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, guest.Id, null);
+
+        // Act
+        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+    }
+
+    /// <summary>Exploratory, edge: checking out later on the day of arrival is allowed.</summary>
+    [Fact]
+    public async Task CheckOutAsync_LaterOnTheDayOfCheckIn_ChecksOut()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id, startOffsetDays: 0, nights: 2);
+        booking.CheckIn(world.Clock.UtcNow, world.Clock.Today);
+        world.Clock.TimeOfDay = TimeSpan.FromHours(13);
+
+        // Act
+        var result = await world.BookingService().CheckOutAsync(booking.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+    }
+
+    /// <summary>Exploratory, state transition: a guest who is already in the hotel cannot be moved to other dates.</summary>
+    [Fact]
+    public async Task RescheduleAsync_CheckedInBooking_ReturnsRescheduleNotAllowed()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var room = world.AddRoom();
+        var booking = world.AddBooking(room.Id, world.AddGuest().Id, startOffsetDays: 0, nights: 2);
+        booking.CheckIn(world.Clock.UtcNow, world.Clock.Today);
+        var request = new RescheduleBookingRequest(booking.Id, world.Clock.Today.AddDays(5), world.Clock.Today.AddDays(7), room.Id);
+
+        // Act
+        var result = await world.BookingService().RescheduleAsync(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.RescheduleNotAllowed, result.FirstError?.Code);
+    }
+
+    /// <summary>Exploratory, state transition: cancelling twice is an error the second time, not a silent success.</summary>
+    [Fact]
+    public async Task CancelAsync_AlreadyCancelledBooking_ReturnsCancelNotAllowed()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
+        await world.BookingService().CancelAsync(booking.Id, TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await world.BookingService().CancelAsync(booking.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.CancelNotAllowed, result.FirstError?.Code);
+    }
+
+    /// <summary>Exploratory, boundary: back-to-back bookings fit, a third that spans both does not.</summary>
+    [Fact]
+    public async Task CreateAsync_BookingSpanningTwoBackToBackBookings_ReturnsRoomNotAvailable()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var room = world.AddRoom();
+        var guest = world.AddGuest();
+        var service = world.BookingService();
+        await service.CreateAsync(new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, guest.Id, null), TestContext.Current.CancellationToken);
+        await service.CreateAsync(new CreateBookingRequest(world.Clock.Today.AddDays(2), world.Clock.Today.AddDays(4), room.Id, guest.Id, null), TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await service.CreateAsync(
+            new CreateBookingRequest(world.Clock.Today.AddDays(1), world.Clock.Today.AddDays(3), room.Id, guest.Id, null),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.RoomNotAvailable, result.FirstError?.Code);
+    }
+
+    #endregion
+
     #region Helpers
 
     private static void ArrangeRoomsAndOccupancy(
