@@ -19,9 +19,12 @@ set -euo pipefail
 
 readonly NETWORK="nfhotel-smoke-net"
 readonly DB_NETWORK="nfhotel-smoke-db"
+readonly API_NETWORK="nfhotel-smoke-api"
+readonly SMOKE_API_TOKEN="smoke-token-0123456789-smoke-token-0123456789"
 readonly LLM_NETWORK="nfhotel-smoke-llm"
 readonly NGINX_PROJECT="nfhotel-smoke-nginx"
 readonly WEB_PROJECT="nfhotel-smoke-web"
+readonly API_PROJECT="nfhotel-smoke-api"
 readonly ANALYSIS_PROJECT="nfhotel-smoke-analysis"
 readonly ANALYSIS_HOST="analysis.localhost"
 readonly ANALYSIS_API_HOST="analysis-api.localhost"
@@ -75,9 +78,16 @@ compose_nginx() {
 }
 
 compose_web() {
-  NFHOTEL_WEB_ENV_FILE="$TMP_NATIVE/nfhotel-web.env" NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_DB_NETWORK="$DB_NETWORK" POSTGRES_PASSWORD=smoke \
+  NFHOTEL_WEB_ENV_FILE="$TMP_NATIVE/nfhotel-web.env" NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_API_NETWORK="$API_NETWORK" API_TOKEN="$SMOKE_API_TOKEN" \
     docker compose --project-name "$WEB_PROJECT" \
     --file deploy/nfhotel-web/docker-compose.yml "$@"
+}
+
+compose_api() {
+  NFHOTEL_API_ENV_FILE="$TMP_NATIVE/nfhotel-api.env" NFHOTEL_API_NETWORK="$API_NETWORK" \
+    NFHOTEL_DB_NETWORK="$DB_NETWORK" POSTGRES_PASSWORD=smoke \
+    docker compose --project-name "$API_PROJECT" \
+    --file deploy/nfhotel-api/docker-compose.yml "$@"
 }
 
 compose_analysis() {
@@ -92,8 +102,9 @@ cleanup() {
   if ((KEEP == 0)); then
     compose_nginx down --volumes --remove-orphans >/dev/null 2>&1 || true
     compose_web down --volumes --remove-orphans >/dev/null 2>&1 || true
+    compose_api down --volumes --remove-orphans >/dev/null 2>&1 || true
     compose_analysis down --volumes --remove-orphans >/dev/null 2>&1 || true
-    docker network rm "$NETWORK" "$DB_NETWORK" "$LLM_NETWORK" >/dev/null 2>&1 || true
+    docker network rm "$NETWORK" "$DB_NETWORK" "$LLM_NETWORK" "$API_NETWORK" >/dev/null 2>&1 || true
   fi
   [[ -n "$TMP_DIR" ]] && rm -rf "$TMP_DIR"
 }
@@ -119,13 +130,18 @@ EOF
   cat >"$TMP_DIR/nfhotel-web.env" <<EOF
 ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+HotelTime__TimeZoneId=Europe/Copenhagen
+EOF
+  cat >"$TMP_DIR/nfhotel-api.env" <<EOF
+ASPNETCORE_ENVIRONMENT=Production
 Encryption__PassportKey=$(openssl rand -base64 32)
 HotelTime__TimeZoneId=Europe/Copenhagen
+Api__Token=$SMOKE_API_TOKEN
 EOF
 }
 
 main() {
-  local root web_id
+  local root web_id api_id
   root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
   while [[ $# -gt 0 ]]; do
@@ -163,7 +179,11 @@ main() {
 
   docker network create "$NETWORK" >/dev/null
   docker network create --internal "$DB_NETWORK" >/dev/null
+  docker network create --internal "$API_NETWORK" >/dev/null
   docker network create "$LLM_NETWORK" >/dev/null
+  echo "Building and starting the database API..."
+  compose_api up --detach --build --wait --wait-timeout 180 >/dev/null ||
+    die "the database API did not become healthy"
   echo "Building and starting the web service..."
   compose_web up --detach --build --wait --wait-timeout 180 >/dev/null ||
     die "the web service did not become healthy"
@@ -190,6 +210,18 @@ main() {
   web_id="$(compose_web ps --quiet nfhotel-web)"
   check "web service publishes no host port" "" \
     "$(docker port "$web_id" 2>/dev/null || true)"
+
+  api_id="$(compose_api ps --quiet nfhotel-api)"
+  check "database API publishes no host port" "" \
+    "$(docker port "$api_id" 2>/dev/null || true)"
+  check "web service is not on the database network" "" \
+    "$(docker inspect --format '{{range $name, $net := .NetworkSettings.Networks}}{{$name}} {{end}}' "$web_id" | tr ' ' '\n' | grep -x "$DB_NETWORK" || true)"
+  check "database API is on the database network" "$DB_NETWORK" \
+    "$(docker inspect --format '{{range $name, $net := .NetworkSettings.Networks}}{{$name}} {{end}}' "$api_id" | tr ' ' '\n' | grep -x "$DB_NETWORK" || true)"
+  check "web container holds no database setting" "" \
+    "$(docker exec "$web_id" printenv | grep -i -E 'ConnectionStrings|PassportKey|POSTGRES' || true)"
+  check "database API refuses a call without the token" 401 \
+    "$(docker exec "$web_id" bash -c 'exec 3<>/dev/tcp/nfhotel-api/8080 && printf "GET /api/rooms HTTP/1.0\r\n\r\n" >&3 && head -n 1 <&3' | cut -d' ' -f2)"
 
   compose_web stop >/dev/null
   check "proxy runs while the web service is stopped" true \
