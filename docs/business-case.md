@@ -15,7 +15,8 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 13, the comments in the source code are in English (MIL-010) | [e67e815] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 14, the tests run on xUnit v3 (MIL-011) | [ef2bd4b] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 15, the tests cover the kinds of behaviour of the coding conventions (MIL-012) | [8200afa] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 16, the booking service refuses an inverted overview period and a check-in to a room that cannot be let (MIL-013) | [5036584] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 16, the booking service refuses an inverted overview period and a check-in to a room that cannot be let (MIL-013) | [5036584] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 17, asynchronous code where it gives meaning, enforced by architecture tests (MIL-014) | pending |
 
 ---
 
@@ -78,6 +79,7 @@ basis for the hosting decision (Q-31).
 14. Move the four test projects from xUnit v2 to xUnit v3, the supported line, without losing or changing a test and without changing the code under test.
 15. Make the tests follow the test rules of the coding conventions: the use-case layer has unit tests, the conflict paths have integration tests, every test is named `Method_Condition_Expected`, and unit and integration tests are apart; the code in `src/` does not change.
 16. Make the booking service refuse an overview period whose end is before its start and a check-in to a room that cannot be let; the code of the domain does not change.
+17. Use asynchronous code where it gives meaning, layer by layer from the domain to the web, and keep it that way with architecture tests; behaviour does not change.
 
 ## Scope
 
@@ -99,6 +101,7 @@ basis for the hosting decision (Q-31).
 - The move of the four test projects from xUnit v2 to xUnit v3, with the same tests and the same test counts (MIL-011); the code in `src/` is not changed.
 - Unit tests for the three services, integration tests for the conflict paths, the renaming of the test methods and the split of unit and integration tests, with a test plan (MIL-012); the code in `src/` is not changed.
 - Two guards in the booking service, the matching error text and the check-in flag of the booking screens, with the use case updated (MIL-013)
+- An audit of asynchronous code per layer in the order domain, application, infrastructure and web, the fixes it finds, and architecture tests for the rules (MIL-014)
 
 ### Out of Scope
 
@@ -155,6 +158,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 17 | Tests on xUnit v3 | 0 references to `xunit` 2.x in the project files; the same test count per project as before; 0 changed lines in `src/` | `dotnet test`, a search of the project files and `git diff` of `src/` |
 | 18 | Tests follow the test rules | 0 test names with fewer than three parts; at least one positive and one negative test for each public method of the three services; 0 sleeps, system-clock reads or network calls in `tests/`; 0 changed lines in `src/` | An architecture test, a source search and `git diff` of `src/` |
 | 19 | Booking guards | The overview refuses an end before the start and allows one day; check-in is refused for a room out of service or in maintenance and allowed for a room that needs cleaning; 0 changed lines in `NFHotel.Domain` | `BookingServiceTests`, a mapping test and `git diff` of the domain |
+| 20 | Asynchronous code | 0 blocking calls (`.Result`, `.Wait()`, `GetAwaiter().GetResult()`, `Task.Run`, `async void`) in `src/`; every method that returns `Task` ends in `Async`; 0 `async` in entities and value objects; every public asynchronous method of the application and infrastructure takes a `CancellationToken` | `AsyncRulesTests` and a source search per layer in the review record |
 
 ## Risks
 
