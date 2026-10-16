@@ -19,14 +19,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="EFCore.NamingConventions" Version="9.0.0" />
+    <PackageReference Include="EFCore.NamingConventions" Version="10.0.1" />
 
     <!--
       Eksplicit og pinnet: EFCore.NamingConventions 9.0.0 trækker Relational 9.0.1, mens
       Npgsql-provideren trækker 9.0.4. Uden denne linje arver de projekter der refererer
       Infrastructure den laveste version og bygger med MSB3277-advarsler.
     -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
 
     <!--
       compile-assets er bevidst slået til: HotelDbContextFactory implementerer
@@ -35,16 +35,16 @@
       DbContextOptions (IStringEncryptor, B-09). PrivateAssets=all sikrer stadig at
       pakken ikke flyder videre til Web eller til testprojekterne.
     -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
       <IncludeAssets>compile; runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
 
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.13" />
 
     <!-- Typed HttpClient til analysetjenestens helligdagskalender (Holidays/HolidayApiClient). -->
-    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.4" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.13" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
   </ItemGroup>
 
 </Project>

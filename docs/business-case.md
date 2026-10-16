@@ -12,7 +12,8 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 12, validation attributes on the entities (MIL-009) | [4cab5fc] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 13, the comments in the source code are in English (MIL-010) | [e67e815] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 13, the comments in the source code are in English (MIL-010) | [e67e815] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 14, the tests run on xUnit v3 (MIL-011) | [ef2bd4b] |
 
 ---
 
@@ -72,6 +73,7 @@ basis for the hosting decision (Q-31).
 11. Dissolve the folder `NFHotel.Domain/Rules` so that the domain has only the folders of the `clean-architecture` skill, the rules living with the entities, value objects and errors they guard, with no change of behaviour.
 12. Express the field rules of the entities as attributes on their properties (ADR-0002), so that the entities hold no validation code, with no change of behaviour.
 13. Convert the comments in the source code and the tests from Danish to English, the Product Owner language, without changing any code; the text of the application screens stays as it is.
+14. Move the four test projects from xUnit v2 to xUnit v3, the supported line, without losing or changing a test and without changing the code under test.
 
 ## Scope
 
@@ -90,6 +92,7 @@ basis for the hosting decision (Q-31).
 - The move of the rules of `NFHotel.Domain/Rules` into the entities, value objects and errors, with the tests and callers updated (MIL-008).
 - Attributes on the properties of `Room` and `Guest` in place of their validation methods, with tests that fix codes, rules and order (MIL-009).
 - The conversion of all comments in `src/` and `tests/` to English, with a check that only comments changed (MIL-010); the text of the application screens, string literals and test data stay as they are.
+- The move of the four test projects from xUnit v2 to xUnit v3, with the same tests and the same test counts (MIL-011); the code in `src/` is not changed.
 
 ### Out of Scope
 
@@ -143,6 +146,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 14 | Domain folders | 0 folders in `NFHotel.Domain` other than `Entities`, `ValueObjects`, `Repositories` and `Errors`; error code strings unchanged | `dotnet test` and a folder listing |
 | 15 | Attribute validation | 0 methods named `Validate` or `IsValid…` in `Room` and `Guest`; error codes, rules and their order unchanged | `dotnet test` and a source search |
 | 16 | Source comments in English | 0 Danish letters or words in the comments of `src/` and `tests/`; 0 changed lines that are not comments | Language scan and comment-only diff check in the review record |
+| 17 | Tests on xUnit v3 | 0 references to `xunit` 2.x in the project files; the same test count per project as before; 0 changed lines in `src/` | `dotnet test`, a search of the project files and `git diff` of `src/` |
 
 ## Risks
 
@@ -220,3 +224,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [48701b5]: https://github.com/NF-Hotel/NFHotel/commit/48701b550cecaf94616bbae64d74a5c872f72d80
 [4cab5fc]: https://github.com/NF-Hotel/NFHotel/commit/4cab5fc64b8358e18f9fec630d27d8bc267e6787
 [e67e815]: https://github.com/NF-Hotel/NFHotel/commit/e67e8155fd63d307e6783924f956fa49f915edbd
+[ef2bd4b]: https://github.com/NF-Hotel/NFHotel/commit/ef2bd4bda1edbd598228cb0fc043a4f2fc996974
