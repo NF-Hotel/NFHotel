@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S04 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S04 | Initial version | [88a4946] |
 
 ---
 
@@ -80,3 +80,4 @@ Go — all Mandatory criteria pass or are not applicable with a stated reason. F
 [MIL-003]: ../../milestones/mil-003-throwaway-proxmox.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca
