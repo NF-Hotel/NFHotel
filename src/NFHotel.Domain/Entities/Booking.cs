@@ -4,16 +4,16 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Domain.Entities;
 
 /// <summary>
-/// En reservation af ét rum til én gæst i én periode. Aggregatrod.
+/// A reservation of one room for one guest for one period. Aggregate root.
 /// </summary>
 /// <remarks>
-/// Bookingen kender kun sine egne felter. Regler der kræver kendskab til <i>andre</i>
-/// bookinger — fx overlap ved oprettelse (BR-19) — hører i Application-laget, som kalder
+/// The booking knows only its own fields. Rules that need knowledge of <i>other</i>
+/// bookings — for example overlap on creation (BR-19) — belong in the Application layer, which calls
 /// <see cref="Booking.ConflictsWith"/>.
 /// <para>
-/// Domænet kender ikke uret: "i dag" (<c>today</c>) og faktiske tidsstempler
-/// (<c>occurredAt</c>) leveres altid som parametre. Det gør tilstandsmaskinen deterministisk
-/// testbar og holder tidszonepolitikken ét sted i Application (A-05).
+/// The domain does not know the clock: "today" (<c>today</c>) and actual timestamps
+/// (<c>occurredAt</c>) are always passed in as parameters. That makes the state machine deterministically
+/// testable and keeps the time zone policy in one place in Application (A-05).
 /// </para>
 /// </remarks>
 public sealed class Booking : Entity<int>
@@ -22,70 +22,70 @@ public sealed class Booking : Entity<int>
     private const string BookingNumberPrefix = "FLZ-";
     private const string BookingNumberFormat = "D6";
 
-    /// <summary>Til EF Core. Brug <see cref="Create"/> i kode.</summary>
+    /// <summary>For EF Core. Use <see cref="Create"/> in code.</summary>
     private Booking()
     {
     }
 
-    /// <summary>Ankomstdato uden klokkeslæt (B-08).</summary>
+    /// <summary>Arrival date without a time of day (B-08).</summary>
     public DateOnly StartDate { get; private set; }
 
     /// <summary>
-    /// Afrejsedato uden klokkeslæt, eksklusiv (B-08).
+    /// Departure date without a time of day, exclusive (B-08).
     /// </summary>
     /// <remarks>
-    /// Den <i>bookede</i> slutdato. Ændres ALDRIG af en udtjekning (A-01) — den er
-    /// historik. Det er <see cref="EffectiveEndDate"/> der styrer belægningen.
+    /// The <i>booked</i> end date. NEVER changed by a check-out (A-01) — it is
+    /// history. It is <see cref="EffectiveEndDate"/> that governs occupancy.
     /// </remarks>
     public DateOnly EndDate { get; private set; }
 
-    /// <summary>Faktisk indtjekningstidspunkt. Null indtil check-in (B-08).</summary>
+    /// <summary>Actual check-in time. Null until check-in (B-08).</summary>
     public DateTimeOffset? CheckInTime { get; private set; }
 
-    /// <summary>Faktisk udtjekningstidspunkt. Null indtil check-ud (B-08).</summary>
+    /// <summary>Actual check-out time. Null until check-out (B-08).</summary>
     public DateTimeOffset? CheckOutTime { get; private set; }
 
     /// <summary>
-    /// Den hotel-lokale dato gæsten faktisk tjekkede ud. Null indtil check-ud.
+    /// The hotel-local date on which the guest actually checked out. Null until check-out.
     /// </summary>
     /// <remarks>
-    /// Selvstændigt felt, ikke afledt af <see cref="CheckOutTime"/>: omregningen
-    /// tidsstempel → hotel-lokal dato er en tidszonepolitik som hverken Domain eller
-    /// databasen kan udføre deterministisk (A-02, A-03). Datoen leveres derfor udefra.
+    /// A field of its own, not derived from <see cref="CheckOutTime"/>: converting a
+    /// timestamp to a hotel-local date is a time zone policy that neither the domain nor
+    /// the database can perform deterministically (A-02, A-03). The date is therefore supplied from outside.
     /// </remarks>
     public DateOnly? CheckOutDate { get; private set; }
 
-    /// <summary>Bookingens livscyklustilstand. Ændres kun via metoderne på klassen.</summary>
+    /// <summary>The life cycle state of the booking. Changed only through the methods of the class.</summary>
     public BookingStatus Status { get; private set; }
 
-    /// <summary>Fremmednøgle til rummet. Altid større end 0 (BR-45, BR-105).</summary>
+    /// <summary>Foreign key to the room. Always greater than 0 (BR-45, BR-105).</summary>
     public int RoomId { get; private set; }
 
-    /// <summary>Fremmednøgle til gæsten. Altid større end 0 (BR-106).</summary>
+    /// <summary>Foreign key to the guest. Always greater than 0 (BR-106).</summary>
     public int GuestId { get; private set; }
 
     /// <summary>
-    /// Navigation til rummet. Kun udfyldt når kaldet har bedt om den; brug den aldrig som guard.
+    /// Navigation to the room. Filled only when the call asked for it; never use it as a guard.
     /// </summary>
     public Room? Room { get; private set; }
 
     /// <summary>
-    /// Navigation til gæsten. Kun udfyldt når kaldet har bedt om den; brug den aldrig som guard.
+    /// Navigation to the guest. Filled only when the call asked for it; never use it as a guard.
     /// </summary>
     public Guest? Guest { get; private set; }
 
-    /// <summary>Den bookede periode som value object. Historik — bruges ikke til overlapstjek.</summary>
+    /// <summary>The booked period as a value object. History — not used for overlap checks.</summary>
     public DateRange Period => new(StartDate, EndDate);
 
     /// <summary>
-    /// Den slutdato bookingen faktisk lægger beslag på rummet til (A-01):
+    /// The end date up to which the booking actually occupies the room (A-01):
     /// <c>GREATEST(StartDate + 1 dag, COALESCE(CheckOutDate, EndDate))</c>.
     /// </summary>
     /// <remarks>
-    /// Tidlig udtjekning frigiver dermed automatisk de resterende nætter, uden at
-    /// <see cref="EndDate"/> røres. <c>StartDate + 1</c> er gulvet, så en udtjekning samme
-    /// dag som ankomsten ikke giver en tom periode — databasens genererede kolonne
-    /// <c>effective_end_date</c> beregner præcis det samme udtryk.
+    /// Early check-out thus releases the remaining nights automatically, without touching
+    /// <see cref="EndDate"/>. <c>StartDate + 1</c> is the floor, so a check-out on the same
+    /// day as arrival does not give an empty period — the generated database column
+    /// <c>effective_end_date</c> computes exactly the same expression.
     /// </remarks>
     public DateOnly EffectiveEndDate
     {
@@ -99,8 +99,8 @@ public sealed class Booking : Entity<int>
     }
 
     /// <summary>
-    /// Den periode bookingen faktisk blokerer rummet i: <c>[StartDate, EffectiveEndDate)</c>.
-    /// Dette er periodetypen overlapstjek skal bruge — ikke <see cref="Period"/> (A-01).
+    /// The period during which the booking actually blocks the room: <c>[StartDate, EffectiveEndDate)</c>.
+    /// This is the period type overlap checks must use — not <see cref="Period"/> (A-01).
     /// </summary>
     public DateRange EffectivePeriod => new(StartDate, EffectiveEndDate);
 
@@ -108,44 +108,44 @@ public sealed class Booking : Entity<int>
     public int NumberOfNights => Period.Nights;
 
     /// <summary>
-    /// Vist bookingnummer, fx <c>FLZ-000123</c> (BR-109). Afledt, aldrig persisteret.
+    /// Displayed booking number, for example <c>FLZ-000123</c> (BR-109). Derived, never persisted.
     /// </summary>
     public string BookingNumber => $"{BookingNumberPrefix}{Id.ToString(BookingNumberFormat)}";
 
-    /// <summary>Sand hvis bookingen må bekræftes (BR-02, BR-121).</summary>
+    /// <summary>True if the booking may be confirmed (BR-02, BR-121).</summary>
     public bool CanConfirm => Status == BookingStatus.Pending;
 
-    /// <summary>Sand hvis bookingen må tjekkes ud (BR-09).</summary>
+    /// <summary>True if the booking may be checked out (BR-09).</summary>
     public bool CanCheckOut =>
         Status == BookingStatus.CheckedIn && CheckInTime is not null && CheckOutTime is null;
 
-    /// <summary>Sand hvis bookingen må annulleres (BR-11, BR-122).</summary>
+    /// <summary>True if the booking may be cancelled (BR-11, BR-122).</summary>
     public bool CanCancel => Status is BookingStatus.Pending or BookingStatus.Confirmed;
 
-    /// <summary>Sand hvis bookingens datoer og rum må ændres (BR-14, BR-123, A-06).</summary>
+    /// <summary>True if the dates and the room of the booking may be changed (BR-14, BR-123, A-06).</summary>
     public bool CanReschedule => Status is BookingStatus.Pending or BookingStatus.Confirmed;
 
     /// <summary>
-    /// Afgør om bookingen må tjekkes ind på den angivne dato (BR-06).
+    /// Decides whether the booking may be checked in on the given date (BR-06).
     /// </summary>
     /// <param name="today">Dagens dato i hotellets tidszone.</param>
-    /// <returns>Sand hvis check-in er tilladt. Bemærk B-01: <c>Confirmed</c> er ikke et krav.</returns>
+    /// <returns>True if check-in is allowed. Note B-01: <c>Confirmed</c> is not required.</returns>
     public bool CanCheckIn(DateOnly today) =>
         (Status is BookingStatus.Pending or BookingStatus.Confirmed)
         && CheckInTime is null
         && StartDate <= today;
 
     /// <summary>
-    /// Opretter en ny booking med status <see cref="BookingStatus.Pending"/> (BR-01, BR-48).
+    /// Creates a new booking with status <see cref="BookingStatus.Pending"/> (BR-01, BR-48).
     /// </summary>
-    /// <param name="period">Bookingperioden. Skal starte på eller efter <paramref name="today"/>.</param>
-    /// <param name="roomId">Rummets id. Skal være større end 0.</param>
-    /// <param name="guestId">Gæstens id. Skal være større end 0.</param>
-    /// <param name="today">Dagens dato i hotellets tidszone. Leveres af kaldet — Domain kender ikke uret.</param>
-    /// <returns>En ny, gyldig booking der endnu ikke er persisteret.</returns>
+    /// <param name="period">The booking period. Must start on or after <paramref name="today"/>.</param>
+    /// <param name="roomId">The id of the room. Must be greater than 0.</param>
+    /// <param name="guestId">The id of the guest. Must be greater than 0.</param>
+    /// <param name="today">Today's date in the hotel's time zone. Supplied by the caller — the domain does not know the clock.</param>
+    /// <returns>A new, valid booking that is not yet persisted.</returns>
     /// <exception cref="DomainException">
-    /// Ved startdato i fortiden (BR-44, BR-104), manglende rum (BR-45, BR-105) eller
-    /// manglende gæst (BR-106).
+    /// On a start date in the past (BR-44, BR-104), a missing room (BR-45, BR-105) or
+    /// a missing guest (BR-106).
     /// </exception>
     public static Booking Create(DateRange period, int roomId, int guestId, DateOnly today)
     {
@@ -164,11 +164,11 @@ public sealed class Booking : Entity<int>
     }
 
     /// <summary>
-    /// Bekræfter bookingen — betaling er garanteret (BR-02, BR-03, BR-05).
-    /// Bekræftelse er ikke en forudsætning for check-in (B-01).
+    /// Confirms the booking — payment is guaranteed (BR-02, BR-03, BR-05).
+    /// Confirmation is not a prerequisite for check-in (B-01).
     /// </summary>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes hvis status ikke er præcis <see cref="BookingStatus.Pending"/>.
+    /// Thrown if the status is not exactly <see cref="BookingStatus.Pending"/>.
     /// </exception>
     public void Confirm()
     {
@@ -181,17 +181,17 @@ public sealed class Booking : Entity<int>
     }
 
     /// <summary>
-    /// Tjekker gæsten ind (BR-06, BR-07). Tilladt fra både <see cref="BookingStatus.Pending"/>
-    /// og <see cref="BookingStatus.Confirmed"/> (B-01).
+    /// Checks the guest in (BR-06, BR-07). Allowed from both <see cref="BookingStatus.Pending"/>
+    /// and <see cref="BookingStatus.Confirmed"/> (B-01).
     /// </summary>
-    /// <param name="occurredAt">Det faktiske indtjekningstidspunkt.</param>
+    /// <param name="occurredAt">The actual check-in time.</param>
     /// <param name="today">
-    /// Dagens dato i hotellets tidszone. Leveres separat, fordi omregningen fra tidsstempel
-    /// til lokal kalenderdato er en tidszonepolitik der hører i Application-laget.
+    /// Today's date in the hotel's time zone. Supplied separately, because converting a timestamp
+    /// to a local calendar date is a time zone policy that belongs in the Application layer.
     /// </param>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes hvis status hverken er Pending eller Confirmed, hvis <see cref="CheckInTime"/>
-    /// allerede er sat, eller hvis <see cref="StartDate"/> ligger efter <paramref name="today"/>.
+    /// Thrown if the status is neither Pending nor Confirmed, if <see cref="CheckInTime"/>
+    /// is already set, or if <see cref="StartDate"/> is after <paramref name="today"/>.
     /// </exception>
     public void CheckIn(DateTimeOffset occurredAt, DateOnly today)
     {
@@ -205,28 +205,28 @@ public sealed class Booking : Entity<int>
     }
 
     /// <summary>
-    /// Tjekker gæsten ud (BR-09, BR-10).
+    /// Checks the guest out (BR-09, BR-10).
     /// </summary>
     /// <param name="occurredAt">
-    /// Det faktiske udtjekningstidspunkt. Skal være strengt efter <see cref="CheckInTime"/> (BR-107).
+    /// The actual check-out time. Must be strictly after <see cref="CheckInTime"/> (BR-107).
     /// </param>
     /// <param name="checkOutDate">
-    /// Den hotel-lokale dato udtjekningen skete på (A-03). Indgår i
-    /// <see cref="EffectiveEndDate"/> og frigiver dermed resterende nætter ved tidlig
-    /// udtjekning, uden at <see cref="EndDate"/> ændres (A-01).
+    /// The hotel-local date on which the check-out happened (A-03). Part of
+    /// <see cref="EffectiveEndDate"/> and thus releases the remaining nights on early
+    /// check-out, without <see cref="EndDate"/> changing (A-01).
     /// </param>
     /// <param name="today">
-    /// Dagens dato i hotellets tidszone — parallelt med <see cref="CheckIn"/>. Leveres af
-    /// kaldet, fordi Domain aldrig selv må kende "i dag".
+    /// Today's date in the hotel's time zone — parallel to <see cref="CheckIn"/>. Supplied by
+    /// the caller, because the domain must never know "today" itself.
     /// </param>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes hvis status ikke er <see cref="BookingStatus.CheckedIn"/>, eller hvis
-    /// <see cref="CheckOutTime"/> allerede er sat.
+    /// Thrown if the status is not <see cref="BookingStatus.CheckedIn"/>, or if
+    /// <see cref="CheckOutTime"/> is already set.
     /// </exception>
     /// <exception cref="DomainException">
-    /// Kastes hvis <paramref name="occurredAt"/> ikke er efter <see cref="CheckInTime"/>
-    /// (BR-107), eller hvis <paramref name="checkOutDate"/> ligger før
-    /// <see cref="StartDate"/> eller efter <paramref name="today"/>.
+    /// Thrown if <paramref name="occurredAt"/> is not after <see cref="CheckInTime"/>
+    /// (BR-107), or if <paramref name="checkOutDate"/> is before
+    /// <see cref="StartDate"/> or after <paramref name="today"/>.
     /// </exception>
     public void CheckOut(DateTimeOffset occurredAt, DateOnly checkOutDate, DateOnly today)
     {
@@ -245,9 +245,9 @@ public sealed class Booking : Entity<int>
             throw new DomainException(BookingErrors.CheckOutDateBeforeStartDate);
         }
 
-        // En udtjekningsdato i fremtiden kan ikke rettes bagefter: en CheckedOut booking
-        // kan hverken omlægges eller annulleres, og datoen ville spærre rummet frem til
-        // den via EffectiveEndDate (A-01). Derfor en øvre grænse, ikke kun en nedre.
+        // A check-out date in the future cannot be corrected afterwards: a CheckedOut booking
+        // can be neither rescheduled nor cancelled, and the date would block the room until
+        // it via EffectiveEndDate (A-01). Hence an upper bound, not only a lower one.
         if (checkOutDate > today)
         {
             throw new DomainException(BookingErrors.CheckOutDateInFuture);
@@ -259,12 +259,12 @@ public sealed class Booking : Entity<int>
     }
 
     /// <summary>
-    /// Annullerer bookingen (BR-11, BR-13). Soft-delete — rækken slettes aldrig.
-    /// Eneste overgang der frigiver rummet helt (A-01).
+    /// Cancels the booking (BR-11, BR-13). Soft delete — the row is never deleted.
+    /// The only transition that releases the room completely (A-01).
     /// </summary>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes hvis status hverken er Pending eller Confirmed. En booking der er tjekket
-    /// ind eller ud kan ikke annulleres.
+    /// Thrown if the status is neither Pending nor Confirmed. A booking that is checked
+    /// in or out cannot be cancelled.
     /// </exception>
     public void Cancel()
     {
@@ -277,20 +277,20 @@ public sealed class Booking : Entity<int>
     }
 
     /// <summary>
-    /// Flytter bookingen til en ny periode og/eller et nyt rum (BR-14, BR-17, BR-18, BR-20).
+    /// Moves the booking to a new period and/or a new room (BR-14, BR-17, BR-18, BR-20).
     /// </summary>
-    /// <param name="newPeriod">Den nye periode. Skal starte på eller efter <paramref name="today"/> (BR-108).</param>
-    /// <param name="newRoomId">Det nye rums id. Skal være større end 0.</param>
+    /// <param name="newPeriod">The new period. Must start on or after <paramref name="today"/> (BR-108).</param>
+    /// <param name="newRoomId">The id of the new room. Must be greater than 0.</param>
     /// <param name="today">Dagens dato i hotellets tidszone.</param>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes hvis status hverken er Pending eller Confirmed.
+    /// Thrown if the status is neither Pending nor Confirmed.
     /// </exception>
     /// <exception cref="DomainException">
-    /// Kastes hvis den nye periode starter i fortiden (BR-108) eller rummets id ikke er gyldigt.
+    /// Thrown if the new period starts in the past (BR-108) or the id of the room is not valid.
     /// </exception>
     /// <remarks>
-    /// Kontrollerer IKKE overlap mod andre bookinger — det kræver kendskab til andre
-    /// bookinger og hører derfor i Application-laget (BR-19).
+    /// Does NOT check overlap against other bookings — that requires knowledge of other
+    /// bookings and therefore belongs in the Application layer (BR-19).
     /// </remarks>
     public void Reschedule(DateRange newPeriod, int newRoomId, DateOnly today)
     {
@@ -307,7 +307,7 @@ public sealed class Booking : Entity<int>
         RoomId = newRoomId;
     }
 
-    /// <summary>Afviser en periode der starter før i dag (BR-44, BR-104, BR-108).</summary>
+    /// <summary>Rejects a period that starts before today (BR-44, BR-104, BR-108).</summary>
     private static void GuardPeriodIsNotInThePast(DateRange period, DateOnly today)
     {
         if (!period.StartsOnOrAfter(today))
@@ -325,7 +325,7 @@ public sealed class Booking : Entity<int>
         }
     }
 
-    /// <summary>Afviser en manglende gæstereference (BR-106).</summary>
+    /// <summary>Rejects a missing guest reference (BR-106).</summary>
     private static void GuardGuestId(int guestId)
     {
         if (guestId <= 0)
@@ -335,16 +335,16 @@ public sealed class Booking : Entity<int>
     }
 
     /// <summary>
-    /// Afgør om denne booking er i konflikt med en ønsket periode på et rum (BR-19).
+    /// Decides whether this booking conflicts with a desired period on a room (BR-19).
     /// </summary>
-    /// <param name="roomId">Rummet den ønskede periode gælder.</param>
-    /// <param name="desiredPeriod">Den ønskede periode.</param>
-    /// <returns>Sand hvis denne booking spærrer for den ønskede periode.</returns>
+    /// <param name="roomId">The room the desired period applies to.</param>
+    /// <param name="desiredPeriod">The desired period.</param>
+    /// <returns>True if this booking blocks the desired period.</returns>
     /// <remarks>
-    /// Sammenligningen sker mod <see cref="EffectivePeriod"/>, ikke <see cref="Period"/>
-    /// (A-01): en gæst der rejser tidligt skal frigive de resterende nætter. Kaldet er
-    /// ansvarligt for at ekskludere bookingen selv ved redigering. Perioden er halvåben
-    /// (B-03, BR-39): afrejse og ankomst samme dag er ikke overlap.
+    /// The comparison is made against <see cref="EffectivePeriod"/>, not <see cref="Period"/>
+    /// (A-01): a guest who leaves early must release the remaining nights. The caller is
+    /// responsible for excluding the booking itself when editing. The period is half-open
+    /// (B-03, BR-39): departure and arrival on the same day are not an overlap.
     /// </remarks>
     public bool ConflictsWith(int roomId, DateRange desiredPeriod) =>
         RoomId == roomId

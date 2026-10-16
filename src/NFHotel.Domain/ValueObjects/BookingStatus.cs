@@ -1,36 +1,36 @@
 namespace NFHotel.Domain.ValueObjects;
 
 /// <summary>
-/// Bookingens livscyklus.
+/// The life cycle of the booking.
 /// </summary>
 /// <remarks>
-/// Ordinalværdierne 0-4 er bevaret fra det gamle system, fordi de allerede findes som int
-/// i eksisterende data (B-07). Værdierne må aldrig omnummereres uden en datamigrering —
-/// databasens exclusion constraint refererer direkte til <c>status &lt;&gt; 4</c>.
+/// The ordinal values 0-4 are kept from the old system, because they already exist as int
+/// in existing data (B-07). The values must never be renumbered without a data migration —
+/// the database exclusion constraint refers directly to <c>status &lt;&gt; 4</c>.
 /// </remarks>
 public enum BookingStatus
 {
-    /// <summary>Oprettet, men ikke betalingsgaranteret. Startstatus for enhver booking (BR-01).</summary>
+    /// <summary>Created, but payment not guaranteed. The start status of every booking (BR-01).</summary>
     Pending = 0,
 
     /// <summary>
-    /// Betaling garanteret. Er IKKE en forudsætning for check-in — walk-in går direkte
-    /// fra <see cref="Pending"/> til <see cref="CheckedIn"/> (B-01).
+    /// Payment guaranteed. Is NOT a prerequisite for check-in — a walk-in goes directly
+    /// from <see cref="Pending"/> to <see cref="CheckedIn"/> (B-01).
     /// </summary>
     Confirmed = 1,
 
-    /// <summary>Gæsten er tjekket ind.</summary>
+    /// <summary>The guest has been checked in.</summary>
     CheckedIn = 2,
 
     /// <summary>
-    /// Gæsten er tjekket ud. Blokerer rummet frem til bookingens effektive slutdato,
-    /// ikke til den oprindelige <c>EndDate</c> (A-01).
+    /// The guest has been checked out. Blocks the room until the effective end date of the booking,
+    /// not until the original <c>EndDate</c> (A-01).
     /// </summary>
     CheckedOut = 3,
 
     /// <summary>
-    /// Annulleret. Soft-delete — rækken slettes aldrig (BR-13).
-    /// Eneste status der frigiver rummet helt (A-01).
+    /// Cancelled. Soft delete — the row is never deleted (BR-13).
+    /// The only status that releases the room completely (A-01).
     /// </summary>
     Cancelled = 4
 }

@@ -1,23 +1,23 @@
 namespace NFHotel.Domain.ValueObjects;
 
 /// <summary>
-/// Rummets bookbarhed — udelukkende det der forhindrer udlejning.
+/// The bookability of the room — exclusively what prevents letting.
 /// </summary>
 /// <remarks>
-/// Rengøringstilstand hører i <see cref="HousekeepingStatus"/> (B-04). Ordinalværdierne
-/// 0-2 er bevaret fra det gamle system, så omlægningen koster nul datamigrering.
-/// Den gamle XAML-dropdowns <c>Cleaning</c> er flyttet til <see cref="HousekeepingStatus"/>,
-/// <c>Maintanance</c> var en stavefejl, og <c>Disabled</c> er semantisk identisk med
+/// Cleaning state belongs in <see cref="HousekeepingStatus"/> (B-04). The ordinal values
+/// 0-2 are kept from the old system, so the change costs zero data migration.
+/// The old XAML dropdown's <c>Cleaning</c> has moved to <see cref="HousekeepingStatus"/>,
+/// <c>Maintanance</c> was a spelling mistake, and <c>Disabled</c> is semantically identical to
 /// <see cref="OutOfService"/> (BR-126).
 /// </remarks>
 public enum RoomStatus
 {
-    /// <summary>Kan bookes. Siger intet om hvorvidt rummet er rent lige nu.</summary>
+    /// <summary>Can be booked. Says nothing about whether the room is clean right now.</summary>
     Available = 0,
 
-    /// <summary>Taget ud af drift på ubestemt tid (ombygning, omdannet til depot). Administrativ beslutning.</summary>
+    /// <summary>Taken out of service indefinitely (renovation, converted to storage). An administrative decision.</summary>
     OutOfService = 1,
 
-    /// <summary>Midlertidigt spærret af en fejl der gør rummet ubeboeligt. Forventes at vende tilbage til <see cref="Available"/>.</summary>
+    /// <summary>Temporarily blocked by a fault that makes the room uninhabitable. Expected to return to <see cref="Available"/>.</summary>
     Maintenance = 2
 }

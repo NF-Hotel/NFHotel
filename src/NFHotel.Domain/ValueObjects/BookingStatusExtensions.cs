@@ -1,19 +1,19 @@
 namespace NFHotel.Domain.ValueObjects;
 
 /// <summary>
-/// Regler der hører til <see cref="BookingStatus"/>.
+/// Rules that belong to <see cref="BookingStatus"/>.
 /// </summary>
 public static class BookingStatusExtensions
 {
     /// <summary>
-    /// Afgør om en booking med den angivne status lægger beslag på rummet.
+    /// Decides whether a booking with the given status occupies the room.
     /// </summary>
-    /// <param name="status">Bookingens status.</param>
-    /// <returns>Sand for alt undtagen <see cref="BookingStatus.Cancelled"/>.</returns>
+    /// <param name="status">The status of the booking.</param>
+    /// <returns>True for everything except <see cref="BookingStatus.Cancelled"/>.</returns>
     /// <remarks>
-    /// Kun annullering frigiver rummet helt. En udtjekket booking blokerer stadig — men
-    /// kun frem til sin effektive slutdato, så tidlig udtjekning alligevel frigiver de
-    /// resterende nætter (A-01). Svarer til databasens <c>WHERE (status &lt;&gt; 4)</c>.
+    /// Only cancellation releases the room completely. A checked-out booking still blocks — but
+    /// only until its effective end date, so early check-out still releases the
+    /// remaining nights (A-01). Corresponds to the database <c>WHERE (status &lt;&gt; 4)</c>.
     /// </remarks>
     public static bool BlocksRoom(this BookingStatus status) => status != BookingStatus.Cancelled;
 }

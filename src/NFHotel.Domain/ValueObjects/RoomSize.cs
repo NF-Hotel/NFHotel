@@ -1,19 +1,19 @@
 namespace NFHotel.Domain.ValueObjects;
 
 /// <summary>
-/// Værelsestype. Erstatter det gamle fritekstfelt <c>Room.RoomSize</c>.
+/// Room type. Replaces the old free-text field <c>Room.RoomSize</c>.
 /// </summary>
 /// <remarks>
-/// Ordinalværdierne er nye — der er ingen eksisterende int-data at bevare, kun tekst
-/// (<c>'Single'</c>/<c>'Double'</c>/<c>'Suite'</c>) som infrastrukturlaget skal mappe
-/// ved migreringen. Bliver senere ophæng for en <c>RoomType</c> med pris.
+/// The ordinal values are new — there is no existing int data to keep, only text
+/// (<c>'Single'</c>/<c>'Double'</c>/<c>'Suite'</c>) that the infrastructure layer must map
+/// at migration. Later becomes the hook for a <c>RoomType</c> with a price.
 /// </remarks>
 public enum RoomSize
 {
-    /// <summary>Enkeltværelse.</summary>
+    /// <summary>Single room.</summary>
     Single = 0,
 
-    /// <summary>Dobbeltværelse.</summary>
+    /// <summary>Double room.</summary>
     Double = 1,
 
     /// <summary>Suite.</summary>

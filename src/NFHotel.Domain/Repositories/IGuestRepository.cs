@@ -3,35 +3,35 @@ using NFHotel.Domain.Entities;
 namespace NFHotel.Domain.Repositories;
 
 /// <summary>
-/// Dataadgang for gæster — entitetsdelen. Implementeres i Infrastructure.
+/// Data access for guests — the entity part. Implemented in Infrastructure.
 /// </summary>
 /// <remarks>
-/// Skrivemetoderne markerer og persisterer ikke — det gør <c>IUnitOfWork</c>. Der findes
-/// bevidst ingen søgning og ingen sortering på pasnummer: feltet er krypteret med en
-/// randomiseret ciffer (B-09), så selv et lighedsopslag ville ikke virke. Projektioner ligger
+/// The write methods mark and do not persist — <c>IUnitOfWork</c> does. There is
+/// deliberately no search and no sorting on the passport number: the field is encrypted with a
+/// randomised cipher (B-09), so even an equality lookup would not work. Projections are
 /// i <c>IGuestQueries</c> (Application).
 /// </remarks>
 public interface IGuestRepository : IRepository<Guest, int>
 {
     /// <summary>
-    /// Afgør om gæsten findes (BR-114).
+    /// Decides whether the guest exists (BR-114).
     /// </summary>
-    /// <param name="guestId">Gæstens id.</param>
+    /// <param name="guestId">The id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Sand hvis gæsten findes. Henter ikke hele grafen.</returns>
+    /// <returns>True if the guest exists. Does not fetch the whole graph.</returns>
     Task<bool> ExistsAsync(int guestId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Afgør om der findes bookinger på gæsten.
+    /// Decides whether there are bookings for the guest.
     /// </summary>
-    /// <param name="guestId">Gæstens id.</param>
+    /// <param name="guestId">The id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Sand hvis mindst én booking peger på gæsten.</returns>
-    /// <remarks>Guard for sletning (BR-N-02) og spor for D-05's persondatasletning.</remarks>
+    /// <returns>True if at least one booking points to the guest.</returns>
+    /// <remarks>Guard for deletion (BR-N-02) and a trail for D-05's personal data deletion.</remarks>
     Task<bool> HasAnyBookingsAsync(int guestId, CancellationToken cancellationToken = default);
 
 
-    /// <summary>Markerer en gæst til sletning (BR-N-02). Persisterer ikke.</summary>
-    /// <param name="guest">Gæsten.</param>
+    /// <summary>Marks a guest for deletion (BR-N-02). Does not persist.</summary>
+    /// <param name="guest">The guest.</param>
     void Remove(Guest guest);
 }

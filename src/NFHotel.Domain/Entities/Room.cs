@@ -6,83 +6,83 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Domain.Entities;
 
 /// <summary>
-/// Et fysisk værelse. Aggregatrod.
+/// A physical room. Aggregate root.
 /// </summary>
 /// <remarks>
-/// Rummet bærer to uafhængige tilstande: bookbarhed (<see cref="Status"/>) og
-/// rengøringsstand (<see cref="HousekeepingStatus"/>) — B-04. Den gamle enum blandede
-/// de to og var uenig med sin egen XAML-dropdown (BR-126).
+/// The room carries two independent states: bookability (<see cref="Status"/>) and
+/// cleaning state (<see cref="HousekeepingStatus"/>) — B-04. The old enum mixed
+/// the two and disagreed with its own XAML dropdown (BR-126).
 /// <para>
-/// Alle status-metoder er idempotente: sætter man en tilstand rummet allerede har, sker
-/// der intet, og der kastes ikke (A-08). Mobilappen har ingen offline-understøttelse og
-/// retry'er over ustabilt netværk — en retry må ikke give en fejl til rengøringspersonalet.
+/// All status methods are idempotent: setting a state the room already has does
+/// nothing and does not throw (A-08). The mobile app has no offline support and
+/// retries over an unstable network — a retry must not give an error to the cleaning staff.
 /// Ulovlige overgange kaster fortsat <see cref="InvalidStateTransitionException"/>.
 /// </para>
 /// </remarks>
 public sealed class Room : Entity<int>
 {
-    /// <summary>Længste tilladte værelsesnummer (A-10). Spejles af EF-konfigurationen.</summary>
+    /// <summary>Longest allowed room number (A-10). Mirrored by the EF configuration.</summary>
     public const int MaxRoomNumberLength = 20;
 
     private const string EntityName = "room";
 
-    /// <summary>Til EF Core. Brug <see cref="Create"/> i kode.</summary>
+    /// <summary>For EF Core. Use <see cref="Create"/> in code.</summary>
     private Room()
     {
     }
 
-    /// <summary>Værelsesnummer som tekst, fx "101" eller "12B" (BR-97).</summary>
+    /// <summary>Room number as text, for example "101" or "12B" (BR-97).</summary>
     [Required(ErrorMessage = RoomErrors.RoomNumberRequired)]
     [StringLength(MaxRoomNumberLength, ErrorMessage = RoomErrors.RoomNumberTooLong)]
     public string RoomNumber { get; private set; } = string.Empty;
 
-    /// <summary>Etage. Altid større end 0 (BR-98).</summary>
+    /// <summary>Floor. Always greater than 0 (BR-98).</summary>
     [Range(1, int.MaxValue, ErrorMessage = RoomErrors.FloorInvalid)]
     public int Floor { get; private set; }
 
-    /// <summary>Værelsestype. Var fri tekst i det gamle system; er nu enum.</summary>
+    /// <summary>Room type. Was free text in the old system; is now an enum.</summary>
     [EnumDataType(typeof(RoomSize), ErrorMessage = RoomErrors.SizeInvalid)]
     public RoomSize Size { get; private set; }
 
-    /// <summary>Antal personer rummet kan rumme. Altid større end 0 (BR-100).</summary>
+    /// <summary>The number of people the room can hold. Always greater than 0 (BR-100).</summary>
     [Range(1, int.MaxValue, ErrorMessage = RoomErrors.CapacityInvalid)]
     public int Capacity { get; private set; }
 
     /// <summary>
-    /// Bookbarhed. Ændres kun via <see cref="TakeOutOfService"/>,
-    /// <see cref="SendToMaintenance"/> og <see cref="ReturnToService"/>.
+    /// Bookability. Changed only through <see cref="TakeOutOfService"/>,
+    /// <see cref="SendToMaintenance"/> and <see cref="ReturnToService"/>.
     /// </summary>
     public RoomStatus Status { get; private set; }
 
-    /// <summary>Rengørings- og servicestand. Ændres kun via housekeeping-metoderne (A-06).</summary>
+    /// <summary>Cleaning and service state. Changed only through the housekeeping methods (A-06).</summary>
     public HousekeepingStatus HousekeepingStatus { get; private set; }
 
     /// <summary>
-    /// Sand hvis rummet overhovedet må udlejes (BR-110). Afhænger UDELUKKENDE af
-    /// <see cref="Status"/> — rengøringsstand er bevidst ikke med (B-04).
+    /// True if the room may be let at all (BR-110). Depends EXCLUSIVELY on
+    /// <see cref="Status"/> — the cleaning state is deliberately not included (B-04).
     /// </summary>
     public bool IsBookable => Status == RoomStatus.Available;
 
     /// <summary>
-    /// Opretter et nyt rum, bookbart og rent.
+    /// Creates a new room, bookable and clean.
     /// </summary>
-    /// <param name="roomNumber">Værelsesnummer, fx "101" eller "12B".</param>
-    /// <param name="floor">Etage. Skal være større end 0.</param>
-    /// <param name="size">Værelsestype.</param>
-    /// <param name="capacity">Antal personer rummet kan rumme. Skal være større end 0.</param>
-    /// <returns>Et nyt, gyldigt rum der endnu ikke er persisteret.</returns>
+    /// <param name="roomNumber">Room number, for example "101" or "12B".</param>
+    /// <param name="floor">Floor. Must be greater than 0.</param>
+    /// <param name="size">Room type.</param>
+    /// <param name="capacity">The number of people the room can hold. Must be greater than 0.</param>
+    /// <returns>A new, valid room that is not yet persisted.</returns>
     /// <exception cref="DomainException">
-    /// Ved tomt eller for langt værelsesnummer (BR-97, A-10), etage ≤ 0 (BR-98),
-    /// ukendt <paramref name="size"/> (BR-99) eller kapacitet ≤ 0 (BR-100).
-    /// Fejlkoden er den første kode; alle koder står i <see cref="DomainException.Codes"/>.
+    /// On an empty or too long room number (BR-97, A-10), floor ≤ 0 (BR-98),
+    /// unknown <paramref name="size"/> (BR-99) or capacity ≤ 0 (BR-100).
+    /// The error code is the first code; all codes are in <see cref="DomainException.Codes"/>.
     /// </exception>
     public static Room Create(string roomNumber, int floor, RoomSize size, int capacity)
     {
         var room = new Room();
         room.Apply(roomNumber, floor, size, capacity);
 
-        // BR-81: et nyoprettet rum er bookbart og rent. HousekeepingStatus.Clean er
-        // tilmed default(HousekeepingStatus), så databasens DEFAULT 0 siger det samme.
+        // BR-81: a newly created room is bookable and clean. HousekeepingStatus.Clean is
+        // also default(HousekeepingStatus), so the database DEFAULT 0 says the same.
         room.Status = RoomStatus.Available;
         room.HousekeepingStatus = HousekeepingStatus.Clean;
 
@@ -90,88 +90,88 @@ public sealed class Room : Entity<int>
     }
 
     /// <summary>
-    /// Opdaterer rummets stamdata. Rører hverken <see cref="Status"/> eller
-    /// <see cref="HousekeepingStatus"/> — statusskift har deres egne metoder (A-08).
+    /// Updates the master data of the room. Touches neither <see cref="Status"/> nor
+    /// <see cref="HousekeepingStatus"/> — status changes have their own methods (A-08).
     /// </summary>
-    /// <param name="roomNumber">Værelsesnummer.</param>
+    /// <param name="roomNumber">Room number.</param>
     /// <param name="floor">Etage.</param>
-    /// <param name="size">Værelsestype.</param>
-    /// <param name="capacity">Antal personer rummet kan rumme.</param>
-    /// <exception cref="DomainException">Samme invarianter som <see cref="Create"/>.</exception>
+    /// <param name="size">Room type.</param>
+    /// <param name="capacity">The number of people the room can hold.</param>
+    /// <exception cref="DomainException">The same invariants as <see cref="Create"/>.</exception>
     public void UpdateDetails(string roomNumber, int floor, RoomSize size, int capacity) =>
         Apply(roomNumber, floor, size, capacity);
 
     // --------------------------------------------------------
     // LOVLIGE OVERGANGE (Can*)
     // --------------------------------------------------------
-    // Én property pr. overgangsmetode. Metoden nedenfor bruger den samme property som sin
-    // guard, så domænet og det UI der spørger på forhånd ikke kan drive fra hinanden — samme
-    // princip som Booking.CanConfirm / CanCancel (BR-22).
+    // One property per transition method. The method below uses the same property as its
+    // guard, so the domain and the UI that asks in advance cannot drift apart — the same
+    // principle as Booking.CanConfirm / CanCancel (BR-22).
     //
-    // A-08-valget: en overgang til den tilstand rummet allerede har er stadig et lovligt kald
-    // (metoden kaster ikke, den gør ingenting), men Can* er alligevel FALSE i den situation.
-    // Properties her svarer på "ændrer denne handling noget?" og ikke "må kaldet foretages?",
-    // fordi de findes for at tegne knapper: en knap der beviseligt ikke gør noget er støj og
-    // får personalet til at tro at systemet ignorerer dem. Idempotensen er der stadig for
-    // mobilappens retries — den beskytter et kald der allerede er sendt, ikke en knap.
-    // Derfor står no-op-checket fortsat som sit eget tidlige return i hver metode, FØR
-    // guarden; Can* dækker kun de tilstande hvor overgangen faktisk flytter rummet.
+    // The A-08 choice: a transition to the state the room already has is still a legal call
+    // (the method does not throw, it does nothing), but Can* is nevertheless FALSE in that situation.
+    // The properties here answer "does this action change anything?" and not "may the call be made?",
+    // because they exist to draw buttons: a button that demonstrably does nothing is noise and
+    // makes the staff think the system ignores them. The idempotence is still there for
+    // the retries of the mobile app — it protects a call that has already been sent, not a button.
+    // Therefore the no-op check remains its own early return in each method, BEFORE
+    // the guard; Can* covers only the states where the transition actually moves the room.
 
-    /// <summary>Om <see cref="TakeOutOfService"/> vil ændre noget (A-08).</summary>
+    /// <summary>Whether <see cref="TakeOutOfService"/> will change anything (A-08).</summary>
     public bool CanTakeOutOfService => Status != RoomStatus.OutOfService;
 
-    /// <summary>Om <see cref="SendToMaintenance"/> vil ændre noget (A-08).</summary>
+    /// <summary>Whether <see cref="SendToMaintenance"/> will change anything (A-08).</summary>
     public bool CanSendToMaintenance => Status != RoomStatus.Maintenance;
 
-    /// <summary>Om <see cref="ReturnToService"/> vil ændre noget (A-08).</summary>
+    /// <summary>Whether <see cref="ReturnToService"/> will change anything (A-08).</summary>
     public bool CanReturnToService => Status != RoomStatus.Available;
 
     /// <summary>
-    /// Om <see cref="MarkDailyCleaningDue"/> er lovlig og ændrer noget. Slutrengøring og
-    /// igangværende arbejde må ikke nedgraderes til daglig rengøring.
+    /// Whether <see cref="MarkDailyCleaningDue"/> is legal and changes anything. Departure cleaning and
+    /// work in progress must not be downgraded to daily cleaning.
     /// </summary>
     public bool CanMarkDailyCleaningDue =>
         HousekeepingStatus is HousekeepingStatus.Clean or HousekeepingStatus.ServiceRequired;
 
     /// <summary>
-    /// Om <see cref="MarkDepartureCleaningDue"/> er lovlig og ændrer noget. Igangværende
-    /// rengøring eller service må ikke afbrydes.
+    /// Whether <see cref="MarkDepartureCleaningDue"/> is legal and changes anything. Cleaning
+    /// or service in progress must not be interrupted.
     /// </summary>
     public bool CanMarkDepartureCleaningDue =>
         HousekeepingStatus is HousekeepingStatus.Clean
             or HousekeepingStatus.DailyCleaningDue
             or HousekeepingStatus.ServiceRequired;
 
-    /// <summary>Om <see cref="StartCleaning"/> er lovlig og ændrer noget.</summary>
+    /// <summary>Whether <see cref="StartCleaning"/> is legal and changes anything.</summary>
     public bool CanStartCleaning =>
         HousekeepingStatus is HousekeepingStatus.DailyCleaningDue or HousekeepingStatus.DepartureCleaningDue;
 
-    /// <summary>Om <see cref="CompleteCleaning"/> er lovlig og ændrer noget.</summary>
+    /// <summary>Whether <see cref="CompleteCleaning"/> is legal and changes anything.</summary>
     public bool CanCompleteCleaning => HousekeepingStatus == HousekeepingStatus.CleaningInProgress;
 
-    /// <summary>Om <see cref="ReportServiceNeeded"/> er lovlig og ændrer noget.</summary>
+    /// <summary>Whether <see cref="ReportServiceNeeded"/> is legal and changes anything.</summary>
     public bool CanReportServiceNeeded =>
         HousekeepingStatus is not (HousekeepingStatus.ServiceRequired or HousekeepingStatus.ServiceInProgress);
 
-    /// <summary>Om <see cref="StartService"/> er lovlig og ændrer noget.</summary>
+    /// <summary>Whether <see cref="StartService"/> is legal and changes anything.</summary>
     public bool CanStartService => HousekeepingStatus == HousekeepingStatus.ServiceRequired;
 
     /// <summary>
-    /// Om <see cref="CompleteService"/> er lovlig og ændrer noget. Gælder begge udfald:
-    /// guarden er den samme, og ingen af sluttilstandene er <c>ServiceInProgress</c>, så
-    /// no-op-tilfældet er allerede udelukket.
+    /// Whether <see cref="CompleteService"/> is legal and changes anything. Applies to both outcomes:
+    /// the guard is the same, and neither of the end states is <c>ServiceInProgress</c>, so
+    /// the no-op case is already excluded.
     /// </summary>
     public bool CanCompleteService => HousekeepingStatus == HousekeepingStatus.ServiceInProgress;
 
     // --------------------------------------------------------
     // BOOKBARHED (RoomStatus)
     // --------------------------------------------------------
-    // Der findes ingen forretningsregel der forbyder en bestemt overgang mellem de tre
-    // statusser, og "ingen ændring" er en no-op (A-08). Metoderne kaster derfor aldrig.
+    // There is no business rule that forbids a particular transition between the three
+    // statuses, and "no change" is a no-op (A-08). The methods therefore never throw.
 
     /// <summary>
-    /// Tager rummet ud af drift på ubestemt tid. Rummet kan ikke bookes.
-    /// Er en no-op hvis rummet allerede er ude af drift (A-08).
+    /// Takes the room out of service indefinitely. The room cannot be booked.
+    /// Is a no-op if the room is already out of service (A-08).
     /// </summary>
     public void TakeOutOfService()
     {
@@ -184,8 +184,8 @@ public sealed class Room : Entity<int>
     }
 
     /// <summary>
-    /// Spærrer rummet midlertidigt på grund af en fejl der gør det ubeboeligt.
-    /// Er en no-op hvis rummet allerede er spærret (A-08).
+    /// Blocks the room temporarily because of a fault that makes it uninhabitable.
+    /// Is a no-op if the room is already blocked (A-08).
     /// </summary>
     public void SendToMaintenance()
     {
@@ -198,9 +198,9 @@ public sealed class Room : Entity<int>
     }
 
     /// <summary>
-    /// Gør rummet bookbart igen. Rører ikke rengøringsstanden — et rum kan være
-    /// bookbart og samtidig afvente rengøring (B-04).
-    /// Er en no-op hvis rummet allerede er bookbart (A-08).
+    /// Makes the room bookable again. Does not touch the cleaning state — a room can be
+    /// bookable and at the same time wait for cleaning (B-04).
+    /// Is a no-op if the room is already bookable (A-08).
     /// </summary>
     public void ReturnToService()
     {
@@ -213,16 +213,16 @@ public sealed class Room : Entity<int>
     }
 
     // --------------------------------------------------------
-    // RENGØRING OG SERVICE (HousekeepingStatus)
+    // CLEANING AND SERVICE (HousekeepingStatus)
     // --------------------------------------------------------
 
     /// <summary>
-    /// Markerer at det beboede rum afventer daglig rengøring.
-    /// Er en no-op hvis rummet allerede afventer daglig rengøring (A-08).
+    /// Marks that the occupied room is waiting for daily cleaning.
+    /// Is a no-op if the room is already waiting for daily cleaning (A-08).
     /// </summary>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes hvis rummet afventer eller er under slutrengøring, eller er under service.
-    /// Slutrengøring rangerer over daglig rengøring og må ikke nedgraderes.
+    /// Thrown if the room is waiting for or undergoing departure cleaning, or is under service.
+    /// Departure cleaning ranks above daily cleaning and must not be downgraded.
     /// </exception>
     public void MarkDailyCleaningDue()
     {
@@ -240,12 +240,12 @@ public sealed class Room : Entity<int>
     }
 
     /// <summary>
-    /// Markerer at rummet afventer slutrengøring efter afrejse. Kaldes typisk af
-    /// Application-laget umiddelbart efter en udtjekning.
-    /// Er en no-op hvis rummet allerede afventer slutrengøring (A-08).
+    /// Marks that the room is waiting for departure cleaning after departure. Typically called by
+    /// the Application layer immediately after a check-out.
+    /// Is a no-op if the room is already waiting for departure cleaning (A-08).
     /// </summary>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes hvis rummet er under rengøring eller service.
+    /// Thrown if the room is under cleaning or service.
     /// </exception>
     public void MarkDepartureCleaningDue()
     {
@@ -263,11 +263,11 @@ public sealed class Room : Entity<int>
     }
 
     /// <summary>
-    /// Rengøringspersonalet kvitterer og går i gang.
-    /// Er en no-op hvis rengøringen allerede er i gang (A-08).
+    /// The cleaning staff acknowledge and start work.
+    /// Is a no-op if the cleaning is already in progress (A-08).
     /// </summary>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes medmindre rummet afventer daglig rengøring eller slutrengøring.
+    /// Thrown unless the room is waiting for daily cleaning or departure cleaning.
     /// </exception>
     public void StartCleaning()
     {
@@ -285,10 +285,10 @@ public sealed class Room : Entity<int>
     }
 
     /// <summary>
-    /// Rengøringen er færdig; rummet er klar.
-    /// Er en no-op hvis rummet allerede er rent (A-08).
+    /// The cleaning is finished; the room is ready.
+    /// Is a no-op if the room is already clean (A-08).
     /// </summary>
-    /// <exception cref="InvalidStateTransitionException">Kastes medmindre rengøringen er i gang.</exception>
+    /// <exception cref="InvalidStateTransitionException">Thrown unless the cleaning is in progress.</exception>
     public void CompleteCleaning()
     {
         if (HousekeepingStatus == HousekeepingStatus.Clean)
@@ -305,11 +305,11 @@ public sealed class Room : Entity<int>
     }
 
     /// <summary>
-    /// Rapporterer at rummet skal ses af en servicetekniker. Spærrer IKKE rummet for
-    /// booking — det kræver <see cref="SendToMaintenance"/> (B-04).
-    /// Er en no-op hvis rummet allerede afventer service (A-08).
+    /// Reports that the room must be seen by a service technician. Does NOT block the room for
+    /// booking — that requires <see cref="SendToMaintenance"/> (B-04).
+    /// Is a no-op if the room is already waiting for service (A-08).
     /// </summary>
-    /// <exception cref="InvalidStateTransitionException">Kastes hvis service allerede er i gang.</exception>
+    /// <exception cref="InvalidStateTransitionException">Thrown if service is already in progress.</exception>
     public void ReportServiceNeeded()
     {
         if (HousekeepingStatus == HousekeepingStatus.ServiceRequired)
@@ -326,10 +326,10 @@ public sealed class Room : Entity<int>
     }
 
     /// <summary>
-    /// Serviceteknikeren kvitterer og går i gang.
-    /// Er en no-op hvis servicen allerede er i gang (A-08).
+    /// The service technician acknowledges and starts work.
+    /// Is a no-op if the service is already in progress (A-08).
     /// </summary>
-    /// <exception cref="InvalidStateTransitionException">Kastes medmindre rummet afventer service.</exception>
+    /// <exception cref="InvalidStateTransitionException">Thrown unless the room is waiting for service.</exception>
     public void StartService()
     {
         if (HousekeepingStatus == HousekeepingStatus.ServiceInProgress)
@@ -346,15 +346,15 @@ public sealed class Room : Entity<int>
     }
 
     /// <summary>
-    /// Servicen er afsluttet.
+    /// The service is finished.
     /// </summary>
     /// <param name="requiresCleaning">
-    /// Sand hvis arbejdet har efterladt rummet snavset; rummet sættes da til
-    /// slutrengøring i stedet for rent.
+    /// True if the work left the room dirty; the room is then set to
+    /// departure cleaning instead of clean.
     /// </param>
     /// <exception cref="InvalidStateTransitionException">
-    /// Kastes medmindre servicen er i gang — eller rummet allerede står i den ønskede
-    /// sluttilstand, hvilket er en no-op (A-08).
+    /// Thrown unless the service is in progress — or the room is already in the desired
+    /// end state, which is a no-op (A-08).
     /// </exception>
     public void CompleteService(bool requiresCleaning)
     {
@@ -376,8 +376,8 @@ public sealed class Room : Entity<int>
     }
 
     /// <summary>
-    /// Håndhæver stamdata-invarianterne og skriver værdierne. Delt af <see cref="Create"/>
-    /// og <see cref="UpdateDetails"/>, så reglen kun findes ét sted (BR-84, BR-113).
+    /// Enforces the master data invariants and writes the values. Shared by <see cref="Create"/>
+    /// and <see cref="UpdateDetails"/>, so the rule exists in one place only (BR-84, BR-113).
     /// </summary>
     private void Apply(string roomNumber, int floor, RoomSize size, int capacity)
     {

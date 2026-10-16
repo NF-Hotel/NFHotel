@@ -1,23 +1,23 @@
 namespace NFHotel.Domain.Errors;
 
 /// <summary>
-/// Kastes når en tilstandsovergang er ulovlig fra entitetens nuværende tilstand.
+/// Thrown when a state transition is illegal from the current state of the entity.
 /// </summary>
 /// <remarks>
-/// At sætte en tilstand entiteten allerede har er <b>ikke</b> ulovligt for rummets
-/// status-metoder — det er en no-op (A-08), fordi mobilappen retry'er over ustabilt netværk.
-/// Fejlkoden har formen <c>"&lt;entitet&gt;.&lt;overgang&gt;.invalid_state"</c>.
+/// Setting a state the entity already has is <b>not</b> illegal for the status
+/// methods of the room — it is a no-op (A-08), because the mobile app retries over an unstable network.
+/// The error code has the form <c>"&lt;entity&gt;.&lt;transition&gt;.invalid_state"</c>.
 /// </remarks>
 public sealed class InvalidStateTransitionException : DomainException
 {
     private const string CodeSuffix = ".invalid_state";
 
     /// <summary>
-    /// Opretter en fejl for en ulovlig tilstandsovergang.
+    /// Creates an error for an illegal state transition.
     /// </summary>
-    /// <param name="code">Fejlkoden.</param>
-    /// <param name="currentState">Tilstanden overgangen blev forsøgt fra.</param>
-    /// <param name="transition">Navnet på overgangen, fx <c>"Confirm"</c>.</param>
+    /// <param name="code">The error code.</param>
+    /// <param name="currentState">The state the transition was attempted from.</param>
+    /// <param name="transition">The name of the transition, for example <c>"Confirm"</c>.</param>
     public InvalidStateTransitionException(string code, string currentState, string transition)
         : base(code)
     {
@@ -25,19 +25,19 @@ public sealed class InvalidStateTransitionException : DomainException
         Transition = transition;
     }
 
-    /// <summary>Tilstanden overgangen blev forsøgt fra. Til logning og fejlsøgning.</summary>
+    /// <summary>The state the transition was attempted from. For logging and troubleshooting.</summary>
     public string CurrentState { get; }
 
-    /// <summary>Navnet på den overgang der blev afvist. Til logning og fejlsøgning.</summary>
+    /// <summary>The name of the transition that was rejected. For logging and troubleshooting.</summary>
     public string Transition { get; }
 
     /// <summary>
-    /// Bygger en fejl for en afvist overgang.
+    /// Builds an error for a rejected transition.
     /// </summary>
-    /// <param name="entity">Entitetens navn i fejlkoden, fx <c>"booking"</c>.</param>
+    /// <param name="entity">The name of the entity in the error code, for example <c>"booking"</c>.</param>
     /// <param name="transition">Overgangens metodenavn, fx <c>"Confirm"</c>.</param>
-    /// <param name="currentState">Den nuværende tilstand.</param>
-    /// <returns>En fejl med koden <c>"&lt;entity&gt;.&lt;transition&gt;.invalid_state"</c>.</returns>
+    /// <param name="currentState">The current state.</param>
+    /// <returns>An error with the code <c>"&lt;entity&gt;.&lt;transition&gt;.invalid_state"</c>.</returns>
     public static InvalidStateTransitionException For(string entity, string transition, object currentState)
     {
         var code = $"{entity}.{ToSnakeCase(transition)}{CodeSuffix}";
@@ -45,8 +45,8 @@ public sealed class InvalidStateTransitionException : DomainException
     }
 
     /// <summary>
-    /// Oversætter et PascalCase-metodenavn til snake_case, så fejlkoderne har samme
-    /// form som valideringskoderne (<c>"booking.check_in.invalid_state"</c>).
+    /// Translates a PascalCase method name to snake_case, so the error codes have the same
+    /// form as the validation codes (<c>"booking.check_in.invalid_state"</c>).
     /// </summary>
     private static string ToSnakeCase(string pascalCase)
     {

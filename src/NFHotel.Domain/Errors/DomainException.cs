@@ -1,19 +1,19 @@
 namespace NFHotel.Domain.Errors;
 
 /// <summary>
-/// Basisfejl for alle brud på en domæneinvariant.
+/// Base error for every breach of a domain invariant.
 /// </summary>
 /// <remarks>
-/// Beskeden er altid en <b>fejlkode</b>, ikke en brugervendt tekst (A-09) — fx
-/// <c>"guest.first_name_required"</c>. Application-laget oversætter kode til tekst,
-/// så UI kan vise beskeden på dansk uden at Domain kender til lokalisering.
+/// The message is always an <b>error code</b>, not a user-facing text (A-09) — for example
+/// <c>"guest.first_name_required"</c>. The Application layer translates the code to text,
+/// so the UI can show the message in Danish without the domain knowing about localisation.
 /// </remarks>
 public class DomainException : Exception
 {
     /// <summary>
-    /// Opretter en domænefejl.
+    /// Creates a domain error.
     /// </summary>
-    /// <param name="code">Fejlkoden, fx <c>"room.floor_invalid"</c>.</param>
+    /// <param name="code">The error code, for example <c>"room.floor_invalid"</c>.</param>
     public DomainException(string code)
         : base(code)
     {
@@ -22,10 +22,10 @@ public class DomainException : Exception
     }
 
     /// <summary>
-    /// Opretter en domænefejl med en underliggende fejl.
+    /// Creates a domain error with an underlying error.
     /// </summary>
-    /// <param name="code">Fejlkoden.</param>
-    /// <param name="innerException">Den underliggende fejl.</param>
+    /// <param name="code">The error code.</param>
+    /// <param name="innerException">The underlying error.</param>
     public DomainException(string code, Exception innerException)
         : base(code, innerException)
     {
@@ -34,8 +34,8 @@ public class DomainException : Exception
     }
 
     /// <summary>
-    /// Den maskinlæsbare fejlkode. Identisk med <see cref="Exception.Message"/>,
-    /// men eksponeret separat så Application kan mappe uden at læse en besked.
+    /// The machine-readable error code. Identical to <see cref="Exception.Message"/>,
+    /// but exposed separately so Application can map without reading a message.
     /// </summary>
     public string Code { get; }
 

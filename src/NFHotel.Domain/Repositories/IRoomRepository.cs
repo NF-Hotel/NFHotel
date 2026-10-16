@@ -3,42 +3,42 @@ using NFHotel.Domain.Entities;
 namespace NFHotel.Domain.Repositories;
 
 /// <summary>
-/// Dataadgang for rum — entitetsdelen. Implementeres i Infrastructure.
+/// Data access for rooms — the entity part. Implemented in Infrastructure.
 /// </summary>
 /// <remarks>
-/// Repositoryet <b>beslutter ikke</b>: filtre er parametre, ikke hårdkodede valg (BR-110).
-/// Skrivemetoderne markerer og persisterer ikke. Projektioner ligger i <c>IRoomQueries</c>
+/// The repository does <b>not decide</b>: filters are parameters, not hard-coded choices (BR-110).
+/// The write methods mark and do not persist. Projections are in <c>IRoomQueries</c>
 /// (Application).
 /// </remarks>
 public interface IRoomRepository : IRepository<Room, int>
 {
     /// <summary>
-    /// Afgør om værelsesnummeret allerede er i brug (BR-N-01).
+    /// Decides whether the room number is already in use (BR-N-01).
     /// </summary>
-    /// <param name="roomNumber">Værelsesnummeret der undersøges.</param>
+    /// <param name="roomNumber">The room number being checked.</param>
     /// <param name="excludeRoomId">
-    /// Rummet der redigeres, så det ikke kolliderer med sig selv. <c>null</c> ved oprettelse.
+    /// The room being edited, so it does not collide with itself. <c>null</c> on creation.
     /// </param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Sand hvis et andet rum har nummeret.</returns>
+    /// <returns>True if another room has the number.</returns>
     Task<bool> RoomNumberExistsAsync(
         string roomNumber,
         int? excludeRoomId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Afgør om der findes bookinger på rummet (BR-78, BR-112).
+    /// Decides whether there are bookings for the room (BR-78, BR-112).
     /// </summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Sand hvis mindst én booking peger på rummet.</returns>
+    /// <returns>True if at least one booking points to the room.</returns>
     /// <remarks>
-    /// Erstatter det gamle systems <c>catch (SqlException 547)</c>. Fremmednøglen bevares som
-    /// sidste værn, men reglen står ikke længere i en catch-blok med brugervendt engelsk tekst.
+    /// Replaces the old system's <c>catch (SqlException 547)</c>. The foreign key is kept as
+    /// the last safeguard, but the rule no longer lives in a catch block with user-facing English text.
     /// </remarks>
     Task<bool> HasAnyBookingsAsync(int roomId, CancellationToken cancellationToken = default);
 
-    /// <summary>Markerer et rum til sletning. Persisterer ikke.</summary>
-    /// <param name="room">Rummet. Entiteten og ikke id'et, fordi servicen alligevel har hentet den.</param>
+    /// <summary>Marks a room for deletion. Does not persist.</summary>
+    /// <param name="room">The room. The entity and not the id, because the service has fetched it anyway.</param>
     void Remove(Room room);
 }

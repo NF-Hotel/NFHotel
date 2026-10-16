@@ -3,30 +3,30 @@ using NFHotel.Domain.Entities;
 namespace NFHotel.Domain.Repositories;
 
 /// <summary>
-/// Fælles kontrakt for et aggregats repository: hent på nøgle og markér ændringer.
+/// Common contract for the repository of an aggregate: fetch by key and mark changes.
 /// </summary>
 /// <typeparam name="TEntity">Entiteten.</typeparam>
-/// <typeparam name="TKey">Nøglens type.</typeparam>
+/// <typeparam name="TKey">The type of the key.</typeparam>
 /// <remarks>
-/// Skriv-metoderne markerer og persisterer ikke — det gør <c>IUnitOfWork</c>, derfor er de
-/// synkrone. Sletning er ikke med her, fordi en booking aldrig slettes (BR-13); entiteter der
-/// kan slettes, tilføjer <c>Remove</c> i deres egen interface.
+/// The write methods mark and do not persist — <c>IUnitOfWork</c> does, which is why they are
+/// synchronous. Deletion is not included here, because a booking is never deleted (BR-13); entities that
+/// can be deleted add <c>Remove</c> in their own interface.
 /// </remarks>
 public interface IRepository<TEntity, TKey>
     where TEntity : Entity<TKey>
     where TKey : notnull
 {
-    /// <summary>Henter entiteten, så domænemetoderne kan kaldes på den.</summary>
-    /// <param name="id">Entitetens nøgle.</param>
+    /// <summary>Fetches the entity so the domain methods can be called on it.</summary>
+    /// <param name="id">The key of the entity.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Entiteten, eller <c>null</c> hvis den ikke findes (BR-115).</returns>
+    /// <returns>The entity, or <c>null</c> if it does not exist (BR-115).</returns>
     Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default);
 
-    /// <summary>Markerer en ny entitet til indsættelse. Persisterer ikke.</summary>
-    /// <param name="entity">Entiteten. Nøglen sættes når der gemmes.</param>
+    /// <summary>Marks a new entity for insertion. Does not persist.</summary>
+    /// <param name="entity">The entity. The key is set when it is saved.</param>
     void Add(TEntity entity);
 
-    /// <summary>Markerer en ændret entitet til opdatering. Persisterer ikke.</summary>
+    /// <summary>Marks a changed entity for update. Does not persist.</summary>
     /// <param name="entity">Entiteten.</param>
     void Update(TEntity entity);
 }

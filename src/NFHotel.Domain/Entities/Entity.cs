@@ -1,18 +1,18 @@
 namespace NFHotel.Domain.Entities;
 
 /// <summary>
-/// Fælles basetype for alle entiteter: bærer primærnøglen <see cref="Id"/>.
+/// Common base type for all entities: carries the primary key <see cref="Id"/>.
 /// </summary>
-/// <typeparam name="TKey">Nøglens type. <c>int</c> når databasen genererer en kompakt nøgle.</typeparam>
+/// <typeparam name="TKey">The type of the key. <c>int</c> when the database generates a compact key.</typeparam>
 /// <remarks>
-/// Nøglens kolonnenavn (<c>&lt;tabel&gt;_id</c>) og om databasen genererer værdien står kun i
-/// Infrastructure (<c>EntityConfiguration</c>), aldrig som attributter her (ADR-0001).
-/// Setteren er beskyttet: kun EF Core og testværktøjer tildeler nøglen.
+/// The column name of the key (<c>&lt;table&gt;_id</c>) and whether the database generates the value are stated only in
+/// Infrastructure (<c>EntityConfiguration</c>), never as attributes here (ADR-0001).
+/// The setter is protected: only EF Core and test tools assign the key.
 /// </remarks>
 public abstract class Entity<TKey>
     where TKey : notnull
 {
-    /// <summary>Primærnøgle. Standardværdien indtil entiteten er persisteret (A-15).</summary>
+    /// <summary>Primary key. The default value until the entity is persisted (A-15).</summary>
     // default! is justified: EF Core or the factory method assigns the key before first use.
     public TKey Id { get; protected set; } = default!;
 }

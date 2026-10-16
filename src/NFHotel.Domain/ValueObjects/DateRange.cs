@@ -3,39 +3,39 @@ using NFHotel.Domain.Errors;
 namespace NFHotel.Domain.ValueObjects;
 
 /// <summary>
-/// En bookingperiode: ankomstdato (inklusiv) til afrejsedato (eksklusiv).
+/// A booking period: arrival date (inclusive) to departure date (exclusive).
 /// </summary>
 /// <remarks>
-/// Halvåbent interval <c>[Start, End)</c>, så afrejse og ankomst samme dag ikke er
+/// Half-open interval <c>[Start, End)</c>, so departure and arrival on the same day are not an
 /// overlap (B-03, BR-39). Typen samler reglerne BR-38, BR-43, BR-88, BR-101, BR-102,
-/// BR-103, BR-109 og BR-117 ét sted.
+/// BR-103, BR-109 and BR-117 in one place.
 /// <para>
-/// Bemærk: <c>default(DateRange)</c> kan som for enhver struct konstrueres uden om
-/// konstruktøren og har da <see cref="Start"/> = <see cref="End"/> = <c>default</c>.
-/// Domænet producerer aldrig den værdi selv — entiteterne bygger altid perioden
-/// gennem konstruktøren.
+/// Note: <c>default(DateRange)</c> can, as with any struct, be constructed bypassing
+/// the constructor and then has <see cref="Start"/> = <see cref="End"/> = <c>default</c>.
+/// The domain never produces that value itself — the entities always build the period
+/// through the constructor.
 /// </para>
 /// </remarks>
 public readonly record struct DateRange
 {
-    /// <summary>Fejlkode: ankomstdatoen er ikke udfyldt (BR-101).</summary>
+    /// <summary>Error code: the arrival date is not filled in (BR-101).</summary>
     public const string StartRequired = "date_range.start_required";
 
-    /// <summary>Fejlkode: afrejsedatoen er ikke udfyldt (BR-102).</summary>
+    /// <summary>Error code: the departure date is not filled in (BR-102).</summary>
     public const string EndRequired = "date_range.end_required";
 
-    /// <summary>Fejlkode: afrejsedatoen er ikke strengt efter ankomstdatoen (BR-38, BR-43, BR-88, BR-103).</summary>
+    /// <summary>Error code: the departure date is not strictly after the arrival date (BR-38, BR-43, BR-88, BR-103).</summary>
     public const string EndNotAfterStart = "date_range.end_not_after_start";
 
     /// <summary>
     /// Opretter en periode.
     /// </summary>
-    /// <param name="start">Ankomstdato, inklusiv.</param>
-    /// <param name="end">Afrejsedato, eksklusiv. Skal være strengt efter <paramref name="start"/>.</param>
+    /// <param name="start">Arrival date, inclusive.</param>
+    /// <param name="end">Departure date, exclusive. Must be strictly after <paramref name="start"/>.</param>
     /// <exception cref="DomainException">
-    /// Kastes hvis en dato er <c>default</c> (BR-101, BR-102), eller hvis
-    /// <paramref name="end"/> ikke er efter <paramref name="start"/> — 0 nætter er
-    /// ikke tilladt (BR-38, BR-43, BR-88, BR-103).
+    /// Thrown if a date is <c>default</c> (BR-101, BR-102), or if
+    /// <paramref name="end"/> is not after <paramref name="start"/> — 0 nights is
+    /// not allowed (BR-38, BR-43, BR-88, BR-103).
     /// </exception>
     public DateRange(DateOnly start, DateOnly end)
     {
@@ -58,33 +58,33 @@ public readonly record struct DateRange
         End = end;
     }
 
-    /// <summary>Ankomstdato, inklusiv.</summary>
+    /// <summary>Arrival date, inclusive.</summary>
     public DateOnly Start { get; }
 
-    /// <summary>Afrejsedato, eksklusiv. Altid strengt større end <see cref="Start"/>.</summary>
+    /// <summary>Departure date, exclusive. Always strictly greater than <see cref="Start"/>.</summary>
     public DateOnly End { get; }
 
-    /// <summary>Antal overnatninger. Erstatter det gamle <c>Booking.NumberOfNights</c> (BR-109, BR-117).</summary>
+    /// <summary>Number of nights. Replaces the old <c>Booking.NumberOfNights</c> (BR-109, BR-117).</summary>
     public int Nights => End.DayNumber - Start.DayNumber;
 
     /// <summary>
-    /// Halvåben overlapstest mod en anden periode (B-03, BR-39).
+    /// Half-open overlap test against another period (B-03, BR-39).
     /// </summary>
-    /// <param name="other">Perioden der sammenlignes med.</param>
-    /// <returns>Sand hvis perioderne deler mindst én nat.</returns>
+    /// <param name="other">The period to compare with.</param>
+    /// <returns>True if the periods share at least one night.</returns>
     public bool Overlaps(DateRange other) => Start < other.End && End > other.Start;
 
     /// <summary>
-    /// Afgør om en dato ligger i perioden.
+    /// Decides whether a date lies in the period.
     /// </summary>
-    /// <param name="date">Datoen der undersøges.</param>
-    /// <returns>Sand hvis <paramref name="date"/> ligger i <c>[Start, End)</c>.</returns>
+    /// <param name="date">The date being checked.</param>
+    /// <returns>True if <paramref name="date"/> lies in <c>[Start, End)</c>.</returns>
     public bool Contains(DateOnly date) => date >= Start && date < End;
 
     /// <summary>
-    /// Afgør om perioden ligger i nutid eller fremtid (BR-44, BR-104).
+    /// Decides whether the period lies in the present or the future (BR-44, BR-104).
     /// </summary>
-    /// <param name="today">Dagens dato i hotellets tidszone. Leveres af kaldet — Domain kender ikke uret.</param>
-    /// <returns>Sand hvis perioden starter på eller efter <paramref name="today"/>.</returns>
+    /// <param name="today">Today's date in the hotel's time zone. Supplied by the caller — the domain does not know the clock.</param>
+    /// <returns>True if the period starts on or after <paramref name="today"/>.</returns>
     public bool StartsOnOrAfter(DateOnly today) => Start >= today;
 }
