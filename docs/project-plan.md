@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [US-001] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [US-001] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Added MIL-003 (throwaway Proxmox container); replaced the real-server risk | [7c6d8f8] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-004 (market analysis service on a Proxmox VM behind nginx) from the Must stories of US-001 | [469c395] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-004 (market analysis service on a Proxmox VM behind nginx) from the Must stories of US-001 | [469c395] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-005 (clean architecture structure) | pending |
 
 ---
 
@@ -36,6 +36,7 @@ person ending 2026-10-17.
 | Nginx proxy and web service in Docker Compose | [MIL-002] | 2026-10-17 to 2026-10-18 | 2026-10-18 | S01 | none | One compose file and one env file per service; web application answering through the proxy | [Milestone 2][GH-M2] |
 | Throwaway Proxmox container for tests | [MIL-003] | 2026-10-18 to 2026-10-19 | 2026-10-19 | S01 | none | Proxmox VE container, per-run token in the environment, unattended full cycle | [Milestone 3][GH-M3] |
 | Market analysis service on a Proxmox VM behind nginx | [MIL-004] | 2026-10-19 to 2026-10-23 | 2026-10-23 | S02 | US-001.01, US-001.03, US-001.05 | Analysis service on a VM, two services routed through nginx, smoke test | [Milestone 4][GH-M4] |
+| Clean architecture structure for NFHotel | [MIL-005] | 2026-10-19 to 2026-10-30 | 2026-10-30 | S01 | none | Entity base type, layer folders, repositories, key columns and DTO folders, tests green | [Milestone 5][GH-M5] |
 
 ```plantuml
 @startgantt
@@ -48,6 +49,8 @@ Project starts 2026-10-16
 [MIL-003 Go/No-Go] happens 2026-10-19
 [Market analysis service] starts 2026-10-19 and ends 2026-10-23
 [MIL-004 Go/No-Go] happens 2026-10-23
+[Clean architecture] starts 2026-10-19 and ends 2026-10-30
+[MIL-005 Go/No-Go] happens 2026-10-30
 @endgantt
 ```
 
@@ -63,11 +66,13 @@ Project starts 2026-10-16
 | Smoke test through the proxy | MIL-002 |
 | Throwaway Proxmox container, per-run token script | MIL-003 |
 | Market analysis and benchmark services on Proxmox VMs (objectives 6 and 7) | MIL-004 (analysis, Must); benchmark in a later milestone |
+| NFHotel source follows the clean architecture structure (objective 8) | MIL-005 |
 
 ## Dependencies
 
 ```
 MIL-001 -> MIL-002 -> MIL-003 -> MIL-004
+MIL-005 (independent of the others)
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -78,6 +83,7 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 | --- | --- | --- |
 | KVM not available to Docker | The Proxmox container cannot start | The runner checks `/dev/kvm` first and stops with a message naming the cause |
 | The Proxmox host for the services is not decided | MIL-004 tasks 3 to 8 cannot start | Task 2 records the decision in an ADR first |
+| The restructuring changes many files at once | Tests fail or behaviour changes | Build and tests after every layer; no behaviour change is allowed in MIL-005 |
 | Stand-in reviews are not independent | Weaker assurance | Each record states `Mode: autonomous, not independent`; S04 reviews the summary |
 
 ## Open Issues
@@ -93,11 +99,13 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-002]: ./milestones/mil-002-nginx-proxy-and-web-compose.md
 [MIL-003]: ./milestones/mil-003-throwaway-proxmox.md
 [MIL-004]: ./milestones/mil-004-market-analysis-service.md
+[MIL-005]: ./milestones/mil-005-clean-architecture.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
 [GH-M3]: https://github.com/NF-Hotel/NFHotel/milestone/3
 [GH-M4]: https://github.com/NF-Hotel/NFHotel/milestone/4
+[GH-M5]: https://github.com/NF-Hotel/NFHotel/milestone/5
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
 [4c5c2d3]: https://github.com/NF-Hotel/NFHotel/commit/4c5c2d3c5a8a8c4de7a2c8ee224719de55b62403
 [88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca

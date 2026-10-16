@@ -23,12 +23,14 @@ updated whenever an artifact instance is created or reviewed.
 
 | Artifact Instance | Type | Language | Domain | Upstream (Backward Link) | Downstream (Forward Link) | Last Reviewed (RC-ID) |
 | --- | --- | --- | --- | --- | --- | --- |
-| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [UCD-001], [US-001] | [RC-014] |
+| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [UCD-001], [US-001] | [RC-017] |
 | [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009] |
 | [MIL-001] | Milestone | en | it | [BC-001] | - | [RC-003] |
 | [MIL-002] | Milestone | en | it | [BC-001] | - | [RC-006] |
 | [MIL-003] | Milestone | en | it | [BC-001] | - | [RC-010] |
 | [MIL-004] | Milestone | en | it | [BC-001], [US-001] | - | [RC-015] |
+| [MIL-005] | Milestone | en | it | [BC-001] | - | [RC-018] |
+| [ADR-0001] | Architecture Decision Record | - | - | [BC-001] | [MIL-005] | [RC-019] |
 | [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003] | - |
 | [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001] | [RC-013] |
 | [US-001] | User Story | en | it | [UCD-001], [BC-001] | - | [RC-012] |
@@ -59,6 +61,11 @@ updated whenever an artifact instance is created or reviewed.
 [RC-014]: ./reviews/rc-014-business-case-market-analysis.md
 [RC-015]: ./reviews/rc-015-milestone-004.md
 [RC-016]: ./reviews/rc-016-market-analysis-service.md
+[RC-017]: ./reviews/rc-017-business-case-clean-architecture.md
+[RC-018]: ./reviews/rc-018-milestone-005.md
+[RC-019]: ./reviews/rc-019-adr-0001.md
+[ADR-0001]: ../adr/adr-0001-clean-architecture-structure.md
+[MIL-005]: ../milestones/mil-005-clean-architecture.md
 [MIL-004]: ../milestones/mil-004-market-analysis-service.md
 [UCD-001]: ../use-case-diagram.md
 [US-001]: ../user-stories.md
