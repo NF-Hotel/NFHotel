@@ -58,7 +58,7 @@ Go — every Mandatory criterion passes. Criterion 9 of QC-LANG-001 rests on the
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| Confirm that S05 (hotel staff) and the stories US-001.06 to US-001.08 describe the back office correctly | S01 | open |
+| Confirm that S05 (hotel staff) and the stories US-001.06 to US-001.08 describe the back office correctly | S01 | Closed 2026-10-16: confirmed by the user in chat |
 
 ---
 
