@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | S04 | Added MIL-002 (accepted by the Product Owner stand-in) (nginx proxy and web service in Docker Compose) to schedule, scope coverage and dependencies | [b690b57] |
-| 2026-10-16 | Accepted | Claude (AI) | S04 | Linked the synced GitHub milestones (accepted by the Product Owner stand-in; no content change) | pending |
+| 2026-10-16 | Accepted | Claude (AI) | S04 | Linked the synced GitHub milestones (accepted by the Product Owner stand-in; no content change) | [4c5c2d3] |
 
 ---
 
@@ -85,3 +85,4 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
+[4c5c2d3]: https://github.com/NF-Hotel/NFHotel/commit/4c5c2d3c5a8a8c4de7a2c8ee224719de55b62403
