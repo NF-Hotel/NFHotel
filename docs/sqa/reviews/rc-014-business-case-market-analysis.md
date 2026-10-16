@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version | [469ff7a] |
 
 ---
 
@@ -65,3 +65,4 @@ Go-with-conditions — every criterion of QC-BC-001 passes. Criterion 9 of QC-LA
 [BC-001]: ../../business-case.md
 [QC-BC-001]: ../../../framework/qc/artifacts/qc-business-case.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa

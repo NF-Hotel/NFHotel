@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version | [469ff7a] |
 
 ---
 
@@ -63,3 +63,4 @@ Go-with-conditions — every criterion of QC-MIL-001 passes. Criterion 9 of QC-L
 [MIL-004]: ../../milestones/mil-004-market-analysis-service.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa
