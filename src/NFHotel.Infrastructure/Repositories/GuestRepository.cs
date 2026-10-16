@@ -1,47 +1,46 @@
-using NFHotel.Application.Guests;
-using NFHotel.Domain.Guests;
-using NFHotel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+
+using NFHotel.Application.Dto.Guests;
+using NFHotel.Application.Ports;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.Repositories;
+using NFHotel.Infrastructure.Persistence;
 
 namespace NFHotel.Infrastructure.Repositories;
 
 /// <summary>
-/// EF Core-implementering af <see cref="IGuestRepository"/>.
+/// EF Core implementation of <see cref="IGuestRepository"/>.
 /// </summary>
 /// <remarks>
-/// Bemærk hvad der bevidst ikke findes: ingen søgning og ingen sortering på pasnummer.
-/// Feltet er krypteret med en randomiseret ciffer (B-09), så selv et lighedsopslag ville
+/// Note what deliberately does not exist: no search and no sorting on the passport number.
+/// The field is encrypted with a randomised cipher (B-09), so even an equality lookup would
 /// ramme ciffertekst.
 /// </remarks>
-public sealed class GuestRepository : IGuestRepository
+public sealed class GuestRepository : Repository<Guest, int>, IGuestRepository, IGuestQueries
 {
-    private readonly HotelDbContext _context;
-
     /// <summary>
     /// Opretter repositoryet.
     /// </summary>
     /// <param name="context">Konteksten.</param>
-    /// <exception cref="ArgumentNullException">Kastes hvis <paramref name="context"/> er <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="context"/> is <c>null</c>.</exception>
     public GuestRepository(HotelDbContext context)
+        : base(context)
     {
-        ArgumentNullException.ThrowIfNull(context);
-
-        _context = context;
     }
 
     // --------------------------------------------------------
-    // LÆSNING — projektioner (A-11)
+    // READING — projections (A-11)
     // --------------------------------------------------------
 
     /// <inheritdoc />
     public async Task<GuestDetailsDto?> GetDetailsAsync(
         int guestId,
         CancellationToken cancellationToken = default) =>
-        await _context.Guests
+        await Context.Guests
             .AsNoTracking()
-            .Where(guest => guest.GuestId == guestId)
+            .Where(guest => guest.Id == guestId)
             .Select(guest => new GuestDetailsDto(
-                guest.GuestId,
+                guest.Id,
                 guest.FirstName,
                 guest.LastName,
                 guest.FirstName + " " + guest.LastName,
@@ -49,9 +48,9 @@ public sealed class GuestRepository : IGuestRepository
                 guest.PhoneNumber,
                 guest.Country,
 
-                // Eneste sted pasnummeret forlader databasen i klartekst. EF anvender
-                // value converteren på den projicerede kolonne, så dekrypteringen sker her
-                // og kun her (B-09).
+                // The only place the passport number leaves the database in plain text. EF applies
+                // the value converter on the projected column, so the decryption happens here
+                // and only here (B-09).
                 guest.PassportNumber))
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -63,10 +62,10 @@ public sealed class GuestRepository : IGuestRepository
     {
         ArgumentNullException.ThrowIfNull(searchTerms);
 
-        var query = _context.Guests.AsNoTracking();
+        var query = Context.Guests.AsNoTracking();
 
-        // BR-68, BR-N-05: AND mellem ord, OR mellem felter. Hvert ord lægges på som sit
-        // eget Where, hvilket netop giver AND. Et tomt sæt returnerer alle gæster (BR-70).
+        // BR-68, BR-N-05: AND between words, OR between fields. Each word is applied as its
+        // own Where, which is exactly what gives AND. An empty set returns all guests (BR-70).
         foreach (var term in searchTerms)
         {
             if (string.IsNullOrWhiteSpace(term))
@@ -83,14 +82,14 @@ public sealed class GuestRepository : IGuestRepository
                 || EF.Functions.ILike(guest.Email, pattern, SqlPattern.EscapeCharacter));
         }
 
-        // Sorteringen er BR-69 og hører i servicen; her sikres kun en deterministisk
-        // rækkefølge, som samtidig kan betjenes af ix_guest_last_name_first_name.
+        // The sorting is BR-69 and belongs in the service; here only a deterministic
+        // order is ensured, which ix_guest_last_name_first_name can also serve.
         return await query
             .OrderBy(guest => guest.LastName)
             .ThenBy(guest => guest.FirstName)
-            .ThenBy(guest => guest.GuestId)
+            .ThenBy(guest => guest.Id)
             .Select(guest => new GuestListItemDto(
-                guest.GuestId,
+                guest.Id,
                 guest.FirstName,
                 guest.LastName,
                 guest.FirstName + " " + guest.LastName,
@@ -98,8 +97,8 @@ public sealed class GuestRepository : IGuestRepository
                 guest.PhoneNumber,
                 guest.Country,
 
-                // Kun om der ER et pasnummer. IS NOT NULL virker fint på ciffertekst;
-                // værdien dekrypteres ikke (B-09).
+                // Only whether there IS a passport number. IS NOT NULL works fine on ciphertext;
+                // the value is not decrypted (B-09).
                 guest.PassportNumber != null))
             .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -107,14 +106,14 @@ public sealed class GuestRepository : IGuestRepository
 
     /// <inheritdoc />
     public async Task<bool> ExistsAsync(int guestId, CancellationToken cancellationToken = default) =>
-        await _context.Guests
+        await Context.Guests
             .AsNoTracking()
-            .AnyAsync(guest => guest.GuestId == guestId, cancellationToken)
+            .AnyAsync(guest => guest.Id == guestId, cancellationToken)
             .ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<bool> HasAnyBookingsAsync(int guestId, CancellationToken cancellationToken = default) =>
-        await _context.Bookings
+        await Context.Bookings
             .AsNoTracking()
             .AnyAsync(booking => booking.GuestId == guestId, cancellationToken)
             .ConfigureAwait(false);
@@ -124,32 +123,5 @@ public sealed class GuestRepository : IGuestRepository
     // --------------------------------------------------------
 
     /// <inheritdoc />
-    public async Task<Guest?> GetByIdAsync(int guestId, CancellationToken cancellationToken = default) =>
-        await _context.Guests
-            .FirstOrDefaultAsync(guest => guest.GuestId == guestId, cancellationToken)
-            .ConfigureAwait(false);
-
-    /// <inheritdoc />
-    public void Add(Guest guest)
-    {
-        ArgumentNullException.ThrowIfNull(guest);
-
-        _context.Guests.Add(guest);
-    }
-
-    /// <inheritdoc />
-    public void Update(Guest guest)
-    {
-        ArgumentNullException.ThrowIfNull(guest);
-
-        _context.Guests.Update(guest);
-    }
-
-    /// <inheritdoc />
-    public void Remove(Guest guest)
-    {
-        ArgumentNullException.ThrowIfNull(guest);
-
-        _context.Guests.Remove(guest);
-    }
+    public void Remove(Guest guest) => MarkForRemoval(guest);
 }

@@ -1,23 +1,25 @@
 using System.Security.Cryptography;
 using System.Text;
 
+using NFHotel.Infrastructure.Config;
+
 namespace NFHotel.Infrastructure.Security;
 
 /// <summary>
-/// AES-GCM-kryptering af enkeltfelter (B-09).
+/// AES-GCM encryption of single fields (B-09).
 /// </summary>
 /// <remarks>
-/// Formatet er <c>base64(nonce ‖ tag ‖ ciphertext)</c> med faste længder på de to første
-/// dele, så en værdi kan dekrypteres uden sidekanal-metadata.
+/// The format is <c>base64(nonce ‖ tag ‖ ciphertext)</c> with fixed lengths for the first two
+/// parts, so a value can be decrypted without side-channel metadata.
 /// <para>
-/// AEAD er valgt frem for AES-CBC, fordi tag'et gør ændret ciffertekst til en
-/// <see cref="CryptographicException"/> i stedet for til vrøvl-klartekst. Nonce'en trækkes
-/// tilfældigt pr. kryptering, hvilket er præcis grunden til at feltet aldrig må indekseres:
-/// samme pasnummer giver forskellig ciffertekst hver gang.
+/// AEAD is chosen over AES-CBC, because the tag turns changed ciphertext into a
+/// <see cref="CryptographicException"/> instead of into nonsense plain text. The nonce is drawn
+/// at random per encryption, which is exactly why the field must never be indexed:
+/// the same passport number gives different ciphertext every time.
 /// </para>
 /// <para>
-/// Typen er trådsikker: nøglen er uforanderlig, og <see cref="AesGcm"/> instantieres pr.
-/// operation. Den kan derfor registreres som singleton.
+/// The type is thread-safe: the key is immutable, and <see cref="AesGcm"/> is instantiated per
+/// operation. It can therefore be registered as a singleton.
 /// </para>
 /// </remarks>
 public sealed class AesGcmStringEncryptor : IStringEncryptor
@@ -32,11 +34,11 @@ public sealed class AesGcmStringEncryptor : IStringEncryptor
     /// <summary>
     /// Opretter krypteringstjenesten.
     /// </summary>
-    /// <param name="options">Krypteringsindstillingerne. Nøglen skal være base64-kodet.</param>
-    /// <exception cref="ArgumentNullException">Kastes hvis <paramref name="options"/> er <c>null</c>.</exception>
+    /// <param name="options">The encryption settings. The key must be base64-encoded.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="options"/> is <c>null</c>.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Kastes hvis nøglen mangler, ikke er gyldig base64 eller ikke afkoder til 16, 24
-    /// eller 32 bytes. Fejlen kastes ved opstart, ikke ved første brug (fail fast).
+    /// Thrown if the key is missing, is not valid base64 or does not decode to 16, 24
+    /// or 32 bytes. The error is thrown at start-up, not on first use (fail fast).
     /// </exception>
     public AesGcmStringEncryptor(EncryptionOptions options)
     {
@@ -83,7 +85,7 @@ public sealed class AesGcmStringEncryptor : IStringEncryptor
         return Encoding.UTF8.GetString(plainBytes);
     }
 
-    /// <summary>Afkoder og validerer nøglen. Fejler ved opstart frem for ved første brug.</summary>
+    /// <summary>Decodes and validates the key. Fails at start-up rather than on first use.</summary>
     private static byte[] DecodeKey(string? base64Key)
     {
         if (string.IsNullOrWhiteSpace(base64Key))
@@ -116,7 +118,7 @@ public sealed class AesGcmStringEncryptor : IStringEncryptor
         return key;
     }
 
-    /// <summary>Afkoder cifferteksten og afviser værdier der er for korte til at bære nonce og tag.</summary>
+    /// <summary>Decodes the ciphertext and rejects values that are too short to carry nonce and tag.</summary>
     private static byte[] DecodeCipherText(string cipherText)
     {
         byte[] input;

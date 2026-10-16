@@ -5,14 +5,14 @@
 @inject GuestListViewModel ViewModel
 
 @*
-    Gæsteoversigt med formular. Kun markup og binding — al logik ligger i
-    GuestListViewModel (B-10). Formularen validerer via IGuestService.ValidateFields, så
-    ingen af BR-52 til BR-56 findes i denne fil.
+    Guest overview with form. Only markup and binding — all logic is in
+    GuestListViewModel (B-10). The form validates via IGuestService.ValidateFields, so
+    none of BR-52 to BR-56 exists in this file.
 
-    Sletning går gennem ConfirmPanel: en gæst uden bookinger forsvinder for altid.
+    Deletion goes through ConfirmPanel: a guest without bookings disappears for good.
 
-    Pasnummeret vises kun i formularen, hvor det lige er hentet og dekrypteret — aldrig i
-    listen (B-09, D-04). Tabellen viser i stedet om der findes et.
+    The passport number is shown only in the form, where it has just been fetched and decrypted — never in
+    the list (B-09, D-04). The table shows instead whether there is one.
 *@
 
 <PageTitle>Guests — administration</PageTitle>
@@ -234,13 +234,13 @@
 </div>
 
 @code {
-    /// <summary>Overskriften i bekræftelsen af en sletning.</summary>
+    /// <summary>The heading in the confirmation of a deletion.</summary>
     private string DeleteTitle => $"Delete {ViewModel.GuestPendingDeletion?.FullName}?";
 
-    /// <summary>Henter den første liste når skærmen åbnes.</summary>
+    /// <summary>Fetches the first list when the screen opens.</summary>
     protected override Task OnInitializedAsync() => ViewModel.InitializeAsync();
 
-    /// <summary>Siger om der er registreret et pasnummer, uden at vise det.</summary>
+    /// <summary>Says whether a passport number is registered, without showing it.</summary>
     private static string PassportText(GuestListItemDto guest) =>
         guest.HasPassportNumber ? "On file" : "—";
 

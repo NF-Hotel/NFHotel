@@ -1,0 +1,27 @@
+# Market analysis service: the history notebook and the API, each on its own host
+# name. Rendered by the nginx image at start from nginx.env.
+server {
+  listen 80;
+  server_name ${ANALYSIS_SERVER_NAME};
+
+  resolver 127.0.0.11 valid=10s;
+  set $upstream http://${ANALYSIS_UPSTREAM_HOST}:${ANALYSIS_UPSTREAM_PORT};
+
+  location / {
+    proxy_pass $upstream;
+    include /etc/nginx/snippets/proxy.conf;
+  }
+}
+
+server {
+  listen 80;
+  server_name ${ANALYSIS_API_SERVER_NAME};
+
+  resolver 127.0.0.11 valid=10s;
+  set $upstream http://${ANALYSIS_API_UPSTREAM_HOST}:${ANALYSIS_API_UPSTREAM_PORT};
+
+  location / {
+    proxy_pass $upstream;
+    include /etc/nginx/snippets/proxy.conf;
+  }
+}

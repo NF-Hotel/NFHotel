@@ -1,172 +1,172 @@
-# Testplan — manuel afprøvning
+# Test plan — manual testing
 
-> Opdateret 2026-09-07 efter UI-overhaulen. Dækker forside, kundebooking og admin.
-> Formålet er ikke at klikke alt igennem, men at bevise de fem ting der er svære at få rigtige.
+> Updated 2026-09-07 after the UI overhaul. Covers the front page, customer booking and admin.
+> The purpose is not to click through everything, but to prove the five things that are hard to get right.
 
 ---
 
-## 0. Opsætning
+## 0. Setup
 
 ```powershell
 cd "C:\Users\Outlashed\Development\New folder\NFHotel"
 
-# 1. Database: en PostgreSQL 16-instans du kan naa.
-#    Hvordan den hostes er DevOps' omraade — projektet kender kun en connection string.
+# 1. Database: a PostgreSQL 16 instance you can reach.
+#    How it is hosted is DevOps' area — the project only knows a connection string.
 $env:NFHOTEL_CONNECTION = "Host=...;Port=5432;Database=nfhotel;Username=...;Password=..."
 
-# 2. Skema
+# 2. Schema
 dotnet ef database update --project src\NFHotel.Infrastructure --startup-project src\NFHotel.Web
 
-# 3. Testdata
+# 3. Test data
 psql $env:NFHOTEL_CONNECTION -f db\seed_dev.sql
 
-# 4. Kør
+# 4. Run
 dotnet run --project src\NFHotel.Web
 ```
 
-Den samme connection string skal stå i `src\NFHotel.Web\appsettings.Development.json`.
-Databasebrugeren skal kunne oprette extensions — første migration opretter `btree_gist`.
+The same connection string must be in `src\NFHotel.Web\appsettings.Development.json`.
+The database user must be able to create extensions — the first migration creates `btree_gist`.
 
-10 rum, 8 gæster, 12 bookinger. Alle datoer er relative til i dag, så check-in altid kan afprøves.
+10 rooms, 8 guests, 12 bookings. All dates are relative to today, so check-in can always be tried out.
 
 ---
 
-## 1. Automatiske tests først
+## 1. Automatic tests first
 
 ```powershell
 dotnet test
 ```
 
-Forventet: **291 grønne** — 285 domænetests og 6 arkitekturtests.
+Expected: **291 green** — 285 domain tests and 6 architecture tests.
 
-De 6 arkitekturtests er værd at kigge på: de fejler hvis nogen kommer til at referere EF Core fra Application, giver Domain en afhængighed, eller lader en service returnere en domæneentitet i stedet for en DTO. Det er den slags der ellers først opdages tre uger senere.
-
----
-
-## 2. Forsiden — `/`
-
-Skal virke **uden** database. Stop containeren og genindlæs, hvis du vil bevise det:
-
-Afbryd forbindelsen — stop instansen, eller peg connection stringen mod en port der ikke svarer.
-Forsiden skal stadig svare normalt.
-
-- [ ] Hero, tre sektioner, knap til `/book`
-- [ ] Ingen sidemenu (det er `PublicLayout`)
-- [ ] Vindue smalt ned til ~400px: intet vandret scroll
+The 6 architecture tests are worth a look: they fail if anyone references EF Core from Application, gives Domain a dependency, or lets a service return a domain entity instead of a DTO. It is the kind of thing that is otherwise discovered only three weeks later.
 
 ---
 
-## 3. Kundens bookingflow — `/book`
+## 2. The front page — `/`
 
-**Det vigtigste forløb i hele systemet.** Det skriver rigtige data og rammer hele stakken: Blazor → ViewModel → Application → Domain → EF → PostgreSQL.
+Must work **without** a database. Stop the container and reload if you want to prove it:
 
-**Lykkelig vej:**
+Cut the connection — stop the instance, or point the connection string at a port that does not answer.
+The front page must still respond normally.
 
-1. Ankomst i dag, afrejse om tre dage → antal nætter skal tælle med
-2. Videre → ledige rum vises. **Rum 203 og 204 må ikke være med** — de er vedligehold og ude af drift (BR-C-02)
-3. Vælg et rum → udfyld oplysninger → send
-4. Kvittering med bookingnummer `FLZ-0000xx`
-5. Kopiér adressen, åbn den i en ny fane → **samme kvittering** (den er bogmærkbar)
+- [ ] Hero, three sections, button to `/book`
+- [ ] No side menu (it is `PublicLayout`)
+- [ ] Window narrowed to ~400px: no horizontal scroll
 
-**Det du skal kigge efter på kvitteringen:** der står rum, datoer, nætter og status — men **hverken navn, e-mail, telefon eller pasnummer**. Det er BR-C-06, og det er bevidst: uden login er `FLZ-000123` trivielt at gætte, så siden må ikke lække persondata til den der gætter.
+---
 
-**Negative tests — disse skal blive afvist:**
+## 3. The customer's booking flow — `/book`
 
-| Prøv | Forventet |
+**The most important flow in the whole system.** It writes real data and hits the whole stack: Blazor → ViewModel → Application → Domain → EF → PostgreSQL.
+
+**Happy path:**
+
+1. Arrival today, departure in three days → the number of nights must count
+2. Next → available rooms are shown. **Rooms 203 and 204 must not be included** — they are under maintenance and out of service (BR-C-02)
+3. Choose a room → fill in details → submit
+4. Receipt with booking number `FLZ-0000xx`
+5. Copy the address, open it in a new tab → **the same receipt** (it is bookmarkable)
+
+**What to look for on the receipt:** it shows room, dates, nights and status — but **neither name, e-mail, phone nor passport number**. That is BR-C-06, and it is deliberate: without login `FLZ-000123` is trivially guessable, so the page must not leak personal data to whoever guesses.
+
+**Negative tests — these must be rejected:**
+
+| Try | Expected |
 |---|---|
-| Afrejse før ankomst | Fejl, kan ikke gå videre |
-| Ankomst i går | Fejl — fortiden er ikke bookbar (BR-44) |
-| Tom e-mail, eller `anne` uden `@` og `.` | Feltfejl på det rigtige felt (BR-55) |
-| Gå tilbage til trin 1 og skift dato | Indtastede oplysninger skal **ikke** være væk |
+| Departure before arrival | Error, cannot proceed |
+| Arrival yesterday | Error — the past cannot be booked (BR-44) |
+| Empty e-mail, or `anne` without `@` and `.` | Field error on the right field (BR-55) |
+| Go back to step 1 and change the date | Entered details must **not** be gone |
 
 ---
 
 ## 4. Admin — `/admin`
 
-**Dashboard:** dagens ankomster, afrejser, rum der kræver rengøring. Tallene skal stemme med hvad du ser på undersiderne — de kommer fra samme kilde.
+**Dashboard:** today's arrivals, departures, rooms that need cleaning. The numbers must match what you see on the sub-pages — they come from the same source.
 
 ### `/admin/bookinger`
 
-Seed-dataene er lavet så knapperne kan afprøves. Det er her tilstandsmaskinen bevises:
+The seed data is made so the buttons can be tried out. This is where the state machine is proven:
 
-| Booking | Prøv | Forventet |
+| Booking | Try | Expected |
 |---|---|---|
-| Pending, ankomst i dag | **Check ind** | Virker — uden at bekræfte først. Det er B-01, walk-in |
-| Pending, ankomst om 7 dage | — | **Check ind-knappen findes ikke.** For tidligt (BR-06) |
-| CheckedIn | **Check ud** | Virker. Bekræft og Annullér findes ikke (BR-11) |
-| CheckedOut | — | Ingen knapper. Slutstatus |
-| Pending | **Annullér** | Bekræftelse først (BR-04), derefter status `Annulleret` — rækken slettes ikke (BR-13) |
+| Pending, arrival today | **Check in** | Works — without confirming first. That is B-01, walk-in |
+| Pending, arrival in 7 days | — | **The check-in button does not exist.** Too early (BR-06) |
+| CheckedIn | **Check out** | Works. Confirm and Cancel do not exist (BR-11) |
+| CheckedOut | — | No buttons. Final status |
+| Pending | **Cancel** | Confirmation first (BR-04), then status `Cancelled` — the row is not deleted (BR-13) |
 
-**Vigtigt:** knapperne kommer fra `Actions` på hver booking, beregnet i domænet. Ser du en knap der giver en fejl når du trykker, er det en fejl værd at rapportere — så er UI og domæne uenige.
+**Important:** the buttons come from `Actions` on each booking, computed in the domain. If you see a button that gives an error when you press it, it is an error worth reporting — then UI and domain disagree.
 
-**Opret booking:** datoer → ledige rum → eksisterende gæst *eller* ny. Prøv begge veje.
+**Create booking:** dates → available rooms → existing guest *or* new. Try both ways.
 
-**Omlæg booking:** vælg en `Pending`, flyt datoerne. Prøv at flytte den oven i en anden bookings periode på samme rum → skal afvises.
+**Reschedule booking:** choose a `Pending`, move the dates. Try moving it on top of another booking's period on the same room → must be rejected.
 
 ### `/admin/rum`
 
-- [ ] Filtre på etage, størrelse, status
-- [ ] Rum 104 er "rengøring i gang" → **Afslut rengøring** virker
-- [ ] Rum 101 er allerede rent → **knappen findes ikke** (ingen grund til at afslutte en rengøring der ikke er i gang)
-- [ ] Opret et rum. Prøv etage `0` → afvist (BR-98). Prøv et eksisterende værelsesnummer → afvist (BR-N-01)
-- [ ] Rediger et rum: **der er intet statusfelt** — status ændres med sine egne knapper (A-08)
+- [ ] Filters on floor, size, status
+- [ ] Room 104 is "cleaning in progress" → **Finish cleaning** works
+- [ ] Room 101 is already clean → **the button does not exist** (no reason to finish a cleaning that is not in progress)
+- [ ] Create a room. Try floor `0` → rejected (BR-98). Try an existing room number → rejected (BR-N-01)
+- [ ] Edit a room: **there is no status field** — status is changed with its own buttons (A-08)
 
 ### `/admin/gaester`
 
-- [ ] Opret en gæst **med pasnummer**. Det er den eneste vej til at se krypteringen virke
-- [ ] Bekræft i databasen at det er krypteret:
+- [ ] Create a guest **with a passport number**. It is the only way to see the encryption work
+- [ ] Confirm in the database that it is encrypted:
 
 ```powershell
 psql $env:NFHOTEL_CONNECTION -c "SELECT first_name, passport_number FROM guest WHERE passport_number IS NOT NULL;"
 ```
 
-Feltet skal være ulæselig base64 — ikke det du skrev. Åbn samme gæst i UI'et: der står den rigtige værdi. Det er B-09.
+The field must be unreadable base64 — not what you typed. Open the same guest in the UI: the real value is shown. That is B-09.
 
-- [ ] Søg på et fornavn, et efternavn og et land — alle tre skal give træf (BR-68)
+- [ ] Search on a first name, a last name and a country — all three must give hits (BR-68)
 
 ---
 
-## 5. Det UI'et ikke kan teste
+## 5. What the UI cannot test
 
 ```powershell
 psql $env:NFHOTEL_CONNECTION -f db\constraint_check.sql
 ```
 
-Fem inserts direkte mod databasen, uden om applikationen.
+Five inserts directly against the database, bypassing the application.
 
-- **Test 1 skal fejle** med `ex_booking_room_period`
-- **Test 2 til 5 skal give `INSERT 0 1`**
+- **Test 1 must fail** with `ex_booking_room_period`
+- **Tests 2 to 5 must give `INSERT 0 1`**
 
-Test 4 er den vigtigste: en booking på rum 10 løber fire dage frem, men gæsten tjekkede ud i går. Rummet skal kunne genudlejes fra i dag. Fejler den, er A-01 brækket — og det var netop den fejl der blev fanget i designfasen.
+Test 4 is the most important: a booking on room 10 runs four days ahead, but the guest checked out yesterday. The room must be re-lettable from today. If it fails, A-01 is broken — and that was exactly the bug caught in the design phase.
 
-Test 1 beviser at dobbeltbooking er **fysisk umulig**, også hvis to receptionister trykker samtidig. Det gamle WPF-system havde intet overlapstjek ved oprettelse overhovedet.
-
----
-
-## 6. Robusthed
-
-**Databasen forsvinder mens appen kører.** Stop instansen og genindlæs `/admin/rum`. Forventet: en neutral dansk fejlbesked inden for få sekunder — **ikke** en stack trace, og ikke en side der hænger i et minut. Start databasen igen; siden skal virke ved næste genindlæsning.
-
-**To faner samtidig:** åbn `/admin/bookinger` i to faner og udfør handlinger i begge. Hver fane har sin egen tilstand, og hvert kald sin egen `DbContext`.
+Test 1 proves that double booking is **physically impossible**, even if two receptionists press at the same time. The old WPF system had no overlap check on creation at all.
 
 ---
 
-## 7. Hvad du IKKE kan teste endnu
+## 6. Robustness
 
-- **Adgangskontrol.** `/admin/**` er åben for alle der kender adressen. Auth er udskudt (D-01 til D-03). Båndet øverst i admin siger det
-- **Priser og omsætning.** `/admin/omsaetning` er en placeholder. `RoomSize` er en kategori uden pris
-- **Mobilappen.** Ikke bygget. Rengøringsforløbet i `/admin/rum` er den flade den senere skal kalde
-- **Persondata-sletning.** Retention (D-05) er ikke implementeret; X'erne er ikke fastsat
+**The database disappears while the app is running.** Stop the instance and reload `/admin/rum`. Expected: a neutral Danish error message within a few seconds — **not** a stack trace, and not a page that hangs for a minute. Start the database again; the page must work on the next reload.
+
+**Two tabs at the same time:** open `/admin/bookinger` in two tabs and perform actions in both. Each tab has its own state, and each call its own `DbContext`.
 
 ---
 
-## 8. Fejl der er værd at rapportere
+## 7. What you CANNOT test yet
 
-Ikke alt er lige interessant. Disse peger på noget reelt:
+- **Access control.** `/admin/**` is open to anyone who knows the address. Auth is postponed (D-01 to D-03). The band at the top of admin says so
+- **Prices and revenue.** `/admin/omsaetning` is a placeholder. `RoomSize` is a category without a price
+- **The mobile app.** Not built. The cleaning process in `/admin/rum` is the surface it will later call
+- **Personal data deletion.** Retention (D-05) is not implemented; the X values are not fixed
 
-- En knap der giver en fejl når man trykker → UI og domæne er uenige om hvad der er lovligt
-- En rå exception eller en engelsk fejlkode i browseren → fejlhåndteringen har et hul
-- `constraint_check.sql` test 1 lykkes → constrainten er ikke aktiv, migrationen er ikke kørt
-- `constraint_check.sql` test 4 fejler → `effective_end_date` er forkert
-- Persondata på kvitteringssiden → BR-C-06 er brudt
-- Et pasnummer i klartekst i databasen → B-09 er brudt
+---
+
+## 8. Errors worth reporting
+
+Not everything is equally interesting. These point to something real:
+
+- A button that gives an error when pressed → UI and domain disagree about what is legal
+- A raw exception or an English error code in the browser → error handling has a hole
+- `constraint_check.sql` test 1 succeeds → the constraint is not active, the migration has not been run
+- `constraint_check.sql` test 4 fails → `effective_end_date` is wrong
+- Personal data on the receipt page → BR-C-06 is broken
+- A passport number in plain text in the database → B-09 is broken

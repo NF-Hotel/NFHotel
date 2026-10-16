@@ -1,70 +1,72 @@
-using Testcontainers.PostgreSql;
 using Microsoft.EntityFrameworkCore;
+
+using NFHotel.Infrastructure.Config;
+using NFHotel.Infrastructure.Persistence;
+using NFHotel.Infrastructure.Security;
 
 using Respawn;
 
-using NFHotel.Infrastructure.Security;
-using NFHotel.Infrastructure.Persistence;
+using Testcontainers.PostgreSql;
 
 namespace NFHotel.Infrastructure.Tests.Persistence;
 
 
 /// <summary>
-/// Fælles PostgreSQL test-container til Infrastructure integrationstests.
+/// Shared PostgreSQL test container for Infrastructure integration tests.
 /// </summary>
 
-// Fixture som opsætter en PostgreSQL-database til integrationstests.
-// IAsyncLifetime bruges til asynkron opsætning og oprydning
-// før og efter integrationstestene.
+// Fixture that sets up a PostgreSQL database for integration tests.
+// IAsyncLifetime is used for asynchronous set-up and clean-up
+// before and after the integration tests.
 public sealed class PostgreSqlFixture : IAsyncLifetime
 {
-    // Gemmer PostgreSQL test-containeren.
-    // readonly = container-referencen skal ikke udskiftes senere.
+    // Keeps the PostgreSQL test container.
+    // readonly = the container reference must not be replaced later.
     private readonly PostgreSqlContainer _container =
        new PostgreSqlBuilder("postgres:16")
            .Build();
 
-    // Respawner bruges til at nulstille databasen mellem integrationstestene.
+    // Respawner is used to reset the database between the integration tests.
     private Respawner? _respawner;
 
-    // Connection string til den midlertidige PostgreSQL test-database.
+    // Connection string for the temporary PostgreSQL test database.
     public string ConnectionString => _container.GetConnectionString();
 
-    // Starter PostgreSQL-containeren før integrationstestene køres.
+    // Starts the PostgreSQL container before the integration tests are run.
     public async Task InitializeAsync()
     {
         await _container.StartAsync();
 
-        // Oprette en fakeAES-256 nøgle kun til integrationstests.
+        // Creates a fake AES-256 key only for integration tests.
         var encryptionOptions = new EncryptionOptions
         {
             PassportKey = Convert.ToBase64String(new byte[32])
         };
 
-        // Opretter den encryptor som HotelDbContext skal bruge til PassportNumber.
+        // Creates the encryptor HotelDbContext must use for PassportNumber.
         var encryptor = new AesGcmStringEncryptor(encryptionOptions);
 
-        // Konfigurerer HotelDbContext med connection string og encryptor.
+        // Configures HotelDbContext with connection string and encryptor.
         var optionsBuilder = new DbContextOptionsBuilder<HotelDbContext>();
 
-        // forbinder til den midlertidige PostgreSQL test-container.
+        // connects to the temporary PostgreSQL test container.
         DependencyInjection.ConfigureHotelDbContext(
             optionsBuilder,
             ConnectionString);
 
-        // Opretter HotelDbContext med testdatabasen og vores fake test-encryptor.
+        // Creates HotelDbContext with the test database and our fake test encryptor.
         await using var context = new HotelDbContext(optionsBuilder.Options, encryptor);
 
-        // Kører projektets migrations på den midlertidige testdatabase.
+        // Runs the project's migrations on the temporary test database.
         await context.Database.MigrateAsync();
 
 
-        // Henter databaseforbindelsen så Respawn kan konfigureres til den midlertidige PostgreSQL testdatabase.
+        // Fetches the database connection so Respawn can be configured for the temporary PostgreSQL test database.
         var connection = context.Database.GetDbConnection();
 
         await connection.OpenAsync();
 
-        // Opretter Respawner efter migrations er kørt så den kender databasestrukturen.
+        // Creates Respawner after migrations have been run so it knows the database structure.
         _respawner = await Respawner.CreateAsync(
             connection,
             new RespawnerOptions
@@ -74,30 +76,30 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
 
     }
 
-    // Metode der nulstiller data i testdatabasen så hver integrationstest kan starte med en ren database.
+    // Method that resets the data in the test database so each integration test can start with a clean database.
     public async Task ResetDatabaseAsync()
     {
 
-        // Kontrollerer at Respawner er blevet initialiseret.
-        // Hvis den ikke er klar stoppes metoden med en exception.
+        // Checks that Respawner has been initialised.
+        // If it is not ready the method is stopped with an exception.
         if (_respawner is null)
         {
             throw new InvalidOperationException("Respawner did not initialise.");
         }
 
 
-        // Opretter en ny forbindelse til PostgreSQL-testdatabasen ved hjælp af testdatabasens connection string.
-        // await using sørger for at forbindelsen bliver frigivet korrekt bagefter.
+        // Creates a new connection to the PostgreSQL test database using the connection string of the test database.
+        // await using ensures that the connection is released correctly afterwards.
         await using var connection = new Npgsql.NpgsqlConnection(ConnectionString);
 
         await connection.OpenAsync();
 
-        // Bruger Respawner til at nulstille data i testdatabasen.
+        // Uses Respawner to reset data in the test database.
         await _respawner.ResetAsync(connection);
     }
 
 
-    // Stopper og rydder PostgreSQL-containeren op efter integrationstestene.
+    // Stops and cleans up the PostgreSQL container after the integration tests.
     public async Task DisposeAsync()
     {
         await _container.DisposeAsync();

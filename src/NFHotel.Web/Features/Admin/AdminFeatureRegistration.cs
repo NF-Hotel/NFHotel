@@ -6,27 +6,27 @@ using NFHotel.Web.Features.Admin.Rooms;
 namespace NFHotel.Web.Features.Admin;
 
 /// <summary>
-/// Registrerer admin-områdets viewmodels i containeren.
+/// Registers the viewmodels of the admin area in the container.
 /// </summary>
 /// <remarks>
-/// Conventions.md holder <c>Program.cs</c> som composition root; denne klasse flytter ikke
-/// beslutningen væk derfra, men samler admin-featurens egne typer ét sted, så en ny skærm
-/// tilføjes i den mappe den hører til frem for i opstartsfilen.
+/// Conventions.md keeps <c>Program.cs</c> as the composition root; this class does not move
+/// the decision away from there, but gathers the types of the admin feature itself in one place, so a new screen
+/// is added in the folder it belongs to rather than in the start-up file.
 /// <para>
-/// Alle viewmodels er <b>Scoped</b>. I Blazor Server er en scope ét SignalR-kredsløb —
-/// altså én brugers session i én fane — og det er præcis den levetid skærmens tilstand
-/// (filtre, åbne formularer, valgt række) skal have. Databaseadgangen er kortere end det:
-/// hvert use case-kald henter sin egen scope gennem <c>IUseCaseRunner</c>
-/// (Architecture.md afsnit 8), så en lang session aldrig deler én <c>DbContext</c>.
+/// All viewmodels are <b>Scoped</b>. In Blazor Server a scope is one SignalR circuit —
+/// that is, one user's session in one tab — and that is exactly the lifetime the state of the screen
+/// (filters, open forms, selected row) should have. Database access is shorter than that:
+/// each use case call fetches its own scope through <c>IUseCaseRunner</c>
+/// (Architecture.md section 8), so a long session never shares one <c>DbContext</c>.
 /// </para>
 /// </remarks>
 public static class AdminFeatureRegistration
 {
     /// <summary>
-    /// Tilføjer admin-områdets viewmodels.
+    /// Adds the viewmodels of the admin area.
     /// </summary>
-    /// <param name="services">Containeren fra <c>Program.cs</c>.</param>
-    /// <returns>Samme container, så kaldet kan kædes.</returns>
+    /// <param name="services">The container from <c>Program.cs</c>.</param>
+    /// <returns>The same container, so the call can be chained.</returns>
     public static IServiceCollection AddAdminFeature(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);

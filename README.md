@@ -386,16 +386,26 @@ The site is then served at `http://localhost:8080` (`NGINX_HTTP_PORT`). To prove
 bash scripts/test-compose-proxy.sh
 ```
 
+### 📊 Market analysis behind the proxy
+
+The market analysis service (`NF-Hotel/Notebook_Market_Analysis`) has its own folder, `deploy/market-analysis`, with a compose file, `market-analysis.env` and a configuration file; see its README. The nginx proxy routes it by host name next to the web application, and `bash scripts/test-compose-proxy.sh` checks all three services through the proxy.
+
 ### 🧪 Proxmox Integration Tests
 
 Read-only tests check the Proxmox VE API. They run unattended against a throwaway Proxmox VE container (`dockurr/proxmox`, privileged, third-party image: use it on your own machine only). The container, a per-run API token and the test container are all removed afterwards.
 
 1. Docker must give containers `/dev/kvm`. On WSL2 start a distribution that loads the KVM modules first, for example `wsl -d Debian`.
 2. Copy `pve.env.example` to `pve.env` (git-ignored) and set `PVE_PASSWORD`, the root password of the container (the runner sets it with `chpasswd` before it creates the token). `pve.env` holds nothing else: the API token is created for every run by `scripts/pve-token.sh` and lives only in environment variables, never in a file.
-3. Run:
+3. Run (the script is bash; it creates the root password, a per-run API token and the throwaway containers, the same steps as doing it by hand with `docker compose`, `chpasswd` and `pveum`):
 
 ```bash
 bash scripts/run-proxmox-tests.sh
+```
+
+In PowerShell, `bash` is WSL's bash, which cannot reach Docker Desktop; call Git Bash explicitly:
+
+```powershell
+& "$env:ProgramFiles\Git\bin\bash.exe" scripts/run-proxmox-tests.sh
 ```
 
 The exit code is `0` when all checks pass. The test client sends only `GET` requests. `dotnet test` on the solution skips the live checks unless `PVE_HOST` is set.

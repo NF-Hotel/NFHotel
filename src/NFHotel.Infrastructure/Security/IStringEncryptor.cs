@@ -1,34 +1,34 @@
 namespace NFHotel.Infrastructure.Security;
 
 /// <summary>
-/// Symmetrisk kryptering af enkeltfelter at-rest (B-09, D-04).
+/// Symmetric encryption of single fields at rest (B-09, D-04).
 /// </summary>
 /// <remarks>
-/// Interfacet bor i Infrastructure og ikke i Application: kryptering er en
-/// persisteringsdetalje. Domænet kender kun klartekst — <c>Guest.PassportNumber</c> ved
-/// ikke at feltet krypteres, og skal ikke vide det.
+/// The interface lives in Infrastructure and not in Application: encryption is a
+/// persistence detail. The domain knows only plain text — <c>Guest.PassportNumber</c> does not know
+/// that the field is encrypted, and should not.
 /// <para>
-/// Implementeringen er randomiseret (ny nonce pr. kryptering), så samme klartekst giver
-/// forskellig ciffertekst hver gang. Konsekvensen er absolut: feltet kan hverken indekseres,
-/// sorteres eller søges på — heller ikke med lighed.
+/// The implementation is randomised (a new nonce per encryption), so the same plain text gives
+/// different ciphertext every time. The consequence is absolute: the field can be neither indexed,
+/// sorted nor searched — not even with equality.
 /// </para>
 /// </remarks>
 public interface IStringEncryptor
 {
     /// <summary>
-    /// Krypterer en klartekstværdi.
+    /// Encrypts a plain text value.
     /// </summary>
     /// <param name="plainText">Klarteksten.</param>
-    /// <returns>Ciffertekst i et selvbeskrivende, base64-kodet format.</returns>
+    /// <returns>Ciphertext in a self-describing, base64-encoded format.</returns>
     string Encrypt(string plainText);
 
     /// <summary>
-    /// Dekrypterer en ciffertekst produceret af <see cref="Encrypt"/>.
+    /// Decrypts a ciphertext produced by <see cref="Encrypt"/>.
     /// </summary>
     /// <param name="cipherText">Cifferteksten.</param>
-    /// <returns>Den oprindelige klartekst.</returns>
+    /// <returns>The original plain text.</returns>
     /// <exception cref="System.Security.Cryptography.CryptographicException">
-    /// Kastes hvis værdien er beskadiget, forkortet eller krypteret med en anden nøgle.
+    /// Thrown if the value is damaged, truncated or encrypted with a different key.
     /// </exception>
     string Decrypt(string cipherText);
 }

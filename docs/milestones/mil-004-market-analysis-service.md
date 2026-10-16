@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version: the Must stories US-001.01, US-001.03 and US-001.05 | [469ff7a] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version: the Must stories US-001.01, US-001.03 and US-001.05 | [469ff7a] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-015 Go | [469c395] |
 
 ---
 
@@ -87,3 +88,4 @@ benchmark service and the model choice) follow in a later milestone.
 [BC-001]: ../business-case.md
 [US-001]: ../user-stories.md
 [469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa
+[469c395]: https://github.com/NF-Hotel/NFHotel/commit/469c3959b999487820f8ffa1c24aa4866e61cfe7

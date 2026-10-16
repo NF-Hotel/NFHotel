@@ -1,0 +1,7 @@
+<Project>
+  <!-- Ensure output/intermediate/generated directories exist before any project builds -->
+  <Target Name="EnsureSolutionDriveRootDirs" BeforeTargets="BeforeBuild">
+    <MakeDir Directories="$(BaseIntermediateOutputPath)" Condition="'$(BaseIntermediateOutputPath)' != ''" />
+    <MakeDir Directories="$(CompilerGeneratedFilesOutputPath)" Condition="'$(CompilerGeneratedFilesOutputPath)' != ''" />
+  </Target>
+</Project>

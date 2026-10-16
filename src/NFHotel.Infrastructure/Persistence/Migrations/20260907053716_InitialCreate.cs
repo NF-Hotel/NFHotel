@@ -1,5 +1,5 @@
-﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -125,16 +125,16 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
             // --------------------------------------------------------
             // EXCLUSION CONSTRAINT (A-01, A-02, B-03)
             // --------------------------------------------------------
-            // EF Core kan ikke modellere en exclusion constraint, så den skrives som rå SQL.
-            // Definitionen står i BookingOverlapConstraint og udledes af BookingRules i
-            // Domain (A-04) — den må ikke skrives af i hånden her, for så kan SQL og C#
-            // blive uenige om hvilke statusser der spærrer.
+            // EF Core cannot model an exclusion constraint, so it is written as raw SQL.
+            // The definition is in BookingOverlapConstraint and is derived from BookingStatusExtensions and Booking in
+            // Domain (A-04) — it must not be copied by hand here, because then SQL and C#
+            // could disagree about which statuses block.
             //
-            // btree_gist-extensionen oprettes allerede af AlterDatabase-annotationen øverst;
-            // constrainten kræver den for at kunne blande '=' på room_id med '&&' på daterange.
+            // The btree_gist extension is already created by the AlterDatabase annotation at the top;
+            // the constraint needs it to be able to mix '=' on room_id with '&&' on daterange.
             //
-            // Rækkefølgen er vigtig: den genererede kolonne effective_end_date skal findes,
-            // før den kan indgå i constrainten. Den oprettes af CreateTable ovenfor.
+            // The order matters: the generated column effective_end_date must exist
+            // before it can be part of the constraint. It is created by CreateTable above.
             migrationBuilder.Sql(BookingOverlapConstraint.CreateConstraintSql);
         }
 

@@ -1,239 +1,239 @@
 # Encryption Key Management — NFHotel
-> IT-sikkerhed · D-04 (Privacy by Design) og D-07 (Secrets Management), jf. `Decisions.md`.
+> IT security · D-04 (Privacy by Design) and D-07 (Secrets Management), cf. `Decisions.md`.
 >
-> **Status: Udkast — afventer review.** Den endelige løsning til opbevaring af krypteringsnøgler i produktion er ikke besluttet endnu
+> **Status: Draft — awaiting review.** The final solution for storing encryption keys in production has not been decided yet
 
 ---
 
-## 1. Formål 
-Dette dokument fastlægger principperne for sikker håndtering af krypteringsnøgler i NFHotel med udgangspunkt i D-04
-(Privacy by Design) og D-07 (Secrets Management)
+## 1. Purpose
+This document sets out the principles for secure handling of encryption keys in NFHotel, based on D-04
+(Privacy by Design) and D-07 (Secrets Management)
 
-NFHotel anvender **AES-GCM** til kryptering af gæsters pasnumre ved lagring i PostgreSQL.
+NFHotel uses **AES-GCM** to encrypt guests' passport numbers when they are stored in PostgreSQL.
 
-Formålet med nøglehåndteringen er at sikre, at:
+The purpose of the key management is to ensure that:
 
-- Krypteringsnøgler bliver genereret med en kryptografisk sikker tilfældighedsgenerator.
-- Nøgler opbevares adskilt fra kildekoden og aldrig committes til Git.
-- Adgang til disse nøgler begrænses kun til autoriserede personer/roller og komponenter.
-- Der fastlægges procedure for nøglerotation, kompromittering og tab af nøgler
+- Encryption keys are generated with a cryptographically secure random number generator.
+- Keys are stored separately from the source code and never committed to Git.
+- Access to these keys is limited to authorised persons/roles and components only.
+- A procedure is defined for key rotation, compromise and loss of keys
 
-**BEMÆRK** Dokumentet skelner mellem **eksisterende implementering**, **anbefalede sikkerhedsforanstaltninger** og **udestående beslutninger**.
+**NOTE** The document distinguishes between the **existing implementation**, **recommended security measures** and **outstanding decisions**.
 
 
 ---
 
 
-## 2. Eksisterende implementering 
+## 2. Existing implementation
 
-NFHotel har implementeret kryptering af gæsters pasnumre ved hjælp af
+NFHotel has implemented encryption of guests' passport numbers using
 AES-GCM (Advanced Encryption Standard – Galois/Counter Mode).
 
-Krypteringen håndteres i Infrastructure-laget og er integreret med
-Entity Framework Core (EF Core), så pasnumre krypteres ved lagring og dekrypteres ved læsning fra PostgreSQL.
+The encryption is handled in the Infrastructure layer and is integrated with
+Entity Framework Core (EF Core), so passport numbers are encrypted on storage and decrypted on reading from PostgreSQL.
 
 
-### 2.1 AES-GCM-kryptering
+### 2.1 AES-GCM encryption
 
-Klassen `AesGcmStringEncryptor` håndterer kryptering og dekryptering
-af pasnumre gennem interfacet `IStringEncryptor`.
+The class `AesGcmStringEncryptor` handles encryption and decryption
+of passport numbers through the interface `IStringEncryptor`.
 
-Implementeringen anvender:
+The implementation uses:
 
-- AES-GCM til kryptering og integritetsbeskyttelse.
-- En tilfældig nonce på 12 bytes ved hver kryptering.
-- Et authentication tag på 16 bytes.
-- En AES-nøgle på 128, 192 eller 256 bit.
+- AES-GCM for encryption and integrity protection.
+- A random nonce of 12 bytes on every encryption.
+- An authentication tag of 16 bytes.
+- An AES key of 128, 192 or 256 bits.
 
-En ny nonce genereres ved hver kryptering, så det samme pasnummer
-normalt resulterer i forskellig ciphertext.
+A new nonce is generated on every encryption, so the same passport number
+normally results in different ciphertext.
 
-Authentication tag bruges til at opdage ændringer i de krypterede data.
-Hvis kontrollen fejler, afvises dekrypteringen.
+The authentication tag is used to detect changes to the encrypted data.
+If the check fails, the decryption is rejected.
 
-### 2.2 EF Core-integration
+### 2.2 EF Core integration
 
-NFHotel anvender `EncryptedStringConverter` til automatisk kryptering
-og dekryptering af pasnumre gennem EF Core.
+NFHotel uses `EncryptedStringConverter` for automatic encryption
+and decryption of passport numbers through EF Core.
 
-Converteren er konfigureret i `GuestConfiguration` på feltet
+The converter is configured in `GuestConfiguration` on the field
 `PassportNumber`.
 
-- Ved lagring krypteres pasnummeret, inden det gemmes i PostgreSQL.
-- Ved læsning dekrypteres pasnummeret gennem EF Core.
-- Hvis `PassportNumber` er `null`, forbliver databaseværdien `NULL`.
+- On storage the passport number is encrypted before it is saved in PostgreSQL.
+- On reading the passport number is decrypted through EF Core.
+- If `PassportNumber` is `null`, the database value remains `NULL`.
 
-Pasnummeret har ikke et databaseindeks, da den anvendte
-AES-GCM-kryptering ikke understøtter almindelig søgning eller
-sortering på den krypterede værdi.
+The passport number has no database index, since the AES-GCM
+encryption used does not support ordinary search or
+sorting on the encrypted value.
 
-### 2.3 Konfiguration og validering
+### 2.3 Configuration and validation
 
-Krypteringsnøglen læses fra konfigurationen gennem
-`EncryptionOptions` med konfigurationsnavnet `Encryption:PassportKey`.
+The encryption key is read from the configuration through
+`EncryptionOptions` with the configuration name `Encryption:PassportKey`.
 
-`AesGcmStringEncryptor` validerer, at nøglen:
+`AesGcmStringEncryptor` validates that the key:
 
-- Er angivet.
-- Er gyldigt Base64-format.
-- Har en gyldig AES-nøglelængde på 128, 192 eller 256 bit.
+- Is specified.
+- Is valid Base64.
+- Has a valid AES key length of 128, 192 or 256 bits.
 
-Hvis nøglen mangler eller er ugyldig, afvises konfigurationen
-ved applikationens opstart.
+If the key is missing or invalid, the configuration is rejected
+at application start-up.
 
-Den eksisterende validering sikrer ikke i sig selv, at nøglen
-opbevares sikkert.
+The existing validation does not in itself ensure that the key
+is stored securely.
 
 ### 2.4 Tests
 
-Implementeringen er verificeret gennem unit tests og
-PostgreSQL-integrationstests.
+The implementation is verified through unit tests and
+PostgreSQL integration tests.
 
-Testene kontrollerer blandt andet:
+The tests check, among other things:
 
-- At krypterede værdier kan dekrypteres korrekt.
-- At gentagen kryptering giver forskellige resultater.
-- At manipulation med ciphertext opdages.
-- At ugyldige og manglende nøgler afvises.
-- At pasnumre lagres krypteret i PostgreSQL.
-- At EF Core dekrypterer værdier korrekt ved læsning.
-- At et manglende pasnummer forbliver `NULL` i databasen.
+- That encrypted values can be decrypted correctly.
+- That repeated encryption gives different results.
+- That tampering with the ciphertext is detected.
+- That invalid and missing keys are rejected.
+- That passport numbers are stored encrypted in PostgreSQL.
+- That EF Core decrypts values correctly on reading.
+- That a missing passport number remains `NULL` in the database.
 
-Testene anvender testnøgler og ikke produktionsnøgler.
+The tests use test keys and not production keys.
 
 ---
 
 
-## 3. Nøgleoversigt (Key Inventory)
+## 3. Key inventory
 
-En nøgleoversigt bruges til at dokumentere hvilke kryptografiske
-nøgler systemet anvender, deres formål og hvordan de håndteres.
+A key inventory is used to document which cryptographic
+keys the system uses, their purpose and how they are handled.
 
-Dette understøtter princippet om, at en kryptografisk nøgle kun
-bør anvendes til ét bestemt formål (Key Separation), som anbefalet
-af OWASP og NIST.
+This supports the principle that a cryptographic key should only
+be used for one specific purpose (Key Separation), as recommended
+by OWASP and NIST.
 
 
-### 3.1 Eksisterende krypteringsnøgle
+### 3.1 Existing encryption key
 
-NFHotel anvender en AES-nøgle til kryptering af gæsternes pasnumre.
+NFHotel uses an AES key to encrypt guests' passport numbers.
 
-| Egenskab | Beskrivelse |
+| Property | Description |
 |---|---|
-| Nøgle | `Encryption:PassportKey` |
-| Formål | Kryptering og dekryptering af gæsters pasnumre |
-| Algoritme | AES-GCM |
-| Nøglelængde | 128, 192 eller 256 bit |
-| Anvendelse | `AesGcmStringEncryptor` i Infrastructure-laget |
-| Konfiguration | `EncryptionOptions` |
-| Opbevaring | .NET User Secrets lokalt; produktionsløsning ikke besluttet |
-| Rotation | Ikke implementeret |
+| Key | `Encryption:PassportKey` |
+| Purpose | Encryption and decryption of guests' passport numbers |
+| Algorithm | AES-GCM |
+| Key length | 128, 192 or 256 bits |
+| Used by | `AesGcmStringEncryptor` in the Infrastructure layer |
+| Configuration | `EncryptionOptions` |
+| Storage | .NET User Secrets locally; production solution not decided |
+| Rotation | Not implemented |
 
-Selve krypteringsnøglen må aldrig skrives i dokumentationen eller committes til Git.
+The encryption key itself must never be written in the documentation or committed to Git.
 
-### 3.2 Adskillelse af kryptografiske nøgler
+### 3.2 Separation of cryptographic keys
 
-Krypteringsnøgler bør kun anvendes til deres tilsigtede formål.
+Encryption keys should only be used for their intended purpose.
 
-AES-nøglen til pasnumre må derfor ikke genbruges til eksempelvis:
+The AES key for passport numbers must therefore not be reused for, for example:
 
-- Signering af JWT-tokens.
-- Kryptering af andre datatyper uden en særskilt vurdering.
-- Andre kryptografiske funktioner med forskellige sikkerhedskrav.
+- Signing JWT tokens.
+- Encrypting other data types without a separate assessment.
+- Other cryptographic functions with different security requirements.
 
-Dette begrænser konsekvenserne, hvis en nøgle bliver kompromitteret.
-
-
----
-
-
-## 4. Generering af krypteringsnøgler
-
-Krypteringsnøgler skal genereres med en kryptografisk sikker
-tilfældighedsgenerator (CSPRNG).
-
-For NFHotel gælder følgende principper:
-
-- AES-256 bit anbefales til nye krypteringsnøgler.
-- Udviklings og produktionsmiljø skal anvendes seperate nøgler 
-
-
-Den fælles udviklingsnøgle til `Encryption:PassportKey` er
-genereret af den DevOps-ansvarlige.
-
----
-
-
-## 5. Opbevaring og adgangskontrol
-
-Krypteringsnøgler skal opbevares adskilt fra kildekoden og kun være tilgængelige for autoriserede personer.
-
-- **Lokal udvikling:** `Encryption:PassportKey` opbevares i .NET User Secrets.
-- **Fælles udviklingsdatabase:** Applikationerne anvender samme AES-nøgle for at kunne dekryptere eksisterende pasnumre.
-- **Adgangskontrol:** Kun udviklere med et konkret behov bør have adgang til krypteringsnøglen.
-- **Produktion:** Nøglen bør opbevares i et sikkert secret-management-system. Den konkrete løsning er endnu ikke besluttet.
-
-User Secrets er ikke krypteret og må derfor ikke betragtes som sikker nøgleopbevaring til produktion.
-
----
-
-
-## 6. Nøglerotation og kompromittering
-
-Nøglerotation betyder selvfølgelig, at en eksisterende krypteringsnøgle udskiftes med en ny.
-
-NFHotel har endnu ikke en implementeret løsning til nøglerotation.
-
-Ved udskiftning af `Encryption:PassportKey` skal følgende sikres:
-
-- Eksisterende pasnumre skal kunne dekrypteres med den gamele nøgle og kryptres igen med den nye 
-- Den gamle nøgle må først udfases, når migreringen er gennemført
-  og verificeret.
-- Ved mistanke om kompromittering skal nøglens adgang begrænses,
-  og berørte data og systemer undersøges.
-
-**Vigtigt:** Hvis nøglen blot udskiftes i konfigurationen kan eksisterende krypterede pasnumre ikke længere dekrypteres.
-
-Cybersecurity-ansvarlig udarbejder en procedure for nøglerotation og håndtering af kompromitterede nøgler i samarbejde med DevOps.
+This limits the consequences if a key is compromised.
 
 
 ---
 
-## 7. Backup og gendannelse
-NFHotel skal sikre, at krypteringsnøgler kan gendannes ved systemfejl eller tab så krypterede pasnumre ikke bliver
-permanent utilgængelige.
 
-- Backup af krypteringsnøgler skal opbevares sikkert og adskilt fra databasebackups.
-- Adgang til backupnøgler skal begrænses til autoriserede personer.
-- Gendannelse skal testes så det verificeres, at krypterede data fortsat kan dekrypteres.
+## 4. Generation of encryption keys
 
-**Status:** Der er endnu ikke dokumenteret en konkret
-backup- og gendannelsesprocedure for `Encryption:PassportKey`.
+Encryption keys must be generated with a cryptographically secure
+random number generator (CSPRNG).
+
+The following principles apply to NFHotel:
+
+- AES-256 bit is recommended for new encryption keys.
+- Separate keys must be used for the development and production environments
+
+
+The shared development key for `Encryption:PassportKey` was
+generated by the DevOps lead.
 
 ---
 
-## 8. Ansvar og udestående beslutninger
 
-Cybersecurity-ansvarlig udarbejder sikkerhedskrav og procedurer
-for nøglehåndtering i samarbejde med DevOps og resten af teamet.
+## 5. Storage and access control
 
-Følgende beslutninger mangler fortsat:
+Encryption keys must be stored separately from the source code and only be available to authorised persons.
 
-| Område | Udestående beslutning |
+- **Local development:** `Encryption:PassportKey` is stored in .NET User Secrets.
+- **Shared development database:** The applications use the same AES key so that they can decrypt existing passport numbers.
+- **Access control:** Only developers with a specific need should have access to the encryption key.
+- **Production:** The key should be stored in a secure secret-management system. The specific solution has not been decided yet.
+
+User Secrets are not encrypted and must therefore not be regarded as secure key storage for production.
+
+---
+
+
+## 6. Key rotation and compromise
+
+Key rotation of course means that an existing encryption key is replaced by a new one.
+
+NFHotel does not yet have an implemented solution for key rotation.
+
+When `Encryption:PassportKey` is replaced, the following must be ensured:
+
+- Existing passport numbers must be decryptable with the old key and encrypted again with the new one
+- The old key may only be phased out when the migration has been completed
+  and verified.
+- If a compromise is suspected, access to the key must be restricted,
+  and affected data and systems investigated.
+
+**Important:** If the key is simply replaced in the configuration, existing encrypted passport numbers can no longer be decrypted.
+
+The cybersecurity lead prepares a procedure for key rotation and handling of compromised keys in cooperation with DevOps.
+
+
+---
+
+## 7. Backup and recovery
+NFHotel must ensure that encryption keys can be recovered after a system failure or loss, so that encrypted passport numbers do not become
+permanently unavailable.
+
+- Backups of encryption keys must be stored securely and separately from database backups.
+- Access to backup keys must be limited to authorised persons.
+- Recovery must be tested so that it is verified that encrypted data can still be decrypted.
+
+**Status:** A specific
+backup and recovery procedure for `Encryption:PassportKey` has not been documented yet.
+
+---
+
+## 8. Responsibility and outstanding decisions
+
+The cybersecurity lead prepares security requirements and procedures
+for key management in cooperation with DevOps and the rest of the team.
+
+The following decisions are still missing:
+
+| Area | Outstanding decision |
 
 |---|---|
-| Produktion | Valg af secret-management-løsning |
-| Nøglerotation | Konkret procedure og teknisk implementering |
-| Backup | Sikker opbevaring og test af gendannelse |
+| Production | Choice of secret-management solution |
+| Key rotation | Specific procedure and technical implementation |
+| Backup | Secure storage and testing of recovery |
 
 
-Beslutningerne skal afklares og godkendes af teamet inden løsningen anvendes i produktion.
+The decisions must be clarified and approved by the team before the solution is used in production.
 
 ---
 
-## 9. Referencer
+## 9. References
 
 - [OWASP – Key Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Key_Management_Cheat_Sheet.html)
 - [Microsoft – Safe Storage of App Secrets in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-10.0)
 - [NIST SP 800-57 – Recommendation for Key Management](https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final)
-- Interne beslutninger: `Decisions.md` (D-04 og D-07).
+- Internal decisions: `Decisions.md` (D-04 and D-07).

@@ -1,29 +1,31 @@
-using NFHotel.Application.Bookings;
-using NFHotel.Application.Common;
+using NFHotel.Application.Dto.Bookings;
+using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Booking;
 
 /// <summary>
-/// Slår én booking op på dens bookingnummer til den offentlige kvitteringsside
+/// Looks up one booking by its booking number for the public receipt page
 /// <c>/booking/{bookingNumber}</c> (BR-C-06).
 /// </summary>
 /// <remarks>
-/// <b>Hvorfor siden viser så lidt.</b> Der er ingen adgangskontrol i Fase 1 (Fase1-Scope.md),
-/// og bookingnummeret er det eneste der skal til for at åbne siden. Formatet er
-/// <c>FLZ-</c> plus bookingens id (BR-109), så <c>FLZ-000123</c> ligger ét ciffer fra
-/// <c>FLZ-000124</c>: den der gætter, rammer en anden gæsts booking i første forsøg.
+/// <b>Why the page shows so little.</b> There is no access control in Phase 1 (Phase1-Scope.md),
+/// and the booking number is all it takes to open the page. The format is
+/// <c>FLZ-</c> plus the id of the booking (BR-109), so <c>FLZ-000123</c> is one digit away from
+/// <c>FLZ-000124</c>: whoever guesses hits another guest's booking on the first try.
 /// <para>
-/// Derfor bærer siden kun det, en gætter ikke kan bruge til noget — bookingnummer,
-/// datoer, antal nætter, rum og status (BR-C-05). Navn, e-mail, telefon og pasnummer
-/// vises <b>ikke</b>, selv om <see cref="BookingDetailsDto.Guest"/> har dem: kunden har
-/// lige selv indtastet dem og har dem i forvejen, mens en fremmed ellers ville kunne høste
-/// persondata ved at tælle opad. Det er en bevidst begrænsning indtil Identity kommer, og
-/// den skal først løftes samtidig med adgangskontrollen — ikke før.
+/// Therefore the page carries only what a guesser cannot use for anything — booking number,
+/// dates, number of nights, room and status (BR-C-05). Name, email, phone and passport number
+/// are <b>not</b> shown, even though <see cref="BookingDetailsDto.Guest"/> has them: the customer has
+/// just entered them and already has them, whereas a stranger could otherwise harvest
+/// personal data by counting upwards. It is a deliberate limitation until Identity arrives, and
+/// it must be lifted only together with the access control — not before.
 /// </para>
 /// <para>
-/// Begrænsningen håndhæves af <c>BookingReceiptCard.razor</c>, som kun har markup til de
-/// tilladte felter. Viewmodellen bærer hele DTO'en, fordi den kommer sådan fra servicen.
+/// The limitation is enforced by <c>BookingReceiptCard.razor</c>, which has markup only for the
+/// allowed fields. The viewmodel carries the whole DTO, because it comes that way from the service.
 /// </para>
 /// </remarks>
 public sealed class BookingReceiptViewModel
@@ -35,7 +37,7 @@ public sealed class BookingReceiptViewModel
     /// <summary>
     /// Opretter viewmodellen.
     /// </summary>
-    /// <param name="bookings">Kører use cases på <see cref="IBookingService"/>.</param>
+    /// <param name="bookings">Runs use cases on <see cref="IBookingService"/>.</param>
     public BookingReceiptViewModel(IUseCaseRunner<IBookingService> bookings)
     {
         ArgumentNullException.ThrowIfNull(bookings);
@@ -43,26 +45,26 @@ public sealed class BookingReceiptViewModel
         _bookings = bookings;
     }
 
-    /// <summary>Bookingen, eller <c>null</c> hvis den ikke blev fundet.</summary>
+    /// <summary>The booking, or <c>null</c> if it was not found.</summary>
     public BookingDetailsDto? Details { get; private set; }
 
-    /// <summary>Sand mens opslaget er i gang.</summary>
+    /// <summary>True while the lookup is in progress.</summary>
     public bool IsBusy { get; private set; }
 
-    /// <summary>Sand når opslaget er forsøgt mindst én gang.</summary>
+    /// <summary>True when the lookup has been tried at least once.</summary>
     public bool IsLoaded { get; private set; }
 
-    /// <summary>Den danske forklaring på hvorfor der ingen booking er.</summary>
+    /// <summary>The Danish explanation of why there is no booking.</summary>
     /// <remarks>
-    /// Samme tekst uanset om nummeret var noget vrøvl eller pegede på en booking der ikke
-    /// findes. Forskellen ville kun oplyse den der prøver sig frem.
+    /// The same text whether the number was nonsense or pointed to a booking that does not
+    /// exist. The difference would only inform whoever is trying their way forward.
     /// </remarks>
     public string NotFoundText { get; private set; } = string.Empty;
 
     /// <summary>
-    /// Slår bookingen op.
+    /// Looks up the booking.
     /// </summary>
-    /// <param name="bookingNumber">Bookingnummeret fra URL'en, fx <c>FLZ-000123</c>.</param>
+    /// <param name="bookingNumber">The booking number from the URL, for example <c>FLZ-000123</c>.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public async Task LoadAsync(string? bookingNumber, CancellationToken cancellationToken = default)
     {
@@ -73,7 +75,7 @@ public sealed class BookingReceiptViewModel
 
         if (!BookingNumberText.TryParseId(bookingNumber, out var bookingId))
         {
-            // Et ulæseligt nummer koster ikke et databaseopslag.
+            // An unreadable number does not cost a database lookup.
             Details = null;
             NotFoundText = Describe(ErrorCodes.Booking.NotFound);
             IsLoaded = true;
@@ -109,10 +111,10 @@ public sealed class BookingReceiptViewModel
         }
     }
 
-    /// <summary>De fejl der skal vises. Tom når bookingen blev fundet.</summary>
+    /// <summary>The errors to show. Empty when the booking was found.</summary>
     public IReadOnlyList<string> Errors =>
         IsLoaded && Details is null && NotFoundText.Length > 0 ? [NotFoundText] : NoMessages;
 
-    /// <summary>Oversætter én fejlkode til dansk.</summary>
+    /// <summary>Translates one error code to Danish.</summary>
     private static string Describe(string code) => ErrorMessages.Describe(new Error(code));
 }

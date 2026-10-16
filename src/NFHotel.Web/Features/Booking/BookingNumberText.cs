@@ -1,39 +1,39 @@
 using System.Globalization;
 
-using NFHotel.Application.Bookings;
+using NFHotel.Application.UseCases.Bookings;
 
 namespace NFHotel.Web.Features.Booking;
 
 /// <summary>
-/// Læser et bookingnummer fra en URL tilbage til bookingens id.
+/// Reads a booking number from a URL back to the id of the booking.
 /// </summary>
 /// <remarks>
-/// Kvitteringssiden slår op på nummeret (BR-C-06), men <c>IBookingService</c> har med vilje
-/// ingen "hent efter nummer": nummeret <i>er</i> id'et i vist form (BR-109), og en ekstra
-/// use case ville være samme opslag med en anden nøgle.
+/// The receipt page looks up the number (BR-C-06), but <c>IBookingService</c> deliberately has
+/// no "fetch by number": the number <i>is</i> the id in displayed form (BR-109), and an extra
+/// use case would be the same lookup with a different key.
 /// <para>
-/// Parsningen hører derfor i Web, som spejling af
-/// <see cref="BookingMapping.FormatBookingNumber(int)"/>, og ikke i Application.
-/// Præfikset er valgfrit og ufølsomt for store og små bogstaver, så et nummer skrevet af
-/// fra en kvittering også virker — det, der afvises, er alt hvad der ikke er et positivt
-/// heltal, så en tastefejl bliver til "bookingen findes ikke" frem for til et opslag på
-/// et tilfældigt id.
+/// The parsing therefore belongs in Web, as a mirror of
+/// <see cref="BookingMapping.FormatBookingNumber(int)"/>, and not in Application.
+/// The prefix is optional and case-insensitive, so a number copied from
+/// a receipt also works — what is rejected is everything that is not a positive
+/// integer, so a typing mistake becomes "the booking does not exist" rather than a lookup on
+/// a random id.
 /// </para>
 /// </remarks>
 public static class BookingNumberText
 {
-    /// <summary>Præfikset i det viste bookingnummer (BR-109).</summary>
+    /// <summary>The prefix in the displayed booking number (BR-109).</summary>
     private const string Prefix = "FLZ-";
 
-    /// <summary>Flest cifre et bookingnummer kan bære, uden at <c>int</c> løber over.</summary>
+    /// <summary>The most digits a booking number can carry without <c>int</c> overflowing.</summary>
     private const int MaxDigits = 9;
 
     /// <summary>
-    /// Forsøger at læse et bookingnummer som <c>FLZ-000123</c> eller <c>123</c> til et id.
+    /// Tries to read a booking number such as <c>FLZ-000123</c> or <c>123</c> as an id.
     /// </summary>
-    /// <param name="bookingNumber">Nummeret fra URL'en. Må være <c>null</c>.</param>
-    /// <param name="bookingId">Bookingens id ved succes; ellers 0.</param>
-    /// <returns>Sand hvis nummeret kunne læses som et positivt id.</returns>
+    /// <param name="bookingNumber">The number from the URL. May be <c>null</c>.</param>
+    /// <param name="bookingId">The id of the booking on success; otherwise 0.</param>
+    /// <returns>True if the number could be read as a positive id.</returns>
     public static bool TryParseId(string? bookingNumber, out int bookingId)
     {
         bookingId = 0;
@@ -63,8 +63,8 @@ public static class BookingNumberText
             }
         }
 
-        // NumberStyles.None: ingen fortegn, ingen tusindtalsseparator, ingen mellemrum —
-        // kun de cifre der lige er kontrolleret.
+        // NumberStyles.None: no sign, no thousands separator, no spaces —
+        // only the digits that have just been checked.
         if (!int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) || parsed <= 0)
         {
             return false;

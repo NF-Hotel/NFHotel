@@ -1,0 +1,157 @@
+@startuml Object-Model-Domain
+' LEGACY picture: not the framework Domain Model; see docs/domain-model.md (DM-004).
+' =====================================================================
+' NFHotel 2.0 — Object model, domain layer
+' Generated 2026-09-08 from src/NFHotel.Domain/
+' =====================================================================
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam roundCorner 6
+skinparam nodesep 26
+skinparam ranksep 50
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #2F4739
+  ArrowColor #5A615C
+  FontColor #1C1F1D
+  AttributeFontColor #5A615C
+  StereotypeFontColor #8A6A34
+}
+skinparam package {
+  BackgroundColor #FCFBF8
+  BorderColor #B08A4F
+  FontColor #2F4739
+  FontStyle bold
+}
+skinparam note {
+  BackgroundColor #F7F5F0
+  BorderColor #DDD9D0
+  FontColor #5A615C
+}
+
+title Object model — domain layer
+
+package "NFHotel.Domain" as DOM #FCFBF8 {
+
+  class Booking <<entity>> {
+    +BookingId
+    +StartDate
+    +EndDate
+    +CheckOutDate
+    +CheckInTime
+    +CheckOutTime
+    +Status
+    +RoomId
+    +GuestId
+    .. derived ..
+    +Period
+    +EffectiveEndDate
+    +EffectivePeriod
+    +NumberOfNights
+    +BookingNumber
+    +CanConfirm
+    +CanCheckOut
+    +CanCancel
+    +CanReschedule
+    .. lifecycle ..
+    {static} +Create(period, roomId, guestId, today)
+    +CanCheckIn(today)
+    +Confirm()
+    +CheckIn(occurredAt, today)
+    +CheckOut(occurredAt, checkOutDate, today)
+    +Cancel()
+    +Reschedule(newPeriod, newRoomId, today)
+  }
+
+  class Room <<entity>> {
+    +RoomId
+    +RoomNumber
+    +Floor
+    +Size
+    +Capacity
+    +Status
+    +HousekeepingStatus
+    .. derived ..
+    +IsBookable
+    +CanStartCleaning
+    +CanCompleteCleaning
+    +CanStartService
+    +CanCompleteService
+    .. transitions ..
+    {static} +Create(roomNumber, floor, size, capacity)
+    +UpdateDetails(...)
+    +TakeOutOfService()
+    +SendToMaintenance()
+    +ReturnToService()
+    +MarkDailyCleaningDue()
+    +MarkDepartureCleaningDue()
+    +StartCleaning()
+    +CompleteCleaning()
+    +ReportServiceNeeded()
+    +StartService()
+    +CompleteService(requiresCleaning)
+  }
+
+  class Guest <<entity>> {
+    +GuestId
+    +FirstName
+    +LastName
+    +Email
+    +PhoneNumber
+    +Country
+    +PassportNumber
+    +FullName
+    {static} +Create(...)
+    +UpdateDetails(...)
+  }
+
+  class DateRange <<value object>> {
+    +Start
+    +End
+    +Nights
+    +Overlaps(other)
+    +Contains(date)
+    +StartsOnOrAfter(today)
+  }
+
+  class BookingRules <<static>> {
+    +Overlaps(a, b)
+    +BlocksRoom(status)
+    +Conflicts(existing, roomId, period)
+  }
+  class GuestRules <<static>>
+  class RoomRules <<static>>
+
+  enum BookingStatus
+  enum RoomStatus
+  enum HousekeepingStatus
+  enum RoomSize
+}
+
+
+Guest "1" -- "0..*" Booking
+Room  "1" -- "0..*" Booking
+Booking ..> DateRange
+Booking ..> BookingStatus
+Room ..> RoomStatus
+Room ..> HousekeepingStatus
+Room ..> RoomSize
+BookingRules ..> DateRange
+BookingRules ..> BookingStatus
+GuestRules ..> Guest
+RoomRules ..> Room
+
+note bottom of Booking
+  **The Can* properties are not a UI convenience.**
+  They are the guard the transition method itself
+  uses, so the user interface can draw buttons by
+  the same rule the domain enforces.
+
+  **No DateTime.Now.** Every rule that needs today's
+  date gets it as a parameter — which is why the
+  state machine can be tested deterministically.
+end note
+
+@enduml

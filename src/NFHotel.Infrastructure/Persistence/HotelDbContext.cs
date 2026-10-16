@@ -1,9 +1,8 @@
-using NFHotel.Domain.Bookings;
-using NFHotel.Domain.Guests;
-using NFHotel.Domain.Rooms;
+using Microsoft.EntityFrameworkCore;
+
+using NFHotel.Domain.Entities;
 using NFHotel.Infrastructure.Persistence.Configurations;
 using NFHotel.Infrastructure.Security;
-using Microsoft.EntityFrameworkCore;
 
 namespace NFHotel.Infrastructure.Persistence;
 
@@ -11,13 +10,13 @@ namespace NFHotel.Infrastructure.Persistence;
 /// EF Core-konteksten for hoteldatabasen.
 /// </summary>
 /// <remarks>
-/// Konteksten kender ikke forretningsregler — den mapper kun. Providervalg og
-/// navnekonvention (<c>UseSnakeCaseNamingConvention</c>, B-06) sættes ved registreringen i
-/// <see cref="DependencyInjection.AddInfrastructure"/>, ikke her, så samme kontekst kan
-/// bruges mod en Testcontainers-database uden en anden kodesti.
+/// The context knows no business rules — it only maps. The choice of provider and
+/// naming convention (<c>UseSnakeCaseNamingConvention</c>, B-06) is made at the registration in
+/// <see cref="DependencyInjection.AddInfrastructure"/>, not here, so the same context can
+/// be used against a Testcontainers database without a different code path.
 /// <para>
-/// Lazy loading er slået fra. Navigationer hentes med eksplicit <c>Include</c> på
-/// kommandostier og projiceres direkte i SQL på læsestier (A-11).
+/// Lazy loading is switched off. Navigations are fetched with an explicit <c>Include</c> on
+/// command paths and projected directly in SQL on read paths (A-11).
 /// </para>
 /// </remarks>
 public sealed class HotelDbContext : DbContext
@@ -27,12 +26,12 @@ public sealed class HotelDbContext : DbContext
     /// <summary>
     /// Opretter konteksten.
     /// </summary>
-    /// <param name="options">Kontekstindstillingerne, herunder provider og connection string.</param>
+    /// <param name="options">The context options, including provider and connection string.</param>
     /// <param name="passportEncryptor">
-    /// Krypteringstjenesten for pasnummer (B-09). Injiceres frem for at blive slået op
-    /// statisk, så en test kan sætte sin egen nøgle uden at røde global tilstand.
+    /// The encryption service for the passport number (B-09). Injected rather than looked up
+    /// statically, so a test can set its own key without stirring up global state.
     /// </param>
-    /// <exception cref="ArgumentNullException">Kastes hvis <paramref name="passportEncryptor"/> er <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="passportEncryptor"/> is <c>null</c>.</exception>
     public HotelDbContext(DbContextOptions<HotelDbContext> options, IStringEncryptor passportEncryptor)
         : base(options)
     {
@@ -41,13 +40,13 @@ public sealed class HotelDbContext : DbContext
         _passportEncryptor = passportEncryptor;
     }
 
-    /// <summary>Bookinger.</summary>
+    /// <summary>Bookings.</summary>
     public DbSet<Booking> Bookings => Set<Booking>();
 
-    /// <summary>Rum.</summary>
+    /// <summary>Rooms.</summary>
     public DbSet<Room> Rooms => Set<Room>();
 
-    /// <summary>Gæster.</summary>
+    /// <summary>Guests.</summary>
     public DbSet<Guest> Guests => Set<Guest>();
 
     /// <inheritdoc />
@@ -57,15 +56,15 @@ public sealed class HotelDbContext : DbContext
 
         base.OnModelCreating(modelBuilder);
 
-        // btree_gist kræves af exclusion constrainten, fordi den blander btree-operatoren
-        // '=' på room_id med gist-operatoren '&&' på daterange (B-03).
+        // btree_gist is required by the exclusion constraint, because it mixes the btree operator
+        // '=' on room_id with the gist operator '&&' on daterange (B-03).
         modelBuilder.HasPostgresExtension(BookingOverlapConstraint.RequiredExtension);
 
         modelBuilder.ApplyConfiguration(new BookingConfiguration());
         modelBuilder.ApplyConfiguration(new RoomConfiguration());
 
-        // GuestConfiguration registreres eksplicit og ikke via assembly-scanning, fordi den
-        // har en afhængighed: value converteren der krypterer pasnummer (B-09).
+        // GuestConfiguration is registered explicitly and not via assembly scanning, because it
+        // has a dependency: the value converter that encrypts the passport number (B-09).
         modelBuilder.ApplyConfiguration(new GuestConfiguration(_passportEncryptor));
     }
 }

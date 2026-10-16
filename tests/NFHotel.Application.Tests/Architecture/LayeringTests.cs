@@ -1,20 +1,21 @@
 using System.Reflection;
-using NFHotel.Application.Common;
+
+using NFHotel.Application.UseCases;
 
 namespace NFHotel.Application.Tests.Architecture;
 
 /// <summary>
-/// Håndhæver afhængighedsretningen i Clean Architecture. Disse regler kan ikke
-/// håndhæves af disciplin alene — én uskyldig using i en travl uge er nok til at
-/// vende retningen, og så arver hverken et senere API eller mobilappen reglerne gratis.
-/// Jf. Architecture.md afsnit 2 og 8.
+/// Enforces the dependency direction of Clean Architecture. These rules cannot
+/// be enforced by discipline alone — one innocent using in a busy week is enough to
+/// reverse the direction, and then neither a later API nor the mobile app inherits the rules for free.
+/// Cf. Architecture.md sections 2 and 8.
 /// </summary>
 public sealed class LayeringTests
 {
     private static readonly Assembly ApplicationAssembly = typeof(Result).Assembly;
-    private static readonly Assembly DomainAssembly = typeof(Domain.Bookings.Booking).Assembly;
+    private static readonly Assembly DomainAssembly = typeof(Domain.Entities.Booking).Assembly;
 
-    /// <summary>Application må kun kende Domain og BCL — ingen persistens, ingen web.</summary>
+    /// <summary>Application may know only Domain and the BCL — no persistence, no web.</summary>
     [Theory]
     [InlineData("Microsoft.EntityFrameworkCore")]
     [InlineData("Npgsql")]
@@ -35,7 +36,7 @@ public sealed class LayeringTests
             "Forretningslogikken skal kunne kaldes uden persistens- eller web-lag.");
     }
 
-    /// <summary>Domain er kernen: nul afhængigheder ud over BCL.</summary>
+    /// <summary>Domain is the core: zero dependencies beyond the BCL.</summary>
     [Fact]
     public void Domain_HasNoOutgoingDependencies()
     {
@@ -54,8 +55,8 @@ public sealed class LayeringTests
     }
 
     /// <summary>
-    /// Application må ikke eksponere Domain-entiteter direkte ud af sine services —
-    /// UI og et senere API skal tale DTO'er, jf. Conventions.md.
+    /// Application must not expose Domain entities directly out of its services —
+    /// the UI and a later API must speak DTOs, cf. Conventions.md.
     /// </summary>
     [Fact]
     public void Services_DoNotReturnDomainEntities()
@@ -76,7 +77,7 @@ public sealed class LayeringTests
             $"Disse service-metoder lækker domæneentiteter: {string.Join(", ", leaks)}");
     }
 
-    /// <summary>Pakker Task&lt;T&gt;, Result&lt;T&gt; og IReadOnlyList&lt;T&gt; ud til den bærende type.</summary>
+    /// <summary>Unwraps Task&lt;T&gt;, Result&lt;T&gt; and IReadOnlyList&lt;T&gt; to the underlying type.</summary>
     private static Type Unwrap(Type type)
     {
         while (type.IsGenericType)

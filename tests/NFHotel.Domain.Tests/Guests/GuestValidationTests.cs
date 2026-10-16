@@ -1,16 +1,16 @@
-using NFHotel.Domain.Common;
-using NFHotel.Domain.Guests;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.Errors;
 
 namespace NFHotel.Domain.Tests.Guests;
 
 /// <summary>
-/// Gæstevalidering. Dækker BR-46, BR-52 til BR-57, BR-60, BR-72, BR-84 og BR-91 til BR-96
-/// samt længdegrænserne fra A-10.
+/// Guest validation. Covers BR-46, BR-52 to BR-57, BR-60, BR-72, BR-84 and BR-91 to BR-96
+/// as well as the length limits from A-10.
 /// </summary>
 /// <remarks>
-/// Reglerne testes gennem <see cref="GuestRules.Validate"/> (som samler alle fejl, BR-96)
-/// og gennem <see cref="Guest.Create"/> (som fejler på den første, BR-46). Begge veje deler
-/// prædikater og skal derfor være enige.
+/// The rules are tested through the helper <c>ErrorsOf</c> (which collects every error code, BR-96)
+/// and through <see cref="Guest.Create"/> (whose exception code is the first, BR-46). Both ways share
+/// the attributes of <c>Guest</c> (ADR-0002) and must therefore agree.
 /// </remarks>
 public class GuestValidationTests
 {
@@ -22,10 +22,10 @@ public class GuestValidationTests
     private const string ValidPassportNumber = "123456789";
 
     // --------------------------------------------------------
-    // PÅKRÆVEDE FELTER (BR-91 til BR-95)
+    // REQUIRED FIELDS (BR-91 to BR-95)
     // --------------------------------------------------------
 
-    /// <summary>BR-52, BR-91: fornavn må hverken være null, tomt eller kun whitespace.</summary>
+    /// <summary>BR-52, BR-91: first name must be neither null, empty nor only whitespace.</summary>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -34,13 +34,13 @@ public class GuestValidationTests
     public void Validate_FirstNameIsMissing_ReturnsFirstNameRequired(string? firstName)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(firstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry);
+        var errors = ErrorsOf(firstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry);
 
         // Assert
-        Assert.Equal(GuestRules.FirstNameRequired, Assert.Single(errors));
+        Assert.Equal(GuestErrors.FirstNameRequired, Assert.Single(errors));
     }
 
-    /// <summary>BR-53, BR-92: efternavn må hverken være null, tomt eller kun whitespace.</summary>
+    /// <summary>BR-53, BR-92: last name must be neither null, empty nor only whitespace.</summary>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -48,13 +48,13 @@ public class GuestValidationTests
     public void Validate_LastNameIsMissing_ReturnsLastNameRequired(string? lastName)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(ValidFirstName, lastName, ValidEmail, ValidPhoneNumber, ValidCountry);
+        var errors = ErrorsOf(ValidFirstName, lastName, ValidEmail, ValidPhoneNumber, ValidCountry);
 
         // Assert
-        Assert.Equal(GuestRules.LastNameRequired, Assert.Single(errors));
+        Assert.Equal(GuestErrors.LastNameRequired, Assert.Single(errors));
     }
 
-    /// <summary>BR-93: e-mail må hverken være null, tom eller kun whitespace.</summary>
+    /// <summary>BR-93: email must be neither null, empty nor only whitespace.</summary>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -62,13 +62,13 @@ public class GuestValidationTests
     public void Validate_EmailIsMissing_ReturnsEmailRequired(string? email)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
 
         // Assert
-        Assert.Equal(GuestRules.EmailRequired, Assert.Single(errors));
+        Assert.Equal(GuestErrors.EmailRequired, Assert.Single(errors));
     }
 
-    /// <summary>BR-54, BR-94: telefonnummer må ikke være tomt.</summary>
+    /// <summary>BR-54, BR-94: phone number must not be empty.</summary>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -76,15 +76,15 @@ public class GuestValidationTests
     public void Validate_PhoneNumberIsMissing_ReturnsPhoneNumberRequired(string? phoneNumber)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
 
         // Assert
-        Assert.Equal(GuestRules.PhoneNumberRequired, Assert.Single(errors));
+        Assert.Equal(GuestErrors.PhoneNumberRequired, Assert.Single(errors));
     }
 
     /// <summary>
-    /// BR-94: telefonnummeret har bevidst intet formatkrav — kun at der står noget.
-    /// Reglen må ikke strammes uden en beslutning; udenlandske gæster har alle formater.
+    /// BR-94: the phone number deliberately has no format requirement — only that something is there.
+    /// The rule must not be tightened without a decision; foreign guests have all formats.
     /// </summary>
     [Theory]
     [InlineData("12345678")]
@@ -93,13 +93,13 @@ public class GuestValidationTests
     public void Validate_PhoneNumberHasAnyNonBlankValue_ReturnsNoErrors(string phoneNumber)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
 
         // Assert
         Assert.Empty(errors);
     }
 
-    /// <summary>BR-56, BR-95: land må ikke være tomt.</summary>
+    /// <summary>BR-56, BR-95: country must not be empty.</summary>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -107,53 +107,53 @@ public class GuestValidationTests
     public void Validate_CountryIsMissing_ReturnsCountryRequired(string? country)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(ValidFirstName, ValidLastName, ValidEmail, ValidPhoneNumber, country);
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, ValidEmail, ValidPhoneNumber, country);
 
         // Assert
-        Assert.Equal(GuestRules.CountryRequired, Assert.Single(errors));
+        Assert.Equal(GuestErrors.CountryRequired, Assert.Single(errors));
     }
 
     // --------------------------------------------------------
-    // E-MAIL (BR-55, BR-93)
+    // EMAIL (BR-55, BR-93)
     // --------------------------------------------------------
 
     /// <summary>
-    /// BR-55, BR-93: e-mailen skal indeholde både '@' og '.'. Positionen kontrolleres
-    /// bevidst ikke — en strammere regel ville bryde paritet med det gamle system.
+    /// BR-55, BR-93: the email must contain both '@' and '.'. The position is deliberately
+    /// not checked — a stricter rule would break parity with the old system.
     /// </summary>
     [Theory]
     [InlineData("valdemar@nfhotel.dk", true)]
     [InlineData("a@b.c", true)]
-    [InlineData(".@", true)] // absurd, men opfylder reglen præcis som den er formuleret
+    [InlineData(".@", true)] // absurd, but meets the rule exactly as it is formulated
     [InlineData("valdemar.nfhotel.dk", false)] // intet '@'
     [InlineData("valdemar@nfhoteldk", false)] // intet '.'
     [InlineData("valdemar", false)]
-    public void IsValidEmail_RequiresBothAtSignAndDot(string email, bool expected)
+    public void Email_RequiresBothAtSignAndDot(string email, bool expected)
     {
         // Arrange & Act
-        var isValid = GuestRules.IsValidEmail(email);
+        var isValid = ErrorsOf(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry).Count == 0;
 
         // Assert
         Assert.Equal(expected, isValid);
     }
 
-    /// <summary>BR-55, BR-93: en udfyldt, men forkert formateret e-mail giver <c>email_invalid</c>.</summary>
+    /// <summary>BR-55, BR-93: a filled-in but wrongly formatted email gives <c>email_invalid</c>.</summary>
     [Theory]
     [InlineData("valdemar.nfhotel.dk")]
     [InlineData("valdemar@nfhoteldk")]
     public void Validate_EmailIsMalformed_ReturnsEmailInvalid(string email)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
 
         // Assert
-        Assert.Equal(GuestRules.EmailInvalid, Assert.Single(errors));
+        Assert.Equal(GuestErrors.EmailInvalid, Assert.Single(errors));
     }
 
     /// <summary>
-    /// BR-96, A-10: e-mailfeltet er det eneste med to uafhængige krav, så en adresse der
-    /// både er for lang og forkert formateret giver begge koder. De øvrige felter kan kun
-    /// give én kode ad gangen.
+    /// BR-96, A-10: the email field is the only one with two independent requirements, so an address that
+    /// is both too long and wrongly formatted gives both codes. The other fields can only
+    /// give one code at a time.
     /// </summary>
     [Fact]
     public void Validate_EmailIsBothMalformedAndTooLong_ReturnsBothCodes()
@@ -162,22 +162,22 @@ public class GuestValidationTests
         var email = new string('a', Guest.MaxEmailLength + 1);
 
         // Act
-        var errors = GuestRules.Validate(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry);
 
         // Assert
         Assert.Collection(
             errors,
-            error => Assert.Equal(GuestRules.EmailInvalid, error),
-            error => Assert.Equal(GuestRules.EmailTooLong, error));
+            error => Assert.Equal(GuestErrors.EmailInvalid, error),
+            error => Assert.Equal(GuestErrors.EmailTooLong, error));
     }
 
     // --------------------------------------------------------
-    // LÆNGDEGRÆNSER (A-10)
+    // LENGTH LIMITS (A-10)
     // --------------------------------------------------------
 
     /// <summary>
-    /// A-10: grænsen selv er tilladt. Testen bevogter den klassiske off-by-one, hvor
-    /// EF-konfigurationen og domænet er uenige om ét tegn.
+    /// A-10: the limit itself is allowed. The test guards against the classic off-by-one, where
+    /// the EF configuration and the domain disagree by one character.
     /// </summary>
     [Fact]
     public void Validate_EveryFieldIsExactlyAtItsMaxLength_ReturnsNoErrors()
@@ -191,15 +191,15 @@ public class GuestValidationTests
         var passportNumber = new string('9', Guest.MaxPassportNumberLength);
 
         // Act
-        var errors = GuestRules.Validate(firstName, lastName, email, phoneNumber, country, passportNumber);
+        var errors = ErrorsOf(firstName, lastName, email, phoneNumber, country, passportNumber);
 
         // Assert
         Assert.Empty(errors);
     }
 
     /// <summary>
-    /// A-10: ét tegn over grænsen afvises af Domain — ikke først af databasen som en
-    /// <c>DbUpdateException</c>. Alle seks felter har hver sin kode.
+    /// A-10: one character over the limit is rejected by Domain — not first by the database as a
+    /// <c>DbUpdateException</c>. All six fields each have their own code.
     /// </summary>
     [Fact]
     public void Validate_EveryFieldExceedsItsMaxLength_ReturnsOneLengthErrorPerField()
@@ -213,22 +213,22 @@ public class GuestValidationTests
         var passportNumber = new string('9', Guest.MaxPassportNumberLength + 1);
 
         // Act
-        var errors = GuestRules.Validate(firstName, lastName, email, phoneNumber, country, passportNumber);
+        var errors = ErrorsOf(firstName, lastName, email, phoneNumber, country, passportNumber);
 
         // Assert
         Assert.Collection(
             errors,
-            error => Assert.Equal(GuestRules.FirstNameTooLong, error),
-            error => Assert.Equal(GuestRules.LastNameTooLong, error),
-            error => Assert.Equal(GuestRules.EmailTooLong, error),
-            error => Assert.Equal(GuestRules.PhoneNumberTooLong, error),
-            error => Assert.Equal(GuestRules.CountryTooLong, error),
-            error => Assert.Equal(GuestRules.PassportNumberTooLong, error));
+            error => Assert.Equal(GuestErrors.FirstNameTooLong, error),
+            error => Assert.Equal(GuestErrors.LastNameTooLong, error),
+            error => Assert.Equal(GuestErrors.EmailTooLong, error),
+            error => Assert.Equal(GuestErrors.PhoneNumberTooLong, error),
+            error => Assert.Equal(GuestErrors.CountryTooLong, error),
+            error => Assert.Equal(GuestErrors.PassportNumberTooLong, error));
     }
 
     /// <summary>
-    /// BR-57: pasnummeret er valgfrit og uvalideret ud over længden — hverken null eller
-    /// en tom streng er en fejl.
+    /// BR-57: the passport number is optional and not validated beyond its length — neither null nor
+    /// an empty string is an error.
     /// </summary>
     [Theory]
     [InlineData(null)]
@@ -237,7 +237,7 @@ public class GuestValidationTests
     public void Validate_PassportNumberIsOptional_ReturnsNoErrors(string? passportNumber)
     {
         // Arrange & Act
-        var errors = GuestRules.Validate(
+        var errors = ErrorsOf(
             ValidFirstName,
             ValidLastName,
             ValidEmail,
@@ -250,32 +250,32 @@ public class GuestValidationTests
     }
 
     // --------------------------------------------------------
-    // ALLE FEJL PÅ ÉN GANG (BR-60, BR-96) OG FAIL-FAST (BR-46)
+    // ALL ERRORS AT ONCE (BR-60, BR-96) AND FAIL-FAST (BR-46)
     // --------------------------------------------------------
 
     /// <summary>
-    /// BR-60, BR-96: <c>Validate</c> samler alle fejl i feltrækkefølge, så en formular kan
-    /// vise dem på én gang i stedet for at lade brugeren rette ét felt ad gangen.
+    /// BR-60, BR-96: <c>ErrorsOf</c> collects all errors in field order, so a form can
+    /// show them at once instead of letting the user correct one field at a time.
     /// </summary>
     [Fact]
     public void Validate_EveryRequiredFieldIsBlank_ReturnsAllErrorsInFieldOrder()
     {
         // Arrange & Act
-        var errors = GuestRules.Validate("  ", null, "", "\t", null);
+        var errors = ErrorsOf("  ", null, "", "\t", null);
 
         // Assert
         Assert.Collection(
             errors,
-            error => Assert.Equal(GuestRules.FirstNameRequired, error),
-            error => Assert.Equal(GuestRules.LastNameRequired, error),
-            error => Assert.Equal(GuestRules.EmailRequired, error),
-            error => Assert.Equal(GuestRules.PhoneNumberRequired, error),
-            error => Assert.Equal(GuestRules.CountryRequired, error));
+            error => Assert.Equal(GuestErrors.FirstNameRequired, error),
+            error => Assert.Equal(GuestErrors.LastNameRequired, error),
+            error => Assert.Equal(GuestErrors.EmailRequired, error),
+            error => Assert.Equal(GuestErrors.PhoneNumberRequired, error),
+            error => Assert.Equal(GuestErrors.CountryRequired, error));
     }
 
     /// <summary>
-    /// BR-46, BR-84: <c>Create</c> fejler på den FØRSTE fejl, så en ugyldig gæst aldrig
-    /// kan opstå som objekt — det gamle system ignorerede valideringsresultatet og gemte
+    /// BR-46, BR-84: <c>Create</c> fails with the FIRST error as its code, so an invalid guest can never
+    /// arise as an object — the old system ignored the validation result and saved
     /// alligevel.
     /// </summary>
     [Fact]
@@ -286,10 +286,10 @@ public class GuestValidationTests
             () => Guest.Create("  ", "  ", "ugyldig", "  ", "  ", null));
 
         // Assert
-        Assert.Equal(GuestRules.FirstNameRequired, exception.Code);
+        Assert.Equal(GuestErrors.FirstNameRequired, exception.Code);
     }
 
-    /// <summary>BR-46: gyldige oplysninger skrives igennem uændret.</summary>
+    /// <summary>BR-46: valid details are written through unchanged.</summary>
     [Fact]
     public void Create_ValidInput_StoresEveryField()
     {
@@ -312,8 +312,8 @@ public class GuestValidationTests
     }
 
     /// <summary>
-    /// BR-84: en afvist opdatering må ikke efterlade gæsten halvt overskrevet —
-    /// invarianterne tjekkes FØR felterne skrives.
+    /// BR-84: a rejected update must not leave the guest half overwritten —
+    /// the invariants are checked BEFORE the fields are written.
     /// </summary>
     [Fact]
     public void UpdateDetails_InvalidInput_ThrowsAndLeavesGuestUnchanged()
@@ -326,13 +326,13 @@ public class GuestValidationTests
             () => guest.UpdateDetails("Ny", "Person", "ugyldig-email", "87654321", "Sverige", null));
 
         // Assert
-        Assert.Equal(GuestRules.EmailInvalid, exception.Code);
+        Assert.Equal(GuestErrors.EmailInvalid, exception.Code);
         Assert.Equal(ValidFirstName, guest.FirstName);
         Assert.Equal(ValidEmail, guest.Email);
         Assert.Equal(ValidCountry, guest.Country);
     }
 
-    /// <summary>BR-72: en gyldig opdatering overskriver præcis de seks redigérbare felter.</summary>
+    /// <summary>BR-72: a valid update overwrites exactly the six editable fields.</summary>
     [Fact]
     public void UpdateDetails_ValidInput_OverwritesEditableFields()
     {
@@ -358,8 +358,32 @@ public class GuestValidationTests
     }
 
     /// <summary>
-    /// Bygger en formatgyldig e-mail af en præcis længde, så længdereglen kan testes
-    /// uden samtidig at udløse formatfejlen (BR-55).
+    /// Builds a format-valid email of an exact length, so the length rule can be tested
+    /// without at the same time triggering the format error (BR-55).
     /// </summary>
     private static string EmailOfLength(int length) => $"a@b.{new string('c', length - 4)}";
+
+    /// <summary>
+    /// Builds a guest and returns every error code, or an empty list when the guest is valid.
+    /// The rules are attributes on <see cref="Guest"/> (ADR-0002).
+    /// </summary>
+    private static IReadOnlyList<string> ErrorsOf(
+        string? firstName,
+        string? lastName,
+        string? email,
+        string? phoneNumber,
+        string? country,
+        string? passportNumber = null)
+    {
+        try
+        {
+            _ = Guest.Create(firstName!, lastName!, email!, phoneNumber!, country!, passportNumber);
+
+            return [];
+        }
+        catch (DomainException exception)
+        {
+            return exception.Codes;
+        }
+    }
 }

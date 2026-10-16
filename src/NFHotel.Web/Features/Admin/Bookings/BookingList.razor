@@ -1,20 +1,22 @@
 @page "/admin/bookings"
 @layout NFHotel.Web.Components.Layout.AdminLayout
 @rendermode InteractiveServer
-@using NFHotel.Domain.Bookings
+@using NFHotel.Domain.Entities
+@using NFHotel.Domain.Errors
+@using NFHotel.Domain.ValueObjects
 @using NFHotel.Web.Features.Admin.Bookings
 @inject BookingListViewModel ViewModel
 @inject BookingFormViewModel Form
 
 @*
-    Bookingoversigt med søgning, sortering, statusfiltre og de handlinger der er lovlige
-    på hver enkelt booking.
+    Booking overview with search, sorting, status filters and the actions that are legal
+    on each individual booking.
 
-    Kun markup og binding. Hvilke knapper der står i en række, kommer udelukkende fra
-    BookingListItemDto.Actions (BR-22) — denne fil kender ingen statusovergange, og der
-    er ingen if-sætning her der gætter på en status.
+    Only markup and binding. Which buttons appear in a row comes exclusively from
+    BookingListItemDto.Actions (BR-22) — this file knows no status transitions, and there
+    is no if statement here that guesses at a status.
 
-    Annullering går gennem ConfirmPanel (BR-04): den er ren UI og hører her, ikke i
+    Cancellation goes through ConfirmPanel (BR-04): it is pure UI and belongs here, not in
     Application.
 *@
 
@@ -532,24 +534,24 @@
 </div>
 
 @code {
-    /// <summary>Statusserne i filterets dropdown.</summary>
+    /// <summary>The statuses in the dropdown of the filter.</summary>
     private static readonly BookingStatus[] Statuses = Enum.GetValues<BookingStatus>();
 
-    /// <summary>Teksten på gemknappen, som følger formularens tilstand.</summary>
+    /// <summary>The text on the save button, which follows the state of the form.</summary>
     private string SaveLabel => Form.Mode == BookingFormMode.Create ? "Create booking" : "Save new dates";
 
-    /// <summary>Overskriften i bekræftelsen af en annullering.</summary>
+    /// <summary>The heading in the confirmation of a cancellation.</summary>
     private string CancelTitle =>
         $"Cancel booking {ViewModel.BookingPendingCancellation?.BookingNumber}?";
 
-    /// <summary>Henter den første liste når skærmen åbnes.</summary>
+    /// <summary>Fetches the first list when the screen opens.</summary>
     protected override Task OnInitializedAsync() => ViewModel.InitializeAsync();
 
-    /// <summary>Giver knappen for gæstetypen den rigtige udseendeklasse.</summary>
+    /// <summary>Gives the button for the guest mode the right appearance class.</summary>
     private string GuestModeClass(BookingGuestMode mode) =>
         Form.GuestMode == mode ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm";
 
-    /// <summary>Skriver aria-pressed som tekst; en bool ville blive til et tomt attribut.</summary>
+    /// <summary>Writes aria-pressed as text; a bool would become an empty attribute.</summary>
     private string GuestModePressed(BookingGuestMode mode) =>
         Form.GuestMode == mode ? "true" : "false";
 
@@ -594,7 +596,7 @@
     private void ValidateGuest() => Form.ValidateNewGuest();
 
     /// <summary>
-    /// Gemmer formularen og henter listen igen, hvis det lykkedes.
+    /// Saves the form and fetches the list again if it succeeded.
     /// </summary>
     private async Task SaveAsync()
     {

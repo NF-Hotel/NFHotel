@@ -1,8 +1,8 @@
 @*
-    Én besked med en alvorlighedsgrad. Til lister af fejl fra en ViewModel bruges
-    ErrorAlert; denne er til den enkelte kvittering, advarsel eller oplysning.
+    One message with a severity. For lists of errors from a ViewModel,
+    ErrorAlert is used; this one is for the single receipt, warning or piece of information.
 
-    Komponenten oversætter ikke fejlkoder — teksten skal være færdig dansk (ErrorMessages).
+    The component does not translate error codes — the text must be finished Danish (ErrorMessages).
 *@
 
 @if (!string.IsNullOrWhiteSpace(Message) || ChildContent is not null)
@@ -17,20 +17,20 @@
 }
 
 @code {
-    /// <summary>Beskedens alvorlighedsgrad. Styrer farve og oplæsning.</summary>
+    /// <summary>The severity of the message. Controls colour and read-out.</summary>
     [Parameter]
     public AlertKind Kind { get; set; } = AlertKind.Info;
 
-    /// <summary>Den danske besked. Tom besked uden indhold skjuler komponenten.</summary>
+    /// <summary>The Danish message. An empty message without content hides the component.</summary>
     [Parameter]
     public string? Message { get; set; }
 
-    /// <summary>Valgfrit ekstra indhold, fx et link eller en knap under beskeden.</summary>
+    /// <summary>Optional extra content, for example a link or a button below the message.</summary>
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
 
     /// <summary>
-    /// Fejl annonceres med det samme; resten venter til skærmlæseren er færdig.
+    /// Errors are announced immediately; the rest wait until the screen reader is finished.
     /// </summary>
     private string Role => Kind == AlertKind.Error ? "alert" : "status";
 }

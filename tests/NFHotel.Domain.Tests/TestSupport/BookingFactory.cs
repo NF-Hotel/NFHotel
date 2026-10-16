@@ -1,52 +1,52 @@
-using NFHotel.Domain.Bookings;
-using NFHotel.Domain.Common;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Tests.TestSupport;
 
 /// <summary>
-/// Bygger bookinger i en ønsket tilstand ud fra faste datoer.
+/// Builds bookings in a desired state from fixed dates.
 /// </summary>
 /// <remarks>
-/// Alle datoer er hårdkodede — Domain tager "i dag" som parameter (A-05), så ingen test
-/// behøver <c>DateTime.Now</c>. Tilstande nås kun gennem de rigtige overgange, så
-/// fabrikken aldrig kan producere en booking domænet ikke selv kunne have produceret.
+/// All dates are hard-coded — Domain takes "today" as a parameter (A-05), so no test
+/// needs <c>DateTime.Now</c>. States are reached only through the real transitions, so
+/// the factory can never produce a booking the domain could not itself have produced.
 /// </remarks>
 internal static class BookingFactory
 {
-    /// <summary>Dagens dato i alle bookingtests.</summary>
+    /// <summary>Today's date in all booking tests.</summary>
     internal static readonly DateOnly Today = new(2026, 1, 1);
 
-    /// <summary>Standardankomst. Samme dag som <see cref="Today"/>, så check-in er lovligt (BR-06).</summary>
+    /// <summary>Default arrival. The same day as <see cref="Today"/>, so check-in is legal (BR-06).</summary>
     internal static readonly DateOnly Arrival = new(2026, 1, 1);
 
-    /// <summary>Standardafrejse (eksklusiv). Giver 9 overnatninger.</summary>
+    /// <summary>Default departure (exclusive). Gives 9 nights.</summary>
     internal static readonly DateOnly Departure = new(2026, 1, 10);
 
-    /// <summary>Standardtidspunkt for indtjekning.</summary>
+    /// <summary>Default time of check-in.</summary>
     internal static readonly DateTimeOffset CheckInMoment = new(2026, 1, 1, 15, 0, 0, TimeSpan.Zero);
 
-    /// <summary>Standardtidspunkt for udtjekning på den bookede afrejsedag.</summary>
+    /// <summary>Default time of check-out on the booked departure day.</summary>
     internal static readonly DateTimeOffset CheckOutMoment = new(2026, 1, 10, 10, 0, 0, TimeSpan.Zero);
 
-    /// <summary>Rummet alle standardbookinger ligger på.</summary>
+    /// <summary>The room all default bookings are on.</summary>
     internal const int RoomId = 7;
 
-    /// <summary>Gæsten alle standardbookinger hører til.</summary>
+    /// <summary>The guest all default bookings belong to.</summary>
     internal const int GuestId = 3;
 
     /// <summary>Standardperioden 1.–10. januar.</summary>
     internal static DateRange StandardPeriod => new(Arrival, Departure);
 
     /// <summary>
-    /// Opretter en booking i startstatus <see cref="BookingStatus.Pending"/> (BR-01).
+    /// Creates a booking in the start status <see cref="BookingStatus.Pending"/> (BR-01).
     /// </summary>
-    /// <returns>En ny booking på <see cref="RoomId"/> i <see cref="StandardPeriod"/>.</returns>
+    /// <returns>A new booking on <see cref="RoomId"/> in <see cref="StandardPeriod"/>.</returns>
     internal static Booking Pending() => Booking.Create(StandardPeriod, RoomId, GuestId, Today);
 
     /// <summary>
-    /// Opretter en booking og kører den frem til den ønskede status ad lovlig vej.
+    /// Creates a booking and runs it to the desired status by a legal route.
     /// </summary>
-    /// <param name="status">Den ønskede sluttilstand.</param>
+    /// <param name="status">The desired end state.</param>
     /// <returns>En booking i <paramref name="status"/>.</returns>
     internal static Booking InStatus(BookingStatus status)
     {
@@ -68,8 +68,8 @@ internal static class BookingFactory
             case BookingStatus.CheckedOut:
                 booking.CheckIn(CheckInMoment, Today);
 
-                // Udtjekningsdatoen må ikke ligge efter "i dag", så hotellets dagsdato ved
-                // udtjekningen er afrejsedagen — ikke ankomstdagen.
+                // The check-out date must not lie after "today", so the hotel's date at
+                // the check-out is the departure day — not the arrival day.
                 booking.CheckOut(CheckOutMoment, Departure, Departure);
                 break;
 
@@ -85,21 +85,21 @@ internal static class BookingFactory
     }
 
     /// <summary>
-    /// Opretter en booking hvor gæsten er rejst før den bookede afrejsedag (A-01).
+    /// Creates a booking where the guest left before the booked departure day (A-01).
     /// </summary>
     /// <param name="checkOutDate">
-    /// Den hotel-lokale dato gæsten faktisk rejste. Bruges også som "i dag", fordi en
-    /// udtjekning altid registreres på den dag den sker.
+    /// The hotel-local date the guest actually left. Also used as "today", because a
+    /// check-out is always registered on the day it happens.
     /// </param>
-    /// <returns>En udtjekket booking med <see cref="Booking.CheckOutDate"/> sat.</returns>
+    /// <returns>A checked-out booking with <see cref="Booking.CheckOutDate"/> set.</returns>
     internal static Booking CheckedOutOn(DateOnly checkOutDate)
     {
         var booking = Pending();
         booking.CheckIn(CheckInMoment, Today);
 
-        // Udtjekningstidspunktet skal være strengt efter indtjekningen (BR-107); klokken 10
-        // på afrejsedagen ligger efter indtjekningen kl. 15 på ankomstdagen i alle scenarier,
-        // også ved udtjekning samme dag som ankomsten.
+        // The check-out time must be strictly after the check-in (BR-107); 10 o'clock
+        // on the departure day lies after the check-in at 3 p.m. on the arrival day in all scenarios,
+        // also on check-out the same day as arrival.
         var occurredAt = checkOutDate == Arrival
             ? CheckInMoment.AddHours(3)
             : new DateTimeOffset(checkOutDate.Year, checkOutDate.Month, checkOutDate.Day, 10, 0, 0, TimeSpan.Zero);
@@ -110,19 +110,19 @@ internal static class BookingFactory
     }
 
     /// <summary>
-    /// Sætter primærnøglen på en booking der ikke er persisteret.
+    /// Sets the primary key on a booking that is not persisted.
     /// </summary>
-    /// <param name="booking">Bookingen der skal have et id.</param>
-    /// <param name="bookingId">Det id EF Core ellers ville have tildelt.</param>
-    /// <returns>Samme booking, med <see cref="Booking.BookingId"/> sat.</returns>
+    /// <param name="booking">The booking that should have an id.</param>
+    /// <param name="bookingId">The id EF Core would otherwise have assigned.</param>
+    /// <returns>The same booking, with <see cref="Entity{TKey}.Id"/> set.</returns>
     /// <remarks>
-    /// <see cref="Booking.BookingId"/> har privat setter, fordi kun EF Core må tildele den
-    /// (A-15). BR-109's bookingnummerformat kan kun testes med et realistisk id, så
-    /// nøglen sættes her via refleksion i stedet for at åbne setteren for produktionskode.
+    /// <see cref="Entity{TKey}.Id"/> has a private setter, because only EF Core may assign it
+    /// (A-15). The booking number format of BR-109 can be tested only with a realistic id, so
+    /// the key is set here via reflection instead of opening the setter to production code.
     /// </remarks>
     internal static Booking WithBookingId(Booking booking, int bookingId)
     {
-        var setter = typeof(Booking).GetProperty(nameof(Booking.BookingId))!.GetSetMethod(nonPublic: true)!;
+        var setter = typeof(Booking).GetProperty(nameof(Booking.Id))!.GetSetMethod(nonPublic: true)!;
         setter.Invoke(booking, [bookingId]);
 
         return booking;

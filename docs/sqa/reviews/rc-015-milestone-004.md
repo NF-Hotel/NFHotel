@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version | [469ff7a] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [469ff7a] |
 
 ---
 
@@ -19,7 +19,7 @@
 - Checklist used: [QC-MIL-001]; also [QC-LANG-001] because the type is written in the PO language
 - Scope: full review
 - Language and domain: en / it
-- Language reviewer: none named; the stand-in cannot confirm criterion 9 (see conditions)
+- Language reviewer: none; the user's chat confirmation closes criterion 9
 - Mode: autonomous, not independent (reviewer is `AI as stand-in for S01`)
 
 ## Checklist Results
@@ -45,18 +45,18 @@
 | 6 | Metadata keys, section headings, IDs and statuses are in English | Pass | Template headings kept |
 | 7 | No translated twin (`<name>.<language>.md`) exists beside the document | Pass | No twin file in `docs/` |
 | 8 | A change of language or domain since the previous accepted version has a Version History row and was reviewed again | Pass | First version, no change |
-| 9 | A reviewer competent in the domain, and in the language, has confirmed that the domain terms are used correctly | Fail | Only the AI stand-in has read it; a person (S01) has not confirmed. Condition 1 |
+| 9 | A reviewer competent in the domain, and in the language, has confirmed that the domain terms are used correctly | Pass | The user (Team 2, S01, owner of NF Hotel) confirmed in chat on 2026-10-16 that the terminology of the amended documents is correct (AI as stand-in for S01)
 | 10 | Abbreviations are spelled out on first use, in the stated language | Pass | Only established IT terms (API, TLS, CI) are abbreviated |
 
 ## Overall Verdict
 
-Go-with-conditions — every criterion of QC-MIL-001 passes. Criterion 9 of QC-LANG-001 needs a person who reads English and knows the IT domain, and the stand-in cannot be that person (`framework/process/review-checklist-process.md`, "Autonomous mode"). The row stays `Proposed` until condition 1 is closed.
+Go — every criterion of QC-MIL-001 passes. Criterion 9 of QC-LANG-001 rests on the user's chat confirmation. Condition 1 was closed: the user confirmed the terminology in chat on 2026-10-16 (AI as stand-in for S01).
 
 ## Action Items
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| Condition 1: confirm in chat that the domain terms of MIL-004 (market analysis service, benchmark service, Proxmox VM, LXC, nginx route) are used correctly (QC-LANG-001 criterion 9) | S01 | 2026-10-18 |
+| Condition 1: confirm in chat that the domain terms of MIL-004 (market analysis service, benchmark service, Proxmox VM, LXC, nginx route) are used correctly (QC-LANG-001 criterion 9) | S01 | Closed 2026-10-16 |
 
 ---
 

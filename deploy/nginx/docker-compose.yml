@@ -15,6 +15,7 @@ services:
       - "${NGINX_BIND:-0.0.0.0}:${NGINX_HTTP_PORT:-8080}:80"
     volumes:
       - ./templates:/etc/nginx/templates:ro
+      - ./snippets:/etc/nginx/snippets:ro
     networks:
       - proxy
 

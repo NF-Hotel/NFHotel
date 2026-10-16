@@ -1,16 +1,17 @@
-using NFHotel.Application.Common;
+using NFHotel.Application.Ports;
+using NFHotel.Infrastructure.Config;
 
 namespace NFHotel.Infrastructure.Time;
 
 /// <summary>
-/// Systemets ur. Eneste implementering af <see cref="IClock"/> (A-05).
+/// The clock of the system. The only implementation of <see cref="IClock"/> (A-05).
 /// </summary>
 /// <remarks>
-/// <see cref="UtcNow"/> er maskinens ur i UTC; <see cref="Today"/> er hotellets
-/// kalenderdato. Adskillelsen er hele pointen: tidsstempler skal være entydige på tværs af
-/// sommertid, mens bookingperioder er lokale kalenderdatoer (B-08).
+/// <see cref="UtcNow"/> is the machine's clock in UTC; <see cref="Today"/> is the hotel's
+/// calendar date. The separation is the whole point: timestamps must be unambiguous across
+/// daylight saving time, while booking periods are local calendar dates (B-08).
 /// <para>
-/// Typen er tilstandsløs bortset fra den uforanderlige tidszone og kan registreres som
+/// The type is stateless apart from the immutable time zone and can be registered as
 /// singleton.
 /// </para>
 /// </remarks>
@@ -21,11 +22,11 @@ public sealed class SystemClock : IClock
     /// <summary>
     /// Opretter uret.
     /// </summary>
-    /// <param name="options">Tidsindstillingerne, herunder hotellets tidszone.</param>
-    /// <exception cref="ArgumentNullException">Kastes hvis <paramref name="options"/> er <c>null</c>.</exception>
+    /// <param name="options">The time settings, including the hotel's time zone.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="options"/> is <c>null</c>.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Kastes hvis tidszone-id'et ikke findes på maskinen. Kastes ved opstart, ikke ved
-    /// første booking (fail fast).
+    /// Thrown if the time zone id does not exist on the machine. Thrown at start-up, not at the
+    /// first booking (fail fast).
     /// </exception>
     public SystemClock(HotelTimeOptions options)
     {
@@ -40,7 +41,7 @@ public sealed class SystemClock : IClock
     /// <inheritdoc />
     public DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(UtcNow, _hotelTimeZone).DateTime);
 
-    /// <summary>Slår tidszonen op og oversætter frameworkets fejl til en forståelig opstartsfejl.</summary>
+    /// <summary>Looks up the time zone and translates the framework's error to an understandable start-up error.</summary>
     private static TimeZoneInfo ResolveTimeZone(string? timeZoneId)
     {
         var id = string.IsNullOrWhiteSpace(timeZoneId)

@@ -1,20 +1,20 @@
 # NFHotel 2.0
 
-Personale-backoffice på web, porteret fra WPF. Blazor Server oven på Clean Architecture med
-EF Core og PostgreSQL.
+Staff back office on the web, ported from WPF. Blazor Server on top of Clean Architecture
+with EF Core and PostgreSQL.
 
-Arkitekturen og dens beslutninger står i `Architecture.md`. Denne fil handler kun om at få
-det til at køre lokalt.
+The architecture and its decisions are in `Architecture.md`. This file is only about getting
+it to run locally.
 
 ---
 
-## Forudsætninger
+## Prerequisites
 
 - .NET SDK 9
-- **En PostgreSQL 16-database du kan nå** — hvordan den hostes er DevOps' beslutning, ikke
-  projektets. Applikationen kender kun en connection string.
-- `psql` eller et andet SQL-værktøj, hvis du vil køre scripts i `db/`
-- `dotnet-ef`, hvis du skal køre migrationer:
+- **A PostgreSQL 16 database you can reach** — how it is hosted is DevOps' decision, not the
+  project's. The application only knows a connection string.
+- `psql` or another SQL tool, if you want to run the scripts in `db/`
+- `dotnet-ef`, if you need to run migrations:
 
 ```bash
 dotnet tool install --global dotnet-ef
@@ -22,23 +22,23 @@ dotnet tool install --global dotnet-ef
 
 ---
 
-## Kom i gang
+## Getting started
 
-### 1. Skaf en database
+### 1. Get a database
 
-Projektet stiller ét krav: en **PostgreSQL 16**-instans og en connection string til den.
-Hvordan den kører — container, lokal installation, managed hosting — er DevOps' område og
-skal ikke stå i denne fil.
+The project makes one requirement: a **PostgreSQL 16** instance and a connection string to it.
+How it runs — container, local installation, managed hosting — is DevOps' area and
+must not be in this file.
 
-Databasen skal have en bruger med rettighed til at oprette extensions. Den første migration
-opretter `btree_gist`, som bookingens exclusion constraint bygger på.
+The database needs a user with the right to create extensions. The first migration
+creates `btree_gist`, on which the booking's exclusion constraint is built.
 
-Sæt din connection string i `appsettings.Development.json` (se **Konfiguration** nedenfor).
+Put your connection string in `appsettings.Development.json` (see **Configuration** below).
 
-### 2. Kør migrationerne
+### 2. Run the migrations
 
-Designtidskonteksten læser sin connection string fra `NFHOTEL_CONNECTION` og falder
-ellers tilbage til `Username=postgres;Password=postgres` — sæt derfor variablen:
+The design-time context reads its connection string from `NFHOTEL_CONNECTION` and otherwise
+falls back to `Username=postgres;Password=postgres` — so set the variable:
 
 ```bash
 export NFHOTEL_CONNECTION="Host=localhost;Port=5432;Database=nfhotel;Username=nfhotel;Password=nfhotel_dev"
@@ -48,67 +48,67 @@ dotnet ef database update \
   --startup-project src/NFHotel.Web
 ```
 
-Migrationen opretter selv `btree_gist`-extensionen og bookingens exclusion constraint
-(B-03), så dobbeltbooking er umulig på databaseniveau.
+The migration itself creates the `btree_gist` extension and the booking's exclusion constraint
+(B-03), so double booking is impossible at database level.
 
-### 3. Start appen
+### 3. Start the app
 
 ```bash
 dotnet run --project src/NFHotel.Web
 ```
 
-`http://localhost:5062` eller `https://localhost:7060` (se `Properties/launchSettings.json`).
+`http://localhost:5062` or `https://localhost:7060` (see `Properties/launchSettings.json`).
 
-`http://localhost:5062` — forside. `/book` er kundens bookingflow, `/admin` er personalets
-backoffice.
+`http://localhost:5062` — front page. `/book` is the customer's booking flow, `/admin` is the staff
+back office.
 
-### 4. Testdata
+### 4. Test data
 
-Databasen er tom efter migrationen, så alle lister starter tomme. Seed-scriptet giver
-10 rum, 8 gæster og 12 bookinger med datoer relative til i dag, så check-in kan afprøves:
+The database is empty after the migration, so all lists start empty. The seed script gives
+10 rooms, 8 guests and 12 bookings with dates relative to today, so check-in can be tried out:
 
 ```bash
 psql "$NFHOTEL_CONNECTION" -f db/seed_dev.sql
 ```
 
-`db/constraint_check.sql` verificerer at exclusion constrainten faktisk virker — kør den
-efter seed-scriptet på samme måde. Se `docs/Testplan.md` for hvad der er værd at afprøve.
+`db/constraint_check.sql` verifies that the exclusion constraint actually works — run it
+after the seed script in the same way. See `docs/Testplan.md` for what is worth trying.
 
 ---
 
-## Konfiguration
+## Configuration
 
-**Har du lige klonet repoet?** `appsettings.Development.json` er med vilje ikke i git.
-Kopiér skabelonen og udfyld den:
+**Just cloned the repository?** `appsettings.Development.json` is deliberately not in git.
+Copy the template and fill it in:
 
 ```bash
 cp src/NFHotel.Web/appsettings.Development.json.example \
    src/NFHotel.Web/appsettings.Development.json
 ```
 
-Generér din egen krypteringsnøgle:
+Generate your own encryption key:
 
 ```bash
 openssl rand -base64 32
 ```
 
-`appsettings.Development.json` indeholder tre ting appen nægter at starte uden:
+`appsettings.Development.json` contains three things the app refuses to start without:
 
-| Nøgle | Betydning |
+| Key | Meaning |
 |---|---|
-| `ConnectionStrings:HotelDatabase` | PostgreSQL på `localhost:5432` |
-| `Encryption:PassportKey` | 32 bytes base64. Pasnumre krypteres at-rest med AES-256-GCM (B-09) |
-| `HotelTime:TimeZoneId` | Hotellets tidszone. "I dag" beregnes herfra, aldrig fra `DateTime.Now` (A-05) |
+| `ConnectionStrings:HotelDatabase` | PostgreSQL on `localhost:5432` |
+| `Encryption:PassportKey` | 32 bytes base64. Passport numbers are encrypted at rest with AES-256-GCM (B-09) |
+| `HotelTime:TimeZoneId` | The hotel's time zone. "Today" is computed from it, never from `DateTime.Now` (A-05) |
 
-Krypteringsnøglen og kodeordet i filen er **kun til udvikling**. I produktion kommer begge
-fra en secret store — de må aldrig committes.
+The encryption key and the password in the file are **for development only**. In production both
+come from a secret store — they must never be committed.
 
-Mangler nøglen, eller er den ikke gyldig base64, stopper appen ved opstart i stedet for ved
-den første gæsteopdatering. Det er med vilje.
+If the key is missing, or is not valid base64, the app stops at start-up instead of at
+the first guest update. That is deliberate.
 
 ---
 
-## Byg og test
+## Build and test
 
 ```bash
 dotnet build
@@ -117,16 +117,16 @@ dotnet test
 
 ---
 
-## Hvor tingene bor
+## Where things live
 
 ```
 src/
-  NFHotel.Domain/          entiteter, værdiobjekter, regler. Nul afhængigheder
-  NFHotel.Application/     use cases, DTOer, Result og fejlkoder
-  NFHotel.Infrastructure/  EF Core, Npgsql, kryptering, ur. Eneste sted med SQL
-  NFHotel.Web/             Blazor Server, feature-først, composition root
+  NFHotel.Domain/          entities, value objects, rules. Zero dependencies
+  NFHotel.Application/     use cases, DTOs, Result and error codes
+  NFHotel.Infrastructure/  EF Core, Npgsql, encryption, clock. The only place with SQL
+  NFHotel.Web/             Blazor Server, feature-first, composition root
 ```
 
-I `Web` ligger hver skærm i `Features/<Feature>/` som en `.razor` med markup og en
-ViewModel med logikken. Komponenter kalder kun Application-interfaces — ingen `DbContext`,
-ingen repositories, ingen forretningsregler (B-10).
+In `Web` each screen lives in `Features/<Feature>/` as a `.razor` with markup and a
+ViewModel with the logic. Components only call Application interfaces — no `DbContext`,
+no repositories, no business rules (B-10).

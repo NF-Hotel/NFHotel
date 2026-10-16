@@ -1,5 +1,7 @@
 # Domain Model
 
+> **Legacy note.** This is not the framework Domain Model. The project Domain Model is [docs/domain-model.md](domain-model.md), checked against QC-DM-001 (RC-036). This document is kept as the history of the analysis.
+
 ## Description
 
 This is a domain model for a hotel management system. It includes the main entities involved in the system, such as guests, bookings, rooms, cleaning tasks, maintenance tasks, and staff members. The relationships between these entities are also defined to illustrate how they interact with each other.

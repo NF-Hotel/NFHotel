@@ -1,19 +1,20 @@
-using NFHotel.Domain.Common;
-using NFHotel.Domain.Rooms;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.Errors;
 using NFHotel.Domain.Tests.TestSupport;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Tests.Rooms;
 
 /// <summary>
-/// Rengørings- og serviceforløbet: hele overgangstabellen for <see cref="HousekeepingStatus"/>.
+/// The cleaning and service flow: the whole transition table for <see cref="HousekeepingStatus"/>.
 /// </summary>
 /// <remarks>
-/// Tre theories dækker de tre udfald en overgang kan have: lovlig (tilstanden skifter),
-/// idempotent (samme måltilstand er en no-op, A-08) og ulovlig (der kastes). Hver række er
-/// ét felt i overgangstabellen, så en glemt overgang er synlig som en manglende række.
+/// Three theories cover the three outcomes a transition can have: legal (the state changes),
+/// idempotent (the same target state is a no-op, A-08) and illegal (it throws). Each row is
+/// one field of the transition table, so a forgotten transition is visible as a missing row.
 /// <para>
-/// A-07: rengøring har eksplicitte metoder i stedet for én generisk mål-status, og A-08
-/// gør retry ufarligt for rengøringspersonalet.
+/// A-07: cleaning has explicit methods instead of one generic target status, and A-08
+/// makes retry harmless for the cleaning staff.
 /// </para>
 /// </remarks>
 public class RoomHousekeepingTests
@@ -23,9 +24,9 @@ public class RoomHousekeepingTests
     // --------------------------------------------------------
 
     /// <summary>
-    /// De 15 lovlige overgange der faktisk ændrer tilstand.
-    /// Bemærk at slutrengøring rangerer over daglig rengøring: en <c>DepartureCleaningDue</c>
-    /// kan ikke nedgraderes til <c>DailyCleaningDue</c>, men det omvendte er tilladt.
+    /// The 15 legal transitions that actually change state.
+    /// Note that departure cleaning ranks above daily cleaning: a <c>DepartureCleaningDue</c>
+    /// cannot be downgraded to <c>DailyCleaningDue</c>, but the reverse is allowed.
     /// </summary>
     [Theory]
     [InlineData(HousekeepingTransition.MarkDailyCleaningDue, HousekeepingStatus.Clean, HousekeepingStatus.DailyCleaningDue)]
@@ -63,9 +64,9 @@ public class RoomHousekeepingTests
     // --------------------------------------------------------
 
     /// <summary>
-    /// A-08: at sætte den tilstand rummet allerede har er en no-op — ikke en exception.
-    /// Mobilappen har ingen offline-understøttelse og retry'er over ustabilt netværk;
-    /// en retry må ikke give en fejl til rengøringspersonalet.
+    /// A-08: setting the state the room already has is a no-op — not an exception.
+    /// The mobile app has no offline support and retries over an unstable network;
+    /// a retry must not give an error to the cleaning staff.
     /// </summary>
     [Theory]
     [InlineData(HousekeepingTransition.MarkDailyCleaningDue, HousekeepingStatus.DailyCleaningDue)]
@@ -96,33 +97,33 @@ public class RoomHousekeepingTests
     // --------------------------------------------------------
 
     /// <summary>
-    /// A-08: ulovlige overgange kaster fortsat. Idempotens gælder kun samme måltilstand —
-    /// den må ikke bruges som undskyldning for at acceptere hvad som helst.
+    /// A-08: illegal transitions still throw. Idempotence applies only to the same target state —
+    /// it must not be used as an excuse to accept anything.
     /// </summary>
     [Theory]
-    // Slutrengøring må ikke nedgraderes til daglig rengøring, og igangværende arbejde må ikke overskrives.
+    // Departure cleaning must not be downgraded to daily cleaning, and work in progress must not be overwritten.
     [InlineData(HousekeepingTransition.MarkDailyCleaningDue, HousekeepingStatus.DepartureCleaningDue)]
     [InlineData(HousekeepingTransition.MarkDailyCleaningDue, HousekeepingStatus.CleaningInProgress)]
     [InlineData(HousekeepingTransition.MarkDailyCleaningDue, HousekeepingStatus.ServiceInProgress)]
     [InlineData(HousekeepingTransition.MarkDepartureCleaningDue, HousekeepingStatus.CleaningInProgress)]
     [InlineData(HousekeepingTransition.MarkDepartureCleaningDue, HousekeepingStatus.ServiceInProgress)]
-    // Man kan kun gå i gang med en rengøring der er bestilt.
+    // One can only start a cleaning that has been ordered.
     [InlineData(HousekeepingTransition.StartCleaning, HousekeepingStatus.Clean)]
     [InlineData(HousekeepingTransition.StartCleaning, HousekeepingStatus.ServiceRequired)]
     [InlineData(HousekeepingTransition.StartCleaning, HousekeepingStatus.ServiceInProgress)]
-    // Man kan kun afslutte en rengøring der er i gang.
+    // One can only finish a cleaning that is in progress.
     [InlineData(HousekeepingTransition.CompleteCleaning, HousekeepingStatus.DailyCleaningDue)]
     [InlineData(HousekeepingTransition.CompleteCleaning, HousekeepingStatus.DepartureCleaningDue)]
     [InlineData(HousekeepingTransition.CompleteCleaning, HousekeepingStatus.ServiceRequired)]
     [InlineData(HousekeepingTransition.CompleteCleaning, HousekeepingStatus.ServiceInProgress)]
-    // Et nyt servicebehov kan ikke rapporteres mens teknikeren står i rummet.
+    // A new service need cannot be reported while the technician is in the room.
     [InlineData(HousekeepingTransition.ReportServiceNeeded, HousekeepingStatus.ServiceInProgress)]
-    // Man kan kun gå i gang med en service der er bestilt.
+    // One can only start a service that has been ordered.
     [InlineData(HousekeepingTransition.StartService, HousekeepingStatus.Clean)]
     [InlineData(HousekeepingTransition.StartService, HousekeepingStatus.DailyCleaningDue)]
     [InlineData(HousekeepingTransition.StartService, HousekeepingStatus.DepartureCleaningDue)]
     [InlineData(HousekeepingTransition.StartService, HousekeepingStatus.CleaningInProgress)]
-    // Man kan kun afslutte en service der er i gang.
+    // One can only finish a service that is in progress.
     [InlineData(HousekeepingTransition.CompleteServiceWithoutCleaning, HousekeepingStatus.DailyCleaningDue)]
     [InlineData(HousekeepingTransition.CompleteServiceWithoutCleaning, HousekeepingStatus.DepartureCleaningDue)]
     [InlineData(HousekeepingTransition.CompleteServiceWithoutCleaning, HousekeepingStatus.CleaningInProgress)]
@@ -147,9 +148,9 @@ public class RoomHousekeepingTests
     }
 
     /// <summary>
-    /// A-09: fejlkoden har formen <c>&lt;entitet&gt;.&lt;overgang&gt;.invalid_state</c> med
-    /// metodenavnet i snake_case, så Application kan mappe kode til en dansk tekst uden at
-    /// læse en engelsk besked.
+    /// A-09: the error code has the form <c>&lt;entity&gt;.&lt;transition&gt;.invalid_state</c> with
+    /// the method name in snake_case, so Application can map code to a Danish text without
+    /// reading an English message.
     /// </summary>
     [Fact]
     public void HousekeepingTransition_FromIllegalState_ThrowsWithTraceableErrorCode()
@@ -167,12 +168,12 @@ public class RoomHousekeepingTests
     }
 
     // --------------------------------------------------------
-    // DE TO NORMALFORLØB
+    // THE TWO NORMAL FLOWS
     // --------------------------------------------------------
 
     /// <summary>
-    /// Det normale rengøringsforløb efter en afrejse: slutrengøring bestilles, personalet
-    /// kvitterer, og rummet er rent igen.
+    /// The normal cleaning flow after a departure: departure cleaning is ordered, the staff
+    /// acknowledge, and the room is clean again.
     /// </summary>
     [Fact]
     public void DepartureCleaningFlow_FromCleanAndBack_EndsClean()
@@ -190,8 +191,8 @@ public class RoomHousekeepingTests
     }
 
     /// <summary>
-    /// Serviceforløbet: efter et snavsende stykke arbejde ender rummet i slutrengøring,
-    /// ikke som rent — og kan derfra køre det normale rengøringsforløb.
+    /// The service flow: after a messy piece of work the room ends in departure cleaning,
+    /// not as clean — and from there can run the normal cleaning flow.
     /// </summary>
     [Fact]
     public void ServiceFlow_WhenWorkLeftTheRoomDirty_EndsInDepartureCleaningDue()
@@ -212,8 +213,8 @@ public class RoomHousekeepingTests
     }
 
     /// <summary>
-    /// B-04: et servicebehov spærrer ikke rummet for booking af sig selv — det kræver
-    /// <c>SendToMaintenance</c>. De to tilstande er uafhængige.
+    /// B-04: a service need does not block the room for booking by itself — that requires
+    /// <c>SendToMaintenance</c>. The two states are independent.
     /// </summary>
     [Fact]
     public void ReportServiceNeeded_DoesNotBlockBookingOnItsOwn()

@@ -1,51 +1,51 @@
-using NFHotel.Application.Bookings;
-using NFHotel.Application.Guests;
-using NFHotel.Application.Rooms;
-using NFHotel.Domain.Bookings;
-using NFHotel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+
+using NFHotel.Application.Dto.Bookings;
+using NFHotel.Application.Dto.Guests;
+using NFHotel.Application.Dto.Rooms;
+using NFHotel.Application.Ports;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.Repositories;
+using NFHotel.Domain.ValueObjects;
+using NFHotel.Infrastructure.Persistence;
 
 namespace NFHotel.Infrastructure.Repositories;
 
 /// <summary>
-/// EF Core-implementering af <see cref="IBookingRepository"/>.
+/// EF Core implementation of <see cref="IBookingRepository"/>.
 /// </summary>
 /// <remarks>
-/// Repositoryet <b>beslutter ikke</b>: hvilke statusser der spærrer kommer som parameter fra
-/// servicen, som har hentet dem fra <see cref="BookingRules.BlocksRoom"/>. Der findes ikke
-/// et hardkodet <c>WHERE status &lt;&gt; 4</c> i denne fil.
+/// The repository does <b>not decide</b>: which statuses block comes as a parameter from
+/// the service, which has taken them from <see cref="NFHotel.Domain.ValueObjects.BookingStatusExtensions.BlocksRoom"/>. There is no
+/// hard-coded <c>WHERE status &lt;&gt; 4</c> in this file.
 /// <para>
-/// Datovinduet filtreres på den genererede kolonne <c>effective_end_date</c> (A-01), læst
-/// via <c>EF.Property</c> fordi <c>Booking.EffectiveEndDate</c> er en beregnet C#-egenskab
-/// uden kolonne. Den <i>endelige</i> overlapsafgørelse træffes altid af domænet (A-04) —
-/// SQL grovfiltrerer kun.
+/// The date window is filtered on the generated column <c>effective_end_date</c> (A-01), read
+/// via <c>EF.Property</c> because <c>Booking.EffectiveEndDate</c> is a computed C# property
+/// without a column. The <i>final</i> overlap decision is always made by the domain (A-04) —
+/// SQL only filters coarsely.
 /// </para>
 /// </remarks>
-public sealed class BookingRepository : IBookingRepository
+public sealed class BookingRepository : Repository<Booking, int>, IBookingRepository, IBookingQueries
 {
-    private readonly HotelDbContext _context;
-
     /// <summary>
     /// Opretter repositoryet.
     /// </summary>
     /// <param name="context">Konteksten.</param>
-    /// <exception cref="ArgumentNullException">Kastes hvis <paramref name="context"/> er <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="context"/> is <c>null</c>.</exception>
     public BookingRepository(HotelDbContext context)
+        : base(context)
     {
-        ArgumentNullException.ThrowIfNull(context);
-
-        _context = context;
     }
 
     // --------------------------------------------------------
-    // LÆSNING — projektioner (A-11)
+    // READING — projections (A-11)
     // --------------------------------------------------------
 
     /// <inheritdoc />
     public async Task<BookingReadModel?> GetReadModelAsync(
         int bookingId,
         CancellationToken cancellationToken = default) =>
-        await ProjectReadModels(_context.Bookings.AsNoTracking())
+        await ProjectReadModels(Context.Bookings.AsNoTracking())
             .FirstOrDefaultAsync(readModel => readModel.BookingId == bookingId, cancellationToken)
             .ConfigureAwait(false);
 
@@ -59,13 +59,13 @@ public sealed class BookingRepository : IBookingRepository
     {
         ArgumentNullException.ThrowIfNull(includedStatuses);
 
-        var query = FilterByWindow(_context.Bookings.AsNoTracking(), periodStart, periodEnd);
+        var query = FilterByWindow(Context.Bookings.AsNoTracking(), periodStart, periodEnd);
 
         query = FilterByStatuses(query, includedStatuses);
         query = FilterBySearchText(query, searchText);
 
-        // BR-111: filtreringen sker i databasen. Sorteringen er servicens ansvar (BR-32);
-        // her sikres kun en deterministisk rækkefølge.
+        // BR-111: the filtering happens in the database. The sorting is the service's responsibility (BR-32);
+        // here only a deterministic order is ensured.
         return await ProjectReadModels(query)
             .OrderBy(readModel => readModel.StartDate)
             .ThenBy(readModel => readModel.BookingId)
@@ -82,13 +82,13 @@ public sealed class BookingRepository : IBookingRepository
     {
         ArgumentNullException.ThrowIfNull(blockingStatuses);
 
-        var query = FilterByWindow(_context.Bookings.AsNoTracking(), periodStart, periodEnd);
+        var query = FilterByWindow(Context.Bookings.AsNoTracking(), periodStart, periodEnd);
 
         query = FilterByStatuses(query, blockingStatuses);
 
         return await query
             .Select(booking => new RoomOccupancyDto(
-                booking.BookingId,
+                booking.Id,
                 booking.RoomId,
                 booking.StartDate,
                 EF.Property<DateOnly>(booking, BookingOverlapConstraint.EffectiveEndDateProperty),
@@ -102,12 +102,6 @@ public sealed class BookingRepository : IBookingRepository
     // --------------------------------------------------------
 
     /// <inheritdoc />
-    public async Task<Booking?> GetByIdAsync(int bookingId, CancellationToken cancellationToken = default) =>
-        await _context.Bookings
-            .FirstOrDefaultAsync(booking => booking.BookingId == bookingId, cancellationToken)
-            .ConfigureAwait(false);
-
-    /// <inheritdoc />
     public async Task<IReadOnlyList<Booking>> GetOverlapCandidatesAsync(
         int roomId,
         DateOnly periodStart,
@@ -119,7 +113,7 @@ public sealed class BookingRepository : IBookingRepository
         ArgumentNullException.ThrowIfNull(blockingStatuses);
 
         var query = FilterByWindow(
-            _context.Bookings.AsNoTracking().Where(booking => booking.RoomId == roomId),
+            Context.Bookings.AsNoTracking().Where(booking => booking.RoomId == roomId),
             periodStart,
             periodEnd);
 
@@ -127,39 +121,23 @@ public sealed class BookingRepository : IBookingRepository
 
         if (excludeBookingId is int excludedId)
         {
-            query = query.Where(booking => booking.BookingId != excludedId);
+            query = query.Where(booking => booking.Id != excludedId);
         }
 
         return await query.ToArrayAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    /// <inheritdoc />
-    public void Add(Booking booking)
-    {
-        ArgumentNullException.ThrowIfNull(booking);
-
-        _context.Bookings.Add(booking);
-    }
-
-    /// <inheritdoc />
-    public void Update(Booking booking)
-    {
-        ArgumentNullException.ThrowIfNull(booking);
-
-        _context.Bookings.Update(booking);
-    }
-
     /// <summary>
-    /// Grovfiltrerer på det halvåbne datovindue mod bookingens <i>effektive</i> periode (A-01).
+    /// Filters coarsely on the half-open date window against the <i>effective</i> period of the booking (A-01).
     /// </summary>
-    /// <param name="query">Forespørgslen der indsnævres.</param>
-    /// <param name="periodStart">Vinduets første dato, inklusiv.</param>
-    /// <param name="periodEnd">Vinduets sidste dato, eksklusiv.</param>
-    /// <returns>Forespørgslen med vinduesfilteret pålagt.</returns>
+    /// <param name="query">The query being narrowed.</param>
+    /// <param name="periodStart">The first date of the window, inclusive.</param>
+    /// <param name="periodEnd">The last date of the window, exclusive.</param>
+    /// <returns>The query with the window filter applied.</returns>
     /// <remarks>
-    /// Prædikatet er halvåbent og spejler <c>DateRange.Overlaps</c> (BR-39). Det er stadig
-    /// et <i>grovfilter</i>: den bindende afgørelse træffes af
-    /// <see cref="BookingRules.Conflicts"/> i servicen, så SQL og C# ikke kan blive uenige
+    /// The predicate is half-open and mirrors <c>DateRange.Overlaps</c> (BR-39). It is still
+    /// a <i>coarse filter</i>: the binding decision is made by
+    /// <see cref="NFHotel.Domain.Entities.Booking.ConflictsWith"/> in the service, so SQL and C# cannot disagree
     /// om <c>&lt;</c> mod <c>&lt;=</c> (A-04).
     /// </remarks>
     private static IQueryable<Booking> FilterByWindow(
@@ -171,11 +149,11 @@ public sealed class BookingRepository : IBookingRepository
             && EF.Property<DateOnly>(booking, BookingOverlapConstraint.EffectiveEndDateProperty) > periodStart);
 
     /// <summary>
-    /// Filtrerer på det statussæt kalderen har valgt. Et tomt sæt betyder ingen rækker.
+    /// Filters on the status set the caller has chosen. An empty set means no rows.
     /// </summary>
-    /// <param name="query">Forespørgslen der indsnævres.</param>
-    /// <param name="statuses">De statusser der skal med.</param>
-    /// <returns>Forespørgslen med statusfilteret pålagt.</returns>
+    /// <param name="query">The query being narrowed.</param>
+    /// <param name="statuses">The statuses to include.</param>
+    /// <returns>The query with the status filter applied.</returns>
     private static IQueryable<Booking> FilterByStatuses(
         IQueryable<Booking> query,
         IReadOnlyCollection<BookingStatus> statuses)
@@ -186,11 +164,11 @@ public sealed class BookingRepository : IBookingRepository
     }
 
     /// <summary>
-    /// Filtrerer på fritekst i gæstens navn, land og e-mail samt i værelsesnummeret (BR-25).
+    /// Filters on free text in the guest's name, country and email and in the room number (BR-25).
     /// </summary>
-    /// <param name="query">Forespørgslen der indsnævres.</param>
-    /// <param name="searchText">Fritekst, eller <c>null</c>/whitespace for intet filter.</param>
-    /// <returns>Forespørgslen med søgefilteret pålagt.</returns>
+    /// <param name="query">The query being narrowed.</param>
+    /// <param name="searchText">Free text, or <c>null</c>/whitespace for no filter.</param>
+    /// <returns>The query with the search filter applied.</returns>
     private static IQueryable<Booking> FilterBySearchText(IQueryable<Booking> query, string? searchText)
     {
         if (string.IsNullOrWhiteSpace(searchText))
@@ -209,19 +187,19 @@ public sealed class BookingRepository : IBookingRepository
     }
 
     /// <summary>
-    /// Projicerer bookinger med rum og gæst direkte i SQL (A-11).
+    /// Projects bookings with room and guest directly in SQL (A-11).
     /// </summary>
-    /// <param name="query">Forespørgslen der projiceres.</param>
-    /// <returns>Læsemodellerne.</returns>
+    /// <param name="query">The query being projected.</param>
+    /// <returns>The read models.</returns>
     /// <remarks>
-    /// Ét sted for projektionen, brugt af både detalje- og oversigtsopslaget. Uden
-    /// projektionen ville en manglende <c>Include</c> give tomme felter i stedet for en fejl.
-    /// Pasnummeret udelades bevidst — <see cref="GuestListItemDto"/> bærer kun om der er ét
+    /// One place for the projection, used by both the detail and the overview lookup. Without
+    /// the projection a missing <c>Include</c> would give empty fields instead of an error.
+    /// The passport number is deliberately left out — <see cref="GuestListItemDto"/> carries only whether there is one
     /// (B-09).
     /// </remarks>
     private static IQueryable<BookingReadModel> ProjectReadModels(IQueryable<Booking> query) =>
         query.Select(booking => new BookingReadModel(
-            booking.BookingId,
+            booking.Id,
             booking.StartDate,
             booking.EndDate,
             EF.Property<DateOnly>(booking, BookingOverlapConstraint.EffectiveEndDateProperty),
@@ -230,7 +208,7 @@ public sealed class BookingRepository : IBookingRepository
             booking.CheckOutTime,
             booking.CheckOutDate,
             new RoomListItemDto(
-                booking.Room!.RoomId,
+                booking.Room!.Id,
                 booking.Room.RoomNumber,
                 booking.Room.Floor,
                 booking.Room.Size,
@@ -238,7 +216,7 @@ public sealed class BookingRepository : IBookingRepository
                 booking.Room.Status,
                 booking.Room.HousekeepingStatus),
             new GuestListItemDto(
-                booking.Guest!.GuestId,
+                booking.Guest!.Id,
                 booking.Guest.FirstName,
                 booking.Guest.LastName,
                 booking.Guest.FirstName + " " + booking.Guest.LastName,

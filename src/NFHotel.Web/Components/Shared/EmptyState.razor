@@ -1,8 +1,8 @@
 @*
-    Fælles "ingen data"-tilstand, så hver liste ikke opfinder sin egen tomme skærm.
+    Common "no data" state, so each list does not invent its own empty screen.
 
-    UI-Spec afsnit 4: en tom tilstand skal forklare hvad brugeren kan gøre — ikke bare
-    konstatere at der ingen data er. Derfor har den plads til en handling i ChildContent.
+    UI-Spec section 4: an empty state must explain what the user can do — not just
+    state that there is no data. Therefore it has room for an action in ChildContent.
 *@
 
 <div class="empty">
@@ -21,28 +21,28 @@
 </div>
 
 @code {
-    /// <summary>Hovedbeskeden, fx "Ingen rum matcher filteret".</summary>
+    /// <summary>The main message, for example "No rooms match the filter".</summary>
     [Parameter]
     [EditorRequired]
     public string Title { get; set; } = DisplayText.NoData;
 
-    /// <summary>Uddybningen: hvad brugeren kan gøre for at få noget at se.</summary>
+    /// <summary>The elaboration: what the user can do to get something to look at.</summary>
     [Parameter]
     public string? Description { get; set; }
 
     /// <summary>
-    /// Ældre navn for <see cref="Description"/>.
+    /// Older name for <see cref="Description"/>.
     /// </summary>
     /// <remarks>
-    /// TODO: fjernes når de sidste skærme er skrevet om til <see cref="Description"/>.
+    /// TODO: remove when the last screens have been rewritten to <see cref="Description"/>.
     /// </remarks>
     [Parameter]
     public string? Hint { get; set; }
 
-    /// <summary>Valgfri handling, fx en knap der rydder filteret eller opretter en post.</summary>
+    /// <summary>Optional action, for example a button that clears the filter or creates a record.</summary>
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
 
-    /// <summary>Den uddybning der faktisk vises.</summary>
+    /// <summary>The elaboration that is actually shown.</summary>
     private string? Text => string.IsNullOrWhiteSpace(Description) ? Hint : Description;
 }

@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version: five stories from the owner and DevOps (translated from Danish) | [fc8ec78] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-012 Go | [469ff7a] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-012 Go | [469ff7a] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.06 to US-001.08, the hotel staff stories (MIL-007) | [a29c54a] |
 
 ---
 
@@ -112,14 +112,58 @@ analysis without anyone starting it by hand.
 | --- | --- | --- | --- | --- |
 | UCD-001 use case "Run Market Analysis Service" | fits one iteration | none | Must | Needed before the owner can view the analysis (US-001.01); reuses the compose pattern of MIL-002 |
 
+### US-001.06 — Manage bookings
+
+**As** hotel staff (S05), **I want** to create, confirm, check in, check out, cancel and move a booking, **so that** every guest has a room for the nights they booked and no room is booked twice.
+
+**Acceptance Criteria**
+
+- Given a room and a period, when staff create a booking, then the booking is stored as pending, unless the room is already booked for any night of the period.
+- Given a booking in a status that does not allow an action, when staff look at the booking, then the action is not offered.
+- Given a booking is cancelled, when staff list the bookings, then it is still listed with the status cancelled.
+
+| Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
+| --- | --- | --- | --- | --- |
+| UCD-001 use case "Manage Bookings" | larger than one iteration; the code already exists | Small | Must | The core of the back office; its rules are the 126-rule ledger in `docs/refactor/BusinessRules.md` |
+
+### US-001.07 — Manage rooms
+
+**As** hotel staff (S05), **I want** to create and change rooms, take them out of service and record their cleaning state, **so that** only rooms that can be let are offered to guests.
+
+**Acceptance Criteria**
+
+- Given a new room, when staff save it, then its number, floor, size and capacity are stored, and a number already in use is refused.
+- Given a room with bookings, when staff delete it, then the delete is refused.
+- Given a room that is out of service, when staff search for a free room, then it is not offered.
+
+| Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
+| --- | --- | --- | --- | --- |
+| UCD-001 use case "Manage Rooms" | fits one iteration | none | Must | Bookings need rooms |
+
+### US-001.08 — Manage guests
+
+**As** hotel staff (S05), **I want** to find, register, change and delete guests, **so that** a booking has a guest and the guest's details are correct.
+
+**Acceptance Criteria**
+
+- Given a name, a country or an email, when staff search, then all guests that match every search word are listed.
+- Given a new guest, when staff save it without a required detail, then every missing or invalid detail is reported at once.
+- Given a guest with bookings, when staff delete the guest, then the delete is refused.
+
+| Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
+| --- | --- | --- | --- | --- |
+| UCD-001 use case "Manage Guests" | fits one iteration | none | Must | Bookings need guests; the passport number is personal data (D-04) |
+
 ## INVEST Check
 
 - Independent: US-001.01 needs US-001.05; US-001.02 needs US-001.04; US-001.04 and US-001.05 need US-001.03. The order is stated in the Reason column.
 - Negotiable: no implementation is fixed beyond what the user named (Proxmox VM, Docker, nginx, the two repositories).
 - Valuable: each story names the benefit to the owner or to DevOps.
-- Estimable: US-001.01, .03 and .05 can be estimated now; .02 and .04 need the hardware question answered.
-- Small: US-001.04 is larger than one iteration and is flagged above.
+- Estimable: US-001.01, .03, .05, .07 and .08 can be estimated now; .02 and .04 need the hardware question answered; .06 is already built.
+- Small: US-001.04 and US-001.06 are larger than one iteration and are flagged above.
 - Testable: every story has Given/When/Then criteria.
+
+Stories US-001.06 to US-001.08 describe the hotel back office that exists in `src/`; they were derived from the rule ledger in `docs/refactor/BusinessRules.md` by the AI and are for S01 and S04 to confirm, merge or drop.
 
 Open questions for the Product Owner: where the Proxmox host lives (the
 throwaway container of MIL-003 is for tests only), a virtual machine or an LXC
@@ -131,5 +175,7 @@ for US-001.02.
 [UCD-001]: ./use-case-diagram.md
 [BC-001]: ./business-case.md
 [MIL-002]: ./milestones/mil-002-nginx-proxy-and-web-compose.md
+[SA-001]: ./stakeholder-analysis.md
 [fc8ec78]: https://github.com/NF-Hotel/NFHotel/commit/fc8ec78b24b805b10d5c056b19ed2785697ee8ff
 [469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa
+[a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d

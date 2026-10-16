@@ -1,28 +1,27 @@
 using Microsoft.EntityFrameworkCore;
 
-
-
-using NFHotel.Infrastructure.Security;
+using NFHotel.Domain.Entities;
+using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Persistence;
-using NFHotel.Domain.Guests;
+using NFHotel.Infrastructure.Security;
 
 namespace NFHotel.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// Integrationstests for kryptering af Guest passportdata i PostgreSQL.
+/// Integration tests for encryption of Guest passport data in PostgreSQL.
 /// </summary>
 [Collection(PostgreSqlCollection.Name)]
 
-// Testklasse der skal teste kryptering af Guest-data mod PostgreSQL
+// Test class that tests encryption of Guest data against PostgreSQL
 public sealed class GuestEncryptionTests : IAsyncLifetime
 {
 
-    // Gemmer en reference til den fælles PostgreSQL-fixture
-    // Testene i klassen kan bruge testdatabasen/containeren
+    // Keeps a reference to the shared PostgreSQL fixture
+    // The tests in the class can use the test database/container
     private readonly PostgreSqlFixture _fixture;
 
 
-    // Constructor som xUnit kalder og automatisk giver den fælles PostgreSqlFixture til.
+    // Constructor that xUnit calls and automatically gives the shared PostgreSqlFixture.
     public GuestEncryptionTests(PostgreSqlFixture fixture)
     {
         _fixture = fixture;
@@ -30,14 +29,14 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
 
 
 
-    // Kører før hver test og nulstiller testdatabasen så testen starter med en ren database.
+    // Runs before each test and resets the test database so the test starts with a clean database.
     public async Task InitializeAsync()
     {
         await _fixture.ResetDatabaseAsync();
     }
 
-    // Kører efter hver test.
-    // databasen nulstilles før næste test.
+    // Runs after each test.
+    // the database is reset before the next test.
     public Task DisposeAsync()
     {
         return Task.CompletedTask;
@@ -45,7 +44,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
 
 
     // Test Metode
-    // Testen skal verificere at PassportNumber bliver krypteret i databasen og dekrypteret korrekt af EF Core.
+    // The test must verify that PassportNumber is encrypted in the database and decrypted correctly by EF Core.
     [Fact]
     public async Task PassportNumber_ShouldBeEncryptedInDatabase_AndDecryptedByEfCore()
     {
@@ -60,7 +59,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
             country: "Testland",
             passportNumber: passportNumber);
 
-        // Opretter en fake AES-256 nøgle kun til integrationstesten.
+        // Creates a fake AES-256 key only for the integration test.
         var encryptionOptions = new EncryptionOptions
         {
             PassportKey = Convert.ToBase64String(new byte[32])
@@ -68,71 +67,71 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
 
         var encryptor = new AesGcmStringEncryptor(encryptionOptions);
 
-        // Opretter konfigurationen til HotelDbContext.
+        // Creates the configuration for HotelDbContext.
         var optionsBuilder = new DbContextOptionsBuilder<HotelDbContext>();
 
-        // Bruger samme EF Core-konfiguration som projektet,
-        // men connection stringen peger på den midlertidige test-container.
+        // Uses the same EF Core configuration as the project,
+        // but the connection string points to the temporary test container.
         DependencyInjection.ConfigureHotelDbContext(
             optionsBuilder,
             _fixture.ConnectionString);
 
-        // Opretter en DbContext til selve integrationstesten.
+        // Creates a DbContext for the integration test itself.
         await using var context = new HotelDbContext(optionsBuilder.Options, encryptor);
 
 
 
 
         // Act
-        // Tilføjer gæsten til EF Core og gemmer den i testdatabasen.
+        // Adds the guest to EF Core and saves it in the test database.
         context.Guests.Add(guest);
-        // Gemmer ændringerne fra contexten i databasen asynkront.
+        // Saves the changes from the context in the database asynchronously.
         await context.SaveChangesAsync();
 
-        // Henter den underliggende databaseforbindelse,
-        // læse passport_number direkte med raw SQL.
+        // Fetches the underlying database connection,
+        // reads passport_number directly with raw SQL.
         var connection = context.Database.GetDbConnection();
 
         await connection.OpenAsync();
 
 
-        // Opretter en raw SQL-kommando direkte mod PostgreSQL.
+        // Creates a raw SQL command directly against PostgreSQL.
         await using var command = connection.CreateCommand();
 
         command.CommandText =
             "SELECT passport_number FROM guest WHERE guest_id = @guestId";
 
 
-        // Tilføjer GuestId som parameter til SQL-kommandoen.
+        // Adds GuestId as a parameter to the SQL command.
         var guestIdParameter = command.CreateParameter();
 
-        // Angiver parameterens navn, som skal matche @guestId i SQL-kommandoen.
+        // Specifies the name of the parameter, which must match @guestId in the SQL command.
         guestIdParameter.ParameterName = "@guestId";
-        guestIdParameter.Value = guest.GuestId;
+        guestIdParameter.Value = guest.Id;
 
-        // Tilføjer @guestId-parameteren til SQL-kommandoen,
-        // så databasen kan bruge værdien når kommandoen udføres.
+        // Adds the @guestId parameter to the SQL command,
+        // so the database can use the value when the command is executed.
         command.Parameters.Add(guestIdParameter);
 
-        // Kører SQL-kommandoen og henter passport_number direkte fra databasen.
+        // Runs the SQL command and fetches passport_number directly from the database.
         var storedPassportNumber = await command.ExecuteScalarAsync();
 
 
 
 
         // Assert
-        // Pasnummeret i databasen må ikke være gemt som plaintext.
+        // The passport number in the database must not be stored as plaintext.
         Assert.NotEqual(passportNumber, storedPassportNumber?.ToString());
 
-        // Fjerner den allerede trackede Guest fra contexten,
-        // EF Core bliver tvunget til at hente gæsten igen fra databasen.
+        // Removes the already tracked Guest from the context,
+        // EF Core is forced to fetch the guest again from the database.
         context.ChangeTracker.Clear();
 
-        // Henter gæsten igen gennem EF Core.
+        // Fetches the guest again through EF Core.
         var loadedGuest = await context.Guests
-            .SingleAsync(g => g.GuestId == guest.GuestId);
+            .SingleAsync(g => g.Id == guest.Id);
 
-        // Verificerer EF Core har dekrypteret PassportNumber korrekt.
+        // Verifies that EF Core has decrypted PassportNumber correctly.
         Assert.Equal(passportNumber, loadedGuest.PassportNumber);
 
     }
@@ -151,7 +150,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
           passportNumber: null);
 
 
-        // Opretter en fake AES-256 nøgle kun til integrationstesten.
+        // Creates a fake AES-256 key only for the integration test.
         var encryptionOptions = new EncryptionOptions
         {
             PassportKey = Convert.ToBase64String(new byte[32])
@@ -159,15 +158,15 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
 
         var encryptor = new AesGcmStringEncryptor(encryptionOptions);
 
-        // Opretter konfigurationen til HotelDbContext.
+        // Creates the configuration for HotelDbContext.
         var optionsBuilder = new DbContextOptionsBuilder<HotelDbContext>();
 
-        // Forbinder til den midlertidige PostgreSQL test-container.
+        // Connects to the temporary PostgreSQL test container.
         DependencyInjection.ConfigureHotelDbContext(
             optionsBuilder,
             _fixture.ConnectionString);
 
-        // Opretter en DbContext til integrationstesten.
+        // Creates a DbContext for the integration test.
         await using var context = new HotelDbContext(
             optionsBuilder.Options,
             encryptor);
@@ -176,35 +175,35 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
 
 
         // Act
-        // Saver gæsten uden pasnummer i testdatabasen.
+        // Saves the guest without passport number in the test database.
         context.Guests.Add(guest);
         await context.SaveChangesAsync();
 
-        // Henter den underliggende databaseforbindelse,
-        // kontrollere passport_number direkte med raw SQL.
+        // Fetches the underlying database connection,
+        // checks passport_number directly with raw SQL.
         var connection = context.Database.GetDbConnection();
 
         await connection.OpenAsync();
 
-        // Opretter en raw SQL-kommando direkte mod PostgreSQL.
+        // Creates a raw SQL command directly against PostgreSQL.
         await using var command = connection.CreateCommand();
 
         command.CommandText =
             "SELECT passport_number IS NULL FROM guest WHERE guest_id = @guestId";
 
-        // Opretter en parameter til SQL-kommandoen.
+        // Creates a parameter for the SQL command.
         var guestIdParameter = command.CreateParameter();
         guestIdParameter.ParameterName = "@guestId";
-        guestIdParameter.Value = guest.GuestId;
+        guestIdParameter.Value = guest.Id;
 
-        // Tilføjer parameteren til SQL-kommandoen.
+        // Adds the parameter to the SQL command.
         command.Parameters.Add(guestIdParameter);
 
-        // Kører SQL-kommandoen og henter resultatet.
+        // Runs the SQL command and fetches the result.
         var result = await command.ExecuteScalarAsync();
 
         // Assert
-        // Verificerer at passport_number faktisk er SQL NULL i databasen.
+        // Verifies that passport_number is actually SQL NULL in the database.
         Assert.Equal(true, result);
 
     }

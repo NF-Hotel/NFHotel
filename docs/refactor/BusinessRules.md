@@ -1,231 +1,231 @@
 # Business Rules Ledger — NFHotel
 
-> Fase 0, genereret 2026-09-02. Kilde: `4. Semester\NFHotel-Hotel-main\`.
-> **126 regler.** Kolonnen "Status i ny kode" udfyldes i Fase 3 af `verify:ledger-audit`.
-> Kolonnen "Bevis" peger på den test i det gamle projekt der beviser reglen (T-id'er, se `Analysis.md` afsnit 5).
+> Phase 0, generated 2026-09-02. Source: `4. Semester\NFHotel-Hotel-main\`.
+> **126 rules.** The column "Status in new code" is filled in during Phase 3 by `verify:ledger-audit`.
+> The column "Evidence" points to the test in the old project that proves the rule (T-ids, see `Analysis.md` section 5).
 >
-> Grupper: BR-01–BR-90 fra ViewModels · BR-91–BR-109 modelvalidering · BR-110–BR-116 repo-lag · BR-117–BR-126 views/converters.
+> Groups: BR-01–BR-90 from ViewModels · BR-91–BR-109 model validation · BR-110–BR-116 repo layer · BR-117–BR-126 views/converters.
 
-| Id | Regel | Kilde (fil:linje) | Type | Bevis | Status i ny kode |
+| Id | Rule | Source (file:line) | Type | Evidence | Status in new code |
 |---|---|---|---|---|---|
-| BR-01 | En booking oprettes altid med status `Pending` — der findes ingen anden startstatus. | `ViewModels/NewBookingViewModel.cs:319` | statusovergang | | |
-| BR-02 | Bookingen kan kun bekræftes (`Pending → Confirmed`) når en booking er valgt og dens status er præcis `Pending`; ellers er `ConfirmBookingCommand` deaktiveret. | `ViewModels/BookingOverviewViewModel.cs:473-479` | statusovergang | T-20, T-27 | |
-| BR-03 | Ved bekræftelse gentjekkes BR-02 i selve handlingen og afvises med "Cannot confirm this booking - only Pending bookings can be confirmed". | `ViewModels/BookingOverviewViewModel.cs:488-497` | statusovergang | | |
-| BR-04 | Bekræftelse kræver eksplicit brugerbekræftelse (Ja/Nej-dialog); alt andet end "Yes" afbryder uden ændring. | `ViewModels/BookingOverviewViewModel.cs:499-511` | adgang | | |
-| BR-05 | Bekræftelse sætter `Status = Confirmed`, persisterer via repository og genindlæser al data. | `ViewModels/BookingOverviewViewModel.cs:522-525` | statusovergang | | |
-| BR-06 | Check-in er kun tilladt når status er `Pending` ELLER `Confirmed`, OG `StartDate.Date <= i dag`, OG `CheckInTime` ikke allerede er sat. | `ViewModels/BookingOverviewViewModel.cs:552-562` | statusovergang | T-21, T-22, T-23 | |
-| BR-07 | Check-in sætter `CheckInTime = DateTime.Now` (aktuelt klokkeslæt) og `Status = CheckedIn`, og persisterer. | `ViewModels/BookingOverviewViewModel.cs:584-588` | statusovergang | | |
-| BR-08 | Check-in-reglen gentjekkes i handlingen og afvises med "Cannot check in this booking"; check-in kræver ingen bekræftelsesdialog. | `ViewModels/BookingOverviewViewModel.cs:570-579` | statusovergang | | |
-| BR-09 | Check-ud er kun tilladt når status er præcis `CheckedIn`, OG `CheckInTime` har værdi, OG `CheckOutTime` endnu ikke har værdi. | `ViewModels/BookingOverviewViewModel.cs:601-609` | statusovergang | T-24 | |
-| BR-10 | Check-ud sætter `CheckOutTime = DateTime.Now` og `Status = CheckedOut`, og persisterer; ingen bekræftelsesdialog. | `ViewModels/BookingOverviewViewModel.cs:617-635` | statusovergang | | |
-| BR-11 | Annullering er kun tilladt når status er `Pending` ELLER `Confirmed` — en `CheckedIn`/`CheckedOut` booking kan ikke annulleres. | `ViewModels/BookingOverviewViewModel.cs:648-655` | statusovergang | T-25 | |
-| BR-12 | Annullering kræver eksplicit "Yes" i dialogen "Cancel Booking Permanently From System?"; ellers sker intet. | `ViewModels/BookingOverviewViewModel.cs:674-682` | adgang | | |
-| BR-13 | Annullering er soft-delete: `Status = Cancelled` gemmes, rækken slettes aldrig fysisk. | `ViewModels/BookingOverviewViewModel.cs:687-690` | statusovergang | | |
-| BR-14 | Redigering af en booking er kun tilladt når status er `Pending` ELLER `Confirmed`. | `ViewModels/BookingOverviewViewModel.cs:715-722` | adgang | T-26 | |
-| BR-15 | Ved indgang til redigeringstilstand forudfyldes edit-felterne med bookingens nuværende rum (`AllRooms` matchet på `RoomId == SelectedBooking.RoomID`), `StartDate` og `EndDate`, og `IsEditMode` sættes true. | `ViewModels/BookingOverviewViewModel.cs:725-735` | beregning | | |
-| BR-16 | `SaveEdit` og `CancelEdit` kan kun udføres når `IsEditMode` er true. | `ViewModels/BookingOverviewViewModel.cs:261-269` | adgang | | |
-| BR-17 | Ved gem af redigering gentjekkes statuskravet (BR-14) og afvises med "Cannot edit this booking - only Pending or Confirmed bookings can be edited". | `ViewModels/BookingOverviewViewModel.cs:743-752` | statusovergang | | |
-| BR-18 | Ved gem af redigering køres `Booking.ValidateEdit(nyStart, nySlut)`; enhver fejl vises samlet (linjeskilt) og blokerer gemning. | `ViewModels/BookingOverviewViewModel.cs:755-765` | validering | T-08 | |
-| BR-19 | Ved gem af redigering afvises ændringen hvis der findes en anden booking (`BookingID != nuværende`) på samme rum, hvis status hverken er `Cancelled` eller `CheckedOut`, og hvor `andenStart < nytUdtjek` OG `andenSlut > nytIndtjek` (halvåben overlap-test) — "Room is not available for selected dates". | `ViewModels/BookingOverviewViewModel.cs:768-786` | validering | | |
-| BR-20 | Består alle tjek, opdateres `StartDate`, `EndDate` og `RoomID`, bookingen persisteres, `IsEditMode` sættes false og data genindlæses. | `ViewModels/BookingOverviewViewModel.cs:791-798` | beregning | | |
-| BR-21 | `CancelEdit` forlader redigeringstilstanden uden at gemme — de indtastede edit-værdier kasseres. | `ViewModels/BookingOverviewViewModel.cs:819-822` | statusovergang | | |
-| BR-22 | Når en booking vælges, genberegnes tilladeligheden af Confirm, CheckIn, CheckOut, Cancel og Edit. | `ViewModels/BookingOverviewViewModel.cs:56-65` | adgang | | |
-| BR-23 | Annullerede bookinger vises aldrig i oversigten, uanset visningsperiode. | `ViewModels/BookingOverviewViewModel.cs:394-402` | beregning | T-28 | |
-| BR-24 | I årsvisning vises kun bookinger der overlapper 1. januar–31. december i det viste år (`StartDate <= 31/12` OG `EndDate >= 1/1`). | `ViewModels/BookingOverviewViewModel.cs:389-398` | beregning | | |
-| BR-25 | En booking matcher en søgetekst hvis den (case-insensitivt) indeholdes i "Fornavn Efternavn", land, e-mail eller værelsesnummer; bookinger uden gæst eller rum matcher aldrig. | `ViewModels/BookingOverviewViewModel.cs:370-378` | beregning | T-29 | |
-| BR-26 | Så snart søgefeltet indeholder andet end whitespace, skiftes visningsperioden automatisk til "Year". | `ViewModels/BookingOverviewViewModel.cs:75-78` | beregning | | |
-| BR-27 | Visningens startdato er ugens start (`CurrentMonth` minus dage siden ugens første dag) i ugevisning, ellers den 1. i den viste måned. | `ViewModels/BookingOverviewViewModel.cs:38-51` | beregning | | |
-| BR-28 | Frem/tilbage-navigation flytter ±7 dage i ugevisning, ±1 år i årsvisning og ±1 måned ellers. | `ViewModels/BookingOverviewViewModel.cs:322-337` | beregning | | |
-| BR-29 | Kolonneantallet i kalenderen er 7 (uge), det faktiske antal dage i måneden (måned) eller 12 (år). | `ViewModels/BookingOverviewViewModel.cs:339-368` | beregning | | |
-| BR-30 | Periodeoverskriften vises som "Week {ugenr}, {år}" (ugenummer efter aktuel kulturs ugeregel), "{år}" eller "MMMM yyyy". | `ViewModels/BookingOverviewViewModel.cs:112-134` | beregning | | |
-| BR-31 | Månedens omsætning sættes altid til 0 — der findes ingen faktisk omsætningsberegning. | `ViewModels/BookingOverviewViewModel.cs:415-418` | beregning | | |
-| BR-32 | Sortering: klik på samme kolonne igen vender retningen, klik på ny kolonne sorterer stigende; tomt kolonnenavn gør intet. | `ViewModels/BookingOverviewViewModel.cs:430-454` | beregning | | |
-| BR-33 | Efter lukning af "Ny booking"-dialogen genindlæses hele bookingoversigten. | `ViewModels/BookingOverviewViewModel.cs:423-428` | beregning | | |
-| BR-34 | Rumlisten i ny booking indeholder kun rum som repositoriet anser for tilgængelige (`GetAllByAvailability`). | `ViewModels/NewBookingViewModel.cs:158-167` | beregning | T-37 | |
-| BR-35 | Er en gæst valgt på forhånd, forudfyldes formularen med gæstens GuestID, navn, e-mail, telefon, land og pasnummer. | `ViewModels/NewBookingViewModel.cs:169-173, 240-249` | beregning | T-30 | |
-| BR-36 | Ændres enten ind- eller udtjekningsdato, genberegnes den tilgængelige rumliste øjeblikkeligt. | `ViewModels/NewBookingViewModel.cs:42-62` | beregning | | |
-| BR-37 | Mangler en af de to datoer, vises hele listen af tilgængelige rum og fejlbeskeden ryddes. | `ViewModels/NewBookingViewModel.cs:183-188` | validering | | |
-| BR-38 | Er udtjekningsdato ≤ indtjekningsdato, tømmes rumlisten og "Check-out date must be after check-in date" vises (0 nætter er ikke tilladt). | `ViewModels/NewBookingViewModel.cs:191-196` | validering | T-31 | |
-| BR-39 | Et rum er optaget i perioden hvis der findes en ikke-annulleret booking med `StartDate < ønsketUdtjek` OG `EndDate > ønsketIndtjek`; sådanne rum fjernes fra listen (afrejse- og ankomstdag samme dag er tilladt). | `ViewModels/NewBookingViewModel.cs:204-217` | validering | | |
-| BR-40 | Er der nul ledige rum i perioden, vises "No rooms available for the selected period. Please try different dates."; ellers ryddes fejlbeskeden. | `ViewModels/NewBookingViewModel.cs:227-234` | validering | | |
-| BR-41 | Oprettelse af booking kræver at indtjekningsdato er udfyldt ("Check-in date is required"). | `ViewModels/NewBookingViewModel.cs:261-264` | validering | T-01 | |
-| BR-42 | Oprettelse af booking kræver at udtjekningsdato er udfyldt ("Check-out date is required"). | `ViewModels/NewBookingViewModel.cs:266-269` | validering | T-02 | |
-| BR-43 | Oprettelse af booking kræver udtjekning > indtjekning (mindst 1 nat). | `ViewModels/NewBookingViewModel.cs:271-274` | validering | T-03 | |
-| BR-44 | Indtjekningsdatoen må ikke ligge før dags dato (datodel sammenlignet, samme dag tilladt) — "Check-in date cannot be in the past". | `ViewModels/NewBookingViewModel.cs:276-279` | validering | T-04 | |
-| BR-45 | Der skal være valgt et rum — "Please select a room". | `ViewModels/NewBookingViewModel.cs:282-285` | validering | T-05 | |
-| BR-46 | Gæsteoplysningerne valideres via `Guest.Validate()`; kun den FØRSTE fejl vises til brugeren og oprettelsen afbrydes. | `ViewModels/NewBookingViewModel.cs:288-304` | validering | | |
-| BR-47 | En gæst med `GuestID == 0` betragtes som ny og oprettes i databasen før bookingen, hvorefter det tildelte id bruges; en eksisterende gæst genbruges uændret. | `ViewModels/NewBookingViewModel.cs:306-312` | beregning | | |
-| BR-48 | Bookingen gemmes med de valgte datoer, det valgte rums `RoomId`, gæstens id og status `Pending`. | `ViewModels/NewBookingViewModel.cs:314-328` | statusovergang | | |
-| BR-49 | Ved succes vises bookingnummer, gæstens navn og antal nætter (`Booking.NumberOfNights`) i kvitteringsteksten. | `ViewModels/NewBookingViewModel.cs:331` | beregning | T-09, T-10 | |
-| BR-50 | Bookingvinduet lukkes automatisk 2000 ms efter en vellykket oprettelse. | `ViewModels/NewBookingViewModel.cs:334-340` | beregning | | |
-| BR-51 | Enhver `ArgumentException` fra valideringen vises som fejltekst; øvrige fejl som "An unexpected error occurred: …" — der oprettes ingen booking i begge tilfælde. | `ViewModels/NewBookingViewModel.cs:342-349` | validering | | |
-| BR-52 | Gæstens fornavn er påkrævet ("First name is required."). | `ViewModels/NewGuestViewModel.cs:177-180` | validering | T-11, T-12 | |
-| BR-53 | Gæstens efternavn er påkrævet ("Last name is required."). | `ViewModels/NewGuestViewModel.cs:181-184` | validering | T-11 | |
-| BR-54 | Gæstens telefonnummer er påkrævet ("Phone number is required.") — intet formatkrav. | `ViewModels/NewGuestViewModel.cs:185-188` | validering | T-11 | |
-| BR-55 | Gæstens e-mail er påkrævet og skal indeholde både "@" og "." ("A valid email is required.") — ingen regex. | `ViewModels/NewGuestViewModel.cs:189-193` | validering | T-13 | |
-| BR-56 | Gæstens land er påkrævet ("Country is required."). | `ViewModels/NewGuestViewModel.cs:194-197` | validering | T-11 | |
-| BR-57 | Pasnummer valideres ikke og er dermed valgfrit. | `ViewModels/NewGuestViewModel.cs:69-77` | validering | T-14 | |
-| BR-58 | Gem-knappen er kun aktiv når alle fem fejlbeskeder (fornavn, efternavn, telefon, e-mail, land) er tomme. | `ViewModels/NewGuestViewModel.cs:155, 199-207` | adgang | | |
-| BR-59 | Alle felter revalideres ved hver ændring og ved åbning af formularen (null normaliseres til tom streng). | `ViewModels/NewGuestViewModel.cs:20-67, 157-158, 168-175` | validering | | |
-| BR-60 | Ved gem valideres gæsten igen med `Guest.Validate()`; ALLE fejl vises samlet og gemning afbrydes. | `ViewModels/NewGuestViewModel.cs:209-220` | validering | T-15 | |
-| BR-61 | Gemning kræver eksplicit "Yes" på "Are you sure you want to save the changes?"; manglende dialog-handler tolkes som "No". | `ViewModels/NewGuestViewModel.cs:222-224` | adgang | | |
-| BR-62 | I redigeringstilstand bevares gæstens oprindelige `GuestID` og der kaldes `UpdateGuest`; ellers oprettes ny gæst og det tildelte id sættes på objektet. | `ViewModels/NewGuestViewModel.cs:211-213, 226-229` | beregning | | |
-| BR-63 | Formularens titel/knaptekst er "Edit Guest"/"Save" i redigeringstilstand og "New Guest"/"Create" ved oprettelse. | `ViewModels/NewGuestViewModel.cs:141-142` | beregning | | |
-| BR-64 | Annuller lukker formularen uden at gemme. | `ViewModels/NewGuestViewModel.cs:236-239` | statusovergang | | |
-| BR-65 | Rediger-gæst og "opret booking for gæst" er kun mulige når en gæst er valgt. | `ViewModels/GuestOverviewViewModel.cs:106-108` | adgang | | |
-| BR-66 | Redigering sker altid på en KOPI af gæsten (fornavn, efternavn, e-mail, telefon, land, pasnummer) — originalen ændres ikke direkte. | `ViewModels/GuestOverviewViewModel.cs:166-183` | adgang | | |
-| BR-67 | Forsøg på redigering uden valgt gæst viser "You must select a guest to edit." og afbryder. | `ViewModels/GuestOverviewViewModel.cs:168-172` | adgang | | |
-| BR-68 | Gæstesøgning: søgeteksten deles i ord på mellemrum, og ALLE ord skal (case-insensitivt) findes i enten fuldt navn, land eller e-mail (AND-logik). | `ViewModels/GuestOverviewViewModel.cs:146-157` | beregning | T-40 | |
-| BR-69 | Gæstelisten sorteres altid alfabetisk efter "fornavn efternavn" i små bogstaver. | `ViewModels/GuestOverviewViewModel.cs:129-143, 220-227` | beregning | | |
-| BR-70 | Tom eller whitespace-søgning viser alle gæster. | `ViewModels/GuestOverviewViewModel.cs:131-135` | beregning | | |
-| BR-71 | "Ryd gæst" erstatter den valgte gæst med et tomt `Guest`-objekt og slår både redigerings- og ny-gæst-tilstand fra. | `ViewModels/GuestOverviewViewModel.cs:186-191` | statusovergang | | |
-| BR-72 | Opdatering af den valgte gæst overskriver præcis seks felter — `GuestID` ændres aldrig. | `ViewModels/GuestOverviewViewModel.cs:208-218` | beregning | | |
-| BR-73 | Booking-for-gæst-hændelsen udløses kun når en gæst faktisk er valgt (dobbelttjek ud over BR-65). | `ViewModels/GuestOverviewViewModel.cs:193-199` | adgang | | |
-| BR-74 | Rumfiltret kombinerer etage, rumstørrelse og status; tom/whitespace rumstørrelse tolkes som "intet filter" (null). | `ViewModels/RoomOverviewViewModel.cs:146-159` | beregning | T-38, T-39 | |
-| BR-75 | Filtervalgmulighederne udledes af de eksisterende rum som distinkte, sorterede værdier for etage, rumstørrelse og status. | `ViewModels/RoomOverviewViewModel.cs:128-144` | beregning | | |
-| BR-76 | "Ryd filter" nulstiller etage, rumstørrelse og status til null og genindlæser samtlige rum. | `ViewModels/RoomOverviewViewModel.cs:161-168` | beregning | | |
-| BR-77 | Sletning af et rum kræver eksplicit "Yes" på advarslen "…This can disrupt logged bookings". | `ViewModels/RoomOverviewViewModel.cs:196-203` | adgang | | |
-| BR-78 | Kaster repositoriet `InvalidOperationException` ved sletning (fx rum med bookinger), forbliver rummet i listen og fejlteksten vises som "Unable to delete room". | `ViewModels/RoomOverviewViewModel.cs:205-214` | validering | | |
-| BR-79 | Rediger-rum gør intet hvis der ikke er sendt et rum med (null-parameter). | `ViewModels/RoomOverviewViewModel.cs:181-183, 196-198` | adgang | | |
-| BR-80 | Efter et gemt rum genindlæses både rumlisten og filtervalgmulighederne, og sidepanelet lukkes. | `ViewModels/RoomOverviewViewModel.cs:217-228` | beregning | | |
-| BR-81 | Et nyoprettet rum får som udgangspunkt status `Available`. | `ViewModels/FormsViewModel/RoomFormViewModel.cs:35-43` | statusovergang | T-19 | |
-| BR-82 | Rum med `RoomId == 0` oprettes; alle andre opdateres. | `ViewModels/FormsViewModel/RoomFormViewModel.cs:59-66` | beregning | | |
-| BR-83 | Rumformularens titel/knaptekst er "Create Room"/"Create" ved oprettelse og "Edit Room"/"Save" ved redigering. | `ViewModels/FormsViewModel/RoomFormViewModel.cs:35-49` | beregning | | |
-| BR-84 | `Room.Validate()` kaldes ved gem, men resultatet ignoreres — ugyldige rum gemmes alligevel (fanges først af BR-113 i repo-laget). | `ViewModels/FormsViewModel/RoomFormViewModel.cs:58` | validering | | |
-| BR-85 | Applikationen starter altid på bookingoversigten. | `ViewModels/MainViewModel.cs:47` | adgang | | |
-| BR-86 | Navigation mellem booking-, gæste-, rum-, salgs- og gæstepolitikvisning er altid tilladt, og hver visning holder én levetidslang instans. | `ViewModels/MainViewModel.cs:42-72` | adgang | | |
-| BR-87 | En kommando uden eksplicit `canExecute` er altid tilladt. | `Commands/RelayCommand.cs:28-31` | adgang | | |
-| BR-88 | `DateGreaterThan`-validering fejler når den validerede dato er ≤ sammenligningsdatoen, med "{felt} must be after {sammenligningsfelt}". | `Validation/DateGreaterThanAttribute.cs:34-43` | validering | | |
-| BR-89 | Peger `DateGreaterThan` på et ikke-eksisterende felt, fejler valideringen med "Unknown property: {navn}". | `Validation/DateGreaterThanAttribute.cs:23-28` | validering | | |
-| BR-90 | Er enten værdien eller sammenligningsværdien ikke en `DateTime` (fx null), betragtes valideringen som bestået. | `Validation/DateGreaterThanAttribute.cs:34-46` | validering | | |
-| BR-91 | `Guest.FirstName` må ikke være null, tom eller kun whitespace. | `Models/Guest.cs:49-50` | validering | T-11, T-12 | |
-| BR-92 | `Guest.LastName` må ikke være null, tom eller kun whitespace. | `Models/Guest.cs:51-52` | validering | T-11 | |
-| BR-93 | `Guest.Email` skal være udfyldt og indeholde både `@` og `.` (positionen kontrolleres ikke). | `Models/Guest.cs:53-54` | validering | T-13 | |
-| BR-94 | `Guest.PhoneNumber` må ikke være tom (intet formatkrav). | `Models/Guest.cs:55-56` | validering | T-11 | |
-| BR-95 | `Guest.Country` må ikke være tom. | `Models/Guest.cs:57-58` | validering | T-11 | |
-| BR-96 | `Guest.Validate()` samler alle fejl i én liste i stedet for at fejle på den første. | `Models/Guest.cs:39-58` | validering | T-15 | |
-| BR-97 | `Room.RoomNumber` må ikke være tom eller whitespace. | `Models/Room.cs:40-41` | validering | T-16 | |
-| BR-98 | `Room.Floor` skal være > 0 (stueetage og kælder er dermed ikke tilladt). | `Models/Room.cs:43-44` | validering | T-17 | |
-| BR-99 | `Room.RoomSize` må ikke være tom — men der kontrolleres ikke mod et sæt tilladte værdier. | `Models/Room.cs:46-47` | validering | T-16 | |
-| BR-100 | `Room.Capacity` skal være > 0. | `Models/Room.cs:49-50` | validering | T-18 | |
-| BR-101 | `Booking.StartDate` må ikke være `default(DateTime)`. | `Models/Booking.cs:47-48` | validering | T-01 | |
-| BR-102 | `Booking.EndDate` må ikke være `default(DateTime)`. | `Models/Booking.cs:50-51` | validering | T-02 | |
-| BR-103 | Når begge datoer er sat, skal `EndDate` være strengt større end `StartDate`. | `Models/Booking.cs:53-54` | validering | T-03 | |
-| BR-104 | `Booking.StartDate.Date` må ikke være før `DateTime.Now.Date`. | `Models/Booking.cs:56-57` | validering | T-04 | |
-| BR-105 | En booking skal have et rum: fejl kun hvis både `Room` er null OG `RoomID` er 0. | `Models/Booking.cs:59-60` | validering | T-05 | |
-| BR-106 | En booking skal have en gæst: fejl kun hvis både `Guest` er null OG `GuestID` er 0. | `Models/Booking.cs:62-63` | validering | T-06 | |
-| BR-107 | Når både `CheckInTime` og `CheckOutTime` har værdi, skal `CheckOutTime` være strengt større end `CheckInTime`. | `Models/Booking.cs:65-66` | validering | T-07 | |
-| BR-108 | `Booking.ValidateEdit(newStart, newEnd)` kræver `newEnd > newStart` og `newStart.Date >= i dag` på de indsendte datoer. | `Models/Booking.cs:75-79` | validering | T-08 | |
-| BR-109 | `NumberOfNights` = `(EndDate - StartDate).Days`, og 0 hvis en af datoerne er `default`. Bookingnummer formateres som `FLZ-{BookingID:D6}`. | `Models/Booking.cs:13, 30-39` | beregning | T-09, T-10 | |
-| BR-110 | Kun rum med status `Available` regnes som tilgængelige — filtret ligger i dataadgangslaget. | `Repositories/RoomRepo.cs:220` | beregning | T-37 | |
-| BR-111 | Udvælgelse af bookinger efter status sker som in-memory-filter efter et fuldt tabeltræk. | `Repositories/BookingRepo.cs:173` | beregning | | |
-| BR-112 | Et værelse med eksisterende bookinger må ikke slettes; brugeren henvises til at sætte det "Out of service". Reglen er kodet som `catch` af SQL-fejl 547. | `Repositories/RoomRepo.cs:208-210` | validering | | |
-| BR-113 | Et rum skal bestå `Room.Validate()` før det persisteres — håndhæves i repoet ved både create og update. | `Repositories/RoomRepo.cs:21-23, 164-166` | validering | T-36 | |
-| BR-114 | En booking skal eksistere før den må opdateres eller slettes; ellers `ArgumentException`. `Create`/`Update` med null giver `ArgumentNullException`. | `Repositories/BookingRepo.cs:190-196, 235-239` | adgang | T-32, T-33 | |
-| BR-115 | `GetById` på et ukendt id returnerer `null` — ikke exception, ikke tomt objekt. | `Repositories/BookingRepo.cs:167`, `GuestRepo.cs:79`, `RoomRepo.cs:101` | beregning | T-34 | |
-| BR-116 | Navnesøgning på gæster er "indeholder" på for- ELLER efternavn (wildcards på begge sider, OR mellem kolonner). | `Repositories/GuestRepo.cs:127, 130` | beregning | T-40 | |
-| BR-117 | En bookings varighed i kalenderen er antal overnatninger, ikke antal dage: bredden er `(EndDate − StartDate).Days`. | `Converters/CalendarConverters.cs:149` | beregning | T-09 | |
-| BR-118 | Halvdags-regel: en booking tegnes fra midt på check-in-dagen (`daysOffset + 0.5`) — værelset regnes optaget fra middag. | `Converters/CalendarConverters.cs:31, 48` | beregning | | |
-| BR-119 | Bookinger der er startet før den viste periode klippes til periodens start og får `+0.5` dag på bredden. | `Converters/CalendarConverters.cs:81, 139` | beregning | | |
-| BR-120 | Et værelses tidslinje viser kun bookinger hvor `Booking.Room.RoomId` matcher rummet; bookinger uden tilknyttet rum udelades helt. | `Converters/CalendarConverters.cs:197` | beregning | | |
-| BR-121 | Confirm-knappen vises kun ved status `Pending` (dublet af BR-02, håndhævet i XAML-trigger). | `Views/BookingOverviewView.xaml:988` | statusovergang | T-20 | |
-| BR-122 | Cancel-knappen vises kun ved status `Pending` eller `Confirmed` (dublet af BR-11, håndhævet i XAML-trigger). | `Views/BookingOverviewView.xaml:1037, 1040` | statusovergang | T-25 | |
-| BR-123 | Edit-knappen skjules ved status `CheckedIn` og `CheckedOut` (dublet af BR-14, håndhævet i XAML-trigger). | `Views/BookingOverviewView.xaml:958, 961` | adgang | T-26 | |
-| BR-124 | Gæstefelter er skrivebeskyttede uden for redigeringstilstand (`IsReadOnly = !IsEditing` på alle seks felter). | `Views/GuestOverviewView.xaml:132, 142, 152, 162, 172, 179` | adgang | | |
-| BR-125 | "Edit Guest" kræver en valgt gæst (`NotNullToBoolConverter`); "New Booking"-knappen har derimod ingen tilsvarende guard. | `Views/GuestOverviewView.xaml:186` (mangler `:187-190`) | adgang | | |
-| BR-126 | De tilladte værelsesstatusser i rumformularen er hardkodet i XAML som Available / Maintanance / Cleaning / Disabled — og matcher ikke enum'en `RoomStatus` (Available / OutOfService / Maintenance). | `Views/Forms/RoomFormView.xaml:43-46` vs. `Models/Enums/RoomStatus.cs:9-14` | validering | | |
+| BR-01 | A booking is always created with status `Pending` — there is no other initial status. | `ViewModels/NewBookingViewModel.cs:319` | state transition | | |
+| BR-02 | The booking can only be confirmed (`Pending → Confirmed`) when a booking is selected and its status is exactly `Pending`; otherwise `ConfirmBookingCommand` is disabled. | `ViewModels/BookingOverviewViewModel.cs:473-479` | state transition | T-20, T-27 | |
+| BR-03 | On confirmation BR-02 is rechecked in the action itself and rejected with "Cannot confirm this booking - only Pending bookings can be confirmed". | `ViewModels/BookingOverviewViewModel.cs:488-497` | state transition | | |
+| BR-04 | Confirmation requires explicit user confirmation (Yes/No dialog); anything other than "Yes" aborts without change. | `ViewModels/BookingOverviewViewModel.cs:499-511` | access | | |
+| BR-05 | Confirmation sets `Status = Confirmed`, persists via the repository and reloads all data. | `ViewModels/BookingOverviewViewModel.cs:522-525` | state transition | | |
+| BR-06 | Check-in is only allowed when the status is `Pending` OR `Confirmed`, AND `StartDate.Date <= today`, AND `CheckInTime` is not already set. | `ViewModels/BookingOverviewViewModel.cs:552-562` | state transition | T-21, T-22, T-23 | |
+| BR-07 | Check-in sets `CheckInTime = DateTime.Now` (current time of day) and `Status = CheckedIn`, and persists. | `ViewModels/BookingOverviewViewModel.cs:584-588` | state transition | | |
+| BR-08 | The check-in rule is rechecked in the action and rejected with "Cannot check in this booking"; check-in requires no confirmation dialog. | `ViewModels/BookingOverviewViewModel.cs:570-579` | state transition | | |
+| BR-09 | Check-out is only allowed when the status is exactly `CheckedIn`, AND `CheckInTime` has a value, AND `CheckOutTime` does not yet have a value. | `ViewModels/BookingOverviewViewModel.cs:601-609` | state transition | T-24 | |
+| BR-10 | Check-out sets `CheckOutTime = DateTime.Now` and `Status = CheckedOut`, and persists; no confirmation dialog. | `ViewModels/BookingOverviewViewModel.cs:617-635` | state transition | | |
+| BR-11 | Cancellation is only allowed when the status is `Pending` OR `Confirmed` — a `CheckedIn`/`CheckedOut` booking cannot be cancelled. | `ViewModels/BookingOverviewViewModel.cs:648-655` | state transition | T-25 | |
+| BR-12 | Cancellation requires an explicit "Yes" in the dialog "Cancel Booking Permanently From System?"; otherwise nothing happens. | `ViewModels/BookingOverviewViewModel.cs:674-682` | access | | |
+| BR-13 | Cancellation is a soft delete: `Status = Cancelled` is saved, the row is never physically deleted. | `ViewModels/BookingOverviewViewModel.cs:687-690` | state transition | | |
+| BR-14 | Editing a booking is only allowed when the status is `Pending` OR `Confirmed`. | `ViewModels/BookingOverviewViewModel.cs:715-722` | access | T-26 | |
+| BR-15 | On entering edit mode the edit fields are prefilled with the booking's current room (`AllRooms` matched on `RoomId == SelectedBooking.RoomID`), `StartDate` and `EndDate`, and `IsEditMode` is set to true. | `ViewModels/BookingOverviewViewModel.cs:725-735` | calculation | | |
+| BR-16 | `SaveEdit` and `CancelEdit` can only be executed when `IsEditMode` is true. | `ViewModels/BookingOverviewViewModel.cs:261-269` | access | | |
+| BR-17 | On saving an edit the status requirement (BR-14) is rechecked and rejected with "Cannot edit this booking - only Pending or Confirmed bookings can be edited". | `ViewModels/BookingOverviewViewModel.cs:743-752` | state transition | | |
+| BR-18 | On saving an edit `Booking.ValidateEdit(newStart, newEnd)` is run; any error is shown together (line-separated) and blocks saving. | `ViewModels/BookingOverviewViewModel.cs:755-765` | validation | T-08 | |
+| BR-19 | On saving an edit the change is rejected if another booking (`BookingID != current`) exists on the same room whose status is neither `Cancelled` nor `CheckedOut`, and where `otherStart < newCheckOut` AND `otherEnd > newCheckIn` (half-open overlap test) — "Room is not available for selected dates". | `ViewModels/BookingOverviewViewModel.cs:768-786` | validation | | |
+| BR-20 | If all checks pass, `StartDate`, `EndDate` and `RoomID` are updated, the booking is persisted, `IsEditMode` is set to false and data is reloaded. | `ViewModels/BookingOverviewViewModel.cs:791-798` | calculation | | |
+| BR-21 | `CancelEdit` leaves edit mode without saving — the entered edit values are discarded. | `ViewModels/BookingOverviewViewModel.cs:819-822` | state transition | | |
+| BR-22 | When a booking is selected, the permissibility of Confirm, CheckIn, CheckOut, Cancel and Edit is recalculated. | `ViewModels/BookingOverviewViewModel.cs:56-65` | access | | |
+| BR-23 | Cancelled bookings are never shown in the overview, regardless of display period. | `ViewModels/BookingOverviewViewModel.cs:394-402` | calculation | T-28 | |
+| BR-24 | In year view only bookings that overlap 1 January–31 December of the displayed year are shown (`StartDate <= 31/12` AND `EndDate >= 1/1`). | `ViewModels/BookingOverviewViewModel.cs:389-398` | calculation | | |
+| BR-25 | A booking matches a search text if it is contained (case-insensitively) in "First name Last name", country, e-mail or room number; bookings without a guest or room never match. | `ViewModels/BookingOverviewViewModel.cs:370-378` | calculation | T-29 | |
+| BR-26 | As soon as the search field contains anything other than whitespace, the display period automatically switches to "Year". | `ViewModels/BookingOverviewViewModel.cs:75-78` | calculation | | |
+| BR-27 | The view's start date is the start of the week (`CurrentMonth` minus days since the first day of the week) in week view, otherwise the 1st of the displayed month. | `ViewModels/BookingOverviewViewModel.cs:38-51` | calculation | | |
+| BR-28 | Forward/back navigation moves ±7 days in week view, ±1 year in year view and ±1 month otherwise. | `ViewModels/BookingOverviewViewModel.cs:322-337` | calculation | | |
+| BR-29 | The number of columns in the calendar is 7 (week), the actual number of days in the month (month) or 12 (year). | `ViewModels/BookingOverviewViewModel.cs:339-368` | calculation | | |
+| BR-30 | The period heading is shown as "Week {week number}, {year}" (week number by the current culture's week rule), "{year}" or "MMMM yyyy". | `ViewModels/BookingOverviewViewModel.cs:112-134` | calculation | | |
+| BR-31 | The month's revenue is always set to 0 — there is no actual revenue calculation. | `ViewModels/BookingOverviewViewModel.cs:415-418` | calculation | | |
+| BR-32 | Sorting: clicking the same column again reverses the direction, clicking a new column sorts ascending; an empty column name does nothing. | `ViewModels/BookingOverviewViewModel.cs:430-454` | calculation | | |
+| BR-33 | After the "New booking" dialog is closed, the whole booking overview is reloaded. | `ViewModels/BookingOverviewViewModel.cs:423-428` | calculation | | |
+| BR-34 | The room list in new booking contains only rooms that the repository considers available (`GetAllByAvailability`). | `ViewModels/NewBookingViewModel.cs:158-167` | calculation | T-37 | |
+| BR-35 | If a guest is preselected, the form is prefilled with the guest's GuestID, name, e-mail, phone, country and passport number. | `ViewModels/NewBookingViewModel.cs:169-173, 240-249` | calculation | T-30 | |
+| BR-36 | If either the check-in or the check-out date changes, the available room list is recalculated immediately. | `ViewModels/NewBookingViewModel.cs:42-62` | calculation | | |
+| BR-37 | If one of the two dates is missing, the whole list of available rooms is shown and the error message is cleared. | `ViewModels/NewBookingViewModel.cs:183-188` | validation | | |
+| BR-38 | If the check-out date is ≤ the check-in date, the room list is emptied and "Check-out date must be after check-in date" is shown (0 nights is not allowed). | `ViewModels/NewBookingViewModel.cs:191-196` | validation | T-31 | |
+| BR-39 | A room is occupied in the period if a non-cancelled booking exists with `StartDate < desiredCheckOut` AND `EndDate > desiredCheckIn`; such rooms are removed from the list (departure and arrival on the same day is allowed). | `ViewModels/NewBookingViewModel.cs:204-217` | validation | | |
+| BR-40 | If there are zero free rooms in the period, "No rooms available for the selected period. Please try different dates." is shown; otherwise the error message is cleared. | `ViewModels/NewBookingViewModel.cs:227-234` | validation | | |
+| BR-41 | Creating a booking requires the check-in date to be filled in ("Check-in date is required"). | `ViewModels/NewBookingViewModel.cs:261-264` | validation | T-01 | |
+| BR-42 | Creating a booking requires the check-out date to be filled in ("Check-out date is required"). | `ViewModels/NewBookingViewModel.cs:266-269` | validation | T-02 | |
+| BR-43 | Creating a booking requires check-out > check-in (at least 1 night). | `ViewModels/NewBookingViewModel.cs:271-274` | validation | T-03 | |
+| BR-44 | The check-in date must not be before today's date (date part compared, same day allowed) — "Check-in date cannot be in the past". | `ViewModels/NewBookingViewModel.cs:276-279` | validation | T-04 | |
+| BR-45 | A room must be selected — "Please select a room". | `ViewModels/NewBookingViewModel.cs:282-285` | validation | T-05 | |
+| BR-46 | The guest details are validated via `Guest.Validate()`; only the FIRST error is shown to the user and the creation is aborted. | `ViewModels/NewBookingViewModel.cs:288-304` | validation | | |
+| BR-47 | A guest with `GuestID == 0` is considered new and is created in the database before the booking, after which the assigned id is used; an existing guest is reused unchanged. | `ViewModels/NewBookingViewModel.cs:306-312` | calculation | | |
+| BR-48 | The booking is saved with the selected dates, the selected room's `RoomId`, the guest's id and status `Pending`. | `ViewModels/NewBookingViewModel.cs:314-328` | state transition | | |
+| BR-49 | On success the booking number, the guest's name and the number of nights (`Booking.NumberOfNights`) are shown in the receipt text. | `ViewModels/NewBookingViewModel.cs:331` | calculation | T-09, T-10 | |
+| BR-50 | The booking window closes automatically 2000 ms after a successful creation. | `ViewModels/NewBookingViewModel.cs:334-340` | calculation | | |
+| BR-51 | Any `ArgumentException` from the validation is shown as error text; other errors as "An unexpected error occurred: …" — no booking is created in either case. | `ViewModels/NewBookingViewModel.cs:342-349` | validation | | |
+| BR-52 | The guest's first name is required ("First name is required."). | `ViewModels/NewGuestViewModel.cs:177-180` | validation | T-11, T-12 | |
+| BR-53 | The guest's last name is required ("Last name is required."). | `ViewModels/NewGuestViewModel.cs:181-184` | validation | T-11 | |
+| BR-54 | The guest's phone number is required ("Phone number is required.") — no format requirement. | `ViewModels/NewGuestViewModel.cs:185-188` | validation | T-11 | |
+| BR-55 | The guest's e-mail is required and must contain both "@" and "." ("A valid email is required.") — no regex. | `ViewModels/NewGuestViewModel.cs:189-193` | validation | T-13 | |
+| BR-56 | The guest's country is required ("Country is required."). | `ViewModels/NewGuestViewModel.cs:194-197` | validation | T-11 | |
+| BR-57 | The passport number is not validated and is thus optional. | `ViewModels/NewGuestViewModel.cs:69-77` | validation | T-14 | |
+| BR-58 | The Save button is only active when all five error messages (first name, last name, phone, e-mail, country) are empty. | `ViewModels/NewGuestViewModel.cs:155, 199-207` | access | | |
+| BR-59 | All fields are revalidated on every change and when the form is opened (null is normalised to an empty string). | `ViewModels/NewGuestViewModel.cs:20-67, 157-158, 168-175` | validation | | |
+| BR-60 | On save the guest is validated again with `Guest.Validate()`; ALL errors are shown together and saving is aborted. | `ViewModels/NewGuestViewModel.cs:209-220` | validation | T-15 | |
+| BR-61 | Saving requires an explicit "Yes" on "Are you sure you want to save the changes?"; a missing dialog handler is interpreted as "No". | `ViewModels/NewGuestViewModel.cs:222-224` | access | | |
+| BR-62 | In edit mode the guest's original `GuestID` is kept and `UpdateGuest` is called; otherwise a new guest is created and the assigned id is set on the object. | `ViewModels/NewGuestViewModel.cs:211-213, 226-229` | calculation | | |
+| BR-63 | The form's title/button text is "Edit Guest"/"Save" in edit mode and "New Guest"/"Create" on creation. | `ViewModels/NewGuestViewModel.cs:141-142` | calculation | | |
+| BR-64 | Cancel closes the form without saving. | `ViewModels/NewGuestViewModel.cs:236-239` | state transition | | |
+| BR-65 | Edit guest and "create booking for guest" are only possible when a guest is selected. | `ViewModels/GuestOverviewViewModel.cs:106-108` | access | | |
+| BR-66 | Editing always happens on a COPY of the guest (first name, last name, e-mail, phone, country, passport number) — the original is not changed directly. | `ViewModels/GuestOverviewViewModel.cs:166-183` | access | | |
+| BR-67 | An attempt to edit without a selected guest shows "You must select a guest to edit." and aborts. | `ViewModels/GuestOverviewViewModel.cs:168-172` | access | | |
+| BR-68 | Guest search: the search text is split into words on spaces, and ALL words must be found (case-insensitively) in either full name, country or e-mail (AND logic). | `ViewModels/GuestOverviewViewModel.cs:146-157` | calculation | T-40 | |
+| BR-69 | The guest list is always sorted alphabetically by "first name last name" in lower case. | `ViewModels/GuestOverviewViewModel.cs:129-143, 220-227` | calculation | | |
+| BR-70 | An empty or whitespace search shows all guests. | `ViewModels/GuestOverviewViewModel.cs:131-135` | calculation | | |
+| BR-71 | "Clear guest" replaces the selected guest with an empty `Guest` object and turns off both edit mode and new-guest mode. | `ViewModels/GuestOverviewViewModel.cs:186-191` | state transition | | |
+| BR-72 | Updating the selected guest overwrites exactly six fields — `GuestID` is never changed. | `ViewModels/GuestOverviewViewModel.cs:208-218` | calculation | | |
+| BR-73 | The booking-for-guest event is only raised when a guest is actually selected (double check beyond BR-65). | `ViewModels/GuestOverviewViewModel.cs:193-199` | access | | |
+| BR-74 | The room filter combines floor, room size and status; an empty/whitespace room size is interpreted as "no filter" (null). | `ViewModels/RoomOverviewViewModel.cs:146-159` | calculation | T-38, T-39 | |
+| BR-75 | The filter options are derived from the existing rooms as distinct, sorted values for floor, room size and status. | `ViewModels/RoomOverviewViewModel.cs:128-144` | calculation | | |
+| BR-76 | "Clear filter" resets floor, room size and status to null and reloads all rooms. | `ViewModels/RoomOverviewViewModel.cs:161-168` | calculation | | |
+| BR-77 | Deleting a room requires an explicit "Yes" on the warning "…This can disrupt logged bookings". | `ViewModels/RoomOverviewViewModel.cs:196-203` | access | | |
+| BR-78 | If the repository throws `InvalidOperationException` on deletion (e.g. a room with bookings), the room remains in the list and the error text is shown as "Unable to delete room". | `ViewModels/RoomOverviewViewModel.cs:205-214` | validation | | |
+| BR-79 | Edit room does nothing if no room was passed (null parameter). | `ViewModels/RoomOverviewViewModel.cs:181-183, 196-198` | access | | |
+| BR-80 | After a room is saved, both the room list and the filter options are reloaded, and the side panel is closed. | `ViewModels/RoomOverviewViewModel.cs:217-228` | calculation | | |
+| BR-81 | A newly created room gets the status `Available` as a starting point. | `ViewModels/FormsViewModel/RoomFormViewModel.cs:35-43` | state transition | T-19 | |
+| BR-82 | A room with `RoomId == 0` is created; all others are updated. | `ViewModels/FormsViewModel/RoomFormViewModel.cs:59-66` | calculation | | |
+| BR-83 | The room form's title/button text is "Create Room"/"Create" on creation and "Edit Room"/"Save" on editing. | `ViewModels/FormsViewModel/RoomFormViewModel.cs:35-49` | calculation | | |
+| BR-84 | `Room.Validate()` is called on save, but the result is ignored — invalid rooms are saved anyway (only caught by BR-113 in the repo layer). | `ViewModels/FormsViewModel/RoomFormViewModel.cs:58` | validation | | |
+| BR-85 | The application always starts on the booking overview. | `ViewModels/MainViewModel.cs:47` | access | | |
+| BR-86 | Navigation between the booking, guest, room, sales and guest policy views is always allowed, and each view holds one lifetime instance. | `ViewModels/MainViewModel.cs:42-72` | access | | |
+| BR-87 | A command without an explicit `canExecute` is always allowed. | `Commands/RelayCommand.cs:28-31` | access | | |
+| BR-88 | `DateGreaterThan` validation fails when the validated date is ≤ the comparison date, with "{field} must be after {comparison field}". | `Validation/DateGreaterThanAttribute.cs:34-43` | validation | | |
+| BR-89 | If `DateGreaterThan` points at a non-existent field, the validation fails with "Unknown property: {name}". | `Validation/DateGreaterThanAttribute.cs:23-28` | validation | | |
+| BR-90 | If either the value or the comparison value is not a `DateTime` (e.g. null), the validation is considered passed. | `Validation/DateGreaterThanAttribute.cs:34-46` | validation | | |
+| BR-91 | `Guest.FirstName` must not be null, empty or only whitespace. | `Models/Guest.cs:49-50` | validation | T-11, T-12 | |
+| BR-92 | `Guest.LastName` must not be null, empty or only whitespace. | `Models/Guest.cs:51-52` | validation | T-11 | |
+| BR-93 | `Guest.Email` must be filled in and contain both `@` and `.` (the position is not checked). | `Models/Guest.cs:53-54` | validation | T-13 | |
+| BR-94 | `Guest.PhoneNumber` must not be empty (no format requirement). | `Models/Guest.cs:55-56` | validation | T-11 | |
+| BR-95 | `Guest.Country` must not be empty. | `Models/Guest.cs:57-58` | validation | T-11 | |
+| BR-96 | `Guest.Validate()` collects all errors in one list instead of failing on the first. | `Models/Guest.cs:39-58` | validation | T-15 | |
+| BR-97 | `Room.RoomNumber` must not be empty or whitespace. | `Models/Room.cs:40-41` | validation | T-16 | |
+| BR-98 | `Room.Floor` must be > 0 (ground floor and basement are thus not allowed). | `Models/Room.cs:43-44` | validation | T-17 | |
+| BR-99 | `Room.RoomSize` must not be empty — but it is not checked against a set of allowed values. | `Models/Room.cs:46-47` | validation | T-16 | |
+| BR-100 | `Room.Capacity` must be > 0. | `Models/Room.cs:49-50` | validation | T-18 | |
+| BR-101 | `Booking.StartDate` must not be `default(DateTime)`. | `Models/Booking.cs:47-48` | validation | T-01 | |
+| BR-102 | `Booking.EndDate` must not be `default(DateTime)`. | `Models/Booking.cs:50-51` | validation | T-02 | |
+| BR-103 | When both dates are set, `EndDate` must be strictly greater than `StartDate`. | `Models/Booking.cs:53-54` | validation | T-03 | |
+| BR-104 | `Booking.StartDate.Date` must not be before `DateTime.Now.Date`. | `Models/Booking.cs:56-57` | validation | T-04 | |
+| BR-105 | A booking must have a room: error only if both `Room` is null AND `RoomID` is 0. | `Models/Booking.cs:59-60` | validation | T-05 | |
+| BR-106 | A booking must have a guest: error only if both `Guest` is null AND `GuestID` is 0. | `Models/Booking.cs:62-63` | validation | T-06 | |
+| BR-107 | When both `CheckInTime` and `CheckOutTime` have a value, `CheckOutTime` must be strictly greater than `CheckInTime`. | `Models/Booking.cs:65-66` | validation | T-07 | |
+| BR-108 | `Booking.ValidateEdit(newStart, newEnd)` requires `newEnd > newStart` and `newStart.Date >= today` on the submitted dates. | `Models/Booking.cs:75-79` | validation | T-08 | |
+| BR-109 | `NumberOfNights` = `(EndDate - StartDate).Days`, and 0 if one of the dates is `default`. The booking number is formatted as `FLZ-{BookingID:D6}`. | `Models/Booking.cs:13, 30-39` | calculation | T-09, T-10 | |
+| BR-110 | Only rooms with status `Available` count as available — the filter lives in the data access layer. | `Repositories/RoomRepo.cs:220` | calculation | T-37 | |
+| BR-111 | Selection of bookings by status happens as an in-memory filter after a full table pull. | `Repositories/BookingRepo.cs:173` | calculation | | |
+| BR-112 | A room with existing bookings must not be deleted; the user is directed to set it "Out of service". The rule is coded as a `catch` of SQL error 547. | `Repositories/RoomRepo.cs:208-210` | validation | | |
+| BR-113 | A room must pass `Room.Validate()` before it is persisted — enforced in the repo on both create and update. | `Repositories/RoomRepo.cs:21-23, 164-166` | validation | T-36 | |
+| BR-114 | A booking must exist before it may be updated or deleted; otherwise `ArgumentException`. `Create`/`Update` with null gives `ArgumentNullException`. | `Repositories/BookingRepo.cs:190-196, 235-239` | access | T-32, T-33 | |
+| BR-115 | `GetById` on an unknown id returns `null` — not an exception, not an empty object. | `Repositories/BookingRepo.cs:167`, `GuestRepo.cs:79`, `RoomRepo.cs:101` | calculation | T-34 | |
+| BR-116 | Name search on guests is "contains" on first OR last name (wildcards on both sides, OR between columns). | `Repositories/GuestRepo.cs:127, 130` | calculation | T-40 | |
+| BR-117 | A booking's duration in the calendar is the number of overnight stays, not the number of days: the width is `(EndDate − StartDate).Days`. | `Converters/CalendarConverters.cs:149` | calculation | T-09 | |
+| BR-118 | Half-day rule: a booking is drawn from the middle of the check-in day (`daysOffset + 0.5`) — the room is counted as occupied from noon. | `Converters/CalendarConverters.cs:31, 48` | calculation | | |
+| BR-119 | Bookings that started before the displayed period are clipped to the start of the period and get `+0.5` day on the width. | `Converters/CalendarConverters.cs:81, 139` | calculation | | |
+| BR-120 | A room's timeline shows only bookings where `Booking.Room.RoomId` matches the room; bookings with no linked room are omitted entirely. | `Converters/CalendarConverters.cs:197` | calculation | | |
+| BR-121 | The Confirm button is shown only at status `Pending` (duplicate of BR-02, enforced in an XAML trigger). | `Views/BookingOverviewView.xaml:988` | state transition | T-20 | |
+| BR-122 | The Cancel button is shown only at status `Pending` or `Confirmed` (duplicate of BR-11, enforced in an XAML trigger). | `Views/BookingOverviewView.xaml:1037, 1040` | state transition | T-25 | |
+| BR-123 | The Edit button is hidden at status `CheckedIn` and `CheckedOut` (duplicate of BR-14, enforced in an XAML trigger). | `Views/BookingOverviewView.xaml:958, 961` | access | T-26 | |
+| BR-124 | Guest fields are read-only outside edit mode (`IsReadOnly = !IsEditing` on all six fields). | `Views/GuestOverviewView.xaml:132, 142, 152, 162, 172, 179` | access | | |
+| BR-125 | "Edit Guest" requires a selected guest (`NotNullToBoolConverter`); the "New Booking" button, however, has no corresponding guard. | `Views/GuestOverviewView.xaml:186` (missing `:187-190`) | access | | |
+| BR-126 | The allowed room statuses in the room form are hard-coded in XAML as Available / Maintanance / Cleaning / Disabled — and do not match the `RoomStatus` enum (Available / OutOfService / Maintenance). | `Views/Forms/RoomFormView.xaml:43-46` vs. `Models/Enums/RoomStatus.cs:9-14` | validation | | |
 
 ---
 
-## Fordeling
+## Distribution
 
-| Type | Antal |
+| Type | Count |
 |---|---|
-| validering | 55 |
-| beregning | 40 |
-| statusovergang | 18 |
-| adgang | 23 |
+| validation | 55 |
+| calculation | 40 |
+| state transition | 18 |
+| access | 23 |
 
-(Summen overstiger 126, fordi nogle regler er talt i den type de primært hører til; se tabellens Type-kolonne for den autoritative klassificering.)
+(The sum exceeds 126 because some rules are counted in the type they primarily belong to; see the table's Type column for the authoritative classification.)
 
-**Dubletter der skal konsolideres i ny kode:** BR-02/BR-121, BR-11/BR-122, BR-14/BR-123 (samme regel i både ViewModel og XAML-trigger) · BR-52..BR-56 / BR-91..BR-95 (samme gæstevalidering i både ViewModel og Model) · BR-41..BR-44 / BR-101..BR-104 (samme datovalidering i både ViewModel og Model) · BR-88 / BR-38 / BR-43 (samme "slut efter start"-regel tre steder).
+**Duplicates to be consolidated in new code:** BR-02/BR-121, BR-11/BR-122, BR-14/BR-123 (the same rule in both ViewModel and XAML trigger) · BR-52..BR-56 / BR-91..BR-95 (the same guest validation in both ViewModel and Model) · BR-41..BR-44 / BR-101..BR-104 (the same date validation in both ViewModel and Model) · BR-88 / BR-38 / BR-43 (the same "end after start" rule in three places).
 
-**Regler der ikke er implementeret i det gamle projekt:** BR-31 (omsætning giver altid 0) · BR-84 (rumvalidering ignoreres i formularen).
+**Rules that are not implemented in the old project:** BR-31 (revenue always gives 0) · BR-84 (room validation is ignored in the form).
 
-**Direkte modstrid mellem regler:** BR-19 vs. BR-39 (overlapstjek ekskluderer `CheckedOut` ved redigering, men ikke ved oprettelse) · BR-126 vs. `RoomStatus`-enum.
+**Direct contradiction between rules:** BR-19 vs. BR-39 (the overlap check excludes `CheckedOut` on editing, but not on creation) · BR-126 vs. the `RoomStatus` enum.
 
 ---
 
-## Tilstandsdiagram — BookingStatus
+## State diagram — BookingStatus
 
-Udledt udelukkende af reglerne ovenfor.
+Derived solely from the rules above.
 
 ```mermaid
 stateDiagram-v2
     [*] --> Pending : SaveBookingCommand / CreateBooking()<br/>BR-01, BR-41..BR-48
 
-    Pending --> Confirmed : ConfirmBookingCommand<br/>[status = Pending] + Ja-dialog<br/>BR-02..BR-05
+    Pending --> Confirmed : ConfirmBookingCommand<br/>[status = Pending] + Yes dialog<br/>BR-02..BR-05
 
-    Pending --> CheckedIn : CheckInBookingCommand<br/>[StartDate.Date <= i dag, CheckInTime ikke sat]<br/>saetter CheckInTime = nu — BR-06, BR-07
-    Confirmed --> CheckedIn : CheckInBookingCommand<br/>[StartDate.Date <= i dag, CheckInTime ikke sat]<br/>saetter CheckInTime = nu — BR-06, BR-07
+    Pending --> CheckedIn : CheckInBookingCommand<br/>[StartDate.Date <= today, CheckInTime not set]<br/>sets CheckInTime = now — BR-06, BR-07
+    Confirmed --> CheckedIn : CheckInBookingCommand<br/>[StartDate.Date <= today, CheckInTime not set]<br/>sets CheckInTime = now — BR-06, BR-07
 
-    CheckedIn --> CheckedOut : CheckOutBookingCommand<br/>[CheckInTime sat, CheckOutTime ikke sat]<br/>saetter CheckOutTime = nu — BR-09, BR-10
+    CheckedIn --> CheckedOut : CheckOutBookingCommand<br/>[CheckInTime set, CheckOutTime not set]<br/>sets CheckOutTime = now — BR-09, BR-10
 
-    Pending --> Cancelled : CancelBookingCommand + Ja-dialog — BR-11..BR-13
-    Confirmed --> Cancelled : CancelBookingCommand + Ja-dialog — BR-11..BR-13
+    Pending --> Cancelled : CancelBookingCommand + Yes dialog — BR-11..BR-13
+    Confirmed --> Cancelled : CancelBookingCommand + Yes dialog — BR-11..BR-13
 
-    Pending --> Pending : SaveEditCommand<br/>[datovalidering + overlapstjek] — BR-14, BR-18..BR-20
-    Confirmed --> Confirmed : SaveEditCommand<br/>[datovalidering + overlapstjek] — BR-14, BR-18..BR-20
+    Pending --> Pending : SaveEditCommand<br/>[date validation + overlap check] — BR-14, BR-18..BR-20
+    Confirmed --> Confirmed : SaveEditCommand<br/>[date validation + overlap check] — BR-14, BR-18..BR-20
 
-    CheckedOut --> [*] : slutstatus — ingen kommandoer tilladt
-    Cancelled --> [*] : slutstatus — skjules i oversigten (BR-23)
+    CheckedOut --> [*] : final status — no commands allowed
+    Cancelled --> [*] : final status — hidden in the overview (BR-23)
 ```
 
-**Bemærk til Fase 1:** overgangen `Pending → CheckedIn` (uden om `Confirmed`) er bekræftet af både kode og test (T-21), men modsiger bekræftelsesdialogens egen tekst om at `Confirmed` betyder "betaling modtaget". Se `OpenQuestions.md` Q-01.
+**Note for Phase 1:** the transition `Pending → CheckedIn` (bypassing `Confirmed`) is confirmed by both code and test (T-21), but contradicts the confirmation dialog's own text that `Confirmed` means "payment received". See `OpenQuestions.md` Q-01.
 
 ---
 
-## Nye regler — opfundet i Fase 1, afventer godkendelse
+## New rules — invented in Phase 1, awaiting approval
 
-> Tilføjet 2026-09-07. Disse findes **ikke** i det gamle system. De er adskilt fra BR-01 til BR-126, så Fase 3's `verify:ledger-audit` kan skelne "bevaret fra gammelt system" fra "opfundet nu".
-> Godkendes de ikke, skal de fjernes fra designet — ikke stiltiende accepteres.
+> Added 2026-09-07. These do **not** exist in the old system. They are kept apart from BR-01 to BR-126, so Phase 3's `verify:ledger-audit` can tell "kept from the old system" from "invented now".
+> If they are not approved, they must be removed from the design — not tacitly accepted.
 
-| Id | Regel | Kilde til behovet | Status i ny kode |
+| Id | Rule | Source of the need | Status in new code |
 |---|---|---|---|
-| BR-N-01 | Rumnummer skal være unikt på tværs af hotellet | To rum med samme nummer er meningsløst; det gamle skema havde ingen constraint | |
-| BR-N-02 | En gæst kan slettes | Følger af D-05 (persondata slettes på gæstens anmodning). Fandtes ikke før | |
-| BR-N-03 | Længdegrænser på navne og felter håndhæves i Domain, ikke kun i databasen | A-10 — ellers fejler for lange værdier som `DbUpdateException` i stedet for som domænefejl | |
-| BR-N-04 | `floor > 0` og `capacity > 0` håndhæves også som databaseconstraints | Reglerne fandtes i C# (BR-98, BR-100), men ikke i skemaet | |
-| BR-N-05 | Gæstesøgning bruger BR-68's semantik overalt (alle ord skal findes i navn, land eller e-mail) | Repo'et søgte kun på for-/efternavn (BR-116); ViewModel'en brugte BR-68. To forskellige søgninger konsolideret til én — en søgning på et efternavn rammer nu også et land med samme navn | |
-| BR-N-06 | Rengøringsforløbets syv overgange: `MarkDailyCleaningDue`, `MarkDepartureCleaningDue`, `StartCleaning`, `CompleteCleaning`, `ReportServiceNeeded`, `StartService`, `CompleteService` | Rumstatus fandtes reelt ikke som regelsæt (kun BR-81 og BR-126). Kræves af mobilappens formål (D-10) | |
-| BR-N-07 | En bookings effektive belægning slutter ved udtjekningsdatoen, ikke ved `EndDate` | A-01 — løser modsigelsen BR-19 ↔ BR-39 og gør genudlejning efter tidlig udtjekning mulig | |
+| BR-N-01 | Room number must be unique across the hotel | Two rooms with the same number is meaningless; the old schema had no constraint | |
+| BR-N-02 | A guest can be deleted | Follows from D-05 (personal data is deleted at the guest's request). Did not exist before | |
+| BR-N-03 | Length limits on names and fields are enforced in Domain, not only in the database | A-10 — otherwise too-long values fail as `DbUpdateException` instead of as a domain error | |
+| BR-N-04 | `floor > 0` and `capacity > 0` are also enforced as database constraints | The rules existed in C# (BR-98, BR-100), but not in the schema | |
+| BR-N-05 | Guest search uses BR-68's semantics everywhere (all words must be found in name, country or e-mail) | The repo searched only on first/last name (BR-116); the ViewModel used BR-68. Two different searches consolidated into one — a search on a last name now also hits a country with the same name | |
+| BR-N-06 | The cleaning process's seven transitions: `MarkDailyCleaningDue`, `MarkDepartureCleaningDue`, `StartCleaning`, `CompleteCleaning`, `ReportServiceNeeded`, `StartService`, `CompleteService` | Room status did not really exist as a rule set (only BR-81 and BR-126). Required by the purpose of the mobile app (D-10) | |
+| BR-N-07 | A booking's effective occupancy ends at the check-out date, not at `EndDate` | A-01 — resolves the contradiction BR-19 ↔ BR-39 and makes re-letting after an early check-out possible | |
 
-**Bemærk til BR-19 og BR-39:** de to modsagde hinanden i det gamle system. BR-39 (kun `Cancelled` frigiver) er valgt som gældende, men anvendt på den *effektive* periode via BR-N-07. BR-19's undtagelse for `CheckedOut` er dermed erstattet, ikke bevaret — den bogføres som **ændret** i Fase 3-auditten.
+**Note on BR-19 and BR-39:** the two contradicted each other in the old system. BR-39 (only `Cancelled` releases) has been chosen as the one that applies, but applied to the *effective* period via BR-N-07. BR-19's exception for `CheckedOut` is thus replaced, not kept — it is recorded as **changed** in the Phase 3 audit.
 
-**Bemærk til A-12 (roller):** rollerne i rengøringsforløbet (rengøringspersonale, servicetekniker, ejer) er **dokumentation**, ikke håndhævede regler i Fase 1. Autorisation er udskudt. De må ikke tælles som implementerede ved auditten.
+**Note on A-12 (roles):** the roles in the cleaning process (cleaning staff, service technician, owner) are **documentation**, not enforced rules in Phase 1. Authorisation is postponed. They must not be counted as implemented at the audit.
 
 ---
 
-## Kundesidens regler — opfundet 2026-09-07, afventer godkendelse
+## The customer side's rules — invented 2026-09-07, awaiting approval
 
-> Kundesiden findes ikke i det gamle system. Disse regler er **defineret nu**, ikke porteret,
-> og føres derfor som en separat `BR-C`-serie. Fase 3's `verify:ledger-audit` skal kunne
-> skelne dem fra de 126 porterede og fra `BR-N`-serien.
+> The customer side does not exist in the old system. These rules are **defined now**, not ported,
+> and are therefore kept as a separate `BR-C` series. Phase 3's `verify:ledger-audit` must be able to
+> tell them from the 126 ported ones and from the `BR-N` series.
 
-| Id | Regel | Hvor den er implementeret | Status i ny kode |
+| Id | Rule | Where it is implemented | Status in new code |
 |---|---|---|---|
-| BR-C-01 | En kunde kan booke uden konto. Gæsteoplysninger indtastes ved bookingen (guest checkout) | `BookingService.CreateAsync` via `CreateBookingRequest.NewGuest` — fandtes allerede som BR-47 | |
-| BR-C-02 | Kunden ser kun rum der er ledige i den valgte periode — aldrig et rum der ikke kan bookes | `GetAvailableRoomsAsync`, som kalder samme overlapsfunktion som oprettelsen | |
-| BR-C-03 | En kundebooking oprettes med status `Pending`. Bekræftelse er personalets handling | Følger af BR-01; kundesiden har ingen bekræft-handling | |
-| BR-C-04 | Kunden kan ikke vælge rum uden først at have valgt gyldige datoer | `BookingFlowViewModel` — kontrolleres ved rumsøgning, rumvalg og indsendelse, ikke kun ved trinskift | |
-| BR-C-05 | Kvitteringen viser bookingnummer, periode, antal nætter og rum — ingen pris, da prismodellen ikke findes | `BookingReceiptCard` viser "Betaling ved ankomst" | |
-| BR-C-06 | Kunden kan ikke se andre gæsters persondata. Kvitteringssiden viser kun booking- og rumoplysninger | `BookingReceiptCard` har ingen markup til gæstefelter | |
+| BR-C-01 | A customer can book without an account. Guest details are entered at booking (guest checkout) | `BookingService.CreateAsync` via `CreateBookingRequest.NewGuest` — already existed as BR-47 | |
+| BR-C-02 | The customer sees only rooms that are free in the chosen period — never a room that cannot be booked | `GetAvailableRoomsAsync`, which calls the same overlap function as the creation | |
+| BR-C-03 | A customer booking is created with status `Pending`. Confirmation is the staff's action | Follows from BR-01; the customer side has no confirm action | |
+| BR-C-04 | The customer cannot choose a room without first having chosen valid dates | `BookingFlowViewModel` — checked on room search, room selection and submission, not only on step change | |
+| BR-C-05 | The receipt shows booking number, period, number of nights and room — no price, since the price model does not exist | `BookingReceiptCard` shows "Betaling ved ankomst" (payment on arrival) | |
+| BR-C-06 | The customer cannot see other guests' personal data. The receipt page shows only booking and room details | `BookingReceiptCard` has no markup for guest fields | |
 
-**Om BR-C-06.** Uden auth er bookingnummeret den eneste nøgle, og `FLZ-000123` er trivielt at gætte.
-Kvitteringssiden viser derfor bevidst hverken navn, e-mail, telefon eller pasnummer — kun det
-kunden lige selv har indtastet, plus rum og datoer. Begrænsningen kan løftes når Identity kommer,
-og bør revurderes dér frem for at blive glemt.
+**On BR-C-06.** Without auth the booking number is the only key, and `FLZ-000123` is trivially guessable.
+The receipt page therefore deliberately shows neither name, e-mail, phone nor passport number — only what the
+customer has just entered themselves, plus room and dates. The restriction can be lifted when Identity arrives,
+and should be reassessed there rather than forgotten.
 
-**Om adgangskontrol.** `/admin/**` er ikke beskyttet. Enhver der kender adressen kan ændre
-bookinger og se alle gæster. Det er den udskudte auth (D-01, D-02, D-03), og `AdminLayout`
-skriver det på skærmen, så ingen tror andet. Det må ikke i drift uden auth.
+**On access control.** `/admin/**` is not protected. Anyone who knows the address can change
+bookings and see all guests. That is the postponed auth (D-01, D-02, D-03), and `AdminLayout`
+writes it on the screen so no one thinks otherwise. It must not go into operation without auth.

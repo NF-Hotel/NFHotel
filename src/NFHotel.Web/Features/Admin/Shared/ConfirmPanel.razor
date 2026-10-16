@@ -1,14 +1,14 @@
 @*
-    Bekræftelse før en handling der ikke kan fortrydes: annullering af en booking (BR-04)
-    og sletning af en gæst eller et rum.
+    Confirmation before an action that cannot be undone: cancelling a booking (BR-04)
+    and deleting a guest or a room.
 
-    Panelet er en indlejret stribe og ikke et overlay. En modal ville kræve klasser der
-    ikke findes i designsystemet (UI-Spec afsnit 3 er kontrakten), og et overlay i Blazor
-    Server bliver stående efter navigation, fordi DOM'en overlever sideskiftet. Striben
-    står i stedet dér hvor rækken står, og forsvinder når listen hentes igen.
+    The panel is an embedded strip and not an overlay. A modal would require classes that
+    do not exist in the design system (UI-Spec section 3 is the contract), and an overlay in Blazor
+    Server stays on screen after navigation, because the DOM survives the page change. The strip
+    stands instead where the row stands, and disappears when the list is fetched again.
 
-    Ingen logik: hvad der skal bekræftes, og hvad der sker bagefter, afgøres af den
-    viewmodel der åbnede panelet.
+    No logic: what is to be confirmed, and what happens afterwards, is decided by the
+    viewmodel that opened the panel.
 *@
 
 <div class="alert alert-error" role="alertdialog" aria-label="@Title">
@@ -34,29 +34,29 @@
 </div>
 
 @code {
-    /// <summary>Overskriften, fx "Annullér booking FLZ-000123?".</summary>
+    /// <summary>The heading, for example "Cancel booking FLZ-000123?".</summary>
     [Parameter]
     [EditorRequired]
     public string Title { get; set; } = string.Empty;
 
-    /// <summary>Forklaringen af hvad der sker hvis brugeren fortsætter.</summary>
+    /// <summary>The explanation of what happens if the user continues.</summary>
     [Parameter]
     [EditorRequired]
     public string Message { get; set; } = string.Empty;
 
-    /// <summary>Teksten på den bekræftende knap. Skal navngive handlingen, ikke sige "OK".</summary>
+    /// <summary>The text on the confirming button. Must name the action, not say "OK".</summary>
     [Parameter]
     public string ConfirmLabel { get; set; } = "Confirm";
 
-    /// <summary>Deaktiverer begge knapper mens et kald er i gang.</summary>
+    /// <summary>Disables both buttons while a call is in progress.</summary>
     [Parameter]
     public bool IsBusy { get; set; }
 
-    /// <summary>Kaldes når brugeren bekræfter.</summary>
+    /// <summary>Called when the user confirms.</summary>
     [Parameter]
     public EventCallback OnConfirm { get; set; }
 
-    /// <summary>Kaldes når brugeren fortryder.</summary>
+    /// <summary>Called when the user backs out.</summary>
     [Parameter]
     public EventCallback OnCancel { get; set; }
 }

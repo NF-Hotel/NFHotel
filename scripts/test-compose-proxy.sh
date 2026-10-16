@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Smoke test for the nginx proxy and the NFHotel web service (MIL-002 task 6).
 #
-# Starts both Docker Compose services on a private network with throwaway
+# Starts the Docker Compose services (nginx, web, market analysis) on a private
+# network with throwaway
 # settings, checks the web application through the proxy, then removes every
 # container, image layer reference, network and temporary file it created.
 # It never reads nginx.env or nfhotel-web.env and needs no input. The web
@@ -12,13 +13,16 @@
 #   --keep  leave the services running after the test (for debugging)
 # Exit:  0 all checks passed; 1 a check or the setup failed; 2 usage error
 # Needs: bash 4+, docker with the compose plugin, curl, openssl
-# Task:  MIL-002 task 6 (docs/milestones/mil-002-nginx-proxy-and-web-compose.md)
+# Task:  MIL-002 task 6 and MIL-004 task 7 (docs/milestones)
 
 set -euo pipefail
 
 readonly NETWORK="nfhotel-smoke-net"
 readonly NGINX_PROJECT="nfhotel-smoke-nginx"
 readonly WEB_PROJECT="nfhotel-smoke-web"
+readonly ANALYSIS_PROJECT="nfhotel-smoke-analysis"
+readonly ANALYSIS_HOST="analysis.localhost"
+readonly ANALYSIS_API_HOST="analysis-api.localhost"
 
 TMP_DIR=""
 TMP_NATIVE=""
@@ -42,16 +46,18 @@ check() {
 }
 
 http_status() {
-  local method="$1" path="$2"
+  local method="$1" path="$2" host="${3:-}"
+  local -a header=()
+  [[ -n "$host" ]] && header=(--header "Host: $host")
   curl --silent --output /dev/null --write-out '%{http_code}' \
-    --max-time 10 --request "$method" "http://127.0.0.1:${PORT}${path}" ||
-    true
+    --max-time 10 --request "$method" "${header[@]}" \
+    "http://127.0.0.1:${PORT}${path}" || true
 }
 
 wait_for_status() {
-  local method="$1" path="$2" expected="$3" tries="${4:-30}" status=""
+  local method="$1" path="$2" expected="$3" tries="${4:-30}" host="${5:-}" status=""
   while ((tries > 0)); do
-    status="$(http_status "$method" "$path")"
+    status="$(http_status "$method" "$path" "$host")"
     [[ "$status" == "$expected" ]] && return 0
     tries=$((tries - 1))
     sleep 2
@@ -72,10 +78,19 @@ compose_web() {
     --file deploy/nfhotel-web/docker-compose.yml "$@"
 }
 
+compose_analysis() {
+  MARKET_ANALYSIS_ENV_FILE="$TMP_NATIVE/market-analysis.env" \
+    MARKET_ANALYSIS_CONFIG="$TMP_NATIVE/market-analysis.toml" \
+    NFHOTEL_PROXY_NETWORK="$NETWORK" \
+    docker compose --project-name "$ANALYSIS_PROJECT" \
+    --file deploy/market-analysis/docker-compose.yml "$@"
+}
+
 cleanup() {
   if ((KEEP == 0)); then
     compose_nginx down --volumes --remove-orphans >/dev/null 2>&1 || true
     compose_web down --volumes --remove-orphans >/dev/null 2>&1 || true
+    compose_analysis down --volumes --remove-orphans >/dev/null 2>&1 || true
     docker network rm "$NETWORK" >/dev/null 2>&1 || true
   fi
   [[ -n "$TMP_DIR" ]] && rm -rf "$TMP_DIR"
@@ -86,7 +101,16 @@ write_settings() {
 NGINX_SERVER_NAME=_
 UPSTREAM_HOST=nfhotel-web
 UPSTREAM_PORT=8080
+ANALYSIS_SERVER_NAME=$ANALYSIS_HOST
+ANALYSIS_UPSTREAM_HOST=market-analysis-notebook
+ANALYSIS_UPSTREAM_PORT=2718
+ANALYSIS_API_SERVER_NAME=$ANALYSIS_API_HOST
+ANALYSIS_API_UPSTREAM_HOST=market-analysis-api
+ANALYSIS_API_UPSTREAM_PORT=8000
 EOF
+  cp deploy/market-analysis/market-analysis.toml.example "$TMP_DIR/market-analysis.toml"
+  printf 'NFHOTEL_PROXY_NETWORK=%s
+' "$NETWORK" >"$TMP_DIR/market-analysis.env"
   cat >"$TMP_DIR/nfhotel-web.env" <<EOF
 ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
@@ -137,6 +161,9 @@ main() {
   echo "Building and starting the web service..."
   compose_web up --detach --build --wait --wait-timeout 180 >/dev/null ||
     die "the web service did not become healthy"
+  echo "Building and starting the market analysis service..."
+  compose_analysis up --detach --build --wait --wait-timeout 300 >/dev/null ||
+    die "the market analysis service did not become healthy"
   echo "Starting the proxy..."
   compose_nginx up --detach --wait --wait-timeout 60 >/dev/null ||
     die "the proxy did not start"
@@ -145,6 +172,14 @@ main() {
   check "GET / through the proxy" 200 "$(http_status GET /)"
   check "POST /_blazor/negotiate through the proxy" 200 \
     "$(http_status POST '/_blazor/negotiate?negotiateVersion=1')"
+
+  wait_for_status GET / 200 30 "$ANALYSIS_HOST" || true
+  check "GET / of the analysis notebook through the proxy" 200 \
+    "$(http_status GET / "$ANALYSIS_HOST")"
+  check "GET /health of the analysis API through the proxy" 200 \
+    "$(http_status GET /health "$ANALYSIS_API_HOST")"
+  check "analysis services publish no host port" "" \
+    "$(for id in $(compose_analysis ps --quiet); do docker port "$id" 2>/dev/null; done)"
 
   web_id="$(compose_web ps --quiet nfhotel-web)"
   check "web service publishes no host port" "" \

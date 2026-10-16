@@ -1,57 +1,57 @@
-using NFHotel.Application.Common;
-
+using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Booking;
 
 /// <summary>
-/// Fordeler et fejlet <see cref="Result"/> ud på gæsteformularens felter, så hver fejl
-/// står ved det felt den handler om.
+/// Distributes a failed <see cref="Result"/> over the fields of the guest form, so each error
+/// stands at the field it is about.
 /// </summary>
 /// <remarks>
-/// Application samler alle brudte regler på én gang (BR-60, BR-96). Vises de som én liste
-/// øverst, skal brugeren selv gætte hvilket felt "E-mailen skal indeholde både '@' og '.'"
-/// hører til. Denne type er den oversættelse — og kun den: teksterne kommer stadig fra
-/// <see cref="ErrorMessages"/>, så der findes ingen dansk streng her.
+/// Application collects all broken rules at once (BR-60, BR-96). If they are shown as one list
+/// at the top, the user must guess which field "The email must contain both '@' and '.'"
+/// belongs to. This type is that translation — and only that: the texts still come from
+/// <see cref="ErrorMessages"/>, so there is no Danish string here.
 /// <para>
-/// Koder klassen ikke kender — fx <c>booking.room_not_available</c> fra oprettelsen —
-/// havner i <see cref="Other"/> og vises som en almindelig fejlbesked. En ukendt kode må
-/// aldrig forsvinde tavst.
+/// Codes the class does not know — for example <c>booking.room_not_available</c> from the creation —
+/// end up in <see cref="Other"/> and are shown as an ordinary error message. An unknown code must
+/// never disappear silently.
 /// </para>
 /// </remarks>
 public sealed class GuestFieldErrors
 {
     private static readonly IReadOnlyList<string> NoMessages = Array.Empty<string>();
 
-    /// <summary>Ingen fejl. Formularens udgangspunkt.</summary>
+    /// <summary>No errors. The starting point of the form.</summary>
     public static readonly GuestFieldErrors None = new();
 
-    /// <summary>Fejlteksten ved fornavn, eller <c>null</c>.</summary>
+    /// <summary>The error text at first name, or <c>null</c>.</summary>
     public string? FirstName { get; private init; }
 
-    /// <summary>Fejlteksten ved efternavn, eller <c>null</c>.</summary>
+    /// <summary>The error text at last name, or <c>null</c>.</summary>
     public string? LastName { get; private init; }
 
-    /// <summary>Fejlteksten ved e-mail, eller <c>null</c>.</summary>
+    /// <summary>The error text at email, or <c>null</c>.</summary>
     public string? Email { get; private init; }
 
-    /// <summary>Fejlteksten ved telefonnummer, eller <c>null</c>.</summary>
+    /// <summary>The error text at phone number, or <c>null</c>.</summary>
     public string? PhoneNumber { get; private init; }
 
-    /// <summary>Fejlteksten ved land, eller <c>null</c>.</summary>
+    /// <summary>The error text at country, or <c>null</c>.</summary>
     public string? Country { get; private init; }
 
-    /// <summary>Fejlteksten ved pasnummer, eller <c>null</c>.</summary>
+    /// <summary>The error text at passport number, or <c>null</c>.</summary>
     public string? PassportNumber { get; private init; }
 
-    /// <summary>De fejl der ikke hører til et enkelt felt. Vises samlet over formularen.</summary>
+    /// <summary>The errors that do not belong to a single field. Shown together above the form.</summary>
     public IReadOnlyList<string> Other { get; private init; } = NoMessages;
 
     /// <summary>
-    /// Fordeler resultatets fejl ud på felterne.
+    /// Distributes the errors of the result over the fields.
     /// </summary>
-    /// <param name="result">Resultatet fra <c>ValidateFields</c> eller <c>CreateAsync</c>.</param>
-    /// <returns>Fejlene fordelt pr. felt. <see cref="None"/> hvis resultatet lykkedes.</returns>
+    /// <param name="result">The result from <c>ValidateFields</c> or <c>CreateAsync</c>.</param>
+    /// <returns>The errors distributed per field. <see cref="None"/> if the result succeeded.</returns>
     public static GuestFieldErrors FromResult(Result result)
     {
         ArgumentNullException.ThrowIfNull(result);

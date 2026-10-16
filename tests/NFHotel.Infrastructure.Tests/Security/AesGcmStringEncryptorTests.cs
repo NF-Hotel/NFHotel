@@ -1,6 +1,6 @@
-using System;
 using System.Security.Cryptography;
 
+using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Security;
 
 namespace NFHotel.Infrastructure.Tests.Security;
@@ -12,25 +12,25 @@ namespace NFHotel.Infrastructure.Tests.Security;
 public class AesGcmStringEncryptorTests
 {
 
-    // Er en roundtrip-test, der sikrer at kryptering og dekryptering fungerer korrekt.
-    // dekrypteres tilbage til den oprindelige værdi.
-    // [Fact] markerer metoden som en xUnit-test.
+    // Is a round-trip test that ensures encryption and decryption work correctly.
+    // decrypts back to the original value.
+    // [Fact] marks the method as an xUnit test.
     [Fact]
     public void Encrypt_ThenDecrypt_ReturnsOriginalPlainText()
     {
-        // Opretter et byte-array på 32.
+        // Creates a byte array of 32.
         var key = new byte[32];
 
-        // Opretter indstillingerne til krypteringen.
+        // Creates the settings for the encryption.
         var options = new EncryptionOptions
         {
-            // Konverterer AES-nøglen fra byte[] til en Base64-string,
-            // fordi PassportKey gemmes/forventes som tekst.
+            // Converts the AES key from byte[] to a Base64 string,
+            // because PassportKey is stored/expected as text.
             PassportKey = Convert.ToBase64String(key)
         };
 
-        // Opretter den klasse, som vi vil teste,
-        // giver den krypteringsindstillingerne med AES-nøglen.
+        // Creates the class we want to test,
+        // gives it the encryption settings with the AES key.
         var encryptor = new AesGcmStringEncryptor(options);
 
 
@@ -46,20 +46,20 @@ public class AesGcmStringEncryptorTests
     }
 
 
-    // Test for at sikre, at kryptering af samme tekst to gange giver forskellige resultater.
+    // Test to ensure that encrypting the same text twice gives different results.
     [Fact]
     public void Encrypt_SamePlainTextTwice_ReturnsDifferentCipherTexts()
     {
-       // Arrange 
-       var key = new byte[32];
+        // Arrange 
+        var key = new byte[32];
 
         var options = new EncryptionOptions
         {
             PassportKey = Convert.ToBase64String(key)
         };
 
-        // Opretter den klasse, som vi vil teste,
-        // giver den krypteringsindstillingerne med AES-nøglen.
+        // Creates the class we want to test,
+        // gives it the encryption settings with the AES key.
         var encryptor = new AesGcmStringEncryptor(options);
 
         const string plainText = "abcd1234";
@@ -75,21 +75,21 @@ public class AesGcmStringEncryptorTests
     }
 
 
-    // Test for at sikre, at manipuleret krypteret data ikke kan dekrypteres.
-    // Dette er vigtigt for at sikre dataintegritet og sikkerhed.
+    // Test to ensure that tampered encrypted data cannot be decrypted.
+    // This is important to ensure data integrity and security.
     [Fact]
     public void Decrypt_TamperedCipherText_ThrowsCryptographicException()
     {
         // Arrange
         var key = new byte[32];
 
-        // Opretter indstillingerne til krypteringen.
+        // Creates the settings for the encryption.
         var options = new EncryptionOptions
         {
             PassportKey = Convert.ToBase64String(key)
         };
 
-        // Opretter den klasse, som vi vil teste,
+        // Creates the class we want to test,
         var encryptor = new AesGcmStringEncryptor(options);
 
         const string plainText = "abcd1234";
@@ -97,25 +97,25 @@ public class AesGcmStringEncryptorTests
 
         var cipherText = encryptor.Encrypt(plainText);
 
-        // Manipulerer den krypterede tekst ved at ændre et enkelt byte.
-        // Konverterer den krypterede Base64-string til bytes
+        // Tampers with the encrypted text by changing a single byte.
+        // Converts the encrypted Base64 string to bytes
         var tamperedBytes = Convert.FromBase64String(cipherText);
 
-        // Ændrer én bit i den sidste byte for med vilje at manipulere
-        // den krypterede data og teste om AES-GCM opdager ændringen.
+        // Changes one bit in the last byte to deliberately tamper with
+        // the encrypted data and test whether AES-GCM detects the change.
         tamperedBytes[^1] ^= 1;
 
 
-        // Konverterer de manipulerede bytes tilbage til en Base64-string,
-        // så den ændrede ciphertext kan bruges i testen.
+        // Converts the tampered bytes back to a Base64 string,
+        // so the changed ciphertext can be used in the test.
         var tamperedCipherText = Convert.ToBase64String(tamperedBytes);
 
 
 
-        // Act og Assert
-        // Forventer, at en CryptographicException kastes, når vi forsøger at dekryptere den manipulerede krypterede tekst.
-          Assert.ThrowsAny<CryptographicException>(
-              () => encryptor.Decrypt(tamperedCipherText));
+        // Act and Assert
+        // Expects a CryptographicException to be thrown when we try to decrypt the tampered encrypted text.
+        Assert.ThrowsAny<CryptographicException>(
+            () => encryptor.Decrypt(tamperedCipherText));
     }
 
 
@@ -123,7 +123,7 @@ public class AesGcmStringEncryptorTests
 
 
 
-    // Test for at sikre, at en manglende krypteringsnøgle afvises.
+    // Test to ensure that a missing encryption key is rejected.
     [Fact]
     public void Constructor_MissingPassportKey_ThrowsInvalidOperationException()
     {
@@ -135,7 +135,7 @@ public class AesGcmStringEncryptorTests
 
 
 
-        // Act og Assert
+        // Act and Assert
         Assert.Throws<InvalidOperationException>(
             () => new AesGcmStringEncryptor(options));
     }
@@ -143,7 +143,7 @@ public class AesGcmStringEncryptorTests
 
 
 
-    // Test for at sikre, at en ugyldig Base64-krypteringsnøgle afvises.
+    // Test to ensure that an invalid Base64 encryption key is rejected.
     [Fact]
     public void Constructor_InvalidBase64Key_ThrowsInvalidOperationException()
     {
@@ -156,7 +156,7 @@ public class AesGcmStringEncryptorTests
         };
 
 
-        // Act og Assert
+        // Act and Assert
         Assert.Throws<InvalidOperationException>(
             () => new AesGcmStringEncryptor(options));
     }
@@ -164,20 +164,20 @@ public class AesGcmStringEncryptorTests
 
 
 
-    // Test for at sikre, at en nøgle med ugyldig længde afvises.
+    // Test to ensure that a key with an invalid length is rejected.
     [Fact]
     public void Constructor_InvalidKeyLength_ThrowsInvalidOperationException()
     {
         // Arrange
         var key = new byte[10];
 
-        
+
         var options = new EncryptionOptions
         {
             PassportKey = Convert.ToBase64String(key)
         };
 
-        // Act og Assert
+        // Act and Assert
         Assert.Throws<InvalidOperationException>(
             () => new AesGcmStringEncryptor(options));
     }
@@ -200,7 +200,7 @@ public class AesGcmStringEncryptorTests
 
         const string invalidCipherText = "not-valid-base64!";
 
-        // Act og Assert
+        // Act and Assert
         Assert.Throws<CryptographicException>(
             () => encryptor.Decrypt(invalidCipherText));
     }
@@ -208,6 +208,3 @@ public class AesGcmStringEncryptorTests
 
 
 }
-
-
-

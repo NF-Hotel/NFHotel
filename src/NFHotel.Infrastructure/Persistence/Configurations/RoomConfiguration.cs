@@ -1,6 +1,7 @@
-using NFHotel.Domain.Rooms;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+using NFHotel.Domain.Entities;
 
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
@@ -8,31 +9,26 @@ namespace NFHotel.Infrastructure.Persistence.Configurations;
 /// EF Core-mapping for <see cref="Room"/>.
 /// </summary>
 /// <remarks>
-/// Længdegrænsen spejler domænets konstant frem for at gentage tallet (A-10): ellers ville
-/// en for lang værdi fejle som <c>DbUpdateException</c> i stedet for som en domænefejl.
+/// The length limit mirrors the constant of the domain instead of repeating the number (A-10): otherwise
+/// a value that is too long would fail as <c>DbUpdateException</c> instead of as a domain error.
 /// </remarks>
-public sealed class RoomConfiguration : IEntityTypeConfiguration<Room>
+public sealed class RoomConfiguration : EntityConfiguration<Room, int>
 {
-    private const string TableName = "room";
+    /// <inheritdoc />
+    protected override string TableName => "room";
 
     /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<Room> builder)
+    protected override void ConfigureTable(TableBuilder<Room> table)
     {
-        ArgumentNullException.ThrowIfNull(builder);
+        // BR-98 and BR-100 as database safeguards behind the domain invariant (BR-N-04).
+        table.HasCheckConstraint("ck_room_floor_positive", "floor > 0");
+        table.HasCheckConstraint("ck_room_capacity_positive", "capacity > 0");
+    }
 
-        builder.ToTable(TableName, table =>
-        {
-            // BR-98 og BR-100 som databaseværn bag domæneinvarianten (BR-N-04).
-            table.HasCheckConstraint("ck_room_floor_positive", "floor > 0");
-            table.HasCheckConstraint("ck_room_capacity_positive", "capacity > 0");
-        });
-
-        builder.HasKey(room => room.RoomId);
-
-        builder.Property(room => room.RoomId)
-            .ValueGeneratedOnAdd();
-
-        // Det gamle skema sagde INT i det ene SQL-sæt og string i C#. Ét skema, én type.
+    /// <inheritdoc />
+    protected override void ConfigureEntity(EntityTypeBuilder<Room> builder)
+    {
+        // The old schema said INT in one SQL set and string in C#. One schema, one type.
         builder.Property(room => room.RoomNumber)
             .HasMaxLength(Room.MaxRoomNumberLength)
             .IsRequired();
@@ -55,13 +51,13 @@ public sealed class RoomConfiguration : IEntityTypeConfiguration<Room>
             .HasConversion<int>()
             .IsRequired();
 
-        // BR-N-01: to rum med samme nummer er meningsløst. Det gamle skema havde ingen
-        // constraint. Servicen tjekker inden den skriver; indekset er kapløbsværnet bag det.
+        // BR-N-01: two rooms with the same number is meaningless. The old schema had no
+        // constraint. The service checks before it writes; the index is the race safeguard behind that.
         builder.HasIndex(room => room.RoomNumber)
             .IsUnique()
             .HasDatabaseName("ux_room_room_number");
 
-        // Tilgængelighedsopslaget filtrerer på bookbarhed (BR-110).
+        // The availability lookup filters on bookability (BR-110).
         builder.HasIndex(room => room.Status)
             .HasDatabaseName("ix_room_status");
 

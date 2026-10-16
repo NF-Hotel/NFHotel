@@ -2,14 +2,14 @@
 @layout NFHotel.Web.Components.Layout.AdminLayout
 
 @*
-    Ærlig placeholder — ingen ViewModel, ingen service, ingen tal.
+    An honest placeholder — no ViewModel, no service, no figures.
 
-    Architecture.md afsnit 7, punkt 5: BR-31 satte altid omsætningen til 0, og der findes
-    ingen pris i domænet. En SalesService der returnerede 0 ville ligne en implementering,
-    og det gamle system havde allerede en tom SalesOverviewViewModel. Skærmen siger derfor
-    hvad der mangler i stedet for at vise et falsk nul.
+    Architecture.md section 7, point 5: BR-31 always set revenue to 0, and there is
+    no price in the domain. A SalesService that returned 0 would look like an implementation,
+    and the old system already had an empty SalesOverviewViewModel. The screen therefore says
+    what is missing instead of showing a false zero.
 
-    Ingen @rendermode: siden er statisk tekst og har intet at være interaktiv om.
+    No @rendermode: the page is static text and has nothing to be interactive about.
 *@
 
 <PageTitle>Revenue — administration</PageTitle>
