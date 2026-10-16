@@ -5,7 +5,7 @@ using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Persistence;
 using NFHotel.Infrastructure.Security;
 
-namespace NFHotel.Infrastructure.Tests.Persistence;
+namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
 
 /// <summary>
 /// Integration tests for encryption of Guest passport data in PostgreSQL.

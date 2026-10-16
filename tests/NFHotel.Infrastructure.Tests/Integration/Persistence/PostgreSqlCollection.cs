@@ -1,6 +1,6 @@
 
 
-namespace NFHotel.Infrastructure.Tests.Persistence;
+namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
 
 
 /// <summary>
