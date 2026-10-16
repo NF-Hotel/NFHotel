@@ -1,6 +1,7 @@
 @page "/admin/guests"
 @layout NFHotel.Web.Components.Layout.AdminLayout
 @rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
 @using NFHotel.Web.Features.Admin.Guests
 @inject GuestListViewModel ViewModel
 
@@ -238,15 +239,15 @@
     private string DeleteTitle => $"Delete {ViewModel.GuestPendingDeletion?.FullName}?";
 
     /// <summary>Fetches the first list when the screen opens.</summary>
-    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync();
+    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
 
     /// <summary>Says whether a passport number is registered, without showing it.</summary>
     private static string PassportText(GuestListItemDto guest) =>
         guest.HasPassportNumber ? "On file" : "—";
 
-    private Task SearchAsync() => ViewModel.SearchAsync();
+    private Task SearchAsync() => ViewModel.SearchAsync(ComponentToken);
 
-    private Task ClearSearchAsync() => ViewModel.ClearSearchAsync();
+    private Task ClearSearchAsync() => ViewModel.ClearSearchAsync(ComponentToken);
 
     private void Validate() => ViewModel.Validate();
 
@@ -260,12 +261,12 @@
     {
         ViewModel.DismissSuccess();
 
-        return ViewModel.BeginEditAsync(guest.GuestId);
+        return ViewModel.BeginEditAsync(guest.GuestId, ComponentToken);
     }
 
     private void CancelEdit() => ViewModel.CancelEdit();
 
-    private Task SaveAsync() => ViewModel.SaveAsync();
+    private Task SaveAsync() => ViewModel.SaveAsync(ComponentToken);
 
     private void RequestDelete(GuestListItemDto guest)
     {
@@ -275,5 +276,5 @@
 
     private void AbortDelete() => ViewModel.AbortDelete();
 
-    private Task ConfirmDeleteAsync() => ViewModel.ConfirmDeleteAsync();
+    private Task ConfirmDeleteAsync() => ViewModel.ConfirmDeleteAsync(ComponentToken);
 }
