@@ -272,7 +272,7 @@ public sealed class BookingListViewModel
         try
         {
             var result = await _bookings
-                .RunAsync((service, token) => Invoke(service, action, bookingId, token), cancellationToken)
+                .RunAsync((service, token) => InvokeAsync(service, action, bookingId, token), cancellationToken)
                 .ConfigureAwait(false);
 
             if (result.IsFailure)
@@ -303,7 +303,7 @@ public sealed class BookingListViewModel
             ? _allBookings
             : _allBookings.Where(booking => booking.Status == StatusFilter.Value).ToArray();
 
-    private static Task<Result<BookingDetailsDto>> Invoke(
+    private static Task<Result<BookingDetailsDto>> InvokeAsync(
         IBookingService service,
         BookingAction action,
         int bookingId,
