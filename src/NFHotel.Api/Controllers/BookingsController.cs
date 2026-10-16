@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 
 using NFHotel.Api.Contracts;
+using NFHotel.Api.Security;
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.UseCases.Bookings;
+using NFHotel.Application.UseCases.Staff;
 
 namespace NFHotel.Api.Controllers;
 
@@ -34,6 +36,7 @@ public sealed class BookingsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The rows of the overview.</returns>
     [HttpPost(ApiRoutes.Overview)]
+    [RequiresPermission(Permission.BookingsView)]
     public async Task<IActionResult> GetOverviewAsync([FromBody] BookingOverviewQuery query, CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings.GetOverviewAsync(query, cancellationToken).ConfigureAwait(false));
 
@@ -66,6 +69,7 @@ public sealed class BookingsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The booking after the change.</returns>
     [HttpPost(ApiRoutes.BookingAction.Confirm)]
+    [RequiresPermission(Permission.BookingsManage)]
     public async Task<IActionResult> ConfirmAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings.ConfirmAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -74,6 +78,7 @@ public sealed class BookingsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The booking after the change.</returns>
     [HttpPost(ApiRoutes.BookingAction.CheckIn)]
+    [RequiresPermission(Permission.BookingsManage)]
     public async Task<IActionResult> CheckInAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings.CheckInAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -82,6 +87,7 @@ public sealed class BookingsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The booking after the change.</returns>
     [HttpPost(ApiRoutes.BookingAction.CheckOut)]
+    [RequiresPermission(Permission.BookingsManage)]
     public async Task<IActionResult> CheckOutAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings.CheckOutAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -90,6 +96,7 @@ public sealed class BookingsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The booking after the change.</returns>
     [HttpPost(ApiRoutes.BookingAction.Cancel)]
+    [RequiresPermission(Permission.BookingsManage)]
     public async Task<IActionResult> CancelAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings.CancelAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -98,6 +105,7 @@ public sealed class BookingsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The booking after the change.</returns>
     [HttpPost(ApiRoutes.Reschedule)]
+    [RequiresPermission(Permission.BookingsManage)]
     public async Task<IActionResult> RescheduleAsync([FromBody] RescheduleBookingRequest request, CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings.RescheduleAsync(request, cancellationToken).ConfigureAwait(false));
 }

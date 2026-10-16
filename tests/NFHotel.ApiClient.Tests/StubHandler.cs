@@ -22,6 +22,9 @@ internal sealed class StubHandler : HttpMessageHandler
     /// <summary>The body of the last call, or <c>null</c> when it had none.</summary>
     public string? Body { get; private set; }
 
+    /// <summary>The staff token header of the last call, or <c>null</c> when it had none.</summary>
+    public string? StaffToken { get; private set; }
+
     /// <summary>The number of calls received.</summary>
     public int Calls { get; private set; }
 
@@ -56,6 +59,7 @@ internal sealed class StubHandler : HttpMessageHandler
         Calls++;
         Method = request.Method;
         PathAndQuery = request.RequestUri?.PathAndQuery;
+        StaffToken = request.Headers.TryGetValues("X-Staff-Token", out var values) ? string.Join(",", values) : null;
         Body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         return await _respond(request).ConfigureAwait(false);

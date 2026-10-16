@@ -1,5 +1,6 @@
 @page "/admin/rooms"
 @layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.RoomsView)]
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
 @using NFHotel.Domain.Entities
@@ -26,12 +27,14 @@
     <PageHeader Title="Rooms"
                 Subtitle="Status, housekeeping and details for every room in the hotel.">
         <Actions>
-            <button type="button"
-                    class="btn btn-primary"
-                    disabled="@Form.IsBusy"
-                    @onclick="BeginCreate">
-                New room
-            </button>
+            <AuthorizeView Policy="@StaffPolicies.RoomsManage">
+                <button type="button"
+                        class="btn btn-primary"
+                        disabled="@Form.IsBusy"
+                        @onclick="BeginCreate">
+                    New room
+                </button>
+            </AuthorizeView>
         </Actions>
     </PageHeader>
 
@@ -212,12 +215,14 @@
                 <div class="row" role="group" aria-label="Room actions">
                     @foreach (var option in ViewModel.AvailableActions)
                     {
-                        <button type="button"
-                                class="btn btn-secondary btn-sm"
-                                disabled="@ViewModel.IsBusy"
-                                @onclick="() => ExecuteAsync(option.Action)">
-                            @option.Label
-                        </button>
+                        <AuthorizeView Policy="@PolicyFor(option.Action)">
+                            <button type="button"
+                                    class="btn btn-secondary btn-sm"
+                                    disabled="@ViewModel.IsBusy"
+                                    @onclick="() => ExecuteAsync(option.Action)">
+                                @option.Label
+                            </button>
+                        </AuthorizeView>
                     }
                 </div>
             }
@@ -251,9 +256,11 @@
     {
         <EmptyState Title="There are no rooms yet"
                     Description="Create the hotel's first room so guests have something to book.">
-            <button type="button" class="btn btn-primary btn-sm" @onclick="BeginCreate">
-                New room
-            </button>
+            <AuthorizeView Policy="@StaffPolicies.RoomsManage">
+                <button type="button" class="btn btn-primary btn-sm" @onclick="BeginCreate">
+                    New room
+                </button>
+            </AuthorizeView>
         </EmptyState>
     }
     else
@@ -290,19 +297,21 @@
                                     @SelectLabel(room)
                                 </button>
 
-                                <button type="button"
-                                        class="btn btn-secondary btn-sm"
-                                        disabled="@Form.IsBusy"
-                                        @onclick="() => BeginEditAsync(room)">
-                                    Edit
-                                </button>
+                                <AuthorizeView Policy="@StaffPolicies.RoomsManage">
+                                    <button type="button"
+                                            class="btn btn-secondary btn-sm"
+                                            disabled="@Form.IsBusy"
+                                            @onclick="() => BeginEditAsync(room)">
+                                        Edit
+                                    </button>
 
-                                <button type="button"
-                                        class="btn btn-danger btn-sm"
-                                        disabled="@ViewModel.IsBusy"
-                                        @onclick="() => RequestDelete(room)">
-                                    Delete
-                                </button>
+                                    <button type="button"
+                                            class="btn btn-danger btn-sm"
+                                            disabled="@ViewModel.IsBusy"
+                                            @onclick="() => RequestDelete(room)">
+                                        Delete
+                                    </button>
+                                </AuthorizeView>
                             </td>
                         </tr>
                     }
@@ -331,6 +340,12 @@
 
     /// <summary>Fetches filter options and the first list when the screen opens.</summary>
     protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
+
+    /// <summary>The policy that decides whether the user sees the button of an action (ADR-0005).</summary>
+    private static string PolicyFor(RoomAction action) =>
+        action is RoomAction.TakeOutOfService or RoomAction.SendToMaintenance or RoomAction.ReturnToService
+            ? StaffPolicies.RoomsManage
+            : StaffPolicies.HousekeepingUpdate;
 
     /// <summary>The text on the button that opens and closes the action panel.</summary>
     private string SelectLabel(RoomListItemDto room) =>

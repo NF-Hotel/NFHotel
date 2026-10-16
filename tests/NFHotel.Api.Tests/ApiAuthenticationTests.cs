@@ -11,7 +11,7 @@ namespace NFHotel.Api.Tests;
 /// <summary>The API refuses a call without the right bearer token and keeps the health endpoint open (ADR-0004).</summary>
 public sealed class ApiAuthenticationTests : IClassFixture<ApiFactory>
 {
-    private const string AnyApiPath = "/api/rooms";
+    private const string AnyApiPath = "/api/bookings/available-rooms?checkInDate=2030-01-02&checkOutDate=2030-01-04";
 
     private readonly ApiFactory _factory;
 

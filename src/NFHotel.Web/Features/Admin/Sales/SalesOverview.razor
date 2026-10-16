@@ -1,5 +1,6 @@
 @page "/admin/revenue"
 @layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.SalesView)]
 
 @*
     An honest placeholder — no ViewModel, no service, no figures.

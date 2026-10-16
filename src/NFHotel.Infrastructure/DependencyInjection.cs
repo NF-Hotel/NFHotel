@@ -6,6 +6,7 @@ using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Repositories;
 using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Persistence;
@@ -57,9 +58,10 @@ public static class DependencyInjection
 
         var connectionString = ReadConnectionString(configuration);
         var encryptionOptions = ReadEncryptionOptions(configuration);
+        var staffOptions = ReadStaffOptions(configuration);
 
         AddPersistence(services, connectionString);
-        AddSecurity(services, encryptionOptions);
+        AddSecurity(services, encryptionOptions, staffOptions);
         AddApplicationServices(services);
 
         return services;
@@ -129,13 +131,20 @@ public static class DependencyInjection
         services.AddScoped<IRoomQueries, RoomRepository>();
         services.AddScoped<IGuestRepository, GuestRepository>();
         services.AddScoped<IGuestQueries, GuestRepository>();
+        services.AddScoped<IStaffRepository, StaffRepository>();
     }
 
     /// <summary>Registers the encryption. Singleton: the key is immutable, and AesGcm is created per operation.</summary>
-    private static void AddSecurity(IServiceCollection services, EncryptionOptions options)
+    private static void AddSecurity(IServiceCollection services, EncryptionOptions options, StaffSecurityOptions staffOptions)
     {
         services.AddSingleton(options);
         services.AddSingleton<IStringEncryptor, AesGcmStringEncryptor>();
+
+        // ADR-0005: the staff sign-in. The throttle is a singleton because its counts must outlive a request.
+        services.AddSingleton(staffOptions);
+        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddSingleton<IStaffTokenIssuer, JwtStaffTokenIssuer>();
+        services.AddSingleton<ILoginThrottle, InMemoryLoginThrottle>();
     }
 
     /// <summary>
@@ -150,6 +159,8 @@ public static class DependencyInjection
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<IRoomService, RoomService>();
         services.AddScoped<IGuestService, GuestService>();
+        services.AddScoped<IStaffAuthService, StaffAuthService>();
+        services.AddScoped<IStaffAccountService, StaffAccountService>();
     }
 
     /// <summary>Reads the connection string and fails fast if it is missing.</summary>
@@ -182,4 +193,28 @@ public static class DependencyInjection
         return options;
     }
 
+    private static StaffSecurityOptions ReadStaffOptions(IConfiguration configuration)
+    {
+        var section = configuration.GetSection(StaffSecurityOptions.SectionName);
+        var signingKey = section["Token:SigningKey"]?.Trim() ?? string.Empty;
+        if (signingKey.Length < StaffSecurityOptions.MinimumSigningKeyLength)
+        {
+            throw new InvalidOperationException(
+                $"'{StaffSecurityOptions.SectionName}:Token:SigningKey' must be at least {StaffSecurityOptions.MinimumSigningKeyLength} characters. Create one with: openssl rand -base64 48");
+        }
+
+        return new StaffSecurityOptions
+        {
+            SigningKey = signingKey,
+            TokenLifetimeMinutes = ReadInt(section, "Token:LifetimeMinutes", 480),
+            PasswordIterations = ReadInt(section, "PasswordIterations", StaffSecurityOptions.DefaultPasswordIterations),
+            MaxFailures = ReadInt(section, "Throttle:MaxFailures", 5),
+            ThrottleWindowMinutes = ReadInt(section, "Throttle:WindowMinutes", 15),
+        };
+    }
+
+    private static int ReadInt(IConfigurationSection section, string key, int fallback) =>
+        int.TryParse(section[key], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var value)
+            ? value
+            : fallback;
 }

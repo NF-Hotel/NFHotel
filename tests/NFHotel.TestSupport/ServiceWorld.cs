@@ -210,6 +210,8 @@ public sealed class ServiceWorld
 
     public InMemoryGuestRepository Guests { get; } = new();
 
+    public InMemoryStaffRepository Staff { get; } = new();
+
     public IBookingQueries BookingQueries { get; } = Substitute.For<IBookingQueries>();
 
     public IRoomQueries RoomQueries { get; } = Substitute.For<IRoomQueries>();

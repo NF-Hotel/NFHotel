@@ -1,0 +1,23 @@
+@page "/admin/denied"
+@layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize]
+@inject AuthenticationStateProvider AuthenticationState
+
+@*
+    Where the cookie sends a signed-in user who asks for a page that the role does not hold (ADR-0005). A visitor who
+    is not signed in goes to the login page instead, because of the [Authorize] above.
+*@
+
+<PageTitle>Not permitted — administration</PageTitle>
+
+<NotPermitted Landing="@_landing" />
+
+@code {
+    private string _landing = "/";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthenticationState.GetAuthenticationStateAsync();
+        _landing = StaffClaims.RoleOf(state.User) is { } role ? RolePermissions.LandingPath(role) : "/";
+    }
+}

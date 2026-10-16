@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 
 using NFHotel.Api.Contracts;
+using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases;
 
 namespace NFHotel.Api.Controllers;
@@ -50,6 +51,16 @@ internal static class ResultResponses
     private static int StatusFor(Result result)
     {
         var codes = Codes(result);
+        if (codes.Contains(ErrorCodes.Staff.TooManyAttempts))
+        {
+            return StatusCodes.Status429TooManyRequests;
+        }
+
+        if (codes.Contains(ErrorCodes.Staff.InvalidCredentials))
+        {
+            return StatusCodes.Status401Unauthorized;
+        }
+
         if (codes.Any(code => code.EndsWith(".not_found", StringComparison.Ordinal)))
         {
             return StatusCodes.Status404NotFound;

@@ -4,9 +4,8 @@
     The staff's work tool: side menu on the left, content on the right, a tighter rhythm
     than the public site.
 
-    The band at the top says openly that access control is missing. Auth is deferred
-    (Phase1-Scope.md), and until Identity arrives, anyone who knows the address can open
-    these screens. That must be stated on the page, not only in a README.
+    Only a signed-in member of staff reaches these pages (ADR-0005); AdminNav shows who is signed in and the
+    menu items that the role may open.
 *@
 
 <a class="skip-link" href="#content">Skip to content</a>
@@ -15,14 +14,6 @@
     <AdminNav />
 
     <div class="admin-main">
-        <div class="admin-header">
-            <p class="admin-notice" role="status">
-                <span aria-hidden="true">&#9888;</span>
-                Access control is not in place yet — anyone with the address can view and
-                change the data on these screens.
-            </p>
-        </div>
-
         <div class="page" id="content">
             @Body
         </div>

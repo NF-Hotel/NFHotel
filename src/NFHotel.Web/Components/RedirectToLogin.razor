@@ -1,0 +1,16 @@
+@using NFHotel.Web.Security
+@inject NavigationManager Navigation
+
+@*
+    Sends a visitor who is not signed in to the login page, with the page that was asked for as return address.
+    The redirect happens while the first request is served, so no page content reaches an anonymous visitor.
+*@
+
+@code {
+    protected override void OnInitialized()
+    {
+        var target = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var returnUrl = "/" + target;
+        Navigation.NavigateTo($"{StaffSecurityRegistration.LoginPath}?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);
+    }
+}

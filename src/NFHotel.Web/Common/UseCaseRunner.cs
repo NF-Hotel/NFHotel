@@ -1,3 +1,4 @@
+using NFHotel.ApiClient;
 using NFHotel.Application.UseCases;
 
 namespace NFHotel.Web.Common;
@@ -7,28 +8,34 @@ namespace NFHotel.Web.Common;
 /// </summary>
 /// <typeparam name="TService">The Application service to be resolved per call.</typeparam>
 /// <remarks>
-/// Registered as an open generic singleton in <c>Program.cs</c>. It is stateless, and
-/// <see cref="IServiceScopeFactory"/> is itself a singleton — making the runner scoped would
-/// bind it to the circuit without gaining anything.
+/// Registered as an open generic scoped service in <c>Program.cs</c> (ADR-0005). It is stateless, but it reads the
+/// staff token of the circuit it belongs to and gives it to the scope of each call, so the API sees who is calling.
 /// </remarks>
 public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     where TService : notnull
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<UseCaseRunner<TService>> _logger;
+    private readonly IStaffTokenSource _tokenSource;
 
     /// <summary>
     /// Opretter runneren.
     /// </summary>
     /// <param name="scopeFactory">The factory that makes a fresh DI scope per call.</param>
     /// <param name="logger">Logger for the technical errors the user never gets to see.</param>
-    public UseCaseRunner(IServiceScopeFactory scopeFactory, ILogger<UseCaseRunner<TService>> logger)
+    /// <param name="tokenSource">Gives the staff token of the signed-in user, if any.</param>
+    public UseCaseRunner(
+        IServiceScopeFactory scopeFactory,
+        ILogger<UseCaseRunner<TService>> logger,
+        IStaffTokenSource tokenSource)
     {
         ArgumentNullException.ThrowIfNull(scopeFactory);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(tokenSource);
 
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _tokenSource = tokenSource;
     }
 
     /// <inheritdoc />
@@ -42,6 +49,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
         {
             // The scope — and thereby the DbContext — lives only as long as the use case runs.
             await using var scope = _scopeFactory.CreateAsyncScope();
+            await GiveStaffTokenAsync(scope).ConfigureAwait(false);
 
             var service = scope.ServiceProvider.GetRequiredService<TService>();
 
@@ -65,6 +73,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
         try
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
+            await GiveStaffTokenAsync(scope).ConfigureAwait(false);
 
             var service = scope.ServiceProvider.GetRequiredService<TService>();
 
@@ -112,6 +121,12 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     /// </remarks>
     private static bool ShouldHandle(Exception exception, CancellationToken cancellationToken) =>
         exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested;
+
+    private async Task GiveStaffTokenAsync(AsyncServiceScope scope)
+    {
+        var token = await _tokenSource.GetTokenAsync().ConfigureAwait(false);
+        scope.ServiceProvider.GetRequiredService<StaffCallContext>().Token = token;
+    }
 
     private void Log(Exception exception) =>
         _logger.LogError(
