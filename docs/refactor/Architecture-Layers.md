@@ -1,16 +1,16 @@
-# Architecture-Layers.md — bilag
+# Architecture-Layers.md — appendix
 
-> Fuldt output fra agenten `design:layers` (Fase 1). **Bilag.** `Architecture.md` har forrang hvor de modsiger hinanden — se især afgørelserne A-01 til A-15.
+> Full output from the agent `design:layers` (Phase 1). **Appendix.** `Architecture.md` takes precedence where they contradict each other — see especially the rulings A-01 to A-15.
 
-# Designdokument — `Application` og `Infrastructure` (Fase 1)
+# Design document — `Application` and `Infrastructure` (Phase 1)
 
-Agent: `design:layers`. Kilder læst: `BusinessRules.md` (126 regler), `Analysis.md` afsnit 1–5, `Conventions.md`, `NFHotel-Refactor-Plan.md` afsnit 1–3 + 7, `Fase1-Scope.md`, `Decisions.md`.
+Agent: `design:layers`. Sources read: `BusinessRules.md` (126 rules), `Analysis.md` sections 1–5, `Conventions.md`, `NFHotel-Refactor-Plan.md` sections 1–3 + 7, `Phase1-Scope.md`, `Decisions.md`.
 
-Præmisserne B-03, B-05, B-06, B-07, B-08, B-09 er lagt til grund og gentænkes ikke. Entiteter, enums og domæneregler er `design:domain`s område; hvor jeg er afhængig af deres valg, står det som en eksplicit afhængighed i afsnit 10.
+The premises B-03, B-05, B-06, B-07, B-08, B-09 are taken as given and not reconsidered. Entities, enums and domain rules are `design:domain`'s area; where I depend on their choices, it is stated as an explicit dependency in section 10.
 
 ---
 
-## 1. Projektstruktur
+## 1. Project structure
 
 ### 1.1 Solution
 
@@ -18,23 +18,25 @@ Præmisserne B-03, B-05, B-06, B-07, B-08, B-09 er lagt til grund og gentænkes 
 NFHotel.sln
 ├── src/
 │   ├── NFHotel.Domain/          (design:domain)
-│   ├── NFHotel.Application/     ← dette dokument
-│   ├── NFHotel.Infrastructure/  ← dette dokument
-│   ├── NFHotel.Web/             (design:web — kun DI-kontrakten her)
-│   └── NFHotel.Api/             TEGNES, BYGGES IKKE (D-09)
+│   ├── NFHotel.Application/     ← this document
+│   ├── NFHotel.Infrastructure/  ← this document
+│   ├── NFHotel.Web/             (design:web — only the DI contract here)
+│   └── NFHotel.Api/             DRAWN, NOT BUILT (D-09)
 └── tests/
     ├── NFHotel.Domain.Tests/
     ├── NFHotel.Application.Tests/
     └── NFHotel.Infrastructure.Tests/
 ```
 
-Referencer, én vej: `Web → Application → Domain` og `Web → Infrastructure → Application → Domain`. **`Application` må ikke referere EF Core, Npgsql eller ASP.NET.** Det håndhæves af en arkitekturtest, ikke af disciplin (afsnit 9).
+References, one way: `Web → Application → Domain` and `Web → Infrastructure → Application → Domain`. **`Application` must not reference EF Core, Npgsql or ASP.NET.** That is enforced by an architecture test, not by discipline (section 9).
 
-### 1.2 Mappeprincip
+### 1.2 Folder principle
 
-`Conventions.md` siger: *"Organisér efter feature først, ikke kun efter type"* og *"Hold namespaces identiske med mappestruktur"*. Målarkitekturen i refaktoreringsplanen (afsnit 3) tegner derimod `Interfaces/`, `Services/`, `DTOs/` — altså type-først. Conventions er source of truth, så **feature-først vinder**; se afsnit 10, punkt 1 for konflikten skrevet ud.
+`Conventions.md` says: *"Organise by feature first, not only by type"* and *"Keep namespaces identical to the folder structure"*. The target architecture in the refactoring plan (section 3), on the other hand, draws `Interfaces/`, `Services/`, `DTOs/` — that is type-first. Conventions is the source of truth, so **feature-first wins**; see section 10, point 1 for the conflict written out.
 
-Konsekvens: én feature-mappe rummer sit service-interface, sin service, sit repository-interface, sine DTO'er og sin mapping. En udvikler der skal ændre "opret booking" åbner én mappe.
+Consequence: one feature folder holds its service interface, its service, its repository interface, its DTOs and its mapping. A developer who has to change "create booking" opens one folder.
+
+> Note 2026-10-16: this was the Phase 1 design. Since ADR-0001 the Application project is organised as `UseCases`, `Dto/<Entity>`, `Ports` and `Errors`, and the repository interfaces are in `Domain/Repositories`; see `Architecture.md` section 2.
 
 ### 1.3 `NFHotel.Application`
 
@@ -44,7 +46,7 @@ src/NFHotel.Application/
 │     ProjectReference: NFHotel.Domain
 │     PackageReference: Microsoft.Extensions.DependencyInjection.Abstractions
 │                       Microsoft.Extensions.Options
-│     (INGEN EF Core, INGEN Npgsql)
+│     (NO EF Core, NO Npgsql)
 ├── DependencyInjection.cs                      → AddApplication()
 ├── Common/
 │   ├── Results/
@@ -53,7 +55,7 @@ src/NFHotel.Application/
 │   │   ├── Result.cs
 │   │   └── ResultOfT.cs                        → Result<TValue>
 │   ├── Exceptions/
-│   │   ├── BookingOverlapConflictException.cs  → oversat fra DB-værnet, B-03
+│   │   ├── BookingOverlapConflictException.cs  → translated from the DB safeguard, B-03
 │   │   ├── ConcurrencyConflictException.cs
 │   │   └── UniqueConstraintViolationException.cs
 │   ├── Sorting/
@@ -109,9 +111,9 @@ src/NFHotel.Application/
         └── GuestMappings.cs
 ```
 
-Namespaces følger mapperne: `NFHotel.Application.Bookings.Dtos` osv. Én public type pr. fil, filnavn = typenavn (Conventions).
+Namespaces follow the folders: `NFHotel.Application.Bookings.Dtos` etc. One public type per file, file name = type name (Conventions).
 
-`GuestFields` ligger i `Guests/Requests/` og bruges også af `Bookings` (BR-47, gæst oprettes sammen med bookingen). Det er den eneste tilladte krydsreference mellem feature-mapper, og den går altid mod en request/DTO — aldrig mod en anden features service.
+`GuestFields` lives in `Guests/Requests/` and is also used by `Bookings` (BR-47, the guest is created together with the booking). It is the only permitted cross-reference between feature folders, and it always goes toward a request/DTO — never toward another feature's service.
 
 ### 1.4 `NFHotel.Infrastructure`
 
@@ -126,9 +128,9 @@ src/NFHotel.Infrastructure/
 ├── DependencyInjection.cs                     → AddInfrastructure(IConfiguration)
 ├── Persistence/
 │   ├── HotelDbContext.cs
-│   ├── HotelDbContextDesignTimeFactory.cs     → så `dotnet ef` ikke skal starte Web
+│   ├── HotelDbContextDesignTimeFactory.cs     → so `dotnet ef` does not have to start Web
 │   ├── UnitOfWork.cs
-│   ├── DbUpdateExceptionTranslator.cs         → SQLSTATE → Application-exception
+│   ├── DbUpdateExceptionTranslator.cs         → SQLSTATE → Application exception
 │   ├── Configurations/
 │   │   ├── BookingConfiguration.cs
 │   │   ├── GuestConfiguration.cs
@@ -136,7 +138,7 @@ src/NFHotel.Infrastructure/
 │   ├── Converters/
 │   │   └── EncryptedStringConverter.cs        → B-09
 │   └── Seed/
-│       └── DevelopmentSeedData.cs             (kun Development)
+│       └── DevelopmentSeedData.cs             (Development only)
 ├── Repositories/
 │   ├── BookingRepository.cs
 │   ├── GuestRepository.cs
@@ -147,23 +149,23 @@ src/NFHotel.Infrastructure/
 │   └── EncryptionOptions.cs
 ├── Time/
 │   └── SystemClock.cs
-└── Migrations/                                (genereret)
+└── Migrations/                                (generated)
 ```
 
-`IStringEncryptor` ligger i **Infrastructure**, ikke Application. Application skal aldrig vide at et felt er krypteret — den ser klartekst, EF gør resten. Det er hele pointen med en `ValueConverter` frem for at kryptere i servicen.
+`IStringEncryptor` lives in **Infrastructure**, not Application. Application must never know that a field is encrypted — it sees plain text, EF does the rest. That is the whole point of a `ValueConverter` instead of encrypting in the service.
 
 ---
 
-## 2. Repository-interfaces
+## 2. Repository interfaces
 
-### 2.1 Designregler for laget
+### 2.1 Design rules for the layer
 
-Fire regler, alle direkte modsvar til fund i `Analysis.md` afsnit 2:
+Four rules, all direct answers to findings in `Analysis.md` section 2:
 
-1. **Repositories beslutter ikke.** De gamle repos indeholdt BR-110, BR-111, BR-112, BR-113, BR-114, BR-116 (`Analysis.md`, "Forretningsregler fundet i repos"). Nyt lag: filtre er *parametre*, ikke hardkodede valg. Når `BookingService` vil vide hvilke bookinger der spærrer et rum, sender den selv status-sættet med — hentet fra `Domain`. Reglen bliver dermed ét sted, ikke i SQL.
-2. **Nullability er ærlig.** Det gamle `IBookingRepo.GetById` lovede `Booking`, klassen returnerede `Booking?`. Alle `GetById*Async` returnerer `T?`, og servicen oversætter `null` til `Result.Failure(NotFound)` (BR-115).
-3. **Ingen `SaveChanges` i repositories.** Skrivemetoder er synkrone (`Add`/`Update`/`Remove`) fordi EF's `Add` ikke laver IO — `Conventions.md`: *"Metoder uden reelt async arbejde skal ikke være async bare for syns skyld"*. Kun `SaveChangesAsync` på `IUnitOfWork` rører databasen.
-4. **`CancellationToken` på alt der rører IO** (B-05), altid sidste parameter med default.
+1. **Repositories do not decide.** The old repos contained BR-110, BR-111, BR-112, BR-113, BR-114, BR-116 (`Analysis.md`, "Business rules found in repos"). New layer: filters are *parameters*, not hard-coded choices. When `BookingService` wants to know which bookings block a room, it passes the status set itself — taken from `Domain`. The rule thus lives in one place, not in SQL.
+2. **Nullability is honest.** The old `IBookingRepo.GetById` promised `Booking`, the class returned `Booking?`. All `GetById*Async` return `T?`, and the service translates `null` to `Result.Failure(NotFound)` (BR-115).
+3. **No `SaveChanges` in repositories.** Write methods are synchronous (`Add`/`Update`/`Remove`) because EF's `Add` does no IO — `Conventions.md`: *"Methods with no real async work must not be async just for show"*. Only `SaveChangesAsync` on `IUnitOfWork` touches the database.
+4. **`CancellationToken` on everything that touches IO** (B-05), always the last parameter with a default.
 
 ### 2.2 `IBookingRepository`
 
@@ -216,26 +218,26 @@ public interface IBookingRepository
 }
 ```
 
-`GetCandidatesForOverlapAsync` returnerer *kandidater* — den grovfiltrerer på rum, statussæt og datovindue i SQL. Selve overlapsafgørelsen træffes af den rene funktion i `Domain` (B-03), så repository og domæne aldrig kan komme til at være uenige om `<` versus `<=`. Det er samme funktion der bruges ved oprettelse og ved opdatering, hvilket lukker modstriden BR-19 mod BR-39.
+`GetCandidatesForOverlapAsync` returns *candidates* — it coarse-filters on room, status set and date window in SQL. The overlap decision itself is made by the pure function in `Domain` (B-03), so repository and domain can never come to disagree about `<` versus `<=`. It is the same function used on creation and on update, which closes the contradiction BR-19 against BR-39.
 
-`GetOccupiedRoomIdsAsync` findes fordi alternativet — at hente alle bookinger i perioden og filtrere i hukommelsen — er præcis BR-111's fejl. Den returnerer id'er, ikke entiteter, fordi kaldet kun bruges som negation i tilgængelighedsopslaget.
+`GetOccupiedRoomIdsAsync` exists because the alternative — fetching all bookings in the period and filtering in memory — is exactly BR-111's mistake. It returns ids, not entities, because the call is only used as a negation in the availability lookup.
 
-**Sammenligning med `IBookingRepo`:**
+**Comparison with `IBookingRepo`:**
 
-| Gammel | Ny | Ændring og begrundelse |
+| Old | New | Change and reason |
 |---|---|---|
-| `void Create(Booking)` | `void Add(Booking)` | Omdøbt. EF-semantik: metoden persisterer ikke, den markerer. `Create` løj om hvornår rækken fandtes. |
-| `List<Booking> GetAll()` | `Task<IReadOnlyList<Booking>> GetAllAsync(ct)` | Async (B-05). `IReadOnlyList` fordi kalderen ikke må mutere resultatet; `List<T>` inviterede til det. |
-| `Booking GetById(int)` | `Task<Booking?> GetByIdAsync(int, ct)` | Nullability rettet — interfacet løj (`Analysis.md` afsnit 2). BR-115 bevaret som kontrakt. |
-| `List<Booking> GetByStatus(BookingStatus)` | `Task<IReadOnlyList<Booking>> GetByStatusAsync(...)` | Bevaret, men implementeres nu som `WHERE status = @p` i stedet for fuldt tabeltræk plus LINQ. BR-111 dør som regel. |
-| `List<Booking> GetByRoomID(int)` | `GetByRoomIdAsync` | Casing rettet (U-19). |
-| `List<Booking> GetByGuestID(int)` | `GetByGuestIdAsync` | Samme. |
-| `void Update(Booking)` | `void Update(Booking)` | Bevaret, men uden det gamle for-`GetById` og `ArgumentException` — eksistenstjekket (BR-114) flytter til servicen, hvor det kan blive et `Result`, og det læs-så-skriv over to connections forsvinder. |
-| `void Delete(int)` | `void Remove(Booking)` | Tager entiteten, ikke id'et, fordi servicen alligevel har hentet den for at kunne afvise "findes ikke" pænt. Sletning bruges i praksis ikke på bookinger — BR-13 er soft-delete via status. |
-| — | `ExistsAsync` | **Tilføjet.** BR-114 uden at hente hele grafen. |
-| — | `GetByPeriodAsync` | **Tilføjet.** BR-24 og oversigtens periodefiltrering rykker i SQL. Retter samtidig fejlen fra `Analysis.md` afsnit 3 punkt 2, hvor uge- og månedsvisning slet ikke filtrerede. |
-| — | `GetCandidatesForOverlapAsync` | **Tilføjet.** B-03. Det gamle lag havde *intet* overlapstjek. |
-| — | `GetOccupiedRoomIdsAsync` | **Tilføjet.** Bærer BR-39/BR-34 uden at flytte reglen ned i SQL. |
+| `void Create(Booking)` | `void Add(Booking)` | Renamed. EF semantics: the method does not persist, it marks. `Create` lied about when the row existed. |
+| `List<Booking> GetAll()` | `Task<IReadOnlyList<Booking>> GetAllAsync(ct)` | Async (B-05). `IReadOnlyList` because the caller must not mutate the result; `List<T>` invited it. |
+| `Booking GetById(int)` | `Task<Booking?> GetByIdAsync(int, ct)` | Nullability corrected — the interface lied (`Analysis.md` section 2). BR-115 kept as a contract. |
+| `List<Booking> GetByStatus(BookingStatus)` | `Task<IReadOnlyList<Booking>> GetByStatusAsync(...)` | Kept, but now implemented as `WHERE status = @p` instead of a full table pull plus LINQ. BR-111 dies as a rule. |
+| `List<Booking> GetByRoomID(int)` | `GetByRoomIdAsync` | Casing corrected (U-19). |
+| `List<Booking> GetByGuestID(int)` | `GetByGuestIdAsync` | Same. |
+| `void Update(Booking)` | `void Update(Booking)` | Kept, but without the old pre-`GetById` and `ArgumentException` — the existence check (BR-114) moves to the service, where it can become a `Result`, and the read-then-write over two connections disappears. |
+| `void Delete(int)` | `void Remove(Booking)` | Takes the entity, not the id, because the service has fetched it anyway to be able to reject "does not exist" nicely. Deletion is in practice not used on bookings — BR-13 is a soft delete via status. |
+| — | `ExistsAsync` | **Added.** BR-114 without fetching the whole graph. |
+| — | `GetByPeriodAsync` | **Added.** BR-24 and the overview's period filtering move into SQL. Also fixes the error from `Analysis.md` section 3 point 2, where week and month views did not filter at all. |
+| — | `GetCandidatesForOverlapAsync` | **Added.** B-03. The old layer had *no* overlap check. |
+| — | `GetOccupiedRoomIdsAsync` | **Added.** Carries BR-39/BR-34 without moving the rule down into SQL. |
 
 ### 2.3 `IRoomRepository`
 
@@ -277,19 +279,19 @@ public interface IRoomRepository
 }
 ```
 
-| Gammel | Ny | Ændring og begrundelse |
+| Old | New | Change and reason |
 |---|---|---|
-| `void CreateRoom(Room)` | `void Add(Room)` | Omdøbt; typenavnet står allerede i interfacet, `Room`-suffikset var støj (Conventions: undgå gentagelse). Validering (BR-113) fjernet fra repoet. |
+| `void CreateRoom(Room)` | `void Add(Room)` | Renamed; the type name is already in the interface, the `Room` suffix was noise (Conventions: avoid repetition). Validation (BR-113) removed from the repo. |
 | `List<Room> GetAll()` | `GetAllAsync` | Async. |
-| `Room? GetById(int)` | `GetByIdAsync` | Nullability nu ens i interface og klasse. |
-| `List<Room> GetRoomsFromCriteria(int?, string, RoomStatus?)` | `GetByFilterAsync(RoomFilter, ct)` | Omdøbt og samlet i et filter-objekt. De tre løse parametre var på vej mod fem (BR-74 plus housekeeping). `uspGetRoomsFromCriteria` forsvinder; filterlogikken bliver læsbar C# i stedet for uverificerbar T-SQL (`Analysis.md` afsnit 2, "Uklart"). Signaturafvigelsen `string?` mod `string` dør med den. |
-| `void UpdateRoom(Room)` | `void Update(Room)` | Validering ud af repoet. |
-| `void DeleteRoom(int)` | `void Remove(Room)` | `catch (SqlException 547)` erstattes af et eksplicit `HasAnyBookingsAsync`-tjek i servicen. FK'en bevares som sidste værn, men reglen står ikke længere i en catch-blok. |
-| `List<Room> GetAllByAvailability()` | **Fjernet** | Metoden var det tydeligste eksempel på BR-110: repoet besluttede hvad "tilgængelig" betød. Erstattes af `GetByStatusAsync(RoomStatus.Available)`, hvor *kalderen* vælger status, plus overlapsopslaget i servicen. Bonus: den lå slet ikke på interfacet i det gamle system, så kaldere skulle caste. |
-| — | `GetByIdsAsync` | **Tilføjet.** Tilgængelighedsopslaget skal hente et sæt rum efter id uden N+1. |
-| — | `RoomNumberExistsAsync` | **Tilføjet.** Se afsnit 10, punkt 5: unikt rumnummer er en *ny* regel og kræver godkendelse. |
-| — | `HasAnyBookingsAsync` | **Tilføjet.** Bærer BR-112 op i servicen. |
-| — | `GetDistinctFloorsAsync` | **Tilføjet.** BR-75's filtervalgmuligheder. Kun etage kræver et DB-opslag; størrelse og status kommer fra enums og hentes ikke fra data. |
+| `Room? GetById(int)` | `GetByIdAsync` | Nullability now the same in interface and class. |
+| `List<Room> GetRoomsFromCriteria(int?, string, RoomStatus?)` | `GetByFilterAsync(RoomFilter, ct)` | Renamed and gathered in a filter object. The three loose parameters were heading toward five (BR-74 plus housekeeping). `uspGetRoomsFromCriteria` disappears; the filter logic becomes readable C# instead of unverifiable T-SQL (`Analysis.md` section 2, "Unclear"). The signature deviation `string?` against `string` dies with it. |
+| `void UpdateRoom(Room)` | `void Update(Room)` | Validation out of the repo. |
+| `void DeleteRoom(int)` | `void Remove(Room)` | `catch (SqlException 547)` is replaced by an explicit `HasAnyBookingsAsync` check in the service. The FK is kept as the last safeguard, but the rule is no longer in a catch block. |
+| `List<Room> GetAllByAvailability()` | **Removed** | The method was the clearest example of BR-110: the repo decided what "available" meant. Replaced by `GetByStatusAsync(RoomStatus.Available)`, where the *caller* chooses the status, plus the overlap lookup in the service. Bonus: it was not on the interface at all in the old system, so callers had to cast. |
+| — | `GetByIdsAsync` | **Added.** The availability lookup needs to fetch a set of rooms by id without N+1. |
+| — | `RoomNumberExistsAsync` | **Added.** See section 10, point 5: a unique room number is a *new* rule and requires approval. |
+| — | `HasAnyBookingsAsync` | **Added.** Lifts BR-112 up into the service. |
+| — | `GetDistinctFloorsAsync` | **Added.** BR-75's filter options. Only floor requires a DB lookup; size and status come from enums and are not fetched from data. |
 
 ### 2.4 `IGuestRepository`
 
@@ -305,9 +307,9 @@ public interface IGuestRepository
     Task<IReadOnlyList<Guest>> GetAllAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Returnerer gæster hvor HVERT af de angivne søgeord (case-insensitivt) findes i
-    /// enten fornavn, efternavn, land eller e-mail. Tomt sæt returnerer alle gæster.
-    /// Pasnummer indgår aldrig i søgningen — feltet er krypteret at-rest (B-09).
+    /// Returns guests where EACH of the given search terms (case-insensitively) is found in
+    /// either first name, last name, country or e-mail. An empty set returns all guests.
+    /// The passport number is never part of the search — the field is encrypted at rest (B-09).
     /// </summary>
     Task<IReadOnlyList<Guest>> SearchAsync(
         IReadOnlyCollection<string> searchTerms,
@@ -321,29 +323,29 @@ public interface IGuestRepository
 }
 ```
 
-| Gammel | Ny | Ændring og begrundelse |
+| Old | New | Change and reason |
 |---|---|---|
-| `int AddGuest(Guest)` | `void Add(Guest)` | Returnerede id'et fra `SCOPE_IDENTITY` med en ucheckt unbox (`Analysis.md`: `(int)cmd.ExecuteScalar()`). EF sætter id'et på entiteten efter `SaveChangesAsync`; servicen læser det derfra. |
-| `Guest? GetByID(int id)` | `Task<Guest?> GetByIdAsync(int guestId, ct)` | Casing rettet, parameternavn ensrettet (det afveg mellem interface og klasse og brækkede named arguments). |
+| `int AddGuest(Guest)` | `void Add(Guest)` | Returned the id from `SCOPE_IDENTITY` with an unchecked unbox (`Analysis.md`: `(int)cmd.ExecuteScalar()`). EF sets the id on the entity after `SaveChangesAsync`; the service reads it from there. |
+| `Guest? GetByID(int id)` | `Task<Guest?> GetByIdAsync(int guestId, ct)` | Casing corrected, parameter name aligned (it differed between interface and class and broke named arguments). |
 | `List<Guest> GetAll()` | `GetAllAsync` | Async. |
-| `List<Guest> GetAllByName(string)` | `SearchAsync(IReadOnlyCollection<string> terms, ct)` | Omdøbt og udvidet. Det gamle `%navn%` på for- ELLER efternavn (BR-116) var kun halvdelen af den søgning brugeren faktisk fik: BR-68 i ViewModel'en delte teksten i ord og krævede at ALLE ord fandtes i navn, land eller e-mail. To søgninger, to semantikker. Ny: én. Tokeniseringen (reglen) sker i servicen, matchningen (dataadgangen) i repoet, og kontrakten står i XML-doc'en og pinnes af en Infrastructure-test. Se afsnit 10, punkt 6. |
-| `void UpdateGuest(Guest)` | `void Update(Guest)` | Den gamle ignorerede `rowsAffected`, så opdatering af en ikke-eksisterende gæst fejlede lydløst. Nu fanges det af EF's `DbUpdateConcurrencyException`, som oversættes til en fejlkode. |
-| `void DeleteGuest(int)` | `void Remove(Guest)` | FK-violation boblede op som rå `SqlException`. Servicen tjekker `HasAnyBookingsAsync` først. |
-| — | `ExistsAsync`, `HasAnyBookingsAsync` | **Tilføjet.** Guard for sletning og for D-05's persondata-spor. |
+| `List<Guest> GetAllByName(string)` | `SearchAsync(IReadOnlyCollection<string> terms, ct)` | Renamed and extended. The old `%name%` on first OR last name (BR-116) was only half of the search the user actually got: BR-68 in the ViewModel split the text into words and required that ALL words be found in name, country or e-mail. Two searches, two semantics. New: one. The tokenisation (the rule) happens in the service, the matching (the data access) in the repo, and the contract is in the XML doc and pinned by an Infrastructure test. See section 10, point 6. |
+| `void UpdateGuest(Guest)` | `void Update(Guest)` | The old one ignored `rowsAffected`, so updating a non-existent guest failed silently. Now it is caught by EF's `DbUpdateConcurrencyException`, which is translated to an error code. |
+| `void DeleteGuest(int)` | `void Remove(Guest)` | An FK violation bubbled up as a raw `SqlException`. The service checks `HasAnyBookingsAsync` first. |
+| — | `ExistsAsync`, `HasAnyBookingsAsync` | **Added.** Guard for deletion and for D-05's personal data track. |
 
-Bemærk hvad der *ikke* er tilføjet: ingen søgning eller sortering på `PassportNumber`. Det er verificeret mod ledgeren i afsnit 6.4.
+Note what was *not* added: no search or sorting on `PassportNumber`. That is verified against the ledger in section 6.4.
 
-### 2.5 `IUnitOfWork` — nødvendig eller overflødig?
+### 2.5 `IUnitOfWork` — necessary or superfluous?
 
-**Nødvendig.** Ikke fordi `DbContext` mangler unit-of-work-semantik — den har den — men fordi Application-laget skal kunne *styre* transaktionsgrænsen uden at kende EF.
+**Necessary.** Not because `DbContext` lacks unit-of-work semantics — it has them — but because the Application layer must be able to *control* the transaction boundary without knowing EF.
 
-Alternativet er selv-gemmende repositories, hvor `Add` internt kalder `SaveChangesAsync`. Det falder på tre punkter:
+The alternative is self-saving repositories, where `Add` internally calls `SaveChangesAsync`. That fails on three points:
 
-1. **BR-47 kræver atomicitet.** "Opret booking for ny gæst" skriver en `Guest` og en `Booking`. Gemmer repoet hver for sig, kan bookingen fejle på exclusion-constrainten (B-03) efter at gæsten er committet — og systemet står med en forældreløs gæst. Med én `SaveChangesAsync` er begge inserts i samme implicitte transaktion, og EF sorterer selv insert-rækkefølgen efter navigationen.
-2. **Selv-gemmende repos lyver.** De tre repositories deler den samme scoped `DbContext`. Kalder `GuestRepository.Add` derfor `SaveChangesAsync`, committer den samtidig alt hvad `BookingRepository` og `RoomRepository` måtte have liggende som pending. Det er en usynlig kobling mellem tre klasser der tilsyneladende ikke kender hinanden. Det er værre end den eksplicitte afhængighed.
-3. **Uden UoW kan servicen ikke skrive to entiteter og rulle tilbage.** Og servicen er præcis det lag der ejer use casen.
+1. **BR-47 requires atomicity.** "Create booking for new guest" writes a `Guest` and a `Booking`. If the repo saves each separately, the booking can fail on the exclusion constraint (B-03) after the guest has been committed — and the system is left with an orphaned guest. With one `SaveChangesAsync`, both inserts are in the same implicit transaction, and EF itself sorts the insert order by the navigation.
+2. **Self-saving repos lie.** The three repositories share the same scoped `DbContext`. If `GuestRepository.Add` therefore calls `SaveChangesAsync`, it simultaneously commits everything `BookingRepository` and `RoomRepository` may have pending. It is an invisible coupling between three classes that apparently do not know each other. That is worse than the explicit dependency.
+3. **Without a UoW the service cannot write two entities and roll back.** And the service is exactly the layer that owns the use case.
 
-Interfacet holdes minimalt:
+The interface is kept minimal:
 
 ```csharp
 namespace NFHotel.Application.Abstractions.Persistence;
@@ -354,15 +356,15 @@ public interface IUnitOfWork
 }
 ```
 
-Ingen `BeginTransactionAsync`, ingen `Rollback`, ingen `IRepository<T>`-property-samling. Alle Fase 1-use cases klarer sig med ét `SaveChangesAsync`-kald; en eksplicit transaktions-API tilføjes den dag en use case skriver i to omgange, og ikke før. En generisk `IUnitOfWork` med repository-properties ville desuden gøre servicernes konstruktør-afhængigheder usynlige for test.
+No `BeginTransactionAsync`, no `Rollback`, no `IRepository<T>` property collection. All Phase 1 use cases manage with one `SaveChangesAsync` call; an explicit transaction API is added the day a use case writes in two rounds, and not before. A generic `IUnitOfWork` with repository properties would also make the services' constructor dependencies invisible to tests.
 
-Implementeringen i Infrastructure er en tolinjers adapter over `HotelDbContext`, som samtidig er det sted hvor Postgres-fejlkoder oversættes til Application-exceptions (afsnit 5.4).
+The implementation in Infrastructure is a two-line adapter over `HotelDbContext`, which is also where Postgres error codes are translated to Application exceptions (section 5.4).
 
 ---
 
 ## 3. Services
 
-Fælles form: konstruktørinjektion (Conventions), `CancellationToken` sidst, `Result`/`Result<T>` retur, ingen UI-typer, ingen `MessageBox`, ingen `Debug.WriteLine`. Testen fra `Fase1-Scope.md` gælder for hver eneste metode: *kan en konsol-app kalde den og få alle regler håndhævet?*
+Common form: constructor injection (Conventions), `CancellationToken` last, `Result`/`Result<T>` return, no UI types, no `MessageBox`, no `Debug.WriteLine`. The test from `Phase1-Scope.md` applies to every single method: *can a console app call it and have all rules enforced?*
 
 ### 3.1 `IBookingService`
 
@@ -424,21 +426,21 @@ public sealed class BookingService : IBookingService
 }
 ```
 
-| Metode | Håndhæver | Noter |
+| Method | Enforces | Notes |
 |---|---|---|
-| `GetByIdAsync` | BR-115 | `null` fra repoet → `Result.Failure(Booking.NotFound)`. |
-| `GetOverviewAsync` | BR-23, BR-24, BR-25, BR-32, BR-111 | Periodefilter altid aktivt (retter at uge/måned ikke filtrerede). Sortering via `BookingSortField`-enum, ikke magiske strenge. |
-| `GetAvailableRoomsAsync` | BR-34, BR-36, BR-37, BR-38, BR-39, BR-40, BR-110 | `excludeBookingId` sat ved redigering, så bookingen ikke blokerer sig selv (den manglede i det gamle system og gjorde BR-19 unødigt indviklet). |
-| `CreateAsync` | BR-01, BR-41, BR-42, BR-43, BR-44, BR-45, BR-46, BR-47, BR-48, BR-49, BR-51, BR-101–BR-106, plus overlapstjek (B-03) | Overlapstjekket er nyt — det fandtes hverken i `CreateBooking` eller i repoet. Alle valideringsfejl samles (BR-46's "kun første fejl" dør, konsolideret med BR-60/BR-96). |
-| `ConfirmAsync` | BR-02, BR-03, BR-05, BR-121 | Bekræftelsesdialogen (BR-04) er UI og bliver i Web. |
-| `CheckInAsync` | BR-06, BR-07, BR-08 | `CheckInTime = _clock.UtcNow`; "i dag" er hotel-lokal dato via `IClock`, ikke `DateTime.Now`. |
+| `GetByIdAsync` | BR-115 | `null` from the repo → `Result.Failure(Booking.NotFound)`. |
+| `GetOverviewAsync` | BR-23, BR-24, BR-25, BR-32, BR-111 | Period filter always active (fixes that week/month did not filter). Sorting via the `BookingSortField` enum, not magic strings. |
+| `GetAvailableRoomsAsync` | BR-34, BR-36, BR-37, BR-38, BR-39, BR-40, BR-110 | `excludeBookingId` is set on editing, so the booking does not block itself (it was missing in the old system and made BR-19 needlessly complicated). |
+| `CreateAsync` | BR-01, BR-41, BR-42, BR-43, BR-44, BR-45, BR-46, BR-47, BR-48, BR-49, BR-51, BR-101–BR-106, plus overlap check (B-03) | The overlap check is new — it existed neither in `CreateBooking` nor in the repo. All validation errors are collected (BR-46's "only the first error" dies, consolidated with BR-60/BR-96). |
+| `ConfirmAsync` | BR-02, BR-03, BR-05, BR-121 | The confirmation dialog (BR-04) is UI and stays in Web. |
+| `CheckInAsync` | BR-06, BR-07, BR-08 | `CheckInTime = _clock.UtcNow`; "today" is the hotel-local date via `IClock`, not `DateTime.Now`. |
 | `CheckOutAsync` | BR-09, BR-10, BR-107 | |
-| `CancelAsync` | BR-11, BR-13, BR-122 | Soft-delete: status sættes, rækken bliver. |
-| `RescheduleAsync` | BR-14, BR-17, BR-18, BR-19, BR-20, BR-108, BR-123, plus B-03 | Samme overlapsfunktion som `CreateAsync`. Navnet er bevidst ikke `UpdateAsync`: use casen er "flyt bookingen", ikke "sæt vilkårlige felter". |
+| `CancelAsync` | BR-11, BR-13, BR-122 | Soft delete: the status is set, the row stays. |
+| `RescheduleAsync` | BR-14, BR-17, BR-18, BR-19, BR-20, BR-108, BR-123, plus B-03 | The same overlap function as `CreateAsync`. The name is deliberately not `UpdateAsync`: the use case is "move the booking", not "set arbitrary fields". |
 
-BR-22 håndteres ikke som en metode, men som `BookingActionsDto` på hver booking-DTO — se afsnit 4.2.
+BR-22 is handled not as a method, but as `BookingActionsDto` on each booking DTO — see section 4.2.
 
-Bemærk placeringen af `GetAvailableRoomsAsync`: den returnerer rum, men reglen er en *bookingregel* (overlap i en periode). Lægges den på `RoomService`, skal `RoomService` kende `IBookingRepository`, og så har begge services begge repositories. Med den nuværende fordeling er `RoomService` fri for bookinger på nær sletteguarden, som bruger et rum-side-opslag.
+Note the placement of `GetAvailableRoomsAsync`: it returns rooms, but the rule is a *booking rule* (overlap in a period). If it were put on `RoomService`, `RoomService` would have to know `IBookingRepository`, and then both services would have both repositories. With the present distribution `RoomService` is free of bookings except for the delete guard, which uses a room-side lookup.
 
 ### 3.2 `IRoomService`
 
@@ -495,17 +497,17 @@ public sealed class RoomService : IRoomService
 }
 ```
 
-| Metode | Håndhæver | Noter |
+| Method | Enforces | Notes |
 |---|---|---|
 | `GetByIdAsync` | BR-115 | |
 | `GetAllAsync` | — | |
-| `SearchAsync` | BR-74, BR-76 | "Ryd filter" = et tomt `RoomFilter`; ingen særskilt metode. Retter samtidig at filteret kørte to gange pr. popup-åbning (view-fejl). |
-| `GetFilterOptionsAsync` | BR-75 | Etager fra data; størrelse, status og housekeeping fra enums — hvilket automatisk løser BR-126, hvor XAML og enum var uenige. |
-| `CreateAsync` | BR-81, BR-84, BR-97, BR-98, BR-99, BR-100, BR-113 | BR-84 (validering blev ignoreret i formularen) kan ikke gentages: entiteten kan ikke konstrueres ugyldigt, og servicen returnerer `Result.Failure` i stedet for at gemme. |
-| `UpdateAsync` | BR-82, BR-84, BR-97–BR-100, BR-113 | BR-82 ("RoomId == 0 betyder opret") dør: to metoder, to use cases. |
-| `ChangeStatusAsync` | BR-126, F-01 | Egen use case, fordi et statusskift ikke skal kræve at hele rummet sendes med. |
-| `ChangeHousekeepingStatusAsync` | F-01, D-10 | Backoffice skal kunne markere et rum rengjort. Metoden er samtidig den flade mobil-guilden senere hænger sit API på — uden at der bygges noget mobilspecifikt nu. |
-| `DeleteAsync` | BR-78, BR-112 | Eksplicit `HasAnyBookingsAsync` før sletning. FK'en er stadig sidste værn, men reglen står ikke i en catch. BR-77's advarselsdialog er UI. |
+| `SearchAsync` | BR-74, BR-76 | "Clear filter" = an empty `RoomFilter`; no separate method. Also fixes that the filter ran twice per popup opening (view bug). |
+| `GetFilterOptionsAsync` | BR-75 | Floors from data; size, status and housekeeping from enums — which automatically resolves BR-126, where XAML and enum disagreed. |
+| `CreateAsync` | BR-81, BR-84, BR-97, BR-98, BR-99, BR-100, BR-113 | BR-84 (validation was ignored in the form) cannot be repeated: the entity cannot be constructed invalid, and the service returns `Result.Failure` instead of saving. |
+| `UpdateAsync` | BR-82, BR-84, BR-97–BR-100, BR-113 | BR-82 ("RoomId == 0 means create") dies: two methods, two use cases. |
+| `ChangeStatusAsync` | BR-126, F-01 | Its own use case, because a status change should not require the whole room to be sent along. |
+| `ChangeHousekeepingStatusAsync` | F-01, D-10 | The back office must be able to mark a room cleaned. The method is also the surface the mobile guild later hangs its API on — without anything mobile-specific being built now. |
+| `DeleteAsync` | BR-78, BR-112 | Explicit `HasAnyBookingsAsync` before deletion. The FK is still the last safeguard, but the rule is not in a catch. BR-77's warning dialog is UI. |
 
 ### 3.3 `IGuestService`
 
@@ -548,24 +550,24 @@ public sealed class GuestService : IGuestService
 }
 ```
 
-| Metode | Håndhæver | Noter |
+| Method | Enforces | Notes |
 |---|---|---|
-| `GetByIdAsync` | BR-115, BR-35 | Bruges også til at forudfylde ny booking for kendt gæst. |
-| `SearchAsync` | BR-68, BR-69, BR-70, BR-116 | Tokenisering og AND-logik her; sortering på "fornavn efternavn" i lowercase (BR-69) sker som en del af use casen, ikke i UI. Tom/whitespace-søgning giver alle (BR-70). |
-| `CreateAsync` | BR-52–BR-57, BR-60, BR-91–BR-96 | Alle fejl samlet i ét `Result` (BR-60/BR-96). BR-46's "kun første fejl" er dermed konsolideret væk. |
-| `UpdateAsync` | BR-62, BR-66, BR-72, BR-91–BR-96 | `GuestId` er påkrævet og ikke-nul i requesten, hvilket lukker fejlen fra `Analysis.md` afsnit 3 punkt 7, hvor en redigeret gæst mistede sit id og blev opdateret på id 0. BR-66's "arbejd på en kopi" bliver overflødigt: requesten *er* kopien. |
-| `DeleteAsync` | D-05 (nyt), guard mod eksisterende bookinger | Ikke i ledgeren; markeret som ny regel der kræver godkendelse. |
-| `ValidateFields` | BR-58, BR-59 | **Bevidst ikke async** — der er ingen IO (Conventions). Lader UI'et give feedback pr. tastetryk og aktivere/deaktivere gemknappen uden at duplikere en eneste valideringsregel. Det er metoden der gør at BR-52..BR-56 aldrig behøver eksistere i Web-laget. |
+| `GetByIdAsync` | BR-115, BR-35 | Also used to prefill a new booking for a known guest. |
+| `SearchAsync` | BR-68, BR-69, BR-70, BR-116 | Tokenisation and AND logic here; sorting on "first name last name" in lowercase (BR-69) happens as part of the use case, not in the UI. An empty/whitespace search gives all (BR-70). |
+| `CreateAsync` | BR-52–BR-57, BR-60, BR-91–BR-96 | All errors collected in one `Result` (BR-60/BR-96). BR-46's "only the first error" is thereby consolidated away. |
+| `UpdateAsync` | BR-62, BR-66, BR-72, BR-91–BR-96 | `GuestId` is required and non-zero in the request, which closes the error from `Analysis.md` section 3 point 7, where an edited guest lost its id and was updated on id 0. BR-66's "work on a copy" becomes superfluous: the request *is* the copy. |
+| `DeleteAsync` | D-05 (new), guard against existing bookings | Not in the ledger; marked as a new rule that requires approval. |
+| `ValidateFields` | BR-58, BR-59 | **Deliberately not async** — there is no IO (Conventions). Lets the UI give feedback per keystroke and enable/disable the save button without duplicating a single validation rule. It is the method that means BR-52..BR-56 never have to exist in the Web layer. |
 
-**Ingen `SalesService` i Fase 1.** Refaktoreringsplanens afsnit 3 nævner den, men BR-31 fastslår at omsætning altid sættes til 0, og der findes ingen pris nogen steder i domænet. En service der returnerer 0 er værre end ingen service: den ligner en implementering. Se afsnit 10, punkt 7.
+**No `SalesService` in Phase 1.** Section 3 of the refactoring plan mentions it, but BR-31 establishes that revenue is always set to 0, and there is no price anywhere in the domain. A service that returns 0 is worse than no service: it looks like an implementation. See section 10, point 7.
 
 ---
 
-## 4. DTO'er og mapping
+## 4. DTOs and mapping
 
-### 4.1 Princip
+### 4.1 Principle
 
-DTO'erne defineres i `Application` (Fase1-Scope, "billig insurance") som `sealed record`-typer med init-only properties. De indeholder ingen formatering: datoer er `DateOnly`/`DateTimeOffset`, ikke strenge; status er enum, ikke farve. `Conventions.md`: *"Domain models må ikke fyldes med UI-formatering"* — det gælder også DTO'erne, ellers flytter problemet bare ét lag.
+The DTOs are defined in `Application` (Phase1-Scope, "cheap insurance") as `sealed record` types with init-only properties. They contain no formatting: dates are `DateOnly`/`DateTimeOffset`, not strings; status is an enum, not a colour. `Conventions.md`: *"Domain models must not be filled with UI formatting"* — that also applies to the DTOs, otherwise the problem just moves one layer.
 
 ### 4.2 Bookings
 
@@ -615,7 +617,7 @@ public sealed record AvailableRoomDto(
     int Capacity);
 ```
 
-`BookingActionsDto` er den vigtigste enkeltdel i hele DTO-designet. Den er beregnet i `Application` ud fra `Domain`s tilstandsregler og gør at Web-laget kan tegne knapper uden at kende en eneste statusovergang. Det er sådan BR-121, BR-122 og BR-123 (XAML-triggere) og BR-02, BR-11, BR-14, BR-22 (ViewModel) bliver til **én** implementering i stedet for seks.
+`BookingActionsDto` is the most important single part of the whole DTO design. It is computed in `Application` from `Domain`'s state rules and means the Web layer can draw buttons without knowing a single status transition. That is how BR-121, BR-122 and BR-123 (XAML triggers) and BR-02, BR-11, BR-14, BR-22 (ViewModel) become **one** implementation instead of six.
 
 **Requests:**
 
@@ -647,9 +649,9 @@ public enum BookingSortField
 }
 ```
 
-`CreateBookingRequest` bærer BR-47: enten `GuestId` eller `NewGuest`, præcis én af dem. At begge eller ingen er sat, er en valideringsfejl fra servicen — ikke en `NullReferenceException`.
+`CreateBookingRequest` carries BR-47: either `GuestId` or `NewGuest`, exactly one of them. That both or neither is set is a validation error from the service — not a `NullReferenceException`.
 
-### 4.3 Rooms og Guests
+### 4.3 Rooms and Guests
 
 ```csharp
 public sealed record RoomListItemDto(
@@ -692,11 +694,11 @@ public sealed record CreateGuestRequest(GuestFields Fields);
 public sealed record UpdateGuestRequest(int GuestId, GuestFields Fields);
 ```
 
-`GuestListItemDto` har `HasPassportNumber` (bool), ikke selve nummeret. Lister og oversigter har aldrig brug for værdien, og med B-09 er hver visning af feltet en dekryptering. Kun `GuestDetailsDto` bærer klartekst — og kun den bruges i gæstens redigeringsformular. Det er privacy by design (D-04) uden at koste funktionalitet: ingen af de 126 regler viser pasnummer i en liste.
+`GuestListItemDto` has `HasPassportNumber` (bool), not the number itself. Lists and overviews never need the value, and with B-09 every display of the field is a decryption. Only `GuestDetailsDto` carries plain text — and only it is used in the guest's edit form. It is privacy by design (D-04) without costing functionality: none of the 126 rules shows the passport number in a list.
 
-### 4.4 Mapping-strategi
+### 4.4 Mapping strategy
 
-**Eksplicit, håndskrevet, én statisk mapper-klasse pr. feature**, placeret i `<Feature>/Mapping/`, med extension-metoder:
+**Explicit, hand-written, one static mapper class per feature**, placed in `<Feature>/Mapping/`, with extension methods:
 
 ```csharp
 namespace NFHotel.Application.Bookings.Mapping;
@@ -709,33 +711,33 @@ public static class BookingMappings
 }
 ```
 
-**Ingen AutoMapper.** Begrundelse:
+**No AutoMapper.** Reasons:
 
-- `Conventions.md`: *"Mapping skal være eksplicit og let at finde"*. En profilklasse med konventionsbaseret navnematchning er hverken.
-- Omfanget er tre entiteter og ni DTO'er. AutoMapper ville koste konfiguration, en pakke, en opstartsvalidering og en læringstærskel for at spare måske 60 linjer triviel tildeling.
-- Feltvalgene er *beslutninger*, ikke boilerplate: at `GuestListItemDto` bærer `HasPassportNumber` i stedet for værdien er en privacy-beslutning (B-09/D-04). Konventionsbaseret mapping ville forsøge at kopiere `PassportNumber` automatisk og dermed dekryptere feltet i enhver liste — stille og af sig selv.
-- `ToActions` er ikke mapping, det er regelevaluering, og den skal være læsbar og testbar.
+- `Conventions.md`: *"Mapping must be explicit and easy to find"*. A profile class with convention-based name matching is neither.
+- The scope is three entities and nine DTOs. AutoMapper would cost configuration, a package, a start-up validation and a learning threshold to save perhaps 60 lines of trivial assignment.
+- The field choices are *decisions*, not boilerplate: that `GuestListItemDto` carries `HasPassportNumber` instead of the value is a privacy decision (B-09/D-04). Convention-based mapping would try to copy `PassportNumber` automatically and thereby decrypt the field in every list — silently and by itself.
+- `ToActions` is not mapping, it is rule evaluation, and it must be readable and testable.
 
-`today` sendes ind fra servicen (der har `IClock`), så mapperne er rene funktioner og kan enhedstestes uden fake-tid.
+`today` is passed in from the service (which has `IClock`), so the mappers are pure functions and can be unit-tested without fake time.
 
-**Modsat retning — request til entitet — findes ikke som mapping.** Services konstruerer entiteter gennem `Domain`s konstruktører/fabriksmetoder og ændrer dem gennem domænemetoder. Der bliver aldrig bulk-kopieret properties ind i en entitet, for det er præcis dér invarianter plejer at forsvinde.
+**The opposite direction — request to entity — does not exist as mapping.** Services construct entities through `Domain`'s constructors/factory methods and change them through domain methods. Properties are never bulk-copied into an entity, because that is exactly where invariants tend to disappear.
 
 ---
 
-## 5. Fejlhåndtering
+## 5. Error handling
 
-### 5.1 Valget
+### 5.1 The choice
 
-**`Result` / `Result<T>` til regelovertrædelser. Exceptions til programmørfejl og infrastrukturfejl.**
+**`Result` / `Result<T>` for rule violations. Exceptions for programmer errors and infrastructure errors.**
 
-Begrundelse:
+Reasons:
 
-- En regelovertrædelse er et **forventet udfald**, ikke en undtagelse. "Denne booking er allerede checket ind" sker hver dag. Exceptions til forventede udfald er dyre, gør stack traces støjende og — vigtigst — kan ignoreres af en kalder der ikke ved de findes.
-- `Result` er synligt i signaturen. Kalderen kan ikke undlade at forholde sig til det uden at det ses i koden. Det er den direkte modgift mod BR-07/BR-10, hvor check-in og check-ud fejlede ned i `Debug.WriteLine` mens statussen allerede var ændret i hukommelsen (Q-25).
-- Flere fejl på én gang kræves af BR-60 og BR-96 ("saml alle fejl i én liste"). Exceptions er dårlige til det; en fejlliste er naturlig i et `Result`.
-- Web/Api er begge klienter til det samme `Result`. Blazor viser en `Alert`, et senere Api mapper fejlkoden til 409/422. Havde vi kastet, skulle begge lag genopfinde oversættelsen.
+- A rule violation is an **expected outcome**, not an exception. "This booking is already checked in" happens every day. Exceptions for expected outcomes are expensive, make stack traces noisy and — most importantly — can be ignored by a caller who does not know they exist.
+- `Result` is visible in the signature. The caller cannot fail to deal with it without it showing in the code. It is the direct antidote to BR-07/BR-10, where check-in and check-out failed down into `Debug.WriteLine` while the status had already been changed in memory (Q-25).
+- Several errors at once are required by BR-60 and BR-96 ("collect all errors in one list"). Exceptions are bad at that; an error list is natural in a `Result`.
+- Web/Api are both clients of the same `Result`. Blazor shows an `Alert`, a later Api maps the error code to 409/422. If we had thrown, both layers would have to reinvent the translation.
 
-### 5.2 Typerne
+### 5.2 The types
 
 ```csharp
 namespace NFHotel.Application.Common.Results;
@@ -792,35 +794,34 @@ public static class ErrorCodes
 }
 ```
 
-**Fejlkoden er kontrakten, teksten er en bekvemmelighed.** UI'et vælger tekst ud fra koden — så kan feltet oversættes, og de gamle brugervendte engelske strenge forsvinder fra forretningslaget. Det gamle system havde brugervendt tekst helt nede i `RoomRepo`s catch-blok (BR-112).
+**The error code is the contract, the text is a convenience.** The UI chooses text from the code — so the field can be translated, and the old user-facing English strings disappear from the business layer. The old system had user-facing text all the way down in `RoomRepo`'s catch block (BR-112).
 
-### 5.3 Hvad der stadig kastes
+### 5.3 What is still thrown
 
-| Situation | Reaktion |
+| Situation | Reaction |
 |---|---|
-| `null` argument, negativt id, tom påkrævet request | `ArgumentNullException` / `ArgumentException` som guard clause. Det er en programmørfejl, ikke et brugerudfald. Bevarer BR-114's `ArgumentNullException`-kontrakt (T-32). |
-| Databasen er nede, timeout, netværksfejl | Boblede exception. Fanges centralt i Web (`ErrorBoundary` + `ILogger`), logges teknisk, brugeren ser en neutral besked (Conventions: *"Log tekniske fejl centralt. Vis brugeren neutrale fejlbeskeder"*). |
-| Optimistisk samtidighedskonflikt | `DbUpdateConcurrencyException` oversættes i Infrastructure til `ConcurrencyConflictException` (Application), som servicen fanger og returnerer som `Result.Failure`. |
-| Exclusion constraint rammer (B-03) | Se nedenfor. |
+| `null` argument, negative id, empty required request | `ArgumentNullException` / `ArgumentException` as a guard clause. It is a programmer error, not a user outcome. Preserves BR-114's `ArgumentNullException` contract (T-32). |
+| The database is down, timeout, network error | Bubbling exception. Caught centrally in Web (`ErrorBoundary` + `ILogger`), logged technically, the user sees a neutral message (Conventions: *"Log technical errors centrally. Show the user neutral error messages"*). |
+| Optimistic concurrency conflict | `DbUpdateConcurrencyException` is translated in Infrastructure to `ConcurrencyConflictException` (Application), which the service catches and returns as `Result.Failure`. |
+| Exclusion constraint hits (B-03) | See below. |
 
-**Ingen tomme catch-blokke. Ingen `catch (Exception) { return false; }`** som i `DatabaseConfig.TestConnection`. Enhver catch logger eller oversætter.
+**No empty catch blocks. No `catch (Exception) { return false; }`** as in `DatabaseConfig.TestConnection`. Every catch logs or translates.
 
-### 5.4 Samspillet mellem servicetjek og databaseværn (B-03)
+### 5.4 The interplay between service checks and database safeguard (B-03)
 
-Overlap afvises to steder, og de to steder gør ikke det samme:
+Overlap is rejected in two places, and the two places do not do the same:
 
-1. `BookingService` kalder den rene funktion i `Domain` mod kandidaterne fra `GetCandidatesForOverlapAsync`. Det er **den normale vej**, den giver en pæn fejlkode og en brugbar besked, og den er dækket af unit-tests uden database.
-2. PostgreSQLs exclusion constraint fanger **kapløbet**: to samtidige oprettelser der begge så et ledigt rum. `SaveChangesAsync` fejler så med `PostgresException` og `SqlState = 23P01`.
+1. `BookingService` calls the pure function in `Domain` against the candidates from `GetCandidatesForOverlapAsync`. It is **the normal path**, it gives a nice error code and a usable message, and it is covered by unit tests without a database.
+2. PostgreSQL's exclusion constraint catches **the race**: two simultaneous creations that both saw a free room. `SaveChangesAsync` then fails with `PostgresException` and `SqlState = 23P01`.
 
-`UnitOfWork.SaveChangesAsync` oversætter `23P01` (med constraint-navnet som diskriminator) til `BookingOverlapConflictException`, defineret i `Application.Common.Exceptions`. `BookingService.CreateAsync` og `RescheduleAsync` fanger netop den og returnerer `Result.Failure(ErrorCodes.Booking.RoomNotAvailable)` — **samme fejlkode som servicetjekket**. Brugeren ser det samme uanset hvilket af de to værn der stoppede hende; forskellen er kun synlig i loggen.
+`UnitOfWork.SaveChangesAsync` translates `23P01` (with the constraint name as discriminator) to `BookingOverlapConflictException`, defined in `Application.Common.Exceptions`. `BookingService.CreateAsync` and `RescheduleAsync` catch exactly that one and return `Result.Failure(ErrorCodes.Booking.RoomNotAvailable)` — **the same error code as the service check**. The user sees the same thing whichever of the two safeguards stopped her; the difference is visible only in the log.
 
-Det er også grunden til at oversættelsen sker i Infrastructure og ikke i servicen: Application må ikke kende `PostgresException`, og servicen skal ikke skulle vide hvad `23P01` betyder.
-
-Tilsvarende: `23505` (unique violation) → `UniqueConstraintViolationException` → `ErrorCodes.Room.RoomNumberAlreadyExists`. `23503` (FK violation ved sletning) → oversættes til rum-/gæste-sletteguardens fejlkode, som sidste værn bag det eksplicitte `HasAnyBookingsAsync`-tjek.
+It is also the reason the translation happens in Infrastructure and not in the service: Application must not know `PostgresException`, and the service should not need to know what `23P01` means.
+Similarly: `23505` (unique violation) → `UniqueConstraintViolationException` → `ErrorCodes.Room.RoomNumberAlreadyExists`. `23503` (FK violation on deletion) → translated to the error code of the room/guest delete guard, as the last safeguard behind the explicit `HasAnyBookingsAsync` check.
 
 ---
 
-## 6. EF Core-konfiguration
+## 6. EF Core configuration
 
 ### 6.1 `HotelDbContext`
 
@@ -840,9 +841,9 @@ public sealed class HotelDbContext : DbContext
 }
 ```
 
-`OnModelCreating` kalder `HasPostgresExtension("btree_gist")` og `ApplyConfigurationsFromAssembly(typeof(HotelDbContext).Assembly)`. Ingen entitetskonfiguration ligger i `OnModelCreating` selv — én konfigurationsklasse pr. entitet, ét ansvar pr. fil (Conventions).
+`OnModelCreating` calls `HasPostgresExtension("btree_gist")` and `ApplyConfigurationsFromAssembly(typeof(HotelDbContext).Assembly)`. No entity configuration lives in `OnModelCreating` itself — one configuration class per entity, one responsibility per file (Conventions).
 
-Providers og konventioner sættes ved registrering:
+Providers and conventions are set at registration:
 
 ```csharp
 options.UseNpgsql(connectionString, npgsql => npgsql
@@ -851,22 +852,22 @@ options.UseNpgsql(connectionString, npgsql => npgsql
        .UseSnakeCaseNamingConvention();   // EFCore.NamingConventions — B-06
 ```
 
-`UseSnakeCaseNamingConvention()` gør `BookingId` til `booking_id` og `Booking` til `booking`. C# forbliver PascalCase, PostgreSQL slipper for quotede identifiers, og U-19's casing-kaos (`RoomID` mod `RoomId` mod `ROOM`) har ingen steder at opstå.
+`UseSnakeCaseNamingConvention()` turns `BookingId` into `booking_id` and `Booking` into `booking`. C# stays PascalCase, PostgreSQL is spared quoted identifiers, and U-19's casing chaos (`RoomID` versus `RoomId` versus `ROOM`) has nowhere to arise.
 
-Læsestrategi: alle query-metoder i repositories bruger `AsNoTracking()`, fordi de fodrer DTO-mapping. Kun `GetByIdAsync` i skrive-use cases henter tracked. Lazy loading er slået fra; navigationer hentes med eksplicit `Include`. Det er den tekniske forudsætning for T-35 (eager loading af `Room` og `Guest`).
+Read strategy: all query methods in repositories use `AsNoTracking()`, because they feed DTO mapping. Only `GetByIdAsync` in write use cases fetches tracked. Lazy loading is off; navigations are fetched with an explicit `Include`. This is the technical prerequisite for T-35 (eager loading of `Room` and `Guest`).
 
 ### 6.2 `BookingConfiguration`
 
-- Nøgle: `BookingId`, identity (`ValueGeneratedOnAdd`).
-- `StartDate`, `EndDate`: `DateOnly` → `date`. Npgsql mapper `DateOnly` til `date` uden konverter (B-08). Ingen `ValueConverter` skal skrives.
-- `CheckInTime`, `CheckOutTime`: `DateTimeOffset?` → `timestamptz`, nullable. Npgsql kræver at værdien har offset 0; det sikres ved at alle tidsstempler kommer fra `IClock.UtcNow` — aldrig fra `DateTime.Now` (som i BR-07/BR-10).
-- `Status`: `.HasConversion<int>()` (B-07), ordinal 0–4 bevaret.
-- Valgfri, anbefalet: `HasCheckConstraint("ck_booking_status_range", "status BETWEEN 0 AND 4")`. Det gamle skema havde ingen, så en vilkårlig int kunne indsættes (`Analysis.md` afsnit 1).
-- Relationer: `HasOne(b => b.Room).WithMany().HasForeignKey(b => b.RoomId).OnDelete(DeleteBehavior.Restrict)` og tilsvarende for `Guest`. `Restrict` er det der bærer BR-112 som DB-værn.
-- `BookingNumber` og `NumberOfNights`: `.Ignore(...)` — afledte værdier, ingen kolonne. Uændret fra det gamle system, hvor `BookingNumber` heller ikke havde en kolonne.
-- Samtidighed: `Property<uint>("xmin").IsRowVersion().HasColumnName("xmin")`. Gratis i PostgreSQL, og det lukker det læs-så-skriv-hul som `BookingRepo.Update` havde over to separate connections.
+- Key: `BookingId`, identity (`ValueGeneratedOnAdd`).
+- `StartDate`, `EndDate`: `DateOnly` → `date`. Npgsql maps `DateOnly` to `date` without a converter (B-08). No `ValueConverter` needs to be written.
+- `CheckInTime`, `CheckOutTime`: `DateTimeOffset?` → `timestamptz`, nullable. Npgsql requires the value to have offset 0; this is ensured by all timestamps coming from `IClock.UtcNow` — never from `DateTime.Now` (as in BR-07/BR-10).
+- `Status`: `.HasConversion<int>()` (B-07), ordinals 0–4 preserved.
+- Optional, recommended: `HasCheckConstraint("ck_booking_status_range", "status BETWEEN 0 AND 4")`. The old schema had none, so an arbitrary int could be inserted (`Analysis.md` section 1).
+- Relations: `HasOne(b => b.Room).WithMany().HasForeignKey(b => b.RoomId).OnDelete(DeleteBehavior.Restrict)` and likewise for `Guest`. `Restrict` is what carries BR-112 as a DB safeguard.
+- `BookingNumber` and `NumberOfNights`: `.Ignore(...)` — derived values, no column. Unchanged from the old system, where `BookingNumber` had no column either.
+- Concurrency: `Property<uint>("xmin").IsRowVersion().HasColumnName("xmin")`. Free in PostgreSQL, and it closes the read-then-write gap that `BookingRepo.Update` had across two separate connections.
 
-**Exclusion constraint (B-03).** EF kan ikke modellere den, så den skrives i migrationen:
+**Exclusion constraint (B-03).** EF cannot model it, so it is written in the migration:
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS btree_gist;
@@ -880,22 +881,22 @@ ALTER TABLE booking
   WHERE (status <> ALL (ARRAY[3, 4]));
 ```
 
-Tre ting er værd at bemærke:
+Three things are worth noting:
 
-- **`'[)'` er halvåben** og svarer nøjagtigt til den halvåbne test i BR-19 og BR-39 (`andenStart < nytUdtjek AND andenSlut > nytIndtjek`). Ankomst samme dag som en afrejse er dermed tilladt, både i domænet og i databasen.
-- **`WHERE`-prædikatet skal spejle `BookingRules`' spærrende statussæt præcist.** Ovenstående udelader `CheckedOut` (3) og `Cancelled` (4), altså BR-19's variant. Vælger `design:domain` BR-39's variant (kun `Cancelled` udelades), skal prædikatet være `status <> 4`. Prædikatet må aldrig være strengere end domænereglen — se afsnit 10, punkt 3, hvor konsekvensen for tidlig udtjekning er skrevet ud.
-- Constrainten skaber sit eget GiST-indeks på `(room_id, daterange(...))`, som samtidig betjener overlapsopslaget fra `GetCandidatesForOverlapAsync`.
+- **`'[)'` is half-open** and corresponds exactly to the half-open test in BR-19 and BR-39 (`otherStart < newCheckOut AND otherEnd > newCheckIn`). Arrival on the same day as a departure is thus allowed, both in the domain and in the database.
+- **The `WHERE` predicate must mirror `BookingRules`' blocking status set exactly.** The above omits `CheckedOut` (3) and `Cancelled` (4), i.e. BR-19's variant. If `design:domain` chooses BR-39's variant (only `Cancelled` omitted), the predicate must be `status <> 4`. The predicate must never be stricter than the domain rule — see section 10, point 3, where the consequence for early check-out is spelled out.
+- The constraint creates its own GiST index on `(room_id, daterange(...))`, which also serves the overlap lookup from `GetCandidatesForOverlapAsync`.
 
 ### 6.3 `RoomConfiguration`
 
-- Nøgle: `RoomId`.
-- `RoomNumber`: `string`, `HasMaxLength(20)`, `IsRequired()`. Løser konflikten fra `Analysis.md` afsnit 1, hvor C# sagde `string` og begge create-scripts sagde `INT`, patchet bagefter af et script der kun fandtes i det ene SQL-sæt. Nyt skema, én type, ingen patch.
-- Unikt indeks på `room_number` — **ny regel**, se afsnit 10, punkt 5.
-- `Status` og `HousekeepingStatus`: `.HasConversion<int>()`.
-- `RoomSize`: `.HasConversion<int>()` hvis `design:domain` gør den til enum (anbefalet af Fase1-Scope, "billig insurance"). Bliver den en string, ændres denne linje og `RoomFilter`s felttype.
-- `Floor`, `Capacity`: `int`, plus valgfri check constraints `floor > 0` (BR-98) og `capacity > 0` (BR-100) som DB-værn bag domæneinvarianten.
+- Key: `RoomId`.
+- `RoomNumber`: `string`, `HasMaxLength(20)`, `IsRequired()`. Resolves the conflict from `Analysis.md` section 1, where C# said `string` and both create scripts said `INT`, patched afterwards by a script that existed in only one of the SQL sets. New schema, one type, no patch.
+- Unique index on `room_number` — **new rule**, see section 10, point 5.
+- `Status` and `HousekeepingStatus`: `.HasConversion<int>()`.
+- `RoomSize`: `.HasConversion<int>()` if `design:domain` makes it an enum (recommended by Phase1-Scope, "cheap insurance"). If it becomes a string, this line and `RoomFilter`'s field type change.
+- `Floor`, `Capacity`: `int`, plus optional check constraints `floor > 0` (BR-98) and `capacity > 0` (BR-100) as DB safeguards behind the domain invariant.
 
-### 6.4 `GuestConfiguration` og kryptering (B-09)
+### 6.4 `GuestConfiguration` and encryption (B-09)
 
 ```csharp
 public sealed class EncryptedStringConverter : ValueConverter<string, string>
@@ -904,7 +905,7 @@ public sealed class EncryptedStringConverter : ValueConverter<string, string>
 }
 ```
 
-Konfigureres som:
+Configured as:
 
 ```csharp
 builder.Property(g => g.PassportNumber)
@@ -912,68 +913,68 @@ builder.Property(g => g.PassportNumber)
        .HasColumnType("text");
 ```
 
-Konverteren instantieres i `GuestConfiguration`s konstruktør med en injiceret `IStringEncryptor` (AES-GCM, nøgle fra `EncryptionOptions`, bundet fra `dotnet user-secrets` i dev og fra miljøvariabler/Actions Secrets i CI, jf. D-07). Konfigurationsklassen registreres derfor eksplicit i `OnModelCreating` frem for via assembly-scanning, da den har en afhængighed.
+The converter is instantiated in `GuestConfiguration`'s constructor with an injected `IStringEncryptor` (AES-GCM, key from `EncryptionOptions`, bound from `dotnet user-secrets` in dev and from environment variables/Actions Secrets in CI, cf. D-07). The configuration class is therefore registered explicitly in `OnModelCreating` rather than via assembly scanning, since it has a dependency.
 
-**Konsekvenser, konkret:**
+**Consequences, concretely:**
 
-| Konsekvens | Detalje |
+| Consequence | Detail |
 |---|---|
-| Ingen `LIKE`/`ILIKE` på feltet | Ciphertext er ikke søgbar. Enhver `WHERE passport_number LIKE ...` ville ramme krypteret tekst. |
-| Ingen `ORDER BY` på feltet | Sorteringsrækkefølge er meningsløs på ciphertext. |
-| Ingen index, heller ikke unikt | AES-GCM er randomiseret (ny nonce pr. kryptering), så samme pasnummer giver forskellig ciphertext hver gang. Selv lighedsopslag virker ikke. |
-| Kolonnetype | `text`, ikke `varchar(50)`. Ciphertext + nonce + tag, base64-kodet, fylder betydeligt mere end de 50 tegn den gamle `NVARCHAR(50)` gav. |
-| `null` bevares | EF kalder ikke value converters for `null`, så `NULL` forbliver `NULL` i databasen. Det bevarer T-41 ("pasnummer kan fjernes igen, sættes til NULL, ikke tom streng") — men det kræver at Domain skelner `null` fra `""`. Skal verificeres i en Infrastructure-test. |
-| Nøglerotation | Ikke løst i Fase 1. Rotation kræver læs-dekrypter-genkrypter over hele tabellen. Noteres som en åben opgave, ikke som en implementering. |
+| No `LIKE`/`ILIKE` on the field | Ciphertext is not searchable. Any `WHERE passport_number LIKE ...` would hit encrypted text. |
+| No `ORDER BY` on the field | Sort order is meaningless on ciphertext. |
+| No index, not even a unique one | AES-GCM is randomised (a new nonce per encryption), so the same passport number gives different ciphertext each time. Even equality lookups do not work. |
+| Column type | `text`, not `varchar(50)`. Ciphertext + nonce + tag, base64-encoded, takes up considerably more than the 50 characters the old `NVARCHAR(50)` gave. |
+| `null` is preserved | EF does not call value converters for `null`, so `NULL` stays `NULL` in the database. That preserves T-41 ("passport number can be removed again, set to NULL, not an empty string") — but it requires Domain to distinguish `null` from `""`. Must be verified in an Infrastructure test. |
+| Key rotation | Not solved in Phase 1. Rotation requires read-decrypt-re-encrypt across the whole table. Noted as an open task, not as an implementation. |
 
-**Verifikation mod ledgeren.** Jeg har gennemgået alle regler der rører søgning eller sortering:
+**Verification against the ledger.** I went through all rules that touch searching or sorting:
 
-| Regel | Felter der søges/sorteres på | Rammer pasnummer? |
+| Rule | Fields searched/sorted on | Hits passport number? |
 |---|---|---|
-| BR-116 (`GuestRepo.GetAllByName`) | fornavn, efternavn | Nej |
-| BR-68 (gæstesøgning i VM) | fuldt navn, land, e-mail | Nej |
-| BR-69 (gæstesortering) | "fornavn efternavn", lowercase | Nej |
-| BR-25 (bookingsøgning) | navn, land, e-mail, værelsesnummer | Nej |
-| BR-74/BR-75 (rumfilter) | etage, størrelse, status | Nej |
-| BR-32 (bookingsortering) | kolonner i bookingoversigten | Nej |
-| BR-35 (forudfyld fra valgt gæst) | opslag på `GuestId`, ikke søgning | Nej |
-| BR-57 / T-14 (pasnummer valgfrit) | ingen søgning | Nej |
-| T-41 (pasnummer kan nulstilles) | opdatering på id | Nej |
+| BR-116 (`GuestRepo.GetAllByName`) | first name, last name | No |
+| BR-68 (guest search in VM) | full name, country, email | No |
+| BR-69 (guest sorting) | "first name last name", lowercase | No |
+| BR-25 (booking search) | name, country, email, room number | No |
+| BR-74/BR-75 (room filter) | floor, size, status | No |
+| BR-32 (booking sorting) | columns in the booking overview | No |
+| BR-35 (prefill from selected guest) | lookup on `GuestId`, not search | No |
+| BR-57 / T-14 (passport number optional) | no search | No |
+| T-41 (passport number can be reset) | update by id | No |
 
-**Konklusion: ingen af de 126 regler søger eller sorterer på pasnummer.** B-09's antagelse holder. Den eneste reelle konsekvens er den tekniske (kolonnetype, ingen index, nøglehåndtering) plus DTO-valget i afsnit 4.3.
+**Conclusion: none of the 126 rules searches or sorts on passport number.** B-09's assumption holds. The only real consequence is the technical one (column type, no index, key handling) plus the DTO choice in section 4.3.
 
-### 6.5 Indekser — hvilke af de gamle bevares
+### 6.5 Indexes — which of the old ones are kept
 
-Det gamle skema havde fem: `IX_Booking_StartDate`, `IX_Booking_EndDate`, `IX_Booking_Status`, `IX_Booking_RoomID`, `IX_Booking_GuestID` — og de forsvandt hvis `fix-booking-identity.sql` blev kørt.
+The old schema had five: `IX_Booking_StartDate`, `IX_Booking_EndDate`, `IX_Booking_Status`, `IX_Booking_RoomID`, `IX_Booking_GuestID` — and they disappeared if `fix-booking-identity.sql` was run.
 
-| Gammelt indeks | Beslutning | Begrundelse |
+| Old index | Decision | Reason |
 |---|---|---|
-| `IX_Booking_RoomID` | **Bevares** som `ix_booking_room_id` | PostgreSQL opretter ikke automatisk indeks på FK-siden. Nødvendigt for `GetByRoomIdAsync` og for FK-tjekket ved rumsletning (BR-112). |
-| `IX_Booking_GuestID` | **Bevares** som `ix_booking_guest_id` | Samme, plus `GetByGuestIdAsync`. |
-| `IX_Booking_Status` | **Bevares, men som composite** `ix_booking_status_start_date (status, start_date)` | Status alene har fem distinkte værdier og er sjældent selektiv nok. Oversigten filtrerer altid på status *og* periode (BR-23 + BR-24), så det sammensatte indeks matcher det faktiske query-mønster. |
-| `IX_Booking_StartDate` | **Erstattes** | Dækket af det sammensatte indeks ovenfor og af GiST-indekset. |
-| `IX_Booking_EndDate` | **Droppes** | Ingen query filtrerer på slutdato alene. Periodeoverlap går gennem GiST-indekset. |
-| — | **Nyt:** GiST-indeks via `ex_booking_room_period` | Følger automatisk med exclusion constrainten (B-03). Betjener overlapsopslaget. |
-| — | **Nyt:** `ux_room_room_number` (unikt) | Ny regel, kræver godkendelse — se afsnit 10, punkt 5. |
-| — | **Nyt:** `ix_guest_last_name_first_name` | Gæstesøgningen (BR-68) og sorteringen (BR-69). Overvej i stedet et GIN/`pg_trgm`-indeks hvis `ILIKE '%x%'` bliver langsomt; med det datavolumen der er tale om, er btree rigeligt i Fase 1. |
-| — | **Nyt:** `ix_room_status` | Tilgængelighedsopslaget (BR-110's efterfølger). |
+| `IX_Booking_RoomID` | **Kept** as `ix_booking_room_id` | PostgreSQL does not automatically create an index on the FK side. Needed for `GetByRoomIdAsync` and for the FK check on room deletion (BR-112). |
+| `IX_Booking_GuestID` | **Kept** as `ix_booking_guest_id` | Same, plus `GetByGuestIdAsync`. |
+| `IX_Booking_Status` | **Kept, but as a composite** `ix_booking_status_start_date (status, start_date)` | Status alone has five distinct values and is rarely selective enough. The overview always filters on status *and* period (BR-23 + BR-24), so the composite index matches the actual query pattern. |
+| `IX_Booking_StartDate` | **Replaced** | Covered by the composite index above and by the GiST index. |
+| `IX_Booking_EndDate` | **Dropped** | No query filters on end date alone. Period overlap goes through the GiST index. |
+| — | **New:** GiST index via `ex_booking_room_period` | Comes automatically with the exclusion constraint (B-03). Serves the overlap lookup. |
+| — | **New:** `ux_room_room_number` (unique) | New rule, requires approval — see section 10, point 5. |
+| — | **New:** `ix_guest_last_name_first_name` | Guest search (BR-68) and sorting (BR-69). Consider a GIN/`pg_trgm` index instead if `ILIKE '%x%'` becomes slow; with the data volume in question, btree is plenty in Phase 1. |
+| — | **New:** `ix_room_status` | The availability lookup (BR-110's successor). |
 
-Ingen indeks på `guest.passport_number` — kan ikke lade sig gøre, jf. 6.4.
+No index on `guest.passport_number` — not possible, cf. 6.4.
 
 ### 6.6 Migrations
 
-Migrations skrives forfra mod PostgreSQL; `01_CreateSchema.sql` er reference, ikke kilde. De to uforenelige SQL-sæt og `fix-booking-identity.sql` porteres ikke. Navngivning: `20260907_InitialSchema`, `20260907_AddBookingOverlapConstraint` osv. — én ting pr. migration, som ved commits.
+Migrations are written from scratch against PostgreSQL; `01_CreateSchema.sql` is a reference, not a source. The two incompatible SQL sets and `fix-booking-identity.sql` are not ported. Naming: `20260907_InitialSchema`, `20260907_AddBookingOverlapConstraint` etc. — one thing per migration, as with commits.
 
-Exclusion constraint, `btree_gist`-extension og eventuelle check constraints tilføjes med `migrationBuilder.Sql(...)` i `Up` og modsvarende `DROP` i `Down`. `Down` skal virke; en migration der ikke kan rulles tilbage, er ikke færdig.
+The exclusion constraint, the `btree_gist` extension and any check constraints are added with `migrationBuilder.Sql(...)` in `Up` and the matching `DROP` in `Down`. `Down` must work; a migration that cannot be rolled back is not finished.
 
-Migrations køres **ikke** automatisk ved opstart i andet end Development. `context.Database.Migrate()` i `Program.cs` er bekvemt og farligt; brug `dotnet ef database update` eller et separat migrator-trin i pipelinen.
+Migrations are **not** run automatically at start-up in anything but Development. `context.Database.Migrate()` in `Program.cs` is convenient and dangerous; use `dotnet ef database update` or a separate migrator step in the pipeline.
 
 ---
 
-## 7. DI-registrering
+## 7. DI registration
 
 ### 7.1 Composition root
 
-`NFHotel.Web/Program.cs` er composition root (Conventions). Den kender to extension-metoder og ellers ingenting om hverken EF eller repositories:
+`NFHotel.Web/Program.cs` is the composition root (Conventions). It knows two extension methods and otherwise nothing about either EF or repositories:
 
 ```csharp
 builder.Services.AddApplication();
@@ -992,13 +993,13 @@ public static class DependencyInjection
 }
 ```
 
-| Registrering | Levetid | Begrundelse |
+| Registration | Lifetime | Reason |
 |---|---|---|
-| `IBookingService` → `BookingService` | Scoped | Følger `DbContext`s levetid gennem repositories. Tilstandsløs i sig selv, men må ikke overleve sin kontekst. |
-| `IRoomService` → `RoomService` | Scoped | Samme. |
-| `IGuestService` → `GuestService` | Scoped | Samme. |
+| `IBookingService` → `BookingService` | Scoped | Follows the `DbContext`'s lifetime through the repositories. Stateless in itself, but must not outlive its context. |
+| `IRoomService` → `RoomService` | Scoped | Same. |
+| `IGuestService` → `GuestService` | Scoped | Same. |
 
-Ingen assembly-scanning. Tre linjer er lettere at læse end en konvention der finder dem, og en glemt registrering fejler så ved opstart i stedet for at blive fundet ved et tilfælde.
+No assembly scanning. Three lines are easier to read than a convention that finds them, and a forgotten registration then fails at start-up instead of being found by chance.
 
 ### 7.3 `AddInfrastructure`
 
@@ -1013,25 +1014,25 @@ public static class DependencyInjection
 }
 ```
 
-| Registrering | Levetid | Begrundelse |
+| Registration | Lifetime | Reason |
 |---|---|---|
-| `HotelDbContext` (via `AddDbContextFactory` + scoped adapter) | Scoped | Se 7.4. |
-| `IUnitOfWork` → `UnitOfWork` | Scoped | Skal være *samme* instans som repositories' kontekst. |
-| `IBookingRepository` → `BookingRepository` | Scoped | Holder en `DbContext`. |
-| `IRoomRepository` → `RoomRepository` | Scoped | Samme. |
-| `IGuestRepository` → `GuestRepository` | Scoped | Samme. |
-| `IClock` → `SystemClock` | Singleton | Tilstandsløs. |
-| `IStringEncryptor` → `AesGcmStringEncryptor` | Singleton | Holder nøglen; `AesGcm` instantieres pr. operation. |
-| `EncryptionOptions` | Options + `ValidateOnStart()` | **Appen skal nægte at starte uden krypteringsnøgle.** Alternativet er at pasnumre gemmes i klartekst uden at nogen opdager det. |
-| `HotelTimeOptions` (tidszone) | Options + `ValidateOnStart()` | "I dag" i BR-06 og BR-44 skal være hotel-lokal, ikke server-lokal. |
+| `HotelDbContext` (via `AddDbContextFactory` + scoped adapter) | Scoped | See 7.4. |
+| `IUnitOfWork` → `UnitOfWork` | Scoped | Must be the *same* instance as the repositories' context. |
+| `IBookingRepository` → `BookingRepository` | Scoped | Holds a `DbContext`. |
+| `IRoomRepository` → `RoomRepository` | Scoped | Same. |
+| `IGuestRepository` → `GuestRepository` | Scoped | Same. |
+| `IClock` → `SystemClock` | Singleton | Stateless. |
+| `IStringEncryptor` → `AesGcmStringEncryptor` | Singleton | Holds the key; `AesGcm` is instantiated per operation. |
+| `EncryptionOptions` | Options + `ValidateOnStart()` | **The app must refuse to start without an encryption key.** The alternative is passport numbers stored in plain text without anyone noticing. |
+| `HotelTimeOptions` (time zone) | Options + `ValidateOnStart()` | "Today" in BR-06 and BR-44 must be hotel-local, not server-local. |
 
-Connection string læses fra `configuration.GetConnectionString("HotelDatabase")` med `ValidateOnStart`. Ingen statisk mutérbar global som `DatabaseConfig`, der stille kunne blive `null` hvis nøglen manglede — den enkeltklasse er ansvarlig for en stor del af det gamle systems utestbarhed.
+The connection string is read from `configuration.GetConnectionString("HotelDatabase")` with `ValidateOnStart`. No static mutable global like `DatabaseConfig`, which could silently become `null` if the key was missing — that single class is responsible for a large part of the old system's untestability.
 
-### 7.4 Blazor Server og `DbContext`-levetid
+### 7.4 Blazor Server and `DbContext` lifetime
 
-Dette er den ene DI-detalje der kan give reelle produktionsfejl, og den skal koordineres med `design:web`.
+This is the one DI detail that can cause real production failures, and it must be coordinated with `design:web`.
 
-I Blazor Server er en scope **hele SignalR-kredsløbet** — potentielt timer. En scoped `DbContext` ville derfor: (a) akkumulere tracked entiteter i hele brugerens session, og (b) kunne blive brugt af to samtidige komponent-hændelser, hvilket kaster `InvalidOperationException: A second operation started on this context`.
+In Blazor Server a scope is **the whole SignalR circuit** — potentially hours. A scoped `DbContext` would therefore: (a) accumulate tracked entities across the user's whole session, and (b) possibly be used by two concurrent component events, which throws `InvalidOperationException: A second operation started on this context`.
 
 Design:
 
@@ -1044,166 +1045,166 @@ services.AddScoped<HotelDbContext>(sp =>
     sp.GetRequiredService<IDbContextFactory<HotelDbContext>>().CreateDbContext());
 ```
 
-Plus et krav til Web-laget, som skrives ind i `Architecture.md`: **hver side/ViewModel får sin egen DI-scope** (via `OwningComponentBase` eller en eksplicit `IServiceScopeFactory`-scope pr. use case), og to samtidige operationer må aldrig dele samme kontekst. Så bliver "scoped" i praksis "pr. side", ikke "pr. session".
+Plus a requirement on the Web layer, to be written into `Architecture.md`: **each page/ViewModel gets its own DI scope** (via `OwningComponentBase` or an explicit `IServiceScopeFactory` scope per use case), and two concurrent operations must never share the same context. "Scoped" then becomes "per page" in practice, not "per session".
 
-Et senere `Api`-projekt kan genbruge `AddApplication` og `AddInfrastructure` uændret — dér er scoped = pr. HTTP-request, hvilket er den levetid EF er designet til. Det er en af de konkrete gevinster ved at registrere via interfaces fra start (Fase1-Scope, "billig insurance").
+A later `Api` project can reuse `AddApplication` and `AddInfrastructure` unchanged — there scoped = per HTTP request, which is the lifetime EF is designed for. It is one of the concrete gains of registering via interfaces from the start (Phase1-Scope, "cheap insurance").
 
-### 7.5 Forberedelse til autorisation (F-03), uden at bygge den
+### 7.5 Preparation for authorisation (F-03), without building it
 
-Autorisation er udskudt, men F-03 kræver at den ender i Application-laget. Der er to måder at få brugerkontekst ind i en service: som **parameter** eller som **injiceret afhængighed**. Vælger vi parameter, skal hver eneste servicesignatur ændres den dag Identity kommer — altså præcis den slags dyre ændring Fase1-Scope siger skal undgås.
+Authorisation is deferred, but F-03 requires that it ends up in the Application layer. There are two ways to get user context into a service: as a **parameter** or as an **injected dependency**. If we choose a parameter, every single service signature must change the day Identity arrives — exactly the kind of expensive change Phase1-Scope says to avoid.
 
-Anbefaling: **injicer, parametrisér ikke.** Der bygges intet auth nu, men når det kommer, tilføjes `ICurrentUser` som konstruktørafhængighed i de services der har brug for den. Ingen af signaturerne i afsnit 3 skal ændres. Det koster nul at beslutte nu.
+Recommendation: **inject, do not parametrise.** No auth is built now, but when it comes, `ICurrentUser` is added as a constructor dependency in the services that need it. None of the signatures in section 3 needs to change. It costs nothing to decide now.
 
 ---
 
-## 8. Regelplacering
+## 8. Rule placement
 
-### 8.1 Placeringsprincip
+### 8.1 Placement principle
 
-| Lag | Hvad hører til |
+| Layer | What belongs there |
 |---|---|
-| **Domain** | Invarianter og rene funktioner: er denne dato gyldig, overlapper disse to perioder, hvor mange nætter, er denne statusovergang lovlig |
-| **Application (service)** | Use casen: hent, spørg domænet, orkestrér repositories, gem, oversæt til `Result`. Alt der kræver at kigge i databasen for at afgøre noget |
-| **Infrastructure** | Oversættelse til SQL, skema-værn (FK, exclusion constraint, check constraints), fejlkodeoversættelse |
-| **Web** | Rendering, dialoger, aktivering af knapper ud fra flag som Application har beregnet |
+| **Domain** | Invariants and pure functions: is this date valid, do these two periods overlap, how many nights, is this status transition legal |
+| **Application (service)** | The use case: fetch, ask the domain, orchestrate repositories, save, translate to `Result`. Everything that requires looking in the database to decide something |
+| **Infrastructure** | Translation to SQL, schema safeguards (FK, exclusion constraint, check constraints), error-code translation |
+| **Web** | Rendering, dialogs, enabling buttons from flags that Application has computed |
 
-### 8.2 BR-110 til BR-116 — regler der i dag ligger i repos
+### 8.2 BR-110 to BR-116 — rules that live in repos today
 
-| Id | Regel i dag | Ny placering | Hvordan |
+| Id | Rule today | New placement | How |
 |---|---|---|---|
-| BR-110 | Kun `Available` tæller som tilgængelig — filtret i `RoomRepo.cs:220` | **Application** — `BookingService.GetAvailableRoomsAsync` | Repoet får `GetByStatusAsync(RoomStatus status)` som neutralt filter; servicen vælger `Available` og kombinerer med overlapsopslaget. `GetAllByAvailability()` udgår. |
-| BR-111 | Statusfilter som in-memory-filter efter fuldt tabeltræk — `BookingRepo.cs:173` | **Infrastructure** (som query, ikke som regel) | `GetByStatusAsync` bliver `WHERE status = @p`. Reglen var aldrig en forretningsregel, den var en implementeringsdefekt. Ophører med at være en ledger-post. |
-| BR-112 | Rum med bookinger må ikke slettes — kodet som `catch (SqlException 547)` i `RoomRepo.cs:208-210` | **Application** — `RoomService.DeleteAsync`, med **Infrastructure** som sidste værn | Eksplicit `HasAnyBookingsAsync` før sletning → `Result.Failure(ErrorCodes.Room.HasBookings)`. FK'en (`OnDelete.Restrict`) bevares og oversættes til samme fejlkode ved kapløb. Den brugervendte tekst ("sæt det Out of service") flytter til Web. |
-| BR-113 | `Room.Validate()` før persistering, håndhævet i repoet — `RoomRepo.cs:21-23, 164-166` | **Domain** (invariant) + **Application** (oversættelse til `Result`) | Entiteten kan ikke konstrueres ugyldigt. Repoet validerer ikke — et repository der validerer, er et repository der har forretningslogik. |
-| BR-114 | Booking skal eksistere før update/delete; null → `ArgumentNullException` — `BookingRepo.cs:190-196, 235-239` | **Application** (eksistens) + **guard clause** (null) | Eksistenstjekket bliver `Result.Failure(Booking.NotFound)` i servicen, hvilket samtidig fjerner det gamle læs-så-skriv over to connections. `ArgumentNullException` for null-argument bevares som guard (T-32). |
-| BR-115 | `GetById` på ukendt id returnerer `null` — tre repos | **Kontrakt mellem Infrastructure og Application** | Repository-interfacene returnerer `T?` (og lyver dermed ikke længere, jf. `IBookingRepo`s `Booking GetById`). Servicen oversætter `null` til `NotFound`. Bevaret adfærd, ærlig signatur. |
-| BR-116 | Navnesøgning = "indeholder" på for- ELLER efternavn — `GuestRepo.cs:127, 130` | **Application** — `GuestService.SearchAsync` | Konsolideres med BR-68's semantik: alle søgeord skal findes i navn, land eller e-mail (AND). Tokeniseringen sker i servicen, matchningen i repoet efter en kontrakt der står i XML-doc og pinnes af en test. **Adfærdsændring** — kræver godkendelse, se afsnit 10, punkt 6. |
+| BR-110 | Only `Available` counts as available — filtered in `RoomRepo.cs:220` | **Application** — `BookingService.GetAvailableRoomsAsync` | The repo gets `GetByStatusAsync(RoomStatus status)` as a neutral filter; the service chooses `Available` and combines it with the overlap lookup. `GetAllByAvailability()` is dropped. |
+| BR-111 | Status filter as an in-memory filter after a full table pull — `BookingRepo.cs:173` | **Infrastructure** (as a query, not as a rule) | `GetByStatusAsync` becomes `WHERE status = @p`. The rule was never a business rule, it was an implementation defect. Ceases to be a ledger entry. |
+| BR-112 | A room with bookings must not be deleted — coded as `catch (SqlException 547)` in `RoomRepo.cs:208-210` | **Application** — `RoomService.DeleteAsync`, with **Infrastructure** as the last safeguard | Explicit `HasAnyBookingsAsync` before deletion → `Result.Failure(ErrorCodes.Room.HasBookings)`. The FK (`OnDelete.Restrict`) is kept and translated to the same error code in a race. The user-facing text ("set it to Out of service") moves to Web. |
+| BR-113 | `Room.Validate()` before persisting, enforced in the repo — `RoomRepo.cs:21-23, 164-166` | **Domain** (invariant) + **Application** (translation to `Result`) | The entity cannot be constructed invalid. The repo does not validate — a repository that validates is a repository that has business logic. |
+| BR-114 | The booking must exist before update/delete; null → `ArgumentNullException` — `BookingRepo.cs:190-196, 235-239` | **Application** (existence) + **guard clause** (null) | The existence check becomes `Result.Failure(Booking.NotFound)` in the service, which at the same time removes the old read-then-write across two connections. `ArgumentNullException` for a null argument is kept as a guard (T-32). |
+| BR-115 | `GetById` on an unknown id returns `null` — three repos | **Contract between Infrastructure and Application** | The repository interfaces return `T?` (and thus no longer lie, cf. `IBookingRepo`'s `Booking GetById`). The service translates `null` to `NotFound`. Preserved behaviour, honest signature. |
+| BR-116 | Name search = "contains" on first OR last name — `GuestRepo.cs:127, 130` | **Application** — `GuestService.SearchAsync` | Consolidated with BR-68's semantics: all search words must be found in name, country or email (AND). Tokenisation happens in the service, matching in the repo according to a contract that is in the XML doc and pinned by a test. **Behaviour change** — requires approval, see section 10, point 6. |
 
-### 8.3 BR-117 til BR-126 — regler der i dag ligger i converters og views
+### 8.3 BR-117 to BR-126 — rules that live in converters and views today
 
-| Id | Regel i dag | Ny placering | Hvordan |
+| Id | Rule today | New placement | How |
 |---|---|---|---|
-| BR-117 | Bredde = antal overnatninger `(EndDate − StartDate).Days` — `CalendarConverters.cs:149` | **Domain** | Allerede `Booking.NumberOfNights`; DTO'en bærer `Nights`. Converteren regnede det samme en ekstra gang. |
-| BR-118 | Halvdags-regel: tegnes fra `daysOffset + 0.5` — `CalendarConverters.cs:31, 48` | **Web** (præsentationsgeometri) | Selve 0,5-forskydningen er pixelmatematik og hører i kalenderkomponenten. Men den koder en forretningsantagelse — "værelset er optaget fra middag" — som `design:domain` bør skrive ned som en policy-konstant hvis den skal være en regel. Uden det er den kun en tegning. Se afsnit 10, punkt 8. |
-| BR-119 | Bookinger startet før perioden klippes til periodestart, `+0.5` dag på bredden — `CalendarConverters.cs:81, 139` | **Web** (præsentationsgeometri) | Datavinduet leveres af `GetOverviewAsync` (BR-24); afklipningen er ren rendering. |
-| BR-120 | Tidslinjen viser kun bookinger hvor `Booking.Room.RoomId` matcher; bookinger uden rum udelades — `CalendarConverters.cs:197` | **Infrastructure** (skema) + **Application** (query) | `room_id` er `NOT NULL` med FK, så "booking uden rum" bliver umulig — halvdelen af reglen forsvinder ved skemaet. Grupperingen pr. rum sker i oversigts-queryen; DTO'en bærer `RoomId`. |
-| BR-121 | Confirm-knap kun ved `Pending` (XAML-trigger, dublet af BR-02) | **Application** — `BookingActionsDto.CanConfirm` + `ConfirmAsync` | Ét sted i stedet for to. UI'et binder til et bool-flag og kender ingen statusser. |
-| BR-122 | Cancel-knap kun ved `Pending`/`Confirmed` (dublet af BR-11) | **Application** — `BookingActionsDto.CanCancel` + `CancelAsync` | Samme. |
-| BR-123 | Edit-knap skjult ved `CheckedIn`/`CheckedOut` (dublet af BR-14) | **Application** — `BookingActionsDto.CanEdit` + `RescheduleAsync` | Samme. |
-| BR-124 | Gæstefelter skrivebeskyttede uden for redigeringstilstand — `IsReadOnly = !IsEditing` | **Web** (ren UI-tilstand) | Ingen serviceregel. Den reelle beskyttelse er at `GuestService.UpdateAsync` er den eneste skrivevej og validerer uanset hvad UI'et gjorde. |
-| BR-125 | "Edit Guest" kræver valgt gæst; "New Booking" har ingen tilsvarende guard | **Web** (knap-aktivering) + **Application** (guard) | Uoverensstemmelsen dør ved typerne: `UpdateGuestRequest.GuestId` og `CreateBookingRequest` kan ikke udfyldes uden en gæst, og servicen returnerer `NotFound` hvis id'et ikke findes. Det er ikke længere muligt at have guard ét sted og ikke det andet. |
-| BR-126 | Rumstatusser hardkodet i XAML (Available / Maintanance / Cleaning / Disabled) og uenige med `RoomStatus`-enum | **Domain** (enum = eneste kilde) + **Application** (`GetFilterOptionsAsync`) | UI'et binder til listen fra Application; en hardkodet dropdown kan ikke længere komme ud af trit. Selve forløbet (F-01, daglig rengøring/service/slutrengøring) fastlægges af `design:domain`; `RoomService.ChangeHousekeepingStatusAsync` er fladen. |
+| BR-117 | Width = number of nights `(EndDate − StartDate).Days` — `CalendarConverters.cs:149` | **Domain** | Already `Booking.NumberOfNights`; the DTO carries `Nights`. The converter computed the same thing one extra time. |
+| BR-118 | Half-day rule: drawn from `daysOffset + 0.5` — `CalendarConverters.cs:31, 48` | **Web** (presentation geometry) | The 0.5 offset itself is pixel maths and belongs in the calendar component. But it encodes a business assumption — "the room is occupied from noon" — which `design:domain` should write down as a policy constant if it is to be a rule. Without that it is only a drawing. See section 10, point 8. |
+| BR-119 | Bookings that started before the period are clipped to the period start, `+0.5` day on the width — `CalendarConverters.cs:81, 139` | **Web** (presentation geometry) | The data window is delivered by `GetOverviewAsync` (BR-24); the clipping is pure rendering. |
+| BR-120 | The timeline shows only bookings where `Booking.Room.RoomId` matches; bookings without a room are omitted — `CalendarConverters.cs:197` | **Infrastructure** (schema) + **Application** (query) | `room_id` is `NOT NULL` with an FK, so "booking without a room" becomes impossible — half the rule disappears with the schema. Grouping per room happens in the overview query; the DTO carries `RoomId`. |
+| BR-121 | Confirm button only for `Pending` (XAML trigger, duplicate of BR-02) | **Application** — `BookingActionsDto.CanConfirm` + `ConfirmAsync` | One place instead of two. The UI binds to a bool flag and knows no statuses. |
+| BR-122 | Cancel button only for `Pending`/`Confirmed` (duplicate of BR-11) | **Application** — `BookingActionsDto.CanCancel` + `CancelAsync` | Same. |
+| BR-123 | Edit button hidden for `CheckedIn`/`CheckedOut` (duplicate of BR-14) | **Application** — `BookingActionsDto.CanEdit` + `RescheduleAsync` | Same. |
+| BR-124 | Guest fields read-only outside edit mode — `IsReadOnly = !IsEditing` | **Web** (pure UI state) | No service rule. The real protection is that `GuestService.UpdateAsync` is the only write path and validates regardless of what the UI did. |
+| BR-125 | "Edit Guest" requires a selected guest; "New Booking" has no corresponding guard | **Web** (button enabling) + **Application** (guard) | The inconsistency dies through the types: `UpdateGuestRequest.GuestId` and `CreateBookingRequest` cannot be filled in without a guest, and the service returns `NotFound` if the id does not exist. It is no longer possible to have a guard in one place and not the other. |
+| BR-126 | Room statuses hard-coded in XAML (Available / Maintanance / Cleaning / Disabled) and out of step with the `RoomStatus` enum | **Domain** (enum = the only source) + **Application** (`GetFilterOptionsAsync`) | The UI binds to the list from Application; a hard-coded dropdown can no longer get out of step. The flow itself (F-01, daily cleaning/service/final cleaning) is determined by `design:domain`; `RoomService.ChangeHousekeepingStatusAsync` is the surface. |
 
-### 8.4 Regler der håndhæves i service-laget — samlet oversigt
+### 8.4 Rules enforced in the service layer — overview
 
-Regler der ligger i **Application**, altså ikke i Domain, ikke i UI, ikke i databasen:
+Rules that live in **Application**, i.e. not in Domain, not in the UI, not in the database:
 
-| Service | BR-id'er |
+| Service | BR ids |
 |---|---|
 | `BookingService` | BR-01, BR-03, BR-05, BR-08, BR-13, BR-17, BR-20, BR-22, BR-23, BR-24, BR-25, BR-32, BR-33*, BR-34, BR-36, BR-37, BR-38, BR-39, BR-40, BR-45, BR-46, BR-47, BR-48, BR-49, BR-51, BR-110, BR-111, BR-114, BR-115, BR-120, BR-121, BR-122, BR-123 |
 | `RoomService` | BR-74, BR-75, BR-76, BR-78, BR-80*, BR-82, BR-84, BR-112, BR-113, BR-115, BR-126 |
 | `GuestService` | BR-58, BR-59, BR-60, BR-62, BR-65*, BR-66, BR-67*, BR-68, BR-69, BR-70, BR-71*, BR-72, BR-73*, BR-115, BR-116, BR-125 |
 
-\* Disse er delvis UI-adfærd (genindlæsning, valgt-element-guards). Servicen bærer den håndhævende halvdel — at handlingen afvises med `NotFound` hvis id'et mangler — mens knappernes aktivering er Web.
+\* These are partly UI behaviour (reloading, selected-item guards). The service carries the enforcing half — that the action is rejected with `NotFound` if the id is missing — while the enabling of buttons is Web.
 
-Regler der **ikke** ligger i service-laget, og hvor de i stedet ligger:
+Rules that do **not** live in the service layer, and where they live instead:
 
 - **Domain:** BR-02, BR-06, BR-09, BR-11, BR-14, BR-18, BR-19, BR-41–BR-44, BR-52–BR-57, BR-88–BR-109, BR-117.
-- **Web (ren præsentation eller bekræftelsesdialoger):** BR-04, BR-12, BR-15, BR-16, BR-21, BR-26–BR-30, BR-50, BR-61, BR-63, BR-64, BR-77, BR-79, BR-83, BR-85, BR-86, BR-118, BR-119, BR-124.
-- **Infrastructure (skemaværn):** BR-112 (FK), overlapsværnet fra B-03, BR-120's "ingen booking uden rum".
-- **Ophører:** BR-31 (omsætning er aldrig implementeret; ingen priser i domænet), BR-87 (WPF-`RelayCommand`-detalje uden modstykke i Blazor), BR-111 (defekt, ikke regel).
+- **Web (pure presentation or confirmation dialogs):** BR-04, BR-12, BR-15, BR-16, BR-21, BR-26–BR-30, BR-50, BR-61, BR-63, BR-64, BR-77, BR-79, BR-83, BR-85, BR-86, BR-118, BR-119, BR-124.
+- **Infrastructure (schema safeguards):** BR-112 (FK), the overlap safeguard from B-03, BR-120's "no booking without a room".
+- **Cease to exist:** BR-31 (revenue was never implemented; no prices in the domain), BR-87 (a WPF `RelayCommand` detail with no counterpart in Blazor), BR-111 (a defect, not a rule).
 
 ---
 
-## 9. Testprojekter
+## 9. Test projects
 
-Udgangspunktet er ikke behageligt: 40 af de 128 gamle tests rammer den **samme fysiske database som applikationen** (`HotelBooking`), med hardkodede nøgler som `"999"` og `TESTAVAIL`, `Parallelize(MethodLevel)` slået til, ujævn oprydning pakket i `catch {}`, og en `appsettings.json` der slet ikke er i repoet — så suiten er 0 % kørbar out-of-the-box. Det skal ikke porteres, det skal erstattes.
+The starting point is not comfortable: 40 of the 128 old tests hit the **same physical database as the application** (`HotelBooking`), with hard-coded keys like `"999"` and `TESTAVAIL`, `Parallelize(MethodLevel)` switched on, uneven clean-up wrapped in `catch {}`, and an `appsettings.json` that is not in the repo at all — so the suite is 0 % runnable out of the box. It should not be ported, it should be replaced.
 
-### 9.1 Fordeling
+### 9.1 Distribution
 
-| Projekt | Tester | Afhængigheder | Kørselstid |
+| Project | Tests | Dependencies | Run time |
 |---|---|---|---|
-| `NFHotel.Domain.Tests` | Invarianter, datoregler, overlapsfunktionen, statusovergange, `NumberOfNights`, `BookingNumber` | Ingen | Millisekunder |
-| `NFHotel.Application.Tests` | Use cases: services med mockede repositories og fake `IClock` | Mocks | Millisekunder |
-| `NFHotel.Infrastructure.Tests` | Skema, mapping, queries, constraints | Testcontainers `postgres:16` | Sekunder |
+| `NFHotel.Domain.Tests` | Invariants, date rules, the overlap function, status transitions, `NumberOfNights`, `BookingNumber` | None | Milliseconds |
+| `NFHotel.Application.Tests` | Use cases: services with mocked repositories and a fake `IClock` | Mocks | Milliseconds |
+| `NFHotel.Infrastructure.Tests` | Schema, mapping, queries, constraints | Testcontainers `postgres:16` | Seconds |
 
-### 9.2 `Application.Tests` — det der erstatter de 22 ViewModel-tests
+### 9.2 `Application.Tests` — what replaces the 22 ViewModel tests
 
-De 22 tests i `BookingOverviewViewModelTests` er ifølge analysen den eneste rigtige facit-kilde og den eneste fil med ægte mocks. **T-20 til T-31 porteres 1:1 som service-tests** — samme scenarier, ny modtager: `BookingService` i stedet for `BookingOverviewViewModel`. Det er selve beviset for at forretningslogikken faktisk flyttede.
+According to the analysis, the 22 tests in `BookingOverviewViewModelTests` are the only real source of truth and the only file with genuine mocks. **T-20 to T-31 are ported 1:1 as service tests** — same scenarios, new receiver: `BookingService` instead of `BookingOverviewViewModel`. That is the very proof that the business logic actually moved.
 
-Hvad der testes her:
+What is tested here:
 
-- Alle statusovergange og deres afvisninger (T-20 til T-27), asserteret på **fejlkode**, ikke på fejltekst — tekster er UI's, koder er kontrakten.
-- Overlapsafvisning ved både `CreateAsync` og `RescheduleAsync` (B-03), med mocket repository der returnerer kolliderende kandidater. Dette er ny dækning; det gamle system havde ingen.
-- BR-47's to grene: eksisterende gæst genbruges, ny gæst oprettes — og at `SaveChangesAsync` kaldes **én gang** (verificér på mocket `IUnitOfWork`). Det er testen for atomiciteten.
-- BR-60/BR-96: at alle valideringsfejl kommer med, ikke kun den første.
-- Filtrering og sortering (T-28, T-29), inklusive at periodefilteret nu gælder alle visninger.
-- `BookingActionsDto`-flagene, som er den enkeltting UI-laget kommer til at stole blindt på.
+- All status transitions and their rejections (T-20 to T-27), asserted on **error code**, not on error text — texts are the UI's, codes are the contract.
+- Overlap rejection in both `CreateAsync` and `RescheduleAsync` (B-03), with a mocked repository that returns colliding candidates. This is new coverage; the old system had none.
+- BR-47's two branches: an existing guest is reused, a new guest is created — and that `SaveChangesAsync` is called **once** (verify on the mocked `IUnitOfWork`). It is the test of atomicity.
+- BR-60/BR-96: that all validation errors are included, not just the first.
+- Filtering and sorting (T-28, T-29), including that the period filter now applies to all views.
+- The `BookingActionsDto` flags, which are the single thing the UI layer is going to trust blindly.
 
-To disciplinkrav: **`IClock` mockes altid** — BR-06, BR-44 og BR-104 handler alle om "i dag", og en test der bruger den rigtige systemtid, holder op med at virke i morgen (det gamle projekt havde præcis det problem indbygget). Og **`Verify(...)` bruges faktisk** — det gamle projekt havde Moq med og brugte mocks udelukkende som stubs, uden en eneste `Verify`.
+Two discipline requirements: **`IClock` is always mocked** — BR-06, BR-44 and BR-104 are all about "today", and a test that uses the real system time stops working tomorrow (the old project had exactly that problem built in). And **`Verify(...)` is actually used** — the old project had Moq but used mocks purely as stubs, without a single `Verify`.
 
-Desuden en **arkitekturtest** (NetArchTest eller tilsvarende) i dette projekt: `NFHotel.Application` må ikke have typer der refererer `Microsoft.EntityFrameworkCore` eller `Npgsql`. Lagdeling håndhævet af build, ikke af hukommelse.
+In addition, an **architecture test** (NetArchTest or equivalent) in this project: `NFHotel.Application` must not have types that reference `Microsoft.EntityFrameworkCore` or `Npgsql`. Layering enforced by the build, not by memory.
 
-### 9.3 `Infrastructure.Tests` — Testcontainers, ikke delt database
+### 9.3 `Infrastructure.Tests` — Testcontainers, not a shared database
 
-Én `postgres:16`-container pr. test-collection, startet i en xUnit `ICollectionFixture`. Hver test kører i sin egen transaktion der rulles tilbage, eller mod et skema der er nulstillet med Respawn. **Ingen test rammer nogen udviklers eller nogens delte database, og ingen test har hardkodede nøgler.** Det er den direkte modgift mod det gamle setups tre problemer på én gang: delt DB, hardkodede id'er og parallelitet.
+One `postgres:16` container per test collection, started in an xUnit `ICollectionFixture`. Each test runs in its own transaction that is rolled back, or against a schema reset with Respawn. **No test hits any developer's or anyone's shared database, and no test has hard-coded keys.** It is the direct antidote to the old setup's three problems at once: shared DB, hard-coded ids and parallelism.
 
-Hvad der hører hjemme her og ingen andre steder:
+What belongs here and nowhere else:
 
-1. **Migrationerne kan køre fra bunden**, og `Down` virker.
-2. **Snake_case slår igennem** (B-06): tabellen hedder `booking`, kolonnen `start_date`.
-3. **Enum-mapping** (B-07): `BookingStatus.Cancelled` lander som `4` i kolonnen. Assertes med rå SQL, ikke gennem EF — ellers tester man EF mod sig selv.
-4. **Datotyper** (B-08): `DateOnly` → `date`, `DateTimeOffset` → `timestamptz`, og en tur frem og tilbage bevarer UTC.
-5. **Kryptering** (B-09): pasnummer læses korrekt tilbage gennem EF, **og** en rå SQL-læsning af kolonnen viser noget der ikke er klarteksten. Plus at `null` forbliver `NULL` (T-41) og ikke bliver til krypteret tom streng.
-6. **Exclusion constrainten virker under samtidighed** (B-03): to parallelle transaktioner der begge indsætter overlappende bookinger på samme rum — præcis én skal committe, den anden skal fejle med `23P01`, og oversættelsen til `BookingOverlapConflictException` skal ske. Det er den vigtigste enkelttest i hele projektet, fordi den er den eneste der beviser at dobbeltbooking ikke kan ske.
-7. **Query-semantik:** gæstesøgningens AND-logik (T-40 udvidet), rumfilterets ekskluderende kriterier (T-38, T-39), eager loading af `Room` og `Guest` (T-35).
-8. **Sletteguards:** FK'en afviser sletning af et rum med bookinger (T-36's efterfølger, BR-112).
+1. **The migrations can run from scratch**, and `Down` works.
+2. **Snake_case takes effect** (B-06): the table is called `booking`, the column `start_date`.
+3. **Enum mapping** (B-07): `BookingStatus.Cancelled` lands as `4` in the column. Asserted with raw SQL, not through EF — otherwise you are testing EF against itself.
+4. **Date types** (B-08): `DateOnly` → `date`, `DateTimeOffset` → `timestamptz`, and a round trip preserves UTC.
+5. **Encryption** (B-09): the passport number is read back correctly through EF, **and** a raw SQL read of the column shows something that is not the plain text. Plus that `null` stays `NULL` (T-41) and does not become an encrypted empty string.
+6. **The exclusion constraint works under concurrency** (B-03): two parallel transactions that both insert overlapping bookings on the same room — exactly one must commit, the other must fail with `23P01`, and the translation to `BookingOverlapConflictException` must happen. It is the most important single test in the whole project, because it is the only one that proves double booking cannot happen.
+7. **Query semantics:** the guest search's AND logic (T-40 extended), the room filter's exclusive criteria (T-38, T-39), eager loading of `Room` and `Guest` (T-35).
+8. **Delete guards:** the FK rejects deletion of a room with bookings (T-36's successor, BR-112).
 
-### 9.4 Hvad der ikke porteres
+### 9.4 What is not ported
 
-De ca. 45 boilerplate-tests fra analysen: property get/set, "er den ikke-null", tre identiske `RoomSize_Accepts*`, roundtrip-tests der kun tester ADO.NET-mapping. `Conventions.md` siger det direkte: *"Undgå at unit-teste simpel boilerplate."*
+The roughly 45 boilerplate tests from the analysis: property get/set, "is it non-null", three identical `RoomSize_Accepts*`, round-trip tests that only test ADO.NET mapping. `Conventions.md` says it directly: *"Avoid unit-testing simple boilerplate."*
 
-De 46 modeltests (T-01 til T-19) porteres derimod til `Domain.Tests` — de er hurtige, rene og koder valideringskontrakten. Det er `design:domain`s område, men de er værd at nævne her fordi de i dag ikke kan køre: assembly-init kaster `FileNotFoundException` og fælder hele assemblyen, også de rene tests. Med lagdelte testprojekter kan Domain- og Application-testene køre uden Docker, uden database og uden konfiguration.
+The 46 model tests (T-01 to T-19), on the other hand, are ported to `Domain.Tests` — they are fast, pure and encode the validation contract. That is `design:domain`'s area, but they are worth mentioning here because they cannot run today: assembly init throws `FileNotFoundException` and takes down the whole assembly, including the pure tests. With layered test projects, the Domain and Application tests can run without Docker, without a database and without configuration.
 
 ### 9.5 Framework
 
-**Anbefaling: xUnit** i alle tre projekter, med **NSubstitute eller Moq** til mocks. xUnit har den bedste Testcontainers-integration (`IAsyncLifetime`), og der er reelt ikke noget at porte: de tests der er værd at beholde, skal alligevel omskrives til nye typer. Målramme `net8.0` (ikke `net8.0-windows` — den gamle suite var Windows-låst udelukkende fordi den refererede WPF-projektet).
+**Recommendation: xUnit** in all three projects, with **NSubstitute or Moq** for mocks. xUnit has the best Testcontainers integration (`IAsyncLifetime`), and there is really nothing to port: the tests worth keeping have to be rewritten for new types anyway. Target framework `net8.0` (not `net8.0-windows` — the old suite was Windows-locked solely because it referenced the WPF project).
 
-Navngivning per Conventions: `CheckInAsync_ShouldFail_WhenBookingIsAlreadyCheckedIn()`. Arrange/Act/Assert konsekvent — den disciplin var faktisk høj i det gamle projekt og er værd at tage med.
-
----
-
-## 10. Uklart og modstridende
-
-1. **Feature-først mod type-først i `Application`.** `Conventions.md` kræver feature-først (`Features/Orders/Create/`); refaktoreringsplanens afsnit 3 tegner `Interfaces/`, `Services/`, `DTOs/`. Jeg har valgt feature-først, fordi Conventions er udpeget som source of truth. Beslutningen skal bekræftes, og `Architecture.md` skal så rette målarkitektur-tegningen — ellers står to dokumenter og modsiger hinanden fra dag ét.
-
-2. **Conventions placerer Entity↔DTO-mapping i Infrastructure.** Afsnittet "SOC → Infrastructure" siger `Mapping (Entity ↔ DTO)`, mens `Fase1-Scope.md` under "billig insurance" kræver at DTO'er defineres i `Application`, ikke i `Web`, så et senere Api kan genbruge dem. De to kan ikke begge holde: ligger DTO'en i Application og mapperen i Infrastructure, får Application-servicen ikke fat i mapperen uden at vende afhængighedsretningen. Jeg har valgt Fase1-Scope (mapping i Application), fordi den beslutning er nyere og scope-specifik, og fordi Infrastructures mapping-ansvar i praksis er entitet↔database, ikke entitet↔DTO. **Bør skrives ind som en rettelse til `Conventions.md`.**
-
-3. **BR-19 mod BR-39 afgør exclusion constraintens prædikat — og valget har en konkret pris.** BR-19 (redigering) udelukker både `Cancelled` og `CheckedOut` fra overlapstjekket; BR-39 (oprettelse) udelukker kun `Cancelled`. `design:domain` vælger ét sæt. Konsekvensen skal med i beslutningen: vælges BR-39's sæt, spærrer databasen for **genudlejning efter tidlig udtjekning** — booking 1.–10. januar, gæsten checker ud den 3., og en ny booking 4.–8. januar vil blive afvist af constrainten, selv om rummet står tomt. Vælges BR-19's sæt, kan der omvendt oprettes en overlappende booking oven i en udtjekket booking hvis periode endnu ikke er udløbet. Den ordentlige løsning er sandsynligvis at **`CheckOutAsync` afkorter bookingens periode til den faktiske udtjekningsdato**, hvorefter BR-39's strammere sæt kan bruges uden bivirkning — men det er en ny domæneregel og dermed `design:domain`s kald. Uanset valget skal prædikatet i migrationen genereres fra én konstant i Domain, og en Infrastructure-test skal asserte at de to er enige.
-
-4. **`RoomSize`s type er ikke fastlagt.** `Fase1-Scope.md` anbefaler enum eller lookup frem for fri streng, men det står ikke i listen over typer jeg må antage. Jeg har skrevet `RoomSize` som enum i `RoomFilter`, DTO'er og requests. Bliver den en string, ændres fire signaturer plus én EF-konfigurationslinje. Bliver den en lookup-tabel, ændres desuden `GetFilterOptionsAsync` til et DB-opslag.
-
-5. **Unikt rumnummer er en ny regel.** Det gamle skema havde ingen unique constraint på `RoomNumber`, og ingen af de 126 regler kræver det. Jeg har foreslået `ux_room_room_number` plus `RoomNumberExistsAsync`, fordi to rum med samme nummer er meningsløst — men det er en tilføjelse, ikke en bevaret regel, og Fase 3's ledger-audit vil registrere den som "opfundet" hvis den ikke godkendes eksplicit. Samme gælder `GuestService.DeleteAsync` (D-05) og check constraints på `floor > 0` / `capacity > 0`.
-
-6. **Gæstesøgningen ændrer adfærd.** BR-116 (repo: for- eller efternavn) og BR-68 (ViewModel: alle ord i navn, land eller e-mail) er to forskellige søgninger. Konsolideringen til BR-68's semantik betyder at en søgning på et efternavn nu også rammer et land med samme navn. Det er en forbedring, men det er en ændring, og den skal godkendes frem for at glide igennem.
-
-7. **`SalesService` står i målarkitekturen, men der er intet at beregne.** BR-31 fastslår at omsætningen altid sættes til 0, og der findes ingen pris nogen steder i domænet — `Room.RoomSize` er fri tekst, ikke en pris. Jeg har udeladt servicen. Alternativet er en service der returnerer 0 og ligner en implementering. Sales-skærmen bør enten udgå af Fase 1 eller vises som en eksplicit placeholder. Prisspørgsmålet (åbent spørgsmål 3 i planen) er ikke besvaret nogen steder.
-
-8. **BR-118's "optaget fra middag" er en forretningsantagelse forklædt som pixelmatematik.** Jeg har placeret geometrien i Web, men hvis hotellet reelt har en check-in-tid og en check-out-tid, er det en domænepolitik der også burde gælde check-in-vinduet (BR-06 tillader i dag check-in på hele startdatoen). Bør afklares af `design:domain`; ellers er 0,5 i converteren det eneste sted den viden findes — igen.
-
-9. **Krypteringsnøgle og rotation er ikke løst.** D-07 er selv markeret som midlertidig og uafklaret (Actions Secrets mod filer i repoet). Fase 1 kan levere `EncryptionOptions` med `ValidateOnStart`, så appen nægter at starte uden nøgle, men nøglerotation kræver en backfill-migration der læser, dekrypterer og genkrypterer hele `guest`-tabellen. Det er ikke designet her. Ligeledes er D-05's to retention-spor (bookingdata efter X måneder, persondata i X år) ikke designet — X'erne findes ikke.
-
-10. **Primærnøgle-navngivning skal fastlægges.** `Conventions.md` siger "Id eller [Entity]Id — vælg én standard", og det gamle system havde `BookingID`, `GuestID` og `RoomId` side om side (U-19). Jeg har antaget `BookingId`, `RoomId`, `GuestId` i C#, hvilket bliver `booking_id`, `room_id`, `guest_id` i databasen. Det er `design:domain`s properties, så valget skal bekræftes dér — men det rammer hver eneste EF-konfiguration og migration, så det skal bekræftes **inden** den første migration genereres.
-
-11. **Blazor Server-scopet skal koordineres.** Mit DI-design forudsætter at Web-laget giver hver side sin egen DI-scope. Gør det ikke det, får en bruger én `DbContext` for hele sin session, og to samtidige komponent-hændelser vil kaste. Det skal stå som et krav i `Architecture.md` og aftales med `design:web`, ikke opdages i drift.
-
-12. **Ingen datamigrering fra det gamle system er forudsat.** Planen siger at testdata porteres til EF seed-data, og at de to T-SQL-sæt ikke kan køres mod PostgreSQL. Jeg har designet ud fra en tom database. Skal produktionsdata faktisk flyttes over, kommer der en engangsopgave oveni: eksisterende pasnumre skal krypteres ved indlæsning, og eksisterende bookinger skal kunne overholde exclusion constrainten — hvis de overlapper i dag (og det kan de godt, for der har aldrig været noget tjek), kan constrainten ikke oprettes før dataene er ryddet op. **Det bør verificeres mod den kørende database før migrationen skrives**, ikke bagefter.
+Naming per Conventions: `CheckInAsync_ShouldFail_WhenBookingIsAlreadyCheckedIn()`. Arrange/Act/Assert consistently — that discipline was actually high in the old project and is worth taking along.
 
 ---
 
-### Kritiske filer for implementering
+## 10. Unclear and contradictory
 
-Læste kildedokumenter der styrer implementeringen:
+1. **Feature-first versus type-first in `Application`.** `Conventions.md` requires feature-first (`Features/Orders/Create/`); the refactoring plan's section 3 draws `Interfaces/`, `Services/`, `DTOs/`. I have chosen feature-first, because Conventions is designated as the source of truth. The decision must be confirmed, and `Architecture.md` must then correct the target-architecture drawing — otherwise two documents contradict each other from day one.
+
+2. **Conventions places Entity↔DTO mapping in Infrastructure.** The section "SOC → Infrastructure" says `Mapping (Entity ↔ DTO)`, while `Phase1-Scope.md` under "cheap insurance" requires DTOs to be defined in `Application`, not in `Web`, so that a later Api can reuse them. The two cannot both hold: if the DTO lives in Application and the mapper in Infrastructure, the Application service cannot reach the mapper without reversing the dependency direction. I have chosen Phase1-Scope (mapping in Application), because that decision is newer and scope-specific, and because Infrastructure's mapping responsibility is in practice entity↔database, not entity↔DTO. **Should be written in as a correction to `Conventions.md`.**
+
+3. **BR-19 versus BR-39 decides the exclusion constraint's predicate — and the choice has a concrete price.** BR-19 (editing) excludes both `Cancelled` and `CheckedOut` from the overlap check; BR-39 (creation) excludes only `Cancelled`. `design:domain` picks one set. The consequence must be part of the decision: if BR-39's set is chosen, the database blocks **re-letting after early check-out** — booking 1–10 January, the guest checks out on the 3rd, and a new booking 4–8 January will be rejected by the constraint even though the room is empty. If BR-19's set is chosen, conversely, an overlapping booking can be created on top of a checked-out booking whose period has not yet expired. The proper solution is probably that **`CheckOutAsync` truncates the booking's period to the actual check-out date**, after which BR-39's stricter set can be used without side effects — but that is a new domain rule and thus `design:domain`'s call. Whichever is chosen, the predicate in the migration must be generated from one constant in Domain, and an Infrastructure test must assert that the two agree.
+
+4. **`RoomSize`'s type is not settled.** `Phase1-Scope.md` recommends an enum or lookup over a free string, but it is not in the list of types I may assume. I have written `RoomSize` as an enum in `RoomFilter`, DTOs and requests. If it becomes a string, four signatures plus one EF configuration line change. If it becomes a lookup table, `GetFilterOptionsAsync` also changes to a DB lookup.
+
+5. **Unique room number is a new rule.** The old schema had no unique constraint on `RoomNumber`, and none of the 126 rules requires it. I have proposed `ux_room_room_number` plus `RoomNumberExistsAsync`, because two rooms with the same number make no sense — but it is an addition, not a preserved rule, and Phase 3's ledger audit will register it as "invented" unless it is explicitly approved. The same goes for `GuestService.DeleteAsync` (D-05) and check constraints on `floor > 0` / `capacity > 0`.
+
+6. **Guest search changes behaviour.** BR-116 (repo: first or last name) and BR-68 (ViewModel: all words in name, country or email) are two different searches. Consolidating to BR-68's semantics means that a search on a surname now also hits a country with the same name. It is an improvement, but it is a change, and it must be approved rather than slip through.
+
+7. **`SalesService` is in the target architecture, but there is nothing to compute.** BR-31 establishes that revenue is always set to 0, and there is no price anywhere in the domain — `Room.RoomSize` is free text, not a price. I have left the service out. The alternative is a service that returns 0 and looks like an implementation. The Sales screen should either be dropped from Phase 1 or shown as an explicit placeholder. The price question (open question 3 in the plan) is not answered anywhere.
+
+8. **BR-118's "occupied from noon" is a business assumption disguised as pixel maths.** I have placed the geometry in Web, but if the hotel really has a check-in time and a check-out time, it is a domain policy that should also apply to the check-in window (BR-06 today allows check-in on the whole start date). Should be clarified by `design:domain`; otherwise 0.5 in the converter is the only place that knowledge exists — again.
+
+9. **The encryption key and rotation are not solved.** D-07 is itself marked as temporary and unresolved (Actions Secrets versus files in the repo). Phase 1 can deliver `EncryptionOptions` with `ValidateOnStart`, so the app refuses to start without a key, but key rotation requires a backfill migration that reads, decrypts and re-encrypts the whole `guest` table. It is not designed here. Likewise, D-05's two retention tracks (booking data after X months, personal data for X years) are not designed — the X's do not exist.
+
+10. **Primary-key naming must be settled.** `Conventions.md` says "Id or [Entity]Id — choose one standard", and the old system had `BookingID`, `GuestID` and `RoomId` side by side (U-19). I have assumed `BookingId`, `RoomId`, `GuestId` in C#, which become `booking_id`, `room_id`, `guest_id` in the database. They are `design:domain`'s properties, so the choice must be confirmed there — but it hits every single EF configuration and migration, so it must be confirmed **before** the first migration is generated.
+
+11. **The Blazor Server scope must be coordinated.** My DI design presupposes that the Web layer gives each page its own DI scope. If it does not, a user gets one `DbContext` for their whole session, and two concurrent component events will throw. It must be written as a requirement in `Architecture.md` and agreed with `design:web`, not discovered in operation.
+
+12. **No data migration from the old system is assumed.** The plan says test data is ported to EF seed data, and that the two T-SQL sets cannot be run against PostgreSQL. I have designed for an empty database. If production data actually has to be moved over, a one-off task comes on top: existing passport numbers must be encrypted on load, and existing bookings must be able to satisfy the exclusion constraint — if they overlap today (and they can, because there has never been a check), the constraint cannot be created until the data has been cleaned up. **This should be verified against the running database before the migration is written**, not afterwards.
+
+---
+
+### Critical files for implementation
+
+Source documents read that govern the implementation:
 
 - `/mnt/user-data/uploads/Development/Conventions.md`
 - `/mnt/user-data/uploads/Development/New folder/NFHotel/docs/BusinessRules.md`
@@ -1211,10 +1212,10 @@ Læste kildedokumenter der styrer implementeringen:
 - `/mnt/user-data/uploads/Development/New folder/NFHotel/docs/Fase1-Scope.md`
 - `/mnt/user-data/uploads/Development/New folder/NFHotel-Refactor-Plan.md`
 
-De fem filer der skal skrives først, i denne rækkefølge (planlagte stier under solution-roden):
+The five files to be written first, in this order (planned paths under the solution root):
 
-1. `src/NFHotel.Application/Common/Results/Result.cs` — alt andet i Application afhænger af returtypen.
-2. `src/NFHotel.Application/Bookings/IBookingRepository.cs` — definerer kontrakten som både `BookingService` og `BookingRepository` bygges imod.
-3. `src/NFHotel.Application/Bookings/BookingService.cs` — bærer flest regler og er den metrik Fase 3's ledger-audit måler op imod.
-4. `src/NFHotel.Infrastructure/Persistence/Configurations/BookingConfiguration.cs` — B-03, B-06, B-07 og B-08 mødes her, og migrationen genereres ud fra den.
-5. `src/NFHotel.Infrastructure/DependencyInjection.cs` — levetider, options-validering og `DbContext`-fabrikken, altså det der afgør om Blazor Server-opsætningen holder.
+1. `src/NFHotel.Application/Common/Results/Result.cs` — everything else in Application depends on the return type.
+2. `src/NFHotel.Application/Bookings/IBookingRepository.cs` — defines the contract that both `BookingService` and `BookingRepository` are built against.
+3. `src/NFHotel.Application/Bookings/BookingService.cs` — carries the most rules and is the metric Phase 3's ledger audit measures against.
+4. `src/NFHotel.Infrastructure/Persistence/Configurations/BookingConfiguration.cs` — B-03, B-06, B-07 and B-08 meet here, and the migration is generated from it.
+5. `src/NFHotel.Infrastructure/DependencyInjection.cs` — lifetimes, options validation and the `DbContext` factory, i.e. what decides whether the Blazor Server setup holds.
