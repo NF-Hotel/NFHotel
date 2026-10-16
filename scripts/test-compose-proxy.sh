@@ -50,10 +50,21 @@ check() {
   fi
 }
 
-http_location() {
+# The public service is served over TLS (MIL-017): the certificate is a throwaway self-signed one, so -k.
+https_port() {
+  echo "$((PORT + 2))"
+}
+
+https_status() {
+  local method="$1" path="$2"
+  curl --silent --insecure --output /dev/null --write-out '%{http_code}' \
+    --max-time 10 --request "$method" "https://127.0.0.1:$(https_port)${path}" || true
+}
+
+https_location() {
   local path="$1"
-  curl --silent --output /dev/null --write-out '%{redirect_url}' \
-    --max-time 10 "http://127.0.0.1:${PORT}${path}" || true
+  curl --silent --insecure --output /dev/null --write-out '%{redirect_url}' \
+    --max-time 10 "https://127.0.0.1:$(https_port)${path}" || true
 }
 
 http_status() {
@@ -79,6 +90,7 @@ wait_for_status() {
 compose_nginx() {
   NGINX_ENV_FILE="$TMP_NATIVE/nginx.env" NFHOTEL_PROXY_NETWORK="$NETWORK" \
     NGINX_BIND=127.0.0.1 NGINX_HTTP_PORT="$PORT" NGINX_INTERNAL_PORT="$((PORT + 1))" \
+    NGINX_HTTPS_PORT="$((PORT + 2))" NGINX_TLS_DIR="$TMP_NATIVE/tls" \
     docker compose --project-name "$NGINX_PROJECT" \
     --file deploy/nginx/docker-compose.yml "$@"
 }
@@ -118,6 +130,8 @@ cleanup() {
 write_settings() {
   cat >"$TMP_DIR/nginx.env" <<EOF
 NGINX_SERVER_NAME=_
+NGINX_REDIRECT_PORT=:$((PORT + 2))
+NGINX_HSTS=
 UPSTREAM_HOST=nfhotel-web
 UPSTREAM_PORT=8080
 ANALYSIS_SERVER_NAME=$ANALYSIS_HOST
@@ -136,8 +150,10 @@ EOF
   cat >"$TMP_DIR/nfhotel-web.env" <<EOF
 ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+Tls__Require=true
 HotelTime__TimeZoneId=Europe/Copenhagen
 EOF
+  bash scripts/make-dev-certificate.sh "$TMP_DIR/tls" >/dev/null
   cat >"$TMP_DIR/nfhotel-api.env" <<EOF
 ASPNETCORE_ENVIRONMENT=Production
 Encryption__PassportKey=$(openssl rand -base64 32)
@@ -201,10 +217,20 @@ main() {
   compose_nginx up --detach --wait --wait-timeout 60 >/dev/null ||
     die "the proxy did not start"
 
-  wait_for_status GET / 200 || true
-  check "GET / through the proxy" 200 "$(http_status GET /)"
-  check "POST /_blazor/negotiate through the proxy" 200 \
-    "$(http_status POST '/_blazor/negotiate?negotiateVersion=1')"
+  wait_for_status GET / 301 || true
+  check "GET / on port 80 redirects" 301 "$(http_status GET /)"
+  check "port 80 redirects to HTTPS" "https://127.0.0.1:$(https_port)/" \
+    "$(curl --silent --output /dev/null --write-out '%{redirect_url}' --max-time 10 "http://127.0.0.1:${PORT}/")"
+  check "GET /admin on port 80 serves no page" 301 "$(http_status GET /admin)"
+  check "GET / through the proxy over TLS" 200 "$(https_status GET /)"
+  check "POST /_blazor/negotiate through the proxy over TLS" 200 \
+    "$(https_status POST '/_blazor/negotiate?negotiateVersion=1')"
+  check "TLS 1.2 is accepted" 200 \
+    "$(curl --silent --insecure --tls-max 1.2 --tlsv1.2 --output /dev/null --write-out '%{http_code}' --max-time 10 "https://127.0.0.1:$(https_port)/")"
+  check "TLS 1.1 is refused" 000 \
+    "$(curl --silent --insecure --tls-max 1.1 --output /dev/null --write-out '%{http_code}' --max-time 10 "https://127.0.0.1:$(https_port)/" || true)"
+  check "no Strict-Transport-Security with the development certificate" "" \
+    "$(curl --silent --insecure --head --max-time 10 "https://127.0.0.1:$(https_port)/" | grep -i '^strict-transport-security' || true)"
 
   wait_for_status GET / 200 30 "$ANALYSIS_HOST" "$((PORT + 1))" || true
   check "GET / of the analysis notebook through the proxy" 200 \
@@ -232,10 +258,10 @@ main() {
 
   # The back office is behind the staff sign-in (MIL-016, ADR-0005).
   check "back office answers with a redirect when nobody is signed in" 302 \
-    "$(http_status GET /admin)"
+    "$(https_status GET /admin)"
   check "back office redirects to the login page" "/admin/login" \
-    "$(http_location /admin | sed -E 's|^https?://[^/]+||; s|[?].*$||')"
-  check "login page is open" 200 "$(http_status GET /admin/login)"
+    "$(https_location /admin | sed -E 's|^https?://[^/]+||; s|[?].*$||')"
+  check "login page is open" 200 "$(https_status GET /admin/login)"
   check "database API refuses a staff endpoint with the web token alone" 401 \
     "$(docker exec "$web_id" bash -c 'exec 3<>/dev/tcp/nfhotel-api/8080 && printf "GET /api/rooms HTTP/1.0\r\nAuthorization: Bearer %s\r\n\r\n" "$Api__Token" >&3 && head -n 1 <&3' | cut -d' ' -f2)"
   check "web container holds no staff signing key" "" \
@@ -245,7 +271,7 @@ main() {
   check "proxy runs while the web service is stopped" true \
     "$(docker inspect --format '{{.State.Running}}' "$(compose_nginx ps --quiet nginx)")"
   check "proxy answers 502 while the web service is stopped" 502 \
-    "$(http_status GET /)"
+    "$(https_status GET /)"
 
   compose_web start >/dev/null
   compose_nginx stop >/dev/null
