@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (decision given by the user in chat) | Initial version, accepted after RC-064 Go | pending |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (decision given by the user in chat) | Initial version, accepted after RC-064 Go | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Clarified: no endpoint for ValidateFields, the client runs the rule locally (reviewed in RC-065) | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -43,7 +44,7 @@ new project `NFHotel.ApiClient` implements `IBookingService`, `IGuestService`
 and `IRoomService` over HTTP; and `NFHotel.Web` uses the client and holds only an
 API address and a token.
 
-- **Contract.** One endpoint per interface method. The Application DTOs are the request and response bodies. Every response is `{ "value": ..., "errors": ["code", ...] }`; the HTTP status says which kind of failure: 404 for a `*.not_found` code, 409 for a conflict, 422 for another rule error, 401 for a missing or wrong token. The routes and the envelope live in `NFHotel.Api.Contracts`, shared by both sides, so they cannot drift.
+- **Contract.** One endpoint per interface method, except `ValidateFields`: it reads and writes nothing, so the client runs the same domain rule locally (`GuestService.Validate`) and the API has no endpoint for it. The Application DTOs are the request and response bodies. Every response is `{ "value": ..., "errors": ["code", ...] }`; the HTTP status says which kind of failure: 404 for a `*.not_found` code, 409 for a conflict, 422 for another rule error, 401 for a missing or wrong token. The routes and the envelope live in `NFHotel.Api.Contracts`, shared by both sides, so they cannot drift.
 - **Same behaviour.** The client returns the same `Result` as the service would: the error codes of the envelope, and the same `ArgumentOutOfRangeException` for a key below one. A contract test sends every method through the client and the API and compares.
 - **Network.** The API publishes no port and nginx has no route to it. It joins two Docker networks: `nfhotel-db` (with PostgreSQL) and `nfhotel-api` (with the web application). The web container leaves `nfhotel-db`.
 - **Token.** The web application sends a bearer token from its environment; the API compares it in constant time and answers 401 otherwise. The token is a secret in the git-ignored env files, never in the repository.
