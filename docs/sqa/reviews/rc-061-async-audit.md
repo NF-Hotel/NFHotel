@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [ceab0e4] |
 
 ---
 
@@ -80,3 +80,4 @@ Go — every applicable criterion of QC-CS-001 and all six Go criteria of MIL-01
 
 [MIL-014]: ../../milestones/mil-014-async-where-it-matters.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[ceab0e4]: https://github.com/NF-Hotel/NFHotel/commit/ceab0e428d78c0673a2a40a975aedf8ed57c7aba
