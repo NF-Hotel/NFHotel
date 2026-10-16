@@ -4,75 +4,75 @@ using NFHotel.Application.Errors;
 namespace NFHotel.Application.UseCases.Guests;
 
 /// <summary>
-/// Use cases for gæster.
+/// Use cases for guests.
 /// </summary>
 public interface IGuestService
 {
     /// <summary>
-    /// Henter én gæst (BR-35, BR-115).
+    /// Fetches one guest (BR-35, BR-115).
     /// </summary>
-    /// <param name="guestId">Gæstens id.</param>
+    /// <param name="guestId">The id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Gæstens detaljer, eller <see cref="ErrorCodes.Guest.NotFound"/>.</returns>
-    /// <remarks>Bruges også til at forudfylde en ny booking for en kendt gæst.</remarks>
+    /// <returns>The details of the guest, or <see cref="ErrorCodes.Guest.NotFound"/>.</returns>
+    /// <remarks>Also used to prefill a new booking for a known guest.</remarks>
     Task<Result<GuestDetailsDto>> GetByIdAsync(int guestId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Søger gæster (BR-68, BR-69, BR-70, BR-116, BR-N-05).
+    /// Searches guests (BR-68, BR-69, BR-70, BR-116, BR-N-05).
     /// </summary>
     /// <param name="searchText">
-    /// Fritekst. Deles i ord; hvert ord skal findes i fornavn, efternavn, land eller e-mail.
-    /// Tom eller kun whitespace giver alle gæster (BR-70).
+    /// Free text. Split into words; every word must be found in first name, last name, country or email.
+    /// Empty or only whitespace gives all guests (BR-70).
     /// </param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>De matchende gæster, sorteret på "fornavn efternavn" i lowercase (BR-69).</returns>
+    /// <returns>The matching guests, sorted on "first name last name" in lowercase (BR-69).</returns>
     Task<Result<IReadOnlyList<GuestListItemDto>>> SearchAsync(
         string? searchText,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Opretter en gæst (BR-52 til BR-57, BR-60, BR-91 til BR-96).
+    /// Creates a guest (BR-52 to BR-57, BR-60, BR-91 to BR-96).
     /// </summary>
-    /// <param name="request">Gæstens felter.</param>
+    /// <param name="request">The fields of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Den oprettede gæst, eller alle valideringsfejl på én gang (BR-60, BR-96).</returns>
+    /// <returns>The created guest, or all validation errors at once (BR-60, BR-96).</returns>
     Task<Result<GuestDetailsDto>> CreateAsync(
         CreateGuestRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retter en gæst (BR-62, BR-66, BR-72, BR-91 til BR-96).
+    /// Changes a guest (BR-62, BR-66, BR-72, BR-91 to BR-96).
     /// </summary>
-    /// <param name="request">De nye feltværdier plus gæstens id.</param>
+    /// <param name="request">The new field values plus the id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Den opdaterede gæst, eller alle valideringsfejl på én gang.</returns>
+    /// <returns>The updated guest, or all validation errors at once.</returns>
     Task<Result<GuestDetailsDto>> UpdateAsync(
         UpdateGuestRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Sletter en gæst (BR-N-02, følger af D-05).
+    /// Deletes a guest (BR-N-02, follows from D-05).
     /// </summary>
-    /// <param name="guestId">Gæstens id.</param>
+    /// <param name="guestId">The id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Succes, eller <see cref="ErrorCodes.Guest.HasBookings"/> hvis gæsten har bookinger.</returns>
+    /// <returns>Success, or <see cref="ErrorCodes.Guest.HasBookings"/> if the guest has bookings.</returns>
     /// <remarks>
-    /// Reglen findes ikke blandt de 126 porterede regler og er registreret som ny (BR-N-02).
+    /// The rule is not among the 126 ported rules and is registered as new (BR-N-02).
     /// </remarks>
     Task<Result> DeleteAsync(int guestId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Validerer gæstefelterne uden at gemme (BR-58, BR-59).
+    /// Validates the guest fields without saving (BR-58, BR-59).
     /// </summary>
-    /// <param name="fields">Felterne der skal valideres.</param>
-    /// <returns>Succes, eller alle brudte regler på én gang.</returns>
+    /// <param name="fields">The fields to validate.</param>
+    /// <returns>Success, or all broken rules at once.</returns>
     /// <remarks>
-    /// <b>Bevidst ikke async</b> — der er ingen IO, og en metode uden reelt async arbejde
-    /// skal ikke være async bare for syns skyld.
+    /// <b>Deliberately not async</b> — there is no IO, and a method without real async work
+    /// should not be async just for show.
     /// <para>
-    /// Metoden lader UI'et give feedback pr. tastetryk og aktivere gemknappen uden at
-    /// duplikere en eneste valideringsregel. Det er den der gør at BR-52 til BR-56 aldrig
-    /// behøver eksistere i Web-laget.
+    /// The method lets the UI give feedback per keystroke and enable the save button without
+    /// duplicating a single validation rule. It is the method that means BR-52 to BR-56 never
+    /// have to exist in the Web layer.
     /// </para>
     /// </remarks>
     Result ValidateFields(GuestFields fields);

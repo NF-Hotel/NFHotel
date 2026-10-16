@@ -3,27 +3,27 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.Dto.Bookings;
 
 /// <summary>
-/// En booking som den vises i oversigten.
+/// A booking as it is shown in the overview.
 /// </summary>
 /// <param name="BookingId">Bookingens id.</param>
 /// <param name="BookingNumber">Vist bookingnummer, fx <c>FLZ-000123</c> (BR-109).</param>
-/// <param name="StartDate">Ankomstdato.</param>
-/// <param name="EndDate">Booket afrejsedato. Historik — ændres aldrig af en udtjekning (A-01).</param>
+/// <param name="StartDate">Arrival date.</param>
+/// <param name="EndDate">Booked departure date. History — never changed by a check-out (A-01).</param>
 /// <param name="EffectiveEndDate">
-/// Den dato bookingen faktisk lægger beslag på rummet til (A-01). Afviger fra
-/// <paramref name="EndDate"/> når gæsten er rejst tidligt.
+/// The date up to which the booking actually occupies the room (A-01). Differs from
+/// <paramref name="EndDate"/> when the guest has left early.
 /// </param>
 /// <param name="Nights">Antal bookede overnatninger (BR-109, BR-117).</param>
 /// <param name="Status">Bookingens livscyklustilstand.</param>
-/// <param name="CheckInTime">Faktisk indtjekningstidspunkt, eller <c>null</c>.</param>
-/// <param name="CheckOutTime">Faktisk udtjekningstidspunkt, eller <c>null</c>.</param>
+/// <param name="CheckInTime">Actual check-in time, or <c>null</c>.</param>
+/// <param name="CheckOutTime">Actual check-out time, or <c>null</c>.</param>
 /// <param name="RoomId">Rummets id.</param>
-/// <param name="RoomNumber">Rummets værelsesnummer.</param>
-/// <param name="GuestId">Gæstens id.</param>
-/// <param name="GuestFullName">Gæstens fulde navn (BR-25).</param>
-/// <param name="GuestCountry">Gæstens land.</param>
-/// <param name="GuestEmail">Gæstens e-mail.</param>
-/// <param name="Actions">Hvilke handlinger der er lovlige lige nu (BR-22).</param>
+/// <param name="RoomNumber">The room number of the room.</param>
+/// <param name="GuestId">The id of the guest.</param>
+/// <param name="GuestFullName">The full name of the guest (BR-25).</param>
+/// <param name="GuestCountry">The country of the guest.</param>
+/// <param name="GuestEmail">The email of the guest.</param>
+/// <param name="Actions">Which actions are legal right now (BR-22).</param>
 public sealed record BookingListItemDto(
     int BookingId,
     string BookingNumber,

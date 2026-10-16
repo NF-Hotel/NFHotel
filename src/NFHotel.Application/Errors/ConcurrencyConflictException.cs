@@ -1,25 +1,25 @@
 namespace NFHotel.Application.Errors;
 
 /// <summary>
-/// Rækken blev ændret af en anden mellem læsning og skrivning (optimistisk samtidighed).
+/// The row was changed by someone else between read and write (optimistic concurrency).
 /// </summary>
 /// <remarks>
-/// Oversat fra dataadgangslagets samtidighedsfejl. Servicen returnerer en fejlkode, så
-/// brugeren kan hente igen og prøve forfra — det gamle system ignorerede
-/// <c>rowsAffected</c> og fejlede lydløst.
+/// Translated from the concurrency error of the data access layer. The service returns an error code, so
+/// the user can fetch again and start over — the old system ignored
+/// <c>rowsAffected</c> and failed silently.
 /// </remarks>
 public sealed class ConcurrencyConflictException : Exception
 {
-    /// <summary>Opretter fejlen.</summary>
-    /// <param name="message">Teknisk besked til loggen.</param>
+    /// <summary>Creates the error.</summary>
+    /// <param name="message">Technical message for the log.</param>
     public ConcurrencyConflictException(string message)
         : base(message)
     {
     }
 
-    /// <summary>Opretter fejlen med en underliggende databasefejl.</summary>
-    /// <param name="message">Teknisk besked til loggen.</param>
-    /// <param name="innerException">Den underliggende fejl fra dataadgangslaget.</param>
+    /// <summary>Creates the error with an underlying database error.</summary>
+    /// <param name="message">Technical message for the log.</param>
+    /// <param name="innerException">The underlying error from the data access layer.</param>
     public ConcurrencyConflictException(string message, Exception innerException)
         : base(message, innerException)
     {

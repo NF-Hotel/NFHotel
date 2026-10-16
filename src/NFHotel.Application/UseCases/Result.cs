@@ -3,20 +3,20 @@ using NFHotel.Application.Errors;
 namespace NFHotel.Application.UseCases;
 
 /// <summary>
-/// Udfaldet af en use case: lykkedes den, og hvis ikke, hvilke regler blev brudt.
+/// The outcome of a use case: did it succeed, and if not, which rules were broken.
 /// </summary>
 /// <remarks>
-/// Forventede regelbrud ("bookingen er allerede tjekket ind") er <b>udfald</b>, ikke
-/// undtagelser. De returneres som <see cref="Result"/>, så kalderen ikke kan overse dem —
-/// det er den direkte modgift mod det gamle systems check-in/check-ud, der fejlede ned i
-/// <c>Debug.WriteLine</c> mens statussen allerede var ændret i hukommelsen.
+/// Expected rule violations ("the booking is already checked in") are <b>outcomes</b>, not
+/// exceptions. They are returned as <see cref="Result"/>, so the caller cannot overlook them —
+/// that is the direct antidote to the old system's check-in/check-out, which failed down into
+/// <c>Debug.WriteLine</c> while the status had already been changed in memory.
 /// <para>
-/// Uventede fejl (databasen er nede, en null-parameter fra en programmørfejl) kastes
-/// fortsat som exceptions og fanges centralt i Web.
+/// Unexpected errors (the database is down, a null parameter from a programmer error) are still
+/// thrown as exceptions and caught centrally in Web.
 /// </para>
 /// <para>
-/// Flere fejl kan bæres på én gang, fordi BR-60 og BR-96 kræver at en formular kan vise
-/// alle valideringsfejl samtidig.
+/// Several errors can be carried at once, because BR-60 and BR-96 require that a form can show
+/// all validation errors at the same time.
 /// </para>
 /// </remarks>
 public class Result
@@ -24,13 +24,13 @@ public class Result
     private static readonly IReadOnlyList<Error> NoErrors = Array.Empty<Error>();
 
     /// <summary>
-    /// Opretter et resultat. Brug fabriksmetoderne <see cref="Success()"/> og
-    /// <see cref="Failure(string)"/> frem for at kalde denne direkte.
+    /// Creates a result. Use the factory methods <see cref="Success()"/> and
+    /// <see cref="Failure(string)"/> rather than calling this directly.
     /// </summary>
-    /// <param name="isSuccess">Sand hvis use casen lykkedes.</param>
-    /// <param name="errors">Fejlene. Skal være tom ved succes og ikke-tom ved fejl.</param>
+    /// <param name="isSuccess">True if the use case succeeded.</param>
+    /// <param name="errors">The errors. Must be empty on success and non-empty on failure.</param>
     /// <exception cref="ArgumentException">
-    /// Kastes hvis succes og fejl modsiger hinanden — det er en programmørfejl, ikke et
+    /// Thrown if success and errors contradict each other — that is a programmer error, not a
     /// brugerudfald.
     /// </exception>
     protected Result(bool isSuccess, IReadOnlyList<Error> errors)
@@ -51,30 +51,30 @@ public class Result
         Errors = errors;
     }
 
-    /// <summary>Sand hvis use casen lykkedes.</summary>
+    /// <summary>True if the use case succeeded.</summary>
     public bool IsSuccess { get; }
 
-    /// <summary>Sand hvis use casen blev afvist af en regel.</summary>
+    /// <summary>True if the use case was rejected by a rule.</summary>
     public bool IsFailure => !IsSuccess;
 
-    /// <summary>Alle brudte regler, i feltrækkefølge. Tom ved succes.</summary>
+    /// <summary>All broken rules, in field order. Empty on success.</summary>
     public IReadOnlyList<Error> Errors { get; }
 
-    /// <summary>Den første fejl, eller <c>null</c> ved succes. Bekvemmelighed for UI der kun viser én.</summary>
+    /// <summary>The first error, or <c>null</c> on success. A convenience for a UI that shows only one.</summary>
     public Error? FirstError => Errors.Count > 0 ? Errors[0] : null;
 
-    /// <summary>Opretter et vellykket resultat uden værdi.</summary>
-    /// <returns>Et resultat med <see cref="IsSuccess"/> sat.</returns>
+    /// <summary>Creates a successful result without a value.</summary>
+    /// <returns>A result with <see cref="IsSuccess"/> set.</returns>
     public static Result Success() => new(true, NoErrors);
 
-    /// <summary>Opretter et fejlet resultat med én fejlkode.</summary>
-    /// <param name="code">Fejlkoden fra <see cref="ErrorCodes"/> eller fra en domæneregel.</param>
-    /// <returns>Et fejlet resultat.</returns>
+    /// <summary>Creates a failed result with one error code.</summary>
+    /// <param name="code">The error code from <see cref="ErrorCodes"/> or from a domain rule.</param>
+    /// <returns>A failed result.</returns>
     public static Result Failure(string code) => Failure(new Error(code));
 
-    /// <summary>Opretter et fejlet resultat med én fejl.</summary>
-    /// <param name="error">Fejlen.</param>
-    /// <returns>Et fejlet resultat.</returns>
+    /// <summary>Creates a failed result with one error.</summary>
+    /// <param name="error">The error.</param>
+    /// <returns>A failed result.</returns>
     public static Result Failure(Error error)
     {
         ArgumentNullException.ThrowIfNull(error);
@@ -82,17 +82,17 @@ public class Result
         return new Result(false, new[] { error });
     }
 
-    /// <summary>Opretter et fejlet resultat med flere fejl (BR-60, BR-96).</summary>
-    /// <param name="errors">Fejlene. Må ikke være tom.</param>
-    /// <returns>Et fejlet resultat.</returns>
+    /// <summary>Creates a failed result with several errors (BR-60, BR-96).</summary>
+    /// <param name="errors">The errors. Must not be empty.</param>
+    /// <returns>A failed result.</returns>
     public static Result Failure(IReadOnlyList<Error> errors) => new(false, errors);
 
     /// <summary>
-    /// Opretter et fejlet resultat ud fra en liste af fejlkoder — formen domænets
+    /// Creates a failed result from a list of error codes — the form the domain's
     /// <c>Validate</c>-metoder returnerer (A-09).
     /// </summary>
-    /// <param name="codes">Fejlkoderne. Må ikke være tom.</param>
-    /// <returns>Et fejlet resultat.</returns>
+    /// <param name="codes">The error codes. Must not be empty.</param>
+    /// <returns>A failed result.</returns>
     public static Result FromCodes(IReadOnlyList<string> codes)
     {
         ArgumentNullException.ThrowIfNull(codes);
@@ -100,9 +100,9 @@ public class Result
         return new Result(false, ToErrors(codes));
     }
 
-    /// <summary>Oversætter fejlkoder til <see cref="Error"/>-objekter. Delt af begge resultattyper.</summary>
-    /// <param name="codes">Fejlkoderne.</param>
-    /// <returns>Fejlene i samme rækkefølge.</returns>
+    /// <summary>Translates error codes to <see cref="Error"/> objects. Shared by both result types.</summary>
+    /// <param name="codes">The error codes.</param>
+    /// <returns>The errors in the same order.</returns>
     protected static IReadOnlyList<Error> ToErrors(IReadOnlyList<string> codes)
     {
         ArgumentNullException.ThrowIfNull(codes);

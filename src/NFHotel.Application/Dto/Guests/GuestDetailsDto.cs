@@ -1,20 +1,20 @@
 namespace NFHotel.Application.Dto.Guests;
 
 /// <summary>
-/// En gæst med alle felter, til redigeringsformularen.
+/// A guest with all fields, for the edit form.
 /// </summary>
 /// <remarks>
-/// Eneste DTO der bærer pasnummeret i klartekst, og kun fordi formularen skal kunne rette
-/// det. Brug <see cref="GuestListItemDto"/> alle andre steder.
+/// The only DTO that carries the passport number in plain text, and only because the form must be able to
+/// correct it. Use <see cref="GuestListItemDto"/> everywhere else.
 /// </remarks>
-/// <param name="GuestId">Gæstens id.</param>
+/// <param name="GuestId">The id of the guest.</param>
 /// <param name="FirstName">Fornavn.</param>
 /// <param name="LastName">Efternavn.</param>
 /// <param name="FullName">"Fornavn Efternavn".</param>
 /// <param name="Email">E-mail.</param>
 /// <param name="PhoneNumber">Telefonnummer.</param>
 /// <param name="Country">Land.</param>
-/// <param name="PassportNumber">Pasnummer, eller <c>null</c> hvis der ikke er registreret et (BR-57).</param>
+/// <param name="PassportNumber">Passport number, or <c>null</c> if none is registered (BR-57).</param>
 public sealed record GuestDetailsDto(
     int GuestId,
     string FirstName,

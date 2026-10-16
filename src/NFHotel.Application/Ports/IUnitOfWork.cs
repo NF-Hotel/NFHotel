@@ -3,36 +3,36 @@ using NFHotel.Application.Errors;
 namespace NFHotel.Application.Ports;
 
 /// <summary>
-/// Transaktionsgrænsen for en use case. Application-lagets eneste vej til at persistere.
+/// The transaction boundary of a use case. The only way for the Application layer to persist.
 /// </summary>
 /// <remarks>
-/// Repositories markerer ændringer (<c>Add</c>, <c>Update</c>, <c>Remove</c>) men gemmer
-/// aldrig selv. Selv-gemmende repositories ville dele den samme underliggende session og
-/// dermed committe hinandens ventende ændringer usynligt — og BR-47 ("opret booking for
-/// ny gæst") kræver at to entiteter skrives under ét.
+/// Repositories mark changes (<c>Add</c>, <c>Update</c>, <c>Remove</c>) but never save
+/// themselves. Self-saving repositories would share the same underlying session and
+/// thereby commit each other's pending changes invisibly — and BR-47 ("create booking for
+/// new guest") requires that two entities are written together.
 /// <para>
-/// Interfacet holdes bevidst minimalt: ingen <c>BeginTransaction</c>, ingen
-/// <c>Rollback</c>, ingen repository-samling. En eksplicit transaktions-API tilføjes den
-/// dag en use case skriver i to omgange — se <c>BookingService.CreateAsync</c>, der i dag
-/// er den eneste der gemmer to gange, og hvor konsekvensen er dokumenteret.
+/// The interface is deliberately minimal: no <c>BeginTransaction</c>, no
+/// <c>Rollback</c>, no repository collection. An explicit transaction API is added the
+/// day a use case writes in two rounds — see <c>BookingService.CreateAsync</c>, which today
+/// is the only one that saves twice, and where the consequence is documented.
 /// </para>
 /// </remarks>
 public interface IUnitOfWork
 {
     /// <summary>
-    /// Persisterer alle ventende ændringer i én transaktion.
+    /// Persists all pending changes in one transaction.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Antal berørte rækker.</returns>
+    /// <returns>The number of affected rows.</returns>
     /// <exception cref="BookingOverlapConflictException">
-    /// Kastes af Infrastructure når databasens exclusion constraint afviser en
+    /// Thrown by Infrastructure when the database exclusion constraint rejects a
     /// dobbeltbooking (B-03).
     /// </exception>
     /// <exception cref="UniqueConstraintViolationException">
-    /// Kastes af Infrastructure ved brud på en unik-constraint, fx rumnummer (BR-N-01).
+    /// Thrown by Infrastructure on a breach of a unique constraint, for example room number (BR-N-01).
     /// </exception>
     /// <exception cref="ConcurrencyConflictException">
-    /// Kastes af Infrastructure når rækken er ændret af en anden siden den blev læst.
+    /// Thrown by Infrastructure when the row has been changed by someone else since it was read.
     /// </exception>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

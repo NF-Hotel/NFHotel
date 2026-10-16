@@ -5,58 +5,58 @@ using NFHotel.Application.Errors;
 namespace NFHotel.Application.UseCases.Bookings;
 
 /// <summary>
-/// Use cases for bookinger. Bærer flest forretningsregler af de tre services.
+/// Use cases for bookings. Carries the most business rules of the three services.
 /// </summary>
 /// <remarks>
-/// Testen for hver eneste metode: <i>kan en konsol-app kalde den og få alle regler
-/// håndhævet?</i> Ingen UI-typer, ingen dialoger, ingen <c>Debug.WriteLine</c> — 823 linjer
-/// logik i én ViewModel var det gamle systems kernefejl (B-10).
+/// The test for every single method: <i>can a console app call it and get every rule
+/// enforced?</i> No UI types, no dialogs, no <c>Debug.WriteLine</c> — 823 lines of
+/// logic in one ViewModel was the core fault of the old system (B-10).
 /// <para>
-/// Bemærk placeringen af <see cref="GetAvailableRoomsAsync"/>: den returnerer rum, men
-/// reglen er en <i>bookingregel</i> (overlap i en periode). Lå den på <c>IRoomService</c>,
-/// skulle den kende <c>IBookingRepository</c>, og så havde begge services begge repositories.
+/// Note the placement of <see cref="GetAvailableRoomsAsync"/>: it returns rooms, but
+/// the rule is a <i>booking rule</i> (overlap in a period). If it lived on <c>IRoomService</c>,
+/// it would have to know <c>IBookingRepository</c>, and then both services would have both repositories.
 /// </para>
 /// <para>
-/// Der er ingen <c>SalesService</c> i Fase 1: BR-31 sætter altid omsætningen til 0, og der
-/// findes ingen pris i domænet. En service der returnerer 0 er værre end ingen — den ligner
+/// There is no <c>SalesService</c> in Phase 1: BR-31 always sets revenue to 0, and there
+/// is no price in the domain. A service that returns 0 is worse than none — it looks like
 /// en implementering.
 /// </para>
 /// </remarks>
 public interface IBookingService
 {
     /// <summary>
-    /// Henter én booking (BR-115).
+    /// Fetches one booking (BR-115).
     /// </summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Bookingens detaljer, eller <see cref="ErrorCodes.Booking.NotFound"/>.</returns>
+    /// <returns>The details of the booking, or <see cref="ErrorCodes.Booking.NotFound"/>.</returns>
     Task<Result<BookingDetailsDto>> GetByIdAsync(int bookingId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Henter bookingoversigten (BR-23, BR-24, BR-25, BR-32, BR-111).
+    /// Fetches the booking overview (BR-23, BR-24, BR-25, BR-32, BR-111).
     /// </summary>
-    /// <param name="query">Datovindue, fritekst, sortering og om annullerede skal med.</param>
+    /// <param name="query">Date window, free text, sorting and whether cancelled bookings are included.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Oversigtens rækker, sorteret som forespurgt.</returns>
+    /// <returns>The rows of the overview, sorted as requested.</returns>
     /// <remarks>
-    /// Periodefilteret er altid aktivt. Det retter fejlen hvor uge- og månedsvisningen slet
-    /// ikke filtrerede og derfor hentede hele tabellen (BR-111).
+    /// The period filter is always active. It fixes the fault where the week and month views did not
+    /// filter at all and therefore fetched the whole table (BR-111).
     /// </remarks>
     Task<Result<IReadOnlyList<BookingListItemDto>>> GetOverviewAsync(
         BookingOverviewQuery query,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Finder ledige rum i en periode (BR-34, BR-36, BR-37, BR-38, BR-39, BR-40, BR-110).
+    /// Finds free rooms in a period (BR-34, BR-36, BR-37, BR-38, BR-39, BR-40, BR-110).
     /// </summary>
-    /// <param name="checkInDate">Ankomstdato, inklusiv.</param>
-    /// <param name="checkOutDate">Afrejsedato, eksklusiv.</param>
+    /// <param name="checkInDate">Arrival date, inclusive.</param>
+    /// <param name="checkOutDate">Departure date, exclusive.</param>
     /// <param name="excludeBookingId">
-    /// Bookingen der redigeres, så den ikke spærrer for sig selv. <c>null</c> ved oprettelse.
-    /// Parameteren manglede i det gamle system og gjorde BR-19 unødigt indviklet.
+    /// The booking being edited, so it does not block itself. <c>null</c> on creation.
+    /// The parameter was missing in the old system and made BR-19 needlessly complicated.
     /// </param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>De rum der både er bookbare (BR-110) og ledige i hele perioden.</returns>
+    /// <returns>The rooms that are both bookable (BR-110) and free for the whole period.</returns>
     Task<Result<IReadOnlyList<AvailableRoomDto>>> GetAvailableRoomsAsync(
         DateOnly checkInDate,
         DateOnly checkOutDate,
@@ -64,50 +64,50 @@ public interface IBookingService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Opretter en booking (BR-01, BR-19, BR-41 til BR-49, BR-51, BR-101 til BR-106, B-03).
+    /// Creates a booking (BR-01, BR-19, BR-41 to BR-49, BR-51, BR-101 to BR-106, B-03).
     /// </summary>
-    /// <param name="request">Periode, rum og enten en eksisterende eller en ny gæst (BR-47).</param>
+    /// <param name="request">Period, room and either an existing or a new guest (BR-47).</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Den oprettede booking, eller de brudte regler.</returns>
+    /// <returns>The created booking, or the broken rules.</returns>
     /// <remarks>
-    /// Overlapstjekket er <b>nyt</b> — det fandtes hverken i det gamle systems
-    /// <c>CreateBooking</c> eller i repoet, så dobbeltbooking var mulig (B-03).
+    /// The overlap check is <b>new</b> — it existed neither in the old system's
+    /// <c>CreateBooking</c> nor in the repo, so double booking was possible (B-03).
     /// </remarks>
     Task<Result<BookingDetailsDto>> CreateAsync(
         CreateBookingRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Bekræfter en booking — betaling er garanteret (BR-02, BR-03, BR-05, BR-121).
+    /// Confirms a booking — payment is guaranteed (BR-02, BR-03, BR-05, BR-121).
     /// </summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Bookingen, eller <see cref="ErrorCodes.Booking.ConfirmNotAllowed"/>.</returns>
-    /// <remarks>Bekræftelsesdialogen (BR-04) er UI og hører i Web.</remarks>
+    /// <returns>The booking, or <see cref="ErrorCodes.Booking.ConfirmNotAllowed"/>.</returns>
+    /// <remarks>The confirmation dialog (BR-04) is UI and belongs in Web.</remarks>
     Task<Result<BookingDetailsDto>> ConfirmAsync(int bookingId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Tjekker gæsten ind (BR-06, BR-07, BR-08).
+    /// Checks the guest in (BR-06, BR-07, BR-08).
     /// </summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Bookingen, eller <see cref="ErrorCodes.Booking.CheckInNotAllowed"/>.</returns>
+    /// <returns>The booking, or <see cref="ErrorCodes.Booking.CheckInNotAllowed"/>.</returns>
     /// <remarks>
-    /// Walk-in er tilladt: <c>Pending</c> går direkte til <c>CheckedIn</c> uden om
-    /// <c>Confirmed</c> (B-01). Tidspunktet kommer fra uret, aldrig fra <c>DateTime.Now</c> (A-05).
+    /// Walk-in is allowed: <c>Pending</c> goes directly to <c>CheckedIn</c> bypassing
+    /// <c>Confirmed</c> (B-01). The time comes from the clock, never from <c>DateTime.Now</c> (A-05).
     /// </remarks>
     Task<Result<BookingDetailsDto>> CheckInAsync(int bookingId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Tjekker gæsten ud (BR-09, BR-10, BR-107, A-01, A-03, BR-N-06).
+    /// Checks the guest out (BR-09, BR-10, BR-107, A-01, A-03, BR-N-06).
     /// </summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Bookingen, eller <see cref="ErrorCodes.Booking.CheckOutNotAllowed"/>.</returns>
+    /// <returns>The booking, or <see cref="ErrorCodes.Booking.CheckOutNotAllowed"/>.</returns>
     /// <remarks>
-    /// Sætter den hotel-lokale udtjekningsdato, hvilket frigiver resterende nætter ved tidlig
-    /// udtjekning uden at røre den bookede slutdato (A-01), og sætter rummet til
-    /// slutrengøring (BR-N-06).
+    /// Sets the hotel-local check-out date, which releases the remaining nights on early
+    /// check-out without touching the booked end date (A-01), and sets the room to
+    /// departure cleaning (BR-N-06).
     /// </remarks>
     Task<Result<BookingDetailsDto>> CheckOutAsync(int bookingId, CancellationToken cancellationToken = default);
 
@@ -116,23 +116,23 @@ public interface IBookingService
     /// </summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Bookingen, eller <see cref="ErrorCodes.Booking.CancelNotAllowed"/>.</returns>
+    /// <returns>The booking, or <see cref="ErrorCodes.Booking.CancelNotAllowed"/>.</returns>
     /// <remarks>
-    /// Soft-delete: status sættes, rækken bliver (BR-13). Det er den eneste overgang der
-    /// frigiver rummet helt (A-01).
+    /// Soft delete: the status is set, the row stays (BR-13). It is the only transition that
+    /// releases the room completely (A-01).
     /// </remarks>
     Task<Result<BookingDetailsDto>> CancelAsync(int bookingId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Flytter en booking til nye datoer og/eller et nyt rum
+    /// Moves a booking to new dates and/or a new room
     /// (BR-14, BR-17, BR-18, BR-19, BR-20, BR-108, BR-123, B-03).
     /// </summary>
-    /// <param name="request">Bookingens id, den nye periode og rummet.</param>
+    /// <param name="request">The id of the booking, the new period and the room.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Den flyttede booking, eller de brudte regler.</returns>
+    /// <returns>The moved booking, or the broken rules.</returns>
     /// <remarks>
-    /// Bruger samme overlapsfunktion som <see cref="CreateAsync"/>, hvilket lukker
-    /// modstriden mellem BR-19 og BR-39.
+    /// Uses the same overlap function as <see cref="CreateAsync"/>, which closes
+    /// the contradiction between BR-19 and BR-39.
     /// </remarks>
     Task<Result<BookingDetailsDto>> RescheduleAsync(
         RescheduleBookingRequest request,

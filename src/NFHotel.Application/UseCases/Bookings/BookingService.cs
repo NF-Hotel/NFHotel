@@ -11,28 +11,28 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.UseCases.Bookings;
 
 /// <summary>
-/// Implementering af bookingernes use cases.
+/// Implementation of the use cases of bookings.
 /// </summary>
 /// <remarks>
-/// Servicen indeholder <b>ingen</b> overlapslogik. Den henter kandidater og spørger
-/// <see cref="NFHotel.Domain.Entities.Booking"/> (A-01, A-04). Fandtes prædikatet også her, ville det være
-/// tredje kopi efter domænet og databasens exclusion constraint — og de tre ville drive fra
+/// The service contains <b>no</b> overlap logic. It fetches candidates and asks
+/// <see cref="NFHotel.Domain.Entities.Booking"/> (A-01, A-04). If the predicate existed here too, it would be
+/// a third copy after the domain and the database exclusion constraint — and the three would drift
 /// hinanden.
 /// <para>
-/// "I dag" og "nu" kommer udelukkende fra <see cref="IClock"/> (A-05).
+/// "Today" and "now" come exclusively from <see cref="IClock"/> (A-05).
 /// </para>
 /// </remarks>
 public sealed class BookingService : IBookingService
 {
     /// <summary>
-    /// De statusser der lægger beslag på et rum. Udledt af domænet
-    /// (<see cref="NFHotel.Domain.ValueObjects.BookingStatusExtensions.BlocksRoom"/>), ikke skrevet af som en liste — ellers ville
-    /// et nyt statustrin skulle huskes to steder.
+    /// The statuses that occupy a room. Derived from the domain
+    /// (<see cref="NFHotel.Domain.ValueObjects.BookingStatusExtensions.BlocksRoom"/>), not written out as a list — otherwise
+    /// a new status step would have to be remembered in two places.
     /// </summary>
     private static readonly IReadOnlyCollection<BookingStatus> BlockingStatuses =
         Enum.GetValues<BookingStatus>().Where(BookingStatusExtensions.BlocksRoom).ToArray();
 
-    /// <summary>Alle statusser. Bruges når oversigten også skal vise annullerede (BR-13).</summary>
+    /// <summary>All statuses. Used when the overview must also show cancelled ones (BR-13).</summary>
     private static readonly IReadOnlyCollection<BookingStatus> AllStatuses = Enum.GetValues<BookingStatus>();
 
     private readonly IBookingRepository _bookingRepository;
@@ -44,14 +44,14 @@ public sealed class BookingService : IBookingService
     private readonly IClock _clock;
 
     /// <summary>
-    /// Opretter servicen.
+    /// Creates the service.
     /// </summary>
-    /// <param name="bookingRepository">Dataadgang for bookinger.</param>
-    /// <param name="roomRepository">Dataadgang for rum — bruges til BR-110 og til slutrengøring.</param>
-    /// <param name="guestRepository">Dataadgang for gæster — bruges til BR-47.</param>
-    /// <param name="bookingQueries">Læsning af bookinger som projektioner (A-11).</param>
-    /// <param name="roomQueries">Læsning af rum som projektioner — bruges til tilgængelighedsopslaget (BR-110).</param>
-    /// <param name="unitOfWork">Transaktionsgrænsen.</param>
+    /// <param name="bookingRepository">Data access for bookings.</param>
+    /// <param name="roomRepository">Data access for rooms — used for BR-110 and for departure cleaning.</param>
+    /// <param name="guestRepository">Data access for guests — used for BR-47.</param>
+    /// <param name="bookingQueries">Reading bookings as projections (A-11).</param>
+    /// <param name="roomQueries">Reading rooms as projections — used for the availability lookup (BR-110).</param>
+    /// <param name="unitOfWork">The transaction boundary.</param>
     /// <param name="clock">Hotellets ur (A-05).</param>
     public BookingService(
         IBookingRepository bookingRepository,
@@ -80,13 +80,13 @@ public sealed class BookingService : IBookingService
     }
 
     // --------------------------------------------------------
-    // LÆSNING
+    // READING
     // --------------------------------------------------------
 
-    /// <summary>Henter én booking (BR-115).</summary>
+    /// <summary>Fetches one booking (BR-115).</summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Bookingens detaljer, eller <see cref="ErrorCodes.Booking.NotFound"/>.</returns>
+    /// <returns>The details of the booking, or <see cref="ErrorCodes.Booking.NotFound"/>.</returns>
     public async Task<Result<BookingDetailsDto>> GetByIdAsync(
         int bookingId,
         CancellationToken cancellationToken = default)
@@ -102,17 +102,17 @@ public sealed class BookingService : IBookingService
             : Result<BookingDetailsDto>.Success(readModel.ToDetails(_clock.Today));
     }
 
-    /// <summary>Henter bookingoversigten (BR-23, BR-24, BR-25, BR-32, BR-111).</summary>
-    /// <param name="query">Datovindue, fritekst, sortering og om annullerede skal med.</param>
+    /// <summary>Fetches the booking overview (BR-23, BR-24, BR-25, BR-32, BR-111).</summary>
+    /// <param name="query">Date window, free text, sorting and whether cancelled bookings are included.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Oversigtens rækker, sorteret som forespurgt.</returns>
+    /// <returns>The rows of the overview, sorted as requested.</returns>
     public async Task<Result<IReadOnlyList<BookingListItemDto>>> GetOverviewAsync(
         BookingOverviewQuery query,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        // BR-13: annullerede bookinger slettes ikke, så de skal kunne skjules i oversigten.
+        // BR-13: cancelled bookings are not deleted, so they must be possible to hide in the overview.
         var statuses = query.IncludeCancelled ? AllStatuses : BlockingStatuses;
 
         var readModels = await _bookingQueries
@@ -126,13 +126,13 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>
-    /// Finder ledige rum i en periode (BR-34, BR-36, BR-37, BR-38, BR-39, BR-40, BR-110).
+    /// Finds free rooms in a period (BR-34, BR-36, BR-37, BR-38, BR-39, BR-40, BR-110).
     /// </summary>
-    /// <param name="checkInDate">Ankomstdato, inklusiv.</param>
-    /// <param name="checkOutDate">Afrejsedato, eksklusiv.</param>
-    /// <param name="excludeBookingId">Bookingen der redigeres, eller <c>null</c>.</param>
+    /// <param name="checkInDate">Arrival date, inclusive.</param>
+    /// <param name="checkOutDate">Departure date, exclusive.</param>
+    /// <param name="excludeBookingId">The booking being edited, or <c>null</c>.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>De rum der både er bookbare og ledige i hele perioden.</returns>
+    /// <returns>The rooms that are both bookable and free for the whole period.</returns>
     public async Task<Result<IReadOnlyList<AvailableRoomDto>>> GetAvailableRoomsAsync(
         DateOnly checkInDate,
         DateOnly checkOutDate,
@@ -144,8 +144,8 @@ public sealed class BookingService : IBookingService
             return Result<IReadOnlyList<AvailableRoomDto>>.Failure(periodError);
         }
 
-        // BR-110: kun rum der overhovedet må udlejes. Servicen vælger statussen — repositoryet
-        // afgør ikke længere selv hvad "tilgængelig" betyder.
+        // BR-110: only rooms that may be let at all. The service chooses the status — the repository
+        // no longer decides for itself what "available" means.
         var bookableRooms = await _roomQueries
             .GetByStatusAsync(RoomStatus.Available, cancellationToken)
             .ConfigureAwait(false);
@@ -163,8 +163,8 @@ public sealed class BookingService : IBookingService
                 continue;
             }
 
-            // Overlapsafgørelsen træffes af domænet, aldrig her (A-01, A-04). BR-39's
-            // halvåbne interval betyder at afrejse- og ankomstdag samme dag ikke er overlap.
+            // The overlap decision is made by the domain, never here (A-01, A-04). The half-open
+            // interval of BR-39 means that departure and arrival on the same day are not an overlap.
             if (!occupancy.Status.BlocksRoom())
             {
                 continue;
@@ -188,19 +188,19 @@ public sealed class BookingService : IBookingService
     // --------------------------------------------------------
 
     /// <summary>
-    /// Opretter en booking (BR-01, BR-19, BR-41 til BR-49, BR-51, BR-101 til BR-106, B-03).
+    /// Creates a booking (BR-01, BR-19, BR-41 to BR-49, BR-51, BR-101 to BR-106, B-03).
     /// </summary>
-    /// <param name="request">Periode, rum og enten en eksisterende eller en ny gæst (BR-47).</param>
+    /// <param name="request">Period, room and either an existing or a new guest (BR-47).</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Den oprettede booking, eller de brudte regler.</returns>
+    /// <returns>The created booking, or the broken rules.</returns>
     public async Task<Result<BookingDetailsDto>> CreateAsync(
         CreateBookingRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        // BR-47: præcis én af de to gæsteveje. Både-og og hverken-eller er en regelfejl,
-        // ikke en NullReferenceException nede i en formular.
+        // BR-47: exactly one of the two guest paths. Both and neither are a rule error,
+        // not a NullReferenceException down in a form.
         var hasExistingGuest = request.GuestId is > 0;
         var hasNewGuest = request.NewGuest is not null;
 
@@ -252,38 +252,38 @@ public sealed class BookingService : IBookingService
         return await SaveAndDescribeAsync(booking, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>Bekræfter en booking (BR-02, BR-03, BR-05, BR-121).</summary>
+    /// <summary>Confirms a booking (BR-02, BR-03, BR-05, BR-121).</summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Bookingen, eller <see cref="ErrorCodes.Booking.ConfirmNotAllowed"/>.</returns>
+    /// <returns>The booking, or <see cref="ErrorCodes.Booking.ConfirmNotAllowed"/>.</returns>
     public Task<Result<BookingDetailsDto>> ConfirmAsync(
         int bookingId,
         CancellationToken cancellationToken = default) =>
         TransitionAsync(bookingId, static booking => booking.Confirm(), cancellationToken);
 
-    /// <summary>Tjekker gæsten ind (BR-06, BR-07, BR-08, B-01).</summary>
+    /// <summary>Checks the guest in (BR-06, BR-07, BR-08, B-01).</summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Bookingen, eller <see cref="ErrorCodes.Booking.CheckInNotAllowed"/>.</returns>
+    /// <returns>The booking, or <see cref="ErrorCodes.Booking.CheckInNotAllowed"/>.</returns>
     public Task<Result<BookingDetailsDto>> CheckInAsync(
         int bookingId,
         CancellationToken cancellationToken = default) =>
         TransitionAsync(bookingId, booking => booking.CheckIn(_clock.UtcNow, _clock.Today), cancellationToken);
 
-    /// <summary>Tjekker gæsten ud (BR-09, BR-10, BR-107, A-01, A-03, BR-N-06).</summary>
+    /// <summary>Checks the guest out (BR-09, BR-10, BR-107, A-01, A-03, BR-N-06).</summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Bookingen, eller <see cref="ErrorCodes.Booking.CheckOutNotAllowed"/>.</returns>
+    /// <returns>The booking, or <see cref="ErrorCodes.Booking.CheckOutNotAllowed"/>.</returns>
     /// <remarks>
-    /// Den hotel-lokale udtjekningsdato leveres af uret, fordi omregningen tidsstempel →
-    /// kalenderdato er en tidszonepolitik som hverken domænet eller databasen kan udføre
+    /// The hotel-local check-out date is supplied by the clock, because converting a timestamp →
+    /// calendar date is a time zone policy that neither the domain nor the database can perform
     /// deterministisk (A-02, A-03).
     /// <para>
-    /// Domænets tosidede guard afviser en udtjekningsdato før ankomsten
-    /// (<see cref="ErrorCodes.Booking.CheckOutDateBeforeStartDate"/>) og efter i dag
-    /// (<see cref="ErrorCodes.Booking.CheckOutDateInFuture"/>). Sidstnævnte kan denne
-    /// use case ikke selv udløse — den tjekker ud i nuet — men guarden holder, hvis der
-    /// senere kommer en "registrér udtjekning bagud i tid"-use case.
+    /// The two-sided guard of the domain rejects a check-out date before the arrival
+    /// (<see cref="ErrorCodes.Booking.CheckOutDateBeforeStartDate"/>) and after today
+    /// (<see cref="ErrorCodes.Booking.CheckOutDateInFuture"/>). The latter cannot be triggered by this
+    /// use case itself — it checks out right now — but the guard holds if a
+    /// "record a check-out retroactively" use case is added later.
     /// </para>
     /// </remarks>
     public async Task<Result<BookingDetailsDto>> CheckOutAsync(
@@ -299,9 +299,9 @@ public sealed class BookingService : IBookingService
             return Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.NotFound);
         }
 
-        // Udtjekningen sker nu, så den hotel-lokale udtjekningsdato ER dagens dato. De to
-        // parametre er alligevel adskilte i domænet, fordi en senere bagudrettet
-        // registrering skal kunne angive en tidligere dato uden at flytte "i dag".
+        // The check-out happens now, so the hotel-local check-out date IS today's date. The two
+        // parameters are nevertheless separate in the domain, because a later retroactive
+        // registration must be able to give an earlier date without moving "today".
         var today = _clock.Today;
 
         try
@@ -323,7 +323,7 @@ public sealed class BookingService : IBookingService
     /// <summary>Annullerer en booking (BR-11, BR-13, BR-122).</summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Bookingen, eller <see cref="ErrorCodes.Booking.CancelNotAllowed"/>.</returns>
+    /// <returns>The booking, or <see cref="ErrorCodes.Booking.CancelNotAllowed"/>.</returns>
     public Task<Result<BookingDetailsDto>> CancelAsync(
         int bookingId,
         CancellationToken cancellationToken = default) =>
@@ -332,9 +332,9 @@ public sealed class BookingService : IBookingService
     /// <summary>
     /// Flytter en booking (BR-14, BR-17, BR-18, BR-19, BR-20, BR-108, BR-123, B-03).
     /// </summary>
-    /// <param name="request">Bookingens id, den nye periode og rummet.</param>
+    /// <param name="request">The id of the booking, the new period and the room.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Den flyttede booking, eller de brudte regler.</returns>
+    /// <returns>The moved booking, or the broken rules.</returns>
     public async Task<Result<BookingDetailsDto>> RescheduleAsync(
         RescheduleBookingRequest request,
         CancellationToken cancellationToken = default)
@@ -363,8 +363,8 @@ public sealed class BookingService : IBookingService
             return Result<BookingDetailsDto>.Failure(roomCheck);
         }
 
-        // BR-19 med samme funktion som CreateAsync, og med bookingen selv udeladt så den ikke
-        // spærrer for sin egen flytning.
+        // BR-19 with the same function as CreateAsync, and with the booking itself left out so it does not
+        // block its own move.
         var overlapError = await FindOverlapAsync(request.RoomId, period, request.BookingId, cancellationToken)
             .ConfigureAwait(false);
 
@@ -388,16 +388,16 @@ public sealed class BookingService : IBookingService
     }
 
     // --------------------------------------------------------
-    // FÆLLES
+    // COMMON
     // --------------------------------------------------------
 
     /// <summary>
-    /// Kører én domæneovergang på en booking og gemmer.
+    /// Runs one domain transition on a booking and saves.
     /// </summary>
     /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="transition">Overgangen — altid præcis ét metodekald på <see cref="NFHotel.Domain.Entities.Booking"/>.</param>
+    /// <param name="transition">The transition — always exactly one method call on <see cref="NFHotel.Domain.Entities.Booking"/>.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Bookingens detaljer, eller domænets fejlkode hvis overgangen blev afvist.</returns>
+    /// <returns>The details of the booking, or the error code of the domain if the transition was rejected.</returns>
     private async Task<Result<BookingDetailsDto>> TransitionAsync(
         int bookingId,
         Action<Booking> transition,
@@ -418,8 +418,8 @@ public sealed class BookingService : IBookingService
         }
         catch (DomainException exception)
         {
-            // Domænets kode har formen "booking.<overgang>.invalid_state" og er dermed
-            // identisk med konstanterne i ErrorCodes.Booking (A-09).
+            // The code of the domain has the form "booking.<transition>.invalid_state" and is thus
+            // identical to the constants in ErrorCodes.Booking (A-09).
             return Result<BookingDetailsDto>.Failure(exception.Code);
         }
 
@@ -429,16 +429,16 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>
-    /// Bygger bookingperioden og oversætter domænets datofejl til en fejlkode.
+    /// Builds the booking period and translates the date errors of the domain to an error code.
     /// </summary>
-    /// <param name="start">Ankomstdato.</param>
-    /// <param name="end">Afrejsedato, eksklusiv.</param>
-    /// <param name="period">Perioden, hvis den er gyldig.</param>
-    /// <param name="errorCode">Fejlkoden, hvis den ikke er.</param>
-    /// <returns>Sand hvis perioden kunne bygges.</returns>
+    /// <param name="start">Arrival date.</param>
+    /// <param name="end">Departure date, exclusive.</param>
+    /// <param name="period">The period, if it is valid.</param>
+    /// <param name="errorCode">The error code, if it is not.</param>
+    /// <returns>True if the period could be built.</returns>
     /// <remarks>
-    /// Reglerne BR-101, BR-102 og BR-103 håndhæves af <see cref="DateRange"/>s konstruktør.
-    /// Servicen gentager dem ikke — den fanger og oversætter.
+    /// The rules BR-101, BR-102 and BR-103 are enforced by the constructor of <see cref="DateRange"/>.
+    /// The service does not repeat them — it catches and translates.
     /// </remarks>
     private static bool TryCreatePeriod(DateOnly start, DateOnly end, out DateRange period, out string errorCode)
     {
@@ -459,11 +459,11 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>
-    /// Afgør om rummet findes og overhovedet må udlejes (BR-45, BR-105, BR-110).
+    /// Decides whether the room exists and may be let at all (BR-45, BR-105, BR-110).
     /// </summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>En fejlkode, eller <c>null</c> hvis rummet er i orden.</returns>
+    /// <returns>An error code, or <c>null</c> if the room is in order.</returns>
     private async Task<string?> CheckRoomIsBookableAsync(int roomId, CancellationToken cancellationToken)
     {
         if (roomId <= 0)
@@ -478,23 +478,23 @@ public sealed class BookingService : IBookingService
             return ErrorCodes.Room.NotFound;
         }
 
-        // BR-110 kommer fra domænet. Servicen udleder den ikke af RoomStatus selv, og
-        // rengøringsstand indgår bevidst ikke (B-04).
+        // BR-110 comes from the domain. The service does not derive it from RoomStatus itself, and
+        // the cleaning state is deliberately not included (B-04).
         return room.IsBookable ? null : ErrorCodes.Booking.RoomNotBookable;
     }
 
     /// <summary>
-    /// Spørger domænet om nogen eksisterende booking spærrer for perioden (BR-19, A-01, A-04).
+    /// Asks the domain whether any existing booking blocks the period (BR-19, A-01, A-04).
     /// </summary>
-    /// <param name="roomId">Rummet.</param>
-    /// <param name="period">Den ønskede periode.</param>
-    /// <param name="excludeBookingId">Bookingen der redigeres, eller <c>null</c>.</param>
+    /// <param name="roomId">The room.</param>
+    /// <param name="period">The desired period.</param>
+    /// <param name="excludeBookingId">The booking being edited, or <c>null</c>.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns><see cref="ErrorCodes.Booking.RoomNotAvailable"/>, eller <c>null</c> hvis rummet er frit.</returns>
+    /// <returns><see cref="ErrorCodes.Booking.RoomNotAvailable"/>, or <c>null</c> if the room is free.</returns>
     /// <remarks>
-    /// Repositoryet grovfiltrerer; <see cref="NFHotel.Domain.Entities.Booking.ConflictsWith"/> afgør. Prædikatet
-    /// findes derfor kun i domænet — og i databasens exclusion constraint, som er genereret
-    /// ud fra samme definition og pinnet af en paritetstest (A-04).
+    /// The repository filters coarsely; <see cref="NFHotel.Domain.Entities.Booking.ConflictsWith"/> decides. The predicate
+    /// therefore exists only in the domain — and in the database exclusion constraint, which is generated
+    /// from the same definition and pinned by a parity test (A-04).
     /// </remarks>
     private async Task<string?> FindOverlapAsync(
         int roomId,
@@ -524,16 +524,16 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>
-    /// Finder gæstens id — enten den valgte gæst eller en netop oprettet (BR-47).
+    /// Finds the id of the guest — either the chosen guest or one just created (BR-47).
     /// </summary>
     /// <param name="request">Oprettelsesanmodningen.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Gæstens id, eller de brudte gæsteregler.</returns>
+    /// <returns>The id of the guest, or the broken guest rules.</returns>
     /// <remarks>
-    /// En ny gæst gemmes i sit eget kald, fordi <see cref="Booking.Create"/> kræver et id
-    /// større end 0 og id'et først findes efter en insert. Fejler bookingen bagefter (fx på
-    /// databasens kapløbsværn), bliver gæsten stående med vilje: hun er en gyldig gæst, og
-    /// personalets indtastning skal ikke gå tabt ved et retry.
+    /// A new guest is saved in its own call, because <see cref="Booking.Create"/> requires an id
+    /// greater than 0 and the id exists only after an insert. If the booking fails afterwards (for example on
+    /// the race safeguard of the database), the guest is deliberately left behind: she is a valid guest, and
+    /// the staff's input should not be lost on a retry.
     /// </remarks>
     private async Task<Result<int>> ResolveGuestIdAsync(
         CreateBookingRequest request,
@@ -548,8 +548,8 @@ public sealed class BookingService : IBookingService
                 : Result<int>.Failure(ErrorCodes.Guest.NotFound);
         }
 
-        // ! er begrundet: CreateAsync afviser allerede en anmodning hvor ikke præcis én af GuestId
-        // og NewGuest er sat (BR-47), og GuestId blev ikke brugt ovenfor, så NewGuest er sat her.
+        // ! is justified: CreateAsync already rejects a request where not exactly one of GuestId
+        // and NewGuest is set (BR-47), and GuestId was not used above, so NewGuest is set here.
         var fields = request.NewGuest!;
         var errors = GuestService.ValidateInternal(fields);
 
@@ -590,15 +590,15 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>
-    /// Sætter rummet til slutrengøring efter en udtjekning (BR-N-06).
+    /// Sets the room to departure cleaning after a check-out (BR-N-06).
     /// </summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>En opgave der er færdig når rummet er markeret, eller bevidst sprunget over.</returns>
+    /// <returns>A task that completes when the room is marked, or deliberately skipped.</returns>
     /// <remarks>
-    /// Er rummet allerede under rengøring eller service, afviser domænet overgangen — og det
-    /// er korrekt: en igangværende opgave må ikke overskrives. Udtjekningen skal ikke fejle
-    /// af den grund, så afvisningen sluges her og kun her.
+    /// If the room is already under cleaning or service, the domain rejects the transition — and that
+    /// is correct: a task in progress must not be overwritten. The check-out must not fail
+    /// for that reason, so the rejection is swallowed here and only here.
     /// </remarks>
     private async Task MarkRoomForDepartureCleaningAsync(int roomId, CancellationToken cancellationToken)
     {
@@ -622,14 +622,14 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>
-    /// Gemmer og bygger svaret. Samler oversættelsen af infrastrukturfejl ét sted.
+    /// Saves and builds the answer. Collects the translation of infrastructure errors in one place.
     /// </summary>
-    /// <param name="booking">Bookingen der netop er ændret.</param>
+    /// <param name="booking">The booking that has just been changed.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Bookingens detaljer, eller fejlkoden for det værn der slog til.</returns>
+    /// <returns>The details of the booking, or the error code of the safeguard that kicked in.</returns>
     /// <remarks>
-    /// Detaljerne læses tilbage som projektion i stedet for at mappes fra entiteten, så rum
-    /// og gæst kommer med uden at kaldet skal have bedt om navigationsdata (A-11).
+    /// The details are read back as a projection instead of being mapped from the entity, so room
+    /// and guest come along without the call having to ask for navigation data (A-11).
     /// </remarks>
     private async Task<Result<BookingDetailsDto>> SaveAndDescribeAsync(
         Booking booking,
@@ -641,8 +641,8 @@ public sealed class BookingService : IBookingService
         }
         catch (BookingOverlapConflictException)
         {
-            // Kapløbsværnet bag servicetjekket (B-03). Samme fejlkode, så brugeren ser det
-            // samme uanset hvilket af de to værn der stoppede hende.
+            // The race safeguard behind the service check (B-03). The same error code, so the user sees the
+            // same thing whichever of the two safeguards stopped her.
             return Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.RoomNotAvailable);
         }
         catch (ConcurrencyConflictException)
@@ -662,13 +662,13 @@ public sealed class BookingService : IBookingService
     /// <summary>
     /// Sorterer oversigten (BR-32).
     /// </summary>
-    /// <param name="items">Rækkerne.</param>
-    /// <param name="sortBy">Feltet der sorteres på.</param>
+    /// <param name="items">The rows.</param>
+    /// <param name="sortBy">The field to sort on.</param>
     /// <param name="direction">Retningen.</param>
-    /// <returns>De sorterede rækker.</returns>
+    /// <returns>The sorted rows.</returns>
     /// <remarks>
-    /// Sorteringen sker i hukommelsen, men først <i>efter</i> at datovinduet har begrænset
-    /// mængden i SQL. Det er forskellen på dette og BR-111, hvor hele tabellen blev hentet.
+    /// The sorting happens in memory, but only <i>after</i> the date window has limited the
+    /// set in SQL. That is the difference between this and BR-111, where the whole table was fetched.
     /// </remarks>
     private static IReadOnlyList<BookingListItemDto> Sort(
         IEnumerable<BookingListItemDto> items,
@@ -693,13 +693,13 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>
-    /// Sorterer stigende eller faldende på én nøgle.
+    /// Sorts ascending or descending on one key.
     /// </summary>
-    /// <typeparam name="TKey">Nøglens type.</typeparam>
-    /// <param name="items">Rækkerne.</param>
-    /// <param name="keySelector">Nøglen.</param>
+    /// <typeparam name="TKey">The type of the key.</typeparam>
+    /// <param name="items">The rows.</param>
+    /// <param name="keySelector">The key.</param>
     /// <param name="ascending">Sand for stigende.</param>
-    /// <returns>De sorterede rækker.</returns>
+    /// <returns>The sorted rows.</returns>
     private static IOrderedEnumerable<BookingListItemDto> OrderBy<TKey>(
         IEnumerable<BookingListItemDto> items,
         Func<BookingListItemDto, TKey> keySelector,

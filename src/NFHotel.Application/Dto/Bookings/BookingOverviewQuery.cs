@@ -1,18 +1,18 @@
 namespace NFHotel.Application.Dto.Bookings;
 
 /// <summary>
-/// Forespørgsel til bookingoversigten (BR-23, BR-24, BR-25, BR-32).
+/// Query for the booking overview (BR-23, BR-24, BR-25, BR-32).
 /// </summary>
 /// <remarks>
-/// Periodefilteret er <b>altid</b> aktivt. I det gamle system filtrerede uge- og
-/// månedsvisningen slet ikke, så hele tabellen blev hentet og sorteret i hukommelsen (BR-111).
+/// The period filter is <b>always</b> active. In the old system the week and
+/// month views did not filter at all, so the whole table was fetched and sorted in memory (BR-111).
 /// </remarks>
-/// <param name="PeriodStart">Første dato i vinduet, inklusiv.</param>
+/// <param name="PeriodStart">First date of the window, inclusive.</param>
 /// <param name="PeriodEnd">Sidste dato i vinduet, eksklusiv.</param>
-/// <param name="SearchText">Fritekst på gæstenavn eller værelsesnummer (BR-23, BR-25). <c>null</c> for alle.</param>
-/// <param name="SortBy">Feltet der sorteres på (BR-32).</param>
+/// <param name="SearchText">Free text on guest name or room number (BR-23, BR-25). <c>null</c> for all.</param>
+/// <param name="SortBy">The field to sort on (BR-32).</param>
 /// <param name="Direction">Sorteringsretning.</param>
-/// <param name="IncludeCancelled">Om annullerede bookinger skal med (BR-13's soft-delete).</param>
+/// <param name="IncludeCancelled">Whether cancelled bookings are included (the soft delete of BR-13).</param>
 public sealed record BookingOverviewQuery(
     DateOnly PeriodStart,
     DateOnly PeriodEnd,

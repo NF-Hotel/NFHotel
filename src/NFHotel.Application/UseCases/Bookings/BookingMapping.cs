@@ -5,57 +5,57 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.UseCases.Bookings;
 
 /// <summary>
-/// Eksplicit mapping fra bookingens læsemodel til dens DTO'er (A-14).
+/// Explicit mapping from the read model of the booking to its DTOs (A-14).
 /// </summary>
 /// <remarks>
-/// "I dag" sendes ind som parameter og hentes ikke fra et ur her, så mapperne er rene
-/// funktioner og kan enhedstestes uden fake-tid (A-05). Servicen ejer uret.
+/// "Today" is passed in as a parameter and is not fetched from a clock here, so the mappers are pure
+/// functions and can be unit tested without fake time (A-05). The service owns the clock.
 /// <para>
 /// <see cref="ToActions(BookingStatus, DateOnly, DateTimeOffset?, DateTimeOffset?, DateOnly)"/>
-/// er ikke mapping men regelevaluering, og den skal derfor være læsbar og testbar frem for
+/// is not mapping but rule evaluation, and it must therefore be readable and testable rather than
 /// genereret.
 /// </para>
 /// </remarks>
 public static class BookingMapping
 {
-    /// <summary>Præfiks på det viste bookingnummer (BR-109).</summary>
+    /// <summary>Prefix of the displayed booking number (BR-109).</summary>
     private const string BookingNumberPrefix = "FLZ-";
 
-    /// <summary>Cifferformat på det viste bookingnummer (BR-109).</summary>
+    /// <summary>Digit format of the displayed booking number (BR-109).</summary>
     private const string BookingNumberFormat = "D6";
 
     /// <summary>
-    /// Formaterer det viste bookingnummer, fx <c>FLZ-000123</c> (BR-109).
+    /// Formats the displayed booking number, for example <c>FLZ-000123</c> (BR-109).
     /// </summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <returns>Bookingnummeret.</returns>
     /// <remarks>
-    /// Spejler <see cref="Booking.BookingNumber"/>, som kun kan beregnes på entiteten.
-    /// Læsestier har ingen entitet (A-11), så formatet findes nødvendigvis to steder —
-    /// en paritetstest i Application.Tests skal pinne dem sammen.
+    /// Mirrors <see cref="Booking.BookingNumber"/>, which can be computed only on the entity.
+    /// Read paths have no entity (A-11), so the format necessarily exists in two places —
+    /// a parity test in Application.Tests must pin them together.
     /// </remarks>
     public static string FormatBookingNumber(int bookingId) =>
         $"{BookingNumberPrefix}{bookingId.ToString(BookingNumberFormat, System.Globalization.CultureInfo.InvariantCulture)}";
 
     /// <summary>
-    /// Beregner hvilke handlinger der er lovlige på en booking lige nu (BR-22).
+    /// Computes which actions are legal on a booking right now (BR-22).
     /// </summary>
     /// <param name="status">Bookingens status.</param>
-    /// <param name="startDate">Ankomstdato.</param>
-    /// <param name="checkInTime">Faktisk indtjekningstidspunkt, eller <c>null</c>.</param>
-    /// <param name="checkOutTime">Faktisk udtjekningstidspunkt, eller <c>null</c>.</param>
-    /// <param name="today">Dagens dato i hotellets tidszone, fra <c>IClock.Today</c>.</param>
+    /// <param name="startDate">Arrival date.</param>
+    /// <param name="checkInTime">Actual check-in time, or <c>null</c>.</param>
+    /// <param name="checkOutTime">Actual check-out time, or <c>null</c>.</param>
+    /// <param name="today">Today's date in the hotel's time zone, from <c>IClock.Today</c>.</param>
     /// <returns>Handlingerne.</returns>
     /// <remarks>
-    /// Prædikaterne spejler <see cref="Booking.CanConfirm"/>, <see cref="Booking.CanCheckIn"/>,
-    /// <see cref="Booking.CanCheckOut"/>, <see cref="Booking.CanCancel"/> og
-    /// <see cref="Booking.CanReschedule"/>. De kan ikke kaldes direkte, fordi læsestien
-    /// arbejder på en projektion og ikke på entiteten (A-11).
+    /// The predicates mirror <see cref="Booking.CanConfirm"/>, <see cref="Booking.CanCheckIn"/>,
+    /// <see cref="Booking.CanCheckOut"/>, <see cref="Booking.CanCancel"/> and
+    /// <see cref="Booking.CanReschedule"/>. They cannot be called directly, because the read path
+    /// works on a projection and not on the entity (A-11).
     /// <para>
-    /// <b>Dette er den eneste kopi i Application</b>, og
-    /// <see cref="ToActions(Booking, DateOnly)"/> kalder den samme funktion, så entitets- og
-    /// læsestien ikke kan blive uenige. En paritetstest mod domænet skal pinne den — samme
-    /// princip som constraint-paritetstesten i A-04.
+    /// <b>This is the only copy in Application</b>, and
+    /// <see cref="ToActions(Booking, DateOnly)"/> calls the same function, so the entity path and the
+    /// read path cannot disagree. A parity test against the domain must pin it — the same
+    /// principle as the constraint parity test in A-04.
     /// </para>
     /// </remarks>
     public static BookingActionsDto ToActions(
@@ -78,7 +78,7 @@ public static class BookingMapping
     /// <summary>
     /// Beregner de lovlige handlinger for en booking-entitet (BR-22).
     /// </summary>
-    /// <param name="booking">Bookingen.</param>
+    /// <param name="booking">The booking.</param>
     /// <param name="today">Dagens dato i hotellets tidszone.</param>
     /// <returns>Handlingerne.</returns>
     public static BookingActionsDto ToActions(this Booking booking, DateOnly today)
@@ -89,11 +89,11 @@ public static class BookingMapping
     }
 
     /// <summary>
-    /// Mapper en læsemodel til oversigtens række.
+    /// Maps a read model to a row of the overview.
     /// </summary>
-    /// <param name="booking">Læsemodellen fra repositoryet.</param>
+    /// <param name="booking">The read model from the repository.</param>
     /// <param name="today">Dagens dato i hotellets tidszone.</param>
-    /// <returns>Rækken, med de lovlige handlinger beregnet.</returns>
+    /// <returns>The row, with the legal actions computed.</returns>
     public static BookingListItemDto ToListItem(this BookingReadModel booking, DateOnly today)
     {
         ArgumentNullException.ThrowIfNull(booking);
@@ -118,11 +118,11 @@ public static class BookingMapping
     }
 
     /// <summary>
-    /// Mapper en læsemodel til detaljevisningen.
+    /// Maps a read model to the detail view.
     /// </summary>
-    /// <param name="booking">Læsemodellen fra repositoryet.</param>
+    /// <param name="booking">The read model from the repository.</param>
     /// <param name="today">Dagens dato i hotellets tidszone.</param>
-    /// <returns>Detaljevisningen, med de lovlige handlinger beregnet.</returns>
+    /// <returns>The detail view, with the legal actions computed.</returns>
     public static BookingDetailsDto ToDetails(this BookingReadModel booking, DateOnly today)
     {
         ArgumentNullException.ThrowIfNull(booking);
@@ -144,13 +144,13 @@ public static class BookingMapping
     }
 
     /// <summary>
-    /// Tæller bookede overnatninger via domænets <see cref="DateRange"/> (BR-109, BR-117).
+    /// Counts booked nights via the domain's <see cref="DateRange"/> (BR-109, BR-117).
     /// </summary>
-    /// <param name="booking">Læsemodellen.</param>
-    /// <returns>Antal nætter.</returns>
+    /// <param name="booking">The read model.</param>
+    /// <returns>The number of nights.</returns>
     /// <remarks>
-    /// Beregningen hentes fra domænet frem for at skrives som en dagdifference her, så der
-    /// kun findes én definition af "en nat".
+    /// The calculation is taken from the domain rather than written as a day difference here, so there
+    /// is only one definition of "a night".
     /// </remarks>
     private static int CountNights(BookingReadModel booking) =>
         new DateRange(booking.StartDate, booking.EndDate).Nights;

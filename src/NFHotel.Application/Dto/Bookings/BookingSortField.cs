@@ -1,27 +1,27 @@
 namespace NFHotel.Application.Dto.Bookings;
 
 /// <summary>
-/// Felt der kan sorteres på i bookingoversigten (BR-32).
+/// A field the booking overview can be sorted on (BR-32).
 /// </summary>
 /// <remarks>
-/// En enum og ikke en streng: en tastefejl i et kolonnenavn skal være en compilerfejl, ikke
+/// An enum and not a string: a typo in a column name must be a compiler error, not
 /// en tavst usorteret liste.
 /// </remarks>
 public enum BookingSortField
 {
-    /// <summary>Bookingnummer — svarer til id-rækkefølgen (BR-109).</summary>
+    /// <summary>Booking number — corresponds to the id order (BR-109).</summary>
     BookingNumber = 0,
 
-    /// <summary>Gæstens fulde navn (BR-25).</summary>
+    /// <summary>The full name of the guest (BR-25).</summary>
     GuestName = 1,
 
-    /// <summary>Værelsesnummer.</summary>
+    /// <summary>Room number.</summary>
     RoomNumber = 2,
 
-    /// <summary>Ankomstdato.</summary>
+    /// <summary>Arrival date.</summary>
     StartDate = 3,
 
-    /// <summary>Booket afrejsedato.</summary>
+    /// <summary>Booked departure date.</summary>
     EndDate = 4,
 
     /// <summary>Bookingens status.</summary>

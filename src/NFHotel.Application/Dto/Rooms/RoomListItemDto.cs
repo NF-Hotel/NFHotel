@@ -4,25 +4,25 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.Dto.Rooms;
 
 /// <summary>
-/// Et rum som det vises i en liste eller en tabelrække.
+/// A room as shown in a list or a table row.
 /// </summary>
 /// <remarks>
-/// Ingen formatering: datoer er datoer, status er enum, ikke farve eller tekst. Formatering
-/// hører i Web — ellers flytter det gamle systems problem bare ét lag ned.
+/// No formatting: dates are dates, status is an enum, not a colour or text. Formatting
+/// belongs in Web — otherwise the old system's problem just moves one layer down.
 /// <para>
-/// <see cref="Actions"/> er en beregnet property og ikke en konstruktørparameter: rækken
-/// bygges som SQL-projektion i repositoryet (A-11), og databasen kan ikke fylde et
-/// <see cref="RoomActionsDto"/> i den. Det er også listen der har brug for den — rummets
-/// handlingsknapper sidder på det valgte listeelement.
+/// <see cref="Actions"/> is a computed property and not a constructor parameter: the row
+/// is built as a SQL projection in the repository (A-11), and the database cannot fill a
+/// <see cref="RoomActionsDto"/> in it. It is also the list that needs it — the action
+/// buttons of the room sit on the selected list item.
 /// </para>
 /// </remarks>
 /// <param name="RoomId">Rummets id.</param>
-/// <param name="RoomNumber">Værelsesnummer, fx "101" eller "12B".</param>
+/// <param name="RoomNumber">Room number, for example "101" or "12B".</param>
 /// <param name="Floor">Etage.</param>
-/// <param name="Size">Værelsestype.</param>
-/// <param name="Capacity">Antal personer rummet kan rumme.</param>
+/// <param name="Size">Room type.</param>
+/// <param name="Capacity">The number of people the room can hold.</param>
 /// <param name="Status">Bookbarhed (B-04).</param>
-/// <param name="HousekeepingStatus">Rengørings- og servicestand (B-04, A-06).</param>
+/// <param name="HousekeepingStatus">Cleaning and service state (B-04, A-06).</param>
 public sealed record RoomListItemDto(
     int RoomId,
     string RoomNumber,
@@ -33,7 +33,7 @@ public sealed record RoomListItemDto(
     HousekeepingStatus HousekeepingStatus)
 {
     /// <summary>
-    /// Hvilke overgange der er lovlige på rummet lige nu (A-07). Samme kilde som
+    /// Which transitions are legal on the room right now (A-07). Same source as
     /// <see cref="RoomDetailsDto.Actions"/>.
     /// </summary>
     public RoomActionsDto Actions => RoomMapping.ToActions(Status, HousekeepingStatus);

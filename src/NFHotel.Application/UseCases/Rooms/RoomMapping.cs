@@ -5,25 +5,25 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.UseCases.Rooms;
 
 /// <summary>
-/// Eksplicit mapping fra <see cref="Room"/> til rummets DTO'er (A-14).
+/// Explicit mapping from <see cref="Room"/> to the DTOs of the room (A-14).
 /// </summary>
 /// <remarks>
-/// Håndskrevet og uden mapping-bibliotek. Feltvalgene er beslutninger, ikke boilerplate —
-/// konventionsbaseret mapping ville kopiere alt hvad der tilfældigvis hedder det samme, og
-/// dermed træffe dem for os.
+/// Hand-written and without a mapping library. The choices of fields are decisions, not boilerplate —
+/// convention-based mapping would copy everything that happens to have the same name, and
+/// thereby make them for us.
 /// <para>
-/// Mapping bruges kun på <b>kommandostier</b>, hvor entiteten alligevel er hentet.
-/// Læsestier projicerer direkte i repositoryet (A-11), så en manglende <c>Include</c> ikke
-/// kan give tavst tomme felter.
+/// Mapping is used only on <b>command paths</b>, where the entity has been fetched anyway.
+/// Read paths project directly in the repository (A-11), so a missing <c>Include</c> cannot
+/// give silently empty fields.
 /// </para>
 /// </remarks>
 public static class RoomMapping
 {
     /// <summary>
-    /// Mapper et rum til en listerække.
+    /// Maps a room to a list row.
     /// </summary>
-    /// <param name="room">Rummet.</param>
-    /// <returns>Listerækken.</returns>
+    /// <param name="room">The room.</param>
+    /// <returns>The list row.</returns>
     public static RoomListItemDto ToListItem(this Room room)
     {
         ArgumentNullException.ThrowIfNull(room);
@@ -39,14 +39,14 @@ public static class RoomMapping
     }
 
     /// <summary>
-    /// Mapper et rum til detaljevisningen.
+    /// Maps a room to the detail view.
     /// </summary>
-    /// <param name="room">Rummet.</param>
+    /// <param name="room">The room.</param>
     /// <param name="hasBookings">
-    /// Om der findes bookinger på rummet. Leveres udefra, fordi det er et opslag i en anden
-    /// tabel og ikke en egenskab ved rummet.
+    /// Whether there are bookings for the room. Supplied from outside, because it is a lookup in another
+    /// table and not a property of the room.
     /// </param>
-    /// <returns>Detaljevisningen. <c>IsBookable</c> kommer fra domænet (BR-110).</returns>
+    /// <returns>The detail view. <c>IsBookable</c> comes from the domain (BR-110).</returns>
     public static RoomDetailsDto ToDetails(this Room room, bool hasBookings)
     {
         ArgumentNullException.ThrowIfNull(room);
@@ -64,21 +64,21 @@ public static class RoomMapping
     }
 
     /// <summary>
-    /// Beregner hvilke overgange der er lovlige på et rum lige nu (A-07).
+    /// Computes which transitions are legal on a room right now (A-07).
     /// </summary>
     /// <param name="status">Rummets bookbarhed.</param>
-    /// <param name="housekeepingStatus">Rummets rengørings- og servicestand.</param>
+    /// <param name="housekeepingStatus">The cleaning and service state of the room.</param>
     /// <returns>Handlingerne.</returns>
     /// <remarks>
-    /// Prædikaterne spejler <see cref="Room.CanTakeOutOfService"/> og de øvrige
-    /// <c>Room.Can*</c>-properties, som overgangsmetoderne selv bruger som guard. De kan ikke
-    /// kaldes direkte, fordi både listen og detaljevisningen projiceres i repositoryet og
-    /// aldrig materialiserer entiteten (A-11).
+    /// The predicates mirror <see cref="Room.CanTakeOutOfService"/> and the other
+    /// <c>Room.Can*</c> properties, which the transition methods themselves use as a guard. They cannot be
+    /// called directly, because both the list and the detail view are projected in the repository and
+    /// never materialise the entity (A-11).
     /// <para>
-    /// <b>Dette er den eneste kopi i Application</b> — begge DTO'ers <c>Actions</c> og
-    /// <see cref="ToActions(Room)"/> kalder den samme funktion, så læse- og kommandostien ikke
-    /// kan blive uenige. Samme opstilling som <c>BookingMapping.ToActions</c>, og en
-    /// paritetstest mod domænet skal pinne den.
+    /// <b>This is the only copy in Application</b> — the <c>Actions</c> of both DTOs and
+    /// <see cref="ToActions(Room)"/> call the same function, so the read path and the command path cannot
+    /// disagree. The same arrangement as <c>BookingMapping.ToActions</c>, and a
+    /// parity test against the domain must pin it.
     /// </para>
     /// </remarks>
     public static RoomActionsDto ToActions(RoomStatus status, HousekeepingStatus housekeepingStatus) =>
@@ -103,9 +103,9 @@ public static class RoomMapping
             CanCompleteService: housekeepingStatus == HousekeepingStatus.ServiceInProgress);
 
     /// <summary>
-    /// Beregner de lovlige overgange for en rum-entitet (A-07).
+    /// Computes the legal transitions for a room entity (A-07).
     /// </summary>
-    /// <param name="room">Rummet.</param>
+    /// <param name="room">The room.</param>
     /// <returns>Handlingerne.</returns>
     public static RoomActionsDto ToActions(this Room room)
     {
@@ -115,10 +115,10 @@ public static class RoomMapping
     }
 
     /// <summary>
-    /// Mapper et rum til tilgængelighedslistens række.
+    /// Maps a room to a row of the availability list.
     /// </summary>
-    /// <param name="room">Rummet.</param>
-    /// <returns>Rækken uden status — listen indeholder kun ledige rum.</returns>
+    /// <param name="room">The room.</param>
+    /// <returns>The row without status — the list contains only free rooms.</returns>
     public static AvailableRoomDto ToAvailableRoom(this Room room)
     {
         ArgumentNullException.ThrowIfNull(room);

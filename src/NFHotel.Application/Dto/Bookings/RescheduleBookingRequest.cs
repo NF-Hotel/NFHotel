@@ -1,16 +1,16 @@
 namespace NFHotel.Application.Dto.Bookings;
 
 /// <summary>
-/// Flyt en booking til nye datoer og/eller et nyt rum (BR-14, BR-17 til BR-20, BR-108).
+/// Move a booking to new dates and/or a new room (BR-14, BR-17 to BR-20, BR-108).
 /// </summary>
 /// <remarks>
-/// Hedder bevidst ikke <c>UpdateBookingRequest</c>: use casen er "flyt bookingen", ikke
-/// "sæt vilkårlige felter". Status, check-in og check-ud har deres egne use cases.
+/// Deliberately not called <c>UpdateBookingRequest</c>: the use case is "move the booking", not
+/// "set arbitrary fields". Status, check-in and check-out have their own use cases.
 /// </remarks>
 /// <param name="BookingId">Bookingens id.</param>
-/// <param name="NewStartDate">Ny ankomstdato. Skal være i dag eller senere (BR-108).</param>
-/// <param name="NewEndDate">Ny afrejsedato, eksklusiv.</param>
-/// <param name="RoomId">Rummets id — samme som før, eller et nyt rum.</param>
+/// <param name="NewStartDate">New arrival date. Must be today or later (BR-108).</param>
+/// <param name="NewEndDate">New departure date, exclusive.</param>
+/// <param name="RoomId">The id of the room — the same as before, or a new room.</param>
 public sealed record RescheduleBookingRequest(
     int BookingId,
     DateOnly NewStartDate,

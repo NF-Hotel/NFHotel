@@ -8,15 +8,15 @@ using NFHotel.Domain.Repositories;
 namespace NFHotel.Application.UseCases.Guests;
 
 /// <summary>
-/// Implementering af gæsternes use cases.
+/// Implementation of the use cases of guests.
 /// </summary>
 /// <remarks>
-/// Al validering går gennem <see cref="NFHotel.Domain.Entities.Guest"/>. Servicen genimplementerer ikke en
-/// eneste regel — den samler kun fejlkoderne op og pakker dem i et <see cref="Result"/>.
+/// All validation goes through <see cref="NFHotel.Domain.Entities.Guest"/>. The service does not re-implement a
+/// single rule — it only collects the error codes and packs them in a <see cref="Result"/>.
 /// </remarks>
 public sealed class GuestService : IGuestService
 {
-    /// <summary>Tegn der adskiller søgeord (BR-68). Whitespace, intet andet.</summary>
+    /// <summary>Characters that separate search words (BR-68). Whitespace, nothing else.</summary>
     private static readonly char[] SearchTermSeparators = [' ', '\t', '\n', '\r'];
 
     private readonly IGuestRepository _guestRepository;
@@ -24,11 +24,11 @@ public sealed class GuestService : IGuestService
     private readonly IUnitOfWork _unitOfWork;
 
     /// <summary>
-    /// Opretter servicen.
+    /// Creates the service.
     /// </summary>
-    /// <param name="guestRepository">Dataadgang for gæster.</param>
-    /// <param name="guestQueries">Læsning af gæster som projektioner (A-11).</param>
-    /// <param name="unitOfWork">Transaktionsgrænsen.</param>
+    /// <param name="guestRepository">Data access for guests.</param>
+    /// <param name="guestQueries">Reading guests as projections (A-11).</param>
+    /// <param name="unitOfWork">The transaction boundary.</param>
     public GuestService(
         IGuestRepository guestRepository,
         IGuestQueries guestQueries,
@@ -43,10 +43,10 @@ public sealed class GuestService : IGuestService
         _unitOfWork = unitOfWork;
     }
 
-    /// <summary>Henter én gæst (BR-35, BR-115).</summary>
-    /// <param name="guestId">Gæstens id.</param>
+    /// <summary>Fetches one guest (BR-35, BR-115).</summary>
+    /// <param name="guestId">The id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Gæstens detaljer, eller <see cref="ErrorCodes.Guest.NotFound"/>.</returns>
+    /// <returns>The details of the guest, or <see cref="ErrorCodes.Guest.NotFound"/>.</returns>
     public async Task<Result<GuestDetailsDto>> GetByIdAsync(
         int guestId,
         CancellationToken cancellationToken = default)
@@ -60,14 +60,14 @@ public sealed class GuestService : IGuestService
             : Result<GuestDetailsDto>.Success(details);
     }
 
-    /// <summary>Søger gæster (BR-68, BR-69, BR-70, BR-116, BR-N-05).</summary>
-    /// <param name="searchText">Fritekst. Tom eller kun whitespace giver alle gæster (BR-70).</param>
+    /// <summary>Searches guests (BR-68, BR-69, BR-70, BR-116, BR-N-05).</summary>
+    /// <param name="searchText">Free text. Empty or only whitespace gives all guests (BR-70).</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>De matchende gæster, sorteret på "fornavn efternavn" i lowercase (BR-69).</returns>
+    /// <returns>The matching guests, sorted on "first name last name" in lowercase (BR-69).</returns>
     /// <remarks>
-    /// Tokeniseringen er <i>reglen</i> (BR-68) og hører derfor her; matchningen er dataadgang
-    /// og sker i repositoryet. Sorteringen er en del af use casen og ikke af UI'et — ellers
-    /// ville hver skærm skulle kende BR-69.
+    /// The tokenisation is the <i>rule</i> (BR-68) and therefore belongs here; the matching is data access
+    /// and happens in the repository. The sorting is part of the use case and not of the UI — otherwise
+    /// every screen would have to know BR-69.
     /// </remarks>
     public async Task<Result<IReadOnlyList<GuestListItemDto>>> SearchAsync(
         string? searchText,
@@ -77,7 +77,7 @@ public sealed class GuestService : IGuestService
 
         var guests = await _guestQueries.SearchAsync(terms, cancellationToken).ConfigureAwait(false);
 
-        // BR-69: sortering på det fulde navn i lowercase, så "aa" og "AA" sorteres ens.
+        // BR-69: sorting on the full name in lowercase, so "aa" and "AA" sort the same.
         var sorted = guests
             .OrderBy(static guest => guest.FullName.ToLowerInvariant(), StringComparer.Ordinal)
             .ThenBy(static guest => guest.GuestId)
@@ -86,10 +86,10 @@ public sealed class GuestService : IGuestService
         return Result<IReadOnlyList<GuestListItemDto>>.Success(sorted);
     }
 
-    /// <summary>Opretter en gæst (BR-52 til BR-57, BR-60, BR-91 til BR-96).</summary>
-    /// <param name="request">Gæstens felter.</param>
+    /// <summary>Creates a guest (BR-52 to BR-57, BR-60, BR-91 to BR-96).</summary>
+    /// <param name="request">The fields of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Den oprettede gæst, eller alle valideringsfejl på én gang.</returns>
+    /// <returns>The created guest, or all validation errors at once.</returns>
     public async Task<Result<GuestDetailsDto>> CreateAsync(
         CreateGuestRequest request,
         CancellationToken cancellationToken = default)
@@ -127,13 +127,13 @@ public sealed class GuestService : IGuestService
         return await SaveAndDescribeAsync(guest, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>Retter en gæst (BR-62, BR-66, BR-72, BR-91 til BR-96).</summary>
-    /// <param name="request">De nye feltværdier plus gæstens id.</param>
+    /// <summary>Changes a guest (BR-62, BR-66, BR-72, BR-91 to BR-96).</summary>
+    /// <param name="request">The new field values plus the id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Den opdaterede gæst, eller alle valideringsfejl på én gang.</returns>
+    /// <returns>The updated guest, or all validation errors at once.</returns>
     /// <remarks>
-    /// Id'et kommer fra requesten og ændres aldrig (BR-72). Findes gæsten ikke, bliver det
-    /// en fejlkode og ikke en lydløs ikke-opdatering som i det gamle system.
+    /// The id comes from the request and is never changed (BR-72). If the guest does not exist, it becomes
+    /// an error code and not a silent non-update as in the old system.
     /// </remarks>
     public async Task<Result<GuestDetailsDto>> UpdateAsync(
         UpdateGuestRequest request,
@@ -178,10 +178,10 @@ public sealed class GuestService : IGuestService
         return await SaveAndDescribeAsync(guest, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>Sletter en gæst (BR-N-02, følger af D-05).</summary>
-    /// <param name="guestId">Gæstens id.</param>
+    /// <summary>Deletes a guest (BR-N-02, follows from D-05).</summary>
+    /// <param name="guestId">The id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Succes, eller <see cref="ErrorCodes.Guest.HasBookings"/>.</returns>
+    /// <returns>Success, or <see cref="ErrorCodes.Guest.HasBookings"/>.</returns>
     public async Task<Result> DeleteAsync(int guestId, CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(guestId);
@@ -197,8 +197,8 @@ public sealed class GuestService : IGuestService
 
         if (hasBookings)
         {
-            // Bookinger er historik og må ikke miste sin gæst. Sletning af persondata på en
-            // gæst med bookinger kræver en anonymiseringsstrategi (D-05), som ikke er designet.
+            // Bookings are history and must not lose their guest. Deleting personal data of a
+            // guest with bookings requires an anonymisation strategy (D-05), which is not designed.
             return Result.Failure(ErrorCodes.Guest.HasBookings);
         }
 
@@ -216,9 +216,9 @@ public sealed class GuestService : IGuestService
         return Result.Success();
     }
 
-    /// <summary>Validerer gæstefelterne uden at gemme (BR-58, BR-59).</summary>
-    /// <param name="fields">Felterne der skal valideres.</param>
-    /// <returns>Succes, eller alle brudte regler på én gang.</returns>
+    /// <summary>Validates the guest fields without saving (BR-58, BR-59).</summary>
+    /// <param name="fields">The fields to validate.</param>
+    /// <returns>Success, or all broken rules at once.</returns>
     public Result ValidateFields(GuestFields fields)
     {
         ArgumentNullException.ThrowIfNull(fields);
@@ -231,16 +231,16 @@ public sealed class GuestService : IGuestService
     }
 
     // --------------------------------------------------------
-    // FÆLLES
+    // COMMON
     // --------------------------------------------------------
 
     /// <summary>
-    /// Kører domænets validering på felterne. Ét kald, ét sted — så
-    /// <see cref="CreateAsync"/>, <see cref="UpdateAsync"/> og <see cref="ValidateFields"/>
-    /// ikke kan komme til at validere forskelligt.
+    /// Collects the validation errors of the guest fields by building a guest; the rules are the
+    /// attributes of <see cref="NFHotel.Domain.Entities.Guest"/> (ADR-0002). One call, one place — so
+    /// <see cref="CreateAsync"/>, <see cref="UpdateAsync"/> and <see cref="ValidateFields"/> cannot validate differently.
     /// </summary>
     /// <param name="fields">Felterne.</param>
-    /// <returns>Fejlkoder i feltrækkefølge. Tom liste betyder gyldig.</returns>
+    /// <returns>Error codes in field order. An empty list means valid.</returns>
     internal static IReadOnlyList<string> ValidateInternal(GuestFields fields)
     {
         try
@@ -262,11 +262,11 @@ public sealed class GuestService : IGuestService
     }
 
     /// <summary>
-    /// Deler søgeteksten i ord (BR-68). Tom eller kun whitespace giver et tomt sæt, som
-    /// repositoryet fortolker som "alle gæster" (BR-70).
+    /// Splits the search text into words (BR-68). Empty or only whitespace gives an empty set, which
+    /// the repository interprets as "all guests" (BR-70).
     /// </summary>
-    /// <param name="searchText">Fritekst fra brugeren.</param>
-    /// <returns>Søgeordene uden tomme elementer.</returns>
+    /// <param name="searchText">Free text from the user.</param>
+    /// <returns>The search words without empty elements.</returns>
     private static IReadOnlyCollection<string> Tokenize(string? searchText)
     {
         if (string.IsNullOrWhiteSpace(searchText))
@@ -278,11 +278,11 @@ public sealed class GuestService : IGuestService
     }
 
     /// <summary>
-    /// Gemmer og bygger svaret. Samler oversættelsen af infrastrukturfejl ét sted.
+    /// Saves and builds the answer. Collects the translation of infrastructure errors in one place.
     /// </summary>
-    /// <param name="guest">Gæsten der netop er ændret.</param>
+    /// <param name="guest">The guest that has just been changed.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Gæstens detaljer, eller en fejlkode.</returns>
+    /// <returns>The details of the guest, or an error code.</returns>
     private async Task<Result<GuestDetailsDto>> SaveAndDescribeAsync(
         Guest guest,
         CancellationToken cancellationToken)

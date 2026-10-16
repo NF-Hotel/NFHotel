@@ -5,22 +5,22 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.Dto.Rooms;
 
 /// <summary>
-/// Et rum med alt hvad detaljeskærmen har brug for.
+/// A room with everything the detail screen needs.
 /// </summary>
 /// <param name="RoomId">Rummets id.</param>
-/// <param name="RoomNumber">Værelsesnummer.</param>
+/// <param name="RoomNumber">Room number.</param>
 /// <param name="Floor">Etage.</param>
-/// <param name="Size">Værelsestype.</param>
-/// <param name="Capacity">Antal personer rummet kan rumme.</param>
+/// <param name="Size">Room type.</param>
+/// <param name="Capacity">The number of people the room can hold.</param>
 /// <param name="Status">Bookbarhed (B-04).</param>
-/// <param name="HousekeepingStatus">Rengørings- og servicestand (B-04).</param>
+/// <param name="HousekeepingStatus">Cleaning and service state (B-04).</param>
 /// <param name="IsBookable">
-/// Om rummet overhovedet må udlejes (BR-110). Beregnet af domænets
-/// <see cref="Room.IsBookable"/> — Web må ikke udlede den af <paramref name="Status"/> selv.
+/// Whether the room may be let at all (BR-110). Computed by the domain's
+/// <see cref="Room.IsBookable"/> — Web must not derive it from <paramref name="Status"/> itself.
 /// </param>
 /// <param name="HasBookings">
-/// Om der findes bookinger på rummet. Bærer sletteguarden (BR-78, BR-112) op i UI'et, så
-/// advarslen kan vises inden knappen trykkes i stedet for som en fejl bagefter.
+/// Whether there are bookings for the room. Carries the delete guard (BR-78, BR-112) up into the UI, so
+/// the warning can be shown before the button is pressed instead of as an error afterwards.
 /// </param>
 public sealed record RoomDetailsDto(
     int RoomId,
@@ -34,15 +34,15 @@ public sealed record RoomDetailsDto(
     bool HasBookings)
 {
     /// <summary>
-    /// Hvilke overgange der er lovlige lige nu (A-07), så Web kan tegne knapper uden at kende
+    /// Which transitions are legal right now (A-07), so Web can draw buttons without knowing
     /// en eneste overgang.
     /// </summary>
     /// <remarks>
-    /// Beregnet property og ikke en konstruktørparameter, fordi detaljevisningen hentes som
-    /// SQL-projektion i repositoryet (A-11): databasen kan ikke fylde et
-    /// <see cref="RoomActionsDto"/> i rækken. Udtrykkene ligger derfor ét sted i Application —
-    /// <see cref="RoomMapping.ToActions(RoomStatus, HousekeepingStatus)"/> — som både denne
-    /// property og entitetsstien bruger.
+    /// A computed property and not a constructor parameter, because the detail view is fetched as a
+    /// SQL projection in the repository (A-11): the database cannot fill a
+    /// <see cref="RoomActionsDto"/> in the row. The expressions therefore live in one place in Application —
+    /// <see cref="RoomMapping.ToActions(RoomStatus, HousekeepingStatus)"/> — which both this
+    /// property and the entity path use.
     /// </remarks>
     public RoomActionsDto Actions => RoomMapping.ToActions(Status, HousekeepingStatus);
 }

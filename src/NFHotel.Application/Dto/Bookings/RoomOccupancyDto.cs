@@ -3,23 +3,23 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.Dto.Bookings;
 
 /// <summary>
-/// Én bookings beslaglæggelse af et rum, til tilgængelighedsopslaget.
+/// One booking's occupation of a room, for the availability lookup.
 /// </summary>
 /// <remarks>
-/// Bevidst så smal som muligt: kun det <see cref="NFHotel.Domain.Entities.Booking"/> skal bruge for at afgøre
-/// om rummet er optaget. Alternativet — at hente alle bookinger i perioden som entiteter og
-/// filtrere i hukommelsen — er præcis den fejl BR-111 beskriver.
+/// Deliberately as narrow as possible: only what <see cref="NFHotel.Domain.Entities.Booking"/> needs to decide
+/// whether the room is occupied. The alternative — fetching all bookings in the period as entities and
+/// filtering in memory — is exactly the fault BR-111 describes.
 /// <para>
-/// Bemærk at overlapsafgørelsen <b>ikke</b> træffes her og heller ikke i SQL: servicen
-/// bygger en <c>DateRange</c> af felterne og spørger domænet (A-01, A-04). Ellers ville
-/// prædikatet findes to steder og kunne blive uenige om <c>&lt;</c> mod <c>&lt;=</c>.
+/// Note that the overlap decision is <b>not</b> made here and not in SQL either: the service
+/// builds a <c>DateRange</c> from the fields and asks the domain (A-01, A-04). Otherwise the
+/// predicate would exist in two places and could disagree about <c>&lt;</c> versus <c>&lt;=</c>.
 /// </para>
 /// </remarks>
-/// <param name="BookingId">Bookingens id, så en booking kan udelades ved redigering.</param>
-/// <param name="RoomId">Rummet der er lagt beslag på.</param>
-/// <param name="StartDate">Første optagne nat.</param>
-/// <param name="EffectiveEndDate">Første ledige dato efter beslaglæggelsen (A-01).</param>
-/// <param name="Status">Bookingens status, så <c>BookingStatusExtensions.BlocksRoom</c> kan efterprøves.</param>
+/// <param name="BookingId">The id of the booking, so a booking can be left out when editing.</param>
+/// <param name="RoomId">The room that is occupied.</param>
+/// <param name="StartDate">The first occupied night.</param>
+/// <param name="EffectiveEndDate">The first free date after the occupation (A-01).</param>
+/// <param name="Status">The status of the booking, so <c>BookingStatusExtensions.BlocksRoom</c> can be checked.</param>
 public sealed record RoomOccupancyDto(
     int BookingId,
     int RoomId,

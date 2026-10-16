@@ -1,31 +1,31 @@
 namespace NFHotel.Application.Dto.Rooms;
 
 /// <summary>
-/// Hvilke overgange der er lovlige på et rum lige nu (A-07).
+/// Which transitions are legal on a room right now (A-07).
 /// </summary>
 /// <remarks>
-/// Rummets pendant til <c>BookingActionsDto</c>. Felterne kommer fra domænets
-/// <c>Room.Can*</c>-properties, som er de samme udtryk overgangsmetoderne bruger som guard.
-/// Web må derfor ikke udlede lovligheden af <c>Status</c> og <c>HousekeepingStatus</c> selv —
-/// det ville kopiere tilstandsmaskinen ud i præsentationslaget (A-07).
+/// The room's counterpart to <c>BookingActionsDto</c>. The fields come from the domain's
+/// <c>Room.Can*</c> properties, which are the same expressions the transition methods use as a guard.
+/// Web must therefore not derive the legality from <c>Status</c> and <c>HousekeepingStatus</c> itself —
+/// that would copy the state machine out into the presentation layer (A-07).
 /// <para>
-/// Et felt der er <c>false</c> betyder "denne handling flytter ikke rummet". En overgang til
-/// den tilstand rummet allerede har er stadig et lovligt kald (A-08), men får <c>false</c>,
-/// fordi felterne findes for at tegne knapper — se kommentaren ved <c>Room.Can*</c>.
+/// A field that is <c>false</c> means "this action does not move the room". A transition to
+/// the state the room already has is still a legal call (A-08), but gets <c>false</c>,
+/// because the fields exist to draw buttons — see the comment at <c>Room.Can*</c>.
 /// </para>
 /// </remarks>
-/// <param name="CanTakeOutOfService">Om rummet må tages ud af drift.</param>
-/// <param name="CanSendToMaintenance">Om rummet må spærres for vedligehold.</param>
-/// <param name="CanReturnToService">Om rummet må sættes i drift igen.</param>
-/// <param name="CanMarkDailyCleaningDue">Om daglig rengøring må markeres som manglende.</param>
-/// <param name="CanMarkDepartureCleaningDue">Om slutrengøring må markeres som manglende.</param>
-/// <param name="CanStartCleaning">Om rengøringen må startes.</param>
-/// <param name="CanCompleteCleaning">Om rengøringen må afsluttes.</param>
-/// <param name="CanReportServiceNeeded">Om et servicebehov må meldes.</param>
-/// <param name="CanStartService">Om servicen må startes.</param>
+/// <param name="CanTakeOutOfService">Whether the room may be taken out of service.</param>
+/// <param name="CanSendToMaintenance">Whether the room may be blocked for maintenance.</param>
+/// <param name="CanReturnToService">Whether the room may be put back in service.</param>
+/// <param name="CanMarkDailyCleaningDue">Whether daily cleaning may be marked as due.</param>
+/// <param name="CanMarkDepartureCleaningDue">Whether departure cleaning may be marked as due.</param>
+/// <param name="CanStartCleaning">Whether the cleaning may be started.</param>
+/// <param name="CanCompleteCleaning">Whether the cleaning may be completed.</param>
+/// <param name="CanReportServiceNeeded">Whether a service need may be reported.</param>
+/// <param name="CanStartService">Whether the service may be started.</param>
 /// <param name="CanCompleteService">
-/// Om servicen må afsluttes. Dækker begge udfald — "rent" og "skal rengøres" — fordi guarden
-/// er den samme; UI'ets to knapper deler derfor dette ene felt.
+/// Whether the service may be completed. Covers both outcomes — "clean" and "needs cleaning" — because the guard
+/// is the same; the two buttons of the UI therefore share this one field.
 /// </param>
 public sealed record RoomActionsDto(
     bool CanTakeOutOfService,

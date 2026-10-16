@@ -1,31 +1,31 @@
 namespace NFHotel.Application.Ports;
 
 /// <summary>
-/// Systemets ur. Eneste tilladte kilde til "nu" og "i dag" i Application-laget (A-05).
+/// The clock of the system. The only allowed source of "now" and "today" in the Application layer (A-05).
 /// </summary>
 /// <remarks>
-/// Services må ALDRIG bruge <c>DateTime.Now</c>, <c>DateTime.UtcNow</c> eller
-/// <c>DateOnly.FromDateTime(...)</c>. Uden ét fælles ur beregner hver service sin egen
-/// "i dag", og BR-06, BR-44 og BR-104 er tilbage i det gamle systems problem, hvor
-/// tidszonepolitikken lå spredt ud over ViewModels.
+/// Services must NEVER use <c>DateTime.Now</c>, <c>DateTime.UtcNow</c> or
+/// <c>DateOnly.FromDateTime(...)</c>. Without one common clock every service computes its own
+/// "today", and BR-06, BR-44 and BR-104 are back in the old system's problem, where
+/// the time zone policy was spread across ViewModels.
 /// <para>
-/// Implementeringen bor i Infrastructure (<c>SystemClock</c>) og kender hotellets
-/// tidszone. Domain kender hverken ur eller tidszone — det er derfor entiteterne får
-/// <c>occurredAt</c> og <c>today</c> som parametre.
+/// The implementation lives in Infrastructure (<c>SystemClock</c>) and knows the hotel's
+/// time zone. Domain knows neither clock nor time zone — which is why the entities get
+/// <c>occurredAt</c> and <c>today</c> as parameters.
 /// </para>
 /// </remarks>
 public interface IClock
 {
-    /// <summary>Det aktuelle tidspunkt i UTC. Bruges til faktiske tidsstempler (B-08).</summary>
+    /// <summary>The current moment in UTC. Used for actual timestamps (B-08).</summary>
     DateTimeOffset UtcNow { get; }
 
     /// <summary>
-    /// Dagens dato i <b>hotellets</b> tidszone — ikke i UTC og ikke i serverens lokaltid.
+    /// Today's date in the <b>hotel's</b> time zone — not in UTC and not in the server's local time.
     /// </summary>
     /// <remarks>
-    /// Bookingperioder er kalenderdatoer, ikke tidsstempler (B-08). Omregningen fra
-    /// tidsstempel til hotel-lokal dato er en politik, ikke en beregning, og hører derfor
-    /// præcis ét sted: bag dette ur.
+    /// Booking periods are calendar dates, not timestamps (B-08). The conversion from
+    /// timestamp to hotel-local date is a policy, not a calculation, and therefore belongs in
+    /// exactly one place: behind this clock.
     /// </remarks>
     DateOnly Today { get; }
 }

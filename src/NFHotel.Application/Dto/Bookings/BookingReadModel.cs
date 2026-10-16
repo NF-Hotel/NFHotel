@@ -6,32 +6,32 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.Dto.Bookings;
 
 /// <summary>
-/// Repositoryets projektion af en booking med sit rum og sin gæst (A-11).
+/// The repository's projection of a booking with its room and its guest (A-11).
 /// </summary>
 /// <remarks>
-/// Læsestier henter denne i stedet for entiteten. Det fjerner fælden hvor en mapper kaldes
-/// på en booking hentet uden navigationsdata og tavst giver tomme felter — og det er hurtigere.
+/// Read paths fetch this instead of the entity. It removes the trap where a mapper is called
+/// on a booking fetched without navigation data and silently gives empty fields — and it is faster.
 /// <para>
-/// Typen er ikke en DTO til UI: den er råt læsemateriale, som
-/// <see cref="BookingMapping"/> gør til <see cref="BookingListItemDto"/> eller
-/// <see cref="BookingDetailsDto"/>. Grunden til det ekstra trin er
-/// <see cref="BookingActionsDto"/>, der afhænger af "i dag" — og datoen kommer fra uret i
-/// servicen, ikke fra databasen (A-05).
+/// The type is not a DTO for the UI: it is raw read material that
+/// <see cref="BookingMapping"/> turns into <see cref="BookingListItemDto"/> or
+/// <see cref="BookingDetailsDto"/>. The reason for the extra step is
+/// <see cref="BookingActionsDto"/>, which depends on "today" — and the date comes from the clock in
+/// the service, not from the database (A-05).
 /// </para>
 /// </remarks>
 /// <param name="BookingId">Bookingens id.</param>
-/// <param name="StartDate">Ankomstdato.</param>
-/// <param name="EndDate">Booket afrejsedato.</param>
+/// <param name="StartDate">Arrival date.</param>
+/// <param name="EndDate">Booked departure date.</param>
 /// <param name="EffectiveEndDate">
-/// Effektiv slutdato (A-01). Projiceres fra databasens genererede kolonne
-/// <c>effective_end_date</c>, som beregner samme udtryk som <c>Booking.EffectiveEndDate</c>.
+/// Effective end date (A-01). Projected from the generated database column
+/// <c>effective_end_date</c>, which computes the same expression as <c>Booking.EffectiveEndDate</c>.
 /// </param>
 /// <param name="Status">Bookingens livscyklustilstand.</param>
-/// <param name="CheckInTime">Faktisk indtjekningstidspunkt, eller <c>null</c>.</param>
-/// <param name="CheckOutTime">Faktisk udtjekningstidspunkt, eller <c>null</c>.</param>
-/// <param name="CheckOutDate">Hotel-lokal udtjekningsdato, eller <c>null</c>.</param>
-/// <param name="Room">Rummet, projiceret med.</param>
-/// <param name="Guest">Gæsten, projiceret med og uden pasnummer.</param>
+/// <param name="CheckInTime">Actual check-in time, or <c>null</c>.</param>
+/// <param name="CheckOutTime">Actual check-out time, or <c>null</c>.</param>
+/// <param name="CheckOutDate">Hotel-local check-out date, or <c>null</c>.</param>
+/// <param name="Room">The room, projected along.</param>
+/// <param name="Guest">The guest, projected along, with passport number.</param>
 public sealed record BookingReadModel(
     int BookingId,
     DateOnly StartDate,

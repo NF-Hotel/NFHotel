@@ -1,22 +1,22 @@
 namespace NFHotel.Application.Dto.Guests;
 
 /// <summary>
-/// En gæst som hun vises i en liste eller et søgeresultat.
+/// A guest as shown in a list or a search result.
 /// </summary>
 /// <remarks>
-/// Bærer <see cref="HasPassportNumber"/> og <b>ikke</b> selve nummeret. Pasnummeret er
-/// krypteret at-rest (B-09), så hver visning af feltet er en dekryptering — og ingen af de
-/// 126 porterede regler viser pasnummer i en liste. Privacy by design uden at koste
+/// Carries <see cref="HasPassportNumber"/> and <b>not</b> the number itself. The passport number is
+/// encrypted at rest (B-09), so every display of the field is a decryption — and none of the
+/// 126 ported rules shows the passport number in a list. Privacy by design without costing
 /// funktionalitet (D-04).
 /// </remarks>
-/// <param name="GuestId">Gæstens id.</param>
+/// <param name="GuestId">The id of the guest.</param>
 /// <param name="FirstName">Fornavn.</param>
 /// <param name="LastName">Efternavn.</param>
-/// <param name="FullName">"Fornavn Efternavn". Kommer fra domænet, ikke fra en visningsformatering.</param>
+/// <param name="FullName">"First name Last name". Comes from the domain, not from display formatting.</param>
 /// <param name="Email">E-mail.</param>
 /// <param name="PhoneNumber">Telefonnummer.</param>
 /// <param name="Country">Land.</param>
-/// <param name="HasPassportNumber">Om der er registreret et pasnummer. Selve værdien udelades bevidst.</param>
+/// <param name="HasPassportNumber">Whether a passport number is registered. The value itself is deliberately left out.</param>
 public sealed record GuestListItemDto(
     int GuestId,
     string FirstName,

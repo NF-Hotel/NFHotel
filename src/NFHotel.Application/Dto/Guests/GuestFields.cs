@@ -1,24 +1,24 @@
 namespace NFHotel.Application.Dto.Guests;
 
 /// <summary>
-/// De seks redigérbare gæstefelter (BR-52 til BR-57, BR-91 til BR-96).
+/// The six editable guest fields (BR-52 to BR-57, BR-91 to BR-96).
 /// </summary>
 /// <remarks>
-/// Egen type, fordi felterne indtastes to steder: i gæsteformularen og i "opret booking for
-/// en ny gæst" (BR-47). Det er den eneste tilladte krydsreference mellem feature-mapper, og
-/// den går mod en request — aldrig mod en anden features service.
+/// A type of its own, because the fields are entered in two places: in the guest form and in "create booking for
+/// a new guest" (BR-47). It is the only allowed cross-reference between feature folders, and
+/// it goes towards a request — never towards another feature's service.
 /// <para>
-/// Felterne er <c>string</c> og ikke <c>string?</c>, fordi de er obligatoriske. At de
-/// alligevel kan være tomme fanges af <c>Guest.Validate</c>, ikke af typesystemet —
-/// en tom streng fra en formular er et brugerudfald, ikke en programmørfejl.
+/// The fields are <c>string</c> and not <c>string?</c>, because they are mandatory. That they
+/// can nevertheless be empty is caught by the validation attributes of <c>Guest</c>, not by the type system —
+/// an empty string from a form is a user outcome, not a programmer error.
 /// </para>
 /// </remarks>
 /// <param name="FirstName">Fornavn.</param>
 /// <param name="LastName">Efternavn.</param>
-/// <param name="Email">E-mail. Skal indeholde både '@' og '.' (BR-55, BR-93).</param>
+/// <param name="Email">Email. Must contain both '@' and '.' (BR-55, BR-93).</param>
 /// <param name="PhoneNumber">Telefonnummer. Intet formatkrav (BR-94).</param>
 /// <param name="Country">Land.</param>
-/// <param name="PassportNumber">Pasnummer. Valgfrit og uvalideret ud over længden (BR-57).</param>
+/// <param name="PassportNumber">Passport number. Optional and not validated beyond its length (BR-57).</param>
 public sealed record GuestFields(
     string FirstName,
     string LastName,

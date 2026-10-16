@@ -3,37 +3,37 @@ using NFHotel.Application.Dto.Guests;
 namespace NFHotel.Application.Ports;
 
 /// <summary>
-/// Læsning af gæster som projektioner (A-11). Implementeres i Infrastructure.
+/// Reading guests as projections (A-11). Implemented in Infrastructure.
 /// </summary>
 /// <remarks>
-/// Entiteter hentes kun på kommandostier, via <c>IGuestRepository</c> i Domain.
+/// Entities are fetched only on command paths, via <c>IGuestRepository</c> in Domain.
 /// </remarks>
 public interface IGuestQueries
 {
     /// <summary>
-    /// Henter en gæsts detaljer som projektion.
+    /// Fetches the details of a guest as a projection.
     /// </summary>
-    /// <param name="guestId">Gæstens id.</param>
+    /// <param name="guestId">The id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Detaljerne, eller <c>null</c> hvis gæsten ikke findes (BR-115).</returns>
+    /// <returns>The details, or <c>null</c> if the guest does not exist (BR-115).</returns>
     Task<GuestDetailsDto?> GetDetailsAsync(int guestId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Søger gæster (BR-68, BR-N-05).
+    /// Searches guests (BR-68, BR-N-05).
     /// </summary>
     /// <param name="searchTerms">
-    /// Søgeordene. <b>HVERT</b> ord skal findes (case-insensitivt) i enten fornavn,
-    /// efternavn, land eller e-mail — altså AND mellem ord, OR mellem felter. Et tomt sæt
-    /// returnerer alle gæster (BR-70).
+    /// The search words. <b>EVERY</b> word must be found (case-insensitively) in either first name,
+    /// last name, country or email — that is, AND between words, OR between fields. An empty set
+    /// returns all guests (BR-70).
     /// </param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>De matchende gæster som listerækker.</returns>
+    /// <returns>The matching guests as list rows.</returns>
     /// <remarks>
-    /// Semantikken er konsolideret fra to uenige søgninger i det gamle system: repoet søgte
-    /// kun på for- og efternavn (BR-116), mens ViewModel'en delte teksten i ord og krævede
-    /// at alle ord fandtes i navn, land eller e-mail (BR-68). BR-68 vandt (BR-N-05).
-    /// Tokeniseringen er reglen og sker i servicen; matchningen er dataadgang og sker her.
-    /// Kontrakten skal pinnes af en test i Infrastructure.Tests, ellers driver de fra hinanden.
+    /// The semantics are consolidated from two disagreeing searches in the old system: the repository searched
+    /// only first and last name (BR-116), while the ViewModel split the text into words and required
+    /// that all words were found in name, country or email (BR-68). BR-68 won (BR-N-05).
+    /// The tokenisation is the rule and happens in the service; the matching is data access and happens here.
+    /// The contract must be pinned by a test in Infrastructure.Tests, otherwise they drift apart.
     /// </remarks>
     Task<IReadOnlyList<GuestListItemDto>> SearchAsync(
         IReadOnlyCollection<string> searchTerms,

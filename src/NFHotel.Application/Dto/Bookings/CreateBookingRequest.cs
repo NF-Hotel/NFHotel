@@ -3,18 +3,18 @@ using NFHotel.Application.Dto.Guests;
 namespace NFHotel.Application.Dto.Bookings;
 
 /// <summary>
-/// Opret en booking (BR-01, BR-41 til BR-49, BR-51, BR-101 til BR-106).
+/// Create a booking (BR-01, BR-41 to BR-49, BR-51, BR-101 to BR-106).
 /// </summary>
 /// <remarks>
-/// Bærer BR-47: <b>præcis én</b> af <see cref="GuestId"/> og <see cref="NewGuest"/> skal
-/// være udfyldt. At begge eller ingen er sat er en valideringsfejl fra servicen — ikke en
+/// Carries BR-47: <b>exactly one</b> of <see cref="GuestId"/> and <see cref="NewGuest"/> must
+/// be filled in. That both or neither is set is a validation error from the service — not a
 /// <c>NullReferenceException</c> nede i en ViewModel.
 /// </remarks>
-/// <param name="CheckInDate">Ankomstdato, inklusiv.</param>
-/// <param name="CheckOutDate">Afrejsedato, eksklusiv. Skal være efter ankomstdatoen (BR-103).</param>
+/// <param name="CheckInDate">Arrival date, inclusive.</param>
+/// <param name="CheckOutDate">Departure date, exclusive. Must be after the arrival date (BR-103).</param>
 /// <param name="RoomId">Rummets id (BR-45, BR-105).</param>
-/// <param name="GuestId">En eksisterende gæsts id, eller <c>null</c> hvis gæsten oprettes nu.</param>
-/// <param name="NewGuest">Felterne til en ny gæst, eller <c>null</c> hvis en eksisterende er valgt.</param>
+/// <param name="GuestId">The id of an existing guest, or <c>null</c> if the guest is created now.</param>
+/// <param name="NewGuest">The fields for a new guest, or <c>null</c> if an existing one is chosen.</param>
 public sealed record CreateBookingRequest(
     DateOnly CheckInDate,
     DateOnly CheckOutDate,

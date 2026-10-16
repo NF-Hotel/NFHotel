@@ -5,47 +5,47 @@ using NFHotel.Application.UseCases;
 namespace NFHotel.Application.Ports;
 
 /// <summary>
-/// Adgang til helligdagskalenderen i analysetjenesten (NF Hotel Analytics API).
+/// Access to the holiday calendar in the analysis service (NF Hotel Analytics API).
 /// </summary>
 /// <remarks>
-/// Kontrakten ligger i Application, implementeringen (HTTP) i Infrastructure — samme
-/// afhængighedsretning som repositories. Application kender derfor hverken
-/// <c>HttpClient</c> eller tjenestens URL og nøgle.
+/// The contract is in Application, the implementation (HTTP) in Infrastructure — the same
+/// dependency direction as the repositories. Application therefore knows neither
+/// <c>HttpClient</c> nor the URL and key of the service.
 /// <para>
-/// Alle forventede fejl — tjenesten er nede, nøglen afvises, svaret er ubrugeligt — er
-/// <see cref="Result"/>-udfald med en kode fra <see cref="ErrorCodes.Holidays"/>. Kun
-/// programmørfejl (fx en <c>null</c>-parameter) og annullering kastes som exceptions.
+/// All expected errors — the service is down, the key is rejected, the answer is unusable — are
+/// <see cref="Result"/> outcomes with a code from <see cref="ErrorCodes.Holidays"/>. Only
+/// programmer errors (for example a <c>null</c> parameter) and cancellation are thrown as exceptions.
 /// </para>
 /// </remarks>
 public interface IHolidayCalendarClient
 {
     /// <summary>
-    /// Henter den eksporterede helligdagskalender.
+    /// Fetches the exported holiday calendar.
     /// </summary>
     /// <param name="year">
-    /// Begræns til ét år, eller <c>null</c> for hele eksporten. Kalenderens
-    /// <c>FirstYear</c> og <c>LastYear</c> beskriver stadig hele eksporten.
+    /// Limit to one year, or <c>null</c> for the whole export. The calendar's
+    /// <c>FirstYear</c> and <c>LastYear</c> still describe the whole export.
     /// </param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <returns>
-    /// Kalenderen, eller en fejl fra <see cref="ErrorCodes.Holidays"/>.
+    /// The calendar, or an error from <see cref="ErrorCodes.Holidays"/>.
     /// </returns>
     Task<Result<HolidayCalendarDto>> GetAsync(int? year = null, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Får tjenesten til at generere helligdagskalenderen forfra fra sin kilde.
+    /// Makes the service generate the holiday calendar from scratch from its source.
     /// </summary>
     /// <remarks>
-    /// Ændrer tilstand hos tjenesten (den overskriver sin eksportfil). Brug den når
-    /// kilden er opdateret eller et nyt år begynder — ikke ved hver visning.
+    /// Changes state in the service (it overwrites its export file). Use it when
+    /// the source has been updated or a new year begins — not on every display.
     /// </remarks>
-    /// <param name="firstYear">Første år, eller <c>null</c> for tjenestens standard (2022).</param>
-    /// <param name="lastYear">Sidste år, eller <c>null</c> for tjenestens standard (næste år).</param>
+    /// <param name="firstYear">First year, or <c>null</c> for the service default (2022).</param>
+    /// <param name="lastYear">Last year, or <c>null</c> for the service default (next year).</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <returns>
-    /// Den nye kalender, eller en fejl fra <see cref="ErrorCodes.Holidays"/>.
-    /// <see cref="ErrorCodes.Holidays.InvalidRequest"/> hvis <paramref name="firstYear"/>
-    /// ligger efter <paramref name="lastYear"/>.
+    /// The new calendar, or an error from <see cref="ErrorCodes.Holidays"/>.
+    /// <see cref="ErrorCodes.Holidays.InvalidRequest"/> if <paramref name="firstYear"/>
+    /// is after <paramref name="lastYear"/>.
     /// </returns>
     Task<Result<HolidayCalendarDto>> RefreshAsync(
         int? firstYear = null,

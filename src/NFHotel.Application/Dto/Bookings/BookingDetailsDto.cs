@@ -5,21 +5,21 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.Dto.Bookings;
 
 /// <summary>
-/// En booking med alt hvad detaljeskærmen har brug for.
+/// A booking with everything the detail screen needs.
 /// </summary>
 /// <param name="BookingId">Bookingens id.</param>
 /// <param name="BookingNumber">Vist bookingnummer (BR-109).</param>
-/// <param name="StartDate">Ankomstdato.</param>
-/// <param name="EndDate">Booket afrejsedato (historik, A-01).</param>
-/// <param name="EffectiveEndDate">Den dato rummet faktisk er optaget til (A-01).</param>
+/// <param name="StartDate">Arrival date.</param>
+/// <param name="EndDate">Booked departure date (history, A-01).</param>
+/// <param name="EffectiveEndDate">The date up to which the room is actually occupied (A-01).</param>
 /// <param name="Nights">Antal bookede overnatninger.</param>
 /// <param name="Status">Bookingens livscyklustilstand.</param>
-/// <param name="CheckInTime">Faktisk indtjekningstidspunkt, eller <c>null</c>.</param>
-/// <param name="CheckOutTime">Faktisk udtjekningstidspunkt, eller <c>null</c>.</param>
-/// <param name="CheckOutDate">Den hotel-lokale dato gæsten tjekkede ud, eller <c>null</c> (A-02, A-03).</param>
-/// <param name="Room">Rummet.</param>
-/// <param name="Guest">Gæsten, uden pasnummer.</param>
-/// <param name="Actions">Hvilke handlinger der er lovlige lige nu (BR-22).</param>
+/// <param name="CheckInTime">Actual check-in time, or <c>null</c>.</param>
+/// <param name="CheckOutTime">Actual check-out time, or <c>null</c>.</param>
+/// <param name="CheckOutDate">The hotel-local date the guest checked out, or <c>null</c> (A-02, A-03).</param>
+/// <param name="Room">The room.</param>
+/// <param name="Guest">The guest, without passport number.</param>
+/// <param name="Actions">Which actions are legal right now (BR-22).</param>
 public sealed record BookingDetailsDto(
     int BookingId,
     string BookingNumber,

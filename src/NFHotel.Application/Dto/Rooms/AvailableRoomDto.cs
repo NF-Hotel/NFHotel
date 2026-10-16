@@ -3,18 +3,18 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.Dto.Rooms;
 
 /// <summary>
-/// Et bookbart rum i tilgængelighedsopslaget (BR-34, BR-36, BR-37).
+/// A bookable room in the availability lookup (BR-34, BR-36, BR-37).
 /// </summary>
 /// <remarks>
-/// Bevidst uden status: listen indeholder kun rum der <i>er</i> ledige, så en statuskolonne
-/// ville kun kunne have én værdi. Typen bor i <c>Rooms</c> og ikke i <c>Bookings</c>, fordi
-/// det er et rum — selv om det er bookingens use case der efterspørger det.
+/// Deliberately without status: the list contains only rooms that <i>are</i> free, so a status column
+/// could only have one value. The type lives in <c>Rooms</c> and not in <c>Bookings</c>, because
+/// it is a room — even though it is the booking use case that asks for it.
 /// </remarks>
 /// <param name="RoomId">Rummets id.</param>
-/// <param name="RoomNumber">Værelsesnummer.</param>
+/// <param name="RoomNumber">Room number.</param>
 /// <param name="Floor">Etage.</param>
-/// <param name="Size">Værelsestype.</param>
-/// <param name="Capacity">Antal personer rummet kan rumme.</param>
+/// <param name="Size">Room type.</param>
+/// <param name="Capacity">The number of people the room can hold.</param>
 public sealed record AvailableRoomDto(
     int RoomId,
     string RoomNumber,

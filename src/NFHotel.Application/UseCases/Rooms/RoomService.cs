@@ -9,13 +9,13 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.UseCases.Rooms;
 
 /// <summary>
-/// Implementering af rummenes use cases.
+/// Implementation of the use cases of rooms.
 /// </summary>
 /// <remarks>
-/// Servicen træffer ingen tilstandsbeslutninger selv: hver overgang er ét kald til en
-/// metode på <see cref="Room"/>, og domænets <see cref="InvalidStateTransitionException"/>
-/// oversættes til en fejlkode. Ville servicen selv afgøre hvilke overgange der er lovlige,
-/// ville tilstandsmaskinen findes to steder (A-07).
+/// The service makes no state decisions itself: every transition is one call to a
+/// method on <see cref="Room"/>, and the domain's <see cref="InvalidStateTransitionException"/>
+/// is translated to an error code. If the service decided itself which transitions are legal,
+/// the state machine would exist in two places (A-07).
 /// </remarks>
 public sealed class RoomService : IRoomService
 {
@@ -24,11 +24,11 @@ public sealed class RoomService : IRoomService
     private readonly IUnitOfWork _unitOfWork;
 
     /// <summary>
-    /// Opretter servicen.
+    /// Creates the service.
     /// </summary>
-    /// <param name="roomRepository">Dataadgang for rum.</param>
-    /// <param name="roomQueries">Læsning af rum som projektioner (A-11).</param>
-    /// <param name="unitOfWork">Transaktionsgrænsen.</param>
+    /// <param name="roomRepository">Data access for rooms.</param>
+    /// <param name="roomQueries">Reading rooms as projections (A-11).</param>
+    /// <param name="unitOfWork">The transaction boundary.</param>
     public RoomService(
         IRoomRepository roomRepository,
         IRoomQueries roomQueries,
@@ -44,13 +44,13 @@ public sealed class RoomService : IRoomService
     }
 
     // --------------------------------------------------------
-    // LÆSNING
+    // READING
     // --------------------------------------------------------
 
-    /// <summary>Henter ét rum (BR-115).</summary>
+    /// <summary>Fetches one room (BR-115).</summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer, eller <see cref="ErrorCodes.Room.NotFound"/>.</returns>
+    /// <returns>The details of the room, or <see cref="ErrorCodes.Room.NotFound"/>.</returns>
     public async Task<Result<RoomDetailsDto>> GetByIdAsync(
         int roomId,
         CancellationToken cancellationToken = default)
@@ -64,9 +64,9 @@ public sealed class RoomService : IRoomService
             : Result<RoomDetailsDto>.Success(details);
     }
 
-    /// <summary>Henter alle rum.</summary>
+    /// <summary>Fetches all rooms.</summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Alle rum som listerækker.</returns>
+    /// <returns>All rooms as list rows.</returns>
     public async Task<Result<IReadOnlyList<RoomListItemDto>>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
@@ -75,10 +75,10 @@ public sealed class RoomService : IRoomService
         return Result<IReadOnlyList<RoomListItemDto>>.Success(rooms);
     }
 
-    /// <summary>Søger rum med filter (BR-74, BR-76).</summary>
-    /// <param name="filter">Filteret. Et tomt filter betyder alle rum.</param>
+    /// <summary>Searches rooms with a filter (BR-74, BR-76).</summary>
+    /// <param name="filter">The filter. An empty filter means all rooms.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>De matchende rum.</returns>
+    /// <returns>The matching rooms.</returns>
     public async Task<Result<IReadOnlyList<RoomListItemDto>>> SearchAsync(
         RoomFilter filter,
         CancellationToken cancellationToken = default)
@@ -90,12 +90,12 @@ public sealed class RoomService : IRoomService
         return Result<IReadOnlyList<RoomListItemDto>>.Success(rooms);
     }
 
-    /// <summary>Henter filterets valgmuligheder (BR-75, BR-126).</summary>
+    /// <summary>Fetches the options of the filter (BR-75, BR-126).</summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Etager fra data; de tre andre lister fra enums.</returns>
+    /// <returns>Floors from data; the three other lists from enums.</returns>
     /// <remarks>
-    /// Kun etager kan variere med data. At størrelse, status og rengøringsstand kommer
-    /// direkte fra enums er det der lukker BR-126: dropdown og enum kan ikke længere være uenige.
+    /// Only floors can vary with data. That size, status and cleaning state come
+    /// directly from enums is what closes BR-126: the dropdown and the enum can no longer disagree.
     /// </remarks>
     public async Task<Result<RoomFilterOptionsDto>> GetFilterOptionsAsync(
         CancellationToken cancellationToken = default)
@@ -116,14 +116,14 @@ public sealed class RoomService : IRoomService
     // --------------------------------------------------------
 
     /// <summary>
-    /// Opretter et rum (BR-81, BR-84, BR-97, BR-98, BR-99, BR-100, BR-113, BR-N-01).
+    /// Creates a room (BR-81, BR-84, BR-97, BR-98, BR-99, BR-100, BR-113, BR-N-01).
     /// </summary>
     /// <param name="request">Rummets stamdata.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Det oprettede rum, eller alle valideringsfejl på én gang.</returns>
+    /// <returns>The created room, or all validation errors at once.</returns>
     /// <remarks>
-    /// BR-84 (formularen ignorerede valideringen) kan ikke gentages: rummet kan ikke
-    /// konstrueres ugyldigt, og servicen gemmer ikke ved fejl.
+    /// BR-84 (the form ignored the validation) cannot be repeated: the room cannot be
+    /// constructed invalid, and the service does not save on error.
     /// </remarks>
     public async Task<Result<RoomDetailsDto>> CreateAsync(
         CreateRoomRequest request,
@@ -164,11 +164,11 @@ public sealed class RoomService : IRoomService
     }
 
     /// <summary>
-    /// Retter et rums stamdata (BR-82, BR-84, BR-97 til BR-100, BR-113, BR-N-01).
+    /// Changes the master data of a room (BR-82, BR-84, BR-97 to BR-100, BR-113, BR-N-01).
     /// </summary>
-    /// <param name="request">De nye stamdata. Bærer ikke status (A-08).</param>
+    /// <param name="request">The new master data. Does not carry status (A-08).</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Det opdaterede rum, eller alle valideringsfejl på én gang.</returns>
+    /// <returns>The updated room, or all validation errors at once.</returns>
     public async Task<Result<RoomDetailsDto>> UpdateAsync(
         UpdateRoomRequest request,
         CancellationToken cancellationToken = default)
@@ -214,14 +214,14 @@ public sealed class RoomService : IRoomService
     }
 
     /// <summary>
-    /// Sletter et rum (BR-78, BR-112).
+    /// Deletes a room (BR-78, BR-112).
     /// </summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Succes, eller <see cref="ErrorCodes.Room.HasBookings"/>.</returns>
+    /// <returns>Success, or <see cref="ErrorCodes.Room.HasBookings"/>.</returns>
     /// <remarks>
-    /// Guarden er eksplicit og ikke en <c>catch</c> på en fremmednøglefejl. Fremmednøglen
-    /// bevares som sidste værn, men reglen er læsbar her — BR-77's advarselsdialog er UI.
+    /// The guard is explicit and not a <c>catch</c> on a foreign key error. The foreign key
+    /// is kept as the last safeguard, but the rule is readable here — the warning dialog of BR-77 is UI.
     /// </remarks>
     public async Task<Result> DeleteAsync(int roomId, CancellationToken cancellationToken = default)
     {
@@ -259,96 +259,96 @@ public sealed class RoomService : IRoomService
     // BOOKBARHED (RoomStatus) — B-04, A-07, A-08
     // --------------------------------------------------------
 
-    /// <summary>Tager rummet ud af drift (BR-110, BR-126). Idempotent (A-08).</summary>
+    /// <summary>Takes the room out of service (BR-110, BR-126). Idempotent (A-08).</summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer efter overgangen.</returns>
+    /// <returns>The details of the room after the transition.</returns>
     public Task<Result<RoomDetailsDto>> TakeOutOfServiceAsync(
         int roomId,
         CancellationToken cancellationToken = default) =>
         TransitionAsync(roomId, static room => room.TakeOutOfService(), cancellationToken);
 
-    /// <summary>Spærrer rummet midlertidigt (BR-110, BR-126). Idempotent (A-08).</summary>
+    /// <summary>Blocks the room temporarily (BR-110, BR-126). Idempotent (A-08).</summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer efter overgangen.</returns>
+    /// <returns>The details of the room after the transition.</returns>
     public Task<Result<RoomDetailsDto>> SendToMaintenanceAsync(
         int roomId,
         CancellationToken cancellationToken = default) =>
         TransitionAsync(roomId, static room => room.SendToMaintenance(), cancellationToken);
 
-    /// <summary>Gør rummet bookbart igen (BR-110, BR-126). Rører ikke rengøringsstanden (B-04).</summary>
+    /// <summary>Makes the room bookable again (BR-110, BR-126). Does not touch the cleaning state (B-04).</summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer efter overgangen.</returns>
+    /// <returns>The details of the room after the transition.</returns>
     public Task<Result<RoomDetailsDto>> ReturnToServiceAsync(
         int roomId,
         CancellationToken cancellationToken = default) =>
         TransitionAsync(roomId, static room => room.ReturnToService(), cancellationToken);
 
     // --------------------------------------------------------
-    // RENGØRING OG SERVICE (HousekeepingStatus) — BR-N-06, A-07
+    // CLEANING AND SERVICE (HousekeepingStatus) — BR-N-06, A-07
     // --------------------------------------------------------
 
-    /// <summary>Markerer daglig rengøring som påkrævet (BR-N-06).</summary>
+    /// <summary>Marks daily cleaning as required (BR-N-06).</summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer, eller en fejlkode hvis overgangen er ulovlig.</returns>
+    /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> MarkDailyCleaningDueAsync(
         int roomId,
         CancellationToken cancellationToken = default) =>
         TransitionAsync(roomId, static room => room.MarkDailyCleaningDue(), cancellationToken);
 
-    /// <summary>Markerer slutrengøring som påkrævet efter afrejse (BR-N-06).</summary>
+    /// <summary>Marks departure cleaning as required after departure (BR-N-06).</summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer, eller en fejlkode hvis overgangen er ulovlig.</returns>
+    /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> MarkDepartureCleaningDueAsync(
         int roomId,
         CancellationToken cancellationToken = default) =>
         TransitionAsync(roomId, static room => room.MarkDepartureCleaningDue(), cancellationToken);
 
-    /// <summary>Rengøringspersonalet kvitterer og går i gang (BR-N-06).</summary>
+    /// <summary>The cleaning staff acknowledge and start work (BR-N-06).</summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer, eller en fejlkode hvis overgangen er ulovlig.</returns>
+    /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> StartCleaningAsync(
         int roomId,
         CancellationToken cancellationToken = default) =>
         TransitionAsync(roomId, static room => room.StartCleaning(), cancellationToken);
 
-    /// <summary>Rengøringen er færdig (BR-N-06).</summary>
+    /// <summary>The cleaning is finished (BR-N-06).</summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer, eller en fejlkode hvis overgangen er ulovlig.</returns>
+    /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> CompleteCleaningAsync(
         int roomId,
         CancellationToken cancellationToken = default) =>
         TransitionAsync(roomId, static room => room.CompleteCleaning(), cancellationToken);
 
-    /// <summary>Rapporterer behov for en servicetekniker (BR-N-06). Spærrer ikke rummet (B-04).</summary>
+    /// <summary>Reports the need for a service technician (BR-N-06). Does not block the room (B-04).</summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer, eller en fejlkode hvis overgangen er ulovlig.</returns>
+    /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> ReportServiceNeededAsync(
         int roomId,
         CancellationToken cancellationToken = default) =>
         TransitionAsync(roomId, static room => room.ReportServiceNeeded(), cancellationToken);
 
-    /// <summary>Serviceteknikeren kvitterer og går i gang (BR-N-06).</summary>
+    /// <summary>The service technician acknowledges and starts work (BR-N-06).</summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer, eller en fejlkode hvis overgangen er ulovlig.</returns>
+    /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> StartServiceAsync(
         int roomId,
         CancellationToken cancellationToken = default) =>
         TransitionAsync(roomId, static room => room.StartService(), cancellationToken);
 
-    /// <summary>Servicen er afsluttet (BR-N-06).</summary>
+    /// <summary>The service is finished (BR-N-06).</summary>
     /// <param name="roomId">Rummets id.</param>
-    /// <param name="requiresCleaning">Sand hvis arbejdet efterlod rummet snavset.</param>
+    /// <param name="requiresCleaning">True if the work left the room dirty.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer, eller en fejlkode hvis overgangen er ulovlig.</returns>
+    /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> CompleteServiceAsync(
         int roomId,
         bool requiresCleaning,
@@ -356,19 +356,19 @@ public sealed class RoomService : IRoomService
         TransitionAsync(roomId, room => room.CompleteService(requiresCleaning), cancellationToken);
 
     // --------------------------------------------------------
-    // FÆLLES
+    // COMMON
     // --------------------------------------------------------
 
     /// <summary>
-    /// Kører én domæneovergang på et rum og gemmer.
+    /// Runs one domain transition on a room and saves.
     /// </summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="transition">
-    /// Overgangen — altid præcis ét metodekald på <see cref="Room"/>. Servicen afgør aldrig
-    /// selv om overgangen er lovlig; det gør entiteten (A-07).
+    /// The transition — always exactly one method call on <see cref="Room"/>. The service never decides
+    /// itself whether the transition is legal; the entity does (A-07).
     /// </param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer, eller domænets fejlkode hvis overgangen blev afvist.</returns>
+    /// <returns>The details of the room, or the error code of the domain if the transition was rejected.</returns>
     private async Task<Result<RoomDetailsDto>> TransitionAsync(
         int roomId,
         Action<Room> transition,
@@ -389,8 +389,8 @@ public sealed class RoomService : IRoomService
         }
         catch (DomainException exception)
         {
-            // Domænets kode har allerede formen "room.<overgang>.invalid_state" og er
-            // dermed identisk med konstanterne i ErrorCodes.Room (A-09).
+            // The code of the domain already has the form "room.<transition>.invalid_state" and is
+            // thus identical to the constants in ErrorCodes.Room (A-09).
             return Result<RoomDetailsDto>.Failure(exception.Code);
         }
 
@@ -400,11 +400,11 @@ public sealed class RoomService : IRoomService
     }
 
     /// <summary>
-    /// Gemmer og bygger svaret. Samler oversættelsen af infrastrukturfejl ét sted.
+    /// Saves and builds the answer. Collects the translation of infrastructure errors in one place.
     /// </summary>
-    /// <param name="room">Rummet der netop er ændret.</param>
+    /// <param name="room">The room that has just been changed.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Rummets detaljer, eller fejlkoden for den constraint der slog til.</returns>
+    /// <returns>The details of the room, or the error code of the constraint that kicked in.</returns>
     private async Task<Result<RoomDetailsDto>> SaveAndDescribeAsync(
         Room room,
         CancellationToken cancellationToken)
@@ -415,8 +415,8 @@ public sealed class RoomService : IRoomService
         }
         catch (UniqueConstraintViolationException)
         {
-            // Kapløbsværnet bag RoomNumberExistsAsync (BR-N-01). Samme fejlkode som
-            // servicetjekket, så brugeren ser det samme uanset hvem der stoppede hende.
+            // The race safeguard behind RoomNumberExistsAsync (BR-N-01). The same error code as
+            // the service check, so the user sees the same thing whichever safeguard stopped her.
             return Result<RoomDetailsDto>.Failure(ErrorCodes.Room.RoomNumberAlreadyExists);
         }
         catch (ConcurrencyConflictException)

@@ -4,21 +4,21 @@ using NFHotel.Domain.Entities;
 namespace NFHotel.Application.UseCases.Guests;
 
 /// <summary>
-/// Eksplicit mapping fra <see cref="NFHotel.Domain.Entities.Guest"/> til gæstens DTO'er (A-14).
+/// Explicit mapping from <see cref="NFHotel.Domain.Entities.Guest"/> to the DTOs of the guest (A-14).
 /// </summary>
 /// <remarks>
-/// Håndskrevet og bevidst uden mapping-bibliotek. Konventionsbaseret mapping ville kopiere
-/// <c>PassportNumber</c> over i <see cref="GuestListItemDto"/> af sig selv, fordi navnene
-/// matcher — og dermed dekryptere feltet i enhver liste, stille (B-09, D-04). Feltvalget er
-/// en beslutning, ikke boilerplate.
+/// Hand-written and deliberately without a mapping library. Convention-based mapping would copy
+/// <c>PassportNumber</c> into <see cref="GuestListItemDto"/> by itself, because the names
+/// match — and thereby decrypt the field in every list, silently (B-09, D-04). The choice of fields is
+/// a decision, not boilerplate.
 /// </remarks>
 public static class GuestMapping
 {
     /// <summary>
-    /// Mapper en gæst til en listerække uden pasnummer.
+    /// Maps a guest to a list row without passport number.
     /// </summary>
-    /// <param name="guest">Gæsten.</param>
-    /// <returns>Listerækken. Pasnummeret reduceres til et ja/nej.</returns>
+    /// <param name="guest">The guest.</param>
+    /// <returns>The list row. The passport number is reduced to a yes/no.</returns>
     public static GuestListItemDto ToListItem(this Guest guest)
     {
         ArgumentNullException.ThrowIfNull(guest);
@@ -35,10 +35,10 @@ public static class GuestMapping
     }
 
     /// <summary>
-    /// Mapper en gæst til detaljevisningen med pasnummer i klartekst.
+    /// Maps a guest to the detail view with passport number in plain text.
     /// </summary>
-    /// <param name="guest">Gæsten.</param>
-    /// <returns>Detaljevisningen. Bruges kun af redigeringsformularen.</returns>
+    /// <param name="guest">The guest.</param>
+    /// <returns>The detail view. Used only by the edit form.</returns>
     public static GuestDetailsDto ToDetails(this Guest guest)
     {
         ArgumentNullException.ThrowIfNull(guest);
