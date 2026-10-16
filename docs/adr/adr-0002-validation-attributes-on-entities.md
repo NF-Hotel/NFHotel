@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-042 Go | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-042 Go | [4cab5fc] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -73,3 +73,4 @@ attribute, which is stricter and would change behaviour.
 [ADR-0001]: ./adr-0001-clean-architecture-structure.md
 [DM-004]: ../domain-model.md
 [MIL-009]: ../milestones/mil-009-validation-attributes.md
+[4cab5fc]: https://github.com/NF-Hotel/NFHotel/commit/4cab5fc64b8358e18f9fec630d27d8bc267e6787

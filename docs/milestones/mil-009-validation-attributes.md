@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-041 Go | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-041 Go | [4cab5fc] |
 
 ---
 
@@ -79,3 +79,4 @@ validation code, with no change of behaviour.
 [BC-001]: ../business-case.md
 [ADR-0002]: ../adr/adr-0002-validation-attributes-on-entities.md
 [MIL-008]: ./mil-008-domain-rules-in-entities.md
+[4cab5fc]: https://github.com/NF-Hotel/NFHotel/commit/4cab5fc64b8358e18f9fec630d27d8bc267e6787
