@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 10, a framework Domain Model of the hotel back office (MIL-007) | [e19063e] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 11, the domain has only the folders of the skill (MIL-008) | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 11, the domain has only the folders of the skill (MIL-008) | [48701b5] |
 
 ---
 
@@ -211,3 +211,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [78eeb18]: https://github.com/NF-Hotel/NFHotel/commit/78eeb18cac8d761ebf5267fca5d6b418b04b98c2
 [180a268]: https://github.com/NF-Hotel/NFHotel/commit/180a2683d3138fe0fce82cbbe34d817511e0097a
 [e19063e]: https://github.com/NF-Hotel/NFHotel/commit/e19063e96ba5d221fffa80ad028432134ecdb111
+[48701b5]: https://github.com/NF-Hotel/NFHotel/commit/48701b550cecaf94616bbae64d74a5c872f72d80

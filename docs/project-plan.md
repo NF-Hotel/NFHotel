@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-007 (Domain Model of the hotel back office) | [e19063e] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-008 (domain rules in the entities) | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-008 (domain rules in the entities) | [48701b5] |
 
 ---
 
@@ -137,3 +137,4 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [78eeb18]: https://github.com/NF-Hotel/NFHotel/commit/78eeb18cac8d761ebf5267fca5d6b418b04b98c2
 [180a268]: https://github.com/NF-Hotel/NFHotel/commit/180a2683d3138fe0fce82cbbe34d817511e0097a
 [e19063e]: https://github.com/NF-Hotel/NFHotel/commit/e19063e96ba5d221fffa80ad028432134ecdb111
+[48701b5]: https://github.com/NF-Hotel/NFHotel/commit/48701b550cecaf94616bbae64d74a5c872f72d80
