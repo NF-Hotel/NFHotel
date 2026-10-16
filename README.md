@@ -405,7 +405,7 @@ bash scripts/run-proxmox-tests.sh
 In PowerShell, `bash` is WSL's bash, which cannot reach Docker Desktop; call Git Bash explicitly:
 
 ```powershell
-& "$env:ProgramFilesGitinash.exe" scripts/run-proxmox-tests.sh
+& "$env:ProgramFiles\Git\bin\bash.exe" scripts/run-proxmox-tests.sh
 ```
 
 The exit code is `0` when all checks pass. The test client sends only `GET` requests. `dotnet test` on the solution skips the live checks unless `PVE_HOST` is set.
