@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Jens Tirsvad Nielsen | <reviewer S-ID> | Initial version | pending |
+| 2026-10-16 | Proposed | Jens Tirsvad Nielsen | <reviewer S-ID> | Initial version | [88a4946] |
 
 ---
 
@@ -75,3 +75,4 @@ Decide whether the Proxmox tests can run against a Proxmox VE that is itself a t
 ---
 
 [BC-001]: ../business-case.md
+[88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Accepted | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Accepted after RC-002 Go | [b690b57] |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S04 | Token role row and revocation rationale changed for the throwaway container | pending |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S04 | Token role row and revocation rationale changed for the throwaway container | [88a4946] |
 
 ---
 
@@ -84,3 +84,4 @@ Reviewer and approver: S04 (in autonomous mode the AI acts as his stand-in, see 
 
 [BC-001]: ./business-case.md
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
+[88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca

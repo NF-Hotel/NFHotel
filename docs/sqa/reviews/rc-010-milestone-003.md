@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S04 | Initial version | pending |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S04 | Initial version | [88a4946] |
 
 ---
 
@@ -63,3 +63,4 @@ Go-with-conditions — every criterion of QC-MIL-001 passes. Criterion 9 of QC-L
 [MIL-003]: ../../milestones/mil-003-throwaway-proxmox.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca
