@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [b8170b7] |
 
 ---
 
@@ -88,3 +88,4 @@ Go — every applicable criterion of QC-CS-001 and all eight Go criteria of MIL-
 [MIL-015]: ../../milestones/mil-015-database-api.md
 [ADR-0004]: ../../adr/adr-0004-database-api.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[b8170b7]: https://github.com/NF-Hotel/NFHotel/commit/b8170b7a84409f6e19f209090c310a9f42c53bc9

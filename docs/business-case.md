@@ -17,7 +17,7 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 15, the tests cover the kinds of behaviour of the coding conventions (MIL-012) | [8200afa] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 16, the booking service refuses an inverted overview period and a check-in to a room that cannot be let (MIL-013) | [5036584] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 17, asynchronous code where it gives meaning, enforced by architecture tests (MIL-014) | [417a575] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 18, the database is reachable only through an API that is not exposed to the internet (MIL-015) | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 18, the database is reachable only through an API that is not exposed to the internet (MIL-015) | [9e6d2d4] |
 
 ---
 
@@ -244,3 +244,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [8200afa]: https://github.com/NF-Hotel/NFHotel/commit/8200afa457e37ca87a68ab7e34126db1dd85e3d1
 [5036584]: https://github.com/NF-Hotel/NFHotel/commit/5036584e9809a90d8459f07554733917c7129a0e
 [417a575]: https://github.com/NF-Hotel/NFHotel/commit/417a575b978d56c59da23eb6cff5967a7b9bf6bf
+[9e6d2d4]: https://github.com/NF-Hotel/NFHotel/commit/9e6d2d40d332b50fbd405564fcced006e241effd

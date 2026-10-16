@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [b8170b7] |
 
 ---
 
@@ -50,3 +50,4 @@ Go — the applicable criteria pass. The smoke test passes 14 of 14 checks, incl
 [RC-051]: ./rc-051-mil-004-deploy-files.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[b8170b7]: https://github.com/NF-Hotel/NFHotel/commit/b8170b7a84409f6e19f209090c310a9f42c53bc9

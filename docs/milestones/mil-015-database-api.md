@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-063 Go | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-063 Go | [9e6d2d4] |
 
 ---
 
@@ -106,3 +106,4 @@ API are never reachable from the internet (ADR-0003).
 [BC-001]: ../business-case.md
 [MIL-014]: ./mil-014-async-where-it-matters.md
 [ADR-0003]: ../adr/adr-0003-proxmox-vm-for-services.md
+[9e6d2d4]: https://github.com/NF-Hotel/NFHotel/commit/9e6d2d40d332b50fbd405564fcced006e241effd
