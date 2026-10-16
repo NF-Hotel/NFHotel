@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [ec58105] |
 
 ---
 
@@ -82,3 +82,4 @@ No model error and no code error was found.
 [DM-004]: ../../domain-model.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
 [QC-DM-001]: ../../../framework/qc/artifacts/qc-domain-model.md
+[ec58105]: https://github.com/NF-Hotel/NFHotel/commit/ec581054576af2286ced648fbf6c605d6eddb26e

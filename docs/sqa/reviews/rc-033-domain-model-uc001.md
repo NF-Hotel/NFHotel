@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [2242b02] |
 
 ---
 
@@ -64,3 +64,4 @@ Go — every Mandatory criterion passes. Criterion 9 of QC-LANG-001 rests on the
 [DM-001]: ../../use-cases/uc-001/dm.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
 [QC-DM-001]: ../../../framework/qc/artifacts/qc-domain-model.md
+[2242b02]: https://github.com/NF-Hotel/NFHotel/commit/2242b023565ea8213a6dc071ae8432cbff038222

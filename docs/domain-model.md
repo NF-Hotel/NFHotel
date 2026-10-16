@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version | [ec58105] |
 
 ---
 
@@ -89,3 +89,4 @@ None. No concept is a kind of another concept.
 [DM-002]: ./use-cases/uc-002/dm.md
 [DM-003]: ./use-cases/uc-003/dm.md
 [RC-036]: ./sqa/reviews/rc-036-domain-model.md
+[ec58105]: https://github.com/NF-Hotel/NFHotel/commit/ec581054576af2286ced648fbf6c605d6eddb26e

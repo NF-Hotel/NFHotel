@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [a29c54a] |
 
 ---
 
@@ -67,3 +67,4 @@ Go — every Mandatory criterion passes. Criterion 9 of QC-LANG-001 rests on the
 [US-001]: ../../user-stories.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
 [QC-US-001]: ../../../framework/qc/artifacts/qc-user-story.md
+[a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d
