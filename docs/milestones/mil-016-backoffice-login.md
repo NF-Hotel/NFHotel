@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-17 | Proposed | Jens Tirsvad Nielsen | S01 | Initial version | [ed2e4b9] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-068 Go | pending |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-068 Go | [bbef3bf] |
 
 ---
 
@@ -107,3 +107,4 @@ left to a later milestone.
 [MIL-015]: ./mil-015-database-api.md
 [ADR-0004]: ../adr/adr-0004-database-api.md
 [ed2e4b9]: https://github.com/NF-Hotel/NFHotel/commit/ed2e4b984204da2953d3226666a063769998ff81
+[bbef3bf]: https://github.com/NF-Hotel/NFHotel/commit/bbef3bf556044704b80b76a7817432bc2b6527cd
