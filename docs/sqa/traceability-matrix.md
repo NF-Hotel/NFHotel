@@ -23,13 +23,15 @@ updated whenever an artifact instance is created or reviewed.
 
 | Artifact Instance | Type | Language | Domain | Upstream (Backward Link) | Downstream (Forward Link) | Last Reviewed (RC-ID) |
 | --- | --- | --- | --- | --- | --- | --- |
-| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002] | [RC-005] |
-| [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-002] |
+| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003] | [RC-008] |
+| [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009] |
 | [MIL-001] | Milestone | en | it | [BC-001] | - | [RC-003] |
 | [MIL-002] | Milestone | en | it | [BC-001] | - | [RC-006] |
-| [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001] | - |
+| [MIL-003] | Milestone | en | it | [BC-001] | - | [RC-010] |
+| [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003] | - |
 | `tests/NFHotel.Proxmox.Tests`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-001] | - | [RC-004] |
 | `deploy/`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-002] | - | [RC-007] |
+| `deploy/proxmox`, `scripts/pve-token.sh`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-003] | - | [RC-011] |
 
 ---
 
@@ -44,5 +46,10 @@ updated whenever an artifact instance is created or reviewed.
 [RC-005]: ./reviews/rc-005-business-case-amendment.md
 [RC-006]: ./reviews/rc-006-milestone-002.md
 [RC-007]: ./reviews/rc-007-compose-and-smoke-test.md
+[RC-008]: ./reviews/rc-008-business-case-throwaway-proxmox.md
+[RC-009]: ./reviews/rc-009-stakeholder-analysis-update.md
+[RC-010]: ./reviews/rc-010-milestone-003.md
+[RC-011]: ./reviews/rc-011-throwaway-proxmox-code.md
+[MIL-003]: ../milestones/mil-003-throwaway-proxmox.md
 [MIL-002]: ../milestones/mil-002-nginx-proxy-and-web-compose.md
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03

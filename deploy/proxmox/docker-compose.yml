@@ -1,0 +1,22 @@
+# Throwaway Proxmox VE for the integration tests (MIL-003 task 2).
+# Read by Docker Compose. The root password comes from PVE_PASSWORD and has no
+# default; keep it in the git-ignored pve.env (copy pve.env.example) and start
+# with scripts/run-proxmox-tests.sh, which also removes the container and its
+# volumes afterwards.
+#
+# WARNING: dockurr/proxmox is a third-party community image and runs privileged
+# and needs /dev/kvm. Use it on your own machine only, never in CI or on a
+# shared host. On WSL2, start a WSL distribution that loads the KVM modules
+# first. Same image and settings as the sibling project iac-node-forge-py.
+name: nfhotel-pve
+
+services:
+  proxmox:
+    image: dockurr/proxmox:latest
+    privileged: true
+    environment:
+      - PVE_PASSWORD=${PVE_PASSWORD:?set PVE_PASSWORD in pve.env}
+    ports:
+      - "127.0.0.1:${PVE_HOST_PORT:-18006}:8006"
+    volumes:
+      - /lib/modules:/lib/modules:ro
