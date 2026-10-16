@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-053 Go | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-053 Go | [8200afa] |
 
 ---
 
@@ -109,3 +109,4 @@ without changing the code under test.
 
 [BC-001]: ../business-case.md
 [MIL-011]: ./mil-011-xunit-v3.md
+[8200afa]: https://github.com/NF-Hotel/NFHotel/commit/8200afa457e37ca87a68ab7e34126db1dd85e3d1

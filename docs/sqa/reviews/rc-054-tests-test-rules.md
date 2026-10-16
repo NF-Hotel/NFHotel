@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [1d120c8] |
 
 ---
 
@@ -89,3 +89,4 @@ Go — every applicable criterion of QC-CS-001 and all nine Go criteria of MIL-0
 
 [MIL-012]: ../../milestones/mil-012-test-kinds.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[1d120c8]: https://github.com/NF-Hotel/NFHotel/commit/1d120c80c459c38400244bd295e6df35502ce65a
