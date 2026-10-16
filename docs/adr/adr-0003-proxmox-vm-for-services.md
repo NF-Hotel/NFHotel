@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (decision given by the user in chat) | Initial version, accepted after RC-047 Go | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (decision given by the user in chat) | Initial version, accepted after RC-047 Go | [0fa84f7] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -82,3 +82,4 @@ compose file and one `<service>.env` per service, an external network
 [BC-001]: ../business-case.md
 [MIL-004]: ../milestones/mil-004-market-analysis-service.md
 [US-001]: ../user-stories.md
+[0fa84f7]: https://github.com/NF-Hotel/NFHotel/commit/0fa84f7fe59f59a20e54b6914c6ad4842fe74b3a
