@@ -161,7 +161,7 @@ if ((dry_run)); then
 fi
 
 # 1. The VM.
-if ((!skip_vm)); then
+if ((! skip_vm)); then
   if [[ -z "$VM_ID" ]]; then
     VM_ID="$(node "qm list | awk -v n='$VM_NAME' '\$2==n {print \$1}'" | head -n 1)"
   fi

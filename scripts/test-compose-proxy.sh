@@ -75,7 +75,7 @@ compose_nginx() {
 }
 
 compose_web() {
-  NFHOTEL_WEB_ENV_FILE="$TMP_NATIVE/nfhotel-web.env" NFHOTEL_PROXY_NETWORK="$NETWORK"     NFHOTEL_DB_NETWORK="$DB_NETWORK" POSTGRES_PASSWORD=smoke \
+  NFHOTEL_WEB_ENV_FILE="$TMP_NATIVE/nfhotel-web.env" NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_DB_NETWORK="$DB_NETWORK" POSTGRES_PASSWORD=smoke \
     docker compose --project-name "$WEB_PROJECT" \
     --file deploy/nfhotel-web/docker-compose.yml "$@"
 }

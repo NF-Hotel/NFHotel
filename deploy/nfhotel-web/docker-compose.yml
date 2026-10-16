@@ -23,7 +23,10 @@ services:
     # POSTGRES_* values; when running compose by hand, export them first.
     # Use no ; or quote in the password (openssl rand -hex 24 is safe).
     environment:
-      ConnectionStrings__HotelDatabase: Host=postgres;Port=5432;Database=${POSTGRES_DB:-nfhotel};Username=${POSTGRES_USER:-nfhotel};Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD, it comes from deploy/postgres/postgres.env}
+      ConnectionStrings__HotelDatabase: "Host=postgres;Port=5432;\
+        Database=${POSTGRES_DB:-nfhotel};\
+        Username=${POSTGRES_USER:-nfhotel};\
+        Password=${POSTGRES_PASSWORD:?set it, it comes from deploy/postgres/postgres.env}"
     expose:
       - "8080"
     healthcheck:
