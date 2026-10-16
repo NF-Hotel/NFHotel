@@ -45,8 +45,8 @@ public sealed class BookingRepository : Repository<Booking, int>, IBookingReposi
     public async Task<BookingReadModel?> GetReadModelAsync(
         int bookingId,
         CancellationToken cancellationToken = default) =>
-        await ProjectReadModels(Context.Bookings.AsNoTracking())
-            .FirstOrDefaultAsync(readModel => readModel.BookingId == bookingId, cancellationToken)
+        await ProjectReadModels(Context.Bookings.AsNoTracking().Where(booking => booking.Id == bookingId))
+            .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -65,10 +65,9 @@ public sealed class BookingRepository : Repository<Booking, int>, IBookingReposi
         query = FilterBySearchText(query, searchText);
 
         // BR-111: the filtering happens in the database. The sorting is the service's responsibility (BR-32);
-        // here only a deterministic order is ensured.
-        return await ProjectReadModels(query)
-            .OrderBy(readModel => readModel.StartDate)
-            .ThenBy(readModel => readModel.BookingId)
+        // here only a deterministic order is ensured. The order is set on the entity, before the projection:
+        // EF Core cannot translate a member of the positional read model that the query has just constructed.
+        return await ProjectReadModels(query.OrderBy(booking => booking.StartDate).ThenBy(booking => booking.Id))
             .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
     }
