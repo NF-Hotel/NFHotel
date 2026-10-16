@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-17 | Proposed | Claude (AI) | S01 | Initial version | [d94daf4] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-079 Go | pending |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-079 Go | [b174eeb] |
 
 ---
 
@@ -102,3 +102,4 @@ Decide whether the sign-in of the back office may be used over a network that is
 [ADR-0005]: ../adr/adr-0005-backoffice-login.md
 [ADR-0003]: ../adr/adr-0003-proxmox-vm-for-services.md
 [d94daf4]: https://github.com/NF-Hotel/NFHotel/commit/d94daf4e834d5d1b03a97f63e81b50caf725bb98
+[b174eeb]: https://github.com/NF-Hotel/NFHotel/commit/b174eeba803523402481ff38d07a4056073941ef

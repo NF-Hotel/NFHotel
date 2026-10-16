@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [065c6e8] |
 
 ---
 
@@ -83,3 +83,4 @@ Go — all eight criteria of MIL-017 pass (criterion 5 for the absent case, as w
 [MIL-017]: ../../milestones/mil-017-tls.md
 [ADR-0006]: ../../adr/adr-0006-tls.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[065c6e8]: https://github.com/NF-Hotel/NFHotel/commit/065c6e85054e7b24dc5848e241038ede6d747f49

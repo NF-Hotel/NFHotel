@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [065c6e8] |
 
 ---
 
@@ -50,3 +50,4 @@ Go — the applicable criteria pass. The smoke test passes 25 of 25 checks. In t
 [RC-077]: ./rc-077-backoffice-login-deploy.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[065c6e8]: https://github.com/NF-Hotel/NFHotel/commit/065c6e85054e7b24dc5848e241038ede6d747f49

@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-17 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-080 Go | pending |
+| 2026-10-17 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version | [065c6e8] |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-080 Go | [065c6e8] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -72,3 +72,4 @@ Quality attributes: security improves (confidentiality of credentials and sessio
 [MIL-017]: ../milestones/mil-017-tls.md
 [ADR-0005]: ./adr-0005-backoffice-login.md
 [ADR-0003]: ./adr-0003-proxmox-vm-for-services.md
+[065c6e8]: https://github.com/NF-Hotel/NFHotel/commit/065c6e85054e7b24dc5848e241038ede6d747f49
