@@ -1,5 +1,5 @@
+using NFHotel.ApiClient;
 using NFHotel.External;
-using NFHotel.Infrastructure;
 using NFHotel.Web.Common;
 using NFHotel.Web.Components;
 using NFHotel.Web.Features.Admin;
@@ -24,7 +24,8 @@ builder.Services.AddRazorComponents()
 // IStringEncryptor and the three Application services. Web knows only this one call.
 // It also validates the encryption key and the time zone at start-up, so a missing key
 // stops the app here rather than at the first guest update (B-09, A-05).
-builder.Services.AddInfrastructure(builder.Configuration);
+// The use cases come from the database API, never from the database (ADR-0004).
+builder.Services.AddApiClient(builder.Configuration);
 builder.Services.AddHotelClock(builder.Configuration);
 builder.Services.AddHolidayApi(builder.Configuration);
 
