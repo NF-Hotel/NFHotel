@@ -16,7 +16,8 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 14, the tests run on xUnit v3 (MIL-011) | [ef2bd4b] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 15, the tests cover the kinds of behaviour of the coding conventions (MIL-012) | [8200afa] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 16, the booking service refuses an inverted overview period and a check-in to a room that cannot be let (MIL-013) | [5036584] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 17, asynchronous code where it gives meaning, enforced by architecture tests (MIL-014) | [417a575] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 17, asynchronous code where it gives meaning, enforced by architecture tests (MIL-014) | [417a575] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 18, the database is reachable only through an API that is not exposed to the internet (MIL-015) | pending |
 
 ---
 
@@ -80,6 +81,7 @@ basis for the hosting decision (Q-31).
 15. Make the tests follow the test rules of the coding conventions: the use-case layer has unit tests, the conflict paths have integration tests, every test is named `Method_Condition_Expected`, and unit and integration tests are apart; the code in `src/` does not change.
 16. Make the booking service refuse an overview period whose end is before its start and a check-in to a room that cannot be let; the code of the domain does not change.
 17. Use asynchronous code where it gives meaning, layer by layer from the domain to the web, and keep it that way with architecture tests; behaviour does not change.
+18. Make the database reachable only through an API that is not exposed to the internet: the web application holds a token for the API and neither the database login nor the passport key.
 
 ## Scope
 
@@ -102,6 +104,7 @@ basis for the hosting decision (Q-31).
 - Unit tests for the three services, integration tests for the conflict paths, the renaming of the test methods and the split of unit and integration tests, with a test plan (MIL-012); the code in `src/` is not changed.
 - Two guards in the booking service, the matching error text and the check-in flag of the booking screens, with the use case updated (MIL-013)
 - An audit of asynchronous code per layer in the order domain, application, infrastructure and web, the fixes it finds, and architecture tests for the rules (MIL-014)
+- An internal API in front of PostgreSQL, a client that implements the use-case interfaces over it, the web application switched to the client, the deploy files, and ADR-0004 (MIL-015)
 
 ### Out of Scope
 
@@ -159,6 +162,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 18 | Tests follow the test rules | 0 test names with fewer than three parts; at least one positive and one negative test for each public method of the three services; 0 sleeps, system-clock reads or network calls in `tests/`; 0 changed lines in `src/` | An architecture test, a source search and `git diff` of `src/` |
 | 19 | Booking guards | The overview refuses an end before the start and allows one day; check-in is refused for a room out of service or in maintenance and allowed for a room that needs cleaning; 0 changed lines in `NFHotel.Domain` | `BookingServiceTests`, a mapping test and `git diff` of the domain |
 | 20 | Asynchronous code | 0 blocking calls (`.Result`, `.Wait()`, `GetAwaiter().GetResult()`, `Task.Run`, `async void`) in `src/`; every method that returns `Task` ends in `Async`; 0 `async` in entities and value objects; every public asynchronous method of the application and infrastructure takes a `CancellationToken` | `AsyncRulesTests` and a source search per layer in the review record |
+| 21 | Database API | 0 references from the web application to Infrastructure, EF Core or Npgsql; 0 database settings in the web container; the API and PostgreSQL publish no host port; a call without the token gets 401; every method of the three service interfaces gives the same result through the API as directly | An architecture test, `docker inspect` in the VM, the contract test and the deploy check |
 
 ## Risks
 
