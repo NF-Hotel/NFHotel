@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S04 | Initial version | [88a4946] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Accepted after RC-010 Go | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Accepted after RC-010 Go | [7c6d8f8] |
 
 ---
 
@@ -77,3 +77,4 @@ Decide whether the Proxmox tests can run against a Proxmox VE that is itself a t
 
 [BC-001]: ../business-case.md
 [88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca
+[7c6d8f8]: https://github.com/NF-Hotel/NFHotel/commit/7c6d8f85d2177b9fe9f2d11d175df7f0b8f1b5d5
