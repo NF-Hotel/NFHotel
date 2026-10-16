@@ -1,3 +1,4 @@
+using NFHotel.External;
 using NFHotel.Infrastructure;
 using NFHotel.Web.Common;
 using NFHotel.Web.Components;
@@ -24,6 +25,8 @@ builder.Services.AddRazorComponents()
 // It also validates the encryption key and the time zone at start-up, so a missing key
 // stops the app here rather than at the first guest update (B-09, A-05).
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHotelClock(builder.Configuration);
+builder.Services.AddHolidayApi(builder.Configuration);
 
 // Open generic singleton: gives every use case call its own DI scope and thereby its own
 // DbContext (Architecture.md section 8). The runner is stateless — it is the scope it makes

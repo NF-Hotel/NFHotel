@@ -9,9 +9,9 @@ using NFHotel.Application.Dto.Holidays;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
-using NFHotel.Infrastructure.Config;
+using NFHotel.External.Config;
 
-namespace NFHotel.Infrastructure.Holidays;
+namespace NFHotel.External.Holidays;
 
 /// <summary>
 /// The HTTP implementation of <see cref="IHolidayCalendarClient"/> against the analysis service's

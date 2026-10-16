@@ -29,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\NFHotel.Application\NFHotel.Application.csproj" />
     <ProjectReference Include="..\NFHotel.Infrastructure\NFHotel.Infrastructure.csproj" />
+    <ProjectReference Include="..\NFHotel.External\NFHotel.External.csproj" />
   </ItemGroup>
 
 </Project>
