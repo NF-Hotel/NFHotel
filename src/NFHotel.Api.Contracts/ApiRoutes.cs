@@ -30,9 +30,6 @@ public static class ApiRoutes
     /// <summary>Searching with a filter in the body.</summary>
     public const string Search = "search";
 
-    /// <summary>Checking guest fields without saving.</summary>
-    public const string Validate = "validate";
-
     /// <summary>The values of the room filter.</summary>
     public const string FilterOptions = "filter-options";
 

@@ -60,11 +60,4 @@ public sealed class GuestsController : ControllerBase
     [HttpDelete(ApiRoutes.ById)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _guests.DeleteAsync(id, cancellationToken).ConfigureAwait(false));
-
-    /// <summary>Checks the fields of a guest without saving.</summary>
-    /// <param name="fields">The fields to check.</param>
-    /// <returns>200 when they are valid, otherwise every error code.</returns>
-    [HttpPost(ApiRoutes.Validate)]
-    public IActionResult Validate([FromBody] GuestFields fields) =>
-        this.ToResponse(_guests.ValidateFields(fields));
 }

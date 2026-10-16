@@ -201,7 +201,7 @@ public sealed class ApiEndpointTests : IClassFixture<ApiFactory>
 
     #region Guest routes
 
-    /// <summary>Positive: create, read, search, update, validate and delete a guest.</summary>
+    /// <summary>Positive: create, read, search, update and delete a guest; invalid fields are 422.</summary>
     [Fact]
     public async Task GuestRoutes_EveryEndpoint_IsReachable()
     {
@@ -216,8 +216,7 @@ public sealed class ApiEndpointTests : IClassFixture<ApiFactory>
         using var get = await client.GetAsync($"{ApiRoutes.Guests}/{id}", TestContext.Current.CancellationToken);
         using var search = await client.GetAsync($"{ApiRoutes.Guests}?searchText=maja", TestContext.Current.CancellationToken);
         using var update = await client.PutAsJsonAsync(ApiRoutes.Guests, new UpdateGuestRequest(id, fields with { LastName = "Nielsen" }), ApiJson.Options, TestContext.Current.CancellationToken);
-        using var valid = await client.PostAsJsonAsync($"{ApiRoutes.Guests}/{ApiRoutes.Validate}", fields, ApiJson.Options, TestContext.Current.CancellationToken);
-        using var invalid = await client.PostAsJsonAsync($"{ApiRoutes.Guests}/{ApiRoutes.Validate}", fields with { FirstName = " " }, ApiJson.Options, TestContext.Current.CancellationToken);
+        using var invalid = await client.PostAsJsonAsync(ApiRoutes.Guests, new CreateGuestRequest(fields with { FirstName = " " }), ApiJson.Options, TestContext.Current.CancellationToken);
         using var delete = await client.DeleteAsync($"{ApiRoutes.Guests}/{id}", TestContext.Current.CancellationToken);
 
         // Assert
@@ -225,7 +224,6 @@ public sealed class ApiEndpointTests : IClassFixture<ApiFactory>
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
         Assert.Equal(HttpStatusCode.OK, search.StatusCode);
         Assert.Equal(HttpStatusCode.OK, update.StatusCode);
-        Assert.Equal(HttpStatusCode.OK, valid.StatusCode);
         Assert.Equal(HttpStatusCode.UnprocessableEntity, invalid.StatusCode);
         Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
     }
