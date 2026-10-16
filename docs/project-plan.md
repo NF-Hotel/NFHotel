@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [US-001] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [US-001] |
 | Language | en |
 | Domain | it |
 
@@ -12,7 +12,8 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-009 (validation attributes on the entities) | [4cab5fc] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-010 (source comments in English) | [e67e815] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-010 (source comments in English) | [e67e815] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Added MIL-011 (tests on xUnit v3) | pending |
 
 ---
 
@@ -42,6 +43,7 @@ person ending 2026-10-17.
 | Domain rules live with the data they guard | [MIL-008] | 2026-11-06 to 2026-11-13 | 2026-11-13 | S01 | none | `NFHotel.Domain/Rules` dissolved into entities, value objects and errors; tests green | [Milestone 8][GH-M8] |
 | Validation attributes on the entities | [MIL-009] | 2026-11-13 to 2026-11-20 | 2026-11-20 | S01 | none | Field rules of Room and Guest as attributes; no validation code in the entities | [Milestone 9][GH-M9] |
 | Source comments in English | [MIL-010] | 2026-11-20 to 2026-12-04 | 2026-12-04 | S01 | none | Every comment in `src/` and `tests/` in English; only comments changed | [Milestone 10][GH-M10] |
+| Tests on xUnit v3 | [MIL-011] | 2026-12-04 to 2026-12-11 | 2026-12-11 | S01 | none | The four test projects reference `xunit.v3`; same test counts; `src/` unchanged | none yet |
 
 ```plantuml
 @startgantt
@@ -66,6 +68,8 @@ Project starts 2026-10-16
 [MIL-009 Go/No-Go] happens 2026-11-20
 [Source comments in English] starts 2026-11-20 and ends 2026-12-04
 [MIL-010 Go/No-Go] happens 2026-12-04
+[Tests on xUnit v3] starts 2026-12-04 and ends 2026-12-11
+[MIL-011 Go/No-Go] happens 2026-12-11
 @endgantt
 ```
 
@@ -87,6 +91,7 @@ Project starts 2026-10-16
 | Domain folders follow the skill (objective 11) | MIL-008 |
 | Validation attributes on the entities (objective 12) | MIL-009 |
 | Source comments in English (objective 13) | MIL-010 |
+| Tests on xUnit v3 (objective 14) | MIL-011 |
 
 ## Dependencies
 
@@ -98,6 +103,7 @@ MIL-006 -> MIL-007
 MIL-005 -> MIL-008
 MIL-008 -> MIL-009
 MIL-009 -> MIL-010
+MIL-010 -> MIL-011
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -131,6 +137,7 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-008]: ./milestones/mil-008-domain-rules-in-entities.md
 [MIL-009]: ./milestones/mil-009-validation-attributes.md
 [MIL-010]: ./milestones/mil-010-english-source-comments.md
+[MIL-011]: ./milestones/mil-011-xunit-v3.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
