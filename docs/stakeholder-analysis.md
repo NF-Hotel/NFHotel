@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Accepted after RC-002 Go | [b690b57] |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S04 | Token role row and revocation rationale changed for the throwaway container | [88a4946] |
+| 2026-10-16 | Deprecated | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Accepted after RC-002 Go | [b690b57] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Token role row and revocation rationale changed for the throwaway container | pending |
 
 ---
 

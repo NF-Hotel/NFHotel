@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | S04 | Linked the synced GitHub milestones (accepted by the Product Owner stand-in; no content change) | [4c5c2d3] |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S04 | Added MIL-003 (throwaway Proxmox container); replaced the real-server risk | [88a4946] |
+| 2026-10-16 | Deprecated | Claude (AI) | S04 | Linked the synced GitHub milestones (accepted by the Product Owner stand-in; no content change) | [4c5c2d3] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Added MIL-003 (throwaway Proxmox container); replaced the real-server risk | pending |
 
 ---
 
@@ -34,7 +34,7 @@ person ending 2026-10-17.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Proxmox integration test environment | [MIL-001] | 2026-10-16 to 2026-10-17 | 2026-10-17 | S01 | none | Unattended throwaway-container tests against Proxmox VE | [Milestone 1][GH-M1] |
 | Nginx proxy and web service in Docker Compose | [MIL-002] | 2026-10-17 to 2026-10-18 | 2026-10-18 | S01 | none | One compose file and one env file per service; web application answering through the proxy | [Milestone 2][GH-M2] |
-| Throwaway Proxmox container for tests | [MIL-003] | 2026-10-18 to 2026-10-19 | 2026-10-19 | S01 | none | Proxmox VE container, per-run token in the environment, unattended full cycle | |
+| Throwaway Proxmox container for tests | [MIL-003] | 2026-10-18 to 2026-10-19 | 2026-10-19 | S01 | none | Proxmox VE container, per-run token in the environment, unattended full cycle | [Milestone 3][GH-M3] |
 
 ```plantuml
 @startgantt
@@ -89,6 +89,7 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-003]: ./milestones/mil-003-throwaway-proxmox.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
+[GH-M3]: https://github.com/NF-Hotel/NFHotel/milestone/3
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
 [4c5c2d3]: https://github.com/NF-Hotel/NFHotel/commit/4c5c2d3c5a8a8c4de7a2c8ee224719de55b62403
 [88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca

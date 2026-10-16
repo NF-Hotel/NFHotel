@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Jens Tirsvad Nielsen | <reviewer S-ID> | Initial version | [88a4946] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S04 | Initial version | [88a4946] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Accepted after RC-010 Go | pending |
 
 ---
 
