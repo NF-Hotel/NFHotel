@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Amended (accepted after RC-005 Go): objective 5 and scope for running NFHotel as containers (nginx proxy and web service, one compose file and one env file per service); target date for MIL-002 | [b690b57] |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S04 | Amended: Proxmox VE is a throwaway Docker container; pve.env holds only the root password; the API token is created per run and kept in environment variables | [88a4946] |
+| 2026-10-16 | Deprecated | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Amended (accepted after RC-005 Go): objective 5 and scope for running NFHotel as containers (nginx proxy and web service, one compose file and one env file per service); target date for MIL-002 | [b690b57] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Amended: Proxmox VE is a throwaway Docker container; pve.env holds only the root password; the API token is created per run and kept in environment variables | pending |
 
 ---
 
