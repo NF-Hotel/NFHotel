@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 8, the NFHotel source follows the clean architecture structure of the skills (MIL-005) | [78eeb18] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 9, the legacy project documents are in the Product Owner language, English (MIL-006) | [180a268] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 9, the legacy project documents are in the Product Owner language, English (MIL-006) | [180a268] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 10, a framework Domain Model of the hotel back office (MIL-007) | pending |
 
 ---
 
@@ -68,6 +68,7 @@ basis for the hosting decision (Q-31).
 7. Run the benchmark service (`NF-Hotel/notebook-benchmark`) on a Proxmox VM as a Docker container behind the proxy, so the owner can choose the local AI model by response time against answer quality (US-001.02, US-001.04).
 8. Bring the NFHotel source (`src/`) to the clean architecture structure of the `clean-architecture` and `coding-conventions` skills: a common key base type for every entity, the folders of each layer, repository interfaces in the domain, key columns named `<table>_id`, and DTOs in one folder per entity, with no change of behaviour.
 9. Convert the legacy project documents in `docs/refactor/` from Danish to English, the Product Owner language, with English file and folder names, without changing their meaning, identifiers or links.
+10. Capture the business concepts of the hotel back office (bookings, rooms, guests) in a Domain Model that follows the framework rules (`QC-DM-001`), so that design and code can be checked against it.
 
 ## Scope
 
@@ -82,6 +83,7 @@ basis for the hosting decision (Q-31).
 - The market analysis service and the benchmark service on Proxmox VMs behind the proxy: compose and env files, an nginx route per service and a smoke test (planned in MIL-004 and a later milestone).
 - The restructuring of `NFHotel.Domain`, `NFHotel.Application` and `NFHotel.Infrastructure` and their tests (MIL-005); the Web project only changes where it must to compile.
 - The translation of the notes, the presentation and the diagrams in `docs/refactor/` (MIL-006); source-code comments and the text of the application screens stay as they are.
+- A Domain Dictionary, three brief use cases and the project Domain Model of the back office, compared with the code (MIL-007); the code is not changed by that milestone.
 
 ### Out of Scope
 
@@ -131,6 +133,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 10 | Benchmark results | At least 2 local models measured for response time and answer quality | Result file of one benchmark run |
 | 11 | Clean architecture | 0 architecture-test failures; every entity derives from `Entity<TKey>`; every key column is `<table>_id`; 0 build warnings; the test suite passes as before | `dotnet build` and `dotnet test` |
 | 12 | Legacy documents in English | 0 Danish letters or words in `docs/refactor/`; every identifier unchanged | Language scan and identifier count in the review record |
+| 13 | Domain Model | Every Mandatory criterion of `QC-DM-001` passes; 0 concepts without a source use case or dictionary term | Review record of the Domain Model |
 
 ## Risks
 

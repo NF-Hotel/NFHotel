@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [US-001] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [US-001] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-005 (clean architecture structure) | [78eeb18] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-006 (legacy project documents in English); open issue about Danish notes closed | [180a268] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-006 (legacy project documents in English); open issue about Danish notes closed | [180a268] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-007 (Domain Model of the hotel back office) | pending |
 
 ---
 
@@ -38,6 +38,7 @@ person ending 2026-10-17.
 | Market analysis service on a Proxmox VM behind nginx | [MIL-004] | 2026-10-19 to 2026-10-23 | 2026-10-23 | S02 | US-001.01, US-001.03, US-001.05 | Analysis service on a VM, two services routed through nginx, smoke test | [Milestone 4][GH-M4] |
 | Clean architecture structure for NFHotel | [MIL-005] | 2026-10-19 to 2026-10-30 | 2026-10-30 | S01 | none | Entity base type, layer folders, repositories, key columns and DTO folders, tests green | [Milestone 5][GH-M5] |
 | Legacy project documents in English | [MIL-006] | 2026-10-19 to 2026-10-26 | 2026-10-26 | S01 | none | The notes, presentation and diagrams of `docs/refactor/` in English with English names | [Milestone 6][GH-M6] |
+| Domain Model of the hotel back office | [MIL-007] | 2026-10-26 to 2026-11-06 | 2026-11-06 | S01 | none | Domain Dictionary, three brief use cases and a Domain Model that passes QC-DM-001 | [Milestone 7][GH-M7] |
 
 ```plantuml
 @startgantt
@@ -54,6 +55,8 @@ Project starts 2026-10-16
 [MIL-005 Go/No-Go] happens 2026-10-30
 [Legacy documents in English] starts 2026-10-19 and ends 2026-10-26
 [MIL-006 Go/No-Go] happens 2026-10-26
+[Domain Model] starts 2026-10-26 and ends 2026-11-06
+[MIL-007 Go/No-Go] happens 2026-11-06
 @endgantt
 ```
 
@@ -71,6 +74,7 @@ Project starts 2026-10-16
 | Market analysis and benchmark services on Proxmox VMs (objectives 6 and 7) | MIL-004 (analysis, Must); benchmark in a later milestone |
 | NFHotel source follows the clean architecture structure (objective 8) | MIL-005 |
 | Legacy documents in English (objective 9) | MIL-006 |
+| Domain Model of the back office (objective 10) | MIL-007 |
 
 ## Dependencies
 
@@ -78,6 +82,7 @@ Project starts 2026-10-16
 MIL-001 -> MIL-002 -> MIL-003 -> MIL-004
 MIL-005 (independent of the others)
 MIL-006 (independent of the others)
+MIL-006 -> MIL-007
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -94,6 +99,7 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 ## Open Issues
 
 - The refactor notes in `docs/refactor/` are legacy notes, not framework artifacts; MIL-006 converts them to English but does not turn them into artifact types.
+- The legacy diagram `docs/refactor/diagrams/Domain-Model.png` is not a framework Domain Model; MIL-007 replaces it with `docs/domain-model.md`.
 - Decision Q-31 (hosting target) and Q-42 (CI platform) stay with the DevOps track.
 
 ---
@@ -106,6 +112,7 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-004]: ./milestones/mil-004-market-analysis-service.md
 [MIL-005]: ./milestones/mil-005-clean-architecture.md
 [MIL-006]: ./milestones/mil-006-english-legacy-documents.md
+[MIL-007]: ./milestones/mil-007-domain-model.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
@@ -113,6 +120,7 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [GH-M4]: https://github.com/NF-Hotel/NFHotel/milestone/4
 [GH-M5]: https://github.com/NF-Hotel/NFHotel/milestone/5
 [GH-M6]: https://github.com/NF-Hotel/NFHotel/milestone/6
+[GH-M7]: https://github.com/NF-Hotel/NFHotel/milestone/7
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
 [4c5c2d3]: https://github.com/NF-Hotel/NFHotel/commit/4c5c2d3c5a8a8c4de7a2c8ee224719de55b62403
 [88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca
