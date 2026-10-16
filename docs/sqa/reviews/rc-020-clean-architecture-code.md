@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [9b18534] |
 
 ---
 
@@ -62,3 +62,4 @@ Go — all Mandatory criteria pass or are not applicable with a stated reason. E
 [MIL-005]: ../../milestones/mil-005-clean-architecture.md
 [ADR-0001]: ../../adr/adr-0001-clean-architecture-structure.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[9b18534]: https://github.com/NF-Hotel/NFHotel/commit/9b185345b6fb55c37dcf95516495448f1af4440c
