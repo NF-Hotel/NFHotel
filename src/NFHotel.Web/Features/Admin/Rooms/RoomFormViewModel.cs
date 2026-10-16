@@ -6,21 +6,21 @@ using NFHotel.Web.Common;
 namespace NFHotel.Web.Features.Admin.Rooms;
 
 /// <summary>
-/// Præsentationslogik for at oprette og rette et rum.
+/// Presentation logic for creating and changing a room.
 /// </summary>
 /// <remarks>
-/// Uden denne formular kan rum kun oprettes med SQL: <c>CreateAsync</c> og
-/// <c>UpdateAsync</c> havde ingen indgang i UI'et.
+/// Without this form rooms can only be created with SQL: <c>CreateAsync</c> and
+/// <c>UpdateAsync</c> had no entry in the UI.
 /// <para>
-/// <b>Formularen har intet statusfelt.</b> <c>UpdateRoomRequest</c> bærer kun
-/// værelsesnummer, etage, størrelse og kapacitet — driftsstatus og rengøringsstand har
-/// deres egne use cases (A-08) og deres egne knapper på rumoversigten. Et statusfelt her
-/// ville være en anden vej til de samme overgange, uden om tilstandsmaskinen.
+/// <b>The form has no status field.</b> <c>UpdateRoomRequest</c> carries only
+/// room number, floor, size and capacity — operating status and cleaning state have
+/// their own use cases (A-08) and their own buttons on the room overview. A status field here
+/// would be another way to the same transitions, bypassing the state machine.
 /// </para>
 /// <para>
-/// B-10: klassen validerer ingenting. Værelsesnummerets længde, etagen, størrelsen og
-/// kapaciteten afgøres af domænet gennem servicen (BR-97 til BR-100), og et
-/// værelsesnummer der allerede findes, afvises af servicen (BR-N-01).
+/// B-10: the class validates nothing. The length of the room number, the floor, the size and
+/// the capacity are decided by the domain through the service (BR-97 to BR-100), and a
+/// room number that already exists is rejected by the service (BR-N-01).
 /// </para>
 /// </remarks>
 public sealed class RoomFormViewModel
@@ -33,7 +33,7 @@ public sealed class RoomFormViewModel
     /// <summary>
     /// Opretter viewmodellen.
     /// </summary>
-    /// <param name="rooms">Kører use cases på <see cref="IRoomService"/>.</param>
+    /// <param name="rooms">Runs use cases on <see cref="IRoomService"/>.</param>
     public RoomFormViewModel(IUseCaseRunner<IRoomService> rooms)
     {
         ArgumentNullException.ThrowIfNull(rooms);
@@ -41,52 +41,52 @@ public sealed class RoomFormViewModel
         _rooms = rooms;
     }
 
-    /// <summary>Sand når formularen er åben.</summary>
+    /// <summary>True when the form is open.</summary>
     public bool IsOpen { get; private set; }
 
-    /// <summary>Id'et på rummet der rettes, eller <c>null</c> når et nyt oprettes.</summary>
+    /// <summary>The id of the room being changed, or <c>null</c> when a new one is created.</summary>
     public int? EditingRoomId { get; private set; }
 
     /// <summary>Formularens overskrift.</summary>
     public string Title => EditingRoomId is null ? "New room" : $"Edit room {RoomNumber}";
 
-    /// <summary>Formularfelt: værelsesnummer (BR-97, BR-N-01).</summary>
+    /// <summary>Form field: room number (BR-97, BR-N-01).</summary>
     public string RoomNumber { get; set; } = string.Empty;
 
-    /// <summary>Formularfelt: etage (BR-98).</summary>
+    /// <summary>Form field: floor (BR-98).</summary>
     public int Floor { get; set; } = DefaultFloor;
 
-    /// <summary>Formularfelt: rumstørrelse (BR-99).</summary>
+    /// <summary>Form field: room size (BR-99).</summary>
     public RoomSize Size { get; set; } = RoomSize.Single;
 
-    /// <summary>Formularfelt: kapacitet (BR-100).</summary>
+    /// <summary>Form field: capacity (BR-100).</summary>
     public int Capacity { get; set; } = DefaultCapacity;
 
-    /// <summary>Alle rumstørrelser, til formularens dropdown.</summary>
+    /// <summary>All room sizes, for the dropdown of the form.</summary>
     public IReadOnlyList<RoomSize> Sizes { get; } = Enum.GetValues<RoomSize>();
 
-    /// <summary>Fejl fra formularen, allerede oversat til dansk.</summary>
+    /// <summary>Errors from the form, already translated to Danish.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = Array.Empty<string>();
 
-    /// <summary>Kvittering efter et vellykket gem.</summary>
+    /// <summary>Receipt after a successful save.</summary>
     public string? SuccessMessage { get; private set; }
 
-    /// <summary>Sand mens et kald er i gang.</summary>
+    /// <summary>True while a call is in progress.</summary>
     public bool IsBusy { get; private set; }
 
-    /// <summary>Sand hvis det seneste gem lykkedes — bruges til at hente listen igen.</summary>
+    /// <summary>True if the latest save succeeded — used to fetch the list again.</summary>
     public bool SavedSuccessfully { get; private set; }
 
-    /// <summary>Sand når gemknappen må være aktiv.</summary>
+    /// <summary>True when the save button may be active.</summary>
     /// <remarks>
-    /// Kun travlhed spærrer knappen. Feltvalideringen hører i domænet, og dens svar vises
-    /// som fejltekster efter forsøget — så skærmen aldrig kan blive uenig med reglerne
-    /// (BR-97 til BR-100).
+    /// Only busyness blocks the button. The field validation belongs in the domain, and its answer is shown
+    /// as error texts after the attempt — so the screen can never disagree with the rules
+    /// (BR-97 to BR-100).
     /// </remarks>
     public bool CanSave => !IsBusy;
 
     /// <summary>
-    /// Åbner en tom formular til et nyt rum.
+    /// Opens an empty form for a new room.
     /// </summary>
     public void BeginCreate()
     {
@@ -103,13 +103,13 @@ public sealed class RoomFormViewModel
     }
 
     /// <summary>
-    /// Åbner formularen med et eksisterende rums felter.
+    /// Opens the form with the fields of an existing room.
     /// </summary>
     /// <param name="roomId">Rummets id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <remarks>
-    /// Henter rummet igen frem for at bruge listens række, så formularen arbejder på den
-    /// nyeste udgave og ikke på en visning der kan være minutter gammel.
+    /// Fetches the room again rather than using the row of the list, so the form works on the
+    /// latest version and not on a view that may be minutes old.
     /// </remarks>
     public async Task BeginEditAsync(int roomId, CancellationToken cancellationToken = default)
     {
@@ -153,7 +153,7 @@ public sealed class RoomFormViewModel
     }
 
     /// <summary>
-    /// Lukker formularen uden at gemme.
+    /// Closes the form without saving.
     /// </summary>
     public void Close()
     {
@@ -164,7 +164,7 @@ public sealed class RoomFormViewModel
     }
 
     /// <summary>
-    /// Gemmer formularen — opretter et nyt rum eller retter det der redigeres.
+    /// Saves the form — creates a new room or changes the one being edited.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public async Task SaveAsync(CancellationToken cancellationToken = default)
@@ -225,7 +225,7 @@ public sealed class RoomFormViewModel
     }
 
     /// <summary>
-    /// Rydder kvitteringen fra sidste gem.
+    /// Clears the receipt from the last save.
     /// </summary>
     public void DismissSuccess() => SuccessMessage = null;
 }

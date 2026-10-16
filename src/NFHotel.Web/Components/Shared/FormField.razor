@@ -1,12 +1,12 @@
 @*
-    Et formularfelt: label, input, fejltekst, hjælpetekst — altid i den rækkefølge.
+    A form field: label, input, error text, help text — always in that order.
 
-    Selve input'et leveres af kaldestedet i ChildContent, så komponenten hverken skal
-    kende feltets type eller binde til noget. Til gengæld ejer den etiketten, så intet
-    input kan ende uden en <label> (UI-Spec afsnit 4).
+    The input itself is supplied by the call site in ChildContent, so the component neither needs to
+    know the type of the field nor bind to anything. In return it owns the label, so no
+    input can end up without a <label> (UI-Spec section 4).
 
-    Kaldestedet giver input'et id="@For" og kan pege aria-describedby på
-    "{For}-hint" og aria-errormessage på "{For}-error".
+    The call site gives the input id="@For" and can point aria-describedby at
+    "{For}-hint" and aria-errormessage at "{For}-error".
 *@
 
 <div class="field">
@@ -29,30 +29,30 @@
 </div>
 
 @code {
-    /// <summary>Etiketten over feltet. Dansk, uden kolon.</summary>
+    /// <summary>The label above the field. Danish, without colon.</summary>
     [Parameter]
     [EditorRequired]
     public string Label { get; set; } = string.Empty;
 
-    /// <summary>Id'et på input'et i <see cref="ChildContent"/>. Binder etiketten til feltet.</summary>
+    /// <summary>The id of the input in <see cref="ChildContent"/>. Binds the label to the field.</summary>
     [Parameter]
     [EditorRequired]
     public string For { get; set; } = string.Empty;
 
-    /// <summary>Selve input'et — <c>&lt;input class="field-input"&gt;</c>, en select eller lignende.</summary>
+    /// <summary>The input itself — <c>&lt;input class="field-input"&gt;</c>, a select or similar.</summary>
     [Parameter]
     [EditorRequired]
     public RenderFragment? ChildContent { get; set; }
 
-    /// <summary>Færdig dansk fejltekst. Tom betyder at feltet er i orden.</summary>
+    /// <summary>Finished Danish error text. Empty means the field is in order.</summary>
     [Parameter]
     public string? Error { get; set; }
 
-    /// <summary>Valgfri hjælpetekst, fx forventet format.</summary>
+    /// <summary>Optional help text, for example the expected format.</summary>
     [Parameter]
     public string? Hint { get; set; }
 
-    /// <summary>Markerer feltet som påkrævet med en stjerne ved etiketten.</summary>
+    /// <summary>Marks the field as required with an asterisk at the label.</summary>
     [Parameter]
     public bool IsRequired { get; set; }
 }

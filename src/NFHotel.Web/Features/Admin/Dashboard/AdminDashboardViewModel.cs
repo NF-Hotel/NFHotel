@@ -8,22 +8,22 @@ using NFHotel.Web.Common;
 namespace NFHotel.Web.Features.Admin.Dashboard;
 
 /// <summary>
-/// Præsentationslogik for admin-dashboardet: dagens ankomster, dagens afrejser og de rum
-/// der afventer rengøring.
+/// Presentation logic for the admin dashboard: today's arrivals, today's departures and the rooms
+/// that are waiting for cleaning.
 /// </summary>
 /// <remarks>
-/// B-10: klassen afgør ingenting selv. Den henter dagens bookinger gennem
-/// <see cref="IBookingService.GetOverviewAsync"/> og alle rum gennem
-/// <see cref="IRoomService.SearchAsync"/>, og deler rækkerne op på datoer og på
+/// B-10: the class decides nothing itself. It fetches today's bookings through
+/// <see cref="IBookingService.GetOverviewAsync"/> and all rooms through
+/// <see cref="IRoomService.SearchAsync"/>, and divides the rows by dates and by
 /// <c>RoomActionsDto</c>.
 /// <para>
-/// Bemærk hvordan "kræver rengøring" afgøres: ikke ved at opregne rengøringsstatusser her,
-/// men ved at spørge <c>Actions.CanStartCleaning</c> — altså om domænet vil tillade at
-/// rengøringen startes. Det er den samme kilde knapperne på rumoversigten bruger, så de to
-/// skærme aldrig kan blive uenige om hvad der mangler at blive gjort.
+/// Note how "requires cleaning" is decided: not by listing cleaning statuses here,
+/// but by asking <c>Actions.CanStartCleaning</c> — that is, whether the domain will allow the
+/// cleaning to be started. It is the same source the buttons on the room overview use, so the two
+/// screens can never disagree about what remains to be done.
 /// </para>
 /// <para>
-/// "I dag" kommer fra <see cref="IClock"/> og aldrig fra <c>DateTime.Now</c> (A-05).
+/// "Today" comes from <see cref="IClock"/> and never from <c>DateTime.Now</c> (A-05).
 /// </para>
 /// </remarks>
 public sealed class AdminDashboardViewModel
@@ -32,10 +32,10 @@ public sealed class AdminDashboardViewModel
     private readonly IUseCaseRunner<IRoomService> _rooms;
 
     /// <summary>
-    /// Opretter viewmodellen og låser dagens dato fast fra hotellets ur.
+    /// Creates the viewmodel and fixes today's date from the hotel's clock.
     /// </summary>
-    /// <param name="bookings">Kører use cases på <see cref="IBookingService"/>.</param>
-    /// <param name="rooms">Kører use cases på <see cref="IRoomService"/>.</param>
+    /// <param name="bookings">Runs use cases on <see cref="IBookingService"/>.</param>
+    /// <param name="rooms">Runs use cases on <see cref="IRoomService"/>.</param>
     /// <param name="clock">Hotellets ur (A-05).</param>
     public AdminDashboardViewModel(
         IUseCaseRunner<IBookingService> bookings,
@@ -52,43 +52,43 @@ public sealed class AdminDashboardViewModel
         Today = clock.Today;
     }
 
-    /// <summary>Hotellets dato i dag.</summary>
+    /// <summary>The hotel's date today.</summary>
     public DateOnly Today { get; }
 
-    /// <summary>Bookinger med ankomst i dag.</summary>
+    /// <summary>Bookings with arrival today.</summary>
     public IReadOnlyList<BookingListItemDto> Arrivals { get; private set; } =
         Array.Empty<BookingListItemDto>();
 
-    /// <summary>Bookinger der giver rummet fri i dag (A-01).</summary>
+    /// <summary>Bookings that release the room today (A-01).</summary>
     public IReadOnlyList<BookingListItemDto> Departures { get; private set; } =
         Array.Empty<BookingListItemDto>();
 
-    /// <summary>Rum hvor rengøringen kan sættes i gang, altså mangler at blive gjort.</summary>
+    /// <summary>Rooms where cleaning can be started, that is, still to be done.</summary>
     public IReadOnlyList<RoomListItemDto> RoomsAwaitingCleaning { get; private set; } =
         Array.Empty<RoomListItemDto>();
 
-    /// <summary>Fejl der skal vises til brugeren, allerede oversat til dansk.</summary>
+    /// <summary>Errors to show to the user, already translated to Danish.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = Array.Empty<string>();
 
-    /// <summary>Sand mens et kald er i gang.</summary>
+    /// <summary>True while a call is in progress.</summary>
     public bool IsBusy { get; private set; }
 
-    /// <summary>Sand når skærmen har hentet data mindst én gang.</summary>
+    /// <summary>True when the screen has fetched data at least once.</summary>
     public bool IsLoaded { get; private set; }
 
-    /// <summary>Sand når dagen er hentet uden fejl og hverken har ankomster eller afrejser.</summary>
+    /// <summary>True when the day was fetched without error and has neither arrivals nor departures.</summary>
     public bool IsQuietDay =>
         IsLoaded && Errors.Count == 0 && Arrivals.Count == 0 && Departures.Count == 0;
 
     /// <summary>
-    /// Henter dagens tal. Kaldes fra <c>OnInitializedAsync</c>.
+    /// Fetches today's figures. Called from <c>OnInitializedAsync</c>.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         RefreshAsync(cancellationToken);
 
     /// <summary>
-    /// Henter dagens bookinger og rummenes stand forfra.
+    /// Fetches today's bookings and the state of the rooms from scratch.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
@@ -117,14 +117,14 @@ public sealed class AdminDashboardViewModel
     }
 
     /// <summary>
-    /// Henter bookingerne i dagens vindue og deler dem i ankomster og afrejser.
+    /// Fetches the bookings in today's window and divides them into arrivals and departures.
     /// </summary>
-    /// <param name="messages">Fejltekster fra denne del af hentningen lægges her.</param>
+    /// <param name="messages">Error texts from this part of the fetching are put here.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <remarks>
-    /// Vinduet er én dag: fra i dag til og med i morgen, eksklusiv. Periodefilteret er
-    /// altid aktivt, netop for ikke at gentage fejlen hvor en oversigt hentede hele
-    /// tabellen og filtrerede i hukommelsen (BR-111).
+    /// The window is one day: from today up to and including tomorrow, exclusive. The period filter is
+    /// always active, precisely so as not to repeat the fault where an overview fetched the whole
+    /// table and filtered in memory (BR-111).
     /// </remarks>
     private async Task LoadTodaysBookingsAsync(List<string> messages, CancellationToken cancellationToken)
     {
@@ -151,16 +151,16 @@ public sealed class AdminDashboardViewModel
 
         var bookings = result.Value;
 
-        // EffectiveEndDate og ikke EndDate: en gæst der er rejst tidligt, afleverer rummet
-        // i dag, selvom bookingen løber videre på papiret (A-01).
+        // EffectiveEndDate and not EndDate: a guest who has left early hands the room back
+        // today, even though the booking runs on on paper (A-01).
         Arrivals = bookings.Where(booking => booking.StartDate == Today).ToArray();
         Departures = bookings.Where(booking => booking.EffectiveEndDate == Today).ToArray();
     }
 
     /// <summary>
-    /// Henter alle rum og finder dem der afventer rengøring.
+    /// Fetches all rooms and finds the ones waiting for cleaning.
     /// </summary>
-    /// <param name="messages">Fejltekster fra denne del af hentningen lægges her.</param>
+    /// <param name="messages">Error texts from this part of the fetching are put here.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     private async Task LoadRoomsAsync(List<string> messages, CancellationToken cancellationToken)
     {

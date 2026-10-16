@@ -3,13 +3,13 @@ using NFHotel.Application.UseCases;
 namespace NFHotel.Web.Common;
 
 /// <summary>
-/// Standardimplementeringen af <see cref="IUseCaseRunner{TService}"/>.
+/// The standard implementation of <see cref="IUseCaseRunner{TService}"/>.
 /// </summary>
-/// <typeparam name="TService">Application-servicen der skal opløses pr. kald.</typeparam>
+/// <typeparam name="TService">The Application service to be resolved per call.</typeparam>
 /// <remarks>
-/// Registreres som åben generisk singleton i <c>Program.cs</c>. Den er tilstandsløs, og
-/// <see cref="IServiceScopeFactory"/> er selv en singleton — at gøre runneren scoped ville
-/// binde den til kredsløbet uden at give noget.
+/// Registered as an open generic singleton in <c>Program.cs</c>. It is stateless, and
+/// <see cref="IServiceScopeFactory"/> is itself a singleton — making the runner scoped would
+/// bind it to the circuit without gaining anything.
 /// </remarks>
 public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     where TService : notnull
@@ -20,8 +20,8 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     /// <summary>
     /// Opretter runneren.
     /// </summary>
-    /// <param name="scopeFactory">Fabrikken der laver en frisk DI-scope pr. kald.</param>
-    /// <param name="logger">Logger til de tekniske fejl brugeren aldrig får at se.</param>
+    /// <param name="scopeFactory">The factory that makes a fresh DI scope per call.</param>
+    /// <param name="logger">Logger for the technical errors the user never gets to see.</param>
     public UseCaseRunner(IServiceScopeFactory scopeFactory, ILogger<UseCaseRunner<TService>> logger)
     {
         ArgumentNullException.ThrowIfNull(scopeFactory);
@@ -40,7 +40,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
 
         try
         {
-            // Scopen — og dermed DbContext'en — lever kun så længe use casen kører.
+            // The scope — and thereby the DbContext — lives only as long as the use case runs.
             await using var scope = _scopeFactory.CreateAsyncScope();
 
             var service = scope.ServiceProvider.GetRequiredService<TService>();
@@ -100,15 +100,15 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     }
 
     /// <summary>
-    /// Afgør om runneren skal svare med en fejlkode i stedet for at lade exceptionen løbe.
+    /// Decides whether the runner should answer with an error code instead of letting the exception propagate.
     /// </summary>
-    /// <param name="exception">Den kastede exception.</param>
+    /// <param name="exception">The exception that was thrown.</param>
     /// <param name="cancellationToken">Kaldets annulleringstoken.</param>
-    /// <returns>Sand hvis exceptionen skal blive til <see cref="WebErrorCodes.Unexpected"/>.</returns>
+    /// <returns>True if the exception should become <see cref="WebErrorCodes.Unexpected"/>.</returns>
     /// <remarks>
-    /// En annullering er ikke en fejl — den betyder at brugeren navigerede væk eller lukkede
-    /// fanen. Den får lov at løbe videre, så Blazor kan rydde op uden at der bliver logget
-    /// støj og uden at en død skærm får en fejlbesked.
+    /// A cancellation is not an error — it means the user navigated away or closed
+    /// the tab. It is allowed to propagate, so Blazor can clean up without noise being logged
+    /// and without a dead screen getting an error message.
     /// </remarks>
     private static bool ShouldHandle(Exception exception, CancellationToken cancellationToken) =>
         exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested;

@@ -1,27 +1,27 @@
 namespace NFHotel.Web.Features.Admin.Bookings;
 
 /// <summary>
-/// De statusovergange bookingoversigten kan udføre på én booking.
+/// The status transitions the booking overview can perform on one booking.
 /// </summary>
 /// <remarks>
-/// Svarer én-til-én til <c>BookingActionsDto</c>'s fem felter minus <c>CanReschedule</c>,
-/// der kræver en formular med datoer og rum og derfor hører til omlægningsskærmen.
+/// Corresponds one-to-one to the five fields of <c>BookingActionsDto</c> minus <c>CanReschedule</c>,
+/// which requires a form with dates and room and therefore belongs to the reschedule screen.
 /// <para>
-/// Enum og ikke en streng: en knap der peger på en overgang der ikke findes, skal være en
-/// compilerfejl, ikke et tavst ingenting.
+/// An enum and not a string: a button that points to a transition that does not exist must be a
+/// compiler error, not a silent nothing.
 /// </para>
 /// </remarks>
 public enum BookingAction
 {
-    /// <summary>Bekræft bookingen (BR-02).</summary>
+    /// <summary>Confirm the booking (BR-02).</summary>
     Confirm = 0,
 
-    /// <summary>Tjek gæsten ind (BR-06).</summary>
+    /// <summary>Check the guest in (BR-06).</summary>
     CheckIn = 1,
 
-    /// <summary>Tjek gæsten ud (BR-09).</summary>
+    /// <summary>Check the guest out (BR-09).</summary>
     CheckOut = 2,
 
-    /// <summary>Annullér bookingen (BR-11). Kræver en bekræftelse først (BR-04).</summary>
+    /// <summary>Cancel the booking (BR-11). Requires a confirmation first (BR-04).</summary>
     Cancel = 3
 }

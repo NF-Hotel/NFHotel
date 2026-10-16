@@ -12,32 +12,32 @@ using NFHotel.Web.Common;
 namespace NFHotel.Web.Features.Booking;
 
 /// <summary>
-/// Al tilstand og alle servicekald i kundens bookingflow på <c>/book</c>:
-/// datoer, ledige rum, gæsteoplysninger og kvittering.
+/// All state and all service calls of the customer's booking flow on <c>/book</c>:
+/// dates, free rooms, guest details and receipt.
 /// </summary>
 /// <remarks>
-/// <c>Book.razor</c> er markup. Den kalder metoderne herunder og læser properties — den
-/// kender hverken <c>IBookingService</c>, <c>IGuestService</c> eller en eneste fejlkode
-/// (B-10, UI-Spec afsnit 4).
+/// <c>Book.razor</c> is markup. It calls the methods below and reads properties — it
+/// knows neither <c>IBookingService</c>, <c>IGuestService</c> nor a single error code
+/// (B-10, UI-Spec section 4).
 /// <para>
-/// Trinnet er en <i>visning</i>, ikke en tilladelse. Hver overgang kontrollerer datoerne
-/// og rumvalget igen, så BR-C-04 holder også hvis en tidligere handling efterlod
-/// <see cref="CurrentStep"/> længere fremme end indtastningen berettiger.
+/// The step is a <i>view</i>, not a permission. Every transition checks the dates
+/// and the room choice again, so BR-C-04 holds even if an earlier action left
+/// <see cref="CurrentStep"/> further ahead than the input justifies.
 /// </para>
 /// <para>
-/// Ingen metode rydder brugerens indtastning. At gå tilbage til trin 1, rette en dato og
-/// komme frem igen skal koste et klik, ikke et navn og en e-mail. Det eneste der kan
-/// forsvinde, er et rumvalg der ikke længere er ledigt — og det er en regel (BR-C-02),
-/// ikke et tab.
+/// No method clears the user's input. Going back to step 1, correcting a date and
+/// getting forward again should cost a click, not a name and an email. The only thing that can
+/// disappear is a room choice that is no longer free — and that is a rule (BR-C-02),
+/// not a loss.
 /// </para>
 /// <para>
-/// "I dag" kommer fra <see cref="IClock"/> og aldrig fra <c>DateTime.Now</c> (A-05), så
-/// klientens datovalidering bruger samme dag som servicen bagefter.
+/// "Today" comes from <see cref="IClock"/> and never from <c>DateTime.Now</c> (A-05), so
+/// the client's date validation uses the same day as the service afterwards.
 /// </para>
 /// </remarks>
 public sealed class BookingFlowViewModel
 {
-    /// <summary>Standardophold når siden åbnes: én nat, i morgen.</summary>
+    /// <summary>Default stay when the page is opened: one night, tomorrow.</summary>
     private const int DefaultNights = 1;
 
     private static readonly IReadOnlyList<string> NoMessages = Array.Empty<string>();
@@ -48,10 +48,10 @@ public sealed class BookingFlowViewModel
     private readonly IClock _clock;
 
     /// <summary>
-    /// Opretter viewmodellen med et tomt flow og et forslag til datoer.
+    /// Creates the viewmodel with an empty flow and a suggestion for dates.
     /// </summary>
-    /// <param name="bookings">Kører use cases på <see cref="IBookingService"/>.</param>
-    /// <param name="guests">Kører use cases på <see cref="IGuestService"/>.</param>
+    /// <param name="bookings">Runs use cases on <see cref="IBookingService"/>.</param>
+    /// <param name="guests">Runs use cases on <see cref="IGuestService"/>.</param>
     /// <param name="clock">Hotellets ur (A-05).</param>
     public BookingFlowViewModel(
         IUseCaseRunner<IBookingService> bookings,
@@ -74,58 +74,58 @@ public sealed class BookingFlowViewModel
     // TILSTAND
     // ------------------------------------------------------------------
 
-    /// <summary>Det trin der vises lige nu.</summary>
+    /// <summary>The step shown right now.</summary>
     public BookingFlowStep CurrentStep { get; private set; } = BookingFlowStep.Dates;
 
-    /// <summary>Sand mens et servicekald er i gang. Knapper deaktiveres, siden hopper ikke.</summary>
+    /// <summary>True while a service call is in progress. Buttons are disabled, the page does not jump.</summary>
     public bool IsBusy { get; private set; }
 
-    /// <summary>Fejl der ikke hører til et enkelt felt, allerede oversat til dansk.</summary>
+    /// <summary>Errors that do not belong to a single field, already translated to Danish.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = NoMessages;
 
-    /// <summary>Ankomstdato, inklusiv. <c>null</c> indtil brugeren har valgt.</summary>
+    /// <summary>Arrival date, inclusive. <c>null</c> until the user has chosen.</summary>
     public DateOnly? CheckInDate { get; set; }
 
-    /// <summary>Afrejsedato, eksklusiv. <c>null</c> indtil brugeren har valgt.</summary>
+    /// <summary>Departure date, exclusive. <c>null</c> until the user has chosen.</summary>
     public DateOnly? CheckOutDate { get; set; }
 
-    /// <summary>De rum der er ledige i perioden (BR-C-02). Tom indtil trin 2 er hentet.</summary>
+    /// <summary>The rooms that are free in the period (BR-C-02). Empty until step 2 has been fetched.</summary>
     public IReadOnlyList<AvailableRoomDto> AvailableRooms { get; private set; } = NoRooms;
 
-    /// <summary>Sand når tilgængeligheden er hentet mindst én gang for de aktuelle datoer.</summary>
+    /// <summary>True when availability has been fetched at least once for the current dates.</summary>
     public bool AreRoomsLoaded { get; private set; }
 
-    /// <summary>Det valgte rum, eller <c>null</c>.</summary>
+    /// <summary>The chosen room, or <c>null</c>.</summary>
     public AvailableRoomDto? SelectedRoom { get; private set; }
 
-    /// <summary>Gæstens fornavn.</summary>
+    /// <summary>The guest's first name.</summary>
     public string FirstName { get; set; } = string.Empty;
 
-    /// <summary>Gæstens efternavn.</summary>
+    /// <summary>The guest's last name.</summary>
     public string LastName { get; set; } = string.Empty;
 
-    /// <summary>Gæstens e-mail.</summary>
+    /// <summary>The guest's email.</summary>
     public string Email { get; set; } = string.Empty;
 
-    /// <summary>Gæstens telefonnummer.</summary>
+    /// <summary>The guest's phone number.</summary>
     public string PhoneNumber { get; set; } = string.Empty;
 
-    /// <summary>Gæstens land.</summary>
+    /// <summary>The guest's country.</summary>
     public string Country { get; set; } = string.Empty;
 
-    /// <summary>Gæstens pasnummer. Valgfrit (BR-57).</summary>
+    /// <summary>The guest's passport number. Optional (BR-57).</summary>
     public string PassportNumber { get; set; } = string.Empty;
 
-    /// <summary>Valideringsfejl fordelt på gæsteformularens felter.</summary>
+    /// <summary>Validation errors distributed over the fields of the guest form.</summary>
     public GuestFieldErrors GuestErrors { get; private set; } = GuestFieldErrors.None;
 
-    /// <summary>Den oprettede booking, eller <c>null</c> indtil trin 4.</summary>
+    /// <summary>The created booking, or <c>null</c> until step 4.</summary>
     public BookingDetailsDto? Confirmation { get; private set; }
 
-    /// <summary>Sand når brugeren har forsøgt at gå videre fra datotrinnet mindst én gang.</summary>
+    /// <summary>True when the user has tried to move on from the date step at least once.</summary>
     /// <remarks>
-    /// Styrer alene om "skal udfyldes" må vises. En tom formular er ikke en fejl, før
-    /// brugeren har forsøgt at bruge den.
+    /// Controls only whether "must be filled in" may be shown. An empty form is not an error until
+    /// the user has tried to use it.
     /// </remarks>
     private bool HasAttemptedDates { get; set; }
 
@@ -134,8 +134,8 @@ public sealed class BookingFlowViewModel
     // ------------------------------------------------------------------
 
     /// <summary>
-    /// Sand når begge datoer er udfyldt, ankomsten ikke ligger i fortiden, og afrejsen er
-    /// efter ankomsten. Porten til trin 2 (BR-C-04).
+    /// True when both dates are filled in, the arrival is not in the past, and the departure is
+    /// after the arrival. The gate to step 2 (BR-C-04).
     /// </summary>
     public bool HasValidDates =>
         CheckInDate is DateOnly checkIn
@@ -144,19 +144,19 @@ public sealed class BookingFlowViewModel
         && checkIn >= _clock.Today
         && checkOut > checkIn;
 
-    /// <summary>Fejlteksten ved ankomstfeltet, eller <c>null</c>.</summary>
+    /// <summary>The error text at the arrival field, or <c>null</c>.</summary>
     public string? CheckInError => Describe(CheckInErrorCode);
 
-    /// <summary>Fejlteksten ved afrejsefeltet, eller <c>null</c>.</summary>
+    /// <summary>The error text at the departure field, or <c>null</c>.</summary>
     public string? CheckOutError => Describe(CheckOutErrorCode);
 
     /// <summary>
-    /// Antal overnatninger i den valgte periode, eller 0 hvis perioden ikke er hel endnu.
+    /// Number of nights in the chosen period, or 0 if the period is not complete yet.
     /// </summary>
     /// <remarks>
-    /// Tælles af domænets <see cref="DateRange"/>, så "en nat" har én definition i hele
-    /// systemet (BR-109, BR-117). Beregnes uden om <see cref="HasValidDates"/>, så tallet
-    /// også opdateres mens brugeren retter en dato der ligger i fortiden.
+    /// Counted by the domain's <see cref="DateRange"/>, so "a night" has one definition in the whole
+    /// system (BR-109, BR-117). Computed independently of <see cref="HasValidDates"/>, so the number
+    /// is also updated while the user corrects a date that lies in the past.
     /// </remarks>
     public int Nights =>
         CheckInDate is DateOnly checkIn
@@ -166,19 +166,19 @@ public sealed class BookingFlowViewModel
             ? new DateRange(checkIn, checkOut).Nights
             : 0;
 
-    /// <summary>Antallet af nætter som tekst, eller en opfordring hvis perioden ikke er hel.</summary>
+    /// <summary>The number of nights as text, or a prompt if the period is not complete.</summary>
     public string NightsText => Nights > 0
         ? PublicDateText.Nights(Nights)
         : "Pick your check-in and check-out dates and we'll work out the nights.";
 
-    /// <summary>Perioden som tekst, eller tom hvis begge datoer ikke er valgt.</summary>
+    /// <summary>The period as text, or empty if both dates are not chosen.</summary>
     public string PeriodText =>
         CheckInDate is DateOnly checkIn && CheckOutDate is DateOnly checkOut && checkOut > checkIn
             ? PublicDateText.Period(checkIn, checkOut)
             : string.Empty;
 
     /// <summary>
-    /// Kort opsummering af det valgte til trin 3 — uden pris, som resten af flowet
+    /// Short summary of the choice for step 3 — without a price, like the rest of the flow
     /// (BR-C-05).
     /// </summary>
     public string SelectionSummary => SelectedRoom is null
@@ -190,27 +190,27 @@ public sealed class BookingFlowViewModel
             PublicDateText.Nights(Nights),
             PaymentText);
 
-    /// <summary>Sand når "find ledige rum" må trykkes.</summary>
+    /// <summary>True when "find free rooms" may be pressed.</summary>
     public bool CanFindRooms => !IsBusy && HasValidDates;
 
-    /// <summary>Sand når bookingen må sendes.</summary>
+    /// <summary>True when the booking may be sent.</summary>
     public bool CanSubmit => !IsBusy && HasValidDates && SelectedRoom is not null;
 
     /// <summary>
-    /// Teksten der står, hvor en pris ellers ville stå. Prismodellen findes ikke i Fase 1
-    /// (BR-C-05, BR-31), og et tomt felt ville ligne en fejl frem for et fravalg.
+    /// The text that stands where a price would otherwise stand. The price model does not exist in Phase 1
+    /// (BR-C-05, BR-31), and an empty field would look like a fault rather than a deliberate omission.
     /// </summary>
     public static string PaymentText => "Payment on arrival";
 
     // ------------------------------------------------------------------
-    // VISNINGSHJÆLPERE
+    // DISPLAY HELPERS
     // ------------------------------------------------------------------
 
     /// <summary>
-    /// Giver klasserne til ét punkt i trinindikatoren.
+    /// Gives the classes for one point in the step indicator.
     /// </summary>
-    /// <param name="step">Trinnet der tegnes.</param>
-    /// <returns>Klassestrengen, fx <c>"step step-active"</c>.</returns>
+    /// <param name="step">The step being drawn.</param>
+    /// <returns>The class string, for example <c>"step step-active"</c>.</returns>
     public string StepClass(BookingFlowStep step) => step switch
     {
         _ when step < CurrentStep => "step step-done",
@@ -219,20 +219,20 @@ public sealed class BookingFlowViewModel
     };
 
     /// <summary>
-    /// Giver <c>aria-current</c> til ét punkt i trinindikatoren.
+    /// Gives <c>aria-current</c> for one point in the step indicator.
     /// </summary>
-    /// <param name="step">Trinnet der tegnes.</param>
-    /// <returns><c>"step"</c> på det aktuelle trin; ellers <c>null</c>, så attributten udelades.</returns>
+    /// <param name="step">The step being drawn.</param>
+    /// <returns><c>"step"</c> on the current step; otherwise <c>null</c>, so the attribute is left out.</returns>
     public string? StepAria(BookingFlowStep step) => step == CurrentStep ? "step" : null;
 
     /// <summary>
-    /// Beskriver et rum til kunden: type, etage og hvor mange der er plads til.
+    /// Describes a room to the customer: type, floor and how many it has room for.
     /// </summary>
-    /// <param name="room">Rummet.</param>
-    /// <returns>Fx <c>"Room 204 · Double room · Floor 2 · sleeps 2"</c>.</returns>
+    /// <param name="room">The room.</param>
+    /// <returns>For example <c>"Room 204 · Double room · Floor 2 · sleeps 2"</c>.</returns>
     /// <remarks>
-    /// Værelsestypen kommer fra <see cref="DisplayText"/>, så kunde- og admin-siden bruger
-    /// samme ord om samme værelsestype.
+    /// The room type comes from <see cref="DisplayText"/>, so the customer side and the admin side use
+    /// the same words about the same room type.
     /// </remarks>
     public static string DescribeRoom(AvailableRoomDto room)
     {
@@ -247,20 +247,20 @@ public sealed class BookingFlowViewModel
     }
 
     /// <summary>
-    /// Beskriver en etage.
+    /// Describes a floor.
     /// </summary>
-    /// <param name="floor">Etagen som den står på rummet.</param>
+    /// <param name="floor">The floor as it stands on the room.</param>
     /// <returns>Fx <c>"Floor 2"</c>.</returns>
     /// <remarks>
-    /// Tallet skrives som det står i domænet. Etagenumre er husets egne, og en omregning
-    /// til "stueetagen" ville være et gæt på en nummerering ingen regel beskriver.
+    /// The number is written as it stands in the domain. Floor numbers are the building's own, and a conversion
+    /// to "ground floor" would be a guess about a numbering that no rule describes.
     /// </remarks>
     public static string DescribeFloor(int floor) => $"Floor {floor}";
 
     /// <summary>
-    /// Beskriver et rums kapacitet.
+    /// Describes the capacity of a room.
     /// </summary>
-    /// <param name="capacity">Antal personer rummet kan rumme.</param>
+    /// <param name="capacity">The number of people the room can hold.</param>
     /// <returns>Fx <c>"sleeps 2"</c>.</returns>
     public static string DescribeCapacity(int capacity) => capacity == 1
         ? "sleeps 1"
@@ -271,12 +271,12 @@ public sealed class BookingFlowViewModel
     // ------------------------------------------------------------------
 
     /// <summary>
-    /// Henter de ledige rum for de valgte datoer og går til trin 2 (BR-C-02, BR-C-04).
+    /// Fetches the free rooms for the chosen dates and goes to step 2 (BR-C-02, BR-C-04).
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <remarks>
-    /// Ugyldige datoer holder brugeren på trin 1 med en besked ved feltet. Servicekaldet
-    /// sker altså aldrig for en periode vi allerede ved er ulovlig.
+    /// Invalid dates keep the user on step 1 with a message at the field. The service call
+    /// therefore never happens for a period we already know is illegal.
     /// </remarks>
     public async Task FindRoomsAsync(CancellationToken cancellationToken = default)
     {
@@ -320,7 +320,7 @@ public sealed class BookingFlowViewModel
             AvailableRooms = result.Value;
             AreRoomsLoaded = true;
 
-            // Et rum valgt til en tidligere periode må ikke følge med over i en ny.
+            // A room chosen for an earlier period must not follow along into a new one.
             if (SelectedRoom is not null && !Contains(AvailableRooms, SelectedRoom.RoomId))
             {
                 SelectedRoom = null;
@@ -335,12 +335,12 @@ public sealed class BookingFlowViewModel
     }
 
     /// <summary>
-    /// Vælger et rum og går til trin 3 (BR-C-04).
+    /// Chooses a room and goes to step 3 (BR-C-04).
     /// </summary>
     /// <param name="roomId">Rummets id.</param>
     /// <remarks>
-    /// Kun rum fra den hentede liste kan vælges. Listen indeholder pr. BR-C-02 kun rum der
-    /// er ledige i perioden, så kunden kan ikke vælge et rum hun ikke har fået vist.
+    /// Only rooms from the fetched list can be chosen. Per BR-C-02 the list contains only rooms that
+    /// are free in the period, so the customer cannot choose a room she has not been shown.
     /// </remarks>
     public void SelectRoom(int roomId)
     {
@@ -369,7 +369,7 @@ public sealed class BookingFlowViewModel
     }
 
     /// <summary>
-    /// Går tilbage til trin 1. Indtastningen bevares.
+    /// Goes back to step 1. The input is kept.
     /// </summary>
     public void BackToDates()
     {
@@ -383,11 +383,11 @@ public sealed class BookingFlowViewModel
     }
 
     /// <summary>
-    /// Går tilbage til trin 2. Gæsteoplysningerne bevares.
+    /// Goes back to step 2. The guest details are kept.
     /// </summary>
     /// <remarks>
-    /// Er rummene aldrig hentet — eller er datoerne ændret til noget ugyldigt siden — ender
-    /// brugeren på trin 1 i stedet for på en tom rumliste.
+    /// If the rooms have never been fetched — or the dates have since been changed to something invalid —
+    /// the user ends up on step 1 instead of on an empty room list.
     /// </remarks>
     public void BackToRooms()
     {
@@ -403,22 +403,22 @@ public sealed class BookingFlowViewModel
     }
 
     /// <summary>
-    /// Validerer gæsteoplysningerne og opretter bookingen (BR-C-01, BR-C-03).
+    /// Validates the guest details and creates the booking (BR-C-01, BR-C-03).
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <remarks>
-    /// <c>ValidateFields</c> kaldes <b>før</b> oprettelsen. Det er ikke en dublering af
-    /// reglerne — det er den samme regel, kaldt uden IO — og det er forskellen på at få
-    /// sine fejl at se og at få dem at se efter en rundtur i databasen.
+    /// <c>ValidateFields</c> is called <b>before</b> the creation. It is not a duplication of
+    /// the rules — it is the same rule, called without IO — and it is the difference between seeing
+    /// one's errors and seeing them after a round trip to the database.
     /// <para>
-    /// Bookingen oprettes uden <c>GuestId</c> og med <c>NewGuest</c> udfyldt (BR-47).
-    /// Statussen sættes af domænet til <c>Pending</c>; bekræftelsen er personalets
-    /// handling (BR-C-03), og der er derfor ingen knap til den her.
+    /// The booking is created without <c>GuestId</c> and with <c>NewGuest</c> filled in (BR-47).
+    /// The status is set by the domain to <c>Pending</c>; the confirmation is the staff's
+    /// action (BR-C-03), and there is therefore no button for it here.
     /// </para>
     /// <para>
-    /// Bliver rummet optaget mellem visningen og klikket, hentes listen igen, og kunden
-    /// sendes tilbage til trin 2 med beskeden i behold. Alternativet — en fejl på en
-    /// formular hvis rum ikke længere findes — er en blindgyde.
+    /// If the room becomes occupied between the display and the click, the list is fetched again, and the customer
+    /// is sent back to step 2 with the message kept. The alternative — an error on a
+    /// form whose room no longer exists — is a dead end.
     /// </para>
     /// </remarks>
     public async Task SubmitAsync(CancellationToken cancellationToken = default)
@@ -509,7 +509,7 @@ public sealed class BookingFlowViewModel
     }
 
     /// <summary>
-    /// Starter et nyt flow forfra. Bruges fra kvitteringen.
+    /// Starts a new flow from scratch. Used from the receipt.
     /// </summary>
     public void StartOver()
     {
@@ -540,7 +540,7 @@ public sealed class BookingFlowViewModel
     // PRIVAT
     // ------------------------------------------------------------------
 
-    /// <summary>Fejlkoden ved ankomstfeltet, eller <c>null</c>.</summary>
+    /// <summary>The error code at the arrival field, or <c>null</c>.</summary>
     private string? CheckInErrorCode
     {
         get
@@ -554,7 +554,7 @@ public sealed class BookingFlowViewModel
         }
     }
 
-    /// <summary>Fejlkoden ved afrejsefeltet, eller <c>null</c>.</summary>
+    /// <summary>The error code at the departure field, or <c>null</c>.</summary>
     private string? CheckOutErrorCode
     {
         get
@@ -571,19 +571,19 @@ public sealed class BookingFlowViewModel
     }
 
     /// <summary>
-    /// Oversætter én fejlkode til dansk gennem <see cref="ErrorMessages"/>.
+    /// Translates one error code to Danish through <see cref="ErrorMessages"/>.
     /// </summary>
-    /// <param name="code">Fejlkoden, eller <c>null</c>.</param>
-    /// <returns>Den danske tekst, eller <c>null</c>.</returns>
+    /// <param name="code">The error code, or <c>null</c>.</param>
+    /// <returns>The Danish text, or <c>null</c>.</returns>
     /// <remarks>
-    /// Datovalideringen bruger med vilje Application-lagets koder frem for sine egne
-    /// tekster. Så siger klientvalideringen ordret det samme som servicen ville sige, og
-    /// der findes stadig kun ét sted med danske fejltekster (A-09).
+    /// The date validation deliberately uses the codes of the Application layer rather than its own
+    /// texts. Then the client validation says word for word the same as the service would say, and
+    /// there is still only one place with Danish error texts (A-09).
     /// </remarks>
     private static string? Describe(string? code) =>
         code is null ? null : ErrorMessages.Describe(new Error(code));
 
-    /// <summary>Bygger gæstefelterne af formularen, trimmet (BR-47).</summary>
+    /// <summary>Builds the guest fields from the form, trimmed (BR-47).</summary>
     private GuestFields BuildGuestFields() => new(
         FirstName.Trim(),
         LastName.Trim(),
@@ -592,7 +592,7 @@ public sealed class BookingFlowViewModel
         Country.Trim(),
         string.IsNullOrWhiteSpace(PassportNumber) ? null : PassportNumber.Trim());
 
-    /// <summary>Sand hvis resultatet handler om rummet frem for om gæsten.</summary>
+    /// <summary>True if the result is about the room rather than about the guest.</summary>
     private static bool MentionsRoom(Result result)
     {
         foreach (var error in result.Errors)
@@ -606,7 +606,7 @@ public sealed class BookingFlowViewModel
         return false;
     }
 
-    /// <summary>Finder et rum i listen, eller <c>null</c>.</summary>
+    /// <summary>Finds a room in the list, or <c>null</c>.</summary>
     private static AvailableRoomDto? Find(IReadOnlyList<AvailableRoomDto> rooms, int roomId)
     {
         foreach (var room in rooms)
@@ -620,7 +620,7 @@ public sealed class BookingFlowViewModel
         return null;
     }
 
-    /// <summary>Sand hvis listen indeholder rummet.</summary>
+    /// <summary>True if the list contains the room.</summary>
     private static bool Contains(IReadOnlyList<AvailableRoomDto> rooms, int roomId) =>
         Find(rooms, roomId) is not null;
 }

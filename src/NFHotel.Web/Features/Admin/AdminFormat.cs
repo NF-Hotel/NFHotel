@@ -3,48 +3,48 @@ using System.Globalization;
 namespace NFHotel.Web.Features.Admin;
 
 /// <summary>
-/// Formatering af datoer og tidspunkter i admin-tabeller.
+/// Formatting of dates and times in admin tables.
 /// </summary>
 /// <remarks>
-/// UI-Spec afsnit 4: datoer skrives <c>dd MMM yyyy</c> i tabeller. Formatet står ét sted,
-/// så en kolonne ikke kan komme til at skrive datoen anderledes end nabokolonnen.
+/// UI-Spec section 4: dates are written <c>dd MMM yyyy</c> in tables. The format is in one place,
+/// so a column cannot come to write the date differently from the neighbouring column.
 /// <para>
-/// <see cref="CultureInfo.InvariantCulture"/> bruges bevidst: månedsforkortelsen skal være
-/// den samme engelske uanset hvilken kultur serveren tilfældigvis kører med, og et rent
-/// talformat som 01.02.2026 læses forskelligt af danske og amerikanske gæster.
+/// <see cref="CultureInfo.InvariantCulture"/> is used deliberately: the month abbreviation must be
+/// the same English one regardless of which culture the server happens to run with, and a pure
+/// number format like 01.02.2026 is read differently by Danish and American guests.
 /// </para>
 /// </remarks>
 public static class AdminFormat
 {
-    /// <summary>Det format datoer skrives med i admin (UI-Spec afsnit 4).</summary>
+    /// <summary>The format dates are written with in admin (UI-Spec section 4).</summary>
     private const string DatePattern = "dd MMM yyyy";
 
-    /// <summary>Format til et klokkeslæt uden dato.</summary>
+    /// <summary>Format for a time of day without a date.</summary>
     private const string TimePattern = "HH:mm";
 
-    /// <summary>Teksten der står hvor en valgfri dato ikke er sat.</summary>
+    /// <summary>The text shown where an optional date is not set.</summary>
     private const string Missing = "—";
 
     /// <summary>
-    /// Skriver en dato som <c>dd MMM yyyy</c>.
+    /// Writes a date as <c>dd MMM yyyy</c>.
     /// </summary>
     /// <param name="value">Datoen.</param>
-    /// <returns>Den formaterede dato.</returns>
+    /// <returns>The formatted date.</returns>
     public static string Date(DateOnly value) =>
         value.ToString(DatePattern, CultureInfo.InvariantCulture);
 
     /// <summary>
-    /// Skriver en valgfri dato som <c>dd MMM yyyy</c>.
+    /// Writes an optional date as <c>dd MMM yyyy</c>.
     /// </summary>
-    /// <param name="value">Datoen, eller <c>null</c>.</param>
-    /// <returns>Den formaterede dato, eller en tankestreg.</returns>
+    /// <param name="value">The date, or <c>null</c>.</param>
+    /// <returns>The formatted date, or a dash.</returns>
     public static string Date(DateOnly? value) => value is null ? Missing : Date(value.Value);
 
     /// <summary>
-    /// Skriver et tidspunkt som <c>dd MMM yyyy HH:mm</c>.
+    /// Writes a time as <c>dd MMM yyyy HH:mm</c>.
     /// </summary>
-    /// <param name="value">Tidspunktet, eller <c>null</c>.</param>
-    /// <returns>Det formaterede tidspunkt, eller en tankestreg.</returns>
+    /// <param name="value">The time, or <c>null</c>.</param>
+    /// <returns>The formatted time, or a dash.</returns>
     public static string DateAndTime(DateTimeOffset? value) => value is null
         ? Missing
         : value.Value.ToString($"{DatePattern} {TimePattern}", CultureInfo.InvariantCulture);

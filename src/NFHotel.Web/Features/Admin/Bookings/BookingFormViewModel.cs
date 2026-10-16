@@ -10,22 +10,22 @@ using NFHotel.Web.Common;
 namespace NFHotel.Web.Features.Admin.Bookings;
 
 /// <summary>
-/// Præsentationslogik for at oprette en booking og for at omlægge en eksisterende.
+/// Presentation logic for creating a booking and for rescheduling an existing one.
 /// </summary>
 /// <remarks>
-/// Uden denne skærm kan systemet kun fodres med SQL: <c>CreateAsync</c> og
-/// <c>RescheduleAsync</c> havde ingen indgang i UI'et.
+/// Without this screen the system can only be fed with SQL: <c>CreateAsync</c> and
+/// <c>RescheduleAsync</c> had no entry point in the UI.
 /// <para>
-/// Flowet er datoer → ledige rum → gæst. Rummene kommer fra
-/// <see cref="IBookingService.GetAvailableRoomsAsync"/>, som både kender bookbarhed
-/// (BR-110) og overlap (BR-19) — skærmen viser altså aldrig et rum den ikke kan bruge, og
-/// den afgør heller ikke selv hvilke der er ledige.
+/// The flow is dates → free rooms → guest. The rooms come from
+/// <see cref="IBookingService.GetAvailableRoomsAsync"/>, which knows both bookability
+/// (BR-110) and overlap (BR-19) — the screen thus never shows a room it cannot use, and
+/// it does not itself decide which ones are free.
 /// </para>
 /// <para>
-/// B-10: klassen validerer ingenting selv. Gæstefelterne spørger
-/// <see cref="IGuestService.ValidateFields"/>, og alt andet afgøres af servicen når der
-/// gemmes. <see cref="CanSave"/> er derfor kun et spørgsmål om formularen er <i>udfyldt</i>
-/// — ikke om den er <i>gyldig</i>.
+/// B-10: the class validates nothing itself. The guest fields ask
+/// <see cref="IGuestService.ValidateFields"/>, and everything else is decided by the service when
+/// saving. <see cref="CanSave"/> is therefore only a question of whether the form is <i>filled in</i>
+/// — not whether it is <i>valid</i>.
 /// </para>
 /// </remarks>
 public sealed class BookingFormViewModel
@@ -37,8 +37,8 @@ public sealed class BookingFormViewModel
     /// <summary>
     /// Opretter viewmodellen.
     /// </summary>
-    /// <param name="bookings">Kører use cases på <see cref="IBookingService"/>.</param>
-    /// <param name="guests">Kører use cases på <see cref="IGuestService"/>.</param>
+    /// <param name="bookings">Runs use cases on <see cref="IBookingService"/>.</param>
+    /// <param name="guests">Runs use cases on <see cref="IGuestService"/>.</param>
     /// <param name="clock">Hotellets ur (A-05).</param>
     public BookingFormViewModel(
         IUseCaseRunner<IBookingService> bookings,
@@ -57,16 +57,16 @@ public sealed class BookingFormViewModel
         CheckOutDate = clock.Today.AddDays(1);
     }
 
-    /// <summary>Sand når formularen er åben.</summary>
+    /// <summary>True when the form is open.</summary>
     public bool IsOpen { get; private set; }
 
-    /// <summary>Om formularen opretter eller omlægger.</summary>
+    /// <summary>Whether the form creates or reschedules.</summary>
     public BookingFormMode Mode { get; private set; } = BookingFormMode.Create;
 
-    /// <summary>Bookingen der omlægges, eller <c>null</c> ved oprettelse.</summary>
+    /// <summary>The booking being rescheduled, or <c>null</c> on creation.</summary>
     public int? BookingId { get; private set; }
 
-    /// <summary>Bookingnummeret der omlægges, til overskriften (BR-109).</summary>
+    /// <summary>The number of the booking being rescheduled, for the heading (BR-109).</summary>
     public string? BookingNumber { get; private set; }
 
     /// <summary>Formularens overskrift.</summary>
@@ -74,85 +74,85 @@ public sealed class BookingFormViewModel
         ? "New booking"
         : $"Reschedule booking {BookingNumber}";
 
-    /// <summary>Ankomstdato, inklusiv.</summary>
+    /// <summary>Arrival date, inclusive.</summary>
     public DateOnly CheckInDate { get; set; }
 
-    /// <summary>Afrejsedato, eksklusiv.</summary>
+    /// <summary>Departure date, exclusive.</summary>
     public DateOnly CheckOutDate { get; set; }
 
-    /// <summary>De ledige rum i den valgte periode (BR-19, BR-110).</summary>
+    /// <summary>The free rooms in the chosen period (BR-19, BR-110).</summary>
     public IReadOnlyList<AvailableRoomDto> AvailableRooms { get; private set; } =
         Array.Empty<AvailableRoomDto>();
 
-    /// <summary>Sand når der er søgt efter rum mindst én gang med de nuværende datoer.</summary>
+    /// <summary>True when rooms have been searched for at least once with the current dates.</summary>
     public bool HasSearchedRooms { get; private set; }
 
-    /// <summary>Sand når søgningen kom tilbage uden fejl, men uden ledige rum.</summary>
+    /// <summary>True when the search came back without error, but without free rooms.</summary>
     public bool HasNoAvailableRooms =>
         HasSearchedRooms && Errors.Count == 0 && AvailableRooms.Count == 0;
 
-    /// <summary>Det valgte rum, eller <c>null</c>.</summary>
+    /// <summary>The chosen room, or <c>null</c>.</summary>
     public int? SelectedRoomId { get; private set; }
 
-    /// <summary>Om gæsten vælges blandt de eksisterende eller oprettes nu (BR-47).</summary>
+    /// <summary>Whether the guest is chosen among the existing ones or created now (BR-47).</summary>
     public BookingGuestMode GuestMode { get; private set; } = BookingGuestMode.Existing;
 
-    /// <summary>Fritekst til gæstesøgningen.</summary>
+    /// <summary>Free text for the guest search.</summary>
     public string? GuestSearchText { get; set; }
 
-    /// <summary>Gæsterne der matcher søgningen.</summary>
+    /// <summary>The guests that match the search.</summary>
     public IReadOnlyList<GuestListItemDto> Guests { get; private set; } =
         Array.Empty<GuestListItemDto>();
 
-    /// <summary>Sand når der er søgt efter gæster mindst én gang.</summary>
+    /// <summary>True when guests have been searched for at least once.</summary>
     public bool HasSearchedGuests { get; private set; }
 
-    /// <summary>Den valgte gæst, eller <c>null</c>.</summary>
+    /// <summary>The chosen guest, or <c>null</c>.</summary>
     public int? SelectedGuestId { get; private set; }
 
-    /// <summary>Ny gæst: fornavn.</summary>
+    /// <summary>New guest: first name.</summary>
     public string FirstName { get; set; } = string.Empty;
 
-    /// <summary>Ny gæst: efternavn.</summary>
+    /// <summary>New guest: last name.</summary>
     public string LastName { get; set; } = string.Empty;
 
-    /// <summary>Ny gæst: e-mail.</summary>
+    /// <summary>New guest: email.</summary>
     public string Email { get; set; } = string.Empty;
 
-    /// <summary>Ny gæst: telefonnummer.</summary>
+    /// <summary>New guest: phone number.</summary>
     public string PhoneNumber { get; set; } = string.Empty;
 
-    /// <summary>Ny gæst: land.</summary>
+    /// <summary>New guest: country.</summary>
     public string Country { get; set; } = string.Empty;
 
-    /// <summary>Ny gæst: pasnummer. Valgfrit (BR-57).</summary>
+    /// <summary>New guest: passport number. Optional (BR-57).</summary>
     public string? PassportNumber { get; set; }
 
-    /// <summary>Valideringsfejl på den nye gæsts felter, allerede oversat til dansk.</summary>
+    /// <summary>Validation errors on the fields of the new guest, already translated to Danish.</summary>
     public IReadOnlyList<string> GuestErrors { get; private set; } = Array.Empty<string>();
 
-    /// <summary>Fejl fra formularen som helhed, allerede oversat til dansk.</summary>
+    /// <summary>Errors from the form as a whole, already translated to Danish.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = Array.Empty<string>();
 
-    /// <summary>Kvittering efter en vellykket oprettelse eller omlægning.</summary>
+    /// <summary>Receipt after a successful creation or reschedule.</summary>
     public string? SuccessMessage { get; private set; }
 
-    /// <summary>Sand mens et kald er i gang.</summary>
+    /// <summary>True while a call is in progress.</summary>
     public bool IsBusy { get; private set; }
 
-    /// <summary>Sand hvis det seneste gem lykkedes — bruges til at hente listen igen.</summary>
+    /// <summary>True if the latest save succeeded — used to fetch the list again.</summary>
     public bool SavedSuccessfully { get; private set; }
 
-    /// <summary>Sand når gæstens felter er udfyldt så domænet accepterer dem.</summary>
+    /// <summary>True when the fields of the guest are filled in so the domain accepts them.</summary>
     public bool NewGuestIsValid { get; private set; }
 
     /// <summary>
-    /// Sand når formularen er udfyldt nok til at det giver mening at forsøge at gemme.
+    /// True when the form is filled in enough that it makes sense to try to save.
     /// </summary>
     /// <remarks>
-    /// Ikke en validering: perioden, rummets bookbarhed og overlappet afgøres af servicen.
-    /// Her tjekkes kun at brugeren har truffet de valg formularen beder om, så knappen
-    /// ikke kan sende en halvt udfyldt anmodning af sted.
+    /// Not a validation: the period, the bookability of the room and the overlap are decided by the service.
+    /// Here it is only checked that the user has made the choices the form asks for, so the button
+    /// cannot send off a half-filled request.
     /// </remarks>
     public bool CanSave
     {
@@ -175,7 +175,7 @@ public sealed class BookingFormViewModel
     }
 
     /// <summary>
-    /// Åbner en tom formular til en ny booking.
+    /// Opens an empty form for a new booking.
     /// </summary>
     public void BeginCreate()
     {
@@ -190,13 +190,13 @@ public sealed class BookingFormViewModel
     }
 
     /// <summary>
-    /// Åbner formularen for at omlægge en booking (BR-14).
+    /// Opens the form to reschedule a booking (BR-14).
     /// </summary>
-    /// <param name="booking">Bookingen der skal flyttes.</param>
+    /// <param name="booking">The booking to be moved.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <remarks>
-    /// Søger straks efter ledige rum, fordi bookingens nuværende periode allerede er valgt.
-    /// Bookingen selv udelades fra opslaget, så den ikke spærrer for sit eget rum.
+    /// Searches for free rooms immediately, because the current period of the booking is already chosen.
+    /// The booking itself is left out of the lookup, so it does not block its own room.
     /// </remarks>
     public async Task BeginRescheduleAsync(
         BookingListItemDto booking,
@@ -218,7 +218,7 @@ public sealed class BookingFormViewModel
     }
 
     /// <summary>
-    /// Lukker formularen uden at gemme.
+    /// Closes the form without saving.
     /// </summary>
     public void Close()
     {
@@ -228,13 +228,13 @@ public sealed class BookingFormViewModel
     }
 
     /// <summary>
-    /// Henter de rum der er ledige i den valgte periode.
+    /// Fetches the rooms that are free in the chosen period.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <remarks>
-    /// Datoerne kontrolleres ikke her: servicen svarer med
-    /// <c>booking.end_not_after_start</c> eller <c>booking.start_date_in_past</c>, og
-    /// skærmen viser den danske tekst. Reglen findes dermed ét sted (BR-103, BR-104).
+    /// The dates are not checked here: the service answers with
+    /// <c>booking.end_not_after_start</c> or <c>booking.start_date_in_past</c>, and
+    /// the screen shows the Danish text. The rule thus exists in one place (BR-103, BR-104).
     /// </remarks>
     public async Task SearchRoomsAsync(CancellationToken cancellationToken = default)
     {
@@ -270,8 +270,8 @@ public sealed class BookingFormViewModel
             Errors = Array.Empty<string>();
             AvailableRooms = result.Value;
 
-            // Det tidligere valgte rum kan være optaget i den nye periode. Så skal det ud
-            // af valget frem for at blive sendt med i anmodningen.
+            // The previously chosen room may be occupied in the new period. Then it must be removed
+            // from the selection rather than being sent along in the request.
             if (SelectedRoomId is not null &&
                 !AvailableRooms.Any(room => room.RoomId == SelectedRoomId.Value))
             {
@@ -286,20 +286,20 @@ public sealed class BookingFormViewModel
     }
 
     /// <summary>
-    /// Vælger rummet bookingen skal ligge på.
+    /// Chooses the room the booking should be on.
     /// </summary>
     /// <param name="roomId">Rummets id.</param>
     public void SelectRoom(int roomId) => SelectedRoomId = roomId;
 
     /// <summary>
-    /// Skifter mellem eksisterende og ny gæst (BR-47).
+    /// Switches between existing and new guest (BR-47).
     /// </summary>
-    /// <param name="mode">Den ønskede tilstand.</param>
+    /// <param name="mode">The desired mode.</param>
     public void SetGuestMode(BookingGuestMode mode)
     {
         GuestMode = mode;
 
-        // Præcis én af de to må være udfyldt, så det andet valg nulstilles.
+        // Exactly one of the two may be filled in, so the other choice is reset.
         if (mode == BookingGuestMode.Existing)
         {
             NewGuestIsValid = false;
@@ -314,7 +314,7 @@ public sealed class BookingFormViewModel
     }
 
     /// <summary>
-    /// Søger blandt de eksisterende gæster.
+    /// Searches among the existing guests.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public async Task SearchGuestsAsync(CancellationToken cancellationToken = default)
@@ -353,17 +353,17 @@ public sealed class BookingFormViewModel
     }
 
     /// <summary>
-    /// Vælger den gæst bookingen skal stå på.
+    /// Chooses the guest the booking should be on.
     /// </summary>
-    /// <param name="guestId">Gæstens id.</param>
+    /// <param name="guestId">The id of the guest.</param>
     public void SelectGuest(int guestId) => SelectedGuestId = guestId;
 
     /// <summary>
-    /// Validerer den nye gæsts felter mod domænets regler (BR-52 til BR-56).
+    /// Validates the fields of the new guest against the rules of the domain (BR-52 to BR-56).
     /// </summary>
     /// <remarks>
-    /// Bevidst ikke async — <see cref="IGuestService.ValidateFields"/> laver ingen IO.
-    /// Alle fejl vises samtidig (BR-60, BR-96).
+    /// Deliberately not async — <see cref="IGuestService.ValidateFields"/> does no IO.
+    /// All errors are shown at the same time (BR-60, BR-96).
     /// </remarks>
     public void ValidateNewGuest()
     {
@@ -375,7 +375,7 @@ public sealed class BookingFormViewModel
     }
 
     /// <summary>
-    /// Gemmer formularen: opretter bookingen eller flytter den.
+    /// Saves the form: creates the booking or moves it.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public async Task SaveAsync(CancellationToken cancellationToken = default)
@@ -424,13 +424,13 @@ public sealed class BookingFormViewModel
     }
 
     /// <summary>
-    /// Rydder kvitteringen fra sidste gem.
+    /// Clears the receipt from the last save.
     /// </summary>
     public void DismissSuccess() => SuccessMessage = null;
 
     private Task<Result<BookingDetailsDto>> CreateAsync(int roomId, CancellationToken cancellationToken)
     {
-        // BR-47: præcis én af de to udfyldes. Valget i UI'et afgør hvilken.
+        // BR-47: exactly one of the two is filled in. The choice in the UI decides which.
         var request = new CreateBookingRequest(
             CheckInDate,
             CheckOutDate,
@@ -465,7 +465,7 @@ public sealed class BookingFormViewModel
         string.IsNullOrWhiteSpace(PassportNumber) ? null : PassportNumber);
 
     /// <summary>
-    /// Nulstiller alle felter, så en ny åbning aldrig arver den forriges valg.
+    /// Resets all fields, so a new opening never inherits the choices of the previous one.
     /// </summary>
     private void Reset()
     {

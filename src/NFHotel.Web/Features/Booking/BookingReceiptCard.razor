@@ -11,23 +11,23 @@
 @using NFHotel.Domain.Repositories
 
 @*
-    Kvitteringen for én booking. Bruges både som trin 4 i flowet og som hele indholdet
-    på den bogmærkbare side /booking/{bookingNumber}.
+    The receipt for one booking. Used both as step 4 in the flow and as the whole content
+    of the bookmarkable page /booking/{bookingNumber}.
 
-    BR-C-06 — HVORFOR DER IKKE STÅR ET NAVN HER
-    Der er ingen adgangskontrol i Fase 1, så bookingnummeret er den eneste nøgle til
-    siden. Formatet er "FLZ-" plus bookingens id (BR-109), og FLZ-000123 ligger derfor
-    ét ciffer fra den næste gæsts booking: den der tæller opad, rammer i første forsøg.
+    BR-C-06 — WHY THERE IS NO NAME HERE
+    There is no access control in Phase 1, so the booking number is the only key to
+    the page. The format is "FLZ-" plus the id of the booking (BR-109), and FLZ-000123 is therefore
+    one digit from the next guest's booking: whoever counts upwards hits on the first try.
 
-    Derfor har denne komponent kun markup til bookingnummer, periode, antal nætter, rum
-    og status (BR-C-05). Details.Guest bærer både navn, e-mail og telefon — de bliver
-    bevidst stående ubrugt, så en fremmed ikke kan høste persondata ved at gætte numre.
-    Kunden mister intet: hun har lige selv indtastet oplysningerne.
+    Therefore this component has markup only for booking number, period, number of nights, room
+    and status (BR-C-05). Details.Guest carries name, email and phone — they are
+    deliberately left unused, so a stranger cannot harvest personal data by guessing numbers.
+    The customer loses nothing: she has just entered the details herself.
 
-    Begrænsningen løftes tidligst når Identity er på plads — og kun samtidig med den.
+    The limitation is lifted at the earliest when Identity is in place — and only together with it.
 
-    Der står heller ingen pris. Prismodellen findes ikke i Fase 1 (BR-C-05, BR-31), og
-    "Betaling ved ankomst" er det ærlige svar frem for et tomt felt der ligner en fejl.
+    There is no price either. The price model does not exist in Phase 1 (BR-C-05, BR-31), and
+    "Payment on arrival" is the honest answer rather than an empty field that looks like a fault.
 *@
 
 @if (Details is not null)
@@ -76,12 +76,12 @@
 }
 
 @code {
-    /// <summary>Bookingen der kvitteres for. Ingen kvittering vises hvis den er <c>null</c>.</summary>
+    /// <summary>The booking the receipt is for. No receipt is shown if it is <c>null</c>.</summary>
     [Parameter]
     [EditorRequired]
     public BookingDetailsDto? Details { get; set; }
 
-    /// <summary>Rummet som kunden læser det: nummer, type og etage.</summary>
+    /// <summary>The room as the customer reads it: number, type and floor.</summary>
     private string RoomText => Details is null
         ? string.Empty
         : $"Room {Details.Room.RoomNumber} · {DisplayText.Describe(Details.Room.Size)} · {BookingFlowViewModel.DescribeFloor(Details.Room.Floor)}";

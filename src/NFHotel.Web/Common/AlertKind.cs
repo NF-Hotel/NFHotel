@@ -1,20 +1,20 @@
 namespace NFHotel.Web.Common;
 
 /// <summary>
-/// Alvorlighedsgraden af en besked vist i <c>AlertBox</c>.
+/// The severity of a message shown in <c>AlertBox</c>.
 /// </summary>
 /// <remarks>
-/// Rent visningsbegreb og derfor Web-lagets ansvar. Application-laget returnerer
-/// fejlkoder, ikke farver — oversættelsen sker her og i <see cref="ErrorMessages"/>.
+/// A pure display concept and therefore the responsibility of the Web layer. The Application layer returns
+/// error codes, not colours — the translation happens here and in <see cref="ErrorMessages"/>.
 /// </remarks>
 public enum AlertKind
 {
-    /// <summary>Neutral oplysning. Kræver ingen handling.</summary>
+    /// <summary>Neutral information. Requires no action.</summary>
     Info = 0,
 
     /// <summary>Handlingen lykkedes.</summary>
     Ok = 1,
 
-    /// <summary>Handlingen mislykkedes, eller data er ugyldige.</summary>
+    /// <summary>The action failed, or data is invalid.</summary>
     Error = 2
 }

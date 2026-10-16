@@ -4,22 +4,22 @@ using NFHotel.Application.UseCases;
 namespace NFHotel.Web.Common;
 
 /// <summary>
-/// Oversætter Application-lagets fejlkoder til danske brugertekster.
+/// Translates the error codes of the Application layer to Danish user texts.
 /// </summary>
 /// <remarks>
-/// A-09: koden er kontrakten, teksten er UI'ets ansvar. Derfor findes oversættelsen præcis
-/// ét sted — her — og ikke spredt ud i komponenterne. Et senere API mapper de samme koder
-/// til HTTP-statusser uden at arve en eneste dansk streng.
+/// A-09: the code is the contract, the text is the responsibility of the UI. Therefore the translation exists in exactly
+/// one place — here — and not spread out in the components. A later API maps the same codes
+/// to HTTP statuses without inheriting a single Danish string.
 /// <para>
-/// Ukendte koder (og enhver uventet exception) bliver til <see cref="Unexpected"/>. Vi viser
-/// aldrig en rå fejlkode eller en exception-tekst til brugeren, jf. Conventions.md's
-/// "Vis brugeren neutrale fejlbeskeder".
+/// Unknown codes (and any unexpected exception) become <see cref="Unexpected"/>. We never
+/// show a raw error code or an exception text to the user, cf. Conventions.md's
+/// "Show the user neutral error messages".
 /// </para>
 /// </remarks>
 public static class ErrorMessages
 {
     /// <summary>
-    /// Den neutrale besked der vises når noget gik galt uden en kendt fejlkode.
+    /// The neutral message shown when something went wrong without a known error code.
     /// </summary>
     public const string Unexpected = "Something went wrong. Please try again.";
 
@@ -55,7 +55,7 @@ public static class ErrorMessages
             [ErrorCodes.Booking.ConcurrencyConflict] = "Someone else changed this booking. Reload the page and start over.",
 
             // ----------------------------------------------------------
-            // RUM
+            // ROOM
             // ----------------------------------------------------------
             [ErrorCodes.Room.NotFound] = "We couldn't find that room.",
             [ErrorCodes.Room.RoomNumberRequired] = "Enter a room number.",
@@ -75,7 +75,7 @@ public static class ErrorMessages
             [ErrorCodes.Room.ConcurrencyConflict] = "Someone else changed this room. Reload the page and start over.",
 
             // ----------------------------------------------------------
-            // GÆST
+            // GUEST
             // ----------------------------------------------------------
             [ErrorCodes.Guest.NotFound] = "We couldn't find that guest.",
             [ErrorCodes.Guest.FirstNameRequired] = "Enter a first name.",
@@ -94,8 +94,8 @@ public static class ErrorMessages
             // ----------------------------------------------------------
             // HELLIGDAGE (analysetjenesten)
             // ----------------------------------------------------------
-            // Konfigurations- og nøglefejl er en driftsfejl: brugeren kan ikke rette dem, så
-            // teksten er neutral. Detaljen står i loggen (HolidayApiClient).
+            // Configuration and key errors are an operations fault: the user cannot fix them, so
+            // the text is neutral. The detail is in the log (HolidayApiClient).
             [ErrorCodes.Holidays.NotConfigured] = "Holiday data isn't available right now.",
             [ErrorCodes.Holidays.Unauthorized] = "Holiday data isn't available right now.",
             [ErrorCodes.Holidays.Unavailable] = "We couldn't reach the holiday service. Please try again later.",
@@ -106,10 +106,10 @@ public static class ErrorMessages
         };
 
     /// <summary>
-    /// Oversætter én fejlkode til dansk.
+    /// Translates one error code to Danish.
     /// </summary>
-    /// <param name="error">Fejlen fra Application-laget.</param>
-    /// <returns>Den danske tekst, eller <see cref="Unexpected"/> hvis koden er ukendt.</returns>
+    /// <param name="error">The error from the Application layer.</param>
+    /// <returns>The Danish text, or <see cref="Unexpected"/> if the code is unknown.</returns>
     public static string Describe(Error error)
     {
         ArgumentNullException.ThrowIfNull(error);
@@ -118,13 +118,13 @@ public static class ErrorMessages
     }
 
     /// <summary>
-    /// Oversætter alle fejl i et resultat til danske tekster.
+    /// Translates all errors in a result to Danish texts.
     /// </summary>
-    /// <param name="result">Et fejlet resultat fra Application-laget.</param>
-    /// <returns>Én tekst pr. fejl. Tom hvis resultatet lykkedes.</returns>
+    /// <param name="result">A failed result from the Application layer.</param>
+    /// <returns>One text per error. Empty if the result succeeded.</returns>
     /// <remarks>
-    /// Flere fejl på én gang er meningen, ikke en fejl: BR-60 og BR-96 kræver at en formular
-    /// kan vise alle valideringsfejl samtidig.
+    /// Several errors at once is the intention, not a fault: BR-60 and BR-96 require that a form
+    /// can show all validation errors at the same time.
     /// </remarks>
     public static IReadOnlyList<string> Describe(Result result)
     {

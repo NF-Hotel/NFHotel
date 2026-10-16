@@ -1,19 +1,19 @@
 namespace NFHotel.Web.Common;
 
 /// <summary>
-/// Fejlkoder der opstår i Web-laget selv.
+/// Error codes that arise in the Web layer itself.
 /// </summary>
 /// <remarks>
-/// Application ejer alle forretningsfejlkoder (<c>ErrorCodes</c>). Denne klasse rummer kun
-/// de koder Web selv kan frembringe, og der er i dag præcis én: den uventede fejl som
-/// <see cref="UseCaseRunner{TService}"/> laver ud af en exception, så skærmene kan behandle
-/// "databasen er nede" med den samme <c>Result</c>-kode de behandler alt andet med.
+/// Application owns all business error codes (<c>ErrorCodes</c>). This class holds only
+/// the codes Web can produce itself, and today there is exactly one: the unexpected error that
+/// <see cref="UseCaseRunner{TService}"/> makes out of an exception, so the screens can treat
+/// "the database is down" with the same <c>Result</c> code they treat everything else with.
 /// </remarks>
 public static class WebErrorCodes
 {
     /// <summary>
-    /// Et use case kastede en uventet exception. Den tekniske detalje er logget; brugeren
-    /// får en neutral besked.
+    /// A use case threw an unexpected exception. The technical detail is logged; the user
+    /// gets a neutral message.
     /// </summary>
     public const string Unexpected = "web.unexpected_error";
 }

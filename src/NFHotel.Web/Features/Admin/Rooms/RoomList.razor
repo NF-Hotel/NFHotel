@@ -9,14 +9,14 @@
 @inject RoomFormViewModel Form
 
 @*
-    Rumoversigt med filtre, rengøringsforløb og opret/ret.
+    Room overview with filters, cleaning flow and create/change.
 
-    Kun markup og binding. Handlingspanelet tegner de knapper viewmodellen udleverer, og
-    de kommer fra RoomListItemDto.Actions — altså fra domænets tilstandsmaskine gennem
-    Application. Denne fil ved ikke hvad "slutrengøring" kommer efter.
+    Only markup and binding. The action panel draws the buttons the viewmodel hands out, and
+    they come from RoomListItemDto.Actions — that is, from the state machine of the domain through
+    Application. This file does not know what "departure cleaning" comes after.
 
-    Formularen har bevidst intet statusfelt: UpdateRoomRequest bærer det ikke, og
-    statusskift har egne use cases (A-08) med egne knapper i handlingspanelet.
+    The form deliberately has no status field: UpdateRoomRequest does not carry it, and
+    status changes have their own use cases (A-08) with their own buttons in the action panel.
 *@
 
 <PageTitle>Rooms — administration</PageTitle>
@@ -312,26 +312,26 @@
 </div>
 
 @code {
-    /// <summary>Alle rumstørrelser, til filterets dropdown.</summary>
+    /// <summary>All room sizes, for the dropdown of the filter.</summary>
     private static readonly RoomSize[] Sizes = Enum.GetValues<RoomSize>();
 
-    /// <summary>Alle driftsstatusser, til filterets dropdown.</summary>
+    /// <summary>All operating statuses, for the dropdown of the filter.</summary>
     private static readonly RoomStatus[] RoomStatuses = Enum.GetValues<RoomStatus>();
 
-    /// <summary>Alle rengøringsstatusser, til filterets dropdown.</summary>
+    /// <summary>All cleaning statuses, for the dropdown of the filter.</summary>
     private static readonly HousekeepingStatus[] HousekeepingStatuses = Enum.GetValues<HousekeepingStatus>();
 
-    /// <summary>Etagerne der faktisk findes, hentet med filtermulighederne.</summary>
+    /// <summary>The floors that actually exist, fetched with the filter options.</summary>
     private IReadOnlyList<int> Floors =>
         ViewModel.FilterOptions?.Floors ?? Array.Empty<int>();
 
-    /// <summary>Overskriften i bekræftelsen af en sletning.</summary>
+    /// <summary>The heading in the confirmation of a deletion.</summary>
     private string DeleteTitle => $"Delete room {ViewModel.RoomPendingDeletion?.RoomNumber}?";
 
-    /// <summary>Henter filtermuligheder og den første liste når skærmen åbnes.</summary>
+    /// <summary>Fetches filter options and the first list when the screen opens.</summary>
     protected override Task OnInitializedAsync() => ViewModel.InitializeAsync();
 
-    /// <summary>Teksten på knappen der åbner og lukker handlingspanelet.</summary>
+    /// <summary>The text on the button that opens and closes the action panel.</summary>
     private string SelectLabel(RoomListItemDto room) =>
         ViewModel.IsSelected(room) ? "Hide actions" : "Actions";
 
@@ -371,7 +371,7 @@
     private void CloseForm() => Form.Close();
 
     /// <summary>
-    /// Gemmer formularen og henter listen igen, hvis det lykkedes.
+    /// Saves the form and fetches the list again if it succeeded.
     /// </summary>
     private async Task SaveAsync()
     {
