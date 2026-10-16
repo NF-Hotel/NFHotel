@@ -1,0 +1,32 @@
+# Rendered by the nginx image at start: ${VAR} placeholders are replaced from
+# nginx.env, nginx's own $variables are left alone.
+# Blazor Server keeps a SignalR connection to /_blazor, so the proxy must pass
+# the WebSocket upgrade through and keep idle connections open.
+
+map $http_upgrade $connection_upgrade {
+  default upgrade;
+  ''      close;
+}
+
+server {
+  listen 80;
+  server_name ${NGINX_SERVER_NAME};
+
+  # Docker's embedded DNS. The upstream is resolved per request through a
+  # variable, so the proxy starts and stays up when the web service is down.
+  resolver 127.0.0.11 valid=10s;
+  set $upstream http://${UPSTREAM_HOST}:${UPSTREAM_PORT};
+
+  location / {
+    proxy_pass $upstream;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_read_timeout 1h;
+    proxy_send_timeout 1h;
+  }
+}

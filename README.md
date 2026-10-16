@@ -362,6 +362,44 @@ DATABASE_PASSWORD
 
 Never commit production credentials or sensitive customer data to the repository.
 
+### 🐳 Running with Docker Compose
+
+Each service has its own folder under `deploy/` with one `docker-compose.yml` and one `<service>.env` file. The `.env` files are git-ignored; copy the tracked `.env.example` next to it and fill it in.
+
+| Service | Folder | Settings file |
+| --- | --- | --- |
+| nginx reverse proxy | `deploy/nginx` | `nginx.env` |
+| NFHotel web application | `deploy/nfhotel-web` | `nfhotel-web.env` |
+
+The services share one Docker network. Create it once, then start the web application and the proxy (in either order). Only the proxy publishes a port; PostgreSQL is not included and is reached through `ConnectionStrings__HotelDatabase`.
+
+```bash
+docker network create nfhotel-proxy
+
+cd deploy/nfhotel-web && docker compose --env-file nfhotel-web.env up -d --build
+cd ../nginx && docker compose --env-file nginx.env up -d
+```
+
+The site is then served at `http://localhost:8080` (`NGINX_HTTP_PORT`). To prove the setup end to end, without touching your own env files:
+
+```bash
+bash scripts/test-compose-proxy.sh
+```
+
+### 🧪 Proxmox Integration Tests
+
+Read-only tests check that the Proxmox VE server is reachable and healthy. They run unattended in a throwaway Docker container that is removed afterwards. Only Docker is needed.
+
+1. In Proxmox, create an API token for a user with the role `PVEAuditor` (read-only) and enable *Privilege Separation*.
+2. Copy `pve.env.example` to `pve.env` (git-ignored) and fill in `PVE_HOST`, `PVE_NODE`, `PVE_API_TOKEN_ID` and `PVE_API_TOKEN_SECRET`.
+3. Run:
+
+```bash
+bash scripts/run-proxmox-tests.sh
+```
+
+The exit code is `0` when all checks pass. A missing setting is reported by name. The tests send only `GET` requests. `dotnet test` on the solution skips the live checks unless `PVE_HOST` is set.
+
 ---
 
 ## 🗄️ Database
