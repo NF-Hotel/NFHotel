@@ -23,11 +23,12 @@ updated whenever an artifact instance is created or reviewed.
 
 | Artifact Instance | Type | Language | Domain | Upstream (Backward Link) | Downstream (Forward Link) | Last Reviewed (RC-ID) |
 | --- | --- | --- | --- | --- | --- | --- |
-| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003] | [RC-008] |
+| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [UCD-001], [US-001] | [RC-014] |
 | [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009] |
 | [MIL-001] | Milestone | en | it | [BC-001] | - | [RC-003] |
 | [MIL-002] | Milestone | en | it | [BC-001] | - | [RC-006] |
 | [MIL-003] | Milestone | en | it | [BC-001] | - | [RC-010] |
+| [MIL-004] | Milestone | en | it | [BC-001], [US-001] | - | [RC-015] |
 | [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003] | - |
 | [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001] | [RC-013] |
 | [US-001] | User Story | en | it | [UCD-001], [BC-001] | - | [RC-012] |
@@ -54,6 +55,9 @@ updated whenever an artifact instance is created or reviewed.
 [RC-011]: ./reviews/rc-011-throwaway-proxmox-code.md
 [RC-012]: ./reviews/rc-012-user-stories.md
 [RC-013]: ./reviews/rc-013-use-case-diagram.md
+[RC-014]: ./reviews/rc-014-business-case-market-analysis.md
+[RC-015]: ./reviews/rc-015-milestone-004.md
+[MIL-004]: ../milestones/mil-004-market-analysis-service.md
 [UCD-001]: ../use-case-diagram.md
 [US-001]: ../user-stories.md
 [MIL-003]: ../milestones/mil-003-throwaway-proxmox.md
