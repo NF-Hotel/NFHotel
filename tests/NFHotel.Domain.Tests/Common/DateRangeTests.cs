@@ -10,9 +10,7 @@ namespace NFHotel.Domain.Tests.Common;
 /// </summary>
 public class DateRangeTests
 {
-    // --------------------------------------------------------
-    // INVARIANTS OF THE CONSTRUCTOR (BR-101, BR-102, BR-103)
-    // --------------------------------------------------------
+    #region Invariants of the constructor (BR-101, BR-102, BR-103)
 
     /// <summary>BR-101: the arrival date must not be <c>default</c>.</summary>
     [Fact]
@@ -78,9 +76,9 @@ public class DateRangeTests
         Assert.Equal(1, period.Nights);
     }
 
-    // --------------------------------------------------------
-    // NUMBER OF NIGHTS (BR-109, BR-117)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Number of nights (BR-109, BR-117)
 
     /// <summary>
     /// BR-109, BR-117: the duration is the number of overnight stays, not the number of calendar days touched.
@@ -104,9 +102,9 @@ public class DateRangeTests
         Assert.Equal(expectedNights, nights);
     }
 
-    // --------------------------------------------------------
-    // OVERLAP (BR-39, B-03)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Overlap (BR-39, B-03)
 
     /// <summary>
     /// BR-39: two periods overlap only if they share at least one night. Departure and
@@ -168,9 +166,9 @@ public class DateRangeTests
         Assert.Equal(forward, backward);
     }
 
-    // --------------------------------------------------------
-    // CONTAINS AND FUTURE
-    // --------------------------------------------------------
+    #endregion
+
+    #region Contains and future
 
     /// <summary>
     /// The period contains the arrival day, but not the departure day — the same half-open rule
@@ -213,4 +211,6 @@ public class DateRangeTests
         // Assert
         Assert.Equal(expected, startsOnOrAfter);
     }
+
+    #endregion
 }

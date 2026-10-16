@@ -19,9 +19,7 @@ namespace NFHotel.Domain.Tests.Rooms;
 /// </remarks>
 public class RoomHousekeepingTests
 {
-    // --------------------------------------------------------
-    // LOVLIGE OVERGANGE
-    // --------------------------------------------------------
+    #region Legal transitions
 
     /// <summary>
     /// The 15 legal transitions that actually change state.
@@ -59,9 +57,9 @@ public class RoomHousekeepingTests
         Assert.Equal(expected, room.HousekeepingStatus);
     }
 
-    // --------------------------------------------------------
-    // IDEMPOTENS (A-08)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Idempotence (A-08)
 
     /// <summary>
     /// A-08: setting the state the room already has is a no-op — not an exception.
@@ -92,9 +90,9 @@ public class RoomHousekeepingTests
         Assert.Equal(target, room.HousekeepingStatus);
     }
 
-    // --------------------------------------------------------
-    // ULOVLIGE OVERGANGE
-    // --------------------------------------------------------
+    #endregion
+
+    #region Illegal transitions
 
     /// <summary>
     /// A-08: illegal transitions still throw. Idempotence applies only to the same target state —
@@ -167,9 +165,9 @@ public class RoomHousekeepingTests
         Assert.Equal(nameof(Room.StartCleaning), exception.Transition);
     }
 
-    // --------------------------------------------------------
-    // THE TWO NORMAL FLOWS
-    // --------------------------------------------------------
+    #endregion
+
+    #region The two normal flows
 
     /// <summary>
     /// The normal cleaning flow after a departure: departure cleaning is ordered, the staff
@@ -229,4 +227,6 @@ public class RoomHousekeepingTests
         Assert.Equal(HousekeepingStatus.ServiceRequired, room.HousekeepingStatus);
         Assert.True(room.IsBookable);
     }
+
+    #endregion
 }

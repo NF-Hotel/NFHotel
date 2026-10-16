@@ -29,6 +29,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
 
 
 
+    #region Test database set-up
     // Runs before each test and resets the test database so the test starts with a clean database.
     public async ValueTask InitializeAsync()
     {
@@ -42,7 +43,9 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
         return ValueTask.CompletedTask;
     }
 
+    #endregion
 
+    #region Passport number encryption
     // Test Metode
     // The test must verify that PassportNumber is encrypted in the database and decrypted correctly by EF Core.
     [Fact]
@@ -207,4 +210,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
         Assert.Equal(true, result);
 
     }
+
+    #endregion
+
 }

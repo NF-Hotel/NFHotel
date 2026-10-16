@@ -11,9 +11,7 @@ namespace NFHotel.Domain.Tests.Rooms;
 /// </summary>
 public class RoomValidationTests
 {
-    // --------------------------------------------------------
-    // ROOM NUMBER (BR-97, A-10)
-    // --------------------------------------------------------
+    #region Room number (BR-97, A-10)
 
     /// <summary>BR-97: the room number must be neither null, empty nor only whitespace.</summary>
     [Theory]
@@ -72,9 +70,9 @@ public class RoomValidationTests
         Assert.Equal(RoomErrors.RoomNumberTooLong, Assert.Single(errors));
     }
 
-    // --------------------------------------------------------
-    // FLOOR AND CAPACITY (BR-98, BR-100)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Floor and capacity (BR-98, BR-100)
 
     /// <summary>
     /// BR-98: the floor must be > 0. Ground floor (0) and basement (negative) are thus not
@@ -135,9 +133,9 @@ public class RoomValidationTests
         Assert.Equal(RoomErrors.CapacityInvalid, Assert.Single(errors));
     }
 
-    // --------------------------------------------------------
-    // ROOM TYPE (BR-99)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Room type (BR-99)
 
     /// <summary>
     /// BR-99: the type was free text in the old system and was never checked against a set of
@@ -171,9 +169,9 @@ public class RoomValidationTests
         Assert.Equal(RoomErrors.SizeInvalid, Assert.Single(errors));
     }
 
-    // --------------------------------------------------------
-    // ALL ERRORS AT ONCE AND FAIL-FAST (BR-84, BR-113)
-    // --------------------------------------------------------
+    #endregion
+
+    #region All errors at once and fail-fast (BR-84, BR-113)
 
     /// <summary>
     /// <c>ErrorsOf</c> collects all errors in field order, so the room form can show them
@@ -209,9 +207,9 @@ public class RoomValidationTests
         Assert.Equal(RoomErrors.RoomNumberRequired, exception.Code);
     }
 
-    // --------------------------------------------------------
-    // CREATION AND UPDATE
-    // --------------------------------------------------------
+    #endregion
+
+    #region Creation and update
 
     /// <summary>
     /// BR-81: a newly created room is bookable and clean. <c>Clean</c> is also
@@ -271,9 +269,9 @@ public class RoomValidationTests
         Assert.Equal(RoomFactory.Capacity, room.Capacity);
     }
 
-    // --------------------------------------------------------
-    // BOOKBARHED (BR-110, B-04)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Bookability (BR-110, B-04)
 
     /// <summary>
     /// BR-110: only <c>Available</c> makes the room bookable. The cleaning state is deliberately
@@ -377,4 +375,6 @@ public class RoomValidationTests
             return exception.Codes;
         }
     }
+
+    #endregion
 }

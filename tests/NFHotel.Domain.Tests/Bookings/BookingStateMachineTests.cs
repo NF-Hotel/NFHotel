@@ -21,9 +21,7 @@ namespace NFHotel.Domain.Tests.Bookings;
 /// </remarks>
 public class BookingStateMachineTests
 {
-    // --------------------------------------------------------
-    // CONFIRMATION (BR-02, BR-05, BR-121 — old T-20, T-27)
-    // --------------------------------------------------------
+    #region Confirmation (BR-02, BR-05, BR-121 — old T-20, T-27)
 
     /// <summary>BR-01, BR-02: a new booking is <c>Pending</c> and may therefore be confirmed.</summary>
     [Fact]
@@ -81,9 +79,9 @@ public class BookingStateMachineTests
         Assert.Equal(status, booking.Status);
     }
 
-    // --------------------------------------------------------
-    // CHECK-IN (BR-06, BR-07 — gamle T-21, T-22, T-23)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Check-in (BR-06, BR-07 — old T-21, T-22, T-23)
 
     /// <summary>
     /// T-21, B-01: walk-in. A <c>Pending</c> booking may check in on the arrival day without
@@ -198,9 +196,9 @@ public class BookingStateMachineTests
         Assert.Equal(nameof(BookingStatus.Cancelled), exception.CurrentState);
     }
 
-    // --------------------------------------------------------
-    // CHECK-OUT (BR-09, BR-10, BR-107 — old T-24)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Check-out (BR-09, BR-10, BR-107 — old T-24)
 
     /// <summary>
     /// T-24, BR-09, BR-10, A-03: check-out sets time, hotel-local date and status.
@@ -379,9 +377,9 @@ public class BookingStateMachineTests
         Assert.Equal(BookingErrors.CheckOutDateBeforeStartDate, exception.Code);
     }
 
-    // --------------------------------------------------------
-    // CANCELLATION (BR-11, BR-13, BR-122 — old T-25)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Cancellation (BR-11, BR-13, BR-122 — old T-25)
 
     /// <summary>
     /// T-25, BR-11: only <c>Pending</c> and <c>Confirmed</c> may be cancelled. A guest who has
@@ -439,9 +437,9 @@ public class BookingStateMachineTests
         Assert.Equal(status, booking.Status);
     }
 
-    // --------------------------------------------------------
-    // RESCHEDULING (BR-14, BR-17, BR-20, BR-108, BR-123 — old T-26)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Rescheduling (BR-14, BR-17, BR-20, BR-108, BR-123 — old T-26)
 
     /// <summary>
     /// T-26, BR-14, BR-123: only <c>Pending</c> and <c>Confirmed</c> may be rescheduled.
@@ -546,9 +544,9 @@ public class BookingStateMachineTests
         Assert.Equal(BookingFactory.RoomId, booking.RoomId);
     }
 
-    // --------------------------------------------------------
-    // THE WHOLE FLOW
-    // --------------------------------------------------------
+    #endregion
+
+    #region The whole flow
 
     /// <summary>
     /// BR-01, BR-06, BR-09: the full happy path Pending → Confirmed → CheckedIn →
@@ -573,4 +571,6 @@ public class BookingStateMachineTests
         Assert.False(booking.CanCancel);
         Assert.False(booking.CanReschedule);
     }
+
+    #endregion
 }

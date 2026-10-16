@@ -19,9 +19,7 @@ public class BookingOverlapTests
 {
     private const int OtherRoomId = 99;
 
-    // --------------------------------------------------------
-    // EFFEKTIV SLUTDATO (A-01)
-    // --------------------------------------------------------
+    #region Effective end date (A-01)
 
     /// <summary>
     /// A-01: without a check-out the effective end date is the booked end date — the rule must
@@ -110,9 +108,9 @@ public class BookingOverlapTests
         Assert.Equal(BookingFactory.Arrival, booking.CheckOutDate);
     }
 
-    // --------------------------------------------------------
-    // WHICH STATUSES BLOCK (A-01, BR-19)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Which statuses block (A-01, BR-19)
 
     /// <summary>
     /// A-01: only cancellation releases the room completely. The database exclusion constraint uses the
@@ -171,9 +169,9 @@ public class BookingOverlapTests
         Assert.False(conflicts);
     }
 
-    // --------------------------------------------------------
-    // RE-LETTING AFTER EARLY CHECK-OUT (A-01, the main scenario)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Re-letting after early check-out (A-01, the main scenario)
 
     /// <summary>
     /// A-01, the main scenario: booking 1–10 January, the guest leaves on the 3rd. The room is empty
@@ -272,4 +270,6 @@ public class BookingOverlapTests
         Assert.False(existing.EffectivePeriod.Overlaps(desiredPeriod));
         Assert.False(conflicts);
     }
+
+    #endregion
 }

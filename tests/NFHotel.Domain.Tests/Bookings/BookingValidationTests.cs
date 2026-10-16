@@ -11,9 +11,7 @@ namespace NFHotel.Domain.Tests.Bookings;
 /// </summary>
 public class BookingValidationTests
 {
-    // --------------------------------------------------------
-    // CREATION (BR-01, BR-48)
-    // --------------------------------------------------------
+    #region Creation (BR-01, BR-48)
 
     /// <summary>
     /// BR-01, BR-48: a booking is always created as <c>Pending</c>, with the chosen period,
@@ -109,9 +107,9 @@ public class BookingValidationTests
         Assert.Equal(BookingErrors.GuestRequired, exception.Code);
     }
 
-    // --------------------------------------------------------
-    // COMPUTED FIELDS (BR-109, BR-117)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Computed fields (BR-109, BR-117)
 
     /// <summary>
     /// BR-109, BR-117: the number of nights is the length of the period in overnight stays — not the number
@@ -154,4 +152,6 @@ public class BookingValidationTests
         // Assert
         Assert.Equal(expected, bookingNumber);
     }
+
+    #endregion
 }

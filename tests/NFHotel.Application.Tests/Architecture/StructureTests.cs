@@ -30,6 +30,7 @@ public sealed partial class StructureTests
         "NFHotel.Application.Dto.Rooms",
     ];
 
+    #region Domain structure
     [Fact]
     public void Entities_EveryConcreteType_DerivesFromEntityOfTKey()
     {
@@ -91,6 +92,10 @@ public sealed partial class StructureTests
 
         Assert.True(offenders.Length == 0, $"Domain references more than the framework: {string.Join(", ", offenders)}");
     }
+
+    #endregion
+
+    #region Application structure
     [Fact]
     public void Repositories_EveryInterface_IsDeclaredInDomain()
     {
@@ -149,6 +154,8 @@ public sealed partial class StructureTests
             .ToArray();
         Assert.True(offenders.Length == 0, $"Filer med ikke præcis én type: {string.Join(", ", offenders)}");
     }
+
+    #endregion
 
     private static bool DerivesFromEntity(Type type)
     {

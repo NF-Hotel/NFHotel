@@ -31,6 +31,7 @@ public sealed class HolidayApiClientTests
         }
         """;
 
+    #region Reading the calendar
     [Fact]
     public async Task GetAsync_WithoutYear_CallsHolidaysAndMapsTheBody()
     {
@@ -64,6 +65,9 @@ public sealed class HolidayApiClientTests
         Assert.Equal("?year=2024", handler.Request!.RequestUri!.Query);
     }
 
+    #endregion
+
+    #region Refreshing the calendar
     [Fact]
     public async Task RefreshAsync_WithoutYears_PostsToUpdateWithoutQuery()
     {
@@ -108,6 +112,9 @@ public sealed class HolidayApiClientTests
         Assert.Null(handler.Request);
     }
 
+    #endregion
+
+    #region Configuration errors
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -134,6 +141,9 @@ public sealed class HolidayApiClientTests
         Assert.Null(handler.Request);
     }
 
+    #endregion
+
+    #region Failures and cancellation
     [Theory]
     [InlineData(HttpStatusCode.Unauthorized, ErrorCodes.Holidays.Unauthorized)]
     [InlineData(HttpStatusCode.Forbidden, ErrorCodes.Holidays.Unauthorized)]
@@ -199,6 +209,9 @@ public sealed class HolidayApiClientTests
         Assert.Equal(ErrorCodes.Holidays.UnexpectedResponse, result.FirstError!.Code);
     }
 
+    #endregion
+
+    #region Edge case and registration
     [Fact]
     public async Task EmptyCalendar_IsSuccess()
     {
@@ -240,6 +253,8 @@ public sealed class HolidayApiClientTests
         Assert.Equal("http://holidays.example:9000/api/v1/holidays?year=2024", handler.Request!.RequestUri!.ToString());
         Assert.Equal("secret-key", Assert.Single(handler.Request.Headers.GetValues("X-API-Key")));
     }
+
+    #endregion
 
     private static HolidayApiClient CreateClient(StubHandler handler, HolidayApiOptions? options = null)
     {
