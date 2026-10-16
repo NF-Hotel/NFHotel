@@ -36,7 +36,8 @@ builder.Services.AddHolidayApi(builder.Configuration);
 builder.Services.AddScoped(typeof(IUseCaseRunner<>), typeof(UseCaseRunner<>));
 
 // The staff sign-in: the cookie, one policy per permission, and the source of the staff token (ADR-0005).
-builder.Services.AddStaffSignIn();
+var requireTls = HttpsRequirement.IsRequired(builder.Configuration);
+builder.Services.AddStaffSignIn(requireTls);
 
 // ViewModels are Scoped: in Blazor Server a scope is one SignalR circuit, that is, one user's
 // session in one tab. That is exactly the lifetime the state of the screen should have.
@@ -56,6 +57,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Behind the TLS proxy (Tls:Require): a request that is still HTTP is sent to HTTPS (ADR-0006).
+app.UseHttpsRequirement(requireTls);
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

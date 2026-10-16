@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [MIL-016], [US-001] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [MIL-016], [MIL-017], [US-001] |
 | Language | en |
 | Domain | it |
 
@@ -18,7 +18,8 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-013 (booking guards) | [5036584] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-014 (async where it matters) | [417a575] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-015 (database API) | [9e6d2d4] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Added MIL-016 (back office login) | [bbef3bf] |
+| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-016 (back office login) | [bbef3bf] |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Added MIL-017 (TLS) | [b174eeb] |
 
 ---
 
@@ -54,6 +55,7 @@ person ending 2026-10-17.
 | Async where it matters | [MIL-014] | 2026-12-23 to 2026-12-30 | 2026-12-30 | S01 | none | Audit per layer, fixes in the order domain to web, architecture tests for the rules | none yet |
 | Database API | [MIL-015] | 2026-12-30 to 2027-01-22 | 2027-01-22 | S01 | none | ADR-0004; API, client and external adapters; web switched to the client; deploy and proof in the VM | none yet |
 | Back office login | [MIL-016] | 2027-01-22 to 2027-02-19 | 2027-02-19 | S01 | none | ADR-0005; staff accounts, token, permission table, login pages; deploy and proof in the VM | none yet |
+| TLS | [MIL-017] | 2027-02-19 to 2027-03-05 | 2027-03-05 | S01 | none | ADR-0006; nginx TLS, certificate script, Secure cookie; deploy and proof in the VM | none yet |
 
 ```plantuml
 @startgantt
@@ -90,6 +92,8 @@ Project starts 2026-10-16
 [MIL-015 Go/No-Go] happens 2027-01-22
 [Back office login] starts 2027-01-22 and ends 2027-02-19
 [MIL-016 Go/No-Go] happens 2027-02-19
+[TLS] starts 2027-02-19 and ends 2027-03-05
+[MIL-017 Go/No-Go] happens 2027-03-05
 @endgantt
 ```
 
@@ -117,6 +121,7 @@ Project starts 2026-10-16
 | Async where it matters (objective 17) | MIL-014 |
 | Database API (objective 18) | MIL-015 |
 | Back office login (objective 19) | MIL-016 |
+| TLS (objective 20) | MIL-017 |
 
 ## Dependencies
 
@@ -134,6 +139,7 @@ MIL-012 -> MIL-013
 MIL-013 -> MIL-014
 MIL-014 -> MIL-015
 MIL-015 -> MIL-016
+MIL-016 -> MIL-017
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -173,6 +179,7 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-014]: ./milestones/mil-014-async-where-it-matters.md
 [MIL-015]: ./milestones/mil-015-database-api.md
 [MIL-016]: ./milestones/mil-016-backoffice-login.md
+[MIL-017]: ./milestones/mil-017-tls.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
@@ -202,3 +209,4 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [417a575]: https://github.com/NF-Hotel/NFHotel/commit/417a575b978d56c59da23eb6cff5967a7b9bf6bf
 [9e6d2d4]: https://github.com/NF-Hotel/NFHotel/commit/9e6d2d40d332b50fbd405564fcced006e241effd
 [bbef3bf]: https://github.com/NF-Hotel/NFHotel/commit/bbef3bf556044704b80b76a7817432bc2b6527cd
+[b174eeb]: https://github.com/NF-Hotel/NFHotel/commit/b174eeba803523402481ff38d07a4056073941ef

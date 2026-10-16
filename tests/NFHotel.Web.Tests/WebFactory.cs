@@ -20,7 +20,7 @@ namespace NFHotel.Web.Tests;
 /// Hosts the real web application (its pipeline, cookie, policies and pages) with a substitute for the sign-in use case,
 /// so a test signs in without an API. Any other call to the API fails at once: the address is not reachable.
 /// </summary>
-public sealed partial class WebFactory : WebApplicationFactory<Program>
+public partial class WebFactory : WebApplicationFactory<Program>
 {
     /// <summary>The password that the substitute accepts for every user name.</summary>
     public const string Password = "correct horse battery staple";
@@ -94,6 +94,10 @@ public sealed partial class WebFactory : WebApplicationFactory<Program>
         throw new InvalidOperationException($"No input with the id '{id}' on the page.");
     }
 
+    /// <summary>Extra settings for the host; a derived factory adds its own.</summary>
+    /// <returns>Pairs of setting name and value.</returns>
+    protected virtual IEnumerable<KeyValuePair<string, string>> ExtraSettings() => [];
+
     /// <inheritdoc />
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -103,6 +107,11 @@ public sealed partial class WebFactory : WebApplicationFactory<Program>
         builder.UseSetting("Api:BaseUrl", "http://api.invalid/");
         builder.UseSetting("Api:Token", "web-test-token-0123456789-web-test-token");
         builder.UseSetting("HotelTime:TimeZoneId", "Europe/Copenhagen");
+        foreach (var (name, value) in ExtraSettings())
+        {
+            builder.UseSetting(name, value);
+        }
+
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IStaffAuthService>();
