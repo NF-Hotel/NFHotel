@@ -390,6 +390,20 @@ bash scripts/test-compose-proxy.sh
 
 The market analysis service (`NF-Hotel/Notebook_Market_Analysis`) has its own folder, `deploy/market-analysis`, with a compose file, `market-analysis.env` and a configuration file; see its README. The nginx proxy routes it by host name next to the web application, and `bash scripts/test-compose-proxy.sh` checks all three services through the proxy.
 
+### 🖥️ Services VM on Proxmox VE
+
+Per ADR-0003 the services run in a KVM virtual machine on Proxmox VE. `scripts/create-docker-vm.sh` creates that VM from the official Debian cloud image and installs Docker, the compose plugin and the `nfhotel-proxy` network with cloud-init. It never changes or removes an existing VM: a VM id that is already in use is an error, and a VM that fails half-way is removed again.
+
+```bash
+# Look at the commands first; nothing is run
+bash scripts/create-docker-vm.sh --ssh root@pve.example --dry-run
+
+# Create the VM (4 vCPU, 8 GiB, 60 GiB by default) and start it
+bash scripts/create-docker-vm.sh --ssh root@pve.example --storage local-lvm --start
+```
+
+`--container <name>` runs the same commands inside the throwaway Proxmox of the integration tests, which is how the script was tested (it has directory storage only, so give `--storage local`). The address of the real server and its credentials are not in the repository.
+
 ### 🧪 Proxmox Integration Tests
 
 Read-only tests check the Proxmox VE API. They run unattended against a throwaway Proxmox VE container (`dockurr/proxmox`, privileged, third-party image: use it on your own machine only). The container, a per-run API token and the test container are all removed afterwards.
