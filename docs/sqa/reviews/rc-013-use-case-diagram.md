@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version | [fc8ec78] |
 
 ---
 
@@ -68,3 +68,4 @@ Go-with-conditions — every criterion of QC-UCD-001 passes. Criterion 9 of QC-L
 [UCD-001]: ../../use-case-diagram.md
 [QC-UCD-001]: ../../../framework/qc/artifacts/qc-use-case-diagram.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[fc8ec78]: https://github.com/NF-Hotel/NFHotel/commit/fc8ec78b24b805b10d5c056b19ed2785697ee8ff
