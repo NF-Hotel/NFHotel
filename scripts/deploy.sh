@@ -33,7 +33,7 @@
 #   --down      stop and remove the named services (data volumes are kept)
 # Reach the internal services from your machine with an ssh tunnel, for example
 #   ssh -L 8081:127.0.0.1:8081 nfhotel@<vm address>
-#   then open http://analysis.localhost:8081 or http://benchmark.localhost:8081
+#   then open analysis.localhost:8081 or benchmark.localhost:8081 in a browser
 # Exit:  0 deployed; 1 a step failed; 2 usage error
 # Needs: bash 4+, ssh, tar, and key login to the Proxmox node and to the VM user
 
@@ -232,5 +232,5 @@ vm "cd $remote_dir && bash scripts/deploy-services.sh ${passthrough[*]:-}" || di
 
 echo
 echo "Done. VM $VM_ID at $VM_IP."
-echo "Public:   http://$VM_IP/  (NFHotel web, through nginx)"
+echo "Public:   port 80 of $VM_IP serves NFHotel web, through nginx"
 echo "Internal: ssh -L 8081:127.0.0.1:8081 $VM_USER@$VM_IP, then analysis.localhost:8081 and benchmark.localhost:8081"
