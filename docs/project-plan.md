@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | S04 | Linked the synced GitHub milestones (accepted by the Product Owner stand-in; no content change) | [4c5c2d3] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Added MIL-003 (throwaway Proxmox container); replaced the real-server risk | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Added MIL-003 (throwaway Proxmox container); replaced the real-server risk | [7c6d8f8] |
 
 ---
 
@@ -93,3 +93,4 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
 [4c5c2d3]: https://github.com/NF-Hotel/NFHotel/commit/4c5c2d3c5a8a8c4de7a2c8ee224719de55b62403
 [88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca
+[7c6d8f8]: https://github.com/NF-Hotel/NFHotel/commit/7c6d8f85d2177b9fe9f2d11d175df7f0b8f1b5d5
