@@ -1,0 +1,70 @@
+using Microsoft.AspNetCore.Mvc;
+
+using NFHotel.Api.Contracts;
+using NFHotel.Application.Dto.Guests;
+using NFHotel.Application.UseCases.Guests;
+
+namespace NFHotel.Api.Controllers;
+
+/// <summary>The guest use cases over HTTP: one endpoint per method of <see cref="IGuestService"/>.</summary>
+[ApiController]
+[Route(ApiRoutes.Guests)]
+public sealed class GuestsController : ControllerBase
+{
+    private readonly IGuestService _guests;
+
+    /// <summary>Creates the controller.</summary>
+    /// <param name="guests">The guest use cases.</param>
+    public GuestsController(IGuestService guests)
+    {
+        ArgumentNullException.ThrowIfNull(guests);
+        _guests = guests;
+    }
+
+    /// <summary>Gets one guest.</summary>
+    /// <param name="id">The guest key.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>The details, or 404.</returns>
+    [HttpGet(ApiRoutes.ById)]
+    public async Task<IActionResult> GetByIdAsync(int id, CancellationToken cancellationToken) =>
+        this.ToResponse(await _guests.GetByIdAsync(id, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Searches guests by name, e-mail or country.</summary>
+    /// <param name="searchText">The text to look for; empty lists everyone.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>The matching guests, sorted by name.</returns>
+    [HttpGet]
+    public async Task<IActionResult> SearchAsync([FromQuery] string? searchText, CancellationToken cancellationToken) =>
+        this.ToResponse(await _guests.SearchAsync(searchText, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Creates a guest.</summary>
+    /// <param name="request">The fields of the guest.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>The new guest.</returns>
+    [HttpPost]
+    public async Task<IActionResult> CreateAsync([FromBody] CreateGuestRequest request, CancellationToken cancellationToken) =>
+        this.ToResponse(await _guests.CreateAsync(request, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Updates a guest.</summary>
+    /// <param name="request">The key and the new fields.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>The guest after the change.</returns>
+    [HttpPut]
+    public async Task<IActionResult> UpdateAsync([FromBody] UpdateGuestRequest request, CancellationToken cancellationToken) =>
+        this.ToResponse(await _guests.UpdateAsync(request, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Deletes a guest who has no bookings.</summary>
+    /// <param name="id">The guest key.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>200, or the reason it was refused.</returns>
+    [HttpDelete(ApiRoutes.ById)]
+    public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken) =>
+        this.ToResponse(await _guests.DeleteAsync(id, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Checks the fields of a guest without saving.</summary>
+    /// <param name="fields">The fields to check.</param>
+    /// <returns>200 when they are valid, otherwise every error code.</returns>
+    [HttpPost(ApiRoutes.Validate)]
+    public IActionResult Validate([FromBody] GuestFields fields) =>
+        this.ToResponse(_guests.ValidateFields(fields));
+}
