@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S04 | Initial version | [b690b57] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | The traceability matrix covers BC, SA, PP, MIL-001 to MIL-005, US, UCD, ADR and RC-001 to RC-020 | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | The traceability matrix covers BC, SA, PP, MIL-001 to MIL-005, US, UCD, ADR and RC-001 to RC-020 | [3db0f51] |
 
 ---
 
@@ -75,3 +75,4 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-003]: ../milestones/mil-003-throwaway-proxmox.md
 [MIL-002]: ../milestones/mil-002-nginx-proxy-and-web-compose.md
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
+[3db0f51]: https://github.com/NF-Hotel/NFHotel/commit/3db0f51b7d7769bfc99dbbd173fc67266ee70c99
