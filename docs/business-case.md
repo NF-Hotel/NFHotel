@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Accepted after RC-001 Go | [b690b57] |
 | 2026-10-16 | Accepted | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Amended (accepted after RC-005 Go): objective 5 and scope for running NFHotel as containers (nginx proxy and web service, one compose file and one env file per service); target date for MIL-002 | [b690b57] |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S04 | Amended: Proxmox VE is a throwaway Docker container; pve.env holds only the root password; the API token is created per run and kept in environment variables | pending |
 
 ---
 
@@ -24,8 +24,7 @@ tests or to host the application (the open questions Q-30, Q-31 and Q-42 in
 `docs/refactor/OpenQuestions-Tracks.md`). This project gives the software
 engineer a repeatable way to prove, from a disposable Docker container and
 without any user interaction, that the team's Proxmox VE server is reachable and
-healthy before anything is deployed or tested against it. Credentials live in a
-git-ignored `pve.env`; a committed `pve.env.example` documents the format. A second step runs NFHotel itself as containers: one Docker Compose file and one `<service>.env` file per service, starting with an nginx reverse proxy and then the web application behind it.
+healthy before anything is deployed or tested against it. The Proxmox VE under test is itself a throwaway Docker container. The git-ignored `pve.env` holds only its root password; an API token is created for every run and lives only in environment variables. A committed `pve.env.example` documents the format. A second step runs NFHotel itself as containers: one Docker Compose file and one `<service>.env` file per service, starting with an nginx reverse proxy and then the web application behind it.
 
 ## Methodological and Standards Foundation
 
@@ -55,13 +54,15 @@ basis for the hosting decision (Q-31).
 
 ## Objectives
 
-1. Provide `pve.env.example` (committed) and `pve.env` (git-ignored) holding all
-   Proxmox connection settings.
-2. Provide a runner that executes the Proxmox tests in a container that is
-   removed afterwards (`docker run --rm`) with no interactive input.
+1. Provide `pve.env.example` (committed) and `pve.env` (git-ignored) holding only
+   the Proxmox root password; the API token is created for each run and is kept
+   in environment variables, never in a file.
+2. Provide a runner that starts a Proxmox VE container, runs the Proxmox tests in a
+   second container, and removes both with their volumes afterwards, with no
+   interactive input.
 3. Provide read-only integration tests that verify API reachability,
    authentication, version and node status.
-4. Guarantee that the tests cannot change anything on the Proxmox server.
+4. Guarantee that the test client cannot change anything on the Proxmox server; only the token script writes, and only inside the throwaway container.
 5. Run NFHotel as containers: one Docker Compose file and one `<service>.env` file per service, with an nginx reverse proxy in front of the web application.
 
 ## Scope
@@ -71,12 +72,13 @@ basis for the hosting decision (Q-31).
 - Credential files `pve.env` and `pve.env.example`.
 - A container image definition and a runner script.
 - A .NET test project `NFHotel.Proxmox.Tests` with read-only Proxmox API checks.
-- Documentation of how to create a read-only API token.
+- A Docker Compose file for the throwaway Proxmox VE container and a script that creates the per-run API token.
 - Reuse of the existing root `Dockerfile` for the web application and one Docker Compose file per service (nginx proxy, NFHotel web), each with its own `<service>.env` and a tracked `<service>.env.example`.
 - A smoke test that proves the web application answers through the proxy.
 
 ### Out of Scope
 
+- Tests against a real, permanent Proxmox host (decided by the DevOps track).
 - Creating, starting, changing or deleting virtual machines or containers on
   Proxmox.
 - Deploying NFHotel itself to Proxmox (decision Q-31 stays with DevOps).
@@ -116,12 +118,14 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 5 | Speed | Run completes in 120 seconds or less once the image is built | Wall-clock time of the runner |
 | 6 | Web through proxy | HTTP 200 for `/` and an answer from `/_blazor/negotiate` through the proxy, with no host port published by the web service | Smoke-test script exit code 0 |
 | 7 | One env file per service | 2 compose files, 2 tracked `.env.example` files, 0 tracked `.env` files | `git ls-files` |
+| 8 | No token on disk | 0 files containing the API token after a run | A search of the repository and the temporary directory finds no token |
 
 ## Risks
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| The API token has write rights | A test bug could change the server | Document role `PVEAuditor`; the HTTP client only exposes GET; a test asserts it |
+| The token is a root token without privilege separation | A test bug could change the container | The container is throwaway; the HTTP client only exposes GET and a test asserts it; the token is never written to a file |
+| KVM is not available to Docker | The Proxmox container cannot start | The runner checks `/dev/kvm` first and stops with a message naming the cause |
 | Self-signed certificate on Proxmox | Connection refused | `PVE_VERIFY_TLS=false` is an explicit, documented setting |
 | Server unreachable from the container | Tests fail | Short timeout (`PVE_TIMEOUT_SECONDS`) and a clear message naming the host |
 | Secrets committed by mistake | Credential leak | `*.env` is git-ignored; only the example file is tracked |
@@ -133,14 +137,14 @@ the rule that GUI and end-to-end tests never run on the host desktop
 
 - The Proxmox VE server is reachable by network from the developer's machine
   and from the container.
-- The Proxmox VE administrator creates a read-only API token and fills in
-  `pve.env`; the AI never writes credentials.
+- Docker can run privileged containers with `/dev/kvm` (on WSL2 a distribution with the KVM modules must have been started).
+- `pve.env` holds a throwaway root password for the test container only.
 - S01 (Team 2, the owner of NF Hotel, all developers) is the Proxmox administrator for now; S04 (Valdamar) stands in for the Product Owner and reviews.
 
 ## Constraints
 
 - Docker is the only required tool on the host.
-- Tests are read-only against the real Proxmox server.
+- The test client is read-only; it runs against a throwaway Proxmox VE container.
 - Target date 2026-10-17 for MIL-001 and 2026-10-18 for MIL-002; one working session each.
 - Existing solution conventions apply (.NET 9 SDK per `global.json`).
 
