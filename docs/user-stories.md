@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version: five stories from the owner and DevOps (translated from Danish) | pending |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version: five stories from the owner and DevOps (translated from Danish) | [fc8ec78] |
 
 ---
 
@@ -130,3 +130,4 @@ for US-001.02.
 [UCD-001]: ./use-case-diagram.md
 [BC-001]: ./business-case.md
 [MIL-002]: ./milestones/mil-002-nginx-proxy-and-web-compose.md
+[fc8ec78]: https://github.com/NF-Hotel/NFHotel/commit/fc8ec78b24b805b10d5c056b19ed2785697ee8ff

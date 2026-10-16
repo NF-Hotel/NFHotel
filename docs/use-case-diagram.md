@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version: market analysis, local AI selection and hosting on Proxmox behind nginx | pending |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version: market analysis, local AI selection and hosting on Proxmox behind nginx | [fc8ec78] |
 
 ---
 
@@ -100,3 +100,4 @@ is a question for the Product Owner.
 [SA-001]: ./stakeholder-analysis.md
 [BC-001]: ./business-case.md
 [US-001]: ./user-stories.md
+[fc8ec78]: https://github.com/NF-Hotel/NFHotel/commit/fc8ec78b24b805b10d5c056b19ed2785697ee8ff
