@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [9bbc0a3] |
 
 ---
 
@@ -95,3 +95,4 @@ Go — every Mandatory criterion of both checklists passes, and all six Go crite
 [ADR-0003]: ../../adr/adr-0003-proxmox-vm-for-services.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[9bbc0a3]: https://github.com/NF-Hotel/NFHotel/commit/9bbc0a31ca2065a8e6532d2e0ee61e4c51954ebf
