@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [US-001] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [MIL-016], [US-001] |
 | Language | en |
 | Domain | it |
 
@@ -17,7 +17,8 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-012 (tests follow the test rules) | [8200afa] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-013 (booking guards) | [5036584] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-014 (async where it matters) | [417a575] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Added MIL-015 (database API) | [9e6d2d4] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-015 (database API) | [9e6d2d4] |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Added MIL-016 (back office login) | pending |
 
 ---
 
@@ -52,6 +53,7 @@ person ending 2026-10-17.
 | Booking guards | [MIL-013] | 2026-12-18 to 2026-12-23 | 2026-12-23 | S01 | none | Overview period guard; check-in room guard; check-in flag follows the room; UC-001 updated | none yet |
 | Async where it matters | [MIL-014] | 2026-12-23 to 2026-12-30 | 2026-12-30 | S01 | none | Audit per layer, fixes in the order domain to web, architecture tests for the rules | none yet |
 | Database API | [MIL-015] | 2026-12-30 to 2027-01-22 | 2027-01-22 | S01 | none | ADR-0004; API, client and external adapters; web switched to the client; deploy and proof in the VM | none yet |
+| Back office login | [MIL-016] | 2027-01-22 to 2027-02-19 | 2027-02-19 | S01 | none | ADR-0005; staff accounts, token, permission table, login pages; deploy and proof in the VM | none yet |
 
 ```plantuml
 @startgantt
@@ -86,6 +88,8 @@ Project starts 2026-10-16
 [MIL-014 Go/No-Go] happens 2026-12-30
 [Database API] starts 2026-12-30 and ends 2027-01-22
 [MIL-015 Go/No-Go] happens 2027-01-22
+[Back office login] starts 2027-01-22 and ends 2027-02-19
+[MIL-016 Go/No-Go] happens 2027-02-19
 @endgantt
 ```
 
@@ -112,6 +116,7 @@ Project starts 2026-10-16
 | Booking guards (objective 16) | MIL-013 |
 | Async where it matters (objective 17) | MIL-014 |
 | Database API (objective 18) | MIL-015 |
+| Back office login (objective 19) | MIL-016 |
 
 ## Dependencies
 
@@ -128,6 +133,7 @@ MIL-011 -> MIL-012
 MIL-012 -> MIL-013
 MIL-013 -> MIL-014
 MIL-014 -> MIL-015
+MIL-015 -> MIL-016
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -166,6 +172,7 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-013]: ./milestones/mil-013-booking-guards.md
 [MIL-014]: ./milestones/mil-014-async-where-it-matters.md
 [MIL-015]: ./milestones/mil-015-database-api.md
+[MIL-016]: ./milestones/mil-016-backoffice-login.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2

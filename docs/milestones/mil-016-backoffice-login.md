@@ -12,6 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-17 | Proposed | Jens Tirsvad Nielsen | S01 | Initial version | [ed2e4b9] |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-068 Go | pending |
 
 ---
 
