@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S04 | Initial version | [b690b57] |
-| 2026-10-16 | Accepted | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Accepted after RC-002 Go | [b690b57] |
+| 2026-10-16 | Deprecated | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Accepted after RC-002 Go | [b690b57] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Token role row and revocation rationale changed for the throwaway container | [7c6d8f8] |
 
 ---
 
@@ -35,7 +35,7 @@ stable IDs. The method is a power/interest grid; concerns are mapped to FURPS+.
 
 - S01 is the owner of NF Hotel, owns the credentials and builds the tests: high power, high interest. S01 is Team 2; all its members are developers.
 - S02 uses the result but cannot block it: medium power, high interest.
-- S03 can refuse access or revoke the token at any time: high power; interest is medium because the tests are small and read-only.
+- S03 can refuse access to the Docker host or stop the container at any time: high power; interest is medium because the tests are small and read-only.
 - S04 (Valdamar) stands in for the Product Owner: he reviews and accepts every artifact, so high power and high interest. S01 and S03 are the same group today (Team 2); the roles stay separate so the Business Case can name who guards the server.
 
 ## Primary Concerns and FURPS+ Mapping
@@ -54,7 +54,7 @@ stable IDs. The method is a power/interest grid; concerns are mapped to FURPS+.
 | --- | --- | --- | --- | --- |
 | S01 | Chat | Per milestone | Run summary with review records | MIL-001 |
 | S02 | Repository README and test output | On change | Runner usage and token instructions | MIL-001 |
-| S03 | Chat | Once | Required token role (PVEAuditor) | MIL-001 |
+| S03 | Chat | Once | Root password in `pve.env` only; token created per run | MIL-003 |
 | S04 | Chat | Per milestone | Review records and run summary | MIL-001 |
 
 ## Conflicting Interests and Mitigations
@@ -84,3 +84,5 @@ Reviewer and approver: S04 (in autonomous mode the AI acts as his stand-in, see 
 
 [BC-001]: ./business-case.md
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
+[88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca
+[7c6d8f8]: https://github.com/NF-Hotel/NFHotel/commit/7c6d8f85d2177b9fe9f2d11d175df7f0b8f1b5d5

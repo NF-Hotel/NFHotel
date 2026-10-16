@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [US-001] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | S04 | Added MIL-002 (accepted by the Product Owner stand-in) (nginx proxy and web service in Docker Compose) to schedule, scope coverage and dependencies | [b690b57] |
-| 2026-10-16 | Accepted | Claude (AI) | S04 | Linked the synced GitHub milestones (accepted by the Product Owner stand-in; no content change) | [4c5c2d3] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Added MIL-003 (throwaway Proxmox container); replaced the real-server risk | [7c6d8f8] |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Added MIL-004 (market analysis service on a Proxmox VM behind nginx) from the Must stories of US-001 | [469ff7a] |
 
 ---
 
@@ -34,6 +34,8 @@ person ending 2026-10-17.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Proxmox integration test environment | [MIL-001] | 2026-10-16 to 2026-10-17 | 2026-10-17 | S01 | none | Unattended throwaway-container tests against Proxmox VE | [Milestone 1][GH-M1] |
 | Nginx proxy and web service in Docker Compose | [MIL-002] | 2026-10-17 to 2026-10-18 | 2026-10-18 | S01 | none | One compose file and one env file per service; web application answering through the proxy | [Milestone 2][GH-M2] |
+| Throwaway Proxmox container for tests | [MIL-003] | 2026-10-18 to 2026-10-19 | 2026-10-19 | S01 | none | Proxmox VE container, per-run token in the environment, unattended full cycle | [Milestone 3][GH-M3] |
+| Market analysis service on a Proxmox VM behind nginx | [MIL-004] | 2026-10-19 to 2026-10-23 | 2026-10-23 | S02 | US-001.01, US-001.03, US-001.05 | Analysis service on a VM, two services routed through nginx, smoke test | |
 
 ```plantuml
 @startgantt
@@ -42,6 +44,10 @@ Project starts 2026-10-16
 [MIL-001 Go/No-Go] happens 2026-10-17
 [Nginx and web compose] starts 2026-10-17 and ends 2026-10-18
 [MIL-002 Go/No-Go] happens 2026-10-18
+[Throwaway Proxmox] starts 2026-10-18 and ends 2026-10-19
+[MIL-003 Go/No-Go] happens 2026-10-19
+[Market analysis service] starts 2026-10-19 and ends 2026-10-23
+[MIL-004 Go/No-Go] happens 2026-10-23
 @endgantt
 ```
 
@@ -55,11 +61,13 @@ Project starts 2026-10-16
 | Documentation of read-only token creation | MIL-001 |
 | Compose files and env files per service (reusing the root Dockerfile) | MIL-002 |
 | Smoke test through the proxy | MIL-002 |
+| Throwaway Proxmox container, per-run token script | MIL-003 |
+| Market analysis and benchmark services on Proxmox VMs (objectives 6 and 7) | MIL-004 (analysis, Must); benchmark in a later milestone |
 
 ## Dependencies
 
 ```
-MIL-001 -> MIL-002
+MIL-001 -> MIL-002 -> MIL-003 -> MIL-004
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -68,7 +76,8 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Proxmox host and token not yet filled into `pve.env` | The real-server run cannot happen | The run reports the missing settings by name; S01 fills `pve.env` |
+| KVM not available to Docker | The Proxmox container cannot start | The runner checks `/dev/kvm` first and stops with a message naming the cause |
+| The Proxmox host for the services is not decided | MIL-004 tasks 3 to 8 cannot start | Task 2 records the decision in an ADR first |
 | Stand-in reviews are not independent | Weaker assurance | Each record states `Mode: autonomous, not independent`; S04 reviews the summary |
 
 ## Open Issues
@@ -82,7 +91,14 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [SA-001]: ./stakeholder-analysis.md
 [MIL-001]: ./milestones/mil-001-proxmox-test-env.md
 [MIL-002]: ./milestones/mil-002-nginx-proxy-and-web-compose.md
+[MIL-003]: ./milestones/mil-003-throwaway-proxmox.md
+[MIL-004]: ./milestones/mil-004-market-analysis-service.md
+[US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
+[GH-M3]: https://github.com/NF-Hotel/NFHotel/milestone/3
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
 [4c5c2d3]: https://github.com/NF-Hotel/NFHotel/commit/4c5c2d3c5a8a8c4de7a2c8ee224719de55b62403
+[88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca
+[7c6d8f8]: https://github.com/NF-Hotel/NFHotel/commit/7c6d8f85d2177b9fe9f2d11d175df7f0b8f1b5d5
+[469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa

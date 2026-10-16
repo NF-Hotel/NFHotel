@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | BC-001 |
-| CrossReference | [SA-001] |
+| CrossReference | [SA-001], [UCD-001], [US-001] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Accepted after RC-001 Go | [b690b57] |
-| 2026-10-16 | Accepted | Claude (AI) | S04 (confirmed language/domain); AI as stand-in for S04 | Amended (accepted after RC-005 Go): objective 5 and scope for running NFHotel as containers (nginx proxy and web service, one compose file and one env file per service); target date for MIL-002 | [b690b57] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Amended: Proxmox VE is a throwaway Docker container; pve.env holds only the root password; the API token is created per run and kept in environment variables | [7c6d8f8] |
+| 2026-10-16 | Proposed | Claude (AI) | AI as stand-in for S01 | Amended: objectives 6 and 7 for the market analysis service and the benchmark service on Proxmox VMs behind nginx, from US-001 | [469ff7a] |
 
 ---
 
@@ -24,8 +24,7 @@ tests or to host the application (the open questions Q-30, Q-31 and Q-42 in
 `docs/refactor/OpenQuestions-Tracks.md`). This project gives the software
 engineer a repeatable way to prove, from a disposable Docker container and
 without any user interaction, that the team's Proxmox VE server is reachable and
-healthy before anything is deployed or tested against it. Credentials live in a
-git-ignored `pve.env`; a committed `pve.env.example` documents the format. A second step runs NFHotel itself as containers: one Docker Compose file and one `<service>.env` file per service, starting with an nginx reverse proxy and then the web application behind it.
+healthy before anything is deployed or tested against it. The Proxmox VE under test is itself a throwaway Docker container. The git-ignored `pve.env` holds only its root password; an API token is created for every run and lives only in environment variables. A committed `pve.env.example` documents the format. A second step runs NFHotel itself as containers: one Docker Compose file and one `<service>.env` file per service, starting with an nginx reverse proxy and then the web application behind it.
 
 ## Methodological and Standards Foundation
 
@@ -55,14 +54,18 @@ basis for the hosting decision (Q-31).
 
 ## Objectives
 
-1. Provide `pve.env.example` (committed) and `pve.env` (git-ignored) holding all
-   Proxmox connection settings.
-2. Provide a runner that executes the Proxmox tests in a container that is
-   removed afterwards (`docker run --rm`) with no interactive input.
+1. Provide `pve.env.example` (committed) and `pve.env` (git-ignored) holding only
+   the Proxmox root password; the API token is created for each run and is kept
+   in environment variables, never in a file.
+2. Provide a runner that starts a Proxmox VE container, runs the Proxmox tests in a
+   second container, and removes both with their volumes afterwards, with no
+   interactive input.
 3. Provide read-only integration tests that verify API reachability,
    authentication, version and node status.
-4. Guarantee that the tests cannot change anything on the Proxmox server.
+4. Guarantee that the test client cannot change anything on the Proxmox server; only the token script writes, and only inside the throwaway container.
 5. Run NFHotel as containers: one Docker Compose file and one `<service>.env` file per service, with an nginx reverse proxy in front of the web application.
+6. Run the market analysis service (`NF-Hotel/Notebook_Market_Analysis`) on a Proxmox VM through Docker Compose behind the nginx proxy, so the owner can see the market analysis with diagrams and an AI analysis (US-001.01, US-001.03, US-001.05).
+7. Run the benchmark service (`NF-Hotel/notebook-benchmark`) on a Proxmox VM as a Docker container behind the proxy, so the owner can choose the local AI model by response time against answer quality (US-001.02, US-001.04).
 
 ## Scope
 
@@ -71,15 +74,18 @@ basis for the hosting decision (Q-31).
 - Credential files `pve.env` and `pve.env.example`.
 - A container image definition and a runner script.
 - A .NET test project `NFHotel.Proxmox.Tests` with read-only Proxmox API checks.
-- Documentation of how to create a read-only API token.
+- A Docker Compose file for the throwaway Proxmox VE container and a script that creates the per-run API token.
 - Reuse of the existing root `Dockerfile` for the web application and one Docker Compose file per service (nginx proxy, NFHotel web), each with its own `<service>.env` and a tracked `<service>.env.example`.
 - A smoke test that proves the web application answers through the proxy.
+- The market analysis service and the benchmark service on Proxmox VMs behind the proxy: compose and env files, an nginx route per service and a smoke test (planned in MIL-004 and a later milestone).
 
 ### Out of Scope
 
+- Tests against a real, permanent Proxmox host (decided by the DevOps track).
 - Creating, starting, changing or deleting virtual machines or containers on
   Proxmox.
-- Deploying NFHotel itself to Proxmox (decision Q-31 stays with DevOps).
+- Deploying the NFHotel web application itself to Proxmox (decision Q-31 stays with DevOps).
+- Changing the code of the two source repositories, except through their own issues and pull requests.
 - A CI pipeline definition (decision Q-42).
 - Secret storage for production (decision D-07).
 - Tests that need a graphical interface.
@@ -116,32 +122,39 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 5 | Speed | Run completes in 120 seconds or less once the image is built | Wall-clock time of the runner |
 | 6 | Web through proxy | HTTP 200 for `/` and an answer from `/_blazor/negotiate` through the proxy, with no host port published by the web service | Smoke-test script exit code 0 |
 | 7 | One env file per service | 2 compose files, 2 tracked `.env.example` files, 0 tracked `.env` files | `git ls-files` |
+| 8 | No token on disk | 0 files containing the API token after a run | A search of the repository and the temporary directory finds no token |
+| 9 | Analysis through the proxy | HTTP 200 for the market analysis through nginx with no host port published by the service | Smoke-test script exit code 0 |
+| 10 | Benchmark results | At least 2 local models measured for response time and answer quality | Result file of one benchmark run |
 
 ## Risks
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| The API token has write rights | A test bug could change the server | Document role `PVEAuditor`; the HTTP client only exposes GET; a test asserts it |
+| The token is a root token without privilege separation | A test bug could change the container | The container is throwaway; the HTTP client only exposes GET and a test asserts it; the token is never written to a file |
+| KVM is not available to Docker | The Proxmox container cannot start | The runner checks `/dev/kvm` first and stops with a message naming the cause |
 | Self-signed certificate on Proxmox | Connection refused | `PVE_VERIFY_TLS=false` is an explicit, documented setting |
 | Server unreachable from the container | Tests fail | Short timeout (`PVE_TIMEOUT_SECONDS`) and a clear message naming the host |
 | Secrets committed by mistake | Credential leak | `*.env` is git-ignored; only the example file is tracked |
 | Docker not installed or not running | Runner cannot start | Runner checks first and exits with a clear message |
 | Secrets placed in a compose file or image | Credential leak | Settings only in the git-ignored `<service>.env`; the compose files reference it with `env_file` |
 | Proxy does not upgrade WebSocket connections | Blazor Server pages load but are not interactive | The nginx template sets the upgrade headers for `/_blazor`; the smoke test checks the path |
+| GPU is not available inside the Proxmox VM | The benchmark times are not those of the real hardware, or the models cannot run | The result names the machine; GPU passthrough is decided in an ADR before the benchmark service is planned |
+| The analysis application has no charts and no container image yet | The owner sees tables instead of diagrams | A gap task in MIL-004; the image is built from the repository at a pinned ref |
 
 ## Assumptions
 
 - The Proxmox VE server is reachable by network from the developer's machine
   and from the container.
-- The Proxmox VE administrator creates a read-only API token and fills in
-  `pve.env`; the AI never writes credentials.
+- Docker can run privileged containers with `/dev/kvm` (on WSL2 a distribution with the KVM modules must have been started).
+- A Proxmox VE host exists for the two services; it is not the throwaway test container.
+- `pve.env` holds a throwaway root password for the test container only.
 - S01 (Team 2, the owner of NF Hotel, all developers) is the Proxmox administrator for now; S04 (Valdamar) stands in for the Product Owner and reviews.
 
 ## Constraints
 
 - Docker is the only required tool on the host.
-- Tests are read-only against the real Proxmox server.
-- Target date 2026-10-17 for MIL-001 and 2026-10-18 for MIL-002; one working session each.
+- The test client is read-only; it runs against a throwaway Proxmox VE container.
+- Target dates 2026-10-17 (MIL-001), 2026-10-18 (MIL-002), 2026-10-19 (MIL-003) and 2026-10-23 (MIL-004); one working session each.
 - Existing solution conventions apply (.NET 9 SDK per `global.json`).
 
 ## Cost–Benefit Assessment
@@ -154,6 +167,7 @@ Qualitative, because no money changes hands and the effort is one working sessio
 | Small container image to maintain | Decision input for Q-31 and Q-42 |
 | One more test project in the solution | Reusable unattended infrastructure-test pattern |
 | About half a day for the compose files, image and smoke test | A reproducible way to run NFHotel behind a proxy |
+| About one week for the analysis service on a VM behind the proxy | The owner can see the market analysis |
 
 ## Stakeholders
 
@@ -172,3 +186,8 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 
 [SA-001]: ./stakeholder-analysis.md
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
+[88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca
+[7c6d8f8]: https://github.com/NF-Hotel/NFHotel/commit/7c6d8f85d2177b9fe9f2d11d175df7f0b8f1b5d5
+[UCD-001]: ./use-case-diagram.md
+[US-001]: ./user-stories.md
+[469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa

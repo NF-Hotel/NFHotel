@@ -388,17 +388,17 @@ bash scripts/test-compose-proxy.sh
 
 ### 🧪 Proxmox Integration Tests
 
-Read-only tests check that the Proxmox VE server is reachable and healthy. They run unattended in a throwaway Docker container that is removed afterwards. Only Docker is needed.
+Read-only tests check the Proxmox VE API. They run unattended against a throwaway Proxmox VE container (`dockurr/proxmox`, privileged, third-party image: use it on your own machine only). The container, a per-run API token and the test container are all removed afterwards.
 
-1. In Proxmox, create an API token for a user with the role `PVEAuditor` (read-only) and enable *Privilege Separation*.
-2. Copy `pve.env.example` to `pve.env` (git-ignored) and fill in `PVE_HOST`, `PVE_NODE`, `PVE_API_TOKEN_ID` and `PVE_API_TOKEN_SECRET`.
+1. Docker must give containers `/dev/kvm`. On WSL2 start a distribution that loads the KVM modules first, for example `wsl -d Debian`.
+2. Copy `pve.env.example` to `pve.env` (git-ignored) and set `PVE_PASSWORD`, the root password of the container (the runner sets it with `chpasswd` before it creates the token). `pve.env` holds nothing else: the API token is created for every run by `scripts/pve-token.sh` and lives only in environment variables, never in a file.
 3. Run:
 
 ```bash
 bash scripts/run-proxmox-tests.sh
 ```
 
-The exit code is `0` when all checks pass. A missing setting is reported by name. The tests send only `GET` requests. `dotnet test` on the solution skips the live checks unless `PVE_HOST` is set.
+The exit code is `0` when all checks pass. The test client sends only `GET` requests. `dotnet test` on the solution skips the live checks unless `PVE_HOST` is set.
 
 ---
 
