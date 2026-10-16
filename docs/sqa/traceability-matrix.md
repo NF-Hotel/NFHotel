@@ -35,7 +35,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-007] | Milestone | en | it | [BC-001] | [DM-004] | [RC-025] |
 | [MIL-008] | Milestone | en | it | [BC-001], [MIL-005] | - | [RC-038], [RC-039] |
 | [MIL-009] | Milestone | en | it | [BC-001], [ADR-0002], [MIL-008] | - | [RC-041], [RC-043] |
-| [MIL-010] | Milestone | en | it | [BC-001], [MIL-006] | - | [RC-045] |
+| [MIL-010] | Milestone | en | it | [BC-001], [MIL-006] | - | [RC-045], [RC-046] |
 | [ADR-0002] | ADR | en | it | [BC-001], [ADR-0001], [DM-004] | [MIL-009] | [RC-042] |
 | [ADR-0001] | Architecture Decision Record | - | - | [BC-001] | [MIL-005] | [RC-019] |
 | `src/` (Domain, Application, Infrastructure) | Source code | - | - | [ADR-0001], [MIL-005] | - | [RC-020] |
@@ -106,6 +106,7 @@ updated whenever an artifact instance is created or reviewed.
 &
 [RC-044]: ./reviews/rc-044-business-case-source-comments.md
 [RC-045]: ./reviews/rc-045-milestone-010.md
+[RC-046]: ./reviews/rc-046-source-comments-english.md
 [DICT-001]: ../dictionary.md
 [UC-001]: ../use-cases/uc-001/uc.md
 [UC-002]: ../use-cases/uc-002/uc.md
