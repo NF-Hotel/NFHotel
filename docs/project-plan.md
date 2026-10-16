@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | S04 | Accepted by the Product Owner stand-in (no checklist exists for PP) | [b690b57] |
-| 2026-10-16 | Accepted | Claude (AI) | S04 | Added MIL-002 (accepted by the Product Owner stand-in) (nginx proxy and web service in Docker Compose) to schedule, scope coverage and dependencies | [b690b57] |
+| 2026-10-16 | Deprecated | Claude (AI) | S04 | Added MIL-002 (accepted by the Product Owner stand-in) (nginx proxy and web service in Docker Compose) to schedule, scope coverage and dependencies | [b690b57] |
+| 2026-10-16 | Accepted | Claude (AI) | S04 | Linked the synced GitHub milestones (accepted by the Product Owner stand-in; no content change) | pending |
 
 ---
 
@@ -32,8 +32,8 @@ person ending 2026-10-17.
 
 | Gateway | Document | Window | Decision date | Owner | Stories | Main deliverable | Milestone |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Proxmox integration test environment | [MIL-001] | 2026-10-16 to 2026-10-17 | 2026-10-17 | S01 | none | Unattended throwaway-container tests against Proxmox VE | |
-| Nginx proxy and web service in Docker Compose | [MIL-002] | 2026-10-17 to 2026-10-18 | 2026-10-18 | S01 | none | One compose file and one env file per service; web application answering through the proxy | |
+| Proxmox integration test environment | [MIL-001] | 2026-10-16 to 2026-10-17 | 2026-10-17 | S01 | none | Unattended throwaway-container tests against Proxmox VE | [Milestone 1][GH-M1] |
+| Nginx proxy and web service in Docker Compose | [MIL-002] | 2026-10-17 to 2026-10-18 | 2026-10-18 | S01 | none | One compose file and one env file per service; web application answering through the proxy | [Milestone 2][GH-M2] |
 
 ```plantuml
 @startgantt
@@ -82,4 +82,6 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [SA-001]: ./stakeholder-analysis.md
 [MIL-001]: ./milestones/mil-001-proxmox-test-env.md
 [MIL-002]: ./milestones/mil-002-nginx-proxy-and-web-compose.md
+[GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
+[GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
