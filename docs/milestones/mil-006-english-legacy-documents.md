@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-022 Go | pending |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version | [180a268] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-022 Go | [180a268] |
 
 ---
 
@@ -80,3 +80,4 @@ their language and the names of their files and folders, not their type.
 ---
 
 [BC-001]: ../business-case.md
+[180a268]: https://github.com/NF-Hotel/NFHotel/commit/180a2683d3138fe0fce82cbbe34d817511e0097a
