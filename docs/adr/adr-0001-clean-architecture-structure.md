@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version, accepted after RC-019 Go | [78eeb18] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Rules folder dissolved (MIL-008, RC-039) | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Rules folder dissolved (MIL-008, RC-039) | [b274cc5] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -94,3 +94,4 @@ key column `<table>_id`; a model test enforces it. DTOs and requests are in
 [BC-001]: ../business-case.md
 [MIL-005]: ../milestones/mil-005-clean-architecture.md
 [78eeb18]: https://github.com/NF-Hotel/NFHotel/commit/78eeb18cac8d761ebf5267fca5d6b418b04b98c2
+[b274cc5]: https://github.com/NF-Hotel/NFHotel/commit/b274cc599b848bc07160cfe465d01ea61ad8c8b4

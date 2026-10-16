@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [b274cc5] |
 
 ---
 
@@ -62,3 +62,4 @@ Go — all Mandatory criteria pass or are not applicable with a stated reason. E
 [MIL-008]: ../../milestones/mil-008-domain-rules-in-entities.md
 [ADR-0001]: ../../adr/adr-0001-clean-architecture-structure.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[b274cc5]: https://github.com/NF-Hotel/NFHotel/commit/b274cc599b848bc07160cfe465d01ea61ad8c8b4
