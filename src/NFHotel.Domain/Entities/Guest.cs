@@ -1,5 +1,4 @@
 using NFHotel.Domain.Errors;
-using NFHotel.Domain.Rules;
 
 namespace NFHotel.Domain.Entities;
 
@@ -76,7 +75,7 @@ public sealed class Guest : Entity<int>
     /// <returns>En ny, gyldig gæst der endnu ikke er persisteret.</returns>
     /// <exception cref="DomainException">
     /// Ved brud på BR-91 til BR-95 eller en længdegrænse (A-10). Fejlkoden er den første
-    /// kode fra <see cref="GuestRules.Validate"/>.
+    /// kode fra <see cref="Guest.Validate"/>.
     /// </exception>
     public static Guest Create(
         string firstName,
@@ -123,7 +122,7 @@ public sealed class Guest : Entity<int>
         string country,
         string? passportNumber)
     {
-        var errors = GuestRules.Validate(firstName, lastName, email, phoneNumber, country, passportNumber);
+        var errors = Guest.Validate(firstName, lastName, email, phoneNumber, country, passportNumber);
 
         if (errors.Count > 0)
         {
@@ -136,5 +135,108 @@ public sealed class Guest : Entity<int>
         PhoneNumber = phoneNumber;
         Country = country;
         PassportNumber = passportNumber;
+    }
+
+    private const char EmailAtSign = '@';
+    private const char EmailDot = '.';
+
+    /// <summary>
+    /// Afgør om e-mailen er gyldig (BR-55, BR-93).
+    /// </summary>
+    /// <param name="email">E-mailadressen.</param>
+    /// <returns>Sand hvis adressen indeholder både '@' og '.'.</returns>
+    /// <remarks>
+    /// Bevidst ikke regex. BR-93 er præcis "indeholder '@' og '.'", og en strammere regel
+    /// ville bryde paritet med det gamle system.
+    /// </remarks>
+    public static bool IsValidEmail(string? email) =>
+        !string.IsNullOrWhiteSpace(email)
+        && email.Contains(EmailAtSign)
+        && email.Contains(EmailDot);
+
+    /// <summary>
+    /// Samler alle valideringsfejl for en gæst, så en formular kan vise dem på én gang
+    /// (BR-60, BR-96).
+    /// </summary>
+    /// <param name="firstName">Fornavn.</param>
+    /// <param name="lastName">Efternavn.</param>
+    /// <param name="email">E-mail.</param>
+    /// <param name="phoneNumber">Telefonnummer.</param>
+    /// <param name="country">Land.</param>
+    /// <param name="passportNumber">
+    /// Pasnummer. Valgfrit og uvalideret ud over længden (BR-57) — udelades af kald der
+    /// kun validerer de fem obligatoriske felter.
+    /// </param>
+    /// <returns>
+    /// Fejlkoder i feltrækkefølge: fornavn, efternavn, e-mail, telefon, land, pasnummer.
+    /// Tom liste betyder gyldig.
+    /// </returns>
+    public static IReadOnlyList<string> Validate(
+        string? firstName,
+        string? lastName,
+        string? email,
+        string? phoneNumber,
+        string? country,
+        string? passportNumber = null)
+    {
+        var errors = new List<string>();
+
+        AddTextErrors(errors, firstName, Guest.MaxNameLength, GuestErrors.FirstNameRequired, GuestErrors.FirstNameTooLong);
+        AddTextErrors(errors, lastName, Guest.MaxNameLength, GuestErrors.LastNameRequired, GuestErrors.LastNameTooLong);
+        AddEmailErrors(errors, email);
+        AddTextErrors(errors, phoneNumber, Guest.MaxPhoneNumberLength, GuestErrors.PhoneNumberRequired, GuestErrors.PhoneNumberTooLong);
+        AddTextErrors(errors, country, Guest.MaxCountryLength, GuestErrors.CountryRequired, GuestErrors.CountryTooLong);
+
+        if (passportNumber is not null && passportNumber.Length > Guest.MaxPassportNumberLength)
+        {
+            errors.Add(GuestErrors.PassportNumberTooLong);
+        }
+
+        return errors;
+    }
+
+    /// <summary>
+    /// Tilføjer fejlkoder for et obligatorisk tekstfelt: tomt felt eller for lang værdi.
+    /// </summary>
+    private static void AddTextErrors(
+        List<string> errors,
+        string? value,
+        int maxLength,
+        string requiredCode,
+        string tooLongCode)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            errors.Add(requiredCode);
+            return;
+        }
+
+        if (value.Length > maxLength)
+        {
+            errors.Add(tooLongCode);
+        }
+    }
+
+    /// <summary>
+    /// Tilføjer fejlkoder for e-mailfeltet. Adskilt fra <see cref="AddTextErrors"/>, fordi
+    /// e-mailen ud over længden også har et formatkrav (BR-55).
+    /// </summary>
+    private static void AddEmailErrors(List<string> errors, string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            errors.Add(GuestErrors.EmailRequired);
+            return;
+        }
+
+        if (!IsValidEmail(email))
+        {
+            errors.Add(GuestErrors.EmailInvalid);
+        }
+
+        if (email.Length > Guest.MaxEmailLength)
+        {
+            errors.Add(GuestErrors.EmailTooLong);
+        }
     }
 }

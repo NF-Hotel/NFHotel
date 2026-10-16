@@ -1,6 +1,5 @@
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.Tests.TestSupport;
 using NFHotel.Domain.ValueObjects;
 
@@ -73,7 +72,7 @@ public class BookingValidationTests
             () => Booking.Create(period, BookingFactory.RoomId, BookingFactory.GuestId, TestDate.Of(today)));
 
         // Assert
-        Assert.Equal(BookingRules.StartDateInPast, exception.Code);
+        Assert.Equal(BookingErrors.StartDateInPast, exception.Code);
     }
 
     /// <summary>BR-45, BR-105: en booking uden rum kan ikke oprettes.</summary>
@@ -90,7 +89,7 @@ public class BookingValidationTests
             () => Booking.Create(period, roomId, BookingFactory.GuestId, BookingFactory.Today));
 
         // Assert
-        Assert.Equal(BookingRules.RoomRequired, exception.Code);
+        Assert.Equal(BookingErrors.RoomRequired, exception.Code);
     }
 
     /// <summary>BR-106: en booking uden gæst kan ikke oprettes.</summary>
@@ -107,7 +106,7 @@ public class BookingValidationTests
             () => Booking.Create(period, BookingFactory.RoomId, guestId, BookingFactory.Today));
 
         // Assert
-        Assert.Equal(BookingRules.GuestRequired, exception.Code);
+        Assert.Equal(BookingErrors.GuestRequired, exception.Code);
     }
 
     // --------------------------------------------------------

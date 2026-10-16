@@ -1,6 +1,5 @@
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.Tests.TestSupport;
 using NFHotel.Domain.ValueObjects;
 
@@ -25,10 +24,10 @@ public class RoomValidationTests
     public void Validate_RoomNumberIsMissing_ReturnsRoomNumberRequired(string? roomNumber)
     {
         // Arrange & Act
-        var errors = RoomRules.Validate(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
+        var errors = Room.Validate(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
 
         // Assert
-        Assert.Equal(RoomRules.RoomNumberRequired, Assert.Single(errors));
+        Assert.Equal(RoomErrors.RoomNumberRequired, Assert.Single(errors));
     }
 
     /// <summary>BR-97: nummeret er tekst, ikke et tal — "12B" er et gyldigt værelsesnummer.</summary>
@@ -39,7 +38,7 @@ public class RoomValidationTests
     public void Validate_RoomNumberIsFreeText_ReturnsNoErrors(string roomNumber)
     {
         // Arrange & Act
-        var errors = RoomRules.Validate(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
+        var errors = Room.Validate(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
 
         // Assert
         Assert.Empty(errors);
@@ -53,7 +52,7 @@ public class RoomValidationTests
         var roomNumber = new string('1', Room.MaxRoomNumberLength);
 
         // Act
-        var errors = RoomRules.Validate(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
+        var errors = Room.Validate(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
 
         // Assert
         Assert.Empty(errors);
@@ -67,10 +66,10 @@ public class RoomValidationTests
         var roomNumber = new string('1', Room.MaxRoomNumberLength + 1);
 
         // Act
-        var errors = RoomRules.Validate(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
+        var errors = Room.Validate(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
 
         // Assert
-        Assert.Equal(RoomRules.RoomNumberTooLong, Assert.Single(errors));
+        Assert.Equal(RoomErrors.RoomNumberTooLong, Assert.Single(errors));
     }
 
     // --------------------------------------------------------
@@ -89,7 +88,7 @@ public class RoomValidationTests
     public void IsValidFloor_RequiresGreaterThanZero(int floor, bool expected)
     {
         // Arrange & Act
-        var isValid = RoomRules.IsValidFloor(floor);
+        var isValid = Room.IsValidFloor(floor);
 
         // Assert
         Assert.Equal(expected, isValid);
@@ -102,10 +101,10 @@ public class RoomValidationTests
     public void Validate_FloorIsNotGreaterThanZero_ReturnsFloorInvalid(int floor)
     {
         // Arrange & Act
-        var errors = RoomRules.Validate(RoomFactory.RoomNumber, floor, RoomSize.Double, RoomFactory.Capacity);
+        var errors = Room.Validate(RoomFactory.RoomNumber, floor, RoomSize.Double, RoomFactory.Capacity);
 
         // Assert
-        Assert.Equal(RoomRules.FloorInvalid, Assert.Single(errors));
+        Assert.Equal(RoomErrors.FloorInvalid, Assert.Single(errors));
     }
 
     /// <summary>BR-100: kapaciteten skal være > 0 — et rum uden pladser kan ikke bookes.</summary>
@@ -117,7 +116,7 @@ public class RoomValidationTests
     public void IsValidCapacity_RequiresGreaterThanZero(int capacity, bool expected)
     {
         // Arrange & Act
-        var isValid = RoomRules.IsValidCapacity(capacity);
+        var isValid = Room.IsValidCapacity(capacity);
 
         // Assert
         Assert.Equal(expected, isValid);
@@ -130,10 +129,10 @@ public class RoomValidationTests
     public void Validate_CapacityIsNotGreaterThanZero_ReturnsCapacityInvalid(int capacity)
     {
         // Arrange & Act
-        var errors = RoomRules.Validate(RoomFactory.RoomNumber, RoomFactory.Floor, RoomSize.Double, capacity);
+        var errors = Room.Validate(RoomFactory.RoomNumber, RoomFactory.Floor, RoomSize.Double, capacity);
 
         // Assert
-        Assert.Equal(RoomRules.CapacityInvalid, Assert.Single(errors));
+        Assert.Equal(RoomErrors.CapacityInvalid, Assert.Single(errors));
     }
 
     // --------------------------------------------------------
@@ -155,7 +154,7 @@ public class RoomValidationTests
     public void IsValidSize_AcceptsOnlyDefinedEnumValues(RoomSize size, bool expected)
     {
         // Arrange & Act
-        var isValid = RoomRules.IsValidSize(size);
+        var isValid = Room.IsValidSize(size);
 
         // Assert
         Assert.Equal(expected, isValid);
@@ -166,10 +165,10 @@ public class RoomValidationTests
     public void Validate_SizeIsNotDefined_ReturnsSizeInvalid()
     {
         // Arrange & Act
-        var errors = RoomRules.Validate(RoomFactory.RoomNumber, RoomFactory.Floor, (RoomSize)42, RoomFactory.Capacity);
+        var errors = Room.Validate(RoomFactory.RoomNumber, RoomFactory.Floor, (RoomSize)42, RoomFactory.Capacity);
 
         // Assert
-        Assert.Equal(RoomRules.SizeInvalid, Assert.Single(errors));
+        Assert.Equal(RoomErrors.SizeInvalid, Assert.Single(errors));
     }
 
     // --------------------------------------------------------
@@ -184,15 +183,15 @@ public class RoomValidationTests
     public void Validate_EveryFieldIsInvalid_ReturnsAllErrorsInFieldOrder()
     {
         // Arrange & Act
-        var errors = RoomRules.Validate("  ", 0, (RoomSize)42, 0);
+        var errors = Room.Validate("  ", 0, (RoomSize)42, 0);
 
         // Assert
         Assert.Collection(
             errors,
-            error => Assert.Equal(RoomRules.RoomNumberRequired, error),
-            error => Assert.Equal(RoomRules.FloorInvalid, error),
-            error => Assert.Equal(RoomRules.SizeInvalid, error),
-            error => Assert.Equal(RoomRules.CapacityInvalid, error));
+            error => Assert.Equal(RoomErrors.RoomNumberRequired, error),
+            error => Assert.Equal(RoomErrors.FloorInvalid, error),
+            error => Assert.Equal(RoomErrors.SizeInvalid, error),
+            error => Assert.Equal(RoomErrors.CapacityInvalid, error));
     }
 
     /// <summary>
@@ -207,7 +206,7 @@ public class RoomValidationTests
         var exception = Assert.Throws<DomainException>(() => Room.Create("  ", 0, (RoomSize)42, 0));
 
         // Assert
-        Assert.Equal(RoomRules.RoomNumberRequired, exception.Code);
+        Assert.Equal(RoomErrors.RoomNumberRequired, exception.Code);
     }
 
     // --------------------------------------------------------
@@ -266,7 +265,7 @@ public class RoomValidationTests
         var exception = Assert.Throws<DomainException>(() => room.UpdateDetails("204", 0, RoomSize.Single, 1));
 
         // Assert
-        Assert.Equal(RoomRules.FloorInvalid, exception.Code);
+        Assert.Equal(RoomErrors.FloorInvalid, exception.Code);
         Assert.Equal(RoomFactory.RoomNumber, room.RoomNumber);
         Assert.Equal(RoomFactory.Floor, room.Floor);
         Assert.Equal(RoomFactory.Capacity, room.Capacity);

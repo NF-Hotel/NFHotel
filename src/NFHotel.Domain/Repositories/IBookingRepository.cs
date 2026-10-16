@@ -1,5 +1,4 @@
 using NFHotel.Domain.Entities;
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Repositories;
@@ -9,7 +8,7 @@ namespace NFHotel.Domain.Repositories;
 /// </summary>
 /// <remarks>
 /// Repositoryet <b>beslutter ikke</b>. Vil servicen vide hvilke bookinger der spærrer et
-/// rum, sender den selv statussættet med — hentet fra <see cref="BookingRules.BlocksRoom"/>.
+/// rum, sender den selv statussættet med — hentet fra <see cref="NFHotel.Domain.ValueObjects.BookingStatusExtensions.BlocksRoom"/>.
 /// Reglen står dermed ét sted i stedet for i SQL. Læsning af projektioner ligger i
 /// <c>IBookingQueries</c> (Application), fordi Domain ikke kender DTO'er (ADR-0001).
 /// </remarks>
@@ -22,7 +21,7 @@ public interface IBookingRepository : IRepository<Booking, int>
     /// <param name="periodStart">Ønsket ankomstdato.</param>
     /// <param name="periodEnd">Ønsket afrejsedato, eksklusiv.</param>
     /// <param name="blockingStatuses">
-    /// De statusser der spærrer. Kommer fra <see cref="BookingRules.BlocksRoom"/> — ikke fra
+    /// De statusser der spærrer. Kommer fra <see cref="NFHotel.Domain.ValueObjects.BookingStatusExtensions.BlocksRoom"/> — ikke fra
     /// et hardkodet <c>WHERE</c>.
     /// </param>
     /// <param name="excludeBookingId">
@@ -31,7 +30,7 @@ public interface IBookingRepository : IRepository<Booking, int>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <returns>
     /// <b>Kandidater</b>, ikke konflikter. Grovfiltreringen på rum, statussæt og datovindue
-    /// sker i SQL; selve afgørelsen træffes af <see cref="BookingRules.Conflicts"/>, så
+    /// sker i SQL; selve afgørelsen træffes af <see cref="NFHotel.Domain.Entities.Booking.ConflictsWith"/>, så
     /// repository og domæne aldrig kan blive uenige om <c>&lt;</c> mod <c>&lt;=</c> (A-04).
     /// </returns>
     Task<IReadOnlyList<Booking>> GetOverlapCandidatesAsync(

@@ -9,7 +9,7 @@ namespace NFHotel.Application.Dto.Guests;
 /// den går mod en request — aldrig mod en anden features service.
 /// <para>
 /// Felterne er <c>string</c> og ikke <c>string?</c>, fordi de er obligatoriske. At de
-/// alligevel kan være tomme fanges af <c>GuestRules.Validate</c>, ikke af typesystemet —
+/// alligevel kan være tomme fanges af <c>Guest.Validate</c>, ikke af typesystemet —
 /// en tom streng fra en formular er et brugerudfald, ikke en programmørfejl.
 /// </para>
 /// </remarks>

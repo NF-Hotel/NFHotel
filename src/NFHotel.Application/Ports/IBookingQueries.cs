@@ -1,5 +1,4 @@
 using NFHotel.Application.Dto.Bookings;
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.Ports;
@@ -49,7 +48,7 @@ public interface IBookingQueries
     /// <param name="periodStart">Vinduets første dato, inklusiv.</param>
     /// <param name="periodEnd">Vinduets sidste dato, eksklusiv.</param>
     /// <param name="blockingStatuses">
-    /// De statusser der spærrer et rum. Kommer fra <see cref="BookingRules.BlocksRoom"/>.
+    /// De statusser der spærrer et rum. Kommer fra <see cref="NFHotel.Domain.ValueObjects.BookingStatusExtensions.BlocksRoom"/>.
     /// </param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <returns>Grovfiltrerede beslaglæggelser. Den endelige overlapsafgørelse træffes af domænet.</returns>

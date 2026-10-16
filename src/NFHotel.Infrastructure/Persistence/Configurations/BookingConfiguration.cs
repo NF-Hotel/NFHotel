@@ -6,7 +6,7 @@ using NFHotel.Domain.Entities;
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// EF Core-mapping for <see cref="Booking"/>.
+/// EF Core-mapping for <see cref="NFHotel.Domain.Entities.Booking"/>.
 /// </summary>
 /// <remarks>
 /// Her mødes B-03 (exclusion constraint), B-06 (snake_case), B-07 (enum som int),

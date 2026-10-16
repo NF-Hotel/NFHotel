@@ -1,5 +1,4 @@
 using NFHotel.Domain.Errors;
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Entities;
@@ -10,7 +9,7 @@ namespace NFHotel.Domain.Entities;
 /// <remarks>
 /// Bookingen kender kun sine egne felter. Regler der kræver kendskab til <i>andre</i>
 /// bookinger — fx overlap ved oprettelse (BR-19) — hører i Application-laget, som kalder
-/// <see cref="BookingRules.Conflicts"/>.
+/// <see cref="Booking.ConflictsWith"/>.
 /// <para>
 /// Domænet kender ikke uret: "i dag" (<c>today</c>) og faktiske tidsstempler
 /// (<c>occurredAt</c>) leveres altid som parametre. Det gør tilstandsmaskinen deterministisk
@@ -238,12 +237,12 @@ public sealed class Booking : Entity<int>
 
         if (occurredAt <= CheckInTime)
         {
-            throw new DomainException(BookingRules.CheckOutBeforeCheckIn);
+            throw new DomainException(BookingErrors.CheckOutBeforeCheckIn);
         }
 
         if (checkOutDate < StartDate)
         {
-            throw new DomainException(BookingRules.CheckOutDateBeforeStartDate);
+            throw new DomainException(BookingErrors.CheckOutDateBeforeStartDate);
         }
 
         // En udtjekningsdato i fremtiden kan ikke rettes bagefter: en CheckedOut booking
@@ -251,7 +250,7 @@ public sealed class Booking : Entity<int>
         // den via EffectiveEndDate (A-01). Derfor en øvre grænse, ikke kun en nedre.
         if (checkOutDate > today)
         {
-            throw new DomainException(BookingRules.CheckOutDateInFuture);
+            throw new DomainException(BookingErrors.CheckOutDateInFuture);
         }
 
         CheckOutTime = occurredAt;
@@ -313,7 +312,7 @@ public sealed class Booking : Entity<int>
     {
         if (!period.StartsOnOrAfter(today))
         {
-            throw new DomainException(BookingRules.StartDateInPast);
+            throw new DomainException(BookingErrors.StartDateInPast);
         }
     }
 
@@ -322,7 +321,7 @@ public sealed class Booking : Entity<int>
     {
         if (roomId <= 0)
         {
-            throw new DomainException(BookingRules.RoomRequired);
+            throw new DomainException(BookingErrors.RoomRequired);
         }
     }
 
@@ -331,7 +330,24 @@ public sealed class Booking : Entity<int>
     {
         if (guestId <= 0)
         {
-            throw new DomainException(BookingRules.GuestRequired);
+            throw new DomainException(BookingErrors.GuestRequired);
         }
     }
+
+    /// <summary>
+    /// Afgør om denne booking er i konflikt med en ønsket periode på et rum (BR-19).
+    /// </summary>
+    /// <param name="roomId">Rummet den ønskede periode gælder.</param>
+    /// <param name="desiredPeriod">Den ønskede periode.</param>
+    /// <returns>Sand hvis denne booking spærrer for den ønskede periode.</returns>
+    /// <remarks>
+    /// Sammenligningen sker mod <see cref="EffectivePeriod"/>, ikke <see cref="Period"/>
+    /// (A-01): en gæst der rejser tidligt skal frigive de resterende nætter. Kaldet er
+    /// ansvarligt for at ekskludere bookingen selv ved redigering. Perioden er halvåben
+    /// (B-03, BR-39): afrejse og ankomst samme dag er ikke overlap.
+    /// </remarks>
+    public bool ConflictsWith(int roomId, DateRange desiredPeriod) =>
+        RoomId == roomId
+        && Status.BlocksRoom()
+        && EffectivePeriod.Overlaps(desiredPeriod);
 }

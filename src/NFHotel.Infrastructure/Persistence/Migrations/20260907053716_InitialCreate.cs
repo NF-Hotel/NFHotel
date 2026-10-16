@@ -126,7 +126,7 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
             // EXCLUSION CONSTRAINT (A-01, A-02, B-03)
             // --------------------------------------------------------
             // EF Core kan ikke modellere en exclusion constraint, så den skrives som rå SQL.
-            // Definitionen står i BookingOverlapConstraint og udledes af BookingRules i
+            // Definitionen står i BookingOverlapConstraint og udledes af BookingStatusExtensions og Booking i
             // Domain (A-04) — den må ikke skrives af i hånden her, for så kan SQL og C#
             // blive uenige om hvilke statusser der spærrer.
             //

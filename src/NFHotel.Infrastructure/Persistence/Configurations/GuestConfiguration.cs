@@ -9,7 +9,7 @@ using NFHotel.Infrastructure.Security;
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// EF Core-mapping for <see cref="Guest"/>, inklusive kryptering af pasnummer (B-09, D-04).
+/// EF Core-mapping for <see cref="NFHotel.Domain.Entities.Guest"/>, inklusive kryptering af pasnummer (B-09, D-04).
 /// </summary>
 /// <remarks>
 /// Klassen har en afhængighed og registreres derfor eksplicit i
@@ -63,7 +63,7 @@ public sealed class GuestConfiguration : EntityConfiguration<Guest, int>
 
         // B-09: krypteret at-rest. Kolonnetypen er text og ikke varchar(50), fordi
         // nonce + tag + ciffertekst i base64 fylder betydeligt mere end klarteksten.
-        // Længdegrænsen (A-10) håndhæves af GuestRules på klarteksten, ikke her.
+        // Længdegrænsen (A-10) håndhæves af Guest.Validate på klarteksten, ikke her.
         // Casten til den ikke-generiske ValueConverter er nødvendig: egenskaben er
         // string?, konverteren string→string. EF kalder aldrig konverteren for null, så
         // NULL forbliver NULL i databasen (T-41).

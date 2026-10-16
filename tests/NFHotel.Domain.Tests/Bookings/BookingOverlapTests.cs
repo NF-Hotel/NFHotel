@@ -1,4 +1,3 @@
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.Tests.TestSupport;
 using NFHotel.Domain.ValueObjects;
 
@@ -128,7 +127,7 @@ public class BookingOverlapTests
     public void BlocksRoom_OnlyCancelledReleasesTheRoom(BookingStatus status, bool expected)
     {
         // Arrange & Act
-        var blocks = BookingRules.BlocksRoom(status);
+        var blocks = status.BlocksRoom();
 
         // Assert
         Assert.Equal(expected, blocks);
@@ -151,7 +150,7 @@ public class BookingOverlapTests
         var desiredPeriod = new DateRange(TestDate.Of("2026-01-04"), TestDate.Of("2026-01-06"));
 
         // Act
-        var conflicts = BookingRules.Conflicts(existing, BookingFactory.RoomId, desiredPeriod);
+        var conflicts = existing.ConflictsWith(BookingFactory.RoomId, desiredPeriod);
 
         // Assert
         Assert.Equal(expected, conflicts);
@@ -166,7 +165,7 @@ public class BookingOverlapTests
         var desiredPeriod = BookingFactory.StandardPeriod;
 
         // Act
-        var conflicts = BookingRules.Conflicts(existing, OtherRoomId, desiredPeriod);
+        var conflicts = existing.ConflictsWith(OtherRoomId, desiredPeriod);
 
         // Assert
         Assert.False(conflicts);
@@ -189,7 +188,7 @@ public class BookingOverlapTests
         var desiredPeriod = new DateRange(TestDate.Of("2026-01-04"), TestDate.Of("2026-01-08"));
 
         // Act
-        var conflicts = BookingRules.Conflicts(existing, BookingFactory.RoomId, desiredPeriod);
+        var conflicts = existing.ConflictsWith(BookingFactory.RoomId, desiredPeriod);
 
         // Assert
         Assert.False(conflicts);
@@ -222,7 +221,7 @@ public class BookingOverlapTests
         var desiredPeriod = new DateRange(TestDate.Of(desiredStart), TestDate.Of(desiredEnd));
 
         // Act
-        var conflicts = BookingRules.Conflicts(existing, BookingFactory.RoomId, desiredPeriod);
+        var conflicts = existing.ConflictsWith(BookingFactory.RoomId, desiredPeriod);
 
         // Assert
         Assert.Equal(expected, conflicts);
@@ -247,7 +246,7 @@ public class BookingOverlapTests
         var desiredPeriod = new DateRange(TestDate.Of(desiredStart), TestDate.Of(desiredEnd));
 
         // Act
-        var conflicts = BookingRules.Conflicts(existing, BookingFactory.RoomId, desiredPeriod);
+        var conflicts = existing.ConflictsWith(BookingFactory.RoomId, desiredPeriod);
 
         // Assert
         Assert.Equal(expected, conflicts);
@@ -266,7 +265,7 @@ public class BookingOverlapTests
         var desiredPeriod = new DateRange(TestDate.Of("2026-01-05"), TestDate.Of("2026-01-07"));
 
         // Act
-        var conflicts = BookingRules.Conflicts(existing, BookingFactory.RoomId, desiredPeriod);
+        var conflicts = existing.ConflictsWith(BookingFactory.RoomId, desiredPeriod);
 
         // Assert
         Assert.True(existing.Period.Overlaps(desiredPeriod));

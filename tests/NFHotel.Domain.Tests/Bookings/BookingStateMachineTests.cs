@@ -1,5 +1,4 @@
 using NFHotel.Domain.Errors;
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.Tests.TestSupport;
 using NFHotel.Domain.ValueObjects;
 
@@ -281,7 +280,7 @@ public class BookingStateMachineTests
             () => booking.CheckOut(occurredAt, BookingFactory.Departure, BookingFactory.Departure));
 
         // Assert
-        Assert.Equal(BookingRules.CheckOutBeforeCheckIn, exception.Code);
+        Assert.Equal(BookingErrors.CheckOutBeforeCheckIn, exception.Code);
         Assert.Equal(BookingStatus.CheckedIn, booking.Status);
     }
 
@@ -302,7 +301,7 @@ public class BookingStateMachineTests
             () => booking.CheckOut(BookingFactory.CheckOutMoment, TestDate.Of(checkOutDate), BookingFactory.Today));
 
         // Assert
-        Assert.Equal(BookingRules.CheckOutDateBeforeStartDate, exception.Code);
+        Assert.Equal(BookingErrors.CheckOutDateBeforeStartDate, exception.Code);
         Assert.Equal(BookingStatus.CheckedIn, booking.Status);
         Assert.Null(booking.CheckOutDate);
         Assert.Null(booking.CheckOutTime);
@@ -330,7 +329,7 @@ public class BookingStateMachineTests
             () => booking.CheckOut(occurredAt, TestDate.Of(checkOutDate), TestDate.Of(today)));
 
         // Assert
-        Assert.Equal(BookingRules.CheckOutDateInFuture, exception.Code);
+        Assert.Equal(BookingErrors.CheckOutDateInFuture, exception.Code);
         Assert.Equal(BookingStatus.CheckedIn, booking.Status);
         Assert.Null(booking.CheckOutDate);
         Assert.Null(booking.CheckOutTime);
@@ -377,7 +376,7 @@ public class BookingStateMachineTests
             () => booking.CheckOut(BookingFactory.CheckOutMoment, beforeArrivalAndAfterToday, today));
 
         // Assert
-        Assert.Equal(BookingRules.CheckOutDateBeforeStartDate, exception.Code);
+        Assert.Equal(BookingErrors.CheckOutDateBeforeStartDate, exception.Code);
     }
 
     // --------------------------------------------------------
@@ -523,7 +522,7 @@ public class BookingStateMachineTests
             () => booking.Reschedule(pastPeriod, 42, BookingFactory.Today));
 
         // Assert
-        Assert.Equal(BookingRules.StartDateInPast, exception.Code);
+        Assert.Equal(BookingErrors.StartDateInPast, exception.Code);
         Assert.Equal(BookingFactory.StandardPeriod, booking.Period);
         Assert.Equal(BookingFactory.RoomId, booking.RoomId);
     }
@@ -543,7 +542,7 @@ public class BookingStateMachineTests
             () => booking.Reschedule(newPeriod, newRoomId, BookingFactory.Today));
 
         // Assert
-        Assert.Equal(BookingRules.RoomRequired, exception.Code);
+        Assert.Equal(BookingErrors.RoomRequired, exception.Code);
         Assert.Equal(BookingFactory.RoomId, booking.RoomId);
     }
 

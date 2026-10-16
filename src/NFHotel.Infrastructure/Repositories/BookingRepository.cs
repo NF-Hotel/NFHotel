@@ -6,7 +6,6 @@ using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Ports;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Repositories;
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.Infrastructure.Persistence;
 
@@ -17,7 +16,7 @@ namespace NFHotel.Infrastructure.Repositories;
 /// </summary>
 /// <remarks>
 /// Repositoryet <b>beslutter ikke</b>: hvilke statusser der spærrer kommer som parameter fra
-/// servicen, som har hentet dem fra <see cref="BookingRules.BlocksRoom"/>. Der findes ikke
+/// servicen, som har hentet dem fra <see cref="NFHotel.Domain.ValueObjects.BookingStatusExtensions.BlocksRoom"/>. Der findes ikke
 /// et hardkodet <c>WHERE status &lt;&gt; 4</c> i denne fil.
 /// <para>
 /// Datovinduet filtreres på den genererede kolonne <c>effective_end_date</c> (A-01), læst
@@ -138,7 +137,7 @@ public sealed class BookingRepository : Repository<Booking, int>, IBookingReposi
     /// <remarks>
     /// Prædikatet er halvåbent og spejler <c>DateRange.Overlaps</c> (BR-39). Det er stadig
     /// et <i>grovfilter</i>: den bindende afgørelse træffes af
-    /// <see cref="BookingRules.Conflicts"/> i servicen, så SQL og C# ikke kan blive uenige
+    /// <see cref="NFHotel.Domain.Entities.Booking.ConflictsWith"/> i servicen, så SQL og C# ikke kan blive uenige
     /// om <c>&lt;</c> mod <c>&lt;=</c> (A-04).
     /// </remarks>
     private static IQueryable<Booking> FilterByWindow(

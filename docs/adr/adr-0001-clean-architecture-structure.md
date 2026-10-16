@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version, accepted after RC-019 Go | [78eeb18] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version, accepted after RC-019 Go | [78eeb18] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Rules folder dissolved (MIL-008, RC-039) | [b274cc5] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -53,8 +54,8 @@ splitting it lets the entity part live in `Domain` as the skill requires.
 
 We follow option 1. The key is `Entity<TKey>`, an abstract base class with the
 property `Id`, and `Booking`, `Guest` and `Room` derive from it with `int` keys.
-The layer folders are those of the skill, plus `Domain/Rules` for the static rule
-classes (named `Domain/Rules/BookingRules` in `docs/refactor/Phase1-Scope.md`).
+The layer folders are those of the skill only; the static rule classes of the first
+version (`Domain/Rules/BookingRules` in `docs/refactor/Phase1-Scope.md`) were moved into the entities, value objects and `Errors` by MIL-008.
 Entity repositories (`IRepository<TEntity, TKey>`, `IBookingRepository`,
 `IGuestRepository`, `IRoomRepository`) are in `Domain/Repositories`; the
 DTO-returning reads are narrow ports (`IBookingQueries`, `IGuestQueries`,
@@ -93,3 +94,4 @@ key column `<table>_id`; a model test enforces it. DTOs and requests are in
 [BC-001]: ../business-case.md
 [MIL-005]: ../milestones/mil-005-clean-architecture.md
 [78eeb18]: https://github.com/NF-Hotel/NFHotel/commit/78eeb18cac8d761ebf5267fca5d6b418b04b98c2
+[b274cc5]: https://github.com/NF-Hotel/NFHotel/commit/b274cc599b848bc07160cfe465d01ea61ad8c8b4

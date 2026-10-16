@@ -4,7 +4,6 @@ using NFHotel.Application.Ports;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.Repositories;
-using NFHotel.Domain.Rules;
 using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.UseCases.Rooms;
@@ -132,7 +131,7 @@ public sealed class RoomService : IRoomService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var errors = RoomRules.Validate(request.RoomNumber, request.Floor, request.Size, request.Capacity);
+        var errors = Room.Validate(request.RoomNumber, request.Floor, request.Size, request.Capacity);
 
         if (errors.Count > 0)
         {
@@ -177,7 +176,7 @@ public sealed class RoomService : IRoomService
         ArgumentNullException.ThrowIfNull(request);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.RoomId);
 
-        var errors = RoomRules.Validate(request.RoomNumber, request.Floor, request.Size, request.Capacity);
+        var errors = Room.Validate(request.RoomNumber, request.Floor, request.Size, request.Capacity);
 
         if (errors.Count > 0)
         {
