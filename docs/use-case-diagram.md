@@ -12,7 +12,8 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-013 Go | [469ff7a] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the actor Hotel staff and the use cases Manage Bookings, Manage Rooms and Manage Guests (MIL-007) | [a29c54a] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the actor Hotel staff and the use cases Manage Bookings, Manage Rooms and Manage Guests (MIL-007) | [a29c54a] |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the use case Sign In To The Back Office (MIL-016) | pending |
 
 ---
 
@@ -44,6 +45,7 @@ rectangle "NFHotel platform" <<System>> {
   usecase "Manage Bookings" as UC7
   usecase "Manage Rooms" as UC8
   usecase "Manage Guests" as UC9
+  usecase "Sign In To The Back Office" as UC10
 }
 Owner --> UC1
 Owner --> UC2
@@ -53,6 +55,10 @@ DevOps --> UC5
 Staff --> UC7
 Staff --> UC8
 Staff --> UC9
+Staff --> UC10
+UC7 ..> UC10 : <<include>>
+UC8 ..> UC10 : <<include>>
+UC9 ..> UC10 : <<include>>
 UC2 ..> UC6 : <<include>>
 UC4 ..> UC3 : <<include>>
 UC5 ..> UC3 : <<include>>
@@ -65,7 +71,7 @@ UC5 ..> UC3 : <<include>>
 | --- | --- | --- | --- |
 | Owner | `<<Actor>>` | S01 | View Market Analysis; Choose Local AI Model |
 | DevOps | `<<Actor>>` | S02 | Route Services Through Nginx; Run Time and Quality Benchmark; Run Market Analysis Service |
-| Hotel staff | `<<Actor>>` | S05 | Manage Bookings; Manage Rooms; Manage Guests |
+| Hotel staff | `<<Actor>>` | S05 | Manage Bookings; Manage Rooms; Manage Guests; Sign In To The Back Office |
 
 ## Use Case Table
 
@@ -80,6 +86,7 @@ UC5 ..> UC3 : <<include>>
 | Manage Bookings | Hotel staff | Create, confirm, check in, check out, cancel and move bookings without double booking | [US-001].06 | Must | The core of the back office |
 | Manage Rooms | Hotel staff | Keep the rooms, their status and their cleaning state correct | [US-001].07 | Must | Bookings need rooms |
 | Manage Guests | Hotel staff | Find, register, change and delete guests | [US-001].08 | Must | Bookings need guests |
+| Sign In To The Back Office | Hotel staff | Sign in with an own account and see only what the role needs | [US-001].09 | Must | The back office must not run on the public port without it |
 
 ## Role Matrix
 
@@ -98,6 +105,7 @@ the DevOps role operates the services; the Hotel staff role runs the back office
 | Manage Bookings | - | - | performs |
 | Manage Rooms | - | - | performs |
 | Manage Guests | - | - | performs |
+| Sign In To The Back Office | - | - | performs |
 
 No use case is shared by two roles. Whether DevOps may also view the analysis
 is a question for the Product Owner.
@@ -109,6 +117,7 @@ is a question for the Product Owner.
 | Choose Local AI Model | `<<include>>` | Compare Models by Time and Quality | A model choice always needs the comparison; it is a mandatory part of the goal |
 | Run Time and Quality Benchmark | `<<include>>` | Route Services Through Nginx | The benchmark service is only reachable behind the proxy |
 | Run Market Analysis Service | `<<include>>` | Route Services Through Nginx | The analysis service is only reachable behind the proxy |
+| Manage Bookings, Manage Rooms, Manage Guests | `<<include>>` | Sign In To The Back Office | Every back office function needs a signed-in member of staff |
 
 ---
 

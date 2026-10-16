@@ -226,6 +226,7 @@ The receipt page therefore deliberately shows neither name, e-mail, phone nor pa
 customer has just entered themselves, plus room and dates. The restriction can be lifted when Identity arrives,
 and should be reassessed there rather than forgotten.
 
-**On access control.** `/admin/**` is not protected. Anyone who knows the address can change
-bookings and see all guests. That is the postponed auth (D-01, D-02, D-03), and `AdminLayout`
-writes it on the screen so no one thinks otherwise. It must not go into operation without auth.
+**On access control.** `/admin/**` needs a signed-in member of staff since MIL-016 (ADR-0005, UC-004):
+the roles Receptionist, Manager and Housekeeping hold the permissions of the Access Control Matrix,
+and the API checks them. Before MIL-016 the pages were open to anyone who knew the address. The
+Guest role and TLS at the public port are still open.
