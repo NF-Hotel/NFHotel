@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-018 Go | pending |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version | [78eeb18] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-018 Go | [78eeb18] |
 
 ---
 
@@ -86,3 +86,4 @@ to behaviour.
 ---
 
 [BC-001]: ../business-case.md
+[78eeb18]: https://github.com/NF-Hotel/NFHotel/commit/78eeb18cac8d761ebf5267fca5d6b418b04b98c2
