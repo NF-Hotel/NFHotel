@@ -37,6 +37,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-009] | Milestone | en | it | [BC-001], [ADR-0002], [MIL-008] | - | [RC-041], [RC-043] |
 | [MIL-010] | Milestone | en | it | [BC-001], [MIL-006] | - | [RC-045], [RC-046] |
 | [ADR-0002] | ADR | en | it | [BC-001], [ADR-0001], [DM-004] | [MIL-009] | [RC-042] |
+| [ADR-0003] | ADR | en | it | [BC-001], [MIL-004], [US-001] | [MIL-004] | [RC-047] |
 | [ADR-0001] | Architecture Decision Record | - | - | [BC-001] | [MIL-005] | [RC-019] |
 | `src/` (Domain, Application, Infrastructure) | Source code | - | - | [ADR-0001], [MIL-005] | - | [RC-020] |
 | [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003] | - |
@@ -107,6 +108,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-044]: ./reviews/rc-044-business-case-source-comments.md
 [RC-045]: ./reviews/rc-045-milestone-010.md
 [RC-046]: ./reviews/rc-046-source-comments-english.md
+[RC-047]: ./reviews/rc-047-adr-0003.md
 [DICT-001]: ../dictionary.md
 [UC-001]: ../use-cases/uc-001/uc.md
 [UC-002]: ../use-cases/uc-002/uc.md
@@ -121,6 +123,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-009]: ../milestones/mil-009-validation-attributes.md
 [MIL-010]: ../milestones/mil-010-english-source-comments.md
 [ADR-0002]: ../adr/adr-0002-validation-attributes-on-entities.md
+[ADR-0003]: ../adr/adr-0003-proxmox-vm-for-services.md
 [ADR-0001]: ../adr/adr-0001-clean-architecture-structure.md
 [MIL-005]: ../milestones/mil-005-clean-architecture.md
 [MIL-004]: ../milestones/mil-004-market-analysis-service.md
