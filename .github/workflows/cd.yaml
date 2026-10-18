@@ -20,6 +20,7 @@ on:
   workflow_run:
     workflows: [NF Hotel Release]
     types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       release_run_id:
@@ -42,9 +43,13 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to production
+    # A run from a fork never reaches the deploy, even if Release were changed
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'workflow_run' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment:
