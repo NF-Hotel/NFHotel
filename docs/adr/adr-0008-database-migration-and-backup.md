@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | mikemike | S01; S03 | Initial version | pending |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-093 Go | pending |
+| 2026-10-18 | Proposed | mikemike | S01; S03 | Initial version | [f4649ad] |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-093 Go | [f4649ad] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -80,3 +80,4 @@ WAL archiving is not chosen now: a daily dump with a tested restore fits the dat
 [ADR-0007]: ./adr-0007-cicd-and-supply-chain.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
+[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f

@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | mikemike | S01; S03 | Rewritten as phase 1 of DSA-001: images from GHCR instead of builds in the VM, Tailscale OIDC and SSH, backups | pending |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-089 Go | pending |
+| 2026-10-18 | Proposed | mikemike | S01; S03 | Rewritten as phase 1 of DSA-001: images from GHCR instead of builds in the VM, Tailscale OIDC and SSH, backups | [f4649ad] |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-089 Go | [f4649ad] |
 
 ---
 
@@ -109,3 +109,4 @@ Supply-chain checks (phase 2, MIL-022) and hardening (phase 3, MIL-023) follow.
 [ADR-0008]: ../adr/adr-0008-database-migration-and-backup.md
 [DSA-001]: ../sqa/devsecops-assessment.md
 [US-001]: ../user-stories.md
+[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f

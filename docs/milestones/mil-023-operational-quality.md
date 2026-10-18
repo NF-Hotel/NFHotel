@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | mikemike | S01 | Initial version | pending |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-091 Go | pending |
+| 2026-10-18 | Proposed | mikemike | S01 | Initial version | [f4649ad] |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-091 Go | [f4649ad] |
 
 ---
 
@@ -102,3 +102,4 @@ Decide whether the VM and the containers are hardened and observed well enough t
 [ADR-0003]: ../adr/adr-0003-proxmox-vm-for-services.md
 [MIL-022]: ./mil-022-supply-chain-security.md
 [DSA-001]: ../sqa/devsecops-assessment.md
+[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f

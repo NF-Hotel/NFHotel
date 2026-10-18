@@ -20,7 +20,7 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 18, the database is reachable only through an API that is not exposed to the internet (MIL-015) | [9e6d2d4] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 19, Make the back office available only to signed-in staff, with a role per staff me (MIL-016) | [bbef3bf] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 20, Serve the one service that the internet reaches only over TLS: HTTP redirects to (MIL-017) | [b174eeb] |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Amended: objectives 23 to 25, a secure CI/CD pipeline in three phases (MIL-021 to MIL-023, DSA-001); accepted after RC-088 Go | pending |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Amended: objectives 23 to 25, a secure CI/CD pipeline in three phases (MIL-021 to MIL-023, DSA-001); accepted after RC-088 Go | [f4649ad] |
 
 ---
 
@@ -265,3 +265,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [9e6d2d4]: https://github.com/NF-Hotel/NFHotel/commit/9e6d2d40d332b50fbd405564fcced006e241effd
 [bbef3bf]: https://github.com/NF-Hotel/NFHotel/commit/bbef3bf556044704b80b76a7817432bc2b6527cd
 [b174eeb]: https://github.com/NF-Hotel/NFHotel/commit/b174eeba803523402481ff38d07a4056073941ef
+[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f

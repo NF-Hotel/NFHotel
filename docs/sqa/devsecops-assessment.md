@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | mikemike | S01; S03 | Initial assessment and plan | pending |
-| 2026-10-18 | Accepted | mikemike | S01 (decisions D1 to D10 approved in chat) | Accepted without a catalog checklist; D4, D7 and D10 still need input from S03 | pending |
+| 2026-10-18 | Proposed | mikemike | S01; S03 | Initial assessment and plan | [f4649ad] |
+| 2026-10-18 | Accepted | mikemike | S01 (decisions D1 to D10 approved in chat) | Accepted without a catalog checklist; D4, D7 and D10 still need input from S03 | [f4649ad] |
 
 This document is a working assessment. Its type is not in `framework/registry/artifact-catalog.md`; a catalog type for it is proposed upstream (rule 5) before it is accepted.
 
@@ -383,3 +383,4 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
+[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f

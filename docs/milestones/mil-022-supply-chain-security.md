@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | mikemike | S01 | Initial version | pending |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-090 Go | pending |
+| 2026-10-18 | Proposed | mikemike | S01 | Initial version | [f4649ad] |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-090 Go | [f4649ad] |
 
 ---
 
@@ -98,3 +98,4 @@ The level is claimed only when criterion 3 holds.
 [ADR-0008]: ../adr/adr-0008-database-migration-and-backup.md
 [MIL-021]: ./mil-021-secure-cicd-foundation.md
 [DSA-001]: ../sqa/devsecops-assessment.md
+[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f

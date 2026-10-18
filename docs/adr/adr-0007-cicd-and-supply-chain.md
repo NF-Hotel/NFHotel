@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | mikemike | S01; S03 | Initial version | pending |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-092 Go | pending |
+| 2026-10-18 | Proposed | mikemike | S01; S03 | Initial version | [f4649ad] |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-092 Go | [f4649ad] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -82,3 +82,4 @@ We follow option 2, with Tailscale workload identity federation and Tailscale SS
 [ADR-0006]: ./adr-0006-tls.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
+[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f

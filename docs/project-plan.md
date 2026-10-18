@@ -20,7 +20,7 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-015 (database API) | [9e6d2d4] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-016 (back office login) | [bbef3bf] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-017 (TLS) | [b174eeb] |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Added MIL-021 to MIL-023 (secure CI/CD in three phases, DSA-001); accepted after RC-088 Go | pending |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Added MIL-021 to MIL-023 (secure CI/CD in three phases, DSA-001); accepted after RC-088 Go | [f4649ad] |
 
 ---
 
@@ -227,3 +227,4 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [9e6d2d4]: https://github.com/NF-Hotel/NFHotel/commit/9e6d2d40d332b50fbd405564fcced006e241effd
 [bbef3bf]: https://github.com/NF-Hotel/NFHotel/commit/bbef3bf556044704b80b76a7817432bc2b6527cd
 [b174eeb]: https://github.com/NF-Hotel/NFHotel/commit/b174eeba803523402481ff38d07a4056073941ef
+[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
