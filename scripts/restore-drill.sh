@@ -7,7 +7,8 @@
 # Steps:
 #   1. decrypt the backup with the age identity (the key file of S03)
 #   2. start a throwaway PostgreSQL 16 container with no network
-#   3. pg_restore the dump into it
+#   3. pg_restore the dump into it, without owners and privileges (the roles of
+#      ADR-0011 do not exist in the throwaway container; a real restore keeps them)
 #   4. report every table with its row count and the latest EF Core migration
 #   5. remove the container and the decrypted dump
 # It changes nothing outside the throwaway container and a temporary folder, both
@@ -79,7 +80,7 @@ docker exec "$CONTAINER" pg_isready --username postgres --dbname drill >/dev/nul
 
 echo "==> 3. restoring"
 docker cp "$work/nfhotel.dump" "$CONTAINER:/tmp/nfhotel.dump" >/dev/null
-docker exec "$CONTAINER" pg_restore --username postgres --dbname drill --no-owner --exit-on-error /tmp/nfhotel.dump ||
+docker exec "$CONTAINER" pg_restore --username postgres --dbname drill --no-owner --no-acl --exit-on-error /tmp/nfhotel.dump ||
   die "pg_restore failed"
 
 echo "==> 4. what was restored"
@@ -91,7 +92,8 @@ tables="$(sql "SELECT count(*) FROM information_schema.tables WHERE table_schema
 sql "SELECT format('%I.%I', schemaname, relname) FROM pg_stat_user_tables ORDER BY 1" | while read -r table; do
   printf '    %-45s %s rows\n' "$table" "$(sql "SELECT count(*) FROM $table")"
 done
-migration="$(sql "SELECT \"MigrationId\" FROM \"__EFMigrationsHistory\" ORDER BY \"MigrationId\" DESC LIMIT 1" 2>/dev/null)" ||
+# The project names columns in snake_case, so the history column is migration_id.
+migration="$(sql "SELECT migration_id FROM \"__EFMigrationsHistory\" ORDER BY migration_id DESC LIMIT 1" 2>/dev/null)" ||
   die "the EF Core migration history is missing"
 [[ -n "$migration" ]] || die "the EF Core migration history is empty"
 echo "    latest migration: $migration"
