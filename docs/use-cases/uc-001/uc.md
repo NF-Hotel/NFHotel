@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version, derived from the rule ledger | [a29c54a] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version, derived from the rule ledger | [a29c54a] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Added the room rule of the check-in and the period rule of the overview (MIL-013) | [109bf1b] |
 
 ---
 
@@ -48,8 +49,13 @@
   1. Hotel staff cancel the booking; it stays in the list with the status cancelled.
 - 5b. The guest wants other nights or another room while the booking is pending or confirmed:
   1. Hotel staff move the booking; the same checks as in step 2 apply, and the booking does not block itself.
+- 5c. The room of the booking is out of service or in maintenance when the guest arrives:
+  1. The system refuses the check-in and tells hotel staff that the room cannot be let.
+  2. Hotel staff move the booking to another room as in 5b and check the guest in there. A room that only needs cleaning can be checked in to.
 - 6a. The guest leaves before the departure date:
   1. The system records the actual check-out date, and the room is free again from that date.
+- *a. At any time, hotel staff look at the bookings of a period whose end is before its start:
+  1. The system refuses the period and shows nothing. A period of one day, with the same start and end, is allowed.
 
 ### Special Requirements / Business Rules
 
@@ -62,6 +68,8 @@
 | 6 | Check-out is allowed only for a checked-in booking, once (BR-09, BR-10) |
 | 5a | Only a pending or confirmed booking can be cancelled; cancelling never deletes (BR-11, BR-13) |
 | 5b | Only a pending or confirmed booking can be moved (BR-14, BR-17 to BR-20) |
+| 5c | A guest is checked in only to a room that can be let; whether the room is clean does not matter (BR-110, B-04) |
+| *a | The end of an overview period is not before its start; a period of one day is allowed |
 
 ### Open Issues
 
@@ -73,3 +81,4 @@
 [US-001]: ../../user-stories.md
 [SA-001]: ../../stakeholder-analysis.md
 [a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d
+[109bf1b]: https://github.com/NF-Hotel/NFHotel/commit/109bf1b06ce371a66a1ad4fcfa0ac85e84a71d7e

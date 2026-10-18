@@ -1,6 +1,8 @@
 @page "/admin"
 @layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.BookingsView)]
 @rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
 @using NFHotel.Web.Features.Admin.Dashboard
 @inject AdminDashboardViewModel ViewModel
 
@@ -189,8 +191,8 @@
     private string SubtitleText => $"Where things stand on {AdminFormat.Date(ViewModel.Today)}";
 
     /// <summary>Fetches today's figures when the screen opens.</summary>
-    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync();
+    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
 
     /// <summary>Passes the refresh button on to the viewmodel.</summary>
-    private Task RefreshAsync() => ViewModel.RefreshAsync();
+    private Task RefreshAsync() => ViewModel.RefreshAsync(ComponentToken);
 }

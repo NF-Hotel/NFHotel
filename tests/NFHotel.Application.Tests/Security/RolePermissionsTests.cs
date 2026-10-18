@@ -1,7 +1,4 @@
-using System;
-
-
-using NFHotel.Application.Security;
+using NFHotel.Application.UseCases.Staff;
 
 namespace NFHotel.Application.Tests.Security;
 
@@ -10,11 +7,13 @@ namespace NFHotel.Application.Tests.Security;
 /// </summary>
 public class RolePermissionsTests
 {
+    #region Single permissions
+
     /// <summary>
     /// Kontrollerer at manager har tilladelse til at ændre priser.
     /// </summary>
     [Fact]
-    public void Manager_CanManagePrices()
+    public void HasPermission_ManagerAndManagePrices_IsTrue()
     {
         // Arrange  Forbered rollen og den permission, vi vil teste.
         string role = Roles.Manager;
@@ -31,7 +30,7 @@ public class RolePermissionsTests
     /// Kontrollerer at Receptionist ikke har tilladelse til at ændre priser.
     /// </summary>
     [Fact]
-    public void Receptionist_CannotManagePrices()
+    public void HasPermission_ReceptionistAndManagePrices_IsFalse()
     {
         // Arrange  Forbered rolle og permission.
         string role = Roles.Receptionist;
@@ -49,7 +48,7 @@ public class RolePermissionsTests
     /// Kontrollerer at guest ikke har tilladelse til at se hotelgæsters pasdata.
     /// </summary>
     [Fact]
-    public void Guest_CannotViewGuestPassportData()
+    public void HasPermission_GuestAndGuestPassportData_IsFalse()
     {
         // Arrange  forbered rolle og permission.
         string role = Roles.Guest;
@@ -68,7 +67,7 @@ public class RolePermissionsTests
     /// Kontrollerer at en ukendt rolle ikke får adgang til at ændre priser.
     /// </summary>
     [Fact]
-    public void UnknownRole_CannotManagePrices()
+    public void HasPermission_UnknownRoleAndManagePrices_IsFalse()
     {
         // Arrange  opret en rolle, der ikke findes i RBAC-matrixen.
         string role = "UnknownRole";
@@ -81,6 +80,10 @@ public class RolePermissionsTests
         Assert.False(result);
     }
 
+
+    #endregion
+
+    #region Whole matrix per role
 
     /// <summary>
     /// Kontrollerer housekeeping-rollens adgangsrettigheder.
@@ -97,7 +100,7 @@ public class RolePermissionsTests
     [InlineData(Permissions.ViewOtherGuestData, false)]
     [InlineData(Permissions.ViewOwnPassportData, false)]
 
-    public void Housekeeping_HasCorrectPermissions(
+    public void HasPermission_HousekeepingAndPermission_MatchesTheMatrix(
         string permission, bool expected)
     {
         // Arrange  rollen er Housekeeping.
@@ -126,7 +129,7 @@ public class RolePermissionsTests
     [InlineData(Permissions.ManagePrices, false)]
     [InlineData(Permissions.ViewHousekeeping, false)]
     [InlineData(Permissions.UpdateHousekeepingStatus, false)]
-    public void Guest_HasCorrectPermissions(
+    public void HasPermission_GuestAndPermission_MatchesTheMatrix(
         string permission, bool expected)
     {
         // Arrange  rollen er Guest.
@@ -154,7 +157,7 @@ public class RolePermissionsTests
     [InlineData(Permissions.ManagePrices, false)]
     [InlineData(Permissions.ViewHousekeeping, true)]
     [InlineData(Permissions.UpdateHousekeepingStatus, false)]
-    public void Receptionist_HasCorrectPermissions(
+    public void HasPermission_ReceptionistAndPermission_MatchesTheMatrix(
         string permission, bool expected)
     {
         // Arrange  rollen er Receptionist.
@@ -183,7 +186,7 @@ public class RolePermissionsTests
     [InlineData(Permissions.ManagePrices, true)]
     [InlineData(Permissions.ViewHousekeeping, true)]
     [InlineData(Permissions.UpdateHousekeepingStatus, true)]
-    public void Manager_HasCorrectPermissions(
+    public void HasPermission_ManagerAndPermission_MatchesTheMatrix(
         string permission, bool expected)
     {
         // Arrange rollen er Manager.
@@ -196,5 +199,5 @@ public class RolePermissionsTests
         Assert.Equal(expected, result);
     }
 
-
+    #endregion
 }

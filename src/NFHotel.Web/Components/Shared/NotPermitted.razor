@@ -1,0 +1,20 @@
+@*
+    Tells a signed-in member of staff that the page is not part of the role (ADR-0005), and where to go instead.
+    Used by the access denied page, which the cookie sends the user to, and by the router when the user navigates
+    inside the circuit.
+*@
+
+<div class="page-narrow stack">
+    <h1 class="title">You don't have access to this page</h1>
+    <p class="lede">Your role doesn't include this part of the back office. Ask a manager if you need it.</p>
+    <div class="row">
+        <a class="btn btn-primary" href="@Landing">Go to your start page</a>
+    </div>
+</div>
+
+@code {
+    /// <summary>The page the role starts on.</summary>
+    [Parameter]
+    [EditorRequired]
+    public string Landing { get; set; } = "/";
+}

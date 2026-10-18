@@ -1,8 +1,28 @@
-# NFHotel web application. Rendered by the nginx image at start: ${VAR}
-# placeholders come from nginx.env, nginx's own $variables are left alone.
+# NFHotel web application over TLS (MIL-017, ADR-0006). Rendered by the nginx image at
+# start: ${VAR} placeholders come from nginx.env, nginx's own $variables are left alone.
+
+# Port 80 only redirects; no page is served in clear text.
 server {
   listen 80;
   server_name ${NGINX_SERVER_NAME};
+
+  location / {
+    return 301 https://$host${NGINX_REDIRECT_PORT}$request_uri;
+  }
+}
+
+server {
+  listen 443 ssl;
+  http2 on;
+  server_name ${NGINX_SERVER_NAME};
+
+  # Certificate and key: files in deploy/nginx/tls (git-ignored), see scripts/make-dev-certificate.sh.
+  ssl_certificate /etc/nginx/tls/fullchain.pem;
+  ssl_certificate_key /etc/nginx/tls/privkey.pem;
+  include /etc/nginx/snippets/tls.conf;
+
+  # Empty NGINX_HSTS sends no header (a development certificate must not set HSTS).
+  add_header Strict-Transport-Security "${NGINX_HSTS}" always;
 
   # Docker's embedded DNS. The upstream is resolved per request through a
   # variable, so the proxy starts and stays up when the web service is down.

@@ -1,5 +1,10 @@
+@using NFHotel.Application.UseCases.Staff
+@using NFHotel.Web.Security
+
 @*
-    The side menu of admin. One item per route in UI-Spec section 1.
+    The side menu of admin. One item per route in UI-Spec section 1, shown only when the role of the signed-in user
+    holds the permission of the page (ADR-0005). The menu is a convenience: the pages and the API check the
+    permission again.
 
     NavLinkMatch.All on /admin, so the dashboard is not marked on every sub-route.
 *@
@@ -10,9 +15,27 @@
         <span>Administration</span>
     </a>
 
-    <NavLink class="admin-nav-link" href="/admin" Match="NavLinkMatch.All">Dashboard</NavLink>
-    <NavLink class="admin-nav-link" href="/admin/bookings">Bookings</NavLink>
-    <NavLink class="admin-nav-link" href="/admin/rooms">Rooms</NavLink>
-    <NavLink class="admin-nav-link" href="/admin/guests">Guests</NavLink>
-    <NavLink class="admin-nav-link" href="/admin/revenue">Revenue</NavLink>
+    <AuthorizeView Policy="@StaffPolicies.BookingsView">
+        <NavLink class="admin-nav-link" href="/admin" Match="NavLinkMatch.All">Dashboard</NavLink>
+        <NavLink class="admin-nav-link" href="/admin/bookings">Bookings</NavLink>
+    </AuthorizeView>
+    <AuthorizeView Policy="@StaffPolicies.RoomsView">
+        <NavLink class="admin-nav-link" href="/admin/rooms">Rooms</NavLink>
+    </AuthorizeView>
+    <AuthorizeView Policy="@StaffPolicies.GuestsView">
+        <NavLink class="admin-nav-link" href="/admin/guests">Guests</NavLink>
+    </AuthorizeView>
+    <AuthorizeView Policy="@StaffPolicies.SalesView">
+        <NavLink class="admin-nav-link" href="/admin/revenue">Revenue</NavLink>
+    </AuthorizeView>
+
+    <AuthorizeView>
+        <div class="admin-nav-user">
+            <p>@context.User.Identity?.Name <span>@StaffClaims.RoleOf(context.User)</span></p>
+            <form method="post" action="@StaffSecurityRegistration.LogoutPath">
+                <AntiforgeryToken />
+                <button type="submit" class="btn btn-ghost btn-sm">Sign out</button>
+            </form>
+        </div>
+    </AuthorizeView>
 </nav>

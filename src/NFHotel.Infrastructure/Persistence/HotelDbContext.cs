@@ -49,6 +49,9 @@ public sealed class HotelDbContext : DbContext
     /// <summary>Guests.</summary>
     public DbSet<Guest> Guests => Set<Guest>();
 
+    /// <summary>Staff accounts (ADR-0005).</summary>
+    public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -62,6 +65,7 @@ public sealed class HotelDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new BookingConfiguration());
         modelBuilder.ApplyConfiguration(new RoomConfiguration());
+        modelBuilder.ApplyConfiguration(new StaffConfiguration());
 
         // GuestConfiguration is registered explicitly and not via assembly scanning, because it
         // has a dependency: the value converter that encrypts the passport number (B-09).

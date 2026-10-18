@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | US-001 |
-| CrossReference | [UCD-001], [BC-001], [MIL-002] |
+| CrossReference | [UCD-001], [BC-001], [MIL-002], [MIL-016] |
 | Language | en |
 | Domain | it |
 
@@ -12,7 +12,8 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-012 Go | [469ff7a] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.06 to US-001.08, the hotel staff stories (MIL-007) | [a29c54a] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.06 to US-001.08, the hotel staff stories (MIL-007) | [a29c54a] |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.09, the staff sign-in story (MIL-016) | [1593b34] |
 
 ---
 
@@ -154,6 +155,21 @@ analysis without anyone starting it by hand.
 | --- | --- | --- | --- | --- |
 | UCD-001 use case "Manage Guests" | fits one iteration | none | Must | Bookings need guests; the passport number is personal data (D-04) |
 
+### US-001.09 — Sign in to the back office
+
+**As** hotel staff (S05), **I want** to sign in with my own account and see only what my role needs, **so that** guest data and the passport number are not open to anyone who finds the address.
+
+**Acceptance Criteria**
+
+- Given nobody is signed in, when someone opens a page of the back office, then they are sent to the sign-in page and nothing of the page is shown.
+- Given a Housekeeping member is signed in, when they open the guests, the bookings or the revenue, then they are told that the role has no access.
+- Given the wrong password, when staff sign in, then they are told that the user name or the password is wrong, without saying which.
+- Given five failed sign-ins of a user name in fifteen minutes, when staff try again, then the attempt is refused, even with the right password.
+
+| Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
+| --- | --- | --- | --- | --- |
+| UCD-001 use case "Sign In To The Back Office" | fits one iteration | none | Must | BusinessRules.md says the back office must not go into operation without a sign-in |
+
 ## INVEST Check
 
 - Independent: US-001.01 needs US-001.05; US-001.02 needs US-001.04; US-001.04 and US-001.05 need US-001.03. The order is stated in the Reason column.
@@ -163,7 +179,7 @@ analysis without anyone starting it by hand.
 - Small: US-001.04 and US-001.06 are larger than one iteration and are flagged above.
 - Testable: every story has Given/When/Then criteria.
 
-Stories US-001.06 to US-001.08 describe the hotel back office that exists in `src/`; they were derived from the rule ledger in `docs/refactor/BusinessRules.md` by the AI and are for S01 and S04 to confirm, merge or drop.
+Stories US-001.06 to US-001.09 describe the hotel back office that exists in `src/`; they were derived from the rule ledger in `docs/refactor/BusinessRules.md` by the AI and are for S01 and S04 to confirm, merge or drop.
 
 Open questions for the Product Owner: where the Proxmox host lives (the
 throwaway container of MIL-003 is for tests only), a virtual machine or an LXC
@@ -177,5 +193,7 @@ for US-001.02.
 [MIL-002]: ./milestones/mil-002-nginx-proxy-and-web-compose.md
 [SA-001]: ./stakeholder-analysis.md
 [fc8ec78]: https://github.com/NF-Hotel/NFHotel/commit/fc8ec78b24b805b10d5c056b19ed2785697ee8ff
+[MIL-016]: ./milestones/mil-016-backoffice-login.md
 [469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa
 [a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d
+[1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4

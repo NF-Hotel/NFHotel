@@ -7,13 +7,10 @@
     }
   },
 
-  "ConnectionStrings": {
-    "HotelDatabase": "Host=localhost;Port=5432;Database=nfhotel;Username=nfhotel;Password=<dit-lokale-kodeord>"
-  },
-
-  "Encryption": {
-    "//": "KUN til udvikling. Produktionsnøglen kommer fra en secret store, aldrig fra en fil i repoet. 32 bytes base64 = AES-256-GCM (B-09).",
-    "PassportKey": "<generer-din-egen-base64-noegle-32-bytes>"
+  "Api": {
+    "//": "Databasens API (NFHotel.Api). Tokenet er det samme som Api:Token i API'ets konfiguration: openssl rand -base64 32. Databaseforbindelsen og pasnøglen hører til API'et, ikke til denne fil.",
+    "BaseUrl": "http://127.0.0.1:5080",
+    "Token": "<samme-token-som-api'et>"
   },
 
   "HotelTime": {

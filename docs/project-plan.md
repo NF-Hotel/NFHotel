@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [US-001] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [MIL-016], [MIL-017], [US-001] |
 | Language | en |
 | Domain | it |
 
@@ -13,7 +13,13 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-009 (validation attributes on the entities) | [4cab5fc] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-010 (source comments in English) | [e67e815] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Added MIL-011 (tests on xUnit v3) | [ef2bd4b] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-011 (tests on xUnit v3) | [ef2bd4b] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-012 (tests follow the test rules) | [8200afa] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-013 (booking guards) | [5036584] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-014 (async where it matters) | [417a575] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-015 (database API) | [9e6d2d4] |
+| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-016 (back office login) | [bbef3bf] |
+| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Added MIL-017 (TLS) | [b174eeb] |
 
 ---
 
@@ -44,6 +50,12 @@ person ending 2026-10-17.
 | Validation attributes on the entities | [MIL-009] | 2026-11-13 to 2026-11-20 | 2026-11-20 | S01 | none | Field rules of Room and Guest as attributes; no validation code in the entities | [Milestone 9][GH-M9] |
 | Source comments in English | [MIL-010] | 2026-11-20 to 2026-12-04 | 2026-12-04 | S01 | none | Every comment in `src/` and `tests/` in English; only comments changed | [Milestone 10][GH-M10] |
 | Tests on xUnit v3 | [MIL-011] | 2026-12-04 to 2026-12-11 | 2026-12-11 | S01 | none | The four test projects reference `xunit.v3`; same test counts; `src/` unchanged | none yet |
+| Tests follow the test rules | [MIL-012] | 2026-12-11 to 2026-12-18 | 2026-12-18 | S01 | none | Test plan; unit tests for the services; integration tests for the conflict paths; three-part test names; `src/` unchanged | none yet |
+| Booking guards | [MIL-013] | 2026-12-18 to 2026-12-23 | 2026-12-23 | S01 | none | Overview period guard; check-in room guard; check-in flag follows the room; UC-001 updated | none yet |
+| Async where it matters | [MIL-014] | 2026-12-23 to 2026-12-30 | 2026-12-30 | S01 | none | Audit per layer, fixes in the order domain to web, architecture tests for the rules | none yet |
+| Database API | [MIL-015] | 2026-12-30 to 2027-01-22 | 2027-01-22 | S01 | none | ADR-0004; API, client and external adapters; web switched to the client; deploy and proof in the VM | none yet |
+| Back office login | [MIL-016] | 2027-01-22 to 2027-02-19 | 2027-02-19 | S01 | none | ADR-0005; staff accounts, token, permission table, login pages; deploy and proof in the VM | none yet |
+| TLS | [MIL-017] | 2027-02-19 to 2027-03-05 | 2027-03-05 | S01 | none | ADR-0006; nginx TLS, certificate script, Secure cookie; deploy and proof in the VM | none yet |
 
 ```plantuml
 @startgantt
@@ -70,6 +82,18 @@ Project starts 2026-10-16
 [MIL-010 Go/No-Go] happens 2026-12-04
 [Tests on xUnit v3] starts 2026-12-04 and ends 2026-12-11
 [MIL-011 Go/No-Go] happens 2026-12-11
+[Tests follow the test rules] starts 2026-12-11 and ends 2026-12-18
+[MIL-012 Go/No-Go] happens 2026-12-18
+[Booking guards] starts 2026-12-18 and ends 2026-12-23
+[MIL-013 Go/No-Go] happens 2026-12-23
+[Async where it matters] starts 2026-12-23 and ends 2026-12-30
+[MIL-014 Go/No-Go] happens 2026-12-30
+[Database API] starts 2026-12-30 and ends 2027-01-22
+[MIL-015 Go/No-Go] happens 2027-01-22
+[Back office login] starts 2027-01-22 and ends 2027-02-19
+[MIL-016 Go/No-Go] happens 2027-02-19
+[TLS] starts 2027-02-19 and ends 2027-03-05
+[MIL-017 Go/No-Go] happens 2027-03-05
 @endgantt
 ```
 
@@ -92,6 +116,12 @@ Project starts 2026-10-16
 | Validation attributes on the entities (objective 12) | MIL-009 |
 | Source comments in English (objective 13) | MIL-010 |
 | Tests on xUnit v3 (objective 14) | MIL-011 |
+| Tests follow the test rules (objective 15) | MIL-012 |
+| Booking guards (objective 16) | MIL-013 |
+| Async where it matters (objective 17) | MIL-014 |
+| Database API (objective 18) | MIL-015 |
+| Back office login (objective 19) | MIL-016 |
+| TLS (objective 20) | MIL-017 |
 
 ## Dependencies
 
@@ -104,6 +134,12 @@ MIL-005 -> MIL-008
 MIL-008 -> MIL-009
 MIL-009 -> MIL-010
 MIL-010 -> MIL-011
+MIL-011 -> MIL-012
+MIL-012 -> MIL-013
+MIL-013 -> MIL-014
+MIL-014 -> MIL-015
+MIL-015 -> MIL-016
+MIL-016 -> MIL-017
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -138,6 +174,12 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-009]: ./milestones/mil-009-validation-attributes.md
 [MIL-010]: ./milestones/mil-010-english-source-comments.md
 [MIL-011]: ./milestones/mil-011-xunit-v3.md
+[MIL-012]: ./milestones/mil-012-test-kinds.md
+[MIL-013]: ./milestones/mil-013-booking-guards.md
+[MIL-014]: ./milestones/mil-014-async-where-it-matters.md
+[MIL-015]: ./milestones/mil-015-database-api.md
+[MIL-016]: ./milestones/mil-016-backoffice-login.md
+[MIL-017]: ./milestones/mil-017-tls.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
@@ -162,3 +204,9 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [4cab5fc]: https://github.com/NF-Hotel/NFHotel/commit/4cab5fc64b8358e18f9fec630d27d8bc267e6787
 [e67e815]: https://github.com/NF-Hotel/NFHotel/commit/e67e8155fd63d307e6783924f956fa49f915edbd
 [ef2bd4b]: https://github.com/NF-Hotel/NFHotel/commit/ef2bd4bda1edbd598228cb0fc043a4f2fc996974
+[8200afa]: https://github.com/NF-Hotel/NFHotel/commit/8200afa457e37ca87a68ab7e34126db1dd85e3d1
+[5036584]: https://github.com/NF-Hotel/NFHotel/commit/5036584e9809a90d8459f07554733917c7129a0e
+[417a575]: https://github.com/NF-Hotel/NFHotel/commit/417a575b978d56c59da23eb6cff5967a7b9bf6bf
+[9e6d2d4]: https://github.com/NF-Hotel/NFHotel/commit/9e6d2d40d332b50fbd405564fcced006e241effd
+[bbef3bf]: https://github.com/NF-Hotel/NFHotel/commit/bbef3bf556044704b80b76a7817432bc2b6527cd
+[b174eeb]: https://github.com/NF-Hotel/NFHotel/commit/b174eeba803523402481ff38d07a4056073941ef

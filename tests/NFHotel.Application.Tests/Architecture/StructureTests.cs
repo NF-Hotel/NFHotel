@@ -28,8 +28,10 @@ public sealed partial class StructureTests
         "NFHotel.Application.Dto.Guests",
         "NFHotel.Application.Dto.Holidays",
         "NFHotel.Application.Dto.Rooms",
+        "NFHotel.Application.Dto.Staff",
     ];
 
+    #region Domain structure
     [Fact]
     public void Entities_EveryConcreteType_DerivesFromEntityOfTKey()
     {
@@ -55,7 +57,7 @@ public sealed partial class StructureTests
 
 
     [Fact]
-    public void Domain_HasNoRulesNamespaceOrRulesClass()
+    public void Domain_WhenInspected_HasNoRulesNamespaceOrRulesClass()
     {
         var offenders = DomainAssembly.GetTypes()
             .Where(t => !IsCompilerGenerated(t)
@@ -68,7 +70,7 @@ public sealed partial class StructureTests
     }
 
     [Fact]
-    public void Entities_HaveNoValidateOrIsValidMethods()
+    public void Entities_WhenInspected_HaveNoValidateOrIsValidMethods()
     {
         var offenders = DomainAssembly.GetTypes()
             .Where(t => t.Namespace == "NFHotel.Domain.Entities")
@@ -82,7 +84,7 @@ public sealed partial class StructureTests
     }
 
     [Fact]
-    public void Domain_ReferencesOnlyTheFrameworkClassLibrary()
+    public void Domain_WhenInspected_ReferencesOnlyTheFrameworkClassLibrary()
     {
         var offenders = DomainAssembly.GetReferencedAssemblies()
             .Select(a => a.Name ?? string.Empty)
@@ -91,6 +93,10 @@ public sealed partial class StructureTests
 
         Assert.True(offenders.Length == 0, $"Domain references more than the framework: {string.Join(", ", offenders)}");
     }
+
+    #endregion
+
+    #region Application structure
     [Fact]
     public void Repositories_EveryInterface_IsDeclaredInDomain()
     {
@@ -139,7 +145,7 @@ public sealed partial class StructureTests
     [Fact]
     public void Dto_EverySourceFile_DeclaresOneTopLevelType()
     {
-        var dtoDirectory = Path.Combine(FindRepositoryRoot(), "src", "NFHotel.Application", "Dto");
+        var dtoDirectory = Path.Combine(RepositoryRoot.Find(), "src", "NFHotel.Application", "Dto");
         var files = Directory.GetFiles(dtoDirectory, "*.cs", SearchOption.AllDirectories);
 
         Assert.NotEmpty(files);
@@ -149,6 +155,8 @@ public sealed partial class StructureTests
             .ToArray();
         Assert.True(offenders.Length == 0, $"Filer med ikke præcis én type: {string.Join(", ", offenders)}");
     }
+
+    #endregion
 
     private static bool DerivesFromEntity(Type type)
     {
@@ -172,19 +180,6 @@ public sealed partial class StructureTests
         ns is "NFHotel.Application.Errors" or "NFHotel.Application.Ports" or "NFHotel.Application.UseCases"
         || (ns is not null && (ns.StartsWith("NFHotel.Application.Dto.", StringComparison.Ordinal)
                                || ns.StartsWith("NFHotel.Application.UseCases.", StringComparison.Ordinal)));
-
-    private static string FindRepositoryRoot()
-    {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "NFHotel.sln")))
-            {
-                return directory.FullName;
-            }
-        }
-
-        throw new InvalidOperationException("NFHotel.sln was not found above the test output folder.");
-    }
 
     [GeneratedRegex(@"^public\s+(?:sealed\s+|static\s+|abstract\s+)*(?:record|class|enum|interface|struct)\b", RegexOptions.Multiline)]
     private static partial Regex TopLevelType();

@@ -7,6 +7,7 @@ clean-architecture .NET solution. This wiki is written for the people who build 
 
 - [Proxmox Deployment](Proxmox-Deployment): set up the Proxmox virtual machine and the Docker
   containers that run the whole system (development environment).
+- [Appendix: Project Documents](Appendix): links to every document under `docs/`.
 
 ## Where things live
 

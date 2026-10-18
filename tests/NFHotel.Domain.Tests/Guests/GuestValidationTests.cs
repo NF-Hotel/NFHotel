@@ -21,9 +21,7 @@ public class GuestValidationTests
     private const string ValidCountry = "Danmark";
     private const string ValidPassportNumber = "123456789";
 
-    // --------------------------------------------------------
-    // REQUIRED FIELDS (BR-91 to BR-95)
-    // --------------------------------------------------------
+    #region Required fields (BR-91 to BR-95)
 
     /// <summary>BR-52, BR-91: first name must be neither null, empty nor only whitespace.</summary>
     [Theory]
@@ -113,9 +111,9 @@ public class GuestValidationTests
         Assert.Equal(GuestErrors.CountryRequired, Assert.Single(errors));
     }
 
-    // --------------------------------------------------------
-    // EMAIL (BR-55, BR-93)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Email (BR-55, BR-93)
 
     /// <summary>
     /// BR-55, BR-93: the email must contain both '@' and '.'. The position is deliberately
@@ -128,7 +126,7 @@ public class GuestValidationTests
     [InlineData("valdemar.nfhotel.dk", false)] // intet '@'
     [InlineData("valdemar@nfhoteldk", false)] // intet '.'
     [InlineData("valdemar", false)]
-    public void Email_RequiresBothAtSignAndDot(string email, bool expected)
+    public void Email_AnyShape_RequiresBothAtSignAndDot(string email, bool expected)
     {
         // Arrange & Act
         var isValid = ErrorsOf(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry).Count == 0;
@@ -171,9 +169,9 @@ public class GuestValidationTests
             error => Assert.Equal(GuestErrors.EmailTooLong, error));
     }
 
-    // --------------------------------------------------------
-    // LENGTH LIMITS (A-10)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Length limits (A-10)
 
     /// <summary>
     /// A-10: the limit itself is allowed. The test guards against the classic off-by-one, where
@@ -249,9 +247,9 @@ public class GuestValidationTests
         Assert.Empty(errors);
     }
 
-    // --------------------------------------------------------
-    // ALL ERRORS AT ONCE (BR-60, BR-96) AND FAIL-FAST (BR-46)
-    // --------------------------------------------------------
+    #endregion
+
+    #region All errors at once (BR-60, BR-96) and fail-fast (BR-46)
 
     /// <summary>
     /// BR-60, BR-96: <c>ErrorsOf</c> collects all errors in field order, so a form can
@@ -386,4 +384,6 @@ public class GuestValidationTests
             return exception.Codes;
         }
     }
+
+    #endregion
 }

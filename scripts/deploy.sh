@@ -11,7 +11,8 @@
 #   4. run scripts/deploy-services.sh in the VM:
 #        postgres   internal network only, no published port
 #        ollama     local model server for analysis and benchmark, not published
-#        web        NFHotel, the only service served to the internet
+#        api        the database API: the only service with the database login and the key
+#        web        NFHotel, the only service served to the internet; it calls the API
 #        analysis   market analysis, loopback of the VM only
 #        benchmark  LLM benchmark, loopback of the VM only
 #        nginx      reverse proxy in front of them
@@ -24,7 +25,7 @@
 # (copy the *.example files). Nothing secret is stored in the repository.
 #
 # Usage: deploy.sh [--skip-vm] [--local] [--dry-run] [--no-build] [--down] [service...]
-#   service     postgres, ollama, web, analysis, benchmark, nginx (default: all six)
+#   service     postgres, ollama, api, web, analysis, benchmark, nginx (default: all seven)
 #   --skip-vm   do not create or start the VM; deploy to the existing one
 #   --local     ship this working tree to the VM (tracked and untracked files, not the
 #               ignored ones) instead of cloning the repository; for unpushed work
@@ -61,7 +62,7 @@ for arg in "$@"; do
     --skip-vm) skip_vm=1 ;;
     --local) local_code=1 ;;
     --dry-run) dry_run=1 ;;
-    --no-build | --down | postgres | ollama | web | analysis | benchmark | nginx)
+    --no-build | --down | postgres | ollama | api | web | analysis | benchmark | nginx)
       passthrough+=("$arg")
       ;;
     -h | --help)
