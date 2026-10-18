@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# Back up the NFHotel database (ADR-0008, MIL-021 task 7). scripts/install-backup.sh
+# installs it as /usr/local/sbin/nfhotel-backup; a systemd timer runs it every day,
+# and scripts/deploy-release.sh runs it before every deploy.
+#
+# Steps:
+#   1. pg_dump --format=custom inside the postgres container (no port is opened)
+#   2. encrypt the dump with age to the public key of S03; the VM cannot read its own
+#      backups, so a stolen VM disk does not reveal them
+#   3. copy the file off the VM with rsync over ssh, when BACKUP_TARGET is set
+#   4. keep 14 daily and 8 weekly (Sunday) files on the VM, delete older ones
+#
+# Settings: /etc/nfhotel/backup.env (root, 0600), written by install-backup.sh:
+#   AGE_RECIPIENT   the age public key (age1...) of S03; required
+#   BACKUP_TARGET   rsync destination off the VM, e.g. backup@host:/srv/nfhotel (D7);
+#                   empty keeps the backups on the VM only and prints a warning
+#   BACKUP_DIR      local folder (default /var/backups/nfhotel)
+#
+# Usage: backup-database.sh
+# Exit:  0 backed up (and copied, if a target is set); 1 a step failed
+# Needs: bash 4+, docker with the compose plugin, age, rsync (for BACKUP_TARGET)
+
+set -euo pipefail
+
+settings="${NFHOTEL_BACKUP_SETTINGS:-/etc/nfhotel/backup.env}"
+app_dir="${NFHOTEL_DIR:-/opt/nfhotel}"
+daily_keep=14
+weekly_keep=8
+
+die() {
+  echo "error: $*" >&2
+  exit 1
+}
+
+[[ -r "$settings" ]] || die "cannot read $settings (run scripts/install-backup.sh)"
+# shellcheck source=/dev/null
+. "$settings"
+[[ "${AGE_RECIPIENT:-}" =~ ^age1[0-9a-z]{58}$ ]] || die "AGE_RECIPIENT in $settings is not an age public key"
+backup_dir="${BACKUP_DIR:-/var/backups/nfhotel}"
+command -v age >/dev/null || die "age is not installed"
+
+install -d -m 0700 "$backup_dir"
+stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+kind=daily
+[[ "$(date -u +%u)" == 7 ]] && kind=weekly
+file="$backup_dir/nfhotel-$kind-$stamp.dump.age"
+partial="$file.partial"
+
+echo "==> dumping the database to $file"
+(cd "$app_dir/deploy/postgres" && docker compose --env-file postgres.env exec -T postgres \
+  sh -c 'pg_dump --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --format=custom --no-owner') |
+  age --encrypt --recipient "$AGE_RECIPIENT" --output "$partial" ||
+  {
+    rm -f "$partial"
+    die "the dump or the encryption failed"
+  }
+[[ -s "$partial" ]] || {
+  rm -f "$partial"
+  die "the backup is empty"
+}
+chmod 0600 "$partial"
+mv "$partial" "$file"
+echo "    $(du -h "$file" | cut -f1)"
+
+if [[ -n "${BACKUP_TARGET:-}" ]]; then
+  echo "==> copying it to $BACKUP_TARGET"
+  rsync --archive --partial "$file" "$BACKUP_TARGET/" || die "the copy off the VM failed"
+else
+  echo "warning: BACKUP_TARGET is empty; the backup stays on the VM only (decision D7 is open)" >&2
+fi
+
+# prune <kind> <keep>: keep the newest <keep> files of a kind on the VM.
+prune() {
+  local old
+  mapfile -t old < <(find "$backup_dir" -maxdepth 1 -name "nfhotel-$1-*.dump.age" -printf '%f\n' | sort -r | tail -n +"$(($2 + 1))")
+  for name in "${old[@]}"; do
+    rm -f "${backup_dir:?}/$name"
+  done
+}
+prune daily "$daily_keep"
+prune weekly "$weekly_keep"
+echo "==> done"
