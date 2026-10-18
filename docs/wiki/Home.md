@@ -7,6 +7,8 @@ clean-architecture .NET solution. This wiki is written for the people who build 
 
 - [Proxmox Deployment](Proxmox-Deployment): set up the Proxmox virtual machine and the Docker
   containers that run the whole system (development environment).
+- [CI/CD](CI-CD): how a release is built, approved, deployed, rolled back, and how the
+  database is backed up and restored; the one-time setup.
 - [Appendix: Project Documents](Appendix): links to every document under `docs/`.
 
 ## Where things live
