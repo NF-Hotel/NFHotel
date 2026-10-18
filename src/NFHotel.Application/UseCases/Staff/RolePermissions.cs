@@ -1,48 +1,90 @@
 using NFHotel.Domain.ValueObjects;
 
+
 namespace NFHotel.Application.UseCases.Staff;
 
+
 /// <summary>
-/// The one table that says what each role may do (Access-Control-Matrix.md, ADR-0005). Least privilege: a role
-/// holds only what its work needs, and a role that is not in the table holds nothing.
+/// Definerer hvilke permissions de forskellige roller har
+/// ud fra den godkendte RBAC-matrix.
 /// </summary>
 public static class RolePermissions
 {
-    private static readonly IReadOnlyDictionary<StaffRole, IReadOnlySet<Permission>> Table =
-        new Dictionary<StaffRole, IReadOnlySet<Permission>>
-        {
-            [StaffRole.Receptionist] = new HashSet<Permission>
-            {
-                Permission.BookingsView,
-                Permission.BookingsManage,
-                Permission.GuestsView,
-                Permission.GuestsManage,
-                Permission.RoomsView,
-            },
-            [StaffRole.Manager] = new HashSet<Permission>(Enum.GetValues<Permission>()),
-            [StaffRole.Housekeeping] = new HashSet<Permission>
-            {
-                Permission.RoomsView,
-                Permission.HousekeepingUpdate,
-            },
-        };
+    /// <summary>
+    /// Opretter en Dictionary der kobler hver rolle sammen med et sæt permissions (tilladelser).
+    /// string = rollen, fx "Guest" eller "Manager".
+    /// HashSet af string = et sæt tilladelser uden dubletter.
+    /// </summary>
+    private static readonly Dictionary<string,HashSet<string>> PermissionsByRole = new()
+    {
+        [Roles.Guest] =
+        [
+            Permissions.CreateBooking,
+            Permissions.EditOwnBooking,
+            Permissions.ViewOwnGuestData,
+        ],
 
-    /// <summary>Tells whether a role holds a permission.</summary>
-    /// <param name="role">The role.</param>
-    /// <param name="permission">The permission.</param>
-    /// <returns>True when the role may.</returns>
-    public static bool Allows(StaffRole role, Permission permission) =>
-        Table.TryGetValue(role, out var held) && held.Contains(permission);
+        [Roles.Receptionist] =
+        [
+            Permissions.CreateBooking,
+            Permissions.EditOwnBooking,
+            Permissions.EditOtherBookings,
+            Permissions.ViewOwnGuestData,
+            Permissions.ViewOtherGuestData,
+            Permissions.ViewGuestPassportData,
+            Permissions.ViewHousekeeping,
+            Permissions.BookingsView,
+            Permissions.GuestsManage,
+            Permissions.RoomsView,
+        ],
 
-    /// <summary>Lists what a role holds.</summary>
-    /// <param name="role">The role.</param>
-    /// <returns>The permissions, empty for an unknown role.</returns>
-    public static IReadOnlySet<Permission> For(StaffRole role) =>
-        Table.TryGetValue(role, out var held) ? held : new HashSet<Permission>();
+        [Roles.Manager] =
+        [
+            Permissions.CreateBooking,
+            Permissions.EditOwnBooking,
+            Permissions.EditOtherBookings,
+            Permissions.ViewOwnGuestData,
+            Permissions.ViewOtherGuestData,
+            Permissions.ViewGuestPassportData,
+            Permissions.ManagePrices,
+            Permissions.ViewHousekeeping,
+            Permissions.UpdateHousekeepingStatus,
+            Permissions.BookingsView,
+            Permissions.GuestsManage,
+            Permissions.RoomsView,
+            Permissions.RoomsManage,
+            Permissions.SalesView
+        ],
 
-    /// <summary>The page that a role starts on after signing in: the dashboard if it may see bookings, else the rooms.</summary>
-    /// <param name="role">The role.</param>
-    /// <returns>A path of the back office.</returns>
+        [Roles.Housekeeping] =
+        [
+            Permissions.ViewHousekeeping,
+            Permissions.UpdateHousekeepingStatus,
+            Permissions.RoomsView
+        ]
+    };
+
+    /// <summary>
+    /// Kontrollerer om en rolle har en bestemt permission.
+    /// </summary>
+    public static bool HasPermission(string role, string permission)
+    {
+        // TryGetValue forsøger at finde rollen i Dictionary.
+        // Hvis rollen findes, gemmes dens permissions i variablen permissions.
+        // Contains kontrollerer om den ønskede permission findes i sættet.
+        return PermissionsByRole.TryGetValue(role, out var permissions)
+            && permissions.Contains(permission);
+    }
+
+    /// <summary>
+    /// Kontrollerer om en medarbejderrolle har en bestemt permission.
+    /// </summary>
+    public static bool HasPermission(StaffRole role, string permission) =>
+        HasPermission(role.ToString(), permission);
+
+    /// <summary>
+    /// Siden en rolle starter på efter login: dashboardet hvis den må se bookinger, ellers værelserne.
+    /// </summary>
     public static string LandingPath(StaffRole role) =>
-        Allows(role, Permission.BookingsView) ? "/admin" : "/admin/rooms";
+        HasPermission(role, Permissions.BookingsView) ? "/admin" : "/admin/rooms";
 }

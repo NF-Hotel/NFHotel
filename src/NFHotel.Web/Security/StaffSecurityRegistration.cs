@@ -19,7 +19,7 @@ public static class StaffSecurityRegistration
     public const string LogoutPath = "/admin/logout";
 
     /// <summary>
-    /// Adds the cookie, one policy per <see cref="Permission"/> built from <see cref="RolePermissions"/>, the cascading
+    /// Adds the cookie, one policy per <see cref="Permissions"/> built from <see cref="RolePermissions"/>, the cascading
     /// authentication state and the source of the staff token for the use-case runner.
     /// </summary>
     /// <param name="services">The service collection.</param>
@@ -72,9 +72,9 @@ public static class StaffSecurityRegistration
 
     private static void AddPolicies(this Microsoft.AspNetCore.Authorization.AuthorizationBuilder builder)
     {
-        foreach (var permission in Enum.GetValues<Permission>())
+        foreach (var permission in Permissions.All)
         {
-            builder.AddPolicy(permission.ToString(), policy => policy
+            builder.AddPolicy(permission, policy => policy
                 .AddAuthenticationSchemes(StaffClaims.CookieScheme)
                 .RequireAssertion(context => StaffClaims.Holds(context.User, permission)));
         }

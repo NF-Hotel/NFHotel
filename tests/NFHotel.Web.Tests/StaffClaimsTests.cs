@@ -86,11 +86,11 @@ public sealed class StaffClaimsTests
 
     /// <summary>Equivalence: a user holds a permission exactly when the table of the role says so.</summary>
     [Theory]
-    [InlineData(StaffRole.Manager, Permission.SalesView, true)]
-    [InlineData(StaffRole.Receptionist, Permission.SalesView, false)]
-    [InlineData(StaffRole.Housekeeping, Permission.RoomsView, true)]
-    [InlineData(StaffRole.Housekeeping, Permission.GuestsView, false)]
-    public void Holds_RoleAndPermission_FollowsTheTable(StaffRole role, Permission permission, bool expected)
+    [InlineData(StaffRole.Manager, Permissions.SalesView, true)]
+    [InlineData(StaffRole.Receptionist, Permissions.SalesView, false)]
+    [InlineData(StaffRole.Housekeeping, Permissions.RoomsView, true)]
+    [InlineData(StaffRole.Housekeeping, Permissions.ViewOtherGuestData, false)]
+    public void Holds_RoleAndPermission_FollowsTheTable(StaffRole role, string permission, bool expected)
     {
         // Arrange
         var principal = StaffClaims.CreatePrincipal(new StaffSessionDto("t", Later, "x", role));
@@ -110,7 +110,7 @@ public sealed class StaffClaimsTests
         var anonymous = new ClaimsPrincipal(new ClaimsIdentity());
 
         // Act
-        var any = Enum.GetValues<Permission>().Any(permission => StaffClaims.Holds(anonymous, permission));
+        var any = Permissions.All.Any(permission => StaffClaims.Holds(anonymous, permission));
 
         // Assert
         Assert.False(any);

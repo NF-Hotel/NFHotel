@@ -19,13 +19,13 @@ public sealed class RequiresPermissionAttribute : Attribute, IAuthorizationFilte
 {
     /// <summary>Creates the attribute.</summary>
     /// <param name="permission">The permission the endpoint needs.</param>
-    public RequiresPermissionAttribute(Permission permission)
+    public RequiresPermissionAttribute(string permission)
     {
         Permission = permission;
     }
 
     /// <summary>The permission the endpoint needs.</summary>
-    public Permission Permission { get; }
+    public string Permission { get; }
 
     /// <inheritdoc />
     public void OnAuthorization(AuthorizationFilterContext context)
@@ -40,7 +40,7 @@ public sealed class RequiresPermissionAttribute : Attribute, IAuthorizationFilte
         }
 
         var allowed = StaffRoleParser.TryParse(user.FindFirst(JwtStaffTokenIssuer.RoleClaim)?.Value, out var role)
-            && RolePermissions.Allows(role, Permission);
+            && RolePermissions.HasPermission(role, Permission);
         if (!allowed)
         {
             context.Result = Refuse(StatusCodes.Status403Forbidden, ErrorCodes.Api.Forbidden);

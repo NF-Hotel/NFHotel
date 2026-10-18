@@ -18,7 +18,7 @@ RUN git init /opt/analysis \
     && git -C /opt/analysis fetch --depth 1 origin "$ANALYSIS_REF" \
     && git -C /opt/analysis checkout FETCH_HEAD \
     && rm -rf /opt/analysis/.git \
-    && pip wheel --no-deps --wheel-dir /tmp/wheels /opt/analysis \
+    && pip wheel --only-binary :all: --no-deps --wheel-dir /tmp/wheels /opt/analysis \
     && pip install --only-binary :all: /tmp/wheels/*.whl \
     && rm -rf /tmp/wheels /opt/analysis
 

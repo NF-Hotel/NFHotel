@@ -54,6 +54,6 @@ public static class StaffClaims
     /// <param name="user">The principal.</param>
     /// <param name="permission">The permission.</param>
     /// <returns>True when the role of the principal holds it.</returns>
-    public static bool Holds(ClaimsPrincipal user, Permission permission) =>
-        RoleOf(user) is { } role && RolePermissions.Allows(role, permission);
+    public static bool Holds(ClaimsPrincipal user, string permission) =>
+        RoleOf(user) is { } role && RolePermissions.HasPermission(role, permission);
 }

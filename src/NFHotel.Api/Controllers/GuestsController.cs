@@ -28,7 +28,7 @@ public sealed class GuestsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The details, or 404.</returns>
     [HttpGet(ApiRoutes.ById)]
-    [RequiresPermission(Permission.GuestsView)]
+    [RequiresPermission(Permissions.ViewOtherGuestData)]
     public async Task<IActionResult> GetByIdAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _guests.GetByIdAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -37,7 +37,7 @@ public sealed class GuestsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The matching guests, sorted by name.</returns>
     [HttpGet]
-    [RequiresPermission(Permission.GuestsView)]
+    [RequiresPermission(Permissions.ViewOtherGuestData)]
     public async Task<IActionResult> SearchAsync([FromQuery] string? searchText, CancellationToken cancellationToken) =>
         this.ToResponse(await _guests.SearchAsync(searchText, cancellationToken).ConfigureAwait(false));
 
@@ -46,7 +46,7 @@ public sealed class GuestsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The new guest.</returns>
     [HttpPost]
-    [RequiresPermission(Permission.GuestsManage)]
+    [RequiresPermission(Permissions.GuestsManage)]
     public async Task<IActionResult> CreateAsync([FromBody] CreateGuestRequest request, CancellationToken cancellationToken) =>
         this.ToResponse(await _guests.CreateAsync(request, cancellationToken).ConfigureAwait(false));
 
@@ -55,7 +55,7 @@ public sealed class GuestsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The guest after the change.</returns>
     [HttpPut]
-    [RequiresPermission(Permission.GuestsManage)]
+    [RequiresPermission(Permissions.GuestsManage)]
     public async Task<IActionResult> UpdateAsync([FromBody] UpdateGuestRequest request, CancellationToken cancellationToken) =>
         this.ToResponse(await _guests.UpdateAsync(request, cancellationToken).ConfigureAwait(false));
 
@@ -64,7 +64,7 @@ public sealed class GuestsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>200, or the reason it was refused.</returns>
     [HttpDelete(ApiRoutes.ById)]
-    [RequiresPermission(Permission.GuestsManage)]
+    [RequiresPermission(Permissions.GuestsManage)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _guests.DeleteAsync(id, cancellationToken).ConfigureAwait(false));
 }

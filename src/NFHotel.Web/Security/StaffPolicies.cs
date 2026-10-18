@@ -2,30 +2,30 @@ using NFHotel.Application.UseCases.Staff;
 
 namespace NFHotel.Web.Security;
 
-/// <summary>The names of the authorization policies, one per <see cref="Permission"/> (ADR-0005), for the page attributes.</summary>
+/// <summary>The names of the authorization policies, one per <see cref="Permissions"/> (ADR-0005), for the page attributes.</summary>
 public static class StaffPolicies
 {
     /// <summary>See bookings.</summary>
-    public const string BookingsView = nameof(Permission.BookingsView);
+    public const string BookingsView = Permissions.BookingsView;
 
     /// <summary>Change bookings.</summary>
-    public const string BookingsManage = nameof(Permission.BookingsManage);
+    public const string BookingsManage = Permissions.EditOtherBookings;
 
     /// <summary>See guests.</summary>
-    public const string GuestsView = nameof(Permission.GuestsView);
+    public const string GuestsView = Permissions.ViewOtherGuestData;
 
     /// <summary>Change guests.</summary>
-    public const string GuestsManage = nameof(Permission.GuestsManage);
+    public const string GuestsManage = Permissions.GuestsManage;
 
     /// <summary>See rooms.</summary>
-    public const string RoomsView = nameof(Permission.RoomsView);
+    public const string RoomsView = Permissions.RoomsView;
 
     /// <summary>Change rooms and their bookability.</summary>
-    public const string RoomsManage = nameof(Permission.RoomsManage);
+    public const string RoomsManage = Permissions.RoomsManage;
 
     /// <summary>Set cleaning and service status.</summary>
-    public const string HousekeepingUpdate = nameof(Permission.HousekeepingUpdate);
+    public const string HousekeepingUpdate = Permissions.UpdateHousekeepingStatus;
 
     /// <summary>See revenue.</summary>
-    public const string SalesView = nameof(Permission.SalesView);
+    public const string SalesView = Permissions.SalesView;
 }
