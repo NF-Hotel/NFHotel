@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 
 using NFHotel.Api.Contracts;
+using NFHotel.Api.Security;
 using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Application.UseCases.Staff;
 
 namespace NFHotel.Api.Controllers;
 
@@ -26,6 +28,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The details, or 404.</returns>
     [HttpGet(ApiRoutes.ById)]
+    [RequiresPermission(Permission.RoomsView)]
     public async Task<IActionResult> GetByIdAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.GetByIdAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -33,6 +36,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>All rooms.</returns>
     [HttpGet]
+    [RequiresPermission(Permission.RoomsView)]
     public async Task<IActionResult> GetAllAsync(CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.GetAllAsync(cancellationToken).ConfigureAwait(false));
 
@@ -41,6 +45,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The matching rooms.</returns>
     [HttpPost(ApiRoutes.Search)]
+    [RequiresPermission(Permission.RoomsView)]
     public async Task<IActionResult> SearchAsync([FromBody] RoomFilter filter, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.SearchAsync(filter, cancellationToken).ConfigureAwait(false));
 
@@ -48,6 +53,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The floors and the enum values.</returns>
     [HttpGet(ApiRoutes.FilterOptions)]
+    [RequiresPermission(Permission.RoomsView)]
     public async Task<IActionResult> GetFilterOptionsAsync(CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.GetFilterOptionsAsync(cancellationToken).ConfigureAwait(false));
 
@@ -56,6 +62,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The new room.</returns>
     [HttpPost]
+    [RequiresPermission(Permission.RoomsManage)]
     public async Task<IActionResult> CreateAsync([FromBody] CreateRoomRequest request, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.CreateAsync(request, cancellationToken).ConfigureAwait(false));
 
@@ -64,6 +71,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The room after the change.</returns>
     [HttpPut]
+    [RequiresPermission(Permission.RoomsManage)]
     public async Task<IActionResult> UpdateAsync([FromBody] UpdateRoomRequest request, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.UpdateAsync(request, cancellationToken).ConfigureAwait(false));
 
@@ -72,6 +80,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>200, or the reason it was refused.</returns>
     [HttpDelete(ApiRoutes.ById)]
+    [RequiresPermission(Permission.RoomsManage)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.DeleteAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -80,6 +89,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The room after the change.</returns>
     [HttpPost(ApiRoutes.RoomAction.TakeOutOfService)]
+    [RequiresPermission(Permission.RoomsManage)]
     public async Task<IActionResult> TakeOutOfServiceAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.TakeOutOfServiceAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -88,6 +98,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The room after the change.</returns>
     [HttpPost(ApiRoutes.RoomAction.SendToMaintenance)]
+    [RequiresPermission(Permission.RoomsManage)]
     public async Task<IActionResult> SendToMaintenanceAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.SendToMaintenanceAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -96,6 +107,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The room after the change.</returns>
     [HttpPost(ApiRoutes.RoomAction.ReturnToService)]
+    [RequiresPermission(Permission.RoomsManage)]
     public async Task<IActionResult> ReturnToServiceAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.ReturnToServiceAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -104,6 +116,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The room after the change.</returns>
     [HttpPost(ApiRoutes.RoomAction.MarkDailyCleaningDue)]
+    [RequiresPermission(Permission.HousekeepingUpdate)]
     public async Task<IActionResult> MarkDailyCleaningDueAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.MarkDailyCleaningDueAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -112,6 +125,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The room after the change.</returns>
     [HttpPost(ApiRoutes.RoomAction.MarkDepartureCleaningDue)]
+    [RequiresPermission(Permission.HousekeepingUpdate)]
     public async Task<IActionResult> MarkDepartureCleaningDueAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.MarkDepartureCleaningDueAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -120,6 +134,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The room after the change.</returns>
     [HttpPost(ApiRoutes.RoomAction.StartCleaning)]
+    [RequiresPermission(Permission.HousekeepingUpdate)]
     public async Task<IActionResult> StartCleaningAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.StartCleaningAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -128,6 +143,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The room after the change.</returns>
     [HttpPost(ApiRoutes.RoomAction.CompleteCleaning)]
+    [RequiresPermission(Permission.HousekeepingUpdate)]
     public async Task<IActionResult> CompleteCleaningAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.CompleteCleaningAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -136,6 +152,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The room after the change.</returns>
     [HttpPost(ApiRoutes.RoomAction.ReportServiceNeeded)]
+    [RequiresPermission(Permission.HousekeepingUpdate)]
     public async Task<IActionResult> ReportServiceNeededAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.ReportServiceNeededAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -144,6 +161,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The room after the change.</returns>
     [HttpPost(ApiRoutes.RoomAction.StartService)]
+    [RequiresPermission(Permission.HousekeepingUpdate)]
     public async Task<IActionResult> StartServiceAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.StartServiceAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -153,6 +171,7 @@ public sealed class RoomsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The room after the change.</returns>
     [HttpPost(ApiRoutes.RoomAction.CompleteService)]
+    [RequiresPermission(Permission.HousekeepingUpdate)]
     public async Task<IActionResult> CompleteServiceAsync(int id, [FromQuery] bool requiresCleaning, CancellationToken cancellationToken) =>
         this.ToResponse(await _rooms.CompleteServiceAsync(id, requiresCleaning, cancellationToken).ConfigureAwait(false));
 }

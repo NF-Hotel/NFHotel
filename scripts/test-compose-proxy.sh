@@ -50,6 +50,12 @@ check() {
   fi
 }
 
+http_location() {
+  local path="$1"
+  curl --silent --output /dev/null --write-out '%{redirect_url}' \
+    --max-time 10 "http://127.0.0.1:${PORT}${path}" || true
+}
+
 http_status() {
   local method="$1" path="$2" host="${3:-}" port="${4:-$PORT}"
   local -a header=()
@@ -137,6 +143,7 @@ ASPNETCORE_ENVIRONMENT=Production
 Encryption__PassportKey=$(openssl rand -base64 32)
 HotelTime__TimeZoneId=Europe/Copenhagen
 Api__Token=$SMOKE_API_TOKEN
+Staff__Token__SigningKey=$(openssl rand -base64 48 | tr -d '\n')
 EOF
 }
 
@@ -222,6 +229,17 @@ main() {
     "$(docker exec "$web_id" printenv | grep -i -E 'ConnectionStrings|PassportKey|POSTGRES' || true)"
   check "database API refuses a call without the token" 401 \
     "$(docker exec "$web_id" bash -c 'exec 3<>/dev/tcp/nfhotel-api/8080 && printf "GET /api/rooms HTTP/1.0\r\n\r\n" >&3 && head -n 1 <&3' | cut -d' ' -f2)"
+
+  # The back office is behind the staff sign-in (MIL-016, ADR-0005).
+  check "back office answers with a redirect when nobody is signed in" 302 \
+    "$(http_status GET /admin)"
+  check "back office redirects to the login page" "/admin/login" \
+    "$(http_location /admin | sed -E 's|^https?://[^/]+||; s|[?].*$||')"
+  check "login page is open" 200 "$(http_status GET /admin/login)"
+  check "database API refuses a staff endpoint with the web token alone" 401 \
+    "$(docker exec "$web_id" bash -c 'exec 3<>/dev/tcp/nfhotel-api/8080 && printf "GET /api/rooms HTTP/1.0\r\nAuthorization: Bearer %s\r\n\r\n" "$Api__Token" >&3 && head -n 1 <&3' | cut -d' ' -f2)"
+  check "web container holds no staff signing key" "" \
+    "$(docker exec "$web_id" printenv | grep -i -E 'SigningKey|InitialManager' || true)"
 
   compose_web stop >/dev/null
   check "proxy runs while the web service is stopped" true \

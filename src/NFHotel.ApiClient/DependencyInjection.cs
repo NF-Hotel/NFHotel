@@ -5,6 +5,7 @@ using NFHotel.Api.Contracts;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Application.UseCases.Staff;
 
 namespace NFHotel.ApiClient;
 
@@ -34,6 +35,8 @@ public static class DependencyInjection
         services.AddScoped<IBookingService, ApiBookingService>();
         services.AddScoped<IGuestService, ApiGuestService>();
         services.AddScoped<IRoomService, ApiRoomService>();
+        services.AddScoped<IStaffAuthService, ApiStaffAuthService>();
+        services.AddScoped<StaffCallContext>();
         return services;
     }
 }

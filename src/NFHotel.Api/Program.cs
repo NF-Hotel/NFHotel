@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Diagnostics;
 
 using NFHotel.Api.Contracts;
 using NFHotel.Api.Security;
+using NFHotel.Api.Startup;
 using NFHotel.External;
 using NFHotel.Infrastructure;
 
@@ -13,6 +14,7 @@ builder.Services.AddControllers();
 builder.Services.AddSingleton(ApiToken.Read(builder.Configuration));
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHotelClock(builder.Configuration);
+builder.Services.AddStaffAuthentication();
 
 var app = builder.Build();
 
@@ -30,11 +32,22 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 }));
 
 app.UseMiddleware<ApiTokenMiddleware>();
+app.UseAuthentication();
+
+await ApiStartup.MigrateIfRequestedAsync(app, app.Lifetime.ApplicationStopping).ConfigureAwait(false);
+await ApiStartup.EnsureFirstManagerAsync(app, app.Lifetime.ApplicationStopping).ConfigureAwait(false);
+
+if (ApiStartup.IsCreateStaff(args))
+{
+    return await ApiStartup.RunCreateStaffAsync(
+        app.Services, args, Environment.GetEnvironmentVariable(ApiStartup.PasswordVariable), app.Lifetime.ApplicationStopping).ConfigureAwait(false);
+}
 
 app.MapGet($"/{ApiRoutes.Health}", () => Results.Ok(new { status = "ok" }));
 app.MapControllers();
 
 await app.RunAsync().ConfigureAwait(false);
+return 0;
 
 /// <summary>The entry point, public so that the integration tests can start the API.</summary>
 public partial class Program;

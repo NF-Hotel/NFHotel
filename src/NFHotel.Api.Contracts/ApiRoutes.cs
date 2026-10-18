@@ -15,6 +15,12 @@ public static class ApiRoutes
     /// <summary>The route prefix of the room endpoints.</summary>
     public const string Rooms = "api/rooms";
 
+    /// <summary>The route prefix of the staff sign-in (ADR-0005).</summary>
+    public const string Auth = "api/auth";
+
+    /// <summary>The sign-in below <see cref="Auth"/>.</summary>
+    public const string Login = "login";
+
     /// <summary>A resource by key: <c>{id}</c> after the prefix.</summary>
     public const string ById = "{id:int}";
 

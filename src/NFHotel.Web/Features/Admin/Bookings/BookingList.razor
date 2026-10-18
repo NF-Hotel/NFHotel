@@ -1,5 +1,6 @@
 @page "/admin/bookings"
 @layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.BookingsView)]
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
 @using NFHotel.Domain.Entities

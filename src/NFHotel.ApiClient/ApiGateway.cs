@@ -16,13 +16,16 @@ namespace NFHotel.ApiClient;
 public sealed class ApiGateway
 {
     private readonly HttpClient _http;
+    private readonly StaffCallContext? _staff;
 
     /// <summary>Creates the gateway.</summary>
     /// <param name="http">The client, with the base address, the token and the timeout set.</param>
-    public ApiGateway(HttpClient http)
+    /// <param name="staff">Holds the staff token of the call, if a member of staff is signed in (ADR-0005).</param>
+    public ApiGateway(HttpClient http, StaffCallContext? staff = null)
     {
         ArgumentNullException.ThrowIfNull(http);
         _http = http;
+        _staff = staff;
     }
 
     /// <summary>Gets a resource.</summary>
@@ -58,15 +61,31 @@ public sealed class ApiGateway
     public Task<Result> DeleteAsync(string path, CancellationToken cancellationToken) =>
         SendAsync(HttpMethod.Delete, path, null, ReadWithoutValueAsync, Result.Failure, cancellationToken);
 
+    /// <summary>Posts a body to an endpoint that answers with a value, without a staff token, such as the sign-in.</summary>
+    /// <typeparam name="TValue">The type of the value.</typeparam>
+    /// <param name="path">The path below the base address.</param>
+    /// <param name="body">The request body.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The result; a 401 or 429 from the API keeps its own error code.</returns>
+    public Task<Result<TValue>> PostAnonymousAsync<TValue>(string path, object body, CancellationToken cancellationToken) =>
+        SendAsync(HttpMethod.Post, path, body, ReadValueAsync<TValue>, Result<TValue>.Failure, cancellationToken, withStaffToken: false);
+
     private async Task<TResult> SendAsync<TResult>(
         HttpMethod method,
         string path,
         object? body,
         Func<HttpResponseMessage, CancellationToken, Task<TResult>> read,
         Func<string, TResult> fail,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool withStaffToken = true)
+        where TResult : Result
     {
         using var request = new HttpRequestMessage(method, path);
+        if (withStaffToken && !string.IsNullOrEmpty(_staff?.Token))
+        {
+            request.Headers.TryAddWithoutValidation(ApiAuthentication.StaffTokenHeader, _staff.Token);
+        }
+
         if (body is not null)
         {
             request.Content = JsonContent.Create(body, body.GetType(), options: ApiJson.Options);
@@ -76,14 +95,13 @@ public sealed class ApiGateway
         {
             using var response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            if ((int)response.StatusCode >= 500)
             {
-                return fail(ErrorCodes.Api.Unauthorized);
+                return fail(ErrorCodes.Api.Unavailable);
             }
 
-            return (int)response.StatusCode >= 500
-                ? fail(ErrorCodes.Api.Unavailable)
-                : await read(response, cancellationToken).ConfigureAwait(false);
+            var answer = await read(response, cancellationToken).ConfigureAwait(false);
+            return response.StatusCode == HttpStatusCode.Unauthorized ? UnauthorizedResult(answer, fail) : answer;
         }
         catch (HttpRequestException)
         {
@@ -94,6 +112,16 @@ public sealed class ApiGateway
             // The timeout of the HttpClient, not a cancel by the caller.
             return fail(ErrorCodes.Api.Unavailable);
         }
+    }
+
+    // A 401 is the service token that was refused, unless the API says it is the staff token or the sign-in (ADR-0005).
+    private static TResult UnauthorizedResult<TResult>(TResult answer, Func<string, TResult> fail)
+        where TResult : Result
+    {
+        var code = answer.FirstError?.Code;
+        return code is not null && (code == ErrorCodes.Api.StaffUnauthorized || code.StartsWith("staff.", StringComparison.Ordinal))
+            ? answer
+            : fail(ErrorCodes.Api.Unauthorized);
     }
 
     private static async Task<Result<TValue>> ReadValueAsync<TValue>(HttpResponseMessage response, CancellationToken cancellationToken)

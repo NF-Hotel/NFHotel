@@ -162,6 +162,37 @@ public static class ErrorCodes
 
         /// <summary>The API answered something this application cannot use (unreadable content, a missing value).</summary>
         public const string UnexpectedResponse = "api.unexpected_response";
+
+        /// <summary>The call needs a valid staff token and had none (ADR-0005).</summary>
+        public const string StaffUnauthorized = "api.staff_unauthorized";
+
+        /// <summary>The role of the signed-in member of staff lacks the permission (ADR-0005).</summary>
+        public const string Forbidden = "api.forbidden";
+    }
+
+    /// <summary>Codes of the staff sign-in and accounts (ADR-0005).</summary>
+    public static class Staff
+    {
+        /// <summary>The user name or the password is wrong, or the account is inactive; the cases are not told apart.</summary>
+        public const string InvalidCredentials = "staff.invalid_credentials";
+
+        /// <summary>The user name has used up its attempts in the window.</summary>
+        public const string TooManyAttempts = "staff.too_many_attempts";
+
+        /// <summary>The password is shorter or longer than allowed.</summary>
+        public const string PasswordInvalid = "staff.password_invalid";
+
+        /// <summary>The user name exists already.</summary>
+        public const string UserNameTaken = "staff.user_name_taken";
+
+        /// <summary>The user name is empty.</summary>
+        public const string UserNameRequired = StaffErrors.UserNameRequired;
+
+        /// <summary>The user name is too long.</summary>
+        public const string UserNameTooLong = StaffErrors.UserNameTooLong;
+
+        /// <summary>The role is not a known role.</summary>
+        public const string RoleInvalid = StaffErrors.RoleInvalid;
     }
 
     /// <summary>Error codes for the holiday calendar of the analysis service.</summary>
