@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial version, from the server inventory given by S01 and the checks of DSA-001 section 2.4.2 | pending |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-098 Go | pending |
+| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial version, from the server inventory given by S01 and the checks of DSA-001 section 2.4.2 | [1b94761] |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-098 Go | [1b94761] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -101,3 +101,4 @@ We follow option 3: `nf-hotel` (Proxmox VMID 100) is the production VM of ADR-00
 [ADR-0008]: ./adr-0008-database-migration-and-backup.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [DSA-001]: ../sqa/devsecops-assessment.md
+[1b94761]: https://github.com/NF-Hotel/NFHotel/commit/1b94761ddb5113cd0d34915c01fe7f0f278bba60

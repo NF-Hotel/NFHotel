@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [1b94761] |
 
 ---
 
@@ -64,3 +64,4 @@ Go — every criterion of QC-MIL-001 passes for the change. The task follows ADR
 [MIL-021]: ../../milestones/mil-021-secure-cicd-foundation.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[1b94761]: https://github.com/NF-Hotel/NFHotel/commit/1b94761ddb5113cd0d34915c01fe7f0f278bba60
