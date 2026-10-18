@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [064c27c] |
 
 ---
 
@@ -59,3 +59,4 @@ Go — every Mandatory criterion of QC-SH-001 passes after the fixes of commit 6
 [ADR-0007]: ../../adr/adr-0007-cicd-and-supply-chain.md
 [ADR-0008]: ../../adr/adr-0008-database-migration-and-backup.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[064c27c]: https://github.com/NF-Hotel/NFHotel/commit/064c27c1d90793a6f3782e61cf4a91a4b96eba84

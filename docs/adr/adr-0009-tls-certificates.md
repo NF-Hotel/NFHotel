@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial version, decision D10 of DSA-001 | pending |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-096 Go | pending |
+| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial version, decision D10 of DSA-001 | [064c27c] |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-096 Go | [064c27c] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -77,3 +77,4 @@ We use `tailscale cert` for the tailnet name now, and certbot with the HTTP-01 w
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
 [DSA-001]: ../sqa/devsecops-assessment.md
+[064c27c]: https://github.com/NF-Hotel/NFHotel/commit/064c27c1d90793a6f3782e61cf4a91a4b96eba84
