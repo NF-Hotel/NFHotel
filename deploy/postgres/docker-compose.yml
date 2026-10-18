@@ -1,0 +1,33 @@
+# PostgreSQL 16 for the NFHotel web application. Read by Docker Compose. Settings
+# live in postgres.env (git-ignored); copy postgres.env.example to postgres.env
+# first. Start with:
+#   docker compose --env-file postgres.env up -d
+# The database is reachable only from the web service: it joins the internal
+# network nfhotel-db (created by scripts/deploy.sh with --internal, so it has no
+# route out and no published host port). Create it by hand once with:
+#   docker network create --internal nfhotel-db
+name: nfhotel-postgres
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: ${POSTGRES_ENV_FILE:-postgres.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+    networks:
+      - db
+
+volumes:
+  pgdata:
+
+networks:
+  db:
+    name: ${NFHOTEL_DB_NETWORK:-nfhotel-db}
+    external: true
