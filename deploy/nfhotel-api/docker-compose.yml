@@ -10,7 +10,7 @@ name: nfhotel-api
 
 services:
   nfhotel-api:
-    image: nfhotel-api:local
+    image: ${NFHOTEL_API_IMAGE:-nfhotel-api:local}
     build:
       context: ../..
       dockerfile: Dockerfile.api

@@ -13,7 +13,7 @@ name: nfhotel-web
 
 services:
   nfhotel-web:
-    image: nfhotel-web:local
+    image: ${NFHOTEL_WEB_IMAGE:-nfhotel-web:local}
     build:
       context: ../..
       dockerfile: Dockerfile
