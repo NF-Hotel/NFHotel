@@ -69,19 +69,21 @@ public sealed partial class AsyncRulesTests
 
     #region Cancellation
 
-    /// <summary>Every public asynchronous method of the application and the infrastructure can be cancelled.</summary>
+    /// <summary>Every public asynchronous method of the application, the infrastructure, the API, its client and the external adapters can be cancelled.</summary>
     [Fact]
     public void PublicAsyncMethods_OfApplicationAndInfrastructure_TakeACancellationToken()
     {
         // Arrange
-        var all = SourceFiles("NFHotel.Application", "NFHotel.Infrastructure")
+        var all = SourceFiles("NFHotel.Application", "NFHotel.Infrastructure", "NFHotel.Api", "NFHotel.ApiClient", "NFHotel.External")
             .SelectMany(file => PublicTaskMethod().Matches(Code(file)))
             .ToArray();
         Assert.True(all.Length > 30, "The scan found too few public asynchronous methods to mean anything.");
-        var offenders = SourceFiles("NFHotel.Application", "NFHotel.Infrastructure")
+        var offenders = SourceFiles("NFHotel.Application", "NFHotel.Infrastructure", "NFHotel.Api", "NFHotel.ApiClient", "NFHotel.External")
             .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}Migrations{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .SelectMany(file => PublicTaskMethod().Matches(Code(file)).Select(match => (file, name: match.Groups["name"].Value, parameters: match.Groups["parameters"].Value)))
-            .Where(method => !method.parameters.Contains("CancellationToken", StringComparison.Ordinal))
+            // A middleware receives the HttpContext, whose RequestAborted is the token of the call.
+            .Where(method => !method.parameters.Contains("CancellationToken", StringComparison.Ordinal)
+                && !method.parameters.Contains("HttpContext", StringComparison.Ordinal))
             .Select(method => $"{Path.GetFileName(method.file)}: {method.name}")
             .ToArray();
 

@@ -1,7 +1,7 @@
 using NFHotel.Application.Ports;
-using NFHotel.Infrastructure.Config;
+using NFHotel.External.Config;
 
-namespace NFHotel.Infrastructure.Time;
+namespace NFHotel.External.Time;
 
 /// <summary>
 /// The clock of the system. The only implementation of <see cref="IClock"/> (A-05).

@@ -6,7 +6,9 @@
 # The image comes from the repository root Dockerfile (already on main).
 # No host port is published: the proxy reaches the service by name on the
 # shared network (create it once: docker network create nfhotel-proxy).
-# PostgreSQL is not part of this file; the connection string is a setting.
+# The web service holds no database login and no passport key (ADR-0004): it reaches the
+# database API (deploy/nfhotel-api) by the name nfhotel-api on the internal network
+# nfhotel-api (docker network create --internal nfhotel-api). It is not on nfhotel-db.
 name: nfhotel-web
 
 services:
@@ -17,6 +19,12 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     env_file: ${NFHOTEL_WEB_ENV_FILE:-nfhotel-web.env}
+    # The token for the API is written once, in deploy/nfhotel-api/nfhotel-api.env as
+    # Api__Token. scripts/deploy-services.sh exports it as API_TOKEN; when running
+    # compose by hand, export it first.
+    environment:
+      Api__BaseUrl: http://nfhotel-api:8080
+      Api__Token: ${API_TOKEN:?set it, from Api__Token in nfhotel-api.env}
     expose:
       - "8080"
     healthcheck:
@@ -27,8 +35,13 @@ services:
       start_period: 15s
     networks:
       - proxy
+      - api
 
 networks:
   proxy:
     name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
+    external: true
+  # Internal network shared with the database API only (no route out, no host port).
+  api:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
     external: true

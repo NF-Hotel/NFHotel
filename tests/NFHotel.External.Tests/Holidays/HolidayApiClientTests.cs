@@ -8,10 +8,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NFHotel.Application.Dto.Holidays;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
-using NFHotel.Infrastructure.Config;
-using NFHotel.Infrastructure.Holidays;
+using NFHotel.External.Config;
+using NFHotel.External.Holidays;
 
-namespace NFHotel.Infrastructure.Tests.Holidays;
+namespace NFHotel.External.Tests.Holidays;
 
 /// <summary>
 /// Tests <see cref="HolidayApiClient"/> against a fake HTTP handler — no network, no running service.
@@ -231,8 +231,6 @@ public sealed class HolidayApiClientTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:HotelDatabase"] = "Host=localhost;Database=unused",
-                ["Encryption:PassportKey"] = Convert.ToBase64String(new byte[32]),
                 ["HolidayApi:BaseUrl"] = "http://holidays.example:9000/",
                 ["HolidayApi:ApiKey"] = "secret-key",
             })
@@ -240,7 +238,7 @@ public sealed class HolidayApiClientTests
 
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddInfrastructure(configuration);
+        services.AddHolidayApi(configuration);
         services.AddHttpClient<IHolidayCalendarClient, HolidayApiClient>()
             .ConfigurePrimaryHttpMessageHandler(() => handler);
 

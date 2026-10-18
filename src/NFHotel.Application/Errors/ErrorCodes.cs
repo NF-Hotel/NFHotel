@@ -151,6 +151,19 @@ public static class ErrorCodes
         public const string ConcurrencyConflict = "room.concurrency_conflict";
     }
 
+    /// <summary>Error codes of the connection from the web application to the database API (ADR-0004).</summary>
+    public static class Api
+    {
+        /// <summary>The API could not be reached, did not answer in time or failed (network, timeout, HTTP 5xx).</summary>
+        public const string Unavailable = "api.unavailable";
+
+        /// <summary>The API refused the token of this application (HTTP 401).</summary>
+        public const string Unauthorized = "api.unauthorized";
+
+        /// <summary>The API answered something this application cannot use (unreadable content, a missing value).</summary>
+        public const string UnexpectedResponse = "api.unexpected_response";
+    }
+
     /// <summary>Error codes for the holiday calendar of the analysis service.</summary>
     /// <remarks>
     /// The codes describe what the caller can do about the error, not the HTTP details:

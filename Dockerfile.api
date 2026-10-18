@@ -1,0 +1,28 @@
+# Builds the database API (ADR-0004) with the same SDK version as global.json.
+FROM mcr.microsoft.com/dotnet/sdk:10.0.400 AS build
+
+# Working folder in the build image.
+WORKDIR /source
+
+# Copies the SDK settings, the code rules and the projects under src.
+COPY global.json .editorconfig ./
+COPY src/ ./src/
+
+# Restores the NuGet packages, builds and publishes the API.
+RUN dotnet publish src/NFHotel.Api/NFHotel.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+# The final image holds ASP.NET Core to run the API.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+# The API listens on port 8080 inside the container and publishes nothing.
+ENV ASPNETCORE_HTTP_PORTS=8080
+EXPOSE 8080
+
+# Runs as the built-in user without root rights.
+USER app
+
+ENTRYPOINT ["dotnet", "NFHotel.Api.dll"]

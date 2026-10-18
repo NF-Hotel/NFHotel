@@ -49,6 +49,7 @@ services:
       start_period: 10s
     networks:
       - proxy
+      - llm
 
   market-analysis-notebook:
     image: *analysis-image
@@ -59,7 +60,7 @@ services:
       - -m
       - marimo
       - run
-      - /opt/analysis/src/hotel_booking_analysis/interface/history_notebook.py
+      - /usr/local/lib/python3.13/site-packages/hotel_booking_analysis/interface/history_notebook.py
       - --host
       - 0.0.0.0
       - --port
@@ -84,6 +85,7 @@ services:
       - market-analysis-api
     networks:
       - proxy
+      - llm
 
 volumes:
   history:
@@ -91,4 +93,8 @@ volumes:
 networks:
   proxy:
     name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
+    external: true
+  # Ollama, the model server (deploy/ollama).
+  llm:
+    name: ${NFHOTEL_LLM_NETWORK:-nfhotel-llm}
     external: true
