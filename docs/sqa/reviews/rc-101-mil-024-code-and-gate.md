@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [891129b] |
 
 ---
 
@@ -82,3 +82,4 @@ Go-with-conditions — every Mandatory criterion of QC-SH-001 passes, and Go/No-
 [MIL-024]: ../../milestones/mil-024-postgresql-api-readiness.md
 [ADR-0011]: ../../adr/adr-0011-postgresql-access-for-the-api.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[891129b]: https://github.com/NF-Hotel/NFHotel/commit/891129bc88431c9ff29b0a221a2a82833959a275

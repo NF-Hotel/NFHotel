@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [af6710f] |
 
 ---
 
@@ -63,3 +63,4 @@ Go — every criterion of QC-MIL-001 passes.
 [MIL-024]: ../../milestones/mil-024-postgresql-api-readiness.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[af6710f]: https://github.com/NF-Hotel/NFHotel/commit/af6710fce369f8d63795d67efe4f7a54a867997a

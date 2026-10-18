@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial version | pending |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-099 Go | pending |
+| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial version | [af6710f] |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-099 Go | [af6710f] |
 
 ---
 
@@ -107,3 +107,4 @@ Decide whether the production database on `nf-hotel` is ready for the ASP.NET Co
 [ADR-0011]: ../adr/adr-0011-postgresql-access-for-the-api.md
 [MIL-021]: ./mil-021-secure-cicd-foundation.md
 [DSA-001]: ../sqa/devsecops-assessment.md
+[af6710f]: https://github.com/NF-Hotel/NFHotel/commit/af6710fce369f8d63795d67efe4f7a54a867997a

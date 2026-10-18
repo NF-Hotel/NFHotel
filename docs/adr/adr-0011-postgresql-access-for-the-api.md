@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial version | pending |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-100 Go | pending |
+| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial version | [af6710f] |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-100 Go | [af6710f] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -127,3 +127,4 @@ We use separate least-privilege roles on the one existing instance, an internal 
 [ADR-0010]: ./adr-0010-production-vm-as-deployed.md
 [MIL-024]: ../milestones/mil-024-postgresql-api-readiness.md
 [DSA-001]: ../sqa/devsecops-assessment.md
+[af6710f]: https://github.com/NF-Hotel/NFHotel/commit/af6710fce369f8d63795d67efe4f7a54a867997a
