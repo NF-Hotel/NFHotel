@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | DSA-001 |
-| CrossReference | [BC-001], [ADR-0003], [ADR-0004], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0009], [MIL-021], [MIL-022], [MIL-023] |
+| CrossReference | [BC-001], [ADR-0003], [ADR-0004], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0009], [ADR-0010], [MIL-021], [MIL-022], [MIL-023] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial assessment and plan | [f4649ad] |
-| 2026-10-18 | Accepted | mikemike | S01 (decisions D1 to D10 approved in chat) | Accepted without a catalog checklist; D4, D7 and D10 still need input from S03 | [f4649ad] |
+| 2026-10-18 | Deprecated | mikemike | S01 (decisions D1 to D10 approved in chat) | Accepted without a catalog checklist; D4, D7 and D10 still need input from S03 | [f4649ad] |
+| 2026-10-18 | Accepted | mikemike | S01 (server inventory given in chat) | Section 2.4.2: `nf-hotel` confirmed as the production VM; the conclusion of 2.4.1 withdrawn; risks R15 and R16; D4 corrected | pending |
 
 This document is a working assessment. Its type is not in `framework/registry/artifact-catalog.md`; a catalog type for it is proposed upstream (rule 5) before it is accepted.
 
@@ -108,9 +108,32 @@ The connection to a tailnet address is authenticated by the WireGuard node key o
 | Access for this assessment | `ssh nfhotel@`, `ssh root@` with the workstation key | Refused; no credential for the VM or the Proxmox node is held by the assessor, by design |
 | Proxmox node `proxmox` | TCP connect, `ssh-keyscan` | 22 and 8006 open; host key `SHA256:jMKkCdkKIuQLFYel6OZcY1uOTj3LA49yTVeRR2JiPDI` (fetched over the tailnet) |
 
-**Conclusion for D4.** The host key of `nf-hotel` is verified. `nf-hotel` does **not** run the NF Hotel services today: it is a Debian 13 host with a stock nginx. Either the stack of ADR-0003 has not been deployed yet, or it runs on another VM. The first deploy is a bootstrap of this host (section 15, decision D4), `nf-hotel` was not created by `create-docker-vm.sh`, which consistently makes Debian 12 VMs; the deploy scripts depend only on Docker and the compose plugin, so they run on either release.
+**Conclusion for D4 (withdrawn on 2026-10-18, see section 2.4.2).** ~~The host key of `nf-hotel` is verified. `nf-hotel` does **not** run the NF Hotel services today: it is a Debian 13 host with a stock nginx. Either the stack of ADR-0003 has not been deployed yet, or it runs on another VM. The first deploy is a bootstrap of this host (section 15, decision D4), `nf-hotel` was not created by `create-docker-vm.sh`, which consistently makes Debian 12 VMs; the deploy scripts depend only on Docker and the compose plugin, so they run on either release.~~ The nginx default page at `/`, the Debian version and the SSH settings do not show which services a host runs; the conclusion was not supported by the evidence.
 
 **New risk R14.** Password login over SSH on `nf-hotel` (CIS Debian, SSH items). Treatment: disable `PasswordAuthentication` and `KbdInteractiveAuthentication` when S03 installs the deploy user (MIL-021 task 5); verified by `ssh -v` showing `publickey` only.
+
+### 2.4.2 Identity of the production VM (2026-10-18, third pass)
+
+S01 stated the production inventory in chat: hostname `nf-hotel`, Debian 13, tailnet IP `100.72.194.127`, Proxmox VMID 100, compose file `/opt/nfhotel/deployment/compose.yaml`, PostgreSQL, Nginx and a Python API deployed, TLS name `nf-hotel.taildb84b5.ts.net`. Sports Club Management is a separate Debian 13 VM, `sports-club`. Read-only checks, and the project's own records:
+
+| Check | Command or source | Result | Supports the inventory |
+| --- | --- | --- | --- |
+| Tailnet identity | `tailscale status --json` | `nf-hotel.taildb84b5.ts.net`, `100.72.194.127`, joined 2026-09-04, the same day as `proxmox`; `sports-club` is another node (`100.106.197.115`, joined 2026-10-13, host key `SHA256:SARau8tyfYG6VzTjZKkM0+jpb2A0emmlOA93JXFBnro`) | Yes |
+| TLS name | `curl --resolve` with the hostname, `openssl s_client` | Same certificate and redirect as by IP; `nginx/1.30.5` | Yes |
+| PostgreSQL | TCP connect and a PostgreSQL SSLRequest on 5432 (no login) | Answers `N`: a PostgreSQL server, **without TLS**, reachable from every tailnet device | Yes |
+| Other ports | TCP connect | 8000, 8001, 8080, 8081, 2718, 2719, 3000, 5000, 9000, 11434 closed | Python API not found on these; not verified |
+| Web paths | `curl` with the hostname | `/` is the nginx default page; `/health`, `/api`, `/docs`, `/admin`, `/login` answer 404 | NF Hotel web not served through this nginx; not a sign that the stack is absent |
+| Compose file | `gh search code` over the NF-Hotel organization, all branches and history of this repository | `/opt/nfhotel/deployment/compose.yaml` is not in any repository; the `DevOps` repository is empty | Not verified (no access to the VM) |
+| VMID 100 | — | Needs the Proxmox API or console | Not verified |
+| Earlier deploy proofs | RC-066, RC-077, RC-082 | All ran in the throwaway Proxmox VE container of MIL-003, not on `nf-hotel` | The repository has never been deployed to production |
+
+**Conclusion.** `nf-hotel` is the production VM of NF Hotel: the inventory of S01 agrees with every item that could be checked, and nothing contradicts it. ADR-0003 is out of date in three points, which ADR-0010 replaces:
+
+- how the VM was made (Debian 13; not by `create-docker-vm.sh`);
+- the deploy layout (one compose file outside git, not the per-service files of `deploy/`);
+- the network exposure (PostgreSQL on 5432 to the tailnet).
+
+**Consequences for MIL-021.** CD must not deploy to `nf-hotel` until the running deployment is reconciled with the repository (MIL-021 task 10). The deploy command now refuses to run when `/opt/nfhotel` is not a git checkout of this repository. The earlier setup step that stopped the nginx on `nf-hotel` is removed from the wiki: it would have stopped the production proxy.
 
 ### 2.5 TLS, data and recovery
 
@@ -233,6 +256,8 @@ The scale is 1 (low) to 3 (high) for likelihood (L) and impact (I). Treatment fo
 | R12 | No one notices an outage | Availability | 2 | 2 | Health checks | Post-deploy smoke test; an external uptime check; log rotation | Medium |
 | R13 | A failed deploy cannot be undone | Availability | 2 | 2 | Manual redeploy | Rollback to the previous digest, recorded per release | Low |
 | R14 | Password guessing against SSH on the VM | VM (root) | 2 | 3 | Reachable only over the tailnet (not verified from the internet) | Disable password and keyboard-interactive login; key or Tailscale SSH only | Low |
+| R15 | Any tailnet device reaches PostgreSQL on 5432, without TLS | Guest and booking data | 2 | 3 | Password of the database role (not verified) | Restrict 5432 to the administrators in the tailnet policy now; remove the published port in the reconciliation (ADR-0010) | Low |
+| R16 | The production configuration is outside version control | Reproducibility, recovery | 3 | 2 | None | Reconcile `/opt/nfhotel/deployment/compose.yaml` into the repository before CD deploys (ADR-0010) | Low |
 
 ## 7. Infrastructure and container security (CIS-aligned)
 
@@ -374,7 +399,7 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 | D1 | Build images in CI and pull them on the VM from GHCR. This replaces the earlier choice "build in the VM", and moves GHCR into phase 1 so that CD never builds on the VM | Approve | S01 |
 | D2 | GHCR packages public (the repository is public) or private with a read-only pull token on the VM | Public | S01 |
 | D3 | Tailscale: tags `tag:ci` and `tag:nfhotel-vm`, workload identity federation instead of an OAuth secret, Tailscale SSH instead of a stored deploy key | Approve | S03 |
-| D4 | Confirm that `nf-hotel` is the services VM and confirm its host key fingerprint | **Decided 2026-10-18:** host key verified over the tailnet (section 2.4.1). `nf-hotel` is the CD target, but runs no NF Hotel stack yet; the first deploy is a bootstrap by S03 with `deploy.sh --skip-vm`, then CD takes over | S03 (bootstrap) |
+| D4 | Confirm that `nf-hotel` is the services VM and confirm its host key fingerprint | **Decided 2026-10-18, corrected the same day (section 2.4.2, ADR-0010):** `nf-hotel` (VMID 100) is the production VM and already runs NF Hotel; its host key is verified over the tailnet. CD deploys to it only after the running deployment is reconciled with the repository (MIL-021 task 10) | S03 (reconciliation) |
 | D5 | Ruleset changes: required status checks, dismiss stale reviews, approve last push, block deletion | Approve | S01 |
 | D6 | Turn on secret scanning with push protection, Dependabot alerts and updates, CodeQL default setup | Approve | S01 |
 | D7 | Backup target off the VM and who holds the decryption key | **Decided 2026-10-18:** an `age` key pair is created on the workstation of S01/S03; the private key stays off the VM in the password manager. Off-VM copies go by rsync over the tailnet to a dedicated user `nfhotel-backup` on the Proxmox node (a different disk and failure domain than the VM), and the Proxmox node keeps a weekly `vzdump` of the VM. A copy outside the Proxmox host is the residual gap (R7) | S03 |
@@ -402,6 +427,7 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 [ADR-0007]: ../adr/adr-0007-cicd-and-supply-chain.md
 [ADR-0008]: ../adr/adr-0008-database-migration-and-backup.md
 [ADR-0009]: ../adr/adr-0009-tls-certificates.md
+[ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md

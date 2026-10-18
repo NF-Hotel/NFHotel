@@ -37,17 +37,18 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-009] | Milestone | en | it | [BC-001], [ADR-0002], [MIL-008] | - | [RC-041], [RC-043] |
 | [MIL-010] | Milestone | en | it | [BC-001], [MIL-006] | - | [RC-045], [RC-046] |
 | [ADR-0002] | ADR | en | it | [BC-001], [ADR-0001], [DM-004] | [MIL-009] | [RC-042] |
-| [ADR-0003] | ADR | en | it | [BC-001], [MIL-004], [US-001] | [MIL-004] | [RC-047] |
+| [ADR-0003] | ADR | en | it | [BC-001], [MIL-004], [US-001] | [MIL-004], [ADR-0010] | [RC-047], [RC-098] |
 | [ADR-0001] | Architecture Decision Record | - | - | [BC-001] | [MIL-005] | [RC-019] |
 | `src/` (Domain, Application, Infrastructure) | Source code | - | - | [ADR-0001], [MIL-005] | - | [RC-020] |
 | [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003], [MIL-021], [MIL-022], [MIL-023] | [RC-088] |
 | [DSA-001] | CI/CD and DevSecOps Assessment (no catalog type) | en | it | [BC-001], [ADR-0003], [ADR-0006] | [ADR-0007], [ADR-0008], [ADR-0009], [MIL-021], [MIL-022], [MIL-023] | - (no checklist; decisions approved in chat) |
-| [MIL-021] | Milestone | en | it | [BC-001], [DSA-001], [ADR-0007], [ADR-0008] | [MIL-022] | [RC-089], [RC-094], [RC-095] |
+| [MIL-021] | Milestone | en | it | [BC-001], [DSA-001], [ADR-0007], [ADR-0008], [ADR-0010] | [MIL-022] | [RC-089], [RC-094], [RC-095], [RC-097] |
 | [MIL-022] | Milestone | en | it | [BC-001], [MIL-021] | [MIL-023] | [RC-090] |
 | [MIL-023] | Milestone | en | it | [BC-001], [MIL-022] | - | [RC-091] |
 | [ADR-0007] | ADR | en | it | [BC-001], [DSA-001], [ADR-0003] | [MIL-021], [MIL-022] | [RC-092] |
 | [ADR-0008] | ADR | en | it | [BC-001], [DSA-001], [ADR-0004] | [MIL-021], [MIL-022] | [RC-093] |
 | [ADR-0009] | ADR | en | it | [ADR-0006], [DSA-001] | [MIL-021], [MIL-023] | [RC-096] |
+| [ADR-0010] | ADR | en | it | [ADR-0003], [ADR-0004], [DSA-001] | [MIL-021] | [RC-098] |
 | [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001] | [RC-013], [RC-028] |
 | [US-001] | User Story | en | it | [UCD-001], [BC-001] | - | [RC-012], [RC-027] |
 | [DICT-001] | Domain Dictionary | en | it | [BC-001], [SA-001] | [DM-004] | [RC-029] |
@@ -158,4 +159,8 @@ updated whenever an artifact instance is created or reviewed.
 [RC-094]: ./reviews/rc-094-mil-021-shell-code.md
 [RC-095]: ./reviews/rc-095-mil-021-workflows.md
 [RC-096]: ./reviews/rc-096-adr-0009.md
+[RC-097]: ./reviews/rc-097-milestone-021-reconciliation.md
+[RC-098]: ./reviews/rc-098-adr-0010.md
+[ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
+[ADR-0003]: ../adr/adr-0003-proxmox-vm-for-services.md
 [RC-043]: ./reviews/rc-043-validation-attributes.md

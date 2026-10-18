@@ -6,7 +6,8 @@
 # file in git takes effect only when S03 installs it again.
 #
 # deploy:
-#   1. check every argument against a strict pattern (nothing else reaches a shell)
+#   1. check every argument against a strict pattern (nothing else reaches a shell), and
+#      refuse when /opt/nfhotel is not a git checkout of NF-Hotel/NFHotel (ADR-0010)
 #   2. take a lock, so two deploys never overlap
 #   3. run the database backup if it is installed (ADR-0008)
 #   4. check out the commit in /opt/nfhotel (detached; the git-ignored settings stay)
@@ -132,8 +133,21 @@ record() {
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" >>"$release_log"
 }
 
+# check_checkout: refuse a VM whose deployment is not this repository (ADR-0010). On a
+# server that still runs a configuration outside git, a deploy would start a second
+# stack next to the running one, so it stops before the backup and the checkout.
+check_checkout() {
+  local origin
+  [[ -d "$app_dir/.git" ]] ||
+    die "$app_dir is not a git checkout; reconcile the running deployment with the repository first (ADR-0010, MIL-021 task 10)"
+  origin="$(as_app git config --get remote.origin.url)" || die "$app_dir has no origin remote"
+  [[ "$origin" =~ ^(https://github\.com/|git@github\.com:)NF-Hotel/NFHotel(\.git)?$ ]] ||
+    die "$app_dir is a checkout of '$origin', not of NF-Hotel/NFHotel"
+}
+
 deploy() {
   check_release "$@"
+  check_checkout
   local last=""
   last="$(previous_release 1 || true)"
 
@@ -169,6 +183,7 @@ rollback() {
   local target
   target="$(previous_release 2 || true)"
   [[ -n "$target" ]] || die "the release log has no release before the latest one"
+  check_checkout
   # shellcheck disable=SC2086 # the line holds the five checked fields
   check_release $target
   # shellcheck disable=SC2086

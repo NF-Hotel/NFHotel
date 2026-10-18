@@ -62,15 +62,12 @@ S03 and a repository administrator do this once, in this order.
 
 ### On the VM (S03)
 
-1. The host key of `nf-hotel` was verified over the tailnet (`SHA256:Ea/3dv5VefOgI6rlseLuRBtDBmB28zebBp2hZsXSi1w`, DSA-001 section 2.4.1).
-   - `nf-hotel` runs no NF Hotel stack yet (decision D4). Bootstrap it once without building anything:
-     - install Docker with the compose plugin;
-     - create the user `nfhotel` in the group `docker`;
-     - run `git clone https://github.com/NF-Hotel/NFHotel.git /opt/nfhotel` and give the folder to `nfhotel`;
-     - copy the `deploy/*/*.env` settings files from their `*.example` files and fill them in.
-
-     The first approved CD run then pulls and starts every service.
-   - The stock nginx on `nf-hotel` uses ports 80 and 443. Stop and disable it (`systemctl disable --now nginx`) before the first deploy, so the NF Hotel proxy can bind them.
+1. The production VM is `nf-hotel` (Proxmox VMID 100, Debian 13, `nf-hotel.taildb84b5.ts.net`); its host key `SHA256:Ea/3dv5VefOgI6rlseLuRBtDBmB28zebBp2hZsXSi1w` was verified over the tailnet (DSA-001 section 2.4.2, ADR-0010).
+   - **It already runs NF Hotel** from `/opt/nfhotel/deployment/compose.yaml`, which is not in git. **Do not stop or replace anything on it** before the deployment is reconciled with the repository (MIL-021 task 10, ADR-0010). Until then the deploy command refuses to run.
+   - The reconciliation, done by S03 with S01:
+     - copy `/opt/nfhotel/deployment/compose.yaml` into a pull request, with every secret replaced by a reference to a git-ignored settings file;
+     - map its services to the release images, and its volumes, PostgreSQL included, to names the release keeps;
+     - take and test a backup of the database first.
    - Turn off SSH password login (risk R14): set `PasswordAuthentication no` and `KbdInteractiveAuthentication no` in `/etc/ssh/sshd_config.d/10-nfhotel.conf`, then run `systemctl reload ssh`.
 2. In `/opt/nfhotel`, run `sudo bash scripts/install-deploy-user.sh --apply` (without `--apply` it only shows what it would do). It creates the user `deploy`, the deploy command and its single sudo rule, then prints the Tailscale steps.
 3. Run `sudo tailscale set --ssh`.
