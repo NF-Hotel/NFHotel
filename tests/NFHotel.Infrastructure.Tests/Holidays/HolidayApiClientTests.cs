@@ -37,7 +37,7 @@ public sealed class HolidayApiClientTests
         var handler = StubHandler.Json(TwoHolidays);
         var client = CreateClient(handler);
 
-        var result = await client.GetAsync();
+        var result = await client.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(HttpMethod.Get, handler.Request!.Method);
@@ -59,7 +59,7 @@ public sealed class HolidayApiClientTests
     {
         var handler = StubHandler.Json(TwoHolidays);
 
-        await CreateClient(handler).GetAsync(2024);
+        await CreateClient(handler).GetAsync(2024, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal("?year=2024", handler.Request!.RequestUri!.Query);
     }
@@ -69,7 +69,7 @@ public sealed class HolidayApiClientTests
     {
         var handler = StubHandler.Json(TwoHolidays);
 
-        var result = await CreateClient(handler).RefreshAsync();
+        var result = await CreateClient(handler).RefreshAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(HttpMethod.Post, handler.Request!.Method);
@@ -82,7 +82,7 @@ public sealed class HolidayApiClientTests
     {
         var handler = StubHandler.Json(TwoHolidays);
 
-        await CreateClient(handler).RefreshAsync(2022, 2027);
+        await CreateClient(handler).RefreshAsync(2022, 2027, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal("?first_year=2022&last_year=2027", handler.Request!.RequestUri!.Query);
     }
@@ -92,7 +92,7 @@ public sealed class HolidayApiClientTests
     {
         var handler = StubHandler.Json(TwoHolidays);
 
-        await CreateClient(handler).RefreshAsync(lastYear: 2030);
+        await CreateClient(handler).RefreshAsync(lastYear: 2030, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal("?last_year=2030", handler.Request!.RequestUri!.Query);
     }
@@ -102,7 +102,7 @@ public sealed class HolidayApiClientTests
     {
         var handler = StubHandler.Json(TwoHolidays);
 
-        var result = await CreateClient(handler).RefreshAsync(2027, 2022);
+        var result = await CreateClient(handler).RefreshAsync(2027, 2022, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(ErrorCodes.Holidays.InvalidRequest, result.FirstError!.Code);
         Assert.Null(handler.Request);
@@ -116,7 +116,7 @@ public sealed class HolidayApiClientTests
         var handler = StubHandler.Json(TwoHolidays);
         var client = CreateClient(handler, new HolidayApiOptions { ApiKey = apiKey });
 
-        var result = await client.GetAsync();
+        var result = await client.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(ErrorCodes.Holidays.NotConfigured, result.FirstError!.Code);
         Assert.Null(handler.Request);
@@ -128,7 +128,7 @@ public sealed class HolidayApiClientTests
         var handler = StubHandler.Json(TwoHolidays);
         var client = CreateClient(handler, new HolidayApiOptions { ApiKey = "k", BaseUrl = "not a url" });
 
-        var result = await client.GetAsync();
+        var result = await client.GetAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(ErrorCodes.Holidays.NotConfigured, result.FirstError!.Code);
         Assert.Null(handler.Request);
@@ -146,8 +146,8 @@ public sealed class HolidayApiClientTests
     {
         var handler = StubHandler.Status(status);
 
-        var get = await CreateClient(handler).GetAsync();
-        var refresh = await CreateClient(handler).RefreshAsync();
+        var get = await CreateClient(handler).GetAsync(cancellationToken: TestContext.Current.CancellationToken);
+        var refresh = await CreateClient(handler).RefreshAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(expectedCode, get.FirstError!.Code);
         Assert.Equal(expectedCode, refresh.FirstError!.Code);
@@ -158,7 +158,7 @@ public sealed class HolidayApiClientTests
     {
         var handler = StubHandler.Throwing(new HttpRequestException("connection refused"));
 
-        var result = await CreateClient(handler).GetAsync();
+        var result = await CreateClient(handler).GetAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(ErrorCodes.Holidays.Unavailable, result.FirstError!.Code);
     }
@@ -169,7 +169,7 @@ public sealed class HolidayApiClientTests
         // HttpClient signals its own timeout as TaskCanceledException without the caller's token being cancelled.
         var handler = StubHandler.Throwing(new TaskCanceledException("timeout"));
 
-        var result = await CreateClient(handler).GetAsync();
+        var result = await CreateClient(handler).GetAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(ErrorCodes.Holidays.Unavailable, result.FirstError!.Code);
     }
@@ -194,7 +194,7 @@ public sealed class HolidayApiClientTests
     {
         var handler = StubHandler.Json(body);
 
-        var result = await CreateClient(handler).GetAsync();
+        var result = await CreateClient(handler).GetAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(ErrorCodes.Holidays.UnexpectedResponse, result.FirstError!.Code);
     }
@@ -205,7 +205,7 @@ public sealed class HolidayApiClientTests
         var handler = StubHandler.Json(
             """{ "country": "KH", "source": "x", "first_year": 2022, "last_year": 2027, "holidays": [] }""");
 
-        var result = await CreateClient(handler).GetAsync(1999);
+        var result = await CreateClient(handler).GetAsync(1999, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
         Assert.Empty(result.Value.Holidays);
@@ -234,7 +234,7 @@ public sealed class HolidayApiClientTests
         await using var provider = services.BuildServiceProvider();
         var client = provider.GetRequiredService<IHolidayCalendarClient>();
 
-        var result = await client.GetAsync(2024);
+        var result = await client.GetAsync(2024, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("http://holidays.example:9000/api/v1/holidays?year=2024", handler.Request!.RequestUri!.ToString());

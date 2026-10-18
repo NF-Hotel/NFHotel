@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace NFHotel.Proxmox.Tests;
 
 /// <summary>
@@ -7,7 +9,10 @@ namespace NFHotel.Proxmox.Tests;
 /// </summary>
 public sealed class LiveFactAttribute : FactAttribute
 {
-    public LiveFactAttribute()
+    public LiveFactAttribute(
+        [CallerFilePath] string? sourceFilePath = null,
+        [CallerLineNumber] int sourceLineNumber = -1)
+        : base(sourceFilePath, sourceLineNumber)
     {
         var required = string.Equals(
             Environment.GetEnvironmentVariable("PVE_REQUIRE_LIVE"),

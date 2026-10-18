@@ -18,6 +18,8 @@
 set -euo pipefail
 
 readonly NETWORK="nfhotel-smoke-net"
+readonly DB_NETWORK="nfhotel-smoke-db"
+readonly LLM_NETWORK="nfhotel-smoke-llm"
 readonly NGINX_PROJECT="nfhotel-smoke-nginx"
 readonly WEB_PROJECT="nfhotel-smoke-web"
 readonly ANALYSIS_PROJECT="nfhotel-smoke-analysis"
@@ -46,18 +48,18 @@ check() {
 }
 
 http_status() {
-  local method="$1" path="$2" host="${3:-}"
+  local method="$1" path="$2" host="${3:-}" port="${4:-$PORT}"
   local -a header=()
   [[ -n "$host" ]] && header=(--header "Host: $host")
   curl --silent --output /dev/null --write-out '%{http_code}' \
     --max-time 10 --request "$method" "${header[@]}" \
-    "http://127.0.0.1:${PORT}${path}" || true
+    "http://127.0.0.1:${port}${path}" || true
 }
 
 wait_for_status() {
-  local method="$1" path="$2" expected="$3" tries="${4:-30}" host="${5:-}" status=""
+  local method="$1" path="$2" expected="$3" tries="${4:-30}" host="${5:-}" port="${6:-$PORT}" status=""
   while ((tries > 0)); do
-    status="$(http_status "$method" "$path" "$host")"
+    status="$(http_status "$method" "$path" "$host" "$port")"
     [[ "$status" == "$expected" ]] && return 0
     tries=$((tries - 1))
     sleep 2
@@ -67,13 +69,13 @@ wait_for_status() {
 
 compose_nginx() {
   NGINX_ENV_FILE="$TMP_NATIVE/nginx.env" NFHOTEL_PROXY_NETWORK="$NETWORK" \
-    NGINX_BIND=127.0.0.1 NGINX_HTTP_PORT="$PORT" \
+    NGINX_BIND=127.0.0.1 NGINX_HTTP_PORT="$PORT" NGINX_INTERNAL_PORT="$((PORT + 1))" \
     docker compose --project-name "$NGINX_PROJECT" \
     --file deploy/nginx/docker-compose.yml "$@"
 }
 
 compose_web() {
-  NFHOTEL_WEB_ENV_FILE="$TMP_NATIVE/nfhotel-web.env" NFHOTEL_PROXY_NETWORK="$NETWORK" \
+  NFHOTEL_WEB_ENV_FILE="$TMP_NATIVE/nfhotel-web.env" NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_DB_NETWORK="$DB_NETWORK" POSTGRES_PASSWORD=smoke \
     docker compose --project-name "$WEB_PROJECT" \
     --file deploy/nfhotel-web/docker-compose.yml "$@"
 }
@@ -81,7 +83,7 @@ compose_web() {
 compose_analysis() {
   MARKET_ANALYSIS_ENV_FILE="$TMP_NATIVE/market-analysis.env" \
     MARKET_ANALYSIS_CONFIG="$TMP_NATIVE/market-analysis.toml" \
-    NFHOTEL_PROXY_NETWORK="$NETWORK" \
+    NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_LLM_NETWORK="$LLM_NETWORK" \
     docker compose --project-name "$ANALYSIS_PROJECT" \
     --file deploy/market-analysis/docker-compose.yml "$@"
 }
@@ -91,7 +93,7 @@ cleanup() {
     compose_nginx down --volumes --remove-orphans >/dev/null 2>&1 || true
     compose_web down --volumes --remove-orphans >/dev/null 2>&1 || true
     compose_analysis down --volumes --remove-orphans >/dev/null 2>&1 || true
-    docker network rm "$NETWORK" >/dev/null 2>&1 || true
+    docker network rm "$NETWORK" "$DB_NETWORK" "$LLM_NETWORK" >/dev/null 2>&1 || true
   fi
   [[ -n "$TMP_DIR" ]] && rm -rf "$TMP_DIR"
 }
@@ -107,6 +109,9 @@ ANALYSIS_UPSTREAM_PORT=2718
 ANALYSIS_API_SERVER_NAME=$ANALYSIS_API_HOST
 ANALYSIS_API_UPSTREAM_HOST=market-analysis-api
 ANALYSIS_API_UPSTREAM_PORT=8000
+BENCHMARK_SERVER_NAME=benchmark.localhost
+BENCHMARK_UPSTREAM_HOST=benchmark
+BENCHMARK_UPSTREAM_PORT=2719
 EOF
   cp deploy/market-analysis/market-analysis.toml.example "$TMP_DIR/market-analysis.toml"
   printf 'NFHOTEL_PROXY_NETWORK=%s
@@ -114,7 +119,6 @@ EOF
   cat >"$TMP_DIR/nfhotel-web.env" <<EOF
 ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
-ConnectionStrings__HotelDatabase=Host=127.0.0.1;Port=1;Database=smoke;Username=smoke;Password=smoke
 Encryption__PassportKey=$(openssl rand -base64 32)
 HotelTime__TimeZoneId=Europe/Copenhagen
 EOF
@@ -158,6 +162,8 @@ main() {
   write_settings
 
   docker network create "$NETWORK" >/dev/null
+  docker network create --internal "$DB_NETWORK" >/dev/null
+  docker network create "$LLM_NETWORK" >/dev/null
   echo "Building and starting the web service..."
   compose_web up --detach --build --wait --wait-timeout 180 >/dev/null ||
     die "the web service did not become healthy"
@@ -173,11 +179,11 @@ main() {
   check "POST /_blazor/negotiate through the proxy" 200 \
     "$(http_status POST '/_blazor/negotiate?negotiateVersion=1')"
 
-  wait_for_status GET / 200 30 "$ANALYSIS_HOST" || true
+  wait_for_status GET / 200 30 "$ANALYSIS_HOST" "$((PORT + 1))" || true
   check "GET / of the analysis notebook through the proxy" 200 \
-    "$(http_status GET / "$ANALYSIS_HOST")"
+    "$(http_status GET / "$ANALYSIS_HOST" "$((PORT + 1))")"
   check "GET /health of the analysis API through the proxy" 200 \
-    "$(http_status GET /health "$ANALYSIS_API_HOST")"
+    "$(http_status GET /health "$ANALYSIS_API_HOST" "$((PORT + 1))")"
   check "analysis services publish no host port" "" \
     "$(for id in $(compose_analysis ps --quiet); do docker port "$id" 2>/dev/null; done)"
 

@@ -370,8 +370,14 @@ Each service has its own folder under `deploy/` with one `docker-compose.yml` an
 | --- | --- | --- |
 | nginx reverse proxy | `deploy/nginx` | `nginx.env` |
 | NFHotel web application | `deploy/nfhotel-web` | `nfhotel-web.env` |
+| PostgreSQL 16 | `deploy/postgres` | `postgres.env` |
+| Ollama (local models) | `deploy/ollama` | `ollama.env` |
+| Market analysis service | `deploy/market-analysis` | `market-analysis.env` |
+| LLM benchmark | `deploy/benchmark` | `benchmark.env` |
 
-The services share one Docker network. Create it once, then start the web application and the proxy (in either order). Only the proxy publishes a port; PostgreSQL is not included and is reached through `ConnectionStrings__HotelDatabase`.
+The services share one Docker network. Create it once, then start the web application and the proxy (in either order). Only the proxy publishes a port. The web service builds its database connection string from the PostgreSQL settings in `deploy/postgres/postgres.env`, so the password is written in one file only; the database sits on the internal network `nfhotel-db`.
+
+To start everything on one Docker host with the right networks and order, use `bash scripts/deploy-services.sh` (see the header of the script for the options).
 
 ```bash
 docker network create nfhotel-proxy
@@ -389,6 +395,22 @@ bash scripts/test-compose-proxy.sh
 ### 📊 Market analysis behind the proxy
 
 The market analysis service (`NF-Hotel/Notebook_Market_Analysis`) has its own folder, `deploy/market-analysis`, with a compose file, `market-analysis.env` and a configuration file; see its README. The nginx proxy routes it by host name next to the web application, and `bash scripts/test-compose-proxy.sh` checks all three services through the proxy.
+
+### 🖥️ Services VM on Proxmox VE
+
+Per ADR-0003 the services run in a KVM virtual machine on Proxmox VE. `scripts/create-docker-vm.sh` creates that VM from the official Debian cloud image and installs Docker, the compose plugin and the `nfhotel-proxy` network with cloud-init. It never changes or removes an existing VM: a VM id that is already in use is an error, and a VM that fails half-way is removed again.
+
+```bash
+# Look at the commands first; nothing is run
+bash scripts/create-docker-vm.sh --ssh root@pve.example --dry-run
+
+# Create the VM (4 vCPU, 12 GiB, 60 GiB by default) and start it
+bash scripts/create-docker-vm.sh --ssh root@pve.example --storage local-lvm --start
+```
+
+`--container <name>` runs the same commands inside the throwaway Proxmox of the integration tests, which is how the script was tested (it has directory storage only, so give `--storage local`). The address of the real server and its credentials are not in the repository.
+
+To create the VM (12 GiB by default) and deploy every service in it with one command, copy `deploy.env.example` to `deploy.env` and the per-service `*.env.example` files, then run `bash scripts/deploy.sh` (add `--local` to ship the working tree, `--dry-run` to see the Proxmox commands). Only NFHotel is served to the internet; the market analysis and benchmark notebooks are on a loopback listener of the VM, reached with an ssh tunnel. The [wiki](https://github.com/NF-Hotel/NFHotel/wiki/Proxmox-Deployment) describes the setup.
 
 ### 🧪 Proxmox Integration Tests
 

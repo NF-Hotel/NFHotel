@@ -30,16 +30,16 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
 
 
     // Runs before each test and resets the test database so the test starts with a clean database.
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _fixture.ResetDatabaseAsync();
     }
 
     // Runs after each test.
     // the database is reset before the next test.
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
 
@@ -86,13 +86,13 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
         // Adds the guest to EF Core and saves it in the test database.
         context.Guests.Add(guest);
         // Saves the changes from the context in the database asynchronously.
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Fetches the underlying database connection,
         // reads passport_number directly with raw SQL.
         var connection = context.Database.GetDbConnection();
 
-        await connection.OpenAsync();
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
 
 
         // Creates a raw SQL command directly against PostgreSQL.
@@ -114,7 +114,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
         command.Parameters.Add(guestIdParameter);
 
         // Runs the SQL command and fetches passport_number directly from the database.
-        var storedPassportNumber = await command.ExecuteScalarAsync();
+        var storedPassportNumber = await command.ExecuteScalarAsync(TestContext.Current.CancellationToken);
 
 
 
@@ -129,7 +129,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
 
         // Fetches the guest again through EF Core.
         var loadedGuest = await context.Guests
-            .SingleAsync(g => g.Id == guest.Id);
+            .SingleAsync(g => g.Id == guest.Id, TestContext.Current.CancellationToken);
 
         // Verifies that EF Core has decrypted PassportNumber correctly.
         Assert.Equal(passportNumber, loadedGuest.PassportNumber);
@@ -177,13 +177,13 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
         // Act
         // Saves the guest without passport number in the test database.
         context.Guests.Add(guest);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Fetches the underlying database connection,
         // checks passport_number directly with raw SQL.
         var connection = context.Database.GetDbConnection();
 
-        await connection.OpenAsync();
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
 
         // Creates a raw SQL command directly against PostgreSQL.
         await using var command = connection.CreateCommand();
@@ -200,7 +200,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
         command.Parameters.Add(guestIdParameter);
 
         // Runs the SQL command and fetches the result.
-        var result = await command.ExecuteScalarAsync();
+        var result = await command.ExecuteScalarAsync(TestContext.Current.CancellationToken);
 
         // Assert
         // Verifies that passport_number is actually SQL NULL in the database.
