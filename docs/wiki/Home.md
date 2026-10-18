@@ -9,6 +9,8 @@ clean-architecture .NET solution. This wiki is written for the people who build 
   containers that run the whole system (development environment).
 - [CI/CD](CI-CD): how a release is built, approved, deployed, rolled back, and how the
   database is backed up and restored; the one-time setup.
+- [Database Preparation](Database-Preparation): least-privilege roles, the internal network and
+  the tailnet checks of the production PostgreSQL, for the API.
 - [Appendix: Project Documents](Appendix): links to every document under `docs/`.
 
 ## Where things live
