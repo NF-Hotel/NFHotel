@@ -19,7 +19,8 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 17, asynchronous code where it gives meaning, enforced by architecture tests (MIL-014) | [417a575] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 18, the database is reachable only through an API that is not exposed to the internet (MIL-015) | [9e6d2d4] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 19, Make the back office available only to signed-in staff, with a role per staff me (MIL-016) | [bbef3bf] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 20, Serve the one service that the internet reaches only over TLS: HTTP redirects to (MIL-017) | [b174eeb] |
+| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 20, Serve the one service that the internet reaches only over TLS: HTTP redirects to (MIL-017) | [b174eeb] |
+| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Amended: objective 21, A guest signs in with the booking number and the email and reaches only their own booking (MIL-018) | [6b606da] |
 
 ---
 
@@ -86,6 +87,7 @@ basis for the hosting decision (Q-31).
 18. Make the database reachable only through an API that is not exposed to the internet: the web application holds a token for the API and neither the database login nor the passport key.
 19. Make the back office available only to signed-in staff, with a role per staff member that limits what each may see and do.
 20. Serve the one service that the internet reaches only over TLS: HTTP redirects to HTTPS and the staff cookie is never sent in clear text.
+21. Let a guest sign in with the booking number and the email of the booking, so that a guest reaches only their own booking and guest details and nobody else's, with no account and no password to keep.
 
 ## Scope
 
@@ -111,6 +113,7 @@ basis for the hosting decision (Q-31).
 - An internal API in front of PostgreSQL, a client that implements the use-case interfaces over it, the web application switched to the client, the deploy files, and ADR-0004 (MIL-015)
 - Staff accounts, sign-in with a signed token, a permission table per role enforced in the Application layer and the API, the login and logout pages, authorization of the back office pages, the deploy files, and ADR-0005 (MIL-016)
 - TLS termination in nginx, a development certificate script, HTTP to HTTPS redirect, a Secure staff cookie, the deploy files, and ADR-0006 (MIL-017)
+- A guest sign-in by booking number and email, a short-lived guest token, an own-resource check in the API and the guest pages, the guest permissions of the permission table, the deploy files, and ADR-0007 (MIL-018)
 
 ### Out of Scope
 
@@ -171,6 +174,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 21 | Database API | 0 references from the web application to Infrastructure, EF Core or Npgsql; 0 database settings in the web container; the API and PostgreSQL publish no host port; a call without the token gets 401; every method of the three service interfaces gives the same result through the API as directly | An architecture test, `docker inspect` in the VM, the contract test and the deploy check |
 | 22 | Back office login | 0 back office pages or staff endpoints answer without a valid sign-in (redirect to the login, or 401); for every role and operation a test states allowed or refused and equals the Access Control Matrix; Housekeeping gets 403 on bookings, guests and sales; a tampered or expired token is refused; the sixth failed sign-in in the window gets 429 | Permission table tests, API and page tests, and the deploy check in the VM |
 | 23 | TLS at the public port | Port 80 answers only 301 to HTTPS; HTTPS answers with TLS 1.2 or 1.3 and refuses 1.1 and 1.0; the staff cookie has Secure and HttpOnly; 0 private keys in git; only ports 80 and 443 of nginx answer from outside | The smoke test, openssl s_client and the deploy check in the VM |
+| 24 | Guest sign-in | A call for a booking without a valid staff or guest token gets 401; a guest token for booking A gets 403 for booking B and for every other guest; a wrong email, an unknown number and an expired token give the same refusal; the sixth failed attempt for a number in the window gets 429; a guest never receives a passport number | Permission and own-resource tests, API and page tests, and the deploy check in the VM |
 
 ## Risks
 
@@ -255,3 +259,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [9e6d2d4]: https://github.com/NF-Hotel/NFHotel/commit/9e6d2d40d332b50fbd405564fcced006e241effd
 [bbef3bf]: https://github.com/NF-Hotel/NFHotel/commit/bbef3bf556044704b80b76a7817432bc2b6527cd
 [b174eeb]: https://github.com/NF-Hotel/NFHotel/commit/b174eeba803523402481ff38d07a4056073941ef
+[6b606da]: https://github.com/NF-Hotel/NFHotel/commit/6b606da4c8584d71b7c2f754d71e14ceb6aca871
