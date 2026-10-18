@@ -48,7 +48,9 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0007] | ADR | en | it | [BC-001], [DSA-001], [ADR-0003] | [MIL-021], [MIL-022] | [RC-092] |
 | [ADR-0008] | ADR | en | it | [BC-001], [DSA-001], [ADR-0004] | [MIL-021], [MIL-022] | [RC-093] |
 | [ADR-0009] | ADR | en | it | [ADR-0006], [DSA-001] | [MIL-021], [MIL-023] | [RC-096] |
-| [ADR-0010] | ADR | en | it | [ADR-0003], [ADR-0004], [DSA-001] | [MIL-021] | [RC-098] |
+| [ADR-0010] | ADR | en | it | [ADR-0003], [ADR-0004], [DSA-001] | [MIL-021], [ADR-0011] | [RC-098] |
+| [MIL-024] | Milestone | en | it | [BC-001], [ADR-0010], [ADR-0011], [MIL-021] | - | [RC-099] |
+| [ADR-0011] | ADR | en | it | [ADR-0004], [ADR-0010], [DSA-001] | [MIL-024] | [RC-100] |
 | [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001] | [RC-013], [RC-028] |
 | [US-001] | User Story | en | it | [UCD-001], [BC-001] | - | [RC-012], [RC-027] |
 | [DICT-001] | Domain Dictionary | en | it | [BC-001], [SA-001] | [DM-004] | [RC-029] |
@@ -161,6 +163,10 @@ updated whenever an artifact instance is created or reviewed.
 [RC-096]: ./reviews/rc-096-adr-0009.md
 [RC-097]: ./reviews/rc-097-milestone-021-reconciliation.md
 [RC-098]: ./reviews/rc-098-adr-0010.md
+[RC-099]: ./reviews/rc-099-milestone-024.md
+[RC-100]: ./reviews/rc-100-adr-0011.md
+[MIL-024]: ../milestones/mil-024-postgresql-api-readiness.md
+[ADR-0011]: ../adr/adr-0011-postgresql-access-for-the-api.md
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [ADR-0003]: ../adr/adr-0003-proxmox-vm-for-services.md
 [RC-043]: ./reviews/rc-043-validation-attributes.md
