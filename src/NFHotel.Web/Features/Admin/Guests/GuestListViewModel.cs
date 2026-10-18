@@ -1,20 +1,21 @@
-using NFHotel.Application.Guests;
+using NFHotel.Application.Dto.Guests;
+using NFHotel.Application.UseCases.Guests;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Admin.Guests;
 
 /// <summary>
-/// Præsentationslogik for gæsteoversigten: søgning samt opret, ret og slet gæst.
+/// Presentation logic for the guest overview: search as well as create, change and delete guest.
 /// </summary>
 /// <remarks>
-/// B-10: klassen validerer <b>ingenting</b> selv. Formularen spørger
-/// <see cref="IGuestService.ValidateFields"/> ved hver ændring, så BR-52 til BR-56 aldrig
-/// findes i Web-laget, og gemknappen aktiveres af domænets svar frem for af en kopi af
-/// reglerne. Alle valideringsfejl vises samtidig (BR-60, BR-96).
+/// B-10: the class validates <b>nothing</b> itself. The form asks
+/// <see cref="IGuestService.ValidateFields"/> on every change, so BR-52 to BR-56 never
+/// exist in the Web layer, and the save button is enabled by the answer of the domain rather than by a copy of
+/// the rules. All validation errors are shown at the same time (BR-60, BR-96).
 /// <para>
-/// Sletning kræver en bekræftelse først. Servicen afviser en gæst med bookinger (BR-N-02),
-/// men en gæst uden bookinger forsvinder for altid — og det skal brugeren nå at sige nej
-/// til.
+/// Deletion requires a confirmation first. The service rejects a guest with bookings (BR-N-02),
+/// but a guest without bookings disappears for good — and the user must be given time to say no
+/// to that.
 /// </para>
 /// </remarks>
 public sealed class GuestListViewModel
@@ -24,7 +25,7 @@ public sealed class GuestListViewModel
     /// <summary>
     /// Opretter viewmodellen.
     /// </summary>
-    /// <param name="guests">Kører use cases på <see cref="IGuestService"/>.</param>
+    /// <param name="guests">Runs use cases on <see cref="IGuestService"/>.</param>
     public GuestListViewModel(IUseCaseRunner<IGuestService> guests)
     {
         ArgumentNullException.ThrowIfNull(guests);
@@ -32,47 +33,47 @@ public sealed class GuestListViewModel
         _guests = guests;
     }
 
-    /// <summary>Gæsterne der vises lige nu.</summary>
+    /// <summary>The guests shown right now.</summary>
     public IReadOnlyList<GuestListItemDto> Guests { get; private set; } =
         Array.Empty<GuestListItemDto>();
 
-    /// <summary>Fejl fra listen og fra sletning, allerede oversat til dansk.</summary>
+    /// <summary>Errors from the list and from deletion, already translated to Danish.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = Array.Empty<string>();
 
-    /// <summary>Fejl fra formularen, allerede oversat til dansk.</summary>
+    /// <summary>Errors from the form, already translated to Danish.</summary>
     public IReadOnlyList<string> FormErrors { get; private set; } = Array.Empty<string>();
 
-    /// <summary>Kvittering efter et vellykket gem eller en sletning.</summary>
+    /// <summary>Receipt after a successful save or a deletion.</summary>
     public string? SuccessMessage { get; private set; }
 
-    /// <summary>Sand mens et kald er i gang.</summary>
+    /// <summary>True while a call is in progress.</summary>
     public bool IsBusy { get; private set; }
 
-    /// <summary>Sand når skærmen har hentet data mindst én gang.</summary>
+    /// <summary>True when the screen has fetched data at least once.</summary>
     public bool IsLoaded { get; private set; }
 
-    /// <summary>Sand når listen er hentet uden fejl, men er tom.</summary>
+    /// <summary>True when the list was fetched without error, but is empty.</summary>
     public bool IsEmpty => IsLoaded && Errors.Count == 0 && Guests.Count == 0;
 
-    /// <summary>Sand når den tomme liste skyldes en søgning og ikke et tomt kartotek.</summary>
+    /// <summary>True when the empty list is due to a search and not to an empty register.</summary>
     public bool IsEmptySearch => IsEmpty && !string.IsNullOrWhiteSpace(SearchText);
 
-    /// <summary>Fritekst på navn, land eller e-mail (BR-68, BR-N-05).</summary>
+    /// <summary>Free text on name, country or email (BR-68, BR-N-05).</summary>
     public string? SearchText { get; set; }
 
-    /// <summary>Sand når formularen er åben.</summary>
+    /// <summary>True when the form is open.</summary>
     public bool IsFormOpen { get; private set; }
 
-    /// <summary>Id'et på gæsten der rettes, eller <c>null</c> når en ny oprettes (BR-72).</summary>
+    /// <summary>The id of the guest being changed, or <c>null</c> when a new one is created (BR-72).</summary>
     public int? EditingGuestId { get; private set; }
 
     /// <summary>Formularens overskrift.</summary>
     public string FormTitle => EditingGuestId is null ? "New guest" : "Edit guest";
 
-    /// <summary>Gæsten der venter på at brugeren bekræfter en sletning.</summary>
+    /// <summary>The guest waiting for the user to confirm a deletion.</summary>
     public GuestListItemDto? GuestPendingDeletion { get; private set; }
 
-    /// <summary>Sand når gemknappen må være aktiv — afgjort af domænets validering.</summary>
+    /// <summary>True when the save button may be active — decided by the validation of the domain.</summary>
     public bool CanSave { get; private set; }
 
     /// <summary>Formularfelt: fornavn.</summary>
@@ -90,18 +91,18 @@ public sealed class GuestListViewModel
     /// <summary>Formularfelt: land.</summary>
     public string Country { get; set; } = string.Empty;
 
-    /// <summary>Formularfelt: pasnummer. Valgfrit (BR-57).</summary>
+    /// <summary>Form field: passport number. Optional (BR-57).</summary>
     public string? PassportNumber { get; set; }
 
     /// <summary>
-    /// Henter den første liste. Kaldes fra <c>OnInitializedAsync</c>.
+    /// Fetches the first list. Called from <c>OnInitializedAsync</c>.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         SearchAsync(cancellationToken);
 
     /// <summary>
-    /// Søger gæster på den nuværende fritekst.
+    /// Searches guests on the current free text.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public async Task SearchAsync(CancellationToken cancellationToken = default)
@@ -134,7 +135,7 @@ public sealed class GuestListViewModel
     }
 
     /// <summary>
-    /// Rydder søgefeltet og henter listen igen.
+    /// Clears the search field and fetches the list again.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public Task ClearSearchAsync(CancellationToken cancellationToken = default)
@@ -145,7 +146,7 @@ public sealed class GuestListViewModel
     }
 
     /// <summary>
-    /// Åbner en tom formular til en ny gæst.
+    /// Opens an empty form for a new guest.
     /// </summary>
     public void BeginCreate()
     {
@@ -165,13 +166,13 @@ public sealed class GuestListViewModel
     }
 
     /// <summary>
-    /// Åbner formularen med en eksisterende gæsts felter.
+    /// Opens the form with the fields of an existing guest.
     /// </summary>
-    /// <param name="guestId">Gæstens id.</param>
+    /// <param name="guestId">The id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <remarks>
-    /// Henter gæsten igen frem for at bruge listens række: kun
-    /// <see cref="GuestDetailsDto"/> bærer pasnummeret, fordi hver visning af feltet er en
+    /// Fetches the guest again rather than using the row of the list: only
+    /// <see cref="GuestDetailsDto"/> carries the passport number, because every display of the field is a
     /// dekryptering (B-09, D-04).
     /// </remarks>
     public async Task BeginEditAsync(int guestId, CancellationToken cancellationToken = default)
@@ -215,7 +216,7 @@ public sealed class GuestListViewModel
     }
 
     /// <summary>
-    /// Lukker formularen uden at gemme.
+    /// Closes the form without saving.
     /// </summary>
     public void CancelEdit()
     {
@@ -226,11 +227,11 @@ public sealed class GuestListViewModel
     }
 
     /// <summary>
-    /// Validerer formularens felter mod domænets regler og opdaterer
-    /// <see cref="FormErrors"/> og <see cref="CanSave"/>.
+    /// Validates the fields of the form against the rules of the domain and updates
+    /// <see cref="FormErrors"/> and <see cref="CanSave"/>.
     /// </summary>
     /// <remarks>
-    /// Bevidst ikke async — <see cref="IGuestService.ValidateFields"/> laver ingen IO.
+    /// Deliberately not async — <see cref="IGuestService.ValidateFields"/> does no IO.
     /// </remarks>
     public void Validate()
     {
@@ -242,7 +243,7 @@ public sealed class GuestListViewModel
     }
 
     /// <summary>
-    /// Gemmer formularen — opretter en ny gæst eller retter den der redigeres.
+    /// Saves the form — creates a new guest or changes the one being edited.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public async Task SaveAsync(CancellationToken cancellationToken = default)
@@ -298,9 +299,9 @@ public sealed class GuestListViewModel
     }
 
     /// <summary>
-    /// Beder om bekræftelse før en gæst slettes.
+    /// Asks for confirmation before a guest is deleted.
     /// </summary>
-    /// <param name="guest">Gæsten brugeren vil slette.</param>
+    /// <param name="guest">The guest the user wants to delete.</param>
     public void RequestDelete(GuestListItemDto guest)
     {
         ArgumentNullException.ThrowIfNull(guest);
@@ -309,16 +310,16 @@ public sealed class GuestListViewModel
     }
 
     /// <summary>
-    /// Fortryder en sletning der endnu ikke er bekræftet.
+    /// Undoes a deletion that has not yet been confirmed.
     /// </summary>
     public void AbortDelete() => GuestPendingDeletion = null;
 
     /// <summary>
-    /// Sletter den gæst brugeren har bekræftet (BR-N-02).
+    /// Deletes the guest the user has confirmed (BR-N-02).
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <remarks>
-    /// Servicen afviser gæster med bookinger; skærmen forsøger og viser svaret.
+    /// The service rejects guests with bookings; the screen tries and shows the answer.
     /// </remarks>
     public async Task ConfirmDeleteAsync(CancellationToken cancellationToken = default)
     {
@@ -367,7 +368,7 @@ public sealed class GuestListViewModel
     }
 
     /// <summary>
-    /// Rydder kvitteringen fra sidste handling.
+    /// Clears the receipt from the last action.
     /// </summary>
     public void DismissSuccess() => SuccessMessage = null;
 

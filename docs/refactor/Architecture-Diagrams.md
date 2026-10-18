@@ -1,14 +1,16 @@
-# Architecture-Diagrams.md — Fase 1
+# Architecture-Diagrams.md — Phase 1
 
-> Bilag til `Architecture.md`. Tegnet af `design:diagrams` ud fra domæne- og lagdesignet.
-> Diagrammerne følger den **reviderede** overlapsregel (A-01) og afgørelserne A-06 og A-07.
+> **Legacy note.** This is not the framework Domain Model. The project Domain Model is [docs/domain-model.md](../domain-model.md), checked against QC-DM-001 (RC-036). This document is kept as the history of the analysis.
+
+> Appendix to `Architecture.md`. Drawn by `design:diagrams` from the domain and layer designs.
+> The diagrams follow the **revised** overlap rule (A-01) and the rulings A-06 and A-07.
 >
-> **Gældende overlapsregel:** en booking blokerer rummet fra `StartDate` til sin effektive slutdato, medmindre den er `Cancelled`.
-> `EffectiveEndDate = GREATEST(StartDate + 1 dag, COALESCE(CheckOutDate, EndDate))`. `EndDate` ændres aldrig.
+> **Applicable overlap rule:** a booking blocks the room from `StartDate` to its effective end date, unless it is `Cancelled`.
+> `EffectiveEndDate = GREATEST(StartDate + 1 day, COALESCE(CheckOutDate, EndDate))`. `EndDate` is never changed.
 
 ---
 
-## 1. Domænemodel
+## 1. Domain model
 
 ```mermaid
 classDiagram
@@ -151,52 +153,52 @@ classDiagram
     RoomRules ..> Room
 ```
 
-Tre aggregatrødder uden navigerbar sammenhæng ud over fremmednøglerne. `DateRange` persisteres ikke — den er regelsted og parametertype. `CheckInTime`, `CheckOutTime`, `CheckOutDate` og `PassportNumber` er nullable; mermaid gengiver ikke `?`. Validerings­metoderne returnerer fejlkoder, ikke tekst (A-09).
+Three aggregate roots with no navigable connection beyond the foreign keys. `DateRange` is not persisted — it is a place for rules and a parameter type. `CheckInTime`, `CheckOutTime`, `CheckOutDate` and `PassportNumber` are nullable; mermaid does not render `?`. The validation methods return error codes, not text (A-09).
 
 ---
 
-## 2. Tilstandsdiagram — BookingStatus
+## 2. State diagram — BookingStatus
 
 ```mermaid
 stateDiagram-v2
     direction LR
 
-    [*] --> Pending : Create<br/>guard startdato ikke i fortiden<br/>BR-01 BR-44 BR-45 BR-48 BR-104 BR-105 BR-106
+    [*] --> Pending : Create<br/>guard start date not in the past<br/>BR-01 BR-44 BR-45 BR-48 BR-104 BR-105 BR-106
 
-    Pending --> Confirmed : Confirm<br/>guard status er Pending<br/>BR-02 BR-03 BR-05 BR-121
+    Pending --> Confirmed : Confirm<br/>guard status is Pending<br/>BR-02 BR-03 BR-05 BR-121
 
-    Pending --> CheckedIn : CheckIn<br/>guard CheckInTime tom<br/>og StartDate senest i dag<br/>BR-06 BR-07 BR-08
-    Confirmed --> CheckedIn : CheckIn<br/>guard CheckInTime tom<br/>og StartDate senest i dag<br/>BR-06 BR-07 BR-08
+    Pending --> CheckedIn : CheckIn<br/>guard CheckInTime empty<br/>and StartDate today at the latest<br/>BR-06 BR-07 BR-08
+    Confirmed --> CheckedIn : CheckIn<br/>guard CheckInTime empty<br/>and StartDate today at the latest<br/>BR-06 BR-07 BR-08
 
-    CheckedIn --> CheckedOut : CheckOut<br/>guard CheckOutTime tom<br/>saetter CheckOutDate<br/>frigiver resterende naetter<br/>BR-09 BR-10 BR-107
+    CheckedIn --> CheckedOut : CheckOut<br/>guard CheckOutTime empty<br/>sets CheckOutDate<br/>releases the remaining nights<br/>BR-09 BR-10 BR-107
 
     Pending --> Cancelled : Cancel - soft delete<br/>BR-11 BR-13 BR-122
     Confirmed --> Cancelled : Cancel - soft delete<br/>BR-11 BR-13 BR-122
 
-    Pending --> Pending : Reschedule<br/>ny periode og nyt rum<br/>BR-14 BR-17 BR-18 BR-20 BR-108 BR-123
-    Confirmed --> Confirmed : Reschedule<br/>ny periode og nyt rum<br/>BR-14 BR-17 BR-18 BR-20 BR-108 BR-123
+    Pending --> Pending : Reschedule<br/>new period and new room<br/>BR-14 BR-17 BR-18 BR-20 BR-108 BR-123
+    Confirmed --> Confirmed : Reschedule<br/>new period and new room<br/>BR-14 BR-17 BR-18 BR-20 BR-108 BR-123
 
     CheckedOut --> [*]
     Cancelled --> [*]
 
     note right of CheckedOut
-        Slutstatus
-        Blokerer stadig rummet men kun frem til
-        effektiv slutdato lig udtjekningsdatoen
-        EndDate bevares uaendret som historik
+        Final status
+        Still blocks the room but only up to the
+        effective end date equal to the check-out date
+        EndDate is kept unchanged as history
     end note
 
     note right of Cancelled
-        Slutstatus
-        Eneste status der frigiver rummet helt
+        Final status
+        The only status that releases the room completely
     end note
 ```
 
-`Confirmed` er ikke en forudsætning for check-in (B-01) — derfor to `CheckIn`-kanter. `Reschedule` er en selvovergang. Den reviderede regel rammer kun `CheckOut`: overgangen ændrer ikke *om* bookingen blokerer, men flytter den effektive slutdato ned til udtjekningsdatoen.
+`Confirmed` is not a precondition for check-in (B-01) — hence two `CheckIn` edges. `Reschedule` is a self-transition. The revised rule affects only `CheckOut`: the transition does not change *whether* the booking blocks, but moves the effective end date down to the check-out date.
 
 ---
 
-## 3. Tilstandsdiagram — HousekeepingStatus
+## 3. State diagram — HousekeepingStatus
 
 ```mermaid
 stateDiagram-v2
@@ -206,41 +208,41 @@ stateDiagram-v2
 
     Clean --> DailyCleaningDue : MarkDailyCleaningDue
     ServiceRequired --> DailyCleaningDue : MarkDailyCleaningDue
-    DailyCleaningDue --> DailyCleaningDue : idempotent ved retry
+    DailyCleaningDue --> DailyCleaningDue : idempotent on retry
 
-    Clean --> DepartureCleaningDue : MarkDepartureCleaningDue<br/>Application efter CheckOut
+    Clean --> DepartureCleaningDue : MarkDepartureCleaningDue<br/>Application after CheckOut
     DailyCleaningDue --> DepartureCleaningDue : MarkDepartureCleaningDue
     ServiceRequired --> DepartureCleaningDue : MarkDepartureCleaningDue
-    DepartureCleaningDue --> DepartureCleaningDue : idempotent ved retry
+    DepartureCleaningDue --> DepartureCleaningDue : idempotent on retry
 
-    DailyCleaningDue --> CleaningInProgress : StartCleaning<br/>rengoeringspersonale
-    DepartureCleaningDue --> CleaningInProgress : StartCleaning<br/>rengoeringspersonale
-    CleaningInProgress --> Clean : CompleteCleaning<br/>rengoeringspersonale
+    DailyCleaningDue --> CleaningInProgress : StartCleaning<br/>cleaning staff
+    DepartureCleaningDue --> CleaningInProgress : StartCleaning<br/>cleaning staff
+    CleaningInProgress --> Clean : CompleteCleaning<br/>cleaning staff
 
     Clean --> ServiceRequired : ReportServiceNeeded
     DailyCleaningDue --> ServiceRequired : ReportServiceNeeded
     DepartureCleaningDue --> ServiceRequired : ReportServiceNeeded
     CleaningInProgress --> ServiceRequired : ReportServiceNeeded
 
-    ServiceRequired --> ServiceInProgress : StartService<br/>servicetekniker
-    ServiceInProgress --> Clean : CompleteService requiresCleaning falsk
-    ServiceInProgress --> DepartureCleaningDue : CompleteService requiresCleaning sand
+    ServiceRequired --> ServiceInProgress : StartService<br/>service technician
+    ServiceInProgress --> Clean : CompleteService requiresCleaning false
+    ServiceInProgress --> DepartureCleaningDue : CompleteService requiresCleaning true
 
     note right of Clean
-        Ingen af disse tilstande paavirker bookbarhed
-        Room.IsBookable laeser kun RoomStatus
-        Spaerring kraever SendToMaintenance
-        B-04 og BR-126
+        None of these states affect bookability
+        Room.IsBookable reads only RoomStatus
+        Blocking requires SendToMaintenance
+        B-04 and BR-126
     end note
 ```
 
-Tre spor: daglig rengøring, slutrengøring efter afrejse, og service — de to første deler `CleaningInProgress`. `MarkDepartureCleaningDue` udløses af Application efter `Booking.CheckOut`, ikke af `Booking` selv (to aggregater).
+Three tracks: daily cleaning, final cleaning after departure, and service — the first two share `CleaningInProgress`. `MarkDepartureCleaningDue` is triggered by Application after `Booking.CheckOut`, not by `Booking` itself (two aggregates).
 
-**Rollerne er dokumentation, ikke håndhævelse i Fase 1 (A-12).** Autorisation er udskudt; enhver kan i praksis kalde enhver overgang indtil Identity bygges. Intet inspektionstrin — tilføjes som `Inspected` når mobil-guilden beder om det.
+**The roles are documentation, not enforcement in Phase 1 (A-12).** Authorisation is postponed; anyone can in practice call any transition until Identity is built. No inspection step — added as `Inspected` when the mobile guild asks for it.
 
 ---
 
-## 4. ER-diagram
+## 4. ER diagram
 
 ```mermaid
 erDiagram
@@ -250,60 +252,60 @@ erDiagram
     booking {
         integer booking_id PK "identity"
         date start_date "NOT NULL"
-        date end_date "NOT NULL - bookede periode - historik"
-        date check_out_date "NULL - hotellokal dato saettes af servicen"
-        date effective_end_date "GENERATED STORED - styrer overlap"
+        date end_date "NOT NULL - booked period - history"
+        date check_out_date "NULL - hotel-local date set by the service"
+        date effective_end_date "GENERATED STORED - controls overlap"
         timestamptz check_in_time "NULL"
         timestamptz check_out_time "NULL"
-        integer status "NOT NULL - BookingStatus 0 til 4"
+        integer status "NOT NULL - BookingStatus 0 to 4"
         integer room_id FK "NOT NULL - ON DELETE RESTRICT"
         integer guest_id FK "NOT NULL - ON DELETE RESTRICT"
     }
 
     room {
         integer room_id PK "identity"
-        varchar room_number "NOT NULL - 20 tegn - unikt - BR-N-01"
-        integer floor "NOT NULL - check over nul"
-        integer size "NOT NULL - RoomSize 0 til 2"
-        integer capacity "NOT NULL - check over nul"
-        integer status "NOT NULL - RoomStatus 0 til 2 - default 0"
-        integer housekeeping_status "NOT NULL - HousekeepingStatus 0 til 5 - default 0"
+        varchar room_number "NOT NULL - 20 characters - unique - BR-N-01"
+        integer floor "NOT NULL - check above zero"
+        integer size "NOT NULL - RoomSize 0 to 2"
+        integer capacity "NOT NULL - check above zero"
+        integer status "NOT NULL - RoomStatus 0 to 2 - default 0"
+        integer housekeeping_status "NOT NULL - HousekeepingStatus 0 to 5 - default 0"
     }
 
     guest {
         integer guest_id PK "identity"
-        varchar first_name "NOT NULL - 100 tegn"
-        varchar last_name "NOT NULL - 100 tegn"
-        varchar email "NOT NULL - 100 tegn"
-        varchar phone_number "NOT NULL - 50 tegn"
-        varchar country "NOT NULL - 100 tegn"
-        text passport_number "NULL - AES GCM krypteret - aldrig indekseret"
+        varchar first_name "NOT NULL - 100 characters"
+        varchar last_name "NOT NULL - 100 characters"
+        varchar email "NOT NULL - 100 characters"
+        varchar phone_number "NOT NULL - 50 characters"
+        varchar country "NOT NULL - 100 characters"
+        text passport_number "NULL - AES GCM encrypted - never indexed"
     }
 ```
 
-Alle tre tabeller bærer desuden systemkolonnen `xmin` som optimistisk samtidighedstoken. Exclusion constraint, check constraints og indekser står i `Architecture.md` afsnit 5.
+All three tables also carry the system column `xmin` as the optimistic concurrency token. The exclusion constraint, check constraints and indexes are in `Architecture.md` section 5.
 
 ---
 
-## 5. Lag- og pakkediagram
+## 5. Layer and package diagram
 
 ```mermaid
 flowchart TB
-    subgraph LWeb [Ydre lag - praesentation]
-        Web["NFHotel.Web<br/>Blazor Server<br/>Razor og Program.cs - composition root"]
-        Api["NFHotel.Api<br/>PLANLAGT - bygges ikke i Fase 1"]
+    subgraph LWeb [Outer layer - presentation]
+        Web["NFHotel.Web<br/>Blazor Server<br/>Razor and Program.cs - composition root"]
+        Api["NFHotel.Api<br/>PLANNED - not built in Phase 1"]
     end
 
-    subgraph LInfra [Infrastrukturlag]
-        Infra["NFHotel.Infrastructure<br/>HotelDbContext og Configurations<br/>Repositories UnitOfWork SystemClock<br/>AesGcmStringEncryptor<br/>EF Core og Npgsql bor KUN her"]
+    subgraph LInfra [Infrastructure layer]
+        Infra["NFHotel.Infrastructure<br/>HotelDbContext and Configurations<br/>Repositories UnitOfWork SystemClock<br/>AesGcmStringEncryptor<br/>EF Core and Npgsql live ONLY here"]
     end
 
-    subgraph LApp [Applikationslag]
-        App["NFHotel.Application<br/>BookingService RoomService GuestService<br/>Repository-interfaces IUnitOfWork IClock<br/>DTOer Requests Result ErrorCodes"]
+    subgraph LApp [Application layer]
+        App["NFHotel.Application<br/>BookingService RoomService GuestService<br/>Repository interfaces IUnitOfWork IClock<br/>DTOs Requests Result ErrorCodes"]
     end
 
-    subgraph LDom [Domaenelag - kerne]
-        Dom["NFHotel.Domain<br/>Booking Room Guest DateRange<br/>BookingRules GuestRules RoomRules<br/>BookingStatus RoomStatus HousekeepingStatus RoomSize<br/>NUL projektreferencer og NUL NuGet-pakker"]
+    subgraph LDom [Domain layer - core]
+        Dom["NFHotel.Domain<br/>Booking Room Guest DateRange<br/>BookingRules GuestRules RoomRules<br/>BookingStatus RoomStatus HousekeepingStatus RoomSize<br/>ZERO project references and ZERO NuGet packages"]
     end
 
     Web --> App
@@ -318,30 +320,30 @@ flowchart TB
     class Api planned;
 ```
 
-Beviset ligger i kantlisten: fire byggede kanter, hver fra et ydre lag mod kernen. `Domain` har **udgrad nul**. `Application` har præcis én udgående kant. `Infrastructure` peger på `Application`, aldrig omvendt — derfor bor repository-*interfaces* i Application og *implementeringerne* i Infrastructure.
+The proof is in the edge list: four built edges, each from an outer layer toward the core. `Domain` has **out-degree zero**. `Application` has exactly one outgoing edge. `Infrastructure` points to `Application`, never the reverse — that is why the repository *interfaces* live in Application and the *implementations* in Infrastructure.
 
-Reglen der ikke kan tegnes — at `Application` ikke må referere EF Core eller Npgsql — håndhæves af arkitekturtesten.
+The rule that cannot be drawn — that `Application` must not reference EF Core or Npgsql — is enforced by the architecture test.
 
 ---
 
-## 6. Use case-diagram
+## 6. Use case diagram
 
 ```mermaid
 flowchart LR
-    Personale(["Personale<br/>eneste aktoer i Fase 1"])
-    Kunde(["Kunde - UDSKUDT"])
-    Mobil(["Rengoering og service via mobil - UDSKUDT"])
+    Staff(["Staff<br/>the only actor in Phase 1"])
+    Customer(["Customer - POSTPONED"])
+    Mobile(["Cleaning and service via mobile - POSTPONED"])
 
     subgraph UCB [IBookingService - 9]
         B1["GetByIdAsync"]
         B2["GetOverviewAsync<br/>BR-23 BR-24 BR-25 BR-32"]
         B3["GetAvailableRoomsAsync<br/>BR-34 BR-36 BR-39 BR-40 BR-110"]
-        B4["CreateAsync<br/>BR-01 BR-41 til BR-49"]
+        B4["CreateAsync<br/>BR-01 BR-41 to BR-49"]
         B5["ConfirmAsync<br/>BR-02 BR-03 BR-05"]
         B6["CheckInAsync<br/>BR-06 BR-07 BR-08"]
-        B7["CheckOutAsync<br/>BR-09 BR-10 - saetter CheckOutDate"]
+        B7["CheckOutAsync<br/>BR-09 BR-10 - sets CheckOutDate"]
         B8["CancelAsync<br/>BR-11 BR-13"]
-        B9["RescheduleAsync<br/>BR-14 BR-17 til BR-20"]
+        B9["RescheduleAsync<br/>BR-14 BR-17 to BR-20"]
     end
 
     subgraph UCR [IRoomService - 15]
@@ -349,8 +351,8 @@ flowchart LR
         R2["GetAllAsync"]
         R3["SearchAsync<br/>BR-74 BR-76"]
         R4["GetFilterOptionsAsync<br/>BR-75"]
-        R5["CreateAsync<br/>BR-97 til BR-100 BR-113"]
-        R6["UpdateAsync<br/>BR-82 - uden status"]
+        R5["CreateAsync<br/>BR-97 to BR-100 BR-113"]
+        R6["UpdateAsync<br/>BR-82 - without status"]
         R7["DeleteAsync<br/>BR-78 BR-112"]
         R8["TakeOutOfServiceAsync"]
         R9["SendToMaintenanceAsync"]
@@ -365,30 +367,30 @@ flowchart LR
     subgraph UCG [IGuestService - 6]
         G1["GetByIdAsync<br/>BR-35"]
         G2["SearchAsync<br/>BR-68 BR-69 BR-70"]
-        G3["CreateAsync<br/>BR-52 til BR-57 BR-91 til BR-96"]
+        G3["CreateAsync<br/>BR-52 to BR-57 BR-91 to BR-96"]
         G4["UpdateAsync<br/>BR-62 BR-66 BR-72"]
-        G5["DeleteAsync<br/>BR-N-02 kraever godkendelse"]
-        G6["ValidateFields<br/>BR-58 BR-59 - synkron"]
+        G5["DeleteAsync<br/>BR-N-02 requires approval"]
+        G6["ValidateFields<br/>BR-58 BR-59 - synchronous"]
     end
 
-    subgraph UCX [Udskudt - tegnes men bygges ikke]
-        X1["Selvbetjent booking og betaling<br/>ingen pris i domaenet"]
-        X2["ISalesService<br/>UDELADT - BR-31 giver altid nul"]
-        X3["Mobil-API for rengoering og service<br/>fladen er R11 til R15"]
+    subgraph UCX [Postponed - drawn but not built]
+        X1["Self-service booking and payment<br/>no price in the domain"]
+        X2["ISalesService<br/>OMITTED - BR-31 always gives zero"]
+        X3["Mobile API for cleaning and service<br/>the surface is R11 to R15"]
     end
 
-    Personale --> UCB
-    Personale --> UCR
-    Personale --> UCG
-    Kunde -.-> X1
-    Personale -.-> X2
-    Mobil -.-> X3
+    Staff --> UCB
+    Staff --> UCR
+    Staff --> UCG
+    Customer -.-> X1
+    Staff -.-> X2
+    Mobile -.-> X3
     X3 -.-> UCR
 
     classDef deferred stroke-dasharray: 6 4,fill:#ffffff;
-    class Kunde,Mobil,X1,X2,X3,UCX deferred;
+    class Customer,Mobile,X1,X2,X3,UCX deferred;
 ```
 
-Ét use case = én service-metode: **30 byggede use cases**. `IRoomService` voksede fra 9 til 15, fordi rengøringsovergangene fik hver sin metode i stedet for én generisk mål-status (A-07).
+One use case = one service method: **30 built use cases**. `IRoomService` grew from 9 to 15, because the cleaning transitions each got their own method instead of one generic target status (A-07).
 
-De syv rengøringsmetoder bygges nu som backoffice-funktioner. De er samtidig præcis den flade mobilappen senere skal kalde — derfor den stiplede pil fra `X3`.
+The seven cleaning methods are now built as back-office functions. They are at the same time exactly the surface the mobile app will later call — hence the dashed arrow from `X3`.

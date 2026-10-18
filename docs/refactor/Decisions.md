@@ -1,105 +1,105 @@
-# Beslutningslog
+# Decision Log
 
-> Truffet beslutninger, ikke spørgsmål. Erstatter de tilsvarende poster i `OpenQuestions.md` og `OpenQuestions-Tracks.md`.
-> Format: hvad er besluttet · hvad det betyder for koden · hvornår det rammer.
+> Decisions made, not questions. Replaces the corresponding entries in `OpenQuestions.md` and `OpenQuestions-Tracks.md`.
+> Format: what was decided · what it means for the code · when it applies.
 
 ---
 
-## 2026-09-07 — runde 1
+## 2026-09-07 — round 1
 
-### Sikkerhed og adgang
+### Security and access
 
-**D-01 (Q-08) — Ikke ASP.NET Identity.**
-Der bruges en lettere auth-løsning (fx `simpleauth.net` — eksempel, ikke valgt leverandør).
+**D-01 (Q-08) — Not ASP.NET Identity.**
+A lighter auth solution is used (e.g. `simpleauth.net` — an example, not a chosen vendor).
 
-**"Auth først, middleware" betyder rækkefølge *inden for* Cybersecurity-sporet:** når auth-featuren bygges, bygges den før roller og autorisation, og den eksponeres som middleware. Det betyder **ikke** at auth skal bygges før resten af refaktoreringen. *(Bekræftet 2026-09-07.)*
-→ *Kode:* auth er et selvstændigt lag, ikke noget der væves ind i Web-projektet. Application-services skal kunne kalde uden at kende auth-implementeringen.
-→ *Rammer:* auth-implementeringen er udskudt, jf. `Fase1-Scope.md`. Kun grænsefladen skal tænkes med i Fase 1b, så laget kan hægtes på uden ombygning.
+**"Auth first, middleware" means order *within* the Cybersecurity track:** when the auth feature is built, it is built before roles and authorisation, and it is exposed as middleware. It does **not** mean that auth must be built before the rest of the refactoring. *(Confirmed 2026-09-07.)*
+→ *Code:* auth is a separate layer, not something woven into the Web project. Application services must be callable without knowing the auth implementation.
+→ *Applies:* the auth implementation is postponed, see `Phase1-Scope.md`. Only the interface has to be considered in Phase 1b, so the layer can be attached later without a rebuild.
 
-**D-02 (Q-36) — JWT implementeres.**
-→ *Kode:* token-udstedelse i auth-middleware, validering på både Web og senere Api.
+**D-02 (Q-36) — JWT is implemented.**
+→ *Code:* token issuing in the auth middleware, validation in both Web and the later Api.
 
-**D-03 (Q-39) — Rollebaseret adgang, fire roller.**
+**D-03 (Q-39) — Role-based access, four roles.**
 
-| Rolle | Mobilapp | Hjemmeside |
+| Role | Mobile app | Website |
 |---|---|---|
-| Rengøringspersonale | ✅ | ✅ |
-| Servicetekniker | ✅ | ✅ |
-| Manager / ejer | ✅ | ✅ |
-| Gæst | ❌ | ✅ |
+| Cleaning staff | ✅ | ✅ |
+| Service technician | ✅ | ✅ |
+| Manager / owner | ✅ | ✅ |
+| Guest | ❌ | ✅ |
 
-Rollerne styrer adgang til **skema og logning**.
-→ *Kode:* rolle er en claim i JWT'en. Autorisation håndhæves i Application-laget, ikke kun i UI — ellers arver API'et ikke reglen.
+The roles control access to **schedules and logging**.
+→ *Code:* the role is a claim in the JWT. Authorisation is enforced in the Application layer, not only in the UI — otherwise the API does not inherit the rule.
 
-**D-04 (Q-38) — Privacy by design. Pasnummer og tilsvarende persondata krypteres. Delete policy påkrævet.**
-→ *Kode:* **dette er en Fase 1-beslutning**, ikke en senere tilføjelse. En krypteret kolonne kan ikke søges eller sorteres normalt, så det ændrer både EF-konfiguration og enhver query der rører feltet. Skal med i `Architecture.md`.
+**D-04 (Q-38) — Privacy by design. Passport numbers and similar personal data are encrypted. A delete policy is required.**
+→ *Code:* **this is a Phase 1 decision**, not a later addition. An encrypted column cannot be searched or sorted normally, so it changes both the EF configuration and every query that touches the field. It must go into `Architecture.md`.
 
-**D-05 (Q-41) — Sletning håndteres i to separate spor.**
-- Bookingdata slettes efter X måneder.
-- Persondata opbevares i X år, eller indtil gæsten selv beder om sletning.
-→ *Kode:* to uafhængige retention-mekanismer. Soft-delete af booking (BR-13) er **ikke** det samme som sletning af persondata. X'erne fastsættes senere.
+**D-05 (Q-41) — Deletion is handled in two separate tracks.**
+- Booking data is deleted after X months.
+- Personal data is kept for X years, or until the guest asks for deletion.
+→ *Code:* two independent retention mechanisms. Soft delete of a booking (BR-13) is **not** the same as deletion of personal data. The X values are set later.
 
-**D-06 (Q-09) — Krediteringslækken i det gamle README er en konstatering, ikke en opgave.**
-Læring: læs output før det pastes.
+**D-06 (Q-09) — The credit leak in the old README is a finding, not a task.**
+Lesson: read output before pasting it.
 
-**D-07 (Q-40) — Secrets gemmes på GitHub indtil videre.**
-Beslutningen er bevidst midlertidig — holdet vurderer ikke at have nok teknologikendskab til et endeligt valg endnu.
-→ ⚠️ **Skal præciseres:** *GitHub Actions Secrets* (krypteret, korrekt) eller *filer i repoet* (= præcis fejlen fra D-06). Se note nederst.
+**D-07 (Q-40) — Secrets are stored on GitHub for now.**
+The decision is deliberately temporary — the team does not judge that it has enough technology knowledge for a final choice yet.
+→ ⚠️ **Must be made precise:** *GitHub Actions Secrets* (encrypted, correct) or *files in the repository* (= exactly the mistake from D-06). See the note at the bottom.
 
-### Mobilapp
+### Mobile app
 
 **D-08 (Q-33) — Flutter.**
 
-**D-09 (Q-35) — `NFHotel.Api` indgår i målarkitekturen.**
-Tegnes i `Architecture.md` som en del af målbilledet. Bygges ikke i denne omgang — jf. `Fase1-Scope.md`.
+**D-09 (Q-35) — `NFHotel.Api` is part of the target architecture.**
+Drawn in `Architecture.md` as part of the target picture. Not built in this round — see `Phase1-Scope.md`.
 
-**D-10 (Q-34) — Appens formål er rumstatus, ikke check-in.**
-Brugere: rengøringspersonale, servicetekniker, ejer. Samme app, forskellig adgang efter rolle (D-03).
-Funktion: opdatering af rumstatus gennem rengøringsforløbet — **daglig rengøring, service, slutrengøring**.
-→ ⚠️ *Konsekvens:* se "Fund" nedenfor. Den nuværende `RoomStatus`-enum kan ikke bære det.
+**D-10 (Q-34) — The purpose of the app is room status, not check-in.**
+Users: cleaning staff, service technician, owner. Same app, different access by role (D-03).
+Function: updating the room status through the cleaning process — **daily cleaning, service, final cleaning**.
+→ ⚠️ *Consequence:* see "Findings" below. The current `RoomStatus` enum cannot carry it.
 
-**D-11 (Q-37) — Ingen offline-understøttelse.**
-Begrundelse: status skal kunne opdateres fra flere enheder uden at der opstår to versioner af virkeligheden — ét sted viser rummet "klar", et andet "mangler service".
-→ *Kode:* alle statusændringer går direkte mod serveren. Ingen lokal kø, ingen konfliktløsning. Til gengæld skal appen håndtere netværksfejl synligt (ikke som det gamle projekt, hvor check-in-fejl kun gik til `Debug.WriteLine` — BR-07/BR-10, Q-25).
+**D-11 (Q-37) — No offline support.**
+Reason: status must be updatable from several devices without two versions of reality arising — one place shows the room as "ready", another as "needs service".
+→ *Code:* all status changes go directly to the server. No local queue, no conflict resolution. In return the app must handle network errors visibly (not as in the old project, where check-in errors only went to `Debug.WriteLine` — BR-07/BR-10, Q-25).
 
 ---
 
-## Fund der følger af beslutningerne
+## Findings that follow from the decisions
 
-**F-01 — `RoomStatus` kan ikke bære mobilappens formål.**
+**F-01 — `RoomStatus` cannot carry the purpose of the mobile app.**
 
-| Kilde | Værdier |
+| Source | Values |
 |---|---|
 | `Models/Enums/RoomStatus.cs` | `Available` (0), `OutOfService` (1), `Maintenance` (2) |
-| Gammel XAML-dropdown | Available, Maintanance *(stavefejl)*, Cleaning, Disabled |
-| **D-10 kræver** | daglig rengøring, service, slutrengøring, klar |
+| Old XAML dropdown | Available, Maintanance *(typo)*, Cleaning, Disabled |
+| **D-10 requires** | daily cleaning, service, final cleaning, ready |
 
-De to gamle kilder har aldrig været enige (BR-126, Q-15), og ingen af dem dækker det rengøringsforløb appen skal styre.
+The two old sources never agreed (BR-126, Q-15), and neither covers the cleaning process the app has to control.
 
-→ **Dette flytter `RoomStatus` fra "billig insurance" til en Fase 1-beslutning.** Enum-værdier persisteres som int i databasen, så en omlægning bagefter er en datamigrering. Rumstatus-forløbet bør designes færdigt i Fase 1 — selv om appen først bygges senere.
+→ **This moves `RoomStatus` from "cheap insurance" to a Phase 1 decision.** Enum values are persisted as int in the database, so a later rearrangement is a data migration. The room status process should be designed completely in Phase 1 — even though the app is built later.
 
-**F-02 — Mobilappen hviler på rumstatus, ikke bookingstatus.**
-Ledgeren indeholder 18 statusovergangsregler for `BookingStatus` og reelt **ingen** for `RoomStatus` (kun BR-81: nye rum er `Available`, og BR-126: XAML-mismatchet). Rumstatus-forløbet er altså et nyt lille regelsæt der skal defineres — men det er mobil-guildens arbejde, når de bygger.
-*Sidegevinst:* appen rører ikke bookinger, så den er uafhængig af Q-01, Q-02 og Q-03.
+**F-02 — The mobile app rests on room status, not booking status.**
+The ledger contains 18 status transition rules for `BookingStatus` and in practice **none** for `RoomStatus` (only BR-81: new rooms are `Available`, and BR-126: the XAML mismatch). The room status process is therefore a new small rule set that must be defined — but that is the mobile guild's work when they build it.
+*Side benefit:* the app does not touch bookings, so it is independent of Q-01, Q-02 and Q-03.
 
-**F-03 — Autorisation skal ligge i Application-laget.**
-D-03 giver fire roller på tværs af to klienter. Håndhæves rollen kun i Blazor-UI'et, arver API'et den ikke, og Flutter-appen kan kalde forbi. Samme princip som forretningslogikken.
+**F-03 — Authorisation must be in the Application layer.**
+D-03 gives four roles across two clients. If the role is enforced only in the Blazor UI, the API does not inherit it, and the Flutter app can call around it. Same principle as the business logic.
 
 ---
 
-## Note til D-07
+## Note on D-07
 
-Ironien er værd at fange: D-06 handler om credentials der lå i klartekst i et README, og D-07 siger "secrets på GitHub".
+The irony is worth catching: D-06 is about credentials that were in plain text in a README, and D-07 says "secrets on GitHub".
 
-- **GitHub Actions Secrets** → krypteret, korrekt, standardpraksis. Ingen indvending.
-- **Secrets i filer i repoet** → samme fejl som D-06, bare i et nyere repo.
+- **GitHub Actions Secrets** → encrypted, correct, standard practice. No objection.
+- **Secrets in files in the repository** → the same mistake as D-06, only in a newer repo.
 
-Hvis det er det første, er beslutningen fin som den er og kan stå indtil I ved mere. Er det det andet, er `dotnet user-secrets` lokalt + Actions Secrets i CI en gratis opgradering der ikke kræver teknologivalg.
+If it is the first, the decision is fine as it is and can stand until more is known. If it is the second, `dotnet user-secrets` locally + Actions Secrets in CI is a free upgrade that needs no technology choice.
 
 ---
 
 ## Status
 
-**Besluttet:** Q-08, Q-09, Q-33, Q-34, Q-35, Q-36, Q-37, Q-38, Q-39, Q-40, Q-41.
+**Decided:** Q-08, Q-09, Q-33, Q-34, Q-35, Q-36, Q-37, Q-38, Q-39, Q-40, Q-41.
 
-**Tilbage før Fase 1:** Q-01, Q-02, Q-03 (bookingreglerne) · rumstatus-forløbet (F-01) · de fem tekniske konventioner i `Fase1-Scope.md`.
+**Remaining before Phase 1:** Q-01, Q-02, Q-03 (the booking rules) · the room status process (F-01) · the five technical conventions in `Phase1-Scope.md`.

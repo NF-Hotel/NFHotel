@@ -1,15 +1,17 @@
 @page "/admin"
 @layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.BookingsView)]
 @rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
 @using NFHotel.Web.Features.Admin.Dashboard
 @inject AdminDashboardViewModel ViewModel
 
 @*
-    Dagens overblik: hvem kommer, hvem rejser, og hvilke rum mangler at blive gjort.
-    Kun markup og binding — alt hentes og opdeles i AdminDashboardViewModel (B-10).
+    Today's overview: who is coming, who is leaving, and which rooms remain to be done.
+    Only markup and binding — everything is fetched and divided in AdminDashboardViewModel (B-10).
 
-    Hvert nøgletal fører videre til den skærm hvor arbejdet udføres, så dashboardet er en
-    indgang og ikke en blindgyde.
+    Each key figure leads on to the screen where the work is done, so the dashboard is an
+    entrance and not a dead end.
 *@
 
 <PageTitle>Dashboard — administration</PageTitle>
@@ -185,12 +187,12 @@
 </div>
 
 @code {
-    /// <summary>Underrubrikken med dagens dato.</summary>
+    /// <summary>The subheading with today's date.</summary>
     private string SubtitleText => $"Where things stand on {AdminFormat.Date(ViewModel.Today)}";
 
-    /// <summary>Henter dagens tal når skærmen åbnes.</summary>
-    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync();
+    /// <summary>Fetches today's figures when the screen opens.</summary>
+    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
 
-    /// <summary>Videresender opdateringsknappen til viewmodellen.</summary>
-    private Task RefreshAsync() => ViewModel.RefreshAsync();
+    /// <summary>Passes the refresh button on to the viewmodel.</summary>
+    private Task RefreshAsync() => ViewModel.RefreshAsync(ComponentToken);
 }

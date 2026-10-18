@@ -1,28 +1,30 @@
-using NFHotel.Application.Bookings;
-using NFHotel.Application.Common;
-using NFHotel.Domain.Bookings;
+using NFHotel.Application.Dto.Bookings;
+using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Bookings;
+using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Admin.Bookings;
 
 /// <summary>
-/// Præsentationslogik for bookingoversigten: periodefilter, fritekstsøgning, sortering,
-/// statusfiltre og de fire statusovergange der kan udføres fra listen.
+/// Presentation logic for the booking overview: period filter, free text search, sorting,
+/// status filters and the four status transitions that can be performed from the list.
 /// </summary>
 /// <remarks>
-/// B-10: klassen kender ingen statusovergange. Hvilke knapper der er lovlige, kommer fra
-/// <c>BookingListItemDto.Actions</c> (BR-22), som Application beregner ud fra domænet —
-/// præcis så BR-02, BR-11, BR-14, BR-22 og XAML-triggerne BR-121 til BR-123 bliver til
+/// B-10: the class knows no status transitions. Which buttons are legal comes from
+/// <c>BookingListItemDto.Actions</c> (BR-22), which Application computes from the domain —
+/// exactly so that BR-02, BR-11, BR-14, BR-22 and the XAML triggers BR-121 to BR-123 become
 /// <b>én</b> implementering i stedet for seks.
 /// <para>
-/// "I dag" kommer fra <see cref="IClock"/> og aldrig fra <c>DateTime.Now</c> (A-05).
-/// Periodefilteret er altid aktivt — det gamle systems uge- og månedsvisning filtrerede
-/// slet ikke og hentede hele tabellen (BR-111).
+/// "Today" comes from <see cref="IClock"/> and never from <c>DateTime.Now</c> (A-05).
+/// The period filter is always active — the old system's week and month views did not filter
+/// at all and fetched the whole table (BR-111).
 /// </para>
 /// <para>
-/// Statusfilteret er skærmens eget: servicen leverer perioden, og listen skjules herfra.
-/// Det er en visningsindsnævring af rækker der allerede er hentet, ikke en regel —
-/// filteret kan aldrig få en booking til at se anderledes ud, kun til at være skjult.
+/// The status filter is the screen's own: the service delivers the period, and the list is hidden from here.
+/// It is a narrowing of the view of rows that have already been fetched, not a rule —
+/// the filter can never make a booking look different, only be hidden.
 /// </para>
 /// </remarks>
 public sealed class BookingListViewModel
@@ -34,9 +36,9 @@ public sealed class BookingListViewModel
     private IReadOnlyList<BookingListItemDto> _allBookings = Array.Empty<BookingListItemDto>();
 
     /// <summary>
-    /// Opretter viewmodellen og sætter standardperioden til de næste 14 dage.
+    /// Creates the viewmodel and sets the default period to the next 14 days.
     /// </summary>
-    /// <param name="bookings">Kører use cases på <see cref="IBookingService"/>.</param>
+    /// <param name="bookings">Runs use cases on <see cref="IBookingService"/>.</param>
     /// <param name="clock">Hotellets ur (A-05).</param>
     public BookingListViewModel(IUseCaseRunner<IBookingService> bookings, IClock clock)
     {
@@ -49,58 +51,58 @@ public sealed class BookingListViewModel
         PeriodEnd = clock.Today.AddDays(DefaultPeriodLengthInDays);
     }
 
-    /// <summary>Bookingerne der vises lige nu, efter statusfilteret.</summary>
+    /// <summary>The bookings shown right now, after the status filter.</summary>
     public IReadOnlyList<BookingListItemDto> Bookings { get; private set; } =
         Array.Empty<BookingListItemDto>();
 
-    /// <summary>Fejl der skal vises til brugeren, allerede oversat til dansk.</summary>
+    /// <summary>Errors to show to the user, already translated to Danish.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = Array.Empty<string>();
 
-    /// <summary>Sand mens et kald er i gang.</summary>
+    /// <summary>True while a call is in progress.</summary>
     public bool IsBusy { get; private set; }
 
-    /// <summary>Sand når skærmen har hentet data mindst én gang.</summary>
+    /// <summary>True when the screen has fetched data at least once.</summary>
     public bool IsLoaded { get; private set; }
 
-    /// <summary>Sand når listen er hentet uden fejl, men er tom.</summary>
+    /// <summary>True when the list was fetched without error, but is empty.</summary>
     public bool IsEmpty => IsLoaded && Errors.Count == 0 && Bookings.Count == 0;
 
-    /// <summary>Sand når perioden har bookinger, men statusfilteret skjuler dem alle.</summary>
+    /// <summary>True when the period has bookings, but the status filter hides them all.</summary>
     public bool IsHiddenByStatusFilter => IsEmpty && _allBookings.Count > 0;
 
-    /// <summary>Periodens første dato, inklusiv.</summary>
+    /// <summary>The first date of the period, inclusive.</summary>
     public DateOnly PeriodStart { get; set; }
 
-    /// <summary>Periodens sidste dato, eksklusiv.</summary>
+    /// <summary>The last date of the period, exclusive.</summary>
     public DateOnly PeriodEnd { get; set; }
 
-    /// <summary>Fritekst på gæstenavn eller værelsesnummer (BR-23, BR-25).</summary>
+    /// <summary>Free text on guest name or room number (BR-23, BR-25).</summary>
     public string? SearchText { get; set; }
 
-    /// <summary>Feltet der sorteres på (BR-32).</summary>
+    /// <summary>The field to sort on (BR-32).</summary>
     public BookingSortField SortBy { get; private set; } = BookingSortField.StartDate;
 
     /// <summary>Sorteringsretningen.</summary>
     public SortDirection Direction { get; private set; } = SortDirection.Ascending;
 
-    /// <summary>Om annullerede bookinger skal hentes med (BR-13's soft-delete).</summary>
+    /// <summary>Whether cancelled bookings are fetched too (the soft delete of BR-13).</summary>
     public bool IncludeCancelled { get; set; }
 
-    /// <summary>Vis kun denne status. <c>null</c> viser alle hentede bookinger.</summary>
+    /// <summary>Show only this status. <c>null</c> shows all fetched bookings.</summary>
     public BookingStatus? StatusFilter { get; set; }
 
-    /// <summary>Bookingen der venter på at brugeren bekræfter en annullering (BR-04).</summary>
+    /// <summary>The booking waiting for the user to confirm a cancellation (BR-04).</summary>
     public BookingListItemDto? BookingPendingCancellation { get; private set; }
 
     /// <summary>
-    /// Henter den første liste. Kaldes fra <c>OnInitializedAsync</c>.
+    /// Fetches the first list. Called from <c>OnInitializedAsync</c>.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         SearchAsync(cancellationToken);
 
     /// <summary>
-    /// Henter bookingerne der matcher den nuværende forespørgsel.
+    /// Fetches the bookings that match the current query.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public async Task SearchAsync(CancellationToken cancellationToken = default)
@@ -139,14 +141,14 @@ public sealed class BookingListViewModel
             IsBusy = false;
             IsLoaded = true;
 
-            // En række der er hentet igen er ikke den samme instans som den brugeren
-            // klikkede på. Bekræftelsen ville pege på en forældet visning.
+            // A row that has been fetched again is not the same instance as the one the user
+            // clicked on. The confirmation would point to an outdated view.
             BookingPendingCancellation = null;
         }
     }
 
     /// <summary>
-    /// Rydder søgefelt, statusfilter og annullerede, og henter listen igen.
+    /// Clears search field, status filter and cancelled, and fetches the list again.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public Task ClearFilterAsync(CancellationToken cancellationToken = default)
@@ -159,13 +161,13 @@ public sealed class BookingListViewModel
     }
 
     /// <summary>
-    /// Sætter statusfilteret og opdaterer den viste liste uden at hente igen.
+    /// Sets the status filter and updates the displayed list without fetching again.
     /// </summary>
-    /// <param name="status">Statussen der skal vises, eller <c>null</c> for alle.</param>
+    /// <param name="status">The status to show, or <c>null</c> for all.</param>
     /// <remarks>
-    /// Filtrerer i det allerede hentede resultat, fordi periodefilteret — det der
-    /// bestemmer hvor meget der hentes — er uændret. Et servicekald ville give samme
-    /// rækker igen.
+    /// Filters in the result already fetched, because the period filter — the one that
+    /// decides how much is fetched — is unchanged. A service call would give the same
+    /// rows again.
     /// </remarks>
     public void FilterByStatus(BookingStatus? status)
     {
@@ -175,9 +177,9 @@ public sealed class BookingListViewModel
     }
 
     /// <summary>
-    /// Sorterer på et felt. Klik på det felt der allerede sorteres på vender retningen.
+    /// Sorts on a field. A click on the field already sorted on reverses the direction.
     /// </summary>
-    /// <param name="field">Feltet der skal sorteres på.</param>
+    /// <param name="field">The field to sort on.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public Task SortByAsync(BookingSortField field, CancellationToken cancellationToken = default)
     {
@@ -191,17 +193,17 @@ public sealed class BookingListViewModel
     }
 
     /// <summary>
-    /// Fortæller om en kolonne er den der sorteres på lige nu.
+    /// Tells whether a column is the one currently sorted on.
     /// </summary>
     /// <param name="field">Kolonnens felt.</param>
-    /// <returns>Sand hvis listen er sorteret på feltet.</returns>
+    /// <returns>True if the list is sorted on the field.</returns>
     public bool IsSortedBy(BookingSortField field) => SortBy == field;
 
     /// <summary>
-    /// Giver værdien til <c>aria-sort</c> på en kolonneoverskrift.
+    /// Gives the value for <c>aria-sort</c> on a column heading.
     /// </summary>
     /// <param name="field">Kolonnens felt.</param>
-    /// <returns><c>"ascending"</c>, <c>"descending"</c> eller <c>"none"</c>.</returns>
+    /// <returns><c>"ascending"</c>, <c>"descending"</c> or <c>"none"</c>.</returns>
     public string AriaSortFor(BookingSortField field)
     {
         if (SortBy != field)
@@ -213,9 +215,9 @@ public sealed class BookingListViewModel
     }
 
     /// <summary>
-    /// Beder om bekræftelse før en annullering (BR-04).
+    /// Asks for confirmation before a cancellation (BR-04).
     /// </summary>
-    /// <param name="booking">Bookingen brugeren vil annullere.</param>
+    /// <param name="booking">The booking the user wants to cancel.</param>
     public void RequestCancel(BookingListItemDto booking)
     {
         ArgumentNullException.ThrowIfNull(booking);
@@ -224,12 +226,12 @@ public sealed class BookingListViewModel
     }
 
     /// <summary>
-    /// Fortryder en annullering der endnu ikke er bekræftet.
+    /// Undoes a cancellation that has not yet been confirmed.
     /// </summary>
     public void AbortCancel() => BookingPendingCancellation = null;
 
     /// <summary>
-    /// Gennemfører den annullering brugeren har bekræftet (BR-04, BR-11).
+    /// Carries out the cancellation the user has confirmed (BR-04, BR-11).
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public async Task ConfirmCancelAsync(CancellationToken cancellationToken = default)
@@ -245,15 +247,15 @@ public sealed class BookingListViewModel
     }
 
     /// <summary>
-    /// Udfører én af bookingens statusovergange og henter listen igen.
+    /// Performs one of the status transitions of the booking and fetches the list again.
     /// </summary>
-    /// <param name="action">Overgangen der skal udføres.</param>
+    /// <param name="action">The transition to perform.</param>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <remarks>
-    /// Knappen vises kun når <c>Actions</c> siger den er lovlig, men servicen kontrollerer
-    /// alligevel: mellem render og klik kan en anden bruger have flyttet bookingen videre.
-    /// Sker det, kommer fejlkoden retur og bliver til en neutral dansk besked.
+    /// The button is shown only when <c>Actions</c> says it is legal, but the service checks
+    /// anyway: between render and click another user may have moved the booking on.
+    /// If that happens, the error code comes back and becomes a neutral Danish message.
     /// </remarks>
     public async Task ExecuteAsync(
         BookingAction action,
@@ -270,7 +272,7 @@ public sealed class BookingListViewModel
         try
         {
             var result = await _bookings
-                .RunAsync((service, token) => Invoke(service, action, bookingId, token), cancellationToken)
+                .RunAsync((service, token) => InvokeAsync(service, action, bookingId, token), cancellationToken)
                 .ConfigureAwait(false);
 
             if (result.IsFailure)
@@ -288,29 +290,29 @@ public sealed class BookingListViewModel
             IsBusy = false;
         }
 
-        // Hentes igen, fordi overgangen kan flytte bookingen ud af filteret — fx en
-        // annullering når "vis annullerede" er slået fra.
+        // Fetched again, because the transition can move the booking out of the filter — for example a
+        // cancellation when "show cancelled" is switched off.
         await SearchAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Lægger statusfilteret ned over de hentede rækker.
+    /// Applies the status filter to the fetched rows.
     /// </summary>
     private void ApplyStatusFilter() =>
         Bookings = StatusFilter is null
             ? _allBookings
             : _allBookings.Where(booking => booking.Status == StatusFilter.Value).ToArray();
 
-    private static Task<Result<BookingDetailsDto>> Invoke(
+    private static Task<Result<BookingDetailsDto>> InvokeAsync(
         IBookingService service,
         BookingAction action,
         int bookingId,
         CancellationToken cancellationToken) => action switch
-    {
-        BookingAction.Confirm => service.ConfirmAsync(bookingId, cancellationToken),
-        BookingAction.CheckIn => service.CheckInAsync(bookingId, cancellationToken),
-        BookingAction.CheckOut => service.CheckOutAsync(bookingId, cancellationToken),
-        BookingAction.Cancel => service.CancelAsync(bookingId, cancellationToken),
-        _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ukendt bookinghandling.")
-    };
+        {
+            BookingAction.Confirm => service.ConfirmAsync(bookingId, cancellationToken),
+            BookingAction.CheckIn => service.CheckInAsync(bookingId, cancellationToken),
+            BookingAction.CheckOut => service.CheckOutAsync(bookingId, cancellationToken),
+            BookingAction.Cancel => service.CancelAsync(bookingId, cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ukendt bookinghandling.")
+        };
 }

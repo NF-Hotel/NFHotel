@@ -1,0 +1,33 @@
+# nginx reverse proxy in front of the NFHotel web service (MIL-002 task 3).
+# Read by Docker Compose. Settings live in nginx.env (git-ignored); copy
+# nginx.env.example to nginx.env first. Start with:
+#   docker compose --env-file nginx.env up -d
+# The proxy joins the external network shared with the web service; create it
+# once with: docker network create nfhotel-proxy
+name: nfhotel-nginx
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    env_file: ${NGINX_ENV_FILE:-nginx.env}
+    ports:
+      # Public: only the NFHotel web application is served here: port 80 only redirects
+      # to HTTPS, port 443 serves it over TLS (MIL-017). Internal: the analysis and
+      # benchmark notebooks, on the loopback of the host only; reach them with an SSH tunnel.
+      - "${NGINX_BIND:-0.0.0.0}:${NGINX_HTTP_PORT:-8080}:80"
+      - "${NGINX_BIND:-0.0.0.0}:${NGINX_HTTPS_PORT:-8443}:443"
+      - "127.0.0.1:${NGINX_INTERNAL_PORT:-8081}:8081"
+    volumes:
+      - ./templates:/etc/nginx/templates:ro
+      - ./snippets:/etc/nginx/snippets:ro
+      # fullchain.pem and privkey.pem: made by scripts/make-dev-certificate.sh,
+      # or put there by the owner (a real certificate).
+      - ${NGINX_TLS_DIR:-./tls}:/etc/nginx/tls:ro
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
+    external: true

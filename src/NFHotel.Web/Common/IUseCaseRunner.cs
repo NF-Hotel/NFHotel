@@ -1,70 +1,70 @@
-using NFHotel.Application.Common;
+using NFHotel.Application.UseCases;
 
 namespace NFHotel.Web.Common;
 
 /// <summary>
-/// Kører ét use case-kald på <typeparamref name="TService"/> i sin egen DI-scope og sikrer
-/// at kaldet altid ender i et <see cref="Result"/>.
+/// Runs one use case call on <typeparamref name="TService"/> in its own DI scope and ensures
+/// that the call always ends in a <see cref="Result"/>.
 /// </summary>
-/// <typeparam name="TService">Application-servicen, fx <c>IBookingService</c>.</typeparam>
+/// <typeparam name="TService">The Application service, for example <c>IBookingService</c>.</typeparam>
 /// <remarks>
-/// Typen løser to ting på én gang, og begge er krav til Fase 2.
+/// The type solves two things at once, and both are requirements for Phase 2.
 /// <para>
-/// <b>1. Én scope pr. use case.</b> Architecture.md afsnit 8: <i>"Blazor Server skal give
-/// hver side sin egen DI-scope. Gør den ikke det, får en bruger én <c>DbContext</c> for
-/// hele sin session, og to samtidige komponenthændelser kaster."</i> I Blazor Server lever
-/// en DI-scope lige så længe som SignalR-kredsløbet — potentielt timer.
-/// <c>AddInfrastructure</c> registrerer derfor <c>HotelDbContext</c> som <c>Scoped</c> oven
-/// på en <c>IDbContextFactory</c>, netop for at Web kan hente en frisk kontekst pr. use
-/// case. Denne type er det sted Web faktisk gør det: ét kald = én scope = én
-/// <c>DbContext</c>, som repositories og <c>IUnitOfWork</c> deler indbyrdes, men ikke deler
-/// med et andet igangværende kald. Uden den ville to hurtige klik på samme side ramme samme
-/// kontekst midt i et <c>await</c>.
+/// <b>1. One scope per use case.</b> Architecture.md section 8: <i>"Blazor Server must give
+/// each page its own DI scope. If it does not, a user gets one <c>DbContext</c> for
+/// their whole session, and two simultaneous component events throw."</i> In Blazor Server
+/// a DI scope lives as long as the SignalR circuit — potentially hours.
+/// <c>AddInfrastructure</c> therefore registers <c>HotelDbContext</c> as <c>Scoped</c> on
+/// top of an <c>IDbContextFactory</c>, precisely so Web can fetch a fresh context per use
+/// case. This type is where Web actually does it: one call = one scope = one
+/// <c>DbContext</c>, which repositories and <c>IUnitOfWork</c> share among themselves, but do not share
+/// with another call in progress. Without it, two quick clicks on the same page would hit the same
+/// context in the middle of an <c>await</c>.
 /// </para>
 /// <para>
-/// <b>2. Ét sted at fange det uventede.</b> Forventede regelbrud kommer allerede tilbage
-/// som <see cref="Result"/>. En nede database gør det ikke — den kaster. Runneren fanger
-/// den, logger den tekniske detalje centralt og returnerer
-/// <see cref="WebErrorCodes.Unexpected"/>, så skærmen kan vise en neutral besked med den
-/// samme kode-sti som alt andet i stedet for at rive kredsløbet ned.
+/// <b>2. One place to catch the unexpected.</b> Expected rule violations already come back
+/// as <see cref="Result"/>. A database that is down does not — it throws. The runner catches
+/// it, logs the technical detail centrally and returns
+/// <see cref="WebErrorCodes.Unexpected"/>, so the screen can show a neutral message through the
+/// same code path as everything else instead of tearing down the circuit.
 /// </para>
 /// <para>
-/// ViewModels afhænger af denne type frem for af <c>IServiceScopeFactory</c>, så de kun
-/// nævner Application-interfaces og ikke selv kender til DI-mekanikken (B-10).
+/// ViewModels depend on this type rather than on <c>IServiceScopeFactory</c>, so they only
+/// mention Application interfaces and do not themselves know the DI mechanics (B-10).
 /// </para>
 /// </remarks>
 public interface IUseCaseRunner<TService>
     where TService : notnull
 {
     /// <summary>
-    /// Kører et asynkront use case der returnerer en værdi.
+    /// Runs an asynchronous use case that returns a value.
     /// </summary>
-    /// <typeparam name="TValue">Use casets værditype.</typeparam>
-    /// <param name="useCase">Kaldet der skal udføres på servicen.</param>
-    /// <param name="cancellationToken">Annulleringstoken, sendes videre til servicen.</param>
-    /// <returns>Servicens resultat, eller en fejl med <see cref="WebErrorCodes.Unexpected"/>.</returns>
+    /// <typeparam name="TValue">The value type of the use case.</typeparam>
+    /// <param name="useCase">The call to be made on the service.</param>
+    /// <param name="cancellationToken">Cancellation token, passed on to the service.</param>
+    /// <returns>The result of the service, or an error with <see cref="WebErrorCodes.Unexpected"/>.</returns>
     Task<Result<TValue>> RunAsync<TValue>(
         Func<TService, CancellationToken, Task<Result<TValue>>> useCase,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Kører et asynkront use case uden returværdi.
+    /// Runs an asynchronous use case without a return value.
     /// </summary>
-    /// <param name="useCase">Kaldet der skal udføres på servicen.</param>
-    /// <param name="cancellationToken">Annulleringstoken, sendes videre til servicen.</param>
-    /// <returns>Servicens resultat, eller en fejl med <see cref="WebErrorCodes.Unexpected"/>.</returns>
+    /// <param name="useCase">The call to be made on the service.</param>
+    /// <param name="cancellationToken">Cancellation token, passed on to the service.</param>
+    /// <returns>The result of the service, or an error with <see cref="WebErrorCodes.Unexpected"/>.</returns>
     Task<Result> RunAsync(
         Func<TService, CancellationToken, Task<Result>> useCase,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Kører et synkront use case.
+    /// Runs a synchronous use case.
     /// </summary>
-    /// <param name="useCase">Kaldet der skal udføres på servicen.</param>
-    /// <returns>Servicens resultat, eller en fejl med <see cref="WebErrorCodes.Unexpected"/>.</returns>
+    /// <param name="useCase">The call to be made on the service.</param>
+    /// <returns>The result of the service, or an error with <see cref="WebErrorCodes.Unexpected"/>.</returns>
     /// <remarks>
-    /// Findes udelukkende til de use cases der ikke laver IO — <c>IGuestService.ValidateFields</c>
-    /// er den eneste i dag. Conventions.md: en metode uden reelt async arbejde skal ikke være
+    /// Exists solely for the use cases that do no IO — <c>IGuestService.ValidateFields</c>
+    /// is the only one today. Conventions.md: a method without real async work should not be
     /// async bare for syns skyld.
     /// </remarks>
     Result Run(Func<TService, Result> useCase);

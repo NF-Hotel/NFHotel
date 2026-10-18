@@ -1,17 +1,18 @@
 @page "/booking/{BookingNumber}"
 @rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
 
 @inject BookingReceiptViewModel ViewModel
 
 @*
-    Den bogmærkbare kvittering. Siden slår kun op på bookingnummeret (BR-C-06) og viser
-    kun det, BookingReceiptCard har markup til: nummer, datoer, nætter, rum og status.
+    The bookmarkable receipt. The page looks up only the booking number (BR-C-06) and shows
+    only what BookingReceiptCard has markup for: number, dates, nights, room and status.
 
-    Hvorfor der ikke står navn, e-mail, telefon eller pasnummer på siden, står i
-    BookingReceiptCard.razor og i BookingReceiptViewModel — kort: uden adgangskontrol er
-    FLZ-000123 gætteligt, og en fremmed må ikke kunne høste persondata ved at tælle opad.
+    Why the page shows no name, email, phone or passport number is explained in
+    BookingReceiptCard.razor and in BookingReceiptViewModel — in short: without access control
+    FLZ-000123 is guessable, and a stranger must not be able to harvest personal data by counting upwards.
 
-    PublicLayout er standardlayout (Routes.razor), så der er ingen @@layout-linje.
+    PublicLayout is the default layout (Routes.razor), so there is no @@layout line.
 *@
 
 <PageTitle>Your booking — NFHotel</PageTitle>
@@ -48,12 +49,12 @@
 </div>
 
 @code {
-    /// <summary>Bookingnummeret fra adressen, fx <c>FLZ-000123</c>.</summary>
+    /// <summary>The booking number from the address, for example <c>FLZ-000123</c>.</summary>
     [Parameter]
     public string? BookingNumber { get; set; }
 
     /// <summary>
-    /// Slår bookingen op — også når kun nummeret i adressen ændrer sig.
+    /// Looks up the booking — also when only the number in the address changes.
     /// </summary>
-    protected override Task OnParametersSetAsync() => ViewModel.LoadAsync(BookingNumber);
+    protected override Task OnParametersSetAsync() => ViewModel.LoadAsync(BookingNumber, ComponentToken);
 }

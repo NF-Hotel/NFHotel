@@ -1,31 +1,30 @@
-using NFHotel.Domain.Bookings;
-using NFHotel.Domain.Rooms;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Web.Common;
 
 /// <summary>
-/// Oversætter domænets tilstande til badge-klasser fra designsystemet.
+/// Translates the states of the domain to badge classes from the design system.
 /// </summary>
 /// <remarks>
-/// Modstykket til <see cref="DisplayText"/>: den ejer ordlyden, denne ejer udseendet.
-/// Begge hører i Web, fordi domænemodeller ikke må fyldes med UI-formatering
-/// (Conventions.md). Klassenavnene er kontrakten fra UI-Spec afsnit 3 og findes i
+/// The counterpart of <see cref="DisplayText"/>: it owns the wording, this owns the appearance.
+/// Both belong in Web, because domain models must not be filled with UI formatting
+/// (Conventions.md). The class names are the contract from UI-Spec section 3 and are found in
 /// <c>wwwroot/app.css</c>.
 /// <para>
-/// <c>_</c>-grenene falder tilbage til den neutrale badge. De er der fordi C# kræver at
-/// et switch-udtryk over en enum dækker alle int-værdier — ikke fordi en tilstand mangler.
+/// The <c>_</c> branches fall back to the neutral badge. They are there because C# requires that
+/// a switch expression over an enum covers all int values — not because a state is missing.
 /// </para>
 /// </remarks>
 public static class BadgeClass
 {
-    /// <summary>Basisklassen som alle modifiers bygger på.</summary>
+    /// <summary>The base class that all modifiers build on.</summary>
     private const string Base = "badge";
 
     /// <summary>
-    /// Giver badge-klasserne for en bookings status.
+    /// Gives the badge classes for the status of a booking.
     /// </summary>
     /// <param name="status">Bookingens status.</param>
-    /// <returns>Klassestrengen, fx <c>"badge badge-confirmed"</c>.</returns>
+    /// <returns>The class string, for example <c>"badge badge-confirmed"</c>.</returns>
     public static string For(BookingStatus status) => status switch
     {
         BookingStatus.Pending => $"{Base} badge-pending",
@@ -37,14 +36,14 @@ public static class BadgeClass
     };
 
     /// <summary>
-    /// Giver badge-klasserne for et rums bookbarhed.
+    /// Gives the badge classes for the bookability of a room.
     /// </summary>
     /// <param name="status">Rummets status.</param>
     /// <returns>Klassestrengen.</returns>
     /// <remarks>
-    /// <see cref="RoomStatus.Maintenance"/> er midlertidig og deler udseende med service,
-    /// mens <see cref="RoomStatus.OutOfService"/> er en administrativ spærring og derfor
-    /// får den neutrale "blokeret"-farve.
+    /// <see cref="RoomStatus.Maintenance"/> is temporary and shares its appearance with service,
+    /// while <see cref="RoomStatus.OutOfService"/> is an administrative block and therefore
+    /// gets the neutral "blocked" colour.
     /// </remarks>
     public static string For(RoomStatus status) => status switch
     {
@@ -55,9 +54,9 @@ public static class BadgeClass
     };
 
     /// <summary>
-    /// Giver badge-klasserne for et rums rengørings- og servicestand.
+    /// Gives the badge classes for the cleaning and service state of a room.
     /// </summary>
-    /// <param name="status">Rummets rengøringsstatus.</param>
+    /// <param name="status">The cleaning status of the room.</param>
     /// <returns>Klassestrengen.</returns>
     public static string For(HousekeepingStatus status) => status switch
     {
@@ -71,10 +70,10 @@ public static class BadgeClass
     };
 
     /// <summary>
-    /// Giver klassen for en beskeds alvorlighedsgrad.
+    /// Gives the class for the severity of a message.
     /// </summary>
     /// <param name="kind">Alvorlighedsgraden.</param>
-    /// <returns>Klassestrengen, fx <c>"alert alert-error"</c>.</returns>
+    /// <returns>The class string, for example <c>"alert alert-error"</c>.</returns>
     public static string For(AlertKind kind) => kind switch
     {
         AlertKind.Error => "alert alert-error",

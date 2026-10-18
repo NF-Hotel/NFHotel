@@ -1,0 +1,559 @@
+<title>Frontend archaeology</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground: #f4f1ea;
+    --paper: #ffffff;
+    --ink: #1c1f1d;
+    --ink-soft: #5c635e;
+    --ink-faint: #8b918c;
+    --line: #ddd9d0;
+    --forest: #2f4739;
+    --forest-ink: #2f4739;
+    --brass: #8a6a34;
+    --brass-bright: #b08a4f;
+    --code-bg: #f7f5f0;
+    --strike: #9d4b42;
+
+    --serif: "Newsreader", Georgia, "Times New Roman", serif;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #141815;
+      --paper: #1b211d;
+      --ink: #ecefe9;
+      --ink-soft: #a3aca5;
+      --ink-faint: #757e77;
+      --line: #2c342e;
+      --forest: #8fb8a1;
+      --forest-ink: #a9cbb8;
+      --brass: #c9a468;
+      --brass-bright: #d9b87f;
+      --code-bg: #10150f;
+      --strike: #d08b83;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #141815;
+    --paper: #1b211d;
+    --ink: #ecefe9;
+    --ink-soft: #a3aca5;
+    --ink-faint: #757e77;
+    --line: #2c342e;
+    --forest: #8fb8a1;
+    --forest-ink: #a9cbb8;
+    --brass: #c9a468;
+    --brass-bright: #d9b87f;
+    --code-bg: #10150f;
+    --strike: #d08b83;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .deck {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 28px 24px 96px;
+  }
+
+  /* ---- slide frame ---------------------------------------------- */
+  .slide {
+    display: none;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    min-height: 540px;
+    padding: 52px 56px 48px;
+    flex-direction: column;
+    gap: 26px;
+    animation: rise .28s ease-out;
+  }
+  .slide[data-active] { display: flex; }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .slide { animation: none; } }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--brass);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .eyebrow::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(34px, 5.4vw, 56px);
+    line-height: 1.08;
+    letter-spacing: -.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(26px, 3.4vw, 36px);
+    line-height: 1.16;
+    letter-spacing: -.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .lede {
+    font-family: var(--serif);
+    font-size: clamp(17px, 2vw, 20px);
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: 60ch;
+    margin: 0;
+  }
+  p { margin: 0; max-width: 68ch; }
+  .body-lg { font-size: 17px; }
+
+  .fill { flex: 1; }
+
+  .takeaway {
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+    font-family: var(--serif);
+    font-size: 17px;
+    font-style: italic;
+    color: var(--forest-ink);
+    max-width: 62ch;
+  }
+  .takeaway b { font-style: normal; font-weight: 600; }
+
+  /* ---- title slide ---------------------------------------------- */
+  .title-slide { justify-content: center; gap: 20px; }
+  .byline {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: .04em;
+  }
+  .agenda {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0;
+    border-top: 1px solid var(--line);
+    margin-top: 12px;
+  }
+  .agenda div {
+    padding: 14px 16px 0 0;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .agenda span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--brass);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  /* ---- numbers -------------------------------------------------- */
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 28px;
+  }
+  .fig-n {
+    font-family: var(--serif);
+    font-size: clamp(38px, 6vw, 54px);
+    line-height: 1;
+    color: var(--forest-ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .fig-l {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+
+  /* ---- lists ---------------------------------------------------- */
+  ul.plain { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+  ul.plain li { padding-left: 22px; position: relative; max-width: 66ch; }
+  ul.plain li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: .62em;
+    width: 9px; height: 1px;
+    background: var(--brass-bright);
+  }
+  ul.plain b { font-weight: 600; }
+
+  /* ---- code ----------------------------------------------------- */
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .snip { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .snip-h {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .snip-h.bad { color: var(--strike); }
+  .snip-h.good { color: var(--forest-ink); }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 14px 16px;
+    margin: 0;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.62;
+    color: var(--ink);
+    flex: 1;
+  }
+  .cm { color: var(--ink-faint); }
+  .kw { color: var(--forest-ink); font-weight: 500; }
+
+  /* ---- two-column ----------------------------------------------- */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; }
+  .col-h {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* ---- token swatches ------------------------------------------- */
+  .swatches { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+  .sw { flex: 1; height: 46px; }
+  .sw-lab {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    display: flex;
+    gap: 0;
+    margin-top: 6px;
+  }
+  .sw-lab span { flex: 1; }
+
+  /* ---- nav ------------------------------------------------------ */
+  .bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--ground);
+    border-top: 1px solid var(--line);
+    padding: 11px 24px;
+  }
+  .bar-in {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .rail { flex: 1; display: flex; gap: 3px; }
+  .tick {
+    flex: 1;
+    height: 3px;
+    background: var(--line);
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background .15s;
+  }
+  .tick[data-on] { background: var(--forest); }
+  .tick:hover { background: var(--brass-bright); }
+  .tick:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+  .count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+    min-width: 46px;
+  }
+  .nav-btn {
+    font-family: var(--sans);
+    font-size: 13px;
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+  .nav-btn:hover { border-color: var(--brass-bright); color: var(--ink); }
+  .nav-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .hint { font-size: 12px; color: var(--ink-faint); }
+
+  @media (max-width: 720px) {
+    .slide { padding: 34px 26px 30px; min-height: 0; }
+    .pair, .cols { grid-template-columns: 1fr; }
+    .hint { display: none; }
+  }
+</style>
+
+<div class="deck">
+
+  <!-- 1 ------------------------------------------------------------ -->
+  <section class="slide title-slide" data-active>
+    <div class="eyebrow">Frontend guild · 4th semester</div>
+    <h1>We found four business rules hidden in a WPF converter</h1>
+    <p class="lede">How we built the frontend of NFHotel 2.0 — and what turned out to be the real work.</p>
+    <div class="fill"></div>
+    <div class="agenda">
+      <div><span>01</span>The legacy</div>
+      <div><span>02</span>One rule</div>
+      <div><span>03</span>The system before the screens</div>
+      <div><span>04</span>The boundary</div>
+      <div><span>05</span>How we used AI</div>
+    </div>
+    <div class="byline">Valdemar · Frontend guild</div>
+  </section>
+
+  <!-- 2 ------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">01 · The legacy</div>
+    <h2>We inherited a WPF project from another group</h2>
+    <div class="figures">
+      <div><div class="fig-n">1,093</div><div class="fig-l">lines of XAML in one view file</div></div>
+      <div><div class="fig-n">823</div><div class="fig-l">lines in one ViewModel</div></div>
+      <div><div class="fig-n">0</div><div class="fig-l">async methods in the entire data access</div></div>
+      <div><div class="fig-n">126</div><div class="fig-l">business rules extracted</div></div>
+    </div>
+    <p class="body-lg">The assignment said "port to Blazor". But WPF bindings, converters and code-behind have no counterparts in Razor. There was nothing to port — the UI had to be written from scratch.</p>
+    <div class="fill"></div>
+    <div class="takeaway"><b>What we took with us:</b> Map the rules before you touch the markup. If you do not know what the old screen did, you recreate its mistakes.</div>
+  </section>
+
+  <!-- 3 ------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">01 · The legacy</div>
+    <h2>Four business rules lived in a colour converter</h2>
+    <p class="body-lg">The calendar drew bookings as bars. The width was <code style="font-family:var(--mono);font-size:13px">(EndDate − StartDate).Days</code> — that is, the number of <em>nights</em>, not days. A bar started in the middle of the arrival day, because the room is only occupied from noon.</p>
+    <ul class="plain">
+      <li><b>None of those rules were in the domain.</b> They existed only as numbers in a converter, between 40 lines of comments where someone was thinking out loud.</li>
+      <li><b>We found them because we had to rewrite the UI.</b> Had we "just ported", they would have vanished silently.</li>
+    </ul>
+    <div class="fill"></div>
+    <div class="takeaway"><b>What we took with us:</b> Frontend code is a hiding place for domain knowledge. A converter, a <code style="font-family:var(--mono);font-size:13px">*.css</code> class or a <code style="font-family:var(--mono);font-size:13px">disabled</code> attribute can be the only documentation of a rule.</div>
+  </section>
+
+  <!-- 4 ------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">02 · One rule</div>
+    <h2>.razor is markup. Full stop.</h2>
+    <p class="body-lg">All logic lives in a ViewModel class, injected via the constructor. Not code-behind, not <code style="font-family:var(--mono);font-size:13px">@code</code> blocks with business rules.</p>
+    <div class="cols">
+      <div>
+        <div class="col-h">The test we use</div>
+        <p>Can a console app call the same use case and get every rule enforced?</p>
+        <p style="margin-top:12px">If the answer is yes, an API can too — and the mobile app inherits the rules for free.</p>
+      </div>
+      <div>
+        <div class="col-h">What it gave us</div>
+        <p>When the customer site was built later, it required <b>zero changes</b> in the business logic. A whole new audience, the same services.</p>
+      </div>
+    </div>
+    <div class="fill"></div>
+    <div class="takeaway"><b>What we took with us:</b> The rule is not an architecture fetish. It is the reason the next layer can be built without touching the previous one.</div>
+  </section>
+
+  <!-- 5 ------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">03 · The system before the screens</div>
+    <h2>We agreed on 63 CSS classes before the first line of markup</h2>
+    <div class="swatches" aria-hidden="true">
+      <div class="sw" style="background:#2f4739"></div>
+      <div class="sw" style="background:#b08a4f"></div>
+      <div class="sw" style="background:#f7f5f0"></div>
+      <div class="sw" style="background:#e2e0da"></div>
+      <div class="sw" style="background:#1c1f1d"></div>
+    </div>
+    <div class="sw-lab"><span>forest</span><span>brass</span><span>sand</span><span>line</span><span>ink</span></div>
+    <p class="body-lg">A written spec with colour tokens, typography and an exhaustive list of class names. No Bootstrap, no external fonts — the app must work offline.</p>
+    <ul class="plain">
+      <li><b>The spec was a contract, not inspiration.</b> Three areas were built in parallel by different people against the same class list.</li>
+      <li><b>Nobody invented their own classes.</b> This was checked mechanically: every class in markup had to exist in the CSS.</li>
+    </ul>
+    <div class="fill"></div>
+    <div class="takeaway"><b>What we took with us:</b> A design system is cheapest to write before the screens and most expensive afterwards. Write the class list down — then several people can work at once without drifting apart.</div>
+  </section>
+
+  <!-- 6 ------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">04 · The boundary</div>
+    <h2>The UI must not guess what is allowed</h2>
+    <div class="pair">
+      <div class="snip">
+        <div class="snip-h bad">The temptation</div>
+<pre>@<span class="kw">if</span> (booking.Status == Pending
+    || booking.Status == Confirmed)
+{
+    &lt;button&gt;Cancel&lt;/button&gt;
+}
+
+<span class="cm">// Now the state machine exists</span>
+<span class="cm">// in two places. They will drift</span>
+<span class="cm">// apart.</span></pre>
+      </div>
+      <div class="snip">
+        <div class="snip-h good">What we do</div>
+<pre>@<span class="kw">if</span> (booking.Actions.CanCancel)
+{
+    &lt;button&gt;Cancel&lt;/button&gt;
+}
+
+<span class="cm">// Actions comes from the domain.</span>
+<span class="cm">// Same source as the guard in</span>
+<span class="cm">// the Cancel method itself.</span></pre>
+      </div>
+    </div>
+    <p>We lacked this for rooms and got 11 buttons that were always visible — and a service that objected afterwards. It was fixed by letting the domain answer, not by copying the rules up into markup.</p>
+    <div class="fill"></div>
+    <div class="takeaway"><b>What we took with us:</b> If a button can give an error when you press it, the UI and the domain disagree. Let the domain decide what is drawn.</div>
+  </section>
+
+  <!-- 7 ------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">04 · The boundary</div>
+    <h2>Error codes down, Danish text up</h2>
+    <div class="cols">
+      <div>
+        <div class="col-h">The domain returns</div>
+<pre>"guest.email_invalid"</pre>
+        <p style="margin-top:14px">A code. No choice of language, no wording, no assumption about who reads it.</p>
+      </div>
+      <div>
+        <div class="col-h">The UI translates</div>
+<pre>"Enter a valid email"</pre>
+        <p style="margin-top:14px">One place in the frontend with all the Danish texts. If the system needs to be in English, it is one file.</p>
+      </div>
+    </div>
+    <p>The old system had English user texts inside the models' <code style="font-family:var(--mono);font-size:13px">Validate()</code> — and swallowed check-in errors in <code style="font-family:var(--mono);font-size:13px">Debug.WriteLine</code>, so the user never saw them.</p>
+    <div class="fill"></div>
+    <div class="takeaway"><b>What we took with us:</b> Language is presentation. If the text lives in the domain, you have tied the business logic to one language and one audience.</div>
+  </section>
+
+  <!-- 8 ------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">05 · How we used AI</div>
+    <h2>The spec was the contract between parallel agents</h2>
+    <ul class="plain">
+      <li><b>One agent per area, owning specific folders.</b> Foundation and design system, customer flow, admin. They never touched each other's files.</li>
+      <li><b>The contract was written in advance</b> — the class list, the component names, the route structure. Without it, three parallel agents would have invented three design systems.</li>
+      <li><b>Verification was independent of whoever built it.</b> An agent that had to draw two design documents in the same diagram found that they had written directly opposite rules for when a room is occupied.</li>
+    </ul>
+    <p>Neither of the two would have found that error in its own document. It became visible because someone had to use them together.</p>
+    <div class="fill"></div>
+    <div class="takeaway"><b>What we took with us:</b> Parallelising requires a contract, not just a split. And never let whoever built something be the only one who checks it.</div>
+  </section>
+
+  <!-- 9 ------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">05 · How we used AI</div>
+    <h2>What we would do differently</h2>
+    <ul class="plain">
+      <li><b>Write the design system even earlier.</b> We first built three lists in Bootstrap and discarded them. That was wasted work, not research.</li>
+      <li><b>Define <code style="font-family:var(--mono);font-size:13px">Actions</code> for all entities from the start.</b> Bookings had it; rooms did not. The difference was visible directly in the UI quality.</li>
+      <li><b>Put accessibility in the spec, not afterwards.</b> Focus markers and labels were fixed at the end — they should have been in the class list.</li>
+      <li><b>Write the test plan at the same time as the screens.</b> We wrote it last and only then discovered that the create forms were missing.</li>
+    </ul>
+    <div class="fill"></div>
+    <div class="takeaway"><b>What we took with us:</b> The mistakes that cost the most were all ordering mistakes — not technical ones.</div>
+  </section>
+
+  <!-- 10 ----------------------------------------------------------- -->
+  <section class="slide">
+    <div class="eyebrow">Summary</div>
+    <h2>Four things you can take to your own projects</h2>
+    <ul class="plain">
+      <li><b>Read the old frontend as documentation.</b> Rules hide in converters, disabled attributes and CSS.</li>
+      <li><b>Write the class list down before markup.</b> It is what makes parallel work possible.</li>
+      <li><b>Let the domain answer what is allowed.</b> Not an <code style="font-family:var(--mono);font-size:13px">if</code> in your Razor.</li>
+      <li><b>Keep language out of the business logic.</b> Codes down, text up.</li>
+    </ul>
+    <div class="fill"></div>
+    <div class="takeaway">The real frontend work was not making the screens look right. It was finding out <b>what</b> they should show — and where that knowledge belonged.</div>
+  </section>
+
+</div>
+
+<nav class="bar">
+  <div class="bar-in">
+    <button class="nav-btn" id="prev" aria-label="Previous slide">←</button>
+    <button class="nav-btn" id="next" aria-label="Next slide">→</button>
+    <div class="rail" id="rail" role="tablist" aria-label="Slides"></div>
+    <div class="count" id="count">1 / 10</div>
+    <span class="hint">Arrow keys</span>
+  </div>
+</nav>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var rail = document.getElementById("rail");
+  var count = document.getElementById("count");
+  var i = 0;
+
+  slides.forEach(function (s, n) {
+    var t = document.createElement("button");
+    t.className = "tick";
+    t.setAttribute("role", "tab");
+    t.setAttribute("aria-label", "Slide " + (n + 1));
+    t.addEventListener("click", function () { go(n); });
+    rail.appendChild(t);
+  });
+  var ticks = Array.prototype.slice.call(rail.children);
+
+  function go(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, k) {
+      if (k === i) { s.setAttribute("data-active", ""); }
+      else { s.removeAttribute("data-active"); }
+    });
+    ticks.forEach(function (t, k) {
+      if (k <= i) { t.setAttribute("data-on", ""); }
+      else { t.removeAttribute("data-on"); }
+    });
+    count.textContent = (i + 1) + " / " + slides.length;
+    window.scrollTo(0, 0);
+  }
+
+  document.getElementById("prev").addEventListener("click", function () { go(i - 1); });
+  document.getElementById("next").addEventListener("click", function () { go(i + 1); });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); go(i + 1); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(i - 1); }
+    else if (e.key === "Home") { go(0); }
+    else if (e.key === "End") { go(slides.length - 1); }
+  });
+
+  go(0);
+</script>

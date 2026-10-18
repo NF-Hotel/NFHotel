@@ -1,31 +1,32 @@
-using NFHotel.Application.Common;
-using NFHotel.Application.Rooms;
-using NFHotel.Domain.Rooms;
+using NFHotel.Application.Dto.Rooms;
+using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Admin.Rooms;
 
 /// <summary>
-/// Præsentationslogik for rumoversigten: filtrering, rengørings- og driftsovergange samt
-/// sletning.
+/// Presentation logic for the room overview: filtering, cleaning and operating transitions as well as
+/// deletion.
 /// </summary>
 /// <remarks>
-/// B-10: klassen indeholder <b>ingen</b> forretningsregler. Hvilke overgange der er lovlige
-/// på et rum, kommer fra <c>RoomListItemDto.Actions</c>, som Application beregner ud fra
-/// domænets tilstandsmaskine — nøjagtig som <c>BookingActionsDto</c> gør for bookinger
-/// (BR-22). <see cref="AvailableActions"/> oversætter kun de sande felter til knaptekster.
+/// B-10: the class contains <b>no</b> business rules. Which transitions are legal
+/// on a room comes from <c>RoomListItemDto.Actions</c>, which Application computes from
+/// the state machine of the domain — exactly as <c>BookingActionsDto</c> does for bookings
+/// (BR-22). <see cref="AvailableActions"/> only translates the true fields to button texts.
 /// <para>
-/// Servicen kontrollerer alligevel ved klik: mellem render og klik kan en anden bruger have
-/// flyttet rummet videre. Sker det, kommer fejlkoden retur og bliver til en dansk besked.
+/// The service checks anyway on click: between render and click another user may have
+/// moved the room on. If that happens, the error code comes back and becomes a Danish message.
 /// </para>
 /// <para>
-/// Hvert kald går gennem <see cref="IUseCaseRunner{TService}"/> og får dermed sin egen
-/// DI-scope og sin egen <c>DbContext</c> (Architecture.md afsnit 8).
+/// Every call goes through <see cref="IUseCaseRunner{TService}"/> and thereby gets its own
+/// DI scope and its own <c>DbContext</c> (Architecture.md section 8).
 /// </para>
 /// </remarks>
 public sealed class RoomListViewModel
 {
-    /// <summary>Antal mulige knapper — kun til listens startkapacitet.</summary>
+    /// <summary>The number of possible buttons — only for the initial capacity of the list.</summary>
     private const int RoomActionCount = 11;
 
     private readonly IUseCaseRunner<IRoomService> _rooms;
@@ -33,7 +34,7 @@ public sealed class RoomListViewModel
     /// <summary>
     /// Opretter viewmodellen.
     /// </summary>
-    /// <param name="rooms">Kører use cases på <see cref="IRoomService"/>.</param>
+    /// <param name="rooms">Runs use cases on <see cref="IRoomService"/>.</param>
     public RoomListViewModel(IUseCaseRunner<IRoomService> rooms)
     {
         ArgumentNullException.ThrowIfNull(rooms);
@@ -41,63 +42,63 @@ public sealed class RoomListViewModel
         _rooms = rooms;
     }
 
-    /// <summary>Rummene der vises lige nu.</summary>
+    /// <summary>The rooms shown right now.</summary>
     public IReadOnlyList<RoomListItemDto> Rooms { get; private set; } = Array.Empty<RoomListItemDto>();
 
-    /// <summary>Valgmulighederne i filterets dropdowns, hentet fra servicen.</summary>
+    /// <summary>The options in the dropdowns of the filter, fetched from the service.</summary>
     public RoomFilterOptionsDto? FilterOptions { get; private set; }
 
-    /// <summary>Fejl der skal vises til brugeren, allerede oversat til dansk.</summary>
+    /// <summary>Errors to show to the user, already translated to Danish.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = Array.Empty<string>();
 
-    /// <summary>Kvittering efter en vellykket sletning.</summary>
+    /// <summary>Receipt after a successful deletion.</summary>
     public string? SuccessMessage { get; private set; }
 
-    /// <summary>Sand mens et kald er i gang, så knapper kan deaktiveres.</summary>
+    /// <summary>True while a call is in progress, so buttons can be disabled.</summary>
     public bool IsBusy { get; private set; }
 
-    /// <summary>Sand når skærmen har hentet data mindst én gang.</summary>
+    /// <summary>True when the screen has fetched data at least once.</summary>
     public bool IsLoaded { get; private set; }
 
-    /// <summary>Sand når listen er hentet uden fejl, men er tom.</summary>
+    /// <summary>True when the list was fetched without error, but is empty.</summary>
     public bool IsEmpty => IsLoaded && Errors.Count == 0 && Rooms.Count == 0;
 
-    /// <summary>Sand når mindst ét filterfelt er sat.</summary>
+    /// <summary>True when at least one filter field is set.</summary>
     public bool HasFilter =>
         FilterFloor is not null ||
         FilterSize is not null ||
         FilterStatus is not null ||
         FilterHousekeepingStatus is not null;
 
-    /// <summary>Det rum handlingspanelet arbejder på, eller <c>null</c>.</summary>
+    /// <summary>The room the action panel works on, or <c>null</c>.</summary>
     public RoomListItemDto? SelectedRoom { get; private set; }
 
-    /// <summary>Rummet der venter på at brugeren bekræfter en sletning.</summary>
+    /// <summary>The room waiting for the user to confirm a deletion.</summary>
     public RoomListItemDto? RoomPendingDeletion { get; private set; }
 
-    /// <summary>Filter: etage. <c>null</c> betyder alle.</summary>
+    /// <summary>Filter: floor. <c>null</c> means all.</summary>
     public int? FilterFloor { get; set; }
 
-    /// <summary>Filter: rumstørrelse. <c>null</c> betyder alle.</summary>
+    /// <summary>Filter: room size. <c>null</c> means all.</summary>
     public RoomSize? FilterSize { get; set; }
 
-    /// <summary>Filter: rumstatus. <c>null</c> betyder alle.</summary>
+    /// <summary>Filter: room status. <c>null</c> means all.</summary>
     public RoomStatus? FilterStatus { get; set; }
 
-    /// <summary>Filter: rengøringsstatus. <c>null</c> betyder alle.</summary>
+    /// <summary>Filter: cleaning status. <c>null</c> means all.</summary>
     public HousekeepingStatus? FilterHousekeepingStatus { get; set; }
 
     /// <summary>
-    /// De overgange der er lovlige på det valgte rum lige nu, med dansk knaptekst.
+    /// The transitions that are legal on the selected room right now, with Danish button text.
     /// </summary>
     /// <remarks>
-    /// Listen er tom når intet rum er valgt. Rækkefølgen følger arbejdsgangen: drift først,
-    /// derefter rengøringsforløbet, derefter service.
+    /// The list is empty when no room is selected. The order follows the workflow: operation first,
+    /// then the cleaning flow, then service.
     /// </remarks>
     public IReadOnlyList<RoomActionOption> AvailableActions => BuildActions(SelectedRoom?.Actions);
 
     /// <summary>
-    /// Henter filtermuligheder og den første liste. Kaldes fra <c>OnInitializedAsync</c>.
+    /// Fetches filter options and the first list. Called from <c>OnInitializedAsync</c>.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -106,8 +107,8 @@ public sealed class RoomListViewModel
 
         if (!optionsLoaded)
         {
-            // Kan filtermulighederne ikke hentes, er datakilden nede. At forsøge listen
-            // bagefter ville blot lade brugeren vente på den samme fejl to gange.
+            // If the filter options cannot be fetched, the data source is down. Trying the list
+            // afterwards would only make the user wait for the same error twice.
             IsLoaded = true;
 
             return;
@@ -117,7 +118,7 @@ public sealed class RoomListViewModel
     }
 
     /// <summary>
-    /// Henter rummene der matcher det nuværende filter.
+    /// Fetches the rooms that match the current filter.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public async Task SearchAsync(CancellationToken cancellationToken = default)
@@ -153,7 +154,7 @@ public sealed class RoomListViewModel
     }
 
     /// <summary>
-    /// Nulstiller alle filterfelter og henter listen igen.
+    /// Resets all filter fields and fetches the list again.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public Task ClearFilterAsync(CancellationToken cancellationToken = default)
@@ -167,9 +168,9 @@ public sealed class RoomListViewModel
     }
 
     /// <summary>
-    /// Vælger eller fravælger rummet handlingspanelet arbejder på.
+    /// Selects or deselects the room the action panel works on.
     /// </summary>
-    /// <param name="room">Rummet der blev klikket på.</param>
+    /// <param name="room">The room that was clicked.</param>
     public void ToggleSelection(RoomListItemDto room)
     {
         ArgumentNullException.ThrowIfNull(room);
@@ -179,10 +180,10 @@ public sealed class RoomListViewModel
     }
 
     /// <summary>
-    /// Fortæller om et rum er det valgte.
+    /// Tells whether a room is the selected one.
     /// </summary>
-    /// <param name="room">Rummet i rækken.</param>
-    /// <returns>Sand hvis rummet er valgt.</returns>
+    /// <param name="room">The room in the row.</param>
+    /// <returns>True if the room is selected.</returns>
     public bool IsSelected(RoomListItemDto room)
     {
         ArgumentNullException.ThrowIfNull(room);
@@ -191,9 +192,9 @@ public sealed class RoomListViewModel
     }
 
     /// <summary>
-    /// Udfører én af rummets overgange på det valgte rum og henter listen igen.
+    /// Performs one of the transitions of the room on the selected room and fetches the list again.
     /// </summary>
-    /// <param name="action">Overgangen der skal udføres.</param>
+    /// <param name="action">The transition to perform.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     public async Task ExecuteAsync(RoomAction action, CancellationToken cancellationToken = default)
     {
@@ -210,7 +211,7 @@ public sealed class RoomListViewModel
         try
         {
             var result = await _rooms
-                .RunAsync((service, token) => Invoke(service, action, room.RoomId, token), cancellationToken)
+                .RunAsync((service, token) => InvokeAsync(service, action, room.RoomId, token), cancellationToken)
                 .ConfigureAwait(false);
 
             if (result.IsFailure)
@@ -227,14 +228,14 @@ public sealed class RoomListViewModel
             IsBusy = false;
         }
 
-        // Listen hentes igen, fordi en overgang kan flytte rummet ud af det aktive filter.
+        // The list is fetched again, because a transition can move the room out of the active filter.
         await SearchAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Beder om bekræftelse før et rum slettes.
+    /// Asks for confirmation before a room is deleted.
     /// </summary>
-    /// <param name="room">Rummet brugeren vil slette.</param>
+    /// <param name="room">The room the user wants to delete.</param>
     public void RequestDelete(RoomListItemDto room)
     {
         ArgumentNullException.ThrowIfNull(room);
@@ -243,16 +244,16 @@ public sealed class RoomListViewModel
     }
 
     /// <summary>
-    /// Fortryder en sletning der endnu ikke er bekræftet.
+    /// Undoes a deletion that has not yet been confirmed.
     /// </summary>
     public void AbortDelete() => RoomPendingDeletion = null;
 
     /// <summary>
-    /// Sletter det rum brugeren har bekræftet (BR-78, BR-112).
+    /// Deletes the room the user has confirmed (BR-78, BR-112).
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <remarks>
-    /// Servicen afviser rum med bookinger; skærmen forsøger og viser svaret.
+    /// The service rejects rooms with bookings; the screen tries and shows the answer.
     /// </remarks>
     public async Task ConfirmDeleteAsync(CancellationToken cancellationToken = default)
     {
@@ -301,15 +302,15 @@ public sealed class RoomListViewModel
     }
 
     /// <summary>
-    /// Rydder kvitteringen fra sidste handling.
+    /// Clears the receipt from the last action.
     /// </summary>
     public void DismissSuccess() => SuccessMessage = null;
 
     /// <summary>
-    /// Henter filterets valgmuligheder.
+    /// Fetches the options of the filter.
     /// </summary>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Sand hvis mulighederne blev hentet.</returns>
+    /// <returns>True if the options were fetched.</returns>
     private async Task<bool> LoadFilterOptionsAsync(CancellationToken cancellationToken)
     {
         var result = await _rooms
@@ -337,15 +338,15 @@ public sealed class RoomListViewModel
             return null;
         }
 
-        // Rummet skal genfindes i den nye liste, ellers viser handlingspanelet en forældet status.
+        // The room must be found again in the new list, otherwise the action panel shows an outdated status.
         return rooms.FirstOrDefault(room => room.RoomId == selectedId.Value);
     }
 
     /// <summary>
-    /// Oversætter de sande felter på <paramref name="actions"/> til knapper.
+    /// Translates the true fields of <paramref name="actions"/> to buttons.
     /// </summary>
-    /// <param name="actions">Rummets lovlige overgange, eller <c>null</c> hvis intet rum er valgt.</param>
-    /// <returns>Knapperne i den rækkefølge de skal stå i panelet.</returns>
+    /// <param name="actions">The legal transitions of the room, or <c>null</c> if no room is selected.</param>
+    /// <returns>The buttons in the order they should appear in the panel.</returns>
     private static IReadOnlyList<RoomActionOption> BuildActions(RoomActionsDto? actions)
     {
         if (actions is null)
@@ -380,23 +381,23 @@ public sealed class RoomListViewModel
         }
     }
 
-    private static Task<Result<RoomDetailsDto>> Invoke(
+    private static Task<Result<RoomDetailsDto>> InvokeAsync(
         IRoomService service,
         RoomAction action,
         int roomId,
         CancellationToken cancellationToken) => action switch
-    {
-        RoomAction.TakeOutOfService => service.TakeOutOfServiceAsync(roomId, cancellationToken),
-        RoomAction.SendToMaintenance => service.SendToMaintenanceAsync(roomId, cancellationToken),
-        RoomAction.ReturnToService => service.ReturnToServiceAsync(roomId, cancellationToken),
-        RoomAction.MarkDailyCleaningDue => service.MarkDailyCleaningDueAsync(roomId, cancellationToken),
-        RoomAction.MarkDepartureCleaningDue => service.MarkDepartureCleaningDueAsync(roomId, cancellationToken),
-        RoomAction.StartCleaning => service.StartCleaningAsync(roomId, cancellationToken),
-        RoomAction.CompleteCleaning => service.CompleteCleaningAsync(roomId, cancellationToken),
-        RoomAction.ReportServiceNeeded => service.ReportServiceNeededAsync(roomId, cancellationToken),
-        RoomAction.StartService => service.StartServiceAsync(roomId, cancellationToken),
-        RoomAction.CompleteServiceStillDirty => service.CompleteServiceAsync(roomId, requiresCleaning: true, cancellationToken),
-        RoomAction.CompleteServiceClean => service.CompleteServiceAsync(roomId, requiresCleaning: false, cancellationToken),
-        _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ukendt rumhandling.")
-    };
+        {
+            RoomAction.TakeOutOfService => service.TakeOutOfServiceAsync(roomId, cancellationToken),
+            RoomAction.SendToMaintenance => service.SendToMaintenanceAsync(roomId, cancellationToken),
+            RoomAction.ReturnToService => service.ReturnToServiceAsync(roomId, cancellationToken),
+            RoomAction.MarkDailyCleaningDue => service.MarkDailyCleaningDueAsync(roomId, cancellationToken),
+            RoomAction.MarkDepartureCleaningDue => service.MarkDepartureCleaningDueAsync(roomId, cancellationToken),
+            RoomAction.StartCleaning => service.StartCleaningAsync(roomId, cancellationToken),
+            RoomAction.CompleteCleaning => service.CompleteCleaningAsync(roomId, cancellationToken),
+            RoomAction.ReportServiceNeeded => service.ReportServiceNeededAsync(roomId, cancellationToken),
+            RoomAction.StartService => service.StartServiceAsync(roomId, cancellationToken),
+            RoomAction.CompleteServiceStillDirty => service.CompleteServiceAsync(roomId, requiresCleaning: true, cancellationToken),
+            RoomAction.CompleteServiceClean => service.CompleteServiceAsync(roomId, requiresCleaning: false, cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ukendt rumhandling.")
+        };
 }

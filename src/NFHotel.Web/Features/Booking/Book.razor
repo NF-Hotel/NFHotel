@@ -1,20 +1,21 @@
 @page "/book"
 @rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
 
 @inject BookingFlowViewModel ViewModel
 @inject NavigationManager Navigation
 
 @*
-    Kundens bookingflow: datoer → ledige rum → oplysninger → kvittering, på én side.
+    The customer's booking flow: dates → free rooms → details → receipt, on one page.
 
-    Filen er markup. Al tilstand, al validering og alle servicekald ligger i
-    BookingFlowViewModel (UI-Spec afsnit 4, B-10). @code herunder indeholder kun
-    viderestillinger og den ene navigation der hører til browseren.
+    The file is markup. All state, all validation and all service calls are in
+    BookingFlowViewModel (UI-Spec section 4, B-10). @code below contains only
+    forwarding and the one navigation that belongs to the browser.
 
-    PublicLayout er standardlayout (Routes.razor), så der er ingen @@layout-linje.
+    PublicLayout is the default layout (Routes.razor), so there is no @@layout line.
 
-    Trinnene kan ikke springes over: knappen til trin 2 er deaktiveret indtil datoerne er
-    gyldige, og viewmodellen kontrollerer dem igen ved hver overgang (BR-C-04).
+    The steps cannot be skipped: the button to step 2 is disabled until the dates are
+    valid, and the viewmodel checks them again at every transition (BR-C-04).
 *@
 
 <PageTitle>Book your stay — NFHotel</PageTitle>
@@ -84,12 +85,12 @@
 
             @if (ViewModel.IsBusy)
             {
-                @* Pladsholdere i kortenes form, så listen ikke skubber siden når den lander. *@
+                @* Placeholders in the shape of the cards, so the list does not push the page when it lands. *@
                 <LoadingSkeleton Rows="6" />
             }
             else if (ViewModel.AvailableRooms.Count == 0)
             {
-                @* Ingen ledige værelser er ikke en fejl — det er et svar på et spørgsmål. *@
+                @* No free rooms is not an error — it is an answer to a question. *@
                 <EmptyState Title="No rooms are free for those dates"
                             Description="Try a day or two either side, or shorten the stay. If your dates can't move, email help@nfhotel.com and reception will look for something.">
                     <button type="button" class="btn btn-primary" @onclick="BackToDates">
@@ -248,14 +249,14 @@
 </div>
 
 @code {
-    /// <summary>Markerer et input som ugyldigt for skærmlæsere, eller udelader attributten.</summary>
+    /// <summary>Marks an input as invalid for screen readers, or omits the attribute.</summary>
     private static string? Invalid(string? error) => error is null ? null : "true";
 
-    /// <summary>Adressen på den bogmærkbare kvittering for den netop oprettede booking.</summary>
+    /// <summary>The address of the bookmarkable receipt for the booking just created.</summary>
     private string ReceiptUrl =>
         ViewModel.Confirmation is null ? "/book" : $"/booking/{ViewModel.Confirmation.BookingNumber}";
 
-    private Task FindRoomsAsync() => ViewModel.FindRoomsAsync();
+    private Task FindRoomsAsync() => ViewModel.FindRoomsAsync(ComponentToken);
 
     private void BackToDates() => ViewModel.BackToDates();
 
@@ -264,16 +265,16 @@
     private void StartOver() => ViewModel.StartOver();
 
     /// <summary>
-    /// Sender bestillingen og fører kunden videre til den bogmærkbare kvittering.
+    /// Sends the order and takes the customer on to the bookmarkable receipt.
     /// </summary>
     /// <remarks>
-    /// Navigationen ligger her og ikke i viewmodellen: en URL er browserens begreb, ikke
-    /// bookingens. Trin 4 tegnes alligevel først, så kvitteringen står på skærmen, også
-    /// hvis navigationen skulle nå at fejle.
+    /// The navigation is here and not in the viewmodel: a URL is a concept of the browser, not
+    /// of the booking. Step 4 is nevertheless drawn first, so the receipt is on the screen even
+    /// if the navigation should happen to fail.
     /// </remarks>
     private async Task SubmitAsync()
     {
-        await ViewModel.SubmitAsync();
+        await ViewModel.SubmitAsync(ComponentToken);
 
         if (ViewModel.Confirmation is not null)
         {

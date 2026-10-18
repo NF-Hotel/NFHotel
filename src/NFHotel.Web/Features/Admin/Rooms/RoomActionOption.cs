@@ -1,12 +1,12 @@
 namespace NFHotel.Web.Features.Admin.Rooms;
 
 /// <summary>
-/// En knap i rummets handlingspanel: overgangen og den danske tekst på knappen.
+/// A button in the action panel of the room: the transition and the Danish text on the button.
 /// </summary>
 /// <remarks>
-/// Viewmodellen udleverer kun de overgange <c>RoomActionsDto</c> siger er lovlige lige nu,
-/// så markupen kan løbe listen igennem uden at kende en eneste tilstandsovergang.
+/// The viewmodel hands out only the transitions <c>RoomActionsDto</c> says are legal right now,
+/// so the markup can run through the list without knowing a single state transition.
 /// </remarks>
-/// <param name="Action">Overgangen knappen udfører.</param>
+/// <param name="Action">The transition the button performs.</param>
 /// <param name="Label">Knappens tekst.</param>
 public sealed record RoomActionOption(RoomAction Action, string Label);

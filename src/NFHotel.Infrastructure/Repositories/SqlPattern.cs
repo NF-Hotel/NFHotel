@@ -1,24 +1,24 @@
 namespace NFHotel.Infrastructure.Repositories;
 
 /// <summary>
-/// Bygger <c>ILIKE</c>-mønstre med korrekt escaping.
+/// Builds <c>ILIKE</c> patterns with correct escaping.
 /// </summary>
 /// <remarks>
-/// Uden escaping ville en gæst der søger efter "100%" eller "a_b" få vilkårlige træf, fordi
-/// <c>%</c> og <c>_</c> er jokertegn i SQL. Det er ikke en sikkerhedsfejl — værdien er
-/// stadig en parameter — men det er et forkert resultat, og det ville være svært at få øje
-/// på i drift.
+/// Without escaping a guest searching for "100%" or "a_b" would get arbitrary hits, because
+/// <c>%</c> and <c>_</c> are wildcards in SQL. It is not a security fault — the value is
+/// still a parameter — but it is a wrong result, and it would be hard to spot
+/// in operation.
 /// </remarks>
 public static class SqlPattern
 {
-    /// <summary>Escape-tegnet der sendes med i <c>ILIKE ... ESCAPE</c>.</summary>
+    /// <summary>The escape character sent along in <c>ILIKE ... ESCAPE</c>.</summary>
     public const string EscapeCharacter = "\\";
 
     /// <summary>
-    /// Bygger et "indeholder"-mønster af en fritekst.
+    /// Builds a "contains" pattern from free text.
     /// </summary>
-    /// <param name="value">Fritekst fra brugeren.</param>
-    /// <returns>Mønsteret <c>%værdi%</c> med jokertegn og escape-tegn escaped.</returns>
+    /// <param name="value">Free text from the user.</param>
+    /// <returns>The pattern <c>%value%</c> with wildcards and escape characters escaped.</returns>
     public static string Contains(string value)
     {
         ArgumentNullException.ThrowIfNull(value);

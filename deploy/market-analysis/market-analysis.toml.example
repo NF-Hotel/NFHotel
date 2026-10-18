@@ -1,0 +1,21 @@
+# Configuration of the market analysis service, copied to market-analysis.toml
+# (git-ignored). It follows hotel_analysis.toml.example of the source repository.
+environment = "production"
+
+[history]
+retention = 10
+path = "output/analysis_history.jsonl"
+
+[llm]
+# The model server: the ollama container of deploy/ollama on the shared network
+# nfhotel-llm. LM Studio, if used, runs on a host the container can reach; on Linux
+# the compose file maps host.docker.internal to the host. allow_remote is needed because the address is
+# not loopback inside the container.
+ollama_url = "http://ollama:11434"
+lmstudio_url = "http://host.docker.internal:1234"
+discovery_timeout_seconds = 2
+generation_timeout_seconds = 120
+provider = ""
+model = ""
+allow_remote = true
+temperature = 0

@@ -1,70 +1,70 @@
-# RBAC — adgangskontrolmatrix
+# RBAC — Access Control Matrix
 
-> Adgangskontrolmatrixen beskriver, hvilke roller der må tilgå forskellige funktioner og data i NFHotel.
-> Matrixen fungerer som grundlag for den senere implementering af autentifikation og autorisation.
-
----
-
-## Formål
-
-Formålet med matrixen er at definere adgangsrettighederne for de forskellige roller i NFHotel, før de implementeres i systemet.
-
-Matrixen skal gøre det tydeligt, hvilke funktioner og data de forskellige roller har behov for adgang til, og samtidig understøtte princippet om **least privilege** — en bruger skal kun have de rettigheder, der er nødvendige for brugerens opgaver.
-
-Adgangskontrollen skal ikke kun håndhæves i brugergrænsefladen, men også i applikationslaget.
+> The access control matrix describes which roles may access which functions and data in NFHotel.
+> The matrix is the basis for the later implementation of authentication and authorisation.
 
 ---
 
-## Roller
+## Purpose
 
-| Rolle | Beskrivelse |
+The purpose of the matrix is to define the access rights of the different roles in NFHotel before they are implemented in the system.
+
+The matrix must make clear which functions and data the different roles need access to, and at the same time support the principle of **least privilege** — a user should only have the rights that are necessary for the user's tasks.
+
+Access control must be enforced not only in the user interface, but also in the application layer.
+
+---
+
+## Roles
+
+| Role | Description |
 |---|---|
-| **Guest** | Hotellets gæst. Login og autorisation for Guest implementeres i en senere fase. |
-| **Receptionist** | Medarbejder der håndterer gæster og bookinger. |
-| **Manager** | Medarbejder med udvidede administrative rettigheder. |
-| **Housekeeping** | Medarbejder der håndterer rengøring og housekeeping-opgaver. |
+| **Guest** | The hotel's guest. Login and authorisation for Guest are implemented in a later phase. |
+| **Receptionist** | Employee who handles guests and bookings. |
+| **Manager** | Employee with extended administrative rights. |
+| **Housekeeping** | Employee who handles cleaning and housekeeping tasks. |
 
 ---
 
 
-## Adgangskontrolmatrix
+## Access control matrix
 
-| Funktion / data | Guest | Receptionist | Manager | Housekeeping |
+| Function / data | Guest | Receptionist | Manager | Housekeeping |
 |---|:---:|:---:|:---:|:---:|
-| Opret booking | o | o | o | x |
-| Ændre egen booking | o | o | o | x |
-| Ændre andre gæsters booking | x | o | o | x |
-| Se egne gæsteoplysninger | o | o | o | x |
-| Se andre gæsters oplysninger | x | o | o | x |
-| Se egne passportdata | ? | o | o | x |
-| Se andre gæsters passportdata | x | o | o | x |
-| Ændre priser/rabatter | x | x | o | x |
-| Se housekeeping-information | x | o | o | o |
-| Ændre housekeeping-status | x | x | o | o |
+| Create booking | o | o | o | x |
+| Change own booking | o | o | o | x |
+| Change other guests' bookings | x | o | o | x |
+| See own guest details | o | o | o | x |
+| See other guests' details | x | o | o | x |
+| See own passport data | ? | o | o | x |
+| See other guests' passport data | x | o | o | x |
+| Change prices/discounts | x | x | o | x |
+| See housekeeping information | x | o | o | o |
+| Change housekeeping status | x | x | o | o |
 
-**Symboler:**
+**Symbols:**
 
-- `o` = adgang
-- `x` = ingen adgang
-- `?` = skal afklares
-
----
-
-## Åbne spørgsmål
-
-Følgende adgangsregler skal afklares med teamet/PO, før de implementeres:
-
-- Skal en Guest kunne se egne passportdata efter upload?
-- Hvilke bookingoplysninger har Housekeeping konkret behov for?
-- Skal Housekeeping have en begrænset visning af bookingoplysninger frem for adgang til hele bookingen?
-- Mangler der funktioner eller data i adgangskontrolmatrixen?
+- `o` = access
+- `x` = no access
+- `?` = to be clarified
 
 ---
 
-## Implementeringsnote
+## Open questions
 
-Matrixen beskriver den ønskede adgangskontrol og er ikke i sig selv en implementering.
+The following access rules must be clarified with the team/PO before they are implemented:
 
-Når adgangsreglerne er gennemgået og godkendt, kan dette bruges som grundlag for implementeringen af roller og autorisation i NFHotel.
+- Should a Guest be able to see their own passport data after upload?
+- Which booking details does Housekeeping specifically need?
+- Should Housekeeping have a limited view of booking details instead of access to the whole booking?
+- Are any functions or data missing from the access control matrix?
 
-Adgang til egne ressourcer kræver mere end en kontrol af brugerens rolle. Hvis en Guest eksempelvis må se sin egen booking, skal systemet også kontrollere, at den konkrete booking tilhører den autentificerede bruger.
+---
+
+## Implementation note
+
+The matrix describes the desired access control and is not itself an implementation.
+
+When the access rules have been reviewed and approved, this can be used as the basis for implementing roles and authorisation in NFHotel.
+
+Access to own resources requires more than a check of the user's role. If a Guest may, for example, see their own booking, the system must also check that the specific booking belongs to the authenticated user.

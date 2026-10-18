@@ -1,8 +1,8 @@
 @*
-    Sidens overskrift med plads til handlinger til højre.
+    The heading of the page with room for actions on the right.
 
-    Den skriver sidens eneste <h1>, som også er det element FocusOnNavigate flytter
-    fokus til ved sideskift — så en skærmlæser får sidens navn først.
+    It writes the only <h1> of the page, which is also the element FocusOnNavigate moves
+    focus to on page change — so a screen reader gets the name of the page first.
 *@
 
 <header class="page-header">
@@ -23,16 +23,16 @@
 </header>
 
 @code {
-    /// <summary>Sidens navn. Bliver sidens <c>h1</c>.</summary>
+    /// <summary>The name of the page. Becomes the <c>h1</c> of the page.</summary>
     [Parameter]
     [EditorRequired]
     public string Title { get; set; } = string.Empty;
 
-    /// <summary>Valgfri underrubrik der forklarer hvad siden er til.</summary>
+    /// <summary>Optional subheading that explains what the page is for.</summary>
     [Parameter]
     public string? Subtitle { get; set; }
 
-    /// <summary>Valgfrie handlinger — typisk en primær knap, fx "Opret booking".</summary>
+    /// <summary>Optional actions — typically a primary button, for example "Create booking".</summary>
     [Parameter]
     public RenderFragment? Actions { get; set; }
 }

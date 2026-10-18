@@ -1,12 +1,11 @@
 @inherits LayoutComponentBase
 
 @*
-    Personalets arbejdsværktøj: sidemenu til venstre, indhold til højre, tættere rytme
-    end den offentlige side.
+    The staff's work tool: side menu on the left, content on the right, a tighter rhythm
+    than the public site.
 
-    Båndet øverst siger åbent at adgangskontrollen mangler. Auth er udskudt
-    (Fase1-Scope.md), og indtil Identity kommer, kan enhver der kender adressen åbne
-    disse skærme. Det skal stå på siden, ikke kun i en README.
+    Only a signed-in member of staff reaches these pages (ADR-0005); AdminNav shows who is signed in and the
+    menu items that the role may open.
 *@
 
 <a class="skip-link" href="#content">Skip to content</a>
@@ -15,14 +14,6 @@
     <AdminNav />
 
     <div class="admin-main">
-        <div class="admin-header">
-            <p class="admin-notice" role="status">
-                <span aria-hidden="true">&#9888;</span>
-                Access control is not in place yet — anyone with the address can view and
-                change the data on these screens.
-            </p>
-        </div>
-
         <div class="page" id="content">
             @Body
         </div>
@@ -30,8 +21,8 @@
 </div>
 
 @*
-    Sidste net under fejlhåndteringen: fanger det ingen ViewModel kunne oversætte til en
-    fejlkode. Teksten er neutral og afslører aldrig en exception (Conventions.md).
+    Last net under the error handling: catches what no ViewModel could translate to an
+    error code. The text is neutral and never reveals an exception (Conventions.md).
 *@
 <div id="blazor-error-ui" data-nosnippet>
     Something went wrong.

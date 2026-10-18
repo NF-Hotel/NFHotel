@@ -1,8 +1,19 @@
-@* Gælder alle admin-skærme. Ligger her og ikke i projektets _Imports, så andre områder ikke arver dem. *@
+@* Applies to all admin screens. It is here and not in the project's _Imports, so other areas do not inherit them. *@
 
-@using NFHotel.Application.Bookings
-@using NFHotel.Application.Guests
-@using NFHotel.Application.Rooms
+@using NFHotel.Application.Dto.Bookings
+@using NFHotel.Application.Dto.Guests
+@using NFHotel.Application.Dto.Rooms
+@using NFHotel.Application.Dto.Holidays
+@using NFHotel.Application.Errors
+@using NFHotel.Application.Ports
+@using NFHotel.Application.UseCases
+@using NFHotel.Application.UseCases.Bookings
+@using NFHotel.Application.UseCases.Guests
+@using NFHotel.Application.UseCases.Rooms
+@using NFHotel.Domain.Repositories
 
+@using NFHotel.Application.UseCases.Staff
 @using NFHotel.Web.Features.Admin
+@using NFHotel.Web.Features.Admin.Login
+@using NFHotel.Web.Security
 @using NFHotel.Web.Features.Admin.Shared

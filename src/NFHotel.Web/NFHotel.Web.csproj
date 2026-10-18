@@ -2,7 +2,8 @@
 
   <!--
     NFHotel.Web er composition root. Den refererer Application (kontrakterne
-    komponenterne kalder) og Infrastructure (kun for AddInfrastructure i Program.cs).
+    komponenterne kalder), ApiClient (use cases over HTTP, ADR-0004) og External (uret og helligdagene).
+    Den refererer ikke Infrastructure: webapplikationen har hverken databaseadgang eller EF Core.
     Ingen komponent og ingen ViewModel må røre EF Core eller Npgsql (B-10).
   -->
 
@@ -28,7 +29,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NFHotel.Application\NFHotel.Application.csproj" />
-    <ProjectReference Include="..\NFHotel.Infrastructure\NFHotel.Infrastructure.csproj" />
+    <ProjectReference Include="..\NFHotel.ApiClient\NFHotel.ApiClient.csproj" />
+    <ProjectReference Include="..\NFHotel.External\NFHotel.External.csproj" />
   </ItemGroup>
 
 </Project>

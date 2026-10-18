@@ -1,36 +1,36 @@
 namespace NFHotel.Web.Features.Admin.Bookings;
 
 /// <summary>
-/// Hvad bookingformularen er åbnet for.
+/// What the booking form has been opened for.
 /// </summary>
 /// <remarks>
-/// De to tilstande deler datovalg og rumsøgning, men rammer hver sit use case:
-/// <c>CreateAsync</c> og <c>RescheduleAsync</c>. De er bevidst ikke slået sammen — en
-/// omlægning må ikke kunne skifte gæst, og en oprettelse har ingen booking at udelade fra
-/// tilgængelighedsopslaget.
+/// The two modes share date choice and room search, but each hits its own use case:
+/// <c>CreateAsync</c> and <c>RescheduleAsync</c>. They are deliberately not merged — a
+/// reschedule must not be able to change the guest, and a creation has no booking to leave out of
+/// the availability lookup.
 /// </remarks>
 public enum BookingFormMode
 {
-    /// <summary>Opret en ny booking (BR-01).</summary>
+    /// <summary>Create a new booking (BR-01).</summary>
     Create = 0,
 
-    /// <summary>Flyt en eksisterende booking til nye datoer eller et nyt rum (BR-14).</summary>
+    /// <summary>Move an existing booking to new dates or a new room (BR-14).</summary>
     Reschedule = 1
 }
 
 /// <summary>
-/// Om bookingen skal knyttes til en eksisterende gæst eller til en der oprettes nu.
+/// Whether the booking is to be linked to an existing guest or to one created now.
 /// </summary>
 /// <remarks>
-/// Modsvarer BR-47: præcis én af <c>GuestId</c> og <c>NewGuest</c> må være udfyldt på
-/// <c>CreateBookingRequest</c>. Valget her afgør hvilken af de to der sendes med, så
-/// formularen aldrig kan sende begge.
+/// Corresponds to BR-47: exactly one of <c>GuestId</c> and <c>NewGuest</c> may be filled in on
+/// <c>CreateBookingRequest</c>. The choice here decides which of the two is sent along, so
+/// the form can never send both.
 /// </remarks>
 public enum BookingGuestMode
 {
-    /// <summary>Vælg en gæst der allerede findes.</summary>
+    /// <summary>Choose a guest that already exists.</summary>
     Existing = 0,
 
-    /// <summary>Opret gæsten som en del af bookingen.</summary>
+    /// <summary>Create the guest as part of the booking.</summary>
     New = 1
 }

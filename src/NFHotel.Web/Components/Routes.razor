@@ -1,13 +1,28 @@
-@* Router. Finder sider under både Components/Pages/ og Features/ — feature-først (A-13). *@
+@* Router. Finds pages under both Components/Pages/ and Features/ — feature first (A-13). *@
 
 @*
-    Standardlayoutet er det offentlige. Admin-siderne vælger selv AdminLayout med
-    @@layout, så en ny side aldrig ved et uheld arver personalets sidemenu.
+    The default layout is the public one. The admin pages choose AdminLayout themselves with
+    @@layout, so a new page never inherits the staff's side menu by accident.
 *@
 
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.PublicLayout)" />
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.PublicLayout)">
+            <NotAuthorized>
+                @* A visitor who is not signed in goes to the login page; a signed-in user whose role lacks the permission is told so (ADR-0005). *@
+                @if (context.User.Identity?.IsAuthenticated == true)
+                {
+                    <LayoutView Layout="typeof(Layout.AdminLayout)">
+                        <PageTitle>Not permitted — administration</PageTitle>
+                        <NotPermitted Landing="@LandingPath(context.User)" />
+                    </LayoutView>
+                }
+                else
+                {
+                    <RedirectToLogin />
+                }
+            </NotAuthorized>
+        </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
     <NotFound>
@@ -24,3 +39,10 @@
         </LayoutView>
     </NotFound>
 </Router>
+
+@code {
+    private static string LandingPath(System.Security.Claims.ClaimsPrincipal user) =>
+        NFHotel.Web.Security.StaffClaims.RoleOf(user) is { } role
+            ? NFHotel.Application.UseCases.Staff.RolePermissions.LandingPath(role)
+            : "/";
+}

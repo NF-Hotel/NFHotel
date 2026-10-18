@@ -1,20 +1,24 @@
 @page "/admin/bookings"
 @layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.BookingsView)]
 @rendermode InteractiveServer
-@using NFHotel.Domain.Bookings
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using NFHotel.Domain.Entities
+@using NFHotel.Domain.Errors
+@using NFHotel.Domain.ValueObjects
 @using NFHotel.Web.Features.Admin.Bookings
 @inject BookingListViewModel ViewModel
 @inject BookingFormViewModel Form
 
 @*
-    Bookingoversigt med søgning, sortering, statusfiltre og de handlinger der er lovlige
-    på hver enkelt booking.
+    Booking overview with search, sorting, status filters and the actions that are legal
+    on each individual booking.
 
-    Kun markup og binding. Hvilke knapper der står i en række, kommer udelukkende fra
-    BookingListItemDto.Actions (BR-22) — denne fil kender ingen statusovergange, og der
-    er ingen if-sætning her der gætter på en status.
+    Only markup and binding. Which buttons appear in a row comes exclusively from
+    BookingListItemDto.Actions (BR-22) — this file knows no status transitions, and there
+    is no if statement here that guesses at a status.
 
-    Annullering går gennem ConfirmPanel (BR-04): den er ren UI og hører her, ikke i
+    Cancellation goes through ConfirmPanel (BR-04): it is pure UI and belongs here, not in
     Application.
 *@
 
@@ -532,45 +536,45 @@
 </div>
 
 @code {
-    /// <summary>Statusserne i filterets dropdown.</summary>
+    /// <summary>The statuses in the dropdown of the filter.</summary>
     private static readonly BookingStatus[] Statuses = Enum.GetValues<BookingStatus>();
 
-    /// <summary>Teksten på gemknappen, som følger formularens tilstand.</summary>
+    /// <summary>The text on the save button, which follows the state of the form.</summary>
     private string SaveLabel => Form.Mode == BookingFormMode.Create ? "Create booking" : "Save new dates";
 
-    /// <summary>Overskriften i bekræftelsen af en annullering.</summary>
+    /// <summary>The heading in the confirmation of a cancellation.</summary>
     private string CancelTitle =>
         $"Cancel booking {ViewModel.BookingPendingCancellation?.BookingNumber}?";
 
-    /// <summary>Henter den første liste når skærmen åbnes.</summary>
-    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync();
+    /// <summary>Fetches the first list when the screen opens.</summary>
+    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
 
-    /// <summary>Giver knappen for gæstetypen den rigtige udseendeklasse.</summary>
+    /// <summary>Gives the button for the guest mode the right appearance class.</summary>
     private string GuestModeClass(BookingGuestMode mode) =>
         Form.GuestMode == mode ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm";
 
-    /// <summary>Skriver aria-pressed som tekst; en bool ville blive til et tomt attribut.</summary>
+    /// <summary>Writes aria-pressed as text; a bool would become an empty attribute.</summary>
     private string GuestModePressed(BookingGuestMode mode) =>
         Form.GuestMode == mode ? "true" : "false";
 
-    private Task SearchAsync() => ViewModel.SearchAsync();
+    private Task SearchAsync() => ViewModel.SearchAsync(ComponentToken);
 
-    private Task ClearFilterAsync() => ViewModel.ClearFilterAsync();
+    private Task ClearFilterAsync() => ViewModel.ClearFilterAsync(ComponentToken);
 
     private void ApplyStatusFilter() => ViewModel.FilterByStatus(ViewModel.StatusFilter);
 
     private void ShowAllStatuses() => ViewModel.FilterByStatus(null);
 
-    private Task SortAsync(BookingSortField field) => ViewModel.SortByAsync(field);
+    private Task SortAsync(BookingSortField field) => ViewModel.SortByAsync(field, ComponentToken);
 
     private Task ExecuteAsync(BookingAction action, BookingListItemDto booking) =>
-        ViewModel.ExecuteAsync(action, booking.BookingId);
+        ViewModel.ExecuteAsync(action, booking.BookingId, ComponentToken);
 
     private void RequestCancel(BookingListItemDto booking) => ViewModel.RequestCancel(booking);
 
     private void AbortCancel() => ViewModel.AbortCancel();
 
-    private Task ConfirmCancelAsync() => ViewModel.ConfirmCancelAsync();
+    private Task ConfirmCancelAsync() => ViewModel.ConfirmCancelAsync(ComponentToken);
 
     private void BeginCreate()
     {
@@ -582,27 +586,27 @@
     {
         Form.DismissSuccess();
 
-        return Form.BeginRescheduleAsync(booking);
+        return Form.BeginRescheduleAsync(booking, ComponentToken);
     }
 
     private void CloseForm() => Form.Close();
 
-    private Task SearchRoomsAsync() => Form.SearchRoomsAsync();
+    private Task SearchRoomsAsync() => Form.SearchRoomsAsync(ComponentToken);
 
-    private Task SearchGuestsAsync() => Form.SearchGuestsAsync();
+    private Task SearchGuestsAsync() => Form.SearchGuestsAsync(ComponentToken);
 
     private void ValidateGuest() => Form.ValidateNewGuest();
 
     /// <summary>
-    /// Gemmer formularen og henter listen igen, hvis det lykkedes.
+    /// Saves the form and fetches the list again if it succeeded.
     /// </summary>
     private async Task SaveAsync()
     {
-        await Form.SaveAsync();
+        await Form.SaveAsync(ComponentToken);
 
         if (Form.SavedSuccessfully)
         {
-            await ViewModel.SearchAsync();
+            await ViewModel.SearchAsync(ComponentToken);
         }
     }
 }

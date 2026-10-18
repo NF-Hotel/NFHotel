@@ -1,41 +1,41 @@
 namespace NFHotel.Domain.Tests.TestSupport;
 
 /// <summary>
-/// De otte rengørings- og serviceovergange på <c>Room</c>, som værdi.
+/// The eight cleaning and service transitions on <c>Room</c>, as a value.
 /// </summary>
 /// <remarks>
-/// Overgangene skal kunne stå i <c>[InlineData]</c>, så hele overgangstabellen kan testes
-/// som theories i stedet for som otte gange tre næsten ens tests.
-/// <c>CompleteService</c> tæller som to overgange, fordi dens <c>requiresCleaning</c>-flag
-/// vælger to forskellige måltilstande.
+/// The transitions must be able to stand in <c>[InlineData]</c>, so the whole transition table can be tested
+/// as theories instead of as eight times three nearly identical tests.
+/// <c>CompleteService</c> counts as two transitions, because its <c>requiresCleaning</c> flag
+/// chooses two different target states.
 /// <para>
-/// Public, ikke internal: xUnit-testmetoder er public, og en parametertype må ikke være
-/// mindre tilgængelig end metoden.
+/// Public, not internal: xUnit test methods are public, and a parameter type must not be
+/// less accessible than the method.
 /// </para>
 /// </remarks>
 public enum HousekeepingTransition
 {
-    /// <summary>Beboet rum afventer daglig rengøring.</summary>
+    /// <summary>The occupied room is waiting for daily cleaning.</summary>
     MarkDailyCleaningDue,
 
-    /// <summary>Rummet afventer slutrengøring efter afrejse.</summary>
+    /// <summary>The room is waiting for departure cleaning after departure.</summary>
     MarkDepartureCleaningDue,
 
-    /// <summary>Rengøringspersonalet kvitterer og går i gang.</summary>
+    /// <summary>The cleaning staff acknowledge and start work.</summary>
     StartCleaning,
 
-    /// <summary>Rengøringen er færdig.</summary>
+    /// <summary>The cleaning is finished.</summary>
     CompleteCleaning,
 
-    /// <summary>Et problem rapporteres til serviceteknikeren.</summary>
+    /// <summary>A problem is reported to the service technician.</summary>
     ReportServiceNeeded,
 
-    /// <summary>Serviceteknikeren kvitterer og går i gang.</summary>
+    /// <summary>The service technician acknowledges and starts work.</summary>
     StartService,
 
-    /// <summary>Servicen afsluttes uden efterfølgende rengøringsbehov.</summary>
+    /// <summary>The service is finished without any need for cleaning afterwards.</summary>
     CompleteServiceWithoutCleaning,
 
-    /// <summary>Servicen afsluttes og har efterladt rummet snavset.</summary>
+    /// <summary>The service is finished and has left the room dirty.</summary>
     CompleteServiceRequiringCleaning
 }

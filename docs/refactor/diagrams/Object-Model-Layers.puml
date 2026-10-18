@@ -1,0 +1,146 @@
+@startuml Object-Model-Layers
+' LEGACY picture: not the framework Domain Model; see docs/domain-model.md (DM-004).
+' =====================================================================
+' NFHotel 2.0 — Object model, layer structure
+' Generated 2026-09-08 from the actual code.
+'
+' Classes and interfaces across the four layers, without member lists.
+' The purpose is to show the dependency direction: everything points inward at the domain.
+' The members are in Object-Model-Domain.puml and in Models.md.
+' =====================================================================
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam roundCorner 6
+skinparam nodesep 12
+skinparam ranksep 60
+
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #2F4739
+  ArrowColor #5A615C
+  FontColor #1C1F1D
+  StereotypeFontColor #8A6A34
+}
+skinparam package {
+  BackgroundColor #FCFBF8
+  BorderColor #B08A4F
+  FontColor #2F4739
+  FontStyle bold
+}
+skinparam note {
+  BackgroundColor #F7F5F0
+  BorderColor #DDD9D0
+  FontColor #5A615C
+}
+
+hide members
+hide circle
+
+title Object model — layer structure and dependency direction
+
+' =====================================================================
+package "Web · Blazor Server" as WEB {
+  class BookingFlowViewModel <<viewmodel>>
+  class BookingListViewModel <<viewmodel>>
+  class RoomListViewModel <<viewmodel>>
+  class GuestListViewModel <<viewmodel>>
+  class AdminDashboardViewModel <<viewmodel>>
+}
+
+package "Infrastructure" as INF {
+  class BookingRepository <<repository>>
+  class RoomRepository <<repository>>
+  class GuestRepository <<repository>>
+  class UnitOfWork
+  class SystemClock
+  class HotelDbContext <<DbContext>>
+  class AesGcmStringEncryptor <<security>>
+}
+
+package "Application" as APP {
+  interface IBookingService <<use cases>>
+  interface IRoomService <<use cases>>
+  interface IGuestService <<use cases>>
+  class BookingService <<service>>
+  class RoomService <<service>>
+  class GuestService <<service>>
+  interface IBookingRepository
+  interface IRoomRepository
+  interface IGuestRepository
+  interface IUnitOfWork
+  interface IClock
+}
+
+package "Domain · the core" as DOM {
+  class Booking <<entity>>
+  class Room <<entity>>
+  class Guest <<entity>>
+  class DateRange <<value object>>
+  class BookingRules <<static>>
+}
+
+' =====================================================================
+' Web only knows the use case interfaces
+' =====================================================================
+BookingFlowViewModel ..> IBookingService
+BookingFlowViewModel ..> IGuestService
+BookingListViewModel ..> IBookingService
+RoomListViewModel ..> IRoomService
+GuestListViewModel ..> IGuestService
+AdminDashboardViewModel ..> IBookingService
+AdminDashboardViewModel ..> IRoomService
+
+' =====================================================================
+' Application implements its own contracts and uses the domain
+' =====================================================================
+BookingService ..|> IBookingService
+RoomService ..|> IRoomService
+GuestService ..|> IGuestService
+
+BookingService --> IBookingRepository
+BookingService --> IUnitOfWork
+BookingService --> IClock
+RoomService --> IRoomRepository
+GuestService --> IGuestRepository
+
+BookingService ..> Booking
+BookingService ..> BookingRules
+RoomService ..> Room
+GuestService ..> Guest
+
+' =====================================================================
+' Infrastructure implements Application's contracts — pointing inward
+' =====================================================================
+BookingRepository ..|> IBookingRepository
+RoomRepository ..|> IRoomRepository
+GuestRepository ..|> IGuestRepository
+UnitOfWork ..|> IUnitOfWork
+SystemClock ..|> IClock
+
+BookingRepository --> HotelDbContext
+RoomRepository --> HotelDbContext
+GuestRepository --> HotelDbContext
+UnitOfWork --> HotelDbContext
+HotelDbContext ..> AesGcmStringEncryptor
+
+' =====================================================================
+note bottom of DOM
+  **Domain has fan-out zero.** No project references, no NuGet packages.
+end note
+
+note bottom of INF
+  The repository **interfaces** live in Application, the **implementations** here.
+  That is why the arrows from Infrastructure point inward and not the other way round.
+  Enforced by architecture tests in Application.Tests — not by discipline.
+end note
+
+' Hidden edges that force the layers into vertical order
+BookingFlowViewModel -[hidden]down- IBookingService
+IBookingService -[hidden]down- BookingService
+BookingService -[hidden]down- Booking
+BookingRepository -[hidden]down- HotelDbContext
+
+@enduml

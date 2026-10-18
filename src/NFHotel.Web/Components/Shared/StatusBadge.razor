@@ -1,8 +1,8 @@
 @*
-    Statusmærkat for domænets tilstande. Sæt præcis én af de tre parametre.
+    Status badge for the states of the domain. Set exactly one of the three parameters.
 
-    Komponenten indeholder ingen oversættelse selv: teksten kommer fra DisplayText og
-    klassen fra BadgeClass, så samme status altid ser og lyder ens på tværs af skærme.
+    The component contains no translation itself: the text comes from DisplayText and
+    the class from BadgeClass, so the same status always looks and sounds the same across screens.
 *@
 
 @if (this.BookingStatus is not null)
@@ -19,15 +19,15 @@ else if (this.HousekeepingStatus is not null)
 }
 
 @code {
-    /// <summary>Bookingens livscyklustilstand. Sæt kun denne, hvis mærkatet viser en booking.</summary>
+    /// <summary>The life cycle state of the booking. Set only this if the badge shows a booking.</summary>
     [Parameter]
     public BookingStatus? BookingStatus { get; set; }
 
-    /// <summary>Rummets bookbarhed. Sæt kun denne, hvis mærkatet viser et rums driftstilstand.</summary>
+    /// <summary>The bookability of the room. Set only this if the badge shows the operating state of a room.</summary>
     [Parameter]
     public RoomStatus? RoomStatus { get; set; }
 
-    /// <summary>Rummets rengørings- og servicestand. Sæt kun denne, hvis mærkatet viser rengøring.</summary>
+    /// <summary>The cleaning and service state of the room. Set only this if the badge shows cleaning.</summary>
     [Parameter]
     public HousekeepingStatus? HousekeepingStatus { get; set; }
 }

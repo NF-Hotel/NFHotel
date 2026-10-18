@@ -1,20 +1,19 @@
-using NFHotel.Domain.Common;
-using NFHotel.Domain.Rooms;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.Errors;
 using NFHotel.Domain.Tests.TestSupport;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Tests.Rooms;
 
 /// <summary>
-/// Validering af et rums stamdata og bookbarhed.
-/// Dækker BR-81, BR-84, BR-97 til BR-100, BR-110 og BR-113 samt A-10 og præmis B-04.
+/// Validation of the master data and bookability of a room.
+/// Covers BR-81, BR-84, BR-97 to BR-100, BR-110 and BR-113 as well as A-10 and premise B-04.
 /// </summary>
 public class RoomValidationTests
 {
-    // --------------------------------------------------------
-    // VÆRELSESNUMMER (BR-97, A-10)
-    // --------------------------------------------------------
+    #region Room number (BR-97, A-10)
 
-    /// <summary>BR-97: værelsesnummeret må hverken være null, tomt eller kun whitespace.</summary>
+    /// <summary>BR-97: the room number must be neither null, empty nor only whitespace.</summary>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -23,13 +22,13 @@ public class RoomValidationTests
     public void Validate_RoomNumberIsMissing_ReturnsRoomNumberRequired(string? roomNumber)
     {
         // Arrange & Act
-        var errors = RoomRules.Validate(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
+        var errors = ErrorsOf(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
 
         // Assert
-        Assert.Equal(RoomRules.RoomNumberRequired, Assert.Single(errors));
+        Assert.Equal(RoomErrors.RoomNumberRequired, Assert.Single(errors));
     }
 
-    /// <summary>BR-97: nummeret er tekst, ikke et tal — "12B" er et gyldigt værelsesnummer.</summary>
+    /// <summary>BR-97: the number is text, not a number — "12B" is a valid room number.</summary>
     [Theory]
     [InlineData("101")]
     [InlineData("12B")]
@@ -37,13 +36,13 @@ public class RoomValidationTests
     public void Validate_RoomNumberIsFreeText_ReturnsNoErrors(string roomNumber)
     {
         // Arrange & Act
-        var errors = RoomRules.Validate(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
+        var errors = ErrorsOf(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
 
         // Assert
         Assert.Empty(errors);
     }
 
-    /// <summary>A-10: grænsen selv er tilladt, ét tegn mere er ikke.</summary>
+    /// <summary>A-10: the limit itself is allowed, one more character is not.</summary>
     [Fact]
     public void Validate_RoomNumberIsExactlyAtMaxLength_ReturnsNoErrors()
     {
@@ -51,13 +50,13 @@ public class RoomValidationTests
         var roomNumber = new string('1', Room.MaxRoomNumberLength);
 
         // Act
-        var errors = RoomRules.Validate(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
+        var errors = ErrorsOf(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
 
         // Assert
         Assert.Empty(errors);
     }
 
-    /// <summary>A-10: for langt værelsesnummer afvises i Domain, ikke først af databasen.</summary>
+    /// <summary>A-10: a too long room number is rejected in Domain, not first by the database.</summary>
     [Fact]
     public void Validate_RoomNumberExceedsMaxLength_ReturnsRoomNumberTooLong()
     {
@@ -65,83 +64,83 @@ public class RoomValidationTests
         var roomNumber = new string('1', Room.MaxRoomNumberLength + 1);
 
         // Act
-        var errors = RoomRules.Validate(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
+        var errors = ErrorsOf(roomNumber, RoomFactory.Floor, RoomSize.Double, RoomFactory.Capacity);
 
         // Assert
-        Assert.Equal(RoomRules.RoomNumberTooLong, Assert.Single(errors));
+        Assert.Equal(RoomErrors.RoomNumberTooLong, Assert.Single(errors));
     }
 
-    // --------------------------------------------------------
-    // ETAGE OG KAPACITET (BR-98, BR-100)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Floor and capacity (BR-98, BR-100)
 
     /// <summary>
-    /// BR-98: etagen skal være > 0. Stueetage (0) og kælder (negativ) er dermed ikke
-    /// tilladt — reglen er porteret uændret, også selv om den er restriktiv.
+    /// BR-98: the floor must be > 0. Ground floor (0) and basement (negative) are thus not
+    /// allowed — the rule is ported unchanged, even though it is restrictive.
     /// </summary>
     [Theory]
     [InlineData(0, false)]
     [InlineData(-1, false)]
     [InlineData(1, true)]
     [InlineData(12, true)]
-    public void IsValidFloor_RequiresGreaterThanZero(int floor, bool expected)
+    public void Floor_AnyValue_RequiresGreaterThanZero(int floor, bool expected)
     {
         // Arrange & Act
-        var isValid = RoomRules.IsValidFloor(floor);
+        var isValid = ErrorsOf(RoomFactory.RoomNumber, floor, RoomSize.Double, RoomFactory.Capacity).Count == 0;
 
         // Assert
         Assert.Equal(expected, isValid);
     }
 
-    /// <summary>BR-98: en ugyldig etage giver <c>room.floor_invalid</c>.</summary>
+    /// <summary>BR-98: an invalid floor gives <c>room.floor_invalid</c>.</summary>
     [Theory]
     [InlineData(0)]
     [InlineData(-3)]
     public void Validate_FloorIsNotGreaterThanZero_ReturnsFloorInvalid(int floor)
     {
         // Arrange & Act
-        var errors = RoomRules.Validate(RoomFactory.RoomNumber, floor, RoomSize.Double, RoomFactory.Capacity);
+        var errors = ErrorsOf(RoomFactory.RoomNumber, floor, RoomSize.Double, RoomFactory.Capacity);
 
         // Assert
-        Assert.Equal(RoomRules.FloorInvalid, Assert.Single(errors));
+        Assert.Equal(RoomErrors.FloorInvalid, Assert.Single(errors));
     }
 
-    /// <summary>BR-100: kapaciteten skal være > 0 — et rum uden pladser kan ikke bookes.</summary>
+    /// <summary>BR-100: the capacity must be > 0 — a room without places cannot be booked.</summary>
     [Theory]
     [InlineData(0, false)]
     [InlineData(-1, false)]
     [InlineData(1, true)]
     [InlineData(4, true)]
-    public void IsValidCapacity_RequiresGreaterThanZero(int capacity, bool expected)
+    public void Capacity_AnyValue_RequiresGreaterThanZero(int capacity, bool expected)
     {
         // Arrange & Act
-        var isValid = RoomRules.IsValidCapacity(capacity);
+        var isValid = ErrorsOf(RoomFactory.RoomNumber, RoomFactory.Floor, RoomSize.Double, capacity).Count == 0;
 
         // Assert
         Assert.Equal(expected, isValid);
     }
 
-    /// <summary>BR-100: en ugyldig kapacitet giver <c>room.capacity_invalid</c>.</summary>
+    /// <summary>BR-100: an invalid capacity gives <c>room.capacity_invalid</c>.</summary>
     [Theory]
     [InlineData(0)]
     [InlineData(-2)]
     public void Validate_CapacityIsNotGreaterThanZero_ReturnsCapacityInvalid(int capacity)
     {
         // Arrange & Act
-        var errors = RoomRules.Validate(RoomFactory.RoomNumber, RoomFactory.Floor, RoomSize.Double, capacity);
+        var errors = ErrorsOf(RoomFactory.RoomNumber, RoomFactory.Floor, RoomSize.Double, capacity);
 
         // Assert
-        Assert.Equal(RoomRules.CapacityInvalid, Assert.Single(errors));
+        Assert.Equal(RoomErrors.CapacityInvalid, Assert.Single(errors));
     }
 
-    // --------------------------------------------------------
-    // VÆRELSESTYPE (BR-99)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Room type (BR-99)
 
     /// <summary>
-    /// BR-99: typen var fri tekst i det gamle system og blev aldrig tjekket mod et sæt
-    /// tilladte værdier. Nu er den en enum, og en udefineret ordinalværdi afvises —
-    /// enums i C# accepterer ellers glad enhver int.
+    /// BR-99: the type was free text in the old system and was never checked against a set of
+    /// allowed values. Now it is an enum, and an undefined ordinal value is rejected —
+    /// C# enums otherwise gladly accept any int.
     /// </summary>
     [Theory]
     [InlineData(RoomSize.Single, true)]
@@ -150,53 +149,53 @@ public class RoomValidationTests
     [InlineData((RoomSize)3, false)]
     [InlineData((RoomSize)(-1), false)]
     [InlineData((RoomSize)99, false)]
-    public void IsValidSize_AcceptsOnlyDefinedEnumValues(RoomSize size, bool expected)
+    public void Size_AnyValue_AcceptsOnlyDefinedEnumValues(RoomSize size, bool expected)
     {
         // Arrange & Act
-        var isValid = RoomRules.IsValidSize(size);
+        var isValid = ErrorsOf(RoomFactory.RoomNumber, RoomFactory.Floor, size, RoomFactory.Capacity).Count == 0;
 
         // Assert
         Assert.Equal(expected, isValid);
     }
 
-    /// <summary>BR-99: en udefineret værelsestype giver <c>room.size_invalid</c>.</summary>
+    /// <summary>BR-99: an undefined room type gives <c>room.size_invalid</c>.</summary>
     [Fact]
     public void Validate_SizeIsNotDefined_ReturnsSizeInvalid()
     {
         // Arrange & Act
-        var errors = RoomRules.Validate(RoomFactory.RoomNumber, RoomFactory.Floor, (RoomSize)42, RoomFactory.Capacity);
+        var errors = ErrorsOf(RoomFactory.RoomNumber, RoomFactory.Floor, (RoomSize)42, RoomFactory.Capacity);
 
         // Assert
-        Assert.Equal(RoomRules.SizeInvalid, Assert.Single(errors));
+        Assert.Equal(RoomErrors.SizeInvalid, Assert.Single(errors));
     }
 
-    // --------------------------------------------------------
-    // ALLE FEJL PÅ ÉN GANG OG FAIL-FAST (BR-84, BR-113)
-    // --------------------------------------------------------
+    #endregion
+
+    #region All errors at once and fail-fast (BR-84, BR-113)
 
     /// <summary>
-    /// <c>Validate</c> samler alle fejl i feltrækkefølge, så rumformularen kan vise dem
-    /// på én gang.
+    /// <c>ErrorsOf</c> collects all errors in field order, so the room form can show them
+    /// at once.
     /// </summary>
     [Fact]
     public void Validate_EveryFieldIsInvalid_ReturnsAllErrorsInFieldOrder()
     {
         // Arrange & Act
-        var errors = RoomRules.Validate("  ", 0, (RoomSize)42, 0);
+        var errors = ErrorsOf("  ", 0, (RoomSize)42, 0);
 
         // Assert
         Assert.Collection(
             errors,
-            error => Assert.Equal(RoomRules.RoomNumberRequired, error),
-            error => Assert.Equal(RoomRules.FloorInvalid, error),
-            error => Assert.Equal(RoomRules.SizeInvalid, error),
-            error => Assert.Equal(RoomRules.CapacityInvalid, error));
+            error => Assert.Equal(RoomErrors.RoomNumberRequired, error),
+            error => Assert.Equal(RoomErrors.FloorInvalid, error),
+            error => Assert.Equal(RoomErrors.SizeInvalid, error),
+            error => Assert.Equal(RoomErrors.CapacityInvalid, error));
     }
 
     /// <summary>
-    /// BR-84, BR-113: <c>Create</c> fejler på den første fejl, så et ugyldigt rum aldrig
-    /// kan opstå som objekt. I det gamle system kaldte formularen <c>Validate()</c> og
-    /// ignorerede resultatet; fejlen blev først fanget i repo-laget.
+    /// BR-84, BR-113: <c>Create</c> fails with the first error as its code, so an invalid room can never
+    /// arise as an object. In the old system the form called <c>Validate()</c> and
+    /// ignored the result; the error was caught only in the repository layer.
     /// </summary>
     [Fact]
     public void Create_MultipleFieldsAreInvalid_ThrowsWithTheFirstErrorCode()
@@ -205,16 +204,16 @@ public class RoomValidationTests
         var exception = Assert.Throws<DomainException>(() => Room.Create("  ", 0, (RoomSize)42, 0));
 
         // Assert
-        Assert.Equal(RoomRules.RoomNumberRequired, exception.Code);
+        Assert.Equal(RoomErrors.RoomNumberRequired, exception.Code);
     }
 
-    // --------------------------------------------------------
-    // OPRETTELSE OG OPDATERING
-    // --------------------------------------------------------
+    #endregion
+
+    #region Creation and update
 
     /// <summary>
-    /// BR-81: et nyoprettet rum er bookbart og rent. <c>Clean</c> er tilmed
-    /// <c>default(HousekeepingStatus)</c>, så databasens <c>DEFAULT 0</c> siger det samme.
+    /// BR-81: a newly created room is bookable and clean. <c>Clean</c> is also
+    /// <c>default(HousekeepingStatus)</c>, so the database <c>DEFAULT 0</c> says the same.
     /// </summary>
     [Fact]
     public void Create_ValidInput_IsAvailableAndClean()
@@ -233,8 +232,8 @@ public class RoomValidationTests
     }
 
     /// <summary>
-    /// A-06, A-08: stamdata og status er adskilt. <c>UpdateDetails</c> må ikke nulstille
-    /// hverken bookbarhed eller rengøringsstand — statusskift har deres egne metoder.
+    /// A-06, A-08: master data and status are separate. <c>UpdateDetails</c> must not reset
+    /// either bookability or cleaning state — status changes have their own methods.
     /// </summary>
     [Fact]
     public void UpdateDetails_ValidInput_LeavesStatusAndHousekeepingStatusUntouched()
@@ -253,7 +252,7 @@ public class RoomValidationTests
         Assert.Equal(HousekeepingStatus.CleaningInProgress, room.HousekeepingStatus);
     }
 
-    /// <summary>BR-84: en afvist opdatering må ikke efterlade rummet halvt overskrevet.</summary>
+    /// <summary>BR-84: a rejected update must not leave the room half overwritten.</summary>
     [Fact]
     public void UpdateDetails_InvalidInput_ThrowsAndLeavesRoomUnchanged()
     {
@@ -264,19 +263,19 @@ public class RoomValidationTests
         var exception = Assert.Throws<DomainException>(() => room.UpdateDetails("204", 0, RoomSize.Single, 1));
 
         // Assert
-        Assert.Equal(RoomRules.FloorInvalid, exception.Code);
+        Assert.Equal(RoomErrors.FloorInvalid, exception.Code);
         Assert.Equal(RoomFactory.RoomNumber, room.RoomNumber);
         Assert.Equal(RoomFactory.Floor, room.Floor);
         Assert.Equal(RoomFactory.Capacity, room.Capacity);
     }
 
-    // --------------------------------------------------------
-    // BOOKBARHED (BR-110, B-04)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Bookability (BR-110, B-04)
 
     /// <summary>
-    /// BR-110: kun <c>Available</c> gør rummet bookbart. Rengøringsstand indgår bevidst
-    /// IKKE (B-04) — et rum kan være bookbart og samtidig afvente rengøring.
+    /// BR-110: only <c>Available</c> makes the room bookable. The cleaning state is deliberately
+    /// NOT included (B-04) — a room can be bookable and at the same time wait for cleaning.
     /// </summary>
     [Theory]
     [InlineData(HousekeepingStatus.Clean)]
@@ -285,7 +284,7 @@ public class RoomValidationTests
     [InlineData(HousekeepingStatus.CleaningInProgress)]
     [InlineData(HousekeepingStatus.ServiceRequired)]
     [InlineData(HousekeepingStatus.ServiceInProgress)]
-    public void IsBookable_IsIndependentOfHousekeepingStatus(HousekeepingStatus housekeepingStatus)
+    public void IsBookable_AnyHousekeepingStatus_IsUnaffected(HousekeepingStatus housekeepingStatus)
     {
         // Arrange
         var room = RoomFactory.WithHousekeeping(housekeepingStatus);
@@ -299,11 +298,11 @@ public class RoomValidationTests
     }
 
     /// <summary>
-    /// BR-110, BR-126: de tre bookbarhedsstatusser. Den gamle XAML-dropdown havde fire
-    /// værdier der ikke matchede enum'en; her er der én liste.
+    /// BR-110, BR-126: the three bookability statuses. The old XAML dropdown had four
+    /// values that did not match the enum; here there is one list.
     /// </summary>
     [Fact]
-    public void RoomStatusTransitions_ChangeBookabilityAndAreReversible()
+    public void RoomStatusTransitions_OutOfAndBackToService_ChangeBookabilityAndAreReversible()
     {
         // Arrange
         var room = RoomFactory.Create();
@@ -323,8 +322,8 @@ public class RoomValidationTests
     }
 
     /// <summary>
-    /// A-08: bookbarhedsmetoderne er idempotente. Mobilappen retry'er over ustabilt
-    /// netværk, og en retry må ikke give en fejl.
+    /// A-08: the bookability methods are idempotent. The mobile app retries over an unstable
+    /// network, and a retry must not give an error.
     /// </summary>
     [Fact]
     public void RoomStatusTransitions_RepeatedCall_IsNoOp()
@@ -342,10 +341,10 @@ public class RoomValidationTests
     }
 
     /// <summary>
-    /// B-04: <c>ReturnToService</c> gør rummet bookbart igen uden at røre rengøringsstanden.
+    /// B-04: <c>ReturnToService</c> makes the room bookable again without touching the cleaning state.
     /// </summary>
     [Fact]
-    public void ReturnToService_LeavesHousekeepingStatusUntouched()
+    public void ReturnToService_AnyHousekeepingStatus_LeavesHousekeepingStatusUntouched()
     {
         // Arrange
         var room = RoomFactory.WithHousekeeping(HousekeepingStatus.DepartureCleaningDue);
@@ -358,4 +357,24 @@ public class RoomValidationTests
         Assert.Equal(RoomStatus.Available, room.Status);
         Assert.Equal(HousekeepingStatus.DepartureCleaningDue, room.HousekeepingStatus);
     }
+
+    /// <summary>
+    /// Builds a room and returns every error code, or an empty list when the room is valid.
+    /// The rules are attributes on <see cref="Room"/> (ADR-0002).
+    /// </summary>
+    private static IReadOnlyList<string> ErrorsOf(string? roomNumber, int floor, RoomSize size, int capacity)
+    {
+        try
+        {
+            _ = Room.Create(roomNumber!, floor, size, capacity);
+
+            return [];
+        }
+        catch (DomainException exception)
+        {
+            return exception.Codes;
+        }
+    }
+
+    #endregion
 }

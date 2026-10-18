@@ -1,19 +1,18 @@
-using NFHotel.Domain.Common;
+using NFHotel.Domain.Errors;
 using NFHotel.Domain.Tests.TestSupport;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Tests.Common;
 
 /// <summary>
-/// Tests for <see cref="DateRange"/> — det halvåbne interval [Start, End).
-/// Dækker BR-38, BR-43, BR-88, BR-101, BR-102, BR-103, BR-109, BR-117 og BR-39.
+/// Tests for <see cref="DateRange"/> — the half-open interval [Start, End).
+/// Covers BR-38, BR-43, BR-88, BR-101, BR-102, BR-103, BR-109, BR-117 and BR-39.
 /// </summary>
 public class DateRangeTests
 {
-    // --------------------------------------------------------
-    // KONSTRUKTØRENS INVARIANTER (BR-101, BR-102, BR-103)
-    // --------------------------------------------------------
+    #region Invariants of the constructor (BR-101, BR-102, BR-103)
 
-    /// <summary>BR-101: ankomstdatoen må ikke være <c>default</c>.</summary>
+    /// <summary>BR-101: the arrival date must not be <c>default</c>.</summary>
     [Fact]
     public void Constructor_StartIsDefault_ThrowsStartRequired()
     {
@@ -27,7 +26,7 @@ public class DateRangeTests
         Assert.Equal(DateRange.StartRequired, exception.Code);
     }
 
-    /// <summary>BR-102: afrejsedatoen må ikke være <c>default</c>.</summary>
+    /// <summary>BR-102: the departure date must not be <c>default</c>.</summary>
     [Fact]
     public void Constructor_EndIsDefault_ThrowsEndRequired()
     {
@@ -42,8 +41,8 @@ public class DateRangeTests
     }
 
     /// <summary>
-    /// BR-38, BR-43, BR-88, BR-103: afrejse skal være strengt efter ankomst — 0 nætter
-    /// er ikke tilladt, og en negativ periode heller ikke.
+    /// BR-38, BR-43, BR-88, BR-103: departure must be strictly after arrival — 0 nights
+    /// is not allowed, and neither is a negative period.
     /// </summary>
     [Theory]
     [InlineData("2026-01-01", "2026-01-01")]
@@ -62,7 +61,7 @@ public class DateRangeTests
         Assert.Equal(DateRange.EndNotAfterStart, exception.Code);
     }
 
-    /// <summary>BR-103: én nat er den korteste lovlige periode.</summary>
+    /// <summary>BR-103: one night is the shortest legal period.</summary>
     [Fact]
     public void Constructor_OneNight_IsAccepted()
     {
@@ -77,13 +76,13 @@ public class DateRangeTests
         Assert.Equal(1, period.Nights);
     }
 
-    // --------------------------------------------------------
-    // ANTAL NÆTTER (BR-109, BR-117)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Number of nights (BR-109, BR-117)
 
     /// <summary>
-    /// BR-109, BR-117: varigheden er antal overnatninger, ikke antal berørte kalenderdage.
-    /// Månedsskifte og skudår må ikke ændre regnestykket.
+    /// BR-109, BR-117: the duration is the number of overnight stays, not the number of calendar days touched.
+    /// A change of month and leap years must not change the calculation.
     /// </summary>
     [Theory]
     [InlineData("2026-01-01", "2026-01-02", 1)]
@@ -91,7 +90,7 @@ public class DateRangeTests
     [InlineData("2026-01-28", "2026-02-03", 6)]
     [InlineData("2026-12-30", "2027-01-02", 3)]
     [InlineData("2028-02-27", "2028-03-01", 3)]
-    public void Nights_ReturnsNumberOfOvernightStays(string start, string end, int expectedNights)
+    public void Nights_AnyPeriod_ReturnsNumberOfOvernightStays(string start, string end, int expectedNights)
     {
         // Arrange
         var period = new DateRange(TestDate.Of(start), TestDate.Of(end));
@@ -103,29 +102,29 @@ public class DateRangeTests
         Assert.Equal(expectedNights, nights);
     }
 
-    // --------------------------------------------------------
-    // OVERLAP (BR-39, B-03)
-    // --------------------------------------------------------
+    #endregion
+
+    #region Overlap (BR-39, B-03)
 
     /// <summary>
-    /// BR-39: to perioder overlapper kun hvis de deler mindst én nat. Afrejse- og
-    /// ankomstdag samme dag er derfor IKKE overlap — i begge retninger.
+    /// BR-39: two periods overlap only if they share at least one night. Departure and
+    /// arrival on the same day is therefore NOT an overlap — in both directions.
     /// </summary>
     [Theory]
-    // Afrejsedag == ankomstdag: intervallet er halvåbent, så rummet kan genudlejes samme dag.
+    // Departure day == arrival day: the interval is half-open, so the room can be re-let the same day.
     [InlineData("2026-01-01", "2026-01-05", "2026-01-05", "2026-01-08", false)]
     [InlineData("2026-01-05", "2026-01-08", "2026-01-01", "2026-01-05", false)]
-    // Helt adskilte perioder.
+    // Completely separate periods.
     [InlineData("2026-01-01", "2026-01-05", "2026-01-10", "2026-01-12", false)]
-    // Én delt nat i hver ende.
+    // One shared night at each end.
     [InlineData("2026-01-01", "2026-01-05", "2026-01-04", "2026-01-08", true)]
     [InlineData("2026-01-04", "2026-01-08", "2026-01-01", "2026-01-05", true)]
     // Identiske perioder.
     [InlineData("2026-01-01", "2026-01-05", "2026-01-01", "2026-01-05", true)]
-    // Den ene indeholder den anden.
+    // One contains the other.
     [InlineData("2026-01-01", "2026-01-31", "2026-01-10", "2026-01-12", true)]
     [InlineData("2026-01-10", "2026-01-12", "2026-01-01", "2026-01-31", true)]
-    // Samme ankomstdag, forskellig længde.
+    // Same arrival day, different length.
     [InlineData("2026-01-01", "2026-01-03", "2026-01-01", "2026-01-20", true)]
     public void Overlaps_HalfOpenInterval_SharesAtLeastOneNight(
         string startA,
@@ -146,14 +145,14 @@ public class DateRangeTests
     }
 
     /// <summary>
-    /// BR-39: overlap er symmetrisk. Ville det ikke være det, ville udfaldet afhænge af
-    /// hvilken booking der tilfældigvis blev hentet først.
+    /// BR-39: overlap is symmetric. If it were not, the outcome would depend on
+    /// which booking happened to be fetched first.
     /// </summary>
     [Theory]
     [InlineData("2026-01-01", "2026-01-05", "2026-01-05", "2026-01-08")]
     [InlineData("2026-01-01", "2026-01-05", "2026-01-04", "2026-01-08")]
     [InlineData("2026-01-01", "2026-01-31", "2026-01-10", "2026-01-12")]
-    public void Overlaps_IsSymmetric(string startA, string endA, string startB, string endB)
+    public void Overlaps_EitherOrder_IsSymmetric(string startA, string endA, string startB, string endB)
     {
         // Arrange
         var a = new DateRange(TestDate.Of(startA), TestDate.Of(endA));
@@ -167,13 +166,13 @@ public class DateRangeTests
         Assert.Equal(forward, backward);
     }
 
-    // --------------------------------------------------------
-    // INDEHOLDER OG FREMTID
-    // --------------------------------------------------------
+    #endregion
+
+    #region Contains and future
 
     /// <summary>
-    /// Perioden indeholder ankomstdagen, men ikke afrejsedagen — samme halvåbne regel
-    /// som overlapstesten (BR-39).
+    /// The period contains the arrival day, but not the departure day — the same half-open rule
+    /// as the overlap test (BR-39).
     /// </summary>
     [Theory]
     [InlineData("2025-12-31", false)]
@@ -181,7 +180,7 @@ public class DateRangeTests
     [InlineData("2026-01-04", true)]
     [InlineData("2026-01-05", false)]
     [InlineData("2026-01-06", false)]
-    public void Contains_DepartureDayIsExcluded(string date, bool expected)
+    public void Contains_DepartureDay_IsExcluded(string date, bool expected)
     {
         // Arrange
         var period = new DateRange(TestDate.Of("2026-01-01"), TestDate.Of("2026-01-05"));
@@ -194,14 +193,14 @@ public class DateRangeTests
     }
 
     /// <summary>
-    /// BR-44, BR-104: en periode må starte i dag, men ikke i går. Datodelen sammenlignes,
-    /// og "i dag" leveres udefra (A-05).
+    /// BR-44, BR-104: a period may start today, but not yesterday. The date part is compared,
+    /// and "today" is supplied from outside (A-05).
     /// </summary>
     [Theory]
     [InlineData("2026-01-01", true)]
     [InlineData("2025-12-31", true)]
     [InlineData("2026-01-02", false)]
-    public void StartsOnOrAfter_TodayIsAllowedButYesterdayIsNot(string today, bool expected)
+    public void StartsOnOrAfter_TodayAndYesterday_TodayIsAllowedButYesterdayIsNot(string today, bool expected)
     {
         // Arrange
         var period = new DateRange(TestDate.Of("2026-01-01"), TestDate.Of("2026-01-10"));
@@ -212,4 +211,6 @@ public class DateRangeTests
         // Assert
         Assert.Equal(expected, startsOnOrAfter);
     }
+
+    #endregion
 }

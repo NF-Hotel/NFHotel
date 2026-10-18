@@ -1,52 +1,53 @@
-using NFHotel.Application.Bookings;
-using NFHotel.Application.Common;
-using NFHotel.Application.Guests;
-using NFHotel.Application.Holidays;
-using NFHotel.Application.Rooms;
-using NFHotel.Infrastructure.Holidays;
-using NFHotel.Infrastructure.Persistence;
-using NFHotel.Infrastructure.Repositories;
-using NFHotel.Infrastructure.Security;
-using NFHotel.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.Bookings;
+using NFHotel.Application.UseCases.Guests;
+using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Application.UseCases.Staff;
+using NFHotel.Domain.Repositories;
+using NFHotel.Infrastructure.Config;
+using NFHotel.Infrastructure.Persistence;
+using NFHotel.Infrastructure.Repositories;
+using NFHotel.Infrastructure.Security;
+
 namespace NFHotel.Infrastructure;
 
 /// <summary>
-/// Registrerer infrastrukturen — og Application-lagets services — i DI-containeren.
+/// Registers the infrastructure — and the services of the Application layer — in the DI container.
 /// </summary>
 /// <remarks>
-/// <b>Hvorfor Application-servicerne registreres her.</b> Application har nul
-/// NuGet-pakker og må derfor ikke referere <c>Microsoft.Extensions.DependencyInjection</c>.
-/// Servicerne registreres derfor herfra. Web/Program.cs kalder én metode og kender hverken
-/// EF Core, Npgsql eller repository-typerne.
+/// <b>Why the Application services are registered here.</b> Application has zero
+/// NuGet packages and therefore must not reference <c>Microsoft.Extensions.DependencyInjection</c>.
+/// The services are therefore registered from here. Web/Program.cs calls one method and knows neither
+/// EF Core, Npgsql nor the repository types.
 /// <para>
-/// Ingen assembly-scanning. Ti eksplicitte linjer er lettere at læse end en konvention der
-/// finder typerne, og en glemt registrering fejler ved opstart i stedet for at blive
-/// opdaget ved et tilfælde.
+/// No assembly scanning. Ten explicit lines are easier to read than a convention that
+/// finds the types, and a forgotten registration then fails at start-up instead of being
+/// found by chance.
 /// </para>
 /// </remarks>
 public static class DependencyInjection
 {
-    /// <summary>Navnet på connection stringen i konfigurationen.</summary>
+    /// <summary>The name of the connection string in the configuration.</summary>
     public const string ConnectionStringName = "HotelDatabase";
 
     /// <summary>
-    /// Registrerer databaseadgang, repositories, ur, kryptering og Application-lagets services.
+    /// Registers data access, repositories, clock, encryption and the services of the Application layer.
     /// </summary>
     /// <param name="services">Servicesamlingen.</param>
-    /// <param name="configuration">Konfigurationen. Skal indeholde connection string og krypteringsnøgle.</param>
-    /// <returns>Samme servicesamling, så kald kan kædes.</returns>
+    /// <param name="configuration">The configuration. Must contain the connection string and the encryption key.</param>
+    /// <returns>The same service collection, so calls can be chained.</returns>
     /// <exception cref="ArgumentNullException">
-    /// Kastes hvis <paramref name="services"/> eller <paramref name="configuration"/> er <c>null</c>.
+    /// Thrown if <paramref name="services"/> or <paramref name="configuration"/> is <c>null</c>.
     /// </exception>
     /// <exception cref="InvalidOperationException">
-    /// Kastes med det samme hvis connection stringen eller krypteringsnøglen mangler.
-    /// <b>Appen skal nægte at starte uden nøgle</b> (B-09) — alternativet er at pasnumre
-    /// gemmes i klartekst uden at nogen opdager det. Valideringen sker her og ikke som
-    /// <c>ValidateOnStart</c>, så fejlen kommer allerede når containeren bygges.
+    /// Thrown immediately if the connection string or the encryption key is missing.
+    /// <b>The app must refuse to start without a key</b> (B-09) — the alternative is that passport numbers
+    /// are saved in plain text without anyone noticing. The validation happens here and not as
+    /// <c>ValidateOnStart</c>, so the error comes already when the container is built.
     /// </exception>
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
@@ -57,27 +58,24 @@ public static class DependencyInjection
 
         var connectionString = ReadConnectionString(configuration);
         var encryptionOptions = ReadEncryptionOptions(configuration);
-        var timeOptions = ReadTimeOptions(configuration);
-        var holidayApiOptions = ReadHolidayApiOptions(configuration);
+        var staffOptions = ReadStaffOptions(configuration);
 
         AddPersistence(services, connectionString);
-        AddSecurity(services, encryptionOptions);
-        AddTime(services, timeOptions);
-        AddHolidayApi(services, holidayApiOptions);
+        AddSecurity(services, encryptionOptions, staffOptions);
         AddApplicationServices(services);
 
         return services;
     }
 
     /// <summary>
-    /// Sætter provider og navnekonvention på en kontekst-builder.
+    /// Sets provider and naming convention on a context builder.
     /// </summary>
-    /// <param name="options">Builderen der konfigureres.</param>
-    /// <param name="connectionString">Connection stringen til PostgreSQL.</param>
+    /// <param name="options">The builder being configured.</param>
+    /// <param name="connectionString">The connection string to PostgreSQL.</param>
     /// <remarks>
-    /// Delt af DI-registreringen og <see cref="HotelDbContextFactory"/>, så designtidens
-    /// model er nøjagtig den samme som driftens. Uden det kunne en migration blive
-    /// genereret mod et andet skema end det appen kører på.
+    /// Shared by the DI registration and <see cref="HotelDbContextFactory"/>, so the design-time
+    /// model is exactly the same as the operational one. Without it a migration could be
+    /// generated against a different schema from the one the app runs on.
     /// </remarks>
     public static void ConfigureHotelDbContext(
         DbContextOptionsBuilder<HotelDbContext> options,
@@ -90,33 +88,33 @@ public static class DependencyInjection
             .UseNpgsql(connectionString, npgsql => npgsql
                 .MigrationsAssembly(typeof(HotelDbContext).Assembly.FullName)
 
-                // Genforsøg dækker et kortvarigt netværksglip, ikke en nede database.
-                // Standardindstillingen bruger ~60 sekunder pr. kald på at give op, og
-                // det rammer receptionisten som en side der hænger — værre end en fejl
-                // hun kan reagere på. Tre forsøg over højst tre sekunder fanger glippet
-                // og fejler hurtigt på alt andet.
+                // Retries cover a brief network glitch, not a database that is down.
+                // The default setting uses ~60 seconds per call to give up, and
+                // it hits the receptionist as a page that hangs — worse than an error
+                // she can react to. Three attempts over at most three seconds catch the glitch
+                // and fail quickly on everything else.
                 .EnableRetryOnFailure(
                     maxRetryCount: 3,
                     maxRetryDelay: TimeSpan.FromSeconds(1),
                     errorCodesToAdd: null)
 
-                // Uden en grænse kan en enkelt tung forespørgsel holde et SignalR-kredsløb
-                // i gidsel på ubestemt tid.
+                // Without a limit a single heavy query can hold a SignalR circuit
+                // hostage indefinitely.
                 .CommandTimeout(20))
 
-            // B-06: BookingId → booking_id, Booking → booking. C# forbliver PascalCase, og
-            // PostgreSQL slipper for quotede identifiers — U-19's casing-kaos har ingen
-            // steder at opstå.
+            // B-06: BookingId → booking_id, Booking → booking. C# stays PascalCase, and
+            // PostgreSQL is spared quoted identifiers — U-19's casing chaos has nowhere
+            // to arise.
             .UseSnakeCaseNamingConvention();
     }
 
-    /// <summary>Registrerer kontekst, repositories og transaktionsgrænse.</summary>
+    /// <summary>Registers context, repositories and transaction boundary.</summary>
     private static void AddPersistence(IServiceCollection services, string connectionString)
     {
-        // Blazor Server: en scope er hele SignalR-kredsløbet, potentielt timer. Fabrikken
-        // gør det muligt for Web at oprette en frisk kontekst pr. use case, mens den
-        // scopede adapter giver repositories og UnitOfWork præcis SAMME instans — ellers
-        // ville UnitOfWork committe en anden kontekst end den repositories skrev til.
+        // Blazor Server: a scope is the whole SignalR circuit, potentially hours. The factory
+        // makes it possible for Web to create a fresh context per use case, while the
+        // scoped adapter gives repositories and UnitOfWork exactly the SAME instance — otherwise
+        // UnitOfWork would commit a different context from the one the repositories wrote to.
         services.AddDbContextFactory<HotelDbContext>(
             (_, options) => ConfigureHotelDbContext(
                 (DbContextOptionsBuilder<HotelDbContext>)options,
@@ -128,65 +126,44 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IBookingRepository, BookingRepository>();
+        services.AddScoped<IBookingQueries, BookingRepository>();
         services.AddScoped<IRoomRepository, RoomRepository>();
+        services.AddScoped<IRoomQueries, RoomRepository>();
         services.AddScoped<IGuestRepository, GuestRepository>();
+        services.AddScoped<IGuestQueries, GuestRepository>();
+        services.AddScoped<IStaffRepository, StaffRepository>();
     }
 
-    /// <summary>Registrerer krypteringen. Singleton: nøglen er uforanderlig, og AesGcm laves pr. operation.</summary>
-    private static void AddSecurity(IServiceCollection services, EncryptionOptions options)
+    /// <summary>Registers the encryption. Singleton: the key is immutable, and AesGcm is created per operation.</summary>
+    private static void AddSecurity(IServiceCollection services, EncryptionOptions options, StaffSecurityOptions staffOptions)
     {
         services.AddSingleton(options);
         services.AddSingleton<IStringEncryptor, AesGcmStringEncryptor>();
-    }
 
-    /// <summary>Registrerer uret. Singleton: tilstandsløst bortset fra den uforanderlige tidszone.</summary>
-    private static void AddTime(IServiceCollection services, HotelTimeOptions options)
-    {
-        services.AddSingleton(options);
-        services.AddSingleton<IClock, SystemClock>();
-    }
-
-    /// <summary>
-    /// Registrerer klienten til analysetjenestens helligdagskalender som en typed
-    /// <see cref="HttpClient"/> (<see cref="IHttpClientFactory"/> ejer handlerens levetid).
-    /// </summary>
-    private static void AddHolidayApi(IServiceCollection services, HolidayApiOptions options)
-    {
-        services.AddSingleton(options);
-
-        services.AddHttpClient<IHolidayCalendarClient, HolidayApiClient>(client =>
-        {
-            // Ugyldig adresse eller manglende nøgle er ikke en opstartsfejl: klienten svarer
-            // holidays.not_configured (se HolidayApiOptions). Vi konfigurerer derfor kun det der kan.
-            if (options.TryGetBaseUri(out var baseUri))
-            {
-                client.BaseAddress = baseUri;
-            }
-
-            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-
-            if (!string.IsNullOrWhiteSpace(options.ApiKey))
-            {
-                client.DefaultRequestHeaders.Add(HolidayApiOptions.ApiKeyHeaderName, options.ApiKey);
-            }
-        });
+        // ADR-0005: the staff sign-in. The throttle is a singleton because its counts must outlive a request.
+        services.AddSingleton(staffOptions);
+        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddSingleton<IStaffTokenIssuer, JwtStaffTokenIssuer>();
+        services.AddSingleton<ILoginThrottle, InMemoryLoginThrottle>();
     }
 
     /// <summary>
-    /// Registrerer Application-lagets tre services.
+    /// Registers the three services of the Application layer.
     /// </summary>
     /// <remarks>
-    /// Scoped, fordi de holder repositories der holder en <c>DbContext</c>. De er
-    /// tilstandsløse i sig selv, men må ikke overleve deres kontekst.
+    /// Scoped, because they hold repositories that hold a <c>DbContext</c>. They are
+    /// stateless in themselves, but must not outlive their context.
     /// </remarks>
     private static void AddApplicationServices(IServiceCollection services)
     {
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<IRoomService, RoomService>();
         services.AddScoped<IGuestService, GuestService>();
+        services.AddScoped<IStaffAuthService, StaffAuthService>();
+        services.AddScoped<IStaffAccountService, StaffAccountService>();
     }
 
-    /// <summary>Læser connection stringen og fejler hurtigt hvis den mangler.</summary>
+    /// <summary>Reads the connection string and fails fast if it is missing.</summary>
     private static string ReadConnectionString(IConfiguration configuration)
     {
         var connectionString = configuration.GetSection("ConnectionStrings")[ConnectionStringName];
@@ -200,7 +177,7 @@ public static class DependencyInjection
         return connectionString;
     }
 
-    /// <summary>Læser krypteringsindstillingerne. Selve nøglevalideringen sker i encryptoren.</summary>
+    /// <summary>Reads the encryption settings. The key validation itself happens in the encryptor.</summary>
     private static EncryptionOptions ReadEncryptionOptions(IConfiguration configuration)
     {
         var section = configuration.GetSection(EncryptionOptions.SectionName);
@@ -209,54 +186,35 @@ public static class DependencyInjection
             PassportKey = section[EncryptionOptions.PassportKeyName] ?? string.Empty
         };
 
-        // Fail fast: konstruér encryptoren nu, så en manglende eller ugyldig nøgle stopper
-        // opstarten frem for den første gæsteopdatering (B-09).
+        // Fail fast: construct the encryptor now, so a missing or invalid key stops
+        // the start-up rather than the first guest update (B-09).
         _ = new AesGcmStringEncryptor(options);
 
         return options;
     }
 
-    /// <summary>
-    /// Læser indstillingerne til analysetjenesten. Fejler ikke ved manglende værdier — se
-    /// <see cref="HolidayApiOptions"/> — men falder tilbage til standardadresse og -timeout.
-    /// </summary>
-    private static HolidayApiOptions ReadHolidayApiOptions(IConfiguration configuration)
+    private static StaffSecurityOptions ReadStaffOptions(IConfiguration configuration)
     {
-        var section = configuration.GetSection(HolidayApiOptions.SectionName);
-        var baseUrl = section[HolidayApiOptions.BaseUrlName];
-
-        var timeout = int.TryParse(
-            section[HolidayApiOptions.TimeoutSecondsName],
-            System.Globalization.NumberStyles.None,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out var seconds) && seconds > 0
-            ? seconds
-            : HolidayApiOptions.DefaultTimeoutSeconds;
-
-        return new HolidayApiOptions
+        var section = configuration.GetSection(StaffSecurityOptions.SectionName);
+        var signingKey = section["Token:SigningKey"]?.Trim() ?? string.Empty;
+        if (signingKey.Length < StaffSecurityOptions.MinimumSigningKeyLength)
         {
-            BaseUrl = string.IsNullOrWhiteSpace(baseUrl) ? HolidayApiOptions.DefaultBaseUrl : baseUrl,
-            ApiKey = section[HolidayApiOptions.ApiKeyName]?.Trim() ?? string.Empty,
-            TimeoutSeconds = timeout,
+            throw new InvalidOperationException(
+                $"'{StaffSecurityOptions.SectionName}:Token:SigningKey' must be at least {StaffSecurityOptions.MinimumSigningKeyLength} characters. Create one with: openssl rand -base64 48");
+        }
+
+        return new StaffSecurityOptions
+        {
+            SigningKey = signingKey,
+            TokenLifetimeMinutes = ReadInt(section, "Token:LifetimeMinutes", 480),
+            PasswordIterations = ReadInt(section, "PasswordIterations", StaffSecurityOptions.DefaultPasswordIterations),
+            MaxFailures = ReadInt(section, "Throttle:MaxFailures", 5),
+            ThrottleWindowMinutes = ReadInt(section, "Throttle:WindowMinutes", 15),
         };
     }
 
-    /// <summary>Læser tidsindstillingerne og verificerer at tidszonen findes på maskinen.</summary>
-    private static HotelTimeOptions ReadTimeOptions(IConfiguration configuration)
-    {
-        var section = configuration.GetSection(HotelTimeOptions.SectionName);
-        var timeZoneId = section[HotelTimeOptions.TimeZoneIdName];
-
-        var options = new HotelTimeOptions
-        {
-            TimeZoneId = string.IsNullOrWhiteSpace(timeZoneId)
-                ? HotelTimeOptions.DefaultTimeZoneId
-                : timeZoneId
-        };
-
-        // Fail fast: en ukendt tidszone må ikke først opdages når nogen tjekker ind (A-05).
-        _ = new SystemClock(options);
-
-        return options;
-    }
+    private static int ReadInt(IConfigurationSection section, string key, int fallback) =>
+        int.TryParse(section[key], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var value)
+            ? value
+            : fallback;
 }

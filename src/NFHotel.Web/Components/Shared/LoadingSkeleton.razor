@@ -1,6 +1,6 @@
 @*
-    Indlæsningstilstand med sidens form bevaret, så layoutet ikke hopper når data kommer.
-    UI-Spec afsnit 4: ingen spinner midt på skærmen.
+    Loading state with the shape of the page preserved, so the layout does not jump when data arrives.
+    UI-Spec section 4: no spinner in the middle of the screen.
 *@
 
 <div class="stack-sm" role="status" aria-busy="true" aria-label="Loading">
@@ -11,7 +11,7 @@
 </div>
 
 @code {
-    /// <summary>Antal pladsholderlinjer. Sæt den så den svarer til det indhold der er på vej.</summary>
+    /// <summary>Number of placeholder lines. Set it to match the content that is on its way.</summary>
     [Parameter]
     public int Rows { get; set; } = 3;
 }

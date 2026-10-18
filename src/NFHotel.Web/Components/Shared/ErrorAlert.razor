@@ -1,9 +1,9 @@
 @*
-    Neutral fejlvisning for en ViewModels fejlliste. Tager færdigoversatte danske tekster
-    og viser dem. Komponenten oversætter ikke selv og kender ingen fejlkoder — det er
+    Neutral error display for the error list of a ViewModel. Takes finished translated Danish texts
+    and shows them. The component does not translate by itself and knows no error codes — that is
     ErrorMessages' job.
 
-    Til en enkelt besked med valgfri alvorlighedsgrad bruges AlertBox i stedet.
+    For a single message with an optional severity, AlertBox is used instead.
 *@
 
 @if (Errors.Count > 0)
@@ -26,7 +26,7 @@
 }
 
 @code {
-    /// <summary>De danske fejltekster der skal vises. Tom liste skjuler komponenten.</summary>
+    /// <summary>The Danish error texts to show. An empty list hides the component.</summary>
     [Parameter]
     [EditorRequired]
     public IReadOnlyList<string> Errors { get; set; } = Array.Empty<string>();

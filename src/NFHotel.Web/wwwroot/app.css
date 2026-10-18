@@ -1,15 +1,15 @@
 /* ==========================================================================
-   NFHOTEL HOTEL — DESIGNSYSTEM
+   NFHOTEL HOTEL — DESIGN SYSTEM
    --------------------------------------------------------------------------
-   Én kilde til alt visuelt. Klasserne herunder er kontrakten fra UI-Spec.md
-   afsnit 3: markup må kun bruge navne der findes her.
+   One source for everything visual. The classes below are the contract from UI-Spec.md
+   section 3: markup may only use names that exist here.
 
-   Ingen eksterne fonte, ingen CDN'er, ingen ikonpakker — siden skal virke
-   offline. Bootstrap er bevidst ikke indlæst: dets .row kolliderer med
-   spec'ens .row, og alt visuelt skal komme fra tokens herunder.
+   No external fonts, no CDNs, no icon packs — the site must work
+   offline. Bootstrap is deliberately not loaded: its .row collides with
+   the spec's .row, and everything visual must come from the tokens below.
 
-   Rækkefølge: tokens → reset → layout → typografi → flader → knapper →
-   formular → data → status → feedback → offentligt → admin → responsivt.
+   Order: tokens → reset → layout → typography → surfaces → buttons →
+   form → data → status → feedback → public → admin → responsive.
    ========================================================================== */
 
 
@@ -38,7 +38,7 @@
     --shadow: 0 1px 2px rgba(20, 23, 31, .06), 0 8px 24px rgba(20, 23, 31, .07);
     --maxw: 1140px;
 
-    /* Rytme — 4px-grid */
+    /* Rhythm — 4px grid */
     --s1: 4px;
     --s2: 8px;
     --s3: 12px;
@@ -48,21 +48,21 @@
     --s12: 48px;
     --s16: 64px;
 
-    /* Typografi. Kun systemfonte. Overskrifter i serif — det er et hotel. */
+    /* Typography. System fonts only. Headings in serif — it is a hotel. */
     --font-serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
     --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-    /* Fokusring. Bruges hvor outline erstattes af en ring med bedre kontrast. */
+    /* Focus ring. Used where the outline is replaced by a ring with better contrast. */
     --focus: 0 0 0 2px var(--paper), 0 0 0 4px var(--navy);
     --focus-on-dark: 0 0 0 2px var(--navy-deep), 0 0 0 4px #cddcd2;
 
-    /* Bredde på admin-sidemenuen. Ét sted, så shell og menu ikke glider fra hinanden. */
+    /* Width of the admin side menu. One place, so shell and menu do not drift apart. */
     --nav-w: 240px;
 }
 
 
 /* --------------------------------------------------------------------------
-   2. RESET OG BASIS
+   2. RESET AND BASE
    -------------------------------------------------------------------------- */
 
 *,
@@ -82,7 +82,7 @@ body {
     line-height: 1.55;
     color: var(--ink);
     background: var(--sand);
-    /* Siden må aldrig scrolle vandret — brede tabeller scroller i .table-wrap. */
+    /* The page must never scroll horizontally — wide tables scroll in .table-wrap. */
     overflow-x: hidden;
 }
 
@@ -143,19 +143,19 @@ code {
     padding: 1px 5px;
 }
 
-/* Fokus er aldrig usynligt. Fjernes outline et sted, erstattes den af --focus. */
+/* Focus is never invisible. If the outline is removed somewhere, it is replaced by --focus. */
 :focus-visible {
     outline: 2px solid var(--navy);
     outline-offset: 2px;
 }
 
-/* h1 får programmatisk fokus af FocusOnNavigate — det skal ikke tegne en ring. */
+/* h1 gets programmatic focus from FocusOnNavigate — it must not draw a ring. */
 h1:focus,
 h1:focus-visible {
     outline: none;
 }
 
-/* Springlink til indhold. Synligt så snart det får fokus. */
+/* Skip link to content. Visible as soon as it gets focus. */
 .skip-link {
     position: absolute;
     left: var(--s4);
@@ -203,7 +203,7 @@ h1:focus-visible {
     padding: var(--s8) var(--s6) var(--s16);
 }
 
-/* Lodret rytme. Sætter afstand mellem søskende uden margin-kollaps. */
+/* Vertical rhythm. Sets spacing between siblings without margin collapse. */
 .stack > * + * { margin-top: var(--s4); }
 .stack-sm > * + * { margin-top: var(--s2); }
 .stack-lg > * + * { margin-top: var(--s8); }
@@ -236,7 +236,7 @@ h1:focus-visible {
 
 
 /* --------------------------------------------------------------------------
-   4. TYPOGRAFI
+   4. TYPOGRAPHY
    -------------------------------------------------------------------------- */
 
 .display {
@@ -286,14 +286,14 @@ h1:focus-visible {
     margin: 0 0 var(--s2);
 }
 
-/* Tabulære tal, så datoer og beløb står i lod under hinanden. */
+/* Tabular figures, so dates and amounts line up under each other. */
 .numeric {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1;
 }
 
-/* I tabeller står tal højrestillet (UI-Spec afsnit 3). En datokolonne der
-   hellere vil stå til venstre får .numeric-start og beholder tabulærtallene. */
+/* In tables numbers are right-aligned (UI-Spec section 3). A date column that
+   would rather be left-aligned gets .numeric-start and keeps the tabular figures. */
 .table td.numeric,
 .table th.numeric {
     text-align: right;
@@ -308,7 +308,7 @@ h1:focus-visible {
 
 
 /* --------------------------------------------------------------------------
-   5. FLADER
+   5. SURFACES
    -------------------------------------------------------------------------- */
 
 .card {
@@ -336,7 +336,7 @@ h1:focus-visible {
     border-color: var(--navy);
 }
 
-/* Fladere end .card — til arbejdsflader i admin hvor skygger bliver støj. */
+/* Flatter than .card — for work surfaces in admin where shadows become noise. */
 .panel {
     background: var(--paper);
     border: 1px solid var(--line);
@@ -353,7 +353,7 @@ h1:focus-visible {
 
 
 /* --------------------------------------------------------------------------
-   6. KNAPPER
+   6. BUTTONS
    -------------------------------------------------------------------------- */
 
 .btn {
@@ -442,7 +442,7 @@ h1:focus-visible {
     width: 100%;
 }
 
-/* Deaktiveret skal SE deaktiveret ud, ikke bare være det. */
+/* Disabled must LOOK disabled, not just be so. */
 .btn:disabled,
 .btn[aria-disabled="true"] {
     background: #eceae4;
@@ -456,7 +456,7 @@ h1:focus-visible {
 
 
 /* --------------------------------------------------------------------------
-   7. FORMULAR
+   7. FORM
    -------------------------------------------------------------------------- */
 
 .field {
@@ -496,7 +496,7 @@ h1:focus-visible {
     min-height: 40px;
 }
 
-/* Egen pil, så select'en ikke arver systemets udseende. Inline SVG = offline. */
+/* Own arrow, so the select does not inherit the look of the system. Inline SVG = offline. */
 .field-select {
     appearance: none;
     padding-right: var(--s8);
@@ -539,7 +539,7 @@ h1:focus-visible {
     margin-top: var(--s1);
 }
 
-/* Feltet ved selv at det er forkert, så markeringen ikke afhænger af markup-orden. */
+/* The field itself knows that it is wrong, so the marking does not depend on markup order. */
 .field:has(.field-error) .field-input,
 .field:has(.field-error) .field-select,
 .field-input[aria-invalid="true"],
@@ -558,7 +558,7 @@ h1:focus-visible {
     margin-top: 0;
 }
 
-/* Blazors egne valideringsklasser holdes i samme sprog som .field-error. */
+/* Blazor's own validation classes are kept in the same language as .field-error. */
 .invalid,
 .field-input.invalid,
 .field-select.invalid {
@@ -582,7 +582,7 @@ h1:focus-visible {
    8. DATA
    -------------------------------------------------------------------------- */
 
-/* Brede tabeller scroller i deres egen container — aldrig hele siden. */
+/* Wide tables scroll in their own container — never the whole page. */
 .table-wrap {
     width: 100%;
     overflow-x: auto;
@@ -636,7 +636,7 @@ h1:focus-visible {
     border-bottom: 0;
 }
 
-/* Zebra-striber. Lyse nok til ikke at konkurrere med badges. */
+/* Zebra stripes. Light enough not to compete with badges. */
 .table tbody tr:nth-child(even) {
     background: #fbfaf7;
 }
@@ -654,7 +654,7 @@ h1:focus-visible {
     padding: var(--s2) var(--s3);
 }
 
-/* Handlingskolonnen: højrestillet, knapper på række, aldrig ombrudt. */
+/* The action column: right-aligned, buttons in a row, never wrapped. */
 .table-actions {
     text-align: right;
     white-space: nowrap;
@@ -664,7 +664,7 @@ h1:focus-visible {
     margin-left: var(--s2);
 }
 
-/* Sticky header i admin, hvor tabellerne er lange nok til at det betaler sig. */
+/* Sticky header in admin, where the tables are long enough for it to pay off. */
 .admin-main .table thead th {
     position: sticky;
     top: 0;
@@ -689,8 +689,8 @@ h1:focus-visible {
     white-space: nowrap;
 }
 
-/* Prikken bærer ingen betydning alene — teksten står altid ved siden af,
-   så farve aldrig er eneste informationsbærer. */
+/* The dot carries no meaning alone — the text always stands next to it,
+   so colour is never the only carrier of information. */
 .badge::before {
     content: "";
     width: 6px;
@@ -707,7 +707,7 @@ h1:focus-visible {
 .badge-checkedout { background: #eeece7; border-color: #d9d5cc; color: #4d534f; }
 .badge-cancelled  { background: #f7e7e5; border-color: #e3c2be; color: #7a302b; }
 
-/* Rum og rengøring */
+/* Rooms and cleaning */
 .badge-clean      { background: #e2efe8; border-color: #b6d3c4; color: #245740; }
 .badge-cleaning   { background: #fbf3e0; border-color: #ead9b0; color: #6d5518; }
 .badge-service    { background: #f4ecdd; border-color: #e0cda6; color: #6b5019; }
@@ -758,7 +758,7 @@ h1:focus-visible {
     color: #464b46;
 }
 
-/* Tom tilstand: ikon-plads, overskrift, forklaring, og plads til en handling. */
+/* Empty state: icon space, heading, explanation, and room for an action. */
 .empty {
     display: flex;
     flex-direction: column;
@@ -799,7 +799,7 @@ h1:focus-visible {
     margin: 0;
 }
 
-/* Indlæsning: pladsholdere der har sidens form, ikke en spinner midt på skærmen. */
+/* Loading: placeholders that have the shape of the page, not a spinner in the middle of the screen. */
 .skeleton {
     display: block;
     width: 100%;
@@ -810,7 +810,7 @@ h1:focus-visible {
     animation: skeleton-sweep 1.3s linear infinite;
 }
 
-/* Ujævne bredder, så pladsholderne ligner tekst og ikke et stregkodemønster. */
+/* Uneven widths, so the placeholders look like text and not a barcode pattern. */
 .skeleton:nth-child(3n + 2) { width: 82%; }
 .skeleton:nth-child(3n + 3) { width: 64%; }
 
@@ -821,7 +821,7 @@ h1:focus-visible {
 
 
 /* --------------------------------------------------------------------------
-   11. OFFENTLIGT
+   11. PUBLIC
    -------------------------------------------------------------------------- */
 
 .site-header {
@@ -868,7 +868,7 @@ h1:focus-visible {
 }
 
 .hero {
-    /* Nattehimlen over floden i Phnom Penh — antydet, ikke kopieret fra deres foto. */
+    /* The night sky over the river in Phnom Penh — hinted at, not copied from their photo. */
     background:
         radial-gradient(90% 120% at 78% 8%, rgba(242, 177, 52, .16) 0%, transparent 55%),
         radial-gradient(120% 130% at 12% 0%, #2c3f68 0%, var(--navy) 46%, var(--navy-deep) 100%);
@@ -932,7 +932,7 @@ h1:focus-visible {
     box-shadow: var(--focus-on-dark);
 }
 
-/* Værelseskort på den offentlige side. */
+/* Room cards on the public page. */
 .roomcard {
     display: flex;
     flex-direction: column;
@@ -943,7 +943,7 @@ h1:focus-visible {
     overflow: hidden;
 }
 
-/* Billedplads uden billeder — en rolig flade i husets farver frem for et tomt hul. */
+/* Image space without images — a calm surface in the colours of the house rather than an empty hole. */
 .roomcard-media {
     aspect-ratio: 16 / 9;
     background: linear-gradient(135deg, #e9e5db 0%, #f3f0e8 45%, #e2ded2 100%);
@@ -1103,7 +1103,7 @@ h1:focus-visible {
     box-shadow: var(--focus-on-dark);
 }
 
-/* NavLink sætter .active på det aktuelle punkt. */
+/* NavLink sets .active on the current item. */
 .admin-nav-link.active {
     background: var(--navy-deep);
     color: var(--paper);
@@ -1123,7 +1123,7 @@ h1:focus-visible {
     padding: var(--s2) var(--s6);
 }
 
-/* Diskret bånd: adgangskontrol mangler. Skal kunne læses, ikke overses. */
+/* Discreet band: access control is missing. Must be readable, not overlooked. */
 .admin-notice {
     display: flex;
     align-items: center;
@@ -1143,7 +1143,7 @@ h1:focus-visible {
     max-width: none;
 }
 
-/* Sidehoved med titel og handlinger. Bruges af PageHeader. */
+/* Page header with title and actions. Used by PageHeader. */
 .page-header {
     display: flex;
     align-items: flex-end;
@@ -1159,7 +1159,7 @@ h1:focus-visible {
     flex-wrap: wrap;
 }
 
-/* Nøgletal på dashboardet. */
+/* Key figures on the dashboard. */
 .stat {
     background: var(--paper);
     border: 1px solid var(--line);
@@ -1191,7 +1191,7 @@ h1:focus-visible {
 
 
 /* --------------------------------------------------------------------------
-   13. BLAZORS FEJLBÅND
+   13. BLAZOR'S ERROR BAND
    -------------------------------------------------------------------------- */
 
 #blazor-error-ui {
@@ -1228,13 +1228,13 @@ h1:focus-visible {
 
 
 /* --------------------------------------------------------------------------
-   14. RESPONSIVT
+   14. RESPONSIVE
    -------------------------------------------------------------------------- */
 
 @media (max-width: 900px) {
-    /* Sidemenuen kollapser til et vandret bånd øverst. Bevidst uden JavaScript
-       og uden skjult tilstand: en drawer i Blazor Server ville blive stående
-       åben efter navigation, fordi DOM'en overlever sideskiftet. */
+    /* The side menu collapses to a horizontal band at the top. Deliberately without JavaScript
+       and without hidden state: a drawer in Blazor Server would stay
+       open after navigation, because the DOM survives the page change. */
     .admin-shell {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -1325,4 +1325,31 @@ h1:focus-visible {
     body {
         background: var(--paper);
     }
+}
+
+/* The signed-in user at the foot of the side menu (ADR-0005). */
+.admin-nav-user {
+    margin-top: auto;
+    padding: var(--s4) var(--s2) 0;
+    display: grid;
+    gap: var(--s2);
+}
+
+.admin-nav-user p {
+    margin: 0;
+    font-weight: 600;
+    color: #fff;
+}
+
+.admin-nav-user p span {
+    display: block;
+    font-weight: 400;
+    font-size: 0.85em;
+    opacity: 0.8;
+}
+
+.admin-nav-user .btn {
+    color: #dde5df;
+    border-color: #dde5df;
+    justify-self: start;
 }

@@ -1,20 +1,24 @@
 @page "/admin/rooms"
 @layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.RoomsView)]
 @rendermode InteractiveServer
-@using NFHotel.Domain.Rooms
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using NFHotel.Domain.Entities
+@using NFHotel.Domain.Errors
+@using NFHotel.Domain.ValueObjects
 @using NFHotel.Web.Features.Admin.Rooms
 @inject RoomListViewModel ViewModel
 @inject RoomFormViewModel Form
 
 @*
-    Rumoversigt med filtre, rengøringsforløb og opret/ret.
+    Room overview with filters, cleaning flow and create/change.
 
-    Kun markup og binding. Handlingspanelet tegner de knapper viewmodellen udleverer, og
-    de kommer fra RoomListItemDto.Actions — altså fra domænets tilstandsmaskine gennem
-    Application. Denne fil ved ikke hvad "slutrengøring" kommer efter.
+    Only markup and binding. The action panel draws the buttons the viewmodel hands out, and
+    they come from RoomListItemDto.Actions — that is, from the state machine of the domain through
+    Application. This file does not know what "departure cleaning" comes after.
 
-    Formularen har bevidst intet statusfelt: UpdateRoomRequest bærer det ikke, og
-    statusskift har egne use cases (A-08) med egne knapper i handlingspanelet.
+    The form deliberately has no status field: UpdateRoomRequest does not carry it, and
+    status changes have their own use cases (A-08) with their own buttons in the action panel.
 *@
 
 <PageTitle>Rooms — administration</PageTitle>
@@ -23,12 +27,14 @@
     <PageHeader Title="Rooms"
                 Subtitle="Status, housekeeping and details for every room in the hotel.">
         <Actions>
-            <button type="button"
-                    class="btn btn-primary"
-                    disabled="@Form.IsBusy"
-                    @onclick="BeginCreate">
-                New room
-            </button>
+            <AuthorizeView Policy="@StaffPolicies.RoomsManage">
+                <button type="button"
+                        class="btn btn-primary"
+                        disabled="@Form.IsBusy"
+                        @onclick="BeginCreate">
+                    New room
+                </button>
+            </AuthorizeView>
         </Actions>
     </PageHeader>
 
@@ -209,12 +215,14 @@
                 <div class="row" role="group" aria-label="Room actions">
                     @foreach (var option in ViewModel.AvailableActions)
                     {
-                        <button type="button"
-                                class="btn btn-secondary btn-sm"
-                                disabled="@ViewModel.IsBusy"
-                                @onclick="() => ExecuteAsync(option.Action)">
-                            @option.Label
-                        </button>
+                        <AuthorizeView Policy="@PolicyFor(option.Action)">
+                            <button type="button"
+                                    class="btn btn-secondary btn-sm"
+                                    disabled="@ViewModel.IsBusy"
+                                    @onclick="() => ExecuteAsync(option.Action)">
+                                @option.Label
+                            </button>
+                        </AuthorizeView>
                     }
                 </div>
             }
@@ -248,9 +256,11 @@
     {
         <EmptyState Title="There are no rooms yet"
                     Description="Create the hotel's first room so guests have something to book.">
-            <button type="button" class="btn btn-primary btn-sm" @onclick="BeginCreate">
-                New room
-            </button>
+            <AuthorizeView Policy="@StaffPolicies.RoomsManage">
+                <button type="button" class="btn btn-primary btn-sm" @onclick="BeginCreate">
+                    New room
+                </button>
+            </AuthorizeView>
         </EmptyState>
     }
     else
@@ -287,19 +297,21 @@
                                     @SelectLabel(room)
                                 </button>
 
-                                <button type="button"
-                                        class="btn btn-secondary btn-sm"
-                                        disabled="@Form.IsBusy"
-                                        @onclick="() => BeginEditAsync(room)">
-                                    Edit
-                                </button>
+                                <AuthorizeView Policy="@StaffPolicies.RoomsManage">
+                                    <button type="button"
+                                            class="btn btn-secondary btn-sm"
+                                            disabled="@Form.IsBusy"
+                                            @onclick="() => BeginEditAsync(room)">
+                                        Edit
+                                    </button>
 
-                                <button type="button"
-                                        class="btn btn-danger btn-sm"
-                                        disabled="@ViewModel.IsBusy"
-                                        @onclick="() => RequestDelete(room)">
-                                    Delete
-                                </button>
+                                    <button type="button"
+                                            class="btn btn-danger btn-sm"
+                                            disabled="@ViewModel.IsBusy"
+                                            @onclick="() => RequestDelete(room)">
+                                        Delete
+                                    </button>
+                                </AuthorizeView>
                             </td>
                         </tr>
                     }
@@ -310,36 +322,42 @@
 </div>
 
 @code {
-    /// <summary>Alle rumstørrelser, til filterets dropdown.</summary>
+    /// <summary>All room sizes, for the dropdown of the filter.</summary>
     private static readonly RoomSize[] Sizes = Enum.GetValues<RoomSize>();
 
-    /// <summary>Alle driftsstatusser, til filterets dropdown.</summary>
+    /// <summary>All operating statuses, for the dropdown of the filter.</summary>
     private static readonly RoomStatus[] RoomStatuses = Enum.GetValues<RoomStatus>();
 
-    /// <summary>Alle rengøringsstatusser, til filterets dropdown.</summary>
+    /// <summary>All cleaning statuses, for the dropdown of the filter.</summary>
     private static readonly HousekeepingStatus[] HousekeepingStatuses = Enum.GetValues<HousekeepingStatus>();
 
-    /// <summary>Etagerne der faktisk findes, hentet med filtermulighederne.</summary>
+    /// <summary>The floors that actually exist, fetched with the filter options.</summary>
     private IReadOnlyList<int> Floors =>
         ViewModel.FilterOptions?.Floors ?? Array.Empty<int>();
 
-    /// <summary>Overskriften i bekræftelsen af en sletning.</summary>
+    /// <summary>The heading in the confirmation of a deletion.</summary>
     private string DeleteTitle => $"Delete room {ViewModel.RoomPendingDeletion?.RoomNumber}?";
 
-    /// <summary>Henter filtermuligheder og den første liste når skærmen åbnes.</summary>
-    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync();
+    /// <summary>Fetches filter options and the first list when the screen opens.</summary>
+    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
 
-    /// <summary>Teksten på knappen der åbner og lukker handlingspanelet.</summary>
+    /// <summary>The policy that decides whether the user sees the button of an action (ADR-0005).</summary>
+    private static string PolicyFor(RoomAction action) =>
+        action is RoomAction.TakeOutOfService or RoomAction.SendToMaintenance or RoomAction.ReturnToService
+            ? StaffPolicies.RoomsManage
+            : StaffPolicies.HousekeepingUpdate;
+
+    /// <summary>The text on the button that opens and closes the action panel.</summary>
     private string SelectLabel(RoomListItemDto room) =>
         ViewModel.IsSelected(room) ? "Hide actions" : "Actions";
 
-    private Task SearchAsync() => ViewModel.SearchAsync();
+    private Task SearchAsync() => ViewModel.SearchAsync(ComponentToken);
 
-    private Task ClearFilterAsync() => ViewModel.ClearFilterAsync();
+    private Task ClearFilterAsync() => ViewModel.ClearFilterAsync(ComponentToken);
 
     private void ToggleSelection(RoomListItemDto room) => ViewModel.ToggleSelection(room);
 
-    private Task ExecuteAsync(RoomAction action) => ViewModel.ExecuteAsync(action);
+    private Task ExecuteAsync(RoomAction action) => ViewModel.ExecuteAsync(action, ComponentToken);
 
     private void RequestDelete(RoomListItemDto room)
     {
@@ -349,7 +367,7 @@
 
     private void AbortDelete() => ViewModel.AbortDelete();
 
-    private Task ConfirmDeleteAsync() => ViewModel.ConfirmDeleteAsync();
+    private Task ConfirmDeleteAsync() => ViewModel.ConfirmDeleteAsync(ComponentToken);
 
     private void BeginCreate()
     {
@@ -363,21 +381,21 @@
         Form.DismissSuccess();
         ViewModel.DismissSuccess();
 
-        return Form.BeginEditAsync(room.RoomId);
+        return Form.BeginEditAsync(room.RoomId, ComponentToken);
     }
 
     private void CloseForm() => Form.Close();
 
     /// <summary>
-    /// Gemmer formularen og henter listen igen, hvis det lykkedes.
+    /// Saves the form and fetches the list again if it succeeded.
     /// </summary>
     private async Task SaveAsync()
     {
-        await Form.SaveAsync();
+        await Form.SaveAsync(ComponentToken);
 
         if (Form.SavedSuccessfully)
         {
-            await ViewModel.SearchAsync();
+            await ViewModel.SearchAsync(ComponentToken);
         }
     }
 }
