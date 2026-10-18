@@ -18,6 +18,9 @@
 #      previous release from the log again and exit 1
 # rollback: deploy the release before the latest one in the log again.
 # status:   print the release log.
+# deploy and rollback are the explicit commands that change the VM; status and a
+# refused argument change nothing. The die and usage helpers are kept in this file
+# because it is installed alone (scripts/lib/common.sh is not beside it).
 #
 # Usage: deploy-release.sh deploy <sha> <web> <api> <analysis> <benchmark>
 #        deploy-release.sh rollback
@@ -39,8 +42,8 @@ app_user="${NFHOTEL_USER:-nfhotel}"
 state_dir="${NFHOTEL_STATE:-/var/lib/nfhotel-deploy}"
 registry="${NFHOTEL_REGISTRY:-ghcr.io/nf-hotel}"
 release_log="$state_dir/releases.log"
-backup_command=/usr/local/sbin/nfhotel-backup
-names=(nfhotel-web nfhotel-api market-analysis benchmark)
+readonly BACKUP_COMMAND=/usr/local/sbin/nfhotel-backup
+readonly NAMES=(nfhotel-web nfhotel-api market-analysis benchmark)
 
 die() {
   echo "error: $*" >&2
@@ -71,11 +74,11 @@ check_release() {
   local sha="$1" i
   shift
   [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || refuse "the commit must be 40 lower-case hex characters"
-  (($# == ${#names[@]})) || refuse "expected ${#names[@]} image digests, got $#"
-  for i in "${!names[@]}"; do
+  (($# == ${#NAMES[@]})) || refuse "expected ${#NAMES[@]} image digests, got $#"
+  for i in "${!NAMES[@]}"; do
     local ref="${*:i+1:1}"
-    [[ "$ref" =~ ^${registry//./\\.}/${names[$i]}@sha256:[0-9a-f]{64}$ ]] ||
-      refuse "argument $((i + 2)) is not $registry/${names[$i]}@sha256:<64 hex>"
+    [[ "$ref" =~ ^${registry//./\\.}/${NAMES[$i]}@sha256:[0-9a-f]{64}$ ]] ||
+      refuse "argument $((i + 2)) is not $registry/${NAMES[$i]}@sha256:<64 hex>"
   done
 }
 
@@ -134,11 +137,11 @@ deploy() {
   local last=""
   last="$(previous_release 1 || true)"
 
-  if [[ -x "$backup_command" ]]; then
+  if [[ -x "$BACKUP_COMMAND" ]]; then
     echo "==> backing up the database before the deploy"
-    "$backup_command" || die "the backup failed; nothing was deployed"
+    "$BACKUP_COMMAND" --apply || die "the backup failed; nothing was deployed"
   else
-    echo "warning: $backup_command is not installed; deploying without a fresh backup" >&2
+    echo "warning: $BACKUP_COMMAND is not installed; deploying without a fresh backup" >&2
   fi
 
   if apply "$@"; then

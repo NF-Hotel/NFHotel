@@ -72,7 +72,7 @@ S03 and a repository administrator do this once, in this order.
      The first approved CD run then pulls and starts every service.
    - The stock nginx on `nf-hotel` uses ports 80 and 443. Stop and disable it (`systemctl disable --now nginx`) before the first deploy, so the NF Hotel proxy can bind them.
    - Turn off SSH password login (risk R14): set `PasswordAuthentication no` and `KbdInteractiveAuthentication no` in `/etc/ssh/sshd_config.d/10-nfhotel.conf`, then run `systemctl reload ssh`.
-2. In `/opt/nfhotel`, run `sudo bash scripts/install-deploy-user.sh`. It creates the user `deploy`, the deploy command and its single sudo rule, then prints the Tailscale steps.
+2. In `/opt/nfhotel`, run `sudo bash scripts/install-deploy-user.sh --apply` (without `--apply` it only shows what it would do). It creates the user `deploy`, the deploy command and its single sudo rule, then prints the Tailscale steps.
 3. Run `sudo tailscale set --ssh`.
 4. On your own machine, create the backup key with `age-keygen -o nfhotel-backup.key`. Keep it offline, and never copy it to the VM.
 5. Prepare the off-VM copy on the Proxmox node (decision D7). The copy is write-only and limited to one folder.
@@ -100,7 +100,7 @@ S03 and a repository administrator do this once, in this order.
 6. On the VM, install the backup:
 
    ```bash
-   sudo bash scripts/install-backup.sh --recipient <age1... public key> --target nfhotel-backup@100.112.20.37:
+   sudo bash scripts/install-backup.sh --recipient <age1... public key> --target nfhotel-backup@100.112.20.37: --apply
    ```
 
    Then test it once with `sudo systemctl start nfhotel-backup.service`.

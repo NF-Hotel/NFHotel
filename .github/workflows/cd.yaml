@@ -1,10 +1,19 @@
 # CD: deploy a release to the Proxmox VM after an approval (ADR-0007, MIL-021 task 6).
-# Starts when NF Hotel Release succeeds, or by hand with the run ID of an earlier
-# release (a redeploy or a rollback). The job runs in the environment production,
-# so it waits for a required reviewer before it starts and before any credential
-# exists. It joins the tailnet as an ephemeral node tagged tag:ci through GitHub
-# OIDC (no stored Tailscale secret) and runs one command on the VM over Tailscale
-# SSH as the user deploy (no stored ssh key).
+#
+# Triggers: a successful NF Hotel Release run (workflow_run), or by hand with the run
+#   ID of an earlier release (a redeploy or a rollback). A manual run is a dry run
+#   unless the input apply is true.
+# Approval: the job runs in the environment production, whose required reviewers
+#   approve it before it starts; no credential exists before that.
+# Access: the job joins the tailnet as an ephemeral node tagged tag:ci through GitHub
+#   OIDC (no stored Tailscale secret) and runs one command on the VM over Tailscale
+#   SSH as the user deploy (no stored ssh key).
+# Settings (environment variables of production, not secrets): TS_OIDC_CLIENT_ID,
+#   TS_OIDC_AUDIENCE, NFHOTEL_VM_HOST.
+# Changes outside the repository: the services on the VM (scripts/deploy-release.sh).
+# It checks out only main (trusted); the steps are in scripts/cd-steps.sh.
+# Verified with actionlint 1.7.7; the GitHub features (workflow_run chain, environment
+# approval, OIDC) are verified on github.com in MIL-021 task 8.
 name: NF Hotel CD
 
 on:
@@ -17,6 +26,11 @@ on:
         description: Run ID of the NF Hotel Release run to deploy
         required: true
         type: string
+      apply:
+        description: Deploy for real (false prints what would be deployed)
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -39,52 +53,45 @@ jobs:
       contents: read
       actions: read
       id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN_ID: ${{ github.event.workflow_run.id || inputs.release_run_id }}
+      APPLY: ${{ github.event_name == 'workflow_run' || inputs.apply }}
 
     steps:
-      # The run to deploy must be a successful NF Hotel Release run of main in this repository
+      # The steps of this workflow, from main only
+      - name: Check out the CD steps from main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
       - name: Check the release run
         id: run
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RUN_ID: ${{ github.event.workflow_run.id || inputs.release_run_id }}
-        run: |
-          [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "::error::the release run ID must be a number"; exit 1; }
-          read -r name branch conclusion repo < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" \
-            --jq '[.name, .head_branch, .conclusion, .repository.full_name] | @tsv')
-          if [[ "$name" != "NF Hotel Release" || "$branch" != "main" || "$conclusion" != "success" || "$repo" != "$GITHUB_REPOSITORY" ]]; then
-            echo "::error::run $RUN_ID is not a successful NF Hotel Release run of main ($name, $branch, $conclusion)"
-            exit 1
-          fi
-          echo "id=$RUN_ID" >>"$GITHUB_OUTPUT"
+        run: bash scripts/cd-steps.sh check-run
 
       - name: Download the release manifest
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
         with:
           name: release-manifest
           run-id: ${{ steps.run.outputs.id }}
           github-token: ${{ github.token }}
 
-      # Only fields that match strict patterns reach the deploy command; the VM checks them again
       - name: Read the release manifest
         id: release
-        run: |
-          sha="$(jq -r '.sha' release.json)"
-          [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::bad commit in the manifest"; exit 1; }
-          echo "sha=$sha" >>"$GITHUB_OUTPUT"
-          for name in nfhotel-web nfhotel-api market-analysis benchmark; do
-            ref="$(jq -r --arg n "$name" '.images[$n]' release.json)"
-            [[ "$ref" =~ ^ghcr\.io/nf-hotel/${name}@sha256:[0-9a-f]{64}$ ]] || { echo "::error::bad digest for $name"; exit 1; }
-            echo "${name//-/_}=$ref" >>"$GITHUB_OUTPUT"
-          done
+        run: bash scripts/cd-steps.sh read-manifest
 
       - name: Join the tailnet
-        uses: tailscale/github-action@v4
+        if: ${{ env.APPLY == 'true' }}
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd  # v4.2.0
         with:
           oauth-client-id: ${{ vars.TS_OIDC_CLIENT_ID }}
           audience: ${{ vars.TS_OIDC_AUDIENCE }}
           tags: tag:ci
+          version: 1.102.4
 
       - name: Deploy on the VM
+        if: ${{ env.APPLY == 'true' }}
         env:
           VM_HOST: ${{ vars.NFHOTEL_VM_HOST }}
           SHA: ${{ steps.release.outputs.sha }}
@@ -92,39 +99,12 @@ jobs:
           API: ${{ steps.release.outputs.nfhotel_api }}
           ANALYSIS: ${{ steps.release.outputs.market_analysis }}
           BENCHMARK: ${{ steps.release.outputs.benchmark }}
-        run: |
-          [[ "$VM_HOST" =~ ^[a-z0-9.-]+$ ]] || { echo "::error::set the environment variable NFHOTEL_VM_HOST"; exit 1; }
-          tailscale ssh "deploy@$VM_HOST" \
-            sudo -n /usr/local/sbin/nfhotel-deploy deploy "$SHA" "$WEB" "$API" "$ANALYSIS" "$BENCHMARK" \
-            2>&1 | tee deploy.log
-          exit "${PIPESTATUS[0]}"
+        run: bash scripts/cd-steps.sh deploy
 
-      # The audit record of this deploy: who approved it is kept by the environment
+      # The audit record of this run; the approver is kept by the environment history
       - name: Write the deployment summary
         if: ${{ always() }}
         env:
           SHA: ${{ steps.release.outputs.sha }}
-          RUN_ID: ${{ steps.run.outputs.id }}
-          OUTCOME: ${{ job.status }}
-        run: |
-          {
-            echo "## Deployment to production: $OUTCOME"
-            echo
-            echo "- Commit: \`$SHA\`"
-            echo "- Release run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$RUN_ID"
-            echo "- Triggered by: $GITHUB_ACTOR ($GITHUB_EVENT_NAME)"
-            echo
-            if [[ -f release.json ]]; then
-              echo '```json'
-              cat release.json
-              echo '```'
-            fi
-            if [[ -f deploy.log ]]; then
-              echo '<details><summary>Deploy log</summary>'
-              echo
-              echo '```'
-              tail -n 60 deploy.log
-              echo '```'
-              echo '</details>'
-            fi
-          } >>"$GITHUB_STEP_SUMMARY"
+          OUTCOME: ${{ env.APPLY == 'true' && job.status || 'dry run' }}
+        run: bash scripts/cd-steps.sh summary

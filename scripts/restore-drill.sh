@@ -10,7 +10,8 @@
 #   3. pg_restore the dump into it
 #   4. report every table with its row count and the latest EF Core migration
 #   5. remove the container and the decrypted dump
-# The drill fails when the restore fails, when no table was restored, or when
+# It changes nothing outside the throwaway container and a temporary folder, both
+# removed at exit, so it needs no --apply flag. The drill fails when the restore fails, when no table was restored, or when
 # the migration history is missing.
 #
 # Usage: restore-drill.sh --identity <key file> <backup .dump.age>
@@ -20,19 +21,13 @@
 
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/lib/common.sh
+. "$ROOT/scripts/lib/common.sh"
+readonly IMAGE="postgres:16-alpine"
+readonly CONTAINER="nfhotel-restore-drill-$$"
 identity=""
 backup=""
-image="postgres:16-alpine"
-container="nfhotel-restore-drill-$$"
-
-die() {
-  echo "error: $*" >&2
-  exit 1
-}
-
-usage() {
-  sed -n '2,/^set -euo/p' "${BASH_SOURCE[0]}" | sed '$d' | sed 's/^# \{0,1\}//'
-}
 
 while (($#)); do
   case "$1" in
@@ -65,7 +60,7 @@ command -v age >/dev/null || die "age is not installed"
 
 work="$(mktemp -d)"
 cleanup() {
-  docker rm -f "$container" >/dev/null 2>&1 || true
+  docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
   rm -rf "$work"
 }
 trap cleanup EXIT
@@ -73,23 +68,23 @@ trap cleanup EXIT
 echo "==> 1. decrypting $(basename "$backup")"
 age --decrypt --identity "$identity" --output "$work/nfhotel.dump" "$backup" || die "the backup cannot be decrypted"
 
-echo "==> 2. starting a throwaway $image (no network)"
-docker run --detach --name "$container" --network none \
-  --env POSTGRES_PASSWORD=drill --env POSTGRES_DB=drill "$image" >/dev/null
+echo "==> 2. starting a throwaway $IMAGE (no network)"
+docker run --detach --name "$CONTAINER" --network none \
+  --env POSTGRES_PASSWORD=drill --env POSTGRES_DB=drill "$IMAGE" >/dev/null
 for _ in $(seq 60); do
-  docker exec "$container" pg_isready --username postgres --dbname drill >/dev/null 2>&1 && break
+  docker exec "$CONTAINER" pg_isready --username postgres --dbname drill >/dev/null 2>&1 && break
   sleep 1
 done
-docker exec "$container" pg_isready --username postgres --dbname drill >/dev/null || die "PostgreSQL did not start"
+docker exec "$CONTAINER" pg_isready --username postgres --dbname drill >/dev/null || die "PostgreSQL did not start"
 
 echo "==> 3. restoring"
-docker cp "$work/nfhotel.dump" "$container:/tmp/nfhotel.dump" >/dev/null
-docker exec "$container" pg_restore --username postgres --dbname drill --no-owner --exit-on-error /tmp/nfhotel.dump ||
+docker cp "$work/nfhotel.dump" "$CONTAINER:/tmp/nfhotel.dump" >/dev/null
+docker exec "$CONTAINER" pg_restore --username postgres --dbname drill --no-owner --exit-on-error /tmp/nfhotel.dump ||
   die "pg_restore failed"
 
 echo "==> 4. what was restored"
 sql() {
-  docker exec "$container" psql --username postgres --dbname drill --tuples-only --no-align --command "$1"
+  docker exec "$CONTAINER" psql --username postgres --dbname drill --tuples-only --no-align --command "$1"
 }
 tables="$(sql "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'")"
 ((tables > 0)) || die "no table was restored"

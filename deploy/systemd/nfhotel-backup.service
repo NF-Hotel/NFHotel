@@ -6,7 +6,7 @@ After=network-online.target docker.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/nfhotel-backup
+ExecStart=/usr/local/sbin/nfhotel-backup --apply
 Nice=10
 IOSchedulingClass=idle
 PrivateTmp=true

@@ -17,7 +17,7 @@ document of a type. `Primary File` may contain a glob (e.g.
 | MIL | Milestone / Gateway | docs/milestones/*.md | 024 |
 | RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 094 |
 | TM | Traceability Matrix | docs/sqa/traceability-matrix.md | 002 |
-| ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0009 |
+| ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0010 |
 | US | User Story | docs/user-stories.md | 002 |
 | UCD | Use Case Diagram | docs/use-case-diagram.md | 002 |
 | UC | Use Case | docs/use-cases/uc-*/uc.md | 005 |

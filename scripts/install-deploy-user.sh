@@ -16,28 +16,21 @@
 #   sudo -n /usr/local/sbin/nfhotel-deploy deploy <sha> <web> <api> <analysis> <benchmark>
 # No ssh key is stored anywhere: Tailscale SSH authorizes the tagged CI node.
 #
-# Usage: install-deploy-user.sh [--dry-run]
-#   --dry-run  print what would be done and change nothing
+# Usage: install-deploy-user.sh [--apply]
+#   --apply  make the changes; without it the script prints what it would do (dry run)
 # Exit:  0 installed; 1 a step failed; 2 usage error
 # Needs: bash 4+, root, useradd, install, visudo (sudo), tailscale (for step 5)
 
 set -euo pipefail
 
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-user=deploy
-command_path=/usr/local/sbin/nfhotel-deploy
-sudoers=/etc/sudoers.d/nfhotel-deploy
-state_dir=/var/lib/nfhotel-deploy
-dry_run=0
-
-die() {
-  echo "error: $*" >&2
-  exit 1
-}
-
-usage() {
-  sed -n '2,/^set -euo/p' "${BASH_SOURCE[0]}" | sed '$d' | sed 's/^# \{0,1\}//'
-}
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/lib/common.sh
+. "$ROOT/scripts/lib/common.sh"
+readonly DEPLOY_USER=deploy
+readonly COMMAND_PATH=/usr/local/sbin/nfhotel-deploy
+readonly SUDOERS=/etc/sudoers.d/nfhotel-deploy
+readonly STATE_DIR=/var/lib/nfhotel-deploy
+dry_run=1
 
 run() {
   if ((dry_run)); then
@@ -49,7 +42,7 @@ run() {
 
 for arg in "$@"; do
   case "$arg" in
-    --dry-run) dry_run=1 ;;
+    --apply) dry_run=0 ;;
     -h | --help)
       usage
       exit 0
@@ -62,26 +55,26 @@ for arg in "$@"; do
 done
 
 ((dry_run)) || [[ "$(id -u)" == 0 ]] || die "run it as root (sudo)"
-[[ -f "$root/scripts/deploy-release.sh" ]] || die "scripts/deploy-release.sh is missing in $root"
+[[ -f "$ROOT/scripts/deploy-release.sh" ]] || die "scripts/deploy-release.sh is missing in $ROOT"
 
-echo "==> 1. user $user"
-if id "$user" >/dev/null 2>&1; then
+echo "==> 1. user $DEPLOY_USER"
+if id "$DEPLOY_USER" >/dev/null 2>&1; then
   echo "    exists"
   for group in docker sudo; do
-    if id -nG "$user" | tr ' ' '\n' | grep -qx "$group"; then
-      die "$user is in the group $group; remove it first (gpasswd -d $user $group)"
+    if id -nG "$DEPLOY_USER" | tr ' ' '\n' | grep -qx "$group"; then
+      die "$DEPLOY_USER is in the group $group; remove it first (gpasswd -d $DEPLOY_USER $group)"
     fi
   done
 else
-  run useradd --create-home --shell /bin/bash --comment "NFHotel CD" "$user"
-  run passwd --lock "$user"
+  run useradd --create-home --shell /bin/bash --comment "NFHotel CD" "$DEPLOY_USER"
+  run passwd --lock "$DEPLOY_USER"
 fi
 
-echo "==> 2. deploy command $command_path"
-run install -o root -g root -m 0755 "$root/scripts/deploy-release.sh" "$command_path"
+echo "==> 2. deploy command $COMMAND_PATH"
+run install -o root -g root -m 0755 "$ROOT/scripts/deploy-release.sh" "$COMMAND_PATH"
 
-echo "==> 3. sudo rule $sudoers"
-rule="$user ALL=(root) NOPASSWD: $command_path"
+echo "==> 3. sudo rule $SUDOERS"
+rule="$DEPLOY_USER ALL=(root) NOPASSWD: $COMMAND_PATH"
 if ((dry_run)); then
   echo "would write: $rule"
 else
@@ -91,12 +84,12 @@ else
     rm -f "$tmp"
     die "the sudo rule did not pass visudo"
   }
-  install -o root -g root -m 0440 "$tmp" "$sudoers"
+  install -o root -g root -m 0440 "$tmp" "$SUDOERS"
   rm -f "$tmp"
 fi
 
-echo "==> 4. state folder $state_dir"
-run install -d -o root -g root -m 0750 "$state_dir"
+echo "==> 4. state folder $STATE_DIR"
+run install -d -o root -g root -m 0750 "$STATE_DIR"
 
 cat <<EOF
 ==> 5. Tailscale (done by S03)
@@ -106,7 +99,7 @@ cat <<EOF
    and add to the tailnet policy:
      "tagOwners": { "tag:ci": ["autogroup:admin"], "tag:nfhotel-vm": ["autogroup:admin"] },
      "grants":    [ { "src": ["tag:ci"], "dst": ["tag:nfhotel-vm"], "ip": ["tcp:22"] } ],
-     "ssh":       [ { "action": "accept", "src": ["tag:ci"], "dst": ["tag:nfhotel-vm"], "users": ["$user"] } ]
+     "ssh":       [ { "action": "accept", "src": ["tag:ci"], "dst": ["tag:nfhotel-vm"], "users": ["$DEPLOY_USER"] } ]
    Then create a trust credential (workload identity federation) for GitHub with the
    scope auth_keys and the tag tag:ci, limited to the repository NF-Hotel/NFHotel and
    the environment production, and give its client ID and audience to the repository

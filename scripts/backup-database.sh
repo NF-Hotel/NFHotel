@@ -20,21 +20,34 @@
 #                   key of the target must be in root's known_hosts (checked strictly)
 #   BACKUP_DIR      local folder (default /var/backups/nfhotel)
 #
-# Usage: backup-database.sh
-# Exit:  0 backed up (and copied, if a target is set); 1 a step failed
+# Usage: backup-database.sh [--apply]
+#   --apply  make the backup; without it the settings are checked and nothing is written
+# The die helper is kept in this file because it is installed alone.
+# Exit:  0 backed up (or checked); 1 a step failed; 2 usage error
 # Needs: bash 4+, docker with the compose plugin, age, rsync (for BACKUP_TARGET)
 
 set -euo pipefail
 
 settings="${NFHOTEL_BACKUP_SETTINGS:-/etc/nfhotel/backup.env}"
 app_dir="${NFHOTEL_DIR:-/opt/nfhotel}"
-daily_keep=14
-weekly_keep=8
+readonly DAILY_KEEP=14
+readonly WEEKLY_KEEP=8
+apply=0
 
 die() {
   echo "error: $*" >&2
   exit 1
 }
+
+for arg in "$@"; do
+  case "$arg" in
+    --apply) apply=1 ;;
+    *)
+      echo "usage: backup-database.sh [--apply]" >&2
+      exit 2
+      ;;
+  esac
+done
 
 [[ -r "$settings" ]] || die "cannot read $settings (run scripts/install-backup.sh)"
 # shellcheck source=/dev/null
@@ -42,6 +55,10 @@ die() {
 [[ "${AGE_RECIPIENT:-}" =~ ^age1[0-9a-z]{58}$ ]] || die "AGE_RECIPIENT in $settings is not an age public key"
 backup_dir="${BACKUP_DIR:-/var/backups/nfhotel}"
 command -v age >/dev/null || die "age is not installed"
+((apply)) || {
+  echo "settings are valid; give --apply to make a backup into $backup_dir"
+  exit 0
+}
 
 install -d -m 0700 "$backup_dir"
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -85,6 +102,6 @@ prune() {
     rm -f "${backup_dir:?}/$name"
   done
 }
-prune daily "$daily_keep"
-prune weekly "$weekly_keep"
+prune daily "$DAILY_KEEP"
+prune weekly "$WEEKLY_KEEP"
 echo "==> done"

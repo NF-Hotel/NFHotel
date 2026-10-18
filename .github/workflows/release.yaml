@@ -1,7 +1,16 @@
-# Release: build the NFHotel images once, push them to GHCR and record their
-# digests (ADR-0007, MIL-021 task 4). Runs only for a green CI run of a push to
-# main in this repository; pull requests never reach this workflow, so untrusted
-# code never gets the package token.
+# Release: build the NFHotel images once, push them to GHCR and record their digests
+# (ADR-0007, MIL-021 task 4).
+#
+# Trigger: a successful NF Hotel CI run of a push to main in this repository
+#   (workflow_run). Pull requests and forks never reach this workflow, so untrusted
+#   code never gets the package token; it checks out only the commit that CI tested
+#   on main.
+# Secrets: none besides the job token (packages: write for GHCR).
+# Changes outside the repository: the four packages ghcr.io/nf-hotel/{nfhotel-web,
+#   nfhotel-api, market-analysis, benchmark}, tagged sha-<commit>.
+# Output: the artifact release-manifest (release.json), which NF Hotel CD deploys.
+# The build is scripts/build-release-images.sh. Verified with actionlint 1.7.7; the
+# workflow_run trigger and the GHCR push are verified on github.com in MIL-021 task 8.
 name: NF Hotel Release
 
 on:
@@ -31,9 +40,8 @@ jobs:
       packages: write
 
     steps:
-      # Build exactly the commit that CI tested
       - name: Check out the tested commit
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           persist-credentials: false
@@ -47,28 +55,16 @@ jobs:
         env:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: >-
-          bash scripts/build-release-images.sh
-          --registry "ghcr.io/${GITHUB_REPOSITORY_OWNER,,}"
-          --sha "$HEAD_SHA"
-          --output release.json
+          bash scripts/build-release-images.sh --push
+          --registry "ghcr.io/${GITHUB_REPOSITORY_OWNER,,}" --sha "$HEAD_SHA"
+          --output release.json --summary "$GITHUB_STEP_SUMMARY"
 
       - name: Log out of GHCR
         if: ${{ always() }}
         run: docker logout ghcr.io
 
-      # The manifest is what CD deploys: the commit and one digest per image
-      - name: Write the release summary
-        run: |
-          {
-            echo "## Release"
-            echo
-            echo '```json'
-            cat release.json
-            echo '```'
-          } >>"$GITHUB_STEP_SUMMARY"
-
       - name: Keep the release manifest
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: release-manifest
           path: release.json
