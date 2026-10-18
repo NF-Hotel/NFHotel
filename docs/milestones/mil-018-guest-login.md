@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | Claude (AI) | S01 | Initial version | pending |
-| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-084 Go | pending |
+| 2026-10-18 | Proposed | Claude (AI) | S01 | Initial version | [6b606da] |
+| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-084 Go | [6b606da] |
 
 ---
 
@@ -101,3 +101,4 @@ Decide whether a guest may see and change a booking without the staff sign-in. S
 [MIL-017]: ./mil-017-tls.md
 [ADR-0005]: ../adr/adr-0005-backoffice-login.md
 [ADR-0006]: ../adr/adr-0006-tls.md
+[6b606da]: https://github.com/NF-Hotel/NFHotel/commit/6b606da4c8584d71b7c2f754d71e14ceb6aca871
