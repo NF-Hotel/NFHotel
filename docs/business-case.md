@@ -14,7 +14,8 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 12, validation attributes on the entities (MIL-009) | [4cab5fc] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Amended: objective 13, the comments in the source code are in English (MIL-010) | [e67e815] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 14, the tests run on xUnit v3 (MIL-011) | [ef2bd4b] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 15, the tests cover the kinds of behaviour of the coding conventions (MIL-012) | [8200afa] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 15, the tests cover the kinds of behaviour of the coding conventions (MIL-012) | [8200afa] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Amended: objective 16, the booking service refuses an inverted overview period and a check-in to a room that cannot be let (MIL-013) | [5036584] |
 
 ---
 
@@ -76,6 +77,7 @@ basis for the hosting decision (Q-31).
 13. Convert the comments in the source code and the tests from Danish to English, the Product Owner language, without changing any code; the text of the application screens stays as it is.
 14. Move the four test projects from xUnit v2 to xUnit v3, the supported line, without losing or changing a test and without changing the code under test.
 15. Make the tests follow the test rules of the coding conventions: the use-case layer has unit tests, the conflict paths have integration tests, every test is named `Method_Condition_Expected`, and unit and integration tests are apart; the code in `src/` does not change.
+16. Make the booking service refuse an overview period whose end is before its start and a check-in to a room that cannot be let; the code of the domain does not change.
 
 ## Scope
 
@@ -96,6 +98,7 @@ basis for the hosting decision (Q-31).
 - The conversion of all comments in `src/` and `tests/` to English, with a check that only comments changed (MIL-010); the text of the application screens, string literals and test data stay as they are.
 - The move of the four test projects from xUnit v2 to xUnit v3, with the same tests and the same test counts (MIL-011); the code in `src/` is not changed.
 - Unit tests for the three services, integration tests for the conflict paths, the renaming of the test methods and the split of unit and integration tests, with a test plan (MIL-012); the code in `src/` is not changed.
+- Two guards in the booking service, the matching error text and the check-in flag of the booking screens, with the use case updated (MIL-013)
 
 ### Out of Scope
 
@@ -151,6 +154,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 16 | Source comments in English | 0 Danish letters or words in the comments of `src/` and `tests/`; 0 changed lines that are not comments | Language scan and comment-only diff check in the review record |
 | 17 | Tests on xUnit v3 | 0 references to `xunit` 2.x in the project files; the same test count per project as before; 0 changed lines in `src/` | `dotnet test`, a search of the project files and `git diff` of `src/` |
 | 18 | Tests follow the test rules | 0 test names with fewer than three parts; at least one positive and one negative test for each public method of the three services; 0 sleeps, system-clock reads or network calls in `tests/`; 0 changed lines in `src/` | An architecture test, a source search and `git diff` of `src/` |
+| 19 | Booking guards | The overview refuses an end before the start and allows one day; check-in is refused for a room out of service or in maintenance and allowed for a room that needs cleaning; 0 changed lines in `NFHotel.Domain` | `BookingServiceTests`, a mapping test and `git diff` of the domain |
 
 ## Risks
 
@@ -230,3 +234,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [e67e815]: https://github.com/NF-Hotel/NFHotel/commit/e67e8155fd63d307e6783924f956fa49f915edbd
 [ef2bd4b]: https://github.com/NF-Hotel/NFHotel/commit/ef2bd4bda1edbd598228cb0fc043a4f2fc996974
 [8200afa]: https://github.com/NF-Hotel/NFHotel/commit/8200afa457e37ca87a68ab7e34126db1dd85e3d1
+[5036584]: https://github.com/NF-Hotel/NFHotel/commit/5036584e9809a90d8459f07554733917c7129a0e

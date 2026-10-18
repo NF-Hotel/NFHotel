@@ -942,6 +942,93 @@ public sealed class BookingServiceTests
 
     #endregion
 
+    #region Booking guards (MIL-013)
+
+    /// <summary>Negative and boundary: an overview whose end is one day before its start is refused and asks nothing.</summary>
+    [Fact]
+    public async Task GetOverviewAsync_EndOneDayBeforeStart_ReturnsOverviewPeriodInvalidWithoutQuerying()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var query = new BookingOverviewQuery(world.Clock.Today, world.Clock.Today.AddDays(-1));
+
+        // Act
+        var result = await world.BookingService().GetOverviewAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.OverviewPeriodInvalid, result.FirstError?.Code);
+        await world.BookingQueries.DidNotReceiveWithAnyArgs().GetOverviewAsync(
+            default, default, default!, default, TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>Boundary: an end equal to the start is the view of one day and is allowed.</summary>
+    [Fact]
+    public async Task GetOverviewAsync_EndEqualsStart_ReturnsTheOneDayView()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var query = new BookingOverviewQuery(world.Clock.Today, world.Clock.Today);
+        world.BookingQueries
+            .GetOverviewAsync(default, default, default!, default, TestContext.Current.CancellationToken)
+            .ReturnsForAnyArgs(Task.FromResult<IReadOnlyList<BookingReadModel>>([]));
+
+        // Act
+        var result = await world.BookingService().GetOverviewAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+    }
+
+    /// <summary>Equivalence: a room out of service and a room in maintenance both refuse the check-in (BR-110).</summary>
+    [Theory]
+    [InlineData(RoomStatus.OutOfService)]
+    [InlineData(RoomStatus.Maintenance)]
+    public async Task CheckInAsync_RoomNotBookable_ReturnsRoomNotBookableAndChangesNothing(RoomStatus roomStatus)
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var room = world.AddRoom();
+        var booking = world.AddBooking(room.Id, world.AddGuest().Id);
+        booking.Confirm();
+        if (roomStatus == RoomStatus.OutOfService)
+        {
+            room.TakeOutOfService();
+        }
+        else
+        {
+            room.SendToMaintenance();
+        }
+
+        // Act
+        var result = await world.BookingService().CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.RoomNotBookable, result.FirstError?.Code);
+        Assert.Equal(BookingStatus.Confirmed, booking.Status);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
+    }
+
+    /// <summary>Edge: a room that only needs cleaning is still bookable, so the guest may check in (B-04).</summary>
+    [Fact]
+    public async Task CheckInAsync_RoomNeedsCleaning_ChecksIn()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var room = world.AddRoom();
+        var booking = world.AddBooking(room.Id, world.AddGuest().Id);
+        booking.Confirm();
+        room.MarkDailyCleaningDue();
+
+        // Act
+        var result = await world.BookingService().CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(BookingStatus.CheckedIn, booking.Status);
+    }
+
+    #endregion
+
     #region Helpers
 
     private static void ArrangeRoomsAndOccupancy(
