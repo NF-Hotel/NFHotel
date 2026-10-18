@@ -33,7 +33,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
     public string ConnectionString => _container.GetConnectionString();
 
     // Starts the PostgreSQL container before the integration tests are run.
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _container.StartAsync();
 
@@ -100,7 +100,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
 
 
     // Stops and cleans up the PostgreSQL container after the integration tests.
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _container.DisposeAsync();
     }
