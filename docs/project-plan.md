@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [MIL-016], [MIL-017], [US-001] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [MIL-016], [MIL-017], [MIL-021], [MIL-022], [MIL-023], [US-001] |
 | Language | en |
 | Domain | it |
 
@@ -19,7 +19,8 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-014 (async where it matters) | [417a575] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-015 (database API) | [9e6d2d4] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-016 (back office login) | [bbef3bf] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Added MIL-017 (TLS) | [b174eeb] |
+| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-017 (TLS) | [b174eeb] |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Added MIL-021 to MIL-023 (secure CI/CD in three phases, DSA-001); accepted after RC-088 Go | pending |
 
 ---
 
@@ -56,6 +57,9 @@ person ending 2026-10-17.
 | Database API | [MIL-015] | 2026-12-30 to 2027-01-22 | 2027-01-22 | S01 | none | ADR-0004; API, client and external adapters; web switched to the client; deploy and proof in the VM | none yet |
 | Back office login | [MIL-016] | 2027-01-22 to 2027-02-19 | 2027-02-19 | S01 | none | ADR-0005; staff accounts, token, permission table, login pages; deploy and proof in the VM | none yet |
 | TLS | [MIL-017] | 2027-02-19 to 2027-03-05 | 2027-03-05 | S01 | none | ADR-0006; nginx TLS, certificate script, Secure cookie; deploy and proof in the VM | none yet |
+| Secure CI/CD foundation | [MIL-021] | 2026-10-18 to 2026-11-15 | 2026-11-15 | S01 | none | ADR-0007, ADR-0008; required checks, release to GHCR, approved CD over Tailscale, backups and a restore drill | none yet |
+| Software supply chain security | [MIL-022] | 2026-11-15 to 2026-12-06 | 2026-12-06 | S01 | none | Trivy, SBOM, provenance verified in CD, pinned actions and images, CodeQL, migrations by CD | none yet |
+| Operational quality and maturity | [MIL-023] | 2026-12-06 to 2027-01-17 | 2027-01-17 | S01 | none | CIS-aligned hardening, nftables, patching, logs, Scorecard, SAMM, DORA, restore drills | none yet |
 
 ```plantuml
 @startgantt
@@ -94,6 +98,12 @@ Project starts 2026-10-16
 [MIL-016 Go/No-Go] happens 2027-02-19
 [TLS] starts 2027-02-19 and ends 2027-03-05
 [MIL-017 Go/No-Go] happens 2027-03-05
+[Secure CI/CD foundation] starts 2026-10-18 and ends 2026-11-15
+[MIL-021 Go/No-Go] happens 2026-11-15
+[Software supply chain security] starts 2026-11-15 and ends 2026-12-06
+[MIL-022 Go/No-Go] happens 2026-12-06
+[Operational quality and maturity] starts 2026-12-06 and ends 2027-01-17
+[MIL-023 Go/No-Go] happens 2027-01-17
 @endgantt
 ```
 
@@ -122,6 +132,9 @@ Project starts 2026-10-16
 | Database API (objective 18) | MIL-015 |
 | Back office login (objective 19) | MIL-016 |
 | TLS (objective 20) | MIL-017 |
+| Approved pipeline and backups (objective 23) | MIL-021 |
+| Verified supply chain (objective 24) | MIL-022 |
+| Hardened and observed server (objective 25) | MIL-023 |
 
 ## Dependencies
 
@@ -140,6 +153,7 @@ MIL-013 -> MIL-014
 MIL-014 -> MIL-015
 MIL-015 -> MIL-016
 MIL-016 -> MIL-017
+MIL-021 -> MIL-022 -> MIL-023 (after PR #22, the CI workflow; independent of MIL-018 to MIL-020)
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -180,6 +194,9 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-015]: ./milestones/mil-015-database-api.md
 [MIL-016]: ./milestones/mil-016-backoffice-login.md
 [MIL-017]: ./milestones/mil-017-tls.md
+[MIL-021]: ./milestones/mil-021-secure-cicd-foundation.md
+[MIL-022]: ./milestones/mil-022-supply-chain-security.md
+[MIL-023]: ./milestones/mil-023-operational-quality.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2

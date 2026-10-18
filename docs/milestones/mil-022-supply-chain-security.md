@@ -12,12 +12,13 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-18 | Proposed | mikemike | S01 | Initial version | pending |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-090 Go | pending |
 
 ---
 
 ## Purpose
 
-Decide whether NF Hotel may claim that only scanned and attested images reach production. This phase adds the following to the pipeline of MIL-021, aiming at SLSA v1.2 Build Level 2:
+Decide whether NF Hotel may claim that only scanned and attested images reach production. This phase adds the following to the pipeline of MIL-021, aiming at SLSA (Supply-chain Levels for Software Artifacts) v1.2 Build Level 2:
 
 - vulnerability scanning;
 - a software bill of materials;
@@ -31,7 +32,7 @@ The level is claimed only when criterion 3 holds.
 ## Deliverable
 
 - **Release scanning.** Trivy scans each pushed digest, with the thresholds of DSA-001 section 8, and the results go to code scanning as SARIF.
-- **SBOM.** An SPDX SBOM is made for each digest and attested.
+- **SBOM.** An SPDX software bill of materials (SBOM) is made for each digest and attested.
 - **Provenance.** Each digest gets a build provenance attestation (`actions/attest`). CD verifies it with `gh attestation verify` and refuses an unverified digest.
 - **Pinning.**
   - All third-party actions are pinned by commit SHA, and the Actions policy requires SHA pinning.
@@ -63,6 +64,7 @@ The level is claimed only when criterion 3 holds.
 
 | Business Case objective / KPI / user story | Reference |
 | --- | --- |
+| Objective 24 and success criterion 27 of BC-001 | All tasks |
 | DSA-001 risks R3, R4, R5 | All tasks |
 | SSDF PS.2, PS.3, PW.4, PW.7, RV.1; SLSA Build L2 | Criteria 2 to 5 |
 

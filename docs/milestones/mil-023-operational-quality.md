@@ -12,6 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-18 | Proposed | mikemike | S01 | Initial version | pending |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-091 Go | pending |
 
 ---
 
@@ -19,7 +20,7 @@
 
 Decide whether the VM and the containers are hardened and observed well enough to serve the internet. The work covers four things:
 
-- harden Docker and Debian along selected CIS Level 1 items;
+- harden Docker and Debian along selected Center for Internet Security (CIS) Benchmark Level 1 items;
 - manage the firewall and patching as code;
 - measure the repository posture and the delivery performance;
 - set a security maturity baseline.
@@ -42,8 +43,8 @@ Decide whether the VM and the containers are hardened and observed well enough t
 - **Observability.** Log rotation, an external uptime check of `https://`, and a deployment log that is kept for 90 days.
 - **Posture and maturity.**
   - An OpenSSF Scorecard workflow (weekly and on `main`), with its results in code scanning.
-  - An OWASP SAMM self-assessment (baseline).
-  - A monthly report of the DORA metrics (change lead time, deployment frequency, failed deployment recovery time, change failure rate, deployment rework rate).
+  - An OWASP Software Assurance Maturity Model (SAMM) self-assessment (baseline).
+  - A monthly report of the DevOps Research and Assessment (DORA) metrics (change lead time, deployment frequency, failed deployment recovery time, change failure rate, deployment rework rate).
   - A monthly restore drill.
 
 ## Go / No-Go Criteria
@@ -68,6 +69,7 @@ Decide whether the VM and the containers are hardened and observed well enough t
 
 | Business Case objective / KPI / user story | Reference |
 | --- | --- |
+| Objective 25 and success criterion 28 of BC-001 | All tasks |
 | DSA-001 risks R10, R11, R12 | All tasks |
 | CIS Docker and Debian; OpenSSF Scorecard; OWASP SAMM; DORA | Criteria 1 to 5 |
 

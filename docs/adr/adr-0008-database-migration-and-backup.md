@@ -5,11 +5,14 @@
 | --- | --- |
 | ID | ADR-0008 |
 | CrossReference | [BC-001], [ADR-0004], [ADR-0007], [MIL-021], [MIL-022] |
+| Language | en |
+| Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-18 | Proposed | mikemike | S01; S03 | Initial version | pending |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-093 Go | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -19,11 +22,13 @@ Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Supers
 
 The database runs in the container `postgres` (PostgreSQL 16) with the named volume `pgdata` on the VM (ADR-0004). It holds guests, bookings and encrypted passport numbers.
 
-There is no backup and no restore procedure (DSA-001 section 2.5). The API applies EF Core migrations itself when it starts, if `Database__MigrateOnStart=true`. A failed migration, a lost disk or a mistaken `docker volume rm` would therefore lose all data, and there is no defined way back.
+There is no backup and no restore procedure (DSA-001 section 2.5). The API applies Entity Framework Core (EF Core) migrations itself when it starts, if `Database__MigrateOnStart=true`. A failed migration, a lost disk or a mistaken `docker volume rm` would therefore lose all data, and there is no defined way back.
 
-Options considered for backups: a Proxmox VM backup only; `pg_dump` on a timer; continuous WAL archiving (point-in-time recovery). Options for migrations: at application start (as today); a migration bundle run by CD; reviewed idempotent SQL scripts run by CD.
+Options considered for backups: a Proxmox VM backup only; `pg_dump` on a timer; continuous write-ahead log (WAL) archiving (point-in-time recovery). Options for migrations: at application start (as today); a migration bundle run by CD; reviewed idempotent SQL scripts run by CD.
 
 ## Decision
+
+We take daily logical backups with a tested restore, and CD applies migrations as reviewed scripts in an expand-then-contract order.
 
 1. **Logical backups.**
    - A systemd timer on the VM runs `pg_dump --format=custom` every day at 02:00.
@@ -56,7 +61,7 @@ WAL archiving is not chosen now: a daily dump with a tested restore fits the dat
 
 **Negative:**
 
-- Up to one day of bookings can be lost in a disaster (RPO 24 hours). Restore time is estimated at under one hour for the current size (RTO), to be measured in the first drill.
+- Up to one day of bookings can be lost in a disaster (recovery point objective, RPO, of 24 hours). Restore time is estimated at under one hour for the current size (recovery time objective, RTO), to be measured in the first drill.
 - Expand-then-contract needs discipline in reviews.
 - The decryption key must be kept safely; if it is lost, the backups are lost.
 

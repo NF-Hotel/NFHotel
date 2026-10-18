@@ -11,17 +11,17 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | mikemike | S01 | Initial version | pending |
 | 2026-10-18 | Proposed | mikemike | S01; S03 | Rewritten as phase 1 of DSA-001: images from GHCR instead of builds in the VM, Tailscale OIDC and SSH, backups | pending |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-089 Go | pending |
 
 ---
 
 ## Purpose
 
-Decide whether NF Hotel may deploy to the Proxmox VM through an approved, repeatable pipeline instead of by hand. Phase 1 of DSA-001 has four parts:
+Decide whether NF Hotel may deploy to the Proxmox VM through an approved, repeatable pipeline instead of by hand. Phase 1 of the CI/CD and DevSecOps assessment DSA-001 has four parts:
 
 - CI becomes a required gate.
-- `main` releases the web and API images to GHCR.
+- `main` releases the web and API images to the GitHub Container Registry (GHCR).
 - An approved CD workflow deploys them by digest over Tailscale, with health checks and rollback.
 - The database gets a backup and a tested restore.
 
@@ -36,7 +36,7 @@ Supply-chain checks (phase 2, MIL-022) and hardening (phase 3, MIL-023) follow.
   - `SECURITY.md` and `CODEOWNERS` are added.
   - The Environment `production` gets required reviewers and is limited to `main`.
 - `.github/workflows/release.yaml`: builds `nfhotel-web` and `nfhotel-api` on `main` after green CI, pushes them to GHCR, and records the digests in the job summary.
-- `.github/workflows/cd.yaml`: Environment `production`, Tailscale OIDC (`tag:ci`), Tailscale SSH as `deploy`, deploy by digest, health checks, smoke test, rollback, concurrency, release record.
+- `.github/workflows/cd.yaml`: Environment `production`, Tailscale with OpenID Connect (OIDC) federation (`tag:ci`), Tailscale SSH as `deploy`, deploy by digest, health checks, smoke test, rollback, concurrency, release record.
 - `scripts/deploy-release.sh` on the VM, and compose files that read the image reference from `deploy/release.env` (keeping `build:` for local development).
 - Tailscale policy: tags `tag:ci` and `tag:nfhotel-vm`, a grant from `tag:ci` to `tag:nfhotel-vm:22` only, and an `ssh` rule for the user `deploy`. These are configured by S03 and recorded in the wiki.
 - Backups:
@@ -71,8 +71,8 @@ Supply-chain checks (phase 2, MIL-022) and hardening (phase 3, MIL-023) follow.
 
 | Business Case objective / KPI / user story | Reference |
 | --- | --- |
-| New objective of an amended BC-001: a release reaches production only through an approved pipeline, and the data can be restored | All tasks |
-| New success criteria (the next free numbers) | Criteria 1 to 8 |
+| Objective 23 of BC-001: a release reaches production only through an approved pipeline, and the data can be restored | All tasks |
+| Success criterion 26 of BC-001 | Criteria 1 to 8 |
 | DSA-001 risks R1, R2, R5, R7, R8, R9, R13 | Tasks 2 to 8 |
 
 ## Ownership

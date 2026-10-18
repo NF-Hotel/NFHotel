@@ -5,11 +5,14 @@
 | --- | --- |
 | ID | ADR-0007 |
 | CrossReference | [BC-001], [ADR-0003], [ADR-0006], [MIL-021], [MIL-022] |
+| Language | en |
+| Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-18 | Proposed | mikemike | S01; S03 | Initial version | pending |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-092 Go | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -17,17 +20,17 @@ Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Supers
 
 ## Context
 
-Today a person deploys by running `scripts/deploy.sh` on a developer machine. The script ships a working tree or a clone, plus the settings files, to the Proxmox VM over ssh, and the VM builds the images (ADR-0003). What runs in production therefore depends on that machine. No image has a digest, a scan or provenance, and CI is not a required check (DSA-001 section 2).
+Today a person deploys by running `scripts/deploy.sh` on a developer machine. The script ships a working tree or a clone, plus the settings files, to the Proxmox VM over ssh, and the VM builds the images (ADR-0003). What runs in production therefore depends on that machine. No image has a digest, a scan or provenance, and continuous integration (CI) is not a required check (DSA-001 section 2).
 
-The team wants deployment to happen only after CI has passed and someone has approved it, without opening a port to the internet. The required standards are NIST SSDF v1.1, SLSA v1.2 Build L2 as a target, and OpenSSF Scorecard as an indicator (DSA-001 section 3).
+The team wants deployment to happen only after CI has passed and someone has approved it, without opening a port to the internet. The required standards are NIST Secure Software Development Framework (SSDF) v1.1, SLSA (Supply-chain Levels for Software Artifacts) v1.2 Build L2 as a target, and OpenSSF Scorecard as an indicator (DSA-001 section 3).
 
 Options considered:
 
 1. **Build on the VM** (keep `deploy-services.sh`) and let CD only trigger it. Small change, but the deployed artefact is never the one CI tested, and SLSA provenance is impossible.
-2. **Build once in a hosted Release workflow, push to GHCR, and deploy by digest.** The VM never builds.
+2. **Build once in a hosted Release workflow, push to the GitHub Container Registry (GHCR), and deploy by digest.** The VM never builds.
 3. **A self-hosted runner in the VM.** No inbound access is needed, but untrusted code would run next to production, and the VM would become a build host.
 
-For access: Tailscale with an OAuth secret, Tailscale with workload identity federation (OIDC), ssh to a public address, or a self-hosted runner.
+For access: Tailscale with an OAuth secret, Tailscale with workload identity federation (OpenID Connect, OIDC), ssh to a public address, or a self-hosted runner.
 
 ## Decision
 
@@ -35,7 +38,7 @@ We follow option 2, with Tailscale workload identity federation and Tailscale SS
 
 1. **Three workflows.**
    - `ci.yaml` runs on pull requests and on `main`, with a read-only token and no secrets.
-   - `release.yaml` runs on `main` after CI succeeds. It builds `nfhotel-web` and `nfhotel-api`, pushes them to `ghcr.io/nf-hotel/`, and writes an SBOM, a Trivy result and a build provenance attestation (`actions/attest`) for each digest.
+   - `release.yaml` runs on `main` after CI succeeds. It builds `nfhotel-web` and `nfhotel-api`, pushes them to `ghcr.io/nf-hotel/`, and writes a software bill of materials (SBOM), a Trivy result and a build provenance attestation (`actions/attest`) for each digest.
    - `cd.yaml` starts on a successful Release run, or by hand for an earlier release.
 2. **Approval first.** The CD job runs in the GitHub Environment `production`, which has required reviewers and a deployment branch rule for `main` only. No credential is issued before the approval.
 3. **Verify before deploy.** CD runs `gh attestation verify` for each digest against the repository and the release workflow. It refuses a digest that has no valid attestation.
