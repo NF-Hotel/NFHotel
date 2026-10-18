@@ -59,17 +59,21 @@ jobs:
       - name: Kontrollér Docker til integrationstests
         run: docker info
 
-      # Kør alle tre testprojekter og mål code coverage
+      # Testene kører på Microsoft.Testing.Platform (global.json), som ikke
+      # kender VSTest-collectoren coverlet.collector. Coverage måles derfor
+      # udefra med dotnet-coverage, så testprojekterne ikke skal ændres.
+      - name: Installer dotnet-coverage
+        run: dotnet tool install --global dotnet-coverage --version 18.12.0
+
+      # Kør alle testprojekter, gem TRX pr. projekt og mål code coverage
       - name: Tests og coverage
         run: >-
-          dotnet test NFHotel.sln
-          --configuration Release
-          --no-build
-          --no-restore
-          --logger trx
-          --results-directory TestResults
-          --collect:"XPlat Code Coverage"
-          --settings .runsettings
+          dotnet-coverage collect
+          --settings dotnet-coverage.config.xml
+          --output TestResults/coverage.cobertura.xml
+          --output-format cobertura
+          "dotnet test NFHotel.sln --configuration Release --no-build
+          --results-directory TestResults --report-xunit-trx"
 
       # Gem rapporter også når tests fejler
       - name: Gem testresultater og coverage
