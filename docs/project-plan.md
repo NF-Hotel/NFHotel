@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [MIL-016], [MIL-017], [MIL-018], [US-001] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [MIL-016], [MIL-017], [MIL-018], [MIL-019], [MIL-020], [US-001] |
 | Language | en |
 | Domain | it |
 
@@ -20,7 +20,8 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-015 (database API) | [9e6d2d4] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-016 (back office login) | [bbef3bf] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-017 (TLS) | [b174eeb] |
-| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Added MIL-018 (guest login) | [6b606da] |
+| 2026-10-18 | Deprecated | Claude (AI) | AI at the request of S01 | Added MIL-018 (guest login) | [6b606da] |
+| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Added MIL-019 and MIL-020 (benchmark results and start, with the notebook-benchmark repository) | [7fbeba1] |
 
 ---
 
@@ -58,6 +59,8 @@ person ending 2026-10-17.
 | Back office login | [MIL-016] | 2027-01-22 to 2027-02-19 | 2027-02-19 | S01 | none | ADR-0005; staff accounts, token, permission table, login pages; deploy and proof in the VM | none yet |
 | TLS | [MIL-017] | 2027-02-19 to 2027-03-05 | 2027-03-05 | S01 | none | ADR-0006; nginx TLS, certificate script, Secure cookie; deploy and proof in the VM | none yet |
 | Guest login | [MIL-018] | 2027-03-05 to 2027-03-19 | 2027-03-19 | S01 | none | ADR-0007; guest token by booking number and email, own-resource check, guest pages; deploy and proof in the VM | none yet |
+| Benchmark results API and pages | [MIL-019] | 2027-03-19 to 2027-04-02 | 2027-04-02 | S01 | none | Results API (idempotent), table, Manager pages for runs; contract of notebook-benchmark MIL-001 | none yet |
+| Start a benchmark run | [MIL-020] | 2027-04-02 to 2027-04-16 | 2027-04-16 | S01 | none | Client of the benchmark API, start page, deploy files and tokens; joins notebook-benchmark MIL-004 | none yet |
 
 ```plantuml
 @startgantt
@@ -98,6 +101,10 @@ Project starts 2026-10-16
 [MIL-017 Go/No-Go] happens 2027-03-05
 [Guest login] starts 2027-03-05 and ends 2027-03-19
 [MIL-018 Go/No-Go] happens 2027-03-19
+[Benchmark results API] starts 2027-03-19 and ends 2027-04-02
+[MIL-019 Go/No-Go] happens 2027-04-02
+[Start a benchmark run] starts 2027-04-02 and ends 2027-04-16
+[MIL-020 Go/No-Go] happens 2027-04-16
 @endgantt
 ```
 
@@ -127,6 +134,7 @@ Project starts 2026-10-16
 | Back office login (objective 19) | MIL-016 |
 | TLS (objective 20) | MIL-017 |
 | Guest login (objective 21) | MIL-018 |
+| Benchmark results and start (objective 22) | MIL-019, MIL-020 |
 
 ## Dependencies
 
@@ -146,6 +154,7 @@ MIL-014 -> MIL-015
 MIL-015 -> MIL-016
 MIL-016 -> MIL-017
 MIL-017 -> MIL-018
+MIL-018 -> MIL-019 -> MIL-020
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -187,6 +196,8 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-016]: ./milestones/mil-016-backoffice-login.md
 [MIL-017]: ./milestones/mil-017-tls.md
 [MIL-018]: ./milestones/mil-018-guest-login.md
+[MIL-019]: ./milestones/mil-019-benchmark-results-api.md
+[MIL-020]: ./milestones/mil-020-start-benchmark-run.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
@@ -218,3 +229,4 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [bbef3bf]: https://github.com/NF-Hotel/NFHotel/commit/bbef3bf556044704b80b76a7817432bc2b6527cd
 [b174eeb]: https://github.com/NF-Hotel/NFHotel/commit/b174eeba803523402481ff38d07a4056073941ef
 [6b606da]: https://github.com/NF-Hotel/NFHotel/commit/6b606da4c8584d71b7c2f754d71e14ceb6aca871
+[7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0

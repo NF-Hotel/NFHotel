@@ -20,7 +20,8 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 18, the database is reachable only through an API that is not exposed to the internet (MIL-015) | [9e6d2d4] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 19, Make the back office available only to signed-in staff, with a role per staff me (MIL-016) | [bbef3bf] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 20, Serve the one service that the internet reaches only over TLS: HTTP redirects to (MIL-017) | [b174eeb] |
-| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Amended: objective 21, A guest signs in with the booking number and the email and reaches only their own booking (MIL-018) | [6b606da] |
+| 2026-10-18 | Deprecated | Claude (AI) | AI at the request of S01 | Amended: objective 21, A guest signs in with the booking number and the email and reaches only their own booking (MIL-018) | [6b606da] |
+| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Amended: objective 22, an administrator starts a benchmark run in the back office and reads its stored result later (MIL-019, MIL-020) | [7fbeba1] |
 
 ---
 
@@ -88,6 +89,7 @@ basis for the hosting decision (Q-31).
 19. Make the back office available only to signed-in staff, with a role per staff member that limits what each may see and do.
 20. Serve the one service that the internet reaches only over TLS: HTTP redirects to HTTPS and the staff cookie is never sent in clear text.
 21. Let a guest sign in with the booking number and the email of the booking, so that a guest reaches only their own booking and guest details and nobody else's, with no account and no password to keep.
+22. Let an administrator start a benchmark run of local AI models from the back office and read the result of every run later, the result being sent by the benchmark service to the web API and stored in the web database.
 
 ## Scope
 
@@ -114,6 +116,7 @@ basis for the hosting decision (Q-31).
 - Staff accounts, sign-in with a signed token, a permission table per role enforced in the Application layer and the API, the login and logout pages, authorization of the back office pages, the deploy files, and ADR-0005 (MIL-016)
 - TLS termination in nginx, a development certificate script, HTTP to HTTPS redirect, a Secure staff cookie, the deploy files, and ADR-0006 (MIL-017)
 - A guest sign-in by booking number and email, a short-lived guest token, an own-resource check in the API and the guest pages, the guest permissions of the permission table, the deploy files, and ADR-0007 (MIL-018)
+- A results API with a table and an administrator page for benchmark runs, and a client and a start page for the benchmark service on the VM (MIL-019, MIL-020); the benchmark service itself is in the repository `notebook-benchmark`.
 
 ### Out of Scope
 
@@ -175,6 +178,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 22 | Back office login | 0 back office pages or staff endpoints answer without a valid sign-in (redirect to the login, or 401); for every role and operation a test states allowed or refused and equals the Access Control Matrix; Housekeeping gets 403 on bookings, guests and sales; a tampered or expired token is refused; the sixth failed sign-in in the window gets 429 | Permission table tests, API and page tests, and the deploy check in the VM |
 | 23 | TLS at the public port | Port 80 answers only 301 to HTTPS; HTTPS answers with TLS 1.2 or 1.3 and refuses 1.1 and 1.0; the staff cookie has Secure and HttpOnly; 0 private keys in git; only ports 80 and 443 of nginx answer from outside | The smoke test, openssl s_client and the deploy check in the VM |
 | 24 | Guest sign-in | A call for a booking without a valid staff or guest token gets 401; a guest token for booking A gets 403 for booking B and for every other guest; a wrong email, an unknown number and an expired token give the same refusal; the sixth failed attempt for a number in the window gets 429; a guest never receives a passport number | Permission and own-resource tests, API and page tests, and the deploy check in the VM |
+| 25 | Benchmark results | A run result posted twice with the same run id is stored once; a call to the results API without the service token gets 401; a Manager lists the runs and reads one with every model and its measurements; a Receptionist and a Housekeeping user get 403; a start request reaches the benchmark service only from a Manager | API, permission and page tests, and the deploy check in the VM |
 
 ## Risks
 
@@ -260,3 +264,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [bbef3bf]: https://github.com/NF-Hotel/NFHotel/commit/bbef3bf556044704b80b76a7817432bc2b6527cd
 [b174eeb]: https://github.com/NF-Hotel/NFHotel/commit/b174eeba803523402481ff38d07a4056073941ef
 [6b606da]: https://github.com/NF-Hotel/NFHotel/commit/6b606da4c8584d71b7c2f754d71e14ceb6aca871
+[7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0
