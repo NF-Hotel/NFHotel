@@ -24,7 +24,7 @@ updated whenever an artifact instance is created or reviewed.
 
 | Artifact Instance | Type | Language | Domain | Upstream (Backward Link) | Downstream (Forward Link) | Last Reviewed (RC-ID) |
 | --- | --- | --- | --- | --- | --- | --- |
-| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [UCD-001], [US-001] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044] |
+| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-021], [MIL-022], [MIL-023], [UCD-001], [US-001] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044], [RC-088] |
 | [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009], [RC-026] |
 | [MIL-001] | Milestone | en | it | [BC-001] | - | [RC-003] |
 | [MIL-002] | Milestone | en | it | [BC-001] | - | [RC-006] |
@@ -40,7 +40,14 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0003] | ADR | en | it | [BC-001], [MIL-004], [US-001] | [MIL-004] | [RC-047] |
 | [ADR-0001] | Architecture Decision Record | - | - | [BC-001] | [MIL-005] | [RC-019] |
 | `src/` (Domain, Application, Infrastructure) | Source code | - | - | [ADR-0001], [MIL-005] | - | [RC-020] |
-| [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003] | - |
+| [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003], [MIL-021], [MIL-022], [MIL-023] | [RC-088] |
+| [DSA-001] | CI/CD and DevSecOps Assessment (no catalog type) | en | it | [BC-001], [ADR-0003], [ADR-0006] | [ADR-0007], [ADR-0008], [ADR-0009], [MIL-021], [MIL-022], [MIL-023] | - (no checklist; decisions approved in chat) |
+| [MIL-021] | Milestone | en | it | [BC-001], [DSA-001], [ADR-0007], [ADR-0008] | [MIL-022] | [RC-089], [RC-094], [RC-095] |
+| [MIL-022] | Milestone | en | it | [BC-001], [MIL-021] | [MIL-023] | [RC-090] |
+| [MIL-023] | Milestone | en | it | [BC-001], [MIL-022] | - | [RC-091] |
+| [ADR-0007] | ADR | en | it | [BC-001], [DSA-001], [ADR-0003] | [MIL-021], [MIL-022] | [RC-092] |
+| [ADR-0008] | ADR | en | it | [BC-001], [DSA-001], [ADR-0004] | [MIL-021], [MIL-022] | [RC-093] |
+| [ADR-0009] | ADR | en | it | [ADR-0006], [DSA-001] | [MIL-021], [MIL-023] | [RC-096] |
 | [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001] | [RC-013], [RC-028] |
 | [US-001] | User Story | en | it | [UCD-001], [BC-001] | - | [RC-012], [RC-027] |
 | [DICT-001] | Domain Dictionary | en | it | [BC-001], [SA-001] | [DM-004] | [RC-029] |
@@ -133,3 +140,22 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-002]: ../milestones/mil-002-nginx-proxy-and-web-compose.md
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
 [3db0f51]: https://github.com/NF-Hotel/NFHotel/commit/3db0f51b7d7769bfc99dbbd173fc67266ee70c99
+[DSA-001]: ./devsecops-assessment.md
+[MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
+[MIL-022]: ../milestones/mil-022-supply-chain-security.md
+[MIL-023]: ../milestones/mil-023-operational-quality.md
+[ADR-0004]: ../adr/adr-0004-database-api.md
+[ADR-0006]: ../adr/adr-0006-tls.md
+[ADR-0007]: ../adr/adr-0007-cicd-and-supply-chain.md
+[ADR-0008]: ../adr/adr-0008-database-migration-and-backup.md
+[ADR-0009]: ../adr/adr-0009-tls-certificates.md
+[RC-088]: ./reviews/rc-088-business-case-cicd.md
+[RC-089]: ./reviews/rc-089-milestone-021.md
+[RC-090]: ./reviews/rc-090-milestone-022.md
+[RC-091]: ./reviews/rc-091-milestone-023.md
+[RC-092]: ./reviews/rc-092-adr-0007.md
+[RC-093]: ./reviews/rc-093-adr-0008.md
+[RC-094]: ./reviews/rc-094-mil-021-shell-code.md
+[RC-095]: ./reviews/rc-095-mil-021-workflows.md
+[RC-096]: ./reviews/rc-096-adr-0009.md
+[RC-043]: ./reviews/rc-043-validation-attributes.md

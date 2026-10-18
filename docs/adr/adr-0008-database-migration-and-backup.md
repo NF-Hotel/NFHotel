@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | mikemike | S01; S03 | Initial version | [f4649ad] |
+| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial version | [f4649ad] |
 | 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-093 Go | [f4649ad] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.

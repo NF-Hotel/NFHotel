@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | mikemike | S01; S03 | Rewritten as phase 1 of DSA-001: images from GHCR instead of builds in the VM, Tailscale OIDC and SSH, backups | [f4649ad] |
+| 2026-10-18 | Deprecated | mikemike | S01; S03 | Rewritten as phase 1 of DSA-001: images from GHCR instead of builds in the VM, Tailscale OIDC and SSH, backups | [f4649ad] |
 | 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-089 Go | [f4649ad] |
 
 ---

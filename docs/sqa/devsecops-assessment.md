@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | mikemike | S01; S03 | Initial assessment and plan | [f4649ad] |
+| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial assessment and plan | [f4649ad] |
 | 2026-10-18 | Accepted | mikemike | S01 (decisions D1 to D10 approved in chat) | Accepted without a catalog checklist; D4, D7 and D10 still need input from S03 | [f4649ad] |
 
 This document is a working assessment. Its type is not in `framework/registry/artifact-catalog.md`; a catalog type for it is proposed upstream (rule 5) before it is accepted.
