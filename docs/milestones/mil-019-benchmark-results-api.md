@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | Claude (AI) | S01 | Initial version | pending |
-| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-086 Go | pending |
+| 2026-10-18 | Proposed | Claude (AI) | S01 | Initial version | [7fbeba1] |
+| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-086 Go | [7fbeba1] |
 
 ---
 
@@ -95,3 +95,4 @@ Decide whether the web application may be the one place that stores and shows th
 [MIL-018]: ./mil-018-guest-login.md
 [ADR-0004]: ../adr/adr-0004-database-api.md
 [ADR-0005]: ../adr/adr-0005-backoffice-login.md
+[7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0

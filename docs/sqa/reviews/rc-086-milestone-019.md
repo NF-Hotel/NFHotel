@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01, not independent | Initial version | pending |
+| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01, not independent | Initial version | [7fbeba1] |
 
 ---
 
@@ -63,3 +63,4 @@ Go — every criterion of QC-MIL-001 passes. Criterion 9 of QC-LANG-001 rests on
 [MIL-019]: ../../milestones/mil-019-benchmark-results-api.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0

@@ -21,7 +21,7 @@
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 19, Make the back office available only to signed-in staff, with a role per staff me (MIL-016) | [bbef3bf] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 20, Serve the one service that the internet reaches only over TLS: HTTP redirects to (MIL-017) | [b174eeb] |
 | 2026-10-18 | Deprecated | Claude (AI) | AI at the request of S01 | Amended: objective 21, A guest signs in with the booking number and the email and reaches only their own booking (MIL-018) | [6b606da] |
-| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Amended: objective 22, an administrator starts a benchmark run in the back office and reads its stored result later (MIL-019, MIL-020) | pending |
+| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Amended: objective 22, an administrator starts a benchmark run in the back office and reads its stored result later (MIL-019, MIL-020) | [7fbeba1] |
 
 ---
 
@@ -264,3 +264,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [bbef3bf]: https://github.com/NF-Hotel/NFHotel/commit/bbef3bf556044704b80b76a7817432bc2b6527cd
 [b174eeb]: https://github.com/NF-Hotel/NFHotel/commit/b174eeba803523402481ff38d07a4056073941ef
 [6b606da]: https://github.com/NF-Hotel/NFHotel/commit/6b606da4c8584d71b7c2f754d71e14ceb6aca871
+[7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0

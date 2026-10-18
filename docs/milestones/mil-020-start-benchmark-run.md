@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | Claude (AI) | S01 | Initial version | pending |
-| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-087 Go | pending |
+| 2026-10-18 | Proposed | Claude (AI) | S01 | Initial version | [7fbeba1] |
+| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-087 Go | [7fbeba1] |
 
 ---
 
@@ -79,3 +79,4 @@ Let a Manager start a benchmark run from the back office and see its state until
 [BC-001]: ../business-case.md
 [MIL-019]: ./mil-019-benchmark-results-api.md
 [ADR-0003]: ../adr/adr-0003-proxmox-vm-for-services.md
+[7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0

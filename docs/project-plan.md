@@ -21,7 +21,7 @@
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-016 (back office login) | [bbef3bf] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-017 (TLS) | [b174eeb] |
 | 2026-10-18 | Deprecated | Claude (AI) | AI at the request of S01 | Added MIL-018 (guest login) | [6b606da] |
-| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Added MIL-019 and MIL-020 (benchmark results and start, with the notebook-benchmark repository) | pending |
+| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Added MIL-019 and MIL-020 (benchmark results and start, with the notebook-benchmark repository) | [7fbeba1] |
 
 ---
 
@@ -229,3 +229,4 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [bbef3bf]: https://github.com/NF-Hotel/NFHotel/commit/bbef3bf556044704b80b76a7817432bc2b6527cd
 [b174eeb]: https://github.com/NF-Hotel/NFHotel/commit/b174eeba803523402481ff38d07a4056073941ef
 [6b606da]: https://github.com/NF-Hotel/NFHotel/commit/6b606da4c8584d71b7c2f754d71e14ceb6aca871
+[7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0
