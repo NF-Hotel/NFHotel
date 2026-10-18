@@ -13,7 +13,8 @@
 #              holds only an API address and a token
 #   analysis   market analysis API and notebook, internal listener only
 #   benchmark  LLM benchmark notebook, internal listener only
-#   nginx      the reverse proxy: public port for web, loopback port for the rest
+#   nginx      the reverse proxy: TLS on 443 and a redirect on 80 for web, loopback port for the rest;
+#              a development certificate is made when deploy/nginx/tls has none (MIL-017)
 # Each service reads its git-ignored settings file next to its docker-compose.yml
 # (postgres.env, ollama.env, nfhotel-api.env, nfhotel-web.env, market-analysis.env, benchmark.env, nginx.env);
 # copy the matching *.example file first. The Docker networks are created if
@@ -181,6 +182,12 @@ fi
 for s in "${ordered[@]}"; do
   d="$(dir_of "$s")"
   e="$(env_of "$s")"
+  if [[ "$s" == "nginx" ]]; then
+    # The proxy needs a certificate to start. A pair put there by the owner is never replaced.
+    names="$(sed -n 's/^NGINX_SERVER_NAME=//p' "$d/$e" | tr -d '') $(hostname -I 2>/dev/null || true)"
+    # shellcheck disable=SC2086 # the names are split on purpose
+    bash "$root/scripts/make-dev-certificate.sh" "$d/tls" $names || die "no certificate for the proxy"
+  fi
   echo "==> deploying $s"
   args=(--env-file "$e" up -d --remove-orphans)
   if ((build)) && [[ "$s" =~ ^(api|web|analysis|benchmark)$ ]]; then

@@ -23,8 +23,9 @@ public static class StaffSecurityRegistration
     /// authentication state and the source of the staff token for the use-case runner.
     /// </summary>
     /// <param name="services">The service collection.</param>
+    /// <param name="requireTls">True when TLS is in front of the application: the cookie is then always <c>Secure</c>.</param>
     /// <returns>The service collection.</returns>
-    public static IServiceCollection AddStaffSignIn(this IServiceCollection services)
+    public static IServiceCollection AddStaffSignIn(this IServiceCollection services, bool requireTls = false)
     {
         ArgumentNullException.ThrowIfNull(services);
 
@@ -35,8 +36,8 @@ public static class StaffSecurityRegistration
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SameSite = SameSiteMode.Lax;
 
-                // Secure when the request is HTTPS. TLS at the public port is a separate decision (ADR-0005).
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                // Always Secure behind the TLS proxy (ADR-0006); Secure when the request is HTTPS otherwise.
+                options.Cookie.SecurePolicy = requireTls ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
                 options.LoginPath = LoginPath;
                 options.ReturnUrlParameter = "returnUrl";
                 options.AccessDeniedPath = AccessDeniedPath;
