@@ -441,3 +441,6 @@ g/
 
 # Certificate and key of the nginx proxy (MIL-017); never committed.
 deploy/nginx/tls/
+
+# Third-party specimen images (Edison TD), local use only; never committed.
+docs/test-data/real-specimens/
