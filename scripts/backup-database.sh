@@ -12,8 +12,12 @@
 #
 # Settings: /etc/nfhotel/backup.env (root, 0600), written by install-backup.sh:
 #   AGE_RECIPIENT   the age public key (age1...) of S03; required
-#   BACKUP_TARGET   rsync destination off the VM, e.g. backup@host:/srv/nfhotel (D7);
-#                   empty keeps the backups on the VM only and prints a warning
+#   BACKUP_TARGET   rsync destination off the VM (D7): the user nfhotel-backup on the
+#                   Proxmox node, restricted there to one folder by rrsync, for
+#                   example nfhotel-backup@proxmox:; empty keeps the backups on the
+#                   VM only and prints a warning
+#   BACKUP_SSH_KEY  the key for that copy (default /root/.ssh/nfhotel-backup); the host
+#                   key of the target must be in root's known_hosts (checked strictly)
 #   BACKUP_DIR      local folder (default /var/backups/nfhotel)
 #
 # Usage: backup-database.sh
@@ -64,7 +68,11 @@ echo "    $(du -h "$file" | cut -f1)"
 
 if [[ -n "${BACKUP_TARGET:-}" ]]; then
   echo "==> copying it to $BACKUP_TARGET"
-  rsync --archive --partial "$file" "$BACKUP_TARGET/" || die "the copy off the VM failed"
+  key="${BACKUP_SSH_KEY:-/root/.ssh/nfhotel-backup}"
+  [[ -r "$key" ]] || die "cannot read the backup ssh key $key"
+  rsync --archive --partial \
+    --rsh "ssh -i $key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes" \
+    "$file" "$BACKUP_TARGET/" || die "the copy off the VM failed"
 else
   echo "warning: BACKUP_TARGET is empty; the backup stays on the VM only (decision D7 is open)" >&2
 fi

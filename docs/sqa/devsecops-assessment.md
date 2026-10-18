@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | DSA-001 |
-| CrossReference | [BC-001], [ADR-0003], [ADR-0004], [ADR-0006], [ADR-0007], [ADR-0008], [MIL-021], [MIL-022], [MIL-023] |
+| CrossReference | [BC-001], [ADR-0003], [ADR-0004], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0009], [MIL-021], [MIL-022], [MIL-023] |
 | Language | en |
 | Domain | it |
 
@@ -91,6 +91,26 @@ None of the compose files sets `cap_drop`, `read_only`, `security_opt: no-new-pr
 | Tailscale | `tailscale status` on the developer workstation | Nodes `nf-hotel` and `proxmox` are online in the tailnet with **no tags**; the connection to `nf-hotel` is relayed (DERP Amsterdam), not direct. Tailscale is not mentioned anywhere in the repository |
 | SSH to the VM over the tailnet | `ssh -o StrictHostKeyChecking=yes nfhotel@nf-hotel` | Refused: the host key is not known on this workstation. Offered fingerprint `SHA256:Ea/3dv5VefOgI6rlseLuRBtDBmB28zebBp2hZsXSi1w` (ED25519), **not yet confirmed by S03**. Whether `nf-hotel` is the `nfhotel-services` VM is **Not verified** |
 | Deploy today | `scripts/deploy.sh` | Run by hand from a developer machine: it ships that machine's working tree or a clone of `main`, and the git-ignored settings files, over ssh. The VM builds the images |
+
+### 2.4.1 Verification over the tailnet (2026-10-18, second pass)
+
+The connection to a tailnet address is authenticated by the WireGuard node key of the peer, so a host key fetched from a `100.x` address comes from that node. Commands run from the developer workstation, read-only:
+
+| Check | Command | Result |
+| --- | --- | --- |
+| Identity of `nf-hotel` | `tailscale whois 100.72.194.127` | Node `nf-hotel.taildb84b5.ts.net`, owned by the tailnet user of S01 |
+| Host key of `nf-hotel` (D4) | `ssh-keyscan -t ed25519 100.72.194.127` | `SHA256:Ea/3dv5VefOgI6rlseLuRBtDBmB28zebBp2hZsXSi1w`, the same key as in the first pass, now fetched over the authenticated tailnet path: **verified** |
+| Operating system | ssh banner | `OpenSSH_10.0p2 Debian-7+deb13u4`: **Debian 13**, not the Debian 12 of `create-docker-vm.sh` |
+| Open ports (tailnet) | TCP connect | 22, 80, 443 open; 8080, 8443, 8006 closed |
+| Web service | `curl` | Port 80 answers 301 to `https://nf-hotel.taildb84b5.ts.net/`; port 443 answers 200 with the **nginx default page** ("Welcome to nginx!"), not NF Hotel |
+| TLS certificate | `openssl s_client` | Let's Encrypt (`YE1`) for `nf-hotel.taildb84b5.ts.net`, valid to 2027-01-04: a Tailscale-issued certificate (`tailscale cert`) |
+| SSH authentication | `ssh -v` | `publickey,password`: **password login is enabled** |
+| Access for this assessment | `ssh nfhotel@`, `ssh root@` with the workstation key | Refused; no credential for the VM or the Proxmox node is held by the assessor, by design |
+| Proxmox node `proxmox` | TCP connect, `ssh-keyscan` | 22 and 8006 open; host key `SHA256:jMKkCdkKIuQLFYel6OZcY1uOTj3LA49yTVeRR2JiPDI` (fetched over the tailnet) |
+
+**Conclusion for D4.** The host key of `nf-hotel` is verified. `nf-hotel` does **not** run the NF Hotel services today: it is a Debian 13 host with a stock nginx. Either the stack of ADR-0003 has not been deployed yet, or it runs on another VM. The first deploy is a bootstrap of this host (section 15, decision D4), `nf-hotel` was not created by `create-docker-vm.sh`, which consistently makes Debian 12 VMs; the deploy scripts depend only on Docker and the compose plugin, so they run on either release.
+
+**New risk R14.** Password login over SSH on `nf-hotel` (CIS Debian, SSH items). Treatment: disable `PasswordAuthentication` and `KbdInteractiveAuthentication` when S03 installs the deploy user (MIL-021 task 5); verified by `ssh -v` showing `publickey` only.
 
 ### 2.5 TLS, data and recovery
 
@@ -212,6 +232,7 @@ The scale is 1 (low) to 3 (high) for likelihood (L) and impact (I). Treatment fo
 | R11 | Unpatched host or containers | VM | 3 | 2 | None | `unattended-upgrades` for security updates; monthly image rebuild | Medium |
 | R12 | No one notices an outage | Availability | 2 | 2 | Health checks | Post-deploy smoke test; an external uptime check; log rotation | Medium |
 | R13 | A failed deploy cannot be undone | Availability | 2 | 2 | Manual redeploy | Rollback to the previous digest, recorded per release | Low |
+| R14 | Password guessing against SSH on the VM | VM (root) | 2 | 3 | Reachable only over the tailnet (not verified from the internet) | Disable password and keyboard-interactive login; key or Tailscale SSH only | Low |
 
 ## 7. Infrastructure and container security (CIS-aligned)
 
@@ -353,13 +374,13 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 | D1 | Build images in CI and pull them on the VM from GHCR. This replaces the earlier choice "build in the VM", and moves GHCR into phase 1 so that CD never builds on the VM | Approve | S01 |
 | D2 | GHCR packages public (the repository is public) or private with a read-only pull token on the VM | Public | S01 |
 | D3 | Tailscale: tags `tag:ci` and `tag:nfhotel-vm`, workload identity federation instead of an OAuth secret, Tailscale SSH instead of a stored deploy key | Approve | S03 |
-| D4 | Confirm that `nf-hotel` is the services VM and confirm its host key fingerprint | Confirm | S03 |
+| D4 | Confirm that `nf-hotel` is the services VM and confirm its host key fingerprint | **Decided 2026-10-18:** host key verified over the tailnet (section 2.4.1). `nf-hotel` is the CD target, but runs no NF Hotel stack yet; the first deploy is a bootstrap by S03 with `deploy.sh --skip-vm`, then CD takes over | S03 (bootstrap) |
 | D5 | Ruleset changes: required status checks, dismiss stale reviews, approve last push, block deletion | Approve | S01 |
 | D6 | Turn on secret scanning with push protection, Dependabot alerts and updates, CodeQL default setup | Approve | S01 |
-| D7 | Backup target off the VM and who holds the decryption key | S03 decides | S03 |
+| D7 | Backup target off the VM and who holds the decryption key | **Decided 2026-10-18:** an `age` key pair is created on the workstation of S01/S03; the private key stays off the VM in the password manager. Off-VM copies go by rsync over the tailnet to a dedicated user `nfhotel-backup` on the Proxmox node (a different disk and failure domain than the VM), and the Proxmox node keeps a weekly `vzdump` of the VM. A copy outside the Proxmox host is the residual gap (R7) | S03 |
 | D8 | Migrations applied by CD as reviewed scripts; `MigrateOnStart` off in production | Approve | S01 |
 | D9 | Trivy and CodeQL thresholds in section 8 | Approve | S01 |
-| D10 | Public TLS certificate method (ADR-0006 decision 4) before the VM serves the internet | S01 and S03 decide | S01, S03 |
+| D10 | Public TLS certificate method (ADR-0006 decision 4) before the VM serves the internet | **Decided 2026-10-18 in ADR-0009:** inside the tailnet, `tailscale cert` (Let's Encrypt, already in use on `nf-hotel`); for a public host name, certbot with the HTTP-01 webroot challenge through nginx, renewed by a systemd timer. Until a public name exists, the VM is not exposed to the internet | S01, S03 |
 
 ## 16. Sources
 
@@ -380,6 +401,7 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 [ADR-0006]: ../adr/adr-0006-tls.md
 [ADR-0007]: ../adr/adr-0007-cicd-and-supply-chain.md
 [ADR-0008]: ../adr/adr-0008-database-migration-and-backup.md
+[ADR-0009]: ../adr/adr-0009-tls-certificates.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md

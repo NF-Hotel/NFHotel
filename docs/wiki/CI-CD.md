@@ -62,23 +62,48 @@ S03 and a repository administrator do this once, in this order.
 
 ### On the VM (S03)
 
-1. Confirm the host key of the VM on the VM itself:
+1. The host key of `nf-hotel` was verified over the tailnet (`SHA256:Ea/3dv5VefOgI6rlseLuRBtDBmB28zebBp2hZsXSi1w`, DSA-001 section 2.4.1).
+   - `nf-hotel` runs no NF Hotel stack yet (decision D4). Bootstrap it once without building anything:
+     - install Docker with the compose plugin;
+     - create the user `nfhotel` in the group `docker`;
+     - run `git clone https://github.com/NF-Hotel/NFHotel.git /opt/nfhotel` and give the folder to `nfhotel`;
+     - copy the `deploy/*/*.env` settings files from their `*.example` files and fill them in.
 
-   ```bash
-   ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
-   ```
-
-   Compare it with the fingerprint in DSA-001 section 2.4 (decision D4).
+     The first approved CD run then pulls and starts every service.
+   - The stock nginx on `nf-hotel` uses ports 80 and 443. Stop and disable it (`systemctl disable --now nginx`) before the first deploy, so the NF Hotel proxy can bind them.
+   - Turn off SSH password login (risk R14): set `PasswordAuthentication no` and `KbdInteractiveAuthentication no` in `/etc/ssh/sshd_config.d/10-nfhotel.conf`, then run `systemctl reload ssh`.
 2. In `/opt/nfhotel`, run `sudo bash scripts/install-deploy-user.sh`. It creates the user `deploy`, the deploy command and its single sudo rule, then prints the Tailscale steps.
 3. Run `sudo tailscale set --ssh`.
 4. On your own machine, create the backup key with `age-keygen -o nfhotel-backup.key`. Keep it offline, and never copy it to the VM.
-5. On the VM, run:
+5. Prepare the off-VM copy on the Proxmox node (decision D7). The copy is write-only and limited to one folder.
+   - On the Proxmox node, create the user and its folder:
+
+     ```bash
+     useradd -m -s /bin/sh nfhotel-backup
+     install -d -o nfhotel-backup -m 700 /var/lib/nfhotel-backups
+     ```
+
+   - On the VM, create the key for the copy:
+
+     ```bash
+     sudo ssh-keygen -t ed25519 -N '' -f /root/.ssh/nfhotel-backup
+     ```
+
+   - On the Proxmox node, add that public key to `~nfhotel-backup/.ssh/authorized_keys` with the prefix `command="rrsync -wo /var/lib/nfhotel-backups",restrict `.
+   - On the VM, pin the host key of the Proxmox node for root. Its fingerprint is `SHA256:jMKkCdkKIuQLFYel6OZcY1uOTj3LA49yTVeRR2JiPDI`, verified over the tailnet:
+
+     ```bash
+     sudo sh -c 'ssh-keyscan -t ed25519 100.112.20.37 >> /root/.ssh/known_hosts'
+     ```
+
+   - In Proxmox, add a weekly `vzdump` backup job for the VM to a storage other than its own disk.
+6. On the VM, install the backup:
 
    ```bash
-   sudo bash scripts/install-backup.sh --recipient <age1... public key> --target <user@host:/path>
+   sudo bash scripts/install-backup.sh --recipient <age1... public key> --target nfhotel-backup@100.112.20.37:
    ```
 
-   `--target` is decision D7. Then test it once with `sudo systemctl start nfhotel-backup.service`.
+   Then test it once with `sudo systemctl start nfhotel-backup.service`.
 
 ### In Tailscale (S03)
 
