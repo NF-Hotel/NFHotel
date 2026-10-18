@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [US-001] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [US-001] |
 | Language | en |
 | Domain | it |
 
@@ -13,7 +13,8 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-009 (validation attributes on the entities) | [4cab5fc] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added MIL-010 (source comments in English) | [e67e815] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Added MIL-011 (tests on xUnit v3) | [ef2bd4b] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-011 (tests on xUnit v3) | [ef2bd4b] |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Added MIL-012 (tests follow the test rules) | [8200afa] |
 
 ---
 
@@ -44,6 +45,7 @@ person ending 2026-10-17.
 | Validation attributes on the entities | [MIL-009] | 2026-11-13 to 2026-11-20 | 2026-11-20 | S01 | none | Field rules of Room and Guest as attributes; no validation code in the entities | [Milestone 9][GH-M9] |
 | Source comments in English | [MIL-010] | 2026-11-20 to 2026-12-04 | 2026-12-04 | S01 | none | Every comment in `src/` and `tests/` in English; only comments changed | [Milestone 10][GH-M10] |
 | Tests on xUnit v3 | [MIL-011] | 2026-12-04 to 2026-12-11 | 2026-12-11 | S01 | none | The four test projects reference `xunit.v3`; same test counts; `src/` unchanged | none yet |
+| Tests follow the test rules | [MIL-012] | 2026-12-11 to 2026-12-18 | 2026-12-18 | S01 | none | Test plan; unit tests for the services; integration tests for the conflict paths; three-part test names; `src/` unchanged | none yet |
 
 ```plantuml
 @startgantt
@@ -70,6 +72,8 @@ Project starts 2026-10-16
 [MIL-010 Go/No-Go] happens 2026-12-04
 [Tests on xUnit v3] starts 2026-12-04 and ends 2026-12-11
 [MIL-011 Go/No-Go] happens 2026-12-11
+[Tests follow the test rules] starts 2026-12-11 and ends 2026-12-18
+[MIL-012 Go/No-Go] happens 2026-12-18
 @endgantt
 ```
 
@@ -92,6 +96,7 @@ Project starts 2026-10-16
 | Validation attributes on the entities (objective 12) | MIL-009 |
 | Source comments in English (objective 13) | MIL-010 |
 | Tests on xUnit v3 (objective 14) | MIL-011 |
+| Tests follow the test rules (objective 15) | MIL-012 |
 
 ## Dependencies
 
@@ -104,6 +109,7 @@ MIL-005 -> MIL-008
 MIL-008 -> MIL-009
 MIL-009 -> MIL-010
 MIL-010 -> MIL-011
+MIL-011 -> MIL-012
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -138,6 +144,7 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-009]: ./milestones/mil-009-validation-attributes.md
 [MIL-010]: ./milestones/mil-010-english-source-comments.md
 [MIL-011]: ./milestones/mil-011-xunit-v3.md
+[MIL-012]: ./milestones/mil-012-test-kinds.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
@@ -162,3 +169,4 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [4cab5fc]: https://github.com/NF-Hotel/NFHotel/commit/4cab5fc64b8358e18f9fec630d27d8bc267e6787
 [e67e815]: https://github.com/NF-Hotel/NFHotel/commit/e67e8155fd63d307e6783924f956fa49f915edbd
 [ef2bd4b]: https://github.com/NF-Hotel/NFHotel/commit/ef2bd4bda1edbd598228cb0fc043a4f2fc996974
+[8200afa]: https://github.com/NF-Hotel/NFHotel/commit/8200afa457e37ca87a68ab7e34126db1dd85e3d1
