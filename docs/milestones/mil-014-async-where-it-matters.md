@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Proposed | Claude (AI) | S01 | Initial version | pending |
+| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-060 Go | [417a575] |
 
 ---
 
@@ -91,3 +91,4 @@ pure computation in memory.
 
 [BC-001]: ../business-case.md
 [MIL-013]: ./mil-013-booking-guards.md
+[417a575]: https://github.com/NF-Hotel/NFHotel/commit/417a575b978d56c59da23eb6cff5967a7b9bf6bf

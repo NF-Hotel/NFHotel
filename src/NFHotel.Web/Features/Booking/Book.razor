@@ -1,5 +1,6 @@
 @page "/book"
 @rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
 
 @inject BookingFlowViewModel ViewModel
 @inject NavigationManager Navigation
@@ -255,7 +256,7 @@
     private string ReceiptUrl =>
         ViewModel.Confirmation is null ? "/book" : $"/booking/{ViewModel.Confirmation.BookingNumber}";
 
-    private Task FindRoomsAsync() => ViewModel.FindRoomsAsync();
+    private Task FindRoomsAsync() => ViewModel.FindRoomsAsync(ComponentToken);
 
     private void BackToDates() => ViewModel.BackToDates();
 
@@ -273,7 +274,7 @@
     /// </remarks>
     private async Task SubmitAsync()
     {
-        await ViewModel.SubmitAsync();
+        await ViewModel.SubmitAsync(ComponentToken);
 
         if (ViewModel.Confirmation is not null)
         {

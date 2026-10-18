@@ -1,6 +1,7 @@
 @page "/admin/rooms"
 @layout NFHotel.Web.Components.Layout.AdminLayout
 @rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
 @using NFHotel.Domain.Entities
 @using NFHotel.Domain.Errors
 @using NFHotel.Domain.ValueObjects
@@ -329,19 +330,19 @@
     private string DeleteTitle => $"Delete room {ViewModel.RoomPendingDeletion?.RoomNumber}?";
 
     /// <summary>Fetches filter options and the first list when the screen opens.</summary>
-    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync();
+    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
 
     /// <summary>The text on the button that opens and closes the action panel.</summary>
     private string SelectLabel(RoomListItemDto room) =>
         ViewModel.IsSelected(room) ? "Hide actions" : "Actions";
 
-    private Task SearchAsync() => ViewModel.SearchAsync();
+    private Task SearchAsync() => ViewModel.SearchAsync(ComponentToken);
 
-    private Task ClearFilterAsync() => ViewModel.ClearFilterAsync();
+    private Task ClearFilterAsync() => ViewModel.ClearFilterAsync(ComponentToken);
 
     private void ToggleSelection(RoomListItemDto room) => ViewModel.ToggleSelection(room);
 
-    private Task ExecuteAsync(RoomAction action) => ViewModel.ExecuteAsync(action);
+    private Task ExecuteAsync(RoomAction action) => ViewModel.ExecuteAsync(action, ComponentToken);
 
     private void RequestDelete(RoomListItemDto room)
     {
@@ -351,7 +352,7 @@
 
     private void AbortDelete() => ViewModel.AbortDelete();
 
-    private Task ConfirmDeleteAsync() => ViewModel.ConfirmDeleteAsync();
+    private Task ConfirmDeleteAsync() => ViewModel.ConfirmDeleteAsync(ComponentToken);
 
     private void BeginCreate()
     {
@@ -365,7 +366,7 @@
         Form.DismissSuccess();
         ViewModel.DismissSuccess();
 
-        return Form.BeginEditAsync(room.RoomId);
+        return Form.BeginEditAsync(room.RoomId, ComponentToken);
     }
 
     private void CloseForm() => Form.Close();
@@ -375,11 +376,11 @@
     /// </summary>
     private async Task SaveAsync()
     {
-        await Form.SaveAsync();
+        await Form.SaveAsync(ComponentToken);
 
         if (Form.SavedSuccessfully)
         {
-            await ViewModel.SearchAsync();
+            await ViewModel.SearchAsync(ComponentToken);
         }
     }
 }

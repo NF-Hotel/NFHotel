@@ -211,7 +211,7 @@ public sealed class RoomListViewModel
         try
         {
             var result = await _rooms
-                .RunAsync((service, token) => Invoke(service, action, room.RoomId, token), cancellationToken)
+                .RunAsync((service, token) => InvokeAsync(service, action, room.RoomId, token), cancellationToken)
                 .ConfigureAwait(false);
 
             if (result.IsFailure)
@@ -381,7 +381,7 @@ public sealed class RoomListViewModel
         }
     }
 
-    private static Task<Result<RoomDetailsDto>> Invoke(
+    private static Task<Result<RoomDetailsDto>> InvokeAsync(
         IRoomService service,
         RoomAction action,
         int roomId,
