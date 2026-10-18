@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [MIL-016], [MIL-017], [US-001] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [MIL-016], [MIL-017], [MIL-018], [US-001] |
 | Language | en |
 | Domain | it |
 
@@ -19,7 +19,8 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-014 (async where it matters) | [417a575] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-015 (database API) | [9e6d2d4] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-016 (back office login) | [bbef3bf] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Added MIL-017 (TLS) | [b174eeb] |
+| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-017 (TLS) | [b174eeb] |
+| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Added MIL-018 (guest login) | pending |
 
 ---
 
@@ -56,6 +57,7 @@ person ending 2026-10-17.
 | Database API | [MIL-015] | 2026-12-30 to 2027-01-22 | 2027-01-22 | S01 | none | ADR-0004; API, client and external adapters; web switched to the client; deploy and proof in the VM | none yet |
 | Back office login | [MIL-016] | 2027-01-22 to 2027-02-19 | 2027-02-19 | S01 | none | ADR-0005; staff accounts, token, permission table, login pages; deploy and proof in the VM | none yet |
 | TLS | [MIL-017] | 2027-02-19 to 2027-03-05 | 2027-03-05 | S01 | none | ADR-0006; nginx TLS, certificate script, Secure cookie; deploy and proof in the VM | none yet |
+| Guest login | [MIL-018] | 2027-03-05 to 2027-03-19 | 2027-03-19 | S01 | none | ADR-0007; guest token by booking number and email, own-resource check, guest pages; deploy and proof in the VM | none yet |
 
 ```plantuml
 @startgantt
@@ -94,6 +96,8 @@ Project starts 2026-10-16
 [MIL-016 Go/No-Go] happens 2027-02-19
 [TLS] starts 2027-02-19 and ends 2027-03-05
 [MIL-017 Go/No-Go] happens 2027-03-05
+[Guest login] starts 2027-03-05 and ends 2027-03-19
+[MIL-018 Go/No-Go] happens 2027-03-19
 @endgantt
 ```
 
@@ -122,6 +126,7 @@ Project starts 2026-10-16
 | Database API (objective 18) | MIL-015 |
 | Back office login (objective 19) | MIL-016 |
 | TLS (objective 20) | MIL-017 |
+| Guest login (objective 21) | MIL-018 |
 
 ## Dependencies
 
@@ -140,6 +145,7 @@ MIL-013 -> MIL-014
 MIL-014 -> MIL-015
 MIL-015 -> MIL-016
 MIL-016 -> MIL-017
+MIL-017 -> MIL-018
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -180,6 +186,7 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-015]: ./milestones/mil-015-database-api.md
 [MIL-016]: ./milestones/mil-016-backoffice-login.md
 [MIL-017]: ./milestones/mil-017-tls.md
+[MIL-018]: ./milestones/mil-018-guest-login.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
