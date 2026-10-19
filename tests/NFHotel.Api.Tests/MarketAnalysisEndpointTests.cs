@@ -111,6 +111,42 @@ public sealed class MarketAnalysisEndpointTests
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    /// <summary>Positive: the period in the body of the start reaches the run, and a start without a body is an open period.</summary>
+    [Fact]
+    public async Task PostRun_PeriodInTheBody_ReachesTheRun()
+    {
+        // Arrange
+        using var factory = new ApiFactory();
+        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        var from = new DateOnly(2019, 1, 1);
+        var to = new DateOnly(2019, 12, 31);
+
+        // Act
+        var started = await (await client.PostAsJsonAsync($"{Route}/runs", new StartMarketAnalysisRequest(from, to), ApiJson.Options, TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(new StartMarketAnalysisRequest(from, to), factory.World.MarketAnalysisTracker.PeriodOf(started!.Value!.RunId));
+    }
+
+    /// <summary>Negative: a first date after the last date is a 422 with its code and starts nothing.</summary>
+    [Fact]
+    public async Task PostRun_FromAfterTo_Returns422()
+    {
+        // Arrange
+        using var factory = new ApiFactory();
+        using var client = factory.CreateStaffClient(StaffRole.Manager);
+
+        // Act
+        using var response = await client.PostAsJsonAsync($"{Route}/runs", new StartMarketAnalysisRequest(new DateOnly(2020, 1, 1), new DateOnly(2019, 1, 1)), ApiJson.Options, TestContext.Current.CancellationToken);
+        var body = await response.Content.ReadFromJsonAsync<ApiResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Contains(ErrorCodes.MarketAnalysis.PeriodInvalid, body!.Errors);
+        Assert.Empty(factory.World.MarketAnalysisLauncher.Launched);
+    }
+
     #endregion
 
     #region Other roles and callers

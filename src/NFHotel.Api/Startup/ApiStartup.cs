@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
 using NFHotel.Application.Dto.Staff;
+using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.Infrastructure.Persistence;
@@ -28,6 +29,9 @@ public static class ApiStartup
 
     /// <summary>The option of <see cref="SeedMarketDataCommand"/> that deletes the rooms, guests and bookings that exist.</summary>
     public const string ReplaceOption = "--replace";
+
+    /// <summary>The option of <see cref="SeedMarketDataCommand"/> that repeats the file until this arrival date, <c>yyyy-MM-dd</c>.</summary>
+    public const string ThroughOption = "--through";
 
     /// <summary>The environment variable that holds the password for <see cref="CreateStaffCommand"/>.</summary>
     public const string PasswordVariable = "STAFF_PASSWORD";
@@ -93,8 +97,9 @@ public static class ApiStartup
         args is { Length: > 0 } && string.Equals(args[0], SeedMarketDataCommand, StringComparison.Ordinal);
 
     /// <summary>
-    /// Runs <c>seed-market-data &lt;file&gt; [--replace]</c>: reads <c>nf_hotel_bookings.csv</c> and writes its rooms, guests
-    /// and bookings to the database. It refuses a database that has data unless <see cref="ReplaceOption"/> is given.
+    /// Runs <c>seed-market-data &lt;file&gt; [--replace] [--through yyyy-MM-dd]</c>: reads <c>nf_hotel_bookings.csv</c> and writes
+    /// its rooms, guests and bookings to the database. It refuses a database that has data unless <see cref="ReplaceOption"/>
+    /// is given. With <see cref="ThroughOption"/> the bookings of the file are repeated back to back up to that arrival date.
     /// </summary>
     /// <param name="services">The services of the application.</param>
     /// <param name="args">The command line.</param>
@@ -105,10 +110,28 @@ public static class ApiStartup
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(args);
 
-        var replace = args.Skip(2).Contains(ReplaceOption, StringComparer.Ordinal);
-        if (args.Length is < 2 or > 3 || (args.Length == 3 && !replace) || !File.Exists(args[1]))
+        var options = args.Skip(2).ToList();
+        var replace = options.Remove(ReplaceOption);
+        DateOnly? through = null;
+        var throughAt = options.IndexOf(ThroughOption);
+        if (throughAt >= 0)
         {
-            await Console.Error.WriteLineAsync($"Usage: {SeedMarketDataCommand} <path of nf_hotel_bookings.csv> [{ReplaceOption}]").ConfigureAwait(false);
+            if (throughAt + 1 >= options.Count
+                || !DateOnly.TryParseExact(options[throughAt + 1], "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsed))
+            {
+                options.Add("invalid");
+            }
+            else
+            {
+                through = parsed;
+                options.RemoveRange(throughAt, 2);
+            }
+        }
+
+        if (args.Length < 2 || options.Count > 0 || !File.Exists(args[1]))
+        {
+            await Console.Error.WriteLineAsync(
+                $"Usage: {SeedMarketDataCommand} <path of nf_hotel_bookings.csv> [{ReplaceOption}] [{ThroughOption} yyyy-MM-dd]").ConfigureAwait(false);
             return 2;
         }
 
@@ -116,7 +139,7 @@ public static class ApiStartup
         try
         {
             using var reader = new StreamReader(args[1]);
-            plan = MarketSeedPlanner.Plan(MarketSeedCsv.Parse(reader));
+            plan = MarketSeedPlanner.Plan(MarketSeedExpander.Expand(MarketSeedCsv.Parse(reader), through));
         }
         catch (Exception exception) when (exception is FormatException or ArgumentException or IOException)
         {
@@ -128,7 +151,7 @@ public static class ApiStartup
         var seeder = new MarketDataSeeder(scope.ServiceProvider.GetRequiredService<HotelDbContext>());
         try
         {
-            await seeder.SeedAsync(plan, replace, cancellationToken).ConfigureAwait(false);
+            await seeder.SeedAsync(plan, scope.ServiceProvider.GetRequiredService<IClock>().Today, replace, cancellationToken).ConfigureAwait(false);
         }
         catch (InvalidOperationException exception)
         {

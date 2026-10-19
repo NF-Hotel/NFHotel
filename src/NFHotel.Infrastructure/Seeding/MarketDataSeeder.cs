@@ -21,6 +21,8 @@ public sealed class MarketDataSeeder
     private const int CheckOutHourUtc = 10;
     private const int RoomAvailable = 0;
     private const int HousekeepingClean = 0;
+    private const int StatusConfirmed = 1;
+    private const int StatusCheckedIn = 2;
     private const int StatusCheckedOut = 3;
     private const int StatusCancelled = 4;
 
@@ -36,11 +38,15 @@ public sealed class MarketDataSeeder
 
     /// <summary>Writes the plan of a file to the database.</summary>
     /// <param name="plan">The rooms, guests and bookings.</param>
+    /// <param name="today">
+    /// Today's date in the hotel: a booking that left before it is checked out, one that is at the hotel is checked in, and one
+    /// that arrives later is confirmed. A cancelled booking stays cancelled.
+    /// </param>
     /// <param name="replace">True to delete the rooms, guests and bookings that exist; false to refuse when any exists.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>A task that ends when everything is written, or nothing is.</returns>
     /// <exception cref="InvalidOperationException">The database has data and <paramref name="replace"/> is false.</exception>
-    public async Task SeedAsync(MarketSeedPlan plan, bool replace, CancellationToken cancellationToken = default)
+    public async Task SeedAsync(MarketSeedPlan plan, DateOnly today, bool replace, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(plan);
 
@@ -64,7 +70,7 @@ public sealed class MarketDataSeeder
 
         await CopyRoomsAsync(connection, plan, cancellationToken).ConfigureAwait(false);
         await CopyGuestsAsync(connection, plan, cancellationToken).ConfigureAwait(false);
-        await CopyBookingsAsync(connection, plan, cancellationToken).ConfigureAwait(false);
+        await CopyBookingsAsync(connection, plan, today, cancellationToken).ConfigureAwait(false);
         await CopyDetailsAsync(connection, plan, cancellationToken).ConfigureAwait(false);
 
         foreach (var (table, column) in new[] { ("room", "room_id"), ("guest", "guest_id"), ("booking", "booking_id"), ("booking_market_detail", "booking_market_detail_id") })
@@ -134,7 +140,7 @@ public sealed class MarketDataSeeder
         }
     }
 
-    private static async Task CopyBookingsAsync(NpgsqlConnection connection, MarketSeedPlan plan, CancellationToken cancellationToken)
+    private static async Task CopyBookingsAsync(NpgsqlConnection connection, MarketSeedPlan plan, DateOnly today, CancellationToken cancellationToken)
     {
         await using var writer = await connection
             .BeginTextImportAsync(
@@ -144,15 +150,20 @@ public sealed class MarketDataSeeder
 
         foreach (var (row, room, guest) in plan.Bookings.Select(placement => (placement.Row, placement.Room, placement.Guest)))
         {
-            var checkedOut = !row.IsCanceled;
+            var status = row.IsCanceled ? StatusCancelled
+                : row.Departure <= today ? StatusCheckedOut
+                : row.Arrival <= today ? StatusCheckedIn
+                : StatusConfirmed;
+            var checkedIn = status is StatusCheckedIn or StatusCheckedOut;
+            var checkedOut = status == StatusCheckedOut;
             await writer.WriteLineAsync(Row(
                 row.Number,
                 Date(row.Arrival),
                 Date(row.Departure),
-                checkedOut ? Time(row.Arrival, CheckInHourUtc) : null,
+                checkedIn ? Time(row.Arrival, CheckInHourUtc) : null,
                 checkedOut ? Time(row.Departure, CheckOutHourUtc) : null,
                 checkedOut ? Date(row.Departure) : null,
-                checkedOut ? StatusCheckedOut : StatusCancelled,
+                status,
                 room,
                 guest)).ConfigureAwait(false);
         }

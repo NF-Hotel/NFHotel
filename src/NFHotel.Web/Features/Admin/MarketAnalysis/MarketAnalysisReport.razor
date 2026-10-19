@@ -27,7 +27,23 @@
     <AuthorizeView Policy="@StaffPolicies.MarketAnalysisStart">
         <section class="card card-pad stack" aria-labelledby="run-start">
             <h2 class="subtitle" id="run-start">New analysis</h2>
-            <p class="muted">A run takes minutes. The report below stays as it is until the new run has finished.</p>
+            <p class="muted">
+                Choose the period of the bookings by arrival date. Leave a date empty for no limit. A run takes minutes, and the
+                report below stays as it is until the new run has finished.
+            </p>
+            <div class="field-row">
+                <FormField Label="From arrival date" For="analysis-from">
+                    <input id="analysis-from" class="field-input" type="date" disabled="@(!ViewModel.CanStart)" @bind="ViewModel.From" />
+                </FormField>
+                <FormField Label="To arrival date" For="analysis-to">
+                    <input id="analysis-to" class="field-input" type="date" disabled="@(!ViewModel.CanStart)" @bind="ViewModel.To" />
+                </FormField>
+            </div>
+            <div class="field-row" role="group" aria-label="Quick choice of the period">
+                <button type="button" class="btn btn-secondary btn-sm" disabled="@(!ViewModel.CanStart)" @onclick="() => ViewModel.UseLastYears(3)">Last 3 years</button>
+                <button type="button" class="btn btn-secondary btn-sm" disabled="@(!ViewModel.CanStart)" @onclick="() => ViewModel.UseLastYears(1)">Last year</button>
+                <button type="button" class="btn btn-secondary btn-sm" disabled="@(!ViewModel.CanStart)" @onclick="ViewModel.UseAllBookings">All bookings</button>
+            </div>
             <div>
                 <button type="button"
                         class="btn btn-primary"

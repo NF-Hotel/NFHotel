@@ -24,8 +24,14 @@ public sealed class FakeMarketAnalysisBookingQueries : IMarketAnalysisBookingQue
     public static MarketBookingDto Booking(int id, bool canceled = false) =>
         new(id, "NF Hotel", canceled, 30, new DateOnly(2019, 1, 30), new DateOnly(2019, 3, 1), 1, 2, 2, 0, 0, "BB", "Portugal", "Direct", false, 0, "C", 0, "No Deposit", "Contract", 0, 1, 94.00m);
 
-    public Task<IReadOnlyList<MarketBookingDto>> GetBookingsAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<MarketBookingDto>>([.. Bookings]);
+    public (DateOnly? From, DateOnly? To)? LastPeriod { get; private set; }
+
+    public Task<IReadOnlyList<MarketBookingDto>> GetBookingsAsync(DateOnly? from, DateOnly? to, CancellationToken cancellationToken = default)
+    {
+        LastPeriod = (from, to);
+        return Task.FromResult<IReadOnlyList<MarketBookingDto>>(
+            [.. Bookings.Where(booking => (from is null || booking.ArrivalDate >= from) && (to is null || booking.ArrivalDate <= to))]);
+    }
 }
 
 /// <summary>

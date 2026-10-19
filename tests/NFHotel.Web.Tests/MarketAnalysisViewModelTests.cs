@@ -113,7 +113,95 @@ public sealed class MarketAnalysisViewModelTests
         // Assert
         Assert.True(viewModel.IsFollowing);
         Assert.False(viewModel.CanStart);
-        await service.Received(1).StartRunAsync(Arg.Any<CancellationToken>());
+        await service.Received(1).StartRunAsync(Arg.Any<StartMarketAnalysisRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>Positive: the dates chosen on the page are the period of the start; no date is an open period.</summary>
+    [Fact]
+    public async Task StartAsync_DatesChosen_SendsThePeriod()
+    {
+        // Arrange
+        var viewModel = Build(out var service);
+        viewModel.From = new DateOnly(2019, 1, 1);
+        viewModel.To = new DateOnly(2019, 12, 31);
+
+        // Act
+        await viewModel.StartAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await service.Received(1).StartRunAsync(new StartMarketAnalysisRequest(new DateOnly(2019, 1, 1), new DateOnly(2019, 12, 31)), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>Positive: the quick choice of the last 3 years fills the dates from three years ago to today, and the start sends them.</summary>
+    [Fact]
+    public async Task UseLastYears_ThreeYears_FillsTheDatesAndTheStartSendsThem()
+    {
+        // Arrange
+        var viewModel = Build(out var service);
+
+        // Act
+        viewModel.UseLastYears(3);
+        await viewModel.StartAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal((new DateOnly(2023, 10, 20), new DateOnly(2026, 10, 20)), (viewModel.From, viewModel.To));
+        await service.Received(1).StartRunAsync(new StartMarketAnalysisRequest(new DateOnly(2023, 10, 20), new DateOnly(2026, 10, 20)), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>Boundary: one year gives the same day one year back.</summary>
+    [Fact]
+    public void UseLastYears_OneYear_GivesOneYearBack()
+    {
+        // Arrange
+        var viewModel = Build(out _);
+
+        // Act
+        viewModel.UseLastYears(1);
+
+        // Assert
+        Assert.Equal(new DateOnly(2025, 10, 20), viewModel.From);
+    }
+
+    /// <summary>Negative: fewer than one year is refused, and the dates are not changed.</summary>
+    [Fact]
+    public void UseLastYears_Zero_IsRefusedAndKeepsTheDates()
+    {
+        // Arrange
+        var viewModel = Build(out _);
+        viewModel.From = new DateOnly(2019, 1, 1);
+
+        // Act and assert
+        Assert.Throws<ArgumentOutOfRangeException>(() => viewModel.UseLastYears(0));
+        Assert.Equal(new DateOnly(2019, 1, 1), viewModel.From);
+    }
+
+    /// <summary>Positive: all bookings clears both dates.</summary>
+    [Fact]
+    public void UseAllBookings_DatesChosen_ClearsThem()
+    {
+        // Arrange
+        var viewModel = Build(out _);
+        viewModel.UseLastYears(3);
+
+        // Act
+        viewModel.UseAllBookings();
+
+        // Assert
+        Assert.Equal((null, null), (viewModel.From, viewModel.To));
+    }
+
+    /// <summary>Boundary: without dates the start asks for every booking.</summary>
+    [Fact]
+    public async Task StartAsync_NoDates_SendsAnOpenPeriod()
+    {
+        // Arrange
+        var viewModel = Build(out var service);
+
+        // Act
+        await viewModel.StartAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await service.Received(1).StartRunAsync(new StartMarketAnalysisRequest(), Arg.Any<CancellationToken>());
     }
 
     /// <summary>Negative: a refused start shows the text and starts nothing to follow.</summary>
@@ -125,7 +213,7 @@ public sealed class MarketAnalysisViewModelTests
     {
         // Arrange
         var viewModel = Build(out var service);
-        service.StartRunAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto>.Failure(code));
+        service.StartRunAsync(Arg.Any<StartMarketAnalysisRequest>(), Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto>.Failure(code));
 
         // Act
         await viewModel.StartAsync(TestContext.Current.CancellationToken);
@@ -231,7 +319,7 @@ public sealed class MarketAnalysisViewModelTests
     {
         var fake = Substitute.For<IMarketAnalysisService>();
         fake.GetLatestReportAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisReportDto>.Success(Report()));
-        fake.StartRunAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto>.Success(State(MarketAnalysisRunStates.Queued)));
+        fake.StartRunAsync(Arg.Any<StartMarketAnalysisRequest>(), Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto>.Success(State(MarketAnalysisRunStates.Queued)));
         fake.GetRunStateAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto>.Success(State(MarketAnalysisRunStates.Running)));
         service = fake;
 
@@ -244,7 +332,7 @@ public sealed class MarketAnalysisViewModelTests
                 Arg.Any<Func<IMarketAnalysisService, CancellationToken, Task<Result<MarketAnalysisRunStateDto>>>>(),
                 Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<Func<IMarketAnalysisService, CancellationToken, Task<Result<MarketAnalysisRunStateDto>>>>()(fake, call.Arg<CancellationToken>()));
-        return new MarketAnalysisViewModel(runner);
+        return new MarketAnalysisViewModel(runner, new FakeClock { Today = new DateOnly(2026, 10, 20) });
     }
 
     #endregion

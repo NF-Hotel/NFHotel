@@ -342,8 +342,11 @@ public static class ErrorCodes
         /// <summary>The result is missing a part, or the stored content cannot be read.</summary>
         public const string BodyInvalid = "market_analysis.body_invalid";
 
-        /// <summary>The hotel has no booking to analyse.</summary>
+        /// <summary>The hotel has no booking to analyse in the period.</summary>
         public const string NoBookings = "market_analysis.no_bookings";
+
+        /// <summary>The first date of the period is after the last date.</summary>
+        public const string PeriodInvalid = "market_analysis.period_invalid";
     }
 
     /// <summary>Codes of the calls to the markets API that runs the market analysis, and of the run itself (MIL-026).</summary>

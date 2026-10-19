@@ -266,7 +266,7 @@ public sealed class MarketAnalysisServiceClientTests
         Assert.Equal(("market-analysis-api", 8000), (service.LastHost, service.LastPort));
     }
 
-    /// <summary>Boundary: an empty section is not a start-up error; the options are not configured and the timeout is 13 minutes.</summary>
+    /// <summary>Boundary: an empty section is not a start-up error; the options are not configured and the timeout is 25 minutes.</summary>
     [Fact]
     public void AddMarketAnalysisService_EmptySection_RegistersUnconfiguredOptionsWithTheLongTimeout()
     {
@@ -281,7 +281,7 @@ public sealed class MarketAnalysisServiceClientTests
 
         // Assert
         Assert.False(options.IsConfigured);
-        Assert.Equal(780, options.TimeoutSeconds);
+        Assert.Equal(1500, options.TimeoutSeconds);
     }
 
     #endregion

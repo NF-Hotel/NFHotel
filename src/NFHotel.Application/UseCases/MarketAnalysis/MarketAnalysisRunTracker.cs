@@ -15,6 +15,7 @@ public sealed class MarketAnalysisRunTracker
     private readonly IClock _clock;
     private readonly object _lock = new();
     private MarketAnalysisRunStateDto? _current;
+    private StartMarketAnalysisRequest _period = new();
 
     /// <summary>Creates the tracker.</summary>
     /// <param name="clock">The clock for the times of a run.</param>
@@ -25,8 +26,10 @@ public sealed class MarketAnalysisRunTracker
     }
 
     /// <summary>Begins a run when none is going on.</summary>
+    /// <param name="from">The first arrival date of the bookings to analyse, or <c>null</c>.</param>
+    /// <param name="to">The last arrival date of the bookings to analyse, or <c>null</c>.</param>
     /// <returns>The queued run, or <c>market_analysis_runner.already_running</c>.</returns>
-    public Result<MarketAnalysisRunStateDto> TryBegin()
+    public Result<MarketAnalysisRunStateDto> TryBegin(DateOnly? from = null, DateOnly? to = null)
     {
         lock (_lock)
         {
@@ -36,6 +39,7 @@ public sealed class MarketAnalysisRunTracker
             }
 
             _current = new MarketAnalysisRunStateDto(Guid.NewGuid(), MarketAnalysisRunStates.Queued, null, null, null);
+            _period = new StartMarketAnalysisRequest(from, to);
             return Result<MarketAnalysisRunStateDto>.Success(_current);
         }
     }
@@ -48,6 +52,17 @@ public sealed class MarketAnalysisRunTracker
         lock (_lock)
         {
             return _current is { } current && current.RunId == runId ? current : null;
+        }
+    }
+
+    /// <summary>Reads the period that a run was started for.</summary>
+    /// <param name="runId">The run id.</param>
+    /// <returns>The period, or an open period when this is not the run that the tracker holds.</returns>
+    public StartMarketAnalysisRequest PeriodOf(Guid runId)
+    {
+        lock (_lock)
+        {
+            return _current is { } current && current.RunId == runId ? _period : new StartMarketAnalysisRequest();
         }
     }
 

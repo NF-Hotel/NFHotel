@@ -19,10 +19,12 @@ public sealed class MarketAnalysisRequestTests
         var (handler, service) = Build($$$"""{"value":{"runId":"{{{RunId}}}","state":"queued","startedAt":null,"finishedAt":null,"error":null},"errors":[]}""");
 
         // Act
-        var result = await service.StartRunAsync(TestContext.Current.CancellationToken);
+        var result = await service.StartRunAsync(new StartMarketAnalysisRequest(new DateOnly(2019, 1, 1), null), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal((HttpMethod.Post, "/api/market-analysis/runs", MarketAnalysisRunStates.Queued), (handler.Method!, handler.PathAndQuery!, result.Value.State));
+        Assert.Contains("\"from\":\"2019-01-01\"", handler.Body, StringComparison.Ordinal);
+        Assert.Contains("\"to\":null", handler.Body, StringComparison.Ordinal);
     }
 
     /// <summary>Positive: the state of a run is a GET of that run below the runs path.</summary>

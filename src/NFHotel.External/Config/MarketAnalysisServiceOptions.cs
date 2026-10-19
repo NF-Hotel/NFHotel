@@ -21,9 +21,10 @@ public sealed class MarketAnalysisServiceOptions
 
     /// <summary>
     /// The seconds to wait for an answer. A run with AI insights lasts up to 2 x discovery plus 6 x generation timeouts of the
-    /// markets API, 12 minutes and 4 seconds with its defaults (ADR-0013 of that repository), so the default is 13 minutes.
+    /// markets API (ADR-0013 of that repository): 12 minutes with its defaults, and 24 minutes with the 240 seconds of
+    /// <c>deploy/market-analysis/market-analysis.toml.example</c> on a machine without a GPU. The default is 25 minutes.
     /// </summary>
-    public const int DefaultTimeoutSeconds = 780;
+    public const int DefaultTimeoutSeconds = 1500;
 
     /// <summary>
     /// The address of the markets API on the shared Docker network. There is no built-in address: it comes from the

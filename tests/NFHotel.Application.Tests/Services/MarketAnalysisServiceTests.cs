@@ -18,7 +18,7 @@ public sealed class MarketAnalysisServiceTests
         var world = new ServiceWorld();
 
         // Act
-        var result = await world.MarketAnalysisService().StartRunAsync(TestContext.Current.CancellationToken);
+        var result = await world.MarketAnalysisService().StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(MarketAnalysisRunStates.Queued, result.Value.State);
@@ -34,10 +34,10 @@ public sealed class MarketAnalysisServiceTests
         // Arrange
         var world = new ServiceWorld();
         var service = world.MarketAnalysisService();
-        await service.StartRunAsync(TestContext.Current.CancellationToken);
+        await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
 
         // Act
-        var second = await service.StartRunAsync(TestContext.Current.CancellationToken);
+        var second = await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.MarketAnalysisRunner.AlreadyRunning, Assert.Single(second.Errors).Code);
@@ -51,11 +51,11 @@ public sealed class MarketAnalysisServiceTests
         // Arrange
         var world = new ServiceWorld();
         var service = world.MarketAnalysisService();
-        var first = (await service.StartRunAsync(TestContext.Current.CancellationToken)).Value;
+        var first = (await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken)).Value;
         await world.MarketAnalysisRunner().ExecuteAsync(first.RunId, TestContext.Current.CancellationToken);
 
         // Act
-        var second = await service.StartRunAsync(TestContext.Current.CancellationToken);
+        var second = await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(second.IsSuccess);
@@ -70,7 +70,7 @@ public sealed class MarketAnalysisServiceTests
         // Arrange
         var world = new ServiceWorld();
         var service = world.MarketAnalysisService();
-        var runId = (await service.StartRunAsync(TestContext.Current.CancellationToken)).Value.RunId;
+        var runId = (await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken)).Value.RunId;
         world.MarketAnalysisClient.Gate = new TaskCompletionSource();
 
         // Act
@@ -95,7 +95,7 @@ public sealed class MarketAnalysisServiceTests
         // Arrange
         var world = new ServiceWorld();
         var service = world.MarketAnalysisService();
-        await service.StartRunAsync(TestContext.Current.CancellationToken);
+        await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
 
         // Act
         var unknown = await service.GetRunStateAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
@@ -131,7 +131,7 @@ public sealed class MarketAnalysisServiceTests
         // Arrange
         var world = new ServiceWorld();
         var service = world.MarketAnalysisService();
-        var runId = (await service.StartRunAsync(TestContext.Current.CancellationToken)).Value.RunId;
+        var runId = (await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken)).Value.RunId;
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
 
         // Act

@@ -23,11 +23,15 @@ public sealed class ApiMarketAnalysisService : IMarketAnalysisService
     }
 
     /// <inheritdoc />
-    public Task<Result<MarketAnalysisRunStateDto>> StartRunAsync(CancellationToken cancellationToken = default) =>
-        _api.PostAsync<MarketAnalysisRunStateDto>(
+    public Task<Result<MarketAnalysisRunStateDto>> StartRunAsync(StartMarketAnalysisRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return _api.PostAsync<MarketAnalysisRunStateDto>(
             $"{ApiRoutes.MarketAnalysis}/{ApiRoutes.MarketAnalysisRuns}",
-            null,
+            request,
             cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task<Result<MarketAnalysisRunStateDto>> GetRunStateAsync(Guid runId, CancellationToken cancellationToken = default)

@@ -1,5 +1,6 @@
 using NFHotel.Application.Dto.MarketAnalysis;
 using NFHotel.Application.Errors;
+using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Web.Common;
@@ -14,14 +15,18 @@ namespace NFHotel.Web.Features.Admin.MarketAnalysis;
 public sealed class MarketAnalysisViewModel
 {
     private readonly IUseCaseRunner<IMarketAnalysisService> _service;
+    private readonly IClock _clock;
 
     /// <summary>Creates the view model.</summary>
     /// <param name="service">Runs the calls to the market analysis use cases.</param>
-    public MarketAnalysisViewModel(IUseCaseRunner<IMarketAnalysisService> service)
+    /// <param name="clock">The clock of the hotel, for the quick choices of the period.</param>
+    public MarketAnalysisViewModel(IUseCaseRunner<IMarketAnalysisService> service, IClock clock)
     {
         ArgumentNullException.ThrowIfNull(service);
+        ArgumentNullException.ThrowIfNull(clock);
 
         _service = service;
+        _clock = clock;
     }
 
     /// <summary>The report that was stored last, or <c>null</c> when none is stored yet.</summary>
@@ -29,6 +34,30 @@ public sealed class MarketAnalysisViewModel
 
     /// <summary>The run that was started and is followed, or <c>null</c>.</summary>
     public MarketAnalysisRunStateDto? CurrentRun { get; private set; }
+
+    /// <summary>The first arrival date of the bookings to analyse, or <c>null</c> for no lower limit.</summary>
+    public DateOnly? From { get; set; }
+
+    /// <summary>The last arrival date of the bookings to analyse, or <c>null</c> for no upper limit.</summary>
+    public DateOnly? To { get; set; }
+
+    /// <summary>Fills the dates with the last years up to today, for example the last 3 years.</summary>
+    /// <param name="years">The number of years; at least 1.</param>
+    public void UseLastYears(int years)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(years, 1);
+
+        var today = _clock.Today;
+        From = today.AddYears(-years);
+        To = today;
+    }
+
+    /// <summary>Clears both dates, so that every booking is analysed.</summary>
+    public void UseAllBookings()
+    {
+        From = null;
+        To = null;
+    }
 
     /// <summary>The texts of the last refusal, empty when the last call succeeded.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = [];
@@ -97,11 +126,13 @@ public sealed class MarketAnalysisViewModel
             return;
         }
 
+        var request = new StartMarketAnalysisRequest(From, To);
+
         IsBusy = true;
         try
         {
             var result = await _service
-                .RunAsync((service, token) => service.StartRunAsync(token), cancellationToken)
+                .RunAsync((service, token) => service.StartRunAsync(request, token), cancellationToken)
                 .ConfigureAwait(false);
 
             if (result.IsFailure)

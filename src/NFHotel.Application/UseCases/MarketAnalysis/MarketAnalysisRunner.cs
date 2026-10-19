@@ -66,7 +66,8 @@ public sealed class MarketAnalysisRunner
         _tracker.MarkRunning(runId);
         var startedAt = _clock.UtcNow;
 
-        var bookings = await _bookings.GetBookingsAsync(cancellationToken).ConfigureAwait(false);
+        var period = _tracker.PeriodOf(runId);
+        var bookings = await _bookings.GetBookingsAsync(period.From, period.To, cancellationToken).ConfigureAwait(false);
         if (bookings.Count == 0)
         {
             _tracker.MarkFailed(runId, ErrorCodes.MarketAnalysis.NoBookings);

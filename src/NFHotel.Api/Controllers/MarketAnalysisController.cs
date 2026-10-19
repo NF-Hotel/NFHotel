@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 
 using NFHotel.Api.Contracts;
 using NFHotel.Api.Security;
+using NFHotel.Application.Dto.MarketAnalysis;
 using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Application.UseCases.Staff;
 
@@ -25,13 +26,14 @@ public sealed class MarketAnalysisController : ControllerBase
         _marketAnalysis = marketAnalysis;
     }
 
-    /// <summary>Starts a run on the data analysis service.</summary>
+    /// <summary>Starts a run in the background for the bookings of a period.</summary>
+    /// <param name="request">The period by arrival date; the body may be left out to analyse every booking.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The queued run, or the codes of why it could not start.</returns>
     [HttpPost(ApiRoutes.MarketAnalysisRuns)]
     [RequiresPermission(Permissions.MarketAnalysisStart)]
-    public async Task<IActionResult> StartRunAsync(CancellationToken cancellationToken) =>
-        this.ToResponse(await _marketAnalysis.StartRunAsync(cancellationToken).ConfigureAwait(false));
+    public async Task<IActionResult> StartRunAsync([FromBody] StartMarketAnalysisRequest? request, CancellationToken cancellationToken) =>
+        this.ToResponse(await _marketAnalysis.StartRunAsync(request ?? new StartMarketAnalysisRequest(), cancellationToken).ConfigureAwait(false));
 
     /// <summary>Reads the state of a run; a completed run is stored on the first read.</summary>
     /// <param name="runId">The run id from the start.</param>

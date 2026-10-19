@@ -29,10 +29,11 @@ public sealed class MarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<MarketBookingDto>> GetBookingsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<MarketBookingDto>> GetBookingsAsync(DateOnly? firstArrival, DateOnly? lastArrival, CancellationToken cancellationToken = default)
     {
         var rows = await (
                 from booking in _context.Bookings.AsNoTracking()
+                where (firstArrival == null || booking.StartDate >= firstArrival) && (lastArrival == null || booking.StartDate <= lastArrival)
                 join guest in _context.Guests.AsNoTracking() on booking.GuestId equals guest.Id
                 join detail in _context.BookingMarketDetails.AsNoTracking() on booking.Id equals detail.BookingId into details
                 from detail in details.DefaultIfEmpty()

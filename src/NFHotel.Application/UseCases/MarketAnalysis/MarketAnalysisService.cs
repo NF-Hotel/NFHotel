@@ -35,9 +35,16 @@ public sealed class MarketAnalysisService : IMarketAnalysisService
     }
 
     /// <inheritdoc />
-    public Task<Result<MarketAnalysisRunStateDto>> StartRunAsync(CancellationToken cancellationToken = default)
+    public Task<Result<MarketAnalysisRunStateDto>> StartRunAsync(StartMarketAnalysisRequest request, CancellationToken cancellationToken = default)
     {
-        var begun = _tracker.TryBegin();
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request.From is { } from && request.To is { } to && from > to)
+        {
+            return Task.FromResult(Result<MarketAnalysisRunStateDto>.Failure(ErrorCodes.MarketAnalysis.PeriodInvalid));
+        }
+
+        var begun = _tracker.TryBegin(request.From, request.To);
         if (begun.IsSuccess)
         {
             _launcher.Launch(begun.Value.RunId);
