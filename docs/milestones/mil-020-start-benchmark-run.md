@@ -18,7 +18,7 @@
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 7 (default AI model for the website and the market analysis) and acceptance criterion 8; done after RC-109 and RC-110 | [b1daae2] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 8 (the analysis view of a run, like the notebook) and acceptance criterion 9; done after RC-111 | [09e3167] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 9 (the default model reaches the market analysis under the exact installed name) and acceptance criterion 10; done after RC-112 | [b195b69] |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Task 3 note: nginx sends a plain HTTP request to the TLS port on to HTTPS (status 497), checked by the proxy test | pending |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Task 3 note: nginx sends a plain HTTP request to the TLS port on to HTTPS (status 497), checked by the proxy test | [9962898] |
 
 ---
 
@@ -100,3 +100,4 @@ Let a Manager start a benchmark run from the back office and see its state until
 [b1daae2]: https://github.com/NF-Hotel/NFHotel/commit/b1daae275e05b207cd5403a3ec47e46fc76f33d0
 [09e3167]: https://github.com/NF-Hotel/NFHotel/commit/09e3167d660245247524dcd240d05b0bdf6d5419
 [b195b69]: https://github.com/NF-Hotel/NFHotel/commit/b195b6954dc291bc1131c121b0bc403c73b2dcec
+[9962898]: https://github.com/NF-Hotel/NFHotel/commit/99628981e27b95218fa5f75b79a1b5e1e940c519
