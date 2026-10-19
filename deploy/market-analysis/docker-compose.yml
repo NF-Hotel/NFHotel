@@ -7,7 +7,7 @@
 # name on the shared network (create it once: docker network create nfhotel-proxy).
 name: market-analysis
 
-x-analysis-image: &analysis-image ${MARKET_ANALYSIS_IMAGE:-market-analysis:local}
+x-analysis-image: &analysis-image market-analysis:local
 
 services:
   market-analysis-api:

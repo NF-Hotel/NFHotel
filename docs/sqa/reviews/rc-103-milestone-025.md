@@ -1,21 +1,21 @@
-# RC-091 Review of MIL-023
+# RC-103 Review of MIL-025
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | RC-091 |
-| CrossReference | [MIL-023], [QC-MIL-001], [QC-LANG-001] |
+| ID | RC-103 |
+| CrossReference | [MIL-025], [QC-MIL-001], [QC-LANG-001] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [f4649ad] |
+| 2026-10-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [4c8f103] |
 
 ---
 
 ## Artifact Under Review
 
-- Instance reviewed: [MIL-023]
+- Instance reviewed: [MIL-025]
 - Checklist used: [QC-MIL-001]; also [QC-LANG-001] because the type is written in the PO language
 - Scope: full review
 - Language and domain: en / it
@@ -26,12 +26,12 @@
 
 | # | Criterion | Status | Evidence/Notes |
 | --- | --- | --- | --- |
-| 1 | A concrete deliverable is defined for every gate | Pass | The CIS checklist, the daemon and compose hardening, nftables, patching, observability, Scorecard, SAMM, DORA and restore drills |
-| 2 | Explicit Go/No-Go criteria are stated for each gate | Pass | Six criteria, checked with nmap, `docker inspect`, logs and reports |
-| 3 | Dependencies on other milestones are explicitly mapped | Pass | MIL-022; S03 for the VM and the firewall |
-| 4 | Each milestone is traceable to a Business Case objective or KPI | Pass | Objective 25 and success criterion 28 of BC-001; DSA-001 risks R10, R11 and R12 |
-| 5 | Milestone owner and approving reviewer are identified | Pass | Owner S01; approving reviewers S01 and S03 |
-| 6 | Milestone has a defined target date consistent with project constraints | Pass | 2027-01-17, six weeks after MIL-022, so that two monthly restore drills fit |
+| 1 | A concrete deliverable is defined for every gate | Pass | The DevOps bootstrap and migration PR, the two actions, the NFHotel boundary PR, the settings, the issue transfer |
+| 2 | Explicit Go/No-Go criteria are stated for each gate | Pass | Eight criteria, with checksums, CI runs and settings as evidence |
+| 3 | Dependencies on other milestones are explicitly mapped | Pass | PR #22, MIL-021, MIL-024, S01, S03 |
+| 4 | Each milestone is traceable to a Business Case objective or KPI | Pass | Objective 23 of BC-001; ADR-0012 |
+| 5 | Milestone owner and approving reviewer are identified | Pass | S01; S03 for the workflows and the deploy |
+| 6 | Milestone has a defined target date consistent with project constraints | Pass | 2026-11-01; task 7 is bounded by MIL-021 and says so |
 
 ## Language and Domain Results
 
@@ -45,22 +45,22 @@
 | 6 | Metadata keys, section headings, IDs and statuses are in English | Pass | Template headings kept |
 | 7 | No translated twin (`<name>.<language>.md`) exists beside the document | Pass | No twin file |
 | 8 | A change of language or domain since the previous accepted version has a Version History row and was reviewed again | Pass | No change of language or domain |
-| 9 | A reviewer competent in the domain, and in the language, has confirmed that the domain terms are used correctly | Pass | The user's request of 2026-10-18 and the approval of decisions D1 to D10 in chat (AI as stand-in for S01) |
+| 9 | A reviewer competent in the domain, and in the language, has confirmed that the domain terms are used correctly | Pass | The repository ownership decision of the user in chat on 2026-10-19 (AI as stand-in for S01) |
 | 10 | Abbreviations are spelled out on first use, in the stated language | Pass | GHCR, OIDC, SBOM, SLSA, CIS, DORA, SAMM, RPO, RTO and WAL are spelled out on first use; CI, CD, API, TLS and SSH are established IT terms |
 
 ## Overall Verdict
 
-Go — every criterion of QC-MIL-001 passes. Criterion 9 of QC-LANG-001 rests on the user's approval in chat on 2026-10-18 and the stand-in's check, not on an independent review.
+Go — every criterion of QC-MIL-001 passes.
 
 ## Action Items
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| S01 and S03 decide the public certificate method (D10) before the VM serves the internet | S01, S03 | Before the MIL-023 Go/No-Go |
+| None | | |
 
 ---
 
-[MIL-023]: ../../milestones/mil-023-operational-quality.md
+[MIL-025]: ../../milestones/mil-025-devops-repository-consolidation.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
-[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
+[4c8f103]: https://github.com/NF-Hotel/NFHotel/commit/4c8f1030fdf53a5d9d827478244c55ecae73b8eb

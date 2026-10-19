@@ -33,7 +33,4 @@ server {
     proxy_pass $upstream;
     include /etc/nginx/snippets/proxy.conf;
   }
-
-  # Optional routes, off by default (ADR-0011): see snippets/locations.d/README.md.
-  include /etc/nginx/snippets/locations.d/*.conf;
 }
