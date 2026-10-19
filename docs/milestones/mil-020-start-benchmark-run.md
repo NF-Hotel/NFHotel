@@ -15,6 +15,7 @@
 | 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-087 Go | [7fbeba1] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Tasks 1 to 4 marked done after RC-106 and RC-107 | [847b639] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added tasks 5 and 6 (delete a stored run, readable results table) and acceptance criterion 7; done after RC-108 | [4f23a15] |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 7 (default AI model for the website and the market analysis) and acceptance criterion 8; done after RC-109 and RC-110 | pending |
 
 ---
 
@@ -41,6 +42,7 @@ Let a Manager start a benchmark run from the back office and see its state until
 | 5 | No token is in git; the compose files publish no host port for the benchmark or Ollama; `git check-ignore` is true for the env files | Yes | No |
 | 6 | `dotnet build` has 0 warnings, format is clean, all tests pass; `qc-programming-csharp` and `qc-yaml` reviews have the verdict `Go` | Yes | No |
 | 7 | A Manager deletes a stored run with a confirmation and it is gone with its requests; a Receptionist and a Housekeeping user get 403; an unknown run is 404 | Yes | No |
+| 8 | A Manager sets the default AI model of the website and of the market analysis from the benchmark page; the service token reads it; a Receptionist and a Housekeeping user get 403 on the write; the deploy script writes the market analysis model into its settings | Yes | No |
 
 ## Dependencies
 
@@ -78,6 +80,7 @@ Let a Manager start a benchmark run from the back office and see its state until
 | 4 | Check and review | Build, format, test; reviews against `qc-programming-csharp` and `qc-yaml`. | No | Done: RC-106, RC-107 |
 | 5 | Delete a stored run | `Permissions.BenchmarkDelete` (Manager only); `DELETE api/benchmark/runs/{runId}`; a Delete button with a confirmation on `/admin/benchmark`; the requests go with the run. | Yes | Done: `BenchmarkService.DeleteRunAsync`, `BenchmarkController.DeleteRunAsync`, `ApiBenchmarkService.DeleteRunAsync`, `BenchmarkRunListViewModel.ConfirmDeleteAsync`; 17 new tests |
 | 6 | Readable results table and models | A Task column (hotel cancellation analysis or the task name) and a 1-based run number in the table of one run; `phi3.5` is pulled with `llama3.2:3b` by `scripts/dev-up.sh`. | No | Done: `BenchmarkRuns.razor`, `scripts/dev-up.sh`; review RC-108 |
+| 7 | Default AI model | Table `ai_default` (one row per purpose), `AiDefaults.Manage` for the Manager, `GET`/`PUT api/ai-defaults`, a Default AI model card and "Use for" buttons on `/admin/benchmark`, and `apply_default_model` in `scripts/deploy-services.sh` (ADR-0014). | Yes | Done: `AiDefault`, `AiDefaultService`, `AiDefaultsController`, `ApiAiDefaultService`, migration `AddAiDefault`; 37 new tests; reviews RC-109 and RC-110 |
 
 ---
 

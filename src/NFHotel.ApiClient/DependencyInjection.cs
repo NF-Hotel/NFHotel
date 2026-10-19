@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using NFHotel.Api.Contracts;
+using NFHotel.Application.UseCases.AiDefaults;
 using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
@@ -37,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<IGuestService, ApiGuestService>();
         services.AddScoped<IRoomService, ApiRoomService>();
         services.AddScoped<IBenchmarkService, ApiBenchmarkService>();
+        services.AddScoped<IAiDefaultService, ApiAiDefaultService>();
         services.AddScoped<IStaffAuthService, ApiStaffAuthService>();
         services.AddScoped<StaffCallContext>();
         return services;

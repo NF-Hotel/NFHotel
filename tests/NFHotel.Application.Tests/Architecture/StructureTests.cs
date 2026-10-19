@@ -24,6 +24,7 @@ public sealed partial class StructureTests
 
     private static readonly string[] DtoFolders =
     [
+        "NFHotel.Application.Dto.AiDefaults",
         "NFHotel.Application.Dto.Benchmark",
         "NFHotel.Application.Dto.Bookings",
         "NFHotel.Application.Dto.Guests",

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.AiDefaults;
 using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
@@ -134,6 +135,7 @@ public static class DependencyInjection
         services.AddScoped<IGuestQueries, GuestRepository>();
         services.AddScoped<IStaffRepository, StaffRepository>();
         services.AddScoped<IBenchmarkRunRepository, BenchmarkRunRepository>();
+        services.AddScoped<IAiDefaultRepository, AiDefaultRepository>();
         services.AddScoped<IBenchmarkQueries, BenchmarkRunRepository>();
     }
 
@@ -161,6 +163,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<IRoomService, RoomService>();
+        services.AddScoped<IAiDefaultService, AiDefaultService>();
         services.AddScoped<BenchmarkService>();
         services.AddScoped<IBenchmarkService>(provider => provider.GetRequiredService<BenchmarkService>());
         services.AddScoped<IBenchmarkIntake>(provider => provider.GetRequiredService<BenchmarkService>());

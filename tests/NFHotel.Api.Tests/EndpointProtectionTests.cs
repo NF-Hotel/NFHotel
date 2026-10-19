@@ -13,7 +13,7 @@ namespace NFHotel.Api.Tests;
 /// </summary>
 public sealed class EndpointProtectionTests
 {
-    /// <summary>The actions that need only the token of the web application: the public booking flow and the sign-in itself.</summary>
+    /// <summary>The actions that need only the token of the web application: the public booking flow, the sign-in itself, and the read of the default AI models that the market analysis service makes.</summary>
     private static readonly string[] PublicActions =
     [
         "BookingsController.GetByIdAsync",
@@ -21,6 +21,7 @@ public sealed class EndpointProtectionTests
         "BookingsController.CreateAsync",
         "AuthController.LoginAsync",
         "BenchmarkController.PostResultAsync",
+        "AiDefaultsController.GetAllAsync",
     ];
 
     #region Protection

@@ -126,6 +126,37 @@ if ((down)); then
 fi
 
 # Check every settings file before touching anything.
+# The default AI model of the market analysis (ADR-0014) is chosen in the back office and stored in the database
+# of the web application. Write it as `model` in the [llm] section of the analysis settings before the analysis
+# service starts, so that the service uses it. Does nothing when the database is not running, no default is set,
+# or the name has a character that a model name does not have.
+analysis_changed=0
+apply_default_model() {
+  local toml="$1" model
+  model="$(docker exec nfhotel-postgres-postgres-1 sh -c \
+    'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -A -c "select model from ai_default where purpose = '"'"'market_analysis'"'"'"' 2>/dev/null |
+    tr -d '\r' | head -n 1 || true)"
+  if [[ -z "$model" ]]; then
+    return 0
+  fi
+  if [[ ! "$model" =~ ^[A-Za-z0-9._:/-]+$ ]]; then
+    echo "warning: the default model '$model' has an unusual character; $toml is not changed" >&2
+    return 0
+  fi
+  echo "==> the default AI model of the market analysis is $model"
+  awk -v model="$model" '
+    /^\[/ { in_llm = ($0 == "[llm]") }
+    in_llm && /^model[[:space:]]*=/ { print "model = \"" model "\""; next }
+    { print }
+  ' "$toml" >"$toml.tmp"
+  if ! cmp -s "$toml" "$toml.tmp"; then
+    # Written in place: the container mounts this file, and a new file would leave it looking at the old one.
+    cat "$toml.tmp" >"$toml"
+    analysis_changed=1
+  fi
+  rm -f "$toml.tmp"
+}
+
 for s in "${ordered[@]}"; do
   d="$(dir_of "$s")"
   e="$(env_of "$s")"
@@ -221,6 +252,9 @@ for s in "${ordered[@]}"; do
     # shellcheck disable=SC2086 # the names are split on purpose
     bash "$root/scripts/make-dev-certificate.sh" "$d/tls" $names || die "no certificate for the proxy"
   fi
+  if [[ "$s" == "analysis" ]]; then
+    apply_default_model "$d/market-analysis.toml"
+  fi
   echo "==> deploying $s"
   args=(--env-file "$e" up -d --remove-orphans)
   if ((build)) && [[ "$s" =~ ^(api|web|analysis|benchmark)$ ]]; then
@@ -231,6 +265,11 @@ for s in "${ordered[@]}"; do
     args+=(--wait --wait-timeout 300)
   fi
   (cd "$d" && docker compose "${args[@]}") || die "deploying $s failed"
+  if [[ "$s" == "analysis" ]] && ((analysis_changed)); then
+    # The service reads its settings when it starts, so a changed default model needs a restart.
+    echo "==> restarting analysis to use the new model"
+    (cd "$d" && docker compose --env-file "$e" restart) || die "restarting $s failed"
+  fi
   if [[ "$s" == "ollama" ]]; then
     models="$(sed -n 's/^OLLAMA_PULL_MODELS=//p' "$d/$e" | tr -d '\r')"
     for model in $models; do

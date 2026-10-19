@@ -5,6 +5,7 @@
 @inherits NFHotel.Web.Common.CancellableComponentBase
 @using System.Globalization
 @using NFHotel.Application.Dto.Benchmark
+@using NFHotel.Domain.Entities
 @using NFHotel.Web.Features.Admin.Benchmark
 @inject BenchmarkRunListViewModel ViewModel
 
@@ -37,6 +38,57 @@
                       IsBusy="ViewModel.IsBusy"
                       OnConfirm="ConfirmDeleteAsync"
                       OnCancel="ViewModel.AbortDelete" />
+    }
+
+    @if (ViewModel.IsLoaded)
+    {
+        <section class="card card-pad stack-sm" aria-labelledby="ai-defaults">
+            <h2 class="subtitle" id="ai-defaults">Default AI model</h2>
+            <p class="muted">
+                The model that the website and the market analysis use unless they are told otherwise. Choose it from the
+                results below, or type the name of an installed model. The market analysis reads it the next time it is deployed.
+            </p>
+            <datalist id="known-models">
+                @foreach (var model in ViewModel.KnownModels)
+                {
+                    <option value="@model"></option>
+                }
+            </datalist>
+            @foreach (var purpose in Purposes)
+            {
+                var current = ViewModel.DefaultOf(purpose);
+                var fieldId = $"default-ai-{purpose}";
+                <div class="field-row">
+                    <div>
+                        <strong>@Title(purpose)</strong>:
+                        @if (current is null)
+                        {
+                            <span>no default set</span>
+                        }
+                        else
+                        {
+                            <span>@current.Model, set by @current.SetBy @current.SetAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) UTC</span>
+                        }
+                    </div>
+                    <AuthorizeView Policy="@StaffPolicies.AiDefaultsManage">
+                        <label class="sr-only" for="@fieldId">Default model for @ViewModel.LabelOfPurpose(purpose)</label>
+                        <input id="@fieldId"
+                               class="field-input"
+                               list="known-models"
+                               maxlength="100"
+                               disabled="@ViewModel.IsBusy"
+                               value="@ViewModel.DraftOf(purpose)"
+                               @onchange="args => ViewModel.SetDraft(purpose, args.Value?.ToString())" />
+                        <button type="button"
+                                class="btn btn-primary btn-sm"
+                                disabled="@(ViewModel.IsBusy || string.IsNullOrWhiteSpace(ViewModel.DraftOf(purpose)))"
+                                @onclick="() => SaveDefaultAsync(purpose)">
+                            Save
+                        </button>
+                    </AuthorizeView>
+                </div>
+            }
+        </section>
     }
 
     @if (!ViewModel.IsLoaded)
@@ -147,6 +199,17 @@
                                             @onclick="() => ShowOutputAsync(result.BenchmarkResultId)">
                                         Show answer
                                     </button>
+                                    <AuthorizeView Policy="@StaffPolicies.AiDefaultsManage">
+                                        @foreach (var purpose in Purposes)
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-secondary btn-sm"
+                                                    disabled="@ViewModel.IsBusy"
+                                                    @onclick="() => ViewModel.SetDefaultAsync(purpose, result.Model, selected.Header.RunId, ComponentToken)">
+                                                Use for @ViewModel.LabelOfPurpose(purpose)
+                                            </button>
+                                        }
+                                    </AuthorizeView>
                                 </td>
                             </tr>
                         }
@@ -177,6 +240,13 @@
 @code {
     /// <summary>Loads the list when the page opens.</summary>
     protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
+
+    private static readonly string[] Purposes = [AiDefault.Website, AiDefault.MarketAnalysis];
+
+    private static string Title(string purpose) =>
+        purpose == AiDefault.Website ? "Website" : "Market analysis";
+
+    private Task SaveDefaultAsync(string purpose) => ViewModel.SaveDefaultAsync(purpose, ComponentToken);
 
     private Task ConfirmDeleteAsync() => ViewModel.ConfirmDeleteAsync(ComponentToken);
 

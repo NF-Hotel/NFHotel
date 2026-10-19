@@ -15,6 +15,12 @@ public static class ApiRoutes
     /// <summary>The route prefix of the room endpoints.</summary>
     public const string Rooms = "api/rooms";
 
+    /// <summary>The route prefix of the default AI models (ADR-0014).</summary>
+    public const string AiDefaults = "api/ai-defaults";
+
+    /// <summary>The default of one purpose below <see cref="AiDefaults"/>.</summary>
+    public const string AiDefaultByPurpose = "{purpose}";
+
     /// <summary>The route prefix of the benchmark results (ADR-0013).</summary>
     public const string Benchmark = "api/benchmark";
 
