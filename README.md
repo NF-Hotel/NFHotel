@@ -570,6 +570,10 @@ For questions regarding the project or its use, please contact the development t
 
 ---
 
+## 🏗️ Infrastructure and Operations
+
+Deployment, CI/CD actions, PostgreSQL operations, backups, Tailscale, nginx, TLS and the DevSecOps evidence live in [NF-Hotel/DevOps](https://github.com/NF-Hotel/DevOps) (ADR-0012). This repository keeps the application and the workflow entry points, which call DevOps actions pinned by full commit SHA. See `CONTRIBUTING.md` for the ownership boundary.
+
 ## 🔗 Repository
 
 The source code is available on GitHub:

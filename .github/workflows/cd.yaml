@@ -1,19 +1,20 @@
-# CD: deploy a release to the Proxmox VM after an approval (ADR-0007, MIL-021 task 6).
+# CD: deploy a release to the Proxmox VM after an approval (ADR-0007, ADR-0012). An entry
+# point: the steps are the deploy-release action of NF-Hotel/DevOps, pinned by full
+# commit SHA. This workflow keeps the trigger, the permissions, the environment and the
+# concurrency, which a composite action cannot set.
 #
-# Triggers: a successful NF Hotel Release run (workflow_run), or by hand with the run
-#   ID of an earlier release (a redeploy or a rollback). A manual run is a dry run
-#   unless the input apply is true.
-# Approval: the job runs in the environment production, whose required reviewers
-#   approve it before it starts; no credential exists before that.
-# Access: the job joins the tailnet as an ephemeral node tagged tag:ci through GitHub
-#   OIDC (no stored Tailscale secret) and runs one command on the VM over Tailscale
-#   SSH as the user deploy (no stored ssh key).
+# Triggers: a successful NF Hotel Release run of main in this repository
+#   (workflow_run), or by hand with the run ID of an earlier release (a redeploy or a
+#   rollback). A manual run is a dry run unless the input apply is true.
+# Approval: the job runs in the environment production, whose required reviewers approve
+#   it before it starts; no credential exists before that.
+# Access: the action joins the tailnet as an ephemeral node tagged tag:ci through GitHub
+#   OIDC (the claims name this repository and production; no stored Tailscale secret)
+#   and runs one command on the VM over Tailscale SSH as the user deploy (no stored key).
 # Settings (environment variables of production, not secrets): TS_OIDC_CLIENT_ID,
 #   TS_OIDC_AUDIENCE, NFHOTEL_VM_HOST.
-# Changes outside the repository: the services on the VM (scripts/deploy-release.sh).
-# It checks out only main (trusted); the steps are in scripts/cd-steps.sh.
-# Verified with actionlint 1.7.7; the GitHub features (workflow_run chain, environment
-# approval, OIDC) are verified on github.com in MIL-021 task 8.
+# Changes outside the repository: the services on the VM.
+# Verified with actionlint 1.7.7.
 name: NF Hotel CD
 
 on:
@@ -43,7 +44,7 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to production
-    # A run from a fork never reaches the deploy, even if Release were changed
+    # A run from a fork never reaches the deploy
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
@@ -58,58 +59,16 @@ jobs:
       contents: read
       actions: read
       id-token: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-      RUN_ID: ${{ github.event.workflow_run.id || inputs.release_run_id }}
-      APPLY: ${{ github.event_name == 'workflow_run' || inputs.apply }}
 
     steps:
-      # The steps of this workflow, from main only
-      - name: Check out the CD steps from main
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Deploy the release
+        # A pinned action reference cannot be wrapped (ADR-0012: full commit SHA).
+        # yamllint disable-line rule:line-length
+        uses: NF-Hotel/DevOps/.github/actions/deploy-release@82cb1f4fe99a21b54551c32cfa738d5982caf9d9
         with:
-          ref: main
-          persist-credentials: false
-
-      - name: Check the release run
-        id: run
-        run: bash scripts/cd-steps.sh check-run
-
-      - name: Download the release manifest
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
-        with:
-          name: release-manifest
-          run-id: ${{ steps.run.outputs.id }}
+          release-run-id: ${{ github.event.workflow_run.id || inputs.release_run_id }}
+          apply: ${{ github.event_name == 'workflow_run' || inputs.apply }}
+          vm-host: ${{ vars.NFHOTEL_VM_HOST }}
+          ts-oidc-client-id: ${{ vars.TS_OIDC_CLIENT_ID }}
+          ts-oidc-audience: ${{ vars.TS_OIDC_AUDIENCE }}
           github-token: ${{ github.token }}
-
-      - name: Read the release manifest
-        id: release
-        run: bash scripts/cd-steps.sh read-manifest
-
-      - name: Join the tailnet
-        if: ${{ env.APPLY == 'true' }}
-        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd  # v4.2.0
-        with:
-          oauth-client-id: ${{ vars.TS_OIDC_CLIENT_ID }}
-          audience: ${{ vars.TS_OIDC_AUDIENCE }}
-          tags: tag:ci
-          version: 1.102.4
-
-      - name: Deploy on the VM
-        if: ${{ env.APPLY == 'true' }}
-        env:
-          VM_HOST: ${{ vars.NFHOTEL_VM_HOST }}
-          SHA: ${{ steps.release.outputs.sha }}
-          WEB: ${{ steps.release.outputs.nfhotel_web }}
-          API: ${{ steps.release.outputs.nfhotel_api }}
-          ANALYSIS: ${{ steps.release.outputs.market_analysis }}
-          BENCHMARK: ${{ steps.release.outputs.benchmark }}
-        run: bash scripts/cd-steps.sh deploy
-
-      # The audit record of this run; the approver is kept by the environment history
-      - name: Write the deployment summary
-        if: ${{ always() }}
-        env:
-          SHA: ${{ steps.release.outputs.sha }}
-          OUTCOME: ${{ env.APPLY == 'true' && job.status || 'dry run' }}
-        run: bash scripts/cd-steps.sh summary

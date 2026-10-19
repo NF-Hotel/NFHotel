@@ -84,6 +84,6 @@ compose file and one `<service>.env` per service, an external network
 [BC-001]: ../business-case.md
 [MIL-004]: ../milestones/mil-004-market-analysis-service.md
 [US-001]: ../user-stories.md
-[ADR-0010]: ./adr-0010-production-vm-as-deployed.md
+[ADR-0010]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0010-production-vm-as-deployed.md
 [0fa84f7]: https://github.com/NF-Hotel/NFHotel/commit/0fa84f7fe59f59a20e54b6914c6ad4842fe74b3a
 [1b94761]: https://github.com/NF-Hotel/NFHotel/commit/1b94761ddb5113cd0d34915c01fe7f0f278bba60

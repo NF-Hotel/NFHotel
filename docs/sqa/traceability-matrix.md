@@ -50,6 +50,8 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0009] | ADR | en | it | [ADR-0006], [DSA-001] | [MIL-021], [MIL-023] | [RC-096] |
 | [ADR-0010] | ADR | en | it | [ADR-0003], [ADR-0004], [DSA-001] | [MIL-021], [ADR-0011] | [RC-098] |
 | [MIL-024] | Milestone | en | it | [BC-001], [ADR-0010], [ADR-0011], [MIL-021] | - | [RC-099], [RC-101] |
+| [ADR-0012] | ADR | en | it | [BC-001], [ADR-0003], [ADR-0006] | [MIL-025] | [RC-102] |
+| [MIL-025] | Milestone | en | it | [BC-001], [ADR-0012] | - | [RC-103] |
 | [ADR-0011] | ADR | en | it | [ADR-0004], [ADR-0010], [DSA-001] | [MIL-024] | [RC-100] |
 | [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001] | [RC-013], [RC-028] |
 | [US-001] | User Story | en | it | [UCD-001], [BC-001] | - | [RC-012], [RC-027] |
@@ -143,31 +145,35 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-002]: ../milestones/mil-002-nginx-proxy-and-web-compose.md
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
 [3db0f51]: https://github.com/NF-Hotel/NFHotel/commit/3db0f51b7d7769bfc99dbbd173fc67266ee70c99
-[DSA-001]: ./devsecops-assessment.md
-[MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
-[MIL-022]: ../milestones/mil-022-supply-chain-security.md
-[MIL-023]: ../milestones/mil-023-operational-quality.md
+[DSA-001]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/devsecops-assessment.md
+[MIL-021]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-021-secure-cicd-foundation.md
+[MIL-022]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-022-supply-chain-security.md
+[MIL-023]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-023-operational-quality.md
 [ADR-0004]: ../adr/adr-0004-database-api.md
 [ADR-0006]: ../adr/adr-0006-tls.md
-[ADR-0007]: ../adr/adr-0007-cicd-and-supply-chain.md
-[ADR-0008]: ../adr/adr-0008-database-migration-and-backup.md
-[ADR-0009]: ../adr/adr-0009-tls-certificates.md
+[ADR-0007]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md
+[ADR-0008]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0008-database-migration-and-backup.md
+[ADR-0009]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0009-tls-certificates.md
 [RC-088]: ./reviews/rc-088-business-case-cicd.md
-[RC-089]: ./reviews/rc-089-milestone-021.md
-[RC-090]: ./reviews/rc-090-milestone-022.md
-[RC-091]: ./reviews/rc-091-milestone-023.md
-[RC-092]: ./reviews/rc-092-adr-0007.md
-[RC-093]: ./reviews/rc-093-adr-0008.md
-[RC-094]: ./reviews/rc-094-mil-021-shell-code.md
-[RC-095]: ./reviews/rc-095-mil-021-workflows.md
-[RC-096]: ./reviews/rc-096-adr-0009.md
-[RC-097]: ./reviews/rc-097-milestone-021-reconciliation.md
-[RC-098]: ./reviews/rc-098-adr-0010.md
-[RC-099]: ./reviews/rc-099-milestone-024.md
-[RC-100]: ./reviews/rc-100-adr-0011.md
-[RC-101]: ./reviews/rc-101-mil-024-code-and-gate.md
-[MIL-024]: ../milestones/mil-024-postgresql-api-readiness.md
-[ADR-0011]: ../adr/adr-0011-postgresql-access-for-the-api.md
-[ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
+[RC-089]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-089-milestone-021.md
+[RC-090]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-090-milestone-022.md
+[RC-091]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-091-milestone-023.md
+[RC-092]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-092-adr-0007.md
+[RC-093]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-093-adr-0008.md
+[RC-094]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-094-mil-021-shell-code.md
+[RC-095]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-095-mil-021-workflows.md
+[RC-096]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-096-adr-0009.md
+[RC-097]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-097-milestone-021-reconciliation.md
+[RC-098]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-098-adr-0010.md
+[RC-099]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-099-milestone-024.md
+[RC-100]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-100-adr-0011.md
+[RC-101]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-101-mil-024-code-and-gate.md
+[MIL-024]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-024-postgresql-api-readiness.md
+[ADR-0011]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0011-postgresql-access-for-the-api.md
+[ADR-0010]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0010-production-vm-as-deployed.md
 [ADR-0003]: ../adr/adr-0003-proxmox-vm-for-services.md
 [RC-043]: ./reviews/rc-043-validation-attributes.md
+[ADR-0012]: ../adr/adr-0012-devops-repository-ownership.md
+[MIL-025]: ../milestones/mil-025-devops-repository-consolidation.md
+[RC-102]: ./reviews/rc-102-adr-0012.md
+[RC-103]: ./reviews/rc-103-milestone-025.md

@@ -1,5 +1,4 @@
 - [Home](Home)
-- [Proxmox Deployment](Proxmox-Deployment)
-- [CI/CD](CI-CD)
-- [Database Preparation](Database-Preparation)
+- [Proxmox Deployment](Proxmox-Deployment) (moved to NF-Hotel/DevOps)
+- [DevOps wiki pages](https://github.com/NF-Hotel/DevOps/tree/main/docs/wiki)
 - [Appendix](Appendix)

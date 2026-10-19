@@ -1,11 +1,14 @@
-# Owners are asked for review when these paths change (MIL-021, DSA-001 section 13).
-# The pipeline, the deployment and the decisions behind them change production, so
-# a second person always sees the change.
+# Owners are asked for review when these paths change (ADR-0012, CONTRIBUTING.md).
+# The workflow entry points and the Dockerfiles are shared with NF-Hotel/DevOps: they
+# decide what is built, released and deployed, so a second person always sees the change.
 
 /.github/                       @codemikemike @Tirsvad
-/deploy/                        @codemikemike @Tirsvad
-/scripts/                       @codemikemike @Tirsvad
 /Dockerfile                     @codemikemike @Tirsvad
 /Dockerfile.api                 @codemikemike @Tirsvad
 /docs/adr/                      @codemikemike @Tirsvad
 /SECURITY.md                    @codemikemike @Tirsvad
+/CONTRIBUTING.md                @codemikemike @Tirsvad
+
+# Old copies of the infrastructure, kept until MIL-025 task 7; change them in NF-Hotel/DevOps.
+/deploy/                        @codemikemike @Tirsvad
+/scripts/                       @codemikemike @Tirsvad

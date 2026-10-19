@@ -7,11 +7,8 @@ clean-architecture .NET solution. This wiki is written for the people who build 
 
 - [Proxmox Deployment](Proxmox-Deployment): set up the Proxmox virtual machine and the Docker
   containers that run the whole system (development environment).
-- [CI/CD](CI-CD): how a release is built, approved, deployed, rolled back, and how the
-  database is backed up and restored; the one-time setup.
-- [Database Preparation](Database-Preparation): least-privilege roles, the internal network and
-  the tailnet checks of the production PostgreSQL, for the API.
 - [Appendix: Project Documents](Appendix): links to every document under `docs/`.
+- Infrastructure and operations (CI/CD, deployment, database preparation, Proxmox): the wiki pages of [NF-Hotel/DevOps](https://github.com/NF-Hotel/DevOps/tree/main/docs/wiki) (ADR-0012).
 
 ## Where things live
 

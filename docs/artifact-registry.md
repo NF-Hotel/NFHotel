@@ -9,6 +9,8 @@ Delete rows for types you don't use. Add a row the first time you create a
 document of a type. `Primary File` may contain a glob (e.g.
 `docs/use-cases/uc-*/uc.md`); `framework/scripts/find-crossreferences.sh` reads it.
 
+Infrastructure documents (DSA-001, ADR-0007 to ADR-0011, MIL-021 to MIL-024 and their review records) moved to [NF-Hotel/DevOps](https://github.com/NF-Hotel/DevOps) with their IDs (ADR-0012). This registry allocates numbers below 500; the DevOps registry allocates them from 500.
+
 | Short Name | Artifact Type | Primary File | Next Available Version |
 | --- | --- | --- | --- |
 | BC | Business Case | docs/business-case.md | 002 |

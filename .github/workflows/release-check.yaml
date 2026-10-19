@@ -1,0 +1,50 @@
+# Release check: on every pull request to main, build the four images through the
+# release-images action of NF-Hotel/DevOps, pinned by full commit SHA, without pushing
+# (ADR-0012, MIL-025 criterion 3). It shows that a change of the application still
+# releases, and that the pinned DevOps action works from this repository.
+#
+# Trigger: pull requests to main. Secrets: none; read-only token; nothing is pushed and
+# nothing outside the repository changes.
+# Verified with actionlint 1.7.7.
+name: NF Hotel Release check
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-check:
+    name: Release build (no push)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read the commit under test
+        id: app
+        run: echo "sha=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
+
+      - name: Build the images through the DevOps action
+        id: release
+        # A pinned action reference cannot be wrapped (ADR-0012: full commit SHA).
+        # yamllint disable-line rule:line-length
+        uses: NF-Hotel/DevOps/.github/actions/release-images@82cb1f4fe99a21b54551c32cfa738d5982caf9d9
+        with:
+          app-path: .
+          app-sha: ${{ steps.app.outputs.sha }}
+          push: "false"
+
+      - name: Show the DevOps commit the action ran at
+        env:
+          DEVOPS_SHA: ${{ steps.release.outputs.devops-sha }}
+        run: echo "release-images ran at NF-Hotel/DevOps $DEVOPS_SHA"
