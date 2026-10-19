@@ -35,7 +35,7 @@ public sealed class BookingFormViewModel
     private readonly IClock _clock;
 
     /// <summary>
-    /// Opretter viewmodellen.
+    /// Creates the view model.
     /// </summary>
     /// <param name="bookings">Runs use cases on <see cref="IBookingService"/>.</param>
     /// <param name="guests">Runs use cases on <see cref="IGuestService"/>.</param>

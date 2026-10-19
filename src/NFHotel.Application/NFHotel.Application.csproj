@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    NFHotel.Application indeholder use cases og forretningslogik (B-10).
-    Én projektreference: Domain. NUL NuGet-pakker — hverken EF Core, Npgsql eller ASP.NET
-    (Architecture.md afsnit 2). Bliver der tilføjet en <PackageReference> her, er
-    afhængighedsretningen brudt, og arkitekturtesten i Application.Tests skal fange det.
+    NFHotel.Application holds the use cases and the business logic (B-10).
+    One project reference: Domain. ZERO NuGet packages: not EF Core, Npgsql or ASP.NET
+    (Architecture.md section 2). If a <PackageReference> is ever added here, the
+    dependency direction is broken, and the architecture test in Application.Tests must catch it.
   -->
 
   <PropertyGroup>

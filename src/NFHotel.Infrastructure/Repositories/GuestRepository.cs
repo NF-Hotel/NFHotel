@@ -19,7 +19,7 @@ namespace NFHotel.Infrastructure.Repositories;
 public sealed class GuestRepository : Repository<Guest, int>, IGuestRepository, IGuestQueries
 {
     /// <summary>
-    /// Opretter repositoryet.
+    /// Creates the repository.
     /// </summary>
     /// <param name="context">Konteksten.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="context"/> is <c>null</c>.</exception>

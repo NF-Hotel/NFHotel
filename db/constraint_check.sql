@@ -1,26 +1,26 @@
 -- =====================================================================
--- Verifikation af exclusion constrainten (A-01, B-03)
+-- Verification of the exclusion constraint (A-01, B-03)
 -- =====================================================================
--- Kør EFTER seed_dev.sql:
+-- Run AFTER seed_dev.sql:
 --   docker exec -i nfhotel-postgres psql -U nfhotel -d nfhotel < db/constraint_check.sql
 --
--- Dette er den vigtigste enkeltmekanisme i hele designet: den gør
--- dobbeltbooking fysisk umulig, også hvis to brugere trykker samtidig.
--- Det gamle WPF-system havde intet overlapstjek ved oprettelse overhovedet.
+-- This is the most important single mechanism in the whole design: it makes
+-- double booking physically impossible, even if two users press at the same time.
+-- The old WPF system had no overlap check on creation at all.
 --
--- Fire tests. De tre første SKAL fejle, den fjerde SKAL lykkes.
+-- Four tests. The first three MUST fail, the fourth MUST succeed.
 -- =====================================================================
 
 \set ON_ERROR_STOP off
 \echo ''
 \echo '=== TEST 1: overlap paa samme rum — FORVENTET: afvist ==='
--- Rum 1 er booket CURRENT_DATE..+3 (booking 1). Denne overlapper midt i.
+-- Room 1 is booked CURRENT_DATE..+3 (booking 1). This one overlaps in the middle.
 INSERT INTO booking (start_date, end_date, status, room_id, guest_id)
 VALUES (CURRENT_DATE + 1, CURRENT_DATE + 2, 0, 1, 3);
 
 \echo ''
 \echo '=== TEST 2: overlap paa nyt rum uden konflikt — FORVENTET: accepteret ==='
--- Rum 9 (204) har ingen bookinger.
+-- Room 9 (204) has no bookings.
 INSERT INTO booking (start_date, end_date, status, room_id, guest_id)
 VALUES (CURRENT_DATE + 1, CURRENT_DATE + 2, 0, 9, 3);
 
@@ -33,15 +33,15 @@ VALUES (CURRENT_DATE + 3, CURRENT_DATE + 5, 0, 1, 4);
 
 \echo ''
 \echo '=== TEST 4: genudlejning efter TIDLIG UDTJEKNING — FORVENTET: accepteret ==='
--- Dette er A-01, hele pointen med effective_end_date.
--- Booking 6 paa rum 10 er booket til CURRENT_DATE + 4, men gaesten tjekkede ud i gaar.
--- Uden effective_end_date ville denne blive afvist, selv om rummet staar tomt.
+-- This is A-01, the whole point of effective_end_date.
+-- Booking 6 on room 10 is booked until CURRENT_DATE + 4, but the guest checked out yesterday.
+-- Without effective_end_date this one would be rejected, even though the room is empty.
 INSERT INTO booking (start_date, end_date, status, room_id, guest_id)
 VALUES (CURRENT_DATE, CURRENT_DATE + 3, 0, 10, 5);
 
 \echo ''
 \echo '=== TEST 5: overlap med en ANNULLERET booking — FORVENTET: accepteret ==='
--- Booking 7 paa rum 3 er Cancelled og blokerer derfor ikke.
+-- Booking 7 on room 3 is Cancelled and therefore does not block.
 INSERT INTO booking (start_date, end_date, status, room_id, guest_id)
 VALUES (CURRENT_DATE + 1, CURRENT_DATE + 2, 0, 3, 6);
 

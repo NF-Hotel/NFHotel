@@ -1,18 +1,18 @@
-# Git-historik og editorindstillinger skal ikke med i build-context.
+# The Git history and the editor settings do not belong in the build context.
 .git
 .vs
 .vscode
 
-# Lokale build-resultater skal ikke bruges i containerens build.
+# Local build output must not be used in the build of the container.
 **/bin
 **/obj
 
-# Lokale miljøfiler og udviklingsindstillinger skal ikke kopieres med.
+# Local environment files and development settings must not be copied.
 **/.env
 **/.env.*
 **/*.env
 **/appsettings.Development.json
 
-# Mobilprojekt, tests og prototyper bruges ikke af denne webapp.
+# The mobile project, the tests and the prototypes are not used by this web application.
 tests
 prototypes

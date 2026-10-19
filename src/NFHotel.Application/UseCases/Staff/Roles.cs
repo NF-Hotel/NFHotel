@@ -3,29 +3,29 @@ namespace NFHotel.Application.UseCases.Staff;
 
 
 /// <summary>
-/// Definerer systemets fire roller ud fra den godkendte RBAC-matrix.
+/// Defines the four roles of the system from the approved RBAC matrix.
 /// </summary>
 public static class Roles
 {
 
-    // definerer et fast rollenavn som kan genbruges andre steder i systemet.
+    // defines a fixed role name that can be reused elsewhere in the system.
     /// <summary>
-    /// Rollen for en gæst.
+    /// The role of a guest.
     /// </summary>
     public const string Guest = "Guest";
 
     /// <summary>
-    /// Rollen for en receptionist.
+    /// The role of a receptionist.
     /// </summary>
     public const string Receptionist = "Receptionist";
 
     /// <summary>
-    /// Rollen for en manager.
+    /// The role of a manager.
     /// </summary>
     public const string Manager = "Manager";
 
     /// <summary>
-    /// Rollen for rengøringspersonale.
+    /// The role of the cleaning staff.
     /// </summary>
     public const string Housekeeping = "Housekeeping";
 }

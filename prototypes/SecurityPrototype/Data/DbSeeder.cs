@@ -6,21 +6,21 @@ using SecurityPrototype.Security;
 
 namespace SecurityPrototype.Data;
 
-// Klasse der bruges til at indsætte startdata i databasen.
+// Class used to insert the start data into the database.
 public static class DbSeeder
 {
-    // Asynkron metode der opretter de nødvendige roller i databasen.
-    // IServiceProvider giver adgang til de services, der er registreret i DI.
-    // IConfiguration er et interface fra ASP.NET Core, som giver adgang til applikationens konfiguration
+    // Asynchronous method that creates the necessary roles in the database.
+    // IServiceProvider gives access to the services that are registered in DI.
+    // IConfiguration is an interface from ASP.NET Core that gives access to the configuration of the application
     public static async Task SeedAsync(IServiceProvider services, IConfiguration configuration)
     {
 
-        // Retriver RoleManager fra Dependency Injection.
-        // RoleManager bruges til roller i ASP.NET Identity.
+        // Retrieves RoleManager from Dependency Injection.
+        // RoleManager is used for roles in ASP.NET Identity.
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-        // String-Array med de roller systemet skal have.
-        // Værdierne kommer fra vores Roles-klassen.
+        // String array with the roles that the system must have.
+        // The values come from our Roles class.
         string[] roles =
 
         {
@@ -30,45 +30,45 @@ public static class DbSeeder
 
         };
 
-        // Foreach loop der går igennem rollerne en ad gange
+        // Foreach loop that goes through the roles one at a time
         foreach (var role in roles)
         {
-            // If statement der kontrollerer om rollen allerede findes i databasen.
+            // If statement that checks whether the role already exists in the database.
             if (!await roleManager.RoleExistsAsync(role))
             {
 
-                // Hvis rolle ikke findes. Oprettets den her.
+                // If the role does not exist, it is created here.
                 await roleManager.CreateAsync(new IdentityRole(role));
             }
         }
 
 
         //
-        // Henter UserManager<AppUser> fra Dependency Injection-containeren.
-        // UserManager er en ASP.NET Core Identity-service, som bruges til a oprette, finde og administrere brugere.
+        // Fetches UserManager<AppUser> from the Dependency Injection container.
+        // UserManager is an ASP.NET Core Identity service that is used to create, find and manage users.
         var userManager = services.GetRequiredService<UserManager<AppUser>>();
 
-        // Henter test-passwords fra User Secrets
-        // Passwords ligger i User Secrets, så de ik blive pushed til Git/GitHub.
+        // Fetches the test passwords from User Secrets
+        // The passwords are in User Secrets, so they are not pushed to Git/GitHub.
         var managerPassword = configuration["SeedUsers:ManagerPassword"];
         var receptionistPassword = configuration["SeedUsers:ReceptionistPassword"];
         var housekeepingPassword = configuration["SeedUsers:HousekeepingPassword"];
 
-        // Stopper programmet hvis et eller flere passwords mangler.
+        // Stops the program if one or more passwords are missing.
         if (string.IsNullOrWhiteSpace(managerPassword) || string.IsNullOrWhiteSpace(receptionistPassword) || string.IsNullOrWhiteSpace(housekeepingPassword))
         {
             throw new InvalidOperationException("One or more seed passwords are not configured.");
         }
 
-        // Kalder Ensure-metoden for at oprette brugere med de angivne roller.
+        // Calls the Ensure method to create users with the given roles.
         async Task EnsureUser(string email, string password, string role)
         {
-            // Tjekker om brugeren allerede findes i databasen.
+            // Checks whether the user already exists in the database.
             var existingUser = await userManager.FindByEmailAsync(email);
 
             if (existingUser is null)
             {
-                // Opretter en ny bruger, hvis der ikke findes en eksisterende.
+                // Creates a new user if there is no existing one.
                 var user = new AppUser
                 {
                     UserName = email,
@@ -76,7 +76,7 @@ public static class DbSeeder
                 };
 
 
-                // Opretter brugeren med password fra User Secrets.
+                // Creates the user with the password from User Secrets.
                 var result = await userManager.CreateAsync(user, password);
 
 
@@ -85,13 +85,13 @@ public static class DbSeeder
                     throw new InvalidOperationException($"Could not create seed user {email}.");
                 }
 
-                // Tilføjer brugeren til den angivne rolle.
+                // Adds the user to the given role.
                 await userManager.AddToRoleAsync(user, role);
             }
 
         }
 
-        // Opretter de tre fake testbrugere, hvis de ikke allerede findes.
+        // Creates the three fake test users if they do not already exist.
         await EnsureUser("reception@nfhotel.test", receptionistPassword, Roles.Receptionist);
         await EnsureUser("housekeeping@nfhotel.test", housekeepingPassword, Roles.Housekeeping);
         await EnsureUser("manager@nfhotel.test", managerPassword, Roles.Manager);

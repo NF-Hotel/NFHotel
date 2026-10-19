@@ -20,7 +20,7 @@ public sealed class SystemClock : IClock
     private readonly TimeZoneInfo _hotelTimeZone;
 
     /// <summary>
-    /// Opretter uret.
+    /// Creates the clock.
     /// </summary>
     /// <param name="options">The time settings, including the hotel's time zone.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="options"/> is <c>null</c>.</exception>
