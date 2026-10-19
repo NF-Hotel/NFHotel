@@ -23,7 +23,7 @@ public sealed class GuestListViewModel
     private readonly IUseCaseRunner<IGuestService> _guests;
 
     /// <summary>
-    /// Opretter viewmodellen.
+    /// Creates the view model.
     /// </summary>
     /// <param name="guests">Runs use cases on <see cref="IGuestService"/>.</param>
     public GuestListViewModel(IUseCaseRunner<IGuestService> guests)

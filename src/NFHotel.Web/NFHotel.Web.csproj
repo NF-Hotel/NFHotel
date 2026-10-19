@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <!--
-    NFHotel.Web er composition root. Den refererer Application (kontrakterne
-    komponenterne kalder), ApiClient (use cases over HTTP, ADR-0004) og External (uret og helligdagene).
-    Den refererer ikke Infrastructure: webapplikationen har hverken databaseadgang eller EF Core.
-    Ingen komponent og ingen ViewModel må røre EF Core eller Npgsql (B-10).
+    NFHotel.Web is the composition root. It references Application (the contracts
+    that the components call), ApiClient (use cases over HTTP, ADR-0004) and External (the clock and the holidays).
+    It does not reference Infrastructure: the web application has no database access and no EF Core.
+    No component and no ViewModel may touch EF Core or Npgsql (B-10).
   -->
 
   <PropertyGroup>
@@ -13,14 +13,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
 
     <!--
-      Bruges af `dotnet user-secrets` til udviklingsværdier der aldrig må i repoet, fx
-      HolidayApi:ApiKey. Ligger uden for arbejdsmappen, så den ikke kan committes ved en fejl.
+      Used by `dotnet user-secrets` for development values that must never be in the repository, for example
+      HolidayApi:ApiKey. It is outside the working folder, so it cannot be committed by mistake.
     -->
     <UserSecretsId>nfhotel-web-2c1f6a3e-8d4b-4b7e-9a51-0e7c5d2b9f34</UserSecretsId>
 
     <!--
-      Samme bar som NFHotel.Infrastructure: 0 advarsler er et krav, ikke et mål.
-      Uden TreatWarningsAsErrors bliver den første advarsel hurtigt til femten.
+      The same bar as NFHotel.Infrastructure: 0 warnings is a requirement, not a goal.
+      Without TreatWarningsAsErrors the first warning quickly becomes fifteen.
     -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

@@ -46,7 +46,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
     #endregion
 
     #region Passport number encryption
-    // Test Metode
+    // Test method
     // The test must verify that PassportNumber is encrypted in the database and decrypted correctly by EF Core.
     [Fact]
     public async Task PassportNumber_ShouldBeEncryptedInDatabase_AndDecryptedByEfCore()

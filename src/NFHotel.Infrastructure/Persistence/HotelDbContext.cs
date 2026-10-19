@@ -24,7 +24,7 @@ public sealed class HotelDbContext : DbContext
     private readonly IStringEncryptor _passportEncryptor;
 
     /// <summary>
-    /// Opretter konteksten.
+    /// Creates the context.
     /// </summary>
     /// <param name="options">The context options, including provider and connection string.</param>
     /// <param name="passportEncryptor">

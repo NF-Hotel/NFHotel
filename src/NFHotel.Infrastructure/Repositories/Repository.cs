@@ -19,7 +19,7 @@ public abstract class Repository<TEntity, TKey> : IRepository<TEntity, TKey>
     where TKey : notnull
 {
     /// <summary>
-    /// Opretter repositoryet.
+    /// Creates the repository.
     /// </summary>
     /// <param name="context">Konteksten.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="context"/> is <c>null</c>.</exception>

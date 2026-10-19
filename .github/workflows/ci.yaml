@@ -1,21 +1,21 @@
-# CI: byg, test og kontrollér koden før deployment
+# CI: build, test and check the code before deployment
 name: NF Hotel CI
 
 on:
-  # Kan stadig startes manuelt fra Actions
+  # Can still be started by hand from Actions
   workflow_dispatch:
-  # Kontrollér ændringer før review og merge
+  # Check changes before review and merge
   pull_request:
     branches: [main]
-  # Kontrollér også den samlede kode efter merge
+  # Also check the whole code after the merge
   push:
     branches: [main]
 
-# Workflowet har kun brug for læseadgang
+# The workflow only needs read access
 permissions:
   contents: read
 
-# Stop en ældre kørsel, når samme branch eller PR får nye ændringer
+# Stop an older run when the same branch or PR gets new changes
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -25,24 +25,43 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
+  # Comments are written in English, the Product Owner language (BC-001, MIL-010). A comment in
+  # Danish fails the run and the log names the file and the line. Run the same check before a
+  # commit with: bash scripts/check-comment-language.sh --staged
+  comment-language:
+    name: Comments are in English
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7
+
+      # The tests of the check come first, so that a broken check cannot pass the code.
+      - name: Test the language check
+        run: bash scripts/test-check-comment-language.sh
+
+      - name: Check that no comment is in Danish
+        run: bash scripts/check-comment-language.sh
+
   build:
     name: Build, tests og sikkerhed
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
-      # Hent projektets kode
+      # Fetch the code of the project
       - name: Hent kode
         uses: actions/checkout@v7
 
-      # Brug projektets SDK-version
+      # Use the SDK version of the project
       - name: Installer .NET
         uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
-      # Scan både direkte og indirekte NuGet-afhængigheder.
-      # Kendte sårbarheder og øvrige restore-advarsler giver fejl.
+      # Scan both direct and indirect NuGet dependencies.
+      # Known vulnerabilities and other restore warnings fail the run.
       - name: Restore og NuGet-sårbarhedskontrol
         run: >-
           dotnet restore NFHotel.sln
@@ -51,21 +70,21 @@ jobs:
           -p:NuGetAuditLevel=low
           -p:TreatWarningsAsErrors=true
 
-      # Byg med projektets eksisterende analyzer- og kodestilregler
+      # Build with the analyzer and code style rules that the project already has
       - name: Build
         run: dotnet build NFHotel.sln --configuration Release --no-restore
 
-      # Integrationstestene bruger Testcontainers og starter selv PostgreSQL
+      # The integration tests use Testcontainers and start PostgreSQL themselves
       - name: Kontrollér Docker til integrationstests
         run: docker info
 
-      # Testene kører på Microsoft.Testing.Platform (global.json), som ikke
-      # kender VSTest-collectoren coverlet.collector. Coverage måles derfor
-      # udefra med dotnet-coverage, så testprojekterne ikke skal ændres.
+      # The tests run on Microsoft.Testing.Platform (global.json), which does not
+      # know the VSTest collector coverlet.collector. Coverage is therefore measured
+      # from the outside with dotnet-coverage, so the test projects need no change.
       - name: Installer dotnet-coverage
         run: dotnet tool install --global dotnet-coverage --version 18.12.0
 
-      # Kør alle testprojekter, gem TRX pr. projekt og mål code coverage
+      # Run all test projects, keep a TRX file per project and measure code coverage
       - name: Tests og coverage
         run: >-
           dotnet-coverage collect
@@ -75,7 +94,7 @@ jobs:
           "dotnet test NFHotel.sln --configuration Release --no-build
           --results-directory TestResults --report-xunit-trx"
 
-      # Gem rapporter også når tests fejler
+      # Keep the reports also when tests fail
       - name: Gem testresultater og coverage
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -102,8 +121,8 @@ jobs:
       - name: Restore
         run: dotnet restore NFHotel.sln
 
-      # Kontrollér formatering efter .editorconfig uden at ændre filer.
-      # Kodestil og analyzers håndteres også af projektets buildindstillinger.
+      # Check the formatting against .editorconfig without changing files.
+      # Code style and analyzers are also handled by the build settings of the project.
       - name: Kontrollér formatering
         run: dotnet format whitespace NFHotel.sln --verify-no-changes --no-restore
 
@@ -117,7 +136,7 @@ jobs:
       - name: Hent kode
         uses: actions/checkout@v7
 
-      # Kontrollér at projektets Dockerfile kan pakke webappen.
-      # Imaget bygges kun lokalt på runneren; det publiceres ikke.
+      # Check that the Dockerfile of the project can package the web application.
+      # The image is built only locally on the runner; it is not published.
       - name: Byg Docker-image
         run: docker build --tag nfhotel:ci .

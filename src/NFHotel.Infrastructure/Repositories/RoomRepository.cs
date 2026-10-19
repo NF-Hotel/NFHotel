@@ -19,7 +19,7 @@ namespace NFHotel.Infrastructure.Repositories;
 public sealed class RoomRepository : Repository<Room, int>, IRoomRepository, IRoomQueries
 {
     /// <summary>
-    /// Opretter repositoryet.
+    /// Creates the repository.
     /// </summary>
     /// <param name="context">Konteksten.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="context"/> is <c>null</c>.</exception>
