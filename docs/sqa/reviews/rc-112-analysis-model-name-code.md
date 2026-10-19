@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Initial version | pending |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Initial version | [b195b69] |
 
 ---
 
@@ -62,3 +62,4 @@ Go — every mandatory criterion passes or is not applicable. The review is not 
 [ADR-0014]: ../../adr/adr-0014-default-ai-model.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[b195b69]: https://github.com/NF-Hotel/NFHotel/commit/b195b6954dc291bc1131c121b0bc403c73b2dcec

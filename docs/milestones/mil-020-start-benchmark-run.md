@@ -17,7 +17,7 @@
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added tasks 5 and 6 (delete a stored run, readable results table) and acceptance criterion 7; done after RC-108 | [4f23a15] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 7 (default AI model for the website and the market analysis) and acceptance criterion 8; done after RC-109 and RC-110 | [b1daae2] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 8 (the analysis view of a run, like the notebook) and acceptance criterion 9; done after RC-111 | [09e3167] |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 9 (the default model reaches the market analysis under the exact installed name) and acceptance criterion 10; done after RC-112 | pending |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 9 (the default model reaches the market analysis under the exact installed name) and acceptance criterion 10; done after RC-112 | [b195b69] |
 
 ---
 
@@ -98,3 +98,4 @@ Let a Manager start a benchmark run from the back office and see its state until
 [4f23a15]: https://github.com/NF-Hotel/NFHotel/commit/4f23a1592ed1f75d3f3a7c30d473671ffce49b64
 [b1daae2]: https://github.com/NF-Hotel/NFHotel/commit/b1daae275e05b207cd5403a3ec47e46fc76f33d0
 [09e3167]: https://github.com/NF-Hotel/NFHotel/commit/09e3167d660245247524dcd240d05b0bdf6d5419
+[b195b69]: https://github.com/NF-Hotel/NFHotel/commit/b195b6954dc291bc1131c121b0bc403c73b2dcec
