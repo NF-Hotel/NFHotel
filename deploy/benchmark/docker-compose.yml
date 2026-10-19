@@ -11,7 +11,7 @@ services:
     image: benchmark:local
     build:
       # Change BENCHMARK_REF to upgrade. Submodules are not fetched: the framework submodule is private and not part of the image.
-      context: ${BENCHMARK_REPO:-https://github.com/NF-Hotel/notebook-benchmark.git}?submodules=false#${BENCHMARK_REF:-074c446aa061bd33b48e02ea7fdb189a715ebd8f}
+      context: ${BENCHMARK_REPO:-https://github.com/NF-Hotel/notebook-benchmark.git}?submodules=false#${BENCHMARK_REF:-409693dfd64880f305541ca163877d9bbcfca40d}
     restart: unless-stopped
     env_file: ${BENCHMARK_ENV_FILE:-benchmark.env}
     environment:

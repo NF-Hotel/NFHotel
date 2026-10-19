@@ -57,7 +57,8 @@ public static class RolePermissions
             Permissions.BenchmarkView,
             Permissions.BenchmarkRun,
             Permissions.BenchmarkDelete,
-            Permissions.AiDefaultsManage
+            Permissions.AiDefaultsManage,
+            Permissions.BenchmarkModelsManage
         ],
 
         [Roles.Housekeeping] =

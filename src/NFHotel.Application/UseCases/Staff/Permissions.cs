@@ -105,6 +105,11 @@ public static class Permissions
     public const string AiDefaultsManage = "AiDefaults.Manage";
 
     /// <summary>
+    /// Permission to add a model to Ollama and to delete an installed one through the benchmark service (MIL-020).
+    /// </summary>
+    public const string BenchmarkModelsManage = "Benchmark.ModelsManage";
+
+    /// <summary>
     /// All permissions, to build one authorisation policy per permission.
     /// </summary>
     public static readonly IReadOnlyList<string> All =
@@ -128,5 +133,6 @@ public static class Permissions
         BenchmarkRun,
         BenchmarkDelete,
         AiDefaultsManage,
+        BenchmarkModelsManage,
     ];
 }

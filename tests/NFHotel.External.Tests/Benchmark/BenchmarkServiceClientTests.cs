@@ -74,6 +74,180 @@ public sealed class BenchmarkServiceClientTests
 
     #endregion
 
+    #region Adding and deleting models
+
+    /// <summary>Positive: a pull posts the trimmed name and returns the queued download.</summary>
+    [Fact]
+    public async Task StartModelPullAsync_ValidName_PostsTheNameAndReturnsTheQueuedPull()
+    {
+        // Arrange
+        var service = new FakeBenchmarkService("m1");
+        var client = CreateClient(service);
+
+        // Act
+        var result = await client.StartModelPullAsync("  phi4-mini ", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(("pull-1", "phi4-mini", ModelPullStates.Queued, (int?)null), (result.Value.PullId, result.Value.Model, result.Value.State, result.Value.Percent));
+        Assert.False(result.Value.IsFinished);
+        Assert.Equal("/models", service.LastPath);
+        using var body = JsonDocument.Parse(service.LastBody!);
+        Assert.Equal("phi4-mini", body.RootElement.GetProperty("name").GetString());
+    }
+
+    /// <summary>Negative: a name that is not an Ollama model name is refused without a call.</summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("../etc/passwd")]
+    [InlineData("a b")]
+    [InlineData("a;b")]
+    public async Task StartModelPullAsync_InvalidName_ReturnsTheNameCodeWithoutACall(string name)
+    {
+        // Arrange
+        var service = new FakeBenchmarkService();
+        var client = CreateClient(service);
+
+        // Act
+        var result = await client.StartModelPullAsync(name, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.BenchmarkRunner.InvalidModelName, Assert.Single(result.Errors).Code);
+        Assert.Equal(0, service.Calls);
+    }
+
+    /// <summary>Negative: an installed model and an active download are refused with their own codes.</summary>
+    [Fact]
+    public async Task StartModelPullAsync_InstalledOrBusy_ReturnsTheirCodes()
+    {
+        // Arrange
+        var installed = CreateClient(new FakeBenchmarkService("phi4-mini"));
+        var busy = CreateClient(new FakeBenchmarkService { PullActive = true });
+
+        // Act
+        var first = await installed.StartModelPullAsync("phi4-mini", TestContext.Current.CancellationToken);
+        var second = await busy.StartModelPullAsync("qwen2.5:7b", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.BenchmarkRunner.ModelAlreadyInstalled, Assert.Single(first.Errors).Code);
+        Assert.Equal(ErrorCodes.BenchmarkRunner.PullActive, Assert.Single(second.Errors).Code);
+    }
+
+    /// <summary>State: a download is read from queued through pulling to done, and the model is then listed.</summary>
+    [Fact]
+    public async Task GetModelPullAsync_FollowingAPull_GoesFromPullingToDoneAndTheModelIsListed()
+    {
+        // Arrange
+        var service = new FakeBenchmarkService("m1");
+        var client = CreateClient(service);
+        await client.StartModelPullAsync("phi4-mini", TestContext.Current.CancellationToken);
+
+        // Act
+        var pulling = await client.GetModelPullAsync("pull-1", TestContext.Current.CancellationToken);
+        var done = await client.GetModelPullAsync("pull-1", TestContext.Current.CancellationToken);
+        var models = await client.ListModelsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal((ModelPullStates.Pulling, 40), (pulling.Value.State, pulling.Value.Percent));
+        Assert.Equal((ModelPullStates.Done, 100, true), (done.Value.State, done.Value.Percent, done.Value.IsFinished));
+        Assert.Equal(["m1", "phi4-mini"], models.Value);
+    }
+
+    /// <summary>Negative: a failed download carries the reason Ollama gave.</summary>
+    [Fact]
+    public async Task GetModelPullAsync_FailedPull_CarriesTheReason()
+    {
+        // Arrange
+        var client = CreateClient(new FakeBenchmarkService { FailPull = true });
+        await client.StartModelPullAsync("no-such-model", TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await client.GetModelPullAsync("pull-1", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ModelPullStates.Failed, result.Value.State);
+        Assert.Contains("file does not exist", result.Value.Error, StringComparison.Ordinal);
+        Assert.True(result.Value.IsFinished);
+    }
+
+    /// <summary>Negative: an unknown download id is the download not found code, and a blank id is refused without a call.</summary>
+    [Fact]
+    public async Task GetModelPullAsync_UnknownOrBlankId_ReturnsTheNotFoundCode()
+    {
+        // Arrange
+        var service = new FakeBenchmarkService();
+        var client = CreateClient(service);
+
+        // Act
+        var unknown = await client.GetModelPullAsync("nope", TestContext.Current.CancellationToken);
+        var calls = service.Calls;
+        var blank = await client.GetModelPullAsync(" ", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.BenchmarkRunner.PullNotFound, Assert.Single(unknown.Errors).Code);
+        Assert.Equal(ErrorCodes.BenchmarkRunner.PullNotFound, Assert.Single(blank.Errors).Code);
+        Assert.Equal(calls, service.Calls);
+    }
+
+    /// <summary>Positive: a delete sends DELETE with the name, a name with a tag and a path included, and the model is gone.</summary>
+    [Theory]
+    [InlineData("llama3.2:3b")]
+    [InlineData("hf.co/user/model:Q4_K_M")]
+    public async Task DeleteModelAsync_InstalledModel_DeletesItWithTheNameAsGiven(string name)
+    {
+        // Arrange
+        var service = new FakeBenchmarkService("m1", name);
+        var client = CreateClient(service);
+
+        // Act
+        var result = await client.DeleteModelAsync(name, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(["m1"], service.Installed);
+    }
+
+    /// <summary>Negative: a model that is not installed and a model that a run uses are refused with their own codes.</summary>
+    [Fact]
+    public async Task DeleteModelAsync_NotInstalledOrInUse_ReturnsTheirCodes()
+    {
+        // Arrange
+        var service = new FakeBenchmarkService("used") { InUse = ["used"] };
+        var client = CreateClient(service);
+
+        // Act
+        var missing = await client.DeleteModelAsync("other", TestContext.Current.CancellationToken);
+        var used = await client.DeleteModelAsync("used", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.BenchmarkRunner.ModelNotFound, Assert.Single(missing.Errors).Code);
+        Assert.Equal(ErrorCodes.BenchmarkRunner.ModelInUse, Assert.Single(used.Errors).Code);
+        Assert.Equal(["used"], service.Installed);
+    }
+
+    /// <summary>Negative: an invalid name is refused without a call, and a 502 from the service is the model server code.</summary>
+    [Fact]
+    public async Task DeleteModelAsync_InvalidNameOrServerError_ReturnsTheirCodes()
+    {
+        // Arrange
+        var service = new FakeBenchmarkService("m1");
+        var client = CreateClient(service);
+        var failing = CreateClient(new FakeBenchmarkService("m1") { Status = HttpStatusCode.BadGateway });
+
+        // Act
+        var invalid = await client.DeleteModelAsync("a b", TestContext.Current.CancellationToken);
+        var calls = service.Calls;
+        var badGateway = await failing.DeleteModelAsync("m1", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.BenchmarkRunner.InvalidModelName, Assert.Single(invalid.Errors).Code);
+        Assert.Equal(0, calls);
+        Assert.Equal(ErrorCodes.BenchmarkRunner.Unavailable, Assert.Single(badGateway.Errors).Code);
+    }
+
+    #endregion
+
     #region Starting a run
 
     /// <summary>Positive: a start posts the contract field names and returns the queued run.</summary>
@@ -373,12 +547,22 @@ public sealed class BenchmarkServiceClientTests
     /// <summary>A fake of the benchmark service that follows <c>openapi/benchmark-contract.yaml</c>.</summary>
     private sealed class FakeBenchmarkService : HttpMessageHandler
     {
-        private readonly string[] _models;
+        private readonly List<string> _models;
         private int _stateReads;
+        private int _pullReads;
+        private string? _pulling;
         private bool _started;
         private string _startedModels = "[]";
 
-        public FakeBenchmarkService(params string[] models) => _models = models;
+        public FakeBenchmarkService(params string[] models) => _models = [.. models];
+
+        public bool PullActive { get; init; }
+
+        public bool FailPull { get; init; }
+
+        public HashSet<string> InUse { get; init; } = [];
+
+        public IReadOnlyList<string> Installed => _models;
 
         public int Calls { get; private set; }
 
@@ -426,6 +610,21 @@ public sealed class BenchmarkServiceClientTests
                 return Reply(HttpStatusCode.Unauthorized, """{"code":"unauthorized"}""");
             }
 
+            if (LastPath == "/models" && request.Method == HttpMethod.Post)
+            {
+                return StartPull();
+            }
+
+            if (LastPath.StartsWith("/models/pulls/", StringComparison.Ordinal))
+            {
+                return ReadPull(LastPath["/models/pulls/".Length..]);
+            }
+
+            if (LastPath.StartsWith("/models/", StringComparison.Ordinal) && request.Method == HttpMethod.Delete)
+            {
+                return DeleteModel(Uri.UnescapeDataString(LastPath["/models/".Length..]));
+            }
+
             return LastPath switch
             {
                 "/models" => Reply(HttpStatusCode.OK, JsonSerializer.Serialize(new { models = _models })),
@@ -464,6 +663,74 @@ public sealed class BenchmarkServiceClientTests
             _startedModels = JsonSerializer.Serialize(asked);
             return Reply(HttpStatusCode.Accepted, State("queued", "not_ready", withTimes: false));
         }
+
+        private HttpResponseMessage StartPull()
+        {
+            using var body = JsonDocument.Parse(LastBody!);
+            var name = body.RootElement.GetProperty("name").GetString()!;
+            if (!ModelNames.IsValid(name))
+            {
+                return Reply(HttpStatusCode.BadRequest, """{"code":"invalid_model_name"}""");
+            }
+
+            if (_models.Contains(name))
+            {
+                return Reply(HttpStatusCode.Conflict, """{"code":"already_installed"}""");
+            }
+
+            if (PullActive)
+            {
+                return Reply(HttpStatusCode.Conflict, """{"code":"pull_active"}""");
+            }
+
+            _pulling = name;
+            return Reply(HttpStatusCode.Accepted, Pull("queued", null, null));
+        }
+
+        private HttpResponseMessage ReadPull(string id)
+        {
+            if (_pulling is null || id != "pull-1")
+            {
+                return Reply(HttpStatusCode.NotFound, """{"code":"pull_not_found"}""");
+            }
+
+            _pullReads++;
+            if (FailPull)
+            {
+                return Reply(HttpStatusCode.OK, Pull("failed", 40, "pull model manifest: file does not exist"));
+            }
+
+            if (_pullReads == 1)
+            {
+                return Reply(HttpStatusCode.OK, Pull("pulling", 40, null));
+            }
+
+            if (!_models.Contains(_pulling))
+            {
+                _models.Add(_pulling);
+            }
+
+            return Reply(HttpStatusCode.OK, Pull("done", 100, null));
+        }
+
+        private HttpResponseMessage DeleteModel(string name)
+        {
+            if (!_models.Contains(name))
+            {
+                return Reply(HttpStatusCode.NotFound, """{"code":"model_not_found"}""");
+            }
+
+            if (InUse.Contains(name))
+            {
+                return Reply(HttpStatusCode.Conflict, """{"code":"model_in_use"}""");
+            }
+
+            _models.Remove(name);
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        }
+
+        private string Pull(string state, int? percent, string? error) =>
+            JsonSerializer.Serialize(new { pull_id = "pull-1", model = _pulling, state, percent, error });
 
         private HttpResponseMessage Read(string id)
         {
