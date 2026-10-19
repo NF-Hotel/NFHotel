@@ -28,6 +28,8 @@ services:
     environment:
       Api__BaseUrl: http://nfhotel-api:8080
       Api__Token: ${API_TOKEN:?set it, from Api__Token in nfhotel-api.env}
+      BenchmarkService__BaseUrl: http://benchmark:8000
+      BenchmarkService__Token: ${BENCHMARK_API_TOKEN:-}
     expose:
       - "8080"
     healthcheck:

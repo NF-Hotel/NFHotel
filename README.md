@@ -379,6 +379,8 @@ The services share one Docker network. Create it once, then start the web applic
 
 To start everything on one Docker host with the right networks and order, use `bash scripts/deploy-services.sh` (see the header of the script for the options).
 
+To see a change while you develop, run `bash scripts/dev-up.sh`. It follows ADR-0003 on your machine: a Proxmox VE container (needs `/dev/kvm`), a VM in it that runs postgres, api, web, analysis and nginx, and `https://localhost:8443/` for the site. The first run creates the container, the VM and any missing settings file and takes ten minutes or more; later runs ship your working tree and rebuild only web and api (about 30 seconds). `--seed` loads the sample data, `--open` opens the browser, `--down` stops the services and `--destroy` removes the Proxmox container with the VM (see the header of the script).
+
 ```bash
 docker network create nfhotel-proxy
 

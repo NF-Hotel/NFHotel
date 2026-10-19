@@ -15,14 +15,14 @@ Docker container inside that VM (decision: ADR-0003).
 | `postgres` | `postgres:16-alpine`, `deploy/postgres` | `nfhotel-api` only, internal network |
 | `ollama` | `ollama/ollama`, `deploy/ollama` | benchmark and market analysis only, network `nfhotel-llm` |
 | `market-analysis-api`, `market-analysis-notebook` | `NF-Hotel/Notebook_Market_Analysis`, `deploy/market-analysis` | VM loopback only |
-| `benchmark` | `NF-Hotel/notebook-benchmark`, `deploy/benchmark` | VM loopback only |
+| `benchmark` | `NF-Hotel/notebook-benchmark` (the API service), `deploy/benchmark` | internal networks only, no published port |
 
 ### Network exposure
 
 - Only nginx publishes ports to the outside: port 443 serves only the NFHotel web application over
   TLS 1.2 and 1.3, and port 80 answers only a redirect to HTTPS (ADR-0006). Any host name sent to
   these ports reaches NFHotel.
-- The analysis and benchmark notebooks are served by a second nginx listener on `127.0.0.1:8081`
+- The analysis notebook and API are served by a second nginx listener on `127.0.0.1:8081`
   inside the VM. Reach them with an SSH tunnel (below).
 - PostgreSQL sits on the Docker network `nfhotel-db`, created with `--internal`: it has no route
   out and no published port. Only the database API `nfhotel-api` joins it (ADR-0004).
@@ -154,8 +154,8 @@ docker compose --env-file ollama.env exec ollama ollama pull <model>
 ```
 
 Run that in `/opt/nfhotel/deploy/ollama` in the VM. Both services find Ollama at `http://ollama:11434`.
-The market analysis configuration (`market-analysis.toml`) points there. The benchmark notebook has
-`localhost:11434` built in, so its container forwards that port to the `ollama` container. A GPU
+The market analysis configuration (`market-analysis.toml`) points there. The benchmark service reads
+`NFBENCH_OLLAMA_URL` from `deploy/benchmark/benchmark.env`. A GPU
 passed through to the VM is described in the comments of `deploy/ollama/docker-compose.yml`.
 
 ## Reach the internal services
@@ -164,9 +164,8 @@ passed through to the VM is described in the comments of `deploy/ollama/docker-c
 ssh -L 8081:127.0.0.1:8081 nfhotel@<vm address>
 ```
 
-Then open `http://analysis.localhost:8081` (market analysis notebook),
-`http://analysis-api.localhost:8081` (analysis API) or `http://benchmark.localhost:8081`
-(benchmark notebook).
+Then open `http://analysis.localhost:8081` (market analysis notebook)
+or `http://analysis-api.localhost:8081` (analysis API).
 
 ## Known limits
 

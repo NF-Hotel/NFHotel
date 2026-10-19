@@ -12,8 +12,9 @@
 #   web        NFHotel web application, the only service the proxy serves publicly; it
 #              holds only an API address and a token
 #   analysis   market analysis API and notebook, internal listener only
-#   benchmark  LLM benchmark notebook, internal listener only
-#   nginx      the reverse proxy: TLS on 443 and a redirect on 80 for web, loopback port for the rest;
+#   benchmark  the benchmark service (API of notebook-benchmark): the web application starts runs there, it runs
+#              the models in ollama and delivers the result to the api; internal networks only, no published port
+#   nginx      (starts only when web is running and the analysis API is healthy) the reverse proxy: TLS on 443 and a redirect on 80 for web, loopback port for the rest;
 #              a development certificate is made when deploy/nginx/tls has none (MIL-017)
 # Each service reads its git-ignored settings file next to its docker-compose.yml
 # (postgres.env, ollama.env, nfhotel-api.env, nfhotel-web.env, market-analysis.env, benchmark.env, nginx.env);
@@ -147,12 +148,22 @@ for s in "${ordered[@]}"; do
       esac
     done <"$pg_env"
   fi
-  if [[ "$s" == "web" ]]; then
+  if [[ "$s" == "web" || "$s" == "benchmark" ]]; then
     api_env="$(dir_of api)/$(env_of api)"
-    [[ -f "$api_env" ]] || die "$api_env is missing; the web service takes the API token from it"
+    [[ -f "$api_env" ]] || die "$api_env is missing; the $s service takes the API token from it"
     while IFS='=' read -r key value; do
       [[ "$key" == "Api__Token" ]] && export "API_TOKEN=${value%$'\r'}"
     done <"$api_env"
+  fi
+  if [[ "$s" == "web" ]]; then
+    # The web application calls the benchmark service with the token of that service; an empty value
+    # leaves the Start page saying that the service is not set up.
+    bench_env="$(dir_of benchmark)/$(env_of benchmark)"
+    if [[ -f "$bench_env" ]]; then
+      while IFS='=' read -r key value; do
+        [[ "$key" == "NFBENCH_API_TOKEN" ]] && export "BENCHMARK_API_TOKEN=${value%$'\r'}"
+      done <"$bench_env"
+    fi
   fi
 done
 
@@ -179,10 +190,32 @@ if ! docker network inspect "$api_network" >/dev/null 2>&1; then
   docker network create --internal "$api_network" >/dev/null
 fi
 
+# The services are separate Compose projects, so Compose cannot order them. Check the order here:
+# web needs a healthy database and API, the proxy needs a running web service. Waits up to 60 seconds,
+# because the service may have been started a moment ago.
+require() {
+  local service="$1" wanted="$2" container="$3" state
+  for _ in $(seq 1 30); do
+    state="$(docker inspect -f "{{.State.Running}} {{if .State.Health}}{{.State.Health.Status}}{{end}}" "$container" 2>/dev/null || true)"
+    case "$wanted" in
+      healthy) [[ "$state" == "true healthy" ]] && return 0 ;;
+      running) [[ "$state" == true* ]] && return 0 ;;
+    esac
+    sleep 2
+  done
+  die "$service needs $container to be $wanted; deploy it first (postgres, api, web, analysis, nginx, in that order)"
+}
+
 for s in "${ordered[@]}"; do
   d="$(dir_of "$s")"
   e="$(env_of "$s")"
+  if [[ "$s" == "web" ]]; then
+    require web healthy nfhotel-postgres-postgres-1
+    require web healthy nfhotel-api-nfhotel-api-1
+  fi
   if [[ "$s" == "nginx" ]]; then
+    require nginx running nfhotel-web-nfhotel-web-1
+    require nginx healthy market-analysis-market-analysis-api-1
     # The proxy needs a certificate to start. A pair put there by the owner is never replaced.
     names="$(sed -n 's/^NGINX_SERVER_NAME=//p' "$d/$e" | tr -d '\r') $(hostname -I 2>/dev/null || true)"
     # shellcheck disable=SC2086 # the names are split on purpose
