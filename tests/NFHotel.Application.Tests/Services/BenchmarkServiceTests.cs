@@ -13,6 +13,77 @@ public sealed class BenchmarkServiceTests
     private static readonly Guid RunId = Guid.Parse("5b3f0e1a-0000-4000-8000-000000000001");
     private static readonly DateTimeOffset Start = new(2026, 10, 19, 10, 0, 0, TimeSpan.Zero);
 
+    #region Deleting a run
+
+    /// <summary>Positive: a stored run is removed with its requests and the change is saved once.</summary>
+    [Fact]
+    public async Task DeleteRunAsync_StoredRun_RemovesItAndSavesOnce()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var service = world.BenchmarkService();
+        await service.StoreAsync(Request(), TestContext.Current.CancellationToken);
+        var saves = world.UnitOfWork.SaveCount;
+
+        // Act
+        var result = await service.DeleteRunAsync(RunId, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Empty(world.Benchmarks.Items);
+        Assert.Equal(saves + 1, world.UnitOfWork.SaveCount);
+    }
+
+    /// <summary>Negative: a run that is not stored is the not found code and nothing is saved.</summary>
+    [Fact]
+    public async Task DeleteRunAsync_UnknownRun_ReturnsNotFoundAndSavesNothing()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+
+        // Act
+        var result = await world.BenchmarkService().DeleteRunAsync(RunId, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorCodes.Benchmark.NotFound, Assert.Single(result.Errors).Code);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
+    }
+
+    /// <summary>Boundary: the empty run id is the not found code without looking in the storage.</summary>
+    [Fact]
+    public async Task DeleteRunAsync_EmptyRunId_ReturnsNotFound()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+
+        // Act
+        var result = await world.BenchmarkService().DeleteRunAsync(Guid.Empty, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Benchmark.NotFound, Assert.Single(result.Errors).Code);
+    }
+
+    /// <summary>State: deleting one run leaves the other runs alone.</summary>
+    [Fact]
+    public async Task DeleteRunAsync_TwoRuns_RemovesOnlyTheNamedOne()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var service = world.BenchmarkService();
+        var otherId = Guid.Parse("5b3f0e1a-0000-4000-8000-000000000002");
+        await service.StoreAsync(Request(), TestContext.Current.CancellationToken);
+        await service.StoreAsync(Request() with { RunId = otherId }, TestContext.Current.CancellationToken);
+
+        // Act
+        await service.DeleteRunAsync(RunId, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(otherId, Assert.Single(world.Benchmarks.Items).RunId);
+    }
+
+    #endregion
+
     #region Storing a run
 
     /// <summary>Positive: a new run is stored once with all its requests and the answer is Created.</summary>

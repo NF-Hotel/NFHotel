@@ -5,6 +5,7 @@ using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Guests;
 using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.AiDefaults;
 using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
@@ -239,7 +240,12 @@ public sealed class ServiceWorld
                     result.VramPeakMb,
                     result.Passed,
                     result.ResponseValid,
-                    result.Error is not null))
+                    result.Error is not null,
+                    result.RamBeforeMb,
+                    result.RamAfterMb,
+                    result.VramBeforeMb,
+                    result.VramAfterMb,
+                    result.FinishReason))
                 .ToArray());
 
     private static string GuestText(Guest guest) =>
@@ -277,6 +283,8 @@ public sealed class ServiceWorld
 
     public InMemoryBenchmarkRunRepository Benchmarks { get; } = new();
 
+    public InMemoryAiDefaultRepository AiDefaults { get; } = new();
+
     public IBookingQueries BookingQueries { get; } = Substitute.For<IBookingQueries>();
 
     public IRoomQueries RoomQueries { get; } = Substitute.For<IRoomQueries>();
@@ -293,6 +301,8 @@ public sealed class ServiceWorld
     public RoomService RoomService() => new(Rooms, RoomQueries, UnitOfWork);
 
     public BenchmarkService BenchmarkService() => new(Benchmarks, BenchmarkQueries, UnitOfWork);
+
+    public AiDefaultService AiDefaultService() => new(AiDefaults, UnitOfWork, Clock);
 
     public Room AddRoom(string number = "101", int floor = 1, RoomSize size = RoomSize.Double, int capacity = 2)
     {

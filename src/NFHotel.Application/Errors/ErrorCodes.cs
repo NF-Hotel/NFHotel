@@ -281,4 +281,31 @@ public static class ErrorCodes
         public const string BodyInvalid = "benchmark.body_invalid";
     }
 
+    /// <summary>Codes of the calls to the benchmark service that runs the models (MIL-020).</summary>
+    public static class BenchmarkRunner
+    {
+        /// <summary>The address or the token of the benchmark service is not set.</summary>
+        public const string NotConfigured = "benchmark_runner.not_configured";
+
+        /// <summary>The benchmark service did not answer in time or could not be reached.</summary>
+        public const string Unavailable = "benchmark_runner.unavailable";
+
+        /// <summary>The benchmark service refused the token of this application.</summary>
+        public const string Unauthorized = "benchmark_runner.unauthorized";
+
+        /// <summary>The benchmark service refused the request: no model, too many, a model twice, or a value out of range.</summary>
+        public const string InvalidRequest = "benchmark_runner.invalid_request";
+
+        /// <summary>A chosen model is not installed.</summary>
+        public const string ModelNotInstalled = "benchmark_runner.model_not_installed";
+
+        /// <summary>A run is active and the queue is full; try again later.</summary>
+        public const string QueueFull = "benchmark_runner.queue_full";
+
+        /// <summary>The benchmark service has no such run (it forgets runs when it restarts).</summary>
+        public const string RunNotFound = "benchmark_runner.run_not_found";
+
+        /// <summary>The benchmark service answered something this application cannot use.</summary>
+        public const string UnexpectedResponse = "benchmark_runner.unexpected_response";
+    }
 }

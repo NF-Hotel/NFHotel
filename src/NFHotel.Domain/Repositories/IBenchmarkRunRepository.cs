@@ -10,4 +10,8 @@ public interface IBenchmarkRunRepository : IRepository<BenchmarkRun, int>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The run, or <c>null</c> when it was never delivered.</returns>
     Task<BenchmarkRun?> FindByRunIdAsync(Guid runId, CancellationToken cancellationToken = default);
+
+    /// <summary>Marks a run for removal; its requests are removed with it when the changes are saved.</summary>
+    /// <param name="run">The run to remove.</param>
+    void Remove(BenchmarkRun run);
 }

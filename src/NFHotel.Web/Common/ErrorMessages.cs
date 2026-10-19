@@ -1,5 +1,6 @@
 using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases;
+using NFHotel.Domain.Errors;
 
 namespace NFHotel.Web.Common;
 
@@ -104,9 +105,20 @@ public static class ErrorMessages
             [ErrorCodes.Api.Forbidden] = "Your role isn't allowed to do that.",
             [ErrorCodes.Staff.InvalidCredentials] = "The user name or the password is wrong.",
             [ErrorCodes.Staff.TooManyAttempts] = "Too many failed attempts. Wait fifteen minutes and try again.",
+            [AiDefaultErrors.PurposeInvalid] = "The default AI model can be set for the website or the market analysis.",
+            [AiDefaultErrors.ModelInvalid] = "Enter a model name of at most 100 characters.",
+            [AiDefaultErrors.SetByInvalid] = "The staff member could not be named. Please sign in again.",
             [ErrorCodes.Benchmark.NotFound] = "The benchmark run was not found.",
             [ErrorCodes.Benchmark.SchemaVersionUnsupported] = "The result uses a schema version that is not supported.",
             [ErrorCodes.Benchmark.BodyInvalid] = "The benchmark result is incomplete.",
+            [ErrorCodes.BenchmarkRunner.NotConfigured] = "The benchmark service is not set up. Please tell the administrator.",
+            [ErrorCodes.BenchmarkRunner.Unavailable] = "We couldn't reach the benchmark service. Please try again in a moment.",
+            [ErrorCodes.BenchmarkRunner.Unauthorized] = "The benchmark service refused this application. Please tell the administrator.",
+            [ErrorCodes.BenchmarkRunner.InvalidRequest] = "Choose one to four models, at least one analysis, and one to five runs.",
+            [ErrorCodes.BenchmarkRunner.ModelNotInstalled] = "A chosen model is not installed on the benchmark service.",
+            [ErrorCodes.BenchmarkRunner.QueueFull] = "A run is active and others are waiting. Try again in a few minutes.",
+            [ErrorCodes.BenchmarkRunner.RunNotFound] = "The benchmark service no longer knows this run. Look for its result in the list of runs.",
+            [ErrorCodes.BenchmarkRunner.UnexpectedResponse] = "The benchmark service answered something we couldn't use. Please try again.",
             [ErrorCodes.Staff.PasswordInvalid] = "The password must be between 12 and 256 characters.",
             [ErrorCodes.Staff.UserNameTaken] = "That user name is already in use.",
             [ErrorCodes.Staff.UserNameRequired] = "Enter a user name.",

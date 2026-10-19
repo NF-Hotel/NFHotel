@@ -1,0 +1,112 @@
+@using System.Globalization
+@using NFHotel.Application.Dto.Benchmark
+@using NFHotel.Web.Features.Admin.Benchmark
+
+@*
+    One answer of a model to the hotel cancellation analysis, as a card next to the others. A valid answer shows its
+    parts; any other shows why it was refused and the start of what the model wrote. Only markup.
+*@
+
+@{
+    var answer = Result.ResponseValid == true && !Result.HasError ? HotelAnswer.TryParse(Output.Output) : null;
+}
+
+<article class="card card-pad stack-sm answer-card" aria-label="Answer of @Result.Model, run @(Result.RunNumber + 1)">
+    <p>
+        <strong>@Result.Model</strong> — @(Result.Cold ? "cold" : "warm"), run @(Result.RunNumber + 1)
+    </p>
+    <p class="muted">
+        First token @Number(Result.TimeToFirstTokenSeconds) s · total @Number(Result.TotalSeconds) s ·
+        @Result.CompletionTokens tokens · @Number(Result.TokensPerSecond) tokens/s
+    </p>
+
+    @if (!string.IsNullOrWhiteSpace(Output.Error))
+    {
+        <AlertBox Kind="AlertKind.Error" Message="@Output.Error" />
+    }
+
+    @if (answer is null)
+    {
+        <AlertBox Kind="AlertKind.Info" Message="@InvalidText" />
+        <details>
+            <summary>Raw answer</summary>
+            <pre class="answer-text">@Shortened</pre>
+        </details>
+    }
+    else
+    {
+        <div>
+            <strong>Summary</strong>
+            <p>@answer.Summary</p>
+        </div>
+        <table class="table table-compact">
+            <caption class="visually-hidden-legend">Rates that the model gave</caption>
+            <thead>
+                <tr>
+                    <th scope="col"></th>
+                    <th scope="col" class="numeric">Model says</th>
+                    <th scope="col" class="numeric">Calculated</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><th scope="row">Overall</th><td class="numeric">@Percent(answer.Overall.Rate)</td><td class="numeric">n/a</td></tr>
+                <tr><th scope="row">Direct customers</th><td class="numeric">@Percent(answer.Direct.Rate)</td><td class="numeric">n/a</td></tr>
+                <tr><th scope="row">Agent bookings</th><td class="numeric">@Percent(answer.Agent.Rate)</td><td class="numeric">n/a</td></tr>
+            </tbody>
+        </table>
+        @if (answer.KeyFindings.Count > 0)
+        {
+            <div>
+                <strong>Key findings</strong>
+                <ul>
+                    @foreach (var finding in answer.KeyFindings)
+                    {
+                        <li>@finding</li>
+                    }
+                </ul>
+            </div>
+        }
+        @if (answer.Limitations.Count > 0)
+        {
+            <div>
+                <strong>Limitations</strong>
+                <ul>
+                    @foreach (var limitation in answer.Limitations)
+                    {
+                        <li>@limitation</li>
+                    }
+                </ul>
+            </div>
+        }
+        <details>
+            <summary>Interpretations</summary>
+            <p><strong>Overall:</strong> @answer.Overall.Interpretation</p>
+            <p><strong>Direct customers:</strong> @answer.Direct.Interpretation</p>
+            <p><strong>Agent bookings:</strong> @answer.Agent.Interpretation</p>
+        </details>
+    }
+</article>
+
+@code {
+    private const int RawLimit = 6000;
+
+    /// <summary>The request that the answer belongs to.</summary>
+    [Parameter, EditorRequired]
+    public BenchmarkResultDto Result { get; set; } = default!;
+
+    /// <summary>The answer text and the reason it was refused, when it was.</summary>
+    [Parameter, EditorRequired]
+    public BenchmarkOutputDto Output { get; set; } = default!;
+
+    private string InvalidText =>
+        string.IsNullOrWhiteSpace(Output.ValidationError) ? "The answer could not be read as the requested structure." : $"Invalid answer: {Output.ValidationError}";
+
+    private string Shortened =>
+        Output.Output is { Length: > RawLimit } text ? text[..RawLimit] + "…" : Output.Output ?? string.Empty;
+
+    private static string Percent(double? rate) =>
+        rate is { } value ? (value * 100).ToString("0.0", CultureInfo.InvariantCulture) + "%" : "n/a";
+
+    private static string Number(double? value) =>
+        value is { } number ? number.ToString("0.##", CultureInfo.InvariantCulture) : "—";
+}

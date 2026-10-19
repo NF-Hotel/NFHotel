@@ -5,6 +5,7 @@
 @inherits NFHotel.Web.Common.CancellableComponentBase
 @using System.Globalization
 @using NFHotel.Application.Dto.Benchmark
+@using NFHotel.Domain.Entities
 @using NFHotel.Web.Features.Admin.Benchmark
 @inject BenchmarkRunListViewModel ViewModel
 
@@ -19,9 +20,83 @@
 
 <div class="stack-lg">
     <PageHeader Title="Benchmark runs"
-                Subtitle="Every finished run of the local models, with the machine it ran on." />
+                Subtitle="Every finished run of the local models, with the machine it ran on.">
+        <Actions>
+            <AuthorizeView Policy="@StaffPolicies.BenchmarkRun">
+                <a class="btn btn-primary" href="/admin/benchmark/start">Start a run</a>
+            </AuthorizeView>
+        </Actions>
+    </PageHeader>
 
     <ErrorAlert Errors="ViewModel.Errors" />
+
+    @if (ViewModel.RunPendingDeletion is { } pending)
+    {
+        <ConfirmPanel Title="@($"Delete the run of {pending.StartedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC?")"
+                      Message="The run, its measurements and every answer are removed for good. This cannot be undone."
+                      ConfirmLabel="Delete run"
+                      IsBusy="ViewModel.IsBusy"
+                      OnConfirm="ConfirmDeleteAsync"
+                      OnCancel="ViewModel.AbortDelete" />
+    }
+
+    @if (ViewModel.IsLoaded)
+    {
+        <section class="card card-pad stack-sm" aria-labelledby="ai-defaults">
+            <h2 class="subtitle" id="ai-defaults">Default AI model</h2>
+            <p class="muted">
+                The model that the website and the market analysis use unless they are told otherwise. Choose it from the
+                results below, or type the name of an installed model. The market analysis reads it the next time it is deployed.
+            </p>
+            <datalist id="known-models">
+                @foreach (var model in ViewModel.KnownModels)
+                {
+                    <option value="@model"></option>
+                }
+            </datalist>
+            @foreach (var purpose in Purposes)
+            {
+                var current = ViewModel.DefaultOf(purpose);
+                var fieldId = $"default-ai-{purpose}";
+                <div class="field-row">
+                    <div>
+                        <strong>@Title(purpose)</strong>:
+                        @if (current is null)
+                        {
+                            <span>no default set</span>
+                        }
+                        else
+                        {
+                            <span>@current.Model, set by @current.SetBy @current.SetAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) UTC</span>
+                        }
+                    </div>
+                    <AuthorizeView Policy="@StaffPolicies.AiDefaultsManage">
+                        <label class="sr-only" for="@fieldId">Default model for @ViewModel.LabelOfPurpose(purpose)</label>
+                        <input id="@fieldId"
+                               class="field-input"
+                               list="known-models"
+                               maxlength="100"
+                               disabled="@ViewModel.IsBusy"
+                               value="@ViewModel.DraftOf(purpose)"
+                               @onchange="args => ViewModel.SetDraft(purpose, args.Value?.ToString())" />
+                        <button type="button"
+                                class="btn btn-primary btn-sm"
+                                disabled="@(ViewModel.IsBusy || string.IsNullOrWhiteSpace(ViewModel.DraftOf(purpose)))"
+                                @onclick="() => SaveDefaultAsync(purpose)">
+                            Save
+                        </button>
+                    </AuthorizeView>
+                </div>
+                @if (ViewModel.IsUnknownModel(purpose))
+                {
+                    <p class="muted" role="note">
+                        No stored run used this name. A service uses a model only when the name is exactly the one that the
+                        model server lists, tag included: take it from <code>ollama list</code>, for example <code>phi3.5:latest</code>.
+                    </p>
+                }
+            }
+        </section>
+    }
 
     @if (!ViewModel.IsLoaded)
     {
@@ -64,6 +139,14 @@
                                         @onclick="() => SelectAsync(run.RunId)">
                                     @(ViewModel.SelectedRun?.Header.RunId == run.RunId ? "Close" : "Open")
                                 </button>
+                                <AuthorizeView Policy="@StaffPolicies.BenchmarkDelete">
+                                    <button type="button"
+                                            class="btn btn-danger btn-sm"
+                                            disabled="@ViewModel.IsBusy"
+                                            @onclick="() => ViewModel.RequestDelete(run)">
+                                        Delete
+                                    </button>
+                                </AuthorizeView>
                             </td>
                         </tr>
                     }
@@ -88,6 +171,7 @@
                     <thead>
                         <tr>
                             <th scope="col">Model</th>
+                            <th scope="col">Task</th>
                             <th scope="col" class="numeric">Run</th>
                             <th scope="col">Start</th>
                             <th scope="col" class="numeric">First token (s)</th>
@@ -105,7 +189,8 @@
                         {
                             <tr>
                                 <td>@result.Model</td>
-                                <td class="numeric">@result.RunNumber</td>
+                                <td>@TaskName(result)</td>
+                                <td class="numeric">@(result.RunNumber + 1)</td>
                                 <td>@(result.Cold ? "cold" : "warm")</td>
                                 <td class="numeric">@Number(result.TimeToFirstTokenSeconds)</td>
                                 <td class="numeric">@Number(result.TotalSeconds)</td>
@@ -121,12 +206,25 @@
                                             @onclick="() => ShowOutputAsync(result.BenchmarkResultId)">
                                         Show answer
                                     </button>
+                                    <AuthorizeView Policy="@StaffPolicies.AiDefaultsManage">
+                                        @foreach (var purpose in Purposes)
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-secondary btn-sm"
+                                                    disabled="@ViewModel.IsBusy"
+                                                    @onclick="() => ViewModel.SetDefaultAsync(purpose, result.Model, selected.Header.RunId, ComponentToken)">
+                                                Use for @ViewModel.LabelOfPurpose(purpose)
+                                            </button>
+                                        }
+                                    </AuthorizeView>
                                 </td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
+
+            <BenchmarkRunAnalysis Run="selected" />
 
             @if (ViewModel.ShownOutput is { } output)
             {
@@ -152,12 +250,23 @@
     /// <summary>Loads the list when the page opens.</summary>
     protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
 
+    private static readonly string[] Purposes = [AiDefault.Website, AiDefault.MarketAnalysis];
+
+    private static string Title(string purpose) =>
+        purpose == AiDefault.Website ? "Website" : "Market analysis";
+
+    private Task SaveDefaultAsync(string purpose) => ViewModel.SaveDefaultAsync(purpose, ComponentToken);
+
+    private Task ConfirmDeleteAsync() => ViewModel.ConfirmDeleteAsync(ComponentToken);
+
     private Task SelectAsync(Guid runId) => ViewModel.SelectAsync(runId, ComponentToken);
 
     private Task ShowOutputAsync(int benchmarkResultId) => ViewModel.ShowOutputAsync(benchmarkResultId, ComponentToken);
 
     private static string Machine(BenchmarkRunListItemDto run) =>
         $"{run.Cpu}, {run.MemoryMb / 1024d:0.#} GiB, {(string.IsNullOrWhiteSpace(run.Gpu) ? "CPU only" : run.Gpu)}";
+
+    private static string TaskName(BenchmarkResultDto result) => BenchmarkResultAnalysis.TaskName(result);
 
     private static string Number(double? value) =>
         value is { } number ? number.ToString("0.##", CultureInfo.InvariantCulture) : "—";

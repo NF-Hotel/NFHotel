@@ -95,6 +95,16 @@ public static class Permissions
     public const string BenchmarkRun = "Benchmark.Run";
 
     /// <summary>
+    /// Permission to delete a stored benchmark run for good (ADR-0013).
+    /// </summary>
+    public const string BenchmarkDelete = "Benchmark.Delete";
+
+    /// <summary>
+    /// Permission to set the default AI model of the website and of the market analysis (ADR-0014).
+    /// </summary>
+    public const string AiDefaultsManage = "AiDefaults.Manage";
+
+    /// <summary>
     /// All permissions, to build one authorisation policy per permission.
     /// </summary>
     public static readonly IReadOnlyList<string> All =
@@ -116,5 +126,7 @@ public static class Permissions
         SalesView,
         BenchmarkView,
         BenchmarkRun,
+        BenchmarkDelete,
+        AiDefaultsManage,
     ];
 }

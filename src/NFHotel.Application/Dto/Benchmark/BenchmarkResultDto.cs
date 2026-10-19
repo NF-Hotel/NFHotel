@@ -18,6 +18,11 @@ namespace NFHotel.Application.Dto.Benchmark;
 /// <param name="Passed">Whether a deterministic task passed, or <c>null</c>.</param>
 /// <param name="ResponseValid">Whether the answer had the required shape, or <c>null</c>.</param>
 /// <param name="HasError">True when the request ended with an error.</param>
+/// <param name="RamBeforeMb">System memory in use before the request in megabytes, or <c>null</c>.</param>
+/// <param name="RamAfterMb">System memory in use after the request in megabytes, or <c>null</c>.</param>
+/// <param name="VramBeforeMb">GPU memory in use before the request in megabytes, or <c>null</c>.</param>
+/// <param name="VramAfterMb">GPU memory in use after the request in megabytes, or <c>null</c>.</param>
+/// <param name="FinishReason">Why the answer ended, or <c>null</c>.</param>
 public sealed record BenchmarkResultDto(
     int BenchmarkResultId,
     DateTimeOffset Timestamp,
@@ -35,4 +40,9 @@ public sealed record BenchmarkResultDto(
     double? VramPeakMb,
     bool? Passed,
     bool? ResponseValid,
-    bool HasError);
+    bool HasError,
+    double? RamBeforeMb = null,
+    double? RamAfterMb = null,
+    double? VramBeforeMb = null,
+    double? VramAfterMb = null,
+    string? FinishReason = null);

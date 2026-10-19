@@ -28,6 +28,9 @@ public sealed class BenchmarkRunRepository : Repository<BenchmarkRun, int>, IBen
             .ConfigureAwait(false);
 
     /// <inheritdoc />
+    public void Remove(BenchmarkRun run) => MarkForRemoval(run);
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<BenchmarkRunListItemDto>> GetRunsAsync(CancellationToken cancellationToken = default)
     {
         var runs = await Context.BenchmarkRuns
@@ -118,7 +121,12 @@ public sealed class BenchmarkRunRepository : Repository<BenchmarkRun, int>, IBen
                 result.VramPeakMb,
                 result.Passed,
                 result.ResponseValid,
-                result.Error != null))
+                result.Error != null,
+                result.RamBeforeMb,
+                result.RamAfterMb,
+                result.VramBeforeMb,
+                result.VramAfterMb,
+                result.FinishReason))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
