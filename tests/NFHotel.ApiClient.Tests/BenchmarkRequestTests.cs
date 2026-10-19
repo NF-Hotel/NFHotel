@@ -42,6 +42,36 @@ public sealed class BenchmarkRequestTests
         Assert.Equal(ErrorCodes.Benchmark.NotFound, Assert.Single(result.Errors).Code);
     }
 
+    /// <summary>Positive: deleting a run is a DELETE of the run id below the runs path.</summary>
+    [Fact]
+    public async Task DeleteRunAsync_RunId_DeletesThePathOfThatRun()
+    {
+        // Arrange
+        var (handler, service) = Build(HttpStatusCode.OK, """{"errors":[]}""");
+
+        // Act
+        var result = await service.DeleteRunAsync(RunId, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal((HttpMethod.Delete, $"/api/benchmark/runs/{RunId}"), (handler.Method!, handler.PathAndQuery!));
+    }
+
+    /// <summary>Negative: the empty run id is the not found code and nothing is sent.</summary>
+    [Fact]
+    public async Task DeleteRunAsync_EmptyRunId_ReturnsNotFoundWithoutACall()
+    {
+        // Arrange
+        var (handler, service) = Build(HttpStatusCode.OK, """{"errors":[]}""");
+
+        // Act
+        var result = await service.DeleteRunAsync(Guid.Empty, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Benchmark.NotFound, Assert.Single(result.Errors).Code);
+        Assert.Null(handler.Method);
+    }
+
     /// <summary>Positive: the answer of a request is a GET of its own path.</summary>
     [Fact]
     public async Task GetOutputAsync_Key_GetsTheOutputPath()

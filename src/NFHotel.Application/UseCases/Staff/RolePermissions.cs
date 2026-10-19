@@ -55,7 +55,8 @@ public static class RolePermissions
             Permissions.RoomsManage,
             Permissions.SalesView,
             Permissions.BenchmarkView,
-            Permissions.BenchmarkRun
+            Permissions.BenchmarkRun,
+            Permissions.BenchmarkDelete
         ],
 
         [Roles.Housekeeping] =

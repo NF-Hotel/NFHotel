@@ -159,6 +159,98 @@ public sealed class BenchmarkRunListViewModelTests
 
     #endregion
 
+    #region Deleting a run
+
+    /// <summary>State: asking to delete a run waits for the confirmation and deletes nothing.</summary>
+    [Fact]
+    public async Task RequestDelete_Run_WaitsForTheConfirmation()
+    {
+        // Arrange
+        var viewModel = Build(out var service);
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        viewModel.RequestDelete(viewModel.Runs[0]);
+
+        // Assert
+        Assert.Equal(RunId, viewModel.RunPendingDeletion!.RunId);
+        await service.DidNotReceive().DeleteRunAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>State: backing out clears the question and deletes nothing.</summary>
+    [Fact]
+    public async Task AbortDelete_AfterTheRequest_ClearsItWithoutDeleting()
+    {
+        // Arrange
+        var viewModel = Build(out var service);
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        viewModel.RequestDelete(viewModel.Runs[0]);
+
+        // Act
+        viewModel.AbortDelete();
+
+        // Assert
+        Assert.Null(viewModel.RunPendingDeletion);
+        await service.DidNotReceive().DeleteRunAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>Positive: confirming deletes the run, closes it when it is open and reads the list again.</summary>
+    [Fact]
+    public async Task ConfirmDeleteAsync_OpenRun_DeletesItClosesItAndReadsTheListAgain()
+    {
+        // Arrange
+        var viewModel = Build(out var service);
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        await viewModel.SelectAsync(RunId, TestContext.Current.CancellationToken);
+        viewModel.RequestDelete(viewModel.Runs[0]);
+        service.GetRunsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<BenchmarkRunListItemDto>>.Success([]));
+
+        // Act
+        await viewModel.ConfirmDeleteAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await service.Received(1).DeleteRunAsync(RunId, Arg.Any<CancellationToken>());
+        Assert.Null(viewModel.RunPendingDeletion);
+        Assert.Null(viewModel.SelectedRun);
+        Assert.True(viewModel.IsEmpty);
+        Assert.Empty(viewModel.Errors);
+    }
+
+    /// <summary>Negative: a refused deletion shows the text of the code and keeps the list as it was.</summary>
+    [Fact]
+    public async Task ConfirmDeleteAsync_NotFound_ShowsTheTextAndKeepsTheList()
+    {
+        // Arrange
+        var viewModel = Build(out var service);
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        viewModel.RequestDelete(viewModel.Runs[0]);
+        service.DeleteRunAsync(RunId, Arg.Any<CancellationToken>()).Returns(Result.Failure(ErrorCodes.Benchmark.NotFound));
+
+        // Act
+        await viewModel.ConfirmDeleteAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorMessages.Describe(Result.Failure(ErrorCodes.Benchmark.NotFound)), viewModel.Errors);
+        Assert.Null(viewModel.RunPendingDeletion);
+        Assert.Single(viewModel.Runs);
+    }
+
+    /// <summary>Boundary: confirming with nothing waiting does nothing.</summary>
+    [Fact]
+    public async Task ConfirmDeleteAsync_NothingPending_DeletesNothing()
+    {
+        // Arrange
+        var viewModel = Build(out var service);
+
+        // Act
+        await viewModel.ConfirmDeleteAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await service.DidNotReceive().DeleteRunAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    #endregion
+
     #region Helpers
 
     private static BenchmarkRunListViewModel Build(out IBenchmarkService service)
@@ -169,6 +261,7 @@ public sealed class BenchmarkRunListViewModelTests
         fake.GetRunsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<BenchmarkRunListItemDto>>.Success([header]));
         fake.GetRunAsync(RunId, Arg.Any<CancellationToken>()).Returns(Result<BenchmarkRunDetailsDto>.Success(details));
         fake.GetOutputAsync(7, Arg.Any<CancellationToken>()).Returns(Result<BenchmarkOutputDto>.Success(new BenchmarkOutputDto(7, "m1", "{}", null, null)));
+        fake.DeleteRunAsync(RunId, Arg.Any<CancellationToken>()).Returns(Result.Success());
         service = fake;
 
         var runner = Substitute.For<IUseCaseRunner<IBenchmarkService>>();
@@ -184,6 +277,10 @@ public sealed class BenchmarkRunListViewModelTests
                 Arg.Any<Func<IBenchmarkService, CancellationToken, Task<Result<BenchmarkOutputDto>>>>(),
                 Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<Func<IBenchmarkService, CancellationToken, Task<Result<BenchmarkOutputDto>>>>()(fake, call.Arg<CancellationToken>()));
+        runner.RunAsync(
+                Arg.Any<Func<IBenchmarkService, CancellationToken, Task<Result>>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<Func<IBenchmarkService, CancellationToken, Task<Result>>>()(fake, call.Arg<CancellationToken>()));
         return new BenchmarkRunListViewModel(runner);
     }
 

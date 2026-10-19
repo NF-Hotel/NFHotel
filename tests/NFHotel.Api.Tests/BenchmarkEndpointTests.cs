@@ -174,6 +174,78 @@ public sealed class BenchmarkEndpointTests
 
     #endregion
 
+    #region Deleting a run
+
+    /// <summary>Positive: a Manager deletes a stored run and it is gone.</summary>
+    [Fact]
+    public async Task DeleteRun_Manager_RemovesTheRun()
+    {
+        // Arrange
+        using var factory = new ApiFactory();
+        factory.World.Benchmarks.Add(NewRun());
+        using var client = factory.CreateStaffClient(StaffRole.Manager);
+
+        // Act
+        using var response = await client.DeleteAsync($"{Runs}/{RunId}", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Empty(factory.World.Benchmarks.Items);
+    }
+
+    /// <summary>Negative: an unknown run id is 404.</summary>
+    [Fact]
+    public async Task DeleteRun_UnknownRunId_Returns404()
+    {
+        // Arrange
+        using var factory = new ApiFactory();
+        using var client = factory.CreateStaffClient(StaffRole.Manager);
+
+        // Act
+        using var response = await client.DeleteAsync($"{Runs}/{RunId}", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    /// <summary>Negative: a role without the permission is 403 and the run stays.</summary>
+    [Theory]
+    [InlineData(StaffRole.Receptionist)]
+    [InlineData(StaffRole.Housekeeping)]
+    public async Task DeleteRun_RoleWithoutThePermission_Returns403AndKeepsTheRun(StaffRole role)
+    {
+        // Arrange
+        using var factory = new ApiFactory();
+        factory.World.Benchmarks.Add(NewRun());
+        using var client = factory.CreateStaffClient(role);
+
+        // Act
+        using var response = await client.DeleteAsync($"{Runs}/{RunId}", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Single(factory.World.Benchmarks.Items);
+    }
+
+    /// <summary>Negative: the service token alone cannot delete a run.</summary>
+    [Fact]
+    public async Task DeleteRun_ServiceTokenOnly_Returns401AndKeepsTheRun()
+    {
+        // Arrange
+        using var factory = new ApiFactory();
+        factory.World.Benchmarks.Add(NewRun());
+        using var client = factory.CreateServiceClient();
+
+        // Act
+        using var response = await client.DeleteAsync($"{Runs}/{RunId}", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Single(factory.World.Benchmarks.Items);
+    }
+
+    #endregion
+
     #region Reading runs
 
     /// <summary>Positive: a Manager lists the runs and reads one with its requests.</summary>

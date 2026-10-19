@@ -92,6 +92,34 @@ public sealed class BenchmarkRepositoryTests : IAsyncLifetime
 
     #endregion
 
+    #region Deleting
+
+    /// <summary>Positive: removing a run removes its requests with it and leaves another run alone.</summary>
+    [Fact]
+    public async Task Remove_StoredRun_RemovesItsRequestsAndKeepsTheOtherRun()
+    {
+        // Arrange
+        await SeedAsync(FirstRun, Start, "m1", "m2");
+        await SeedAsync(SecondRun, Start.AddHours(1), "m3");
+        await using (var context = _fixture.CreateContext())
+        {
+            var repository = new BenchmarkRunRepository(context);
+            var run = await repository.FindByRunIdAsync(FirstRun, TestContext.Current.CancellationToken);
+
+            // Act
+            repository.Remove(run!);
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        // Assert
+        await using var check = _fixture.CreateContext();
+        var remaining = check.BenchmarkRuns.Select(run => run.RunId).ToList();
+        Assert.Equal(SecondRun, Assert.Single(remaining));
+        Assert.Equal(["m3"], check.BenchmarkResults.Select(result => result.Model));
+    }
+
+    #endregion
+
     #region Reading
 
     /// <summary>Positive: the list is newest first, shows each model once and counts the requests.</summary>

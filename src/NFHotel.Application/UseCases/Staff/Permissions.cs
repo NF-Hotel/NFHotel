@@ -95,6 +95,11 @@ public static class Permissions
     public const string BenchmarkRun = "Benchmark.Run";
 
     /// <summary>
+    /// Permission to delete a stored benchmark run for good (ADR-0013).
+    /// </summary>
+    public const string BenchmarkDelete = "Benchmark.Delete";
+
+    /// <summary>
     /// All permissions, to build one authorisation policy per permission.
     /// </summary>
     public static readonly IReadOnlyList<string> All =
@@ -116,5 +121,6 @@ public static class Permissions
         SalesView,
         BenchmarkView,
         BenchmarkRun,
+        BenchmarkDelete,
     ];
 }

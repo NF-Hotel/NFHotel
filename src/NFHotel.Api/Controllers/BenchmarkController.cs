@@ -70,6 +70,15 @@ public sealed class BenchmarkController : ControllerBase
     public async Task<IActionResult> GetRunAsync(Guid runId, CancellationToken cancellationToken) =>
         this.ToResponse(await _benchmark.GetRunAsync(runId, cancellationToken).ConfigureAwait(false));
 
+    /// <summary>Deletes one stored run with every request and answer of it, for good.</summary>
+    /// <param name="runId">The run id of the contract.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>200, or 404 when the run is not stored.</returns>
+    [HttpDelete(ApiRoutes.BenchmarkRunById)]
+    [RequiresPermission(Permissions.BenchmarkDelete)]
+    public async Task<IActionResult> DeleteRunAsync(Guid runId, CancellationToken cancellationToken) =>
+        this.ToResponse(await _benchmark.DeleteRunAsync(runId, cancellationToken).ConfigureAwait(false));
+
     /// <summary>Reads the answer text of one request.</summary>
     /// <param name="id">The key of the request.</param>
     /// <param name="cancellationToken">Cancels the call.</param>

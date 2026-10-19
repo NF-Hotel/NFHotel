@@ -27,6 +27,9 @@ public sealed class BenchmarkRunListViewModel
     /// <summary>The run that is open, or <c>null</c>.</summary>
     public BenchmarkRunDetailsDto? SelectedRun { get; private set; }
 
+    /// <summary>The run that waits for the confirmation of its deletion, or <c>null</c>.</summary>
+    public BenchmarkRunListItemDto? RunPendingDeletion { get; private set; }
+
     /// <summary>The answer of one request that is shown, or <c>null</c>.</summary>
     public BenchmarkOutputDto? ShownOutput { get; private set; }
 
@@ -134,6 +137,58 @@ public sealed class BenchmarkRunListViewModel
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>Asks for the confirmation of deleting a run.</summary>
+    /// <param name="run">The run to delete.</param>
+    public void RequestDelete(BenchmarkRunListItemDto run)
+    {
+        ArgumentNullException.ThrowIfNull(run);
+
+        RunPendingDeletion = run;
+    }
+
+    /// <summary>Backs out of deleting a run.</summary>
+    public void AbortDelete() => RunPendingDeletion = null;
+
+    /// <summary>Deletes the run that the user confirmed, for good, and reads the list again.</summary>
+    /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
+    /// <returns>A task that ends when the list is read again.</returns>
+    public async Task ConfirmDeleteAsync(CancellationToken cancellationToken = default)
+    {
+        var run = RunPendingDeletion;
+        if (run is null)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var result = await _benchmark
+                .RunAsync((service, token) => service.DeleteRunAsync(run.RunId, token), cancellationToken)
+                .ConfigureAwait(false);
+
+            RunPendingDeletion = null;
+            if (result.IsFailure)
+            {
+                Errors = ErrorMessages.Describe(result);
+                return;
+            }
+
+            if (SelectedRun?.Header.RunId == run.RunId)
+            {
+                SelectedRun = null;
+            }
+
+            ShownOutput = null;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        await InitializeAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Hides the answer that is shown.</summary>
