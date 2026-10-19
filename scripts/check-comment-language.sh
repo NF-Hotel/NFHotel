@@ -21,8 +21,8 @@
 # Needs: bash 4 or later, git (when no file is named), awk (POSIX: gawk or mawk).
 set -euo pipefail
 
-# Danish words that are not English words. Short function words that are also English (for example `en`, `den`,
-# `er`, `for`, `mod`, `kan`) are left out on purpose: the letters and these words catch what is written in Danish.
+# Danish words that are not English words. Short function words that are also English are left out on purpose
+# (see WEAK below): the letters and these words catch what is written in Danish.
 WORDS='og|ikke|til|af|som|skal|bliver|hvis|fra|også|når|eller|uden|efter|mellem|denne|dette|hvor|kun|være|blive|hent|bruger|bruge|brugeren|kontroller|kontrollér|ændringer|kode|byg|sikkerhed|afhængigheder|fejl|kørsel|projektets|både|alle|hvad|deres|disse|adgang|rollen|rolle|sammenlign|sammenligner|forventede|resultatet|forbered|forbered|opret|opretter|oprettet|ukendte|tilladelse|tilladelser|siden|sine|ligger|findes|hvilke|hvilken|hvilket|samme|kun|inde|ude|fordi|mange|nogle|ingen|hele|dette|først|første|anden|tredje|bliver|gemmer|henter|kalder|sender|viser|tilføjer|fjerner|returnerer|registrerer|opsat|klasse|metode|værdier|værdien|bookinger|gæster|booket|ledig|vedligehold'
 # Short Danish words that are rare in English but not impossible: two different ones in one comment make it Danish.
 WEAK='er|med|den|det|der|kan|ved|mod|nu|jeg'
