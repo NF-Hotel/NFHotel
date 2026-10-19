@@ -43,14 +43,14 @@
             @foreach (var model in ViewModel.Models)
             {
                 var name = model;
-                <li class="field-row">
-                    <span>@name</span>
+                <li class="model-row">
+                    <span class="model-name">@name</span>
                     @foreach (var purpose in ViewModel.DefaultPurposesOf(name))
                     {
                         <span class="badge badge-confirmed">default for @purpose</span>
                     }
                     <button type="button"
-                            class="btn btn-danger btn-sm"
+                            class="btn btn-danger btn-sm btn-fixed"
                             disabled="@(ViewModel.IsBusy || ViewModel.IsPulling)"
                             @onclick="() => ViewModel.RequestDelete(name)">
                         Delete
@@ -60,7 +60,7 @@
         </ul>
     }
 
-    <div class="field-row">
+    <div class="add-model-row">
         <label class="field-label" for="new-model-name">Add a model</label>
         <input id="new-model-name"
                class="field-input"
@@ -73,7 +73,7 @@
                @bind="ViewModel.NewModelName"
                @bind:event="oninput" />
         <button type="button"
-                class="btn btn-primary btn-sm"
+                class="btn btn-primary btn-sm btn-fixed"
                 disabled="@(!ViewModel.CanAdd)"
                 @onclick="StartPullAsync">
             Add model
