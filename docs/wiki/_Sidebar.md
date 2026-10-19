@@ -1,3 +1,4 @@
 - [Home](Home)
 - [Proxmox Deployment](Proxmox-Deployment)
+- [CI/CD](CI-CD)
 - [Appendix](Appendix)

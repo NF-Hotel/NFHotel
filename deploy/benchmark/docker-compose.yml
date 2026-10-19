@@ -9,7 +9,7 @@ name: benchmark
 
 services:
   benchmark:
-    image: benchmark:local
+    image: ${BENCHMARK_IMAGE:-benchmark:local}
     build:
       context: .
       args:

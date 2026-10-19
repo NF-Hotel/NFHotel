@@ -1,0 +1,115 @@
+# CD: deploy a release to the Proxmox VM after an approval (ADR-0007, MIL-021 task 6).
+#
+# Triggers: a successful NF Hotel Release run (workflow_run), or by hand with the run
+#   ID of an earlier release (a redeploy or a rollback). A manual run is a dry run
+#   unless the input apply is true.
+# Approval: the job runs in the environment production, whose required reviewers
+#   approve it before it starts; no credential exists before that.
+# Access: the job joins the tailnet as an ephemeral node tagged tag:ci through GitHub
+#   OIDC (no stored Tailscale secret) and runs one command on the VM over Tailscale
+#   SSH as the user deploy (no stored ssh key).
+# Settings (environment variables of production, not secrets): TS_OIDC_CLIENT_ID,
+#   TS_OIDC_AUDIENCE, NFHOTEL_VM_HOST.
+# Changes outside the repository: the services on the VM (scripts/deploy-release.sh).
+# It checks out only main (trusted); the steps are in scripts/cd-steps.sh.
+# Verified with actionlint 1.7.7; the GitHub features (workflow_run chain, environment
+# approval, OIDC) are verified on github.com in MIL-021 task 8.
+name: NF Hotel CD
+
+on:
+  workflow_run:
+    workflows: [NF Hotel Release]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_run_id:
+        description: Run ID of the NF Hotel Release run to deploy
+        required: true
+        type: string
+      apply:
+        description: Deploy for real (false prints what would be deployed)
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    # A run from a fork never reaches the deploy, even if Release were changed
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'workflow_run' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: production
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN_ID: ${{ github.event.workflow_run.id || inputs.release_run_id }}
+      APPLY: ${{ github.event_name == 'workflow_run' || inputs.apply }}
+
+    steps:
+      # The steps of this workflow, from main only
+      - name: Check out the CD steps from main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Check the release run
+        id: run
+        run: bash scripts/cd-steps.sh check-run
+
+      - name: Download the release manifest
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
+        with:
+          name: release-manifest
+          run-id: ${{ steps.run.outputs.id }}
+          github-token: ${{ github.token }}
+
+      - name: Read the release manifest
+        id: release
+        run: bash scripts/cd-steps.sh read-manifest
+
+      - name: Join the tailnet
+        if: ${{ env.APPLY == 'true' }}
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd  # v4.2.0
+        with:
+          oauth-client-id: ${{ vars.TS_OIDC_CLIENT_ID }}
+          audience: ${{ vars.TS_OIDC_AUDIENCE }}
+          tags: tag:ci
+          version: 1.102.4
+
+      - name: Deploy on the VM
+        if: ${{ env.APPLY == 'true' }}
+        env:
+          VM_HOST: ${{ vars.NFHOTEL_VM_HOST }}
+          SHA: ${{ steps.release.outputs.sha }}
+          WEB: ${{ steps.release.outputs.nfhotel_web }}
+          API: ${{ steps.release.outputs.nfhotel_api }}
+          ANALYSIS: ${{ steps.release.outputs.market_analysis }}
+          BENCHMARK: ${{ steps.release.outputs.benchmark }}
+        run: bash scripts/cd-steps.sh deploy
+
+      # The audit record of this run; the approver is kept by the environment history
+      - name: Write the deployment summary
+        if: ${{ always() }}
+        env:
+          SHA: ${{ steps.release.outputs.sha }}
+          OUTCOME: ${{ env.APPLY == 'true' && job.status || 'dry run' }}
+        run: bash scripts/cd-steps.sh summary

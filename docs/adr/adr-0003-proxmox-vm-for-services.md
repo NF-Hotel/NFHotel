@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0003 |
-| CrossReference | [BC-001], [MIL-004], [US-001] |
+| CrossReference | [BC-001], [MIL-004], [US-001], [ADR-0010] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (decision given by the user in chat) | Initial version, accepted after RC-047 Go | [0fa84f7] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (decision given by the user in chat) | Initial version, accepted after RC-047 Go | [0fa84f7] |
+| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Decision unchanged; its statements on how the VM is made, the deploy layout and the published ports are replaced by ADR-0010 (RC-098) | [1b94761] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -76,10 +77,13 @@ compose file and one `<service>.env` per service, an external network
 
 - [MIL-004] — task 2 is decided here; task 3 creates the VM
 - [US-001] — US-001.04 and US-001.05 name the VM
+- [ADR-0010] — records the production VM `nf-hotel` as deployed and replaces the out-of-date statements of fact
 
 ---
 
 [BC-001]: ../business-case.md
 [MIL-004]: ../milestones/mil-004-market-analysis-service.md
 [US-001]: ../user-stories.md
+[ADR-0010]: ./adr-0010-production-vm-as-deployed.md
 [0fa84f7]: https://github.com/NF-Hotel/NFHotel/commit/0fa84f7fe59f59a20e54b6914c6ad4842fe74b3a
+[1b94761]: https://github.com/NF-Hotel/NFHotel/commit/1b94761ddb5113cd0d34915c01fe7f0f278bba60
