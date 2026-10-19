@@ -1,23 +1,123 @@
-#navn
+# CI: byg, test og kontrollér koden før deployment
 name: NF Hotel CI
 
-#start workflowet manuelt fra Actions
 on:
+  # Kan stadig startes manuelt fra Actions
   workflow_dispatch:
-  
-#hent github linux maskine
+  # Kontrollér ændringer før review og merge
+  pull_request:
+    branches: [main]
+  # Kontrollér også den samlede kode efter merge
+  push:
+    branches: [main]
+
+# Workflowet har kun brug for læseadgang
+permissions:
+  contents: read
+
+# Stop en ældre kørsel, når samme branch eller PR får nye ændringer
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
 jobs:
   build:
+    name: Build, tests og sikkerhed
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
 
     steps:
-      #henter projektets kode med dette værktøk checkout version 7
-      - uses: actions/checkout@v7
+      # Hent projektets kode
+      - name: Hent kode
+        uses: actions/checkout@v7
 
-      #installer .NET versionen fra global.json.
-      - uses: actions/setup-dotnet@v6
+      # Brug projektets SDK-version
+      - name: Installer .NET
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
-      #byg projektet. nuGet packets hentes automatisk.
-      - run: dotnet build NFHotel.sln
+      # Scan både direkte og indirekte NuGet-afhængigheder.
+      # Kendte sårbarheder og øvrige restore-advarsler giver fejl.
+      - name: Restore og NuGet-sårbarhedskontrol
+        run: >-
+          dotnet restore NFHotel.sln
+          -p:NuGetAudit=true
+          -p:NuGetAuditMode=all
+          -p:NuGetAuditLevel=low
+          -p:TreatWarningsAsErrors=true
+
+      # Byg med projektets eksisterende analyzer- og kodestilregler
+      - name: Build
+        run: dotnet build NFHotel.sln --configuration Release --no-restore
+
+      # Integrationstestene bruger Testcontainers og starter selv PostgreSQL
+      - name: Kontrollér Docker til integrationstests
+        run: docker info
+
+      # Testene kører på Microsoft.Testing.Platform (global.json), som ikke
+      # kender VSTest-collectoren coverlet.collector. Coverage måles derfor
+      # udefra med dotnet-coverage, så testprojekterne ikke skal ændres.
+      - name: Installer dotnet-coverage
+        run: dotnet tool install --global dotnet-coverage --version 18.12.0
+
+      # Kør alle testprojekter, gem TRX pr. projekt og mål code coverage
+      - name: Tests og coverage
+        run: >-
+          dotnet-coverage collect
+          --settings dotnet-coverage.config.xml
+          --output TestResults/coverage.cobertura.xml
+          --output-format cobertura
+          "dotnet test NFHotel.sln --configuration Release --no-build
+          --results-directory TestResults --report-xunit-trx"
+
+      # Gem rapporter også når tests fejler
+      - name: Gem testresultater og coverage
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: TestResults/
+          if-no-files-found: warn
+          retention-days: 14
+
+  formatting:
+    name: Formatering
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Hent kode
+        uses: actions/checkout@v7
+
+      - name: Installer .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore NFHotel.sln
+
+      # Kontrollér formatering efter .editorconfig uden at ændre filer.
+      # Kodestil og analyzers håndteres også af projektets buildindstillinger.
+      - name: Kontrollér formatering
+        run: dotnet format whitespace NFHotel.sln --verify-no-changes --no-restore
+
+  container:
+    name: Docker-build
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Hent kode
+        uses: actions/checkout@v7
+
+      # Kontrollér at projektets Dockerfile kan pakke webappen.
+      # Imaget bygges kun lokalt på runneren; det publiceres ikke.
+      - name: Byg Docker-image
+        run: docker build --tag nfhotel:ci .
