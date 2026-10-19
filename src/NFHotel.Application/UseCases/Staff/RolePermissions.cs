@@ -5,17 +5,17 @@ namespace NFHotel.Application.UseCases.Staff;
 
 
 /// <summary>
-/// Definerer hvilke permissions de forskellige roller har
-/// ud fra den godkendte RBAC-matrix.
+/// Defines which permissions the different roles have
+/// from the approved RBAC matrix.
 /// </summary>
 public static class RolePermissions
 {
     /// <summary>
-    /// Opretter en Dictionary der kobler hver rolle sammen med et sæt permissions (tilladelser).
-    /// string = rollen, fx "Guest" eller "Manager".
-    /// HashSet af string = et sæt tilladelser uden dubletter.
+    /// Creates a Dictionary that links each role to a set of permissions.
+    /// string = the role, for example "Guest" or "Manager".
+    /// HashSet of string = a set of permissions without duplicates.
     /// </summary>
-    private static readonly Dictionary<string,HashSet<string>> PermissionsByRole = new()
+    private static readonly Dictionary<string, HashSet<string>> PermissionsByRole = new()
     {
         [Roles.Guest] =
         [
@@ -53,7 +53,9 @@ public static class RolePermissions
             Permissions.GuestsManage,
             Permissions.RoomsView,
             Permissions.RoomsManage,
-            Permissions.SalesView
+            Permissions.SalesView,
+            Permissions.BenchmarkView,
+            Permissions.BenchmarkRun
         ],
 
         [Roles.Housekeeping] =
@@ -65,13 +67,13 @@ public static class RolePermissions
     };
 
     /// <summary>
-    /// Kontrollerer om en rolle har en bestemt permission.
+    /// Checks whether a role has a given permission.
     /// </summary>
     public static bool HasPermission(string role, string permission)
     {
-        // TryGetValue forsøger at finde rollen i Dictionary.
-        // Hvis rollen findes, gemmes dens permissions i variablen permissions.
-        // Contains kontrollerer om den ønskede permission findes i sættet.
+        // TryGetValue tries to find the role in the Dictionary.
+        // If the role exists, its permissions are stored in the variable permissions.
+        // Contains checks whether the wanted permission is in the set.
         return PermissionsByRole.TryGetValue(role, out var permissions)
             && permissions.Contains(permission);
     }
@@ -83,7 +85,7 @@ public static class RolePermissions
         HasPermission(role.ToString(), permission);
 
     /// <summary>
-    /// Siden en rolle starter på efter login: dashboardet hvis den må se bookinger, ellers værelserne.
+    /// The page that a role starts on after signing in: the dashboard if it may see bookings, otherwise the rooms.
     /// </summary>
     public static string LandingPath(StaffRole role) =>
         HasPermission(role, Permissions.BookingsView) ? "/admin" : "/admin/rooms";

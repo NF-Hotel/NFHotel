@@ -24,6 +24,7 @@ public sealed class AdminAccessTests : IClassFixture<WebFactory>
     [InlineData("/admin/rooms")]
     [InlineData("/admin/guests")]
     [InlineData("/admin/revenue")]
+    [InlineData("/admin/benchmark")]
     public async Task Get_AdminPageWithoutSession_RedirectsToTheLogin(string path)
     {
         // Arrange
@@ -200,12 +201,79 @@ public sealed class AdminAccessTests : IClassFixture<WebFactory>
         Assert.DoesNotContain("The system has no pricing model.", html, StringComparison.Ordinal);
     }
 
+    /// <summary>Positive: a signed-in Manager opens the benchmark page.</summary>
+
+    [Fact]
+
+    public async Task Get_BenchmarkAsManager_ShowsThePage()
+
+    {
+
+        // Arrange
+
+        using var browser = _factory.CreateBrowser();
+
+        await WebFactory.SignInAsync(browser, "mona", WebFactory.Password);
+
+
+
+        // Act
+
+        using var response = await browser.GetAsync("/admin/benchmark", TestContext.Current.CancellationToken);
+
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+
+
+        // Assert
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        Assert.Contains("Benchmark runs", html, StringComparison.Ordinal);
+
+    }
+
+
+
+    /// <summary>Negative: a Receptionist is told the benchmark page is not permitted, and does not see its content.</summary>
+
+    [Fact]
+
+    public async Task Get_BenchmarkAsReceptionist_ShowsNotPermitted()
+
+    {
+
+        // Arrange
+
+        using var browser = _factory.CreateBrowser();
+
+        await WebFactory.SignInAsync(browser, "rita", WebFactory.Password);
+
+
+
+        // Act
+
+        var html = await GetFollowingOneRedirectAsync(browser, "/admin/benchmark");
+
+
+
+        // Assert
+
+        Assert.Contains("You don't have access to this page", html, StringComparison.Ordinal);
+
+        Assert.DoesNotContain("Every finished run of the local models", html, StringComparison.Ordinal);
+
+    }
+
+
+
     /// <summary>Negative: Housekeeping is told the bookings, the guests and the dashboard are not permitted.</summary>
     [Theory]
     [InlineData("/admin")]
     [InlineData("/admin/bookings")]
     [InlineData("/admin/guests")]
     [InlineData("/admin/revenue")]
+    [InlineData("/admin/benchmark")]
     public async Task Get_PageAsHousekeeping_ShowsNotPermitted(string path)
     {
         // Arrange
@@ -235,6 +303,7 @@ public sealed class AdminAccessTests : IClassFixture<WebFactory>
         Assert.DoesNotContain("href=\"/admin/guests\"", html, StringComparison.Ordinal);
         Assert.DoesNotContain("href=\"/admin/bookings\"", html, StringComparison.Ordinal);
         Assert.DoesNotContain("href=\"/admin/revenue\"", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("href=\"/admin/benchmark\"", html, StringComparison.Ordinal);
         Assert.Contains("hilda", html, StringComparison.Ordinal);
     }
 
@@ -251,7 +320,7 @@ public sealed class AdminAccessTests : IClassFixture<WebFactory>
 
         // Assert
         Assert.All(
-            new[] { "/admin\"", "/admin/bookings", "/admin/rooms", "/admin/guests", "/admin/revenue" },
+            new[] { "/admin\"", "/admin/bookings", "/admin/rooms", "/admin/guests", "/admin/revenue", "/admin/benchmark" },
             item => Assert.Contains($"href=\"{item}", html, StringComparison.Ordinal));
     }
 

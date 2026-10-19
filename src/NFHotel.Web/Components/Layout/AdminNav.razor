@@ -28,6 +28,9 @@
     <AuthorizeView Policy="@StaffPolicies.SalesView">
         <NavLink class="admin-nav-link" href="/admin/revenue">Revenue</NavLink>
     </AuthorizeView>
+    <AuthorizeView Policy="@StaffPolicies.BenchmarkView">
+        <NavLink class="admin-nav-link" href="/admin/benchmark">Benchmark</NavLink>
+    </AuthorizeView>
 
     <AuthorizeView>
         <div class="admin-nav-user">

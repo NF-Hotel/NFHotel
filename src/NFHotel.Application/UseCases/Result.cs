@@ -89,7 +89,7 @@ public class Result
 
     /// <summary>
     /// Creates a failed result from a list of error codes — the form the domain's
-    /// <c>Validate</c>-metoder returnerer (A-09).
+    /// <c>Validate</c> methods return (A-09).
     /// </summary>
     /// <param name="codes">The error codes. Must not be empty.</param>
     /// <returns>A failed result.</returns>

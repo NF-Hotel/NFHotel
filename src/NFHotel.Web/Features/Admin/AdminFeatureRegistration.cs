@@ -1,3 +1,4 @@
+using NFHotel.Web.Features.Admin.Benchmark;
 using NFHotel.Web.Features.Admin.Bookings;
 using NFHotel.Web.Features.Admin.Dashboard;
 using NFHotel.Web.Features.Admin.Guests;
@@ -41,6 +42,8 @@ public static class AdminFeatureRegistration
         services.AddScoped<RoomFormViewModel>();
 
         services.AddScoped<GuestListViewModel>();
+
+        services.AddScoped<BenchmarkRunListViewModel>();
 
         services.AddScoped<LoginViewModel>();
 

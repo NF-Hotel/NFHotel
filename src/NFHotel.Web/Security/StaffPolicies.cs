@@ -28,4 +28,10 @@ public static class StaffPolicies
 
     /// <summary>See revenue.</summary>
     public const string SalesView = Permissions.SalesView;
+
+    /// <summary>See the stored benchmark runs.</summary>
+    public const string BenchmarkView = Permissions.BenchmarkView;
+
+    /// <summary>Start a benchmark run.</summary>
+    public const string BenchmarkRun = Permissions.BenchmarkRun;
 }

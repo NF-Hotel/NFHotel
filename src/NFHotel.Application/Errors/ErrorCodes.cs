@@ -267,4 +267,18 @@ public static class ErrorCodes
         /// <summary>The guest was changed by someone else in the meantime. Fetch again and start over.</summary>
         public const string ConcurrencyConflict = "guest.concurrency_conflict";
     }
+
+    /// <summary>Codes of the stored benchmark runs (ADR-0013). The field codes are those of the domain.</summary>
+    public static class Benchmark
+    {
+        /// <summary>No run or request has that key.</summary>
+        public const string NotFound = "benchmark.not_found";
+
+        /// <summary>The result schema version is not the one that this API reads.</summary>
+        public const string SchemaVersionUnsupported = "benchmark.schema_version_unsupported";
+
+        /// <summary>The body is missing, or a part of it is missing.</summary>
+        public const string BodyInvalid = "benchmark.body_invalid";
+    }
+
 }
