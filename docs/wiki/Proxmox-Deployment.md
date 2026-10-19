@@ -174,3 +174,16 @@ Then open `http://analysis.localhost:8081` (market analysis notebook),
   these scripts.
 - The deploy runs no migration itself; the API applies them at start when
   `Database__MigrateOnStart=true` (see Staff sign-in).
+
+## The benchmark service (MIL-019, MIL-020)
+
+The benchmark service is a separate repository, `notebook-benchmark`, with its own compose file and env files. It
+joins the internal network `nfhotel-api` and publishes no host port.
+
+- The web application starts runs at `http://benchmark:8000` with the bearer token in
+  `BenchmarkService__Token` of `deploy/nfhotel-web/nfhotel-web.env`. That value is the `NFBENCH_API_TOKEN` of the
+  benchmark service.
+- The benchmark service delivers the finished result to `http://nfhotel-api:8080/api/benchmark/results` with the
+  `Api__Token` of `deploy/nfhotel-api/nfhotel-api.env`. That value is its `NFBENCH_WEB_TOKEN`.
+- A Manager starts a run at `/admin/benchmark/start` and reads the stored runs at `/admin/benchmark`.
+- Until `BenchmarkService__Token` is set, the start page says that the service is not set up.

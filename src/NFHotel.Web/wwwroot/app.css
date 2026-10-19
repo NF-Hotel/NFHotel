@@ -1361,3 +1361,19 @@ h1:focus-visible {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* Start of a benchmark run (MIL-020): a checkbox with its label, and a legend that only screen readers need. */
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.visually-hidden-legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -19,7 +19,13 @@
 
 <div class="stack-lg">
     <PageHeader Title="Benchmark runs"
-                Subtitle="Every finished run of the local models, with the machine it ran on." />
+                Subtitle="Every finished run of the local models, with the machine it ran on.">
+        <Actions>
+            <AuthorizeView Policy="@StaffPolicies.BenchmarkRun">
+                <a class="btn btn-primary" href="/admin/benchmark/start">Start a run</a>
+            </AuthorizeView>
+        </Actions>
+    </PageHeader>
 
     <ErrorAlert Errors="ViewModel.Errors" />
 

@@ -29,6 +29,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddApiClient(builder.Configuration);
 builder.Services.AddHotelClock(builder.Configuration);
 builder.Services.AddHolidayApi(builder.Configuration);
+builder.Services.AddBenchmarkService(builder.Configuration);   // starts runs on the benchmark service (MIL-020)
 
 // Open generic scoped service: gives every use case call its own DI scope (Architecture.md section 8). The runner is
 // stateless, but it belongs to the circuit so that it can hand the staff token of the signed-in user to each call

@@ -44,6 +44,7 @@ public static class AdminFeatureRegistration
         services.AddScoped<GuestListViewModel>();
 
         services.AddScoped<BenchmarkRunListViewModel>();
+        services.AddScoped<BenchmarkStartViewModel>();
 
         services.AddScoped<LoginViewModel>();
 
