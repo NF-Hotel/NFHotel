@@ -18,6 +18,7 @@
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 7 (default AI model for the website and the market analysis) and acceptance criterion 8; done after RC-109 and RC-110 | [b1daae2] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 8 (the analysis view of a run, like the notebook) and acceptance criterion 9; done after RC-111 | [09e3167] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 9 (the default model reaches the market analysis under the exact installed name) and acceptance criterion 10; done after RC-112 | [b195b69] |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Task 3 note: nginx sends a plain HTTP request to the TLS port on to HTTPS (status 497), checked by the proxy test | [9962898] |
 
 ---
 
@@ -80,7 +81,7 @@ Let a Manager start a benchmark run from the back office and see its state until
 | --- | --- | --- | --- | --- |
 | 1 | Client of the benchmark service | Port and adapter to start a run and read its state; fake for the tests. | No | Done: `BenchmarkServiceClient`, `IBenchmarkServiceClient`; 19 tests against a fake of the service |
 | 2 | Start page | Choose models, start, follow the state; Manager only; page tests. | Yes | UC: administrator starts a benchmark run. Done: `/admin/benchmark/start`, `BenchmarkStartViewModel`; Manager only |
-| 3 | Deploy files and tokens | Compose entries and env examples for the benchmark and Ollama containers. | No | Done: `nfhotel-web.env.example`, `docker-compose.yml` comment, wiki section |
+| 3 | Deploy files and tokens | Compose entries and env examples for the benchmark and Ollama containers. | No | Done: `nfhotel-web.env.example`, `docker-compose.yml` comment, wiki section; nginx redirects a plain HTTP request on the TLS port to HTTPS (`error_page 497`), proxy test |
 | 4 | Check and review | Build, format, test; reviews against `qc-programming-csharp` and `qc-yaml`. | No | Done: RC-106, RC-107 |
 | 5 | Delete a stored run | `Permissions.BenchmarkDelete` (Manager only); `DELETE api/benchmark/runs/{runId}`; a Delete button with a confirmation on `/admin/benchmark`; the requests go with the run. | Yes | Done: `BenchmarkService.DeleteRunAsync`, `BenchmarkController.DeleteRunAsync`, `ApiBenchmarkService.DeleteRunAsync`, `BenchmarkRunListViewModel.ConfirmDeleteAsync`; 17 new tests |
 | 6 | Readable results table and models | A Task column (hotel cancellation analysis or the task name) and a 1-based run number in the table of one run; `phi3.5` is pulled with `llama3.2:3b` by `scripts/dev-up.sh`. | No | Done: `BenchmarkRuns.razor`, `scripts/dev-up.sh`; review RC-108 |
@@ -99,3 +100,4 @@ Let a Manager start a benchmark run from the back office and see its state until
 [b1daae2]: https://github.com/NF-Hotel/NFHotel/commit/b1daae275e05b207cd5403a3ec47e46fc76f33d0
 [09e3167]: https://github.com/NF-Hotel/NFHotel/commit/09e3167d660245247524dcd240d05b0bdf6d5419
 [b195b69]: https://github.com/NF-Hotel/NFHotel/commit/b195b6954dc291bc1131c121b0bc403c73b2dcec
+[9962898]: https://github.com/NF-Hotel/NFHotel/commit/99628981e27b95218fa5f75b79a1b5e1e940c519
