@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Deprecated | Claude (AI) | AI at the request of S01, not independent | Changed source: the deployed markets API (`Notebook_Market_Analysis`, `POST /analyze?insights=true`) replaces `notebook-data-analysis`; the hotel bookings of the database are sent, with the fields and the fake data they need; the run is in the background of the API; accepted after RC-117 Go; tasks 1 to 10 done after RC-118 and RC-119 | [1fd620f] |
-| 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 11 (a Manager chooses the first and last arrival date of the analysis) and task 12 (the fake bookings are filled in up to 2026-12-31) and criteria 12 and 13; done after RC-121; accepted after RC-120 Go | pending |
+| 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 11 (a Manager chooses the first and last arrival date of the analysis) and task 12 (the fake bookings are filled in up to 2026-12-31) and criteria 12 and 13; done after RC-121; accepted after RC-120 Go | [364b34c] |
 
 ---
 
@@ -101,3 +101,4 @@ Let a Manager start a market analysis of the hotel bookings and read its report 
 [MIL-020]: ./mil-020-start-benchmark-run.md
 [82ec2b2]: https://github.com/NF-Hotel/NFHotel/commit/82ec2b2acd49a5a76da4093e355397b6615ef9b0
 [1fd620f]: https://github.com/NF-Hotel/NFHotel/commit/1fd620f1fbbf51a8296d577e2e7654bb4415ff01
+[364b34c]: https://github.com/NF-Hotel/NFHotel/commit/364b34c0d17a512d3bea06d9e01ad839b2a86e77
