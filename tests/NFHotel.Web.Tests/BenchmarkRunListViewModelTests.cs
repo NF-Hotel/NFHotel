@@ -285,6 +285,26 @@ public sealed class BenchmarkRunListViewModelTests
         Assert.Equal(string.Empty, viewModel.DraftOf("market_analysis"));
     }
 
+    /// <summary>Positive: a name that no stored run used gets the hint, a known name or an empty field does not.</summary>
+    [Fact]
+    public async Task IsUnknownModel_NameNoRunUsed_AsksForTheExactName()
+    {
+        // Arrange
+        var viewModel = Build(out _);
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Act and assert
+        Assert.False(viewModel.IsUnknownModel("website"));
+        viewModel.SetDraft("website", "m1");
+        Assert.False(viewModel.IsUnknownModel("website"));
+        viewModel.SetDraft("website", " phi3.5 ");
+        Assert.True(viewModel.IsUnknownModel("website"));
+        viewModel.SetDraft("website", "m1:latest");
+        Assert.True(viewModel.IsUnknownModel("website"));
+        viewModel.SetDraft("website", "   ");
+        Assert.False(viewModel.IsUnknownModel("website"));
+    }
+
     /// <summary>Positive: saving the field sets the default with the newest run that has the model, then reads the defaults again.</summary>
     [Fact]
     public async Task SaveDefaultAsync_ModelOfARun_SetsItWithThatRunAndReadsAgain()

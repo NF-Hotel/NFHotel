@@ -143,6 +143,19 @@ apply_default_model() {
     echo "warning: the default model '$model' has an unusual character; $toml is not changed" >&2
     return 0
   fi
+  # The analysis service uses a model only when the name is exactly one that Ollama lists, tag included
+  # (phi3.5:latest, not phi3.5), so find the listed name; a default that is not installed is not written.
+  local installed resolved
+  installed="$(docker exec ollama-ollama-1 ollama list 2>/dev/null || true)"
+  if [[ -z "$installed" ]]; then
+    echo "warning: Ollama is not running, so the name of the default model $model is not checked" >&2
+  elif resolved="$(printf '%s
+' "$installed" | bash "$root/scripts/resolve-model-name.sh" "$model")"; then
+    model="$resolved"
+  else
+    echo "warning: the default model $model is not installed in Ollama (see: ollama list); $toml is not changed" >&2
+    return 0
+  fi
   echo "==> the default AI model of the market analysis is $model"
   awk -v model="$model" '
     /^\[/ { in_llm = ($0 == "[llm]") }
