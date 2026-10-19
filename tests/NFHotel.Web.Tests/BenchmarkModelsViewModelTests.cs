@@ -297,6 +297,87 @@ public sealed class BenchmarkModelsViewModelTests
 
     #endregion
 
+    #region Live state
+
+    /// <summary>Positive: an active download that the service reports is shown with its progress, also after a refresh of the page.</summary>
+    [Fact]
+    public async Task RefreshLiveAsync_ActiveDownloadOfAnotherSession_IsShownWithItsProgress()
+    {
+        // Arrange
+        var viewModel = Build(out var client, out _);
+        client.ListModelPullsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<ModelPullDto>>.Success(
+        [
+            new ModelPullDto("pull-9", "phi4-mini", ModelPullStates.Pulling, 12, null),
+            new ModelPullDto("pull-8", "qwen2.5:7b", ModelPullStates.Done, 100, null),
+        ]));
+
+        // Act
+        await viewModel.RefreshLiveAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(("pull-9", 12), (viewModel.CurrentPull!.PullId, viewModel.CurrentPull.Percent));
+        Assert.True(viewModel.IsPulling);
+        Assert.False(viewModel.CanAdd);
+    }
+
+    /// <summary>State: a download that ended while the panel was open shows its end and clears the field.</summary>
+    [Fact]
+    public async Task RefreshLiveAsync_DownloadEnded_ShowsTheEndAndClearsTheField()
+    {
+        // Arrange
+        var viewModel = Build(out var client, out _);
+        viewModel.NewModelName = "phi4-mini";
+        await viewModel.StartPullAsync(TestContext.Current.CancellationToken);
+        client.ListModelPullsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<ModelPullDto>>.Success([new ModelPullDto("pull-1", "phi4-mini", ModelPullStates.Done, 100, null)]));
+
+        // Act
+        await viewModel.RefreshLiveAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ModelPullStates.Done, viewModel.CurrentPull!.State);
+        Assert.False(viewModel.IsPulling);
+        Assert.Equal(string.Empty, viewModel.NewModelName);
+    }
+
+    /// <summary>Positive: a model that was added or deleted elsewhere changes the list and tells the caller.</summary>
+    [Fact]
+    public async Task RefreshLiveAsync_ModelsChangedElsewhere_ReturnsTrueOnce()
+    {
+        // Arrange
+        var viewModel = Build(out var client, out _);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        client.ListModelsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<string>>.Success(["llama3.2:3b", "phi3.5:latest", "phi4-mini:latest"]));
+
+        // Act
+        var first = await viewModel.RefreshLiveAsync(TestContext.Current.CancellationToken);
+        var second = await viewModel.RefreshLiveAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(first);
+        Assert.False(second);
+        Assert.Contains("phi4-mini:latest", viewModel.Models);
+    }
+
+    /// <summary>Negative: a failing read keeps the last state and says that the live view is paused.</summary>
+    [Fact]
+    public async Task RefreshLiveAsync_ServiceDown_IsNotLiveAndKeepsTheModels()
+    {
+        // Arrange
+        var viewModel = Build(out var client, out _);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        client.ListModelPullsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<ModelPullDto>>.Failure(ErrorCodes.BenchmarkRunner.Unavailable));
+
+        // Act
+        var changed = await viewModel.RefreshLiveAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.False(changed);
+        Assert.False(viewModel.IsLive);
+        Assert.Equal(2, viewModel.Models.Count);
+    }
+
+    #endregion
+
     #region Helpers
 
     private static BenchmarkModelsViewModel Build(out IBenchmarkServiceClient client, out IAiDefaultService defaults)
@@ -306,6 +387,7 @@ public sealed class BenchmarkModelsViewModelTests
         fake.StartModelPullAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(call => Result<ModelPullDto>.Success(new ModelPullDto("pull-1", call.ArgAt<string>(0), ModelPullStates.Queued, null, null)));
         fake.DeleteModelAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Result.Success());
+        fake.ListModelPullsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<ModelPullDto>>.Success([]));
         client = fake;
 
         var fakeDefaults = Substitute.For<IAiDefaultService>();
@@ -325,6 +407,11 @@ public sealed class BenchmarkModelsViewModelTests
                 Arg.Any<Func<IBenchmarkServiceClient, CancellationToken, Task<Result>>>(),
                 Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<Func<IBenchmarkServiceClient, CancellationToken, Task<Result>>>()(fake, call.Arg<CancellationToken>()));
+
+        clientRunner.RunAsync(
+                Arg.Any<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<IReadOnlyList<ModelPullDto>>>>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<IReadOnlyList<ModelPullDto>>>>>()(fake, call.Arg<CancellationToken>()));
 
         var defaultsRunner = Substitute.For<IUseCaseRunner<IAiDefaultService>>();
         defaultsRunner.RunAsync(

@@ -86,9 +86,24 @@ public sealed class ModelsPanelTests
         Assert.Contains("Delete model", html, StringComparison.Ordinal);
     }
 
+    /// <summary>Positive: a download that is active in the service is shown with its percent when the panel opens.</summary>
+    [Fact]
+    public async Task ModelsPanel_ActiveDownloadInTheService_ShowsItsProgressAfterARefresh()
+    {
+        // Arrange and act
+        var html = await RenderAsync(
+            async viewModel => await viewModel.RefreshLiveAsync(),
+            activePulls: [new ModelPullDto("pull-9", "phi4-mini", ModelPullStates.Pulling, 12, null)]);
+
+        // Assert
+        Assert.Contains("Adding", html, StringComparison.Ordinal);
+        Assert.Contains("12 %", html, StringComparison.Ordinal);
+        Assert.Contains("<progress", html, StringComparison.Ordinal);
+    }
+
     private static int Count(string text, string part) => text.Split(part).Length - 1;
 
-    private static async Task<string> RenderAsync(Func<BenchmarkModelsViewModel, Task> arrange, ModelPullDto? pullAfterStart = null)
+    private static async Task<string> RenderAsync(Func<BenchmarkModelsViewModel, Task> arrange, ModelPullDto? pullAfterStart = null, IReadOnlyList<ModelPullDto>? activePulls = null)
     {
         var client = Substitute.For<IBenchmarkServiceClient>();
         client.ListModelsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<string>>.Success(["llama3.2:3b", "phi3.5:latest"]));
@@ -99,6 +114,8 @@ public sealed class ModelsPanelTests
             client.GetModelPullAsync("pull-1", Arg.Any<CancellationToken>()).Returns(Result<ModelPullDto>.Success(pullAfterStart));
         }
 
+        client.ListModelPullsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<ModelPullDto>>.Success(activePulls ?? []));
+
         var defaults = Substitute.For<IAiDefaultService>();
         defaults.GetAllAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<AiDefaultDto>>.Success([new AiDefaultDto("website", "llama3.2:3b", "manager", At, null)]));
 
@@ -107,6 +124,8 @@ public sealed class ModelsPanelTests
             .Returns(call => call.Arg<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<IReadOnlyList<string>>>>>()(client, call.Arg<CancellationToken>()));
         clientRunner.RunAsync(Arg.Any<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<ModelPullDto>>>>(), Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<ModelPullDto>>>>()(client, call.Arg<CancellationToken>()));
+        clientRunner.RunAsync(Arg.Any<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<IReadOnlyList<ModelPullDto>>>>>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<IReadOnlyList<ModelPullDto>>>>>()(client, call.Arg<CancellationToken>()));
         var defaultsRunner = Substitute.For<IUseCaseRunner<IAiDefaultService>>();
         defaultsRunner.RunAsync(Arg.Any<Func<IAiDefaultService, CancellationToken, Task<Result<IReadOnlyList<AiDefaultDto>>>>>(), Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<Func<IAiDefaultService, CancellationToken, Task<Result<IReadOnlyList<AiDefaultDto>>>>>()(defaults, call.Arg<CancellationToken>()));

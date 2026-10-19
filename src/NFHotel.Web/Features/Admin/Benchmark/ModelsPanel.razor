@@ -108,20 +108,24 @@
 </section>
 
 @code {
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
+
     /// <summary>Called when the list of installed models changed, so the page can offer the new list.</summary>
     [Parameter]
     public EventCallback OnModelsChanged { get; set; }
 
-    /// <summary>Loads the models and the defaults when the panel opens.</summary>
-    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
+    /// <summary>Loads the models and the defaults when the panel opens, and then keeps them live.</summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.LoadAsync(ComponentToken);
+        await ViewModel.RefreshLiveAsync(ComponentToken);
+        _ = PollAsync();
+    }
 
     private async Task StartPullAsync()
     {
         await ViewModel.StartPullAsync(ComponentToken);
-        if (ViewModel.IsPulling)
-        {
-            _ = FollowAsync();
-        }
+        await ViewModel.RefreshLiveAsync(ComponentToken);
     }
 
     private async Task ConfirmDeleteAsync()
@@ -130,21 +134,29 @@
         await OnModelsChanged.InvokeAsync();
     }
 
-    /// <summary>Asks for the state every few seconds until the download ends or the page is closed.</summary>
-    private async Task FollowAsync()
+    /// <summary>
+    /// Reads the downloads and the models every few seconds for as long as the panel is open (ADR-0006 of the benchmark
+    /// service), so a download that was started elsewhere, or before a refresh, shows its progress without a click.
+    /// </summary>
+    private async Task PollAsync()
     {
         try
         {
-            while (ViewModel.IsPulling && !ComponentToken.IsCancellationRequested)
+            while (!ComponentToken.IsCancellationRequested)
             {
-                await Task.Delay(TimeSpan.FromSeconds(3), ComponentToken);
-                await ViewModel.RefreshPullAsync(ComponentToken);
-                await InvokeAsync(StateHasChanged);
-            }
+                await Task.Delay(PollInterval, ComponentToken);
+                var wasPulling = ViewModel.IsPulling;
+                var changed = await ViewModel.RefreshLiveAsync(ComponentToken);
+                if (ViewModel.IsPulling)
+                {
+                    await ViewModel.RefreshPullAsync(ComponentToken);
+                }
 
-            if (ViewModel.CurrentPull?.State == ModelPullStates.Done)
-            {
-                await OnModelsChanged.InvokeAsync();
+                await InvokeAsync(StateHasChanged);
+                if (changed || (wasPulling && !ViewModel.IsPulling))
+                {
+                    await OnModelsChanged.InvokeAsync();
+                }
             }
         }
         catch (OperationCanceledException)

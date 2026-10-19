@@ -87,29 +87,76 @@
         </section>
     }
 
-    @if (ViewModel.CurrentRun is { } run)
+    @if (ViewModel.IsLoaded)
     {
-        <section class="card card-pad stack" aria-labelledby="run-state" aria-live="polite">
-            <h2 class="subtitle" id="run-state">Run @run.RunId</h2>
-            <p>Models: @string.Join(", ", run.Models)</p>
-            <p>State: <strong>@run.State</strong>. Result: <strong>@Delivery(run)</strong>.</p>
+        <section class="card card-pad stack" aria-labelledby="runs-live">
+            <h2 class="subtitle" id="runs-live">Runs</h2>
+            <p class="muted">
+                What the benchmark service knows: queued, running and the recent runs, whoever started them. The list follows a
+                change within a few seconds; it is not lost by a refresh. The service forgets it when it restarts, but a result that
+                was stored stays in the list of runs.
+            </p>
 
-            @if (run.State == BenchmarkRunStates.Failed)
+            @if (!ViewModel.IsLive)
             {
-                <AlertBox Kind="AlertKind.Error" Message="@(run.Error ?? "The run failed.")" />
+                <AlertBox Kind="AlertKind.Info" Message="Live updates are paused: the benchmark service could not be reached. The list shows the last state that was read." />
             }
-            else if (ViewModel.ResultIsStored)
+
+            @if (ViewModel.KnownRuns.Count == 0)
             {
-                <AlertBox Kind="AlertKind.Ok" Message="The result is stored." />
-                <p><a class="btn btn-secondary btn-sm" href="/admin/benchmark">Open the list of runs</a></p>
+                <p>No run is queued or running, and the service has no recent run.</p>
+            }
+            else
+            {
+                <div class="table-wrap" role="status" aria-live="polite">
+                    <table class="table">
+                        <caption>@ViewModel.KnownRuns.Count runs, newest first</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Queued</th>
+                                <th scope="col">Models</th>
+                                <th scope="col">State</th>
+                                <th scope="col">Result</th>
+                                <th scope="col" class="table-actions">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var run in ViewModel.KnownRuns)
+                            {
+                                <tr>
+                                    <td>@Time(run.QueuedAt)</td>
+                                    <td>@string.Join(", ", run.Models)</td>
+                                    <td><strong>@run.State</strong>@SinceText(run)</td>
+                                    <td>@Delivery(run)</td>
+                                    <td>
+                                        @if (run.State == BenchmarkRunStates.Failed)
+                                        {
+                                            <span class="muted">@(run.Error ?? "The run failed.")</span>
+                                        }
+                                        else if (run.Delivery == BenchmarkDeliveryStates.Delivered)
+                                        {
+                                            <a class="btn btn-secondary btn-sm" href="/admin/benchmark">Open the list of runs</a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
         </section>
     }
 </div>
 
 @code {
-    /// <summary>Loads the installed models when the page opens.</summary>
-    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
+
+    /// <summary>Loads the installed models and the runs when the page opens, and then keeps them live.</summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.InitializeAsync(ComponentToken);
+        _ = PollAsync();
+    }
 
     /// <summary>Offers the new list of models when a model was added or deleted in the panel.</summary>
     private Task ReloadModelsAsync() => ViewModel.InitializeAsync(ComponentToken);
@@ -117,21 +164,26 @@
     private async Task StartAsync()
     {
         await ViewModel.StartAsync(ComponentToken);
-        if (ViewModel.IsFollowing)
-        {
-            _ = FollowAsync();
-        }
+        await ViewModel.RefreshLiveAsync(ComponentToken);
     }
 
-    /// <summary>Asks for the state every few seconds until the run is done and delivered, or the page is closed.</summary>
-    private async Task FollowAsync()
+    /// <summary>
+    /// Reads the runs and the models every few seconds for as long as the page is open (ADR-0006 of the benchmark service),
+    /// so a change that any caller made shows without a refresh. The run that this page started is read on its own too.
+    /// </summary>
+    private async Task PollAsync()
     {
         try
         {
-            while (ViewModel.IsFollowing && !ComponentToken.IsCancellationRequested)
+            while (!ComponentToken.IsCancellationRequested)
             {
-                await Task.Delay(TimeSpan.FromSeconds(5), ComponentToken);
-                await ViewModel.RefreshAsync(ComponentToken);
+                await Task.Delay(PollInterval, ComponentToken);
+                await ViewModel.RefreshLiveAsync(ComponentToken);
+                if (ViewModel.IsFollowing)
+                {
+                    await ViewModel.RefreshAsync(ComponentToken);
+                }
+
                 await InvokeAsync(StateHasChanged);
             }
         }
@@ -144,6 +196,12 @@
             // The circuit ended between the answer and the redraw: the same case, the page is gone.
         }
     }
+
+    private static string SinceText(BenchmarkRunStateDto run) =>
+        run.StartedAt is { } started && !run.IsFinished ? $" since {Time(started)}" : string.Empty;
+
+    private static string Time(DateTimeOffset value) =>
+        value.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture) + " UTC";
 
     private static string Delivery(BenchmarkRunStateDto run) =>
         run.Delivery switch

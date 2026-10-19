@@ -20,6 +20,7 @@
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 9 (the default model reaches the market analysis under the exact installed name) and acceptance criterion 10; done after RC-112 | [b195b69] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Task 3 note: nginx sends a plain HTTP request to the TLS port on to HTTPS (status 497), checked by the proxy test | [9962898] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 10 (a Manager adds and deletes Ollama models through the benchmark service, notebook-benchmark MIL-005) and acceptance criterion 11; done after RC-113 | [075beac] |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 11 (the Start page and the model panel read the runs and the downloads from the benchmark service and follow them live, notebook-benchmark MIL-006) and acceptance criterion 12; done after RC-115 | [81760a7] |
 
 ---
 
@@ -50,6 +51,7 @@ Let a Manager start a benchmark run from the back office and see its state until
 | 9 | The open run shows the performance per model and phase with charts, the deterministic outcomes, the answers side by side, the memory use and a CSV and JSON download, built from the stored results | Yes | No |
 | 10 | A default model written without its tag (phi3.5) reaches the market analysis settings as the exact name that Ollama lists (phi3.5:latest), a model that is not installed is not written, and the page says to use the exact name | Yes | No |
 | 11 | A Manager adds a model by name and follows the download to done, then can choose it for a run; a Manager deletes an installed model after a confirmation, with a warning when it is a default AI model; the benchmark service refuses a delete for a model that a run uses; a Receptionist and a Housekeeping user do not see the panel | Yes | No |
+| 12 | After a refresh of the Start page, or in another browser, the queued and running runs and an active model download are listed; a change that any caller makes to a run, a download or the installed models shows within about 3 seconds without a refresh; a failing read keeps the last state and says that the live view is paused | Yes | No |
 
 ## Dependencies
 
@@ -91,6 +93,7 @@ Let a Manager start a benchmark run from the back office and see its state until
 | 8 | Analysis view of a run | Workload filter, means per model and phase with SVG bar charts (first token, total time, tokens per second), task outcome grid, up to three answers side by side with the parsed parts, RAM and GPU memory charts, CSV and JSON export; `BenchmarkResultDto` carries the memory moments and the finish reason. The figures the benchmark service calculates from the dataset are not delivered, so the cards show n/a for them. | Yes | Done: `BenchmarkResultAnalysis`, `HotelAnswer`, `BenchmarkExport`, `BenchmarkAnalysisViewModel`, `GroupedBarChart`, `AnswerCard`, `BenchmarkRunAnalysis`; 35 new tests; review RC-111 |
 | 9 | Exact model name for the market analysis | `scripts/resolve-model-name.sh` finds the listed name (tag included) and `deploy-services.sh` writes it; a model that is not installed is not written; a hint on the Default AI model card; `generation_timeout_seconds` 240 in the settings example. Found when the AI executive summary was missing: the default `phi3.5` selected no model because Ollama lists `phi3.5:latest`. | Yes | Done: `resolve-model-name.sh` with 14 shell checks, `IsUnknownModel`; review RC-112 |
 | 10 | Add and delete models | `Permissions.BenchmarkModelsManage` (Manager only); `IBenchmarkServiceClient.StartModelPullAsync`, `GetModelPullAsync`, `DeleteModelAsync` and the codes of the service; an Installed models panel on `/admin/benchmark/start` with an Add field, progress, and a Delete button with the confirmation panel; `deploy/benchmark` is built from the commit of notebook-benchmark that has the endpoints (`409693d`). | Yes | Done: `BenchmarkModelsViewModel`, `ModelsPanel.razor`, `ModelNames`, client methods; 58 new tests; review RC-113 |
+| 11 | Live runs and downloads | `IBenchmarkServiceClient.ListRunsAsync` and `ListModelPullsAsync`; a Runs table on `/admin/benchmark/start` built from the service and not from the session; the Start page and the Installed models panel read the service every 3 seconds while they are open (runs, downloads and installed models), resume an active download after a refresh, and show a paused note when the service cannot be read; `deploy/benchmark` is built from notebook-benchmark `2391438`. | Yes | Done: `BenchmarkStartViewModel.RefreshLiveAsync`, `BenchmarkModelsViewModel.RefreshLiveAsync`, `PollAsync` in the page and the panel; 14 new tests; review RC-115 |
 
 ---
 
@@ -105,3 +108,4 @@ Let a Manager start a benchmark run from the back office and see its state until
 [b195b69]: https://github.com/NF-Hotel/NFHotel/commit/b195b6954dc291bc1131c121b0bc403c73b2dcec
 [9962898]: https://github.com/NF-Hotel/NFHotel/commit/99628981e27b95218fa5f75b79a1b5e1e940c519
 [075beac]: https://github.com/NF-Hotel/NFHotel/commit/075beac550e309d474b11836bd60fbbbaa8cced5
+[81760a7]: https://github.com/NF-Hotel/NFHotel/commit/81760a7483bd15219e274ffdc199a319a670c2e8

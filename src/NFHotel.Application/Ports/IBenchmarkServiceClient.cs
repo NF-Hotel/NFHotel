@@ -40,6 +40,16 @@ public interface IBenchmarkServiceClient
     /// <returns>The state, or the download not found code.</returns>
     Task<Result<ModelPullDto>> GetModelPullAsync(string pullId, CancellationToken cancellationToken = default);
 
+    /// <summary>Lists the runs that the service knows, newest first (ADR-0006 of the benchmark service).</summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The runs, an empty list when there is none, or a code when the service cannot be used.</returns>
+    Task<Result<IReadOnlyList<BenchmarkRunStateDto>>> ListRunsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Lists the model downloads that the service keeps, newest first (ADR-0006 of the benchmark service).</summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The downloads, an empty list when there is none, or a code when the service cannot be used.</returns>
+    Task<Result<IReadOnlyList<ModelPullDto>>> ListModelPullsAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Deletes an installed model from Ollama.</summary>
     /// <param name="name">The model name as <see cref="ListModelsAsync"/> gave it.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
