@@ -1455,3 +1455,26 @@ h1:focus-visible {
   margin: var(--s1) 0 0;
   padding-left: var(--s6);
 }
+
+/* Installed models (MIL-020): the Delete buttons and the Add model button have one width, in a row that wraps on a phone. */
+.model-row,
+.add-model-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.model-row > .model-name,
+.add-model-row > .field-input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.btn-fixed {
+  flex: 0 0 9rem;
+  width: 9rem;
+  justify-content: center;
+  text-align: center;
+}
