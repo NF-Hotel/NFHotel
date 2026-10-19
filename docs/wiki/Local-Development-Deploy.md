@@ -89,7 +89,7 @@ If you change a password in the application, these files no longer match it.
 
 | What | Where |
 | --- | --- |
-| The site | `https://localhost:8443/` (an address that starts with `http://` answers 400, use `https://`) |
+| The site | `https://localhost:8443/` (an address that starts with `http://` is sent on to `https://`) |
 | Proxmox VE | `https://localhost:8006/`, user `root`, the password is `PVE_PASSWORD` in `pve.env` |
 | Database, benchmark results, Ollama models | volumes inside the VM, which lives inside the `proxmox-node1` container (the name is `PVE_CONTAINER` in `deploy.env`) |
 | The code the VM runs | `/opt/nfhotel` in the VM, a copy of your working tree made at each run |
@@ -110,7 +110,7 @@ and the default AI model for the website and the market analysis are on `/admin/
 
 | What you see | Why | What to do |
 | --- | --- | --- |
-| `400 Bad Request: The plain HTTP request was sent to HTTPS port` | the address starts with `http://` | use `https://localhost:8443/` |
+| The address starts with `http://` (for example the link that Docker Desktop shows for the container) | Docker Desktop writes every published port as `http://`; the site speaks HTTPS only | nothing: nginx sends `http://localhost:8443/` on to `https://localhost:8443/`. The Proxmox page on port 8006 is not behind nginx and needs `https://localhost:8006/` typed by hand |
 | The browser warns about the certificate | the certificate is made by the script | accept it for this site |
 | `/dev/kvm is not available to Docker` | KVM is off or WSL has not loaded it | turn on virtualization in the BIOS; on Windows start `wsl -d Debian` first; run `--check` |
 | `the Docker daemon does not answer` | Docker Desktop is not running | start it and wait until it says running |

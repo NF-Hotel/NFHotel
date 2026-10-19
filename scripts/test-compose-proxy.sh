@@ -228,6 +228,10 @@ main() {
     "$(curl --silent --insecure --tls-max 1.1 --output /dev/null --write-out '%{http_code}' --max-time 10 "https://127.0.0.1:$(https_port)/" || true)"
   check "no Strict-Transport-Security with the development certificate" "" \
     "$(curl --silent --insecure --head --max-time 10 "https://127.0.0.1:$(https_port)/" | grep -i '^strict-transport-security' || true)"
+  check "plain HTTP sent to the TLS port is redirected" 301 "$(http_status GET /admin/login "" "$(https_port)")"
+  check "plain HTTP sent to the TLS port goes to the same address over HTTPS" \
+    "https://127.0.0.1:$(https_port)/admin/login?returnUrl=%2Fadmin" \
+    "$(curl --silent --output /dev/null --write-out '%{redirect_url}' --max-time 10 "http://127.0.0.1:$(https_port)/admin/login?returnUrl=%2Fadmin")"
 
   wait_for_status GET / 200 30 "$ANALYSIS_HOST" "$((PORT + 1))" || true
   check "GET / of the analysis notebook through the proxy" 200 \
