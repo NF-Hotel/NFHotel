@@ -5,24 +5,22 @@ using NFHotel.Api.Contracts;
 using NFHotel.Application.Dto.MarketAnalysis;
 using NFHotel.Application.Errors;
 using NFHotel.Domain.ValueObjects;
-using NFHotel.TestSupport;
 
 namespace NFHotel.Api.Tests;
 
 /// <summary>
-/// The market analysis endpoints (MIL-026): only a Manager starts a run or reads the report; the API stores the result of
-/// a completed run when the state is read.
+/// The market analysis endpoints (MIL-026): only a Manager starts a run or reads the report; a start returns at once and
+/// the work runs in the background.
 /// </summary>
 public sealed class MarketAnalysisEndpointTests
 {
     private const string Route = "/api/market-analysis";
-    private static readonly Guid RunId = FakeMarketAnalysisServiceClient.RunId;
 
     #region Manager
 
-    /// <summary>Positive: a Manager starts a run and the service receives the start.</summary>
+    /// <summary>Positive: a Manager starts a run; the answer is the queued run and the work is launched, not done.</summary>
     [Fact]
-    public async Task PostRun_Manager_ReturnsTheQueuedRun()
+    public async Task PostRun_Manager_ReturnsTheQueuedRunAndLaunchesTheWork()
     {
         // Arrange
         using var factory = new ApiFactory();
@@ -34,18 +32,19 @@ public sealed class MarketAnalysisEndpointTests
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal((RunId, MarketAnalysisRunStates.Queued), (body!.Value!.RunId, body.Value.State));
-        Assert.Equal(1, factory.World.MarketAnalysisClient.StartCount);
+        Assert.Equal(MarketAnalysisRunStates.Queued, body!.Value!.State);
+        Assert.Equal([body.Value.RunId], factory.World.MarketAnalysisLauncher.Launched);
+        Assert.Equal(0, factory.World.MarketAnalysisClient.Calls);
     }
 
-    /// <summary>Negative: a run that is already active is a 409 with its code.</summary>
+    /// <summary>Negative: a second start while a run is active is a 409 with its code.</summary>
     [Fact]
-    public async Task PostRun_AlreadyRunning_Returns409()
+    public async Task PostRun_RunActive_Returns409()
     {
         // Arrange
         using var factory = new ApiFactory();
-        factory.World.MarketAnalysisClient.FailWith = ErrorCodes.MarketAnalysisRunner.AlreadyRunning;
         using var client = factory.CreateStaffClient(StaffRole.Manager);
+        await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
 
         // Act
         using var response = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
@@ -54,45 +53,30 @@ public sealed class MarketAnalysisEndpointTests
         // Assert
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Contains(ErrorCodes.MarketAnalysisRunner.AlreadyRunning, body!.Errors);
+        Assert.Single(factory.World.MarketAnalysisLauncher.Launched);
     }
 
-    /// <summary>Negative: a service that is down or not set up is a 503, and one that limits the rate is a 429.</summary>
-    [Theory]
-    [InlineData("market_analysis_runner.unavailable", HttpStatusCode.ServiceUnavailable)]
-    [InlineData("market_analysis_runner.not_configured", HttpStatusCode.ServiceUnavailable)]
-    [InlineData("market_analysis_runner.rate_limited", HttpStatusCode.TooManyRequests)]
-    public async Task PostRun_ServiceFails_ReturnsTheMatchingStatus(string code, HttpStatusCode status)
-    {
-        // Arrange
-        using var factory = new ApiFactory();
-        factory.World.MarketAnalysisClient.FailWith = code;
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
-
-        // Act
-        using var response = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(status, response.StatusCode);
-    }
-
-    /// <summary>State: reading a completed run stores it, and the latest report then carries its content.</summary>
+    /// <summary>State: the state of the run follows the work, and the latest report carries the result when it is done.</summary>
     [Fact]
-    public async Task GetRunThenLatest_CompletedRun_StoresItAndServesTheReport()
+    public async Task GetRunThenLatest_AfterTheWork_ServesTheStateAndTheReport()
     {
         // Arrange
         using var factory = new ApiFactory();
-        factory.World.MarketAnalysisClient.State = MarketAnalysisRunStates.Completed;
         using var client = factory.CreateStaffClient(StaffRole.Manager);
+        var started = await (await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        var runId = started!.Value!.RunId;
 
         // Act
-        using var state = await client.GetAsync($"{Route}/runs/{RunId}", TestContext.Current.CancellationToken);
+        var before = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>($"{Route}/runs/{runId}", ApiJson.Options, TestContext.Current.CancellationToken);
+        await factory.World.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
+        var after = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>($"{Route}/runs/{runId}", ApiJson.Options, TestContext.Current.CancellationToken);
         var report = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisReportDto>>($"{Route}/latest", ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, state.StatusCode);
-        Assert.Single(factory.World.MarketAnalysisRuns.Items);
+        Assert.Equal((MarketAnalysisRunStates.Queued, MarketAnalysisRunStates.Completed), (before!.Value!.State, after!.Value!.State));
         Assert.Equal("phi3.5:latest", report!.Value!.Model);
-        Assert.Equal("Bookings by country", Assert.Single(report.Value.Content.Series).Title);
+        Assert.Equal("Non-refundable bookings are cancelled most often.", report.Value.Content.Sections[0].Insight!.ExecutiveSummary);
     }
 
     /// <summary>Negative: with nothing stored the latest report is a 404 with the not found code.</summary>
@@ -112,7 +96,7 @@ public sealed class MarketAnalysisEndpointTests
         Assert.Contains(ErrorCodes.MarketAnalysis.NotFound, body!.Errors);
     }
 
-    /// <summary>Negative: a run the service does not know is a 404.</summary>
+    /// <summary>Negative: a run the API does not know, for example after a restart, is a 404.</summary>
     [Fact]
     public async Task GetRun_UnknownRun_Returns404()
     {
@@ -131,7 +115,7 @@ public sealed class MarketAnalysisEndpointTests
 
     #region Other roles and callers
 
-    /// <summary>Negative: a Receptionist and a Housekeeping user get 403 on all three endpoints and the service is not called.</summary>
+    /// <summary>Negative: a Receptionist and a Housekeeping user get 403 on all three endpoints and nothing is started.</summary>
     [Theory]
     [InlineData(StaffRole.Receptionist)]
     [InlineData(StaffRole.Housekeeping)]
@@ -143,12 +127,12 @@ public sealed class MarketAnalysisEndpointTests
 
         // Act
         using var start = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
-        using var state = await client.GetAsync($"{Route}/runs/{RunId}", TestContext.Current.CancellationToken);
+        using var state = await client.GetAsync($"{Route}/runs/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
         using var latest = await client.GetAsync($"{Route}/latest", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal([HttpStatusCode.Forbidden, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden], [start.StatusCode, state.StatusCode, latest.StatusCode]);
-        Assert.Equal(0, factory.World.MarketAnalysisClient.StartCount);
+        Assert.Empty(factory.World.MarketAnalysisLauncher.Launched);
     }
 
     /// <summary>Negative: the service token alone, without a staff token, is a 401.</summary>

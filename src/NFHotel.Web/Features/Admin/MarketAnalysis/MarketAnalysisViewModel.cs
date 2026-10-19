@@ -1,5 +1,6 @@
 using NFHotel.Application.Dto.MarketAnalysis;
 using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Web.Common;
 using NFHotel.Web.Features.Admin.Shared;
@@ -50,16 +51,24 @@ public sealed class MarketAnalysisViewModel
     /// <summary>True when the last followed run failed, so the page shows its reason.</summary>
     public bool LastRunFailed => CurrentRun is { State: MarketAnalysisRunStates.Failed };
 
-    /// <summary>The charts of the report, one bar chart per series.</summary>
-    public IReadOnlyList<MarketAnalysisChart> Charts =>
+    /// <summary>The text of the reason the last followed run failed, or <c>null</c> when it did not fail.</summary>
+    public string? FailureText =>
+        CurrentRun is { State: MarketAnalysisRunStates.Failed } run
+            ? ErrorMessages.Describe(new Error(run.Error ?? ErrorCodes.MarketAnalysisRunner.UnexpectedResponse))
+            : null;
+
+    /// <summary>The analyses of the report as the page draws them: the charts of each and its AI insight.</summary>
+    public IReadOnlyList<MarketAnalysisSectionView> Sections =>
         Report is null
             ? []
-            : [.. Report.Content.Series
-                .Where(series => series.Points.Count > 0)
-                .Select(series => new MarketAnalysisChart(
-                    series.Title,
-                    series.Unit,
-                    [.. series.Points.Select(point => new ChartGroup(point.Label, [new ChartBar(SeriesName(series), point.Value)]))]))];
+            : [.. Report.Content.Sections.Select(section => new MarketAnalysisSectionView(
+                section,
+                [.. section.Series
+                    .Where(series => series.Points.Count > 0)
+                    .Select(series => new MarketAnalysisChart(
+                        series.Title,
+                        series.Unit,
+                        [.. series.Points.Select(point => new ChartGroup(point.Label, [new ChartBar(SeriesName(series), point.Value)]))]))]))];
 
     /// <summary>Loads the stored report when the page opens.</summary>
     /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
@@ -176,7 +185,12 @@ public sealed class MarketAnalysisViewModel
     }
 }
 
-/// <summary>One chart of the report as the page draws it.</summary>
+/// <summary>One analysis of the report as the page draws it.</summary>
+/// <param name="Section">The analysis with its AI insight.</param>
+/// <param name="Charts">One chart for each series that has points.</param>
+public sealed record MarketAnalysisSectionView(MarketAnalysisSectionDto Section, IReadOnlyList<MarketAnalysisChart> Charts);
+
+/// <summary>One chart of an analysis as the page draws it.</summary>
 /// <param name="Title">The title of the chart.</param>
 /// <param name="Unit">The unit of the values, or empty.</param>
 /// <param name="Groups">One group with one bar per point of the series.</param>

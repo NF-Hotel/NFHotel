@@ -128,6 +128,8 @@ public sealed class InMemoryGuestRepository : InMemoryRepository<Guest>, IGuestR
 /// </summary>
 public sealed class ServiceWorld
 {
+    private MarketAnalysisRunTracker? _marketAnalysisTracker;
+
     public ServiceWorld()
     {
         BookingQueries.GetReadModelAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -290,6 +292,12 @@ public sealed class ServiceWorld
 
     public FakeMarketAnalysisServiceClient MarketAnalysisClient { get; } = new();
 
+    public FakeMarketAnalysisBookingQueries MarketAnalysisBookings { get; } = new();
+
+    public RecordingMarketAnalysisLauncher MarketAnalysisLauncher { get; } = new();
+
+    public MarketAnalysisRunTracker MarketAnalysisTracker => _marketAnalysisTracker ??= new(Clock);
+
     public IBookingQueries BookingQueries { get; } = Substitute.For<IBookingQueries>();
 
     public IRoomQueries RoomQueries { get; } = Substitute.For<IRoomQueries>();
@@ -309,7 +317,10 @@ public sealed class ServiceWorld
 
     public AiDefaultService AiDefaultService() => new(AiDefaults, UnitOfWork, Clock);
 
-    public MarketAnalysisService MarketAnalysisService() => new(MarketAnalysisClient, MarketAnalysisRuns, UnitOfWork);
+    public MarketAnalysisService MarketAnalysisService() => new(MarketAnalysisTracker, MarketAnalysisLauncher, MarketAnalysisRuns);
+
+    public MarketAnalysisRunner MarketAnalysisRunner() =>
+        new(MarketAnalysisBookings, MarketAnalysisClient, MarketAnalysisRuns, UnitOfWork, MarketAnalysisTracker, Clock);
 
     public Room AddRoom(string number = "101", int floor = 1, RoomSize size = RoomSize.Double, int capacity = 2)
     {

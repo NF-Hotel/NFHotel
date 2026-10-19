@@ -109,7 +109,11 @@ public class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IAiDefaultService>(_ => World.AiDefaultService());
             services.RemoveAll<IMarketAnalysisService>();
             services.RemoveAll<IMarketAnalysisServiceClient>();
+            services.RemoveAll<IMarketAnalysisRunLauncher>();
+            services.RemoveAll<MarketAnalysisRunTracker>();
             services.AddSingleton<IMarketAnalysisServiceClient>(World.MarketAnalysisClient);
+            services.AddSingleton<IMarketAnalysisRunLauncher>(World.MarketAnalysisLauncher);
+            services.AddSingleton(World.MarketAnalysisTracker);
             services.AddSingleton<IMarketAnalysisService>(_ => World.MarketAnalysisService());
             services.AddSingleton<IBookingService>(_ => World.BookingService());
             services.AddSingleton<IGuestService>(_ => World.GuestService());

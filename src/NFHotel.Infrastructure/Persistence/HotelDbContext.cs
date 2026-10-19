@@ -58,6 +58,9 @@ public sealed class HotelDbContext : DbContext
     /// <summary>The default AI model per purpose (ADR-0014).</summary>
     public DbSet<AiDefault> AiDefaults => Set<AiDefault>();
 
+    /// <summary>The market fields of the bookings (MIL-026).</summary>
+    public DbSet<BookingMarketDetail> BookingMarketDetails => Set<BookingMarketDetail>();
+
     /// <summary>The market analyses that the data analysis service delivered (MIL-026).</summary>
     public DbSet<MarketAnalysisRun> MarketAnalysisRuns => Set<MarketAnalysisRun>();
 
@@ -81,6 +84,7 @@ public sealed class HotelDbContext : DbContext
         modelBuilder.ApplyConfiguration(new BenchmarkRunConfiguration());
         modelBuilder.ApplyConfiguration(new AiDefaultConfiguration());
         modelBuilder.ApplyConfiguration(new MarketAnalysisRunConfiguration());
+        modelBuilder.ApplyConfiguration(new BookingMarketDetailConfiguration());
         modelBuilder.ApplyConfiguration(new BenchmarkResultConfiguration());
 
         // GuestConfiguration is registered explicitly and not via assembly scanning, because it

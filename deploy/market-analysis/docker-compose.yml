@@ -50,6 +50,8 @@ services:
     networks:
       - proxy
       - llm
+      # The NFHotel API sends the bookings to /analyze (MIL-026): it reaches this service by its name on this internal network.
+      - api
 
   market-analysis-notebook:
     image: *analysis-image
@@ -97,4 +99,8 @@ networks:
   # Ollama, the model server (deploy/ollama).
   llm:
     name: ${NFHOTEL_LLM_NETWORK:-nfhotel-llm}
+    external: true
+  # The internal network of the NFHotel API (MIL-026); it has no route out and no host port.
+  api:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
     external: true

@@ -13,13 +13,13 @@ namespace NFHotel.Web.Tests;
 /// <summary>Reading the market analysis report, starting a run and following it until the report is stored (MIL-026).</summary>
 public sealed class MarketAnalysisViewModelTests
 {
-    private static readonly Guid RunId = FakeMarketAnalysisServiceClient.RunId;
+    private static readonly Guid RunId = Guid.Parse("5b3f0e1a-0000-4000-8000-0000000000a1");
 
     #region Report
 
-    /// <summary>Positive: the stored report is loaded with one chart per series and the AI analysis.</summary>
+    /// <summary>Positive: the stored report is loaded with each analysis, its charts and its AI insight.</summary>
     [Fact]
-    public async Task InitializeAsync_ReportStored_LoadsTheReportAndTheCharts()
+    public async Task InitializeAsync_ReportStored_LoadsTheSectionsWithChartsAndInsights()
     {
         // Arrange
         var viewModel = Build(out _);
@@ -28,12 +28,15 @@ public sealed class MarketAnalysisViewModelTests
         await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var chart = Assert.Single(viewModel.Charts);
-        Assert.Equal("Bookings by country", chart.Title);
-        Assert.Equal(["Portugal", "United Kingdom"], chart.Groups.Select(group => group.Label));
-        Assert.Equal(48590, Assert.Single(chart.Groups[0].Bars).Value);
-        Assert.Equal(["bookings"], chart.SeriesNames);
-        Assert.StartsWith("Portugal", viewModel.Report!.Content.Summary, StringComparison.Ordinal);
+        var cancellations = viewModel.Sections[0];
+        var chart = Assert.Single(cancellations.Charts);
+        Assert.Equal(["Cancellations", "Room value and stay"], viewModel.Sections.Select(view => view.Section.Title));
+        Assert.Equal("By deposit type", chart.Title);
+        Assert.Equal(["No Deposit", "Non Refund"], chart.Groups.Select(group => group.Label));
+        Assert.Equal(27.5, Assert.Single(chart.Groups[0].Bars).Value);
+        Assert.Equal(["%"], chart.SeriesNames);
+        Assert.Equal("Non-refundable bookings are cancelled most often.", cancellations.Section.Insight!.ExecutiveSummary);
+        Assert.Empty(viewModel.Sections[1].Charts);
         Assert.False(viewModel.HasNoReport);
     }
 
@@ -51,7 +54,7 @@ public sealed class MarketAnalysisViewModelTests
         // Assert
         Assert.True(viewModel.HasNoReport);
         Assert.Empty(viewModel.Errors);
-        Assert.Empty(viewModel.Charts);
+        Assert.Empty(viewModel.Sections);
     }
 
     /// <summary>Negative: an API that cannot be used shows the text and is not the empty message.</summary>
@@ -73,13 +76,13 @@ public sealed class MarketAnalysisViewModelTests
 
     /// <summary>Boundary: a series without points is not drawn.</summary>
     [Fact]
-    public async Task Charts_SeriesWithoutPoints_AreLeftOut()
+    public async Task Sections_SeriesWithoutPoints_AreLeftOut()
     {
         // Arrange
         var viewModel = Build(out var service);
         var report = Report() with
         {
-            Content = new MarketAnalysisContentDto("", [], [new MarketAnalysisSeriesDto("empty", "Empty", "", [])]),
+            Content = new MarketAnalysisContentDto([], [new MarketAnalysisSectionDto("x", "X", "available", null, [new MarketAnalysisSeriesDto("empty", "Empty", "", [])], null)]),
         };
         service.GetLatestReportAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisReportDto>.Success(report));
 
@@ -87,7 +90,7 @@ public sealed class MarketAnalysisViewModelTests
         await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Empty(viewModel.Charts);
+        Assert.Empty(Assert.Single(viewModel.Sections).Charts);
         Assert.NotNull(viewModel.Report);
     }
 
@@ -116,9 +119,8 @@ public sealed class MarketAnalysisViewModelTests
     /// <summary>Negative: a refused start shows the text and starts nothing to follow.</summary>
     [Theory]
     [InlineData("market_analysis_runner.already_running", "An analysis is already running. Wait until it is done.")]
-    [InlineData("market_analysis_runner.unavailable", "We couldn't reach the market analysis service. Please try again in a moment.")]
-    [InlineData("market_analysis_runner.unauthorized", "The market analysis service refused this application. Please tell the administrator.")]
-    [InlineData("market_analysis_runner.rate_limited", "Too many analyses were started. Try again in a minute.")]
+    [InlineData("market_analysis_runner.unavailable", "We couldn't reach the market analysis service, or it took too long. Please try again.")]
+    [InlineData("market_analysis_runner.not_configured", "The market analysis service is not set up. Please tell the administrator.")]
     public async Task StartAsync_Refused_ShowsTheTextAndFollowsNothing(string code, string text)
     {
         // Arrange
@@ -168,7 +170,7 @@ public sealed class MarketAnalysisViewModelTests
         // Arrange
         var viewModel = Build(out var service);
         service.GetRunStateAsync(RunId, Arg.Any<CancellationToken>()).Returns(
-            Result<MarketAnalysisRunStateDto>.Success(new(RunId, MarketAnalysisRunStates.Failed, null, null, "notebook_execution_failed")));
+            Result<MarketAnalysisRunStateDto>.Success(new(RunId, MarketAnalysisRunStates.Failed, null, null, "market_analysis_runner.unexpected_response")));
         await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
         await viewModel.StartAsync(TestContext.Current.CancellationToken);
 
@@ -177,6 +179,7 @@ public sealed class MarketAnalysisViewModelTests
 
         // Assert
         Assert.True(viewModel.LastRunFailed);
+        Assert.Equal("The market analysis service answered something we couldn't use. Please try again.", viewModel.FailureText);
         Assert.False(viewModel.IsFollowing);
         Assert.NotNull(viewModel.Report);
     }
@@ -195,7 +198,7 @@ public sealed class MarketAnalysisViewModelTests
 
         // Assert
         Assert.Null(viewModel.CurrentRun);
-        Assert.StartsWith("The market analysis service no longer knows this run.", Assert.Single(viewModel.Errors), StringComparison.Ordinal);
+        Assert.StartsWith("The API no longer knows this run", Assert.Single(viewModel.Errors), StringComparison.Ordinal);
     }
 
     /// <summary>Negative: a refresh with no run followed asks the service for nothing.</summary>

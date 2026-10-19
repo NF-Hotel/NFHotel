@@ -59,14 +59,16 @@ public sealed class MarketAnalysisRequestTests
     public async Task GetLatestReportAsync_Call_GetsTheLatestPathAndReadsTheContent()
     {
         // Arrange
-        var (handler, service) = Build($$$"""{"value":{"runId":"{{{RunId}}}","startedAt":"2026-10-19T10:00:00+00:00","finishedAt":"2026-10-19T10:04:00+00:00","provider":"ollama","model":"m","content":{"summary":"s","figures":[],"series":[{"id":"a","title":"A","unit":"u","points":[{"label":"x","value":1.5}]}]}},"errors":[]}""");
+        var (handler, service) = Build($$$"""{"value":{"runId":"{{{RunId}}}","startedAt":"2026-10-19T10:00:00+00:00","finishedAt":"2026-10-19T10:04:00+00:00","provider":"ollama","model":"m","content":{"figures":[],"sections":[{"id":"a","title":"A","status":"available","reason":null,"series":[{"id":"s","title":"S","unit":"u","points":[{"label":"x","value":1.5}]}],"insight":{"status":"available","reason":null,"executiveSummary":"es","suggestions":[]}}]}},"errors":[]}""");
 
         // Act
         var result = await service.GetLatestReportAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal((HttpMethod.Get, "/api/market-analysis/latest"), (handler.Method!, handler.PathAndQuery!));
-        Assert.Equal(1.5, Assert.Single(Assert.Single(result.Value.Content.Series).Points).Value);
+        var section = Assert.Single(result.Value.Content.Sections);
+        Assert.Equal(1.5, Assert.Single(Assert.Single(section.Series).Points).Value);
+        Assert.Equal("es", section.Insight!.ExecutiveSummary);
     }
 
     /// <summary>Negative: a 404 from the API keeps its code, so the page can show the empty message.</summary>

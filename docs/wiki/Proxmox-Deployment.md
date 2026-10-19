@@ -208,19 +208,41 @@ joins the internal network `nfhotel-api` and publishes no host port.
 
 ## The market analysis report (MIL-026)
 
-The market analysis report is made by the data analysis service, a separate repository, `notebook-data-analysis`, with
-its own compose file in `deploy/data-analysis/`. It joins `nfhotel-api` and `nfhotel-llm` and publishes no host port.
+The report is made by the markets API of `Notebook_Market_Analysis` (`deploy/market-analysis/`, MIL-004). The NFHotel API,
+not the web application, calls it.
 
-- The NFHotel API (not the web application) calls it at `http://data-analysis:8000` with the bearer token in
-  `MarketAnalysisService__Token` of `deploy/nfhotel-api/nfhotel-api.env`. That value is the `API_TOKEN` of
-  `deploy/data-analysis/data-analysis.env`.
-- A Manager starts a run at `/admin/market-analysis`. The page asks the API for the state every few seconds; the first
-  read of a completed run makes the API fetch the result from the service and store it in the table
-  `market_analysis_run`. The service does not push a result.
-- The page shows the last stored report: key figures, one bar chart per series, and the AI analysis next to them. Without
-  a stored run it says that no analysis has been run.
+- A Manager starts a run at `/admin/market-analysis`. The API answers at once and runs the analysis in the background: it
+  reads every booking of the database (with the guest country and the market details of the booking), sends them as a
+  JSON array to `http://market-analysis-api:8000/analyze?insights=true`, and stores the result in the table
+  `market_analysis_run`. One run at a time; the page asks the API for the state every few seconds. A run with AI insights
+  takes up to 12 minutes, so `MarketAnalysisService__TimeoutSeconds` in `deploy/nfhotel-api/nfhotel-api.env` is 780.
+- The state of a run is kept in the memory of the API. A restart forgets it, the page then says that the API no longer
+  knows the run, and the stored report is not lost.
+- The page shows the last stored report: key figures, and for each analysis its charts and the AI executive summary and
+  suggestions, or the reason there is none (for example `GUARDRAIL_REJECTED`). Without a stored run it says that no
+  analysis has been run.
+- The markets API joins the network `nfhotel-api` (`deploy/market-analysis/docker-compose.yml`) so that the API reaches it;
+  it publishes no host port and has no authentication, so keep that network internal.
 - Receptionist and Housekeeping users get 403 on `api/market-analysis` and do not see the menu entry.
-- `DATA_ANALYSIS_REF` has no default: pin a commit of `notebook-data-analysis` that has a Dockerfile. The service is not
-  part of `scripts/deploy-services.sh` yet; start it with `docker compose --env-file data-analysis.env up -d --build` in
-  `deploy/data-analysis/`.
-- Until `MarketAnalysisService__Token` is set, the page says that the service is not set up.
+- The AI model of the analysis is the one in `deploy/market-analysis/market-analysis.toml`, which `scripts/deploy-services.sh`
+  sets from the default AI model of the market analysis (ADR-0014).
+
+### The fake bookings
+
+The database has no real bookings yet, so the report is made from fake ones. The bookings have extra fields that the
+analysis needs (table `booking_market_detail`: booking date, price per night, adults, children, babies, meal, market
+segment, customer type, deposit type, room type, repeated guest, previous cancellations, booking changes, special
+requests, parking spaces). A booking without these fields is analysed with them missing.
+
+`nf_hotel_bookings.csv` (40,060 bookings from 2018 to 2020, in `src/NFHotel.DataAnalysis/data/`) is loaded with the
+command `seed-market-data` of the API:
+
+```bash
+docker cp src/NFHotel.DataAnalysis/data/nf_hotel_bookings.csv nfhotel-api-nfhotel-api-1:/tmp/nf_hotel_bookings.csv
+docker exec nfhotel-api-nfhotel-api-1 dotnet NFHotel.Api.dll seed-market-data /tmp/nf_hotel_bookings.csv
+```
+
+It makes 187 rooms (the most bookings that are at the hotel on one night), about 500 guests with the countries of the file,
+and the bookings placed in rooms so that the overlap rule of the database holds. The file has no price, so the price per
+night is made from the room type, the month and the market segment: it is not real. The command refuses a database that has
+rooms, guests or bookings; add `--replace` to delete them first. It loads the same data every time.

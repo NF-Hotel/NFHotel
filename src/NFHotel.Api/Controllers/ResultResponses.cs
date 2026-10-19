@@ -74,11 +74,6 @@ internal static class ResultResponses
             return StatusCodes.Status404NotFound;
         }
 
-        if (codes.Contains(ErrorCodes.MarketAnalysisRunner.RateLimited))
-        {
-            return StatusCodes.Status429TooManyRequests;
-        }
-
         if (codes.Any(code => UnavailableEndings.Any(ending => code.EndsWith(ending, StringComparison.Ordinal))))
         {
             return StatusCodes.Status503ServiceUnavailable;

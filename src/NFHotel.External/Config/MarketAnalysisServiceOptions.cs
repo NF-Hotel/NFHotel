@@ -1,8 +1,8 @@
 namespace NFHotel.External.Config;
 
 /// <summary>
-/// The settings for the data analysis service (repository <c>notebook-data-analysis</c>) that runs the market analysis
-/// (MIL-026). Missing values are not a start-up error: the client answers
+/// The settings for the markets API (repository <c>Notebook_Market_Analysis</c>, deployed in MIL-004) that runs the market
+/// analysis (MIL-026). A missing address is not a start-up error: the client answers
 /// <c>market_analysis_runner.not_configured</c> so that the rest of the API keeps working.
 /// </summary>
 public sealed class MarketAnalysisServiceOptions
@@ -19,23 +19,29 @@ public sealed class MarketAnalysisServiceOptions
     /// <summary>The key of the timeout.</summary>
     public const string TimeoutSecondsName = "TimeoutSeconds";
 
-    /// <summary>The seconds to wait for an answer; a start and a read return at once, so a short time is enough.</summary>
-    public const int DefaultTimeoutSeconds = 30;
+    /// <summary>
+    /// The seconds to wait for an answer. A run with AI insights lasts up to 2 x discovery plus 6 x generation timeouts of the
+    /// markets API, 12 minutes and 4 seconds with its defaults (ADR-0013 of that repository), so the default is 13 minutes.
+    /// </summary>
+    public const int DefaultTimeoutSeconds = 780;
 
     /// <summary>
-    /// The address of the data analysis service on the shared Docker network. There is no built-in address: it comes
-    /// from the settings, and an empty address means the service is not configured.
+    /// The address of the markets API on the shared Docker network. There is no built-in address: it comes from the
+    /// settings, and an empty address means the service is not configured.
     /// </summary>
     public string BaseUrl { get; init; } = string.Empty;
 
-    /// <summary>The token that the data analysis service expects as a bearer token; a secret from the env file.</summary>
+    /// <summary>
+    /// A bearer token, sent only when it is set. The markets API has no authentication of its own (it is on an internal
+    /// network), so this is for a gateway in front of it.
+    /// </summary>
     public string Token { get; init; } = string.Empty;
 
     /// <summary>The seconds to wait for an answer.</summary>
     public int TimeoutSeconds { get; init; } = DefaultTimeoutSeconds;
 
-    /// <summary>True when there is a token and the address is an absolute http or https address.</summary>
-    public bool IsConfigured => !string.IsNullOrWhiteSpace(Token) && TryGetBaseUri(out _);
+    /// <summary>True when the address is an absolute http or https address.</summary>
+    public bool IsConfigured => TryGetBaseUri(out _);
 
     /// <summary>Reads the address as an absolute URI that ends in a slash, so that relative paths are added to it.</summary>
     /// <param name="baseUri">The address when the method returns true.</param>

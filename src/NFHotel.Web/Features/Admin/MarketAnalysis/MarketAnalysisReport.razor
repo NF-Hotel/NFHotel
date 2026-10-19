@@ -20,7 +20,7 @@
 
 <div class="stack-lg">
     <PageHeader Title="Market analysis"
-                Subtitle="The market data of the hotel, with an analysis written by a local AI model." />
+                Subtitle="The bookings of the hotel, analysed by the markets API, with an executive summary written by a local AI model." />
 
     <ErrorAlert Errors="ViewModel.Errors" />
 
@@ -42,7 +42,7 @@
                 <div role="status" aria-live="polite">
                     @if (ViewModel.LastRunFailed)
                     {
-                        <AlertBox Kind="AlertKind.Error" Message="@($"The analysis failed. {run.Error}")" />
+                        <AlertBox Kind="AlertKind.Error" Message="@($"The analysis failed. {ViewModel.FailureText}")" />
                     }
                     else if (run.State == MarketAnalysisRunStates.Completed)
                     {
@@ -93,42 +93,67 @@
                 </section>
             }
 
-            <div class="market-analysis-layout">
-                <section class="card card-pad stack" aria-labelledby="charts-title">
-                    <h2 class="subtitle" id="charts-title">Charts</h2>
-                    @if (ViewModel.Charts.Count == 0)
-                    {
-                        <p class="muted">The analysis has no chart data.</p>
-                    }
-                    else
-                    {
-                        <div class="chart-grid">
-                            @foreach (var chart in ViewModel.Charts)
-                            {
-                                <GroupedBarChart Title="@chart.Title"
-                                                 AxisTitle="@AxisText(chart)"
-                                                 SeriesNames="chart.SeriesNames"
-                                                 Groups="chart.Groups" />
-                            }
-                        </div>
-                    }
-                </section>
+            @foreach (var view in ViewModel.Sections)
+            {
+                var section = view.Section;
+                var headingId = $"analysis-{section.Id}";
+                <section class="card card-pad stack" aria-labelledby="@headingId">
+                    <h2 class="subtitle" id="@headingId">@section.Title</h2>
 
-                <section class="card card-pad stack" aria-labelledby="ai-title">
-                    <h2 class="subtitle" id="ai-title">AI analysis</h2>
-                    @if (string.IsNullOrWhiteSpace(report.Content.Summary))
+                    @if (section.Status != "available")
                     {
-                        <p class="muted">No AI analysis was written for this run. No AI model was available.</p>
+                        <p class="muted">This analysis could not be made@(string.IsNullOrWhiteSpace(section.Reason) ? "." : $": {section.Reason}")</p>
                     }
                     else
                     {
-                        foreach (var paragraph in Paragraphs(report.Content.Summary))
+                        @if (section.Insight is { } insight)
                         {
-                            <p>@paragraph</p>
+                            <div class="stack-sm" role="region" aria-label="AI executive summary of @section.Title">
+                                <h3 class="subtitle-small">AI executive summary</h3>
+                                @if (insight.Status == "available" && !string.IsNullOrWhiteSpace(insight.ExecutiveSummary))
+                                {
+                                    <p>@insight.ExecutiveSummary</p>
+                                    <p class="muted">Written by an AI model. It is a hypothesis to check, not a forecast.</p>
+                                    @if (insight.Suggestions.Count > 0)
+                                    {
+                                        <h3 class="subtitle-small">Suggestions</h3>
+                                        <ul class="stack-sm">
+                                            @foreach (var suggestion in insight.Suggestions)
+                                            {
+                                                <li>
+                                                    <strong>@suggestion.Suggestion</strong>
+                                                    <span class="muted"> Evidence: @suggestion.Evidence (@suggestion.SampleSize bookings)</span>
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="muted">No AI summary for this analysis@(string.IsNullOrWhiteSpace(insight.Reason) ? "." : $": {insight.Reason}")</p>
+                                }
+                            </div>
+                        }
+
+                        @if (view.Charts.Count == 0)
+                        {
+                            <p class="muted">This analysis has no chart data.</p>
+                        }
+                        else
+                        {
+                            <div class="chart-grid">
+                                @foreach (var chart in view.Charts)
+                                {
+                                    <GroupedBarChart Title="@chart.Title"
+                                                     AxisTitle="@AxisText(chart)"
+                                                     SeriesNames="chart.SeriesNames"
+                                                     Groups="chart.Groups" />
+                                }
+                            </div>
                         }
                     }
                 </section>
-            </div>
+            }
         </div>
     }
 </div>
