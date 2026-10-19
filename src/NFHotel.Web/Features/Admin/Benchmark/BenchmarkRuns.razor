@@ -87,6 +87,13 @@
                         </button>
                     </AuthorizeView>
                 </div>
+                @if (ViewModel.IsUnknownModel(purpose))
+                {
+                    <p class="muted" role="note">
+                        No stored run used this name. A service uses a model only when the name is exactly the one that the
+                        model server lists, tag included: take it from <code>ollama list</code>, for example <code>phi3.5:latest</code>.
+                    </p>
+                }
             }
         </section>
     }

@@ -14,8 +14,12 @@ path = "output/analysis_history.jsonl"
 ollama_url = "http://ollama:11434"
 lmstudio_url = "http://host.docker.internal:1234"
 discovery_timeout_seconds = 2
-generation_timeout_seconds = 120
+# A model on a server without a GPU needs minutes for one analysis; the proxy allows a request one hour.
+generation_timeout_seconds = 240
 provider = ""
+# The exact name that ollama list shows, tag included (phi3.5:latest, not phi3.5): the service uses a model only
+# when the name is exactly one that the server lists. The default AI model chosen in the back office is written
+# here by scripts/deploy-services.sh before the service starts.
 model = ""
 allow_remote = true
 temperature = 0

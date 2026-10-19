@@ -119,6 +119,7 @@ and the default AI model for the website and the market analysis are on `/admin/
 | The Start page says the benchmark service is not set up | the service or the model is not ready | run `dev-up.sh benchmark`, then reload the page |
 | `502 Bad Gateway` after a rebuild | nginx has not found the new container | run `dev-up.sh` again; it reloads nginx |
 | The Docker build of the benchmark service fails on a submodule | the build must not fetch the private `framework` submodule | already handled with `?submodules=false` in `deploy/benchmark/docker-compose.yml`; update the repository |
+| The market analysis shows no AI executive summary | the model name in the settings is not exactly one that Ollama lists (`phi3.5` instead of `phi3.5:latest`), or the model is too slow for the timeout | set the default AI model on `/admin/benchmark` and run `dev-up.sh` or `deploy-services.sh analysis`: the exact name is found and written. Insights on a CPU-only VM take 5 to 10 minutes; an analysis that times out shows `TIMEOUT` as the reason, and `GUARDRAIL_REJECTED` means the model broke the wording rules |
 | Out of memory, the VM is killed | Docker has too little memory | raise it (see the table at the top), then `wsl --shutdown` |
 
 ## Rules of the road

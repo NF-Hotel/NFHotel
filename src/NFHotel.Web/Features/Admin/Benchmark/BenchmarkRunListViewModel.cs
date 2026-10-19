@@ -47,6 +47,19 @@ public sealed class BenchmarkRunListViewModel
     public string DraftOf(string purpose) =>
         _drafts.TryGetValue(purpose, out var draft) ? draft : DefaultOf(purpose)?.Model ?? string.Empty;
 
+    /// <summary>
+    /// Tells whether the text in the field of a purpose is a name that no stored run used. The services use a model only
+    /// when the name is exactly the one that the model server lists, tag included, so such a name deserves a hint.
+    /// </summary>
+    /// <param name="purpose">The purpose.</param>
+    /// <returns>True when the field has a text that is not one of the known models.</returns>
+    public bool IsUnknownModel(string purpose)
+    {
+        var draft = DraftOf(purpose).Trim();
+
+        return draft.Length > 0 && !KnownModels.Contains(draft, StringComparer.Ordinal);
+    }
+
     /// <summary>Remembers the text of the field of a purpose.</summary>
     /// <param name="purpose">The purpose.</param>
     /// <param name="model">The text.</param>

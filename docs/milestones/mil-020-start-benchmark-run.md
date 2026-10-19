@@ -17,6 +17,7 @@
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added tasks 5 and 6 (delete a stored run, readable results table) and acceptance criterion 7; done after RC-108 | [4f23a15] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 7 (default AI model for the website and the market analysis) and acceptance criterion 8; done after RC-109 and RC-110 | [b1daae2] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 8 (the analysis view of a run, like the notebook) and acceptance criterion 9; done after RC-111 | [09e3167] |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 9 (the default model reaches the market analysis under the exact installed name) and acceptance criterion 10; done after RC-112 | pending |
 
 ---
 
@@ -45,6 +46,7 @@ Let a Manager start a benchmark run from the back office and see its state until
 | 7 | A Manager deletes a stored run with a confirmation and it is gone with its requests; a Receptionist and a Housekeeping user get 403; an unknown run is 404 | Yes | No |
 | 8 | A Manager sets the default AI model of the website and of the market analysis from the benchmark page; the service token reads it; a Receptionist and a Housekeeping user get 403 on the write; the deploy script writes the market analysis model into its settings | Yes | No |
 | 9 | The open run shows the performance per model and phase with charts, the deterministic outcomes, the answers side by side, the memory use and a CSV and JSON download, built from the stored results | Yes | No |
+| 10 | A default model written without its tag (phi3.5) reaches the market analysis settings as the exact name that Ollama lists (phi3.5:latest), a model that is not installed is not written, and the page says to use the exact name | Yes | No |
 
 ## Dependencies
 
@@ -84,6 +86,7 @@ Let a Manager start a benchmark run from the back office and see its state until
 | 6 | Readable results table and models | A Task column (hotel cancellation analysis or the task name) and a 1-based run number in the table of one run; `phi3.5` is pulled with `llama3.2:3b` by `scripts/dev-up.sh`. | No | Done: `BenchmarkRuns.razor`, `scripts/dev-up.sh`; review RC-108 |
 | 7 | Default AI model | Table `ai_default` (one row per purpose), `AiDefaults.Manage` for the Manager, `GET`/`PUT api/ai-defaults`, a Default AI model card and "Use for" buttons on `/admin/benchmark`, and `apply_default_model` in `scripts/deploy-services.sh` (ADR-0014). | Yes | Done: `AiDefault`, `AiDefaultService`, `AiDefaultsController`, `ApiAiDefaultService`, migration `AddAiDefault`; 37 new tests; reviews RC-109 and RC-110 |
 | 8 | Analysis view of a run | Workload filter, means per model and phase with SVG bar charts (first token, total time, tokens per second), task outcome grid, up to three answers side by side with the parsed parts, RAM and GPU memory charts, CSV and JSON export; `BenchmarkResultDto` carries the memory moments and the finish reason. The figures the benchmark service calculates from the dataset are not delivered, so the cards show n/a for them. | Yes | Done: `BenchmarkResultAnalysis`, `HotelAnswer`, `BenchmarkExport`, `BenchmarkAnalysisViewModel`, `GroupedBarChart`, `AnswerCard`, `BenchmarkRunAnalysis`; 35 new tests; review RC-111 |
+| 9 | Exact model name for the market analysis | `scripts/resolve-model-name.sh` finds the listed name (tag included) and `deploy-services.sh` writes it; a model that is not installed is not written; a hint on the Default AI model card; `generation_timeout_seconds` 240 in the settings example. Found when the AI executive summary was missing: the default `phi3.5` selected no model because Ollama lists `phi3.5:latest`. | Yes | Done: `resolve-model-name.sh` with 14 shell checks, `IsUnknownModel`; review RC-112 |
 
 ---
 
