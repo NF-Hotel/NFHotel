@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 | Proposed | Claude (AI) | S01 | Initial version | pending |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Accepted after RC-109 Go | pending |
+| 2026-10-19 | Proposed | Claude (AI) | S01 | Initial version | [b1daae2] |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Accepted after RC-109 Go | [b1daae2] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -69,3 +69,4 @@ Quality attributes: usability improves (one place, next to the results); securit
 [MIL-020]: ../milestones/mil-020-start-benchmark-run.md
 [ADR-0005]: ./adr-0005-backoffice-login.md
 [ADR-0013]: ./adr-0013-benchmark-results.md
+[b1daae2]: https://github.com/NF-Hotel/NFHotel/commit/b1daae275e05b207cd5403a3ec47e46fc76f33d0
