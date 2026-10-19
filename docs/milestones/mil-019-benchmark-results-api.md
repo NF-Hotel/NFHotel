@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-18 | Proposed | Claude (AI) | S01 | Initial version | [7fbeba1] |
 | 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-086 Go | [7fbeba1] |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Tasks 1 to 7 marked done after RC-088 and RC-089 | pending |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Tasks 1 to 7 marked done after RC-088 and RC-089 | [5e09a59] |
 
 ---
 
@@ -97,3 +97,4 @@ Decide whether the web application may be the one place that stores and shows th
 [ADR-0004]: ../adr/adr-0004-database-api.md
 [ADR-0005]: ../adr/adr-0005-backoffice-login.md
 [7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0
+[5e09a59]: https://github.com/NF-Hotel/NFHotel/commit/5e09a59285ead213d7e846b5367ee8daa6a00104

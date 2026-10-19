@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 | Proposed | Claude (AI) | S01 | Initial version | pending |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Accepted after RC-088 Go | pending |
+| 2026-10-19 | Proposed | Claude (AI) | S01 | Initial version | [5e09a59] |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Accepted after RC-088 Go | [5e09a59] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -70,3 +70,4 @@ Quality attributes: reliability improves (idempotent receiving, no lost result);
 [MIL-019]: ../milestones/mil-019-benchmark-results-api.md
 [ADR-0004]: ./adr-0004-database-api.md
 [ADR-0005]: ./adr-0005-backoffice-login.md
+[5e09a59]: https://github.com/NF-Hotel/NFHotel/commit/5e09a59285ead213d7e846b5367ee8daa6a00104
