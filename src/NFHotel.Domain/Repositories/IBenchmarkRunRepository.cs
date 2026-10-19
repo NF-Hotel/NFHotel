@@ -2,7 +2,7 @@ using NFHotel.Domain.Entities;
 
 namespace NFHotel.Domain.Repositories;
 
-/// <summary>Storage of the benchmark runs that the benchmark service delivers (ADR-0008).</summary>
+/// <summary>Storage of the benchmark runs that the benchmark service delivers (ADR-0013).</summary>
 public interface IBenchmarkRunRepository : IRepository<BenchmarkRun, int>
 {
     /// <summary>Finds a run by the id the benchmark service gave it.</summary>

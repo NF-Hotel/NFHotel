@@ -5,7 +5,7 @@ using NFHotel.Domain.Entities;
 
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
-/// <summary>Maps <see cref="BenchmarkRun"/> to the table <c>benchmark_run</c> (ADR-0008).</summary>
+/// <summary>Maps <see cref="BenchmarkRun"/> to the table <c>benchmark_run</c> (ADR-0013).</summary>
 public sealed class BenchmarkRunConfiguration : EntityConfiguration<BenchmarkRun, int>
 {
     /// <inheritdoc />
@@ -30,7 +30,7 @@ public sealed class BenchmarkRunConfiguration : EntityConfiguration<BenchmarkRun
         builder.Property(run => run.BackendVersion).HasMaxLength(BenchmarkRun.MaxTextLength);
 
         // The run id of the contract is the key of idempotency. This index is also the safeguard when two
-        // deliveries of the same run arrive at the same moment (ADR-0008).
+        // deliveries of the same run arrive at the same moment (ADR-0013).
         builder.HasIndex(run => run.RunId)
             .IsUnique()
             .HasDatabaseName("ux_benchmark_run_run_id");

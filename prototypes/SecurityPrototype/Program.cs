@@ -9,42 +9,42 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//bruger builder til at hente en connection string fra PostgreSQL-database.
+//uses builder to fetch a connection string for the PostgreSQL database.
 var connectionString = builder.Configuration.GetConnectionString("Postgres")
     ?? throw new InvalidOperationException("Connection string 'Postgres' not found.");
 
-// Registrerer ApplicationDbContext i Dependency Injection.
+// Registers ApplicationDbContext in Dependency Injection.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 
 
-// Registrerer ASP.NET Core Identity med AppUser som brugerklasse
+// Registers ASP.NET Core Identity with AppUser as the user class
 builder.Services.AddIdentityCore<AppUser>(options =>
 {
-    // Konfiguration af password-regler
+    // Configuration of the password rules
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequiredLength = 12;
 })
-    .AddRoles<IdentityRole>() // Tilføjer rolle-støtte
-    .AddEntityFrameworkStores<ApplicationDbContext>() // Bruger ApplicationDbContext til at gemme brugere og roller
-    .AddSignInManager(); // Tilføjer SignInManager til håndtering af login
+    .AddRoles<IdentityRole>() // Adds role support
+    .AddEntityFrameworkStores<ApplicationDbContext>() // Uses ApplicationDbContext to store users and roles
+    .AddSignInManager(); // Adds SignInManager to handle sign-in
 
 
 
 
-// Registrerer og konfigurerer authorization med rollebaserede policies.
+// Registers and configures authorization with role-based policies.
 builder.Services.AddAuthorization(options =>
 {
-    // opsat på den måde, så kun Manager og Receptionist må få adgang til pas data.
+    // set up so that only Manager and Receptionist may get access to passport data.
     options.AddPolicy("CanAccessPassportData", policy =>
         policy.RequireRole(Roles.Manager, Roles.Receptionist));
 
 
-    // opsat på den måde, så kun Manager, Receptionist og Housekeeping må få adgang til housekeeping data.
+    // set up so that only Manager, Receptionist and Housekeeping may get access to housekeeping data.
     options.AddPolicy("CanAccessHousekeeping", policy =>
         policy.RequireRole(
             Roles.Manager,
@@ -53,38 +53,38 @@ builder.Services.AddAuthorization(options =>
 });
 
 
-// Aktiverer authentication(nødvendig for cookies/login)
+// Enables authentication (needed for cookies/sign-in)
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddIdentityCookies();
 
 
 
-// Konfigurerer indstillingerne for ASP.NET Core Identity authentication-cookie.
-// IdentityConstants.ApplicationScheme angiver specifikt den cookie, som Identity bruger til at holde en bruger logget ind.
+// Configures the settings of the ASP.NET Core Identity authentication cookie.
+// IdentityConstants.ApplicationScheme names the cookie that Identity uses to keep a user signed in.
 builder.Services.Configure<CookieAuthenticationOptions>(
     IdentityConstants.ApplicationScheme,
     options =>
     {
 
-        // Denne event bliver kørt når en bruger forsøger at tilgå
-        // et beskyttet endpoint uden at være logget ind.
+        // This event runs when a user tries to reach
+        // a protected endpoint without being signed in.
         options.Events.OnRedirectToLogin = context =>
         {
 
-            // Returnerer HTTP-statuskoden 401 Unauthorized i stedet for at redirecte brugeren til en login-side.
+            // Returns HTTP status code 401 Unauthorized instead of redirecting the user to a login page.
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
 
-            // Fortæller at den asynkrone event-handler er færdig.
+            // Tells that the asynchronous event handler has finished.
             return Task.CompletedTask;
         };
 
-        // Denne event bliver kørt, når brugeren er logget ind,
+        // This event runs when the user is signed in,
         options.Events.OnRedirectToAccessDenied = context =>
         {
-            // Returnerer HTTP-statuskoden 403 Forbidden
+            // Returns HTTP status code 403 Forbidden
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
 
-            // Fortæller at den asynkrone event-handler er færdig.
+            // Tells that the asynchronous event handler has finished.
             return Task.CompletedTask;
         };
     });
@@ -102,13 +102,13 @@ var app = builder.Build();
 
 // ===== Seed database with roles =====
 
-// Opretter et midlertidigt Dependency Injection-scope.
-// Et scope bruges, så vi kan hente scoped services (Identity/EF Core-services)
-// fra appens DI-container
+// Creates a temporary Dependency Injection scope.
+// A scope is used so that we can fetch scoped services (Identity/EF Core services)
+// from the DI container of the application
 using (var scope = app.Services.CreateScope())
 {
-    // Kalder DbSeeder og sender scopets ServiceProvider med.
-    // SeedAsync kontrollerer derefter, om rollerne findes, og opretter dem hvis de mangler.
+    // Calls DbSeeder and passes the ServiceProvider of the scope.
+    // SeedAsync then checks whether the roles exist, and creates them if they are missing.
     await DbSeeder.SeedAsync(scope.ServiceProvider, builder.Configuration);
 
 }
@@ -119,7 +119,7 @@ app.UseAuthorization();
 
 
 // ===== Endpoints =====
-// Login (cookie udstedes ved succes)
+// Login (the cookie is issued on success)
 app.MapPost("/login", async (LoginRequest req,
     UserManager<AppUser> userManager,
     SignInManager<AppUser> signInManager) =>
@@ -136,28 +136,28 @@ app.MapPost("/login", async (LoginRequest req,
 
 
 // Logout
-// Opretter et POST-endpoint til logout.
+// Creates a POST endpoint for logout.
 app.MapPost("/logout", async (SignInManager<AppUser> signInManager) =>
 {
-    // Signer brugeren ud og fjerner cookie auth
+    // Signs the user out and removes the cookie auth
     await signInManager.SignOutAsync();
     return Results.Ok("Logget ud");
 });
 
 
 
-// beskyttet GET-endpoin hvor kun brugere der opfylder "CanAccessPassportData"-policy får adgang.
-// Passport data endpoint kun tilgængelig for Manager og Receptionist
-// Opretter et GET-endpoint på URL'en /admin/passportdata.
-//Map = forbind / map en URL til noget kode.
+// protected GET endpoint where only users who satisfy the "CanAccessPassportData" policy get access.
+// Passport data endpoint only available to Manager and Receptionist
+// Creates a GET endpoint at the URL /admin/passportdata.
+//Map = connect / map a URL to some code.
 app.MapGet("/admin/passportdata", () =>
 {
     return Results.Ok("Fake passport data");
 })
     .RequireAuthorization("CanAccessPassportData");
 
-// Beskyttet endpoint til housekeeping-data.
-// Tilgængelig for Manager Receptionist og Housekeeping.
+// Protected endpoint for housekeeping data.
+// Available to Manager, Receptionist and Housekeeping.
 app.MapGet("/admin/housekeeping", () =>
 {
     return Results.Ok("Fake housekeeping data");
@@ -166,4 +166,3 @@ app.MapGet("/admin/housekeeping", () =>
 
 
 app.Run();
-

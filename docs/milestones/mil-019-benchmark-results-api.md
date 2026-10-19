@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-18 | Proposed | Claude (AI) | S01 | Initial version | [7fbeba1] |
 | 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-086 Go | [7fbeba1] |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Tasks 1 to 7 marked done after RC-088 and RC-089 | [5e09a59] |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Tasks 1 to 7 marked done after RC-104 and RC-105 | [5e09a59] |
 
 ---
 
@@ -21,7 +21,7 @@
 
 Decide whether the web application may be the one place that stores and shows the results of the benchmark service. The benchmark service (repository `notebook-benchmark`) runs local AI models on the VM and, when a run is ready, sends the result to the web API. This milestone builds the receiving side: an API that stores a run once, a table, and pages in which a Manager reads the runs later. It builds against the contract of `notebook-benchmark` MIL-001 (ADR-0001 and its OpenAPI file); the milestone cannot start before that contract has a `Go` review.
 
-## Decisions to record in ADR-0008
+## Decisions to record in ADR-0013
 
 | # | Decision | Why |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ Decide whether the web application may be the one place that stores and shows th
 
 ## Deliverable
 
-- ADR-0008 recording the decisions above, reviewed.
+- ADR-0013 recording the decisions above, reviewed.
 - Domain and application: the run and result types, the repository port, the use cases to store, list and read runs, tests with fakes.
 - Infrastructure: the tables, the migration and the repository; integration tests for the unique run id.
 - API: the three endpoints and the permission checks.
@@ -50,7 +50,7 @@ Decide whether the web application may be the one place that stores and shows th
 | 3 | A Manager lists the runs and reads one with every model and its measurements; the values equal the posted values | Yes | No |
 | 4 | A Receptionist and a Housekeeping user get 403 on the list and the detail endpoints and cannot open the pages | Yes | No |
 | 5 | The permission table test states allowed or refused for every role and permission, including the two new ones | Yes | No |
-| 6 | `dotnet build` has 0 warnings, format is clean, all tests pass; `qc-programming-csharp` reviews have the verdict `Go`; ADR-0008 has a `Go` review | Yes | No |
+| 6 | `dotnet build` has 0 warnings, format is clean, all tests pass; `qc-programming-csharp` reviews have the verdict `Go`; ADR-0013 has a `Go` review | Yes | No |
 
 ## Dependencies
 
@@ -83,12 +83,12 @@ Decide whether the web application may be the one place that stores and shows th
 | # | Task | Summary | Needs its own Use Case/User Story? | Reference |
 | --- | --- | --- | --- | --- |
 | 1 | Amend Business Case and Project Plan | Add objective 22, the scope item, success criterion 25 and the schedule rows of MIL-019 and MIL-020; review again. | No | Done: RC-085 |
-| 2 | Record the decisions in ADR-0008 | The six decisions above. | No | Done: ADR-0008, RC-088 |
-| 3 | Domain and application | Run and result types, port, use cases to store, list and read; unit tests. | Yes | UC: administrator reads a stored benchmark run. Done: `BenchmarkRun`, `BenchmarkService`; the use case document is open (RC-089) |
+| 2 | Record the decisions in ADR-0013 | The six decisions above. | No | Done: ADR-0013, RC-104 |
+| 3 | Domain and application | Run and result types, port, use cases to store, list and read; unit tests. | Yes | UC: administrator reads a stored benchmark run. Done: `BenchmarkRun`, `BenchmarkService`; the use case document is open (RC-105) |
 | 4 | Tables and repository | Migration, repository, integration test of the unique run id. | No | Done: migration `AddBenchmarkRun`, `BenchmarkRunRepository`; 8 tests against PostgreSQL |
 | 5 | API endpoints and permissions | The three endpoints, the two permissions, the tests. | No | Done: `BenchmarkController`, `Benchmark.View`, `Benchmark.Run` |
 | 6 | Back office pages | List and detail page, menu entry for the Manager; page tests. | No | Done: `/admin/benchmark`, menu item for the Manager |
-| 7 | Check and review | Build, format, test; reviews against `qc-programming-csharp` and `qc-adr`. | No | Done: RC-088, RC-089 |
+| 7 | Check and review | Build, format, test; reviews against `qc-programming-csharp` and `qc-adr`. | No | Done: RC-104, RC-105 |
 
 ---
 

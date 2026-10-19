@@ -26,7 +26,7 @@
 
 | # | Criterion | Status | Evidence/Notes |
 | --- | --- | --- | --- |
-| 1 | A concrete deliverable is defined for every gate | Pass | Deliverable lists ADR-0008, the domain and application types, the tables and migration, the three endpoints and the two pages |
+| 1 | A concrete deliverable is defined for every gate | Pass | Deliverable lists ADR-0013, the domain and application types, the tables and migration, the three endpoints and the two pages |
 | 2 | Explicit Go/No-Go criteria are stated for each gate | Pass | Six criteria (idempotent post, 401 and 400, Manager reads equal values, 403 for other roles, permission table test, build and reviews) |
 | 3 | Dependencies on other milestones are explicitly mapped | Pass | Dependencies table: MIL-018, notebook-benchmark MIL-001 and ADR-0004 and ADR-0005 |
 | 4 | Each milestone is traceable to a Business Case objective or KPI | Pass | Traceability maps to new objective 22 and success criterion 25 |

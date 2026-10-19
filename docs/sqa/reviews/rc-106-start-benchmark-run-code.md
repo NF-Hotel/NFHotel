@@ -1,9 +1,9 @@
-# RC-090 Review of the start of a benchmark run (MIL-020)
+# RC-106 Review of the start of a benchmark run (MIL-020)
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | RC-090 |
+| ID | RC-106 |
 | CrossReference | [MIL-020], [QC-CS-001] |
 
 ## Version History
@@ -28,7 +28,7 @@
 | --- | --- | --- | --- |
 | 1 | Naming follows the conventions | Pass | PascalCase types and members, `_camelCase` fields (a test field `_models_started` was renamed during the work), `I` interfaces |
 | 2 | Async methods end in `Async`; one top-level type per file | Pass | The architecture tests pass; the wire records and the fake service are nested private types |
-| 3 | Formatted per `.editorconfig`; no unexplained analyzer suppressions | Pass | Build 0 warnings with warnings as errors; `dotnet format --verify-no-changes` flags none of the files of this change, only the 14 older files already named in RC-089 |
+| 3 | Formatted per `.editorconfig`; no unexplained analyzer suppressions | Pass | Build 0 warnings with warnings as errors; `dotnet format --verify-no-changes` flags none of the files of this change, only the 14 older files already named in RC-105 |
 | 4 | Nullable reference types enabled; `!` justified | Pass | One `null!` in `BenchmarkServiceOptions.TryGetBaseUri` with the same justification comment as `HolidayApiOptions` |
 | 5 | `IDisposable` objects are disposed | Pass | `using` for the request and the response in the client |
 | 6 | Async code uses `await` throughout | Pass | No `.Result`, `.Wait()` or `async void`. The page starts its follow loop with `_ = FollowAsync()`, a deliberate fire-and-forget that catches the end of the page (cancellation and a disposed circuit) and is stopped by the component token |
@@ -38,7 +38,7 @@
 | 10 | Money uses `decimal`; points in time use `DateTimeOffset` | Pass | No money; the times are `DateTimeOffset` |
 | 11 | Public async APIs accept and pass a `CancellationToken` | Pass | Every async method does |
 | 12 | Tests cover new behaviour, are named `Method_Condition_Expected`, and do not depend on order, time or the network | Pass | A fake of the benchmark service that follows the contract (token check, validation, queued, running, done, delivered) drives 19 client tests; 18 view model tests; 4 more page access cases. Whole solution: 1011 tests, 1008 passed, 3 skipped (live Proxmox), 0 failed. No test sleeps: the follow loop of the page is not unit-tested, only the view model that it calls |
-| 13 | Classes and members trace to the Design Class Diagram | N-A | The project DCD has no benchmark classes; see the open action of RC-089 |
+| 13 | Classes and members trace to the Design Class Diagram | N-A | The project DCD has no benchmark classes; see the open action of RC-105 |
 | 14 | Each piece of knowledge is defined in one place | Pass | The limits (4 models, 5 runs) are constants of the view model and the client check mirrors them, which the service checks again; the run states are constants in `BenchmarkRunStates`; the error codes and their texts are one table |
 | 15 | Namespace and project references point inward | Pass | The port is in Application; the HTTP client is in External; the page uses the view model and the port, never the client class |
 | 16 | SOLID holds | Pass | A narrow port with three methods; the view model depends on the runner and the port |

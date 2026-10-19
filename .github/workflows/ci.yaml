@@ -1,23 +1,142 @@
-#navn
+# CI: build, test and check the code before deployment
 name: NF Hotel CI
 
-#start workflowet manuelt fra Actions
 on:
+  # Can still be started by hand from Actions
   workflow_dispatch:
-  
-#hent github linux maskine
+  # Check changes before review and merge
+  pull_request:
+    branches: [main]
+  # Also check the whole code after the merge
+  push:
+    branches: [main]
+
+# The workflow only needs read access
+permissions:
+  contents: read
+
+# Stop an older run when the same branch or PR gets new changes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
 jobs:
-  build:
+  # Comments are written in English, the Product Owner language (BC-001, MIL-010). A comment in
+  # Danish fails the run and the log names the file and the line. Run the same check before a
+  # commit with: bash scripts/check-comment-language.sh --staged
+  comment-language:
+    name: Comments are in English
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
 
     steps:
-      #henter projektets kode med dette værktøk checkout version 7
-      - uses: actions/checkout@v7
+      - name: Check out the code
+        uses: actions/checkout@v7
 
-      #installer .NET versionen fra global.json.
-      - uses: actions/setup-dotnet@v6
+      # The tests of the check come first, so that a broken check cannot pass the code.
+      - name: Test the language check
+        run: bash scripts/test-check-comment-language.sh
+
+      - name: Check that no comment is in Danish
+        run: bash scripts/check-comment-language.sh
+
+  build:
+    name: Build, tests og sikkerhed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      # Fetch the code of the project
+      - name: Hent kode
+        uses: actions/checkout@v7
+
+      # Use the SDK version of the project
+      - name: Installer .NET
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
-      #byg projektet. nuGet packets hentes automatisk.
-      - run: dotnet build NFHotel.sln
+      # Scan both direct and indirect NuGet dependencies.
+      # Known vulnerabilities and other restore warnings fail the run.
+      - name: Restore og NuGet-sårbarhedskontrol
+        run: >-
+          dotnet restore NFHotel.sln
+          -p:NuGetAudit=true
+          -p:NuGetAuditMode=all
+          -p:NuGetAuditLevel=low
+          -p:TreatWarningsAsErrors=true
+
+      # Build with the analyzer and code style rules that the project already has
+      - name: Build
+        run: dotnet build NFHotel.sln --configuration Release --no-restore
+
+      # The integration tests use Testcontainers and start PostgreSQL themselves
+      - name: Kontrollér Docker til integrationstests
+        run: docker info
+
+      # The tests run on Microsoft.Testing.Platform (global.json), which does not
+      # know the VSTest collector coverlet.collector. Coverage is therefore measured
+      # from the outside with dotnet-coverage, so the test projects need no change.
+      - name: Installer dotnet-coverage
+        run: dotnet tool install --global dotnet-coverage --version 18.12.0
+
+      # Run all test projects, keep a TRX file per project and measure code coverage
+      - name: Tests og coverage
+        run: >-
+          dotnet-coverage collect
+          --settings dotnet-coverage.config.xml
+          --output TestResults/coverage.cobertura.xml
+          --output-format cobertura
+          "dotnet test NFHotel.sln --configuration Release --no-build
+          --results-directory TestResults --report-xunit-trx"
+
+      # Keep the reports also when tests fail
+      - name: Gem testresultater og coverage
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: TestResults/
+          if-no-files-found: warn
+          retention-days: 14
+
+  formatting:
+    name: Formatering
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Hent kode
+        uses: actions/checkout@v7
+
+      - name: Installer .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore NFHotel.sln
+
+      # Check the formatting against .editorconfig without changing files.
+      # Code style and analyzers are also handled by the build settings of the project.
+      - name: Kontrollér formatering
+        run: dotnet format whitespace NFHotel.sln --verify-no-changes --no-restore
+
+  container:
+    name: Docker-build
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Hent kode
+        uses: actions/checkout@v7
+
+      # Check that the Dockerfile of the project can package the web application.
+      # The image is built only locally on the runner; it is not published.
+      - name: Byg Docker-image
+        run: docker build --tag nfhotel:ci .

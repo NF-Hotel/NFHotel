@@ -5,7 +5,7 @@ using NFHotel.Domain.Entities;
 
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
-/// <summary>Maps <see cref="BenchmarkResult"/> to the table <c>benchmark_result</c> (ADR-0008).</summary>
+/// <summary>Maps <see cref="BenchmarkResult"/> to the table <c>benchmark_result</c> (ADR-0013).</summary>
 public sealed class BenchmarkResultConfiguration : EntityConfiguration<BenchmarkResult, int>
 {
     /// <inheritdoc />

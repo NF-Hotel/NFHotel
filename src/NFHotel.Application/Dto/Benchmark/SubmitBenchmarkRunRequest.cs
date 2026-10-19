@@ -4,7 +4,7 @@ namespace NFHotel.Application.Dto.Benchmark;
 
 /// <summary>
 /// The body that the benchmark service posts when a run is ready: the <c>RunResult</c> of the contract
-/// <c>openapi/benchmark-contract.yaml</c> (ADR-0008). The field names are those of the contract.
+/// <c>openapi/benchmark-contract.yaml</c> (ADR-0013). The field names are those of the contract.
 /// </summary>
 /// <param name="SchemaVersion">The result schema; only 2 is accepted.</param>
 /// <param name="RunId">The id of the run; the key of idempotency.</param>

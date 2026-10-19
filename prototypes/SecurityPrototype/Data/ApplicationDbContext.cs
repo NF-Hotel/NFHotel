@@ -7,16 +7,14 @@ namespace SecurityPrototype.Data;
 
 
 // Database context for application.
-// Inherits fra IdentityDbContext, så den kan bruge ASP.NET Core Identity med AppUser.
+// Inherits from IdentityDbContext, so it can use ASP.NET Core Identity with AppUser.
 public class ApplicationDbContext : IdentityDbContext<AppUser>
 {
 
-    // Modtager databasekonfigurationen, som er opsat i Program.cs.
+    // Receives the database configuration that is set up in Program.cs.
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
     }
 
 }
-
-

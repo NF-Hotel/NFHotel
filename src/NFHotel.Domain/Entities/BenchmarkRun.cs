@@ -7,7 +7,7 @@ namespace NFHotel.Domain.Entities;
 
 /// <summary>
 /// A finished benchmark run as the benchmark service delivered it: the header of the run and one
-/// <see cref="BenchmarkResult"/> per request (ADR-0008). The run id of the contract is stored once.
+/// <see cref="BenchmarkResult"/> per request (ADR-0013). The run id of the contract is stored once.
 /// </summary>
 public sealed class BenchmarkRun : Entity<int>
 {

@@ -184,7 +184,7 @@ for s in "${ordered[@]}"; do
   e="$(env_of "$s")"
   if [[ "$s" == "nginx" ]]; then
     # The proxy needs a certificate to start. A pair put there by the owner is never replaced.
-    names="$(sed -n 's/^NGINX_SERVER_NAME=//p' "$d/$e" | tr -d '') $(hostname -I 2>/dev/null || true)"
+    names="$(sed -n 's/^NGINX_SERVER_NAME=//p' "$d/$e" | tr -d '\r') $(hostname -I 2>/dev/null || true)"
     # shellcheck disable=SC2086 # the names are split on purpose
     bash "$root/scripts/make-dev-certificate.sh" "$d/tls" $names || die "no certificate for the proxy"
   fi
@@ -199,7 +199,7 @@ for s in "${ordered[@]}"; do
   fi
   (cd "$d" && docker compose "${args[@]}") || die "deploying $s failed"
   if [[ "$s" == "ollama" ]]; then
-    models="$(sed -n 's/^OLLAMA_PULL_MODELS=//p' "$d/$e" | tr -d '')"
+    models="$(sed -n 's/^OLLAMA_PULL_MODELS=//p' "$d/$e" | tr -d '\r')"
     for model in $models; do
       echo "==> pulling model $model"
       (cd "$d" && docker compose --env-file "$e" exec -T ollama ollama pull "$model") ||

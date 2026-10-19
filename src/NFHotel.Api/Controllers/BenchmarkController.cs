@@ -9,7 +9,7 @@ using NFHotel.Application.UseCases.Staff;
 namespace NFHotel.Api.Controllers;
 
 /// <summary>
-/// The benchmark runs (ADR-0008). The benchmark service posts a finished run with the service token only; a Manager reads
+/// The benchmark runs (ADR-0013). The benchmark service posts a finished run with the service token only; a Manager reads
 /// the stored runs with a staff token that holds <see cref="Permissions.BenchmarkView"/>.
 /// </summary>
 [ApiController]

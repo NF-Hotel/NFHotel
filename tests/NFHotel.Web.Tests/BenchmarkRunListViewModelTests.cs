@@ -9,7 +9,7 @@ using NSubstitute;
 
 namespace NFHotel.Web.Tests;
 
-/// <summary>The list of stored benchmark runs, one run opened, and its answer read on its own (ADR-0008).</summary>
+/// <summary>The list of stored benchmark runs, one run opened, and its answer read on its own (ADR-0013).</summary>
 public sealed class BenchmarkRunListViewModelTests
 {
     private static readonly Guid RunId = Guid.Parse("5b3f0e1a-0000-4000-8000-000000000001");

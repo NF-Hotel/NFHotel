@@ -9,15 +9,17 @@ Delete rows for types you don't use. Add a row the first time you create a
 document of a type. `Primary File` may contain a glob (e.g.
 `docs/use-cases/uc-*/uc.md`); `framework/scripts/find-crossreferences.sh` reads it.
 
+Infrastructure documents (DSA-001, ADR-0007 to ADR-0011, MIL-021 to MIL-024 and their review records) moved to [NF-Hotel/DevOps](https://github.com/NF-Hotel/DevOps) with their IDs (ADR-0012). This registry allocates numbers below 500; the DevOps registry allocates them from 500.
+
 | Short Name | Artifact Type | Primary File | Next Available Version |
 | --- | --- | --- | --- |
 | BC | Business Case | docs/business-case.md | 002 |
 | SA | Stakeholder Analysis | docs/stakeholder-analysis.md | 002 |
 | PP | Project Plan | docs/project-plan.md | 002 |
-| MIL | Milestone / Gateway | docs/milestones/*.md | 021 |
-| RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 092 |
+| MIL | Milestone / Gateway | docs/milestones/*.md | 026 |
+| RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 108 |
 | TM | Traceability Matrix | docs/sqa/traceability-matrix.md | 002 |
-| ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0007 |
+| ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0014 |
 | US | User Story | docs/user-stories.md | 002 |
 | UCD | Use Case Diagram | docs/use-case-diagram.md | 002 |
 | UC | Use Case | docs/use-cases/uc-*/uc.md | 005 |

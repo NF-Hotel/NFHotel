@@ -1,0 +1,2 @@
+# The tests of the checker hold Danish sample text on purpose.
+scripts/test-check-comment-language.sh

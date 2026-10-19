@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    NFHotel.Infrastructure er det ENESTE projekt der kender EF Core og Npgsql
-    (Architecture.md afsnit 2). Application må ikke have en eneste PackageReference.
+    NFHotel.Infrastructure is the ONLY project that knows EF Core and Npgsql
+    (Architecture.md section 2). Application must not have a single PackageReference.
   -->
 
   <PropertyGroup>
@@ -22,18 +22,18 @@
     <PackageReference Include="EFCore.NamingConventions" Version="10.0.1" />
 
     <!--
-      Eksplicit og pinnet: EFCore.NamingConventions 9.0.0 trækker Relational 9.0.1, mens
-      Npgsql-provideren trækker 9.0.4. Uden denne linje arver de projekter der refererer
-      Infrastructure den laveste version og bygger med MSB3277-advarsler.
+      Explicit and pinned: EFCore.NamingConventions 9.0.0 pulls Relational 9.0.1, while
+      the Npgsql provider pulls 9.0.4. Without this line the projects that reference
+      Infrastructure inherit the lowest version and build with MSB3277 warnings.
     -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
 
     <!--
-      compile-assets er bevidst slået til: HotelDbContextFactory implementerer
-      IDesignTimeDbContextFactory<T>, som kun findes i Design-pakken. Uden den kan
-      migrationen ikke genereres, fordi HotelDbContext har en afhængighed ud over
+      compile-assets is switched on on purpose: HotelDbContextFactory implements
+      IDesignTimeDbContextFactory<T>, which is only in the Design package. Without it the
+      migration cannot be generated, because HotelDbContext has a dependency beyond
       DbContextOptions (IStringEncryptor, B-09). PrivateAssets=all sikrer stadig at
-      pakken ikke flyder videre til Web eller til testprojekterne.
+      the package does not flow on to Web or to the test projects.
     -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
       <IncludeAssets>compile; runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

@@ -32,7 +32,7 @@ public sealed class AesGcmStringEncryptor : IStringEncryptor
     private readonly byte[] _key;
 
     /// <summary>
-    /// Opretter krypteringstjenesten.
+    /// Creates the encryption service.
     /// </summary>
     /// <param name="options">The encryption settings. The key must be base64-encoded.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="options"/> is <c>null</c>.</exception>

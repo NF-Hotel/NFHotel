@@ -31,7 +31,7 @@ public sealed class RoomFormViewModel
     private readonly IUseCaseRunner<IRoomService> _rooms;
 
     /// <summary>
-    /// Opretter viewmodellen.
+    /// Creates the view model.
     /// </summary>
     /// <param name="rooms">Runs use cases on <see cref="IRoomService"/>.</param>
     public RoomFormViewModel(IUseCaseRunner<IRoomService> rooms)

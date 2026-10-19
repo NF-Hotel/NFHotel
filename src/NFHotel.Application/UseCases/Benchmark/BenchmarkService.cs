@@ -8,7 +8,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.UseCases.Benchmark;
 
-/// <summary>Stores and reads the benchmark runs (ADR-0008).</summary>
+/// <summary>Stores and reads the benchmark runs (ADR-0013).</summary>
 public sealed class BenchmarkService : IBenchmarkService, IBenchmarkIntake
 {
     /// <summary>The only result schema version that is read.</summary>

@@ -1,16 +1,16 @@
-# ADR-0008 Storing and showing benchmark results
+# ADR-0013 Storing and showing benchmark results
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | ADR-0008 |
+| ID | ADR-0013 |
 | CrossReference | [BC-001], [MIL-019], [ADR-0004], [ADR-0005] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-19 | Proposed | Claude (AI) | S01 | Initial version | [5e09a59] |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Accepted after RC-088 Go | [5e09a59] |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Accepted after RC-104 Go | [5e09a59] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 

@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-18 | Proposed | Claude (AI) | S01 | Initial version | [7fbeba1] |
 | 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-087 Go | [7fbeba1] |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Tasks 1 to 4 marked done after RC-090 and RC-091 | [847b639] |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Tasks 1 to 4 marked done after RC-106 and RC-107 | [847b639] |
 
 ---
 
@@ -73,7 +73,7 @@ Let a Manager start a benchmark run from the back office and see its state until
 | 1 | Client of the benchmark service | Port and adapter to start a run and read its state; fake for the tests. | No | Done: `BenchmarkServiceClient`, `IBenchmarkServiceClient`; 19 tests against a fake of the service |
 | 2 | Start page | Choose models, start, follow the state; Manager only; page tests. | Yes | UC: administrator starts a benchmark run. Done: `/admin/benchmark/start`, `BenchmarkStartViewModel`; Manager only |
 | 3 | Deploy files and tokens | Compose entries and env examples for the benchmark and Ollama containers. | No | Done: `nfhotel-web.env.example`, `docker-compose.yml` comment, wiki section |
-| 4 | Check and review | Build, format, test; reviews against `qc-programming-csharp` and `qc-yaml`. | No | Done: RC-090, RC-091 |
+| 4 | Check and review | Build, format, test; reviews against `qc-programming-csharp` and `qc-yaml`. | No | Done: RC-106, RC-107 |
 
 ---
 

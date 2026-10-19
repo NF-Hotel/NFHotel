@@ -24,7 +24,7 @@ public sealed class HotelDbContext : DbContext
     private readonly IStringEncryptor _passportEncryptor;
 
     /// <summary>
-    /// Opretter konteksten.
+    /// Creates the context.
     /// </summary>
     /// <param name="options">The context options, including provider and connection string.</param>
     /// <param name="passportEncryptor">
@@ -52,7 +52,7 @@ public sealed class HotelDbContext : DbContext
     /// <summary>Staff accounts (ADR-0005).</summary>
     public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
 
-    /// <summary>The benchmark runs that the benchmark service delivered (ADR-0008).</summary>
+    /// <summary>The benchmark runs that the benchmark service delivered (ADR-0013).</summary>
     public DbSet<BenchmarkRun> BenchmarkRuns => Set<BenchmarkRun>();
 
     /// <summary>The requests of the benchmark runs.</summary>

@@ -2,7 +2,7 @@ namespace NFHotel.Domain.ValueObjects;
 
 /// <summary>
 /// The measurements and the outcome of one request to one model, in the fields of the result schema version 2
-/// (ADR-0008). The memory figures are in megabytes; a figure that could not be measured is <c>null</c>.
+/// (ADR-0013). The memory figures are in megabytes; a figure that could not be measured is <c>null</c>.
 /// </summary>
 /// <param name="Timestamp">When the request was made.</param>
 /// <param name="Backend">The model server, for example <c>ollama</c>.</param>

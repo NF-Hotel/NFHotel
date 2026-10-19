@@ -20,7 +20,7 @@ public sealed class GuestConfiguration : EntityConfiguration<Guest, int>
     private readonly IStringEncryptor _passportEncryptor;
 
     /// <summary>
-    /// Opretter konfigurationen.
+    /// Creates the configuration.
     /// </summary>
     /// <param name="passportEncryptor">Krypteringstjenesten for pasnummer.</param>
     /// <exception cref="ArgumentNullException">
