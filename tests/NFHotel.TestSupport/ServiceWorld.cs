@@ -240,7 +240,12 @@ public sealed class ServiceWorld
                     result.VramPeakMb,
                     result.Passed,
                     result.ResponseValid,
-                    result.Error is not null))
+                    result.Error is not null,
+                    result.RamBeforeMb,
+                    result.RamAfterMb,
+                    result.VramBeforeMb,
+                    result.VramAfterMb,
+                    result.FinishReason))
                 .ToArray());
 
     private static string GuestText(Guest guest) =>

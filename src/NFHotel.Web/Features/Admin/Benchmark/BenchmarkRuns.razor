@@ -217,6 +217,8 @@
                 </table>
             </div>
 
+            <BenchmarkRunAnalysis Run="selected" />
+
             @if (ViewModel.ShownOutput is { } output)
             {
                 <section class="stack-sm" aria-labelledby="run-answer">
@@ -257,10 +259,7 @@
     private static string Machine(BenchmarkRunListItemDto run) =>
         $"{run.Cpu}, {run.MemoryMb / 1024d:0.#} GiB, {(string.IsNullOrWhiteSpace(run.Gpu) ? "CPU only" : run.Gpu)}";
 
-    private static string TaskName(BenchmarkResultDto result) =>
-        string.Equals(result.AnalysisType, "hotel_cancellation", StringComparison.Ordinal)
-            ? "Hotel cancellation analysis"
-            : result.TaskId ?? result.AnalysisType;
+    private static string TaskName(BenchmarkResultDto result) => BenchmarkResultAnalysis.TaskName(result);
 
     private static string Number(double? value) =>
         value is { } number ? number.ToString("0.##", CultureInfo.InvariantCulture) : "—";
