@@ -17,7 +17,9 @@
 #      ASPNETCORE_ENVIRONMENT=Development in nfhotel-api.env, and never in a release deployment.
 #      The generated passwords are kept in deploy/nfhotel-api/dev-staff.env (git-ignored).
 #
-# Usage: dev-up.sh [--all] [--seed] [--open] [--down] [--destroy] [web|api|benchmark ...]
+# Usage: dev-up.sh [--check] [--all] [--seed] [--open] [--down] [--destroy] [web|api|benchmark ...]
+#   --check    only test that this machine can run it (Docker, KVM, tools, ports, disk, memory) and say how to fix
+#              each problem; starts nothing. The same test runs at the start of every other run.
 #   web, api   rebuild and restart only these (default: web and api, the code of this repository)
 #   benchmark  rebuild the benchmark service from BENCHMARK_REF in deploy/benchmark/benchmark.env
 #   --all      rebuild and restart every service of the seven
@@ -45,6 +47,7 @@ core=(postgres ollama api web analysis benchmark nginx)
 rebuild=()
 seed=0
 open_site=0
+check_only=0
 down=0
 destroy=0
 
@@ -59,6 +62,7 @@ usage() {
 
 for arg in "$@"; do
   case "$arg" in
+    --check) check_only=1 ;;
     --all) rebuild=(api web) ;;
     --seed) seed=1 ;;
     --open) open_site=1 ;;
@@ -80,9 +84,89 @@ if [[ ${#rebuild[@]} -eq 0 ]]; then
   rebuild=(api web)
 fi
 
-command -v docker >/dev/null || die "docker is not installed or not on PATH"
-command -v curl >/dev/null || die "curl is not installed or not on PATH"
-docker info >/dev/null 2>&1 || die "cannot reach the Docker daemon (is it running?)"
+# Tests that this machine can run the chain below, and says how to fix each problem. Every line starts with ok,
+# warning or PROBLEM; one PROBLEM fails the check. Nothing is started or changed.
+preflight() {
+  local problems=0 name tool kib mem_mib need_mib vm_mib running_container
+
+  report() { # status text
+    printf '  %-8s %s\n' "$1" "$2"
+    [[ "$1" == "PROBLEM" ]] && problems=$((problems + 1))
+    return 0
+  }
+
+  echo "Checking this machine for dev-up.sh"
+  if ((BASH_VERSINFO[0] < 4)); then
+    report PROBLEM "bash ${BASH_VERSION} is too old; install bash 4 or later (on Windows: Git for Windows)"
+  else
+    report ok "bash ${BASH_VERSION%%(*}"
+  fi
+
+  for tool in curl ssh tar git; do
+    if command -v "$tool" >/dev/null 2>&1; then
+      report ok "$tool"
+    else
+      report PROBLEM "$tool is not on PATH (on Windows: install Git for Windows and use Git Bash)"
+    fi
+  done
+
+  if ! command -v docker >/dev/null 2>&1; then
+    report PROBLEM "docker is not on PATH; install Docker Desktop (Windows, macOS) or Docker Engine (Linux)"
+  elif ! docker info >/dev/null 2>&1; then
+    report PROBLEM "the Docker daemon does not answer; start Docker Desktop, wait until it says running, and try again"
+  else
+    report ok "docker $(docker version --format '{{.Server.Version}}' 2>/dev/null)"
+    if docker compose version >/dev/null 2>&1; then
+      report ok "docker compose"
+    else
+      report PROBLEM "the docker compose plugin is missing; update Docker Desktop, or install docker-compose-plugin"
+    fi
+
+    if docker run --rm --privileged alpine sh -c 'test -e /dev/kvm' >/dev/null 2>&1; then
+      report ok "/dev/kvm is available to Docker (Proxmox VE needs it)"
+    else
+      report PROBLEM "/dev/kvm is not available to Docker. On Windows with WSL2: turn on virtualization in the BIOS, open a WSL distribution that loads the KVM modules (for example: wsl -d Debian), and try again. On Linux: install and load kvm for your CPU"
+    fi
+
+    kib="$(docker info --format '{{.MemTotal}}' 2>/dev/null || echo 0)"
+    mem_mib=$((kib / 1024 / 1024))
+    vm_mib="$(value_of "$root/deploy.env" VM_MEMORY 2>/dev/null || true)"
+    [[ "$vm_mib" =~ ^[0-9]+$ ]] || vm_mib=12288
+    need_mib=$((vm_mib + 2048))
+    if ((mem_mib >= need_mib)); then
+      report ok "Docker has ${mem_mib} MiB of memory (the VM uses ${vm_mib} MiB)"
+    else
+      report warning "Docker has ${mem_mib} MiB of memory and about ${need_mib} MiB are needed; on Windows raise the memory in %UserProfile%\\.wslconfig (memory=16GB) and run: wsl --shutdown"
+    fi
+  fi
+
+  # The ports are free, unless the container of an earlier run owns them.
+  running_container="$(value_of "$root/deploy.env" PVE_CONTAINER 2>/dev/null || true)"
+  if [[ -z "$running_container" || "$(docker inspect -f '{{.State.Running}}' "$running_container" 2>/dev/null || true)" != "true" ]]; then
+    for name in "$site_port" "$pve_port"; do
+      if (exec 3<>"/dev/tcp/127.0.0.1/${name}") 2>/dev/null; then
+        report PROBLEM "port ${name} on this machine is in use; stop what uses it, or set DEV_SITE_PORT or DEV_PVE_PORT"
+      else
+        report ok "port ${name} is free"
+      fi
+    done
+  else
+    report ok "ports ${site_port} and ${pve_port} belong to the running Proxmox container"
+  fi
+
+  kib="$(df -Pk "$root" 2>/dev/null | awk 'NR==2 {print $4}')"
+  if [[ -n "$kib" ]] && ((kib / 1024 / 1024 < 40)); then
+    report warning "only $((kib / 1024 / 1024)) GiB free on the disk of this folder; the first run needs about 40 GiB for the images, the VM and the models"
+  else
+    report ok "disk space"
+  fi
+
+  if ((problems > 0)); then
+    echo "$problems problem(s). Fix them and run: bash scripts/dev-up.sh --check"
+    return 1
+  fi
+  echo "This machine can run dev-up.sh."
+}
 
 # A random secret: base64 of the given number of bytes, without the characters / + = that need quoting.
 secret() {
@@ -106,6 +190,11 @@ make_env() {
   cp "$dir/$name.example" "$dir/$name"
   echo "==> made $dir/$name from the example"
 }
+
+preflight || exit 1
+if ((check_only)); then
+  exit 0
+fi
 
 pve_env="$root/pve.env"
 deploy_env="$root/deploy.env"
