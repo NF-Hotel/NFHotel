@@ -1,5 +1,8 @@
+using NFHotel.Application.Dto.AiDefaults;
 using NFHotel.Application.Dto.Benchmark;
+using NFHotel.Application.UseCases.AiDefaults;
 using NFHotel.Application.UseCases.Benchmark;
+using NFHotel.Domain.Entities;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Admin.Benchmark;
@@ -11,14 +14,102 @@ namespace NFHotel.Web.Features.Admin.Benchmark;
 public sealed class BenchmarkRunListViewModel
 {
     private readonly IUseCaseRunner<IBenchmarkService> _benchmark;
+    private readonly IUseCaseRunner<IAiDefaultService> _aiDefaults;
+    private readonly Dictionary<string, string> _drafts = [];
 
     /// <summary>Creates the view model.</summary>
     /// <param name="benchmark">Runs the use cases with the staff token of the signed-in user.</param>
-    public BenchmarkRunListViewModel(IUseCaseRunner<IBenchmarkService> benchmark)
+    /// <param name="aiDefaults">Reads and sets the default AI models with the same token.</param>
+    public BenchmarkRunListViewModel(IUseCaseRunner<IBenchmarkService> benchmark, IUseCaseRunner<IAiDefaultService> aiDefaults)
     {
         ArgumentNullException.ThrowIfNull(benchmark);
+        ArgumentNullException.ThrowIfNull(aiDefaults);
 
         _benchmark = benchmark;
+        _aiDefaults = aiDefaults;
+    }
+
+    /// <summary>The default AI models that are set, by purpose.</summary>
+    public IReadOnlyList<AiDefaultDto> Defaults { get; private set; } = [];
+
+    /// <summary>The models seen in the stored runs, in alphabetical order: what the Manager can choose from.</summary>
+    public IReadOnlyList<string> KnownModels =>
+        [.. Runs.SelectMany(run => run.Models).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+
+    /// <summary>The model that is set as the default of a purpose, or <c>null</c> when none is set.</summary>
+    /// <param name="purpose">The purpose.</param>
+    /// <returns>The default, or <c>null</c>.</returns>
+    public AiDefaultDto? DefaultOf(string purpose) => Defaults.FirstOrDefault(value => value.Purpose == purpose);
+
+    /// <summary>The model typed or chosen in the field of a purpose; the saved default until the user changes it.</summary>
+    /// <param name="purpose">The purpose.</param>
+    /// <returns>The text of the field.</returns>
+    public string DraftOf(string purpose) =>
+        _drafts.TryGetValue(purpose, out var draft) ? draft : DefaultOf(purpose)?.Model ?? string.Empty;
+
+    /// <summary>Remembers the text of the field of a purpose.</summary>
+    /// <param name="purpose">The purpose.</param>
+    /// <param name="model">The text.</param>
+    public void SetDraft(string purpose, string? model) => _drafts[purpose] = model ?? string.Empty;
+
+    /// <summary>Sets the default of a purpose to the model in its field.</summary>
+    /// <param name="purpose">The purpose.</param>
+    /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
+    /// <returns>A task that ends when the default is saved and read again.</returns>
+    public Task SaveDefaultAsync(string purpose, CancellationToken cancellationToken = default)
+    {
+        var model = DraftOf(purpose).Trim();
+        var source = Runs.FirstOrDefault(run => run.Models.Contains(model, StringComparer.Ordinal))?.RunId;
+
+        return SetDefaultAsync(purpose, model, source, cancellationToken);
+    }
+
+    /// <summary>Sets the default of a purpose to the model of a result row, remembering the run.</summary>
+    /// <param name="purpose">The purpose.</param>
+    /// <param name="model">The model of the row.</param>
+    /// <param name="runId">The run of the row.</param>
+    /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
+    /// <returns>A task that ends when the default is saved and read again.</returns>
+    public async Task SetDefaultAsync(string purpose, string model, Guid? runId, CancellationToken cancellationToken = default)
+    {
+        IsBusy = true;
+        try
+        {
+            var result = await _aiDefaults
+                .RunAsync((service, token) => service.SetAsync(purpose, new SetAiDefaultRequest(model, runId), string.Empty, token), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (result.IsFailure)
+            {
+                Errors = ErrorMessages.Describe(result);
+                return;
+            }
+
+            Errors = [];
+            _drafts.Remove(purpose);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        await LoadDefaultsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>The words that name a purpose in a label, for example "the website".</summary>
+    /// <param name="purpose">The purpose.</param>
+    /// <returns>The label to show.</returns>
+    public string LabelOfPurpose(string purpose) =>
+        purpose == AiDefault.Website ? "the website" : "the market analysis";
+
+    private async Task LoadDefaultsAsync(CancellationToken cancellationToken)
+    {
+        var result = await _aiDefaults
+            .RunAsync((service, token) => service.GetAllAsync(token), cancellationToken)
+            .ConfigureAwait(false);
+
+        // A failing read of the defaults does not hide the runs; the card then shows no default.
+        Defaults = result.IsFailure ? [] : result.Value;
     }
 
     /// <summary>The stored runs, newest first.</summary>
@@ -66,6 +157,7 @@ public sealed class BenchmarkRunListViewModel
 
             Errors = [];
             Runs = result.Value;
+            await LoadDefaultsAsync(cancellationToken).ConfigureAwait(false);
         }
         finally
         {

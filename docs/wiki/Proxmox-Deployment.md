@@ -187,4 +187,9 @@ joins the internal network `nfhotel-api` and publishes no host port.
 - The benchmark service delivers the finished result to `http://nfhotel-api:8080/api/benchmark/results` with the
   `Api__Token` of `deploy/nfhotel-api/nfhotel-api.env`. That value is its `NFBENCH_WEB_TOKEN`.
 - A Manager starts a run at `/admin/benchmark/start` and reads the stored runs at `/admin/benchmark`.
+- A Manager sets the default AI model of the website and of the market analysis on `/admin/benchmark` (ADR-0014): type
+  or choose a model, or press "Use for the website" or "Use for the market analysis" on a result row. `GET /api/ai-defaults`
+  gives the defaults to a caller with the service token. `scripts/deploy-services.sh` writes the model of the market
+  analysis as `model` in the `[llm]` section of `deploy/market-analysis/market-analysis.toml` before it starts the analysis
+  service, so a new default applies at the next deployment of that service.
 - Until `BenchmarkService__Token` is set, the start page says that the service is not set up.

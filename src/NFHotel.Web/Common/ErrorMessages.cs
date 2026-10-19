@@ -1,5 +1,6 @@
 using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases;
+using NFHotel.Domain.Errors;
 
 namespace NFHotel.Web.Common;
 
@@ -104,6 +105,9 @@ public static class ErrorMessages
             [ErrorCodes.Api.Forbidden] = "Your role isn't allowed to do that.",
             [ErrorCodes.Staff.InvalidCredentials] = "The user name or the password is wrong.",
             [ErrorCodes.Staff.TooManyAttempts] = "Too many failed attempts. Wait fifteen minutes and try again.",
+            [AiDefaultErrors.PurposeInvalid] = "The default AI model can be set for the website or the market analysis.",
+            [AiDefaultErrors.ModelInvalid] = "Enter a model name of at most 100 characters.",
+            [AiDefaultErrors.SetByInvalid] = "The staff member could not be named. Please sign in again.",
             [ErrorCodes.Benchmark.NotFound] = "The benchmark run was not found.",
             [ErrorCodes.Benchmark.SchemaVersionUnsupported] = "The result uses a schema version that is not supported.",
             [ErrorCodes.Benchmark.BodyInvalid] = "The benchmark result is incomplete.",

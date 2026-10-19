@@ -1,6 +1,8 @@
+using NFHotel.Application.Dto.AiDefaults;
 using NFHotel.Application.Dto.Benchmark;
 using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.AiDefaults;
 using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Web.Common;
 using NFHotel.Web.Features.Admin.Benchmark;
@@ -251,9 +253,127 @@ public sealed class BenchmarkRunListViewModelTests
 
     #endregion
 
+    #region Default AI models
+
+    /// <summary>Positive: the models seen in the runs are what the Manager can choose from, once each and in order.</summary>
+    [Fact]
+    public async Task KnownModels_AfterTheRunsAreLoaded_ListsEachModelOnceInOrder()
+    {
+        // Arrange
+        var viewModel = Build(out _);
+
+        // Act
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(["m1"], viewModel.KnownModels);
+    }
+
+    /// <summary>State: the field shows the saved default until the user types, then the typed text.</summary>
+    [Fact]
+    public async Task DraftOf_SavedDefaultAndTyping_ShowsTheSavedModelThenTheTypedOne()
+    {
+        // Arrange
+        var viewModel = Build(out _, out var defaults);
+        defaults.GetAllAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<AiDefaultDto>>.Success([new AiDefaultDto("website", "saved", "manager", Start, null)]));
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Act and assert
+        Assert.Equal("saved", viewModel.DraftOf("website"));
+        viewModel.SetDraft("website", "typed");
+        Assert.Equal("typed", viewModel.DraftOf("website"));
+        Assert.Equal(string.Empty, viewModel.DraftOf("market_analysis"));
+    }
+
+    /// <summary>Positive: saving the field sets the default with the newest run that has the model, then reads the defaults again.</summary>
+    [Fact]
+    public async Task SaveDefaultAsync_ModelOfARun_SetsItWithThatRunAndReadsAgain()
+    {
+        // Arrange
+        var viewModel = Build(out _, out var defaults);
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        viewModel.SetDraft("market_analysis", " m1 ");
+
+        // Act
+        await viewModel.SaveDefaultAsync("market_analysis", TestContext.Current.CancellationToken);
+
+        // Assert
+        await defaults.Received(1).SetAsync("market_analysis", Arg.Is<SetAiDefaultRequest>(request => request.Model == "m1" && request.SourceRunId == RunId), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await defaults.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
+        Assert.Empty(viewModel.Errors);
+    }
+
+    /// <summary>Positive: a typed model that no run has is set without a source run.</summary>
+    [Fact]
+    public async Task SaveDefaultAsync_ModelNoRunHas_SetsItWithoutASourceRun()
+    {
+        // Arrange
+        var viewModel = Build(out _, out var defaults);
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        viewModel.SetDraft("website", "phi3.5");
+
+        // Act
+        await viewModel.SaveDefaultAsync("website", TestContext.Current.CancellationToken);
+
+        // Assert
+        await defaults.Received(1).SetAsync("website", Arg.Is<SetAiDefaultRequest>(request => request.Model == "phi3.5" && request.SourceRunId == null), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>Positive: the button of a result row sets the default to the model and the run of that row.</summary>
+    [Fact]
+    public async Task SetDefaultAsync_FromAResultRow_SetsTheModelWithTheRun()
+    {
+        // Arrange
+        var viewModel = Build(out _, out var defaults);
+
+        // Act
+        await viewModel.SetDefaultAsync("website", "m1", RunId, TestContext.Current.CancellationToken);
+
+        // Assert
+        await defaults.Received(1).SetAsync("website", Arg.Is<SetAiDefaultRequest>(request => request.Model == "m1" && request.SourceRunId == RunId), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>Negative: a refused default shows the text of its code and reads nothing again.</summary>
+    [Fact]
+    public async Task SetDefaultAsync_Refused_ShowsTheText()
+    {
+        // Arrange
+        var viewModel = Build(out _, out var defaults);
+        defaults.SetAsync(Arg.Any<string>(), Arg.Any<SetAiDefaultRequest>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Result<AiDefaultDto>.Failure(NFHotel.Domain.Errors.AiDefaultErrors.ModelInvalid));
+
+        // Act
+        await viewModel.SetDefaultAsync("website", " ", null, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("Enter a model name of at most 100 characters.", Assert.Single(viewModel.Errors));
+        await defaults.DidNotReceive().GetAllAsync(Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>Negative: a failing read of the defaults does not hide the runs.</summary>
+    [Fact]
+    public async Task InitializeAsync_DefaultsUnavailable_StillShowsTheRuns()
+    {
+        // Arrange
+        var viewModel = Build(out _, out var defaults);
+        defaults.GetAllAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<AiDefaultDto>>.Failure(ErrorCodes.Api.Unavailable));
+
+        // Act
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Single(viewModel.Runs);
+        Assert.Empty(viewModel.Defaults);
+        Assert.Empty(viewModel.Errors);
+    }
+
+    #endregion
+
     #region Helpers
 
-    private static BenchmarkRunListViewModel Build(out IBenchmarkService service)
+    private static BenchmarkRunListViewModel Build(out IBenchmarkService service) => Build(out service, out _);
+
+    private static BenchmarkRunListViewModel Build(out IBenchmarkService service, out IAiDefaultService defaults)
     {
         var header = new BenchmarkRunListItemDto(RunId, Start, Start.AddMinutes(5), "d.csv", "Test CPU", 16384, null, "ollama", "0.5.1", ["m1"], 1);
         var details = new BenchmarkRunDetailsDto(header, new string('a', 64), 10, "hotel-v1", 8, "Linux", []);
@@ -263,6 +383,20 @@ public sealed class BenchmarkRunListViewModelTests
         fake.GetOutputAsync(7, Arg.Any<CancellationToken>()).Returns(Result<BenchmarkOutputDto>.Success(new BenchmarkOutputDto(7, "m1", "{}", null, null)));
         fake.DeleteRunAsync(RunId, Arg.Any<CancellationToken>()).Returns(Result.Success());
         service = fake;
+        var fakeDefaults = Substitute.For<IAiDefaultService>();
+        fakeDefaults.GetAllAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<AiDefaultDto>>.Success([]));
+        fakeDefaults.SetAsync(Arg.Any<string>(), Arg.Any<SetAiDefaultRequest>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result<AiDefaultDto>.Success(new AiDefaultDto(call.ArgAt<string>(0), call.ArgAt<SetAiDefaultRequest>(1).Model, "manager", Start, call.ArgAt<SetAiDefaultRequest>(1).SourceRunId)));
+        defaults = fakeDefaults;
+        var defaultsRunner = Substitute.For<IUseCaseRunner<IAiDefaultService>>();
+        defaultsRunner.RunAsync(
+                Arg.Any<Func<IAiDefaultService, CancellationToken, Task<Result<IReadOnlyList<AiDefaultDto>>>>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<Func<IAiDefaultService, CancellationToken, Task<Result<IReadOnlyList<AiDefaultDto>>>>>()(fakeDefaults, call.Arg<CancellationToken>()));
+        defaultsRunner.RunAsync(
+                Arg.Any<Func<IAiDefaultService, CancellationToken, Task<Result<AiDefaultDto>>>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<Func<IAiDefaultService, CancellationToken, Task<Result<AiDefaultDto>>>>()(fakeDefaults, call.Arg<CancellationToken>()));
 
         var runner = Substitute.For<IUseCaseRunner<IBenchmarkService>>();
         runner.RunAsync(
@@ -281,7 +415,7 @@ public sealed class BenchmarkRunListViewModelTests
                 Arg.Any<Func<IBenchmarkService, CancellationToken, Task<Result>>>(),
                 Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<Func<IBenchmarkService, CancellationToken, Task<Result>>>()(fake, call.Arg<CancellationToken>()));
-        return new BenchmarkRunListViewModel(runner);
+        return new BenchmarkRunListViewModel(runner, defaultsRunner);
     }
 
     #endregion

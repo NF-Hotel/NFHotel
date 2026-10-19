@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using NFHotel.Api.Contracts;
 using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.AiDefaults;
 using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
@@ -103,6 +104,8 @@ public class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IRoomService>();
             services.RemoveAll<IBenchmarkService>();
             services.RemoveAll<IBenchmarkIntake>();
+            services.RemoveAll<IAiDefaultService>();
+            services.AddSingleton<IAiDefaultService>(_ => World.AiDefaultService());
             services.AddSingleton<IBookingService>(_ => World.BookingService());
             services.AddSingleton<IGuestService>(_ => World.GuestService());
             services.AddSingleton<IRoomService>(_ => World.RoomService());
