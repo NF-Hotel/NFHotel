@@ -1,5 +1,7 @@
 # Proxmox Deployment
 
+To try this deployment on your own machine, see [Local Development Deploy](Local-Development-Deploy).
+
 > **Moved.** This page is maintained in [NF-Hotel/DevOps](https://github.com/NF-Hotel/DevOps/blob/main/docs/wiki/Proxmox-Deployment.md) (ADR-0012). This copy stays until MIL-025 task 7 and is not updated. The CI/CD and database pages are in DevOps only: [CI-CD](https://github.com/NF-Hotel/DevOps/blob/main/docs/wiki/CI-CD.md), [Database Preparation](https://github.com/NF-Hotel/DevOps/blob/main/docs/wiki/Database-Preparation.md).
 
 The development environment is one virtual machine (VM) on Proxmox VE. Every service runs as a

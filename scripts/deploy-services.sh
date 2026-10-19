@@ -263,6 +263,10 @@ for s in "${ordered[@]}"; do
   # --wait returns once every service with a healthcheck is healthy.
   if [[ "$s" != "nginx" ]]; then
     args+=(--wait --wait-timeout 300)
+  else
+    # The proxy keeps nothing. Its templates are rendered into the container when it starts, so a container that is
+    # kept would still hold a file of a template that was removed; always start it fresh.
+    args+=(--force-recreate)
   fi
   (cd "$d" && docker compose "${args[@]}") || die "deploying $s failed"
   if [[ "$s" == "analysis" ]] && ((analysis_changed)); then

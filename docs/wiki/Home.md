@@ -5,6 +5,8 @@ clean-architecture .NET solution. This wiki is written for the people who build 
 
 ## Pages
 
+- [Local Development Deploy](Local-Development-Deploy): run the whole deployment on your own machine with one
+  script, to see a change working. Start here.
 - [Proxmox Deployment](Proxmox-Deployment): set up the Proxmox virtual machine and the Docker
   containers that run the whole system (development environment).
 - [Appendix: Project Documents](Appendix): links to every document under `docs/`.
