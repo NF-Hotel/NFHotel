@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [4c8f103] |
 
 ---
 
@@ -63,3 +63,4 @@ Go — every criterion of QC-MIL-001 passes.
 [MIL-025]: ../../milestones/mil-025-devops-repository-consolidation.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[4c8f103]: https://github.com/NF-Hotel/NFHotel/commit/4c8f1030fdf53a5d9d827478244c55ecae73b8eb
