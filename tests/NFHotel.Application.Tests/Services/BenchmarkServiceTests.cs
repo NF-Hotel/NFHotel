@@ -7,7 +7,7 @@ using NSubstitute;
 
 namespace NFHotel.Application.Tests.Services;
 
-/// <summary>Storing and reading the benchmark runs that the benchmark service delivers (ADR-0008).</summary>
+/// <summary>Storing and reading the benchmark runs that the benchmark service delivers (ADR-0013).</summary>
 public sealed class BenchmarkServiceTests
 {
     private static readonly Guid RunId = Guid.Parse("5b3f0e1a-0000-4000-8000-000000000001");

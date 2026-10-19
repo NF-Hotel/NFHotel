@@ -11,7 +11,7 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Api.Tests;
 
 /// <summary>
-/// The benchmark endpoints (ADR-0008): the benchmark service posts a run with the service token only, and a Manager
+/// The benchmark endpoints (ADR-0013): the benchmark service posts a run with the service token only, and a Manager
 /// reads the stored runs. Every refusal happens before the use case is called.
 /// </summary>
 public sealed class BenchmarkEndpointTests

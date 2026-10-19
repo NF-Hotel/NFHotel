@@ -4,7 +4,7 @@ using NFHotel.Application.Errors;
 
 namespace NFHotel.ApiClient.Tests;
 
-/// <summary>The web application reads the stored benchmark runs through the API (ADR-0008); it never posts a run.</summary>
+/// <summary>The web application reads the stored benchmark runs through the API (ADR-0013); it never posts a run.</summary>
 public sealed class BenchmarkRequestTests
 {
     private static readonly Uri Base = new("http://api.test/");

@@ -6,7 +6,7 @@ using NFHotel.Infrastructure.Repositories;
 
 namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
 
-/// <summary>The benchmark tables against a real PostgreSQL: idempotency, the reads and the answer kept apart (ADR-0008).</summary>
+/// <summary>The benchmark tables against a real PostgreSQL: idempotency, the reads and the answer kept apart (ADR-0013).</summary>
 [Collection(PostgreSqlCollection.Name)]
 public sealed class BenchmarkRepositoryTests : IAsyncLifetime
 {

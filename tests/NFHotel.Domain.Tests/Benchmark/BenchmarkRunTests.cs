@@ -4,7 +4,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Tests.Benchmark;
 
-/// <summary>The rules of a stored benchmark run and its requests (ADR-0008).</summary>
+/// <summary>The rules of a stored benchmark run and its requests (ADR-0013).</summary>
 public sealed class BenchmarkRunTests
 {
     private static readonly Guid RunId = Guid.Parse("5b3f0e1a-0000-4000-8000-000000000001");
