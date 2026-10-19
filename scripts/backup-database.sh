@@ -19,6 +19,10 @@
 #   BACKUP_SSH_KEY  the key for that copy (default /root/.ssh/nfhotel-backup); the host
 #                   key of the target must be in root's known_hosts (checked strictly)
 #   BACKUP_DIR      local folder (default /var/backups/nfhotel)
+#   BACKUP_CONTAINER  the running PostgreSQL container to dump (ADR-0010); empty uses the
+#                   compose project in deploy/postgres
+#   BACKUP_ROLE     the role that dumps, for example nfhotel_backup (ADR-0011); empty uses
+#                   the superuser of the image
 #
 # Usage: backup-database.sh [--apply]
 #   --apply  make the backup; without it the settings are checked and nothing is written
@@ -68,8 +72,18 @@ file="$backup_dir/nfhotel-$kind-$stamp.dump.age"
 partial="$file.partial"
 
 echo "==> dumping the database to $file"
-(cd "$app_dir/deploy/postgres" && docker compose --env-file postgres.env exec -T postgres \
-  sh -c 'pg_dump --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --format=custom --no-owner') |
+# The role that dumps: the read-only nfhotel_backup of ADR-0011 when BACKUP_ROLE says so,
+# otherwise the superuser of the image. It connects over the socket inside the container.
+role="${BACKUP_ROLE:-}"
+[[ -z "$role" || "$role" =~ ^[a-z_][a-z0-9_]*$ ]] || die "BACKUP_ROLE '$role' is not a role name"
+# shellcheck disable=SC2016 # expanded by the shell inside the container, not here
+dump='pg_dump --username "${1:-$POSTGRES_USER}" --dbname "$POSTGRES_DB" --format=custom --no-owner'
+if [[ -n "${BACKUP_CONTAINER:-}" ]]; then
+  [[ "$BACKUP_CONTAINER" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] || die "BACKUP_CONTAINER is not a container name"
+  docker exec "$BACKUP_CONTAINER" sh -c "$dump" _ "$role"
+else
+  (cd "$app_dir/deploy/postgres" && docker compose --env-file postgres.env exec -T postgres sh -c "$dump" _ "$role")
+fi |
   age --encrypt --recipient "$AGE_RECIPIENT" --output "$partial" ||
   {
     rm -f "$partial"

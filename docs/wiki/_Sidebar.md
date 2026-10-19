@@ -1,4 +1,5 @@
 - [Home](Home)
 - [Proxmox Deployment](Proxmox-Deployment)
 - [CI/CD](CI-CD)
+- [Database Preparation](Database-Preparation)
 - [Appendix](Appendix)
