@@ -15,6 +15,21 @@ public static class ApiRoutes
     /// <summary>The route prefix of the room endpoints.</summary>
     public const string Rooms = "api/rooms";
 
+    /// <summary>The route prefix of the benchmark results (ADR-0008).</summary>
+    public const string Benchmark = "api/benchmark";
+
+    /// <summary>The delivery of a result below <see cref="Benchmark"/>.</summary>
+    public const string BenchmarkResults = "results";
+
+    /// <summary>The list of runs below <see cref="Benchmark"/>.</summary>
+    public const string BenchmarkRuns = "runs";
+
+    /// <summary>One run below <see cref="Benchmark"/>, by the run id of the contract.</summary>
+    public const string BenchmarkRunById = "runs/{runId:guid}";
+
+    /// <summary>The answer text of one request below <see cref="Benchmark"/>.</summary>
+    public const string BenchmarkOutput = "results/{id:int}/output";
+
     /// <summary>The route prefix of the staff sign-in (ADR-0005).</summary>
     public const string Auth = "api/auth";
 

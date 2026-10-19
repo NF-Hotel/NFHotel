@@ -15,7 +15,7 @@ document of a type. `Primary File` may contain a glob (e.g.
 | SA | Stakeholder Analysis | docs/stakeholder-analysis.md | 002 |
 | PP | Project Plan | docs/project-plan.md | 002 |
 | MIL | Milestone / Gateway | docs/milestones/*.md | 021 |
-| RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 088 |
+| RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 090 |
 | TM | Traceability Matrix | docs/sqa/traceability-matrix.md | 002 |
 | ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0007 |
 | US | User Story | docs/user-stories.md | 002 |

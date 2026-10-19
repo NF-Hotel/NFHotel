@@ -85,6 +85,16 @@ public static class Permissions
     public const string SalesView = "Sales.View";
 
     /// <summary>
+    /// Tilladelse til at se de gemte benchmark-kørsler i back office (ADR-0008).
+    /// </summary>
+    public const string BenchmarkView = "Benchmark.View";
+
+    /// <summary>
+    /// Tilladelse til at starte en benchmark-kørsel fra back office (ADR-0008, MIL-020).
+    /// </summary>
+    public const string BenchmarkRun = "Benchmark.Run";
+
+    /// <summary>
     /// Alle permissions, til at bygge én autorisationspolitik pr. permission.
     /// </summary>
     public static readonly IReadOnlyList<string> All =
@@ -104,5 +114,7 @@ public static class Permissions
         RoomsView,
         RoomsManage,
         SalesView,
+        BenchmarkView,
+        BenchmarkRun,
     ];
 }

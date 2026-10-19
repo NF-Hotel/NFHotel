@@ -20,6 +20,7 @@ public sealed class EndpointProtectionTests
         "BookingsController.GetAvailableRoomsAsync",
         "BookingsController.CreateAsync",
         "AuthController.LoginAsync",
+        "BenchmarkController.PostResultAsync",
     ];
 
     #region Protection

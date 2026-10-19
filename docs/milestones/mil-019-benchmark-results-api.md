@@ -13,6 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-18 | Proposed | Claude (AI) | S01 | Initial version | [7fbeba1] |
 | 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-086 Go | [7fbeba1] |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Tasks 1 to 7 marked done after RC-088 and RC-089 | pending |
 
 ---
 
@@ -81,13 +82,13 @@ Decide whether the web application may be the one place that stores and shows th
 
 | # | Task | Summary | Needs its own Use Case/User Story? | Reference |
 | --- | --- | --- | --- | --- |
-| 1 | Amend Business Case and Project Plan | Add objective 22, the scope item, success criterion 25 and the schedule rows of MIL-019 and MIL-020; review again. | No | |
-| 2 | Record the decisions in ADR-0008 | The six decisions above. | No | |
-| 3 | Domain and application | Run and result types, port, use cases to store, list and read; unit tests. | Yes | UC: administrator reads a stored benchmark run |
-| 4 | Tables and repository | Migration, repository, integration test of the unique run id. | No | |
-| 5 | API endpoints and permissions | The three endpoints, the two permissions, the tests. | No | |
-| 6 | Back office pages | List and detail page, menu entry for the Manager; page tests. | No | |
-| 7 | Check and review | Build, format, test; reviews against `qc-programming-csharp` and `qc-adr`. | No | |
+| 1 | Amend Business Case and Project Plan | Add objective 22, the scope item, success criterion 25 and the schedule rows of MIL-019 and MIL-020; review again. | No | Done: RC-085 |
+| 2 | Record the decisions in ADR-0008 | The six decisions above. | No | Done: ADR-0008, RC-088 |
+| 3 | Domain and application | Run and result types, port, use cases to store, list and read; unit tests. | Yes | UC: administrator reads a stored benchmark run. Done: `BenchmarkRun`, `BenchmarkService`; the use case document is open (RC-089) |
+| 4 | Tables and repository | Migration, repository, integration test of the unique run id. | No | Done: migration `AddBenchmarkRun`, `BenchmarkRunRepository`; 8 tests against PostgreSQL |
+| 5 | API endpoints and permissions | The three endpoints, the two permissions, the tests. | No | Done: `BenchmarkController`, `Benchmark.View`, `Benchmark.Run` |
+| 6 | Back office pages | List and detail page, menu entry for the Manager; page tests. | No | Done: `/admin/benchmark`, menu item for the Manager |
+| 7 | Check and review | Build, format, test; reviews against `qc-programming-csharp` and `qc-adr`. | No | Done: RC-088, RC-089 |
 
 ---
 

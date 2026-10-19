@@ -1,0 +1,170 @@
+@page "/admin/benchmark"
+@layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.BenchmarkView)]
+@rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using System.Globalization
+@using NFHotel.Application.Dto.Benchmark
+@using NFHotel.Web.Features.Admin.Benchmark
+@inject BenchmarkRunListViewModel ViewModel
+
+@*
+    The benchmark runs that the benchmark service delivered (ADR-0008, MIL-019). Only markup and binding.
+
+    The list never carries an answer text: the answer of one request is read on its own with its button, because it can
+    be long. The memory figures are what the machine had in use, not what the model alone used (BENCHMARK_METHODOLOGY.md).
+*@
+
+<PageTitle>Benchmark runs — administration</PageTitle>
+
+<div class="stack-lg">
+    <PageHeader Title="Benchmark runs"
+                Subtitle="Every finished run of the local models, with the machine it ran on." />
+
+    <ErrorAlert Errors="ViewModel.Errors" />
+
+    @if (!ViewModel.IsLoaded)
+    {
+        <LoadingSkeleton Rows="4" />
+    }
+    else if (ViewModel.IsEmpty)
+    {
+        <EmptyState Title="No benchmark run has been stored yet"
+                    Description="A run appears here when the benchmark service has finished it and delivered the result." />
+    }
+    else if (ViewModel.Runs.Count > 0)
+    {
+        <div class="table-wrap">
+            <table class="table">
+                <caption>@ViewModel.Runs.Count runs, newest first</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Started</th>
+                        <th scope="col">Models</th>
+                        <th scope="col" class="numeric">Requests</th>
+                        <th scope="col">Machine</th>
+                        <th scope="col">Dataset</th>
+                        <th scope="col" class="table-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var run in ViewModel.Runs)
+                    {
+                        <tr>
+                            <td>@run.StartedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) UTC</td>
+                            <td>@string.Join(", ", run.Models)</td>
+                            <td class="numeric">@run.RequestCount</td>
+                            <td>@Machine(run)</td>
+                            <td>@run.DatasetName</td>
+                            <td>
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        disabled="@ViewModel.IsBusy"
+                                        aria-expanded="@(ViewModel.SelectedRun?.Header.RunId == run.RunId)"
+                                        @onclick="() => SelectAsync(run.RunId)">
+                                    @(ViewModel.SelectedRun?.Header.RunId == run.RunId ? "Close" : "Open")
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (ViewModel.SelectedRun is { } selected)
+    {
+        <section class="card card-pad stack" aria-labelledby="run-details">
+            <h2 class="subtitle" id="run-details">Run @selected.Header.RunId</h2>
+            <p>
+                @Machine(selected.Header), @selected.CpuCores cores, @selected.OperatingSystem.
+                Backend @selected.Header.BackendName @selected.Header.BackendVersion.
+                Dataset @selected.Header.DatasetName (@selected.DatasetRows rows), prompt @selected.PromptVersion.
+            </p>
+
+            <div class="table-wrap">
+                <table class="table">
+                    <caption>@selected.Results.Count requests</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Model</th>
+                            <th scope="col" class="numeric">Run</th>
+                            <th scope="col">Start</th>
+                            <th scope="col" class="numeric">First token (s)</th>
+                            <th scope="col" class="numeric">Total (s)</th>
+                            <th scope="col" class="numeric">Tokens</th>
+                            <th scope="col" class="numeric">Tokens/s</th>
+                            <th scope="col" class="numeric">RAM peak (MB)</th>
+                            <th scope="col" class="numeric">GPU peak (MB)</th>
+                            <th scope="col">Outcome</th>
+                            <th scope="col" class="table-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var result in selected.Results)
+                        {
+                            <tr>
+                                <td>@result.Model</td>
+                                <td class="numeric">@result.RunNumber</td>
+                                <td>@(result.Cold ? "cold" : "warm")</td>
+                                <td class="numeric">@Number(result.TimeToFirstTokenSeconds)</td>
+                                <td class="numeric">@Number(result.TotalSeconds)</td>
+                                <td class="numeric">@result.CompletionTokens@(result.TokensEstimated ? " (est.)" : string.Empty)</td>
+                                <td class="numeric">@Number(result.TokensPerSecond)</td>
+                                <td class="numeric">@Number(result.RamPeakMb)</td>
+                                <td class="numeric">@Number(result.VramPeakMb)</td>
+                                <td>@Outcome(result)</td>
+                                <td>
+                                    <button type="button"
+                                            class="btn btn-ghost btn-sm"
+                                            disabled="@ViewModel.IsBusy"
+                                            @onclick="() => ShowOutputAsync(result.BenchmarkResultId)">
+                                        Show answer
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (ViewModel.ShownOutput is { } output)
+            {
+                <section class="stack-sm" aria-labelledby="run-answer">
+                    <h3 class="subtitle" id="run-answer">Answer of @output.Model</h3>
+                    @if (!string.IsNullOrWhiteSpace(output.Error))
+                    {
+                        <AlertBox Kind="AlertKind.Error" Message="@output.Error" />
+                    }
+                    @if (!string.IsNullOrWhiteSpace(output.ValidationError))
+                    {
+                        <AlertBox Kind="AlertKind.Info" Message="@output.ValidationError" />
+                    }
+                    <pre class="answer-text">@output.Output</pre>
+                    <button type="button" class="btn btn-ghost btn-sm" @onclick="ViewModel.HideOutput">Hide the answer</button>
+                </section>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    /// <summary>Loads the list when the page opens.</summary>
+    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
+
+    private Task SelectAsync(Guid runId) => ViewModel.SelectAsync(runId, ComponentToken);
+
+    private Task ShowOutputAsync(int benchmarkResultId) => ViewModel.ShowOutputAsync(benchmarkResultId, ComponentToken);
+
+    private static string Machine(BenchmarkRunListItemDto run) =>
+        $"{run.Cpu}, {run.MemoryMb / 1024d:0.#} GiB, {(string.IsNullOrWhiteSpace(run.Gpu) ? "CPU only" : run.Gpu)}";
+
+    private static string Number(double? value) =>
+        value is { } number ? number.ToString("0.##", CultureInfo.InvariantCulture) : "—";
+
+    private static string Outcome(BenchmarkResultDto result) =>
+        result.HasError ? "error"
+        : result.Passed is { } passed ? (passed ? "passed" : "failed")
+        : result.ResponseValid is { } valid ? (valid ? "valid answer" : "invalid answer")
+        : "—";
+}

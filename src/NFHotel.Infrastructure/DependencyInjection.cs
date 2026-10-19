@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.Rooms;
@@ -132,6 +133,8 @@ public static class DependencyInjection
         services.AddScoped<IGuestRepository, GuestRepository>();
         services.AddScoped<IGuestQueries, GuestRepository>();
         services.AddScoped<IStaffRepository, StaffRepository>();
+        services.AddScoped<IBenchmarkRunRepository, BenchmarkRunRepository>();
+        services.AddScoped<IBenchmarkQueries, BenchmarkRunRepository>();
     }
 
     /// <summary>Registers the encryption. Singleton: the key is immutable, and AesGcm is created per operation.</summary>
@@ -158,6 +161,9 @@ public static class DependencyInjection
     {
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<IRoomService, RoomService>();
+        services.AddScoped<BenchmarkService>();
+        services.AddScoped<IBenchmarkService>(provider => provider.GetRequiredService<BenchmarkService>());
+        services.AddScoped<IBenchmarkIntake>(provider => provider.GetRequiredService<BenchmarkService>());
         services.AddScoped<IGuestService, GuestService>();
         services.AddScoped<IStaffAuthService, StaffAuthService>();
         services.AddScoped<IStaffAccountService, StaffAccountService>();

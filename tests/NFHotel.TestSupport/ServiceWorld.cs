@@ -1,9 +1,11 @@
 using System.Reflection;
 
+using NFHotel.Application.Dto.Benchmark;
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Guests;
 using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.Rooms;
@@ -129,6 +131,7 @@ public sealed class ServiceWorld
         BookingQueries.GetReadModelAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(call => Task.FromResult(ReadModelOrNull(call.Arg<int>())));
         ReadSideFromTheRepositories();
+        BenchmarkReadSideFromTheRepository();
     }
 
     /// <summary>
@@ -179,6 +182,66 @@ public sealed class ServiceWorld
                 .ToArray()));
     }
 
+    private void BenchmarkReadSideFromTheRepository()
+    {
+        BenchmarkQueries.GetRunsAsync(Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult<IReadOnlyList<BenchmarkRunListItemDto>>(Benchmarks.Items
+                .OrderByDescending(run => run.StartedAt)
+                .Select(BenchmarkListItem)
+                .ToArray()));
+        BenchmarkQueries.GetRunAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult(Benchmarks.Items.Where(run => run.RunId == call.Arg<Guid>()).Select(BenchmarkDetails).FirstOrDefault()));
+        BenchmarkQueries.GetOutputAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult(Benchmarks.Items
+                .SelectMany(run => run.Results)
+                .Where(result => result.Id == call.Arg<int>())
+                .Select(result => new BenchmarkOutputDto(result.Id, result.Model, result.Output, result.ValidationError, result.Error))
+                .FirstOrDefault()));
+    }
+
+    private static BenchmarkRunListItemDto BenchmarkListItem(BenchmarkRun run) =>
+        new(
+            run.RunId,
+            run.StartedAt,
+            run.FinishedAt,
+            run.DatasetName,
+            run.Cpu,
+            run.MemoryMb,
+            run.Gpu,
+            run.BackendName,
+            run.BackendVersion,
+            run.Results.Select(result => result.Model).Distinct().Order(StringComparer.Ordinal).ToArray(),
+            run.Results.Count);
+
+    private static BenchmarkRunDetailsDto BenchmarkDetails(BenchmarkRun run) =>
+        new(
+            BenchmarkListItem(run),
+            run.DatasetHash,
+            run.DatasetRows,
+            run.PromptVersion,
+            run.CpuCores,
+            run.OperatingSystem,
+            run.Results
+                .Select(result => new BenchmarkResultDto(
+                    result.Id,
+                    result.Timestamp,
+                    result.Model,
+                    result.AnalysisType,
+                    result.TaskId,
+                    result.RunNumber,
+                    result.Cold,
+                    result.TimeToFirstTokenSeconds,
+                    result.TotalSeconds,
+                    result.CompletionTokens,
+                    result.TokensPerSecond,
+                    result.TokensEstimated,
+                    result.RamPeakMb,
+                    result.VramPeakMb,
+                    result.Passed,
+                    result.ResponseValid,
+                    result.Error is not null))
+                .ToArray());
+
     private static string GuestText(Guest guest) =>
         $"{guest.FirstName} {guest.LastName} {guest.Email} {guest.Country}";
 
@@ -212,11 +275,15 @@ public sealed class ServiceWorld
 
     public InMemoryStaffRepository Staff { get; } = new();
 
+    public InMemoryBenchmarkRunRepository Benchmarks { get; } = new();
+
     public IBookingQueries BookingQueries { get; } = Substitute.For<IBookingQueries>();
 
     public IRoomQueries RoomQueries { get; } = Substitute.For<IRoomQueries>();
 
     public IGuestQueries GuestQueries { get; } = Substitute.For<IGuestQueries>();
+
+    public IBenchmarkQueries BenchmarkQueries { get; } = Substitute.For<IBenchmarkQueries>();
 
     public BookingService BookingService() =>
         new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock);
@@ -224,6 +291,8 @@ public sealed class ServiceWorld
     public GuestService GuestService() => new(Guests, GuestQueries, UnitOfWork);
 
     public RoomService RoomService() => new(Rooms, RoomQueries, UnitOfWork);
+
+    public BenchmarkService BenchmarkService() => new(Benchmarks, BenchmarkQueries, UnitOfWork);
 
     public Room AddRoom(string number = "101", int floor = 1, RoomSize size = RoomSize.Double, int capacity = 2)
     {

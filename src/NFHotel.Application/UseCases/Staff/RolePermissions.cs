@@ -15,7 +15,7 @@ public static class RolePermissions
     /// string = rollen, fx "Guest" eller "Manager".
     /// HashSet af string = et sæt tilladelser uden dubletter.
     /// </summary>
-    private static readonly Dictionary<string,HashSet<string>> PermissionsByRole = new()
+    private static readonly Dictionary<string, HashSet<string>> PermissionsByRole = new()
     {
         [Roles.Guest] =
         [
@@ -53,7 +53,9 @@ public static class RolePermissions
             Permissions.GuestsManage,
             Permissions.RoomsView,
             Permissions.RoomsManage,
-            Permissions.SalesView
+            Permissions.SalesView,
+            Permissions.BenchmarkView,
+            Permissions.BenchmarkRun
         ],
 
         [Roles.Housekeeping] =

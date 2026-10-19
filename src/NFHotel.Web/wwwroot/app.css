@@ -1353,3 +1353,11 @@ h1:focus-visible {
     border-color: #dde5df;
     justify-self: start;
 }
+
+/* Benchmark runs (ADR-0008): the answer of a model is shown as it came, wrapped, never cut. */
+.answer-text {
+  max-height: 24rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
