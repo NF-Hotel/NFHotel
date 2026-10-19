@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Initial version | pending |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Initial version | [82ec2b2] |
 
 ---
 
@@ -61,3 +61,4 @@ Go — every mandatory criterion passes or is not applicable. The review is not 
 
 [MIL-026]: ../../milestones/mil-026-market-analysis-report.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[82ec2b2]: https://github.com/NF-Hotel/NFHotel/commit/82ec2b2acd49a5a76da4093e355397b6615ef9b0

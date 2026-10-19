@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 | Deprecated | Jens Tirsvad Nielsen | AI at the request of S01, not independent | Initial version; accepted after RC-114 Go | pending |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | The service does not push a result, so the API fetches and stores it on the first read of a completed run (task 3); the chart is the existing `GroupedBarChart` (task 5); tasks 1 to 7 done after RC-115 and RC-116 | pending |
+| 2026-10-19 | Deprecated | Jens Tirsvad Nielsen | AI at the request of S01, not independent | Initial version; accepted after RC-114 Go | [82ec2b2] |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | The service does not push a result, so the API fetches and stores it on the first read of a completed run (task 3); the chart is the existing `GroupedBarChart` (task 5); tasks 1 to 7 done after RC-115 and RC-116 | [82ec2b2] |
 
 ---
 
@@ -87,3 +87,4 @@ Let a Manager start a market analysis and read its report in the back office. Th
 [US-001]: ../user-stories.md
 [MIL-019]: ./mil-019-benchmark-results-api.md
 [MIL-020]: ./mil-020-start-benchmark-run.md
+[82ec2b2]: https://github.com/NF-Hotel/NFHotel/commit/82ec2b2acd49a5a76da4093e355397b6615ef9b0
