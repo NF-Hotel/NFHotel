@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Initial version | pending |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Initial version | [09e3167] |
 
 ---
 
@@ -60,3 +60,4 @@ Go — every mandatory criterion passes or is not applicable. The review is not 
 
 [MIL-020]: ../../milestones/mil-020-start-benchmark-run.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[09e3167]: https://github.com/NF-Hotel/NFHotel/commit/09e3167d660245247524dcd240d05b0bdf6d5419
