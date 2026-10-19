@@ -45,24 +45,24 @@ jobs:
         run: bash scripts/check-comment-language.sh
 
   build:
-    name: Build, tests og sikkerhed
+    name: Build, tests and security
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
       # Fetch the code of the project
-      - name: Hent kode
+      - name: Check out the code
         uses: actions/checkout@v7
 
       # Use the SDK version of the project
-      - name: Installer .NET
+      - name: Install .NET
         uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
       # Scan both direct and indirect NuGet dependencies.
       # Known vulnerabilities and other restore warnings fail the run.
-      - name: Restore og NuGet-sårbarhedskontrol
+      - name: Restore and NuGet vulnerability check
         run: >-
           dotnet restore NFHotel.sln
           -p:NuGetAudit=true
@@ -75,17 +75,17 @@ jobs:
         run: dotnet build NFHotel.sln --configuration Release --no-restore
 
       # The integration tests use Testcontainers and start PostgreSQL themselves
-      - name: Kontrollér Docker til integrationstests
+      - name: Check Docker for the integration tests
         run: docker info
 
       # The tests run on Microsoft.Testing.Platform (global.json), which does not
       # know the VSTest collector coverlet.collector. Coverage is therefore measured
       # from the outside with dotnet-coverage, so the test projects need no change.
-      - name: Installer dotnet-coverage
+      - name: Install dotnet-coverage
         run: dotnet tool install --global dotnet-coverage --version 18.12.0
 
       # Run all test projects, keep a TRX file per project and measure code coverage
-      - name: Tests og coverage
+      - name: Tests and coverage
         run: >-
           dotnet-coverage collect
           --settings dotnet-coverage.config.xml
@@ -95,7 +95,7 @@ jobs:
           --results-directory TestResults --report-xunit-trx"
 
       # Keep the reports also when tests fail
-      - name: Gem testresultater og coverage
+      - name: Keep test results and coverage
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
@@ -105,15 +105,15 @@ jobs:
           retention-days: 14
 
   formatting:
-    name: Formatering
+    name: Formatting
     runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:
-      - name: Hent kode
+      - name: Check out the code
         uses: actions/checkout@v7
 
-      - name: Installer .NET
+      - name: Install .NET
         uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
@@ -123,20 +123,20 @@ jobs:
 
       # Check the formatting against .editorconfig without changing files.
       # Code style and analyzers are also handled by the build settings of the project.
-      - name: Kontrollér formatering
+      - name: Check formatting
         run: dotnet format whitespace NFHotel.sln --verify-no-changes --no-restore
 
   container:
-    name: Docker-build
+    name: Docker build
     needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
-      - name: Hent kode
+      - name: Check out the code
         uses: actions/checkout@v7
 
       # Check that the Dockerfile of the project can package the web application.
       # The image is built only locally on the runner; it is not published.
-      - name: Byg Docker-image
+      - name: Build the Docker image
         run: docker build --tag nfhotel:ci .
