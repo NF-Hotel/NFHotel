@@ -1,5 +1,7 @@
 using System;
+
 using Microsoft.AspNetCore.Identity;
+
 using SecurityPrototype.Security;
 
 namespace SecurityPrototype.Data;
