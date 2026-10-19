@@ -95,6 +95,64 @@ public sealed class BenchmarkServiceClient : IBenchmarkServiceClient
     }
 
     /// <inheritdoc />
+    public async Task<Result<IReadOnlyList<BenchmarkRunStateDto>>> ListRunsAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await SendAsync<RunListWire>(HttpMethod.Get, "runs", null, cancellationToken).ConfigureAwait(false);
+        if (result.IsFailure)
+        {
+            return Result<IReadOnlyList<BenchmarkRunStateDto>>.Failure(result.Errors);
+        }
+
+        if (result.Value.Runs is null)
+        {
+            return Unexpected<IReadOnlyList<BenchmarkRunStateDto>>();
+        }
+
+        var runs = new List<BenchmarkRunStateDto>();
+        foreach (var wire in result.Value.Runs)
+        {
+            var state = ToState(Result<RunWire>.Success(wire));
+            if (state.IsFailure)
+            {
+                return Result<IReadOnlyList<BenchmarkRunStateDto>>.Failure(state.Errors);
+            }
+
+            runs.Add(state.Value);
+        }
+
+        return Result<IReadOnlyList<BenchmarkRunStateDto>>.Success(runs);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<IReadOnlyList<ModelPullDto>>> ListModelPullsAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await SendAsync<PullListWire>(HttpMethod.Get, "models/pulls", null, cancellationToken).ConfigureAwait(false);
+        if (result.IsFailure)
+        {
+            return Result<IReadOnlyList<ModelPullDto>>.Failure(result.Errors);
+        }
+
+        if (result.Value.Pulls is null)
+        {
+            return Unexpected<IReadOnlyList<ModelPullDto>>();
+        }
+
+        var pulls = new List<ModelPullDto>();
+        foreach (var wire in result.Value.Pulls)
+        {
+            var pull = ToPull(Result<PullWire>.Success(wire));
+            if (pull.IsFailure)
+            {
+                return Result<IReadOnlyList<ModelPullDto>>.Failure(pull.Errors);
+            }
+
+            pulls.Add(pull.Value);
+        }
+
+        return Result<IReadOnlyList<ModelPullDto>>.Success(pulls);
+    }
+
+    /// <inheritdoc />
     public async Task<Result<ModelPullDto>> StartModelPullAsync(string name, CancellationToken cancellationToken = default)
     {
         var trimmed = name?.Trim();
@@ -281,6 +339,10 @@ public sealed class BenchmarkServiceClient : IBenchmarkServiceClient
     }
 
     private sealed record ModelsWire(IReadOnlyList<string>? Models);
+
+    private sealed record RunListWire(IReadOnlyList<RunWire>? Runs);
+
+    private sealed record PullListWire(IReadOnlyList<PullWire>? Pulls);
 
     private sealed record PullStartWire(string Name);
 
