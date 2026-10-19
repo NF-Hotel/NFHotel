@@ -40,4 +40,7 @@ public static class StaffPolicies
 
     /// <summary>Set the default AI model of the website and of the market analysis.</summary>
     public const string AiDefaultsManage = Permissions.AiDefaultsManage;
+
+    /// <summary>Add models to Ollama and delete installed ones.</summary>
+    public const string BenchmarkModelsManage = Permissions.BenchmarkModelsManage;
 }

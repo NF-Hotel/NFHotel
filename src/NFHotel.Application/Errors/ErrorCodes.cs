@@ -307,5 +307,26 @@ public static class ErrorCodes
 
         /// <summary>The benchmark service answered something this application cannot use.</summary>
         public const string UnexpectedResponse = "benchmark_runner.unexpected_response";
+
+        /// <summary>The text is not the name of an Ollama model.</summary>
+        public const string InvalidModelName = "benchmark_runner.invalid_model_name";
+
+        /// <summary>The model to add is already installed.</summary>
+        public const string ModelAlreadyInstalled = "benchmark_runner.model_already_installed";
+
+        /// <summary>Another model is being added; one at a time.</summary>
+        public const string PullActive = "benchmark_runner.pull_active";
+
+        /// <summary>The benchmark service has no such download (it forgets them when it restarts).</summary>
+        public const string PullNotFound = "benchmark_runner.pull_not_found";
+
+        /// <summary>The model to delete is not installed.</summary>
+        public const string ModelNotFound = "benchmark_runner.model_not_found";
+
+        /// <summary>A queued or running benchmark names the model, so it cannot be deleted.</summary>
+        public const string ModelInUse = "benchmark_runner.model_in_use";
+
+        /// <summary>Ollama could not be reached or refused the delete.</summary>
+        public const string ModelServerError = "benchmark_runner.model_server_error";
     }
 }

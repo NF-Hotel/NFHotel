@@ -1,0 +1,164 @@
+@using NFHotel.Application.Dto.Benchmark
+@using NFHotel.Web.Features.Admin.Benchmark
+@inject BenchmarkModelsViewModel ViewModel
+@inherits NFHotel.Web.Common.CancellableComponentBase
+
+@*
+    The installed models, with a field to add a model and a Delete button on each (MIL-020, ADR-0005 of the benchmark
+    service). Only markup and binding. A download takes minutes, so the panel asks for its state every few seconds until it
+    ends; the page that holds the panel is told when the list changed so that it can offer the new model.
+*@
+
+<section class="card card-pad stack" aria-labelledby="installed-models">
+    <h2 class="subtitle" id="installed-models">Installed models</h2>
+    <p class="muted">
+        Add a model by the name that Ollama uses, for example <code>phi4-mini</code>. A download is several gigabytes and takes
+        minutes; only one runs at a time.
+    </p>
+
+    <ErrorAlert Errors="ViewModel.Errors" />
+
+    @if (ViewModel.ModelPendingDeletion is { } pending)
+    {
+        var purposes = ViewModel.DefaultPurposesOf(pending);
+        <ConfirmPanel Title="@($"Delete the model {pending}?")"
+                      Message="@DeleteMessage(purposes)"
+                      ConfirmLabel="Delete model"
+                      IsBusy="ViewModel.IsBusy"
+                      OnConfirm="ConfirmDeleteAsync"
+                      OnCancel="ViewModel.AbortDelete" />
+    }
+
+    @if (!ViewModel.IsLoaded)
+    {
+        <LoadingSkeleton Rows="3" />
+    }
+    else if (ViewModel.Models.Count == 0 && ViewModel.Errors.Count == 0)
+    {
+        <p class="muted">No model is installed.</p>
+    }
+    else if (ViewModel.Models.Count > 0)
+    {
+        <ul class="stack-sm" aria-label="Installed models">
+            @foreach (var model in ViewModel.Models)
+            {
+                var name = model;
+                <li class="field-row">
+                    <span>@name</span>
+                    @foreach (var purpose in ViewModel.DefaultPurposesOf(name))
+                    {
+                        <span class="badge badge-confirmed">default for @purpose</span>
+                    }
+                    <button type="button"
+                            class="btn btn-danger btn-sm"
+                            disabled="@(ViewModel.IsBusy || ViewModel.IsPulling)"
+                            @onclick="() => ViewModel.RequestDelete(name)">
+                        Delete
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+
+    <div class="field-row">
+        <label class="field-label" for="new-model-name">Add a model</label>
+        <input id="new-model-name"
+               class="field-input"
+               type="text"
+               maxlength="@ModelNames.MaxLength"
+               placeholder="phi4-mini"
+               autocomplete="off"
+               spellcheck="false"
+               disabled="@(ViewModel.IsBusy || ViewModel.IsPulling)"
+               @bind="ViewModel.NewModelName"
+               @bind:event="oninput" />
+        <button type="button"
+                class="btn btn-primary btn-sm"
+                disabled="@(!ViewModel.CanAdd)"
+                @onclick="StartPullAsync">
+            Add model
+        </button>
+    </div>
+
+    @if (ViewModel.CurrentPull is { } pull)
+    {
+        <div role="status" aria-live="polite">
+            @switch (pull.State)
+            {
+                case ModelPullStates.Done:
+                    <AlertBox Kind="AlertKind.Ok" Message="@($"{pull.Model} is installed.")" />
+                    break;
+                case ModelPullStates.Failed:
+                    <AlertBox Kind="AlertKind.Error" Message="@($"{pull.Model} could not be added: {pull.Error ?? "the model server gave no reason"}")" />
+                    break;
+                default:
+                    <p>
+                        Adding <strong>@pull.Model</strong>:
+                        @(pull.State == ModelPullStates.Queued ? "waiting" : pull.Percent is { } percent ? $"{percent} %" : "starting")
+                    </p>
+                    @if (pull.Percent is { } shown)
+                    {
+                        <progress max="100" value="@shown" aria-label="Download of @pull.Model">@shown %</progress>
+                    }
+
+                    break;
+            }
+        </div>
+    }
+</section>
+
+@code {
+    /// <summary>Called when the list of installed models changed, so the page can offer the new list.</summary>
+    [Parameter]
+    public EventCallback OnModelsChanged { get; set; }
+
+    /// <summary>Loads the models and the defaults when the panel opens.</summary>
+    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
+
+    private async Task StartPullAsync()
+    {
+        await ViewModel.StartPullAsync(ComponentToken);
+        if (ViewModel.IsPulling)
+        {
+            _ = FollowAsync();
+        }
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        await ViewModel.ConfirmDeleteAsync(ComponentToken);
+        await OnModelsChanged.InvokeAsync();
+    }
+
+    /// <summary>Asks for the state every few seconds until the download ends or the page is closed.</summary>
+    private async Task FollowAsync()
+    {
+        try
+        {
+            while (ViewModel.IsPulling && !ComponentToken.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3), ComponentToken);
+                await ViewModel.RefreshPullAsync(ComponentToken);
+                await InvokeAsync(StateHasChanged);
+            }
+
+            if (ViewModel.CurrentPull?.State == ModelPullStates.Done)
+            {
+                await OnModelsChanged.InvokeAsync();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was closed: there is nobody to show the state to.
+        }
+        catch (ObjectDisposedException)
+        {
+            // The circuit ended between the answer and the redraw: the same case, the page is gone.
+        }
+    }
+
+    private static string DeleteMessage(IReadOnlyList<string> purposes) =>
+        purposes.Count == 0
+            ? "The model is removed from the server for good. A benchmark that is queued or running with it stops the delete."
+            : $"This model is the default AI model of {string.Join(" and ", purposes)}. It is removed from the server for good and the default stays set, so choose another default afterwards.";
+}

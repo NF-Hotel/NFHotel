@@ -94,6 +94,61 @@ public sealed class BenchmarkServiceClient : IBenchmarkServiceClient
         return ToState(result);
     }
 
+    /// <inheritdoc />
+    public async Task<Result<ModelPullDto>> StartModelPullAsync(string name, CancellationToken cancellationToken = default)
+    {
+        var trimmed = name?.Trim();
+        if (!ModelNames.IsValid(trimmed))
+        {
+            return Result<ModelPullDto>.Failure(ErrorCodes.BenchmarkRunner.InvalidModelName);
+        }
+
+        var result = await SendAsync<PullWire>(HttpMethod.Post, "models", new PullStartWire(trimmed!), cancellationToken).ConfigureAwait(false);
+
+        return ToPull(result);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<ModelPullDto>> GetModelPullAsync(string pullId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(pullId))
+        {
+            return Result<ModelPullDto>.Failure(ErrorCodes.BenchmarkRunner.PullNotFound);
+        }
+
+        var result = await SendAsync<PullWire>(HttpMethod.Get, $"models/pulls/{Uri.EscapeDataString(pullId)}", null, cancellationToken).ConfigureAwait(false);
+
+        return ToPull(result);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> DeleteModelAsync(string name, CancellationToken cancellationToken = default)
+    {
+        var trimmed = name?.Trim();
+        if (!ModelNames.IsValid(trimmed))
+        {
+            return Result.Failure(ErrorCodes.BenchmarkRunner.InvalidModelName);
+        }
+
+        // The answer has no body (204), so only the status is read.
+        var result = await SendAsync<NoBody>(HttpMethod.Delete, $"models/{Uri.EscapeDataString(trimmed!)}", null, cancellationToken).ConfigureAwait(false);
+
+        return result.IsFailure ? Result.Failure(result.Errors) : Result.Success();
+    }
+
+    private static Result<ModelPullDto> ToPull(Result<PullWire> result)
+    {
+        if (result.IsFailure)
+        {
+            return Result<ModelPullDto>.Failure(result.Errors);
+        }
+
+        var wire = result.Value;
+        return string.IsNullOrEmpty(wire.PullId) || string.IsNullOrEmpty(wire.Model) || wire.State is null
+            ? Unexpected<ModelPullDto>()
+            : Result<ModelPullDto>.Success(new ModelPullDto(wire.PullId, wire.Model, wire.State, wire.Percent, wire.Error));
+    }
+
     private static Result<BenchmarkRunStateDto> ToState(Result<RunWire> result)
     {
         if (result.IsFailure)
@@ -149,6 +204,11 @@ public sealed class BenchmarkServiceClient : IBenchmarkServiceClient
                 return await FailAsync<TWire>(method, response, cancellationToken).ConfigureAwait(false);
             }
 
+            if (typeof(TWire) == typeof(NoBody))
+            {
+                return Result<TWire>.Success((TWire)(object)NoBody.Instance);
+            }
+
             var wire = await response.Content.ReadFromJsonAsync<TWire>(JsonOptions, cancellationToken).ConfigureAwait(false);
 
             return wire is null
@@ -179,14 +239,21 @@ public sealed class BenchmarkServiceClient : IBenchmarkServiceClient
     private async Task<Result<TWire>> FailAsync<TWire>(HttpMethod method, HttpResponseMessage response, CancellationToken cancellationToken)
     {
         var status = response.StatusCode;
-        var serviceCode = status == HttpStatusCode.BadRequest
+        var serviceCode = status is HttpStatusCode.BadRequest or HttpStatusCode.NotFound or HttpStatusCode.Conflict or HttpStatusCode.BadGateway
             ? await ReadCodeAsync(response, cancellationToken).ConfigureAwait(false)
             : null;
 
         var code = status switch
         {
             HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => ErrorCodes.BenchmarkRunner.Unauthorized,
+            HttpStatusCode.NotFound when serviceCode == "model_not_found" => ErrorCodes.BenchmarkRunner.ModelNotFound,
+            HttpStatusCode.NotFound when serviceCode == "pull_not_found" => ErrorCodes.BenchmarkRunner.PullNotFound,
             HttpStatusCode.NotFound => ErrorCodes.BenchmarkRunner.RunNotFound,
+            HttpStatusCode.Conflict when serviceCode == "already_installed" => ErrorCodes.BenchmarkRunner.ModelAlreadyInstalled,
+            HttpStatusCode.Conflict when serviceCode == "pull_active" => ErrorCodes.BenchmarkRunner.PullActive,
+            HttpStatusCode.Conflict when serviceCode == "model_in_use" => ErrorCodes.BenchmarkRunner.ModelInUse,
+            HttpStatusCode.BadGateway when serviceCode == "model_server_error" => ErrorCodes.BenchmarkRunner.ModelServerError,
+            HttpStatusCode.BadRequest when serviceCode == "invalid_model_name" => ErrorCodes.BenchmarkRunner.InvalidModelName,
             HttpStatusCode.TooManyRequests => ErrorCodes.BenchmarkRunner.QueueFull,
             HttpStatusCode.BadRequest when serviceCode == "model_not_installed" => ErrorCodes.BenchmarkRunner.ModelNotInstalled,
             HttpStatusCode.BadRequest or HttpStatusCode.UnprocessableEntity => ErrorCodes.BenchmarkRunner.InvalidRequest,
@@ -214,6 +281,15 @@ public sealed class BenchmarkServiceClient : IBenchmarkServiceClient
     }
 
     private sealed record ModelsWire(IReadOnlyList<string>? Models);
+
+    private sealed record PullStartWire(string Name);
+
+    private sealed record PullWire(string? PullId, string? Model, string? State, int? Percent, string? Error);
+
+    private sealed class NoBody
+    {
+        public static readonly NoBody Instance = new();
+    }
 
     private sealed record ProblemWire(string? Code);
 

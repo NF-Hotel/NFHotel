@@ -194,6 +194,11 @@ joins the internal network `nfhotel-api` and publishes no host port.
   deterministic tasks, up to three answers side by side, the memory charts, and a CSV and JSON download of the rows
   without the answer texts. The figures that the benchmark service calculates from the dataset are not delivered yet, so
   the Calculated column shows n/a.
+- A Manager adds a model (for example `phi4-mini`) and deletes an installed one in the Installed models panel of
+  `/admin/benchmark/start`. The web application asks the benchmark service, which pulls into and deletes from the
+  Ollama of the VM (ADR-0005 of notebook-benchmark): one download at a time, with progress; a model that a queued or
+  running benchmark uses cannot be deleted, and a default AI model is warned about before it is deleted. The service
+  does not check free disk; Ollama fails a download that does not fit and the reason is shown.
 - A Manager sets the default AI model of the website and of the market analysis on `/admin/benchmark` (ADR-0014): type
   or choose a model, or press "Use for the website" or "Use for the market analysis" on a result row. `GET /api/ai-defaults`
   gives the defaults to a caller with the service token. `scripts/deploy-services.sh` writes the model of the market
