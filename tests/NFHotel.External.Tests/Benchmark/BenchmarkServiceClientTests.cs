@@ -302,6 +302,23 @@ public sealed class BenchmarkServiceClientTests
 
     #endregion
 
+    /// <summary>Boundary: with only a token and no address set, nothing is sent; there is no built-in address.</summary>
+    [Fact]
+    public async Task ListModelsAsync_TokenButNoAddress_ReturnsTheNotConfiguredCodeWithoutACall()
+    {
+        // Arrange
+        var service = new FakeBenchmarkService("m1");
+        var client = CreateClient(service, new BenchmarkServiceOptions { Token = Token });
+
+        // Act
+        var result = await client.ListModelsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.BenchmarkRunner.NotConfigured, Assert.Single(result.Errors).Code);
+        Assert.Equal(0, service.Calls);
+        Assert.False(new BenchmarkServiceOptions { Token = Token }.IsConfigured);
+    }
+
     #region Registration
 
     /// <summary>Positive: the registration reads the section, sets the address and sends the token as a bearer token.</summary>

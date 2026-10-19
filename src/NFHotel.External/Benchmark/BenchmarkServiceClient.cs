@@ -127,12 +127,9 @@ public sealed class BenchmarkServiceClient : IBenchmarkServiceClient
         if (!_options.IsConfigured)
         {
             _logger.LogWarning(
-                "The benchmark service is not configured: set {Section}:{Token} (and {Section}:{BaseUrl} if it is not {Default}).",
-                BenchmarkServiceOptions.SectionName,
-                BenchmarkServiceOptions.TokenName,
-                BenchmarkServiceOptions.SectionName,
-                BenchmarkServiceOptions.BaseUrlName,
-                BenchmarkServiceOptions.DefaultBaseUrl);
+                "The benchmark service is not configured: set {TokenSetting} and {BaseUrlSetting}.",
+                $"{BenchmarkServiceOptions.SectionName}:{BenchmarkServiceOptions.TokenName}",
+                $"{BenchmarkServiceOptions.SectionName}:{BenchmarkServiceOptions.BaseUrlName}");
 
             return Result<TWire>.Failure(ErrorCodes.BenchmarkRunner.NotConfigured);
         }

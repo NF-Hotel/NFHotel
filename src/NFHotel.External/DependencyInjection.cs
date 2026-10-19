@@ -148,7 +148,7 @@ public static class DependencyInjection
 
         return new BenchmarkServiceOptions
         {
-            BaseUrl = string.IsNullOrWhiteSpace(baseUrl) ? BenchmarkServiceOptions.DefaultBaseUrl : baseUrl,
+            BaseUrl = baseUrl?.Trim() ?? string.Empty,
             Token = section[BenchmarkServiceOptions.TokenName]?.Trim() ?? string.Empty,
             TimeoutSeconds = timeout,
         };

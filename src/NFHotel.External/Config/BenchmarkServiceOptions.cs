@@ -18,14 +18,14 @@ public sealed class BenchmarkServiceOptions
     /// <summary>The key of the timeout.</summary>
     public const string TimeoutSecondsName = "TimeoutSeconds";
 
-    /// <summary>The address on the shared Docker network.</summary>
-    public const string DefaultBaseUrl = "http://benchmark:8000";
-
     /// <summary>The seconds to wait for an answer; a start and a read return at once, so a short time is enough.</summary>
     public const int DefaultTimeoutSeconds = 30;
 
-    /// <summary>The address of the benchmark service.</summary>
-    public string BaseUrl { get; init; } = DefaultBaseUrl;
+    /// <summary>
+    /// The address of the benchmark service on the shared Docker network. There is no built-in address: it comes from
+    /// the settings (<c>nfhotel-web.env.example</c> shows it), and an empty address means the service is not configured.
+    /// </summary>
+    public string BaseUrl { get; init; } = string.Empty;
 
     /// <summary>The token that the benchmark service expects as a bearer token; a secret from the env file.</summary>
     public string Token { get; init; } = string.Empty;
