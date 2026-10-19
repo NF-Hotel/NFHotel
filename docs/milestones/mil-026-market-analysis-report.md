@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-19 | Deprecated | Claude (AI) | AI at the request of S01, not independent | The service does not push a result, so the API fetches and stores it on the first read of a completed run (task 3); the chart is the existing `GroupedBarChart` (task 5); tasks 1 to 7 done after RC-115 and RC-116 | [82ec2b2] |
-| 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Changed source: the deployed markets API (`Notebook_Market_Analysis`, `POST /analyze?insights=true`) replaces `notebook-data-analysis`; the hotel bookings of the database are sent, with the fields and the fake data they need; the run is in the background of the API; accepted after RC-117 Go; tasks 1 to 10 done after RC-118 and RC-119 | pending |
+| 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Changed source: the deployed markets API (`Notebook_Market_Analysis`, `POST /analyze?insights=true`) replaces `notebook-data-analysis`; the hotel bookings of the database are sent, with the fields and the fake data they need; the run is in the background of the API; accepted after RC-117 Go; tasks 1 to 10 done after RC-118 and RC-119 | [1fd620f] |
 
 ---
 
@@ -96,3 +96,4 @@ Let a Manager start a market analysis of the hotel bookings and read its report 
 [MIL-019]: ./mil-019-benchmark-results-api.md
 [MIL-020]: ./mil-020-start-benchmark-run.md
 [82ec2b2]: https://github.com/NF-Hotel/NFHotel/commit/82ec2b2acd49a5a76da4093e355397b6615ef9b0
+[1fd620f]: https://github.com/NF-Hotel/NFHotel/commit/1fd620f1fbbf51a8296d577e2e7654bb4415ff01

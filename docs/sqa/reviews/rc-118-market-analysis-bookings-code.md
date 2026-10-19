@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Initial version; it replaces RC-115 for the code that the amendment changed | pending |
+| 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Initial version; it replaces RC-115 for the code that the amendment changed | [1fd620f] |
 
 ---
 
@@ -61,3 +61,4 @@ Go — every mandatory criterion passes or is not applicable. The review is not 
 
 [MIL-026]: ../../milestones/mil-026-market-analysis-report.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[1fd620f]: https://github.com/NF-Hotel/NFHotel/commit/1fd620f1fbbf51a8296d577e2e7654bb4415ff01
