@@ -9,6 +9,7 @@ using NFHotel.Application.UseCases.AiDefaults;
 using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
+using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Application.UseCases.Rooms;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Repositories;
@@ -285,6 +286,10 @@ public sealed class ServiceWorld
 
     public InMemoryAiDefaultRepository AiDefaults { get; } = new();
 
+    public InMemoryMarketAnalysisRunRepository MarketAnalysisRuns { get; } = new();
+
+    public FakeMarketAnalysisServiceClient MarketAnalysisClient { get; } = new();
+
     public IBookingQueries BookingQueries { get; } = Substitute.For<IBookingQueries>();
 
     public IRoomQueries RoomQueries { get; } = Substitute.For<IRoomQueries>();
@@ -303,6 +308,8 @@ public sealed class ServiceWorld
     public BenchmarkService BenchmarkService() => new(Benchmarks, BenchmarkQueries, UnitOfWork);
 
     public AiDefaultService AiDefaultService() => new(AiDefaults, UnitOfWork, Clock);
+
+    public MarketAnalysisService MarketAnalysisService() => new(MarketAnalysisClient, MarketAnalysisRuns, UnitOfWork);
 
     public Room AddRoom(string number = "101", int floor = 1, RoomSize size = RoomSize.Double, int capacity = 2)
     {

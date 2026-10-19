@@ -436,6 +436,59 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                     b.ToTable("guest", (string)null);
                 });
 
+            modelBuilder.Entity("NFHotel.Domain.Entities.MarketAnalysisRun", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("market_analysis_run_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("content_json");
+
+                    b.Property<DateTimeOffset>("FinishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("model");
+
+                    b.Property<string>("Provider")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("provider");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<int>("SchemaVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("schema_version");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_analysis_run");
+
+                    b.HasIndex("FinishedAt")
+                        .HasDatabaseName("ix_market_analysis_run_finished_at");
+
+                    b.HasIndex("RunId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_market_analysis_run_run_id");
+
+                    b.ToTable("market_analysis_run", (string)null);
+                });
+
             modelBuilder.Entity("NFHotel.Domain.Entities.Room", b =>
                 {
                     b.Property<int>("Id")

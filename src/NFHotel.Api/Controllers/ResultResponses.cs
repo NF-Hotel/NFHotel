@@ -15,6 +15,13 @@ internal static class ResultResponses
         ".room_not_available",
         ".room_number_already_exists",
         ".has_bookings",
+        ".already_running",
+    ];
+
+    private static readonly string[] UnavailableEndings =
+    [
+        "_runner.unavailable",
+        "_runner.not_configured",
     ];
 
     /// <summary>Maps a result that carries a value.</summary>
@@ -61,9 +68,20 @@ internal static class ResultResponses
             return StatusCodes.Status401Unauthorized;
         }
 
-        if (codes.Any(code => code.EndsWith(".not_found", StringComparison.Ordinal)))
+        if (codes.Any(code => code.EndsWith(".not_found", StringComparison.Ordinal)
+            || code == ErrorCodes.MarketAnalysisRunner.RunNotFound))
         {
             return StatusCodes.Status404NotFound;
+        }
+
+        if (codes.Contains(ErrorCodes.MarketAnalysisRunner.RateLimited))
+        {
+            return StatusCodes.Status429TooManyRequests;
+        }
+
+        if (codes.Any(code => UnavailableEndings.Any(ending => code.EndsWith(ending, StringComparison.Ordinal))))
+        {
+            return StatusCodes.Status503ServiceUnavailable;
         }
 
         return codes.Any(code => ConflictEndings.Any(ending => code.EndsWith(ending, StringComparison.Ordinal)))

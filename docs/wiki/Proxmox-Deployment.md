@@ -205,3 +205,22 @@ joins the internal network `nfhotel-api` and publishes no host port.
   analysis as `model` in the `[llm]` section of `deploy/market-analysis/market-analysis.toml` before it starts the analysis
   service, so a new default applies at the next deployment of that service.
 - Until `BenchmarkService__Token` is set, the start page says that the service is not set up.
+
+## The market analysis report (MIL-026)
+
+The market analysis report is made by the data analysis service, a separate repository, `notebook-data-analysis`, with
+its own compose file in `deploy/data-analysis/`. It joins `nfhotel-api` and `nfhotel-llm` and publishes no host port.
+
+- The NFHotel API (not the web application) calls it at `http://data-analysis:8000` with the bearer token in
+  `MarketAnalysisService__Token` of `deploy/nfhotel-api/nfhotel-api.env`. That value is the `API_TOKEN` of
+  `deploy/data-analysis/data-analysis.env`.
+- A Manager starts a run at `/admin/market-analysis`. The page asks the API for the state every few seconds; the first
+  read of a completed run makes the API fetch the result from the service and store it in the table
+  `market_analysis_run`. The service does not push a result.
+- The page shows the last stored report: key figures, one bar chart per series, and the AI analysis next to them. Without
+  a stored run it says that no analysis has been run.
+- Receptionist and Housekeeping users get 403 on `api/market-analysis` and do not see the menu entry.
+- `DATA_ANALYSIS_REF` has no default: pin a commit of `notebook-data-analysis` that has a Dockerfile. The service is not
+  part of `scripts/deploy-services.sh` yet; start it with `docker compose --env-file data-analysis.env up -d --build` in
+  `deploy/data-analysis/`.
+- Until `MarketAnalysisService__Token` is set, the page says that the service is not set up.

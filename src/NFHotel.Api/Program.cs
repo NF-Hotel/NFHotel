@@ -14,6 +14,7 @@ builder.Services.AddControllers();
 builder.Services.AddSingleton(ApiToken.Read(builder.Configuration));
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHotelClock(builder.Configuration);
+builder.Services.AddMarketAnalysisService(builder.Configuration);   // starts and reads runs of the market analysis (MIL-026)
 builder.Services.AddStaffAuthentication();
 
 var app = builder.Build();

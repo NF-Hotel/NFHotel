@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "job_id": "5b3f0e1a-0000-4000-8000-0000000000a1",
+    "notebook": "market_analysis",
+    "status": "completed",
+    "started_at": "2026-10-19T10:00:00Z",
+    "finished_at": "2026-10-19T10:04:00Z",
+    "provider": "ollama",
+    "model": "phi3.5:latest",
+    "warnings": []
+  },
+  "schema_version": 1,
+  "result": {
+    "summary": "Portugal is the largest market by far.\n\nCancellations are highest in the summer months.",
+    "figures": [
+      { "label": "Cancellation rate", "value": 37.1, "unit": "%" },
+      { "label": "Bookings", "value": 119390, "unit": "" }
+    ],
+    "series": [
+      {
+        "id": "bookings_by_country",
+        "title": "Bookings by country",
+        "unit": "bookings",
+        "points": [
+          { "label": "Portugal", "value": 48590 },
+          { "label": "United Kingdom", "value": 12129 }
+        ]
+      }
+    ]
+  }
+}

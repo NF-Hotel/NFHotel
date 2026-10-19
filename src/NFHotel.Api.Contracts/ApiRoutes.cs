@@ -36,6 +36,18 @@ public static class ApiRoutes
     /// <summary>The answer text of one request below <see cref="Benchmark"/>.</summary>
     public const string BenchmarkOutput = "results/{id:int}/output";
 
+    /// <summary>The route prefix of the market analysis (MIL-026).</summary>
+    public const string MarketAnalysis = "api/market-analysis";
+
+    /// <summary>The latest stored report below <see cref="MarketAnalysis"/>.</summary>
+    public const string MarketAnalysisLatest = "latest";
+
+    /// <summary>The runs below <see cref="MarketAnalysis"/>: a start posts here.</summary>
+    public const string MarketAnalysisRuns = "runs";
+
+    /// <summary>One run below <see cref="MarketAnalysis"/>, by the run id of the data analysis service.</summary>
+    public const string MarketAnalysisRunById = "runs/{runId:guid}";
+
     /// <summary>The route prefix of the staff sign-in (ADR-0005).</summary>
     public const string Auth = "api/auth";
 

@@ -1,0 +1,187 @@
+@page "/admin/market-analysis"
+@layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.MarketAnalysisView)]
+@rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using System.Globalization
+@using NFHotel.Application.Dto.MarketAnalysis
+@using NFHotel.Web.Features.Admin.MarketAnalysis
+@inject MarketAnalysisViewModel ViewModel
+
+@*
+    The market analysis report (MIL-026, US-001.01). Only markup and binding.
+
+    The page shows the report that was stored last: the AI analysis next to the charts of the market data. A Manager can
+    start a new run; a run takes minutes, so the page then asks for its state every few seconds and shows the new report
+    when the API has stored it. Without a stored run the page says so instead of showing an empty page.
+*@
+
+<PageTitle>Market analysis — administration</PageTitle>
+
+<div class="stack-lg">
+    <PageHeader Title="Market analysis"
+                Subtitle="The market data of the hotel, with an analysis written by a local AI model." />
+
+    <ErrorAlert Errors="ViewModel.Errors" />
+
+    <AuthorizeView Policy="@StaffPolicies.MarketAnalysisStart">
+        <section class="card card-pad stack" aria-labelledby="run-start">
+            <h2 class="subtitle" id="run-start">New analysis</h2>
+            <p class="muted">A run takes minutes. The report below stays as it is until the new run has finished.</p>
+            <div>
+                <button type="button"
+                        class="btn btn-primary"
+                        disabled="@(!ViewModel.CanStart)"
+                        @onclick="StartAsync">
+                    Start a new analysis
+                </button>
+            </div>
+
+            @if (ViewModel.CurrentRun is { } run)
+            {
+                <div role="status" aria-live="polite">
+                    @if (ViewModel.LastRunFailed)
+                    {
+                        <AlertBox Kind="AlertKind.Error" Message="@($"The analysis failed. {run.Error}")" />
+                    }
+                    else if (run.State == MarketAnalysisRunStates.Completed)
+                    {
+                        <AlertBox Kind="AlertKind.Ok" Message="The analysis is done and the report below is the new one." />
+                    }
+                    else
+                    {
+                        <p><strong>@run.State</strong>@SinceText(run)</p>
+                    }
+                </div>
+            }
+        </section>
+    </AuthorizeView>
+
+    @if (!ViewModel.IsLoaded)
+    {
+        <LoadingSkeleton Rows="4" />
+    }
+    else if (ViewModel.HasNoReport)
+    {
+        <EmptyState Title="No market analysis yet"
+                    Description="No analysis has been run. A Manager can start the first one above." />
+    }
+    else if (ViewModel.Report is { } report)
+    {
+        <div class="stack-lg">
+            <p class="muted">
+                Run of @Time(report.StartedAt), finished @Time(report.FinishedAt).
+                @if (!string.IsNullOrWhiteSpace(report.Model))
+                {
+                    <text>Analysis by @report.Model.</text>
+                }
+            </p>
+
+            @if (report.Content.Figures.Count > 0)
+            {
+                <section class="card card-pad" aria-labelledby="figures-title">
+                    <h2 class="subtitle" id="figures-title">Key figures</h2>
+                    <dl class="stack-sm">
+                        @foreach (var figure in report.Content.Figures)
+                        {
+                            <div>
+                                <dt>@figure.Label</dt>
+                                <dd><strong>@figure.Value.ToString("#,0.##", CultureInfo.InvariantCulture)</strong> @figure.Unit</dd>
+                            </div>
+                        }
+                    </dl>
+                </section>
+            }
+
+            <div class="market-analysis-layout">
+                <section class="card card-pad stack" aria-labelledby="charts-title">
+                    <h2 class="subtitle" id="charts-title">Charts</h2>
+                    @if (ViewModel.Charts.Count == 0)
+                    {
+                        <p class="muted">The analysis has no chart data.</p>
+                    }
+                    else
+                    {
+                        <div class="chart-grid">
+                            @foreach (var chart in ViewModel.Charts)
+                            {
+                                <GroupedBarChart Title="@chart.Title"
+                                                 AxisTitle="@AxisText(chart)"
+                                                 SeriesNames="chart.SeriesNames"
+                                                 Groups="chart.Groups" />
+                            }
+                        </div>
+                    }
+                </section>
+
+                <section class="card card-pad stack" aria-labelledby="ai-title">
+                    <h2 class="subtitle" id="ai-title">AI analysis</h2>
+                    @if (string.IsNullOrWhiteSpace(report.Content.Summary))
+                    {
+                        <p class="muted">No AI analysis was written for this run. No AI model was available.</p>
+                    }
+                    else
+                    {
+                        foreach (var paragraph in Paragraphs(report.Content.Summary))
+                        {
+                            <p>@paragraph</p>
+                        }
+                    }
+                </section>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
+
+    /// <summary>Loads the stored report when the page opens, and then follows a run that this page started.</summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.InitializeAsync(ComponentToken);
+        _ = PollAsync();
+    }
+
+    private async Task StartAsync()
+    {
+        await ViewModel.StartAsync(ComponentToken);
+    }
+
+    /// <summary>Reads the state of the followed run every few seconds for as long as the page is open.</summary>
+    private async Task PollAsync()
+    {
+        try
+        {
+            while (!ComponentToken.IsCancellationRequested)
+            {
+                await Task.Delay(PollInterval, ComponentToken);
+                if (ViewModel.IsFollowing)
+                {
+                    await ViewModel.RefreshAsync(ComponentToken);
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was closed: there is nobody to show the state to.
+        }
+        catch (ObjectDisposedException)
+        {
+            // The circuit ended between the answer and the redraw: the same case, the page is gone.
+        }
+    }
+
+    private static string[] Paragraphs(string text) =>
+        text.Split(["\r\n\r\n", "\n\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private static string AxisText(MarketAnalysisChart chart) =>
+        string.IsNullOrWhiteSpace(chart.Unit) ? "value" : chart.Unit;
+
+    private static string SinceText(MarketAnalysisRunStateDto run) =>
+        run.StartedAt is { } started ? $" since {Time(started)}" : string.Empty;
+
+    private static string Time(DateTimeOffset value) =>
+        value.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) + " UTC";
+}

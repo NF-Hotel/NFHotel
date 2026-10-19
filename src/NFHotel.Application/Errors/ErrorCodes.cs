@@ -329,4 +329,42 @@ public static class ErrorCodes
         /// <summary>Ollama could not be reached or refused the delete.</summary>
         public const string ModelServerError = "benchmark_runner.model_server_error";
     }
+
+    /// <summary>Codes of the stored market analysis (MIL-026). The field codes are those of the domain.</summary>
+    public static class MarketAnalysis
+    {
+        /// <summary>No market analysis has been stored yet.</summary>
+        public const string NotFound = "market_analysis.not_found";
+
+        /// <summary>The result schema version is not the one that this API reads.</summary>
+        public const string SchemaVersionUnsupported = "market_analysis.schema_version_unsupported";
+
+        /// <summary>The result is missing a part, or the stored content cannot be read.</summary>
+        public const string BodyInvalid = "market_analysis.body_invalid";
+    }
+
+    /// <summary>Codes of the calls to the data analysis service that runs the market analysis (MIL-026).</summary>
+    public static class MarketAnalysisRunner
+    {
+        /// <summary>The address or the token of the data analysis service is not set.</summary>
+        public const string NotConfigured = "market_analysis_runner.not_configured";
+
+        /// <summary>The data analysis service did not answer in time or could not be reached.</summary>
+        public const string Unavailable = "market_analysis_runner.unavailable";
+
+        /// <summary>The data analysis service refused the token of this application.</summary>
+        public const string Unauthorized = "market_analysis_runner.unauthorized";
+
+        /// <summary>A run of the market analysis is already active.</summary>
+        public const string AlreadyRunning = "market_analysis_runner.already_running";
+
+        /// <summary>Too many runs were started in a minute; try again later.</summary>
+        public const string RateLimited = "market_analysis_runner.rate_limited";
+
+        /// <summary>The data analysis service has no such run (it deletes old runs).</summary>
+        public const string RunNotFound = "market_analysis_runner.run_not_found";
+
+        /// <summary>The data analysis service answered something this application cannot use.</summary>
+        public const string UnexpectedResponse = "market_analysis_runner.unexpected_response";
+    }
 }

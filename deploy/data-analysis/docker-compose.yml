@@ -1,0 +1,51 @@
+# The data analysis service of the notebook-data-analysis repository (MIL-026): an API that the NFHotel API calls
+# to run the market analysis notebook and to read its result. It is built from a pinned commit of that
+# repository, joins nfhotel-api (the NFHotel API reaches it as http://data-analysis:8000) and nfhotel-llm (the Ollama
+# of NFHotel), and publishes no port. The web application never calls it.
+# Start it with: docker compose --env-file data-analysis.env up -d --build
+# DATA_ANALYSIS_REF has no default: pin a commit of notebook-data-analysis that has a Dockerfile.
+name: data-analysis
+
+services:
+  data-analysis:
+    image: data-analysis:local
+    build:
+      # Submodules are not fetched: the framework submodule is private and not part of the image.
+      context: ${DATA_ANALYSIS_REPO:-https://github.com/NF-Hotel/notebook-data-analysis.git}?submodules=false#${DATA_ANALYSIS_REF:?set it, a commit of notebook-data-analysis that has a Dockerfile}
+    restart: unless-stopped
+    env_file: ${DATA_ANALYSIS_ENV_FILE:-data-analysis.env}
+    expose:
+      - "8000"
+    volumes:
+      - output:/app/output
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - llm
+      - api
+
+volumes:
+  output:
+
+networks:
+  llm:
+    name: ${NFHOTEL_LLM_NETWORK:-nfhotel-llm}
+    external: true
+  api:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
+    external: true
