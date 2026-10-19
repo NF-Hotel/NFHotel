@@ -1,58 +1,53 @@
-# Local LLM hotel benchmark (NF-Hotel/notebook-benchmark), a marimo notebook behind
-# the nginx proxy. Read by Docker Compose. Settings live in benchmark.env
-# (git-ignored); copy benchmark.env.example first. Start with:
-#   docker compose --env-file benchmark.env up -d --build
-# The model server is deploy/ollama (network nfhotel-llm). No host port is
-# published and the proxy serves the notebook only on its internal listener
-# (127.0.0.1 of the VM), so it is not reachable from the internet.
+# The benchmark service of the notebook-benchmark repository (ADR-0004, MIL-019, MIL-020): an API that the
+# web application calls to start a run and that delivers the result to the NFHotel API. It is built from
+# the pinned commit of that repository, joins nfhotel-api (the web application reaches it as
+# http://benchmark:8000) and nfhotel-llm (the Ollama of NFHotel), and publishes no port.
+# Start it with scripts/deploy-services.sh, which passes the service token of the API as API_TOKEN, so the
+# token is written in nfhotel-api.env only.
 name: benchmark
 
 services:
   benchmark:
     image: benchmark:local
     build:
-      context: .
-      args:
-        BENCHMARK_REPO: ${BENCHMARK_REPO:-https://github.com/NF-Hotel/notebook-benchmark.git}
-        BENCHMARK_REF: ${BENCHMARK_REF:-bc6d5ff04ba571e184a0a8bc29ad4b6d4e6255a4}
+      # Change BENCHMARK_REF to upgrade. Submodules are not fetched: the framework submodule is private and not part of the image.
+      context: ${BENCHMARK_REPO:-https://github.com/NF-Hotel/notebook-benchmark.git}?submodules=false#${BENCHMARK_REF:-074c446aa061bd33b48e02ea7fdb189a715ebd8f}
     restart: unless-stopped
     env_file: ${BENCHMARK_ENV_FILE:-benchmark.env}
-    # The notebook has Ollama at localhost:11434 built in: forward that to the
-    # ollama container, then start the notebook.
-    command:
-      - sh
-      - -c
-      - >-
-        socat TCP-LISTEN:11434,fork,reuseaddr TCP:ollama:11434 &
-        exec python -m marimo run notebooks/llm_hotel_benchmark.py
-        --host 0.0.0.0 --port 2719 --headless
+    environment:
+      NFBENCH_WEB_TOKEN: ${API_TOKEN:?set it, from Api__Token in nfhotel-api.env}
     expose:
-      - "2719"
+      - "8000"
     volumes:
-      - results:/opt/benchmark/output
-    extra_hosts:
-      - host.docker.internal:host-gateway
+      - results:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test:
         - CMD
         - python
         - -c
-        - import socket; socket.create_connection(('127.0.0.1', 2719), 3)
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 20s
     networks:
-      - proxy
       - llm
+      - api
 
 volumes:
   results:
 
 networks:
-  proxy:
-    name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
-    external: true
   llm:
     name: ${NFHOTEL_LLM_NETWORK:-nfhotel-llm}
+    external: true
+  api:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
     external: true
