@@ -14,7 +14,7 @@
 | 2026-10-18 | Proposed | Claude (AI) | S01 | Initial version | [7fbeba1] |
 | 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-087 Go | [7fbeba1] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Tasks 1 to 4 marked done after RC-106 and RC-107 | [847b639] |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added tasks 5 and 6 (delete a stored run, readable results table) and acceptance criterion 7; done after RC-108 | pending |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added tasks 5 and 6 (delete a stored run, readable results table) and acceptance criterion 7; done after RC-108 | [4f23a15] |
 
 ---
 
@@ -86,3 +86,4 @@ Let a Manager start a benchmark run from the back office and see its state until
 [ADR-0003]: ../adr/adr-0003-proxmox-vm-for-services.md
 [7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0
 [847b639]: https://github.com/NF-Hotel/NFHotel/commit/847b639fa32cd4699fbfb154011ea93b76fdc545
+[4f23a15]: https://github.com/NF-Hotel/NFHotel/commit/4f23a1592ed1f75d3f3a7c30d473671ffce49b64
