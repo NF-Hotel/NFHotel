@@ -10,7 +10,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// become <b>one</b> implementation instead of six.
 /// <para>
 /// The name is <c>CanReschedule</c> and not <c>CanEdit</c>, so the DTO and the domain use the same word
-/// om samme regel (A-06).
+/// about the same rule (A-06).
 /// </para>
 /// </remarks>
 /// <param name="CanConfirm">Whether the booking may be confirmed (BR-02, BR-121).</param>

@@ -9,7 +9,7 @@ using NFHotel.Infrastructure.Persistence;
 namespace NFHotel.Infrastructure.Repositories;
 
 /// <summary>
-/// Stores the benchmark runs and reads them for the back office (ADR-0008). The reads never load the answer text
+/// Stores the benchmark runs and reads them for the back office (ADR-0013). The reads never load the answer text
 /// of a request except in <see cref="GetOutputAsync"/>.
 /// </summary>
 public sealed class BenchmarkRunRepository : Repository<BenchmarkRun, int>, IBenchmarkRunRepository, IBenchmarkQueries

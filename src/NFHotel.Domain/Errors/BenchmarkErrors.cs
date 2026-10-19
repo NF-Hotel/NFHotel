@@ -1,7 +1,7 @@
 namespace NFHotel.Domain.Errors;
 
 /// <summary>
-/// Error codes of the benchmark aggregates (ADR-0008). A code is a stable string; the text for the user is the
+/// Error codes of the benchmark aggregates (ADR-0013). A code is a stable string; the text for the user is the
 /// concern of the presentation layer.
 /// </summary>
 public static class BenchmarkErrors

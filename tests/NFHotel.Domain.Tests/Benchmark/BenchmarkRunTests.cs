@@ -204,7 +204,7 @@ public sealed class BenchmarkRunTests
         Assert.Contains(BenchmarkErrors.RunNumberInvalid, error.Codes);
     }
 
-    /// <summary>State: several faults in one delivery are all reported once, so the sender can fix them together.</summary>
+    /// <summary>State: several faults in one delivery are all reported once, so the client can fix them together.</summary>
     [Fact]
     public void Create_SeveralFaults_ReportsEachCodeOnce()
     {

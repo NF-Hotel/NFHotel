@@ -268,7 +268,7 @@ public static class ErrorCodes
         public const string ConcurrencyConflict = "guest.concurrency_conflict";
     }
 
-    /// <summary>Codes of the stored benchmark runs (ADR-0008). The field codes are those of the domain.</summary>
+    /// <summary>Codes of the stored benchmark runs (ADR-0013). The field codes are those of the domain.</summary>
     public static class Benchmark
     {
         /// <summary>No run or request has that key.</summary>

@@ -1,6 +1,6 @@
 namespace NFHotel.Application.Dto.Benchmark;
 
-/// <summary>What storing a delivered run came to (ADR-0008).</summary>
+/// <summary>What storing a delivered run came to (ADR-0013).</summary>
 public enum BenchmarkStoreOutcome
 {
     /// <summary>The run id was new and the run is now stored.</summary>

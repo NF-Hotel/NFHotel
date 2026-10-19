@@ -6,7 +6,7 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Domain.Entities;
 
 /// <summary>
-/// One request to one model in a benchmark run: the measurements and the outcome (ADR-0008). A result belongs to its
+/// One request to one model in a benchmark run: the measurements and the outcome (ADR-0013). A result belongs to its
 /// <see cref="BenchmarkRun"/> and is created only through <see cref="BenchmarkRun.Create"/>.
 /// </summary>
 public sealed class BenchmarkResult : Entity<int>

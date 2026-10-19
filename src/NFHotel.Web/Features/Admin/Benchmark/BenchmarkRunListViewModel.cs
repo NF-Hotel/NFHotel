@@ -5,7 +5,7 @@ using NFHotel.Web.Common;
 namespace NFHotel.Web.Features.Admin.Benchmark;
 
 /// <summary>
-/// State of the page of stored benchmark runs (ADR-0008): the list, the run that is open and the answer of one request.
+/// State of the page of stored benchmark runs (ADR-0013): the list, the run that is open and the answer of one request.
 /// The page holds only markup and binding.
 /// </summary>
 public sealed class BenchmarkRunListViewModel

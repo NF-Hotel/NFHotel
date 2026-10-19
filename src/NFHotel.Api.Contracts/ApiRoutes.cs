@@ -15,7 +15,7 @@ public static class ApiRoutes
     /// <summary>The route prefix of the room endpoints.</summary>
     public const string Rooms = "api/rooms";
 
-    /// <summary>The route prefix of the benchmark results (ADR-0008).</summary>
+    /// <summary>The route prefix of the benchmark results (ADR-0013).</summary>
     public const string Benchmark = "api/benchmark";
 
     /// <summary>The delivery of a result below <see cref="Benchmark"/>.</summary>

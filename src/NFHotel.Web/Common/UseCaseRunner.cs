@@ -19,7 +19,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     private readonly IStaffTokenSource _tokenSource;
 
     /// <summary>
-    /// Opretter runneren.
+    /// Creates the runner.
     /// </summary>
     /// <param name="scopeFactory">The factory that makes a fresh DI scope per call.</param>
     /// <param name="logger">Logger for the technical errors the user never gets to see.</param>

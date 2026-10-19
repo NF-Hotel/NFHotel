@@ -7,7 +7,7 @@ using NFHotel.Application.UseCases.Benchmark;
 namespace NFHotel.ApiClient;
 
 /// <summary>
-/// Reads the stored benchmark runs through the API for the web application (ADR-0008). It implements only the reads: a
+/// Reads the stored benchmark runs through the API for the web application (ADR-0013). It implements only the reads: a
 /// run is stored by the benchmark service, never by the web application.
 /// </summary>
 public sealed class ApiBenchmarkService : IBenchmarkService

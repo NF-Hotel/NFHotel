@@ -1,6 +1,6 @@
 namespace NFHotel.Application.Dto.Benchmark;
 
-/// <summary>One request of a stored run with its measurements; the answer text is read on its own (ADR-0008).</summary>
+/// <summary>One request of a stored run with its measurements; the answer text is read on its own (ADR-0013).</summary>
 /// <param name="BenchmarkResultId">The key of the request, used to read the answer.</param>
 /// <param name="Timestamp">When the request was made.</param>
 /// <param name="Model">The model.</param>

@@ -20,7 +20,7 @@ namespace NFHotel.Infrastructure.Persistence.Converters;
 public sealed class EncryptedStringConverter : ValueConverter<string, string>
 {
     /// <summary>
-    /// Opretter konverteren.
+    /// Creates the converter.
     /// </summary>
     /// <param name="encryptor">The encryption service that carries the key.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="encryptor"/> is <c>null</c>.</exception>

@@ -10,73 +10,73 @@ public class RolePermissionsTests
     #region Single permissions
 
     /// <summary>
-    /// Kontrollerer at manager har tilladelse til at ændre priser.
+    /// Checks that a manager is allowed to change prices.
     /// </summary>
     [Fact]
     public void HasPermission_ManagerAndManagePrices_IsTrue()
     {
-        // Arrange  Forbered rollen og den permission, vi vil teste.
+        // Arrange  Prepare the role and the permission we want to test.
         string role = Roles.Manager;
         string permission = Permissions.ManagePrices;
 
-        // Act  Kontroller om rollen har den ønskede permission.
+        // Act  Check whether the role has the wanted permission.
         bool result = RolePermissions.HasPermission(role, permission);
 
-        // Assert  Manager skal have tilladelse.
+        // Assert  The manager must be allowed.
         Assert.True(result);
     }
 
     /// <summary>
-    /// Kontrollerer at Receptionist ikke har tilladelse til at ændre priser.
+    /// Checks that a receptionist is not allowed to change prices.
     /// </summary>
     [Fact]
     public void HasPermission_ReceptionistAndManagePrices_IsFalse()
     {
-        // Arrange  Forbered rolle og permission.
+        // Arrange  Prepare the role and the permission.
         string role = Roles.Receptionist;
         string permission = Permissions.ManagePrices;
 
-        // Act  Kontroller om rollen har den ønskede permission.
+        // Act  Check whether the role has the wanted permission.
         bool result = RolePermissions.HasPermission(role, permission);
 
-        // Assert  Receptionist skal ikke have tilladelse.
+        // Assert  The receptionist must not be allowed.
         Assert.False(result);
     }
 
 
     /// <summary>
-    /// Kontrollerer at guest ikke har tilladelse til at se hotelgæsters pasdata.
+    /// Checks that a guest is not allowed to see the passport data of hotel guests.
     /// </summary>
     [Fact]
     public void HasPermission_GuestAndGuestPassportData_IsFalse()
     {
-        // Arrange  forbered rolle og permission.
+        // Arrange  prepare the role and the permission.
         string role = Roles.Guest;
         string permission = Permissions.ViewGuestPassportData;
 
-        // Act  kontroller om rollen har den ønskede permission.
+        // Act  check whether the role has the wanted permission.
         bool result = RolePermissions.HasPermission(role, permission);
 
-        // Assert  guest skal ikke have tilladelse.
+        // Assert  the guest must not be allowed.
         Assert.False(result);
     }
 
 
 
     /// <summary>
-    /// Kontrollerer at en ukendt rolle ikke får adgang til at ændre priser.
+    /// Checks that an unknown role gets no access to change prices.
     /// </summary>
     [Fact]
     public void HasPermission_UnknownRoleAndManagePrices_IsFalse()
     {
-        // Arrange  opret en rolle, der ikke findes i RBAC-matrixen.
+        // Arrange  create a role that is not in the RBAC matrix.
         string role = "UnknownRole";
         string permission = Permissions.ManagePrices;
 
-        // Act  kontroller om rollen har den ønskede permission.
+        // Act  check whether the role has the wanted permission.
         bool result = RolePermissions.HasPermission(role, permission);
 
-        // Assert ukendte roller skal nægtes adgang.
+        // Assert  unknown roles must be denied access.
         Assert.False(result);
     }
 
@@ -103,13 +103,13 @@ public class RolePermissionsTests
     public void HasPermission_HousekeepingAndPermission_MatchesTheMatrix(
         string permission, bool expected)
     {
-        // Arrange  rollen er Housekeeping.
+        // Arrange  the role is Housekeeping.
         string role = Roles.Housekeeping;
 
-        // Act  kontroller om rollen har den ønskede permission.
+        // Act  check whether the role has the wanted permission.
         bool result = RolePermissions.HasPermission(role, permission);
 
-        // Assert  sammenlign resultatet med den forventede adgang.
+        // Assert  compare the result with the expected access.
         Assert.Equal(expected, result);
     }
 
@@ -132,13 +132,13 @@ public class RolePermissionsTests
     public void HasPermission_GuestAndPermission_MatchesTheMatrix(
         string permission, bool expected)
     {
-        // Arrange  rollen er Guest.
+        // Arrange  the role is Guest.
         string role = Roles.Guest;
 
-        // Act  kontroller om rollen har den ønskede permission.
+        // Act  check whether the role has the wanted permission.
         bool result = RolePermissions.HasPermission(role, permission);
 
-        // Assert  sammenlign med den forventede adgang.
+        // Assert  compare with the expected access.
         Assert.Equal(expected, result);
     }
 
@@ -160,13 +160,13 @@ public class RolePermissionsTests
     public void HasPermission_ReceptionistAndPermission_MatchesTheMatrix(
         string permission, bool expected)
     {
-        // Arrange  rollen er Receptionist.
+        // Arrange  the role is Receptionist.
         string role = Roles.Receptionist;
 
-        // Act  kontroller om rollen har den ønskede permission.
+        // Act  check whether the role has the wanted permission.
         bool result = RolePermissions.HasPermission(role, permission);
 
-        // Assert  sammenlign med den forventede adgang.
+        // Assert  compare with the expected access.
         Assert.Equal(expected, result);
     }
 
@@ -189,13 +189,13 @@ public class RolePermissionsTests
     public void HasPermission_ManagerAndPermission_MatchesTheMatrix(
         string permission, bool expected)
     {
-        // Arrange rollen er Manager.
+        // Arrange the role is Manager.
         string role = Roles.Manager;
 
-        // Act  kontroller om rollen har den ønskede permission.
+        // Act  check whether the role has the wanted permission.
         bool result = RolePermissions.HasPermission(role, permission);
 
-        // Assert  sammenlign med den forventede adgang.
+        // Assert  compare with the expected access.
         Assert.Equal(expected, result);
     }
 

@@ -2,8 +2,8 @@
 
   <!--
     NFHotel.Domain er kernen: nul projektreferencer, nul NuGet-pakker.
-    Bliver der nogensinde tilføjet en <PackageReference> eller <ProjectReference> her,
-    er Clean Architecture-afhængighedsretningen brudt (Architecture.md afsnit 2).
+    If a <PackageReference> or a <ProjectReference> is ever added here,
+    the Clean Architecture dependency direction is broken (Architecture.md section 2).
   -->
 
   <PropertyGroup>

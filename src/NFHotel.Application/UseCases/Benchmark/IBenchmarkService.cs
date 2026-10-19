@@ -3,7 +3,7 @@ using NFHotel.Application.Dto.Benchmark;
 namespace NFHotel.Application.UseCases.Benchmark;
 
 /// <summary>
-/// Reads the stored benchmark runs for a Manager (ADR-0008). The API implements it with the read port, and the web
+/// Reads the stored benchmark runs for a Manager (ADR-0013). The API implements it with the read port, and the web
 /// application with a client over HTTP. Storing a run is <see cref="IBenchmarkIntake"/>, which only the API implements.
 /// </summary>
 public interface IBenchmarkService

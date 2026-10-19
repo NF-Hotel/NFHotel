@@ -3,7 +3,7 @@ using NFHotel.Application.Dto.Benchmark;
 namespace NFHotel.Application.UseCases.Benchmark;
 
 /// <summary>
-/// Receives the runs that the benchmark service delivers (ADR-0008). Only the API implements it: the web application
+/// Receives the runs that the benchmark service delivers (ADR-0013). Only the API implements it: the web application
 /// never stores a run itself.
 /// </summary>
 public interface IBenchmarkIntake

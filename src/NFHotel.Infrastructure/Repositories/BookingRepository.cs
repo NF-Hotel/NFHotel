@@ -28,7 +28,7 @@ namespace NFHotel.Infrastructure.Repositories;
 public sealed class BookingRepository : Repository<Booking, int>, IBookingRepository, IBookingQueries
 {
     /// <summary>
-    /// Opretter repositoryet.
+    /// Creates the repository.
     /// </summary>
     /// <param name="context">Konteksten.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="context"/> is <c>null</c>.</exception>

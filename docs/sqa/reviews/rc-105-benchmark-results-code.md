@@ -1,10 +1,10 @@
-# RC-089 Review of the benchmark results code of MIL-019
+# RC-105 Review of the benchmark results code of MIL-019
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | RC-089 |
-| CrossReference | [MIL-019], [ADR-0008], [QC-CS-001] |
+| ID | RC-105 |
+| CrossReference | [MIL-019], [ADR-0013], [QC-CS-001] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
@@ -38,7 +38,7 @@
 | 10 | Money uses `decimal`; points in time use `DateTimeOffset` | Pass | No money; all times are `DateTimeOffset` and are stored as UTC (tested with a +02:00 offset) |
 | 11 | Public async APIs accept and pass a `CancellationToken` | Pass | Every async method takes one and passes it on |
 | 12 | Tests cover new behaviour, are named `Method_Condition_Expected`, and do not depend on order, time or the network | Pass | Tests in seven files: domain rules, the service, the API (201, 200, 400, 401, 403, 404), the client paths, the view model, the page access per role and eight tests against a real PostgreSQL. Whole solution: 970 tests, 967 passed, 3 skipped (the live Proxmox tests), 0 failed. Dates are fixed in the tests. The tests were written before the code for the permissions and the service; the domain code and the API tests were written after the code, which is a departure from tests first |
-| 13 | Classes and members trace to the Design Class Diagram | N-A | The project `docs/dcd.md` has no benchmark classes; the design is ADR-0008. The domain model and the dictionary also lack the concepts Benchmark run and Benchmark result (action item) |
+| 13 | Classes and members trace to the Design Class Diagram | N-A | The project `docs/dcd.md` has no benchmark classes; the design is ADR-0013. The domain model and the dictionary also lack the concepts Benchmark run and Benchmark result (action item) |
 | 14 | Each piece of knowledge is defined in one place | Pass | The permission names are defined once in `Permissions` and the policies are built from `Permissions.All`; the error codes of the fields are in `BenchmarkErrors`; the analysis types are constants of `BenchmarkResult`; the schema version is `BenchmarkService.SupportedSchemaVersion` |
 | 15 | Namespace and project references point inward | Pass | Domain has no reference; Application references Domain; the architecture tests pass. `System.Text.Json` attributes on the intake DTOs are part of the BCL, not a package |
 | 16 | SOLID holds | Pass | The intake (`IBenchmarkIntake`) is split from the reads (`IBenchmarkService`) so that the web client implements only the reads; narrow interfaces; the controller depends on abstractions |
@@ -60,6 +60,6 @@ Go — every mandatory criterion passes or is not applicable. The review is not 
 ---
 
 [MIL-019]: ../../milestones/mil-019-benchmark-results-api.md
-[ADR-0008]: ../../adr/adr-0008-benchmark-results.md
+[ADR-0013]: ../../adr/adr-0013-benchmark-results.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [5e09a59]: https://github.com/NF-Hotel/NFHotel/commit/5e09a59285ead213d7e846b5367ee8daa6a00104

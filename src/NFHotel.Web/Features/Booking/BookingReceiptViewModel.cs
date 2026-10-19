@@ -35,7 +35,7 @@ public sealed class BookingReceiptViewModel
     private readonly IUseCaseRunner<IBookingService> _bookings;
 
     /// <summary>
-    /// Opretter viewmodellen.
+    /// Creates the view model.
     /// </summary>
     /// <param name="bookings">Runs use cases on <see cref="IBookingService"/>.</param>
     public BookingReceiptViewModel(IUseCaseRunner<IBookingService> bookings)
