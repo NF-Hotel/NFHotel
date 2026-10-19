@@ -1,0 +1,266 @@
+@using System.Globalization
+@using NFHotel.Application.Dto.Benchmark
+@using NFHotel.Web.Features.Admin.Benchmark
+@inject BenchmarkAnalysisViewModel ViewModel
+@inherits NFHotel.Web.Common.CancellableComponentBase
+
+@*
+    The analysis view of one open run, laid out like the notebook of the benchmark repository: performance per model and
+    phase, deterministic task outcomes, the answers of the models side by side, memory use, and the export. Only markup
+    and binding; the figures come from BenchmarkResultAnalysis.
+
+    Not in this view: the figures that the benchmark service calculated from the dataset (cancellation rates of the
+    data). The service does not deliver them yet, so the cards show n/a next to the rates of the models.
+*@
+
+@{
+    var selected = BenchmarkResultAnalysis.Select(Run.Results, ViewModel.Workload);
+    var phases = BenchmarkResultAnalysis.Phases(selected);
+    var outcomes = BenchmarkResultAnalysis.TaskOutcomes(selected);
+    var resources = BenchmarkResultAnalysis.Resources(Run.Results);
+    var hotel = BenchmarkResultAnalysis.Select(Run.Results, BenchmarkWorkload.Hotel);
+}
+
+<section class="stack" aria-labelledby="analysis-performance">
+    <h3 class="subtitle" id="analysis-performance">Performance</h3>
+    <div class="field-row">
+        <label class="field-label" for="analysis-workload">Workload</label>
+        <select id="analysis-workload" class="field-input" @bind="ViewModel.Workload" @bind:after="StateHasChanged">
+            <option value="@BenchmarkWorkload.Hotel">Hotel analysis</option>
+            <option value="@BenchmarkWorkload.Deterministic">Deterministic tasks</option>
+            <option value="@BenchmarkWorkload.Both">Both</option>
+        </select>
+    </div>
+
+    @if (phases.Count == 0)
+    {
+        <p class="muted">No request of this workload finished without an error.</p>
+    }
+    else
+    {
+        <p class="muted">Cold is the first request of a model in its run (it may include loading the model); warm is every later request.</p>
+        <div class="table-wrap">
+            <table class="table">
+                <caption>Mean per model and phase</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Model</th>
+                        <th scope="col">Phase</th>
+                        <th scope="col" class="numeric">First token (s)</th>
+                        <th scope="col" class="numeric">Total (s)</th>
+                        <th scope="col" class="numeric">Tokens</th>
+                        <th scope="col" class="numeric">Tokens/s</th>
+                        <th scope="col" class="numeric">Requests</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var stats in phases)
+                    {
+                        <tr>
+                            <td>@stats.Model</td>
+                            <td>@stats.Phase</td>
+                            <td class="numeric">@Number(stats.FirstTokenSeconds)</td>
+                            <td class="numeric">@Number(stats.TotalSeconds)</td>
+                            <td class="numeric">@Number(stats.CompletionTokens)</td>
+                            <td class="numeric">@Number(stats.TokensPerSecond)</td>
+                            <td class="numeric">@stats.Requests</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="chart-grid">
+            <GroupedBarChart Title="First token (s)" AxisTitle="seconds, lower is faster" SeriesNames="PhaseNames"
+                             Groups="PhaseGroups(phases, stats => stats.FirstTokenSeconds)" />
+            <GroupedBarChart Title="Total time (s)" AxisTitle="seconds, lower is faster" SeriesNames="PhaseNames"
+                             Groups="PhaseGroups(phases, stats => stats.TotalSeconds)" />
+            <GroupedBarChart Title="Tokens per second" AxisTitle="tokens/s, higher is faster" SeriesNames="PhaseNames"
+                             Groups="PhaseGroups(phases, stats => stats.TokensPerSecond)" />
+        </div>
+    }
+</section>
+
+@if (outcomes.Count > 0)
+{
+    var tasks = outcomes.Select(outcome => outcome.TaskId).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+    var models = outcomes.Select(outcome => outcome.Model).Distinct(StringComparer.Ordinal).ToArray();
+    <section class="stack-sm" aria-labelledby="analysis-outcomes">
+        <h3 class="subtitle" id="analysis-outcomes">Deterministic task outcomes</h3>
+        <div class="table-wrap">
+            <table class="table">
+                <caption>Passed runs out of graded runs, per model and task</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Model</th>
+                        @foreach (var task in tasks)
+                        {
+                            <th scope="col">@task</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var model in models)
+                    {
+                        <tr>
+                            <th scope="row">@model</th>
+                            @foreach (var task in tasks)
+                            {
+                                var outcome = outcomes.FirstOrDefault(item => item.Model == model && item.TaskId == task);
+                                @if (outcome is null)
+                                {
+                                    <td>—</td>
+                                }
+                                else
+                                {
+                                    <td class="@(outcome.AllPassed ? "outcome-pass" : "outcome-fail")">
+                                        @(outcome.AllPassed ? "pass" : "fail") (@outcome.Passed/@outcome.Total)
+                                    </td>
+                                }
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+
+@if (hotel.Count > 0)
+{
+    <section class="stack" aria-labelledby="analysis-answers">
+        <h3 class="subtitle" id="analysis-answers">LLM analysis comparison</h3>
+        <p class="muted">No model is ranked. "Valid" only says that the answer had the requested structure.</p>
+        <ErrorAlert Errors="ViewModel.Errors" />
+        <div class="table-wrap">
+            <table class="table">
+                <caption>Answers to the hotel cancellation analysis</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Compare</th>
+                        <th scope="col">Model</th>
+                        <th scope="col" class="numeric">Run</th>
+                        <th scope="col">Phase</th>
+                        <th scope="col" class="numeric">First token (s)</th>
+                        <th scope="col" class="numeric">Total (s)</th>
+                        <th scope="col" class="numeric">Tokens</th>
+                        <th scope="col" class="numeric">Tokens/s</th>
+                        <th scope="col">Valid</th>
+                        <th scope="col">Finish</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var result in hotel)
+                    {
+                        var id = result.BenchmarkResultId;
+                        <tr>
+                            <td>
+                                <input type="checkbox"
+                                       aria-label="Compare the answer of @result.Model, run @(result.RunNumber + 1)"
+                                       checked="@ViewModel.IsCompared(id)"
+                                       disabled="@ViewModel.IsBusy"
+                                       @onchange="() => ToggleAsync(id)" />
+                            </td>
+                            <td>@result.Model</td>
+                            <td class="numeric">@(result.RunNumber + 1)</td>
+                            <td>@(result.Cold ? "cold" : "warm")</td>
+                            <td class="numeric">@Number(result.TimeToFirstTokenSeconds)</td>
+                            <td class="numeric">@Number(result.TotalSeconds)</td>
+                            <td class="numeric">@result.CompletionTokens</td>
+                            <td class="numeric">@Number(result.TokensPerSecond)</td>
+                            <td>@(result.HasError ? "error" : result.ResponseValid is { } valid ? (valid ? "yes" : "no") : "—")</td>
+                            <td>@(result.FinishReason ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (ViewModel.Compared.Count > 0)
+        {
+            <p class="muted">Compare up to @BenchmarkAnalysisViewModel.MaxCompared answers; a new choice replaces the oldest.</p>
+            <div class="compare-cards">
+                @foreach (var id in ViewModel.Compared)
+                {
+                    var result = hotel.FirstOrDefault(item => item.BenchmarkResultId == id);
+                    @if (result is not null && ViewModel.Outputs.TryGetValue(id, out var output))
+                    {
+                        <AnswerCard Result="result" Output="output" />
+                    }
+                }
+            </div>
+        }
+    </section>
+}
+
+@if (resources.Any(usage => usage.RamPeakMb is not null || usage.VramPeakMb is not null))
+{
+    <section class="stack" aria-labelledby="analysis-resources">
+        <h3 class="subtitle" id="analysis-resources">Resource usage</h3>
+        <p class="muted">
+            Memory is what the whole machine had in use, sampled about four times a second, not what the model alone used.
+            The mean over the requests of a model.
+        </p>
+        <div class="chart-grid">
+            <GroupedBarChart Title="System memory (MB)" AxisTitle="MB, mean over the requests" SeriesNames="MomentNames" ValueFormat="#,0"
+                             Groups="MomentGroups(resources, usage => usage.RamBeforeMb, usage => usage.RamAfterMb, usage => usage.RamPeakMb)" />
+            @if (resources.Any(usage => usage.VramPeakMb is not null))
+            {
+                <GroupedBarChart Title="GPU memory (MB)" AxisTitle="MB, mean over the requests" SeriesNames="MomentNames" ValueFormat="#,0"
+                                 Groups="MomentGroups(resources, usage => usage.VramBeforeMb, usage => usage.VramAfterMb, usage => usage.VramPeakMb)" />
+            }
+            else
+            {
+                <p class="muted">GPU memory was not measured (no NVIDIA GPU, or nvidia-smi was not found).</p>
+            }
+        </div>
+    </section>
+}
+
+<section class="stack-sm" aria-labelledby="analysis-export">
+    <h3 class="subtitle" id="analysis-export">Export</h3>
+    <p class="muted">The rows of this run without the answer texts, which are read one at a time.</p>
+    <div class="row">
+        <a class="btn btn-secondary btn-sm" download="benchmark-results-@(Run.Header.RunId).csv"
+           href="data:text/csv;charset=utf-8,@Uri.EscapeDataString(BenchmarkExport.ToCsv(Run.Results))">Download CSV</a>
+        <a class="btn btn-secondary btn-sm" download="benchmark-results-@(Run.Header.RunId).json"
+           href="data:application/json;charset=utf-8,@Uri.EscapeDataString(BenchmarkExport.ToJson(Run.Results))">Download JSON</a>
+    </div>
+</section>
+
+@code {
+    private static readonly IReadOnlyList<string> PhaseNames = [BenchmarkResultAnalysis.Cold, BenchmarkResultAnalysis.Warm];
+    private static readonly IReadOnlyList<string> MomentNames = ["before", "after", "peak"];
+
+    /// <summary>The run that is shown.</summary>
+    [Parameter, EditorRequired]
+    public BenchmarkRunDetailsDto Run { get; set; } = default!;
+
+    /// <summary>Starts the state of the view for the run that is shown.</summary>
+    protected override void OnParametersSet() => ViewModel.ShowRun(Run.Header.RunId);
+
+    private Task ToggleAsync(int benchmarkResultId) => ViewModel.ToggleCompareAsync(benchmarkResultId, ComponentToken);
+
+    private static IReadOnlyList<ChartGroup> PhaseGroups(IReadOnlyList<PhaseStats> phases, Func<PhaseStats, double?> value) =>
+        [
+            .. phases
+                .GroupBy(stats => stats.Model)
+                .Select(group => new ChartGroup(
+                    group.Key,
+                    [.. PhaseNames.Select(name => new ChartBar(name, group.FirstOrDefault(stats => stats.Phase == name) is { } stats ? value(stats) : null))])),
+        ];
+
+    private static IReadOnlyList<ChartGroup> MomentGroups(
+        IReadOnlyList<ResourceUsage> resources,
+        Func<ResourceUsage, double?> before,
+        Func<ResourceUsage, double?> after,
+        Func<ResourceUsage, double?> peak) =>
+        [
+            .. resources.Select(usage => new ChartGroup(
+                usage.Model,
+                [new ChartBar("before", before(usage)), new ChartBar("after", after(usage)), new ChartBar("peak", peak(usage))])),
+        ];
+
+    private static string Number(double? value) =>
+        value is { } number ? number.ToString("0.##", CultureInfo.InvariantCulture) : "—";
+}
