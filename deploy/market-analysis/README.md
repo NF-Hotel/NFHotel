@@ -27,5 +27,5 @@ says the insight is unavailable.
 | Gap | Evidence | Owner | Action |
 | --- | --- | --- | --- |
 | No charts: the notebook shows tables | The source README says "Not built yet: charts"; the repository has no charting library | S02 | Raise an issue in `NF-Hotel/Notebook_Market_Analysis` for charts; this repository does not change its code |
-| AI analysis needs a reachable local model | `[llm]` in the configuration; without one the insight is `unavailable` | S02 | Decide where the model runs when the Proxmox host is chosen (MIL-004 task 2) |
+| AI analysis needs a reachable local model | `[llm]` in the configuration; without one the insight is `unavailable` | S02 | Decide where the model runs; the services run in a VM on Proxmox (ADR-0003), the model on a host the VM can reach |
 | No input is loaded by the service itself | A calling system posts the bookings | S02 | Decide who sends the bookings to `/analyze` |

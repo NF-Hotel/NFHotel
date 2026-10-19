@@ -1,0 +1,88 @@
+@page "/admin/login"
+@inherits CancellableComponentBase
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authentication
+@using NFHotel.Application.UseCases.Staff
+@using NFHotel.Web.Security
+@inject LoginViewModel ViewModel
+@inject NavigationManager Navigation
+
+@*
+    The sign-in of the back office (ADR-0005). A static server-rendered form, with no @@rendermode: the cookie can only
+    be set while the response is being made, and a SignalR circuit cannot set one.
+
+    The form posts to this page. The page asks the sign-in use case, and on success puts the cookie with the user
+    name, the role and the staff token, then goes on to the page that was asked for, or to the landing page of the
+    role. A refusal says the same thing for an unknown user and a wrong password.
+*@
+
+<PageTitle>Sign in — NFHotel administration</PageTitle>
+
+<div class="page-narrow stack-lg">
+    <PageHeader Title="Staff sign-in"
+                Subtitle="The back office is for the hotel's staff. Sign in with your own account." />
+
+    <ErrorAlert Errors="ViewModel.Errors" />
+
+    <EditForm Model="Input" FormName="staff-login" OnValidSubmit="SignInAsync" method="post" class="card card-pad stack">
+        <DataAnnotationsValidator />
+
+        <FormField Label="User name" For="login-user" IsRequired="true">
+            <InputText id="login-user" class="field-input" autocomplete="username" @bind-Value="Input!.UserName" />
+        </FormField>
+
+        <FormField Label="Password" For="login-password" IsRequired="true">
+            <InputText id="login-password" type="password" class="field-input" autocomplete="current-password" @bind-Value="Input!.Password" />
+        </FormField>
+
+        <ValidationSummary />
+
+        <div class="row">
+            <button type="submit" class="btn btn-primary">Sign in</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    private string? ReturnTo { get; set; }
+
+    [SupplyParameterFromForm(FormName = "staff-login")]
+    private LoginInput? Input { get; set; }
+
+    protected override void OnInitialized() => Input ??= new();
+
+    private async Task SignInAsync()
+    {
+        if (HttpContext is null || Input is null)
+        {
+            return;
+        }
+
+        var session = await ViewModel.SignInAsync(Input.UserName, Input.Password, ComponentToken);
+        Input.Password = string.Empty;
+        if (session is null)
+        {
+            return;
+        }
+
+        await HttpContext.SignInAsync(
+            StaffClaims.CookieScheme,
+            StaffClaims.CreatePrincipal(session),
+            new AuthenticationProperties { ExpiresUtc = session.ExpiresAt, IsPersistent = false, AllowRefresh = false });
+
+        Navigation.NavigateTo(ReturnUrl.Safe(ReturnTo, RolePermissions.LandingPath(session.Role)));
+    }
+
+    private sealed class LoginInput
+    {
+        [Required(ErrorMessage = "Enter your user name.")]
+        public string UserName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Enter your password.")]
+        public string Password { get; set; } = string.Empty;
+    }
+}

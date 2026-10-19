@@ -112,6 +112,13 @@ public sealed class BookingService : IBookingService
     {
         ArgumentNullException.ThrowIfNull(query);
 
+        // MIL-013: an end before the start is a mistake, not an empty period. An end equal to the start
+        // is the view of one day and is allowed, unlike a stay, which needs at least one night.
+        if (query.PeriodEnd < query.PeriodStart)
+        {
+            return Result<IReadOnlyList<BookingListItemDto>>.Failure(ErrorCodes.Booking.OverviewPeriodInvalid);
+        }
+
         // BR-13: cancelled bookings are not deleted, so they must be possible to hide in the overview.
         var statuses = query.IncludeCancelled ? AllStatuses : BlockingStatuses;
 
@@ -268,7 +275,11 @@ public sealed class BookingService : IBookingService
     public Task<Result<BookingDetailsDto>> CheckInAsync(
         int bookingId,
         CancellationToken cancellationToken = default) =>
-        TransitionAsync(bookingId, booking => booking.CheckIn(_clock.UtcNow, _clock.Today), cancellationToken);
+        TransitionAsync(
+            bookingId,
+            booking => booking.CheckIn(_clock.UtcNow, _clock.Today),
+            cancellationToken,
+            RoomMustBeBookableForCheckInAsync);
 
     /// <summary>Checks the guest out (BR-09, BR-10, BR-107, A-01, A-03, BR-N-06).</summary>
     /// <param name="bookingId">Bookingens id.</param>
@@ -397,11 +408,13 @@ public sealed class BookingService : IBookingService
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="transition">The transition — always exactly one method call on <see cref="NFHotel.Domain.Entities.Booking"/>.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="precondition">An optional check that needs more than the booking, run before the transition; returns an error code or <c>null</c>.</param>
     /// <returns>The details of the booking, or the error code of the domain if the transition was rejected.</returns>
     private async Task<Result<BookingDetailsDto>> TransitionAsync(
         int bookingId,
         Action<Booking> transition,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<Booking, CancellationToken, Task<string?>>? precondition = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bookingId);
 
@@ -410,6 +423,17 @@ public sealed class BookingService : IBookingService
         if (booking is null)
         {
             return Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.NotFound);
+        }
+
+        // A precondition that depends on something outside the booking is checked before the transition,
+        // so a refusal leaves the booking untouched and unsaved.
+        if (precondition is not null)
+        {
+            var refusal = await precondition(booking, cancellationToken).ConfigureAwait(false);
+            if (refusal is not null)
+            {
+                return Result<BookingDetailsDto>.Failure(refusal);
+            }
         }
 
         try
@@ -457,6 +481,18 @@ public sealed class BookingService : IBookingService
             return false;
         }
     }
+
+    /// <summary>
+    /// MIL-013: a guest is checked in only to a room that can be let (BR-110). When the booking cannot be
+    /// checked in anyway, the transition reports that first, so the user sees the real reason.
+    /// </summary>
+    /// <param name="booking">The booking about to be checked in.</param>
+    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <returns>An error code, or <c>null</c> if the check-in may go on.</returns>
+    private Task<string?> RoomMustBeBookableForCheckInAsync(Booking booking, CancellationToken cancellationToken) =>
+        booking.CanCheckIn(_clock.Today)
+            ? CheckRoomIsBookableAsync(booking.RoomId, cancellationToken)
+            : Task.FromResult<string?>(null);
 
     /// <summary>
     /// Decides whether the room exists and may be let at all (BR-45, BR-105, BR-110).

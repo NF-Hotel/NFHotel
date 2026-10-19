@@ -11,7 +11,7 @@ namespace NFHotel.Application.UseCases.Bookings;
 /// "Today" is passed in as a parameter and is not fetched from a clock here, so the mappers are pure
 /// functions and can be unit tested without fake time (A-05). The service owns the clock.
 /// <para>
-/// <see cref="ToActions(BookingStatus, DateOnly, DateTimeOffset?, DateTimeOffset?, DateOnly)"/>
+/// <see cref="ToActions(BookingStatus, DateOnly, DateTimeOffset?, DateTimeOffset?, DateOnly, bool)"/>
 /// is not mapping but rule evaluation, and it must therefore be readable and testable rather than
 /// genereret.
 /// </para>
@@ -45,6 +45,7 @@ public static class BookingMapping
     /// <param name="checkInTime">Actual check-in time, or <c>null</c>.</param>
     /// <param name="checkOutTime">Actual check-out time, or <c>null</c>.</param>
     /// <param name="today">Today's date in the hotel's time zone, from <c>IClock.Today</c>.</param>
+    /// <param name="roomIsBookable">Whether the room of the booking can be let (BR-110); a guest is checked in only to such a room (MIL-013).</param>
     /// <returns>Handlingerne.</returns>
     /// <remarks>
     /// The predicates mirror <see cref="Booking.CanConfirm"/>, <see cref="Booking.CanCheckIn"/>,
@@ -63,13 +64,14 @@ public static class BookingMapping
         DateOnly startDate,
         DateTimeOffset? checkInTime,
         DateTimeOffset? checkOutTime,
-        DateOnly today)
+        DateOnly today,
+        bool roomIsBookable = true)
     {
         var isOpen = status is BookingStatus.Pending or BookingStatus.Confirmed;
 
         return new BookingActionsDto(
             CanConfirm: status == BookingStatus.Pending,
-            CanCheckIn: isOpen && checkInTime is null && startDate <= today,
+            CanCheckIn: isOpen && checkInTime is null && startDate <= today && roomIsBookable,
             CanCheckOut: status == BookingStatus.CheckedIn && checkInTime is not null && checkOutTime is null,
             CanCancel: isOpen,
             CanReschedule: isOpen);
@@ -114,7 +116,7 @@ public static class BookingMapping
             booking.Guest.FullName,
             booking.Guest.Country,
             booking.Guest.Email,
-            ToActions(booking.Status, booking.StartDate, booking.CheckInTime, booking.CheckOutTime, today));
+            ToActions(booking.Status, booking.StartDate, booking.CheckInTime, booking.CheckOutTime, today, RoomIsBookable(booking)));
     }
 
     /// <summary>
@@ -140,7 +142,7 @@ public static class BookingMapping
             booking.CheckOutDate,
             booking.Room,
             booking.Guest,
-            ToActions(booking.Status, booking.StartDate, booking.CheckInTime, booking.CheckOutTime, today));
+            ToActions(booking.Status, booking.StartDate, booking.CheckInTime, booking.CheckOutTime, today, RoomIsBookable(booking)));
     }
 
     /// <summary>
@@ -154,4 +156,7 @@ public static class BookingMapping
     /// </remarks>
     private static int CountNights(BookingReadModel booking) =>
         new DateRange(booking.StartDate, booking.EndDate).Nights;
+
+    private static bool RoomIsBookable(BookingReadModel booking) => booking.Room.Status == RoomStatus.Available;
+
 }

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Team6. All rights reserved. 
+//  No warranty, explicit or implicit, provided.
+
 using System.ComponentModel.DataAnnotations;
 
 using NFHotel.Domain.Errors;
@@ -102,7 +105,7 @@ public sealed class Guest : Entity<int>
         string country,
         string? passportNumber)
     {
-        var guest = new Guest();
+        Guest guest = new();
         guest.Apply(firstName, lastName, email, phoneNumber, country, passportNumber);
 
         return guest;
@@ -139,7 +142,7 @@ public sealed class Guest : Entity<int>
         string country,
         string? passportNumber)
     {
-        var candidate = new Guest
+        Guest candidate = new()
         {
             FirstName = firstName,
             LastName = lastName,

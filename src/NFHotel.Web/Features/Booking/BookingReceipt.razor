@@ -1,5 +1,6 @@
 @page "/booking/{BookingNumber}"
 @rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
 
 @inject BookingReceiptViewModel ViewModel
 
@@ -55,5 +56,5 @@
     /// <summary>
     /// Looks up the booking — also when only the number in the address changes.
     /// </summary>
-    protected override Task OnParametersSetAsync() => ViewModel.LoadAsync(BookingNumber);
+    protected override Task OnParametersSetAsync() => ViewModel.LoadAsync(BookingNumber, ComponentToken);
 }

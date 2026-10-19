@@ -1,0 +1,74 @@
+# Release: build the NFHotel images once, push them to GHCR and record their digests
+# (ADR-0007, ADR-0012). An entry point: the steps are the release-images action of
+# NF-Hotel/DevOps, pinned by full commit SHA (the action refuses anything else). This
+# workflow keeps the trigger, the permissions and the GHCR login.
+#
+# Trigger: a successful NF Hotel CI run of a push to main in this repository
+#   (workflow_run). Pull requests and forks never reach this workflow, so untrusted
+#   code never gets the package token; it checks out only the commit that CI tested.
+# Secrets: none besides the job token (packages: write for GHCR).
+# Changes outside the repository: the four packages ghcr.io/nf-hotel/{nfhotel-web,
+#   nfhotel-api, market-analysis, benchmark}, tagged sha-<commit>.
+# Output: the artifact release-manifest (release.json: this commit, the DevOps commit,
+#   four digests), which NF Hotel CD deploys.
+# Verified with actionlint 1.7.7.
+name: NF Hotel Release
+
+on:
+  workflow_run:
+    workflows: [NF Hotel CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and push images
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Check out the tested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Log in to GHCR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      - name: Build and push the images
+        # A pinned action reference cannot be wrapped (ADR-0012: full commit SHA).
+        # yamllint disable-line rule:line-length
+        uses: NF-Hotel/DevOps/.github/actions/release-images@82cb1f4fe99a21b54551c32cfa738d5982caf9d9
+        with:
+          app-path: .
+          app-sha: ${{ github.event.workflow_run.head_sha }}
+          push: "true"
+
+      - name: Log out of GHCR
+        if: ${{ always() }}
+        run: docker logout ghcr.io
+
+      - name: Keep the release manifest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: release-manifest
+          path: release.json
+          if-no-files-found: error
+          retention-days: 90

@@ -219,7 +219,15 @@ public sealed class GuestService : IGuestService
     /// <summary>Validates the guest fields without saving (BR-58, BR-59).</summary>
     /// <param name="fields">The fields to validate.</param>
     /// <returns>Success, or all broken rules at once.</returns>
-    public Result ValidateFields(GuestFields fields)
+    public Result ValidateFields(GuestFields fields) => Validate(fields);
+
+    /// <summary>
+    /// Checks guest fields against the rules of the domain. Pure and synchronous: it reads nothing and writes
+    /// nothing, so the API client runs it locally instead of calling the API (ADR-0004).
+    /// </summary>
+    /// <param name="fields">The fields to check.</param>
+    /// <returns>A success, or a failure with every error code.</returns>
+    public static Result Validate(GuestFields fields)
     {
         ArgumentNullException.ThrowIfNull(fields);
 

@@ -15,7 +15,7 @@ public sealed class ReadOnlyHandlerTests
             new HttpMethod(method), "https://pve.invalid/api2/json/version");
 
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => client.SendAsync(request));
+            () => client.SendAsync(request, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -23,7 +23,7 @@ public sealed class ReadOnlyHandlerTests
     {
         using var client = new HttpClient(new ReadOnlyHandler(new OkHandler()));
 
-        using var response = await client.GetAsync("https://pve.invalid/api2/json/version");
+        using var response = await client.GetAsync("https://pve.invalid/api2/json/version", TestContext.Current.CancellationToken);
 
         Assert.True(response.IsSuccessStatusCode);
     }

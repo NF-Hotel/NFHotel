@@ -1,0 +1,74 @@
+# CD: deploy a release to the Proxmox VM after an approval (ADR-0007, ADR-0012). An entry
+# point: the steps are the deploy-release action of NF-Hotel/DevOps, pinned by full
+# commit SHA. This workflow keeps the trigger, the permissions, the environment and the
+# concurrency, which a composite action cannot set.
+#
+# Triggers: a successful NF Hotel Release run of main in this repository
+#   (workflow_run), or by hand with the run ID of an earlier release (a redeploy or a
+#   rollback). A manual run is a dry run unless the input apply is true.
+# Approval: the job runs in the environment production, whose required reviewers approve
+#   it before it starts; no credential exists before that.
+# Access: the action joins the tailnet as an ephemeral node tagged tag:ci through GitHub
+#   OIDC (the claims name this repository and production; no stored Tailscale secret)
+#   and runs one command on the VM over Tailscale SSH as the user deploy (no stored key).
+# Settings (environment variables of production, not secrets): TS_OIDC_CLIENT_ID,
+#   TS_OIDC_AUDIENCE, NFHOTEL_VM_HOST.
+# Changes outside the repository: the services on the VM.
+# Verified with actionlint 1.7.7.
+name: NF Hotel CD
+
+on:
+  workflow_run:
+    workflows: [NF Hotel Release]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_run_id:
+        description: Run ID of the NF Hotel Release run to deploy
+        required: true
+        type: string
+      apply:
+        description: Deploy for real (false prints what would be deployed)
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    # A run from a fork never reaches the deploy
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'workflow_run' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: production
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+
+    steps:
+      - name: Deploy the release
+        # A pinned action reference cannot be wrapped (ADR-0012: full commit SHA).
+        # yamllint disable-line rule:line-length
+        uses: NF-Hotel/DevOps/.github/actions/deploy-release@82cb1f4fe99a21b54551c32cfa738d5982caf9d9
+        with:
+          release-run-id: ${{ github.event.workflow_run.id || inputs.release_run_id }}
+          apply: ${{ github.event_name == 'workflow_run' || inputs.apply }}
+          vm-host: ${{ vars.NFHOTEL_VM_HOST }}
+          ts-oidc-client-id: ${{ vars.TS_OIDC_CLIENT_ID }}
+          ts-oidc-audience: ${{ vars.TS_OIDC_AUDIENCE }}
+          github-token: ${{ github.token }}

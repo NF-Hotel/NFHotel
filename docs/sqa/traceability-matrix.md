@@ -24,7 +24,7 @@ updated whenever an artifact instance is created or reviewed.
 
 | Artifact Instance | Type | Language | Domain | Upstream (Backward Link) | Downstream (Forward Link) | Last Reviewed (RC-ID) |
 | --- | --- | --- | --- | --- | --- | --- |
-| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [UCD-001], [US-001] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044] |
+| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-021], [MIL-022], [MIL-023], [UCD-001], [US-001] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044], [RC-088] |
 | [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009], [RC-026] |
 | [MIL-001] | Milestone | en | it | [BC-001] | - | [RC-003] |
 | [MIL-002] | Milestone | en | it | [BC-001] | - | [RC-006] |
@@ -37,9 +37,22 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-009] | Milestone | en | it | [BC-001], [ADR-0002], [MIL-008] | - | [RC-041], [RC-043] |
 | [MIL-010] | Milestone | en | it | [BC-001], [MIL-006] | - | [RC-045], [RC-046] |
 | [ADR-0002] | ADR | en | it | [BC-001], [ADR-0001], [DM-004] | [MIL-009] | [RC-042] |
+| [ADR-0003] | ADR | en | it | [BC-001], [MIL-004], [US-001] | [MIL-004], [ADR-0010] | [RC-047], [RC-098] |
 | [ADR-0001] | Architecture Decision Record | - | - | [BC-001] | [MIL-005] | [RC-019] |
 | `src/` (Domain, Application, Infrastructure) | Source code | - | - | [ADR-0001], [MIL-005] | - | [RC-020] |
-| [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003] | - |
+| [PP-001] | Project Plan | en | it | [BC-001], [SA-001] | [MIL-001], [MIL-002], [MIL-003], [MIL-021], [MIL-022], [MIL-023] | [RC-088] |
+| [DSA-001] | CI/CD and DevSecOps Assessment (no catalog type) | en | it | [BC-001], [ADR-0003], [ADR-0006] | [ADR-0007], [ADR-0008], [ADR-0009], [MIL-021], [MIL-022], [MIL-023] | - (no checklist; decisions approved in chat) |
+| [MIL-021] | Milestone | en | it | [BC-001], [DSA-001], [ADR-0007], [ADR-0008], [ADR-0010] | [MIL-022] | [RC-089], [RC-094], [RC-095], [RC-097] |
+| [MIL-022] | Milestone | en | it | [BC-001], [MIL-021] | [MIL-023] | [RC-090] |
+| [MIL-023] | Milestone | en | it | [BC-001], [MIL-022] | - | [RC-091] |
+| [ADR-0007] | ADR | en | it | [BC-001], [DSA-001], [ADR-0003] | [MIL-021], [MIL-022] | [RC-092] |
+| [ADR-0008] | ADR | en | it | [BC-001], [DSA-001], [ADR-0004] | [MIL-021], [MIL-022] | [RC-093] |
+| [ADR-0009] | ADR | en | it | [ADR-0006], [DSA-001] | [MIL-021], [MIL-023] | [RC-096] |
+| [ADR-0010] | ADR | en | it | [ADR-0003], [ADR-0004], [DSA-001] | [MIL-021], [ADR-0011] | [RC-098] |
+| [MIL-024] | Milestone | en | it | [BC-001], [ADR-0010], [ADR-0011], [MIL-021] | - | [RC-099], [RC-101] |
+| [ADR-0012] | ADR | en | it | [BC-001], [ADR-0003], [ADR-0006] | [MIL-025] | [RC-102] |
+| [MIL-025] | Milestone | en | it | [BC-001], [ADR-0012] | - | [RC-103] |
+| [ADR-0011] | ADR | en | it | [ADR-0004], [ADR-0010], [DSA-001] | [MIL-024] | [RC-100] |
 | [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001] | [RC-013], [RC-028] |
 | [US-001] | User Story | en | it | [UCD-001], [BC-001] | - | [RC-012], [RC-027] |
 | [DICT-001] | Domain Dictionary | en | it | [BC-001], [SA-001] | [DM-004] | [RC-029] |
@@ -107,6 +120,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-044]: ./reviews/rc-044-business-case-source-comments.md
 [RC-045]: ./reviews/rc-045-milestone-010.md
 [RC-046]: ./reviews/rc-046-source-comments-english.md
+[RC-047]: ./reviews/rc-047-adr-0003.md
 [DICT-001]: ../dictionary.md
 [UC-001]: ../use-cases/uc-001/uc.md
 [UC-002]: ../use-cases/uc-002/uc.md
@@ -121,6 +135,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-009]: ../milestones/mil-009-validation-attributes.md
 [MIL-010]: ../milestones/mil-010-english-source-comments.md
 [ADR-0002]: ../adr/adr-0002-validation-attributes-on-entities.md
+[ADR-0003]: ../adr/adr-0003-proxmox-vm-for-services.md
 [ADR-0001]: ../adr/adr-0001-clean-architecture-structure.md
 [MIL-005]: ../milestones/mil-005-clean-architecture.md
 [MIL-004]: ../milestones/mil-004-market-analysis-service.md
@@ -130,3 +145,35 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-002]: ../milestones/mil-002-nginx-proxy-and-web-compose.md
 [b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
 [3db0f51]: https://github.com/NF-Hotel/NFHotel/commit/3db0f51b7d7769bfc99dbbd173fc67266ee70c99
+[DSA-001]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/devsecops-assessment.md
+[MIL-021]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-021-secure-cicd-foundation.md
+[MIL-022]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-022-supply-chain-security.md
+[MIL-023]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-023-operational-quality.md
+[ADR-0004]: ../adr/adr-0004-database-api.md
+[ADR-0006]: ../adr/adr-0006-tls.md
+[ADR-0007]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md
+[ADR-0008]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0008-database-migration-and-backup.md
+[ADR-0009]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0009-tls-certificates.md
+[RC-088]: ./reviews/rc-088-business-case-cicd.md
+[RC-089]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-089-milestone-021.md
+[RC-090]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-090-milestone-022.md
+[RC-091]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-091-milestone-023.md
+[RC-092]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-092-adr-0007.md
+[RC-093]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-093-adr-0008.md
+[RC-094]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-094-mil-021-shell-code.md
+[RC-095]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-095-mil-021-workflows.md
+[RC-096]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-096-adr-0009.md
+[RC-097]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-097-milestone-021-reconciliation.md
+[RC-098]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-098-adr-0010.md
+[RC-099]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-099-milestone-024.md
+[RC-100]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-100-adr-0011.md
+[RC-101]: https://github.com/NF-Hotel/DevOps/blob/main/docs/sqa/reviews/rc-101-mil-024-code-and-gate.md
+[MIL-024]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-024-postgresql-api-readiness.md
+[ADR-0011]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0011-postgresql-access-for-the-api.md
+[ADR-0010]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0010-production-vm-as-deployed.md
+[ADR-0003]: ../adr/adr-0003-proxmox-vm-for-services.md
+[RC-043]: ./reviews/rc-043-validation-attributes.md
+[ADR-0012]: ../adr/adr-0012-devops-repository-ownership.md
+[MIL-025]: ../milestones/mil-025-devops-repository-consolidation.md
+[RC-102]: ./reviews/rc-102-adr-0012.md
+[RC-103]: ./reviews/rc-103-milestone-025.md

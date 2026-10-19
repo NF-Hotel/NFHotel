@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Team6. All rights reserved. 
+//  No warranty, explicit or implicit, provided.
+
 using System.Text.Json;
 
 namespace NFHotel.Proxmox.Tests;
@@ -28,7 +31,7 @@ public sealed class ProxmoxApiTests : IDisposable
     [LiveFact]
     public async Task GetVersion_WithValidToken_ReturnsVersion()
     {
-        var data = await Client.GetDataAsync("version");
+        JsonElement data = await Client.GetDataAsync("version");
 
         Assert.False(string.IsNullOrWhiteSpace(data.GetProperty("version").GetString()));
     }
@@ -36,20 +39,18 @@ public sealed class ProxmoxApiTests : IDisposable
     [LiveFact]
     public async Task GetNodes_ConfiguredNode_IsListed()
     {
-        var nodes = await Client.GetDataAsync("nodes");
+        JsonElement nodes = await Client.GetDataAsync("nodes");
 
-        var names = nodes.EnumerateArray()
-            .Select(node => node.GetProperty("node").GetString())
-            .ToList();
+        List<string?> names = [.. nodes.EnumerateArray().Select(static node => node.GetProperty("node").GetString())];
         Assert.Contains(Settings.Node, names);
     }
 
     [LiveFact]
     public async Task GetNodeStatus_ConfiguredNode_ReportsUptime()
     {
-        var data = await Client.GetDataAsync($"nodes/{Settings.Node}/status");
+        JsonElement data = await Client.GetDataAsync($"nodes/{Settings.Node}/status");
 
-        var uptime = data.GetProperty("uptime");
+        JsonElement uptime = data.GetProperty("uptime");
         Assert.Equal(JsonValueKind.Number, uptime.ValueKind);
         Assert.True(uptime.GetInt64() > 0);
     }

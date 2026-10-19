@@ -1,6 +1,8 @@
 @page "/admin/bookings"
 @layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.BookingsView)]
 @rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
 @using NFHotel.Domain.Entities
 @using NFHotel.Domain.Errors
 @using NFHotel.Domain.ValueObjects
@@ -545,7 +547,7 @@
         $"Cancel booking {ViewModel.BookingPendingCancellation?.BookingNumber}?";
 
     /// <summary>Fetches the first list when the screen opens.</summary>
-    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync();
+    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
 
     /// <summary>Gives the button for the guest mode the right appearance class.</summary>
     private string GuestModeClass(BookingGuestMode mode) =>
@@ -555,24 +557,24 @@
     private string GuestModePressed(BookingGuestMode mode) =>
         Form.GuestMode == mode ? "true" : "false";
 
-    private Task SearchAsync() => ViewModel.SearchAsync();
+    private Task SearchAsync() => ViewModel.SearchAsync(ComponentToken);
 
-    private Task ClearFilterAsync() => ViewModel.ClearFilterAsync();
+    private Task ClearFilterAsync() => ViewModel.ClearFilterAsync(ComponentToken);
 
     private void ApplyStatusFilter() => ViewModel.FilterByStatus(ViewModel.StatusFilter);
 
     private void ShowAllStatuses() => ViewModel.FilterByStatus(null);
 
-    private Task SortAsync(BookingSortField field) => ViewModel.SortByAsync(field);
+    private Task SortAsync(BookingSortField field) => ViewModel.SortByAsync(field, ComponentToken);
 
     private Task ExecuteAsync(BookingAction action, BookingListItemDto booking) =>
-        ViewModel.ExecuteAsync(action, booking.BookingId);
+        ViewModel.ExecuteAsync(action, booking.BookingId, ComponentToken);
 
     private void RequestCancel(BookingListItemDto booking) => ViewModel.RequestCancel(booking);
 
     private void AbortCancel() => ViewModel.AbortCancel();
 
-    private Task ConfirmCancelAsync() => ViewModel.ConfirmCancelAsync();
+    private Task ConfirmCancelAsync() => ViewModel.ConfirmCancelAsync(ComponentToken);
 
     private void BeginCreate()
     {
@@ -584,14 +586,14 @@
     {
         Form.DismissSuccess();
 
-        return Form.BeginRescheduleAsync(booking);
+        return Form.BeginRescheduleAsync(booking, ComponentToken);
     }
 
     private void CloseForm() => Form.Close();
 
-    private Task SearchRoomsAsync() => Form.SearchRoomsAsync();
+    private Task SearchRoomsAsync() => Form.SearchRoomsAsync(ComponentToken);
 
-    private Task SearchGuestsAsync() => Form.SearchGuestsAsync();
+    private Task SearchGuestsAsync() => Form.SearchGuestsAsync(ComponentToken);
 
     private void ValidateGuest() => Form.ValidateNewGuest();
 
@@ -600,11 +602,11 @@
     /// </summary>
     private async Task SaveAsync()
     {
-        await Form.SaveAsync();
+        await Form.SaveAsync(ComponentToken);
 
         if (Form.SavedSuccessfully)
         {
-            await ViewModel.SearchAsync();
+            await ViewModel.SearchAsync(ComponentToken);
         }
     }
 }

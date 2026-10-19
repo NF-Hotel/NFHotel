@@ -51,6 +51,7 @@ public static class ErrorMessages
             [ErrorCodes.Booking.RescheduleNotAllowed] = "This booking can't be moved in its current state.",
             [ErrorCodes.Booking.RoomNotAvailable] = "That room is already taken for the selected dates.",
             [ErrorCodes.Booking.RoomNotBookable] = "That room can't be booked right now.",
+            [ErrorCodes.Booking.OverviewPeriodInvalid] = "The end of the period can't be before its start.",
             [ErrorCodes.Booking.GuestSelectionInvalid] = "Pick an existing guest or create a new one — not both.",
             [ErrorCodes.Booking.ConcurrencyConflict] = "Someone else changed this booking. Reload the page and start over.",
 
@@ -96,6 +97,18 @@ public static class ErrorMessages
             // ----------------------------------------------------------
             // Configuration and key errors are an operations fault: the user cannot fix them, so
             // the text is neutral. The detail is in the log (HolidayApiClient).
+            [ErrorCodes.Api.Unavailable] = "We couldn't reach the hotel system. Please try again in a moment.",
+            [ErrorCodes.Api.Unauthorized] = "The hotel system refused this application. Please tell the administrator.",
+            [ErrorCodes.Api.UnexpectedResponse] = "The hotel system answered something we couldn't use. Please try again.",
+            [ErrorCodes.Api.StaffUnauthorized] = "Your session has ended. Sign in again.",
+            [ErrorCodes.Api.Forbidden] = "Your role isn't allowed to do that.",
+            [ErrorCodes.Staff.InvalidCredentials] = "The user name or the password is wrong.",
+            [ErrorCodes.Staff.TooManyAttempts] = "Too many failed attempts. Wait fifteen minutes and try again.",
+            [ErrorCodes.Staff.PasswordInvalid] = "The password must be between 12 and 256 characters.",
+            [ErrorCodes.Staff.UserNameTaken] = "That user name is already in use.",
+            [ErrorCodes.Staff.UserNameRequired] = "Enter a user name.",
+            [ErrorCodes.Staff.UserNameTooLong] = "The user name is too long.",
+            [ErrorCodes.Staff.RoleInvalid] = "Select a role.",
             [ErrorCodes.Holidays.NotConfigured] = "Holiday data isn't available right now.",
             [ErrorCodes.Holidays.Unauthorized] = "Holiday data isn't available right now.",
             [ErrorCodes.Holidays.Unavailable] = "We couldn't reach the holiday service. Please try again later.",

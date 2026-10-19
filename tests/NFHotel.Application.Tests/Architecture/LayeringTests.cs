@@ -38,7 +38,7 @@ public sealed class LayeringTests
 
     /// <summary>Domain is the core: zero dependencies beyond the BCL.</summary>
     [Fact]
-    public void Domain_HasNoOutgoingDependencies()
+    public void Domain_WhenInspected_HasNoOutgoingDependencies()
     {
         var offenders = DomainAssembly
             .GetReferencedAssemblies()
@@ -59,7 +59,7 @@ public sealed class LayeringTests
     /// the UI and a later API must speak DTOs, cf. Conventions.md.
     /// </summary>
     [Fact]
-    public void Services_DoNotReturnDomainEntities()
+    public void Services_WhenInspected_DoNotReturnDomainEntities()
     {
         var domainNamespace = DomainAssembly.GetName().Name!;
 

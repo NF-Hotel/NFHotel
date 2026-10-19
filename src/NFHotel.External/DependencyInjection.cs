@@ -1,0 +1,119 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+using NFHotel.Application.Ports;
+using NFHotel.External.Config;
+using NFHotel.External.Holidays;
+using NFHotel.External.Time;
+
+namespace NFHotel.External;
+
+/// <summary>
+/// Registration of the adapters that are not the database: the hotel clock and the holiday calendar
+/// client. The API uses the clock; the web application uses both (ADR-0004).
+/// </summary>
+public static class DependencyInjection
+{
+    /// <summary>Registers <see cref="IClock"/> in the time zone of the hotel (A-05).</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration, with the section <c>HotelTime</c>.</param>
+    /// <returns>The service collection.</returns>
+    public static IServiceCollection AddHotelClock(this IServiceCollection services, IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        AddTime(services, ReadTimeOptions(configuration));
+        return services;
+    }
+
+    /// <summary>Registers the typed <c>HttpClient</c> of the holiday calendar of the analysis service.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration, with the section <c>HolidayApi</c>.</param>
+    /// <returns>The service collection.</returns>
+    public static IServiceCollection AddHolidayApi(this IServiceCollection services, IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        AddHolidayApi(services, ReadHolidayApiOptions(configuration));
+        return services;
+    }
+
+    /// <summary>Registers the clock. Singleton: stateless apart from the immutable time zone.</summary>
+    private static void AddTime(IServiceCollection services, HotelTimeOptions options)
+    {
+        services.AddSingleton(options);
+        services.AddSingleton<IClock, SystemClock>();
+    }
+
+    /// <summary>
+    /// Registers the client for the holiday calendar of the analysis service as a typed
+    /// <see cref="HttpClient"/> (<see cref="IHttpClientFactory"/> owns the lifetime of the handler).
+    /// </summary>
+    private static void AddHolidayApi(IServiceCollection services, HolidayApiOptions options)
+    {
+        services.AddSingleton(options);
+
+        services.AddHttpClient<IHolidayCalendarClient, HolidayApiClient>(client =>
+        {
+            // An invalid address or missing key is not a start-up error: the client answers
+            // holidays.not_configured (see HolidayApiOptions). We therefore configure only what we can.
+            if (options.TryGetBaseUri(out var baseUri))
+            {
+                client.BaseAddress = baseUri;
+            }
+
+            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+
+            if (!string.IsNullOrWhiteSpace(options.ApiKey))
+            {
+                client.DefaultRequestHeaders.Add(HolidayApiOptions.ApiKeyHeaderName, options.ApiKey);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Reads the settings for the analysis service. Does not fail on missing values — see
+    /// <see cref="HolidayApiOptions"/> — but falls back to the default address and timeout.
+    /// </summary>
+    private static HolidayApiOptions ReadHolidayApiOptions(IConfiguration configuration)
+    {
+        var section = configuration.GetSection(HolidayApiOptions.SectionName);
+        var baseUrl = section[HolidayApiOptions.BaseUrlName];
+
+        var timeout = int.TryParse(
+            section[HolidayApiOptions.TimeoutSecondsName],
+            System.Globalization.NumberStyles.None,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var seconds) && seconds > 0
+            ? seconds
+            : HolidayApiOptions.DefaultTimeoutSeconds;
+
+        return new HolidayApiOptions
+        {
+            BaseUrl = string.IsNullOrWhiteSpace(baseUrl) ? HolidayApiOptions.DefaultBaseUrl : baseUrl,
+            ApiKey = section[HolidayApiOptions.ApiKeyName]?.Trim() ?? string.Empty,
+            TimeoutSeconds = timeout,
+        };
+    }
+
+    /// <summary>Reads the time settings and verifies that the time zone exists on the machine.</summary>
+    private static HotelTimeOptions ReadTimeOptions(IConfiguration configuration)
+    {
+        var section = configuration.GetSection(HotelTimeOptions.SectionName);
+        var timeZoneId = section[HotelTimeOptions.TimeZoneIdName];
+
+        var options = new HotelTimeOptions
+        {
+            TimeZoneId = string.IsNullOrWhiteSpace(timeZoneId)
+                ? HotelTimeOptions.DefaultTimeZoneId
+                : timeZoneId
+        };
+
+        // Fail fast: an unknown time zone must not be discovered only when someone checks in (A-05).
+        _ = new SystemClock(options);
+
+        return options;
+    }
+}
