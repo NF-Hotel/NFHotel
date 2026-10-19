@@ -3,7 +3,7 @@ using NFHotel.Application.Dto.Benchmark;
 namespace NFHotel.Application.UseCases.Benchmark;
 
 /// <summary>
-/// Reads the stored benchmark runs for a Manager (ADR-0013). The API implements it with the read port, and the web
+/// Reads and deletes the stored benchmark runs for a Manager (ADR-0013). The API implements it with the read port, and the web
 /// application with a client over HTTP. Storing a run is <see cref="IBenchmarkIntake"/>, which only the API implements.
 /// </summary>
 public interface IBenchmarkService
@@ -24,4 +24,10 @@ public interface IBenchmarkService
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The answer, or the not found code.</returns>
     Task<Result<BenchmarkOutputDto>> GetOutputAsync(int benchmarkResultId, CancellationToken cancellationToken = default);
+
+    /// <summary>Deletes one stored run with every request and answer of it, for good.</summary>
+    /// <param name="runId">The run id of the contract.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>Success, or the not found code.</returns>
+    Task<Result> DeleteRunAsync(Guid runId, CancellationToken cancellationToken = default);
 }

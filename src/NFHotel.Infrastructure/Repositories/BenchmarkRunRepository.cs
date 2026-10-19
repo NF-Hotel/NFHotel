@@ -28,6 +28,9 @@ public sealed class BenchmarkRunRepository : Repository<BenchmarkRun, int>, IBen
             .ConfigureAwait(false);
 
     /// <inheritdoc />
+    public void Remove(BenchmarkRun run) => MarkForRemoval(run);
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<BenchmarkRunListItemDto>> GetRunsAsync(CancellationToken cancellationToken = default)
     {
         var runs = await Context.BenchmarkRuns

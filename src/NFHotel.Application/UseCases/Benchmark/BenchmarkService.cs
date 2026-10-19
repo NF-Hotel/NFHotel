@@ -140,6 +140,26 @@ public sealed class BenchmarkService : IBenchmarkService, IBenchmarkIntake
             : Result<BenchmarkOutputDto>.Success(output);
     }
 
+    /// <inheritdoc />
+    public async Task<Result> DeleteRunAsync(Guid runId, CancellationToken cancellationToken = default)
+    {
+        if (runId == Guid.Empty)
+        {
+            return Result.Failure(ErrorCodes.Benchmark.NotFound);
+        }
+
+        var run = await _runs.FindByRunIdAsync(runId, cancellationToken).ConfigureAwait(false);
+        if (run is null)
+        {
+            return Result.Failure(ErrorCodes.Benchmark.NotFound);
+        }
+
+        _runs.Remove(run);
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return Result.Success();
+    }
+
     private static BenchmarkResultData ToData(BenchmarkRequestResultDto dto) =>
         new(
             dto.Timestamp,

@@ -29,6 +29,16 @@
 
     <ErrorAlert Errors="ViewModel.Errors" />
 
+    @if (ViewModel.RunPendingDeletion is { } pending)
+    {
+        <ConfirmPanel Title="@($"Delete the run of {pending.StartedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC?")"
+                      Message="The run, its measurements and every answer are removed for good. This cannot be undone."
+                      ConfirmLabel="Delete run"
+                      IsBusy="ViewModel.IsBusy"
+                      OnConfirm="ConfirmDeleteAsync"
+                      OnCancel="ViewModel.AbortDelete" />
+    }
+
     @if (!ViewModel.IsLoaded)
     {
         <LoadingSkeleton Rows="4" />
@@ -70,6 +80,14 @@
                                         @onclick="() => SelectAsync(run.RunId)">
                                     @(ViewModel.SelectedRun?.Header.RunId == run.RunId ? "Close" : "Open")
                                 </button>
+                                <AuthorizeView Policy="@StaffPolicies.BenchmarkDelete">
+                                    <button type="button"
+                                            class="btn btn-danger btn-sm"
+                                            disabled="@ViewModel.IsBusy"
+                                            @onclick="() => ViewModel.RequestDelete(run)">
+                                        Delete
+                                    </button>
+                                </AuthorizeView>
                             </td>
                         </tr>
                     }
@@ -94,6 +112,7 @@
                     <thead>
                         <tr>
                             <th scope="col">Model</th>
+                            <th scope="col">Task</th>
                             <th scope="col" class="numeric">Run</th>
                             <th scope="col">Start</th>
                             <th scope="col" class="numeric">First token (s)</th>
@@ -111,7 +130,8 @@
                         {
                             <tr>
                                 <td>@result.Model</td>
-                                <td class="numeric">@result.RunNumber</td>
+                                <td>@TaskName(result)</td>
+                                <td class="numeric">@(result.RunNumber + 1)</td>
                                 <td>@(result.Cold ? "cold" : "warm")</td>
                                 <td class="numeric">@Number(result.TimeToFirstTokenSeconds)</td>
                                 <td class="numeric">@Number(result.TotalSeconds)</td>
@@ -158,12 +178,19 @@
     /// <summary>Loads the list when the page opens.</summary>
     protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
 
+    private Task ConfirmDeleteAsync() => ViewModel.ConfirmDeleteAsync(ComponentToken);
+
     private Task SelectAsync(Guid runId) => ViewModel.SelectAsync(runId, ComponentToken);
 
     private Task ShowOutputAsync(int benchmarkResultId) => ViewModel.ShowOutputAsync(benchmarkResultId, ComponentToken);
 
     private static string Machine(BenchmarkRunListItemDto run) =>
         $"{run.Cpu}, {run.MemoryMb / 1024d:0.#} GiB, {(string.IsNullOrWhiteSpace(run.Gpu) ? "CPU only" : run.Gpu)}";
+
+    private static string TaskName(BenchmarkResultDto result) =>
+        string.Equals(result.AnalysisType, "hotel_cancellation", StringComparison.Ordinal)
+            ? "Hotel cancellation analysis"
+            : result.TaskId ?? result.AnalysisType;
 
     private static string Number(double? value) =>
         value is { } number ? number.ToString("0.##", CultureInfo.InvariantCulture) : "—";

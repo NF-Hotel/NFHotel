@@ -34,4 +34,7 @@ public static class StaffPolicies
 
     /// <summary>Start a benchmark run.</summary>
     public const string BenchmarkRun = Permissions.BenchmarkRun;
+
+    /// <summary>Delete a stored benchmark run.</summary>
+    public const string BenchmarkDelete = Permissions.BenchmarkDelete;
 }
