@@ -7,4 +7,3 @@ namespace SecurityPrototype.Data;
 public class AppUser : IdentityUser
 {
 }
-
