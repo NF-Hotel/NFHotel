@@ -20,7 +20,7 @@
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 9 (the default model reaches the market analysis under the exact installed name) and acceptance criterion 10; done after RC-112 | [b195b69] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Task 3 note: nginx sends a plain HTTP request to the TLS port on to HTTPS (status 497), checked by the proxy test | [9962898] |
 | 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 10 (a Manager adds and deletes Ollama models through the benchmark service, notebook-benchmark MIL-005) and acceptance criterion 11; done after RC-113 | [075beac] |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 11 (the Start page and the model panel read the runs and the downloads from the benchmark service and follow them live, notebook-benchmark MIL-006) and acceptance criterion 12; done after RC-115 | pending |
+| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Added task 11 (the Start page and the model panel read the runs and the downloads from the benchmark service and follow them live, notebook-benchmark MIL-006) and acceptance criterion 12; done after RC-115 | [81760a7] |
 
 ---
 
@@ -108,3 +108,4 @@ Let a Manager start a benchmark run from the back office and see its state until
 [b195b69]: https://github.com/NF-Hotel/NFHotel/commit/b195b6954dc291bc1131c121b0bc403c73b2dcec
 [9962898]: https://github.com/NF-Hotel/NFHotel/commit/99628981e27b95218fa5f75b79a1b5e1e940c519
 [075beac]: https://github.com/NF-Hotel/NFHotel/commit/075beac550e309d474b11836bd60fbbbaa8cced5
+[81760a7]: https://github.com/NF-Hotel/NFHotel/commit/81760a7483bd15219e274ffdc199a319a670c2e8
