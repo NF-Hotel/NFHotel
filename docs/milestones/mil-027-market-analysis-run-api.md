@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Deprecated | Claude (AI) | AI at the request of S01, not independent | Initial version: the market analysis service in `NF-Hotel/notebook-market-analysis` gets the analysis run API that [MIL-026] needs; accepted by S01 in chat on 2026-10-20 after RC-122 Go | pending |
-| 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Three analyses added for the UCL assignment of S01: occupancy, occupancy on holidays and the correlation matrix, so nine analyses; the run request carries the number of rooms; the result has the formulas and the limits of each analysis; accepted by the user in chat on 2026-10-20 after RC-125 Go | pending |
+| 2026-10-20 | Deprecated | Claude (AI) | AI at the request of S01, not independent | Initial version: the market analysis service in `NF-Hotel/notebook-market-analysis` gets the analysis run API that [MIL-026] needs; accepted by S01 in chat on 2026-10-20 after RC-122 Go | [5bc5cf0] |
+| 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Three analyses added for the UCL assignment of S01: occupancy, occupancy on holidays and the correlation matrix, so nine analyses; the run request carries the number of rooms; the result has the formulas and the limits of each analysis; accepted by the user in chat on 2026-10-20 after RC-125 Go | [5bc5cf0] |
 
 ---
 
@@ -86,3 +86,4 @@ Give the market analysis service the analysis that the website needs. [MIL-004] 
 [US-001]: ../user-stories.md
 [MIL-004]: ./mil-004-market-analysis-service.md
 [MIL-026]: ./mil-026-market-analysis-report.md
+[5bc5cf0]: https://github.com/NF-Hotel/NFHotel/commit/5bc5cf054789ce61d82e0f429092a4e485ae7c27
