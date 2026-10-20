@@ -16,8 +16,8 @@ Infrastructure documents (DSA-001, ADR-0007 to ADR-0011, MIL-021 to MIL-024 and 
 | BC | Business Case | docs/business-case.md | 002 |
 | SA | Stakeholder Analysis | docs/stakeholder-analysis.md | 002 |
 | PP | Project Plan | docs/project-plan.md | 002 |
-| MIL | Milestone / Gateway | docs/milestones/*.md | 027 |
-| RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 122 |
+| MIL | Milestone / Gateway | docs/milestones/*.md | 028 |
+| RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 127 |
 | TM | Traceability Matrix | docs/sqa/traceability-matrix.md | 002 |
 | ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0015 |
 | US | User Story | docs/user-stories.md | 002 |
