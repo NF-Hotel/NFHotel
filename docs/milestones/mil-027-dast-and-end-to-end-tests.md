@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Deprecated | mikemike | S01 | Initial version | pending |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-104 Go (plan accepted by S01 in chat) | pending |
+| 2026-10-20 | Deprecated | mikemike | S01 | Initial version | [483a0d7] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-104 Go (plan accepted by S01 in chat) | [483a0d7] |
 
 ---
 
@@ -103,3 +103,4 @@ This milestone adds both, in CI, against a throwaway stack. Production and the P
 [MIL-017]: ./mil-017-tls.md
 [ADR-0005]: ../adr/adr-0005-backoffice-login.md
 [ADR-0012]: ../adr/adr-0012-devops-repository-ownership.md
+[483a0d7]: https://github.com/NF-Hotel/NFHotel/commit/483a0d75d8a3a1b7db2e4f3efd1a0e0e1e3b84b5
