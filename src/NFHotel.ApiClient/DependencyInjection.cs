@@ -42,6 +42,7 @@ public static class DependencyInjection
         services.AddScoped<IAiDefaultService, ApiAiDefaultService>();
         services.AddScoped<IMarketAnalysisService, ApiMarketAnalysisService>();
         services.AddScoped<IStaffAuthService, ApiStaffAuthService>();
+        services.AddScoped<IStaffAdminService, ApiStaffAdminService>();
         services.AddScoped<StaffCallContext>();
         return services;
     }

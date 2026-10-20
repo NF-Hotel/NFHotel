@@ -18,6 +18,21 @@ public static class StaffClaims
     /// <summary>The claim that carries the staff token for the API.</summary>
     public const string TokenClaim = "staff_token";
 
+    /// <summary>The claim that is <c>true</c> while the member has to choose a new password first (ADR-0015).</summary>
+    public const string MustChangeClaim = "must_change_password";
+
+    /// <summary>Tells whether the member has to choose a new password before anything else.</summary>
+    /// <param name="user">The principal.</param>
+    /// <returns>True when the cookie says so.</returns>
+    public static bool MustChangePassword(ClaimsPrincipal user)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+
+        return user.Identity?.IsAuthenticated == true
+            && bool.TryParse(user.FindFirst(MustChangeClaim)?.Value, out var mustChange)
+            && mustChange;
+    }
+
     /// <summary>Builds the principal that goes into the cookie.</summary>
     /// <param name="session">The session the API gave at the sign-in.</param>
     /// <returns>The principal.</returns>
@@ -30,6 +45,7 @@ public static class StaffClaims
                 new Claim(ClaimTypes.Name, session.UserName),
                 new Claim(ClaimTypes.Role, session.Role.ToString()),
                 new Claim(TokenClaim, session.Token),
+                new Claim(MustChangeClaim, session.MustChangePassword ? "true" : "false"),
             ],
             CookieScheme,
             ClaimTypes.Name,

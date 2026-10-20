@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases.AiDefaults;
@@ -135,6 +136,7 @@ public static class DependencyInjection
         services.AddScoped<IGuestRepository, GuestRepository>();
         services.AddScoped<IGuestQueries, GuestRepository>();
         services.AddScoped<IStaffRepository, StaffRepository>();
+        services.AddScoped<IStaffAuditRepository, StaffAuditRepository>();
         services.AddScoped<IBenchmarkRunRepository, BenchmarkRunRepository>();
         services.AddScoped<IAiDefaultRepository, AiDefaultRepository>();
         services.AddScoped<IMarketAnalysisRunRepository, MarketAnalysisRunRepository>();
@@ -152,6 +154,9 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<IStaffTokenIssuer, JwtStaffTokenIssuer>();
         services.AddSingleton<ILoginThrottle, InMemoryLoginThrottle>();
+
+        // A caller that is not an HTTP request knows nobody; the API replaces this with the one that reads the token (ADR-0015).
+        services.TryAddScoped<IStaffCallContext, AnonymousStaffCallContext>();
     }
 
     /// <summary>
@@ -177,7 +182,9 @@ public static class DependencyInjection
         services.AddScoped<IBenchmarkIntake>(provider => provider.GetRequiredService<BenchmarkService>());
         services.AddScoped<IGuestService, GuestService>();
         services.AddScoped<IStaffAuthService, StaffAuthService>();
-        services.AddScoped<IStaffAccountService, StaffAccountService>();
+        services.AddScoped<StaffAccountService>();
+        services.AddScoped<IStaffAccountService>(provider => provider.GetRequiredService<StaffAccountService>());
+        services.AddScoped<IStaffAdminService>(provider => provider.GetRequiredService<StaffAccountService>());
     }
 
     /// <summary>Reads the connection string and fails fast if it is missing.</summary>

@@ -130,8 +130,9 @@ The pages under `/admin` need a signed-in member of staff (ADR-0005). The public
   `Staff__InitialManager__Password` (at least 12 characters, `openssl rand -base64 18`) make the
   first Manager when no staff account exists. The web application never holds them.
 - **First sign-in.** Open `http://<vm>/admin`: it redirects to `/admin/login`. Sign in with the
-  first Manager. A session lasts 8 hours.
-- **More accounts.** Run the command in the API container, with the password in the environment so it
+  first Manager. A session lasts 8 hours. The first Manager must choose a new password before
+  anything else (`Staff__InitialManager__MustChangePassword`, true by default).
+- **More accounts.** Use the Staff page of the back office (see "Staff accounts and passwords" below), or run the command in the API container, with the password in the environment so it
   never appears on a command line:
 
 ```bash
@@ -142,6 +143,29 @@ docker exec -e STAFF_PASSWORD='<at least 12 characters>' nfhotel-api-nfhotel-api
   cleaning status and revenue. Housekeeping: rooms and their cleaning status only.
 - **Wrong passwords.** Five failures of a user name in fifteen minutes stop that name until the
   window has passed (HTTP 429). Restarting the API clears the count.
+
+### Staff accounts and passwords (MIL-030, ADR-0015)
+
+Everything below is done on the pages of the back office, not with commands on the server.
+
+- **Change your own password.** "Change password" in the side menu, for every role. It needs the current
+  password; the new one has at least 12 characters, is not your user name or the old password, and is not a
+  common password. Your other sessions end at once.
+- **Manage accounts (Manager).** "Staff" lists the accounts. A Manager creates an account with a temporary
+  password, disables an account (its sessions end at once), enables it again, and sets a new temporary
+  password. The person must choose their own password at the next sign-in. A Manager cannot disable their own
+  account, and the last active Manager cannot be disabled.
+- **Audit trail (Manager).** "Audit" shows sign-ins, failed sign-ins, lockouts and every change to an account,
+  with who did it and from which address. It never holds a password.
+- **The password in the environment file.** `Staff__InitialManager__Password` only seeds an empty database.
+  After the first Manager has chosen a new password, delete that line from `nfhotel-api.env` and restart the
+  API; changing the line has no effect on an existing account.
+- **A lost Manager password (break-glass).** If no Manager can sign in, set a temporary password on the server;
+  the account must change it at the next sign-in and its old sessions end:
+
+```bash
+docker exec -e STAFF_PASSWORD='<at least 12 characters>' nfhotel-api-nfhotel-api-1   dotnet NFHotel.Api.dll reset-staff-password <user name>
+```
 - **Limits.** A token cannot be revoked before it expires. Over TLS (above) the password and the
   cookie are private on the wire.
 

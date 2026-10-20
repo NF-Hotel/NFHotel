@@ -34,6 +34,23 @@ public sealed class JwtStaffTokenIssuerTests
         Assert.Equal("nfhotel-api", result.Claims["iss"]);
     }
 
+    /// <summary>Positive: the token carries the stamp of the account and the must-change flag, so the API can compare them (ADR-0015).</summary>
+    [Fact]
+    public async Task Issue_Member_CarriesTheStampAndTheMustChangeFlag()
+    {
+        // Arrange
+        var member = StaffMember.Create("rita", "hash", StaffRole.Manager, mustChangePassword: true);
+        member.ChangePassword("hash-2");
+        member.ResetPassword("hash-3");
+
+        // Act
+        var result = await Validate(Build(new FakeClock()).Issue(member).Token, SigningKey);
+
+        // Assert
+        Assert.Equal(3, Convert.ToInt32(result.Claims["stamp"], System.Globalization.CultureInfo.InvariantCulture));
+        Assert.True(Convert.ToBoolean(result.Claims["must_change"], System.Globalization.CultureInfo.InvariantCulture));
+    }
+
     /// <summary>Boundary: the token expires after the lifetime of the options from the instant of the clock, not before.</summary>
     [Fact]
     public void Issue_Member_ExpiresAfterTheConfiguredLifetime()

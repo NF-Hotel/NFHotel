@@ -267,7 +267,7 @@ public sealed class StaffAuthorizationTests : IClassFixture<ApiFactory>
     public async Task Get_TokenWithAnUnknownRole_ReturnsForbidden()
     {
         // Arrange
-        var token = Craft(ApiFactory.SigningKey, "Director");
+        var token = Craft(ApiFactory.SigningKey, "Director", sub: StoredAccountId());
 
         // Act
         var status = await StatusWithStaffTokenAsync(Rooms, token);
@@ -281,7 +281,7 @@ public sealed class StaffAuthorizationTests : IClassFixture<ApiFactory>
     public async Task Get_TokenWithTheRoleAsANumber_ReturnsForbidden()
     {
         // Arrange
-        var token = Craft(ApiFactory.SigningKey, "2");
+        var token = Craft(ApiFactory.SigningKey, "2", sub: StoredAccountId());
 
         // Act
         var status = await StatusWithStaffTokenAsync(Rooms, token);
@@ -334,7 +334,10 @@ public sealed class StaffAuthorizationTests : IClassFixture<ApiFactory>
         return response.StatusCode;
     }
 
-    private static string Craft(string signingKey, string role, DateTime? expires = null, string audience = "nfhotel-staff")
+    // The API checks the account of every token, so a crafted token must name a stored one to reach the role check.
+    private string StoredAccountId() => _factory.AccountOf(StaffRole.Manager).Id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string Craft(string signingKey, string role, DateTime? expires = null, string audience = "nfhotel-staff", string sub = "1")
     {
         var descriptor = new SecurityTokenDescriptor
         {
@@ -343,7 +346,7 @@ public sealed class StaffAuthorizationTests : IClassFixture<ApiFactory>
             NotBefore = new DateTime(2019, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             Expires = expires ?? new DateTime(2100, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)), SecurityAlgorithms.HmacSha256),
-            Claims = new Dictionary<string, object> { ["role"] = role, ["name"] = "crafted", ["sub"] = "1" },
+            Claims = new Dictionary<string, object> { ["role"] = role, ["name"] = "crafted", ["sub"] = sub, ["stamp"] = 1 },
         };
         return new JsonWebTokenHandler().CreateToken(descriptor);
     }

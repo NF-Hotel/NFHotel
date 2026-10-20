@@ -33,6 +33,24 @@ public sealed class ApiStartupTests
         Assert.Equal(StaffRole.Manager, Assert.Single(factory.World.Staff.Items).Role);
     }
 
+    /// <summary>Positive: the first Manager must choose a new password unless the setting says otherwise (ADR-0015).</summary>
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    public async Task Start_InitialManager_MustChangeFollowsTheSetting(string? setting, bool expected)
+    {
+        // Arrange
+        using var factory = new FirstManagerFactory("boss", Password, setting);
+
+        // Act
+        using var client = factory.CreateServiceClient();
+        await client.GetAsync("/health", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(expected, Assert.Single(factory.World.Staff.Items).MustChangePassword);
+    }
+
     /// <summary>Idempotence: when an account exists already, a start changes nothing.</summary>
     [Fact]
     public async Task Start_AccountExists_ChangesNothing()
@@ -165,6 +183,57 @@ public sealed class ApiStartupTests
 
     #endregion
 
+    #region The reset command
+
+    /// <summary>Positive: the command sets a temporary password, ends the old sessions and requires a change.</summary>
+    [Fact]
+    public async Task RunResetStaffPasswordAsync_KnownAccount_SetsATemporaryPasswordAndReturnsZero()
+    {
+        // Arrange
+        using var factory = new ApiFactory();
+        var member = factory.AddStaff("boss", "an old passphrase 123", StaffRole.Manager);
+
+        // Act
+        var code = await ApiStartup.RunResetStaffPasswordAsync(factory.Services, ["reset-staff-password", "Boss"], Password, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(0, code);
+        Assert.True(member.MustChangePassword);
+        Assert.Equal(2, member.SecurityStamp);
+        Assert.Equal("system", Assert.Single(factory.World.StaffAudit.Events).ActorName);
+    }
+
+    /// <summary>Negative: a wrong command line returns 2, and an unknown name or a weak password returns 1.</summary>
+    [Fact]
+    public async Task RunResetStaffPasswordAsync_WrongCommandLineOrRefusal_ReturnsTwoOrOne()
+    {
+        // Arrange
+        using var factory = new ApiFactory();
+        factory.AddStaff("boss", "an old passphrase 123", StaffRole.Manager);
+
+        // Act
+        var noName = await ApiStartup.RunResetStaffPasswordAsync(factory.Services, ["reset-staff-password"], Password, TestContext.Current.CancellationToken);
+        var noPassword = await ApiStartup.RunResetStaffPasswordAsync(factory.Services, ["reset-staff-password", "boss"], null, TestContext.Current.CancellationToken);
+        var unknown = await ApiStartup.RunResetStaffPasswordAsync(factory.Services, ["reset-staff-password", "nobody"], Password, TestContext.Current.CancellationToken);
+        var weak = await ApiStartup.RunResetStaffPasswordAsync(factory.Services, ["reset-staff-password", "boss"], "short", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(2, noName);
+        Assert.Equal(2, noPassword);
+        Assert.Equal(1, unknown);
+        Assert.Equal(1, weak);
+    }
+
+    /// <summary>Equivalence: only the exact command name selects the reset.</summary>
+    [Theory]
+    [InlineData("reset-staff-password", true)]
+    [InlineData("create-staff", false)]
+    [InlineData("Reset-Staff-Password", false)]
+    public void IsResetStaffPassword_Command_MatchesOnlyTheExactName(string command, bool expected) =>
+        Assert.Equal(expected, ApiStartup.IsResetStaffPassword([command]));
+
+    #endregion
+
     #region Helpers
 
     private sealed class FirstManagerFactory : ApiFactory
@@ -172,17 +241,24 @@ public sealed class ApiStartupTests
         private readonly string _userName;
         private readonly string _password;
 
-        public FirstManagerFactory(string userName, string password)
+        private readonly string? _mustChange;
+
+        public FirstManagerFactory(string userName, string password, string? mustChange = null)
         {
             _userName = userName;
             _password = password;
+            _mustChange = mustChange;
         }
 
-        protected override IEnumerable<KeyValuePair<string, string>> ExtraSettings() =>
-        [
-            new("Staff:InitialManager:UserName", _userName),
-            new("Staff:InitialManager:Password", _password),
-        ];
+        protected override IEnumerable<KeyValuePair<string, string>> ExtraSettings()
+        {
+            yield return new("Staff:InitialManager:UserName", _userName);
+            yield return new("Staff:InitialManager:Password", _password);
+            if (_mustChange is not null)
+            {
+                yield return new("Staff:InitialManager:MustChangePassword", _mustChange);
+            }
+        }
     }
 
     #endregion

@@ -35,9 +35,15 @@
         <NavLink class="admin-nav-link" href="/admin/market-analysis">Market analysis</NavLink>
     </AuthorizeView>
 
+    <AuthorizeView Policy="@StaffPolicies.StaffManage">
+        <NavLink class="admin-nav-link" href="/admin/staff" Match="NavLinkMatch.All">Staff</NavLink>
+        <NavLink class="admin-nav-link" href="/admin/staff/audit">Audit</NavLink>
+    </AuthorizeView>
+
     <AuthorizeView>
         <div class="admin-nav-user">
             <p>@context.User.Identity?.Name <span>@StaffClaims.RoleOf(context.User)</span></p>
+            <a class="admin-nav-link" href="/admin/account/password">Change password</a>
             <form method="post" action="@StaffSecurityRegistration.LogoutPath">
                 <AntiforgeryToken />
                 <button type="submit" class="btn btn-ghost btn-sm">Sign out</button>

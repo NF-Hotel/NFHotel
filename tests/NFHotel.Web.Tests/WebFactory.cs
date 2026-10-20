@@ -34,7 +34,14 @@ public partial class WebFactory : WebApplicationFactory<Program>
         ["rita"] = StaffRole.Receptionist,
         ["mona"] = StaffRole.Manager,
         ["hilda"] = StaffRole.Housekeeping,
+        [MustChangeUser] = StaffRole.Manager,
     };
+
+    /// <summary>The user name of the account that must choose a new password (ADR-0015).</summary>
+    public const string MustChangeUser = "newbie";
+
+    /// <summary>The new password that the substitute accepts for <see cref="MustChangeUser"/>.</summary>
+    public const string NewPassword = "another long passphrase 42";
 
     /// <summary>Creates a client that keeps cookies and does not follow redirects, so a test sees every 302.</summary>
     /// <returns>The client.</returns>
@@ -126,8 +133,15 @@ public partial class WebFactory : WebApplicationFactory<Program>
         {
             var request = call.Arg<SignInRequest>();
             return Accounts.TryGetValue(request.UserName.Trim().ToLowerInvariant(), out var role) && request.Password == Password
-                ? Result<StaffSessionDto>.Success(new StaffSessionDto(StaffToken, new DateTimeOffset(2100, 1, 1, 0, 0, 0, TimeSpan.Zero), request.UserName.Trim().ToLowerInvariant(), role))
+                ? Result<StaffSessionDto>.Success(new StaffSessionDto(StaffToken, new DateTimeOffset(2100, 1, 1, 0, 0, 0, TimeSpan.Zero), request.UserName.Trim().ToLowerInvariant(), role, request.UserName.Trim().ToLowerInvariant() == MustChangeUser))
                 : Result<StaffSessionDto>.Failure(ErrorCodes.Staff.InvalidCredentials);
+        });
+        service.ChangePasswordAsync(Arg.Any<ChangePasswordRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            var request = call.Arg<ChangePasswordRequest>();
+            return request.CurrentPassword == Password
+                ? Result<StaffSessionDto>.Success(new StaffSessionDto(StaffToken, new DateTimeOffset(2100, 1, 1, 0, 0, 0, TimeSpan.Zero), MustChangeUser, StaffRole.Manager))
+                : Result<StaffSessionDto>.Failure(ErrorCodes.Staff.CurrentPasswordInvalid);
         });
         return service;
     }

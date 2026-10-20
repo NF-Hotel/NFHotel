@@ -60,7 +60,24 @@ public class ApiFactory : WebApplicationFactory<Program>
     /// <param name="role">The role.</param>
     /// <returns>The signed token.</returns>
     public string IssueStaffToken(StaffRole role) =>
-        Services.GetRequiredService<IStaffTokenIssuer>().Issue(StaffMember.Create("tester", "any-hash", role)).Token;
+        Services.GetRequiredService<IStaffTokenIssuer>().Issue(AccountOf(role)).Token;
+
+    /// <summary>Gets the stored account that the staff clients of a role sign in as, and stores it the first time (the API checks the account on each call).</summary>
+    /// <param name="role">The role.</param>
+    /// <returns>The account.</returns>
+    public StaffMember AccountOf(StaffRole role)
+    {
+        var userName = $"tester-{role.ToString().ToLowerInvariant()}";
+        var existing = World.Staff.Items.SingleOrDefault(member => member.UserName == userName);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var member = StaffMember.Create(userName, "any-hash", role);
+        World.Staff.Add(member);
+        return member;
+    }
 
     /// <summary>Stores an account whose password is hashed by the hasher of the API under test.</summary>
     /// <param name="userName">The user name.</param>
@@ -125,6 +142,8 @@ public class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IStaffRepository>();
             services.RemoveAll<IUnitOfWork>();
             services.AddSingleton<IStaffRepository>(World.Staff);
+            services.RemoveAll<IStaffAuditRepository>();
+            services.AddSingleton<IStaffAuditRepository>(World.StaffAudit);
             services.AddSingleton<IUnitOfWork>(World.UnitOfWork);
         });
     }

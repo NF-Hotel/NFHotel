@@ -639,6 +639,61 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("NFHotel.Domain.Entities.StaffAuditEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("staff_audit_event_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Action")
+                        .HasColumnType("integer")
+                        .HasColumnName("action");
+
+                    b.Property<int?>("ActorId")
+                        .HasColumnType("integer")
+                        .HasColumnName("actor_id");
+
+                    b.Property<string>("ActorName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("actor_name");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("outcome");
+
+                    b.Property<string>("RemoteAddress")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("remote_address");
+
+                    b.Property<int?>("TargetId")
+                        .HasColumnType("integer")
+                        .HasColumnName("target_id");
+
+                    b.Property<string>("TargetName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("target_name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_staff_audit_event");
+
+                    b.HasIndex("OccurredAt")
+                        .HasDatabaseName("ix_staff_audit_event_occurred_at");
+
+                    b.ToTable("staff_audit_event", (string)null);
+                });
+
             modelBuilder.Entity("NFHotel.Domain.Entities.StaffMember", b =>
                 {
                     b.Property<int>("Id")
@@ -652,6 +707,12 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<bool>("MustChangePassword")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("must_change_password");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -661,6 +722,12 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("integer")
                         .HasColumnName("role");
+
+                    b.Property<int>("SecurityStamp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("security_stamp");
 
                     b.Property<string>("UserName")
                         .IsRequired()

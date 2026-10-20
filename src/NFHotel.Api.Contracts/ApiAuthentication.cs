@@ -23,4 +23,10 @@ public static class ApiAuthentication
     /// token of the web application, so the staff token travels beside it (ADR-0005).
     /// </summary>
     public const string StaffTokenHeader = "X-Staff-Token";
+
+    /// <summary>
+    /// The header in which the web application passes the address of the browser to the API, so the audit trail can
+    /// record it (ADR-0015). The API trusts it because the call carries the service token.
+    /// </summary>
+    public const string ClientAddressHeader = "X-Forwarded-For";
 }

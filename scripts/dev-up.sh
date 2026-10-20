@@ -261,6 +261,7 @@ if ((new_api)); then
     -e "s#^Api__Token=.*#Api__Token=$(secret 32)#" \
     -e "s#^Staff__Token__SigningKey=.*#Staff__Token__SigningKey=$(secret 48)#" \
     -e "s#^Staff__InitialManager__Password=.*#Staff__InitialManager__Password=$(secret 18)#" \
+    -e "s#^Staff__InitialManager__MustChangePassword=.*#Staff__InitialManager__MustChangePassword=false#" \
     "$api_dir/nfhotel-api.env"
 fi
 if ((new_web)); then

@@ -1,6 +1,7 @@
 using NFHotel.Application.Ports;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Repositories;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.TestSupport;
 
@@ -13,6 +14,44 @@ public sealed class InMemoryStaffRepository : InMemoryRepository<StaffMember>, I
 
     /// <inheritdoc />
     public Task<bool> AnyAsync(CancellationToken cancellationToken = default) => Task.FromResult(Items.Count > 0);
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<StaffMember>> ListAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<StaffMember>>([.. Items.OrderBy(member => member.UserName, StringComparer.Ordinal)]);
+
+    /// <inheritdoc />
+    public Task<bool> AnotherActiveManagerExistsAsync(int excludingId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Items.Any(member => member.Id != excludingId && member.IsActive && member.Role == StaffRole.Manager));
+}
+
+/// <summary>An in-memory audit trail that keeps what was added, newest first when listed.</summary>
+public sealed class InMemoryStaffAuditRepository : IStaffAuditRepository
+{
+    /// <summary>Every record that was added, in the order added.</summary>
+    public List<StaffAuditEvent> Events { get; } = [];
+
+    /// <inheritdoc />
+    public void Add(StaffAuditEvent auditEvent) => Events.Add(auditEvent);
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<StaffAuditEvent>> ListAsync(int skip, int take, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<StaffAuditEvent>>([.. Enumerable.Reverse(Events).Skip(skip).Take(take)]);
+
+    /// <inheritdoc />
+    public Task<int> CountAsync(CancellationToken cancellationToken = default) => Task.FromResult(Events.Count);
+}
+
+/// <summary>A call context that a test fills in: who is calling and from where.</summary>
+public sealed class FakeStaffCallContext : IStaffCallContext
+{
+    /// <inheritdoc />
+    public int? StaffId { get; set; }
+
+    /// <inheritdoc />
+    public string? StaffName { get; set; }
+
+    /// <inheritdoc />
+    public string? RemoteAddress { get; set; }
 }
 
 /// <summary>A password hasher without cost: the hash is the password behind a fixed prefix, so a test can see what was stored.</summary>

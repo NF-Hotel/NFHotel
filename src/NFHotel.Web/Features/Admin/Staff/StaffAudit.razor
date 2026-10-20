@@ -1,0 +1,79 @@
+@page "/admin/staff/audit"
+@layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.StaffManage)]
+@rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using System.Globalization
+@using NFHotel.Web.Common
+@using NFHotel.Web.Features.Admin.Staff
+@inject StaffAuditViewModel ViewModel
+
+@*
+    The audit trail of the staff accounts (UC-006, ADR-0015): who did what to whom, when, and with what result. It never
+    shows a password, a hash or a token, because none is stored. Newest first, one page at a time.
+*@
+
+<PageTitle>Audit — administration</PageTitle>
+
+<div class="stack-lg">
+    <PageHeader Title="Audit trail" Subtitle="Sign-ins and changes to the staff accounts, newest first.">
+        <Actions>
+            <a class="btn btn-secondary" href="/admin/staff">Staff</a>
+        </Actions>
+    </PageHeader>
+
+    <ErrorAlert Errors="ViewModel.Errors" />
+
+    @if (!ViewModel.IsLoaded)
+    {
+        <LoadingSkeleton />
+    }
+    else if (ViewModel.Items.Count == 0)
+    {
+        <p class="muted">Nothing has been recorded yet.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Time (UTC)</th>
+                    <th scope="col">By</th>
+                    <th scope="col">Action</th>
+                    <th scope="col">To</th>
+                    <th scope="col">Result</th>
+                    <th scope="col">Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var line in ViewModel.Items)
+                {
+                    <tr>
+                        <td>@line.OccurredAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</td>
+                        <td>@(line.ActorName ?? "-")</td>
+                        <td>@line.Action</td>
+                        <td>@(line.TargetName ?? "-")</td>
+                        <td>@line.Outcome</td>
+                        <td>@(line.RemoteAddress ?? "-")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="row">
+            <button type="button" class="btn btn-secondary btn-sm" disabled="@(!ViewModel.HasPrevious)" @onclick="PreviousAsync">Previous</button>
+            <span>Page @ViewModel.Page of @Pages</span>
+            <button type="button" class="btn btn-secondary btn-sm" disabled="@(!ViewModel.HasNext)" @onclick="NextAsync">Next</button>
+        </div>
+    }
+</div>
+
+@code {
+    private int Pages => Math.Max(1, (ViewModel.Total + StaffAuditViewModel.PageSize - 1) / StaffAuditViewModel.PageSize);
+
+    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(1, ComponentToken);
+
+    private Task PreviousAsync() => ViewModel.LoadAsync(ViewModel.Page - 1, ComponentToken);
+
+    private Task NextAsync() => ViewModel.LoadAsync(ViewModel.Page + 1, ComponentToken);
+}

@@ -16,6 +16,10 @@ internal static class ResultResponses
         ".room_number_already_exists",
         ".has_bookings",
         ".already_running",
+        ".user_name_taken",
+        ".last_manager",
+        ".cannot_disable_self",
+        ".cannot_reset_self",
     ];
 
     private static readonly string[] UnavailableEndings =
@@ -58,12 +62,12 @@ internal static class ResultResponses
     private static int StatusFor(Result result)
     {
         var codes = Codes(result);
-        if (codes.Contains(ErrorCodes.Staff.TooManyAttempts))
+        if (codes.Contains(ErrorCodes.Staff.TooManyAttempts) || codes.Contains(ErrorCodes.Staff.TooManyRequests))
         {
             return StatusCodes.Status429TooManyRequests;
         }
 
-        if (codes.Contains(ErrorCodes.Staff.InvalidCredentials))
+        if (codes.Contains(ErrorCodes.Staff.InvalidCredentials) || codes.Contains(ErrorCodes.Api.StaffUnauthorized))
         {
             return StatusCodes.Status401Unauthorized;
         }

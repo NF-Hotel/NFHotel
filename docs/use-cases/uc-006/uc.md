@@ -55,7 +55,7 @@
 - 1a. A Receptionist or Housekeeping user asks for "Staff" or "Audit":
   1. The system tells them that the role has no access (UC-004, 6a).
 - 6a. Too many changes in a minute (more than 30):
-  1. The system refuses with "try again later" and writes the refusal to the audit trail.
+  1. The system refuses with "try again later" and changes nothing.
 
 ### Special Requirements / Business Rules
 

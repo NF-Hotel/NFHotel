@@ -36,6 +36,7 @@ public static class RolePermissions
             Permissions.BookingsView,
             Permissions.GuestsManage,
             Permissions.RoomsView,
+            Permissions.StaffChangeOwnPassword,
         ],
 
         [Roles.Manager] =
@@ -60,14 +61,17 @@ public static class RolePermissions
             Permissions.AiDefaultsManage,
             Permissions.BenchmarkModelsManage,
             Permissions.MarketAnalysisView,
-            Permissions.MarketAnalysisStart
+            Permissions.MarketAnalysisStart,
+            Permissions.StaffManage,
+            Permissions.StaffChangeOwnPassword
         ],
 
         [Roles.Housekeeping] =
         [
             Permissions.ViewHousekeeping,
             Permissions.UpdateHousekeepingStatus,
-            Permissions.RoomsView
+            Permissions.RoomsView,
+            Permissions.StaffChangeOwnPassword
         ]
     };
 

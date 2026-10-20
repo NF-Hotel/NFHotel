@@ -6,4 +6,5 @@ namespace NFHotel.Application.Dto.Staff;
 /// <param name="UserName">The user name.</param>
 /// <param name="Password">The password in clear text; hashed before it is stored.</param>
 /// <param name="Role">The role.</param>
-public sealed record CreateStaffRequest(string UserName, string Password, StaffRole Role);
+/// <param name="MustChangePassword">True when the person must choose a new password at the first sign-in (ADR-0015).</param>
+public sealed record CreateStaffRequest(string UserName, string Password, StaffRole Role, bool MustChangePassword = false);
