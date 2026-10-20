@@ -9,6 +9,6 @@
 /SECURITY.md                    @codemikemike @Tirsvad
 /CONTRIBUTING.md                @codemikemike @Tirsvad
 
-# Old copies of the infrastructure, kept until MIL-025 task 7; change them in NF-Hotel/DevOps.
-/deploy/                        @codemikemike @Tirsvad
+# The development deploy runs the deployment of an NF-Hotel/DevOps checkout (dev-up.sh, dev-up.ps1),
+# and the checks under scripts/ run in CI.
 /scripts/                       @codemikemike @Tirsvad

@@ -20,4 +20,4 @@ We confirm a report within 5 working days and agree a disclosure date with you. 
 
 ## Secrets
 
-Settings files with secrets (`deploy/*/*.env`, `deploy/nginx/tls/`) are git-ignored and stay on the server. If a secret is ever committed or exposed, it is rotated at once; removing it from git alone is not enough.
+Settings files with secrets (`deploy/*/*.env`, `deploy/nginx/tls/` of an NF-Hotel/DevOps checkout, and the `.env` files of this repository) are git-ignored and stay on the server. If a secret is ever committed or exposed, it is rotated at once; removing it from git alone is not enough.

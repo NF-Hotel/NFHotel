@@ -4,7 +4,11 @@ This page explains how to run the whole NF Hotel deployment on your own machine,
 the deployment of [ADR-0003](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0003-proxmox-vm-for-services.md)
 in miniature: Proxmox VE runs in a Docker container, a virtual machine (VM) in it runs every service as a Docker
 container, and one script does all the steps. The script is for development only. For the real server see
-[Proxmox Deployment](Proxmox-Deployment).
+[Proxmox Deployment](https://github.com/NF-Hotel/DevOps/blob/main/docs/wiki/Proxmox-Deployment.md) in NF-Hotel/DevOps.
+
+The deployment itself (the compose files, the settings examples and `scripts/deploy.sh`) lives in
+[NF-Hotel/DevOps](https://github.com/NF-Hotel/DevOps) (ADR-0012). `scripts/dev-up.sh` of this repository runs it from a
+DevOps checkout and ships your NFHotel working tree to the VM.
 
 ```text
 your machine ── Docker ── Proxmox VE container ── VM (Debian + Docker) ── postgres, ollama, api, web, analysis, benchmark, nginx
@@ -19,12 +23,20 @@ your machine ── Docker ── Proxmox VE container ── VM (Debian + Docke
 | Docker | runs the Proxmox VE container | Docker Desktop with the WSL 2 backend | Docker Engine with the compose plugin |
 | `/dev/kvm` inside Docker | Proxmox VE starts the VM with KVM | Virtualization on in the BIOS, and a WSL distribution that loads the KVM modules, for example `wsl -d Debian`, started before the script | the `kvm` module for your CPU, loaded |
 | bash 4 or later, `curl`, `ssh`, `tar`, `git` | the script and its tools | Git for Windows (Git Bash) | the packages of your distribution |
+| A checkout of NF-Hotel/DevOps | the deployment that the script runs | `../DevOps` beside this repository, or the folder in `NFHOTEL_DEVOPS_DIR` (`-DevOpsDir` in PowerShell) | the same |
 | Memory | the VM has 12 GiB by default, and Docker needs about 2 GiB more | give Docker 16 GiB or more: `memory=16GB` in `%UserProfile%\.wslconfig`, then `wsl --shutdown` | 16 GiB or more of RAM |
 | Disk | the images, the VM disk and the models | about 40 GiB free | about 40 GiB free |
 | Internet | the Proxmox image, the Debian image, Docker images, the models | yes | yes |
 | Free ports | the site and the Proxmox web page | 8443 and 8006 | 8443 and 8006 |
 
-You do not need a Proxmox server, an account or a password to start. The GitHub clone of the repository is enough.
+You do not need a Proxmox server, an account or a password to start. The GitHub clones of the two repositories are
+enough. Clone DevOps once, beside this repository:
+
+```bash
+git clone https://github.com/NF-Hotel/DevOps.git ../DevOps
+```
+
+Keep it up to date with `git -C ../DevOps pull`. The check says when it is missing or too old.
 
 Not sure? Run the check. It tests every line of the table, tells you how to fix each problem, and starts nothing:
 
@@ -49,7 +61,7 @@ your working tree to the VM and rebuild only what you name, in about 30 seconds.
 | `dev-up.sh` | start everything, then rebuild and restart `api` and `web` from your working tree |
 | `dev-up.sh web` | rebuild only the web application |
 | `dev-up.sh api` | rebuild only the database API |
-| `dev-up.sh benchmark` | rebuild the benchmark service from the commit named in `deploy/benchmark/benchmark.env` |
+| `dev-up.sh benchmark` | rebuild the benchmark service from the commit named in `deploy/benchmark/benchmark.env` of DevOps |
 | `dev-up.sh --all` | rebuild `api` and `web` and start whatever is not running |
 | `dev-up.sh --seed` | load the sample rooms, guests and bookings of `db/seed_dev.sql` |
 | `dev-up.sh --open` | open the site in your browser when it is ready |
@@ -57,17 +69,23 @@ your working tree to the VM and rebuild only what you name, in about 30 seconds.
 | `dev-up.sh --down` | stop the services; the database, the VM and Proxmox stay |
 | `dev-up.sh --destroy` | remove the Proxmox container with the VM and everything in it, including the database |
 
-Settings through the environment: `DEV_SITE_PORT` (default 8443), `DEV_PVE_PORT` (default 8006) and `DEV_MODELS` (the
-Ollama models to pull, default `llama3.2:3b phi3.5`; an empty value pulls none).
+Settings through the environment: `DEV_SITE_PORT` (default 8443), `DEV_PVE_PORT` (default 8006), `DEV_MODELS` (the
+Ollama models to pull, default `llama3.2:3b phi3.5`; an empty value pulls none) and `NFHOTEL_DEVOPS_DIR` (the DevOps
+checkout, default `../DevOps`).
 
 ## What it does, step by step
 
 1. Checks the machine (the same check as `--check`).
-2. Makes any missing settings file from its `.example` with new random secrets: `pve.env`, `deploy.env` and the
-   `deploy/*/*.env` files of postgres, the API, the web application and nginx, plus `ollama.env` and `benchmark.env`. A
-   file that exists is never changed. All of them are git-ignored.
+2. Makes any missing settings file of the DevOps checkout from its `.example` with new random secrets: `pve.env`,
+   `deploy.env` and the `deploy/*/*.env` files of postgres, the API, the web application and nginx, plus `ollama.env`
+   and `benchmark.env`. A file that exists is never changed. All of them are git-ignored there. A clone of this
+   repository made before MIL-025 task 7 may still hold these files in its own `deploy/` folder: a file that the DevOps
+   checkout does not have yet is copied from there once, so the passwords of the existing database and accounts still
+   match.
 3. Starts the Proxmox VE container once (later runs only start it again) and sets its root password from `pve.env`.
-4. Runs `scripts/deploy.sh --local`, which creates the VM when it is missing, copies your working tree into it and
+   The image is the one that DevOps pins in `deploy/proxmox/docker-compose.yml`.
+4. Runs `scripts/deploy.sh --local --app-dir <this repository>` of DevOps, which creates the VM when it is missing,
+   copies the DevOps working tree to `/opt/nfhotel` and your NFHotel working tree to `/opt/nfhotel-app` in it, and
    deploys the services in the right order with `scripts/deploy-services.sh`: the web application waits for a healthy
    database and API, and nginx waits for the web application and the market analysis API.
 5. Pulls the small Ollama models, creates the accounts and publishes the site on `https://localhost:8443/`.
@@ -76,9 +94,10 @@ Ollama models to pull, default `llama3.2:3b phi3.5`; an empty value pulls none).
 
 Open `https://localhost:8443/admin/login`. The browser warns about the certificate, because the script makes a
 development certificate; accept it. The script prints one account per role (Manager, Receptionist and Housekeeping) at
-the end of each run, **only** when `ASPNETCORE_ENVIRONMENT` is `Development` in `deploy/nfhotel-api/nfhotel-api.env`,
+the end of each run, **only** when `ASPNETCORE_ENVIRONMENT` is `Development` in `deploy/nfhotel-api/nfhotel-api.env`
+of the DevOps checkout,
 which is what the script writes. A release deployment never prints them. The passwords are in plain text in two
-git-ignored files:
+git-ignored files of the DevOps checkout:
 
 - the Manager: `Staff__InitialManager__Password` in `deploy/nfhotel-api/nfhotel-api.env`;
 - the Receptionist and the Housekeeping user: `deploy/nfhotel-api/dev-staff.env`.
@@ -92,7 +111,8 @@ If you change a password in the application, these files no longer match it.
 | The site | `https://localhost:8443/` (an address that starts with `http://` is sent on to `https://`) |
 | Proxmox VE | `https://localhost:8006/`, user `root`, the password is `PVE_PASSWORD` in `pve.env` |
 | Database, benchmark results, Ollama models | volumes inside the VM, which lives inside the `proxmox-node1` container (the name is `PVE_CONTAINER` in `deploy.env`) |
-| The code the VM runs | `/opt/nfhotel` in the VM, a copy of your working tree made at each run |
+| The code the VM runs | `/opt/nfhotel` (DevOps) and `/opt/nfhotel-app` (NFHotel) in the VM, copies of your working trees made at each run |
+| The settings files | `pve.env`, `deploy.env` and `deploy/*/*.env` of the DevOps checkout |
 
 Everything that is stored lives in the VM. `--destroy` removes it; `--down` does not.
 
@@ -118,7 +138,8 @@ and the default AI model for the website and the market analysis are on `/admin/
 | The first run stops at `waiting for ssh, cloud-init and Docker` | the VM is still installing Docker | run the script again; it continues |
 | The Start page says the benchmark service is not set up | the service or the model is not ready | run `dev-up.sh benchmark`, then reload the page |
 | `502 Bad Gateway` after a rebuild | nginx has not found the new container | run `dev-up.sh` again; it reloads nginx |
-| The Docker build of the benchmark service fails on a submodule | the build must not fetch the private `framework` submodule | already handled with `?submodules=false` in `deploy/benchmark/docker-compose.yml`; update the repository |
+| `no NF-Hotel/DevOps checkout` or `the DevOps checkout ... is too old` | the script needs a DevOps checkout that can ship this working tree | clone it beside this repository, or `git -C ../DevOps pull`; set `NFHOTEL_DEVOPS_DIR` for another folder |
+| The Docker build of the benchmark service fails on a submodule | the build must not fetch the private `framework` submodule | already handled: the Dockerfile in `deploy/benchmark` of DevOps removes it; update the DevOps checkout |
 | The market analysis shows no AI executive summary | the model name in the settings is not exactly one that Ollama lists (`phi3.5` instead of `phi3.5:latest`), or the model is too slow for the timeout | set the default AI model on `/admin/benchmark` and run `dev-up.sh` or `deploy-services.sh analysis`: the exact name is found and written. Insights on a CPU-only VM take 5 to 10 minutes; an analysis that times out shows `TIMEOUT` as the reason, and `GUARDRAIL_REJECTED` means the model broke the wording rules |
 | Out of memory, the VM is killed | Docker has too little memory | raise it (see the table at the top), then `wsl --shutdown` |
 
@@ -129,5 +150,5 @@ and the default AI model for the website and the market analysis are on `/admin/
 - It is for development. Do not use its certificate, accounts or settings files for a real server.
 - Never commit the `*.env` files or `deploy.env`; they are git-ignored, and the script never prints a secret except the
   development accounts described above.
-- To change the deployment itself, change `scripts/dev-up.sh`, `scripts/deploy.sh` or `scripts/deploy-services.sh` and
-  run `bash scripts/dev-up.sh --check` first.
+- To change the deployment itself, change `scripts/deploy.sh` or `scripts/deploy-services.sh` in NF-Hotel/DevOps (its
+  own pull request), or `scripts/dev-up.sh` here, and run `bash scripts/dev-up.sh --check` first.

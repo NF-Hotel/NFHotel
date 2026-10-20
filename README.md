@@ -362,86 +362,21 @@ DATABASE_PASSWORD
 
 Never commit production credentials or sensitive customer data to the repository.
 
-### 🐳 Running with Docker Compose
+### 🐳 The deployment lives in NF-Hotel/DevOps
 
-Each service has its own folder under `deploy/` with one `docker-compose.yml` and one `<service>.env` file. The `.env` files are git-ignored; copy the tracked `.env.example` next to it and fill it in.
-
-| Service | Folder | Settings file |
-| --- | --- | --- |
-| nginx reverse proxy | `deploy/nginx` | `nginx.env` |
-| NFHotel web application | `deploy/nfhotel-web` | `nfhotel-web.env` |
-| PostgreSQL 16 | `deploy/postgres` | `postgres.env` |
-| Ollama (local models) | `deploy/ollama` | `ollama.env` |
-| Market analysis service | `deploy/market-analysis` | `market-analysis.env` |
-| LLM benchmark | `deploy/benchmark` | `benchmark.env` |
-
-The services share one Docker network. Create it once, then start the web application and the proxy (in either order). Only the proxy publishes a port. The web service builds its database connection string from the PostgreSQL settings in `deploy/postgres/postgres.env`, so the password is written in one file only; the database sits on the internal network `nfhotel-db`.
-
-To start everything on one Docker host with the right networks and order, use `bash scripts/deploy-services.sh` (see the header of the script for the options).
+The Docker Compose files of every service (nginx, web, API, PostgreSQL, Ollama, market analysis, benchmark), their settings examples, the deploy, release and Proxmox scripts and the Proxmox tests are in [NF-Hotel/DevOps](https://github.com/NF-Hotel/DevOps) (ADR-0012). This repository holds the application, its Dockerfiles and the workflow entry points that call DevOps. How the services, networks and settings files fit together: the DevOps wiki page [Proxmox Deployment](https://github.com/NF-Hotel/DevOps/blob/main/docs/wiki/Proxmox-Deployment.md).
 
 ### 🚀 See your change: the development deployment
 
-One command runs the whole deployment of ADR-0003 on your machine: a Proxmox VE container, a VM in it, and every service in the VM.
+One command runs the whole deployment of ADR-0003 on your machine: a Proxmox VE container, a VM in it, and every service in the VM. It uses a DevOps checkout beside this repository; clone it once:
 
 ```bash
+git clone https://github.com/NF-Hotel/DevOps.git ../DevOps
 bash scripts/dev-up.sh --check   # does this machine meet the needs? starts nothing
 bash scripts/dev-up.sh           # first run: ten minutes or more; later runs: about 30 seconds
 ```
 
-On Windows from PowerShell: `.\scripts\dev-up.ps1 --check` and `.\scripts\dev-up.ps1`. Then open `https://localhost:8443/` (accept the development certificate) and sign in at `/admin/login`; the script prints the development accounts. What you need, what it does and how to fix problems: the wiki page [Local Development Deploy](docs/wiki/Local-Development-Deploy.md).
-
-```bash
-docker network create nfhotel-proxy
-
-cd deploy/nfhotel-web && docker compose --env-file nfhotel-web.env up -d --build
-cd ../nginx && docker compose --env-file nginx.env up -d
-```
-
-The site is then served at `http://localhost:8080` (`NGINX_HTTP_PORT`). To prove the setup end to end, without touching your own env files:
-
-```bash
-bash scripts/test-compose-proxy.sh
-```
-
-### 📊 Market analysis behind the proxy
-
-The market analysis service (`NF-Hotel/Notebook_Market_Analysis`) has its own folder, `deploy/market-analysis`, with a compose file, `market-analysis.env` and a configuration file; see its README. The nginx proxy routes it by host name next to the web application, and `bash scripts/test-compose-proxy.sh` checks all three services through the proxy.
-
-### 🖥️ Services VM on Proxmox VE
-
-Per ADR-0003 the services run in a KVM virtual machine on Proxmox VE. `scripts/create-docker-vm.sh` creates that VM from the official Debian cloud image and installs Docker, the compose plugin and the `nfhotel-proxy` network with cloud-init. It never changes or removes an existing VM: a VM id that is already in use is an error, and a VM that fails half-way is removed again.
-
-```bash
-# Look at the commands first; nothing is run
-bash scripts/create-docker-vm.sh --ssh root@pve.example --dry-run
-
-# Create the VM (4 vCPU, 12 GiB, 60 GiB by default) and start it
-bash scripts/create-docker-vm.sh --ssh root@pve.example --storage local-lvm --start
-```
-
-`--container <name>` runs the same commands inside the throwaway Proxmox of the integration tests, which is how the script was tested (it has directory storage only, so give `--storage local`). The address of the real server and its credentials are not in the repository.
-
-To create the VM (12 GiB by default) and deploy every service in it with one command, copy `deploy.env.example` to `deploy.env` and the per-service `*.env.example` files, then run `bash scripts/deploy.sh` (add `--local` to ship the working tree, `--dry-run` to see the Proxmox commands). Only NFHotel is served to the internet; the market analysis and benchmark notebooks are on a loopback listener of the VM, reached with an ssh tunnel. The [wiki](https://github.com/NF-Hotel/NFHotel/wiki/Proxmox-Deployment) describes the setup.
-
-### 🧪 Proxmox Integration Tests
-
-Read-only tests check the Proxmox VE API. They run unattended against a throwaway Proxmox VE container (`dockurr/proxmox`, privileged, third-party image: use it on your own machine only). The container, a per-run API token and the test container are all removed afterwards.
-
-1. Docker must give containers `/dev/kvm`. On WSL2 start a distribution that loads the KVM modules first, for example `wsl -d Debian`.
-2. Copy `pve.env.example` to `pve.env` (git-ignored) and set `PVE_PASSWORD`, the root password of the container (the runner sets it with `chpasswd` before it creates the token). `pve.env` holds nothing else: the API token is created for every run by `scripts/pve-token.sh` and lives only in environment variables, never in a file.
-3. Run (the script is bash; it creates the root password, a per-run API token and the throwaway containers, the same steps as doing it by hand with `docker compose`, `chpasswd` and `pveum`):
-
-```bash
-bash scripts/run-proxmox-tests.sh
-```
-
-In PowerShell, `bash` is WSL's bash, which cannot reach Docker Desktop; call Git Bash explicitly:
-
-```powershell
-& "$env:ProgramFiles\Git\bin\bash.exe" scripts/run-proxmox-tests.sh
-```
-
-The exit code is `0` when all checks pass. The test client sends only `GET` requests. `dotnet test` on the solution skips the live checks unless `PVE_HOST` is set.
+Keep the DevOps checkout somewhere else? Set `NFHOTEL_DEVOPS_DIR` to it (`-DevOpsDir` in PowerShell). On Windows from PowerShell: `.\scripts\dev-up.ps1 --check` and `.\scripts\dev-up.ps1`. Then open `https://localhost:8443/` (accept the development certificate) and sign in at `/admin/login`; the script prints the development accounts. What you need, what it does and how to fix problems: the wiki page [Local Development Deploy](docs/wiki/Local-Development-Deploy.md).
 
 ---
 

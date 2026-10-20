@@ -1,5 +1,5 @@
 - [Home](Home)
 - [Local Development Deploy](Local-Development-Deploy)
-- [Proxmox Deployment](Proxmox-Deployment) (moved to NF-Hotel/DevOps)
+- [Proxmox Deployment](https://github.com/NF-Hotel/DevOps/blob/main/docs/wiki/Proxmox-Deployment.md) (NF-Hotel/DevOps)
 - [DevOps wiki pages](https://github.com/NF-Hotel/DevOps/tree/main/docs/wiki)
 - [Appendix](Appendix)

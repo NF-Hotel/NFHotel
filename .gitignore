@@ -434,13 +434,13 @@ secrets.json
 # AI prompt log (public repository, see framework/process/ai-prompt-log.md)
 /docs/ai-prompts/
 src/NFHotel.Domain/bin/
-/deploy/market-analysis/market-analysis.toml
 
 # Build output (ArtifactsPath in Directory.Build.props)
 g/
 
-# Certificate and key of the nginx proxy (MIL-017); never committed.
-deploy/nginx/tls/
+# The deployment moved to NF-Hotel/DevOps (ADR-0012, MIL-025 task 7). A clone made before that may
+# still hold the old settings files, certificates and keys in deploy/; never commit them.
+/deploy/
 
 # Third-party specimen images (Edison TD), local use only; never committed.
 docs/test-data/real-specimens/

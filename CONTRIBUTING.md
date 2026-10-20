@@ -23,7 +23,7 @@ All **DevOps and DevSecOps** work belongs in [NF-Hotel/DevOps](https://github.co
 
 **A change that needs both repositories** is two pull requests: the DevOps change first, then the SHA bump here.
 
-**During the migration (MIL-025),** `deploy/`, the infrastructure scripts under `scripts/`, `tests/NFHotel.Proxmox.Tests`, `deploy.env.example` and `pve.env.example` still exist here as old copies. **Do not edit them**: change them in NF-Hotel/DevOps. They are removed once the first deploy from DevOps is verified (MIL-025 task 7).
+**The deployment lives in NF-Hotel/DevOps only** (MIL-025 task 7): the compose files, the settings examples, the deploy and Proxmox scripts and the Proxmox tests. `scripts/dev-up.sh` (and `dev-up.ps1`) runs that deployment on your machine from a DevOps checkout beside this repository (`../DevOps`, or the folder in `NFHOTEL_DEVOPS_DIR`); see the wiki page Local Development Deploy.
 
 ## How to work
 
