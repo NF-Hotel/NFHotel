@@ -168,7 +168,9 @@ echo "== 7. the API image reads the database through the alias postgres as nfhot
 token="$(openssl rand -hex 24)"
 manager_password="$(openssl rand -hex 12)"
 cat "$W/secrets/nfhotel-api-database.env" >"$W/api.env"
-printf 'ASPNETCORE_ENVIRONMENT=Production\nEncryption__PassportKey=%s\nHotelTime__TimeZoneId=Europe/Copenhagen\nApi__Token=%s\nStaff__Token__SigningKey=%s\nStaff__InitialManager__UserName=manager\nStaff__InitialManager__Password=%s\nDatabase__MigrateOnStart=false\n' \
+# This test checks the database access of the API, not the password flow of MIL-030, so the
+# first Manager need not choose a new password before the API answers its calls.
+printf 'ASPNETCORE_ENVIRONMENT=Production\nEncryption__PassportKey=%s\nHotelTime__TimeZoneId=Europe/Copenhagen\nApi__Token=%s\nStaff__Token__SigningKey=%s\nStaff__InitialManager__UserName=manager\nStaff__InitialManager__Password=%s\nStaff__InitialManager__MustChangePassword=false\nDatabase__MigrateOnStart=false\n' \
   "$(openssl rand -base64 32)" "$token" "$(openssl rand -hex 32)" "$manager_password" >>"$W/api.env"
 docker network create t-apinet >/dev/null
 docker run -d --name "$API" --network nfhotel-db --env-file "$W/api.env" "$API_IMAGE" >/dev/null
