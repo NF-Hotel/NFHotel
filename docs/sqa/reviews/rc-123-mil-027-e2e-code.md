@@ -42,7 +42,7 @@
 | CS comments | XML comments in English | Pass | Each type and the non-obvious steps (the empty-state button, the change event of `@bind`) |
 | WF 4 | Header comment of the workflow | Pass | The triggers, what is attacked and what never is, the secrets (none) and the permissions per job |
 | WF 7 | Least permissions | Pass | `contents: read` at the top. `security-events: write` only for the two DAST jobs, `issues: write` only for the full scan |
-| WF 8 | Actions pinned by full SHA | Pass | checkout v7.0.1, and the DevOps actions at `667d0a6`. That commit is on NF-Hotel/DevOps#4, so the pin moves to its merge commit later |
+| WF 8 | Actions pinned by full SHA | Pass | checkout v7.0.1, and the DevOps actions at `6873188`. That commit is on NF-Hotel/DevOps#4, so the pin moves to its merge commit later |
 | WF 10 | Untrusted text only through env | Pass | The issue step reads the run id and the title from `env:` |
 | WF 14–16 | runs-on, timeout, concurrency | Pass | `ubuntu-24.04`, a time limit per job, concurrency per event so a schedule never cancels a pull request run |
 | WF 20 | run blocks within the YAML limit | Pass | One `run:` of four folded lines |

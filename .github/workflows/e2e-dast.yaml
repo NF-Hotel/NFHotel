@@ -44,7 +44,7 @@ jobs:
       - name: Run the end-to-end tests against a throwaway stack
         # A pinned action reference cannot be wrapped (ADR-0012: full commit SHA).
         # yamllint disable-line rule:line-length
-        uses: NF-Hotel/DevOps/.github/actions/e2e-tests@667d0a6a893285f593351c920da4d5698e3d13df
+        uses: NF-Hotel/DevOps/.github/actions/e2e-tests@68731885227ab554a3776800fe15ca2fd27c72a2
         with:
           app-path: .
 
@@ -64,7 +64,7 @@ jobs:
 
       - name: Scan a throwaway stack with the ZAP baseline
         # yamllint disable-line rule:line-length
-        uses: NF-Hotel/DevOps/.github/actions/dast-scan@667d0a6a893285f593351c920da4d5698e3d13df
+        uses: NF-Hotel/DevOps/.github/actions/dast-scan@68731885227ab554a3776800fe15ca2fd27c72a2
         with:
           app-path: .
           mode: baseline
@@ -88,7 +88,7 @@ jobs:
 
       - name: Scan a throwaway stack with the ZAP full scan
         # yamllint disable-line rule:line-length
-        uses: NF-Hotel/DevOps/.github/actions/dast-scan@667d0a6a893285f593351c920da4d5698e3d13df
+        uses: NF-Hotel/DevOps/.github/actions/dast-scan@68731885227ab554a3776800fe15ca2fd27c72a2
         with:
           app-path: .
           mode: full
