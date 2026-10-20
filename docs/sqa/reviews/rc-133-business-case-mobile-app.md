@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Initial version | pending |
+| 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Initial version | [1c3efb9] |
 
 ---
 
@@ -66,3 +66,4 @@ Go — every criterion of QC-BC-001 passes. Criterion 9 of QC-LANG-001 rests on 
 [BC-001]: ../../business-case.md
 [QC-BC-001]: ../../../framework/qc/artifacts/qc-business-case.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[1c3efb9]: https://github.com/NF-Hotel/NFHotel/commit/1c3efb91f421c2b5ca0f4a62b7f0b2fe865eac70

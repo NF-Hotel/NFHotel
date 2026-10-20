@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Initial version | pending |
+| 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Initial version | [d4854a9] |
 
 ---
 
@@ -62,3 +62,4 @@ Go — all criteria pass; four defects were found by this review and fixed befor
 [MIL-029]: ../../milestones/mil-029-mobile-app-staff-api.md
 [ADR-0015]: ../../adr/adr-0015-mobile-app-staff-token-access.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[d4854a9]: https://github.com/NF-Hotel/NFHotel/commit/d4854a98afb67dfadb7294ecb0ddd1394a593dc1

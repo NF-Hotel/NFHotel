@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Proposed | Claude (AI) | S01 | Initial version, from the decisions of S01 in chat: login and rooms, staff token only, tested against the Docker development server | pending |
-| 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Accepted after RC-134 Go (objective 26 of BC-001 added, RC-133) | pending |
+| 2026-10-20 | Proposed | Claude (AI) | S01 | Initial version, from the decisions of S01 in chat: login and rooms, staff token only, tested against the Docker development server | [1c3efb9] |
+| 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Accepted after RC-134 Go (objective 26 of BC-001 added, RC-133) | [1c3efb9] |
 
 ---
 
@@ -90,3 +90,4 @@ Let the Flutter mobile app (`NF-Hotel/MobileApp`) sign in a member of staff and 
 [ADR-0005]: ../adr/adr-0005-backoffice-login.md
 [ADR-0015]: ../adr/adr-0015-mobile-app-staff-token-access.md
 [MIL-016]: ./mil-016-backoffice-login.md
+[1c3efb9]: https://github.com/NF-Hotel/NFHotel/commit/1c3efb91f421c2b5ca0f4a62b7f0b2fe865eac70
