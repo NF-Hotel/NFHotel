@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 | Deprecated | mikemike | S01; S03 | Initial version | [4c8f103] |
 | 2026-10-19 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-103 Go | [4c8f103] |
+| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Its goal is reversed by ADR-0016; the open tasks are replaced by MIL-031 | pending |
 
 ---
 
