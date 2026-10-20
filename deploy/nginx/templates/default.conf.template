@@ -21,6 +21,10 @@ server {
   ssl_certificate_key /etc/nginx/tls/privkey.pem;
   include /etc/nginx/snippets/tls.conf;
 
+  # A plain HTTP request sent to this TLS port (nginx status 497), for example from a link that a tool builds as
+  # http://host:port, is sent on to the same address over HTTPS and not answered with 400 Bad Request.
+  error_page 497 =301 https://$http_host$request_uri;
+
   # Empty NGINX_HSTS sends no header (a development certificate must not set HSTS).
   add_header Strict-Transport-Security "${NGINX_HSTS}" always;
 

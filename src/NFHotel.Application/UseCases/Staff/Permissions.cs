@@ -85,6 +85,41 @@ public static class Permissions
     public const string SalesView = "Sales.View";
 
     /// <summary>
+    /// Permission to see the stored benchmark runs in the back office (ADR-0013).
+    /// </summary>
+    public const string BenchmarkView = "Benchmark.View";
+
+    /// <summary>
+    /// Permission to start a benchmark run from the back office (ADR-0013, MIL-020).
+    /// </summary>
+    public const string BenchmarkRun = "Benchmark.Run";
+
+    /// <summary>
+    /// Permission to delete a stored benchmark run for good (ADR-0013).
+    /// </summary>
+    public const string BenchmarkDelete = "Benchmark.Delete";
+
+    /// <summary>
+    /// Permission to set the default AI model of the website and of the market analysis (ADR-0014).
+    /// </summary>
+    public const string AiDefaultsManage = "AiDefaults.Manage";
+
+    /// <summary>
+    /// Permission to add a model to Ollama and to delete an installed one through the benchmark service (MIL-020).
+    /// </summary>
+    public const string BenchmarkModelsManage = "Benchmark.ModelsManage";
+
+    /// <summary>
+    /// Permission to read the market analysis report in the back office (MIL-026).
+    /// </summary>
+    public const string MarketAnalysisView = "MarketAnalysis.View";
+
+    /// <summary>
+    /// Permission to start a market analysis run from the back office (MIL-026).
+    /// </summary>
+    public const string MarketAnalysisStart = "MarketAnalysis.Start";
+
+    /// <summary>
     /// All permissions, to build one authorisation policy per permission.
     /// </summary>
     public static readonly IReadOnlyList<string> All =
@@ -104,5 +139,12 @@ public static class Permissions
         RoomsView,
         RoomsManage,
         SalesView,
+        BenchmarkView,
+        BenchmarkRun,
+        BenchmarkDelete,
+        AiDefaultsManage,
+        BenchmarkModelsManage,
+        MarketAnalysisView,
+        MarketAnalysisStart,
     ];
 }

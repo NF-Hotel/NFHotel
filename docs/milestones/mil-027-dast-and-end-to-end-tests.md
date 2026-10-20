@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Deprecated | mikemike | S01 | Initial version | [483a0d7] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-104 Go (plan accepted by S01 in chat) | [483a0d7] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-122 Go (numbered RC-104 in commit 483a0d7, renumbered after a clash with main) (plan accepted by S01 in chat) | [483a0d7] |
 
 ---
 

@@ -1353,3 +1353,128 @@ h1:focus-visible {
     border-color: #dde5df;
     justify-self: start;
 }
+
+/* Benchmark runs (ADR-0013): the answer of a model is shown as it came, wrapped, never cut. */
+.answer-text {
+  max-height: 24rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Start of a benchmark run (MIL-020): a checkbox with its label, and a legend that only screen readers need. */
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.visually-hidden,
+.visually-hidden-legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Analysis view of a benchmark run (MIL-020): grouped bar charts drawn as SVG, outcome cells and answer cards. */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: var(--s6);
+}
+
+.chart {
+  margin: 0;
+}
+
+.chart-title {
+  font-weight: 600;
+  margin-bottom: var(--s2);
+}
+
+.chart-legend {
+  display: flex;
+  gap: var(--s4);
+  list-style: none;
+  margin: 0 0 var(--s2);
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: .875rem;
+}
+
+.chart-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: var(--s1);
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+
+.chart-svg {
+  width: 100%;
+  height: auto;
+  max-width: 640px;
+}
+
+.chart-label,
+.chart-value,
+.chart-axis-title {
+  font-size: 12px;
+  fill: var(--ink);
+}
+
+.chart-axis-title,
+.chart-missing {
+  fill: var(--ink-soft);
+}
+
+.chart-axis {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart-series-0 { fill: #b5523b; background: #b5523b; }
+.chart-series-1 { fill: #2f6a9e; background: #2f6a9e; }
+.chart-series-2 { fill: #6b7280; background: #6b7280; }
+
+.outcome-pass { background: #e2efe8; color: #245740; }
+.outcome-fail { background: #f7e7e5; color: #7a302b; }
+
+.compare-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: var(--s4);
+  align-items: start;
+}
+
+.answer-card ul {
+  margin: var(--s1) 0 0;
+  padding-left: var(--s6);
+}
+
+/* Installed models (MIL-020): the Delete buttons and the Add model button have one width, in a row that wraps on a phone. */
+.model-row,
+.add-model-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.model-row > .model-name,
+.add-model-row > .field-input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.btn-fixed {
+  flex: 0 0 9rem;
+  width: 9rem;
+  justify-content: center;
+  text-align: center;
+}

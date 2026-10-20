@@ -53,7 +53,14 @@ public static class RolePermissions
             Permissions.GuestsManage,
             Permissions.RoomsView,
             Permissions.RoomsManage,
-            Permissions.SalesView
+            Permissions.SalesView,
+            Permissions.BenchmarkView,
+            Permissions.BenchmarkRun,
+            Permissions.BenchmarkDelete,
+            Permissions.AiDefaultsManage,
+            Permissions.BenchmarkModelsManage,
+            Permissions.MarketAnalysisView,
+            Permissions.MarketAnalysisStart
         ],
 
         [Roles.Housekeeping] =

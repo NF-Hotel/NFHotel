@@ -1,0 +1,2693 @@
+{
+  "schema_version": "1.1",
+  "result_id": "5b3f0e1a-0000-4000-8000-0000000000a1",
+  "generated_at": "2026-10-19T10:04:00.000Z",
+  "status": "completed_with_warnings",
+  "input": {
+    "source": "supplied",
+    "reference": "request-body.json",
+    "record_count": 40060,
+    "content_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "data_quality": {
+    "record_count": 40060,
+    "earliest_booking_date": "2016-06-24",
+    "latest_booking_date": "2020-08-31",
+    "earliest_arrival_date": "2018-07-01",
+    "latest_arrival_date": "2020-08-31",
+    "duplicate_booking_id_count": 0,
+    "missing_counts": {
+      "booking_id": 0,
+      "hotel": 0,
+      "meal": 0,
+      "country": 0,
+      "market_segment": 0,
+      "assigned_room_type": 0,
+      "deposit_type": 0,
+      "agent": 40060,
+      "customer_type": 0,
+      "lead_time": 0,
+      "stays_in_weekend_nights": 0,
+      "stays_in_week_nights": 0,
+      "adults": 0,
+      "children": 0,
+      "babies": 0,
+      "previous_cancellations": 0,
+      "booking_changes": 0,
+      "required_car_parking_spaces": 0,
+      "total_of_special_requests": 0,
+      "is_canceled": 0,
+      "is_repeated_guest": 0,
+      "booking_date": 0,
+      "arrival_date": 0,
+      "price_per_night": 0
+    },
+    "invalid_counts": {
+      "booking_id": 0,
+      "hotel": 0,
+      "meal": 0,
+      "country": 0,
+      "market_segment": 0,
+      "assigned_room_type": 0,
+      "deposit_type": 0,
+      "agent": 0,
+      "customer_type": 0,
+      "lead_time": 0,
+      "stays_in_weekend_nights": 0,
+      "stays_in_week_nights": 0,
+      "adults": 0,
+      "children": 0,
+      "babies": 0,
+      "previous_cancellations": 0,
+      "booking_changes": 0,
+      "required_car_parking_spaces": 0,
+      "total_of_special_requests": 0,
+      "is_canceled": 0,
+      "is_repeated_guest": 0,
+      "booking_date": 0,
+      "arrival_date": 0,
+      "price_per_night": 0
+    },
+    "zero_price_count": 201,
+    "unknown_fields": []
+  },
+  "analyses": {
+    "lead_time": {
+      "status": "available",
+      "findings": {
+        "unit": "days",
+        "bands": [
+          "0-7",
+          "8-30",
+          "31-90"
+        ],
+        "records_used": 40060,
+        "overall": {
+          "figure": {
+            "group": "all",
+            "numerator": 40060,
+            "denominator": 40060,
+            "small_sample": false
+          },
+          "median_days": 57,
+          "bands": [
+            {
+              "group": "0-7",
+              "numerator": 8938,
+              "denominator": 40060,
+              "small_sample": false
+            },
+            {
+              "group": "8-30",
+              "numerator": 6406,
+              "denominator": 40060,
+              "small_sample": false
+            },
+            {
+              "group": "31-90",
+              "numerator": 8756,
+              "denominator": 40060,
+              "small_sample": false
+            }
+          ],
+          "summary": "The median lead time was 57 days across 40060 records; this describes the observed distribution."
+        },
+        "splits": {
+          "by_cancellation_status": {
+            "status": "available",
+            "groups": [
+              {
+                "figure": {
+                  "group": "canceled",
+                  "numerator": 11122,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "median_days": 109,
+                "bands": [
+                  {
+                    "group": "0-7",
+                    "numerator": 583,
+                    "denominator": 11122,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "8-30",
+                    "numerator": 1403,
+                    "denominator": 11122,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "31-90",
+                    "numerator": 2841,
+                    "denominator": 11122,
+                    "small_sample": false
+                  }
+                ],
+                "summary": "The median lead time was 109 days across 11122 records; this describes the observed distribution."
+              },
+              {
+                "figure": {
+                  "group": "not_canceled",
+                  "numerator": 28938,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "median_days": 38,
+                "bands": [
+                  {
+                    "group": "0-7",
+                    "numerator": 8355,
+                    "denominator": 28938,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "8-30",
+                    "numerator": 5003,
+                    "denominator": 28938,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "31-90",
+                    "numerator": 5915,
+                    "denominator": 28938,
+                    "small_sample": false
+                  }
+                ],
+                "summary": "The median lead time was 38 days across 28938 records; this describes the observed distribution."
+              }
+            ]
+          },
+          "by_arrival_month": {
+            "status": "available",
+            "groups": [
+              {
+                "figure": {
+                  "group": "2018-07",
+                  "numerator": 1378,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "median_days": 54,
+                "bands": [
+                  {
+                    "group": "0-7",
+                    "numerator": 154,
+                    "denominator": 1378,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "8-30",
+                    "numerator": 218,
+                    "denominator": 1378,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "31-90",
+                    "numerator": 595,
+                    "denominator": 1378,
+                    "small_sample": false
+                  }
+                ],
+                "summary": "The median lead time was 54 days across 1378 records; this describes the observed distribution.",
+                "partial_period": false
+              },
+              {
+                "figure": {
+                  "group": "2018-08",
+                  "numerator": 1409,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "median_days": 65,
+                "bands": [
+                  {
+                    "group": "0-7",
+                    "numerator": 174,
+                    "denominator": 1409,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "8-30",
+                    "numerator": 193,
+                    "denominator": 1409,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "31-90",
+                    "numerator": 641,
+                    "denominator": 1409,
+                    "small_sample": false
+                  }
+                ],
+                "summary": "The median lead time was 65 days across 1409 records; this describes the observed distribution.",
+                "partial_period": false
+              },
+              {
+                "figure": {
+                  "group": "2018-09",
+                  "numerator": 1585,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "median_days": 140,
+                "bands": [
+                  {
+                    "group": "0-7",
+                    "numerator": 145,
+                    "denominator": 1585,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "8-30",
+                    "numerator": 112,
+                    "denominator": 1585,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "31-90",
+                    "numerator": 352,
+                    "denominator": 1585,
+                    "small_sample": false
+                  }
+                ],
+                "summary": "The median lead time was 140 days across 1585 records; this describes the observed distribution.",
+                "partial_period": false
+              }
+            ]
+          },
+          "by_market_segment": {
+            "status": "available",
+            "groups": [
+              {
+                "figure": {
+                  "group": "Complementary",
+                  "numerator": 201,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "median_days": 8,
+                "bands": [
+                  {
+                    "group": "0-7",
+                    "numerator": 100,
+                    "denominator": 201,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "8-30",
+                    "numerator": 63,
+                    "denominator": 201,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "31-90",
+                    "numerator": 28,
+                    "denominator": 201,
+                    "small_sample": true
+                  }
+                ],
+                "summary": "The median lead time was 8 days across 201 records; this describes the observed distribution."
+              },
+              {
+                "figure": {
+                  "group": "Corporate",
+                  "numerator": 2309,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "median_days": 6,
+                "bands": [
+                  {
+                    "group": "0-7",
+                    "numerator": 1356,
+                    "denominator": 2309,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "8-30",
+                    "numerator": 515,
+                    "denominator": 2309,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "31-90",
+                    "numerator": 391,
+                    "denominator": 2309,
+                    "small_sample": false
+                  }
+                ],
+                "summary": "The median lead time was 6 days across 2309 records; this describes the observed distribution."
+              },
+              {
+                "figure": {
+                  "group": "Direct",
+                  "numerator": 6513,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "median_days": 12,
+                "bands": [
+                  {
+                    "group": "0-7",
+                    "numerator": 2967,
+                    "denominator": 6513,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "8-30",
+                    "numerator": 1099,
+                    "denominator": 6513,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "31-90",
+                    "numerator": 1144,
+                    "denominator": 6513,
+                    "small_sample": false
+                  }
+                ],
+                "summary": "The median lead time was 12 days across 6513 records; this describes the observed distribution."
+              }
+            ]
+          },
+          "by_customer_type": {
+            "status": "available",
+            "groups": [
+              {
+                "figure": {
+                  "group": "Contract (Single)",
+                  "numerator": 1776,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "median_days": 157,
+                "bands": [
+                  {
+                    "group": "0-7",
+                    "numerator": 22,
+                    "denominator": 1776,
+                    "small_sample": true
+                  },
+                  {
+                    "group": "8-30",
+                    "numerator": 101,
+                    "denominator": 1776,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "31-90",
+                    "numerator": 317,
+                    "denominator": 1776,
+                    "small_sample": false
+                  }
+                ],
+                "summary": "The median lead time was 157 days across 1776 records; this describes the observed distribution."
+              },
+              {
+                "figure": {
+                  "group": "Group Contract",
+                  "numerator": 284,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "median_days": 7,
+                "bands": [
+                  {
+                    "group": "0-7",
+                    "numerator": 145,
+                    "denominator": 284,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "8-30",
+                    "numerator": 60,
+                    "denominator": 284,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "31-90",
+                    "numerator": 29,
+                    "denominator": 284,
+                    "small_sample": true
+                  }
+                ],
+                "summary": "The median lead time was 7 days across 284 records; this describes the observed distribution."
+              },
+              {
+                "figure": {
+                  "group": "No Contract (Group)",
+                  "numerator": 7791,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "median_days": 96,
+                "bands": [
+                  {
+                    "group": "0-7",
+                    "numerator": 1048,
+                    "denominator": 7791,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "8-30",
+                    "numerator": 1180,
+                    "denominator": 7791,
+                    "small_sample": false
+                  },
+                  {
+                    "group": "31-90",
+                    "numerator": 1591,
+                    "denominator": 7791,
+                    "small_sample": false
+                  }
+                ],
+                "summary": "The median lead time was 96 days across 7791 records; this describes the observed distribution."
+              }
+            ]
+          }
+        },
+        "date_comparison": {
+          "status": "available",
+          "difference_definition": "arrival date minus booking date, in days",
+          "figure": {
+            "group": "differs_from_supplied",
+            "numerator": 0,
+            "denominator": 40060,
+            "small_sample": false
+          },
+          "summary": "The supplied lead time differed from the days between booking date and arrival date in 0 of 40060 records."
+        }
+      },
+      "insight": {
+        "status": "available",
+        "reason": null,
+        "label": "AI-generated",
+        "provider": "ollama",
+        "model": "phi3.5:latest",
+        "generated_at": "2026-10-19T10:03:30.000Z",
+        "executive_summary": "Most bookings are made more than a month before arrival, and the median lead time is long.",
+        "improvement_suggestions": [
+          {
+            "suggestion": "Look at whether early-booking offers fit the segments with the longest lead times.",
+            "evidence": "0-7 days: 22.3% of 40,060 bookings",
+            "sample_size": 40060
+          }
+        ]
+      }
+    },
+    "holidays": {
+      "status": "available",
+      "findings": {
+        "calendar": "holidays package, country KH",
+        "windows_days": [
+          1,
+          3,
+          7
+        ],
+        "note": "Holiday figures describe associations between dates and activity; other factors are not adjusted for. Holidays are taken only for the years present in the data, so days at the start or end of the date span may lie near a holiday of a neighbouring year that is not considered.",
+        "booking_date": {
+          "status": "available",
+          "measure": "bookings",
+          "date_field": "booking_date",
+          "span": {
+            "first": "2016-06-24",
+            "last": "2020-08-31"
+          },
+          "years_used": [
+            2016,
+            2017,
+            2018
+          ],
+          "years_unavailable": [],
+          "records_used": 40060,
+          "records_left_out_unavailable_years": 0,
+          "days_left_out_unavailable_years": 0,
+          "holiday_days": {
+            "day_kind": "holiday",
+            "window_days": null,
+            "group": {
+              "figure": {
+                "group": "holiday",
+                "numerator": 3954,
+                "denominator": 135,
+                "small_sample": false
+              },
+              "mean_per_day": 29.2889
+            },
+            "baseline_same_weekdays": {
+              "figure": {
+                "group": "baseline_same_weekdays",
+                "numerator": 17393,
+                "denominator": 719,
+                "small_sample": false
+              },
+              "mean_per_day": 24.1905
+            },
+            "by_weekday": [
+              {
+                "weekday": "Monday",
+                "group": {
+                  "figure": {
+                    "group": "holiday",
+                    "numerator": 1417,
+                    "denominator": 25,
+                    "small_sample": true
+                  },
+                  "mean_per_day": 56.68
+                },
+                "baseline": {
+                  "figure": {
+                    "group": "baseline",
+                    "numerator": 2864,
+                    "denominator": 103,
+                    "small_sample": false
+                  },
+                  "mean_per_day": 27.8058
+                }
+              },
+              {
+                "weekday": "Tuesday",
+                "group": {
+                  "figure": {
+                    "group": "holiday",
+                    "numerator": 563,
+                    "denominator": 22,
+                    "small_sample": true
+                  },
+                  "mean_per_day": 25.5909
+                },
+                "baseline": {
+                  "figure": {
+                    "group": "baseline",
+                    "numerator": 2223,
+                    "denominator": 101,
+                    "small_sample": false
+                  },
+                  "mean_per_day": 22.0099
+                }
+              },
+              {
+                "weekday": "Wednesday",
+                "group": {
+                  "figure": {
+                    "group": "holiday",
+                    "numerator": 266,
+                    "denominator": 18,
+                    "small_sample": true
+                  },
+                  "mean_per_day": 14.7778
+                },
+                "baseline": {
+                  "figure": {
+                    "group": "baseline",
+                    "numerator": 1420,
+                    "denominator": 103,
+                    "small_sample": false
+                  },
+                  "mean_per_day": 13.7864
+                }
+              }
+            ],
+            "statement": "Mean bookings per day was higher on holidays (29.29) than on baseline days of the same weekdays (24.19); this is an observed association only."
+          },
+          "windows": [
+            {
+              "day_kind": "before",
+              "window_days": 1,
+              "group": {
+                "figure": {
+                  "group": "before_1_days",
+                  "numerator": 2000,
+                  "denominator": 70,
+                  "small_sample": false
+                },
+                "mean_per_day": 28.5714
+              },
+              "baseline_same_weekdays": {
+                "figure": {
+                  "group": "baseline_same_weekdays",
+                  "numerator": 17393,
+                  "denominator": 719,
+                  "small_sample": false
+                },
+                "mean_per_day": 24.1905
+              },
+              "by_weekday": [
+                {
+                  "weekday": "Monday",
+                  "group": {
+                    "figure": {
+                      "group": "before_1_days",
+                      "numerator": 587,
+                      "denominator": 10,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 58.7
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2864,
+                      "denominator": 103,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 27.8058
+                  }
+                },
+                {
+                  "weekday": "Tuesday",
+                  "group": {
+                    "figure": {
+                      "group": "before_1_days",
+                      "numerator": 246,
+                      "denominator": 9,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 27.3333
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2223,
+                      "denominator": 101,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 22.0099
+                  }
+                },
+                {
+                  "weekday": "Wednesday",
+                  "group": {
+                    "figure": {
+                      "group": "before_1_days",
+                      "numerator": 28,
+                      "denominator": 6,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 4.6667
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 1420,
+                      "denominator": 103,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 13.7864
+                  }
+                }
+              ],
+              "statement": "Mean bookings per day was higher in the 1-day window before holidays (28.57) than on baseline days of the same weekdays (24.19); this is an observed association only."
+            },
+            {
+              "day_kind": "after",
+              "window_days": 1,
+              "group": {
+                "figure": {
+                  "group": "after_1_days",
+                  "numerator": 1699,
+                  "denominator": 70,
+                  "small_sample": false
+                },
+                "mean_per_day": 24.2714
+              },
+              "baseline_same_weekdays": {
+                "figure": {
+                  "group": "baseline_same_weekdays",
+                  "numerator": 17393,
+                  "denominator": 719,
+                  "small_sample": false
+                },
+                "mean_per_day": 24.1905
+              },
+              "by_weekday": [
+                {
+                  "weekday": "Monday",
+                  "group": {
+                    "figure": {
+                      "group": "after_1_days",
+                      "numerator": 55,
+                      "denominator": 10,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 5.5
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2864,
+                      "denominator": 103,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 27.8058
+                  }
+                },
+                {
+                  "weekday": "Tuesday",
+                  "group": {
+                    "figure": {
+                      "group": "after_1_days",
+                      "numerator": 729,
+                      "denominator": 15,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 48.6
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2223,
+                      "denominator": 101,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 22.0099
+                  }
+                },
+                {
+                  "weekday": "Wednesday",
+                  "group": {
+                    "figure": {
+                      "group": "after_1_days",
+                      "numerator": 301,
+                      "denominator": 12,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 25.0833
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 1420,
+                      "denominator": 103,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 13.7864
+                  }
+                }
+              ],
+              "statement": "Mean bookings per day was higher in the 1-day window after holidays (24.27) than on baseline days of the same weekdays (24.19); this is an observed association only."
+            },
+            {
+              "day_kind": "before",
+              "window_days": 3,
+              "group": {
+                "figure": {
+                  "group": "before_3_days",
+                  "numerator": 5540,
+                  "denominator": 181,
+                  "small_sample": false
+                },
+                "mean_per_day": 30.6077
+              },
+              "baseline_same_weekdays": {
+                "figure": {
+                  "group": "baseline_same_weekdays",
+                  "numerator": 17393,
+                  "denominator": 719,
+                  "small_sample": false
+                },
+                "mean_per_day": 24.1905
+              },
+              "by_weekday": [
+                {
+                  "weekday": "Monday",
+                  "group": {
+                    "figure": {
+                      "group": "before_3_days",
+                      "numerator": 854,
+                      "denominator": 22,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 38.8182
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2864,
+                      "denominator": 103,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 27.8058
+                  }
+                },
+                {
+                  "weekday": "Tuesday",
+                  "group": {
+                    "figure": {
+                      "group": "before_3_days",
+                      "numerator": 565,
+                      "denominator": 18,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 31.3889
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2223,
+                      "denominator": 101,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 22.0099
+                  }
+                },
+                {
+                  "weekday": "Wednesday",
+                  "group": {
+                    "figure": {
+                      "group": "before_3_days",
+                      "numerator": 199,
+                      "denominator": 20,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 9.95
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 1420,
+                      "denominator": 103,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 13.7864
+                  }
+                }
+              ],
+              "statement": "Mean bookings per day was higher in the 3-day window before holidays (30.61) than on baseline days of the same weekdays (24.19); this is an observed association only."
+            }
+          ],
+          "baseline": {
+            "figure": {
+              "group": "baseline",
+              "numerator": 17393,
+              "denominator": 719,
+              "small_sample": false
+            },
+            "mean_per_day": 24.1905
+          }
+        },
+        "arrival_date": {
+          "status": "available",
+          "measure": "arrivals",
+          "date_field": "arrival_date",
+          "span": {
+            "first": "2018-07-01",
+            "last": "2020-08-31"
+          },
+          "years_used": [
+            2018,
+            2019,
+            2020
+          ],
+          "years_unavailable": [],
+          "records_used": 40060,
+          "records_left_out_unavailable_years": 0,
+          "days_left_out_unavailable_years": 0,
+          "holiday_days": {
+            "day_kind": "holiday",
+            "window_days": null,
+            "group": {
+              "figure": {
+                "group": "holiday",
+                "numerator": 3313,
+                "denominator": 68,
+                "small_sample": false
+              },
+              "mean_per_day": 48.7206,
+              "cancellation_share": {
+                "group": "cancellation_share",
+                "numerator": 922,
+                "denominator": 3313,
+                "small_sample": false
+              }
+            },
+            "baseline_same_weekdays": {
+              "figure": {
+                "group": "baseline_same_weekdays",
+                "numerator": 19684,
+                "denominator": 397,
+                "small_sample": false
+              },
+              "mean_per_day": 49.5819,
+              "cancellation_share": {
+                "group": "cancellation_share",
+                "numerator": 5522,
+                "denominator": 19684,
+                "small_sample": false
+              }
+            },
+            "by_weekday": [
+              {
+                "weekday": "Monday",
+                "group": {
+                  "figure": {
+                    "group": "holiday",
+                    "numerator": 703,
+                    "denominator": 15,
+                    "small_sample": true
+                  },
+                  "mean_per_day": 46.8667,
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 211,
+                    "denominator": 703,
+                    "small_sample": false
+                  }
+                },
+                "baseline": {
+                  "figure": {
+                    "group": "baseline",
+                    "numerator": 2898,
+                    "denominator": 57,
+                    "small_sample": false
+                  },
+                  "mean_per_day": 50.8421,
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 811,
+                    "denominator": 2898,
+                    "small_sample": false
+                  }
+                }
+              },
+              {
+                "weekday": "Tuesday",
+                "group": {
+                  "figure": {
+                    "group": "holiday",
+                    "numerator": 787,
+                    "denominator": 15,
+                    "small_sample": true
+                  },
+                  "mean_per_day": 52.4667,
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 259,
+                    "denominator": 787,
+                    "small_sample": false
+                  }
+                },
+                "baseline": {
+                  "figure": {
+                    "group": "baseline",
+                    "numerator": 2904,
+                    "denominator": 54,
+                    "small_sample": false
+                  },
+                  "mean_per_day": 53.7778,
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 868,
+                    "denominator": 2904,
+                    "small_sample": false
+                  }
+                }
+              },
+              {
+                "weekday": "Wednesday",
+                "group": {
+                  "figure": {
+                    "group": "holiday",
+                    "numerator": 494,
+                    "denominator": 9,
+                    "small_sample": true
+                  },
+                  "mean_per_day": 54.8889,
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 135,
+                    "denominator": 494,
+                    "small_sample": false
+                  }
+                },
+                "baseline": {
+                  "figure": {
+                    "group": "baseline",
+                    "numerator": 2909,
+                    "denominator": 57,
+                    "small_sample": false
+                  },
+                  "mean_per_day": 51.0351,
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 915,
+                    "denominator": 2909,
+                    "small_sample": false
+                  }
+                }
+              }
+            ],
+            "statement": "Mean arrivals per day was lower on holidays (48.72) than on baseline days of the same weekdays (49.58); this is an observed association only."
+          },
+          "windows": [
+            {
+              "day_kind": "before",
+              "window_days": 1,
+              "group": {
+                "figure": {
+                  "group": "before_1_days",
+                  "numerator": 1916,
+                  "denominator": 34,
+                  "small_sample": false
+                },
+                "mean_per_day": 56.3529,
+                "cancellation_share": {
+                  "group": "cancellation_share",
+                  "numerator": 557,
+                  "denominator": 1916,
+                  "small_sample": false
+                }
+              },
+              "baseline_same_weekdays": {
+                "figure": {
+                  "group": "baseline_same_weekdays",
+                  "numerator": 19684,
+                  "denominator": 397,
+                  "small_sample": false
+                },
+                "mean_per_day": 49.5819,
+                "cancellation_share": {
+                  "group": "cancellation_share",
+                  "numerator": 5522,
+                  "denominator": 19684,
+                  "small_sample": false
+                }
+              },
+              "by_weekday": [
+                {
+                  "weekday": "Monday",
+                  "group": {
+                    "figure": {
+                      "group": "before_1_days",
+                      "numerator": 376,
+                      "denominator": 9,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 41.7778,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 85,
+                      "denominator": 376,
+                      "small_sample": false
+                    }
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2898,
+                      "denominator": 57,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 50.8421,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 811,
+                      "denominator": 2898,
+                      "small_sample": false
+                    }
+                  }
+                },
+                {
+                  "weekday": "Tuesday",
+                  "group": {
+                    "figure": {
+                      "group": "before_1_days",
+                      "numerator": 398,
+                      "denominator": 5,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 79.6,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 164,
+                      "denominator": 398,
+                      "small_sample": false
+                    }
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2904,
+                      "denominator": 54,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 53.7778,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 868,
+                      "denominator": 2904,
+                      "small_sample": false
+                    }
+                  }
+                },
+                {
+                  "weekday": "Wednesday",
+                  "group": {
+                    "figure": {
+                      "group": "before_1_days",
+                      "numerator": 117,
+                      "denominator": 2,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 58.5,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 40,
+                      "denominator": 117,
+                      "small_sample": false
+                    }
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2909,
+                      "denominator": 57,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 51.0351,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 915,
+                      "denominator": 2909,
+                      "small_sample": false
+                    }
+                  }
+                }
+              ],
+              "statement": "Mean arrivals per day was higher in the 1-day window before holidays (56.35) than on baseline days of the same weekdays (49.58); this is an observed association only."
+            },
+            {
+              "day_kind": "after",
+              "window_days": 1,
+              "group": {
+                "figure": {
+                  "group": "after_1_days",
+                  "numerator": 1762,
+                  "denominator": 34,
+                  "small_sample": false
+                },
+                "mean_per_day": 51.8235,
+                "cancellation_share": {
+                  "group": "cancellation_share",
+                  "numerator": 476,
+                  "denominator": 1762,
+                  "small_sample": false
+                }
+              },
+              "baseline_same_weekdays": {
+                "figure": {
+                  "group": "baseline_same_weekdays",
+                  "numerator": 19684,
+                  "denominator": 397,
+                  "small_sample": false
+                },
+                "mean_per_day": 49.5819,
+                "cancellation_share": {
+                  "group": "cancellation_share",
+                  "numerator": 5522,
+                  "denominator": 19684,
+                  "small_sample": false
+                }
+              },
+              "by_weekday": [
+                {
+                  "weekday": "Monday",
+                  "group": {
+                    "figure": {
+                      "group": "after_1_days",
+                      "numerator": 105,
+                      "denominator": 1,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 105.0,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 48,
+                      "denominator": 105,
+                      "small_sample": false
+                    }
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2898,
+                      "denominator": 57,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 50.8421,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 811,
+                      "denominator": 2898,
+                      "small_sample": false
+                    }
+                  }
+                },
+                {
+                  "weekday": "Tuesday",
+                  "group": {
+                    "figure": {
+                      "group": "after_1_days",
+                      "numerator": 317,
+                      "denominator": 8,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 39.625,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 93,
+                      "denominator": 317,
+                      "small_sample": false
+                    }
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2904,
+                      "denominator": 54,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 53.7778,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 868,
+                      "denominator": 2904,
+                      "small_sample": false
+                    }
+                  }
+                },
+                {
+                  "weekday": "Wednesday",
+                  "group": {
+                    "figure": {
+                      "group": "after_1_days",
+                      "numerator": 494,
+                      "denominator": 10,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 49.4,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 157,
+                      "denominator": 494,
+                      "small_sample": false
+                    }
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2909,
+                      "denominator": 57,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 51.0351,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 915,
+                      "denominator": 2909,
+                      "small_sample": false
+                    }
+                  }
+                }
+              ],
+              "statement": "Mean arrivals per day was higher in the 1-day window after holidays (51.82) than on baseline days of the same weekdays (49.58); this is an observed association only."
+            },
+            {
+              "day_kind": "before",
+              "window_days": 3,
+              "group": {
+                "figure": {
+                  "group": "before_3_days",
+                  "numerator": 4929,
+                  "denominator": 88,
+                  "small_sample": false
+                },
+                "mean_per_day": 56.0114,
+                "cancellation_share": {
+                  "group": "cancellation_share",
+                  "numerator": 1370,
+                  "denominator": 4929,
+                  "small_sample": false
+                }
+              },
+              "baseline_same_weekdays": {
+                "figure": {
+                  "group": "baseline_same_weekdays",
+                  "numerator": 19684,
+                  "denominator": 397,
+                  "small_sample": false
+                },
+                "mean_per_day": 49.5819,
+                "cancellation_share": {
+                  "group": "cancellation_share",
+                  "numerator": 5522,
+                  "denominator": 19684,
+                  "small_sample": false
+                }
+              },
+              "by_weekday": [
+                {
+                  "weekday": "Monday",
+                  "group": {
+                    "figure": {
+                      "group": "before_3_days",
+                      "numerator": 862,
+                      "denominator": 15,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 57.4667,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 285,
+                      "denominator": 862,
+                      "small_sample": false
+                    }
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2898,
+                      "denominator": 57,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 50.8421,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 811,
+                      "denominator": 2898,
+                      "small_sample": false
+                    }
+                  }
+                },
+                {
+                  "weekday": "Tuesday",
+                  "group": {
+                    "figure": {
+                      "group": "before_3_days",
+                      "numerator": 598,
+                      "denominator": 9,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 66.4444,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 230,
+                      "denominator": 598,
+                      "small_sample": false
+                    }
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2904,
+                      "denominator": 54,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 53.7778,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 868,
+                      "denominator": 2904,
+                      "small_sample": false
+                    }
+                  }
+                },
+                {
+                  "weekday": "Wednesday",
+                  "group": {
+                    "figure": {
+                      "group": "before_3_days",
+                      "numerator": 477,
+                      "denominator": 8,
+                      "small_sample": true
+                    },
+                    "mean_per_day": 59.625,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 136,
+                      "denominator": 477,
+                      "small_sample": false
+                    }
+                  },
+                  "baseline": {
+                    "figure": {
+                      "group": "baseline",
+                      "numerator": 2909,
+                      "denominator": 57,
+                      "small_sample": false
+                    },
+                    "mean_per_day": 51.0351,
+                    "cancellation_share": {
+                      "group": "cancellation_share",
+                      "numerator": 915,
+                      "denominator": 2909,
+                      "small_sample": false
+                    }
+                  }
+                }
+              ],
+              "statement": "Mean arrivals per day was higher in the 3-day window before holidays (56.01) than on baseline days of the same weekdays (49.58); this is an observed association only."
+            }
+          ],
+          "baseline": {
+            "figure": {
+              "group": "baseline",
+              "numerator": 19684,
+              "denominator": 397,
+              "small_sample": false
+            },
+            "mean_per_day": 49.5819,
+            "cancellation_share": {
+              "group": "cancellation_share",
+              "numerator": 5522,
+              "denominator": 19684,
+              "small_sample": false
+            }
+          }
+        }
+      },
+      "insight": {
+        "status": "unavailable",
+        "reason": "TIMEOUT",
+        "label": null,
+        "provider": "ollama",
+        "model": "phi3.5:latest",
+        "generated_at": null,
+        "executive_summary": null,
+        "improvement_suggestions": []
+      }
+    },
+    "seasonality": {
+      "status": "available",
+      "findings": {
+        "note": "Bookings are counted by booking date and arrivals by arrival date, as separate series. Figures describe observed counts per period; no seasons are defined, and a partial period is not fully covered by the observed dates.",
+        "bookings": {
+          "status": "available",
+          "measure": "bookings",
+          "date_field": "booking_date",
+          "span": {
+            "first": "2016-06-24",
+            "last": "2020-08-31"
+          },
+          "records_used": 40060,
+          "summary": "40060 bookings were observed from 2016-06-24 to 2020-08-31, in 41 months and 162 ISO weeks; 3 of these periods are partial. This describes the observed data only.",
+          "unavailable_parts": {},
+          "monthly": {
+            "periods": [
+              {
+                "figure": {
+                  "group": "2016-06",
+                  "numerator": 1,
+                  "denominator": 40060,
+                  "small_sample": true
+                },
+                "partial_period": true,
+                "cancellation": {
+                  "group": "cancellation_share",
+                  "numerator": 0,
+                  "denominator": 1,
+                  "small_sample": true
+                },
+                "mean_price_per_night": {
+                  "value": "126.9",
+                  "count": 1,
+                  "small_sample": true
+                }
+              },
+              {
+                "figure": {
+                  "group": "2017-03",
+                  "numerator": 1,
+                  "denominator": 40060,
+                  "small_sample": true
+                },
+                "partial_period": false,
+                "cancellation": {
+                  "group": "cancellation_share",
+                  "numerator": 0,
+                  "denominator": 1,
+                  "small_sample": true
+                },
+                "mean_price_per_night": {
+                  "value": "118",
+                  "count": 1,
+                  "small_sample": true
+                }
+              },
+              {
+                "figure": {
+                  "group": "2017-04",
+                  "numerator": 4,
+                  "denominator": 40060,
+                  "small_sample": true
+                },
+                "partial_period": false,
+                "cancellation": {
+                  "group": "cancellation_share",
+                  "numerator": 0,
+                  "denominator": 4,
+                  "small_sample": true
+                },
+                "mean_price_per_night": {
+                  "value": "145.975",
+                  "count": 4,
+                  "small_sample": true
+                }
+              }
+            ]
+          },
+          "iso_week": {
+            "periods": [
+              {
+                "figure": {
+                  "group": "2016-W25",
+                  "numerator": 1,
+                  "denominator": 40060,
+                  "small_sample": true
+                },
+                "partial_period": true,
+                "cancellation": {
+                  "group": "cancellation_share",
+                  "numerator": 0,
+                  "denominator": 1,
+                  "small_sample": true
+                },
+                "mean_price_per_night": {
+                  "value": "126.9",
+                  "count": 1,
+                  "small_sample": true
+                }
+              },
+              {
+                "figure": {
+                  "group": "2017-W11",
+                  "numerator": 1,
+                  "denominator": 40060,
+                  "small_sample": true
+                },
+                "partial_period": false,
+                "cancellation": {
+                  "group": "cancellation_share",
+                  "numerator": 0,
+                  "denominator": 1,
+                  "small_sample": true
+                },
+                "mean_price_per_night": {
+                  "value": "118",
+                  "count": 1,
+                  "small_sample": true
+                }
+              },
+              {
+                "figure": {
+                  "group": "2017-W16",
+                  "numerator": 1,
+                  "denominator": 40060,
+                  "small_sample": true
+                },
+                "partial_period": false,
+                "cancellation": {
+                  "group": "cancellation_share",
+                  "numerator": 0,
+                  "denominator": 1,
+                  "small_sample": true
+                },
+                "mean_price_per_night": {
+                  "value": "106",
+                  "count": 1,
+                  "small_sample": true
+                }
+              }
+            ]
+          },
+          "incomplete_years": [
+            {
+              "year": 2016,
+              "months_present": 1
+            },
+            {
+              "year": 2017,
+              "months_present": 8
+            },
+            {
+              "year": 2020,
+              "months_present": 8
+            }
+          ]
+        },
+        "arrivals": {
+          "status": "available",
+          "measure": "arrivals",
+          "date_field": "arrival_date",
+          "span": {
+            "first": "2018-07-01",
+            "last": "2020-08-31"
+          },
+          "records_used": 40060,
+          "summary": "40060 arrivals were observed from 2018-07-01 to 2020-08-31, in 26 months and 115 ISO weeks; 2 of these periods are partial. This describes the observed data only.",
+          "unavailable_parts": {},
+          "monthly": {
+            "periods": [
+              {
+                "figure": {
+                  "group": "2018-07",
+                  "numerator": 1378,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "partial_period": false,
+                "cancellation": {
+                  "group": "cancellation_share",
+                  "numerator": 320,
+                  "denominator": 1378,
+                  "small_sample": false
+                },
+                "mean_price_per_night": {
+                  "value": "131.2047",
+                  "count": 1378,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "2018-08",
+                  "numerator": 1409,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "partial_period": false,
+                "cancellation": {
+                  "group": "cancellation_share",
+                  "numerator": 366,
+                  "denominator": 1409,
+                  "small_sample": false
+                },
+                "mean_price_per_night": {
+                  "value": "131.0966",
+                  "count": 1409,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "2018-09",
+                  "numerator": 1585,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "partial_period": false,
+                "cancellation": {
+                  "group": "cancellation_share",
+                  "numerator": 551,
+                  "denominator": 1585,
+                  "small_sample": false
+                },
+                "mean_price_per_night": {
+                  "value": "104.6623",
+                  "count": 1585,
+                  "small_sample": false
+                }
+              }
+            ]
+          },
+          "iso_week": {
+            "periods": [
+              {
+                "figure": {
+                  "group": "2018-W26",
+                  "numerator": 43,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "partial_period": true,
+                "cancellation": {
+                  "group": "cancellation_share",
+                  "numerator": 5,
+                  "denominator": 43,
+                  "small_sample": false
+                },
+                "mean_price_per_night": {
+                  "value": "135.5651",
+                  "count": 43,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "2018-W27",
+                  "numerator": 288,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "partial_period": false,
+                "cancellation": {
+                  "group": "cancellation_share",
+                  "numerator": 65,
+                  "denominator": 288,
+                  "small_sample": false
+                },
+                "mean_price_per_night": {
+                  "value": "131.8031",
+                  "count": 288,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "2018-W28",
+                  "numerator": 302,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "partial_period": false,
+                "cancellation": {
+                  "group": "cancellation_share",
+                  "numerator": 75,
+                  "denominator": 302,
+                  "small_sample": false
+                },
+                "mean_price_per_night": {
+                  "value": "124.3788",
+                  "count": 302,
+                  "small_sample": false
+                }
+              }
+            ]
+          },
+          "incomplete_years": [
+            {
+              "year": 2018,
+              "months_present": 6
+            },
+            {
+              "year": 2020,
+              "months_present": 8
+            }
+          ]
+        }
+      },
+      "insight": {
+        "status": "unavailable",
+        "reason": "BAD_STRUCTURE",
+        "label": null,
+        "provider": "ollama",
+        "model": "phi3.5:latest",
+        "generated_at": null,
+        "executive_summary": null,
+        "improvement_suggestions": []
+      }
+    },
+    "cancellations": {
+      "status": "available",
+      "findings": {
+        "note": "Cancellation shares are observed associations between a booking attribute and cancellation status; other factors are not adjusted for, and nothing is predicted.",
+        "records_used": 40060,
+        "overall": {
+          "group": "all",
+          "numerator": 11122,
+          "denominator": 40060,
+          "small_sample": false
+        },
+        "splits": {
+          "by_lead_time_band": {
+            "status": "available",
+            "records_used": 40060,
+            "records_left_out": 0,
+            "groups": [
+              {
+                "figure": {
+                  "group": "0-7",
+                  "numerator": 583,
+                  "denominator": 8938,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "8-30",
+                  "numerator": 1403,
+                  "denominator": 6406,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "31-90",
+                  "numerator": 2841,
+                  "denominator": 8756,
+                  "small_sample": false
+                }
+              }
+            ],
+            "summary": "Cancellation share by lead time band: 11122 of 40060 bookings were cancelled overall; groups are shown with their counts and small groups are flagged."
+          },
+          "by_deposit_type": {
+            "status": "available",
+            "records_used": 40060,
+            "records_left_out": 0,
+            "groups": [
+              {
+                "figure": {
+                  "group": "No Deposit",
+                  "numerator": 9450,
+                  "denominator": 38199,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "Non Refund",
+                  "numerator": 1650,
+                  "denominator": 1719,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "Refundable",
+                  "numerator": 22,
+                  "denominator": 142,
+                  "small_sample": false
+                }
+              }
+            ],
+            "summary": "Cancellation share by deposit type: 11122 of 40060 bookings were cancelled overall; groups are shown with their counts and small groups are flagged."
+          },
+          "by_market_segment": {
+            "status": "available",
+            "records_used": 40060,
+            "records_left_out": 0,
+            "groups": [
+              {
+                "figure": {
+                  "group": "Complementary",
+                  "numerator": 33,
+                  "denominator": 201,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "Corporate",
+                  "numerator": 351,
+                  "denominator": 2309,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "Direct",
+                  "numerator": 878,
+                  "denominator": 6513,
+                  "small_sample": false
+                }
+              }
+            ],
+            "summary": "Cancellation share by market segment: 11122 of 40060 bookings were cancelled overall; groups are shown with their counts and small groups are flagged."
+          },
+          "by_customer_type": {
+            "status": "available",
+            "records_used": 40060,
+            "records_left_out": 0,
+            "groups": [
+              {
+                "figure": {
+                  "group": "Contract (Single)",
+                  "numerator": 157,
+                  "denominator": 1776,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "Group Contract",
+                  "numerator": 30,
+                  "denominator": 284,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "No Contract (Group)",
+                  "numerator": 1519,
+                  "denominator": 7791,
+                  "small_sample": false
+                }
+              }
+            ],
+            "summary": "Cancellation share by customer type: 11122 of 40060 bookings were cancelled overall; groups are shown with their counts and small groups are flagged."
+          },
+          "by_arrival_month": {
+            "status": "available",
+            "records_used": 40060,
+            "records_left_out": 0,
+            "groups": [
+              {
+                "figure": {
+                  "group": "2018-07",
+                  "numerator": 320,
+                  "denominator": 1378,
+                  "small_sample": false
+                },
+                "partial_period": false
+              },
+              {
+                "figure": {
+                  "group": "2018-08",
+                  "numerator": 366,
+                  "denominator": 1409,
+                  "small_sample": false
+                },
+                "partial_period": false
+              },
+              {
+                "figure": {
+                  "group": "2018-09",
+                  "numerator": 551,
+                  "denominator": 1585,
+                  "small_sample": false
+                },
+                "partial_period": false
+              }
+            ],
+            "summary": "Cancellation share by arrival month: 11122 of 40060 bookings were cancelled overall; groups are shown with their counts and small groups are flagged."
+          },
+          "by_special_requests": {
+            "status": "available",
+            "records_used": 40060,
+            "records_left_out": 0,
+            "groups": [
+              {
+                "figure": {
+                  "group": "0",
+                  "numerator": 7216,
+                  "denominator": 22361,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "1",
+                  "numerator": 2597,
+                  "denominator": 11806,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "2",
+                  "numerator": 1127,
+                  "denominator": 4827,
+                  "small_sample": false
+                }
+              }
+            ],
+            "summary": "Cancellation share by special requests: 11122 of 40060 bookings were cancelled overall; groups are shown with their counts and small groups are flagged."
+          },
+          "by_booking_changes": {
+            "status": "available",
+            "records_used": 40060,
+            "records_left_out": 0,
+            "groups": [
+              {
+                "figure": {
+                  "group": "0",
+                  "numerator": 9968,
+                  "denominator": 32252,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "1",
+                  "numerator": 813,
+                  "denominator": 5469,
+                  "small_sample": false
+                }
+              },
+              {
+                "figure": {
+                  "group": "2+",
+                  "numerator": 341,
+                  "denominator": 2339,
+                  "small_sample": false
+                }
+              }
+            ],
+            "summary": "Cancellation share by booking changes: 11122 of 40060 bookings were cancelled overall; groups are shown with their counts and small groups are flagged."
+          }
+        }
+      },
+      "insight": {
+        "status": "available",
+        "reason": null,
+        "label": "AI-generated",
+        "provider": "ollama",
+        "model": "phi3.5:latest",
+        "generated_at": "2026-10-19T10:03:30.000Z",
+        "executive_summary": "About 28% of the bookings are cancelled, and the share differs a lot between deposit types.",
+        "improvement_suggestions": [
+          {
+            "suggestion": "Review the conditions of the non-refundable rate, which has the highest cancellation share.",
+            "evidence": "Non Refund 1,650 of 1,719 bookings were cancelled",
+            "sample_size": 1719
+          },
+          {
+            "suggestion": "Check whether bookings with no special request cancel more often.",
+            "evidence": "0 special requests: 32.3% of the bookings",
+            "sample_size": 40060
+          }
+        ]
+      }
+    },
+    "room_value": {
+      "status": "available",
+      "findings": {
+        "estimate": {
+          "notice_code": "ESTIMATE_NOT_REVENUE",
+          "label": "Estimate in the price units of the input: price per night times total nights. It is not realized revenue; payments, taxes, discounts and adjustments are not supplied.",
+          "unit": "price units of the input"
+        },
+        "records_used": 40060,
+        "zero_night_records": 0,
+        "length_of_stay": {
+          "unit": "nights",
+          "records_used": 40060,
+          "total_nights": 173385,
+          "buckets": [
+            {
+              "group": "1",
+              "numerator": 8132,
+              "denominator": 40060,
+              "small_sample": false
+            },
+            {
+              "group": "2",
+              "numerator": 6217,
+              "denominator": 40060,
+              "small_sample": false
+            },
+            {
+              "group": "3",
+              "numerator": 5695,
+              "denominator": 40060,
+              "small_sample": false
+            }
+          ]
+        },
+        "estimated_value": {
+          "status": "available",
+          "unit": "price units of the input",
+          "label": "Estimate in the price units of the input: price per night times total nights. It is not realized revenue; payments, taxes, discounts and adjustments are not supplied.",
+          "records_used": 40060,
+          "records_without_price": 0,
+          "zero_price_records": 201,
+          "groups": [
+            {
+              "figure": {
+                "group": "canceled",
+                "numerator": 11122,
+                "denominator": 40060,
+                "small_sample": false
+              },
+              "cancellation_status": "cancelled",
+              "count": 11122,
+              "total": "5787349.4",
+              "mean": "520.3515",
+              "zero_price_records": 33,
+              "summary": "Estimated value of 11122 cancelled bookings: total 5787349.4, mean 520.3515 in the price units of the input (an estimate, not realized revenue)."
+            },
+            {
+              "figure": {
+                "group": "not_canceled",
+                "numerator": 28938,
+                "denominator": 40060,
+                "small_sample": false
+              },
+              "cancellation_status": "not cancelled",
+              "count": 28938,
+              "total": "13474565.2",
+              "mean": "465.6357",
+              "zero_price_records": 168,
+              "summary": "Estimated value of 28938 not cancelled bookings: total 13474565.2, mean 465.6357 in the price units of the input (an estimate, not realized revenue)."
+            }
+          ]
+        }
+      },
+      "insight": {
+        "status": "unavailable",
+        "reason": "GUARDRAIL_REJECTED",
+        "label": null,
+        "provider": "ollama",
+        "model": "phi3.5:latest",
+        "generated_at": null,
+        "executive_summary": null,
+        "improvement_suggestions": []
+      }
+    },
+    "guest_mix": {
+      "status": "available",
+      "findings": {
+        "note": "Distributions show how bookings are spread over each attribute. A comparison is stated only for groups that are not small samples; it describes an observed association only.",
+        "distributions": {
+          "total_guests": {
+            "status": "available",
+            "records_used": 40060,
+            "groups": [
+              {
+                "figure": {
+                  "group": "0",
+                  "numerator": 13,
+                  "denominator": 40060,
+                  "small_sample": true
+                },
+                "comparison": {
+                  "status": "omitted_small_sample",
+                  "statement": "No comparison is stated for group '0'; it is a small sample of 13 records."
+                }
+              },
+              {
+                "figure": {
+                  "group": "1",
+                  "numerator": 7013,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "3.0197",
+                    "count": 7013,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 1183,
+                    "denominator": 7013,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "92.8748",
+                    "count": 7013,
+                    "small_sample": false
+                  }
+                }
+              },
+              {
+                "figure": {
+                  "group": "2",
+                  "numerator": 28116,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "4.5721",
+                    "count": 28116,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 8353,
+                    "denominator": 28116,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "106.7387",
+                    "count": 28116,
+                    "small_sample": false
+                  }
+                }
+              }
+            ]
+          },
+          "country": {
+            "status": "available",
+            "records_used": 40060,
+            "groups": [
+              {
+                "figure": {
+                  "group": "France",
+                  "numerator": 1,
+                  "denominator": 40060,
+                  "small_sample": true
+                },
+                "comparison": {
+                  "status": "omitted_small_sample",
+                  "statement": "No comparison is stated for group 'France'; it is a small sample of 1 records."
+                }
+              },
+              {
+                "figure": {
+                  "group": "Germany",
+                  "numerator": 1,
+                  "denominator": 40060,
+                  "small_sample": true
+                },
+                "comparison": {
+                  "status": "omitted_small_sample",
+                  "statement": "No comparison is stated for group 'Germany'; it is a small sample of 1 records."
+                }
+              },
+              {
+                "figure": {
+                  "group": "Ireland",
+                  "numerator": 9,
+                  "denominator": 40060,
+                  "small_sample": true
+                },
+                "comparison": {
+                  "status": "omitted_small_sample",
+                  "statement": "No comparison is stated for group 'Ireland'; it is a small sample of 9 records."
+                }
+              }
+            ]
+          },
+          "meal": {
+            "status": "available",
+            "records_used": 40060,
+            "groups": [
+              {
+                "figure": {
+                  "group": "BB",
+                  "numerator": 30005,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "3.9943",
+                    "count": 30005,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 7843,
+                    "denominator": 30005,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "108.8194",
+                    "count": 30005,
+                    "small_sample": false
+                  }
+                }
+              },
+              {
+                "figure": {
+                  "group": "FB",
+                  "numerator": 754,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "4.0716",
+                    "count": 754,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 443,
+                    "denominator": 754,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "92.1412",
+                    "count": 754,
+                    "small_sample": false
+                  }
+                }
+              },
+              {
+                "figure": {
+                  "group": "HB",
+                  "numerator": 8046,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "5.5777",
+                    "count": 8046,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 2547,
+                    "denominator": 8046,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "109.8185",
+                    "count": 8046,
+                    "small_sample": false
+                  }
+                }
+              }
+            ]
+          },
+          "assigned_room_type": {
+            "status": "available",
+            "records_used": 40060,
+            "groups": [
+              {
+                "figure": {
+                  "group": "A",
+                  "numerator": 17046,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "4.2905",
+                    "count": 17046,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 6047,
+                    "denominator": 17046,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "79.0738",
+                    "count": 17046,
+                    "small_sample": false
+                  }
+                }
+              },
+              {
+                "figure": {
+                  "group": "B",
+                  "numerator": 159,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "3.239",
+                    "count": 159,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 9,
+                    "denominator": 159,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "98.7868",
+                    "count": 159,
+                    "small_sample": false
+                  }
+                }
+              },
+              {
+                "figure": {
+                  "group": "C",
+                  "numerator": 2214,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "4.1843",
+                    "count": 2214,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 431,
+                    "denominator": 2214,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "108.7538",
+                    "count": 2214,
+                    "small_sample": false
+                  }
+                }
+              }
+            ]
+          },
+          "is_repeated_guest": {
+            "status": "available",
+            "records_used": 40060,
+            "groups": [
+              {
+                "figure": {
+                  "group": "not_repeated",
+                  "numerator": 38282,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "4.4244",
+                    "count": 38282,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 11011,
+                    "denominator": 38282,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "108.3538",
+                    "count": 38282,
+                    "small_sample": false
+                  }
+                }
+              },
+              {
+                "figure": {
+                  "group": "repeated",
+                  "numerator": 1778,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "2.2548",
+                    "count": 1778,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 111,
+                    "denominator": 1778,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "103.1231",
+                    "count": 1778,
+                    "small_sample": false
+                  }
+                }
+              }
+            ]
+          },
+          "required_car_parking_spaces": {
+            "status": "available",
+            "records_used": 40060,
+            "groups": [
+              {
+                "figure": {
+                  "group": "0",
+                  "numerator": 34570,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "4.4763",
+                    "count": 34570,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 11122,
+                    "denominator": 34570,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "106.7105",
+                    "count": 34570,
+                    "small_sample": false
+                  }
+                }
+              },
+              {
+                "figure": {
+                  "group": "1",
+                  "numerator": 5462,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "3.3834",
+                    "count": 5462,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 0,
+                    "denominator": 5462,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "117.0257",
+                    "count": 5462,
+                    "small_sample": false
+                  }
+                }
+              },
+              {
+                "figure": {
+                  "group": "2",
+                  "numerator": 25,
+                  "denominator": 40060,
+                  "small_sample": true
+                },
+                "comparison": {
+                  "status": "omitted_small_sample",
+                  "statement": "No comparison is stated for group '2'; it is a small sample of 25 records."
+                }
+              }
+            ]
+          },
+          "total_of_special_requests": {
+            "status": "available",
+            "records_used": 40060,
+            "groups": [
+              {
+                "figure": {
+                  "group": "0",
+                  "numerator": 22361,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "4.1688",
+                    "count": 22361,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 7216,
+                    "denominator": 22361,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "104.6523",
+                    "count": 22361,
+                    "small_sample": false
+                  }
+                }
+              },
+              {
+                "figure": {
+                  "group": "1",
+                  "numerator": 11806,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "4.4283",
+                    "count": 11806,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 2597,
+                    "denominator": 11806,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "111.2491",
+                    "count": 11806,
+                    "small_sample": false
+                  }
+                }
+              },
+              {
+                "figure": {
+                  "group": "2",
+                  "numerator": 4827,
+                  "denominator": 40060,
+                  "small_sample": false
+                },
+                "comparison": {
+                  "status": "available",
+                  "mean_length_of_stay": {
+                    "value": "4.6435",
+                    "count": 4827,
+                    "small_sample": false
+                  },
+                  "cancellation_share": {
+                    "group": "cancellation_share",
+                    "numerator": 1127,
+                    "denominator": 4827,
+                    "small_sample": false
+                  },
+                  "mean_price_per_night": {
+                    "value": "113.9875",
+                    "count": 4827,
+                    "small_sample": false
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "insight": {
+        "status": "available",
+        "reason": null,
+        "label": "AI-generated",
+        "provider": "ollama",
+        "model": "phi3.5:latest",
+        "generated_at": "2026-10-19T10:03:30.000Z",
+        "executive_summary": "Most guests are from one country and book half board or bed and breakfast.",
+        "improvement_suggestions": [
+          {
+            "suggestion": "Look at market-specific offers for the largest country group.",
+            "evidence": "Portugal is the largest group of the 13 countries",
+            "sample_size": 40060
+          }
+        ]
+      }
+    }
+  },
+  "notices": [
+    {
+      "code": "INSIGHTS_UNAVAILABLE",
+      "message": "The insight of some analyses is unavailable."
+    }
+  ],
+  "insights": {
+    "requested": true,
+    "provider": "ollama",
+    "model": "phi3.5:latest",
+    "prompt_version": "1"
+  }
+}

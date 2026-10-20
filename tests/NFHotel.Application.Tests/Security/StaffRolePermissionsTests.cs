@@ -19,6 +19,13 @@ public sealed class StaffRolePermissionsTests
         Permissions.RoomsManage,
         Permissions.UpdateHousekeepingStatus,
         Permissions.SalesView,
+        Permissions.BenchmarkView,
+        Permissions.BenchmarkRun,
+        Permissions.BenchmarkDelete,
+        Permissions.AiDefaultsManage,
+        Permissions.BenchmarkModelsManage,
+        Permissions.MarketAnalysisView,
+        Permissions.MarketAnalysisStart,
     ];
 
     private static readonly Dictionary<StaffRole, string[]> Expected = new()

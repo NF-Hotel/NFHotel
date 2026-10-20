@@ -379,6 +379,17 @@ The services share one Docker network. Create it once, then start the web applic
 
 To start everything on one Docker host with the right networks and order, use `bash scripts/deploy-services.sh` (see the header of the script for the options).
 
+### 🚀 See your change: the development deployment
+
+One command runs the whole deployment of ADR-0003 on your machine: a Proxmox VE container, a VM in it, and every service in the VM.
+
+```bash
+bash scripts/dev-up.sh --check   # does this machine meet the needs? starts nothing
+bash scripts/dev-up.sh           # first run: ten minutes or more; later runs: about 30 seconds
+```
+
+On Windows from PowerShell: `.\scripts\dev-up.ps1 --check` and `.\scripts\dev-up.ps1`. Then open `https://localhost:8443/` (accept the development certificate) and sign in at `/admin/login`; the script prints the development accounts. What you need, what it does and how to fix problems: the wiki page [Local Development Deploy](docs/wiki/Local-Development-Deploy.md).
+
 ```bash
 docker network create nfhotel-proxy
 

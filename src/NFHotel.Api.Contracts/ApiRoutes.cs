@@ -15,6 +15,39 @@ public static class ApiRoutes
     /// <summary>The route prefix of the room endpoints.</summary>
     public const string Rooms = "api/rooms";
 
+    /// <summary>The route prefix of the default AI models (ADR-0014).</summary>
+    public const string AiDefaults = "api/ai-defaults";
+
+    /// <summary>The default of one purpose below <see cref="AiDefaults"/>.</summary>
+    public const string AiDefaultByPurpose = "{purpose}";
+
+    /// <summary>The route prefix of the benchmark results (ADR-0013).</summary>
+    public const string Benchmark = "api/benchmark";
+
+    /// <summary>The delivery of a result below <see cref="Benchmark"/>.</summary>
+    public const string BenchmarkResults = "results";
+
+    /// <summary>The list of runs below <see cref="Benchmark"/>.</summary>
+    public const string BenchmarkRuns = "runs";
+
+    /// <summary>One run below <see cref="Benchmark"/>, by the run id of the contract.</summary>
+    public const string BenchmarkRunById = "runs/{runId:guid}";
+
+    /// <summary>The answer text of one request below <see cref="Benchmark"/>.</summary>
+    public const string BenchmarkOutput = "results/{id:int}/output";
+
+    /// <summary>The route prefix of the market analysis (MIL-026).</summary>
+    public const string MarketAnalysis = "api/market-analysis";
+
+    /// <summary>The latest stored report below <see cref="MarketAnalysis"/>.</summary>
+    public const string MarketAnalysisLatest = "latest";
+
+    /// <summary>The runs below <see cref="MarketAnalysis"/>: a start posts here.</summary>
+    public const string MarketAnalysisRuns = "runs";
+
+    /// <summary>One run below <see cref="MarketAnalysis"/>, by the run id of the data analysis service.</summary>
+    public const string MarketAnalysisRunById = "runs/{runId:guid}";
+
     /// <summary>The route prefix of the staff sign-in (ADR-0005).</summary>
     public const string Auth = "api/auth";
 

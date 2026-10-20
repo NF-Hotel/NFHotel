@@ -52,6 +52,21 @@ public sealed class HotelDbContext : DbContext
     /// <summary>Staff accounts (ADR-0005).</summary>
     public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
 
+    /// <summary>The benchmark runs that the benchmark service delivered (ADR-0013).</summary>
+    public DbSet<BenchmarkRun> BenchmarkRuns => Set<BenchmarkRun>();
+
+    /// <summary>The default AI model per purpose (ADR-0014).</summary>
+    public DbSet<AiDefault> AiDefaults => Set<AiDefault>();
+
+    /// <summary>The market fields of the bookings (MIL-026).</summary>
+    public DbSet<BookingMarketDetail> BookingMarketDetails => Set<BookingMarketDetail>();
+
+    /// <summary>The market analyses that the data analysis service delivered (MIL-026).</summary>
+    public DbSet<MarketAnalysisRun> MarketAnalysisRuns => Set<MarketAnalysisRun>();
+
+    /// <summary>The requests of the benchmark runs.</summary>
+    public DbSet<BenchmarkResult> BenchmarkResults => Set<BenchmarkResult>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -66,6 +81,11 @@ public sealed class HotelDbContext : DbContext
         modelBuilder.ApplyConfiguration(new BookingConfiguration());
         modelBuilder.ApplyConfiguration(new RoomConfiguration());
         modelBuilder.ApplyConfiguration(new StaffConfiguration());
+        modelBuilder.ApplyConfiguration(new BenchmarkRunConfiguration());
+        modelBuilder.ApplyConfiguration(new AiDefaultConfiguration());
+        modelBuilder.ApplyConfiguration(new MarketAnalysisRunConfiguration());
+        modelBuilder.ApplyConfiguration(new BookingMarketDetailConfiguration());
+        modelBuilder.ApplyConfiguration(new BenchmarkResultConfiguration());
 
         // GuestConfiguration is registered explicitly and not via assembly scanning, because it
         // has a dependency: the value converter that encrypts the passport number (B-09).
