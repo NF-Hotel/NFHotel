@@ -42,7 +42,7 @@ public sealed class UnitOfWork : IUnitOfWork
         catch (DbUpdateConcurrencyException exception)
         {
             throw new ConcurrencyConflictException(
-                "Rækken blev ændret af en anden mellem læsning og skrivning (xmin-token matchede ikke).",
+                "The row was changed by someone else between the read and the write (the xmin token did not match).",
                 exception);
         }
         catch (DbUpdateException exception) when (exception.InnerException is PostgresException postgres)

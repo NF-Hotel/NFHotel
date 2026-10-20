@@ -421,9 +421,9 @@ FodyWeavers.xsd
 /docs/doxygen/html
 
 ##########################################################
-# .NET backend — lokale hemmeligheder.
+# .NET backend — local secrets.
 # Added with refactor/dotnet-backend.
-# appsettings.Development.json indeholder connection string
+# appsettings.Development.json holds the connection string
 # and the AES key for passport number encryption, and must NEVER be committed.
 ##########################################################
 appsettings.Development.json

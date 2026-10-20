@@ -32,8 +32,8 @@ public sealed class LayeringTests
 
         Assert.True(
             offenders.Length == 0,
-            $"Application refererer {string.Join(", ", offenders)}. " +
-            "Forretningslogikken skal kunne kaldes uden persistens- eller web-lag.");
+            $"Application references {string.Join(", ", offenders)}. " +
+            "The business logic must be callable without a persistence or web layer.");
     }
 
     /// <summary>Domain is the core: zero dependencies beyond the BCL.</summary>
@@ -74,7 +74,7 @@ public sealed class LayeringTests
 
         Assert.True(
             leaks.Length == 0,
-            $"Disse service-metoder lækker domæneentiteter: {string.Join(", ", leaks)}");
+            $"These service methods leak domain entities: {string.Join(", ", leaks)}");
     }
 
     /// <summary>Unwraps Task&lt;T&gt;, Result&lt;T&gt; and IReadOnlyList&lt;T&gt; to the underlying type.</summary>

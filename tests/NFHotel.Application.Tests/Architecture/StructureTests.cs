@@ -44,7 +44,7 @@ public sealed partial class StructureTests
 
         Assert.NotEmpty(entities);
         var offenders = entities.Where(t => !DerivesFromEntity(t)).Select(t => t.Name).ToArray();
-        Assert.True(offenders.Length == 0, $"Disse entiteter arver ikke Entity<TKey>: {string.Join(", ", offenders)}");
+        Assert.True(offenders.Length == 0, $"These entities do not inherit Entity<TKey>: {string.Join(", ", offenders)}");
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public sealed partial class StructureTests
             .Select(t => $"{t.Namespace}.{t.Name}")
             .ToArray();
 
-        Assert.True(offenders.Length == 0, $"Reglerne hører til entiteter, værdiobjekter og fejl: {string.Join(", ", offenders)}");
+        Assert.True(offenders.Length == 0, $"The rules belong to entities, value objects and errors: {string.Join(", ", offenders)}");
     }
 
     [Fact]
@@ -156,7 +156,7 @@ public sealed partial class StructureTests
             .Where(file => TopLevelType().Matches(File.ReadAllText(file)).Count != 1)
             .Select(file => Path.GetRelativePath(dtoDirectory, file))
             .ToArray();
-        Assert.True(offenders.Length == 0, $"Filer med ikke præcis én type: {string.Join(", ", offenders)}");
+        Assert.True(offenders.Length == 0, $"Files without exactly one type: {string.Join(", ", offenders)}");
     }
 
     #endregion

@@ -137,7 +137,7 @@ public sealed class BookingRepository : Repository<Booking, int>, IBookingReposi
     /// The predicate is half-open and mirrors <c>DateRange.Overlaps</c> (BR-39). It is still
     /// a <i>coarse filter</i>: the binding decision is made by
     /// <see cref="NFHotel.Domain.Entities.Booking.ConflictsWith"/> in the service, so SQL and C# cannot disagree
-    /// om <c>&lt;</c> mod <c>&lt;=</c> (A-04).
+    /// about <c>&lt;</c> versus <c>&lt;=</c> (A-04).
     /// </remarks>
     private static IQueryable<Booking> FilterByWindow(
         IQueryable<Booking> query,
