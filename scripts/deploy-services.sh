@@ -186,7 +186,8 @@ for s in "${ordered[@]}"; do
   if [[ "$s" == "api" ]]; then
     pg_env="$(dir_of postgres)/$(env_of postgres)"
     [[ -f "$pg_env" ]] || die "$pg_env is missing; the API takes the database login from it"
-    while IFS='=' read -r key value; do
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      key="${line%%=*}" value="${line#*=}"
       case "$key" in
         POSTGRES_USER | POSTGRES_PASSWORD | POSTGRES_DB) export "$key=${value%$'\r'}" ;;
       esac
@@ -195,7 +196,8 @@ for s in "${ordered[@]}"; do
   if [[ "$s" == "web" || "$s" == "benchmark" ]]; then
     api_env="$(dir_of api)/$(env_of api)"
     [[ -f "$api_env" ]] || die "$api_env is missing; the $s service takes the API token from it"
-    while IFS='=' read -r key value; do
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      key="${line%%=*}" value="${line#*=}"
       [[ "$key" == "Api__Token" ]] && export "API_TOKEN=${value%$'\r'}"
     done <"$api_env"
   fi
@@ -204,7 +206,8 @@ for s in "${ordered[@]}"; do
     # leaves the Start page saying that the service is not set up.
     bench_env="$(dir_of benchmark)/$(env_of benchmark)"
     if [[ -f "$bench_env" ]]; then
-      while IFS='=' read -r key value; do
+      while IFS= read -r line || [[ -n "$line" ]]; do
+        key="${line%%=*}" value="${line#*=}"
         [[ "$key" == "NFBENCH_API_TOKEN" ]] && export "BENCHMARK_API_TOKEN=${value%$'\r'}"
       done <"$bench_env"
     fi
