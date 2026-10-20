@@ -131,7 +131,9 @@ smoke_test() {
   host="$(nginx_host)"
   http="$(nginx_port NGINX_HTTP_PORT 80)"
   https="$(nginx_port NGINX_HTTPS_PORT 443)"
-  code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 "http://$host:$http/")" || true
+  # Plain HTTP on purpose: port 80 must answer only with a redirect to HTTPS (MIL-017), and
+  # this checks that redirect on the VM itself; nothing is sent but the request line.
+  code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 "http://$host:$http/")" || true # NOSONAR
   [[ "$code" == "301" ]] || {
     echo "smoke test: $host:$http answered '$code', expected 301" >&2
     return 1
