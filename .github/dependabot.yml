@@ -1,0 +1,44 @@
+# Dependabot version updates for NF-Hotel/NFHotel (MIL-022 task 4). Packages, base images
+# and actions are pinned (NuGet versions, image digests, action commit SHAs); Dependabot
+# proposes the next pin as a pull request, which runs every required check like any other
+# change. The github-actions entry also moves the pins of the NF-Hotel/DevOps actions to
+# the newest commit of its main branch, so the application follows its pipeline.
+# A cooldown keeps a new release out for a week, so a compromised release has time to be
+# found first. Security updates of the NuGet packages come at once (Dependabot alerts).
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      nuget-minor-and-patch:
+        update-types: ["minor", "patch"]
+    commit-message:
+      prefix: "Packages:"
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      dotnet-images:
+        patterns: ["dotnet/*"]
+    commit-message:
+      prefix: "Images:"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "Actions:"

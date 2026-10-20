@@ -55,16 +55,20 @@ jobs:
     timeout-minutes: 30
     environment:
       name: production
+    # attestations: read and packages: read let the action verify the build provenance and
+    # the SBOM of every digest before the deploy (MIL-022 task 3).
     permissions:
       contents: read
       actions: read
       id-token: write
+      attestations: read
+      packages: read
 
     steps:
       - name: Deploy the release
         # A pinned action reference cannot be wrapped (ADR-0012: full commit SHA).
         # yamllint disable-line rule:line-length
-        uses: NF-Hotel/DevOps/.github/actions/deploy-release@24d979e3d785a206c66f5c5fc1655221b5417160
+        uses: NF-Hotel/DevOps/.github/actions/deploy-release@933c2e65363a7a9dcb1258b10986d4a5279a4583
         with:
           release-run-id: ${{ github.event.workflow_run.id || inputs.release_run_id }}
           apply: ${{ github.event_name == 'workflow_run' || inputs.apply }}
