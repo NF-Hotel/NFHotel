@@ -267,4 +267,110 @@ public static class ErrorCodes
         /// <summary>The guest was changed by someone else in the meantime. Fetch again and start over.</summary>
         public const string ConcurrencyConflict = "guest.concurrency_conflict";
     }
+
+    /// <summary>Codes of the stored benchmark runs (ADR-0013). The field codes are those of the domain.</summary>
+    public static class Benchmark
+    {
+        /// <summary>No run or request has that key.</summary>
+        public const string NotFound = "benchmark.not_found";
+
+        /// <summary>The result schema version is not the one that this API reads.</summary>
+        public const string SchemaVersionUnsupported = "benchmark.schema_version_unsupported";
+
+        /// <summary>The body is missing, or a part of it is missing.</summary>
+        public const string BodyInvalid = "benchmark.body_invalid";
+    }
+
+    /// <summary>Codes of the calls to the benchmark service that runs the models (MIL-020).</summary>
+    public static class BenchmarkRunner
+    {
+        /// <summary>The address or the token of the benchmark service is not set.</summary>
+        public const string NotConfigured = "benchmark_runner.not_configured";
+
+        /// <summary>The benchmark service did not answer in time or could not be reached.</summary>
+        public const string Unavailable = "benchmark_runner.unavailable";
+
+        /// <summary>The benchmark service refused the token of this application.</summary>
+        public const string Unauthorized = "benchmark_runner.unauthorized";
+
+        /// <summary>The benchmark service refused the request: no model, too many, a model twice, or a value out of range.</summary>
+        public const string InvalidRequest = "benchmark_runner.invalid_request";
+
+        /// <summary>A chosen model is not installed.</summary>
+        public const string ModelNotInstalled = "benchmark_runner.model_not_installed";
+
+        /// <summary>A run is active and the queue is full; try again later.</summary>
+        public const string QueueFull = "benchmark_runner.queue_full";
+
+        /// <summary>The benchmark service has no such run (it forgets runs when it restarts).</summary>
+        public const string RunNotFound = "benchmark_runner.run_not_found";
+
+        /// <summary>The benchmark service answered something this application cannot use.</summary>
+        public const string UnexpectedResponse = "benchmark_runner.unexpected_response";
+
+        /// <summary>The text is not the name of an Ollama model.</summary>
+        public const string InvalidModelName = "benchmark_runner.invalid_model_name";
+
+        /// <summary>The model to add is already installed.</summary>
+        public const string ModelAlreadyInstalled = "benchmark_runner.model_already_installed";
+
+        /// <summary>Another model is being added; one at a time.</summary>
+        public const string PullActive = "benchmark_runner.pull_active";
+
+        /// <summary>The benchmark service has no such download (it forgets them when it restarts).</summary>
+        public const string PullNotFound = "benchmark_runner.pull_not_found";
+
+        /// <summary>The model to delete is not installed.</summary>
+        public const string ModelNotFound = "benchmark_runner.model_not_found";
+
+        /// <summary>A queued or running benchmark names the model, so it cannot be deleted.</summary>
+        public const string ModelInUse = "benchmark_runner.model_in_use";
+
+        /// <summary>Ollama could not be reached or refused the delete.</summary>
+        public const string ModelServerError = "benchmark_runner.model_server_error";
+    }
+
+    /// <summary>Codes of the stored market analysis (MIL-026). The field codes are those of the domain.</summary>
+    public static class MarketAnalysis
+    {
+        /// <summary>No market analysis has been stored yet.</summary>
+        public const string NotFound = "market_analysis.not_found";
+
+        /// <summary>The result schema version is not the one that this API reads.</summary>
+        public const string SchemaVersionUnsupported = "market_analysis.schema_version_unsupported";
+
+        /// <summary>The result is missing a part, or the stored content cannot be read.</summary>
+        public const string BodyInvalid = "market_analysis.body_invalid";
+
+        /// <summary>The hotel has no booking to analyse in the period.</summary>
+        public const string NoBookings = "market_analysis.no_bookings";
+
+        /// <summary>The first date of the period is after the last date.</summary>
+        public const string PeriodInvalid = "market_analysis.period_invalid";
+    }
+
+    /// <summary>Codes of the calls to the markets API that runs the market analysis, and of the run itself (MIL-026).</summary>
+    public static class MarketAnalysisRunner
+    {
+        /// <summary>The address of the markets API is not set.</summary>
+        public const string NotConfigured = "market_analysis_runner.not_configured";
+
+        /// <summary>The markets API did not answer in time or could not be reached.</summary>
+        public const string Unavailable = "market_analysis_runner.unavailable";
+
+        /// <summary>The markets API refused the call (a gateway in front of it asked for a token).</summary>
+        public const string Unauthorized = "market_analysis_runner.unauthorized";
+
+        /// <summary>A run of the market analysis is already active.</summary>
+        public const string AlreadyRunning = "market_analysis_runner.already_running";
+
+        /// <summary>The markets API refused the bookings (an input error, status 422).</summary>
+        public const string InputRejected = "market_analysis_runner.input_rejected";
+
+        /// <summary>The API does not know this run (it keeps the last one in memory, and a restart forgets it).</summary>
+        public const string RunNotFound = "market_analysis_runner.run_not_found";
+
+        /// <summary>The markets API answered something this application cannot use.</summary>
+        public const string UnexpectedResponse = "market_analysis_runner.unexpected_response";
+    }
 }

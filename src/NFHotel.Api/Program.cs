@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using NFHotel.Api.Contracts;
 using NFHotel.Api.Security;
 using NFHotel.Api.Startup;
+using NFHotel.Application.Ports;
 using NFHotel.External;
 using NFHotel.Infrastructure;
 
@@ -14,6 +15,10 @@ builder.Services.AddControllers();
 builder.Services.AddSingleton(ApiToken.Read(builder.Configuration));
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHotelClock(builder.Configuration);
+builder.Services.AddMarketAnalysisService(builder.Configuration);   // the markets API that analyses the bookings (MIL-026)
+builder.Services.AddSingleton<ChannelMarketAnalysisRunLauncher>();
+builder.Services.AddSingleton<IMarketAnalysisRunLauncher>(provider => provider.GetRequiredService<ChannelMarketAnalysisRunLauncher>());
+builder.Services.AddHostedService<MarketAnalysisRunWorker>();
 builder.Services.AddStaffAuthentication();
 
 var app = builder.Build();
@@ -41,6 +46,11 @@ if (ApiStartup.IsCreateStaff(args))
 {
     return await ApiStartup.RunCreateStaffAsync(
         app.Services, args, Environment.GetEnvironmentVariable(ApiStartup.PasswordVariable), app.Lifetime.ApplicationStopping).ConfigureAwait(false);
+}
+
+if (ApiStartup.IsSeedMarketData(args))
+{
+    return await ApiStartup.RunSeedMarketDataAsync(app.Services, args, app.Lifetime.ApplicationStopping).ConfigureAwait(false);
 }
 
 app.MapGet($"/{ApiRoutes.Health}", () => Results.Ok(new { status = "ok" }));

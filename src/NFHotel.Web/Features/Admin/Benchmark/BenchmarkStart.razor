@@ -1,0 +1,156 @@
+@page "/admin/benchmark/start"
+@layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.BenchmarkRun)]
+@rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using NFHotel.Application.Dto.Benchmark
+@using NFHotel.Web.Features.Admin.Benchmark
+@inject BenchmarkStartViewModel ViewModel
+
+@*
+    Start a benchmark run (MIL-020, ADR-0001 of the benchmark service). Only markup and binding.
+
+    The page is for the Manager only: the policy above is the check that ADR-0001 asks for before the benchmark service is
+    called. The service checks its limits again. A start returns at once; the page then asks for the state every few
+    seconds until the run is done and its result is stored, and links to the list of runs.
+*@
+
+<PageTitle>Start a benchmark run — administration</PageTitle>
+
+<div class="stack-lg">
+    <PageHeader Title="Start a benchmark run"
+                Subtitle="Choose the installed models to compare. A run takes minutes and runs one model at a time." />
+
+    <ErrorAlert Errors="ViewModel.Errors" />
+
+    <AuthorizeView Policy="@StaffPolicies.BenchmarkModelsManage">
+        <ModelsPanel OnModelsChanged="ReloadModelsAsync" />
+    </AuthorizeView>
+
+    @if (!ViewModel.IsLoaded)
+    {
+        <LoadingSkeleton Rows="4" />
+    }
+    else if (ViewModel.Models.Count == 0 && ViewModel.Errors.Count == 0)
+    {
+        <EmptyState Title="No model is installed"
+                    Description="Install the models on the benchmark service first, then come back." />
+    }
+    else if (ViewModel.Models.Count > 0)
+    {
+        <section class="card card-pad stack" aria-labelledby="run-choice">
+            <h2 class="subtitle" id="run-choice">Models</h2>
+
+            <fieldset class="stack-sm">
+                <legend class="visually-hidden-legend">Models, one to @BenchmarkStartViewModel.MaxModels</legend>
+                @foreach (var model in ViewModel.Models)
+                {
+                    var name = model;
+                    <label class="check">
+                        <input type="checkbox"
+                               checked="@ViewModel.SelectedModels.Contains(name)"
+                               disabled="@(ViewModel.IsBusy || ViewModel.IsFollowing)"
+                               @onchange="() => ViewModel.ToggleModel(name)" />
+                        @name
+                    </label>
+                }
+            </fieldset>
+
+            <div class="field-row">
+                <label class="check">
+                    <input type="checkbox" @bind="ViewModel.HotelAnalysis" disabled="@(ViewModel.IsBusy || ViewModel.IsFollowing)" />
+                    Hotel cancellation analysis
+                </label>
+                <label class="check">
+                    <input type="checkbox" @bind="ViewModel.DeterministicTasks" disabled="@(ViewModel.IsBusy || ViewModel.IsFollowing)" />
+                    Deterministic tasks
+                </label>
+                <FormField Label="Runs per model" For="benchmark-runs">
+                    <input id="benchmark-runs"
+                           class="field-input"
+                           type="number"
+                           min="1"
+                           max="@BenchmarkStartViewModel.MaxRuns"
+                           disabled="@(ViewModel.IsBusy || ViewModel.IsFollowing)"
+                           @bind="ViewModel.Runs" />
+                </FormField>
+            </div>
+
+            <div>
+                <button type="button"
+                        class="btn btn-primary"
+                        disabled="@(!ViewModel.CanStart)"
+                        @onclick="StartAsync">
+                    Start the run
+                </button>
+            </div>
+        </section>
+    }
+
+    @if (ViewModel.CurrentRun is { } run)
+    {
+        <section class="card card-pad stack" aria-labelledby="run-state" aria-live="polite">
+            <h2 class="subtitle" id="run-state">Run @run.RunId</h2>
+            <p>Models: @string.Join(", ", run.Models)</p>
+            <p>State: <strong>@run.State</strong>. Result: <strong>@Delivery(run)</strong>.</p>
+
+            @if (run.State == BenchmarkRunStates.Failed)
+            {
+                <AlertBox Kind="AlertKind.Error" Message="@(run.Error ?? "The run failed.")" />
+            }
+            else if (ViewModel.ResultIsStored)
+            {
+                <AlertBox Kind="AlertKind.Ok" Message="The result is stored." />
+                <p><a class="btn btn-secondary btn-sm" href="/admin/benchmark">Open the list of runs</a></p>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    /// <summary>Loads the installed models when the page opens.</summary>
+    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
+
+    /// <summary>Offers the new list of models when a model was added or deleted in the panel.</summary>
+    private Task ReloadModelsAsync() => ViewModel.InitializeAsync(ComponentToken);
+
+    private async Task StartAsync()
+    {
+        await ViewModel.StartAsync(ComponentToken);
+        if (ViewModel.IsFollowing)
+        {
+            _ = FollowAsync();
+        }
+    }
+
+    /// <summary>Asks for the state every few seconds until the run is done and delivered, or the page is closed.</summary>
+    private async Task FollowAsync()
+    {
+        try
+        {
+            while (ViewModel.IsFollowing && !ComponentToken.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5), ComponentToken);
+                await ViewModel.RefreshAsync(ComponentToken);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was closed: there is nobody to show the state to.
+        }
+        catch (ObjectDisposedException)
+        {
+            // The circuit ended between the answer and the redraw: the same case, the page is gone.
+        }
+    }
+
+    private static string Delivery(BenchmarkRunStateDto run) =>
+        run.Delivery switch
+        {
+            BenchmarkDeliveryStates.Delivered => "stored",
+            BenchmarkDeliveryStates.Pending => "waiting to be stored",
+            BenchmarkDeliveryStates.Failed => "could not be stored (the benchmark service keeps it)",
+            _ => "not ready",
+        };
+}

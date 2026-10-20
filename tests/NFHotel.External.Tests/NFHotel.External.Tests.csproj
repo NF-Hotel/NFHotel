@@ -27,6 +27,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The sample of the result contract (MIL-026) is the test input, so the contract and the client cannot drift apart. -->
+    <Content Include="..\..\docs\test-data\market-analysis-result.json" Link="TestData\market-analysis-result.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\NFHotel.External\NFHotel.External.csproj" />
   </ItemGroup>
 
