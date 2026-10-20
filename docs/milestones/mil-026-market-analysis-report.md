@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Deprecated | Claude (AI) | AI at the request of the user, not independent | Tasks 20 and 21 and criteria 20 and 21: the number of rooms goes to the service for the occupancy analyses, a correlation matrix is drawn as a heat map, and each chart says what it shows and why that kind of chart was chosen (the course assignment of S01); accepted by the user in chat on 2026-10-20 after RC-128 Go | [5bc5cf0] |
-| 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Task 13 uses short timeouts, because a run is followed by its run id and no HTTP request stays open; `MarketAnalysisService__TimeoutSeconds` is set back to its default; accepted by the user in chat on 2026-10-20 after RC-130 Go | pending |
+| 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Task 13 uses short timeouts, because a run is followed by its run id and no HTTP request stays open; `MarketAnalysisService__TimeoutSeconds` is set back to its default; accepted by the user in chat on 2026-10-20 after RC-130 Go | [c9f8d5c] |
 
 ---
 
@@ -124,3 +124,4 @@ Let a Manager start a market analysis of the hotel bookings and read its report 
 [82ec2b2]: https://github.com/NF-Hotel/NFHotel/commit/82ec2b2acd49a5a76da4093e355397b6615ef9b0
 [364b34c]: https://github.com/NF-Hotel/NFHotel/commit/364b34c0d17a512d3bea06d9e01ad839b2a86e77
 [5bc5cf0]: https://github.com/NF-Hotel/NFHotel/commit/5bc5cf054789ce61d82e0f429092a4e485ae7c27
+[c9f8d5c]: https://github.com/NF-Hotel/NFHotel/commit/c9f8d5c7a01ebdbf4c89ce2ce4a046971d85d694

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Deprecated | Claude (AI) | AI at the request of the user, not independent | Three analyses added for the UCL assignment of S01: occupancy, occupancy on holidays and the correlation matrix, so nine analyses; the run request carries the number of rooms; the result has the formulas and the limits of each analysis; accepted by the user in chat on 2026-10-20 after RC-127 Go | [5bc5cf0] |
-| 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Two time limits on the request to the model (a stall timeout and a total limit) replace one fixed timeout; the run API needs no long HTTP request, so the website keeps only short timeouts; accepted by the user in chat on 2026-10-20 after RC-129 Go | pending |
+| 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Two time limits on the request to the model (a stall timeout and a total limit) replace one fixed timeout; the run API needs no long HTTP request, so the website keeps only short timeouts; accepted by the user in chat on 2026-10-20 after RC-129 Go | [c9f8d5c] |
 
 ---
 
@@ -87,3 +87,4 @@ Give the market analysis service the analysis that the website needs. [MIL-004] 
 [MIL-004]: ./mil-004-market-analysis-service.md
 [MIL-026]: ./mil-026-market-analysis-report.md
 [5bc5cf0]: https://github.com/NF-Hotel/NFHotel/commit/5bc5cf054789ce61d82e0f429092a4e485ae7c27
+[c9f8d5c]: https://github.com/NF-Hotel/NFHotel/commit/c9f8d5c7a01ebdbf4c89ce2ce4a046971d85d694
