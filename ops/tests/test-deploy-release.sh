@@ -124,13 +124,13 @@ expect_code() {
 
   expect_code 0 "deploys release A" deploy $(good "$A")
   [[ "$(git -C "$W/app" rev-parse HEAD)" == "$A" ]] && ok "the VM is at DevOps commit A" || ko "HEAD after A"
-  grep -q '^http://127.0.0.1:80/$' "$W/urls" && ok "the smoke test uses 127.0.0.1 when no address is set" || ko "smoke test default host"
+  grep -q '^http://127.0.0.1:80/$' "$W/urls" && ok "the smoke test uses 127.0.0.1 when no address is set" || ko "smoke test default host" # NOSONAR: the URL that the smoke test checks for its redirect
   mkdir -p "$W/app/deploy/nginx" && echo "NGINX_BIND=100.64.0.7" >"$W/app/deploy/nginx/nginx.env"
   expect_code 1 "a failed smoke test fails the deploy of B" deploy $(bad "$B")
   grep -q "rolled back to $APP" "$W/out" && [[ "$(git -C "$W/app" rev-parse HEAD)" == "$A" ]] &&
     [[ "$(cat "$W/health")" == good ]] && ok "it rolled back to release A" || ko "rollback after failed B"
   expect_code 0 "deploys release B" deploy $(good "$B")
-  grep -q '^http://100.64.0.7:80/$' "$W/urls" && grep -q '^https://100.64.0.7:443/$' "$W/urls" &&
+  grep -q '^http://100.64.0.7:80/$' "$W/urls" && grep -q '^https://100.64.0.7:443/$' "$W/urls" && # NOSONAR: the URL that the smoke test checks for its redirect
     ok "the smoke test uses the published address of the proxy" || ko "smoke test published address"
   [[ "$(wc -l <"$W/state-app/releases.log")" == 2 ]] && ok "the release log holds two releases" || ko "release log"
   awk 'NF == 7' "$W/state-app/releases.log" | grep -q "$APP $B" && ok "the log records both commits" || ko "log fields"
