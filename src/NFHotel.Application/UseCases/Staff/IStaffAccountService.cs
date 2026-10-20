@@ -34,7 +34,7 @@ public interface IStaffAccountService
     /// <summary>Creates the first Manager when no account exists. Does nothing when one does.</summary>
     /// <param name="userName">The user name.</param>
     /// <param name="password">The password.</param>
-    /// <param name="mustChangePassword">True when the first Manager must choose a new password at the first sign-in (ADR-0015).</param>
+    /// <param name="mustChangePassword">True when the first Manager must choose a new password at the first sign-in (ADR-0017).</param>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>Success whether it created the account or found one; the codes if the account was refused.</returns>
     Task<Result> EnsureFirstManagerAsync(string userName, string password, bool mustChangePassword, CancellationToken cancellationToken = default);

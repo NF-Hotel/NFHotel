@@ -15,7 +15,7 @@ public static class StaffSignIn
         await Assertions.Expect(page.GetByRole(AriaRole.Button, new() { Name = "Sign out" })).ToBeVisibleAsync();
     }
 
-    /// <summary>The page that an account with a temporary password is sent to (ADR-0015).</summary>
+    /// <summary>The page that an account with a temporary password is sent to (ADR-0017).</summary>
     public const string ChangePasswordPath = "/admin/account/password";
 
     /// <summary>

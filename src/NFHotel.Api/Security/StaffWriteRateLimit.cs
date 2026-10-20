@@ -6,7 +6,7 @@ using NFHotel.Application.Errors;
 
 namespace NFHotel.Api.Security;
 
-/// <summary>The limit on the writes that a Manager makes to staff accounts: 30 a minute per account (ADR-0015).</summary>
+/// <summary>The limit on the writes that a Manager makes to staff accounts: 30 a minute per account (ADR-0017).</summary>
 public static class StaffWriteRateLimit
 {
     /// <summary>The number of writes that one account may make in a window.</summary>

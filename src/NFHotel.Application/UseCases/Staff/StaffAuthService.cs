@@ -8,7 +8,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.UseCases.Staff;
 
-/// <summary>Checks a password, issues the token and changes the own password (ADR-0005, ADR-0015).</summary>
+/// <summary>Checks a password, issues the token and changes the own password (ADR-0005, ADR-0017).</summary>
 public sealed class StaffAuthService : IStaffAuthService
 {
     /// <summary>A longer password is refused without hashing it, so it cannot be used to burn processor time.</summary>
@@ -59,7 +59,7 @@ public sealed class StaffAuthService : IStaffAuthService
         _recorder = new StaffAuditRecorder(audit, context, clock);
     }
 
-    /// <summary>The key of the limit on the current-password check of one account (ADR-0015).</summary>
+    /// <summary>The key of the limit on the current-password check of one account (ADR-0017).</summary>
     /// <param name="staffId">The account.</param>
     /// <returns>The key.</returns>
     public static string ChangeKey(int staffId) => $"pwd:{staffId}";

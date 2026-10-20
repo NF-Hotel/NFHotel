@@ -6,7 +6,7 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.UseCases.Staff;
 
 /// <summary>
-/// Adds the audit record of an act on the staff accounts (ADR-0015). The record is only marked for insertion; the
+/// Adds the audit record of an act on the staff accounts (ADR-0017). The record is only marked for insertion; the
 /// unit of work saves it in the same transaction as the change it describes.
 /// </summary>
 internal sealed class StaffAuditRecorder

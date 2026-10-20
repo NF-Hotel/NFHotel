@@ -24,7 +24,7 @@ public static class ApiStartup
     /// <summary>The command that creates a staff account.</summary>
     public const string CreateStaffCommand = "create-staff";
 
-    /// <summary>The command that sets a temporary password for an account, for a Manager who has lost theirs (ADR-0015).</summary>
+    /// <summary>The command that sets a temporary password for an account, for a Manager who has lost theirs (ADR-0017).</summary>
     public const string ResetStaffPasswordCommand = "reset-staff-password";
 
     /// <summary>The command that loads the fake bookings of the hotel into the database (MIL-026).</summary>
@@ -79,7 +79,7 @@ public static class ApiStartup
         await using var scope = app.Services.CreateAsyncScope();
         var accounts = scope.ServiceProvider.GetRequiredService<IStaffAccountService>();
 
-        // The first Manager chooses a new password at the first sign-in, unless the setting says otherwise (ADR-0015).
+        // The first Manager chooses a new password at the first sign-in, unless the setting says otherwise (ADR-0017).
         var mustChange = !bool.TryParse(app.Configuration[$"{InitialManagerSection}:MustChangePassword"], out var configured) || configured;
         var result = await accounts.EnsureFirstManagerAsync(userName, password, mustChange, cancellationToken).ConfigureAwait(false);
         if (result.IsFailure)

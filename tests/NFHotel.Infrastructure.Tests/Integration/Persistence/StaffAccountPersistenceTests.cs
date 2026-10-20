@@ -7,7 +7,7 @@ namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
 
 /// <summary>
 /// The new columns of the staff table, the list, the last-Manager query and the audit table against a real PostgreSQL
-/// (ADR-0015).
+/// (ADR-0017).
 /// </summary>
 [Collection(PostgreSqlCollection.Name)]
 public sealed class StaffAccountPersistenceTests : IAsyncLifetime

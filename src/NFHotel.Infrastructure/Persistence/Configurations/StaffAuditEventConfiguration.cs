@@ -5,7 +5,7 @@ using NFHotel.Domain.Entities;
 
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
-/// <summary>Maps <see cref="StaffAuditEvent"/> to the table <c>staff_audit_event</c> (ADR-0015).</summary>
+/// <summary>Maps <see cref="StaffAuditEvent"/> to the table <c>staff_audit_event</c> (ADR-0017).</summary>
 public sealed class StaffAuditEventConfiguration : EntityConfiguration<StaffAuditEvent, int>
 {
     /// <inheritdoc />

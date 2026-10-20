@@ -2,26 +2,29 @@
 # Start the application the way it is deployed, on this machine, so a developer can see a change.
 #
 # ADR-0003: the services run as Docker containers in one virtual machine on Proxmox VE. For development the
-# Proxmox VE node is a local Docker container (deploy/proxmox, the image of MIL-003), so the chain is
+# Proxmox VE node is a local Docker container (ops/deploy/proxmox, the image of MIL-003), so the chain is
 #   this machine -> Proxmox VE container -> VM (Debian, Docker) -> postgres, ollama, api, web, analysis, benchmark, nginx
 # The script does the whole chain and then reuses it, so the next run only ships your working tree to the
-# VM and rebuilds the services you name (scripts/deploy.sh does the VM and the services):
+# VM and rebuilds the services you name (ops/scripts/deploy.sh does the VM and the services):
 #   1. check that Docker can use /dev/kvm (on WSL2 start a distribution that loads the KVM modules first)
 #   2. make a missing pve.env, deploy.env and service settings file from its .example, with fresh secrets;
 #      an existing file is never changed
 #   3. start the Proxmox VE container (created once, then only started) and set its root password
-#   4. scripts/deploy.sh --local: create the VM when it is missing, copy this working tree into it, deploy
-#   5. publish the site on this machine: https://localhost:8443/ (a development certificate)
+#   4. ops/scripts/deploy.sh --local: create the VM when it is missing, copy this working tree into it, deploy
+#   5. publish the site on this machine: https://localhost:8443/ (a development certificate); the mobile app
+#      (MobileApp repository) reaches the sign-in and the rooms of the API at https://localhost:8443/mobile-api/
+#      (from the Android emulator: https://10.0.2.2:8443/mobile-api/), ADR-0015
 #   6. create one back office account per role (Manager, Receptionist, Housekeeping) and print the user names and
 #      passwords at the end. This is for development only: the passwords are printed only when
 #      ASPNETCORE_ENVIRONMENT=Development in nfhotel-api.env, and never in a release deployment.
-#      The generated passwords are kept in deploy/nfhotel-api/dev-staff.env (git-ignored).
+#      The generated passwords are kept in ops/deploy/nfhotel-api/dev-staff.env (git-ignored).
 #
-# Usage: dev-up.sh [--check] [--all] [--seed] [--open] [--down] [--destroy] [web|api|benchmark ...]
+# Usage: dev-up.sh [--check] [--all] [--seed] [--open] [--down] [--destroy] [web|api|benchmark|nginx ...]
 #   --check    only test that this machine can run it (Docker, KVM, tools, ports, disk, memory) and say how to fix
 #              each problem; starts nothing. The same test runs at the start of every other run.
 #   web, api   rebuild and restart only these (default: web and api, the code of this repository)
-#   benchmark  rebuild the benchmark service from BENCHMARK_REF in deploy/benchmark/benchmark.env
+#   benchmark  rebuild the benchmark service from BENCHMARK_REF in ops/deploy/benchmark/benchmark.env
+#   nginx      recreate the proxy, to read a changed template or the mobile-app route (ADR-0015)
 #   --all      rebuild and restart every service of the seven
 #   --seed     load db/seed_dev.sql (sample rooms, guests and bookings) into the database
 #   --open     open the site in the default browser when it is ready
@@ -37,6 +40,8 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# The operations of the application, in this repository since ADR-0016.
+ops="$root/ops"
 export MSYS_NO_PATHCONV=1
 
 site_port="${DEV_SITE_PORT:-8443}"
@@ -72,7 +77,7 @@ for arg in "$@"; do
       usage
       exit 0
       ;;
-    web | api | benchmark) rebuild+=("$arg") ;;
+    web | api | benchmark | nginx) rebuild+=("$arg") ;;
     *)
       echo "error: unknown argument: $arg" >&2
       usage >&2
@@ -130,7 +135,7 @@ preflight() {
 
     kib="$(docker info --format '{{.MemTotal}}' 2>/dev/null || echo 0)"
     mem_mib=$((kib / 1024 / 1024))
-    vm_mib="$(value_of "$root/deploy.env" VM_MEMORY 2>/dev/null || true)"
+    vm_mib="$(value_of "$ops/deploy.env" VM_MEMORY 2>/dev/null || true)"
     [[ "$vm_mib" =~ ^[0-9]+$ ]] || vm_mib=12288
     need_mib=$((vm_mib + 2048))
     if ((mem_mib >= need_mib)); then
@@ -141,7 +146,7 @@ preflight() {
   fi
 
   # The ports are free, unless the container of an earlier run owns them.
-  running_container="$(value_of "$root/deploy.env" PVE_CONTAINER 2>/dev/null || true)"
+  running_container="$(value_of "$ops/deploy.env" PVE_CONTAINER 2>/dev/null || true)"
   if [[ -z "$running_container" || "$(docker inspect -f '{{.State.Running}}' "$running_container" 2>/dev/null || true)" != "true" ]]; then
     for name in "$site_port" "$pve_port"; do
       if (exec 3<>"/dev/tcp/127.0.0.1/${name}") 2>/dev/null; then
@@ -196,13 +201,31 @@ if ((check_only)); then
   exit 0
 fi
 
-pve_env="$root/pve.env"
-deploy_env="$root/deploy.env"
+pve_env="$ops/pve.env"
+deploy_env="$ops/deploy.env"
 
-if make_env "$root" pve.env; then
+# move_old_settings: before ADR-0016 the git-ignored settings files were in the root and in
+# deploy/ of this checkout. Copy each one that is not in ops/ yet, once, so an existing
+# development VM keeps its passwords. The old files are left where they are.
+move_old_settings() {
+  local old new
+  for old in "$root/pve.env" "$root/deploy.env"; do
+    new="$ops/$(basename "$old")"
+    [[ -f "$old" && ! -f "$new" ]] && cp -p "$old" "$new" && echo "==> copied $old to $new"
+  done
+  [[ -d "$root/deploy" ]] || return 0
+  while IFS= read -r old; do
+    new="$ops/${old#"$root"/}"
+    [[ -f "$new" ]] && continue
+    mkdir -p "$(dirname "$new")" && cp -p "$old" "$new" && echo "==> copied $old to $new"
+  done < <(find "$root/deploy" -type f \( -name "*.env" -o -name "market-analysis.toml" \))
+}
+move_old_settings
+
+if make_env "$ops" pve.env; then
   sed -i "s#^PVE_PASSWORD=.*#PVE_PASSWORD=$(secret 18)#" "$pve_env"
 fi
-if make_env "$root" deploy.env; then
+if make_env "$ops" deploy.env; then
   # Development: the Proxmox node is the local container, its storage is "local", and the script
   # makes its own ssh key for the VM user.
   sed -i \
@@ -225,10 +248,10 @@ if ((destroy)); then
   exit 0
 fi
 
-pg_dir="$root/deploy/postgres"
-api_dir="$root/deploy/nfhotel-api"
-web_dir="$root/deploy/nfhotel-web"
-nginx_dir="$root/deploy/nginx"
+pg_dir="$ops/deploy/postgres"
+api_dir="$ops/deploy/nfhotel-api"
+web_dir="$ops/deploy/nfhotel-web"
+nginx_dir="$ops/deploy/nginx"
 
 new_api=0
 [[ -f "$api_dir/nfhotel-api.env" ]] || new_api=1
@@ -240,11 +263,17 @@ fi
 make_env "$api_dir" nfhotel-api.env || true
 make_env "$web_dir" nfhotel-web.env || true
 make_env "$nginx_dir" nginx.env || true
-make_env "$root/deploy/ollama" ollama.env || true
+# The route of the mobile app (ADR-0015, MIL-029): /mobile-api on the site address, to the sign-in and the rooms of the
+# API. It is added to an existing nginx.env too, because it is a development setting; a release deployment never runs
+# this script, so it has no such route.
+if ! grep -q '^COMPOSE_FILE=' "$nginx_dir/nginx.env"; then
+  printf '\nCOMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml\n' >> "$nginx_dir/nginx.env"
+fi
+make_env "$ops/deploy/ollama" ollama.env || true
 # The benchmark service: an older benchmark.env from the notebook has none of the NFBENCH_ settings, so it is
 # kept under another name and the new example takes its place. The token of the service is made once; the web
-# service gets the same value from this file (scripts/deploy-services.sh).
-bench_dir="$root/deploy/benchmark"
+# service gets the same value from this file (ops/scripts/deploy-services.sh).
+bench_dir="$ops/deploy/benchmark"
 if [[ -f "$bench_dir/benchmark.env" ]] && ! grep -q '^NFBENCH_WEB_URL=' "$bench_dir/benchmark.env"; then
   mv "$bench_dir/benchmark.env" "$bench_dir/benchmark.env.old-notebook"
   echo "==> kept the old $bench_dir/benchmark.env as benchmark.env.old-notebook"
@@ -290,7 +319,7 @@ find_vm_ip() {
 if ((down)); then
   [[ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null || true)" == "true" ]] ||
     die "the Proxmox VE container $container is not running; nothing to stop"
-  exec bash "$root/scripts/deploy.sh" --skip-vm --down "${core[@]}"
+  exec bash "$ops/scripts/deploy.sh" --skip-vm --down "${core[@]}"
 fi
 
 # 1. KVM.
@@ -360,7 +389,7 @@ else
 fi
 echo "==> deploying: ${todo[*]}"
 log="$(mktemp)"
-bash "$root/scripts/deploy.sh" --local "${todo[@]}" | tee "${log}"
+bash "$ops/scripts/deploy.sh" --local "${todo[@]}" | tee "${log}"
 vm_ip="$(sed -n 's/^Done\. VM [0-9]* at \([0-9.]*\)\.$/\1/p' "${log}" | tail -n 1)"
 [[ -n "$vm_ip" ]] || vm_ip="$(find_vm_ip)" || die "could not find the address of the VM"
 
@@ -382,7 +411,7 @@ if ((seed)); then
   echo "==> loading db/seed_dev.sql"
   pg_user="$(value_of "$pg_dir/postgres.env" POSTGRES_USER)"
   pg_db="$(value_of "$pg_dir/postgres.env" POSTGRES_DB)"
-  vm "cd /opt/nfhotel/deploy/postgres && docker compose --env-file postgres.env exec -T postgres psql -v ON_ERROR_STOP=1 -U ${pg_user} -d ${pg_db}" \
+  vm "cd /opt/nfhotel/ops/deploy/postgres && docker compose --env-file postgres.env exec -T postgres psql -v ON_ERROR_STOP=1 -U ${pg_user} -d ${pg_db}" \
     <"$root/db/seed_dev.sql" >/dev/null || die "the seed script failed (it may already have been loaded)"
 fi
 

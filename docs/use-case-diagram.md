@@ -14,7 +14,7 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-013 Go | [469ff7a] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the actor Hotel staff and the use cases Manage Bookings, Manage Rooms and Manage Guests (MIL-007) | [a29c54a] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the use case Sign In To The Back Office (MIL-016) | [1593b34] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Change Own Password and Manage Staff Accounts (MIL-030) (accepted after RC-135 Go) | [0891cf1] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Change Own Password and Manage Staff Accounts (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
 
 ---
 

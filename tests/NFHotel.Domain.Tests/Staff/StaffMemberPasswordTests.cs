@@ -4,7 +4,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Tests.Staff;
 
-/// <summary>The password, the "must change" flag and the security stamp of a staff account (ADR-0015).</summary>
+/// <summary>The password, the "must change" flag and the security stamp of a staff account (ADR-0017).</summary>
 public sealed class StaffMemberPasswordTests
 {
     #region Creation

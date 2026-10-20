@@ -5,7 +5,7 @@ using NFHotel.Application.UseCases.Staff;
 
 namespace NFHotel.ApiClient;
 
-/// <summary><see cref="IStaffAdminService"/> over HTTP: the API holds the accounts and checks the role of the caller (ADR-0015).</summary>
+/// <summary><see cref="IStaffAdminService"/> over HTTP: the API holds the accounts and checks the role of the caller (ADR-0017).</summary>
 public sealed class ApiStaffAdminService : IStaffAdminService
 {
     private readonly ApiGateway _api;

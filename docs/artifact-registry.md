@@ -16,10 +16,11 @@ Infrastructure documents (DSA-001, ADR-0007 to ADR-0011, MIL-021 to MIL-024 and 
 | BC | Business Case | docs/business-case.md | 002 |
 | SA | Stakeholder Analysis | docs/stakeholder-analysis.md | 002 |
 | PP | Project Plan | docs/project-plan.md | 002 |
-| MIL | Milestone / Gateway | docs/milestones/*.md | 031 |
-| RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 139 |
+| MIL | Milestone / Gateway | docs/milestones/*.md | 032 |
+| RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 157 |
 | TM | Traceability Matrix | docs/sqa/traceability-matrix.md | 002 |
-| ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0016 |
+| DSA | CI/CD and DevSecOps Assessment (no catalog type, proposed upstream) | docs/sqa/devsecops-assessment.md | 002 |
+| ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0018 |
 | US | User Story | docs/user-stories.md | 002 |
 | UCD | Use Case Diagram | docs/use-case-diagram.md | 002 |
 | UC | Use Case | docs/use-cases/uc-*/uc.md | 007 |
@@ -60,6 +61,8 @@ reviewer can see at once which professional vocabulary a document uses.
 | OC, SD, DCD, ERD, ADR, TM, RC, QC, source code | IT Professional English | No |
 
 ## Notes
+
+- **IDs from 500 (ADR-0016).** NF-Hotel/DevOps allocated its IDs from 500 under ADR-0012: ADR-0500 and RC-500 to RC-507. They keep their numbers in `docs/` and are not reused. New documents continue the sequences above. The documents that moved to DevOps keep their IDs too: DSA-001, ADR-0007 to ADR-0011, MIL-021 to MIL-024 and their review records. The DevOps registry at the move is kept as `ops/artifact-registry-devops.md`, and the traceability matrix of the operations as `docs/sqa/traceability-matrix-operations.md`.
 
 - "Next Available Version" is the zero-padded (3-digit) version to use the
   *next* time a new document of that type is created. Increment it only when

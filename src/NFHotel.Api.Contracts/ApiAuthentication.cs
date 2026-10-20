@@ -26,7 +26,7 @@ public static class ApiAuthentication
 
     /// <summary>
     /// The header in which the web application passes the address of the browser to the API, so the audit trail can
-    /// record it (ADR-0015). The API trusts it because the call carries the service token.
+    /// record it (ADR-0017). The API trusts it because the call carries the service token.
     /// </summary>
     public const string ClientAddressHeader = "X-Forwarded-For";
 }

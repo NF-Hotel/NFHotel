@@ -37,7 +37,7 @@ public partial class WebFactory : WebApplicationFactory<Program>
         [MustChangeUser] = StaffRole.Manager,
     };
 
-    /// <summary>The user name of the account that must choose a new password (ADR-0015).</summary>
+    /// <summary>The user name of the account that must choose a new password (ADR-0017).</summary>
     public const string MustChangeUser = "newbie";
 
     /// <summary>The new password that the substitute accepts for <see cref="MustChangeUser"/>.</summary>

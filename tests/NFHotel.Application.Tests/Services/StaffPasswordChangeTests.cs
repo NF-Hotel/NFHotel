@@ -9,7 +9,7 @@ using NSubstitute;
 
 namespace NFHotel.Application.Tests.Services;
 
-/// <summary>The change of the own password and the audit of the sign-in (UC-005, ADR-0015).</summary>
+/// <summary>The change of the own password and the audit of the sign-in (UC-005, ADR-0017).</summary>
 public sealed class StaffPasswordChangeTests
 {
     private const string Current = "correct horse battery staple";

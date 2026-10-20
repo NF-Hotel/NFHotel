@@ -38,12 +38,12 @@ public sealed class StaffMember : Entity<int>
     /// <summary>False when the member may no longer sign in.</summary>
     public bool IsActive { get; private set; }
 
-    /// <summary>True when the member has to choose a new password before anything else (ADR-0015).</summary>
+    /// <summary>True when the member has to choose a new password before anything else (ADR-0017).</summary>
     public bool MustChangePassword { get; private set; }
 
     /// <summary>
     /// Rises whenever the password changes or the member is disabled or enabled. A token carries the value it was
-    /// issued with, so an older token no longer matches and its session has ended (ADR-0015).
+    /// issued with, so an older token no longer matches and its session has ended (ADR-0017).
     /// </summary>
     public int SecurityStamp { get; private set; } = 1;
 

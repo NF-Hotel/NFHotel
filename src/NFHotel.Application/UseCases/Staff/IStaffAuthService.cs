@@ -17,7 +17,7 @@ public interface IStaffAuthService
     Task<Result<StaffSessionDto>> SignInAsync(SignInRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Changes the password of the signed-in caller (UC-005, ADR-0015). The current password must match, the new one
+    /// Changes the password of the signed-in caller (UC-005, ADR-0017). The current password must match, the new one
     /// must pass <see cref="PasswordPolicy"/>, and a wrong current password counts against a limit per account.
     /// </summary>
     /// <param name="request">The current and the new password.</param>

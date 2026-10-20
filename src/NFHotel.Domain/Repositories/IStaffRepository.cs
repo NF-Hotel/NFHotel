@@ -16,7 +16,7 @@ public interface IStaffRepository : IRepository<StaffMember, int>
     /// <returns>True when the table has a row.</returns>
     Task<bool> AnyAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>Lists all accounts, ordered by user name (ADR-0015).</summary>
+    /// <summary>Lists all accounts, ordered by user name (ADR-0017).</summary>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The accounts.</returns>
     Task<IReadOnlyList<StaffMember>> ListAsync(CancellationToken cancellationToken = default);

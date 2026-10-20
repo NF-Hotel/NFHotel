@@ -3,7 +3,7 @@ using NFHotel.Application.UseCases.Staff;
 
 namespace NFHotel.Application.Tests.Services;
 
-/// <summary>The one rule for a new staff password (ADR-0015): length, user name, current password, common passwords.</summary>
+/// <summary>The one rule for a new staff password (ADR-0017): length, user name, current password, common passwords.</summary>
 public sealed class PasswordPolicyTests
 {
     private const string Good = "correct horse battery staple";

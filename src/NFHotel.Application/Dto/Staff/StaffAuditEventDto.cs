@@ -2,7 +2,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.Dto.Staff;
 
-/// <summary>One line of the audit trail as the audit page shows it (ADR-0015).</summary>
+/// <summary>One line of the audit trail as the audit page shows it (ADR-0017).</summary>
 /// <param name="OccurredAt">When it happened (UTC).</param>
 /// <param name="ActorName">Who did it, or <c>null</c>.</param>
 /// <param name="Action">What happened.</param>

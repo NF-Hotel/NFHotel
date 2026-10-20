@@ -1,6 +1,6 @@
 namespace NFHotel.Domain.ValueObjects;
 
-/// <summary>What an audit event of the staff accounts records (ADR-0015).</summary>
+/// <summary>What an audit event of the staff accounts records (ADR-0017).</summary>
 public enum StaffAuditAction
 {
     /// <summary>A member of staff signed in.</summary>

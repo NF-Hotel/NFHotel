@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.AspNetCore.HttpOverrides;
 
 using NFHotel.Api.Contracts;
 using NFHotel.Api.Security;
@@ -24,8 +25,21 @@ builder.Services.AddStaffAuthentication();
 builder.Services.AddHttpContextAccessor();
 builder.Services.Replace(ServiceDescriptor.Scoped<IStaffCallContext, HttpStaffCallContext>());
 builder.Services.AddStaffWriteRateLimit();
+builder.Services.AddSingleton<AddressLoginThrottle>();   // the limit per client address for the mobile app (ADR-0015)
+builder.Services.AddScoped<LoginAddressLimitFilter>();
+
+// Behind the proxy the peer is nginx; the address of the phone is in X-Forwarded-For. The API publishes no port, so
+// only the proxy and the web application on the internal networks can send the header (ADR-0015).
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // A key below one or a missing argument is a programming error of the caller: 400. Anything else is a
 // fault of the API: 500, without a stack trace or a message that could leak a setting.

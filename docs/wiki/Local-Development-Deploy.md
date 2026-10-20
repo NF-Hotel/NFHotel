@@ -49,7 +49,7 @@ your working tree to the VM and rebuild only what you name, in about 30 seconds.
 | `dev-up.sh` | start everything, then rebuild and restart `api` and `web` from your working tree |
 | `dev-up.sh web` | rebuild only the web application |
 | `dev-up.sh api` | rebuild only the database API |
-| `dev-up.sh benchmark` | rebuild the benchmark service from the commit named in `deploy/benchmark/benchmark.env` |
+| `dev-up.sh benchmark` | rebuild the benchmark service from the commit named in `ops/deploy/benchmark/benchmark.env` |
 | `dev-up.sh --all` | rebuild `api` and `web` and start whatever is not running |
 | `dev-up.sh --seed` | load the sample rooms, guests and bookings of `db/seed_dev.sql` |
 | `dev-up.sh --open` | open the site in your browser when it is ready |
@@ -63,12 +63,12 @@ Ollama models to pull, default `llama3.2:3b phi3.5`; an empty value pulls none).
 ## What it does, step by step
 
 1. Checks the machine (the same check as `--check`).
-2. Makes any missing settings file from its `.example` with new random secrets: `pve.env`, `deploy.env` and the
-   `deploy/*/*.env` files of postgres, the API, the web application and nginx, plus `ollama.env` and `benchmark.env`. A
+2. Makes any missing settings file from its `.example` with new random secrets: `ops/pve.env`, `ops/deploy.env` and the
+   `ops/deploy/*/*.env` files of postgres, the API, the web application and nginx, plus `ollama.env` and `benchmark.env`. A
    file that exists is never changed. All of them are git-ignored.
-3. Starts the Proxmox VE container once (later runs only start it again) and sets its root password from `pve.env`.
-4. Runs `scripts/deploy.sh --local`, which creates the VM when it is missing, copies your working tree into it and
-   deploys the services in the right order with `scripts/deploy-services.sh`: the web application waits for a healthy
+3. Starts the Proxmox VE container once (later runs only start it again) and sets its root password from `ops/pve.env`.
+4. Runs `ops/scripts/deploy.sh --local`, which creates the VM when it is missing, copies your working tree into it and
+   deploys the services in the right order with `ops/scripts/deploy-services.sh`: the web application waits for a healthy
    database and API, and nginx waits for the web application and the market analysis API.
 5. Pulls the small Ollama models, creates the accounts and publishes the site on `https://localhost:8443/`.
 
@@ -76,12 +76,12 @@ Ollama models to pull, default `llama3.2:3b phi3.5`; an empty value pulls none).
 
 Open `https://localhost:8443/admin/login`. The browser warns about the certificate, because the script makes a
 development certificate; accept it. The script prints one account per role (Manager, Receptionist and Housekeeping) at
-the end of each run, **only** when `ASPNETCORE_ENVIRONMENT` is `Development` in `deploy/nfhotel-api/nfhotel-api.env`,
+the end of each run, **only** when `ASPNETCORE_ENVIRONMENT` is `Development` in `ops/deploy/nfhotel-api/nfhotel-api.env`,
 which is what the script writes. A release deployment never prints them. The passwords are in plain text in two
 git-ignored files:
 
-- the Manager: `Staff__InitialManager__Password` in `deploy/nfhotel-api/nfhotel-api.env`;
-- the Receptionist and the Housekeeping user: `deploy/nfhotel-api/dev-staff.env`.
+- the Manager: `Staff__InitialManager__Password` in `ops/deploy/nfhotel-api/nfhotel-api.env`;
+- the Receptionist and the Housekeeping user: `ops/deploy/nfhotel-api/dev-staff.env`.
 
 If you change a password in the application, these files no longer match it.
 
@@ -90,8 +90,8 @@ If you change a password in the application, these files no longer match it.
 | What | Where |
 | --- | --- |
 | The site | `https://localhost:8443/` (an address that starts with `http://` is sent on to `https://`) |
-| Proxmox VE | `https://localhost:8006/`, user `root`, the password is `PVE_PASSWORD` in `pve.env` |
-| Database, benchmark results, Ollama models | volumes inside the VM, which lives inside the `proxmox-node1` container (the name is `PVE_CONTAINER` in `deploy.env`) |
+| Proxmox VE | `https://localhost:8006/`, user `root`, the password is `PVE_PASSWORD` in `ops/pve.env` |
+| Database, benchmark results, Ollama models | volumes inside the VM, which lives inside the `proxmox-node1` container (the name is `PVE_CONTAINER` in `ops/deploy.env`) |
 | The code the VM runs | `/opt/nfhotel` in the VM, a copy of your working tree made at each run |
 
 Everything that is stored lives in the VM. `--destroy` removes it; `--down` does not.
@@ -118,7 +118,7 @@ and the default AI model for the website and the market analysis are on `/admin/
 | The first run stops at `waiting for ssh, cloud-init and Docker` | the VM is still installing Docker | run the script again; it continues |
 | The Start page says the benchmark service is not set up | the service or the model is not ready | run `dev-up.sh benchmark`, then reload the page |
 | `502 Bad Gateway` after a rebuild | nginx has not found the new container | run `dev-up.sh` again; it reloads nginx |
-| The Docker build of the benchmark service fails on a submodule | the build must not fetch the private `framework` submodule | already handled with `?submodules=false` in `deploy/benchmark/docker-compose.yml`; update the repository |
+| The Docker build of the benchmark service fails on a submodule | the build must not fetch the private `framework` submodule | already handled with `?submodules=false` in `ops/deploy/benchmark/docker-compose.yml`; update the repository |
 | The market analysis shows no AI executive summary | the model name in the settings is not exactly one that Ollama lists (`phi3.5` instead of `phi3.5:latest`), or the model is too slow for the timeout | set the default AI model on `/admin/benchmark` and run `dev-up.sh` or `deploy-services.sh analysis`: the exact name is found and written. Insights on a CPU-only VM take 5 to 10 minutes; an analysis that times out shows `TIMEOUT` as the reason, and `GUARDRAIL_REJECTED` means the model broke the wording rules |
 | Out of memory, the VM is killed | Docker has too little memory | raise it (see the table at the top), then `wsl --shutdown` |
 
@@ -127,7 +127,7 @@ and the default AI model for the website and the market analysis are on `/admin/
 - Use it on your own machine only. The Proxmox VE image is a third-party image that runs privileged and needs
   `/dev/kvm`; never run it in CI or on a shared host.
 - It is for development. Do not use its certificate, accounts or settings files for a real server.
-- Never commit the `*.env` files or `deploy.env`; they are git-ignored, and the script never prints a secret except the
+- Never commit the `*.env` files or `ops/deploy.env`; they are git-ignored, and the script never prints a secret except the
   development accounts described above.
-- To change the deployment itself, change `scripts/dev-up.sh`, `scripts/deploy.sh` or `scripts/deploy-services.sh` and
+- To change the deployment itself, change `scripts/dev-up.sh`, `ops/scripts/deploy.sh` or `ops/scripts/deploy-services.sh` and
   run `bash scripts/dev-up.sh --check` first.

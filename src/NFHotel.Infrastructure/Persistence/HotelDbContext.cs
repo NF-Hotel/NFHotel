@@ -67,7 +67,7 @@ public sealed class HotelDbContext : DbContext
     /// <summary>The requests of the benchmark runs.</summary>
     public DbSet<BenchmarkResult> BenchmarkResults => Set<BenchmarkResult>();
 
-    /// <summary>The audit trail of the staff accounts (ADR-0015).</summary>
+    /// <summary>The audit trail of the staff accounts (ADR-0017).</summary>
     public DbSet<StaffAuditEvent> StaffAuditEvents => Set<StaffAuditEvent>();
 
     /// <inheritdoc />

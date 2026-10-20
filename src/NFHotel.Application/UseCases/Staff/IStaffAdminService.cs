@@ -3,7 +3,7 @@ using NFHotel.Application.Dto.Staff;
 namespace NFHotel.Application.UseCases.Staff;
 
 /// <summary>
-/// What a Manager does with staff accounts (UC-006, ADR-0015). Every operation is for the signed-in caller; the
+/// What a Manager does with staff accounts (UC-006, ADR-0017). Every operation is for the signed-in caller; the
 /// permission <see cref="Permissions.StaffManage"/> is checked where the call arrives.
 /// </summary>
 public interface IStaffAdminService

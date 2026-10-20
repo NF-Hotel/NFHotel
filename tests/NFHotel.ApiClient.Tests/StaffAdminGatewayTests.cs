@@ -5,7 +5,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.ApiClient.Tests;
 
-/// <summary>The staff account calls over HTTP: the routes, the methods, the staff token and the codes that survive (ADR-0015).</summary>
+/// <summary>The staff account calls over HTTP: the routes, the methods, the staff token and the codes that survive (ADR-0017).</summary>
 public sealed class StaffAdminGatewayTests
 {
     private static readonly Uri Base = new("http://api.test/");

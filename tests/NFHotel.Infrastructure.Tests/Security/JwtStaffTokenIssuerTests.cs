@@ -34,7 +34,7 @@ public sealed class JwtStaffTokenIssuerTests
         Assert.Equal("nfhotel-api", result.Claims["iss"]);
     }
 
-    /// <summary>Positive: the token carries the stamp of the account and the must-change flag, so the API can compare them (ADR-0015).</summary>
+    /// <summary>Positive: the token carries the stamp of the account and the must-change flag, so the API can compare them (ADR-0017).</summary>
     [Fact]
     public async Task Issue_Member_CarriesTheStampAndTheMustChangeFlag()
     {

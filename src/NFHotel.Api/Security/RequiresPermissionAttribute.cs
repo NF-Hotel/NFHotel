@@ -47,7 +47,7 @@ public sealed class RequiresPermissionAttribute : Attribute, IAuthorizationFilte
             return;
         }
 
-        // An account that must choose a new password may do nothing else until it has (ADR-0015).
+        // An account that must choose a new password may do nothing else until it has (ADR-0017).
         if (Permission != Permissions.StaffChangeOwnPassword
             && bool.TryParse(user.FindFirst(JwtStaffTokenIssuer.MustChangeClaim)?.Value, out var mustChange)
             && mustChange)

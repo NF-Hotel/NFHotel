@@ -4,7 +4,7 @@ namespace NFHotel.Web.Tests;
 
 /// <summary>
 /// The change-password page, the forced change and the Manager pages through the real pipeline of the web application
-/// (UC-005, UC-006, ADR-0015).
+/// (UC-005, UC-006, ADR-0017).
 /// </summary>
 public sealed class StaffPasswordPageTests : IClassFixture<WebFactory>
 {

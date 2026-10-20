@@ -1,0 +1,12 @@
+# Findings of the container scan that are accepted for a time (DSA-001 section 8,
+# MIL-022 task 1). Trivy leaves them out of the gate; scripts/scan-gate.sh
+# --check-ignore refuses an entry without a statement or with an expiry more than
+# 30 days ahead. An entry is added by a reviewed pull request; S01 approves it.
+#
+# Format (Trivy YAML ignore file):
+#   vulnerabilities:
+#     - id: CVE-2026-12345
+#       paths: ["usr/lib/libexample.so"]   # optional, narrows the entry
+#       statement: Not reachable: the service never parses untrusted archives.
+#       expired_at: 2026-11-19
+vulnerabilities: []

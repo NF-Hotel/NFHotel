@@ -46,7 +46,7 @@ public sealed class StaffAuthorizationTests : IClassFixture<ApiFactory>
         Assert.Equal([ErrorCodes.Api.StaffUnauthorized], body!.Errors);
     }
 
-    /// <summary>Negative: a valid staff token without the token of the web application is still 401 with the service code.</summary>
+    /// <summary>Negative: a valid staff token without the token of the web application is still 401 with the service code, on a route that is not one of the mobile routes (ADR-0015).</summary>
     [Fact]
     public async Task Get_StaffTokenWithoutServiceToken_ReturnsUnauthorizedWithTheServiceCode()
     {
@@ -55,7 +55,7 @@ public sealed class StaffAuthorizationTests : IClassFixture<ApiFactory>
         client.DefaultRequestHeaders.Add(ApiAuthentication.StaffTokenHeader, _factory.IssueStaffToken(StaffRole.Manager));
 
         // Act
-        using var response = await client.GetAsync(Rooms, TestContext.Current.CancellationToken);
+        using var response = await client.GetAsync(Guests, TestContext.Current.CancellationToken);
         var body = await response.Content.ReadFromJsonAsync<ApiResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert

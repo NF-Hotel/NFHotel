@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Proposed | mikemike | S01 | Initial version | [0891cf1] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-131 Go; plan accepted by the user in chat | [0891cf1] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-149 Go; plan accepted by the user in chat | [0891cf1] |
 
 ---
 
@@ -31,7 +31,7 @@ What is found in the code today (ADR-0005, MIL-016, `src/`):
 | There is no audit trail anywhere in the code, and ADR-0005 does not ask for one | Audit of account events is new in this milestone and is decided in a new ADR |
 | The Access Control Matrix says that the Manager owns "staff accounts"; no permission exists for it in `Permissions.cs` | Add `Staff.Manage` (Manager only) and `Staff.ChangeOwnPassword` (every staff role) |
 
-## Decisions to record in ADR-0015
+## Decisions to record in ADR-0017
 
 | # | Decision | Why |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ What is found in the code today (ADR-0005, MIL-016, `src/`):
 
 ## Deliverable
 
-- ADR-0015 recording the decisions above, reviewed.
+- ADR-0017 recording the decisions above, reviewed.
 - Use cases UC-005 (a staff member changes their own password) and UC-006 (a Manager manages staff accounts) with wireframes, domain model and system sequence diagrams; `docs/domain-model.md`, `docs/dictionary.md`, `docs/use-case-diagram.md` and `docs/user-stories.md` updated; UC-004 open issues amended.
 - Domain and Application: the security stamp, the "must change password" flag, change and reset of the password, disable and enable, the last-Manager rule, the password policy, the audit event, and the permissions `Staff.Manage` and `Staff.ChangeOwnPassword` in the role table.
 - Infrastructure and Api: the migration (two columns on the staff table and the audit table), the stamp claim and its check on every staff call, the endpoints below, the throttles, and the `reset-staff-password` command.
@@ -110,7 +110,7 @@ What is found in the code today (ADR-0005, MIL-016, `src/`):
 | # | Task | Summary | Needs its own Use Case/User Story? | Reference |
 | --- | --- | --- | --- | --- |
 | 1 | Amend Business Case and Project Plan | Add the objective, the scope item, the success criterion and the MIL-030 schedule row; review again. | No | |
-| 2 | Record the decisions in ADR-0015 | The eight decisions above, with the options considered (a one-time reset link by mail, no revocation and a shorter token, a revocation list instead of a stamp, a TOTP second factor). | No | |
+| 2 | Record the decisions in ADR-0017 | The eight decisions above, with the options considered (a one-time reset link by mail, no revocation and a shorter token, a revocation list instead of a stamp, a TOTP second factor). | No | |
 | 3 | Change own password | A staff member changes their password with the current one and stays signed in on this device; includes the forced change after a reset and for the first Manager; wireframe kept with the use case. | Yes | UC-005 |
 | 4 | Manage staff accounts | A Manager lists, creates, disables, enables and resets accounts and reads the audit trail; wireframes kept with the use case. | Yes | UC-006 |
 | 5 | Domain, Application and permissions | Security stamp, must-change flag, change and reset, last-Manager rule, password policy and block list, audit event port, the two permissions in the role table; unit tests for every rule and for every role and operation. | No | |

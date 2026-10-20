@@ -14,7 +14,7 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-012 Go | [469ff7a] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.06 to US-001.08, the hotel staff stories (MIL-007) | [a29c54a] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.09, the staff sign-in story (MIL-016) | [1593b34] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.10 and US-001.11, the password and account stories (MIL-030) (accepted after RC-135 Go) | [0891cf1] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.10 and US-001.11, the password and account stories (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
 
 ---
 

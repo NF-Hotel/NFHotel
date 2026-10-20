@@ -3,7 +3,7 @@ using NFHotel.Domain.Entities;
 namespace NFHotel.Domain.Repositories;
 
 /// <summary>
-/// Storage of the audit trail of the staff accounts (ADR-0015). It can add and read; there is no update and no delete.
+/// Storage of the audit trail of the staff accounts (ADR-0017). It can add and read; there is no update and no delete.
 /// </summary>
 public interface IStaffAuditRepository
 {

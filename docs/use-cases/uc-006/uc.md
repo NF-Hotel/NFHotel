@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Proposed | mikemike | S01 | Initial version (MIL-030) | [ea8a47f] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-136 Go | [ea8a47f] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-154 Go | [ea8a47f] |
 
 ---
 
@@ -62,9 +62,9 @@
 | Step | Rule |
 | --- | --- |
 | 3, 7 | A temporary password follows the rules of UC-005 and is shown once, to the Manager who typed it; it is never stored in clear text or written to a log |
-| 5 | A Manager cannot disable their own account, and the last active Manager cannot be disabled (ADR-0015) |
-| 6, 8 | Sessions end because the account's security stamp rises; the API checks the stamp and the active flag on every staff call (ADR-0015) |
-| 9 | The audit trail is append-only and holds no password, hash or token; only a Manager reads it (ADR-0015) |
+| 5 | A Manager cannot disable their own account, and the last active Manager cannot be disabled (ADR-0017) |
+| 6, 8 | Sessions end because the account's security stamp rises; the API checks the stamp and the active flag on every staff call (ADR-0017) |
+| 9 | The audit trail is append-only and holds no password, hash or token; only a Manager reads it (ADR-0017) |
 | all | The Manager owns "staff accounts" in the Access Control Matrix; no other role holds the permission |
 
 ### Open Issues

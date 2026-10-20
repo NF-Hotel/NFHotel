@@ -1,7 +1,7 @@
 namespace NFHotel.Application.UseCases.Staff;
 
 /// <summary>
-/// Passwords that are refused because anyone guessing would try them first (ADR-0015). Only passwords of the
+/// Passwords that are refused because anyone guessing would try them first (ADR-0017). Only passwords of the
 /// minimum length or more are listed, as shorter ones fail the length rule. A password made of one repeated
 /// character is refused too. The list is compared without regard to case.
 /// </summary>

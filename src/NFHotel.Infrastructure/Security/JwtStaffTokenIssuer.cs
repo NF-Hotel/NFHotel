@@ -18,10 +18,10 @@ public sealed class JwtStaffTokenIssuer : IStaffTokenIssuer
     /// <summary>The claim with the user name.</summary>
     public const string NameClaim = "name";
 
-    /// <summary>The claim with the security stamp of the account at the sign-in (ADR-0015).</summary>
+    /// <summary>The claim with the security stamp of the account at the sign-in (ADR-0017).</summary>
     public const string StampClaim = "stamp";
 
-    /// <summary>The claim that is <c>true</c> when the member may do nothing but change the password (ADR-0015).</summary>
+    /// <summary>The claim that is <c>true</c> when the member may do nothing but change the password (ADR-0017).</summary>
     public const string MustChangeClaim = "must_change";
 
     private readonly StaffSecurityOptions _options;

@@ -44,7 +44,7 @@ public static class StaffAuthentication
                 bearer.Events = new JwtBearerEvents
                 {
                     // A valid signature is not enough: the account must still exist, be active and have the stamp that the
-                    // token was issued with, so a password change, a reset or a disable ends the old sessions at once (ADR-0015).
+                    // token was issued with, so a password change, a reset or a disable ends the old sessions at once (ADR-0017).
                     OnTokenValidated = async context =>
                     {
                         var principal = context.Principal;

@@ -37,7 +37,7 @@ public static class E2ESettings
 
     /// <summary>
     /// The password of the test account of a role. An account that had to choose a new password at its first sign-in
-    /// (the first Manager, ADR-0015) answers with the one it chose.
+    /// (the first Manager, ADR-0017) answers with the one it chose.
     /// </summary>
     public static string Password(StaffRole role) =>
         ChosenPasswords.TryGetValue(role, out var chosen) ? chosen : Required($"E2E_{role.ToString().ToUpperInvariant()}_PASSWORD");

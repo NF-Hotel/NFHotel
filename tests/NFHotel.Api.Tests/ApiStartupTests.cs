@@ -33,7 +33,7 @@ public sealed class ApiStartupTests
         Assert.Equal(StaffRole.Manager, Assert.Single(factory.World.Staff.Items).Role);
     }
 
-    /// <summary>Positive: the first Manager must choose a new password unless the setting says otherwise (ADR-0015).</summary>
+    /// <summary>Positive: the first Manager must choose a new password unless the setting says otherwise (ADR-0017).</summary>
     [Theory]
     [InlineData(null, true)]
     [InlineData("true", true)]

@@ -5,7 +5,7 @@ using NFHotel.Infrastructure.Security;
 namespace NFHotel.Api.Security;
 
 /// <summary>
-/// Reads who is calling from the validated staff token and the request (ADR-0015). The address is the one that the
+/// Reads who is calling from the validated staff token and the request (ADR-0017). The address is the one that the
 /// web application forwards in <see cref="ApiAuthentication.ClientAddressHeader"/> (it is authenticated by its service token), or the
 /// address of the connection when there is none.
 /// </summary>

@@ -1,6 +1,6 @@
 namespace NFHotel.Application.Dto.Staff;
 
-/// <summary>One page of the audit trail, newest first (ADR-0015).</summary>
+/// <summary>One page of the audit trail, newest first (ADR-0017).</summary>
 /// <param name="Items">The lines of this page.</param>
 /// <param name="Page">The page number, from 1.</param>
 /// <param name="PageSize">The number of lines on a full page.</param>

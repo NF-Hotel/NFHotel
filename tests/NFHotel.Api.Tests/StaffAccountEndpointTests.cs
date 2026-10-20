@@ -9,7 +9,7 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Api.Tests;
 
 /// <summary>
-/// The staff account endpoints through HTTP (UC-005, UC-006, ADR-0015): the own password, account management by a Manager,
+/// The staff account endpoints through HTTP (UC-005, UC-006, ADR-0017): the own password, account management by a Manager,
 /// the end of old sessions, the forced change and the limits.
 /// </summary>
 public sealed class StaffAccountEndpointTests : IClassFixture<ApiFactory>

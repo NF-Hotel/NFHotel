@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version | [c74d991] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added Staff member, User name, Role, Password and Active (MIL-016) | [1593b34] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Must change password, Security stamp and Audit event (MIL-030) (accepted after RC-135 Go) | [0891cf1] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Must change password, Security stamp and Audit event (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
 
 ---
 

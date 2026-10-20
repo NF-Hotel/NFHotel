@@ -18,7 +18,7 @@ public static class StaffClaims
     /// <summary>The claim that carries the staff token for the API.</summary>
     public const string TokenClaim = "staff_token";
 
-    /// <summary>The claim that is <c>true</c> while the member has to choose a new password first (ADR-0015).</summary>
+    /// <summary>The claim that is <c>true</c> while the member has to choose a new password first (ADR-0017).</summary>
     public const string MustChangeClaim = "must_change_password";
 
     /// <summary>Tells whether the member has to choose a new password before anything else.</summary>

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Proposed | mikemike | S01 | Initial version (MIL-030) | [0891cf1] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-135 Go | [0891cf1] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-153 Go | [0891cf1] |
 
 ---
 
@@ -54,9 +54,9 @@
 
 | Step | Rule |
 | --- | --- |
-| 4 | 12 to 256 characters, no composition rules, not on the block list of the 1 000 most common passwords (ADR-0015) |
-| 4 | The check of the current password takes the same time whatever the answer, and a wrong one counts against the account's own limit (ADR-0015) |
-| 5 | Other sessions end because the account's security stamp rises; the API checks it on every call (ADR-0015) |
+| 4 | 12 to 256 characters, no composition rules, not on the block list of the 1 000 most common passwords (ADR-0017) |
+| 4 | The check of the current password takes the same time whatever the answer, and a wrong one counts against the account's own limit (ADR-0017) |
+| 5 | Other sessions end because the account's security stamp rises; the API checks it on every call (ADR-0017) |
 | 5 | The password, its hash and the tokens are never written to a log or to the audit trail |
 | all | The password travels over TLS only (MIL-017) |
 

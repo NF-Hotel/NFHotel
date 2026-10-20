@@ -155,7 +155,7 @@ public static class DependencyInjection
         services.AddSingleton<IStaffTokenIssuer, JwtStaffTokenIssuer>();
         services.AddSingleton<ILoginThrottle, InMemoryLoginThrottle>();
 
-        // A caller that is not an HTTP request knows nobody; the API replaces this with the one that reads the token (ADR-0015).
+        // A caller that is not an HTTP request knows nobody; the API replaces this with the one that reads the token (ADR-0017).
         services.TryAddScoped<IStaffCallContext, AnonymousStaffCallContext>();
     }
 

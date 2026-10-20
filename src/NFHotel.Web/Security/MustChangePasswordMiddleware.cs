@@ -2,7 +2,7 @@ namespace NFHotel.Web.Security;
 
 /// <summary>
 /// Sends a signed-in member of staff whose account must choose a new password to the change page, for every page request
-/// below <c>/admin</c> except that page, the sign-in and the sign-out (ADR-0015). The API refuses their other calls
+/// below <c>/admin</c> except that page, the sign-in and the sign-out (ADR-0017). The API refuses their other calls
 /// anyway; this keeps them from seeing pages that cannot load.
 /// </summary>
 public static class MustChangePasswordMiddleware

@@ -3,7 +3,7 @@ using NFHotel.Application.Errors;
 namespace NFHotel.Application.UseCases.Staff;
 
 /// <summary>
-/// The one place that decides whether a new staff password is acceptable (ADR-0015): length, not the user name, not
+/// The one place that decides whether a new staff password is acceptable (ADR-0017): length, not the user name, not
 /// the current password, not a common one. There are no composition rules (NIST SP 800-63B).
 /// </summary>
 public static class PasswordPolicy

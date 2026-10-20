@@ -1,7 +1,7 @@
 namespace NFHotel.Application.Ports;
 
 /// <summary>
-/// Who is calling the use case and from where (ADR-0015). The API fills it from the validated staff token and the
+/// Who is calling the use case and from where (ADR-0017). The API fills it from the validated staff token and the
 /// request; a command on the server has no caller. It is read for the audit trail and for rules about the caller's
 /// own account.
 /// </summary>

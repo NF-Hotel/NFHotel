@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       # The tests of the check come first, so that a broken check cannot pass the code.
       - name: Test the language check
@@ -52,11 +52,11 @@ jobs:
     steps:
       # Fetch the code of the project
       - name: Check out the code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       # Use the SDK version of the project
       - name: Install .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
         with:
           global-json-file: global.json
 
@@ -97,7 +97,7 @@ jobs:
       # Keep the reports also when tests fail
       - name: Keep test results and coverage
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: test-results-${{ github.run_id }}-${{ github.run_attempt }}
           path: TestResults/
@@ -111,10 +111,10 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       - name: Install .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
         with:
           global-json-file: global.json
 
@@ -134,7 +134,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       # Check that the Dockerfile of the project can package the web application.
       # The image is built only locally on the runner; it is not published.

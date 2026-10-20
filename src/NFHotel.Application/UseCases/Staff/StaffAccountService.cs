@@ -8,7 +8,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.UseCases.Staff;
 
-/// <summary>Creates and manages staff accounts and reads the audit trail (ADR-0005, ADR-0015).</summary>
+/// <summary>Creates and manages staff accounts and reads the audit trail (ADR-0005, ADR-0017).</summary>
 public sealed class StaffAccountService : IStaffAccountService, IStaffAdminService
 {
     /// <summary>The shortest password that is accepted.</summary>

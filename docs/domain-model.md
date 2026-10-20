@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version | [ec58105] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the concepts Staff member and Role from DM-005 (MIL-016) | [1593b34] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Audit event and two attributes of Staff member (MIL-030) (accepted after RC-135 Go) | [0891cf1] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Audit event and two attributes of Staff member (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
 
 ---
 

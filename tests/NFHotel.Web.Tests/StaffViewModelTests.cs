@@ -13,7 +13,7 @@ using NSubstitute;
 
 namespace NFHotel.Web.Tests;
 
-/// <summary>The presentation logic of the change-password, staff and audit pages, and the must-change claim (UC-005, UC-006, ADR-0015).</summary>
+/// <summary>The presentation logic of the change-password, staff and audit pages, and the must-change claim (UC-005, UC-006, ADR-0017).</summary>
 public sealed class StaffViewModelTests
 {
     private static readonly DateTimeOffset Later = new(2100, 1, 1, 0, 0, 0, TimeSpan.Zero);

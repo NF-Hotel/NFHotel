@@ -1,0 +1,9 @@
+extends: default
+rules:
+  line-length:
+    max: 100
+    # An image pinned by tag and digest is one long word that cannot be broken.
+    allow-non-breakable-inline-mappings: true
+  document-start: disable
+  truthy:
+    check-keys: false

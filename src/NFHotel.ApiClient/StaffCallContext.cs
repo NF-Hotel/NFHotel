@@ -11,7 +11,7 @@ public sealed class StaffCallContext
     public string? Token { get; set; }
 
     /// <summary>
-    /// The address of the browser, passed on to the API in <c>X-Forwarded-For</c> for the audit trail (ADR-0015), or
+    /// The address of the browser, passed on to the API in <c>X-Forwarded-For</c> for the audit trail (ADR-0017), or
     /// <c>null</c> when it is unknown. It is only as trustworthy as the proxy that the browser came through.
     /// </summary>
     public string? ClientAddress { get; set; }

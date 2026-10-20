@@ -3,7 +3,7 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Domain.Entities;
 
 /// <summary>
-/// One record of the audit trail of the staff accounts (ADR-0015): who did what to whom, when, and with what result.
+/// One record of the audit trail of the staff accounts (ADR-0017): who did what to whom, when, and with what result.
 /// It is written once and never changed or deleted. It never holds a password, a hash, a token or a stamp.
 /// </summary>
 public sealed class StaffAuditEvent : Entity<int>

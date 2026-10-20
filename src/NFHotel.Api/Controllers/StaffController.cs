@@ -9,7 +9,7 @@ using NFHotel.Application.UseCases.Staff;
 namespace NFHotel.Api.Controllers;
 
 /// <summary>
-/// The staff accounts over HTTP (ADR-0015): the change of the own password for every role, and account management and the
+/// The staff accounts over HTTP (ADR-0017): the change of the own password for every role, and account management and the
 /// audit trail for a Manager. The writes of a Manager are limited per account by the policy <see cref="WriteLimitPolicy"/>.
 /// </summary>
 [ApiController]

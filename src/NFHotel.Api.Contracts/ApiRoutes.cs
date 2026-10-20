@@ -54,7 +54,7 @@ public static class ApiRoutes
     /// <summary>The sign-in below <see cref="Auth"/>.</summary>
     public const string Login = "login";
 
-    /// <summary>The route prefix of the staff accounts (ADR-0015).</summary>
+    /// <summary>The route prefix of the staff accounts (ADR-0017).</summary>
     public const string Staff = "api/staff";
 
     /// <summary>The change of the own password below <see cref="Staff"/>.</summary>

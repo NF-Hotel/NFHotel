@@ -185,34 +185,34 @@ public static class ErrorCodes
         /// <summary>The user name exists already.</summary>
         public const string UserNameTaken = "staff.user_name_taken";
 
-        /// <summary>The current password given for a password change is wrong (ADR-0015).</summary>
+        /// <summary>The current password given for a password change is wrong (ADR-0017).</summary>
         public const string CurrentPasswordInvalid = "staff.current_password_invalid";
 
-        /// <summary>The new password is the same as the user name, in any case (ADR-0015).</summary>
+        /// <summary>The new password is the same as the user name, in any case (ADR-0017).</summary>
         public const string PasswordSameAsUserName = "staff.password_same_as_user_name";
 
-        /// <summary>The new password is the same as the current one (ADR-0015).</summary>
+        /// <summary>The new password is the same as the current one (ADR-0017).</summary>
         public const string PasswordSameAsCurrent = "staff.password_same_as_current";
 
-        /// <summary>The new password is on the list of common passwords or is one repeated character (ADR-0015).</summary>
+        /// <summary>The new password is on the list of common passwords or is one repeated character (ADR-0017).</summary>
         public const string PasswordTooCommon = "staff.password_too_common";
 
         /// <summary>The account does not exist.</summary>
         public const string NotFound = "staff.not_found";
 
-        /// <summary>The account is the last active Manager and cannot be disabled (ADR-0015).</summary>
+        /// <summary>The account is the last active Manager and cannot be disabled (ADR-0017).</summary>
         public const string LastManager = "staff.last_manager";
 
-        /// <summary>A Manager cannot disable their own account (ADR-0015).</summary>
+        /// <summary>A Manager cannot disable their own account (ADR-0017).</summary>
         public const string CannotDisableSelf = "staff.cannot_disable_self";
 
-        /// <summary>A Manager cannot reset their own password; they change it with the current one (ADR-0015).</summary>
+        /// <summary>A Manager cannot reset their own password; they change it with the current one (ADR-0017).</summary>
         public const string CannotResetSelf = "staff.cannot_reset_self";
 
-        /// <summary>The account must choose a new password before anything else can be done (ADR-0015).</summary>
+        /// <summary>The account must choose a new password before anything else can be done (ADR-0017).</summary>
         public const string PasswordChangeRequired = "staff.password_change_required";
 
-        /// <summary>The Manager endpoints were called too often by one account (ADR-0015).</summary>
+        /// <summary>The Manager endpoints were called too often by one account (ADR-0017).</summary>
         public const string TooManyRequests = "staff.too_many_requests";
 
         /// <summary>The user name is empty.</summary>

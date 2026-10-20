@@ -70,6 +70,24 @@ public sealed class EndpointProtectionTests
         Assert.True(both.Length == 0, $"Public and protected at the same time: {string.Join(", ", both)}");
     }
 
+    /// <summary>
+    /// The rooms routes are reached with a staff token alone (ADR-0015) and the middleware only checks that the header is
+    /// there; the permission of each action validates the token. So no rooms action may be public.
+    /// </summary>
+    [Fact]
+    public void RoomsController_EveryAction_RequiresAPermission()
+    {
+        // Arrange
+        var without = ActionsOfTheApi()
+            .Where(action => action.DeclaringType == typeof(NFHotel.Api.Controllers.RoomsController))
+            .Where(action => action.GetCustomAttribute<RequiresPermissionAttribute>() is null)
+            .Select(Describe)
+            .ToArray();
+
+        // Act and assert
+        Assert.True(without.Length == 0, $"Rooms actions without a permission: {string.Join(", ", without)}");
+    }
+
     #endregion
 
     #region Helpers

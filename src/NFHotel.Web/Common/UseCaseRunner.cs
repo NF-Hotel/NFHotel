@@ -25,7 +25,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     /// <param name="scopeFactory">The factory that makes a fresh DI scope per call.</param>
     /// <param name="logger">Logger for the technical errors the user never gets to see.</param>
     /// <param name="tokenSource">Gives the staff token of the signed-in user, if any.</param>
-    /// <param name="httpContext">Gives the request of a static page, whose address goes to the API for the audit trail (ADR-0015).</param>
+    /// <param name="httpContext">Gives the request of a static page, whose address goes to the API for the audit trail (ADR-0017).</param>
     public UseCaseRunner(
         IServiceScopeFactory scopeFactory,
         ILogger<UseCaseRunner<TService>> logger,

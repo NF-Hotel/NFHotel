@@ -10,7 +10,7 @@ using NSubstitute;
 
 namespace NFHotel.Application.Tests.Services;
 
-/// <summary>What a Manager does with staff accounts and the audit trail (UC-006, ADR-0015).</summary>
+/// <summary>What a Manager does with staff accounts and the audit trail (UC-006, ADR-0017).</summary>
 public sealed class StaffAdminServiceTests
 {
     private const string Temporary = "temporary passphrase 7";

@@ -2,7 +2,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.Dto.Staff;
 
-/// <summary>An account as the staff page lists it; it never holds the hash (ADR-0015).</summary>
+/// <summary>An account as the staff page lists it; it never holds the hash (ADR-0017).</summary>
 /// <param name="Id">The key.</param>
 /// <param name="UserName">The user name.</param>
 /// <param name="Role">The role.</param>
