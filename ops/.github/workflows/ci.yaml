@@ -1,0 +1,188 @@
+# CI of NF-Hotel/DevOps (MIL-025 task 4): linters, the script tests, the Proxmox tests
+# without a server (MIL-025 task 7), a cross-repository build of the NF Hotel images from
+# an NF-Hotel/NFHotel checkout through the release-images action, without pushing, and
+# the throwaway end-to-end stack of MIL-027 (NFHotel), started from that checkout and
+# checked from its own network.
+#
+# Triggers: pull requests to main, pushes to main, and by hand (with the NFHotel ref to
+#   build).
+# Secrets: none. NFHotel is public and is read without a token; nothing is pushed, and
+#   nothing outside this repository changes.
+# Verified with actionlint 1.7.7 (tests/lint.sh).
+name: DevOps CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      nfhotel-ref:
+        description: The NF-Hotel/NFHotel branch, tag or commit to build
+        required: false
+        type: string
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NFHOTEL_REF: ${{ inputs.nfhotel-ref || 'main' }}
+
+jobs:
+  lint:
+    name: Linters
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run actionlint, shellcheck, shfmt and yamllint
+        run: bash tests/lint.sh
+
+  script-tests:
+    name: Script tests (${{ matrix.test }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - test-deploy-release.sh
+          - test-cd-steps.sh
+          - test-vm-setup.sh
+          - test-scan-gate.sh
+          - test-dast-rules.sh
+          - test-deploy-services-env.sh
+          - test-resolve-model-name.sh
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run the test in Debian 12
+        env:
+          TEST: ${{ matrix.test }}
+        run: docker run --rm -v "$PWD:/src:ro" debian:12-slim bash "/src/tests/$TEST"
+
+  nginx:
+    name: nginx routes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test the routes with and without the optional API route
+        run: bash tests/test-nginx.sh
+
+  proxmox-tests:
+    name: Proxmox tests (live tests skip)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
+        with:
+          global-json-file: tests/NFHotel.Proxmox.Tests/global.json
+      # No PVE_HOST here, so the tests that need the real Proxmox VE skip; the settings,
+      # the read-only handler and the client run. scripts/run-proxmox-tests.sh runs all
+      # of them against a throwaway Proxmox VE, which needs /dev/kvm.
+      - name: Run the tests
+        working-directory: tests/NFHotel.Proxmox.Tests
+        run: dotnet test --solution NFHotel.Proxmox.Tests.sln
+
+  release-build:
+    name: Cross-repository release build (no push)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out DevOps
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out NF-Hotel/NFHotel
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: NF-Hotel/NFHotel
+          ref: ${{ env.NFHOTEL_REF }}
+          path: nfhotel
+          persist-credentials: false
+      - name: Read the NFHotel commit
+        id: app
+        run: echo "sha=$(git -C nfhotel rev-parse HEAD)" >>"$GITHUB_OUTPUT"
+      - name: Build the images through the release-images action
+        id: release
+        uses: ./.github/actions/release-images
+        with:
+          app-path: nfhotel
+          app-sha: ${{ steps.app.outputs.sha }}
+          push: "false"
+          devops-sha: ${{ github.sha }}
+      - name: Check the images and their labels
+        env:
+          APP_SHA: ${{ steps.app.outputs.sha }}
+        run: bash tests/check-release-build.sh "$APP_SHA"
+
+  e2e-stack:
+    name: End-to-end stack (MIL-027)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out DevOps
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out NF-Hotel/NFHotel
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: NF-Hotel/NFHotel
+          ref: ${{ env.NFHOTEL_REF }}
+          path: nfhotel
+          persist-credentials: false
+      - name: Start the throwaway stack
+        run: bash scripts/e2e-stack.sh up --app-dir nfhotel --out "$RUNNER_TEMP/e2e-stack"
+      - name: Check the stack from its own network
+        run: bash tests/check-e2e-stack.sh "$RUNNER_TEMP/e2e-stack/stack.env"
+      - name: Remove the stack
+        if: always()
+        run: bash scripts/e2e-stack.sh down
+
+  database:
+    name: PostgreSQL preparation (real migrations)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out DevOps
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out NF-Hotel/NFHotel
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: NF-Hotel/NFHotel
+          ref: ${{ env.NFHOTEL_REF }}
+          path: nfhotel
+          persist-credentials: false
+      - name: Install .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
+        with:
+          global-json-file: nfhotel/global.json
+      - name: Install age
+        run: sudo apt-get install -y --no-install-recommends age
+      - name: Prepare the migrations and the API image
+        run: bash tests/prepare-database-test.sh nfhotel tests/output/database
+      - name: Test roles, network, migrator, API, backup and restore
+        run: bash tests/test-database.sh tests/output/database/migrations.sql nfhotel-api:test

@@ -1,0 +1,55 @@
+# Run the end-to-end tests of NFHotel in a browser against a throwaway stack (MIL-027
+# tasks 1 to 5 of NFHotel, ADR-0012). Called by an NFHotel workflow, pinned by full commit
+# SHA. The stack (nginx with a self-signed certificate, web, API, PostgreSQL) is built
+# from the NFHotel checkout and runs on its own Docker networks with no host port; the
+# tests run in the Playwright image on that network. Nothing outside the runner changes;
+# the stack is removed even when a step fails. Needs no secret and no permission beyond
+# contents: read. The results (TRX, a trace per test, a screenshot per failure) are
+# uploaded as the artifact e2e-results. The logic is in scripts/ of this repository.
+name: NF Hotel end-to-end tests
+description: Start the throwaway NF Hotel stack and run the end-to-end tests against it
+
+inputs:
+  app-path:
+    description: Path of the NF-Hotel/NFHotel checkout in the workspace
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install the .NET SDK of the checkout
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
+      with:
+        global-json-file: ${{ inputs.app-path }}/global.json
+
+    - name: Start the stack
+      shell: bash
+      env:
+        APP_PATH: ${{ inputs.app-path }}
+        STACK_DIR: ${{ runner.temp }}/e2e-stack
+      run: >-
+        bash "$GITHUB_ACTION_PATH/../../../scripts/e2e-stack.sh" up
+        --app-dir "$APP_PATH" --out "$STACK_DIR"
+
+    - name: Run the end-to-end tests
+      shell: bash
+      env:
+        APP_PATH: ${{ inputs.app-path }}
+        STACK_DIR: ${{ runner.temp }}/e2e-stack
+      run: >-
+        bash "$GITHUB_ACTION_PATH/../../../scripts/run-e2e-tests.sh" --app-dir "$APP_PATH"
+        --stack-env "$STACK_DIR/stack.env" --results e2e-results
+
+    - name: Upload the results
+      if: always()
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+      with:
+        name: e2e-results
+        path: e2e-results/
+        if-no-files-found: ignore
+        retention-days: 14
+
+    - name: Remove the stack
+      if: always()
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/../../../scripts/e2e-stack.sh" down

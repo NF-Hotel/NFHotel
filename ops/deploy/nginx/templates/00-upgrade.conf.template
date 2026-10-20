@@ -1,0 +1,6 @@
+# Rendered by the nginx image at start. Defines $connection_upgrade once for the
+# whole proxy: WebSocket upgrade when the client asks for it, close otherwise.
+map $http_upgrade $connection_upgrade {
+  default upgrade;
+  ''      close;
+}

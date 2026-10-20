@@ -1,0 +1,110 @@
+# Deploy a release to the NF Hotel VM (ADR-0007, ADR-0012 of NFHotel, MIL-025). Called by
+# cd.yaml of NFHotel, pinned by full commit SHA, in a job that runs in the environment
+# production, so the approval comes before any credential, and that holds
+# id-token: write for Tailscale, and attestations: read and packages: read for the check
+# of the attestations (MIL-022 task 3). With apply: 'true' it changes the VM: it joins the tailnet
+# as tag:ci and runs the deploy command over Tailscale SSH. Otherwise it only checks the
+# release and writes the summary (a dry run). The logic is in scripts/cd-steps.sh of this
+# repository, at the same commit.
+name: NF Hotel deploy release
+description: Check a release of NFHotel and deploy it to the VM over Tailscale
+
+inputs:
+  release-run-id:
+    description: Run ID of the NF Hotel Release run of NF-Hotel/NFHotel to deploy
+    required: true
+  apply:
+    description: "'true' deploys; anything else is a dry run"
+    required: false
+    default: "false"
+  vm-host:
+    description: The tailnet name of the VM
+    required: false
+    default: ""
+  ts-oidc-client-id:
+    description: Client ID of the Tailscale trust credential (workload identity federation)
+    required: false
+    default: ""
+  ts-oidc-audience:
+    description: Audience of the Tailscale trust credential
+    required: false
+    default: ""
+  github-token:
+    description: The job token, to read the release run, its artifact and the attestations
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve the DevOps commit
+      id: devops
+      shell: bash
+      env:
+        ACTION_REF: ${{ github.action_ref }}
+      run: bash "$GITHUB_ACTION_PATH/../../../scripts/action-ref.sh"
+
+    - name: Check the release run
+      id: run
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        RUN_ID: ${{ inputs.release-run-id }}
+      run: bash "$GITHUB_ACTION_PATH/../../../scripts/cd-steps.sh" check-run
+
+    - name: Download the release manifest
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
+      with:
+        name: release-manifest
+        run-id: ${{ steps.run.outputs.id }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Read the release manifest
+      id: release
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/../../../scripts/cd-steps.sh" read-manifest
+
+    # Before any credential for the VM: a digest without a valid build provenance and SBOM
+    # attestation of the release workflow is refused (MIL-022 task 3), in a dry run too.
+    - name: Verify the attestations of the images
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        WEB: ${{ steps.release.outputs.nfhotel_web }}
+        API: ${{ steps.release.outputs.nfhotel_api }}
+        ANALYSIS: ${{ steps.release.outputs.market_analysis }}
+        BENCHMARK: ${{ steps.release.outputs.benchmark }}
+      run: bash "$GITHUB_ACTION_PATH/../../../scripts/cd-steps.sh" verify
+
+    - name: Join the tailnet
+      if: ${{ inputs.apply == 'true' }}
+      uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd  # v4.2.0
+      with:
+        oauth-client-id: ${{ inputs.ts-oidc-client-id }}
+        audience: ${{ inputs.ts-oidc-audience }}
+        tags: tag:ci
+        version: 1.102.4
+
+    - name: Deploy on the VM
+      id: deploy
+      if: ${{ inputs.apply == 'true' }}
+      shell: bash
+      env:
+        VM_HOST: ${{ inputs.vm-host }}
+        SHA: ${{ steps.release.outputs.sha }}
+        DEVOPS_SHA: ${{ steps.release.outputs.devops_sha }}
+        WEB: ${{ steps.release.outputs.nfhotel_web }}
+        API: ${{ steps.release.outputs.nfhotel_api }}
+        ANALYSIS: ${{ steps.release.outputs.market_analysis }}
+        BENCHMARK: ${{ steps.release.outputs.benchmark }}
+        MIGRATIONS: ${{ steps.release.outputs.migrations }}
+      run: bash "$GITHUB_ACTION_PATH/../../../scripts/cd-steps.sh" deploy
+
+    - name: Write the deployment summary
+      if: ${{ always() }}
+      shell: bash
+      env:
+        RUN_ID: ${{ steps.run.outputs.id }}
+        SHA: ${{ steps.release.outputs.sha }}
+        DEVOPS_SHA: ${{ steps.release.outputs.devops_sha }}
+        OUTCOME: ${{ inputs.apply == 'true' && steps.deploy.outcome || 'dry run' }}
+      run: bash "$GITHUB_ACTION_PATH/../../../scripts/cd-steps.sh" summary

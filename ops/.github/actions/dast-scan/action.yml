@@ -1,0 +1,91 @@
+# Scan the throwaway NF Hotel stack with OWASP ZAP (MIL-027 tasks 6 and 7 of NFHotel,
+# ADR-0012). Called by an NFHotel workflow, pinned by full commit SHA. The stack is the
+# one of the e2e-tests action, built from the NFHotel checkout; ZAP attacks only
+# https://nginx on the stack's own Docker network, never the VM, the tailnet or a public
+# host. mode 'baseline' is the passive scan signed out and signed in (pull requests);
+# 'full' is the active scan signed in (the weekly run). Any High alert whose rule is not
+# IGNORE in the rules file fails the step. The HTML, JSON and SARIF reports are uploaded
+# as the artifact dast-<mode>; with upload-sarif: 'true' the SARIF also goes to code
+# scanning, which needs security-events: write in the calling job. The stack is removed
+# even when a step fails. The logic is in scripts/ of this repository.
+name: NF Hotel DAST scan
+description: Start the throwaway NF Hotel stack and scan it with OWASP ZAP
+
+inputs:
+  app-path:
+    description: Path of the NF-Hotel/NFHotel checkout in the workspace
+    required: true
+  mode:
+    description: "'baseline' (passive, signed out and signed in) or 'full' (active, signed in)"
+    required: false
+    default: baseline
+  rules:
+    description: The ZAP rules file, relative to the workspace
+    required: true
+  upload-sarif:
+    description: "'true' uploads the SARIF reports to code scanning (security-events: write)"
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Start the stack
+      shell: bash
+      env:
+        APP_PATH: ${{ inputs.app-path }}
+        STACK_DIR: ${{ runner.temp }}/e2e-stack
+      run: >-
+        bash "$GITHUB_ACTION_PATH/../../../scripts/e2e-stack.sh" up
+        --app-dir "$APP_PATH" --out "$STACK_DIR"
+
+    - name: Scan with ZAP
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        RULES: ${{ inputs.rules }}
+        STACK_DIR: ${{ runner.temp }}/e2e-stack
+      run: >-
+        bash "$GITHUB_ACTION_PATH/../../../scripts/dast-scan.sh" "$MODE"
+        --stack-env "$STACK_DIR/stack.env" --rules "$RULES" --results dast-results
+
+    - name: Upload the reports
+      if: always()
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+      with:
+        name: dast-${{ inputs.mode }}
+        path: dast-results/
+        if-no-files-found: ignore
+        retention-days: 30
+
+    # One upload per report, each its own category. Also after a failed gate, so the
+    # alerts are visible.
+    - name: Upload the signed-out baseline to code scanning
+      if: >-
+        always() && inputs.upload-sarif == 'true' &&
+        hashFiles('dast-results/baseline-public.sarif') != ''
+      uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2  # v4.38.2
+      with:
+        sarif_file: dast-results/baseline-public.sarif
+        category: zap-baseline-public
+    - name: Upload the signed-in baseline to code scanning
+      if: >-
+        always() && inputs.upload-sarif == 'true' &&
+        hashFiles('dast-results/baseline-admin.sarif') != ''
+      uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2  # v4.38.2
+      with:
+        sarif_file: dast-results/baseline-admin.sarif
+        category: zap-baseline-admin
+    - name: Upload the full scan to code scanning
+      if: >-
+        always() && inputs.upload-sarif == 'true' &&
+        hashFiles('dast-results/full.sarif') != ''
+      uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2  # v4.38.2
+      with:
+        sarif_file: dast-results/full.sarif
+        category: zap-full
+
+    - name: Remove the stack
+      if: always()
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/../../../scripts/e2e-stack.sh" down

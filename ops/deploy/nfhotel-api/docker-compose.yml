@@ -1,0 +1,63 @@
+# NFHotel database API (MIL-015, ADR-0004): the only service that talks to PostgreSQL and
+# holds the passport key. Read by Docker Compose. Settings live in nfhotel-api.env
+# (git-ignored); copy nfhotel-api.env.example to nfhotel-api.env first. Start with:
+#   docker compose --env-file nfhotel-api.env up -d --build
+# The image comes from Dockerfile.api in the repository root. No host port is published
+# and the proxy has no route to it: the web service reaches it by the name nfhotel-api on
+# the internal network nfhotel-api (create it once: docker network create --internal nfhotel-api).
+# It joins nfhotel-db with PostgreSQL; the web service does not.
+name: nfhotel-api
+
+services:
+  nfhotel-api:
+    image: ${NFHOTEL_API_IMAGE:-nfhotel-api:local}
+    build:
+      # The application source is an NF-Hotel/NFHotel checkout (ADR-0012): beside this
+      # repository by default, or the folder in NFHOTEL_APP_DIR (the release action sets it).
+      context: ${NFHOTEL_APP_DIR:-../../../NFHotel}
+      dockerfile: Dockerfile.api
+      labels:
+        org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
+        org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
+    restart: unless-stopped
+    env_file: ${NFHOTEL_API_ENV_FILE:-nfhotel-api.env}
+    # The connection string is built here from postgres.env, so the database
+    # password lives in one file only. scripts/deploy-services.sh exports the
+    # POSTGRES_* values; when running compose by hand, export them first.
+    # Use no ; or quote in the password (openssl rand -hex 24 is safe).
+    # Once the roles of ADR-0011 exist, scripts/deploy-services.sh sets
+    # NFHOTEL_API_CONNECTION_STRING to the login of nfhotel_app and turns the migrations at
+    # start off, because the CD applies them (MIL-022 task 6). Without it, the superuser of
+    # postgres.env is used and the API migrates at start, as before.
+    environment:
+      ConnectionStrings__HotelDatabase: "${NFHOTEL_API_CONNECTION_STRING:-Host=postgres;Port=5432;\
+        Database=${POSTGRES_DB:-nfhotel};\
+        Username=${POSTGRES_USER:-nfhotel};\
+        Password=${POSTGRES_PASSWORD:?set it, it comes from deploy/postgres/postgres.env}}"
+      Database__MigrateOnStart: "${NFHOTEL_API_MIGRATE_ON_START:-true}"
+    expose:
+      - "8080"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080
+          && printf "GET /health HTTP/1.0\r\n\r\n" >&3
+          && head -n 1 <&3 | grep -q 200'
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+    networks:
+      - api
+      - db
+
+networks:
+  # Internal network shared with the web service only (no route out, no host port).
+  api:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
+    external: true
+  # Internal network shared with PostgreSQL only (no route out, no host port).
+  db:
+    name: ${NFHOTEL_DB_NETWORK:-nfhotel-db}
+    external: true
