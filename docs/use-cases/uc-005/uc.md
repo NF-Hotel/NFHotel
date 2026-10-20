@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Proposed | mikemike | S01 | Initial version (MIL-030) | pending |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-135 Go | pending |
+| 2026-10-20 | Proposed | mikemike | S01 | Initial version (MIL-030) | [0891cf1] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-135 Go | [0891cf1] |
 
 ---
 
@@ -72,3 +72,4 @@
 [SA-001]: ../../stakeholder-analysis.md
 [UC-004]: ../uc-004/uc.md
 [ADR-0005]: ../../adr/adr-0005-backoffice-login.md
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf

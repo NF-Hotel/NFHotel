@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Proposed | mikemike | AI as stand-in for S01 | Initial version | pending |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-134 Go | pending |
+| 2026-10-20 | Proposed | mikemike | AI as stand-in for S01 | Initial version | [ea8a47f] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-134 Go | [ea8a47f] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -76,3 +76,4 @@ Quality attributes: security improves (revocation, accountability, recovery); us
 [ADR-0005]: ./adr-0005-backoffice-login.md
 [UC-005]: ../use-cases/uc-005/uc.md
 [UC-006]: ../use-cases/uc-006/uc.md
+[ea8a47f]: https://github.com/NF-Hotel/NFHotel/commit/ea8a47fc392a25ce295dae854d1727f8c8934a95

@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [ea8a47f] |
 
 ---
 
@@ -71,3 +71,4 @@ Go-with-conditions. Every Mandatory criterion passes. The conditions are the end
 [MIL-030]: ../../milestones/mil-030-staff-accounts-and-password.md
 [ADR-0015]: ../../adr/adr-0015-staff-passwords-and-audit.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[ea8a47f]: https://github.com/NF-Hotel/NFHotel/commit/ea8a47fc392a25ce295dae854d1727f8c8934a95

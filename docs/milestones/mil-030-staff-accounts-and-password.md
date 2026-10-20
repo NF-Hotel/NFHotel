@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Proposed | mikemike | S01 | Initial version | pending |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-131 Go; plan accepted by the user in chat | pending |
+| 2026-10-20 | Proposed | mikemike | S01 | Initial version | [0891cf1] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-131 Go; plan accepted by the user in chat | [0891cf1] |
 
 ---
 
@@ -129,3 +129,4 @@ What is found in the code today (ADR-0005, MIL-016, `src/`):
 [UC-006]: ../use-cases/uc-006/uc.md
 [ADR-0004]: ../adr/adr-0004-database-api.md
 [ADR-0005]: ../adr/adr-0005-backoffice-login.md
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf

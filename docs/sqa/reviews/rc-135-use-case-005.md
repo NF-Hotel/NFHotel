@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [0891cf1] |
 
 ---
 
@@ -69,3 +69,4 @@ Go: every Mandatory criterion passes. This record also covers the project-level 
 [UC-005]: ../../use-cases/uc-005/uc.md
 [QC-UC-001]: ../../../framework/qc/artifacts/qc-use-case.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf

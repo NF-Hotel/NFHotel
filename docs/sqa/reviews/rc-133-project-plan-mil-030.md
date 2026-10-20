@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [0891cf1] |
 
 ---
 
@@ -63,3 +63,4 @@ Go: every Mandatory criterion passes. Delta review of the amendment: one phase r
 [PP-001]: ../../project-plan.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf

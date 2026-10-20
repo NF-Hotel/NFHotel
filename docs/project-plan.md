@@ -23,7 +23,7 @@
 | 2026-10-18 | Deprecated | Claude (AI) | AI at the request of S01 | Added MIL-018 (guest login) | [6b606da] |
 | 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Added MIL-019 and MIL-020 (benchmark results and start, with the notebook-benchmark repository) | [7fbeba1] |
 | 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Added MIL-021 to MIL-023 (secure CI/CD in three phases, DSA-001); accepted after RC-088 Go | [f4649ad] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added MIL-030 (staff accounts and password change) (accepted after RC-133 Go) | pending |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added MIL-030 (staff accounts and password change) (accepted after RC-133 Go) | [0891cf1] |
 
 ---
 
@@ -253,3 +253,4 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [6b606da]: https://github.com/NF-Hotel/NFHotel/commit/6b606da4c8584d71b7c2f754d71e14ceb6aca871
 [7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0
 [f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf

@@ -14,7 +14,7 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-012 Go | [469ff7a] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.06 to US-001.08, the hotel staff stories (MIL-007) | [a29c54a] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.09, the staff sign-in story (MIL-016) | [1593b34] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.10 and US-001.11, the password and account stories (MIL-030) (accepted after RC-135 Go) | pending |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.10 and US-001.11, the password and account stories (MIL-030) (accepted after RC-135 Go) | [0891cf1] |
 
 ---
 
@@ -229,3 +229,4 @@ for US-001.02.
 [469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa
 [a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d
 [1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf

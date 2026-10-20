@@ -23,7 +23,7 @@
 | 2026-10-18 | Deprecated | Claude (AI) | AI at the request of S01 | Amended: objective 21, A guest signs in with the booking number and the email and reaches only their own booking (MIL-018) | [6b606da] |
 | 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Amended: objective 22, an administrator starts a benchmark run in the back office and reads its stored result later (MIL-019, MIL-020) | [7fbeba1] |
 | 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Amended: objectives 23 to 25, a secure CI/CD pipeline in three phases (MIL-021 to MIL-023, DSA-001); accepted after RC-088 Go | [f4649ad] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Amended: objective 26, staff accounts and passwords (MIL-030), and success criterion 29 (accepted after RC-132 Go) | pending |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Amended: objective 26, staff accounts and passwords (MIL-030), and success criterion 29 (accepted after RC-132 Go) | [0891cf1] |
 
 ---
 
@@ -280,3 +280,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [6b606da]: https://github.com/NF-Hotel/NFHotel/commit/6b606da4c8584d71b7c2f754d71e14ceb6aca871
 [7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0
 [f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf

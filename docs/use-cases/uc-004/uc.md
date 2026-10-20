@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-17 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version (MIL-016) | [1593b34] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Accepted after RC-070 Go | [1593b34] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Open issues closed by UC-005, UC-006 and ADR-0015 (MIL-030) (accepted after RC-136 Go) | pending |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Open issues closed by UC-005, UC-006 and ADR-0015 (MIL-030) (accepted after RC-136 Go) | [0891cf1] |
 
 ---
 
@@ -78,3 +78,4 @@
 [SA-001]: ../../stakeholder-analysis.md
 [ADR-0005]: ../../adr/adr-0005-backoffice-login.md
 [1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf

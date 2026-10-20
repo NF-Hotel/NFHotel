@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Proposed | mikemike | S01 | Initial version (MIL-030) | pending |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-136 Go | pending |
+| 2026-10-20 | Proposed | mikemike | S01 | Initial version (MIL-030) | [ea8a47f] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-136 Go | [ea8a47f] |
 
 ---
 
@@ -80,3 +80,4 @@
 [UC-004]: ../uc-004/uc.md
 [UC-005]: ../uc-005/uc.md
 [ADR-0005]: ../../adr/adr-0005-backoffice-login.md
+[ea8a47f]: https://github.com/NF-Hotel/NFHotel/commit/ea8a47fc392a25ce295dae854d1727f8c8934a95

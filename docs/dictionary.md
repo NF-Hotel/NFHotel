@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version | [c74d991] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added Staff member, User name, Role, Password and Active (MIL-016) | [1593b34] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Must change password, Security stamp and Audit event (MIL-030) (accepted after RC-135 Go) | pending |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Must change password, Security stamp and Audit event (MIL-030) (accepted after RC-135 Go) | [0891cf1] |
 
 ---
 
@@ -71,3 +71,4 @@ English (en), domain it, as set in the registry.
 [SA-001]: ./stakeholder-analysis.md
 [c74d991]: https://github.com/NF-Hotel/NFHotel/commit/c74d991b66d29df8c8cfb8d07848abed38ca386d
 [1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
