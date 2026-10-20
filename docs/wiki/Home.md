@@ -16,7 +16,7 @@ clean-architecture .NET solution. This wiki is written for the people who build 
 
 | What | Where |
 | --- | --- |
-| Source code | `src/` (Domain, Application, Infrastructure, Web, DataAnalysis) |
+| Source code | `src/` (Domain, Application, Infrastructure, Web) |
 | Tests | `tests/` |
 | Container definitions | `deploy/` |
 | Deploy scripts | `scripts/deploy.sh`, `scripts/deploy-services.sh`, `scripts/create-docker-vm.sh` |
