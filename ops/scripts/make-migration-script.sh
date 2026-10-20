@@ -13,7 +13,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=scripts/lib/common.sh
+# shellcheck source=ops/scripts/lib/common.sh
 . "$ROOT/scripts/lib/common.sh"
 # The dotnet-ef tool of the EF Core version of NFHotel; bump them together.
 readonly EF_VERSION=10.0.13

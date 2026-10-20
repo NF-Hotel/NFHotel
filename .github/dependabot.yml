@@ -1,0 +1,70 @@
+# Dependabot version updates for NF-Hotel/NFHotel: the application and its operations in
+# ops/ (ADR-0016, MIL-022 task 4). Packages, base images and actions are pinned (NuGet
+# versions, image digests, action commit SHAs); Dependabot proposes the next pin as a pull
+# request, which runs every required check like any other change. A cooldown keeps a new
+# release out for a week, so a compromised release has time to be found first. Security
+# updates come at once through Dependabot alerts.
+# Not here: the Python packages of the benchmark image. ops/deploy/benchmark/requirements.lock
+# is generated from the pinned commit of its repository and changes with BENCHMARK_REF.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directories:
+      - /
+      - /ops/tests/NFHotel.Proxmox.Tests
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      nuget-minor-and-patch:
+        update-types: ["minor", "patch"]
+    commit-message:
+      prefix: "Packages:"
+
+  - package-ecosystem: docker
+    # The application images, and the benchmark image. Not ops/deploy/market-analysis: that
+    # image is frozen and not built (ADR-0500).
+    directories:
+      - /
+      - /ops/deploy/benchmark
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "Images:"
+
+  - package-ecosystem: docker-compose
+    directories:
+      - /ops/deploy/nginx
+      - /ops/deploy/ollama
+      - /ops/deploy/postgres
+      - /ops/deploy/proxmox
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    ignore:
+      # A new major of PostgreSQL needs a dump and restore (ADR-0008), not a pull.
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: "Images:"
+
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/release-images
+      - /.github/actions/deploy-release
+      - /.github/actions/e2e-tests
+      - /.github/actions/dast-scan
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "Actions:"

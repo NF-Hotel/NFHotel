@@ -42,7 +42,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=scripts/lib/common.sh
+# shellcheck source=ops/scripts/lib/common.sh
 . "$ROOT/scripts/lib/common.sh"
 readonly RELEASE_WORKFLOW="NF Hotel Release"
 readonly IMAGE_NAMES=(nfhotel-web nfhotel-api market-analysis benchmark)

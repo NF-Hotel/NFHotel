@@ -18,9 +18,9 @@ services:
   nfhotel-web:
     image: ${NFHOTEL_WEB_IMAGE:-nfhotel-web:local}
     build:
-      # The application source is an NF-Hotel/NFHotel checkout (ADR-0012): beside this
-      # repository by default, or the folder in NFHOTEL_APP_DIR (the release action sets it).
-      context: ${NFHOTEL_APP_DIR:-../../../NFHotel}
+      # The application source is the root of this repository by default (ADR-0016), or the
+      # NFHotel checkout in NFHOTEL_APP_DIR (the release action and e2e-stack.sh set it).
+      context: ${NFHOTEL_APP_DIR:-../../..}
       dockerfile: Dockerfile
       labels:
         org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel

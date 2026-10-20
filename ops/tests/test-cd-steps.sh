@@ -8,13 +8,13 @@
 # Run it in Debian 12 with the repository at /src:
 #   docker run --rm -v "$PWD:/src:ro" debian:12-slim bash /src/tests/test-cd-steps.sh
 # Exit:  0 every check passed; 1 a check failed
-# Needs: Debian 12 (apt-get, jq)
+# Needs: Debian 12 (apt-get, jq, git)
 
 # shellcheck disable=SC2015 # ok and ko always return 0, so `test && ok || ko` runs
 # exactly one of them; the short form keeps each check on one line.
 set -uo pipefail
 
-apt-get -qq update >/dev/null && apt-get -qq install -y jq >/dev/null 2>&1
+apt-get -qq update >/dev/null && apt-get -qq install -y jq git >/dev/null 2>&1
 W="$(mktemp -d)"
 trap 'rm -rf "$W"' EXIT
 cd "$W" || exit 1
@@ -105,18 +105,27 @@ FAKE_EXIT=1 VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" WEB=w API=a ANALYSIS=n
 GITHUB_STEP_SUMMARY="$W/sum" RUN_ID=1 SHA="$APP" DEVOPS_SHA="$OPS" OUTCOME=success bash /src/scripts/cd-steps.sh summary
 grep -q "NFHotel commit: \`$APP\`" sum && grep -q "DevOps commit: \`$OPS\`" sum && ok "the summary records both commits" || ko "summary"
 
+# action-ref (ADR-0016): the actions are local, so the commit is the checkout that holds
+# the script; a ref, when there is one, must be a full SHA, and a given devops-sha must match.
+git init -q "$W/checkout" && mkdir -p "$W/checkout/scripts"
+cp /src/scripts/action-ref.sh "$W/checkout/scripts/"
+git -C "$W/checkout" -c user.email=t@t -c user.name=t add -A >/dev/null
+git -C "$W/checkout" -c user.email=t@t -c user.name=t commit -qm checkout
+HEAD_SHA="$(git -C "$W/checkout" rev-parse HEAD)"
+mkdir -p "$W/nogit" && cp /src/scripts/action-ref.sh "$W/nogit/"
 ref() {
   : >out
-  GITHUB_OUTPUT="$W/out" bash /src/scripts/action-ref.sh >log 2>&1
+  GITHUB_OUTPUT="$W/out" bash "${SCRIPT:-$W/checkout/scripts/action-ref.sh}" >log 2>&1
 }
-ACTION_REF="$OPS" GITHUB_REPOSITORY=NF-Hotel/NFHotel expect 0 "action-ref accepts a full SHA from another repository" ref
-grep -qx "devops_sha=$OPS" out && ok "action-ref writes the pinned SHA" || ko "action-ref output"
-ACTION_REF=main GITHUB_REPOSITORY=NF-Hotel/NFHotel expect 1 "action-ref refuses a branch" ref
-ACTION_REF=v1 GITHUB_REPOSITORY=NF-Hotel/NFHotel expect 1 "action-ref refuses a tag" ref
-ACTION_REF="" GITHUB_REPOSITORY=NF-Hotel/NFHotel expect 1 "action-ref refuses a local action outside NF-Hotel/DevOps" ref
-ACTION_REF="" GITHUB_REPOSITORY=NF-Hotel/DevOps DEVOPS_SHA_INPUT="$OPS" expect 0 "action-ref accepts a local action in NF-Hotel/DevOps with devops-sha" ref
-ACTION_REF="" GITHUB_REPOSITORY=NF-Hotel/DevOps DEVOPS_SHA_INPUT="" expect 1 "action-ref needs devops-sha for a local action" ref
-ACTION_REF="$OPS" GITHUB_REPOSITORY=NF-Hotel/NFHotel DEVOPS_SHA_INPUT="$APP" expect 1 "action-ref refuses a devops-sha that differs from the pin" ref
+ACTION_REF="" expect 0 "action-ref resolves a local action to the commit of its checkout" ref
+grep -qx "devops_sha=$HEAD_SHA" out && ok "action-ref writes the commit of the checkout" || ko "action-ref output: $(cat out)"
+ACTION_REF="" DEVOPS_SHA_INPUT="$HEAD_SHA" expect 0 "action-ref accepts a devops-sha that is the checkout" ref
+ACTION_REF="" DEVOPS_SHA_INPUT="$OPS" expect 1 "action-ref refuses a devops-sha that differs from the checkout" ref
+ACTION_REF="" SCRIPT="$W/nogit/action-ref.sh" expect 1 "action-ref refuses an action outside a git checkout" ref
+ACTION_REF="$OPS" expect 0 "action-ref accepts a full SHA ref" ref
+grep -qx "devops_sha=$OPS" out && ok "action-ref writes the SHA of the ref" || ko "action-ref ref output"
+ACTION_REF=main expect 1 "action-ref refuses a branch" ref
+ACTION_REF=v1 expect 1 "action-ref refuses a tag" ref
 
 # verify (MIL-022 task 3): both attestations per built image, the frozen one by its pin.
 FROZEN="$(tr -d '[:space:]' </src/deploy/market-analysis/frozen-image)"

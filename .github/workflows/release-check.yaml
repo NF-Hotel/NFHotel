@@ -1,7 +1,7 @@
 # Release check: on every pull request to main, build the four images through the
-# release-images action of NF-Hotel/DevOps, pinned by full commit SHA, without pushing
-# (ADR-0012, MIL-025 criterion 3). It shows that a change of the application still
-# releases, and that the pinned DevOps action works from this repository.
+# local release-images action (ADR-0016), without pushing. It shows that a change of the
+# application or of ops/ still releases: the images build, pass the Trivy gate and carry
+# the labels of this commit.
 #
 # Trigger: pull requests to main. Secrets: none; read-only token; nothing is pushed and
 # nothing outside the repository changes.
@@ -34,17 +34,15 @@ jobs:
         id: app
         run: echo "sha=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
 
-      - name: Build the images through the DevOps action
+      - name: Build the images through the release-images action
         id: release
-        # A pinned action reference cannot be wrapped (ADR-0012: full commit SHA).
-        # yamllint disable-line rule:line-length
-        uses: NF-Hotel/DevOps/.github/actions/release-images@24d979e3d785a206c66f5c5fc1655221b5417160
+        uses: ./.github/actions/release-images
         with:
           app-path: .
           app-sha: ${{ steps.app.outputs.sha }}
           push: "false"
 
-      - name: Show the DevOps commit the action ran at
+      - name: Show the commit the action ran at
         env:
           DEVOPS_SHA: ${{ steps.release.outputs.devops-sha }}
-        run: echo "release-images ran at NF-Hotel/DevOps $DEVOPS_SHA"
+        run: echo "release-images ran at the operations commit $DEVOPS_SHA"

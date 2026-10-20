@@ -1,35 +1,28 @@
 # Contributing
 
-## Where work belongs (ADR-0012)
+## Where work belongs (ADR-0016)
 
-This repository holds the NF Hotel **application**:
-- the ASP.NET Core and Blazor code, the services and the API;
-- the domain and business logic, the tests and the EF Core migrations;
-- the application configuration templates (`appsettings*.json`);
-- the project baseline (Business Case, Stakeholder Analysis, Project Plan, application ADRs and milestones).
+This repository holds NF Hotel: the **application** and its **operations**.
 
-All **DevOps and DevSecOps** work belongs in [NF-Hotel/DevOps](https://github.com/NF-Hotel/DevOps), by default and without exception unless an ADR there says why. That covers:
-- pipeline logic, Docker Compose, deployment and rollback;
-- PostgreSQL infrastructure, backups, Tailscale, nftables, nginx and TLS;
-- secrets management, image scanning, SBOMs and attestations;
-- monitoring, and the infrastructure ADRs, runbooks and evidence.
-
-| Shared item | Lives in | Reviewed by |
+| Area | Where | Reviewed by |
 | --- | --- | --- |
-| `Dockerfile`, `Dockerfile.api` | here | DevOps code owners (`.github/CODEOWNERS`) |
-| `.github/workflows/ci.yaml` | here | application maintainers |
-| `.github/workflows/release.yaml`, `cd.yaml`, `release-check.yaml` | here: entry points only (triggers, permissions, environment), calling DevOps actions pinned by full commit SHA | DevOps code owners, S03 |
+| The ASP.NET Core and Blazor code, the services, the API, the domain, the tests and the EF Core migrations | `src/`, `tests/`, `db/` | application maintainers |
+| The application configuration templates | `appsettings*.json` | application maintainers |
+| `Dockerfile`, `Dockerfile.api` | the root | code owners of the operations (`.github/CODEOWNERS`) |
+| Compose files, deploy, backup and database scripts, nginx, TLS, Tailscale, scanning, the throwaway test stack, the Proxmox tests | `ops/` | code owners of the operations, S03 for what runs on the VM |
+| The composite actions and the workflows | `.github/actions/`, `.github/workflows/` | code owners of the operations |
 | The `production` environment and the Tailscale trust credential | settings of this repository | S03 |
+| The project baseline, the ADRs, the milestones, the DevSecOps assessment and the review records | `docs/` | the reviewer named in each document |
 
-**A change that needs both repositories** is two pull requests: the DevOps change first, then the SHA bump here.
+**A change to the application and its deployment is one pull request.** The workflows read the actions from the same commit, so nothing has to be pinned or bumped. A script that runs as root on the VM takes effect only after S03 installs it again (wiki page CI-CD).
 
-**During the migration (MIL-025),** `deploy/`, the infrastructure scripts under `scripts/`, `tests/NFHotel.Proxmox.Tests`, `deploy.env.example` and `pve.env.example` still exist here as old copies. **Do not edit them**: change them in NF-Hotel/DevOps. They are removed once the first deploy from DevOps is verified (MIL-025 task 7).
+NF-Hotel/DevOps, where the operations lived under ADR-0012, is archived. Its history is part of this repository: `git log -- ops/`.
 
 ## How to work
 
 - Follow the SQA/QC framework in `framework/` (`git submodule update --init --recursive`).
 - **Branches:** never commit on `main`. Open a pull request with one approving review from someone other than the author.
-- **CI:** it must be green. The required checks come from `ci.yaml`; `release-check.yaml` builds the release images on every pull request.
-- **IDs:** this repository allocates MIL, ADR and RC numbers below 500. NF-Hotel/DevOps allocates them from 500.
+- **CI:** it must be green. The required checks come from `ci.yaml` (the application), `ops-ci.yaml` (the operations), `release-check.yaml` (the release images) and `e2e-dast.yaml` (the browser tests and the DAST baseline).
+- **IDs:** MIL, ADR and RC numbers continue the sequences of `docs/artifact-registry.md`. The IDs from 500 that NF-Hotel/DevOps allocated (ADR-0500, RC-500 to RC-507) keep their numbers.
 - **Formatting:** English, LF line endings (`.editorconfig`, `.gitattributes`).
 - **Secrets:** they never enter git.

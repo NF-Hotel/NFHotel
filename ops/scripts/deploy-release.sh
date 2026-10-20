@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy one NFHotel release on the VM: the NFHotel commit, the NF-Hotel/DevOps commit
+# Deploy one NFHotel release on the VM: the NFHotel commit, the commit of the operations code
 # and the image digests that the release action recorded (ADR-0007, MIL-021 task 6;
 # ADR-0012 of NFHotel). The CD workflow calls it
 # over Tailscale SSH as the user deploy, through sudo; scripts/install-deploy-user.sh
@@ -8,14 +8,16 @@
 #
 # deploy:
 #   1. check every argument against a strict pattern (nothing else reaches a shell), and
-#      refuse when /opt/nfhotel is not a git checkout of NF-Hotel/DevOps (ADR-0010,
+#      refuse when /opt/nfhotel is not a git checkout of NF-Hotel/NFHotel, or of NF-Hotel/DevOps
+#      until the VM is switched (ADR-0010, ADR-0016,
 #      ADR-0012 of NFHotel)
 #   2. take a lock, so two deploys never overlap
 #   3. run the database backup if it is installed (ADR-0008)
 #   4. check out the DevOps commit in /opt/nfhotel (detached; the git-ignored settings
 #      stay): the compose files and scripts of the release. The application is in the
 #      images, so no NFHotel checkout is on the VM
-#   5. run scripts/deploy-services.sh --no-build with the digests: images are pulled,
+#   5. run scripts/deploy-services.sh of the operations folder (ops/ of an NFHotel checkout,
+#      the root of a DevOps one) --no-build with the digests: images are pulled,
 #      never built, and compose recreates only the containers whose image or
 #      configuration changed; named volumes are never removed
 #   6. smoke test: port 80 answers 301 and HTTPS answers 200 on the VM
@@ -40,7 +42,8 @@
 #        deploy-release.sh rollback
 #        deploy-release.sh status
 #   <app-sha>    the 40-character NF-Hotel/NFHotel commit of the release (recorded)
-#   <devops-sha> the 40-character NF-Hotel/DevOps commit to check out
+#   <devops-sha> the 40-character commit to check out: the commit of the operations code,
+#                which since ADR-0016 is the NFHotel commit of the release
 #   <web> ...    ghcr.io/nf-hotel/<image>@sha256:<64 hex>, in this order:
 #                nfhotel-web, nfhotel-api, market-analysis, benchmark
 # Env:   NFHOTEL_DIR (default /opt/nfhotel), NFHOTEL_USER (default nfhotel),
@@ -106,7 +109,7 @@ check_release() {
 # nginx_port <variable> <default>: the published port from the nginx settings file.
 nginx_port() {
   local value
-  value="$(sed -n "s/^$1=\([0-9]\{1,5\}\)\$/\1/p" "$app_dir/deploy/nginx/nginx.env" 2>/dev/null | tail -n 1)"
+  value="$(sed -n "s/^$1=\([0-9]\{1,5\}\)\$/\1/p" "$(ops_dir)/deploy/nginx/nginx.env" 2>/dev/null | tail -n 1)"
   echo "${value:-$2}"
 }
 
@@ -115,7 +118,7 @@ nginx_port() {
 # 127.0.0.1 would not reach it. An empty value or 0.0.0.0 (all addresses) is tested on 127.0.0.1.
 nginx_host() {
   local value
-  value="$(sed -n 's/^NGINX_BIND=\([0-9.]\{7,15\}\)$/\1/p' "$app_dir/deploy/nginx/nginx.env" 2>/dev/null | tail -n 1)"
+  value="$(sed -n 's/^NGINX_BIND=\([0-9.]\{7,15\}\)$/\1/p' "$(ops_dir)/deploy/nginx/nginx.env" 2>/dev/null | tail -n 1)"
   if [[ -z "$value" || "$value" == 0.0.0.0 ]]; then
     echo 127.0.0.1
   else
@@ -147,7 +150,7 @@ smoke_test() {
 # commit and start one release.
 apply() {
   local sha="$2"
-  echo "==> release of NFHotel $1: checking out DevOps $sha in $app_dir"
+  echo "==> release of NFHotel $1: checking out the operations commit $sha in $app_dir"
   as_app git fetch --quiet --depth 1 origin "$sha" || return 1
   as_app git checkout --quiet --detach "$sha" || return 1
   [[ "$(as_app git rev-parse HEAD)" == "$sha" ]] || return 1
@@ -155,7 +158,7 @@ apply() {
   api_database_settings || return 1
   echo "==> starting the services from the release images (no build)"
   as_app env NFHOTEL_WEB_IMAGE="$3" NFHOTEL_API_IMAGE="$4" MARKET_ANALYSIS_IMAGE="$5" BENCHMARK_IMAGE="$6" \
-    bash scripts/deploy-services.sh --no-build || return 1
+    bash "$(ops_rel)/scripts/deploy-services.sh" --no-build || return 1
   smoke_test
 }
 
@@ -186,7 +189,19 @@ record() {
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" >>"$release_log"
 }
 
-# check_checkout: refuse a VM whose deployment is not NF-Hotel/DevOps (ADR-0010, ADR-0012). On a
+# ops_rel: the operations folder relative to the checkout: ops/ of an NFHotel checkout
+# (ADR-0016), or the root of a NF-Hotel/DevOps checkout before the VM is switched.
+ops_rel() {
+  if [[ -f "$app_dir/ops/scripts/deploy-services.sh" ]]; then echo ops; else echo .; fi
+}
+
+# ops_dir: the same folder as an absolute path.
+ops_dir() {
+  echo "$app_dir/$(ops_rel)"
+}
+
+# check_checkout: refuse a VM whose deployment is not NF-Hotel/NFHotel, or NF-Hotel/DevOps
+# until the switch of ADR-0016 (ADR-0010, ADR-0012). On a
 # server that still runs a configuration outside git, a deploy would start a second
 # stack next to the running one, so it stops before the backup and the checkout.
 check_checkout() {
@@ -194,8 +209,8 @@ check_checkout() {
   [[ -d "$app_dir/.git" ]] ||
     die "$app_dir is not a git checkout; reconcile the running deployment with the repository first (ADR-0010, MIL-021 task 10)"
   origin="$(as_app git config --get remote.origin.url)" || die "$app_dir has no origin remote"
-  [[ "$origin" =~ ^(https://github\.com/|git@github\.com:)NF-Hotel/DevOps(\.git)?$ ]] ||
-    die "$app_dir is a checkout of '$origin', not of NF-Hotel/DevOps"
+  [[ "$origin" =~ ^(https://github\.com/|git@github\.com:)NF-Hotel/(NFHotel|DevOps)(\.git)?$ ]] ||
+    die "$app_dir is a checkout of '$origin', not of NF-Hotel/NFHotel (or NF-Hotel/DevOps)"
 }
 
 deploy() {

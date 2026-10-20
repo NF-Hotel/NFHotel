@@ -16,7 +16,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=scripts/lib/common.sh
+# shellcheck source=ops/scripts/lib/common.sh
 . "$ROOT/scripts/lib/common.sh"
 
 # Playwright 1.62.0, the version of Microsoft.Playwright in NFHotel.E2E.Tests.csproj; bump both together.

@@ -11,7 +11,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=scripts/lib/common.sh
+# shellcheck source=ops/scripts/lib/common.sh
 . "$ROOT/scripts/lib/common.sh"
 
 [[ $# == 2 && -f "$1/Dockerfile.api" ]] || {

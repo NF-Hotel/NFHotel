@@ -1,5 +1,7 @@
 # Migration from NF-Hotel/NFHotel
 
+> **Back in NF-Hotel/NFHotel (ADR-0016, 2026-10-20).** The whole repository NF-Hotel/DevOps, at `b63fbed` (its PR #13), was brought back into NFHotel under `ops/` by a subtree merge. Its commits are part of NFHotel's history (`git log -- ops/`), and NF-Hotel/DevOps is archived. The record below is the first move, kept as it was.
+
 This repository took over the infrastructure and operations work of NF Hotel from `NF-Hotel/NFHotel` (ADR-0012, MIL-025). This file is the provenance record. No history was rewritten and no commit was made up. The history of how each file was written stays in NFHotel, at the commits listed below.
 
 ## Source

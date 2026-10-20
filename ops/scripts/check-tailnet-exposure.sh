@@ -17,7 +17,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=scripts/lib/common.sh
+# shellcheck source=ops/scripts/lib/common.sh
 . "$ROOT/scripts/lib/common.sh"
 readonly OPEN_PORTS=(22 80 443)
 readonly CLOSED_PORTS=(8080 8081 2718 2719 8000 11434)

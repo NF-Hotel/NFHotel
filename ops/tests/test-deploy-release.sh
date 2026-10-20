@@ -50,8 +50,25 @@ git -C "$W/src" push -q origin main
 git clone -q "$W/origin.git" "$W/app"
 git config --global url."$W/origin.git".insteadOf https://github.com/NF-Hotel/DevOps.git
 git -C "$W/app" remote set-url origin https://github.com/NF-Hotel/DevOps.git
-git clone -q "$W/origin.git" "$W/other" && git -C "$W/other" remote set-url origin https://github.com/NF-Hotel/NFHotel.git
+git clone -q "$W/origin.git" "$W/other" && git -C "$W/other" remote set-url origin https://github.com/NF-Hotel/Other.git
 mkdir -p "$W/legacy/deployment" && echo "services: {}" >"$W/legacy/deployment/compose.yaml"
+
+# An NFHotel repository with the operations under ops/ (ADR-0016), for the VM after its
+# switch: the deploy command must run ops/scripts/deploy-services.sh of that checkout.
+git init -q --bare "$W/nfh-origin.git"
+git -C "$W/nfh-origin.git" config uploadpack.allowAnySHA1InWant true
+git clone -q "$W/nfh-origin.git" "$W/nfh-src" 2>/dev/null
+mkdir -p "$W/nfh-src/ops/scripts" "$W/nfh-src/ops/deploy/nginx" "$W/nfh-src/src"
+cat >"$W/nfh-src/ops/scripts/deploy-services.sh" <<EOF
+echo "ops-layout web=\$NFHOTEL_WEB_IMAGE" >>"$W/calls"
+echo good >"$W/health"
+EOF
+git -C "$W/nfh-src" add -A && git -C "$W/nfh-src" commit -qm nfh
+N="$(git -C "$W/nfh-src" rev-parse HEAD)"
+git -C "$W/nfh-src" push -q origin main
+git config --global url."$W/nfh-origin.git".insteadOf https://github.com/NF-Hotel/NFHotel.git
+git clone -q "$W/nfh-origin.git" "$W/nfh"
+git -C "$W/nfh" remote set-url origin https://github.com/NF-Hotel/NFHotel.git
 cat >"$W/bin/curl" <<EOF
 #!/bin/bash
 for a in "\$@"; do case "\$a" in http*://*) echo "\$a" >>$W/urls ;; esac; done
@@ -136,7 +153,7 @@ wait
   [[ $? == 1 ]] && grep -q "not a git checkout" "$W/out" && [[ -f "$W/legacy/deployment/compose.yaml" ]] &&
     ok "refuses a VM without a DevOps checkout and leaves it untouched" || ko "legacy layout: $(head -1 "$W/out")"
   run "$W/other" deploy $(good "$A")
-  [[ $? == 1 ]] && grep -q "not of NF-Hotel/DevOps" "$W/out" && ok "refuses a checkout of another repository" ||
+  [[ $? == 1 ]] && grep -q "not of NF-Hotel/NFHotel" "$W/out" && ok "refuses a checkout of another repository" ||
     ko "other repository: $(head -1 "$W/out")"
 }
 
@@ -174,6 +191,17 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
   echo 'ConnectionStrings__HotelDatabase=Host=postgres;Username=nfhotel;Password=p' >"$W/secrets/nfhotel-api-database.env"
   expect_code 1 "refuses an API settings file that is not for nfhotel_app" deploy $(good "$A")
   rm -f "$W/secrets/nfhotel-api-database.env"
+}
+
+# The NFHotel layout (ADR-0016): an NFHotel checkout runs ops/scripts/deploy-services.sh.
+# shellcheck disable=SC2046
+{
+  : >"$W/calls"
+  if run "$W/nfh" deploy $(good "$N") && grep -q "ops-layout web=$R/nfhotel-web@$D" "$W/calls"; then
+    ok "deploys from an NFHotel checkout with ops/"
+  else
+    ko "NFHotel layout: $(head -1 "$W/out")"
+  fi
 }
 
 echo "RESULT: $pass passed, $fail failed"

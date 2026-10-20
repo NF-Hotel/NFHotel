@@ -33,6 +33,10 @@ server {
   resolver 127.0.0.11 valid=10s;
   set $upstream http://${UPSTREAM_HOST}:${UPSTREAM_PORT};
 
+  # Development only: routes of the mobile app (ADR-0015). The folder exists only when docker-compose.dev.yml
+  # mounts it, and an include that matches no file is allowed, so a release deployment has none of them.
+  include /etc/nginx/dev/*.conf;
+
   location / {
     proxy_pass $upstream;
     include /etc/nginx/snippets/proxy.conf;
