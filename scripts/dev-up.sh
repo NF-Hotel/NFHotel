@@ -11,17 +11,20 @@
 #      an existing file is never changed
 #   3. start the Proxmox VE container (created once, then only started) and set its root password
 #   4. scripts/deploy.sh --local: create the VM when it is missing, copy this working tree into it, deploy
-#   5. publish the site on this machine: https://localhost:8443/ (a development certificate)
+#   5. publish the site on this machine: https://localhost:8443/ (a development certificate); the mobile app
+#      (MobileApp repository) reaches the sign-in and the rooms of the API at https://localhost:8443/mobile-api/
+#      (from the Android emulator: https://10.0.2.2:8443/mobile-api/), ADR-0015
 #   6. create one back office account per role (Manager, Receptionist, Housekeeping) and print the user names and
 #      passwords at the end. This is for development only: the passwords are printed only when
 #      ASPNETCORE_ENVIRONMENT=Development in nfhotel-api.env, and never in a release deployment.
 #      The generated passwords are kept in deploy/nfhotel-api/dev-staff.env (git-ignored).
 #
-# Usage: dev-up.sh [--check] [--all] [--seed] [--open] [--down] [--destroy] [web|api|benchmark ...]
+# Usage: dev-up.sh [--check] [--all] [--seed] [--open] [--down] [--destroy] [web|api|benchmark|nginx ...]
 #   --check    only test that this machine can run it (Docker, KVM, tools, ports, disk, memory) and say how to fix
 #              each problem; starts nothing. The same test runs at the start of every other run.
 #   web, api   rebuild and restart only these (default: web and api, the code of this repository)
 #   benchmark  rebuild the benchmark service from BENCHMARK_REF in deploy/benchmark/benchmark.env
+#   nginx      recreate the proxy, to read a changed template or the mobile-app route (ADR-0015)
 #   --all      rebuild and restart every service of the seven
 #   --seed     load db/seed_dev.sql (sample rooms, guests and bookings) into the database
 #   --open     open the site in the default browser when it is ready
@@ -72,7 +75,7 @@ for arg in "$@"; do
       usage
       exit 0
       ;;
-    web | api | benchmark) rebuild+=("$arg") ;;
+    web | api | benchmark | nginx) rebuild+=("$arg") ;;
     *)
       echo "error: unknown argument: $arg" >&2
       usage >&2
@@ -240,6 +243,12 @@ fi
 make_env "$api_dir" nfhotel-api.env || true
 make_env "$web_dir" nfhotel-web.env || true
 make_env "$nginx_dir" nginx.env || true
+# The route of the mobile app (ADR-0015, MIL-029): /mobile-api on the site address, to the sign-in and the rooms of the
+# API. It is added to an existing nginx.env too, because it is a development setting; a release deployment never runs
+# this script, so it has no such route.
+if ! grep -q '^COMPOSE_FILE=' "$nginx_dir/nginx.env"; then
+  printf '\nCOMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml\n' >> "$nginx_dir/nginx.env"
+fi
 make_env "$root/deploy/ollama" ollama.env || true
 # The benchmark service: an older benchmark.env from the notebook has none of the NFBENCH_ settings, so it is
 # kept under another name and the new example takes its place. The token of the service is made once; the web
