@@ -27,7 +27,7 @@
 | # | Criterion | Status | Evidence/Notes |
 | --- | --- | --- | --- |
 | WF 1 | Every action pinned by full commit SHA with the version in a comment | Pass | checkout v7.0.1, scorecard-action v2.4.4 (`2d11466`, released 2026-07-23), upload-artifact v4.6.2, codeql-action/upload-sarif v4.38.2 (`2892aa5`, 2026-09-24). Both are older than two weeks; scorecard-action v2.5.0 (2026-10-12) is not |
-| WF 2 | Least permissions | Pass | `read-all` at the top; the job adds `security-events: write` for the SARIF and `id-token: write` to sign the published results; `contents` and `actions` read |
+| WF 2 | Least permissions | Pass | `contents: read` at the top (not `read-all`, which SonarCloud rule githubactions:S8234 rejects); the job adds `security-events: write` for the SARIF and `id-token: write` to sign the published results; `contents` and `actions` read |
 | WF 3 | Triggers | Pass | Push to `main`, `branch_protection_rule`, Tuesday 04:41 UTC and by hand. No pull request trigger: a pull request run can neither upload nor publish |
 | WF 4 | No untrusted input in a `run:` line; no stored secret | Pass | No `run:` step; only the job token. Without a personal token the Branch-Protection check sees less than an administrator would; accepted, no token is stored for it |
 | WF 5 | Timeouts and concurrency | Pass | `timeout-minutes: 15`; one run per ref |

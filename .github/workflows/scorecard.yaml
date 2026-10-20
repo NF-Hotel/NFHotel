@@ -8,8 +8,9 @@
 # Secrets: none. Without a personal token, the Branch-Protection check sees only what
 #   the job token may read, so it scores lower than the rulesets deserve (recorded in
 #   the result of RC-140).
-# Permissions: read-all at the top; security-events: write to upload the SARIF, and
-#   id-token: write to sign the published results (Scorecard API).
+# Permissions: contents: read at the top; the job adds actions: read,
+#   security-events: write to upload the SARIF, and id-token: write to sign the
+#   published results (Scorecard API).
 # Publishing restricts the job: no top-level env or defaults, no containers or
 #   services, and only the actions below (all pinned by full commit SHA).
 # Verified with actionlint 1.7.7.
@@ -23,7 +24,8 @@ on:
     - cron: "41 4 * * 2"
   workflow_dispatch:
 
-permissions: read-all
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
