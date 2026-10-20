@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [53ab6fb] |
 
 ---
 
@@ -58,3 +58,4 @@ Go-with-conditions: QC-WF-001 criterion 22 closes with the first release and dep
 
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[53ab6fb]: https://github.com/NF-Hotel/NFHotel/commit/53ab6fbb63acce4e76792739a84149ff41070619
