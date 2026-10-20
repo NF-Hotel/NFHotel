@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [41b18fb] |
 
 ---
 
@@ -61,3 +61,4 @@ Go-with-conditions. Build, tests and format pass. QC-SH-001 criterion 11 is part
 [MIL-025]: ../../milestones/mil-025-devops-repository-consolidation.md
 [ADR-0012]: ../../adr/adr-0012-devops-repository-ownership.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[41b18fb]: https://github.com/NF-Hotel/NFHotel/commit/41b18fbccc7b1adad5375080800c42a5168f8cec
