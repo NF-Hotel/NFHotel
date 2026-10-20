@@ -5,7 +5,8 @@ namespace NFHotel.Domain.Errors;
 /// concern of the presentation layer.
 /// </summary>
 public static class AiDefaultErrors
-{
+{   
+
     /// <summary>The purpose is not one of the known ones.</summary>
     public const string PurposeInvalid = "ai_default.purpose_invalid";
 
