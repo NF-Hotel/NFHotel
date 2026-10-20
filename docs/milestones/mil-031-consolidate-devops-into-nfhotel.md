@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Deprecated | mikemike | S01 | Initial version | pending |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-147 Go (plan accepted by S01 in chat) | pending |
+| 2026-10-20 | Deprecated | mikemike | S01 | Initial version | [1b46421] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-147 Go (plan accepted by S01 in chat) | [1b46421] |
 
 ---
 
@@ -93,3 +93,4 @@ Decide whether NF Hotel can run its application and its operations from one repo
 [ADR-0016]: ../adr/adr-0016-one-repository-for-application-and-operations.md
 [ADR-0012]: ../adr/adr-0012-devops-repository-ownership.md
 [MIL-025]: ./mil-025-devops-repository-consolidation.md
+[1b46421]: https://github.com/NF-Hotel/NFHotel/commit/1b46421e16ad0138fc39ab6aa7bf0fe3a1799f38

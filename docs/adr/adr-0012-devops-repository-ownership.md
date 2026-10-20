@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-19 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-102 Go | [4c8f103] |
-| 2026-10-20 | Superseded by ADR-0016 | mikemike | AI as stand-in for S01 | S01 decided to keep the application and its operations in NF-Hotel/NFHotel (ADR-0016, RC-146) | pending |
+| 2026-10-20 | Superseded by ADR-0016 | mikemike | AI as stand-in for S01 | S01 decided to keep the application and its operations in NF-Hotel/NFHotel (ADR-0016, RC-146) | [1b46421] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -125,3 +125,4 @@ We follow option 4: `NF-Hotel/DevOps` owns infrastructure and operations, `NF-Ho
 [MIL-025]: ../milestones/mil-025-devops-repository-consolidation.md
 [4c8f103]: https://github.com/NF-Hotel/NFHotel/commit/4c8f1030fdf53a5d9d827478244c55ecae73b8eb
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
+[1b46421]: https://github.com/NF-Hotel/NFHotel/commit/1b46421e16ad0138fc39ab6aa7bf0fe3a1799f38

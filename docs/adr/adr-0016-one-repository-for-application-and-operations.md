@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Deprecated | mikemike | S01 | Initial version, the decision of S01 in chat to keep everything in NF-Hotel/NFHotel | pending |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-146 Go | pending |
+| 2026-10-20 | Deprecated | mikemike | S01 | Initial version, the decision of S01 in chat to keep everything in NF-Hotel/NFHotel | [1b46421] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-146 Go | [1b46421] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -87,3 +87,4 @@ We follow option 2: NF-Hotel/NFHotel holds the application and its operations; t
 [ADR-0012]: ./adr-0012-devops-repository-ownership.md
 [MIL-025]: ../milestones/mil-025-devops-repository-consolidation.md
 [MIL-031]: ../milestones/mil-031-consolidate-devops-into-nfhotel.md
+[1b46421]: https://github.com/NF-Hotel/NFHotel/commit/1b46421e16ad0138fc39ab6aa7bf0fe3a1799f38
