@@ -2,33 +2,39 @@
 # Start the application the way it is deployed, on this machine, so a developer can see a change.
 #
 # ADR-0003: the services run as Docker containers in one virtual machine on Proxmox VE. For development the
-# Proxmox VE node is a local Docker container (deploy/proxmox, the image of MIL-003), so the chain is
+# Proxmox VE node is a local Docker container (the image of MIL-003), so the chain is
 #   this machine -> Proxmox VE container -> VM (Debian, Docker) -> postgres, ollama, api, web, analysis, benchmark, nginx
-# The script does the whole chain and then reuses it, so the next run only ships your working tree to the
-# VM and rebuilds the services you name (scripts/deploy.sh does the VM and the services):
+# The deployment itself (compose files, settings examples, scripts/deploy.sh) lives in NF-Hotel/DevOps
+# (ADR-0012). This script uses a DevOps checkout: ../DevOps beside this repository, or the folder in
+# NFHOTEL_DEVOPS_DIR. Clone it once: git clone https://github.com/NF-Hotel/DevOps.git ../DevOps
+# The script does the whole chain and then reuses it, so the next run only ships your working trees to the
+# VM and rebuilds the services you name (deploy.sh of DevOps does the VM and the services):
 #   1. check that Docker can use /dev/kvm (on WSL2 start a distribution that loads the KVM modules first)
-#   2. make a missing pve.env, deploy.env and service settings file from its .example, with fresh secrets;
-#      an existing file is never changed
+#   2. make a missing pve.env, deploy.env and service settings file of the DevOps checkout from its .example,
+#      with fresh secrets; an existing file is never changed. Settings files left in this repository by
+#      an older version (pve.env, deploy.env, deploy/*/*.env) are copied there first.
 #   3. start the Proxmox VE container (created once, then only started) and set its root password
-#   4. scripts/deploy.sh --local: create the VM when it is missing, copy this working tree into it, deploy
+#   4. deploy.sh --local --app-dir <this repository> of DevOps: create the VM when it is missing, copy the
+#      DevOps working tree and this working tree into it, deploy
 #   5. publish the site on this machine: https://localhost:8443/ (a development certificate)
 #   6. create one back office account per role (Manager, Receptionist, Housekeeping) and print the user names and
 #      passwords at the end. This is for development only: the passwords are printed only when
 #      ASPNETCORE_ENVIRONMENT=Development in nfhotel-api.env, and never in a release deployment.
-#      The generated passwords are kept in deploy/nfhotel-api/dev-staff.env (git-ignored).
+#      The generated passwords are kept in deploy/nfhotel-api/dev-staff.env of DevOps (git-ignored).
 #
 # Usage: dev-up.sh [--check] [--all] [--seed] [--open] [--down] [--destroy] [web|api|benchmark ...]
 #   --check    only test that this machine can run it (Docker, KVM, tools, ports, disk, memory) and say how to fix
 #              each problem; starts nothing. The same test runs at the start of every other run.
 #   web, api   rebuild and restart only these (default: web and api, the code of this repository)
-#   benchmark  rebuild the benchmark service from BENCHMARK_REF in deploy/benchmark/benchmark.env
+#   benchmark  rebuild the benchmark service from BENCHMARK_REF in deploy/benchmark/benchmark.env of DevOps
 #   --all      rebuild and restart every service of the seven
 #   --seed     load db/seed_dev.sql (sample rooms, guests and bookings) into the database
 #   --open     open the site in the default browser when it is ready
 #   --down     stop the seven services in the VM; the database volume, the VM and Proxmox are kept
 #   --destroy  remove the Proxmox VE container, with the VM and the database in it (asks nothing: development only)
 # Env:   DEV_SITE_PORT port of the site on this machine (default 8443); DEV_PVE_PORT Proxmox web UI (default 8006);
-#        DEV_MODELS the Ollama models to pull, space separated (default "llama3.2:3b phi3.5"; empty pulls none)
+#        DEV_MODELS the Ollama models to pull, space separated (default "llama3.2:3b phi3.5"; empty pulls none);
+#        NFHOTEL_DEVOPS_DIR the DevOps checkout (default ../DevOps beside this repository)
 # Exit:  0 the site answers; 1 a step failed; 2 usage error
 # Needs: bash 4+, docker, curl, ssh, tar. The first run downloads the Proxmox image and the Debian image and
 # installs Docker in the VM: allow ten minutes or more. Later runs take seconds to a minute.
@@ -37,11 +43,12 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+devops="${NFHOTEL_DEVOPS_DIR:-$root/../DevOps}"
+[[ -d "$devops" ]] && devops="$(cd "$devops" && pwd)"
 export MSYS_NO_PATHCONV=1
 
 site_port="${DEV_SITE_PORT:-8443}"
 pve_port="${DEV_PVE_PORT:-8006}"
-image="dockurr/proxmox:latest"
 default_container="nfhotel-pve-proxmox-1"
 core=(postgres ollama api web analysis benchmark nginx)
 rebuild=()
@@ -102,6 +109,15 @@ preflight() {
     report ok "bash ${BASH_VERSION%%(*}"
   fi
 
+  # The deployment comes from a DevOps checkout that can ship this working tree (deploy.sh --app-dir).
+  if [[ ! -f "$devops/scripts/deploy.sh" || ! -f "$devops/deploy/proxmox/docker-compose.yml" ]]; then
+    report PROBLEM "no NF-Hotel/DevOps checkout at $devops; clone it: git clone https://github.com/NF-Hotel/DevOps.git \"$devops\" (or set NFHOTEL_DEVOPS_DIR to your checkout)"
+  elif ! grep -q -- '--app-dir' "$devops/scripts/deploy.sh"; then
+    report PROBLEM "the DevOps checkout at $devops is too old (its deploy.sh has no --app-dir); update it: git -C \"$devops\" pull"
+  else
+    report ok "DevOps checkout $devops"
+  fi
+
   for tool in curl ssh tar git; do
     if command -v "$tool" >/dev/null 2>&1; then
       report ok "$tool"
@@ -130,7 +146,7 @@ preflight() {
 
     kib="$(docker info --format '{{.MemTotal}}' 2>/dev/null || echo 0)"
     mem_mib=$((kib / 1024 / 1024))
-    vm_mib="$(value_of "$root/deploy.env" VM_MEMORY 2>/dev/null || true)"
+    vm_mib="$(value_of "$devops/deploy.env" VM_MEMORY 2>/dev/null || true)"
     [[ "$vm_mib" =~ ^[0-9]+$ ]] || vm_mib=12288
     need_mib=$((vm_mib + 2048))
     if ((mem_mib >= need_mib)); then
@@ -141,7 +157,7 @@ preflight() {
   fi
 
   # The ports are free, unless the container of an earlier run owns them.
-  running_container="$(value_of "$root/deploy.env" PVE_CONTAINER 2>/dev/null || true)"
+  running_container="$(value_of "$devops/deploy.env" PVE_CONTAINER 2>/dev/null || true)"
   if [[ -z "$running_container" || "$(docker inspect -f '{{.State.Running}}' "$running_container" 2>/dev/null || true)" != "true" ]]; then
     for name in "$site_port" "$pve_port"; do
       if (exec 3<>"/dev/tcp/127.0.0.1/${name}") 2>/dev/null; then
@@ -196,13 +212,33 @@ if ((check_only)); then
   exit 0
 fi
 
-pve_env="$root/pve.env"
-deploy_env="$root/deploy.env"
+# Before MIL-025 task 7 the settings files were made in this repository. They hold the secrets of the
+# database and the accounts that already exist in the VM, so a missing file of the DevOps checkout is
+# copied from there once. The old files are left as they are.
+adopt_old_settings() {
+  local old new
+  while IFS= read -r old; do
+    new="$devops/${old#"$root"/}"
+    if [[ ! -f "$new" && -d "$(dirname "$new")" ]]; then
+      cp -p "$old" "$new"
+      echo "==> copied the old settings file $old to $new"
+    fi
+  done < <(find "$root/pve.env" "$root/deploy.env" "$root/deploy" -maxdepth 2 -type f \
+    \( -name '*.env' -o -name 'market-analysis.toml' \) 2>/dev/null || true)
+}
+adopt_old_settings
 
-if make_env "$root" pve.env; then
+# The Proxmox VE image of DevOps, pinned by digest there (deploy/proxmox).
+image="$(sed -n 's/^ *image: *//p' "$devops/deploy/proxmox/docker-compose.yml" | head -n 1)"
+[[ -n "$image" ]] || die "no image in $devops/deploy/proxmox/docker-compose.yml"
+
+pve_env="$devops/pve.env"
+deploy_env="$devops/deploy.env"
+
+if make_env "$devops" pve.env; then
   sed -i "s#^PVE_PASSWORD=.*#PVE_PASSWORD=$(secret 18)#" "$pve_env"
 fi
-if make_env "$root" deploy.env; then
+if make_env "$devops" deploy.env; then
   # Development: the Proxmox node is the local container, its storage is "local", and the script
   # makes its own ssh key for the VM user.
   sed -i \
@@ -214,8 +250,8 @@ if make_env "$root" deploy.env; then
 fi
 
 container="$(value_of "$deploy_env" PVE_CONTAINER)"
-[[ -n "$container" ]] || die "deploy.env has no PVE_CONTAINER; this script runs Proxmox VE in a local container (set PVE_SSH only for a real node, and use scripts/deploy.sh)"
-[[ -z "$(value_of "$deploy_env" PVE_SSH)" ]] || die "deploy.env sets both PVE_SSH and PVE_CONTAINER; keep only PVE_CONTAINER for development"
+[[ -n "$container" ]] || die "$deploy_env has no PVE_CONTAINER; this script runs Proxmox VE in a local container (set PVE_SSH only for a real node, and use scripts/deploy.sh of DevOps)"
+[[ -z "$(value_of "$deploy_env" PVE_SSH)" ]] || die "$deploy_env sets both PVE_SSH and PVE_CONTAINER; keep only PVE_CONTAINER for development"
 vm_name="$(value_of "$deploy_env" VM_NAME)"
 vm_name="${vm_name:-nfhotel-services}"
 
@@ -225,10 +261,10 @@ if ((destroy)); then
   exit 0
 fi
 
-pg_dir="$root/deploy/postgres"
-api_dir="$root/deploy/nfhotel-api"
-web_dir="$root/deploy/nfhotel-web"
-nginx_dir="$root/deploy/nginx"
+pg_dir="$devops/deploy/postgres"
+api_dir="$devops/deploy/nfhotel-api"
+web_dir="$devops/deploy/nfhotel-web"
+nginx_dir="$devops/deploy/nginx"
 
 new_api=0
 [[ -f "$api_dir/nfhotel-api.env" ]] || new_api=1
@@ -240,11 +276,11 @@ fi
 make_env "$api_dir" nfhotel-api.env || true
 make_env "$web_dir" nfhotel-web.env || true
 make_env "$nginx_dir" nginx.env || true
-make_env "$root/deploy/ollama" ollama.env || true
+make_env "$devops/deploy/ollama" ollama.env || true
 # The benchmark service: an older benchmark.env from the notebook has none of the NFBENCH_ settings, so it is
 # kept under another name and the new example takes its place. The token of the service is made once; the web
-# service gets the same value from this file (scripts/deploy-services.sh).
-bench_dir="$root/deploy/benchmark"
+# service gets the same value from this file (scripts/deploy-services.sh of DevOps).
+bench_dir="$devops/deploy/benchmark"
 if [[ -f "$bench_dir/benchmark.env" ]] && ! grep -q '^NFBENCH_WEB_URL=' "$bench_dir/benchmark.env"; then
   mv "$bench_dir/benchmark.env" "$bench_dir/benchmark.env.old-notebook"
   echo "==> kept the old $bench_dir/benchmark.env as benchmark.env.old-notebook"
@@ -289,7 +325,7 @@ find_vm_ip() {
 if ((down)); then
   [[ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null || true)" == "true" ]] ||
     die "the Proxmox VE container $container is not running; nothing to stop"
-  exec bash "$root/scripts/deploy.sh" --skip-vm --down "${core[@]}"
+  exec bash "$devops/scripts/deploy.sh" --skip-vm --down "${core[@]}"
 fi
 
 # 1. KVM.
@@ -359,7 +395,7 @@ else
 fi
 echo "==> deploying: ${todo[*]}"
 log="$(mktemp)"
-bash "$root/scripts/deploy.sh" --local "${todo[@]}" | tee "${log}"
+bash "$devops/scripts/deploy.sh" --local --app-dir "$root" "${todo[@]}" | tee "${log}"
 vm_ip="$(sed -n 's/^Done\. VM [0-9]* at \([0-9.]*\)\.$/\1/p' "${log}" | tail -n 1)"
 [[ -n "$vm_ip" ]] || vm_ip="$(find_vm_ip)" || die "could not find the address of the VM"
 
@@ -427,7 +463,7 @@ done
 
 echo
 echo "Ready: $url (development certificate: accept the browser warning)"
-echo "Proxmox VE: https://localhost:${pve_port}/ (user root; the password is PVE_PASSWORD in pve.env)"
+echo "Proxmox VE: https://localhost:${pve_port}/ (user root; the password is PVE_PASSWORD in $pve_env)"
 if ((show_accounts)); then
   echo
   echo "Back office accounts (development only), sign in at ${url}admin/login:"
