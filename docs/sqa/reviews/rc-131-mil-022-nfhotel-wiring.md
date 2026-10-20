@@ -21,7 +21,7 @@
   - `.github/dependabot.yml` (new): `nuget`, `docker` and `github-actions`;
   - `.github/workflows/release.yaml`: `id-token`, `attestations` and `security-events: write`, `upload-sarif`, and `migrations.sql` in the release artifact;
   - `.github/workflows/cd.yaml`: `attestations: read` and `packages: read`;
-  - every DevOps action pin moved to `933c2e6` of NF-Hotel/DevOps#8.
+  - every DevOps action pin moved to `b63fbed` of NF-Hotel/DevOps#13 (the combined head of #1, #3, #4, #8, #9 and #11).
 - **Checklists used:** [QC-WF-001], [QC-YML-001].
 - **Mode:** autonomous, not independent (reviewer is `AI as stand-in for S01`). MIL-022 is accepted (RC-090); this is its NFHotel part, tasks 1 to 4 and 6.
 - **Tools:** actionlint 1.7.7 and yamllint 1.35.1. The images were checked with `docker buildx imagetools inspect`; `aspnet:10.0.13` has the same digest as `aspnet:10.0` today.

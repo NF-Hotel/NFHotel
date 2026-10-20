@@ -38,7 +38,7 @@ jobs:
         id: release
         # A pinned action reference cannot be wrapped (ADR-0012: full commit SHA).
         # yamllint disable-line rule:line-length
-        uses: NF-Hotel/DevOps/.github/actions/release-images@933c2e65363a7a9dcb1258b10986d4a5279a4583
+        uses: NF-Hotel/DevOps/.github/actions/release-images@b63fbed70eb203ad18261cfa98799d08effe481b
         with:
           app-path: .
           app-sha: ${{ steps.app.outputs.sha }}
