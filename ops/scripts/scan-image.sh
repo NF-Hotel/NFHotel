@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # Scan one release image with Trivy before it is pushed (MIL-022 tasks 1 and 2, DSA-001
 # section 8): a JSON report, the same findings as SARIF for code scanning, and an SPDX
-# SBOM of the image. Then the gate of scripts/scan-gate.sh decides, unless
-# --report-only (the frozen image of ADR-0500, which cannot be rebuilt to fix anything).
+# SBOM of the image. Then the gate of scripts/scan-gate.sh decides. With --report-only (the
+# frozen image of ADR-0500, which cannot be rebuilt to fix anything) its vulnerabilities
+# are only reported, but a secret still blocks.
 # Trivy runs in a container at a pinned digest and reads the image from the local
 # Docker daemon through its socket, so nothing is pushed and no registry login is needed.
 # Its vulnerability database is kept in the Docker volume nfhotel-trivy-cache.
 #
 # Usage: scan-image.sh [--report-only] <image> <name> <output folder>
 #   writes <folder>/<name>.trivy.json, <name>.sarif and <name>.spdx.json
-# Exit:  0 the gate passes (or --report-only); 1 it fails or a scan failed; 2 usage error
+# Exit:  0 the gate passes (or --report-only and no secret); 1 it fails or a scan failed;
+#        2 usage error
 # Needs: bash 4+, docker, jq, GNU date
 
 set -euo pipefail
@@ -48,7 +50,7 @@ trivy() {
 }
 
 echo "==> scanning $image"
-trivy image --quiet --scanners vuln --format json --ignorefile /tmp/trivyignore.yaml \
+trivy image --quiet --scanners vuln,secret --format json --ignorefile /tmp/trivyignore.yaml \
   "$image" >"$out/$name.trivy.json" || die "the Trivy scan of $image failed"
 # The SARIF report is made from the JSON one, so both hold the same findings.
 MSYS_NO_PATHCONV=1 docker run --rm -i --entrypoint sh "$TRIVY" -c \
@@ -61,8 +63,12 @@ jq -e '.spdxVersion and (.packages | length > 0)' "$out/$name.spdx.json" >/dev/n
 echo "    $(jq '.packages | length' "$out/$name.spdx.json") packages in the SBOM"
 
 if ((report_only)); then
+  # A secret still blocks: it leaks whether or not the image can be rebuilt.
+  if jq -e '[.Results[]?.Secrets[]?] | length > 0' "$out/$name.trivy.json" >/dev/null; then
+    exec bash "$ROOT/scripts/scan-gate.sh" "$out/$name.trivy.json"
+  fi
   bash "$ROOT/scripts/scan-gate.sh" "$out/$name.trivy.json" ||
-    echo "    report only: $name is frozen (ADR-0500), so these findings do not block the release"
+    echo "    report only: $name is frozen (ADR-0500), so its vulnerabilities do not block the release"
   exit 0
 fi
 exec bash "$ROOT/scripts/scan-gate.sh" "$out/$name.trivy.json"

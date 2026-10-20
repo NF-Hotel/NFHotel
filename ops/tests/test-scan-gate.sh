@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tests of scripts/scan-gate.sh (MIL-022 task 1, DSA-001 section 8): the gate fails on a
-# critical finding with or without a fix and on a high one with a fix, and passes a high
+# secret in the image, on a critical finding with or without a fix and on a high one with a
+# fix, and passes a high
 # one without a fix, medium findings and an empty report; the ignore file check refuses
 # an entry without a statement, without an expiry or with an expiry beyond 30 days.
 # Hand-written Trivy reports stand in for real scans.
@@ -59,6 +60,12 @@ bash "$GATE" "$W/medium.json" >/dev/null && ok "medium, low and unfixed high fin
 out="$(bash "$GATE" "$W/high-fix.json" 2>&1)"
 [[ "$out" == *"CVE-2026-0001"*"pkg1 1.0 -> 2.0"* ]] && ok "the blocking finding is named with its fix" || ko "the blocking finding is named with its fix"
 bash "$GATE" "$W/missing.json" >/dev/null 2>&1 && ko "a missing report fails" || ok "a missing report fails"
+echo '{"ArtifactName":"test/image:1","Results":[{"Target":"app/appsettings.json","Secrets":[{"RuleID":"aws-access-key-id","Severity":"CRITICAL","Title":"AWS"}]}]}' >"$W/secret.json"
+bash "$GATE" "$W/secret.json" >/dev/null && ko "a secret in the image fails" || ok "a secret in the image fails"
+out="$(bash "$GATE" "$W/secret.json" 2>&1)"
+[[ "$out" == *"aws-access-key-id"*"app/appsettings.json"* ]] && ok "the secret is named with its file" || ko "the secret is named with its file"
+echo '{"ArtifactName":"test/image:1","Results":[{"Target":"t","Secrets":[]}]}' >"$W/nosecret.json"
+bash "$GATE" "$W/nosecret.json" >/dev/null && ok "an empty secret list passes" || ko "an empty secret list passes"
 bash "$GATE" >/dev/null 2>&1
 [[ $? -eq 2 ]] && ok "no argument is a usage error" || ko "no argument is a usage error"
 

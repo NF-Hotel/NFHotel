@@ -270,6 +270,15 @@ if ! grep -q '^COMPOSE_FILE=' "$nginx_dir/nginx.env"; then
   printf '\nCOMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml\n' >> "$nginx_dir/nginx.env"
 fi
 make_env "$ops/deploy/ollama" ollama.env || true
+# The market analysis service reads its settings and its configuration file. Its image is
+# frozen (ADR-0500), so a development VM runs it only with a GHCR login; without one,
+# ops/scripts/deploy-services.sh leaves it out and says why.
+analysis_dir="$ops/deploy/market-analysis"
+make_env "$analysis_dir" market-analysis.env || true
+if [[ ! -f "$analysis_dir/market-analysis.toml" ]]; then
+  cp "$analysis_dir/market-analysis.toml.example" "$analysis_dir/market-analysis.toml"
+  echo "==> made $analysis_dir/market-analysis.toml from the example"
+fi
 # The benchmark service: an older benchmark.env from the notebook has none of the NFBENCH_ settings, so it is
 # kept under another name and the new example takes its place. The token of the service is made once; the web
 # service gets the same value from this file (ops/scripts/deploy-services.sh).
