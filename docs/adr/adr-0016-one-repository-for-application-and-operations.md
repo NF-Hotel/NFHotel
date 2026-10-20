@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-146 Go | [1b46421] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | States that S01 decided and the AI wrote the reasons, which S01 accepted | pending |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | States that S01 decided and the AI wrote the reasons, which S01 accepted | [fdfc65c] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -90,3 +90,4 @@ We follow option 2: NF-Hotel/NFHotel holds the application and its operations; t
 [MIL-025]: ../milestones/mil-025-devops-repository-consolidation.md
 [MIL-031]: ../milestones/mil-031-consolidate-devops-into-nfhotel.md
 [1b46421]: https://github.com/NF-Hotel/NFHotel/commit/1b46421e16ad0138fc39ab6aa7bf0fe3a1799f38
+[fdfc65c]: https://github.com/NF-Hotel/NFHotel/commit/fdfc65cf7e3e03cacac7a0e9393f031dc80679a4
