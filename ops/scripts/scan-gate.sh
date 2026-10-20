@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # The container scan gate of DSA-001 section 8 (MIL-022 task 1): read a Trivy JSON
-# report and fail on any critical vulnerability, or any high one with a fix available.
-# Trivy has already left out what security/trivyignore.yaml accepts.
+# report and fail on any critical vulnerability, any high one with a fix available, and
+# any secret found in the image (a key, a token or a password in a file of a layer), so
+# no image with a secret reaches the registry, which may be public. Trivy has already
+# left out what security/trivyignore.yaml accepts.
 #
 # With --check-ignore it checks that ignore file instead: every entry has an id, a
 # statement (the reason) and an expired_at date at most 30 days after <today>, so an
@@ -80,10 +82,18 @@ findings="$(jq -r '
    | select(.Severity == "CRITICAL" or (.Severity == "HIGH" and (.FixedVersion // "") != ""))]
   | unique_by(.VulnerabilityID + " " + .PkgName)
   | .[] | "\(.Severity)  \(.VulnerabilityID)  \(.PkgName) \(.InstalledVersion) -> \(.FixedVersion // "" | if . == "" then "no fix" else . end)"' "$report")"
+secrets="$(jq -r '
+  [.Results[]? | .Target as $t | .Secrets[]? | "SECRET  \(.RuleID) (\(.Severity)) in \($t)"]
+  | unique | .[]' "$report")"
+if [[ -n "$secrets" ]]; then
+  echo "FAIL  $image holds secrets (DSA-001 section 8); remove them from the image and rotate them:"
+  while IFS= read -r line; do echo "      $line"; done <<<"$secrets"
+  exit 1
+fi
 if [[ -n "$findings" ]]; then
   echo "FAIL  $image has findings that block the release (DSA-001 section 8):"
   while IFS= read -r line; do echo "      $line"; done <<<"$findings"
   echo "      Fix them, or accept one in security/trivyignore.yaml with a reason and an expiry."
   exit 1
 fi
-echo "PASS  $image: no critical finding and no high finding with a fix"
+echo "PASS  $image: no secret, no critical finding and no high finding with a fix"

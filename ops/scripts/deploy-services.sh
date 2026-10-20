@@ -259,16 +259,31 @@ require() {
   die "$service needs $container to be $wanted; deploy it first (postgres, api, web, analysis, nginx, in that order)"
 }
 
+analysis_skipped=0
 for s in "${ordered[@]}"; do
   d="$(dir_of "$s")"
   e="$(env_of "$s")"
+  # A frozen image (ADR-0500) is never built: its source repository is gone. A build uses
+  # the pinned digest instead. The package is private, so a host without a GHCR login (a
+  # development VM) cannot pull it; the service is then left out, with the reason, and the
+  # rest of the deployment goes on. A release (--no-build) always names its digests.
+  if [[ "$s" == "analysis" ]] && ((build)) && [[ -f "$d/frozen-image" ]]; then
+    export MARKET_ANALYSIS_IMAGE
+    MARKET_ANALYSIS_IMAGE="$(tr -d '[:space:]' <"$d/frozen-image")"
+    if ! docker pull -q "$MARKET_ANALYSIS_IMAGE" >/dev/null 2>&1; then
+      echo "warning: cannot pull the frozen image $MARKET_ANALYSIS_IMAGE (a private GHCR package, ADR-0500);" >&2
+      echo "         analysis is left out. Log this host in to ghcr.io with a token that can read packages to run it." >&2
+      analysis_skipped=1
+      continue
+    fi
+  fi
   if [[ "$s" == "web" ]]; then
     require web healthy nfhotel-postgres-postgres-1
     require web healthy nfhotel-api-nfhotel-api-1
   fi
   if [[ "$s" == "nginx" ]]; then
     require nginx running nfhotel-web-nfhotel-web-1
-    require nginx healthy market-analysis-market-analysis-api-1
+    ((analysis_skipped)) || require nginx healthy market-analysis-market-analysis-api-1
     # The proxy needs a certificate to start. A pair put there by the owner is never replaced.
     names="$(sed -n 's/^NGINX_SERVER_NAME=//p' "$d/$e" | tr -d '\r') $(hostname -I 2>/dev/null || true)"
     # shellcheck disable=SC2086 # the names are split on purpose
@@ -279,7 +294,7 @@ for s in "${ordered[@]}"; do
   fi
   echo "==> deploying $s"
   args=(--env-file "$e" up -d --remove-orphans)
-  if ((build)) && [[ "$s" =~ ^(api|web|analysis|benchmark)$ ]]; then
+  if ((build)) && [[ "$s" =~ ^(api|web|analysis|benchmark)$ ]] && [[ ! -f "$d/frozen-image" ]]; then
     args+=(--build)
   fi
   # --wait returns once every service with a healthcheck is healthy.
@@ -309,6 +324,7 @@ done
 echo
 echo "==> status"
 for s in "${ordered[@]}"; do
+  [[ "$s" == "analysis" ]] && ((analysis_skipped)) && continue
   (cd "$(dir_of "$s")" && docker compose --env-file "$(env_of "$s")" ps)
 done
-echo "Deployed: ${ordered[*]}"
+echo "Deployed: ${ordered[*]}$( ((analysis_skipped)) && echo ' (analysis left out: see the warning above)')"
