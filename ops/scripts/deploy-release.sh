@@ -135,7 +135,7 @@ smoke_test() {
   # this checks that redirect on the VM itself; nothing is sent but the request line.
   code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 "http://$host:$http_port/")" || true # NOSONAR
   [[ "$code" == "301" ]] || {
-    echo "smoke test: $host:$http_port answered '$code', expected 301" >&2
+    echo "smoke test: $host:$http_port answered '$code', expected 301" >&2 # NOSONAR: a message, not a URL
     return 1
   }
   # The development certificate is self-signed, so the certificate is not checked here;
