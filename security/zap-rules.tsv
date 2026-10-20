@@ -1,0 +1,6 @@
+# OWASP ZAP rules for the DAST scans of NF Hotel (MIL-027 tasks 6 and 7), read by
+# scripts/dast-scan.sh of NF-Hotel/DevOps. One rule per line, tab separated:
+#   <rule id>	IGNORE|WARN|FAIL	(<reason>; expires YYYY-MM-DD)
+# IGNORE and WARN need a reason and an expiry at most 30 days ahead; S01 approves each
+# line in a reviewed pull request. A rule not listed keeps the ZAP default, and any
+# High alert of a rule that is not IGNORE fails the scan.

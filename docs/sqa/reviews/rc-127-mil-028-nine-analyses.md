@@ -1,10 +1,10 @@
-# RC-125 Review of the amendment of MIL-027 (nine analyses, chart observations)
+# RC-127 Review of the amendment of MIL-028 (nine analyses, chart observations)
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | RC-125 |
-| CrossReference | [MIL-027], [QC-MIL-001], [QC-LANG-001] |
+| ID | RC-127 |
+| CrossReference | [MIL-028], [QC-MIL-001], [QC-LANG-001] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
@@ -15,7 +15,7 @@
 
 ## Artifact Under Review
 
-- Instance reviewed: [MIL-027], amended on 2026-10-20 (nine analyses, `room_count`, an observation per chart)
+- Instance reviewed: [MIL-028], amended on 2026-10-20 (nine analyses, `room_count`, an observation per chart)
 - Checklist used: [QC-MIL-001]; also [QC-LANG-001] because the type is written in the PO language
 - Scope: full review of the changes of 2026-10-20 (nine analyses, occupancy, correlation matrix, an AI observation for each chart)
 - Language and domain: en / it
@@ -61,7 +61,7 @@ Go — every criterion of QC-MIL-001 passes with two action items. Criterion 9 o
 
 ---
 
-[MIL-027]: ../../milestones/mil-027-market-analysis-run-api.md
+[MIL-028]: ../../milestones/mil-028-market-analysis-run-api.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
 [5bc5cf0]: https://github.com/NF-Hotel/NFHotel/commit/5bc5cf054789ce61d82e0f429092a4e485ae7c27

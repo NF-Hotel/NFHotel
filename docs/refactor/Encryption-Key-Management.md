@@ -101,6 +101,19 @@ The tests check, among other things:
 
 The tests use test keys and not production keys.
 
+
+
+### 2.5 Scope of encryption
+
+AES-GCM encryption is currently applied to guests' passport numbers.
+
+First name, last name, email and country remain searchable to support guest search requirements BR-68 / BR-N-05.
+
+These fields must still be protected through appropriate access control and database security measures.
+
+Encryption of additional sensitive personal data requires a separate assessment and team approval.
+
+
 ---
 
 
@@ -228,6 +241,19 @@ The following decisions are still missing:
 
 
 The decisions must be clarified and approved by the team before the solution is used in production.
+
+
+### 8.1 D-04 assessment
+
+The existing AES-GCM implementation protects guests' passport numbers and has been verified through unit and integration tests.
+
+The encryption scope has been reviewed against the guest data model and search requirements BR-68 / BR-N-05.
+
+First name, last name, email and country remain searchable. Phone numbers are also personal data but are not currently included in the application-level AES-GCM encryption scope.
+
+No additional field-level encryption is proposed as part of the current D-04 task.
+
+Production key storage, key rotation and backup/recovery remain outstanding decisions and must be addressed before production deployment.
 
 ---
 

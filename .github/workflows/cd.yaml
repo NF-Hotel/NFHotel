@@ -64,7 +64,7 @@ jobs:
       - name: Deploy the release
         # A pinned action reference cannot be wrapped (ADR-0012: full commit SHA).
         # yamllint disable-line rule:line-length
-        uses: NF-Hotel/DevOps/.github/actions/deploy-release@82cb1f4fe99a21b54551c32cfa738d5982caf9d9
+        uses: NF-Hotel/DevOps/.github/actions/deploy-release@24d979e3d785a206c66f5c5fc1655221b5417160
         with:
           release-run-id: ${{ github.event.workflow_run.id || inputs.release_run_id }}
           apply: ${{ github.event_name == 'workflow_run' || inputs.apply }}

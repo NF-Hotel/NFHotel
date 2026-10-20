@@ -1,9 +1,9 @@
-# RC-126 Review of the amendment of MIL-026 (occupancy, correlation heat map, AI observations)
+# RC-128 Review of the amendment of MIL-026 (occupancy, correlation heat map, AI observations)
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | RC-126 |
+| ID | RC-128 |
 | CrossReference | [MIL-026], [QC-MIL-001], [QC-LANG-001] |
 
 ## Version History
@@ -28,10 +28,10 @@
 | --- | --- | --- | --- |
 | 1 | A concrete deliverable is defined for every gate | Pass | The deliverable names `room_count` in the request, the correlation heat map and a caption under every chart with the AI observation; the review corrected task 20, which first said donut for holiday against other days |
 | 2 | Explicit Go/No-Go criteria are stated for each gate | Pass | Criteria 20 and 21 are checkable by client tests against a fake of the service and by component tests; criterion 21 says a chart with no observation says why and never shows an empty box, which also meets criterion 19 (no donut for figures that are not parts of one whole) |
-| 3 | Dependencies on other milestones are explicitly mapped | Pass | MIL-027 supplies the nine analyses and the observations; tasks 13 to 21 start when its run API is merged, as the Dependencies row says |
+| 3 | Dependencies on other milestones are explicitly mapped | Pass | MIL-028 supplies the nine analyses and the observations; tasks 13 to 21 start when its run API is merged, as the Dependencies row says |
 | 4 | Each milestone is traceable to a Business Case objective or KPI | Pass | Objective 6 of BC-001 and US-001.01; unchanged |
 | 5 | Milestone owner and approving reviewer are identified | Pass | S01; S03 for the container and the ports |
-| 6 | Milestone has a defined target date consistent with project constraints | Pass | 2026-11-27 is kept: two weeks after MIL-027, and the chart tasks can be built against the sample result before that |
+| 6 | Milestone has a defined target date consistent with project constraints | Pass | 2026-11-27 is kept: two weeks after MIL-028, and the chart tasks can be built against the sample result before that |
 
 ## Language and Domain Results
 

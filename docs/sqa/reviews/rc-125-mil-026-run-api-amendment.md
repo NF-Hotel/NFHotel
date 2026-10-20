@@ -1,10 +1,10 @@
-# RC-122 Review of MIL-027 (market analysis run API)
+# RC-125 Review of the amendment of MIL-026 (run API of the new service)
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | RC-122 |
-| CrossReference | [MIL-027], [QC-MIL-001], [QC-LANG-001] |
+| ID | RC-125 |
+| CrossReference | [MIL-026], [QC-MIL-001], [QC-LANG-001] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
@@ -15,7 +15,7 @@
 
 ## Artifact Under Review
 
-- Instance reviewed: [MIL-027], initial version of 2026-10-20
+- Instance reviewed: [MIL-026], amended on 2026-10-20 (tasks 13 to 16, criteria 14 to 17)
 - Checklist used: [QC-MIL-001]; also [QC-LANG-001] because the type is written in the PO language
 - Scope: full review
 - Language and domain: en / it
@@ -26,12 +26,12 @@
 
 | # | Criterion | Status | Evidence/Notes |
 | --- | --- | --- | --- |
-| 1 | A concrete deliverable is defined for every gate | Pass | Deliverable is the contract first, six analyses, AI port and adapters, background run API and deploy files, each with a named output |
-| 2 | Explicit Go/No-Go criteria are stated for each gate | Pass | Nine criteria, each checkable by a test or a command; criterion 7 had no number for the time and the memory, so the review made it 60 seconds and the `mem_limit` of the compose file |
-| 3 | Dependencies on other milestones are explicitly mapped | Pass | Depends on MIL-004, ADR-0003 and the repository `notebook-market-analysis`; the last has no baseline of its own (see action items) |
-| 4 | Each milestone is traceable to a Business Case objective or KPI | Pass | Objective 6 of BC-001 and US-001.01 are named in the Traceability table |
-| 5 | Milestone owner and approving reviewer are identified | Pass | S01 owns; S01 and S03 approve |
-| 6 | Milestone has a defined target date consistent with project constraints | Pass | 2026-11-13 is not in the date list of the Constraints of BC-001 (it ends at MIL-006); it follows the pull request failure of 2026-10-20 and leaves two weeks before MIL-026 |
+| 1 | A concrete deliverable is defined for every gate | Pass | The deliverable now names the run API client, the `X-API-Key`, and the removal of `deploy/market-analysis/`; tasks 13 to 16 are inside it |
+| 2 | Explicit Go/No-Go criteria are stated for each gate | Pass | Seventeen criteria; the new 14 to 17 are checked by client tests against a fake built from the contract file, by a comparison of the sample files and by the release check |
+| 3 | Dependencies on other milestones are explicitly mapped | Pass | MIL-028 is added with the reason; tasks 13 to 16 start only when its run API is merged |
+| 4 | Each milestone is traceable to a Business Case objective or KPI | Pass | Objective 6 of BC-001 and US-001.01, unchanged |
+| 5 | Milestone owner and approving reviewer are identified | Pass | S01; S03 for the container and the ports, unchanged |
+| 6 | Milestone has a defined target date consistent with project constraints | Pass | 2026-11-27 is two weeks after MIL-028; BC-001 has no date for this milestone |
 
 ## Language and Domain Results
 
@@ -50,19 +50,18 @@
 
 ## Overall Verdict
 
-Go — every criterion of QC-MIL-001 passes after criterion 7 of the milestone was made measurable during the review. Criterion 9 of QC-LANG-001 rests on the user's acceptance in chat and the AI check.
+Go — every criterion of QC-MIL-001 passes for the amendment. The milestone cannot be accepted for tasks 13 to 16 to start before MIL-028 is accepted and its run API is merged. Criterion 9 of QC-LANG-001 rests on the user's acceptance in chat and the AI check.
 
 ## Action Items
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| Decide whether `notebook-market-analysis` gets its own Business Case, Stakeholder Analysis and milestone (its AGENTS.md has the plan-first gate for `src/` and `tests/` there), or whether this milestone is accepted as the plan for its pull requests | S01 | Before task 2 starts |
-| Decide where the issues of the six tasks live (this repository's host, or the service repository), because the dry run creates them in `NF-Hotel/NFHotel` | S01 | Before `--apply` |
-| Confirm the target date 2026-11-13 | S01 | Before acceptance |
+| Confirm the target date 2026-11-27 | S01 | Before acceptance |
+| Until MIL-028 is merged the release check of pull request 180 stays red; decide whether to merge with it red or to hold the pull request | S01 | Before the merge |
 
 ---
 
-[MIL-027]: ../../milestones/mil-027-market-analysis-run-api.md
+[MIL-026]: ../../milestones/mil-026-market-analysis-report.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
 [5bc5cf0]: https://github.com/NF-Hotel/NFHotel/commit/5bc5cf054789ce61d82e0f429092a4e485ae7c27

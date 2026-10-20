@@ -1,9 +1,9 @@
-# RC-124 Review of the amendment of MIL-026 (charts by the shape of the data)
+# RC-126 Review of the amendment of MIL-026 (charts by the shape of the data)
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | RC-124 |
+| ID | RC-126 |
 | CrossReference | [MIL-026], [QC-MIL-001], [QC-LANG-001] |
 
 ## Version History
@@ -28,10 +28,10 @@
 | --- | --- | --- | --- |
 | 1 | A concrete deliverable is defined for every gate | Pass | The deliverable has a new bullet: charts that fit the data, with the six kinds and the rule that picks them; all as SVG, no script library |
 | 2 | Explicit Go/No-Go criteria are stated for each gate | Pass | Nineteen criteria. The new 18 is checked by a test that states the rule (donut for 2 to 4 parts, ranked bars above 4, columns, line, heat map, tile, bar chart as the fallback); the new 19 is checked by a component test of the markup (no donut above 4 parts, a text alternative, a second cue besides colour) |
-| 3 | Dependencies on other milestones are explicitly mapped | Pass | Unchanged. Tasks 17 to 19 need no run API: they are built and tested against the sample result of `docs/test-data/`, so they do not wait for MIL-027 |
+| 3 | Dependencies on other milestones are explicitly mapped | Pass | Unchanged. Tasks 17 to 19 need no run API: they are built and tested against the sample result of `docs/test-data/`, so they do not wait for MIL-028 |
 | 4 | Each milestone is traceable to a Business Case objective or KPI | Pass | Objective 6 of BC-001 and US-001.01; the review added tasks 17 and 18 to the Traceability row of US-001.01 |
 | 5 | Milestone owner and approving reviewer are identified | Pass | S01; S03 for the container and the ports, unchanged |
-| 6 | Milestone has a defined target date consistent with project constraints | Pass | 2026-11-27 is kept; the chart tasks are independent of MIL-027 and add about a week of work inside the two weeks that follow it. BC-001 sets no date for this milestone |
+| 6 | Milestone has a defined target date consistent with project constraints | Pass | 2026-11-27 is kept; the chart tasks are independent of MIL-028 and add about a week of work inside the two weeks that follow it. BC-001 sets no date for this milestone |
 
 ## Language and Domain Results
 

@@ -4,21 +4,21 @@
 | Key | Value |
 | --- | --- |
 | ID | MIL-026 |
-| CrossReference | [BC-001], [US-001], [MIL-004], [MIL-019], [MIL-020], [MIL-027] |
+| CrossReference | [BC-001], [US-001], [MIL-004], [MIL-019], [MIL-020], [MIL-028] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Deprecated | Claude (AI) | AI at the request of S01, not independent | Added tasks 17 to 19 and criteria 18 and 19: each chart type follows the shape of the data (a pie chart only for two to four parts of a whole, bars to compare and rank, columns for ordered bands, a line for a time series, a heat map for month and year, tiles for single figures) instead of one bar chart for everything; asked for by S01; accepted by S01 in chat on 2026-10-20 after RC-124 Go | [5bc5cf0] |
-| 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Tasks 20 and 21 and criteria 20 and 21: the number of rooms goes to the service for the occupancy analyses, a correlation matrix is drawn as a heat map, and each chart says what it shows and why that kind of chart was chosen (the course assignment of S01); accepted by the user in chat on 2026-10-20 after RC-126 Go | [5bc5cf0] |
+| 2026-10-20 | Deprecated | Claude (AI) | AI at the request of S01, not independent | Added tasks 17 to 19 and criteria 18 and 19: each chart type follows the shape of the data (a pie chart only for two to four parts of a whole, bars to compare and rank, columns for ordered bands, a line for a time series, a heat map for month and year, tiles for single figures) instead of one bar chart for everything; asked for by S01; accepted by S01 in chat on 2026-10-20 after RC-126 Go | [5bc5cf0] |
+| 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Tasks 20 and 21 and criteria 20 and 21: the number of rooms goes to the service for the occupancy analyses, a correlation matrix is drawn as a heat map, and each chart says what it shows and why that kind of chart was chosen (the course assignment of S01); accepted by the user in chat on 2026-10-20 after RC-128 Go | [5bc5cf0] |
 
 ---
 
 ## Purpose
 
-Let a Manager start a market analysis of the hotel bookings and read its report in the back office, with the AI executive summary of every analysis. The website API (API to API) reads the bookings of the database, sends them to the run API of the market analysis service (`NF-Hotel/notebook-market-analysis`, built by [MIL-027]), stores the result and a Blazor page shows it. The second version called `Notebook_Market_Analysis`, which has since been replaced by `notebook-market-analysis`; the third version (this one) calls the run API that [MIL-027] adds to it, with nine analyses and insights. The bookings need fields that the database does not have yet (booking date, price, guests, market segment and more), so the milestone adds them and loads the fake data of the repository (`nf_hotel_bookings.csv`) into the database. It delivers [US-001] story US-001.01 (View the market analysis).
+Let a Manager start a market analysis of the hotel bookings and read its report in the back office, with the AI executive summary of every analysis. The website API (API to API) reads the bookings of the database, sends them to the run API of the market analysis service (`NF-Hotel/notebook-market-analysis`, built by [MIL-028]), stores the result and a Blazor page shows it. The second version called `Notebook_Market_Analysis`, which has since been replaced by `notebook-market-analysis`; the third version (this one) calls the run API that [MIL-028] adds to it, with nine analyses and insights. The bookings need fields that the database does not have yet (booking date, price, guests, market segment and more), so the milestone adds them and loads the fake data of the repository (`nf_hotel_bookings.csv`) into the database. It delivers [US-001] story US-001.01 (View the market analysis).
 
 ## Deliverable
 
@@ -26,7 +26,7 @@ Let a Manager start a market analysis of the hotel bookings and read its report 
 - A client of the market analysis service (a port in the Application layer and an adapter) that starts a run with the bookings as the JSON of its contract (`openapi/market-contract.yaml`), asks for the state of the run and reads result schema 1.1; the base address and the `X-API-Key` are in the env file, and no key is in git.
 - A run of the analysis in the background of the API, because a run with AI insights takes up to 12 minutes: a start returns at once, the page asks for the state, and the API follows the run of the service by its run id instead of one long request.
 - Website API endpoints: start a run (Manager only), read the state of a run, and read the latest report. The data analysis service does not push a result, so the API reads it when a completed run is first asked for, and stores it in the website database with its `schema_version`.
-- The number of rooms of the hotel in the run request (the occupancy analyses of MIL-027 need it), a correlation matrix drawn as a heat map with a diverging colour scale and the value in each cell, and under every chart a short text of what it shows, why that kind of chart was chosen and what it cannot say, and what the AI sees in that chart (its observation from the service, labelled as AI-generated).
+- The number of rooms of the hotel in the run request (the occupancy analyses of MIL-028 need it), a correlation matrix drawn as a heat map with a diverging colour scale and the value in each cell, and under every chart a short text of what it shows, why that kind of chart was chosen and what it cannot say, and what the AI sees in that chart (its observation from the service, labelled as AI-generated).
 - Charts that fit the data: the kind of chart is chosen from the shape of each series by one rule (a pie or donut chart only for two to four parts of a whole, ranked bars to compare many categories, columns for ordered bands such as lead time, a line for a time series such as the months, a heat map for month against year, tiles for single figures), all as SVG without a script library.
 - A back office page `/admin/market-analysis` for a Manager: start a run, follow the state (`queued`, `running`, `completed`, `failed`), and read the report: charts of the market data and the AI analysis next to them, or a clear message when there is no result yet.
 - A fake of the Python service for the tests, so that no test needs Python, Ollama or the VM.
@@ -66,7 +66,7 @@ Let a Manager start a market analysis of the hotel bookings and read its report 
 | MIL-019 | The result storage pattern and API conventions this milestone repeats |
 | MIL-020 | The service client pattern, Manager policy, tokens and deploy files |
 | MIL-004 | The deployment pattern of the market analysis service behind nginx |
-| MIL-027 | The run API of the market analysis service that the client calls; tasks 13 to 16 start when MIL-027 is accepted and its run API is merged |
+| MIL-028 | The run API of the market analysis service that the client calls; tasks 13 to 16 start when MIL-028 is accepted and its run API is merged |
 | ADR-0003 | The VM and the network rules |
 
 ## Traceability
@@ -85,7 +85,7 @@ Let a Manager start a market analysis of the hotel bookings and read its report 
 
 ## Target Date
 
-2026-11-27 — two weeks after [MIL-027] (2026-11-13), whose run API tasks 13 to 16 need; for S01 to confirm.
+2026-11-27 — two weeks after [MIL-028] (2026-11-13), whose run API tasks 13 to 16 need; for S01 to confirm.
 
 ## Tasks
 
@@ -103,7 +103,7 @@ Let a Manager start a market analysis of the hotel bookings and read its report 
 | 10 | Bookings feed for the analysis | A read of the bookings of the database as the input contract of the markets API: nights split into weekend and week nights, lead time from the booking date, country of the guest, cancelled from the status. | Yes | US-001.01. Done: `MarketAnalysisBookingQueries`, `StayNights`; a test compares the bookings read with counts of the database |
 | 11 | Choose the period of the analysis | `StartMarketAnalysisRequest` with an optional first and last arrival date (by arrival date, both included); the API refuses a first date after the last; the bookings read are those of the period; two date fields and quick choices (last 3 years, last year, all bookings) on the page. Asked for by the Manager after the first run said that the hotel had no bookings. | Yes | US-001.01. Done: `StartMarketAnalysisRequest`, `MarketAnalysisRunTracker.PeriodOf`, `IMarketAnalysisBookingQueries.GetBookingsAsync(from, to)`, the date fields of `MarketAnalysisReport.razor`, `PeriodInvalid` and `NoBookings` texts; review RC-121 |
 | 12 | Fill the fake bookings up to 2026-12-31 | `seed-market-data --through 2026-12-31` repeats the 26 months of the file back to back (`MarketSeedExpander`) until the date, with unique booking numbers, and gives each booking the status of today's date (`MarketDataSeeder`): checked out, checked in, confirmed or cancelled. | Yes | US-001.01. Done: 156,686 bookings in 294 rooms in the dev VM; the repeated bookings are not a forecast; an analysis of the last 3 years (55,484 bookings) completed in 10 minutes with `phi4-mini` and was stored; review RC-121 |
-| 13 | Move the client to the run API | Replace the call of `POST /analyze?insights=true` by start, state and result of the run API of [MIL-027] (`MarketAnalysisServiceClient`, `IMarketAnalysisServiceClient`), send `X-API-Key`, follow the run id instead of one 12 minute request, map the errors of the contract to the messages of the page; tests against a fake built from the contract file. | No | |
+| 13 | Move the client to the run API | Replace the call of `POST /analyze?insights=true` by start, state and result of the run API of [MIL-028] (`MarketAnalysisServiceClient`, `IMarketAnalysisServiceClient`), send `X-API-Key`, follow the run id instead of one 12 minute request, map the errors of the contract to the messages of the page; tests against a fake built from the contract file. | No | |
 | 14 | Align the result mapper and the sample | Check `MarketAnalysisResultMapper` and `FindingsSeries` against the figures that the new service returns for the nine analyses, and read the `observations` of each analysis; replace `docs/test-data/market-analysis-result.json` by a result of the new service; keep result schema 1.1 and the `schema_version` check. | No | |
 | 15 | Replace the deploy files | Remove `deploy/market-analysis/` (the Dockerfile that clones `Notebook_Market_Analysis`, its compose file, env files and toml); point the README, `nfhotel-api.env.example` (`MarketAnalysisService__*`, add the key), the wiki and the release workflow input to the service's own `deploy/docker-compose.yml`; rename the old repository in the documents. | No | |
 | 16 | Check and review the move to the run API | Build, format, tests, the release check of the pull request, a run on the dev VM with the real service; reviews against `qc-programming-csharp` and `qc-yaml`; record the RC. | No | |
@@ -120,7 +120,7 @@ Let a Manager start a market analysis of the hotel bookings and read its report 
 [MIL-019]: ./mil-019-benchmark-results-api.md
 [MIL-004]: ./mil-004-market-analysis-service.md
 [MIL-020]: ./mil-020-start-benchmark-run.md
-[MIL-027]: ./mil-027-market-analysis-run-api.md
+[MIL-028]: ./mil-028-market-analysis-run-api.md
 [82ec2b2]: https://github.com/NF-Hotel/NFHotel/commit/82ec2b2acd49a5a76da4093e355397b6615ef9b0
 [364b34c]: https://github.com/NF-Hotel/NFHotel/commit/364b34c0d17a512d3bea06d9e01ad839b2a86e77
 [5bc5cf0]: https://github.com/NF-Hotel/NFHotel/commit/5bc5cf054789ce61d82e0f429092a4e485ae7c27
