@@ -43,4 +43,10 @@ public static class StaffPolicies
 
     /// <summary>Add models to Ollama and delete installed ones.</summary>
     public const string BenchmarkModelsManage = Permissions.BenchmarkModelsManage;
+
+    /// <summary>See the market analysis report.</summary>
+    public const string MarketAnalysisView = Permissions.MarketAnalysisView;
+
+    /// <summary>Start a market analysis run.</summary>
+    public const string MarketAnalysisStart = Permissions.MarketAnalysisStart;
 }

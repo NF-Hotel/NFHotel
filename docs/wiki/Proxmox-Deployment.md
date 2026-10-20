@@ -205,3 +205,53 @@ joins the internal network `nfhotel-api` and publishes no host port.
   analysis as `model` in the `[llm]` section of `deploy/market-analysis/market-analysis.toml` before it starts the analysis
   service, so a new default applies at the next deployment of that service.
 - Until `BenchmarkService__Token` is set, the start page says that the service is not set up.
+
+## The market analysis report (MIL-026)
+
+The report is made by the markets API of `Notebook_Market_Analysis` (`deploy/market-analysis/`, MIL-004). The NFHotel API,
+not the web application, calls it.
+
+- A Manager starts a run at `/admin/market-analysis`. The API answers at once and runs the analysis in the background: it
+  reads every booking of the database (with the guest country and the market details of the booking), sends them as a
+  JSON array to `http://market-analysis-api:8000/analyze?insights=true`, and stores the result in the table
+  `market_analysis_run`. One run at a time; the page asks the API for the state every few seconds. A run with AI insights
+  takes up to 6 x `generation_timeout_seconds` of `market-analysis.toml` (24 minutes with 240, on a machine without a
+  GPU), so `MarketAnalysisService__TimeoutSeconds` in `deploy/nfhotel-api/nfhotel-api.env` is 1500. The time depends on
+  the model and not on the number of bookings, because the model only sees the findings.
+- The state of a run is kept in the memory of the API. A restart forgets it, the page then says that the API no longer
+  knows the run, and the stored report is not lost.
+- The page shows the last stored report: key figures, and for each analysis its charts and the AI executive summary and
+  suggestions, or the reason there is none (for example `GUARDRAIL_REJECTED`). Without a stored run it says that no
+  analysis has been run.
+- The markets API joins the network `nfhotel-api` (`deploy/market-analysis/docker-compose.yml`) so that the API reaches it;
+  it publishes no host port and has no authentication, so keep that network internal.
+- Receptionist and Housekeeping users get 403 on `api/market-analysis` and do not see the menu entry.
+- The AI model of the analysis is the one in `deploy/market-analysis/market-analysis.toml`, which `scripts/deploy-services.sh`
+  sets from the default AI model of the market analysis (ADR-0014).
+
+### The fake bookings
+
+The database has no real bookings yet, so the report is made from fake ones. The bookings have extra fields that the
+analysis needs (table `booking_market_detail`: booking date, price per night, adults, children, babies, meal, market
+segment, customer type, deposit type, room type, repeated guest, previous cancellations, booking changes, special
+requests, parking spaces). A booking without these fields is analysed with them missing.
+
+`nf_hotel_bookings.csv` (40,060 bookings from 2018 to 2020, in `src/NFHotel.DataAnalysis/data/`) is loaded with the
+command `seed-market-data` of the API:
+
+```bash
+docker cp src/NFHotel.DataAnalysis/data/nf_hotel_bookings.csv nfhotel-api-nfhotel-api-1:/tmp/nf_hotel_bookings.csv
+docker exec nfhotel-api-nfhotel-api-1 dotnet NFHotel.Api.dll seed-market-data /tmp/nf_hotel_bookings.csv --through 2026-12-31
+```
+
+It makes 187 rooms (the most bookings that are at the hotel on one night), about 500 guests with the countries of the file,
+and the bookings placed in rooms so that the overlap rule of the database holds. The file has no price, so the price per
+night is made from the room type, the month and the market segment: it is not real. The command refuses a database that has
+rooms, guests or bookings; add `--replace` to delete them first. It loads the same data every time.
+
+The file covers 26 months (2018-07 to 2020-08). With `--through 2026-12-31` the file is repeated back to back, 26 months
+at a time, until that arrival date, and the bookings after it are left out: about 157,000 bookings in 294 rooms.
+The status follows today's date: a booking that has left is checked out, one that is at the hotel is checked in, one that
+arrives later is confirmed, and a cancelled one stays cancelled. The repeated bookings are not a forecast.
+
+The market analysis page takes a first and a last arrival date; with no date it analyses every booking.

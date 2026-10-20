@@ -110,6 +110,16 @@ public static class Permissions
     public const string BenchmarkModelsManage = "Benchmark.ModelsManage";
 
     /// <summary>
+    /// Permission to read the market analysis report in the back office (MIL-026).
+    /// </summary>
+    public const string MarketAnalysisView = "MarketAnalysis.View";
+
+    /// <summary>
+    /// Permission to start a market analysis run from the back office (MIL-026).
+    /// </summary>
+    public const string MarketAnalysisStart = "MarketAnalysis.Start";
+
+    /// <summary>
     /// All permissions, to build one authorisation policy per permission.
     /// </summary>
     public static readonly IReadOnlyList<string> All =
@@ -134,5 +144,7 @@ public static class Permissions
         BenchmarkDelete,
         AiDefaultsManage,
         BenchmarkModelsManage,
+        MarketAnalysisView,
+        MarketAnalysisStart,
     ];
 }

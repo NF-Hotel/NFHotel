@@ -329,4 +329,48 @@ public static class ErrorCodes
         /// <summary>Ollama could not be reached or refused the delete.</summary>
         public const string ModelServerError = "benchmark_runner.model_server_error";
     }
+
+    /// <summary>Codes of the stored market analysis (MIL-026). The field codes are those of the domain.</summary>
+    public static class MarketAnalysis
+    {
+        /// <summary>No market analysis has been stored yet.</summary>
+        public const string NotFound = "market_analysis.not_found";
+
+        /// <summary>The result schema version is not the one that this API reads.</summary>
+        public const string SchemaVersionUnsupported = "market_analysis.schema_version_unsupported";
+
+        /// <summary>The result is missing a part, or the stored content cannot be read.</summary>
+        public const string BodyInvalid = "market_analysis.body_invalid";
+
+        /// <summary>The hotel has no booking to analyse in the period.</summary>
+        public const string NoBookings = "market_analysis.no_bookings";
+
+        /// <summary>The first date of the period is after the last date.</summary>
+        public const string PeriodInvalid = "market_analysis.period_invalid";
+    }
+
+    /// <summary>Codes of the calls to the markets API that runs the market analysis, and of the run itself (MIL-026).</summary>
+    public static class MarketAnalysisRunner
+    {
+        /// <summary>The address of the markets API is not set.</summary>
+        public const string NotConfigured = "market_analysis_runner.not_configured";
+
+        /// <summary>The markets API did not answer in time or could not be reached.</summary>
+        public const string Unavailable = "market_analysis_runner.unavailable";
+
+        /// <summary>The markets API refused the call (a gateway in front of it asked for a token).</summary>
+        public const string Unauthorized = "market_analysis_runner.unauthorized";
+
+        /// <summary>A run of the market analysis is already active.</summary>
+        public const string AlreadyRunning = "market_analysis_runner.already_running";
+
+        /// <summary>The markets API refused the bookings (an input error, status 422).</summary>
+        public const string InputRejected = "market_analysis_runner.input_rejected";
+
+        /// <summary>The API does not know this run (it keeps the last one in memory, and a restart forgets it).</summary>
+        public const string RunNotFound = "market_analysis_runner.run_not_found";
+
+        /// <summary>The markets API answered something this application cannot use.</summary>
+        public const string UnexpectedResponse = "market_analysis_runner.unexpected_response";
+    }
 }

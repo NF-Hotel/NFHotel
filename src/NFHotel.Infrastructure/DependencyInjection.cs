@@ -7,6 +7,7 @@ using NFHotel.Application.UseCases.AiDefaults;
 using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
+using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Application.UseCases.Rooms;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Repositories;
@@ -136,6 +137,7 @@ public static class DependencyInjection
         services.AddScoped<IStaffRepository, StaffRepository>();
         services.AddScoped<IBenchmarkRunRepository, BenchmarkRunRepository>();
         services.AddScoped<IAiDefaultRepository, AiDefaultRepository>();
+        services.AddScoped<IMarketAnalysisRunRepository, MarketAnalysisRunRepository>();
         services.AddScoped<IBenchmarkQueries, BenchmarkRunRepository>();
     }
 
@@ -164,6 +166,12 @@ public static class DependencyInjection
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<IRoomService, RoomService>();
         services.AddScoped<IAiDefaultService, AiDefaultService>();
+        services.AddScoped<IMarketAnalysisService, MarketAnalysisService>();
+        services.AddScoped<MarketAnalysisRunner>();
+        services.AddScoped<IMarketAnalysisBookingQueries, MarketAnalysisBookingQueries>();
+
+        // One run at a time for the whole API, so the tracker outlives a request.
+        services.AddSingleton<MarketAnalysisRunTracker>();
         services.AddScoped<BenchmarkService>();
         services.AddScoped<IBenchmarkService>(provider => provider.GetRequiredService<BenchmarkService>());
         services.AddScoped<IBenchmarkIntake>(provider => provider.GetRequiredService<BenchmarkService>());

@@ -377,6 +377,97 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("NFHotel.Domain.Entities.BookingMarketDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("booking_market_detail_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Adults")
+                        .HasColumnType("integer")
+                        .HasColumnName("adults");
+
+                    b.Property<int>("Babies")
+                        .HasColumnType("integer")
+                        .HasColumnName("babies");
+
+                    b.Property<DateOnly>("BookedAt")
+                        .HasColumnType("date")
+                        .HasColumnName("booked_at");
+
+                    b.Property<int>("BookingChanges")
+                        .HasColumnType("integer")
+                        .HasColumnName("booking_changes");
+
+                    b.Property<int>("BookingId")
+                        .HasColumnType("integer")
+                        .HasColumnName("booking_id");
+
+                    b.Property<int>("Children")
+                        .HasColumnType("integer")
+                        .HasColumnName("children");
+
+                    b.Property<string>("CustomerType")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("customer_type");
+
+                    b.Property<string>("DepositType")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("deposit_type");
+
+                    b.Property<bool>("IsRepeatedGuest")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_repeated_guest");
+
+                    b.Property<string>("MarketSegment")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("market_segment");
+
+                    b.Property<string>("Meal")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("meal");
+
+                    b.Property<int>("ParkingSpaces")
+                        .HasColumnType("integer")
+                        .HasColumnName("parking_spaces");
+
+                    b.Property<int>("PreviousCancellations")
+                        .HasColumnType("integer")
+                        .HasColumnName("previous_cancellations");
+
+                    b.Property<decimal?>("PricePerNight")
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("price_per_night");
+
+                    b.Property<string>("RoomType")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("room_type");
+
+                    b.Property<int>("SpecialRequests")
+                        .HasColumnType("integer")
+                        .HasColumnName("special_requests");
+
+                    b.HasKey("Id")
+                        .HasName("pk_booking_market_detail");
+
+                    b.HasIndex("BookedAt")
+                        .HasDatabaseName("ix_booking_market_detail_booked_at");
+
+                    b.HasIndex("BookingId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_booking_market_detail_booking_id");
+
+                    b.ToTable("booking_market_detail", (string)null);
+                });
+
             modelBuilder.Entity("NFHotel.Domain.Entities.Guest", b =>
                 {
                     b.Property<int>("Id")
@@ -434,6 +525,59 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_guest_last_name_first_name");
 
                     b.ToTable("guest", (string)null);
+                });
+
+            modelBuilder.Entity("NFHotel.Domain.Entities.MarketAnalysisRun", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("market_analysis_run_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("content_json");
+
+                    b.Property<DateTimeOffset>("FinishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("model");
+
+                    b.Property<string>("Provider")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("provider");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<int>("SchemaVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("schema_version");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_market_analysis_run");
+
+                    b.HasIndex("FinishedAt")
+                        .HasDatabaseName("ix_market_analysis_run_finished_at");
+
+                    b.HasIndex("RunId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_market_analysis_run_run_id");
+
+                    b.ToTable("market_analysis_run", (string)null);
                 });
 
             modelBuilder.Entity("NFHotel.Domain.Entities.Room", b =>
@@ -569,6 +713,16 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                     b.Navigation("Guest");
 
                     b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("NFHotel.Domain.Entities.BookingMarketDetail", b =>
+                {
+                    b.HasOne("NFHotel.Domain.Entities.Booking", null)
+                        .WithOne()
+                        .HasForeignKey("NFHotel.Domain.Entities.BookingMarketDetail", "BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_booking_market_detail_booking_booking_id");
                 });
 
             modelBuilder.Entity("NFHotel.Domain.Entities.BenchmarkRun", b =>
