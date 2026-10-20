@@ -127,25 +127,25 @@ nginx_host() {
 }
 
 smoke_test() {
-  local host http https code
+  local host http_port https_port code
   host="$(nginx_host)"
-  http="$(nginx_port NGINX_HTTP_PORT 80)"
-  https="$(nginx_port NGINX_HTTPS_PORT 443)"
+  http_port="$(nginx_port NGINX_HTTP_PORT 80)"
+  https_port="$(nginx_port NGINX_HTTPS_PORT 443)"
   # Plain HTTP on purpose: port 80 must answer only with a redirect to HTTPS (MIL-017), and
   # this checks that redirect on the VM itself; nothing is sent but the request line.
-  code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 "http://$host:$http/")" || true # NOSONAR
+  code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 "http://$host:$http_port/")" || true # NOSONAR
   [[ "$code" == "301" ]] || {
-    echo "smoke test: $host:$http answered '$code', expected 301" >&2
+    echo "smoke test: $host:$http_port answered '$code', expected 301" >&2
     return 1
   }
   # The development certificate is self-signed, so the certificate is not checked here;
   # the TLS settings themselves are checked by the smoke test of MIL-017.
-  code="$(curl --silent --insecure --output /dev/null --write-out '%{http_code}' --max-time 10 "https://$host:$https/")" || true
+  code="$(curl --silent --insecure --output /dev/null --write-out '%{http_code}' --max-time 10 "https://$host:$https_port/")" || true
   [[ "$code" == "200" ]] || {
-    echo "smoke test: $host:$https answered '$code', expected 200" >&2
+    echo "smoke test: $host:$https_port answered '$code', expected 200" >&2
     return 1
   }
-  echo "smoke test: $host:$http answers 301, $host:$https answers 200"
+  echo "smoke test: $host:$http_port answers 301, $host:$https_port answers 200"
 }
 
 # apply <app-sha> <devops-sha> <web> <api> <analysis> <benchmark>: check out the DevOps
