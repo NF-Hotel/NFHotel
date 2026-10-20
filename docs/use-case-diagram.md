@@ -13,7 +13,8 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-013 Go | [469ff7a] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the actor Hotel staff and the use cases Manage Bookings, Manage Rooms and Manage Guests (MIL-007) | [a29c54a] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the use case Sign In To The Back Office (MIL-016) | [1593b34] |
+| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the use case Sign In To The Back Office (MIL-016) | [1593b34] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Change Own Password and Manage Staff Accounts (MIL-030) (accepted after RC-135 Go) | pending |
 
 ---
 
@@ -46,6 +47,8 @@ rectangle "NFHotel platform" <<System>> {
   usecase "Manage Rooms" as UC8
   usecase "Manage Guests" as UC9
   usecase "Sign In To The Back Office" as UC10
+  usecase "Change Own Password" as UC11
+  usecase "Manage Staff Accounts" as UC12
 }
 Owner --> UC1
 Owner --> UC2
@@ -56,8 +59,12 @@ Staff --> UC7
 Staff --> UC8
 Staff --> UC9
 Staff --> UC10
+Staff --> UC11
+Staff --> UC12
 UC7 ..> UC10 : <<include>>
 UC8 ..> UC10 : <<include>>
+UC11 ..> UC10 : <<include>>
+UC12 ..> UC10 : <<include>>
 UC9 ..> UC10 : <<include>>
 UC2 ..> UC6 : <<include>>
 UC4 ..> UC3 : <<include>>
@@ -71,7 +78,7 @@ UC5 ..> UC3 : <<include>>
 | --- | --- | --- | --- |
 | Owner | `<<Actor>>` | S01 | View Market Analysis; Choose Local AI Model |
 | DevOps | `<<Actor>>` | S02 | Route Services Through Nginx; Run Time and Quality Benchmark; Run Market Analysis Service |
-| Hotel staff | `<<Actor>>` | S05 | Manage Bookings; Manage Rooms; Manage Guests; Sign In To The Back Office |
+| Hotel staff | `<<Actor>>` | S05 | Manage Bookings; Manage Rooms; Manage Guests; Sign In To The Back Office; Change Own Password; Manage Staff Accounts |
 
 ## Use Case Table
 
@@ -87,6 +94,8 @@ UC5 ..> UC3 : <<include>>
 | Manage Rooms | Hotel staff | Keep the rooms, their status and their cleaning state correct | [US-001].07 | Must | Bookings need rooms |
 | Manage Guests | Hotel staff | Find, register, change and delete guests | [US-001].08 | Must | Bookings need guests |
 | Sign In To The Back Office | Hotel staff | Sign in with an own account and see only what the role needs | [US-001].09 | Must | The back office must not run on the public port without it |
+| Change Own Password | Hotel staff | Change the own password with the current one, so that older sessions end | [US-001].10 | Must | A password that others have seen must be replaceable |
+| Manage Staff Accounts | Hotel staff (Manager) | Create, disable, enable and reset accounts and read the audit trail | [US-001].11 | Must | Accounts are made by a command on the server today |
 
 ## Role Matrix
 
@@ -106,6 +115,8 @@ the DevOps role operates the services; the Hotel staff role runs the back office
 | Manage Rooms | - | - | performs |
 | Manage Guests | - | - | performs |
 | Sign In To The Back Office | - | - | performs |
+| Change Own Password | - | - | performs |
+| Manage Staff Accounts | - | - | performs (Manager only) |
 
 No use case is shared by two roles. Whether DevOps may also view the analysis
 is a question for the Product Owner.
@@ -118,6 +129,7 @@ is a question for the Product Owner.
 | Run Time and Quality Benchmark | `<<include>>` | Route Services Through Nginx | The benchmark service is only reachable behind the proxy |
 | Run Market Analysis Service | `<<include>>` | Route Services Through Nginx | The analysis service is only reachable behind the proxy |
 | Manage Bookings, Manage Rooms, Manage Guests | `<<include>>` | Sign In To The Back Office | Every back office function needs a signed-in member of staff |
+| Change Own Password, Manage Staff Accounts | `<<include>>` | Sign In To The Back Office | Both need a signed-in member of staff |
 
 ---
 

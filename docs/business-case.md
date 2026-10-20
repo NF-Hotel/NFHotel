@@ -22,7 +22,8 @@
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 20, Serve the one service that the internet reaches only over TLS: HTTP redirects to (MIL-017) | [b174eeb] |
 | 2026-10-18 | Deprecated | Claude (AI) | AI at the request of S01 | Amended: objective 21, A guest signs in with the booking number and the email and reaches only their own booking (MIL-018) | [6b606da] |
 | 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Amended: objective 22, an administrator starts a benchmark run in the back office and reads its stored result later (MIL-019, MIL-020) | [7fbeba1] |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Amended: objectives 23 to 25, a secure CI/CD pipeline in three phases (MIL-021 to MIL-023, DSA-001); accepted after RC-088 Go | [f4649ad] |
+| 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Amended: objectives 23 to 25, a secure CI/CD pipeline in three phases (MIL-021 to MIL-023, DSA-001); accepted after RC-088 Go | [f4649ad] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Amended: objective 26, staff accounts and passwords (MIL-030), and success criterion 29 (accepted after RC-132 Go) | pending |
 
 ---
 
@@ -94,6 +95,7 @@ basis for the hosting decision (Q-31).
 23. Release only through an approved pipeline: a change reaches the server only after the required CI checks pass, as an image built once in CI and deployed by digest after an approval, over a private connection; the database has a backup whose restore is tested (MIL-021).
 24. Deploy only scanned and attested images: every released image has a vulnerability scan, an SBOM and build provenance that the deploy verifies, and every dependency is pinned (MIL-022).
 25. Harden and observe the server: selected CIS items for Docker and Debian are applied with evidence, the firewall and patching are managed as code, and the posture and delivery performance are measured (MIL-023).
+26. Let the owner and the Managers manage staff accounts and passwords in the back office: a staff member changes their own password with the current one, a Manager creates, disables, enables and resets accounts, a change or a disable ends the old sessions at once, and account events are kept in an audit trail (MIL-030).
 
 ## Scope
 
@@ -124,6 +126,7 @@ basis for the hosting decision (Q-31).
 - The CI/CD and DevSecOps assessment DSA-001, ADR-0007 and ADR-0008; required checks and repository security settings; a release workflow to GHCR; an approved CD workflow over Tailscale with health checks and rollback; PostgreSQL backups and restore drills (MIL-021)
 - Vulnerability scanning, SBOMs, build provenance and its verification, pinned actions and images, CodeQL, and migrations applied by the deploy (MIL-022)
 - CIS-aligned hardening of Docker and Debian, nftables, unattended security updates, log rotation and an uptime check, OpenSSF Scorecard, an OWASP SAMM baseline and DORA metrics (MIL-023)
+- A change-password function for every staff role, account management and an audit page for the Manager, a security stamp that ends old sessions, a password policy, the `reset-staff-password` recovery command, the deploy files and the replacement of the production Manager password, and ADR-0015 (MIL-030)
 
 ### Out of Scope
 
@@ -189,6 +192,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 26 | Approved pipeline | A pull request with a failing required check cannot be merged; every deploy runs the image digests of a green release after an approval in `production`; 0 images built on the VM; a failed smoke test rolls back to the previous digests; 0 ssh keys or Tailscale secrets stored in GitHub; a restore of the daily backup is recorded | The ruleset API, the CD run record, `docker inspect` in the VM and the restore drill RC |
 | 27 | Verified supply chain | Every deployed digest has an SBOM and a provenance attestation that `gh attestation verify` accepts; 0 critical and 0 fixable high findings in the deployed images; 0 unpinned actions or image tags | The CD log, the Trivy SARIF and the Scorecard Pinned-Dependencies check |
 | 28 | Hardened server | Every selected CIS item has a status and evidence; only ports 80 and 443 answer from outside the tailnet; security updates install unattended; a Scorecard result, a SAMM baseline and a monthly DORA report exist | The CIS checklist, an nmap scan, the update log and the reports |
+| 29 | Staff accounts and passwords | A password change with a wrong current password, a short, common or reused new password is refused, and the sixth wrong current password in the window gets 429; a token issued before a change, reset or disable gets 401; a Receptionist and a Housekeeping user get 403 on account management; the last active Manager cannot be disabled; every account event writes one audit row with no password, hash or token in it; in the VM the initial Manager password is refused after the owner changed it | Unit, API and page tests, the audit page and the deploy check in the VM |
 
 ## Risks
 

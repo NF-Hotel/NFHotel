@@ -13,7 +13,8 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-012 Go | [469ff7a] |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.06 to US-001.08, the hotel staff stories (MIL-007) | [a29c54a] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.09, the staff sign-in story (MIL-016) | [1593b34] |
+| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.09, the staff sign-in story (MIL-016) | [1593b34] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.10 and US-001.11, the password and account stories (MIL-030) (accepted after RC-135 Go) | pending |
 
 ---
 
@@ -169,6 +170,37 @@ analysis without anyone starting it by hand.
 | Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
 | --- | --- | --- | --- | --- |
 | UCD-001 use case "Sign In To The Back Office" | fits one iteration | none | Must | BusinessRules.md says the back office must not go into operation without a sign-in |
+
+### US-001.10 — Change my password
+
+**As** hotel staff (S05), **I want** to change my own password, **so that** a password that others have seen stops working and I am the only one who knows mine.
+
+**Acceptance Criteria**
+
+- Given I am signed in, when I give my current password and a new one of at least 12 characters, then the password is changed and I stay signed in on this device.
+- Given the current password is wrong, when I try to change, then nothing changes, and after five wrong attempts in fifteen minutes I must wait.
+- Given I changed my password, when anyone uses a session or the old password from before, then it is refused.
+- Given my account must change its password, when I sign in, then I see only the change page until I have changed it.
+
+| Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
+| --- | --- | --- | --- | --- |
+| UCD-001 use case "Change Own Password" | fits one iteration | none | Must | The first Manager password was seen in a chat |
+
+### US-001.11 — Manage staff accounts
+
+**As** a Manager (S05), **I want** to create, disable, enable and reset staff accounts on a screen, **so that** colleagues get and lose access without a command on the server, and I can see who did what.
+
+**Acceptance Criteria**
+
+- Given I am a Manager, when I create an account with a role and a temporary password, then the person must change the password at the first sign-in.
+- Given I disable an account, when its owner uses an open session, then it is refused at once.
+- Given I am the only active Manager, when I try to disable my account, then it is refused.
+- Given I am a Receptionist or Housekeeping, when I open the staff page, then I am told that the role has no access.
+- Given I open the audit page, when accounts were changed, then I see who did what, to whom and when, and no password.
+
+| Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
+| --- | --- | --- | --- | --- |
+| UCD-001 use case "Manage Staff Accounts" | fits one iteration | none | Must | Accounts are made by a command on the server today |
 
 ## INVEST Check
 
