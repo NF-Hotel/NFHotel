@@ -11,14 +11,16 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Deprecated | mikemike | S01 | Initial version, the decision of S01 in chat to keep everything in NF-Hotel/NFHotel | [1b46421] |
 | 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-146 Go | [1b46421] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | States that S01 decided and the AI wrote the reasons, which S01 accepted | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
 ---
 
 ## Context
+
+**Who wrote what.** The decision is S01's, given in chat on 2026-10-20 ("let us keep it all in NF Hotel and write why in an ADR", translated from Danish). The reasons below were written by the AI assistant from the events of that day and from the analysis it gave S01 before the decision. S01 read them and accepted this ADR. They are not a quote of S01.
 
 ADR-0012 (2026-10-19) made `NF-Hotel/DevOps` the authoritative repository for infrastructure and operations. NFHotel kept the application and thin workflows that call DevOps composite actions pinned by commit SHA. One day of running that split showed its cost for a team of this size:
 
@@ -83,7 +85,7 @@ We follow option 2: NF-Hotel/NFHotel holds the application and its operations; t
 
 [BC-001]: ../business-case.md
 [SA-001]: ../stakeholder-analysis.md
-[ADR-0007]: https://github.com/NF-Hotel/DevOps/blob/release-candidate-2026-10-20/docs/adr/adr-0007-cicd-and-supply-chain.md
+[ADR-0007]: ./adr-0007-cicd-and-supply-chain.md
 [ADR-0012]: ./adr-0012-devops-repository-ownership.md
 [MIL-025]: ../milestones/mil-025-devops-repository-consolidation.md
 [MIL-031]: ../milestones/mil-031-consolidate-devops-into-nfhotel.md

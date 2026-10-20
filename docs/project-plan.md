@@ -212,9 +212,9 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-018]: ./milestones/mil-018-guest-login.md
 [MIL-019]: ./milestones/mil-019-benchmark-results-api.md
 [MIL-020]: ./milestones/mil-020-start-benchmark-run.md
-[MIL-021]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-021-secure-cicd-foundation.md
-[MIL-022]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-022-supply-chain-security.md
-[MIL-023]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-023-operational-quality.md
+[MIL-021]: ./milestones/mil-021-secure-cicd-foundation.md
+[MIL-022]: ./milestones/mil-022-supply-chain-security.md
+[MIL-023]: ./milestones/mil-023-operational-quality.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2

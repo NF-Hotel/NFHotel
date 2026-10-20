@@ -120,8 +120,8 @@ We follow option 4: `NF-Hotel/DevOps` owns infrastructure and operations, `NF-Ho
 [BC-001]: ../business-case.md
 [ADR-0003]: ./adr-0003-proxmox-vm-for-services.md
 [ADR-0006]: ./adr-0006-tls.md
-[ADR-0007]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md
-[ADR-0010]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0010-production-vm-as-deployed.md
+[ADR-0007]: ./adr-0007-cicd-and-supply-chain.md
+[ADR-0010]: ./adr-0010-production-vm-as-deployed.md
 [MIL-025]: ../milestones/mil-025-devops-repository-consolidation.md
 [4c8f103]: https://github.com/NF-Hotel/NFHotel/commit/4c8f1030fdf53a5d9d827478244c55ecae73b8eb
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md

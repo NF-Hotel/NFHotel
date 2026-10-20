@@ -53,6 +53,8 @@
 
 - **The order in production.** After this merge, a release names an NFHotel commit. The VM can check it out only after `switch-vm-checkout.sh` has made `/opt/nfhotel` an NFHotel checkout. CD before the switch fails at the checkout, before any container changes. S03 runs the switch first.
 - **NFHotel#195** pins the DevOps actions and carries the same permissions, image pins and Dependabot. This branch holds all of its changes on local actions. If #195 merges first, this branch keeps its own versions of the four workflows.
+- **No way back to two copies.** `ops/tests/check-layout.sh` (in the linters, job "Ops linters") fails when a path that moved into `ops/` is back at the root, or when a workflow calls NF-Hotel/DevOps. An open pull request that still changes the old paths, such as #194 (`deploy/nfhotel-api/nfhotel-api.env.example`, `scripts/dev-up.sh`), then fails until its change is moved to `ops/`.
+- **The links of the moved documents** to `NF-Hotel/DevOps/blob/...` are relative links to the files in `docs/` now. DevOps `main` never held them, so those links did not work before either.
 - **`ops-ci.yaml` runs on every pull request,** not only on changes of `ops/`. Its jobs are meant to be required checks, and a path filter would leave them unreported on other pull requests.
 
 ## Overall Verdict
