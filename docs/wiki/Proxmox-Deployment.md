@@ -215,8 +215,9 @@ not the web application, calls it.
   reads every booking of the database (with the guest country and the market details of the booking), sends them as a
   JSON array to `http://market-analysis-api:8000/analyze?insights=true`, and stores the result in the table
   `market_analysis_run`. One run at a time; the page asks the API for the state every few seconds. A run with AI insights
-  takes up to 6 x `generation_timeout_seconds` of `market-analysis.toml` (24 minutes with 240, on a machine without a
-  GPU), so `MarketAnalysisService__TimeoutSeconds` in `deploy/nfhotel-api/nfhotel-api.env` is 1500. The time depends on
+  takes up to 6 x `generation_timeout_seconds` of `market-analysis.toml`. A run is started at night on a machine without a
+  GPU, so the example allows 4 hours for one request (14400) and `MarketAnalysisService__TimeoutSeconds` in
+  `deploy/nfhotel-api/nfhotel-api.env` is 90000 (25 hours); 240 and 1500 are enough for a short run. The time depends on
   the model and not on the number of bookings, because the model only sees the findings.
 - The state of a run is kept in the memory of the API. A restart forgets it, the page then says that the API no longer
   knows the run, and the stored report is not lost.
