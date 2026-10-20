@@ -214,8 +214,8 @@ if ((local_code)); then
   echo "==> copying the working tree to $remote_dir"
   vm "sudo mkdir -p $remote_dir && sudo chown $VM_USER $remote_dir"
   # The templates and snippets of the proxy are read as whole folders by nginx, and a file that was removed from the
-  # repository must not stay in the VM, so these two folders are replaced and not merged.
-  vm "rm -rf $remote_dir/deploy/nginx/templates $remote_dir/deploy/nginx/snippets"
+  # repository must not stay in the VM, so these three folders are replaced and not merged.
+  vm "rm -rf $remote_dir/deploy/nginx/templates $remote_dir/deploy/nginx/snippets $remote_dir/deploy/nginx/dev"
   (cd "$root" && git ls-files -co --exclude-standard -z |
     tar --null --exclude=framework -T - -cf -) | vm "tar -xf - -C $remote_dir" ||
     die "could not copy the working tree to the VM"
