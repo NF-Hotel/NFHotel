@@ -27,7 +27,7 @@ public sealed class Result<TValue> : Result
     /// </exception>
     public TValue Value => IsSuccess
         ? _value
-        : throw new InvalidOperationException("Værdien på et fejlet resultat kan ikke læses.");
+        : throw new InvalidOperationException("The value of a failed result cannot be read.");
 
     /// <summary>Creates a successful result with a value.</summary>
     /// <param name="value">The value.</param>

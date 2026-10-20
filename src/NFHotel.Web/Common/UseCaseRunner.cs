@@ -131,6 +131,6 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     private void Log(Exception exception) =>
         _logger.LogError(
             exception,
-            "Et use case på {Service} fejlede uventet. Brugeren fik en neutral besked.",
+            "A use case on {Service} failed unexpectedly. The user got a neutral message.",
             typeof(TService).Name);
 }

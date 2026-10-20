@@ -31,7 +31,7 @@ public static class PublicDateText
     /// <summary>
     /// Writes one date as <c>12 October 2026</c>.
     /// </summary>
-    /// <param name="date">Datoen.</param>
+    /// <param name="date">The date.</param>
     /// <returns>The English text.</returns>
     public static string Long(DateOnly date) => string.Concat(
         date.Day.ToString(CultureInfo.InvariantCulture),

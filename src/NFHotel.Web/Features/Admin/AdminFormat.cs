@@ -28,7 +28,7 @@ public static class AdminFormat
     /// <summary>
     /// Writes a date as <c>dd MMM yyyy</c>.
     /// </summary>
-    /// <param name="value">Datoen.</param>
+    /// <param name="value">The date.</param>
     /// <returns>The formatted date.</returns>
     public static string Date(DateOnly value) =>
         value.ToString(DatePattern, CultureInfo.InvariantCulture);

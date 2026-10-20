@@ -56,7 +56,7 @@ public sealed class HotelDbContextFactory : IDesignTimeDbContextFactory<HotelDbC
         public string Decrypt(string cipherText) => throw new NotSupportedException(Message);
 
         private const string Message =
-            "Designtidskonteksten kan ikke kryptere. Sæt en rigtig nøgle via AddInfrastructure "
-            + "hvis du skal læse eller skrive data.";
+            "The design-time context cannot encrypt. Set a real key through AddInfrastructure "
+            + "if you need to read or write data.";
     }
 }

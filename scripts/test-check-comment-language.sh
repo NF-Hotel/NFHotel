@@ -57,6 +57,27 @@ check html.csproj '<!-- Kontrollér ændringer før merge -->
 <Project />'
 expect "danish in an xml comment, exit 1" "1" "${status}"
 
+check bad-summary.cs '/// <summary>
+/// Kontrollerer om en medarbejderrolle har en bestemt permission.
+/// </summary>
+public static bool HasPermission(StaffRole role, string permission) => false;'
+expect "danish xml summary without danish letters, exit 1" "1" "${status}"
+expect "danish xml summary, the line is named" "1" "$(grep -c '^bad-summary.cs:2:' <<<"${output}")"
+
+check bad-param.cs '/// <param name="value">Datoen.</param>
+public static string Date(DateOnly value) => "";'
+expect "danish xml param text, exit 1" "1" "${status}"
+
+check bad-ascii.sql '-- Booking 1 paa rum 1 slutter i dag. En ny booking maa starte der.
+SELECT 1;'
+expect "danish sql comment in ascii spelling, exit 1" "1" "${status}"
+
+check ok-docs.cs '/// <summary>
+/// Checks whether a staff role has a given permission, and returns the date.
+/// </summary>
+public static bool HasPermission(StaffRole role, string permission) => false;'
+expect "english xml summary, exit 0" "0" "${status}"
+
 check ok.yml '# Build, test and check the code
 name: x'
 expect "english yaml comment, exit 0" "0" "${status}"

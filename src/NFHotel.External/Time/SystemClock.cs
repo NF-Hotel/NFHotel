@@ -55,8 +55,8 @@ public sealed class SystemClock : IClock
         catch (Exception exception) when (exception is TimeZoneNotFoundException or InvalidTimeZoneException)
         {
             throw new InvalidOperationException(
-                $"Tidszonen '{id}' fra "
-                + $"'{HotelTimeOptions.SectionName}:{HotelTimeOptions.TimeZoneIdName}' findes ikke på denne maskine.",
+                $"The time zone '{id}' from "
+                + $"'{HotelTimeOptions.SectionName}:{HotelTimeOptions.TimeZoneIdName}' does not exist on this machine.",
                 exception);
         }
     }

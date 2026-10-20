@@ -84,7 +84,7 @@ public static class RolePermissions
     }
 
     /// <summary>
-    /// Kontrollerer om en medarbejderrolle har en bestemt permission.
+    /// Checks whether a staff role has a given permission.
     /// </summary>
     public static bool HasPermission(StaffRole role, string permission) =>
         HasPermission(role.ToString(), permission);

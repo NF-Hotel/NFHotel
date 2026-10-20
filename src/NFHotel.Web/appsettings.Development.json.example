@@ -8,7 +8,7 @@
   },
 
   "Api": {
-    "//": "Databasens API (NFHotel.Api). Tokenet er det samme som Api:Token i API'ets konfiguration: openssl rand -base64 32. Databaseforbindelsen og pasnøglen hører til API'et, ikke til denne fil.",
+    "//": "The database API (NFHotel.Api). The token is the same as Api:Token in the API configuration: openssl rand -base64 32. The database connection and the passport key belong to the API, not to this file.",
     "BaseUrl": "http://127.0.0.1:5080",
     "Token": "<samme-token-som-api'et>"
   },
@@ -18,7 +18,7 @@
   },
 
   "HolidayApi": {
-    "//": "Analysetjenesten (NF Hotel Analytics API). ApiKey hører IKKE i denne fil: dotnet user-secrets set \"HolidayApi:ApiKey\" \"<nøglen>\" --project src/NFHotel.Web",
+    "//": "The analysis service (NF Hotel Analytics API). The ApiKey does NOT belong in this file: dotnet user-secrets set \"HolidayApi:ApiKey\" \"<the key>\" --project src/NFHotel.Web",
     "BaseUrl": "http://127.0.0.1:8000",
     "TimeoutSeconds": 30
   }

@@ -91,8 +91,8 @@ public sealed class AesGcmStringEncryptor : IStringEncryptor
         if (string.IsNullOrWhiteSpace(base64Key))
         {
             throw new InvalidOperationException(
-                $"Krypteringsnøglen '{EncryptionOptions.SectionName}:{EncryptionOptions.PassportKeyName}' mangler. "
-                + "Appen nægter at starte uden, så pasnumre ikke kan ende i klartekst (B-09).");
+                $"The encryption key '{EncryptionOptions.SectionName}:{EncryptionOptions.PassportKeyName}' is missing. "
+                + "The app refuses to start without it, so passport numbers cannot end up in plain text (B-09).");
         }
 
         byte[] key;
@@ -104,15 +104,15 @@ public sealed class AesGcmStringEncryptor : IStringEncryptor
         catch (FormatException exception)
         {
             throw new InvalidOperationException(
-                $"Krypteringsnøglen '{EncryptionOptions.SectionName}:{EncryptionOptions.PassportKeyName}' "
-                + "er ikke gyldig base64.",
+                $"The encryption key '{EncryptionOptions.SectionName}:{EncryptionOptions.PassportKeyName}' "
+                + "is not valid base64.",
                 exception);
         }
 
         if (!ValidKeyLengths.Contains(key.Length))
         {
             throw new InvalidOperationException(
-                $"Krypteringsnøglen skal afkode til 16, 24 eller 32 bytes, men fyldte {key.Length}.");
+                $"The encryption key must decode to 16, 24 or 32 bytes, but was {key.Length}.");
         }
 
         return key;
@@ -129,12 +129,12 @@ public sealed class AesGcmStringEncryptor : IStringEncryptor
         }
         catch (FormatException exception)
         {
-            throw new CryptographicException("Den krypterede værdi er ikke gyldig base64.", exception);
+            throw new CryptographicException("The encrypted value is not valid base64.", exception);
         }
 
         if (input.Length < NonceLength + TagLength)
         {
-            throw new CryptographicException("Den krypterede værdi er for kort til at bære nonce og tag.");
+            throw new CryptographicException("The encrypted value is too short to hold the nonce and tag.");
         }
 
         return input;

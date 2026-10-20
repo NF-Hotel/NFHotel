@@ -186,7 +186,7 @@ public class AesGcmStringEncryptorTests
     #endregion
 
     #region Invalid input
-    // Test for at sikre, at ugyldig Base64-ciphertext afvises.
+    // Verifies that invalid Base64 ciphertext is rejected.
     [Fact]
     public void Decrypt_InvalidBase64_ThrowsCryptographicException()
     {
