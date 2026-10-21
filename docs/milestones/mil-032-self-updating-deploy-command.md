@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Deprecated | mikemike | S01 | Initial version | pending |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-158 Go (accepted by S01 in chat) | pending |
+| 2026-10-21 | Deprecated | mikemike | S01 | Initial version | [819a1d9] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-158 Go (accepted by S01 in chat) | [819a1d9] |
 
 ---
 
@@ -80,3 +80,4 @@ Decide whether a merged change to the operations commands on the VM reaches prod
 [ADR-0018]: ../adr/adr-0018-deploy-command-updates-itself.md
 [ADR-0007]: ../adr/adr-0007-cicd-and-supply-chain.md
 [MIL-021]: ./mil-021-secure-cicd-foundation.md
+[819a1d9]: https://github.com/NF-Hotel/NFHotel/commit/819a1d9d1bd8492f9164aac8416d56192d514e24

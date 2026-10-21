@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Deprecated | mikemike | S01 | Initial version | pending |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-157 Go (accepted by S01 in chat) | pending |
+| 2026-10-21 | Deprecated | mikemike | S01 | Initial version | [819a1d9] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-157 Go (accepted by S01 in chat) | [819a1d9] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -90,3 +90,4 @@ We follow option 3: during each CD run, before the migrations, the deploy comman
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-032]: ../milestones/mil-032-self-updating-deploy-command.md
+[819a1d9]: https://github.com/NF-Hotel/NFHotel/commit/819a1d9d1bd8492f9164aac8416d56192d514e24

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-092 Go | [f4649ad] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Amended by ADR-0018: CD installs the deploy and backup commands from a reviewed `main` commit | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Amended by ADR-0018: CD installs the deploy and backup commands from a reviewed `main` commit | [819a1d9] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -87,3 +87,4 @@ Amended by [ADR-0018] (2026-10-21): the deploy command is no longer installed on
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
 [f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
+[819a1d9]: https://github.com/NF-Hotel/NFHotel/commit/819a1d9d1bd8492f9164aac8416d56192d514e24
