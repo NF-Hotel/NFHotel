@@ -138,6 +138,13 @@ deploy() {
   tailscale ssh "deploy@$VM_HOST" sudo -n /usr/local/sbin/nfhotel-deploy update "$DEVOPS_SHA" \
     2>&1 | tee update.log || status=$?
   ((status == 0)) || fail "the update of the commands on $VM_HOST failed (exit $status); nothing was migrated or deployed"
+  # A new deploy command may install files that the old one did not know (such as the
+  # certificate renewal); it runs once more, so they are in place in the same deploy.
+  if grep -q "installed /usr/local/sbin/nfhotel-deploy from" update.log; then
+    tailscale ssh "deploy@$VM_HOST" sudo -n /usr/local/sbin/nfhotel-deploy update "$DEVOPS_SHA" \
+      2>&1 | tee -a update.log || status=$?
+    ((status == 0)) || fail "the second update on $VM_HOST failed (exit $status); nothing was migrated or deployed"
+  fi
   if [[ -n "${MIGRATIONS:-}" ]]; then
     [[ "$MIGRATIONS" =~ ^[0-9a-f]{64}$ ]] || fail "bad migration script hash"
     tailscale ssh "deploy@$VM_HOST" sudo -n /usr/local/sbin/nfhotel-deploy migrate "$MIGRATIONS" \

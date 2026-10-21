@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0009 |
-| CrossReference | [ADR-0006], [ADR-0007], [MIL-021], [MIL-023], [DSA-001], [ADR-0010], [ADR-0016], [RC-161] |
+| CrossReference | [ADR-0006], [ADR-0007], [MIL-021], [MIL-023], [DSA-001], [ADR-0010], [ADR-0016], [RC-161], [RC-162], [ADR-0018] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-096 Go | [064c27c] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Paths under ops/ and the renewal as it runs on nf-hotel (RC-161); the renewal unit is not in the repository | [12a64c3] |
+| 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Paths under ops/ and the renewal as it runs on nf-hotel (RC-161); the renewal unit is not in the repository | [12a64c3] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | The renewal is in git and installed by CD (RC-162); the hand-made unit reloaded a stopped container | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -49,7 +49,7 @@ We use `tailscale cert` for the tailnet name now, and certbot with the HTTP-01 w
 3. **No private key in git** (unchanged from ADR-0006).
 4. **The smoke test of CD** stays at "HTTPS answers 200". It adds a certificate check (`curl` without `--insecure`) once the trusted certificate is installed.
 
-**Current state (2026-10-21, [RC-161]).** `nf-hotel` serves the Let's Encrypt (YE1) certificate for `nf-hotel.taildb84b5.ts.net`, valid to 2027-01-04. It is renewed by `nfhotel-cert-renew.timer` and its service, which run every day (not every month). That timer and service were installed on the VM by hand, and they are not in the repository. This breaks the rule of [ADR-0010] that the repository is the source of truth for the VM; RC-161 records it as a finding. The files are under `ops/` since [ADR-0016].
+**Current state (2026-10-21, [RC-161]).** `nf-hotel` serves the Let's Encrypt (YE1) certificate for `nf-hotel.taildb84b5.ts.net`, valid to 2027-01-04. It is renewed by `nfhotel-cert-renew.timer` and its service, which run every day (not every month). That timer and service were installed on the VM by hand and were not in the repository, against the rule of [ADR-0010] that the repository is the source of truth for the VM (RC-161). They wrote to `/etc/nginx/certs/` and reloaded the container `nfhotel-nginx` of the stack from before the reconciliation. Since that container stopped, every run failed (the journal of 2026-10-21), so a renewed certificate would never have reached the running nginx. [RC-162] puts the renewal in git, as `ops/scripts/renew-certificate.sh` with `ops/deploy/systemd/nfhotel-cert-renew.{service,timer}`. The script writes into the folder that the running nginx mounts, found by its compose labels, and reloads nginx only when the certificate changed. CD installs and enables them ([ADR-0018]). The files are under `ops/` since [ADR-0016].
 
 ## Consequences
 
@@ -79,8 +79,9 @@ We use `tailscale cert` for the tailnet name now, and certbot with the HTTP-01 w
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
 [DSA-001]: ../sqa/devsecops-assessment.md
-[064c27c]: https://github.com/NF-Hotel/NFHotel/commit/064c27c1d90793a6f3782e61cf4a91a4b96eba84
 [ADR-0010]: ./adr-0010-production-vm-as-deployed.md
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
 [12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
+[RC-162]: ../sqa/reviews/rc-162-certificate-renewal.md
+[ADR-0018]: ./adr-0018-deploy-command-updates-itself.md

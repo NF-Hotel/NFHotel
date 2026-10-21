@@ -52,7 +52,7 @@ EOF
 cat >bin/tailscale <<'EOF'
 #!/bin/bash
 echo "tailscale $*"
-[[ "$*" == *" update "* ]] && exit "${FAKE_UPDATE_EXIT:-0}"
+[[ "$*" == *" update "* ]] && { [[ -n "${FAKE_UPDATE_OUT:-}" ]] && echo "$FAKE_UPDATE_OUT"; exit "${FAKE_UPDATE_EXIT:-0}"; }
 [[ "$*" == *" migrate "* ]] && { cat >"${FAKE_STDIN:-/dev/null}"; exit "${FAKE_MIGRATE_EXIT:-0}"; }
 exit "${FAKE_EXIT:-0}"
 EOF
@@ -185,6 +185,12 @@ grep -q "nfhotel-deploy deploy" log && ko "nothing is deployed after a failed mi
 FAKE_UPDATE_EXIT=2 expect 1 "a failed update fails the step" deploy_m
 grep -qE "nfhotel-deploy (migrate|deploy)" log && ko "nothing runs after a failed update" || ok "nothing runs after a failed update"
 VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="x;id" WEB=w API=a ANALYSIS=n BENCHMARK=b expect 1 "deploy refuses a bad operations commit" step deploy
+# When update installed a new deploy command, that command runs update once more, so the
+# files it knows and the old one did not are installed in the same deploy.
+FAKE_UPDATE_OUT="    installed /usr/local/sbin/nfhotel-deploy from ops/scripts/deploy-release.sh" expect 0 "a new deploy command runs update again" deploy_m
+[[ "$(grep -c 'nfhotel-deploy update' log)" == 2 ]] && ok "update runs twice after a new deploy command" || ko "second update: $(tr '\n' '|' <log)"
+expect 0 "an unchanged deploy command runs update once" deploy_m
+[[ "$(grep -c 'nfhotel-deploy update' log)" == 1 ]] && ok "update runs once when the deploy command is unchanged" || ko "single update"
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))
