@@ -5,7 +5,9 @@
 #
 # Triggers: a successful NF Hotel Release run of main in this repository
 #   (workflow_run), or by hand with the run ID of an earlier release (a redeploy or a
-#   rollback). A manual run is a dry run unless the input apply is true.
+#   rollback). A manual run is a dry run unless the input apply is true. A manual run
+#   with rollback_drill deploys the release and then rolls back to the previous one on
+#   purpose, and ends red: the proof of MIL-021 criterion 6.
 # Approval: the job runs in the environment production, whose required reviewers approve
 #   it before it starts; no credential exists before that.
 # Access: the action joins the tailnet as an ephemeral node tagged tag:ci through GitHub
@@ -30,6 +32,11 @@ on:
         type: string
       apply:
         description: Deploy for real (false prints what would be deployed)
+        required: false
+        type: boolean
+        default: false
+      rollback_drill:
+        description: Rollback drill - deploy, then roll back on purpose; the run ends red
         required: false
         type: boolean
         default: false
@@ -76,6 +83,7 @@ jobs:
         with:
           release-run-id: ${{ github.event.workflow_run.id || inputs.release_run_id }}
           apply: ${{ github.event_name == 'workflow_run' || inputs.apply }}
+          rollback-drill: ${{ github.event_name == 'workflow_dispatch' && inputs.rollback_drill }}
           vm-host: ${{ vars.NFHOTEL_VM_HOST }}
           ts-oidc-client-id: ${{ vars.TS_OIDC_CLIENT_ID }}
           ts-oidc-audience: ${{ vars.TS_OIDC_AUDIENCE }}

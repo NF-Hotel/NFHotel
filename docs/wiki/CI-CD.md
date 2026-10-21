@@ -42,6 +42,7 @@ Open the waiting `NF Hotel CD` run, choose **Review deployments**, tick `product
 - **To the release before the latest one:** on the VM, run `sudo /usr/local/sbin/nfhotel-deploy rollback`. Running it again switches back to where you came from.
 - **To any earlier release:** start `NF Hotel CD` by hand (Actions, NF Hotel CD, Run workflow) with the run ID of the `NF Hotel Release` run you want to deploy. It is approved like any other deploy.
 - **To see what is deployed:** `sudo /usr/local/sbin/nfhotel-deploy status` prints the release log (`/var/lib/nfhotel-deploy/releases.log`).
+- **Rollback drill (MIL-021 criterion 6):** start `NF Hotel CD` by hand with `apply` and `rollback_drill` ticked. The run deploys the release, then rolls back to the previous release on purpose, and ends red. The drilled release is not recorded in the release log. Run a normal deploy of the release afterwards.
 
 A rollback changes the images and the compose files, not the database. Migrations are written so that the previous release still runs on the new schema (ADR-0008, expand then contract).
 
@@ -54,7 +55,7 @@ A rollback changes the images and the compose files, not the database. Migration
 ## Back up and restore
 
 - The timer `nfhotel-backup.timer` runs `/usr/local/sbin/nfhotel-backup` every day at 02:00 UTC, and every deploy runs it first.
-- Each backup is a `pg_dump` encrypted with `age` to the public key of S03, in `/var/backups/nfhotel`. It is copied to `BACKUP_TARGET` when that is set in `/etc/nfhotel/backup.env`.
+- Each backup is a `pg_dump` encrypted with `age` to the public key of S03, in `/var/backups/nfhotel`. Every backup that the target lacks is copied to `BACKUP_TARGET` (the backup target on the legion laptop, set in `/etc/nfhotel/backup.env`). When the copy fails, the run warns and shows the time of the last copy that worked.
 - 14 daily and 8 weekly backups are kept on the VM.
 - **Restore drill (monthly):** copy a backup to a machine with Docker and the private key, then run:
 
@@ -81,32 +82,42 @@ S03 and a repository administrator do this once, in this order.
 2. In `/opt/nfhotel`, run `sudo bash ops/scripts/install-deploy-user.sh --apply` (without `--apply` it only shows what it would do). It creates the user `deploy`, the deploy command and its single sudo rule, then prints the Tailscale steps.
 3. Run `sudo tailscale set --ssh`.
 4. On your own machine, create the backup key with `age-keygen -o nfhotel-backup.key`. Keep it offline, and never copy it to the VM.
-5. Prepare the off-VM copy on the Proxmox node (decision D7). The copy is write-only and limited to one folder.
-   - On the Proxmox node, create the user and its folder:
+5. Prepare the off-VM copy on the backup host, the legion laptop of S03 (decision D7, revised 2026-10-21). The copy is write-only and limited to one folder. The target is the container `ops/deploy/backup-target`; it needs Docker and Tailscale on the laptop.
+   - On the VM, create the key for the copy, and show its public half:
 
      ```bash
-     useradd -m -s /bin/sh nfhotel-backup
-     install -d -o nfhotel-backup -m 700 /var/lib/nfhotel-backups
+     sudo ssh-keygen -t ed25519 -N '' -C root@nf-hotel -f /root/.ssh/nfhotel-backup
+     sudo cat /root/.ssh/nfhotel-backup.pub
      ```
 
-   - On the VM, create the key for the copy:
+   - On the laptop, in `ops/deploy/backup-target`, copy `backup-target.env.example` to `backup-target.env`. Then fill in:
+     - `BACKUP_PUBLIC_KEY`: that public key;
+     - `BACKUP_TARGET_BIND`: the tailnet address of the laptop (`tailscale ip -4`);
+     - `BACKUP_TARGET_DIR`: where the backups land.
+
+     Start the container, and read the fingerprint of its host key from the first line of its log:
 
      ```bash
-     sudo ssh-keygen -t ed25519 -N '' -f /root/.ssh/nfhotel-backup
+     docker compose --env-file backup-target.env up -d --build
+     docker compose --env-file backup-target.env logs backup-target | head -1
      ```
 
-   - On the Proxmox node, add that public key to `~nfhotel-backup/.ssh/authorized_keys` with the prefix `command="rrsync -wo /var/lib/nfhotel-backups",restrict `.
-   - On the VM, pin the host key of the Proxmox node for root. Its fingerprint is `SHA256:jMKkCdkKIuQLFYel6OZcY1uOTj3LA49yTVeRR2JiPDI`, verified over the tailnet:
+   - In the tailnet policy, let `tag:nfhotel-vm` reach the laptop on the port of the target (2222). Nothing else needs it.
+   - On the VM, pin the host key of the target for root, and check that its fingerprint matches the log line:
 
      ```bash
-     sudo sh -c 'ssh-keyscan -t ed25519 100.112.20.37 >> /root/.ssh/known_hosts'
+     sudo sh -c 'ssh-keyscan -p 2222 -t ed25519 <laptop tailnet address> >> /root/.ssh/known_hosts'
+     sudo ssh-keygen -l -F '[<laptop tailnet address>]:2222' -f /root/.ssh/known_hosts
      ```
 
-   - In Proxmox, add a weekly `vzdump` backup job for the VM to a storage other than its own disk.
+   - In `/etc/nfhotel/backup.env` on the VM, set `BACKUP_TARGET=nfhotel-backup@<laptop tailnet address>:/` and `BACKUP_SSH_PORT=2222`.
+   - In Proxmox, keep the weekly `vzdump` backup job of the VM, to a storage other than its own disk.
+
+   When the laptop is off, the backup stays on the VM and warns. The next backup copies every file that the target lacks.
 6. On the VM, install the backup:
 
    ```bash
-   sudo bash ops/scripts/install-backup.sh --recipient <age1... public key> --target nfhotel-backup@100.112.20.37: --apply
+   sudo bash ops/scripts/install-backup.sh --recipient <age1... public key> --apply
    ```
 
    Then test it once with `sudo systemctl start nfhotel-backup.service`.

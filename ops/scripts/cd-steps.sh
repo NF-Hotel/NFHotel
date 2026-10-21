@@ -23,6 +23,9 @@
 #                  rest (ADR-0018, MIL-032). With MIGRATIONS set it then sends migrations.sql
 #                  to the migrate command (backup, then the script as nfhotel_migrator),
 #                  and deploys only when that succeeded (MIL-022 task 6)
+#   scope          check what this CI node reaches in the tailnet: port 22 of the VM must
+#                  answer; other ports of the VM and other peers are warnings (MIL-021
+#                  criterion 7)
 #   summary        append the audit record of the run to GITHUB_STEP_SUMMARY
 #
 # Environment (set by the workflow through env:, never interpolated):
@@ -138,16 +141,64 @@ deploy() {
   tailscale ssh "deploy@$VM_HOST" sudo -n /usr/local/sbin/nfhotel-deploy update "$DEVOPS_SHA" \
     2>&1 | tee update.log || status=$?
   ((status == 0)) || fail "the update of the commands on $VM_HOST failed (exit $status); nothing was migrated or deployed"
+  # A new deploy command may install files that the old one did not know (such as the
+  # certificate renewal); it runs once more, so they are in place in the same deploy.
+  if grep -q "installed /usr/local/sbin/nfhotel-deploy from" update.log; then
+    tailscale ssh "deploy@$VM_HOST" sudo -n /usr/local/sbin/nfhotel-deploy update "$DEVOPS_SHA" \
+      2>&1 | tee -a update.log || status=$?
+    ((status == 0)) || fail "the second update on $VM_HOST failed (exit $status); nothing was migrated or deployed"
+  fi
   if [[ -n "${MIGRATIONS:-}" ]]; then
     [[ "$MIGRATIONS" =~ ^[0-9a-f]{64}$ ]] || fail "bad migration script hash"
     tailscale ssh "deploy@$VM_HOST" sudo -n /usr/local/sbin/nfhotel-deploy migrate "$MIGRATIONS" \
       <"$MIGRATIONS_FILE" 2>&1 | tee migrate.log || status=$?
     ((status == 0)) || fail "the migrations on $VM_HOST failed (exit $status); nothing was deployed"
   fi
+  local drill=()
+  [[ "${ROLLBACK_DRILL:-false}" == "true" ]] && drill=(--drill)
   tailscale ssh "deploy@$VM_HOST" \
-    sudo -n /usr/local/sbin/nfhotel-deploy deploy "$SHA" "$DEVOPS_SHA" "$WEB" "$API" "$ANALYSIS" "$BENCHMARK" \
+    sudo -n /usr/local/sbin/nfhotel-deploy deploy "$SHA" "$DEVOPS_SHA" "$WEB" "$API" "$ANALYSIS" "$BENCHMARK" "${drill[@]}" \
     2>&1 | tee deploy.log || status=$?
   ((status == 0)) || fail "the deploy on $VM_HOST failed (exit $status); see the deploy log"
+}
+
+# reach <port>: whether a TCP connection to that port of the VM opens within 5 seconds.
+reach() {
+  timeout 5 bash -c "exec 3<>/dev/tcp/$VM_HOST/$1" 2>/dev/null
+}
+
+# scope: what this CI node reaches in the tailnet (MIL-021 criterion 7, ADR-0007
+# decision 4). Port 22 of the VM must answer. Its other ports, and any other peer, should
+# not: the policy grants tag:ci only tcp:22 of tag:nfhotel-vm. Such a finding is a warning
+# in the run and in the summary, not a failed deploy, so a change of the policy is seen
+# without blocking a release.
+scope() {
+  [[ "${VM_HOST:-}" =~ ^[a-z0-9.-]+$ ]] || fail "set the environment variable NFHOTEL_VM_HOST of production"
+  local peers others port open=()
+  peers="$(tailscale status --json | jq -r '(.Peer // {}) | to_entries[] | .value.DNSName | sub("[.]$"; "")')" ||
+    fail "cannot read the tailnet status"
+  others="$(grep -v -e "^${VM_HOST}\$" -e "^${VM_HOST}[.]" <<<"$peers" | grep . || true)"
+  # The ports are variables for the tests only.
+  local ssh_port="${SCOPE_SSH_PORT:-22}" other_ports="${SCOPE_OTHER_PORTS:-80 443 5432 8081}"
+  reach "$ssh_port" || fail "port $ssh_port of $VM_HOST does not answer"
+  for port in $other_ports; do
+    if reach "$port"; then open+=("$port"); fi
+  done
+  {
+    echo "- Port $ssh_port of $VM_HOST answers."
+    if ((${#open[@]})); then
+      echo "- **Also open from tag:ci:** ${open[*]} (the policy should allow only $ssh_port)."
+    else
+      echo "- Ports $other_ports of $VM_HOST do not answer."
+    fi
+    if [[ -n "$others" ]]; then
+      echo "- **Other peers seen:** $(tr '\n' ' ' <<<"$others")"
+    else
+      echo "- No peer other than $VM_HOST is seen."
+    fi
+  } | tee scope.log
+  ((${#open[@]} == 0)) || echo "::warning::tag:ci reaches ports ${open[*]} of $VM_HOST; the policy should allow only 22"
+  [[ -z "$others" ]] || echo "::warning::tag:ci sees other tailnet peers; the policy should show it only $VM_HOST"
 }
 
 summary() {
@@ -161,6 +212,9 @@ summary() {
     if [[ -f "$MANIFEST" ]]; then
       printf '\n%sjson\n%s\n%s\n' "$FENCE" "$(cat "$MANIFEST")" "$FENCE"
     fi
+    if [[ -f scope.log ]]; then
+      printf '\n### Tailnet scope of this CI node\n\n%s\n' "$(cat scope.log)"
+    fi
     if [[ -f deploy.log ]]; then
       printf '\n<details><summary>Deploy log</summary>\n\n%s\n%s\n%s\n</details>\n' "$FENCE" "$(tail -n 60 deploy.log)" "$FENCE"
     fi
@@ -172,6 +226,7 @@ case "${1:-}" in
   read-manifest) read_manifest ;;
   verify) verify ;;
   deploy) deploy ;;
+  scope) scope ;;
   summary) summary ;;
   -h | --help) usage ;;
   *)

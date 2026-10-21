@@ -1,0 +1,13 @@
+# Daily renewal of the TLS certificate of the tailnet name (ADR-0009). Installed by the
+# update command of CD (ADR-0018) from ops/deploy/systemd/; it runs
+# ops/scripts/renew-certificate.sh, installed as /usr/local/sbin/nfhotel-cert-renew.
+[Unit]
+Description=Renew the NF Hotel HTTPS certificate
+Wants=network-online.target
+After=network-online.target tailscaled.service docker.service
+Requires=tailscaled.service docker.service
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/local/sbin/nfhotel-cert-renew

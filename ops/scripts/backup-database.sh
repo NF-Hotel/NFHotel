@@ -7,15 +7,17 @@
 #   1. pg_dump --format=custom inside the postgres container (no port is opened)
 #   2. encrypt the dump with age to the public key of S03; the VM cannot read its own
 #      backups, so a stolen VM disk does not reveal them
-#   3. copy the file off the VM with rsync over ssh, when BACKUP_TARGET is set
+#   3. copy every backup that the target lacks off the VM with rsync over ssh, when
+#      BACKUP_TARGET is set; a failed copy warns and is caught up by the next run
 #   4. keep 14 daily and 8 weekly (Sunday) files on the VM, delete older ones
 #
 # Settings: /etc/nfhotel/backup.env (root, 0600), written by install-backup.sh:
 #   AGE_RECIPIENT   the age public key (age1...) of S03; required
-#   BACKUP_TARGET   rsync destination off the VM (D7): the user nfhotel-backup on the
-#                   Proxmox node, restricted there to one folder by rrsync, for
-#                   example nfhotel-backup@proxmox:; empty keeps the backups on the
-#                   VM only and prints a warning
+#   BACKUP_TARGET   rsync destination off the VM (D7): the user nfhotel-backup of the
+#                   backup target (ops/deploy/backup-target), restricted there to one
+#                   write-only folder by rrsync, for example nfhotel-backup@legion:/;
+#                   empty keeps the backups on the VM only and prints a warning
+#   BACKUP_SSH_PORT the ssh port of the target (default 22)
 #   BACKUP_SSH_KEY  the key for that copy (default /root/.ssh/nfhotel-backup); the host
 #                   key of the target must be in root's known_hosts (checked strictly)
 #   BACKUP_DIR      local folder (default /var/backups/nfhotel)
@@ -101,14 +103,29 @@ mv "$partial" "$file"
 echo "    $(du -h "$file" | cut -f1)"
 
 if [[ -n "${BACKUP_TARGET:-}" ]]; then
-  echo "==> copying it to $BACKUP_TARGET"
+  echo "==> copying the backups to $BACKUP_TARGET"
   key="${BACKUP_SSH_KEY:-/root/.ssh/nfhotel-backup}"
+  port="${BACKUP_SSH_PORT:-22}"
   [[ -r "$key" ]] || die "cannot read the backup ssh key $key"
-  rsync --archive --partial \
-    --rsh "ssh -i $key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes" \
-    "$file" "$BACKUP_TARGET/" || die "the copy off the VM failed"
+  [[ "$port" =~ ^[0-9]{1,5}$ ]] || die "BACKUP_SSH_PORT '$port' is not a port number"
+  # The target may be off, such as a laptop (D7). A failed copy is a warning: the backup
+  # is safe on the VM, and the next run sends every file that the target lacks. The
+  # target is write-only, so files there are never replaced (--ignore-existing).
+  if rsync --archive --partial --ignore-existing --include='nfhotel-*.dump.age' --exclude='*' \
+    --rsh "ssh -p $port -i $key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20" \
+    "$backup_dir/" "$BACKUP_TARGET/"; then
+    date -u +%Y-%m-%dT%H:%M:%SZ >"$backup_dir/.last-copy"
+    echo "    copied off the VM"
+  else
+    echo "warning: the copy to $BACKUP_TARGET failed; the backups stay on the VM, and the next run sends what the target lacks" >&2
+    if [[ -f "$backup_dir/.last-copy" ]]; then
+      echo "warning: the last copy off the VM was at $(cat "$backup_dir/.last-copy")" >&2
+    else
+      echo "warning: no copy off the VM has succeeded yet" >&2
+    fi
+  fi
 else
-  echo "warning: BACKUP_TARGET is empty; the backup stays on the VM only (decision D7 is open)" >&2
+  echo "warning: BACKUP_TARGET is empty; the backup stays on the VM only (decision D7 is not in place)" >&2
 fi
 
 # prune <kind> <keep>: keep the newest <keep> files of a kind on the VM.

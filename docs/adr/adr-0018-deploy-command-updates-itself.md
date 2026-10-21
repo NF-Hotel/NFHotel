@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0018 |
-| CrossReference | [BC-001], [SA-001], [ADR-0007], [ADR-0008], [ADR-0016], [MIL-021], [MIL-032] |
+| CrossReference | [BC-001], [SA-001], [ADR-0007], [ADR-0008], [ADR-0016], [MIL-021], [MIL-032], [RC-162], [ADR-0009] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Deprecated | mikemike | S01 | Initial version | [819a1d9] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-157 Go (accepted by S01 in chat) | [819a1d9] |
+| 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-157 Go (accepted by S01 in chat) | [819a1d9] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | The certificate renewal is installed too, and CD runs update again after a new deploy command (RC-162) | [e2e8a90] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -53,7 +53,10 @@ We follow option 3: during each CD run, before the migrations, the deploy comman
 3. **What it installs.** It reads the files from that commit with `git show`, so a modified working tree cannot be installed:
    - `ops/scripts/deploy-release.sh` as `/usr/local/sbin/nfhotel-deploy`;
    - `ops/scripts/backup-database.sh` as `/usr/local/sbin/nfhotel-backup`;
-   - `ops/deploy/systemd/nfhotel-backup.{service,timer}`, followed by `systemctl daemon-reload`.
+   - `ops/deploy/systemd/nfhotel-backup.{service,timer}`, followed by `systemctl daemon-reload`;
+   - `ops/scripts/renew-certificate.sh` as `/usr/local/sbin/nfhotel-cert-renew`, and `ops/deploy/systemd/nfhotel-cert-renew.{service,timer}`, whose timer it enables (added by [RC-162], [ADR-0009]).
+
+   When `update` installs a new deploy command, CD runs `update` once more. The new command then installs the files that the old one did not know, in the same deploy.
 
    Each file is installed with `install` (root, the same mode as today), and only when its content differs.
 4. **A way back and a record.** The copy it replaces is kept as `<file>.previous`. Each update appends a line to the release log with the commit and the old and new SHA-256 of every file it changed. A run that changes nothing writes nothing.
@@ -91,3 +94,6 @@ We follow option 3: during each CD run, before the migrations, the deploy comman
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-032]: ../milestones/mil-032-self-updating-deploy-command.md
 [819a1d9]: https://github.com/NF-Hotel/NFHotel/commit/819a1d9d1bd8492f9164aac8416d56192d514e24
+[RC-162]: ../sqa/reviews/rc-162-certificate-renewal.md
+[ADR-0009]: ./adr-0009-tls-certificates.md
+[e2e8a90]: https://github.com/NF-Hotel/NFHotel/commit/e2e8a90e0082aa329e4d2da499e8b1e853c26ca8

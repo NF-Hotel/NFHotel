@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | MIL-021 |
-| CrossReference | [BC-001], [ADR-0003], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0010], [DSA-001], [US-001] |
+| CrossReference | [BC-001], [ADR-0003], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0010], [DSA-001], [US-001], [ADR-0016], [RC-164] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Added task 10 and criterion 10, the reconciliation of the production VM (ADR-0010); accepted after RC-097 Go | [1b94761] |
-| 2026-10-19 | Accepted | mikemike | AI as stand-in for S01 | Moved to NF-Hotel/DevOps (ADR-0012): the workflows are NFHotel entry points calling the actions here, and criterion 10 expects a DevOps checkout; accepted after RC-500 Go | [c1dc5f7] |
+| 2026-10-19 | Deprecated | mikemike | AI as stand-in for S01 | Moved to NF-Hotel/DevOps (ADR-0012): the workflows are NFHotel entry points calling the actions here, and criterion 10 expects a DevOps checkout; accepted after RC-500 Go | [c1dc5f7] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Criterion 10 follows ADR-0016 (NFHotel checkout); off-VM copy to legion (D7 revised); criteria 6 to 8 name how they are proven; accepted after RC-164 Go | [7853a62] |
 
 ---
 
@@ -54,11 +54,11 @@ Supply-chain checks (phase 2, MIL-022) and hardening (phase 3, MIL-023) follow.
 | 3 | `NF Hotel CD` waits for approval in `production`, and the job receives no credential before approval | Yes | No |
 | 4 | After the deploy, `docker inspect` on the VM shows the digests from the Release run, and no image was built on the VM | Yes | No |
 | 5 | A deploy that changes only the web image does not recreate `postgres`, `nginx` or `ollama` (container IDs unchanged) | Yes | No |
-| 6 | The smoke test passes (80 answers 301, `https://` answers 200); a forced failure rolls back to the previous digests, and the run is red | Yes | No |
-| 7 | The CI node reaches only port 22 of `tag:nfhotel-vm` (a test from the runner to another tailnet node fails); no ssh key and no Tailscale secret is stored in GitHub | Yes | No |
-| 8 | A dump from the timer is restored into a throwaway container, and the row counts match; the drill is recorded in an RC | Yes | No |
+| 6 | The smoke test passes (80 answers 301, `https://` answers 200); a forced failure rolls back to the previous digests, and the run is red (a manual CD run with `rollback_drill`) | Yes | No |
+| 7 | The CI node reaches only port 22 of `tag:nfhotel-vm`: the step "Check the tailnet scope of this node" of CD finds the other ports of the VM closed and no other peer; no ssh key and no Tailscale secret is stored in GitHub | Yes | No |
+| 8 | A dump from the timer, taken from the off-VM copy, is restored into a throwaway container, and the row counts match; the drill is recorded in an RC | Yes | No |
 | 9 | `actionlint`, `shellcheck`, `shfmt -d` and `bash -n` are clean; reviews against `qc-yaml`, `qc-programming-shell` and `qc-adr` have the verdict `Go` | Yes | No |
-| 10 | On `nf-hotel`, `/opt/nfhotel` is a git checkout of `NF-Hotel/DevOps` (ADR-0012) whose compose files describe every running container, and port 5432 does not answer from the tailnet | Yes | No |
+| 10 | On `nf-hotel`, `/opt/nfhotel` is a git checkout of `NF-Hotel/NFHotel` (ADR-0016) whose compose files describe every running container, and port 5432 does not answer from the tailnet | Yes | No |
 
 ## Dependencies
 
@@ -99,8 +99,8 @@ Supply-chain checks (phase 2, MIL-022) and hardening (phase 3, MIL-023) follow.
 | 4 | Release workflow | Build and push web and api to GHCR on green `main`; digests in the job summary; least privilege. | No | |
 | 5 | Tailscale and the deploy user | Tags, grant, `ssh` rule, workload identity federation; the `deploy` user with its single command; the host key confirmed. | No | |
 | 6 | CD workflow and deploy script | `cd.yaml` and `deploy-release.sh`: approval, Tailscale, pull by digest, health, smoke test, rollback, release log. | No | |
-| 7 | Backup and restore | The `pg_dump` timer with `age`, the off-VM copy, `restore-drill.sh`, the first drill recorded. | No | |
-| 8 | Prove it | One approved deploy, one forced rollback, one test PR blocked by a red check; record the run links. | No | |
+| 7 | Backup and restore | The `pg_dump` timer with `age`; the off-VM copy to the write-only backup target (`ops/deploy/backup-target`) on the legion laptop of S03 (D7, revised 2026-10-21), caught up after the laptop was off; `restore-drill.sh`, the first drill recorded. | No | |
+| 8 | Prove it | One approved deploy, one forced rollback (CD with `rollback_drill`), one test PR blocked by a red check, the tailnet scope of the CI node; record the run links. | No | |
 | 9 | Check and review | Linters; reviews against `qc-yaml`, `qc-programming-shell`, `qc-adr`; the wiki page. | No | |
 | 10 | Reconcile the production deployment | Bring `/opt/nfhotel/deployment/compose.yaml` of `nf-hotel` into the repository (secrets as references to git-ignored files), map its services and volumes to the release, back up the database first, stop publishing PostgreSQL to the tailnet; done by S03 with S01 (ADR-0010). | No | |
 
@@ -114,6 +114,7 @@ Supply-chain checks (phase 2, MIL-022) and hardening (phase 3, MIL-023) follow.
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [DSA-001]: ../sqa/devsecops-assessment.md
 [US-001]: https://github.com/NF-Hotel/NFHotel/blob/main/docs/user-stories.md
-[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
-[1b94761]: https://github.com/NF-Hotel/NFHotel/commit/1b94761ddb5113cd0d34915c01fe7f0f278bba60
 [c1dc5f7]: https://github.com/NF-Hotel/DevOps/commit/c1dc5f74e11ce4e10f7f1dbdf5ef304e4db8429e
+[ADR-0016]: ../adr/adr-0016-one-repository-for-application-and-operations.md
+[RC-164]: ../sqa/reviews/rc-164-mil-021-amendment.md
+[7853a62]: https://github.com/NF-Hotel/NFHotel/commit/7853a620ea10e270620236ac74fea5f77cd29ac2
