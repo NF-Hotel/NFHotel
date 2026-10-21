@@ -50,6 +50,19 @@ NFHOTEL_BACKUP_SETTINGS=/tmp/backup.env bash /src/scripts/backup-database.sh | g
   ok "backup-database.sh only checks without --apply" || ko "backup dry run"
 printf 'AGE_RECIPIENT=nope\n' >/tmp/bad.env
 NFHOTEL_BACKUP_SETTINGS=/tmp/bad.env bash /src/scripts/backup-database.sh --apply >/dev/null 2>&1 && ko "accepted a bad recipient" || ok "backup refuses a bad recipient"
+# Without BACKUP_CONTAINER the dump runs in the compose folder of the checkout: ops/deploy
+# in a checkout of NF-Hotel/NFHotel (ADR-0016), deploy/ in an old one of NF-Hotel/DevOps.
+# A stand-in docker records the folder it ran in and writes a dump.
+mkdir -p /tmp/fake-bin
+printf '#!/bin/sh\npwd >/tmp/docker-cwd\necho dump\n' >/tmp/fake-bin/docker && chmod +x /tmp/fake-bin/docker
+printf 'AGE_RECIPIENT=%s\nBACKUP_DIR=/tmp/backups\n' "$PUB" >/tmp/backup-dir.env
+for layout in ops/deploy deploy; do
+  rm -rf /tmp/app && mkdir -p "/tmp/app/$layout/postgres"
+  PATH="/tmp/fake-bin:$PATH" NFHOTEL_DIR=/tmp/app NFHOTEL_BACKUP_SETTINGS=/tmp/backup-dir.env \
+    bash /src/scripts/backup-database.sh --apply >/dev/null 2>&1 &&
+    [[ "$(cat /tmp/docker-cwd)" == "/tmp/app/$layout/postgres" ]] &&
+    ok "the backup dumps from $layout/postgres" || ko "the backup dumps from $layout/postgres"
+done
 
 echo "== write-only copy to the Proxmox node (D7)"
 useradd -m -s /bin/sh nfhotel-backup

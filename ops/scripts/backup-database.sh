@@ -20,7 +20,8 @@
 #                   key of the target must be in root's known_hosts (checked strictly)
 #   BACKUP_DIR      local folder (default /var/backups/nfhotel)
 #   BACKUP_CONTAINER  the running PostgreSQL container to dump (ADR-0010); empty uses the
-#                   compose project in deploy/postgres
+#                   compose project in ops/deploy/postgres (ADR-0016), or deploy/postgres
+#                   in a checkout of NF-Hotel/DevOps
 #   BACKUP_ROLE     the role that dumps, for example nfhotel_backup (ADR-0011); empty uses
 #                   the superuser of the image
 #
@@ -82,7 +83,9 @@ if [[ -n "${BACKUP_CONTAINER:-}" ]]; then
   [[ "$BACKUP_CONTAINER" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] || die "BACKUP_CONTAINER is not a container name"
   docker exec "$BACKUP_CONTAINER" sh -c "$dump" _ "$role"
 else
-  (cd "$app_dir/deploy/postgres" && docker compose --env-file postgres.env exec -T postgres sh -c "$dump" _ "$role")
+  compose_dir="$app_dir/ops/deploy/postgres"
+  [[ -d "$compose_dir" ]] || compose_dir="$app_dir/deploy/postgres"
+  (cd "$compose_dir" && docker compose --env-file postgres.env exec -T postgres sh -c "$dump" _ "$role")
 fi |
   age --encrypt --recipient "$AGE_RECIPIENT" --output "$partial" ||
   {
