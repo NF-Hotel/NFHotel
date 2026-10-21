@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0500 |
-| CrossReference | [ADR-0007], [DSA-001], [MIL-021] |
+| CrossReference | [ADR-0007], [DSA-001], [MIL-021], [ADR-0016], [RC-161] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Deprecated | mikemike | S01 | Initial version (risk R17, issue #2) | [150af89] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-502 Go | [150af89] |
+| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-502 Go | [150af89] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Paths under ops/ (RC-161); the freeze is still in force | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -38,10 +38,12 @@ Options considered:
 
 We freeze `market-analysis` at its last good digest until S01 decides the service of the new repository.
 
-1. `deploy/market-analysis/frozen-image` holds the digest above. `build-release-images.sh` does not build an image that has such a file.
+1. `ops/deploy/market-analysis/frozen-image` holds the digest above. `build-release-images.sh` does not build an image that has such a file.
 2. With `--push`, the build checks that the digest exists in the registry and refuses the release otherwise. It writes the digest into the manifest, so the manifest still names four images and the deploy is unchanged.
-3. The CI check `tests/check-release-build.sh` checks that a frozen digest is well formed. The other three images are built and checked as before.
+3. The CI check `ops/tests/check-release-build.sh` checks that a frozen digest is well formed. The other three images are built and checked as before.
 4. The freeze ends with a reviewed pull request that removes the file. That pull request either restores the source (option 1, with a new ref) or removes the service (option 2).
+
+**Current state (2026-10-21, [RC-161]).** The freeze is still in force. The release of 2026-10-21 carried the digest above, and CD accepted it by its pin. The decision this ADR waits for, what becomes of the service of the new repository, is still open with S01. The files are under `ops/` since [ADR-0016].
 
 ## Consequences
 
@@ -70,3 +72,5 @@ We freeze `market-analysis` at its last good digest until S01 decides the servic
 [DSA-001]: ../sqa/devsecops-assessment.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [150af89]: https://github.com/NF-Hotel/DevOps/commit/150af89418a891c0fe10d6da3e519ab54290b7cc
+[ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
+[RC-161]: ../sqa/reviews/rc-161-adr-refresh.md

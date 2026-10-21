@@ -4,13 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0014 |
-| CrossReference | [BC-001], [MIL-020], [ADR-0005], [ADR-0013] |
+| CrossReference | [BC-001], [MIL-020], [ADR-0005], [ADR-0013], [ADR-0016], [ADR-0500], [RC-161] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 | Proposed | Claude (AI) | S01 | Initial version | [b1daae2] |
-| 2026-10-19 | Accepted | Claude (AI) | AI at the request of S01, not independent | Accepted after RC-109 Go | [b1daae2] |
+| 2026-10-19 | Deprecated | Claude (AI) | AI at the request of S01, not independent | Accepted after RC-109 Go | [b1daae2] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Path under ops/ (RC-161) | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -36,9 +36,11 @@ We follow option 2. The API stores one default model per purpose, `website` and 
 - **Permission.** `AiDefaults.Manage` is a row of the permission table, held by the Manager only, with a test for every role.
 - **Endpoints.** `GET /api/ai-defaults` needs the service token only, so the market analysis service can read it; it is on the list of public actions of the endpoint protection test, with a comment. `PUT /api/ai-defaults/{purpose}` needs the staff token and `AiDefaults.Manage`. The name of the staff member comes from the staff token, never from the body.
 - **Page.** `/admin/benchmark` shows the current defaults with a field that takes any model name (with the models of the stored runs as suggestions) and a button on every result row, "Use for the website" and "Use for the market analysis", which sets the default to the model and the run of that row.
-- **Market analysis.** `scripts/deploy-services.sh` writes the saved model as `model` in the `[llm]` section of `market-analysis.toml` just before it starts the analysis service. The service picks the new model up at its next deployment. Reading the default live from the API needs a change in the market analysis repository and is not part of this decision.
+- **Market analysis.** `ops/scripts/deploy-services.sh` writes the saved model as `model` in the `[llm]` section of `market-analysis.toml` just before it starts the analysis service. The service picks the new model up at its next deployment. Reading the default live from the API needs a change in the market analysis repository and is not part of this decision.
 - **Website.** The website gets the stored setting and the endpoint. No AI call is added to the website by this decision.
 - **Validation.** The purpose must be one of the two known ones, the model is trimmed and must not be blank. The database holds only the unique index; the other rules are in the domain.
+
+**Current state (2026-10-21, [RC-161]).** The script is `ops/scripts/deploy-services.sh` ([ADR-0016]). It also writes the model for the frozen `market-analysis` image of [ADR-0500], which reads the same `market-analysis.toml`.
 
 ## Consequences
 
@@ -70,3 +72,6 @@ Quality attributes: usability improves (one place, next to the results); securit
 [ADR-0005]: ./adr-0005-backoffice-login.md
 [ADR-0013]: ./adr-0013-benchmark-results.md
 [b1daae2]: https://github.com/NF-Hotel/NFHotel/commit/b1daae275e05b207cd5403a3ec47e46fc76f33d0
+[ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
+[ADR-0500]: ./adr-0500-freeze-market-analysis-image.md
+[RC-161]: ../sqa/reviews/rc-161-adr-refresh.md

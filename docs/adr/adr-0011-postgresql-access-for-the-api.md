@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0011 |
-| CrossReference | [ADR-0004], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0010], [MIL-024], [DSA-001] |
+| CrossReference | [ADR-0004], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0010], [MIL-024], [DSA-001], [ADR-0016], [RC-161] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial version | [af6710f] |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-100 Go | [af6710f] |
+| 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-100 Go | [af6710f] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Paths under ops/ (RC-161); in place on nf-hotel | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -55,7 +55,7 @@ Options considered:
 We use separate least-privilege roles on the one existing instance, an internal Docker network that the running PostgreSQL container joins without a restart, and an optional tailnet-only nginx route that stays off until the API runs.
 
 1. **One instance.** The running PostgreSQL 16 container on `nf-hotel` is the only production database. No second instance and no second database are created.
-2. **Roles** (`scripts/db/roles.sql`, idempotent):
+2. **Roles** (`ops/scripts/db/roles.sql`, idempotent):
    - `nfhotel_owner`, `NOLOGIN`: owns the schema objects of the application.
    - `nfhotel_migrator`, `LOGIN`: a member of `nfhotel_owner` (`SET` only, no `INHERIT`). It connects with `Options=-c role=nfhotel_owner`, so every object it creates is owned by `nfhotel_owner`. Used only by the migration step of CD (ADR-0008).
    - `nfhotel_app`, `LOGIN`: `CONNECT`, `USAGE` on `public`, `SELECT, INSERT, UPDATE, DELETE` on the tables and `USAGE, SELECT` on the sequences. `ALTER DEFAULT PRIVILEGES FOR ROLE nfhotel_owner` gives the same on future objects. No `CREATE`, `TRUNCATE`, `REFERENCES` or `TRIGGER`.
@@ -63,8 +63,8 @@ We use separate least-privilege roles on the one existing instance, an internal 
    - The superuser of the image stays as break-glass for S03. No application uses it.
    - `PUBLIC` loses `CREATE` and `TEMPORARY` on the database.
    - The login roles get connection limits (app 20, migrator 2, backup 2) and `SCRAM-SHA-256` passwords.
-3. **Existing objects.** `scripts/db/transfer-ownership.sql` moves the ownership of every existing table, sequence and view in `public`, and of the schema, to `nfhotel_owner` with `ALTER ... OWNER TO`. That changes catalog entries only: no row and no migration history row is touched. It runs after a verified backup, in a maintenance window, and it is tested on a copy first.
-4. **Secrets.** `scripts/prepare-database-roles.sh` creates the passwords on the VM (`openssl rand`) and keeps them in `/etc/nfhotel/secrets/` (root, 0600).
+3. **Existing objects.** `ops/scripts/db/transfer-ownership.sql` moves the ownership of every existing table, sequence and view in `public`, and of the schema, to `nfhotel_owner` with `ALTER ... OWNER TO`. That changes catalog entries only: no row and no migration history row is touched. It runs after a verified backup, in a maintenance window, and it is tested on a copy first.
+4. **Secrets.** `ops/scripts/prepare-database-roles.sh` creates the passwords on the VM (`openssl rand`) and keeps them in `/etc/nfhotel/secrets/` (root, 0600).
    - It writes the connection strings into git-ignored settings files that the compose file of the API reads.
    - It passes passwords to `psql` only on standard input, with `log_statement` turned off for that session, so they never reach a command line, the server log or git.
 5. **Network.**
@@ -77,18 +77,20 @@ We use separate least-privilege roles on the one existing instance, an internal 
    - The reconciliation then publishes 5432 on `127.0.0.1` only; administrators reach it through Tailscale SSH and a tunnel.
 7. **nginx.**
    - The API is not published to the internet (ADR-0004).
-   - `deploy/nginx/optional/api.conf.template` defines `/api/` on the tailnet name only (`allow 100.64.0.0/10; allow fd7a:115c:a1e0::/48; deny all`). It uses a variable upstream and Docker's resolver, so nginx starts even when the API does not run.
+   - `ops/deploy/nginx/optional/api.conf` defines `/api/` on the tailnet name only (`allow 100.64.0.0/10; allow fd7a:115c:a1e0::/48; deny all`). It uses a variable upstream and Docker's resolver, so nginx starts even when the API does not run.
    - It is outside `templates/` and is not loaded until the API is deployed and it is copied in by a reviewed change.
    - The existing routes are not changed.
 8. **CI/CD.**
    - The API image is already built and pushed by NF Hotel Release (ADR-0007).
    - CD deploys it after the reconciliation. The runtime connection string uses `nfhotel_app`; the migration step uses `nfhotel_migrator`.
-9. **Verification.** `scripts/verify-database.sh` checks, read-only, on the VM:
+9. **Verification.** `ops/scripts/verify-database.sh` checks, read-only, on the VM:
    - roles, privileges and the owners of the objects;
    - the migration history and the row counts;
    - the internal network and the backup.
 
    S03 runs it before and after each step.
+
+**Current state (2026-10-21, [RC-161]).** In place on `nf-hotel` since MIL-024 (RC-506). Every deploy logs that the API connects as `nfhotel_app` and does not migrate at start. The scripts are under `ops/scripts/` since [ADR-0016].
 
 ## Consequences
 
@@ -128,3 +130,5 @@ We use separate least-privilege roles on the one existing instance, an internal 
 [MIL-024]: ../milestones/mil-024-postgresql-api-readiness.md
 [DSA-001]: ../sqa/devsecops-assessment.md
 [af6710f]: https://github.com/NF-Hotel/NFHotel/commit/af6710fce369f8d63795d67efe4f7a54a867997a
+[ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
+[RC-161]: ../sqa/reviews/rc-161-adr-refresh.md

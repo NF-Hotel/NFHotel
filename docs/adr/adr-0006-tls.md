@@ -4,13 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0006 |
-| CrossReference | [BC-001], [MIL-017], [ADR-0005], [ADR-0003] |
+| CrossReference | [BC-001], [MIL-017], [ADR-0005], [ADR-0003], [ADR-0009], [ADR-0016], [RC-161] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-17 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version | [065c6e8] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-080 Go | [065c6e8] |
+| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Accepted after RC-080 Go | [065c6e8] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Paths under ops/ and the later certificate decision ADR-0009 (RC-161) | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -36,11 +36,13 @@ We follow option 2.
 
 - **Termination.** nginx listens on 443 with TLS 1.2 and 1.3 only and a modern cipher list. The web application stays on plain HTTP on the network `nfhotel-proxy`, with `X-Forwarded-Proto: https` set by nginx.
 - **Redirect.** Port 80 answers only `301` to the same path on HTTPS. No page and no sign-in is served in clear text. The redirect keeps a non-standard HTTPS port when one is set (`NGINX_REDIRECT_PORT`).
-- **Certificate files.** `deploy/nginx/tls/fullchain.pem` and `privkey.pem`, git-ignored and mounted read-only. `scripts/make-dev-certificate.sh` makes a self-signed pair with the host name and the addresses of the VM in the alternative names, and `deploy-services.sh` runs it when the pair does not exist. A certificate from a public authority is put in the same two files; the nginx configuration does not change. nginx does not start without the files, so the deploy never serves HTTP by accident.
+- **Certificate files.** `ops/deploy/nginx/tls/fullchain.pem` and `privkey.pem`, git-ignored and mounted read-only. `ops/scripts/make-dev-certificate.sh` makes a self-signed pair with the host name and the addresses of the VM in the alternative names, and `deploy-services.sh` runs it when the pair does not exist. A certificate from a public authority is put in the same two files; the nginx configuration does not change. nginx does not start without the files, so the deploy never serves HTTP by accident.
 - **Issuing and renewing** a public certificate is not automated here. It needs a public host name and DNS that the owner (S01, S03) has not decided; when they have, the choice between certbot on the VM, a DNS-challenge client and a purchased certificate is a new ADR.
 - **HSTS.** `Strict-Transport-Security` is sent only when `NGINX_HSTS` holds a value; it is empty for the development certificate, because a browser that has seen HSTS for a self-signed certificate cannot be let past the warning.
 - **Web application.** With `Tls__Require=true` (set in the env file of the deployment) it redirects any request that arrives as HTTP, after the forwarded headers, to HTTPS, and the staff cookie is always `Secure`. Without the setting (local development) it behaves as before and the cookie is `Secure` when the request is HTTPS.
 - **Internal listener.** Port 8081 for the analysis and benchmark services is unchanged and stays on the loopback of the VM.
+
+**Current state (2026-10-21, [RC-161]).** The later decision of the fourth point is [ADR-0009]. `nf-hotel` serves a Let's Encrypt certificate from `tailscale cert` for `nf-hotel.taildb84b5.ts.net`, valid to 2027-01-04, and HSTS is on (`Strict-Transport-Security: max-age=2592000`). The files are under `ops/` since [ADR-0016].
 
 ## Consequences
 
@@ -73,3 +75,6 @@ Quality attributes: security improves (confidentiality of credentials and sessio
 [ADR-0005]: ./adr-0005-backoffice-login.md
 [ADR-0003]: ./adr-0003-proxmox-vm-for-services.md
 [065c6e8]: https://github.com/NF-Hotel/NFHotel/commit/065c6e85054e7b24dc5848e241038ede6d747f49
+[ADR-0009]: ./adr-0009-tls-certificates.md
+[ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
+[RC-161]: ../sqa/reviews/rc-161-adr-refresh.md

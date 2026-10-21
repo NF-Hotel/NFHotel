@@ -4,13 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0003 |
-| CrossReference | [BC-001], [MIL-004], [US-001], [ADR-0010] |
+| CrossReference | [BC-001], [MIL-004], [US-001], [ADR-0010], [ADR-0016], [RC-161] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (decision given by the user in chat) | Initial version, accepted after RC-047 Go | [0fa84f7] |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Decision unchanged; its statements on how the VM is made, the deploy layout and the published ports are replaced by ADR-0010 (RC-098) | [1b94761] |
+| 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Decision unchanged; its statements on how the VM is made, the deploy layout and the published ports are replaced by ADR-0010 (RC-098) | [1b94761] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Brought up to date with the repository and nf-hotel (RC-161): path under ops/, size of the production VM | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -54,9 +54,11 @@ compose file and one `<service>.env` per service, an external network
   is decided with that service; the benchmark result names the machine (CPU,
   memory, GPU) as US-001.04 requires. The market analysis service needs no GPU:
   its local model runs on a host that the container can reach through
-  `host.docker.internal`, as in `deploy/market-analysis`.
+  `host.docker.internal`, as in `ops/deploy/market-analysis`.
 - **Sizing.** Start with 4 vCPU, 8 GiB memory and 60 GiB disk for the analysis
   VM; the benchmark VM is sized when its GPU is known.
+
+**Current state (2026-10-21, [RC-161]).** The compose files are under `ops/deploy/` (ADR-0016). The production VM is `nf-hotel` (ADR-0010): 4 vCPU, 20 GiB memory, a 111 GB disk, Debian 13 and no GPU, read on the VM. The sizing above was the starting point for the first VM; the default of a new VM is in the wiki page Proxmox Deployment.
 
 ## Consequences
 
@@ -85,5 +87,6 @@ compose file and one `<service>.env` per service, an external network
 [MIL-004]: ../milestones/mil-004-market-analysis-service.md
 [US-001]: ../user-stories.md
 [ADR-0010]: ./adr-0010-production-vm-as-deployed.md
-[0fa84f7]: https://github.com/NF-Hotel/NFHotel/commit/0fa84f7fe59f59a20e54b6914c6ad4842fe74b3a
 [1b94761]: https://github.com/NF-Hotel/NFHotel/commit/1b94761ddb5113cd0d34915c01fe7f0f278bba60
+[ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
+[RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
