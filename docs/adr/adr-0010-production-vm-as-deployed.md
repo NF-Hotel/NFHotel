@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0010 |
-| CrossReference | [ADR-0003], [ADR-0004], [ADR-0007], [ADR-0008], [MIL-021], [DSA-001] |
+| CrossReference | [ADR-0003], [ADR-0004], [ADR-0007], [ADR-0008], [MIL-021], [DSA-001], [ADR-0012], [ADR-0016], [RC-161] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-098 Go | [1b94761] |
-| 2026-10-19 | Accepted | mikemike | AI as stand-in for S01 | Decision 3 refined by ADR-0012 of NFHotel: the checkout on the VM is NF-Hotel/DevOps, and the reconciliation pull request goes to NF-Hotel/DevOps; accepted after RC-500 Go | [c1dc5f7] |
+| 2026-10-19 | Deprecated | mikemike | AI as stand-in for S01 | Decision 3 refined by ADR-0012 of NFHotel: the checkout on the VM is NF-Hotel/DevOps, and the reconciliation pull request goes to NF-Hotel/DevOps; accepted after RC-500 Go | [c1dc5f7] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Decision 3 follows ADR-0016 (NFHotel checkout); state of decisions 2 to 6 on nf-hotel (RC-161) | [12a64c3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -61,12 +61,14 @@ We follow option 3: `nf-hotel` (Proxmox VMID 100) is the production VM of ADR-00
    - S03 copies `/opt/nfhotel/deployment/compose.yaml` into a pull request, with every secret replaced by a reference to a git-ignored settings file.
    - The pull request maps its services to the release images and its volumes, PostgreSQL included, to names the release keeps.
    - It is reviewed like any other change.
-3. **No deploy before that.** The deploy command refuses to run while `/opt/nfhotel` is not a git checkout of `NF-Hotel/DevOps` (since [ADR-0012]; `NF-Hotel/NFHotel` before), so CD cannot start a second stack next to the running one.
+3. **No deploy before that.** The deploy command refuses to run while `/opt/nfhotel` is not a git checkout of `NF-Hotel/NFHotel` (since [ADR-0016]; `NF-Hotel/DevOps` under [ADR-0012]), so CD cannot start a second stack next to the running one.
 4. **Data first.** Before the first CD deploy, a backup of the running database is taken and restored in a drill (ADR-0008).
 5. **Close the PostgreSQL port.**
    - PostgreSQL is reachable only on the Docker network of the API, as ADR-0004 decided.
    - Until the reconciliation lands, the tailnet policy limits port 5432 to the administrators (risk R15).
 6. **Record the VM.** The VMID, the size and the creation method of `nf-hotel` are written into the wiki page Proxmox Deployment once S03 has read them from the Proxmox node.
+
+**Current state (2026-10-21, [RC-161]).** Decisions 2 and 4 are done: the reconciliation of MIL-021, and the drill RC-505. Decision 5 is done: no port is published for PostgreSQL, and nothing listens on 5432 on the host (RC-506). For decision 6, the wiki page CI-CD records VMID 100. The size, read on the VM, is 4 vCPU, 20 GiB memory, a 111 GB disk and Debian 13. Since 2026-10-21, `/opt/nfhotel` is a checkout of NF-Hotel/NFHotel, switched by `ops/scripts/switch-vm-checkout.sh` (MIL-031 task 6, [ADR-0016]). The old DevOps checkout is kept in `/opt/nfhotel-devops`. **Open:** the stopped containers of the stack from before the reconciliation are still on the VM. They are `nfhotel-nginx`, `nfhotel-python-api` and `nfhotel-postgres`, with its volume `nfhotel-postgres_nfhotel_postgres_data`. The running database uses `nfhotel-postgres_pgdata`. They are in no repository and no record. S03 removes them only after checking that no data in the old volume is missing from production.
 
 ## Consequences
 
@@ -101,6 +103,8 @@ We follow option 3: `nf-hotel` (Proxmox VMID 100) is the production VM of ADR-00
 [ADR-0008]: ./adr-0008-database-migration-and-backup.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [DSA-001]: ../sqa/devsecops-assessment.md
-[1b94761]: https://github.com/NF-Hotel/NFHotel/commit/1b94761ddb5113cd0d34915c01fe7f0f278bba60
 [ADR-0012]: https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0012-devops-repository-ownership.md
 [c1dc5f7]: https://github.com/NF-Hotel/DevOps/commit/c1dc5f74e11ce4e10f7f1dbdf5ef304e4db8429e
+[ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
+[RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493

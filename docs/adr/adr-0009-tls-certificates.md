@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0009 |
-| CrossReference | [ADR-0006], [ADR-0007], [MIL-021], [MIL-023], [DSA-001] |
+| CrossReference | [ADR-0006], [ADR-0007], [MIL-021], [MIL-023], [DSA-001], [ADR-0010], [ADR-0016], [RC-161] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial version, decision D10 of DSA-001 | [064c27c] |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-096 Go | [064c27c] |
+| 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-096 Go | [064c27c] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Paths under ops/ and the renewal as it runs on nf-hotel (RC-161); the renewal unit is not in the repository | [12a64c3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -40,14 +40,16 @@ Options considered:
 We use `tailscale cert` for the tailnet name now, and certbot with the HTTP-01 webroot challenge for a public name once one exists. The VM is not exposed to the internet before that.
 
 1. **Tailnet name.**
-   - `tailscale cert` writes the certificate and key for `<host>.taildb84b5.ts.net` into the git-ignored `deploy/nginx/tls/` that ADR-0006 already mounts read-only.
+   - `tailscale cert` writes the certificate and key for `<host>.taildb84b5.ts.net` into the git-ignored `ops/deploy/nginx/tls/` that ADR-0006 already mounts read-only.
    - A systemd timer renews them every month and reloads nginx when they change.
    - `NGINX_SERVER_NAME` is set to the tailnet name, and HSTS is on (`NGINX_HSTS=on`), because the certificate is trusted.
 2. **Public name, later.**
    - certbot runs on the VM with `--webroot`, and nginx serves `/.well-known/acme-challenge/` from a read-only mount. This path is the exception for a certificate authority that ADR-0006 decision 2 already allows.
-   - Renewal uses certbot's own timer, with a deploy hook that copies the files into `deploy/nginx/tls/` and reloads nginx.
+   - Renewal uses certbot's own timer, with a deploy hook that copies the files into `ops/deploy/nginx/tls/` and reloads nginx.
 3. **No private key in git** (unchanged from ADR-0006).
 4. **The smoke test of CD** stays at "HTTPS answers 200". It adds a certificate check (`curl` without `--insecure`) once the trusted certificate is installed.
+
+**Current state (2026-10-21, [RC-161]).** `nf-hotel` serves the Let's Encrypt (YE1) certificate for `nf-hotel.taildb84b5.ts.net`, valid to 2027-01-04. It is renewed by `nfhotel-cert-renew.timer` and its service, which run every day (not every month). That timer and service were installed on the VM by hand, and they are not in the repository. This breaks the rule of [ADR-0010] that the repository is the source of truth for the VM; RC-161 records it as a finding. The files are under `ops/` since [ADR-0016].
 
 ## Consequences
 
@@ -78,3 +80,7 @@ We use `tailscale cert` for the tailnet name now, and certbot with the HTTP-01 w
 [MIL-023]: ../milestones/mil-023-operational-quality.md
 [DSA-001]: ../sqa/devsecops-assessment.md
 [064c27c]: https://github.com/NF-Hotel/NFHotel/commit/064c27c1d90793a6f3782e61cf4a91a4b96eba84
+[ADR-0010]: ./adr-0010-production-vm-as-deployed.md
+[ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
+[RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493

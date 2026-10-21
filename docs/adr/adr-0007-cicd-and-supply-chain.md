@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0007 |
-| CrossReference | [BC-001], [ADR-0003], [ADR-0006], [MIL-021], [MIL-022], [ADR-0018] |
+| CrossReference | [BC-001], [ADR-0003], [ADR-0006], [MIL-021], [MIL-022], [ADR-0018], [ADR-0016], [ADR-0500], [RC-161] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-092 Go | [f4649ad] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Amended by ADR-0018: CD installs the deploy and backup commands from a reviewed `main` commit | [819a1d9] |
+| 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Amended by ADR-0018: CD installs the deploy and backup commands from a reviewed `main` commit | [819a1d9] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Matched to the code (RC-161): four images, the installed deploy command, deploy by environment, a 5 minute health wait | [12a64c3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -40,19 +40,21 @@ Amended by [ADR-0018] (2026-10-21): the deploy command is no longer installed on
 
 1. **Three workflows.**
    - `ci.yaml` runs on pull requests and on `main`, with a read-only token and no secrets.
-   - `release.yaml` runs on `main` after CI succeeds. It builds `nfhotel-web` and `nfhotel-api`, pushes them to `ghcr.io/nf-hotel/`, and writes a software bill of materials (SBOM), a Trivy result and a build provenance attestation (`actions/attest`) for each digest.
+   - `release.yaml` runs on `main` after CI succeeds. It builds `nfhotel-web`, `nfhotel-api` and `benchmark`, carries `market-analysis` at its frozen digest (ADR-0500), pushes them to `ghcr.io/nf-hotel/`, and writes a software bill of materials (SBOM), a Trivy result and a build provenance attestation (`actions/attest`) for each digest.
    - `cd.yaml` starts on a successful Release run, or by hand for an earlier release.
 2. **Approval first.** The CD job runs in the GitHub Environment `production`, which has required reviewers and a deployment branch rule for `main` only. No credential is issued before the approval.
 3. **Verify before deploy.** CD runs `gh attestation verify` for each digest against the repository and the release workflow. It refuses a digest that has no valid attestation.
 4. **Private connectivity.** The CD job joins the tailnet with `tailscale/github-action` v4, using GitHub OIDC (workload identity federation). It becomes an ephemeral node tagged `tag:ci`. The tailnet policy lets `tag:ci` reach only `tag:nfhotel-vm` on port 22. No port is opened to the internet.
-5. **Restricted deploy identity.** CD logs in with Tailscale SSH as the user `deploy`, allowed by an ACL `ssh` rule for `tag:ci`. The user may run only `scripts/deploy-release.sh`. No ssh private key is stored in GitHub.
-6. **Deploy by digest, no rebuild.** `deploy-release.sh` writes the digests into a git-ignored `deploy/release.env`, then runs `docker compose pull` and `docker compose up -d`. Unchanged services are not recreated, named volumes are never removed, and third-party images are pinned by digest in the compose files.
+5. **Restricted deploy identity.** CD logs in with Tailscale SSH as the user `deploy`, allowed by an ACL `ssh` rule for `tag:ci`. The user may run only `/usr/local/sbin/nfhotel-deploy`, the installed copy of `ops/scripts/deploy-release.sh`. No ssh private key is stored in GitHub.
+6. **Deploy by digest, no rebuild.** `nfhotel-deploy` checks out the release commit and runs `ops/scripts/deploy-services.sh --no-build` with the digests in its environment; Docker Compose pulls them and starts the services. Unchanged services are not recreated, named volumes are never removed, and third-party images are pinned by digest in the compose files.
 7. **Health, smoke test and rollback.**
-   - Every container must be healthy within 3 minutes.
+   - Every container must be healthy within 5 minutes (`docker compose up --wait --wait-timeout 300`).
    - Port 80 must answer 301 and `https://` must answer 200.
    - When a check fails, CD deploys the previous release from the release log and the run fails.
 8. **One deploy at a time.** `concurrency: production` without cancelling a run that is in progress.
 9. **Least privilege.** Each job declares only the permissions it needs. Third-party actions are pinned by commit SHA and updated by Dependabot. `pull_request_target` is not used.
+
+**Current state (2026-10-21, [RC-161]).** The steps of the workflows are the local composite actions in `.github/actions/` ([ADR-0016]). Every CD run verifies the attestations of each digest, and the frozen `market-analysis` image is accepted only by its pinned digest ([ADR-0500]). Since [ADR-0018], the first step of a deploy installs the deploy and backup commands from the release commit.
 
 ## Consequences
 
@@ -86,5 +88,8 @@ Amended by [ADR-0018] (2026-10-21): the deploy command is no longer installed on
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
-[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
 [819a1d9]: https://github.com/NF-Hotel/NFHotel/commit/819a1d9d1bd8492f9164aac8416d56192d514e24
+[ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
+[ADR-0500]: ./adr-0500-freeze-market-analysis-image.md
+[RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493

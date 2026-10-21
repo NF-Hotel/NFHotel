@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0016 |
-| CrossReference | [BC-001], [SA-001], [ADR-0007], [ADR-0012], [MIL-025], [MIL-031] |
+| CrossReference | [BC-001], [SA-001], [ADR-0007], [ADR-0012], [MIL-025], [MIL-031], [ADR-0018], [RC-161] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-146 Go | [1b46421] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | States that S01 decided and the AI wrote the reasons, which S01 accepted | [fdfc65c] |
+| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | States that S01 decided and the AI wrote the reasons, which S01 accepted | [fdfc65c] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Matched to the repository (RC-161): ops/scripts/db, Ops CI on every pull request; state of decisions 7 and 8 | [12a64c3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -44,17 +44,19 @@ Options considered:
 
 We follow option 2: NF-Hotel/NFHotel holds the application and its operations; the operations live under `ops/`, and NF-Hotel/DevOps is archived. This supersedes ADR-0012.
 
-1. **Layout.** `ops/` holds the tree of NF-Hotel/DevOps as it is: `ops/deploy/`, `ops/scripts/`, `ops/tests/`, `ops/security/` and `ops/db/`. The composite actions go to `.github/actions/`, beside the workflows that use them. The scripts find their root from their own location, so they run unchanged from `ops/`.
+1. **Layout.** `ops/` holds the tree of NF-Hotel/DevOps as it is: `ops/deploy/`, `ops/scripts/`, `ops/tests/`, `ops/security/`, with the database scripts in `ops/scripts/db/`. The composite actions go to `.github/actions/`, beside the workflows that use them. The scripts find their root from their own location, so they run unchanged from `ops/`.
 2. **History.** DevOps is brought in with a subtree merge of its combined head (`b63fbed`, NF-Hotel/DevOps#13) under `ops/`, so its commits stay in NFHotel's history and `git log -- ops/` shows them. No history is rewritten. DevOps's `MIGRATION.md` stays as the record of the first move.
 3. **Documents.** The infrastructure documents return to `docs/` with their IDs: DSA-001, ADR-0007 to ADR-0011, ADR-0500, MIL-021 to MIL-025, and their review records. The IDs from 500 that DevOps allocated stay as they are, and NFHotel continues its own sequences. The wiki pages of DevOps (CI-CD, Database Preparation) join the NFHotel wiki.
 4. **Pipeline.**
    - The workflows call `./.github/actions/<action>` at the commit under test, so there is no pin and no bump.
    - The release manifest keeps `devops_sha`, now equal to `sha`, so the deploy command and the release log keep their format.
    - The VM checks out NFHotel at the release commit. `nfhotel-deploy` accepts the origin `NF-Hotel/NFHotel` and uses `ops/` of it.
-5. **Checks.** An `ops` CI workflow runs the linters and the script tests of DevOps when `ops/**`, `.github/actions/**` or the workflows change. The application CI runs when the application changes. Both are required checks.
+5. **Checks.** An `ops` CI workflow runs the linters and the script tests of DevOps on every pull request to `main` and on `main`; a path filter would leave its required checks unreported on other pull requests (RC-148). The application CI runs when the application changes. Both are required checks.
 6. **Ownership.** CODEOWNERS names the reviewers of `ops/`, `.github/` and the Dockerfiles. Changes there need their review, as in DevOps.
 7. **Order.** The deploy that is ready (NFHotel#195 on DevOps `b63fbed`) may go first: this decision changes where the code lives, not what runs. Then `/opt/nfhotel` on the VM is switched to an NFHotel checkout by S03, in a reviewed step with a backup and a way back.
 8. **DevOps.** Its open pull requests are closed with a link to the NFHotel PR that carries their content. Its MIL-023 work (#10, #12) and framework update (#5) are moved as NFHotel pull requests of their own. The repository is then archived (read-only, not deleted), with a README that points here.
+
+**Current state (2026-10-21, [RC-161]).** Decisions 1 to 7 are done. The VM was switched on 2026-10-21, and CD has deployed from NFHotel since then. The `NF Hotel Ops CI` jobs are required checks of the ruleset "Approve merges" since 2026-10-21. Decision 8 is open: NF-Hotel/DevOps is not archived and has open pull requests (NFHotel#205). Since [ADR-0018], CD installs the root commands of `ops/` from the release commit.
 
 ## Consequences
 
@@ -89,5 +91,7 @@ We follow option 2: NF-Hotel/NFHotel holds the application and its operations; t
 [ADR-0012]: ./adr-0012-devops-repository-ownership.md
 [MIL-025]: ../milestones/mil-025-devops-repository-consolidation.md
 [MIL-031]: ../milestones/mil-031-consolidate-devops-into-nfhotel.md
-[1b46421]: https://github.com/NF-Hotel/NFHotel/commit/1b46421e16ad0138fc39ab6aa7bf0fe3a1799f38
 [fdfc65c]: https://github.com/NF-Hotel/NFHotel/commit/fdfc65cf7e3e03cacac7a0e9393f031dc80679a4
+[ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
+[RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
