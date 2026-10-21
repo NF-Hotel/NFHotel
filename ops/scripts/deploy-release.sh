@@ -43,7 +43,7 @@
 #           the old and new SHA-256. The sudo rule does not change.
 # rollback: deploy the release before the latest one in the log again.
 # status:   print the release log.
-# deploy and rollback are the explicit commands that change the VM; status and a
+# update, deploy and rollback are the explicit commands that change the VM; status and a
 # refused argument change nothing. The die and usage helpers are kept in this file
 # because it is installed alone (scripts/lib/common.sh is not beside it).
 #
@@ -308,32 +308,29 @@ migrate() {
 
 # install_from <sha> <path in git> <target> <mode>: install one file of the commit when it
 # differs from the target; keep the old target as <target>.previous and log both hashes.
-# Returns 0 when it installed the file, 1 when the target was already equal.
+# Returns 0 when it installed the file, 1 when the target was already equal. It is called
+# in a condition, where set -e does not apply, so every step that can fail dies by itself.
+# The new file is written in update_dir, which update removes on exit.
 install_from() {
-  local sha="$1" path="$2" target="$3" mode="$4" new old
-  new="$(mktemp)"
-  as_app git show "$sha:$path" >"$new" || {
-    rm -f "$new"
-    die "$path is not in $sha"
-  }
+  local sha="$1" path="$2" target="$3" mode="$4" new="$update_dir/new" old=none
+  as_app git show "$sha:$path" >"$new" || die "$path is not in $sha"
   if [[ -f "$target" ]] && cmp -s "$new" "$target"; then
-    rm -f "$new"
     return 1
   fi
-  old=none
   if [[ -f "$target" ]]; then
-    old="$(sha256sum "$target" | cut -d' ' -f1)"
-    cp -p "$target" "$target.previous"
+    old="$(sha256sum "$target" | cut -d' ' -f1)" || die "cannot hash $target"
+    cp -p "$target" "$target.previous" || die "cannot keep $target as $target.previous"
   fi
-  install -o root -g root -m "$mode" "$new" "$target"
-  rm -f "$new"
-  record update "$sha" "$target" "$old" "$(sha256sum "$target" | cut -d' ' -f1)"
+  install -o root -g root -m "$mode" "$new" "$target" || die "cannot install $target"
+  record update "$sha" "$target" "$old" "$(sha256sum "$target" | cut -d' ' -f1)" || die "cannot log the update of $target"
   echo "    installed $target from $path"
 }
 
 update() {
   local sha="${1:-}" units=0
   [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || refuse "the commit must be 40 lower-case hex characters"
+  update_dir="$(mktemp -d)"
+  trap 'rm -rf "$update_dir"' EXIT
   check_checkout
   [[ "$(ops_rel)" == ops ]] || die "$app_dir has no ops/; update needs a checkout of NF-Hotel/NFHotel (ADR-0016)"
   echo "==> update: installing the operations commands of $sha (ADR-0018)"

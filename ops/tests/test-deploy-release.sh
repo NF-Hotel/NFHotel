@@ -108,7 +108,7 @@ run() {
   shift
   PATH="$W/bin:$PATH" NFHOTEL_USER=root NFHOTEL_STATE="$W/state-$(basename "$dir")" NFHOTEL_DIR="$dir" \
   NFHOTEL_SECRETS="${SECRETS:-$W/secrets}" NFHOTEL_BACKUP_COMMAND="${BACKUP:-$W/bin/backup}" \
-  NFHOTEL_COMMAND_DIR="$W/sbin" NFHOTEL_SYSTEMD_DIR="$W/systemd" NFHOTEL_SYSTEMCTL="$W/bin/systemctl" \
+  NFHOTEL_COMMAND_DIR="${CMD_DIR:-$W/sbin}" NFHOTEL_SYSTEMD_DIR="$W/systemd" NFHOTEL_SYSTEMCTL="$W/bin/systemctl" \
     bash /src/scripts/deploy-release.sh "$@" <"${STDIN:-/dev/null}" >"$W/out" 2>&1
 }
 expect_code() {
@@ -285,6 +285,18 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
   run "$W/nfhs" update "$P"
   [[ $? == 2 ]] && [[ "$(cat "$W/sbin/nfhotel-deploy")" == "echo deploy v3" ]] &&
     ok "a shallow checkout also refuses a pull-request commit" || ko "shallow refusal: $(tail -2 "$W/out")"
+
+  # A failed install stops update with an error, though it runs inside a condition where
+  # set -e does not apply, and update leaves no temporary file behind.
+  echo 'echo deploy v4' >"$W/nfh-src/ops/scripts/deploy-release.sh"
+  git -C "$W/nfh-src" commit -qam v4 && git -C "$W/nfh-src" push -q origin main
+  U4="$(git -C "$W/nfh-src" rev-parse HEAD)"
+  before="$(find /tmp -maxdepth 1 -name 'tmp.*' | wc -l)"
+  CMD_DIR="$W/missing" run "$W/nfh" update "$U4"
+  [[ $? == 1 ]] && grep -q "cannot install $W/missing/nfhotel-deploy" "$W/out" &&
+    ok "a failed install fails update with its reason" || ko "failed install: $(tail -2 "$W/out")"
+  [[ "$(find /tmp -maxdepth 1 -name 'tmp.*' | wc -l)" == "$before" ]] &&
+    ok "update removes its temporary folder" || ko "temporary files left in /tmp"
 }
 
 echo "RESULT: $pass passed, $fail failed"
