@@ -52,6 +52,7 @@ EOF
 cat >bin/tailscale <<'EOF'
 #!/bin/bash
 echo "tailscale $*"
+[[ "$*" == *" update "* ]] && exit "${FAKE_UPDATE_EXIT:-0}"
 [[ "$*" == *" migrate "* ]] && { cat >"${FAKE_STDIN:-/dev/null}"; exit "${FAKE_MIGRATE_EXIT:-0}"; }
 exit "${FAKE_EXIT:-0}"
 EOF
@@ -174,11 +175,16 @@ deploy_m() {
     FAKE_STDIN="$W/sent.sql" step deploy
 }
 expect 0 "deploy with migrations runs migrate, then deploy" deploy_m
-[[ "$(grep -c '^tailscale ssh' log)" == 2 ]] && head -1 log | grep -q "nfhotel-deploy migrate $M" &&
-  sed -n 2p log | grep -q "nfhotel-deploy deploy $APP" && ok "migrate comes before deploy, with the hash" || ko "order: $(tr '\n' '|' <log)"
+[[ "$(grep -c '^tailscale ssh' log)" == 3 ]] && head -1 log | grep -q "nfhotel-deploy update $OPS" &&
+  sed -n 2p log | grep -q "nfhotel-deploy migrate $M" && sed -n 3p log | grep -q "nfhotel-deploy deploy $APP" &&
+  ok "update, then migrate with the hash, then deploy" || ko "order: $(tr '\n' '|' <log)"
 cmp -s migrations.sql "$W/sent.sql" && ok "migrate receives the script on standard input" || ko "script sent"
 FAKE_MIGRATE_EXIT=1 expect 1 "a failed migrate fails the step" deploy_m
 grep -q "nfhotel-deploy deploy" log && ko "nothing is deployed after a failed migrate" || ok "nothing is deployed after a failed migrate"
+# The update of the commands (ADR-0018) comes first; when it fails, nothing else runs.
+FAKE_UPDATE_EXIT=2 expect 1 "a failed update fails the step" deploy_m
+grep -qE "nfhotel-deploy (migrate|deploy)" log && ko "nothing runs after a failed update" || ok "nothing runs after a failed update"
+VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="x;id" WEB=w API=a ANALYSIS=n BENCHMARK=b expect 1 "deploy refuses a bad operations commit" step deploy
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Install the daily NFHotel database backup on the VM (ADR-0008, MIL-021 task 7).
-# S03 runs it once as root in the checkout /opt/nfhotel, and again after
-# scripts/backup-database.sh or deploy/systemd/ change in git.
+# S03 runs it once as root in the checkout /opt/nfhotel. After that, the update command of
+# each CD run installs a changed backup-database.sh or deploy/systemd/ from the release
+# commit, only when that commit is on main (ADR-0018); its settings file is not touched.
 #
 # It:
 #   1. installs age and rsync from Debian

@@ -2,9 +2,10 @@
 # Deploy one NFHotel release on the VM: the NFHotel commit, the commit of the operations code
 # and the image digests that the release action recorded (ADR-0007, MIL-021 task 6;
 # ADR-0012 of NFHotel). The CD workflow calls it
-# over Tailscale SSH as the user deploy, through sudo; scripts/install-deploy-user.sh
-# installs it as /usr/local/sbin/nfhotel-deploy, owned by root, so a change to this
-# file in git takes effect only when S03 installs it again.
+# over Tailscale SSH as the user deploy, through sudo. scripts/install-deploy-user.sh
+# installs it once as /usr/local/sbin/nfhotel-deploy, owned by root; after that, the
+# update command of each CD run installs it from the release commit, only when that
+# commit is on main (ADR-0018).
 #
 # deploy:
 #   1. check every argument against a strict pattern (nothing else reaches a shell), and
@@ -31,13 +32,23 @@
 #           nfhotel_owner, with the URL of /etc/nfhotel/secrets/nfhotel-migrator-database.env.
 #           Each migration of the script commits on its own and is skipped when its id is
 #           already in the history, so a rerun changes nothing.
+# update:   install the operations commands of a release commit (ADR-0018, MIL-032), before
+#           migrate and deploy. It fetches main from origin and refuses a commit that is
+#           not reachable from origin/main, the branch the ruleset protects: GitHub serves
+#           commits of open pull requests by SHA, so this keeps unreviewed code from running
+#           as root. From that commit (git show, never the working tree) it installs
+#           ops/scripts/deploy-release.sh as nfhotel-deploy, ops/scripts/backup-database.sh
+#           as nfhotel-backup and the backup service and timer, each only when it differs.
+#           The replaced copy is kept as <file>.previous, and each change is logged with
+#           the old and new SHA-256. The sudo rule does not change.
 # rollback: deploy the release before the latest one in the log again.
 # status:   print the release log.
 # deploy and rollback are the explicit commands that change the VM; status and a
 # refused argument change nothing. The die and usage helpers are kept in this file
 # because it is installed alone (scripts/lib/common.sh is not beside it).
 #
-# Usage: deploy-release.sh deploy <app-sha> <devops-sha> <web> <api> <analysis> <benchmark>
+# Usage: deploy-release.sh update <sha>
+#        deploy-release.sh deploy <app-sha> <devops-sha> <web> <api> <analysis> <benchmark>
 #        deploy-release.sh migrate <sha256 of the script> < migrations.sql
 #        deploy-release.sh rollback
 #        deploy-release.sh status
@@ -49,7 +60,9 @@
 # Env:   NFHOTEL_DIR (default /opt/nfhotel), NFHOTEL_USER (default nfhotel),
 #        NFHOTEL_STATE (default /var/lib/nfhotel-deploy), NFHOTEL_REGISTRY
 #        (default ghcr.io/nf-hotel), NFHOTEL_SECRETS (default /etc/nfhotel/secrets),
-#        NFHOTEL_BACKUP_COMMAND (default /usr/local/sbin/nfhotel-backup; for the tests)
+#        NFHOTEL_BACKUP_COMMAND (default /usr/local/sbin/nfhotel-backup; for the tests),
+#        NFHOTEL_COMMAND_DIR (default /usr/local/sbin), NFHOTEL_SYSTEMD_DIR (default
+#        /etc/systemd/system), NFHOTEL_SYSTEMCTL (default systemctl; for the tests)
 # Exit:  0 deployed (or rolled back on request); 1 the deploy failed (a rollback was
 #        tried); 2 usage error or an argument that does not match its pattern
 # Needs: bash 4+, git, curl, flock, sudo, docker with the compose plugin
@@ -64,6 +77,9 @@ release_log="$state_dir/releases.log"
 secrets_dir="${NFHOTEL_SECRETS:-/etc/nfhotel/secrets}"
 # Overridable for the tests only: sudo resets the environment of the deploy user.
 readonly BACKUP_COMMAND="${NFHOTEL_BACKUP_COMMAND:-/usr/local/sbin/nfhotel-backup}"
+readonly COMMAND_DIR="${NFHOTEL_COMMAND_DIR:-/usr/local/sbin}"
+readonly SYSTEMD_DIR="${NFHOTEL_SYSTEMD_DIR:-/etc/systemd/system}"
+readonly SYSTEMCTL="${NFHOTEL_SYSTEMCTL:-systemctl}"
 readonly NAMES=(nfhotel-web nfhotel-api market-analysis benchmark)
 
 die() {
@@ -189,10 +205,11 @@ api_database_settings() {
   echo "==> the API connects as nfhotel_app and does not migrate at start (ADR-0011)"
 }
 
-# previous_release <n>: the n-th latest successful release line (1 = latest).
+# previous_release <n>: the n-th latest successful release line (1 = latest). The log also
+# holds the lines of update, which have six fields, so only release lines are counted.
 previous_release() {
   [[ -f "$release_log" ]] || return 1
-  tail -n "$1" "$release_log" | head -n 1 | awk 'NF == 7 { print $2, $3, $4, $5, $6, $7 }'
+  awk 'NF == 7' "$release_log" | tail -n "$1" | head -n 1 | awk '{ print $2, $3, $4, $5, $6, $7 }'
 }
 
 record() {
@@ -289,6 +306,57 @@ migrate() {
   echo "==> migrations applied"
 }
 
+# install_from <sha> <path in git> <target> <mode>: install one file of the commit when it
+# differs from the target; keep the old target as <target>.previous and log both hashes.
+# Returns 0 when it installed the file, 1 when the target was already equal.
+install_from() {
+  local sha="$1" path="$2" target="$3" mode="$4" new old
+  new="$(mktemp)"
+  as_app git show "$sha:$path" >"$new" || {
+    rm -f "$new"
+    die "$path is not in $sha"
+  }
+  if [[ -f "$target" ]] && cmp -s "$new" "$target"; then
+    rm -f "$new"
+    return 1
+  fi
+  old=none
+  if [[ -f "$target" ]]; then
+    old="$(sha256sum "$target" | cut -d' ' -f1)"
+    cp -p "$target" "$target.previous"
+  fi
+  install -o root -g root -m "$mode" "$new" "$target"
+  rm -f "$new"
+  record update "$sha" "$target" "$old" "$(sha256sum "$target" | cut -d' ' -f1)"
+  echo "    installed $target from $path"
+}
+
+update() {
+  local sha="${1:-}" units=0
+  [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || refuse "the commit must be 40 lower-case hex characters"
+  check_checkout
+  [[ "$(ops_rel)" == ops ]] || die "$app_dir has no ops/; update needs a checkout of NF-Hotel/NFHotel (ADR-0016)"
+  echo "==> update: installing the operations commands of $sha (ADR-0018)"
+  # The checkout is shallow. Fetching main brings the commits between its tip and what the
+  # checkout has, which holds every release commit since; an older commit is refused.
+  as_app git fetch --quiet --no-tags origin "+refs/heads/main:refs/remotes/origin/main" ||
+    die "cannot fetch main from origin"
+  as_app git cat-file -e "$sha^{commit}" 2>/dev/null ||
+    as_app git fetch --quiet --no-tags --depth 1 origin "$sha" || die "cannot fetch $sha from origin"
+  as_app git merge-base --is-ancestor "$sha" refs/remotes/origin/main ||
+    refuse "$sha is not on main of origin; only a reviewed commit is installed (ADR-0018)"
+
+  install_from "$sha" ops/scripts/deploy-release.sh "$COMMAND_DIR/nfhotel-deploy" 0755 || true
+  install_from "$sha" ops/scripts/backup-database.sh "$COMMAND_DIR/nfhotel-backup" 0755 || true
+  install_from "$sha" ops/deploy/systemd/nfhotel-backup.service "$SYSTEMD_DIR/nfhotel-backup.service" 0644 && units=1
+  install_from "$sha" ops/deploy/systemd/nfhotel-backup.timer "$SYSTEMD_DIR/nfhotel-backup.timer" 0644 && units=1
+  if ((units)); then
+    "$SYSTEMCTL" daemon-reload || die "systemctl daemon-reload failed"
+    "$SYSTEMCTL" try-restart nfhotel-backup.timer || die "the backup timer did not restart"
+  fi
+  echo "==> update: the commands match $sha"
+}
+
 rollback() {
   local target
   target="$(previous_release 2 || true)"
@@ -313,6 +381,10 @@ main() {
   flock --nonblock 9 || die "another deploy is running"
 
   case "$1" in
+    update)
+      shift
+      update "$@"
+      ;;
     deploy)
       shift
       deploy "$@"
