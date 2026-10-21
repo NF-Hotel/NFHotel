@@ -8,13 +8,13 @@
 # Run it in Debian 12 with the repository at /src:
 #   docker run --rm -v "$PWD:/src:ro" debian:12-slim bash /src/tests/test-cd-steps.sh
 # Exit:  0 every check passed; 1 a check failed
-# Needs: Debian 12 (apt-get, jq, git)
+# Needs: Debian 12 (apt-get, jq, git, python3)
 
 # shellcheck disable=SC2015 # ok and ko always return 0, so `test && ok || ko` runs
 # exactly one of them; the short form keeps each check on one line.
 set -uo pipefail
 
-apt-get -qq update >/dev/null && apt-get -qq install -y jq git >/dev/null 2>&1
+apt-get -qq update >/dev/null && apt-get -qq install -y jq git python3 >/dev/null 2>&1
 W="$(mktemp -d)"
 trap 'rm -rf "$W"' EXIT
 cd "$W" || exit 1
@@ -51,6 +51,7 @@ EOF
 # shellcheck disable=SC2016 # the fake script expands these when it runs, not here
 cat >bin/tailscale <<'EOF'
 #!/bin/bash
+[[ "$1" == status ]] && { echo "$FAKE_STATUS"; exit 0; }
 echo "tailscale $*"
 [[ "$*" == *" update "* ]] && { [[ -n "${FAKE_UPDATE_OUT:-}" ]] && echo "$FAKE_UPDATE_OUT"; exit "${FAKE_UPDATE_EXIT:-0}"; }
 [[ "$*" == *" migrate "* ]] && { cat >"${FAKE_STDIN:-/dev/null}"; exit "${FAKE_MIGRATE_EXIT:-0}"; }
@@ -191,6 +192,33 @@ FAKE_UPDATE_OUT="    installed /usr/local/sbin/nfhotel-deploy from ops/scripts/d
 [[ "$(grep -c 'nfhotel-deploy update' log)" == 2 ]] && ok "update runs twice after a new deploy command" || ko "second update: $(tr '\n' '|' <log)"
 expect 0 "an unchanged deploy command runs update once" deploy_m
 [[ "$(grep -c 'nfhotel-deploy update' log)" == 1 ]] && ok "update runs once when the deploy command is unchanged" || ko "single update"
+
+# The rollback drill (MIL-021 criterion 6) passes --drill to the deploy command, only
+# when ROLLBACK_DRILL is true.
+VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" WEB=w API=a ANALYSIS=n BENCHMARK=b ROLLBACK_DRILL=true expect 0 "a drill run calls deploy" step deploy
+grep -q "nfhotel-deploy deploy $APP $OPS w a n b --drill" log && ok "a drill passes --drill" || ko "drill: $(tr '\n' '|' <log)"
+VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" WEB=w API=a ANALYSIS=n BENCHMARK=b ROLLBACK_DRILL=false expect 0 "a normal run calls deploy" step deploy
+grep -q -- "--drill" log && ko "a normal run passed --drill" || ok "a normal run passes no --drill"
+
+# The tailnet scope (MIL-021 criterion 7): a listener on 127.0.0.1 stands in for ssh of
+# the VM, and the status of tailscale names the peers.
+python3 -m http.server 18022 --bind 127.0.0.1 >/dev/null 2>&1 &
+python3 -m http.server 18080 --bind 127.0.0.1 >/dev/null 2>&1 &
+for _ in $(seq 50); do
+  (echo >/dev/tcp/127.0.0.1/18080) 2>/dev/null && break
+  sleep 0.1
+done
+scope() { VM_HOST=127.0.0.1 SCOPE_SSH_PORT=18022 SCOPE_OTHER_PORTS="$1" step scope; }
+export FAKE_STATUS='{"Peer":{"k1":{"DNSName":"127.0.0.1."}}}'
+expect 0 "scope passes when only ssh answers" scope 18081
+grep -q "Ports 18081 of 127.0.0.1 do not answer" log && grep -q "No peer other than" log && ! grep -q "::warning::" log &&
+  ok "the scope records the closed ports and no other peer" || ko "scope: $(tr '\n' '|' <log)"
+expect 0 "an open port is a warning, not a failure" scope 18080
+grep -q "::warning::tag:ci reaches ports 18080" log && ok "an open port is reported" || ko "open port: $(tr '\n' '|' <log)"
+FAKE_STATUS='{"Peer":{"k1":{"DNSName":"127.0.0.1."},"k2":{"DNSName":"legion.example.ts.net."}}}' expect 0 "another peer is a warning" scope 18081
+grep -q "Other peers seen:.*legion.example.ts.net" log && ok "another peer is reported" || ko "peer: $(tr '\n' '|' <log)"
+VM_HOST=127.0.0.1 SCOPE_SSH_PORT=18099 expect 1 "scope fails when ssh does not answer" step scope
+kill %1 %2 2>/dev/null
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))

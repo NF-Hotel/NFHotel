@@ -50,7 +50,7 @@
 # because it is installed alone (scripts/lib/common.sh is not beside it).
 #
 # Usage: deploy-release.sh update <sha>
-#        deploy-release.sh deploy <app-sha> <devops-sha> <web> <api> <analysis> <benchmark>
+#        deploy-release.sh deploy <app-sha> <devops-sha> <web> <api> <analysis> <benchmark> [--drill]
 #        deploy-release.sh migrate <sha256 of the script> < migrations.sql
 #        deploy-release.sh rollback
 #        deploy-release.sh status
@@ -59,6 +59,8 @@
 #                which since ADR-0016 is the NFHotel commit of the release
 #   <web> ...    ghcr.io/nf-hotel/<image>@sha256:<64 hex>, in this order:
 #                nfhotel-web, nfhotel-api, market-analysis, benchmark
+#   --drill      a rollback drill: deploy, then roll back to the previous release as if
+#                the smoke test had failed, and exit 1; the release is not recorded
 # Env:   NFHOTEL_DIR (default /opt/nfhotel), NFHOTEL_USER (default nfhotel),
 #        NFHOTEL_STATE (default /var/lib/nfhotel-deploy), NFHOTEL_REGISTRY
 #        (default ghcr.io/nf-hotel), NFHOTEL_SECRETS (default /etc/nfhotel/secrets),
@@ -243,6 +245,14 @@ check_checkout() {
 }
 
 deploy() {
+  local drill=0
+  # --drill (MIL-021 criterion 6): deploy the release, then treat it as failed, so the
+  # rollback to the previous release runs for real and the run is red. Only a manual CD
+  # run with rollback_drill passes it.
+  if [[ "${7:-}" == "--drill" ]]; then
+    drill=1
+    set -- "${@:1:6}"
+  fi
   check_release "$@"
   check_checkout
   local last=""
@@ -256,9 +266,13 @@ deploy() {
   fi
 
   if apply "$@"; then
-    record "$@"
-    echo "==> deployed $1"
-    return 0
+    if ((drill)); then
+      echo "==> rollback drill: the deploy of $1 passed, and is treated as failed" >&2
+    else
+      record "$@"
+      echo "==> deployed $1"
+      return 0
+    fi
   fi
 
   echo "==> the deploy of $1 failed" >&2

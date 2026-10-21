@@ -144,6 +144,14 @@ expect_code() {
   awk 'NF == 7' "$W/state-app/releases.log" | grep -q "$APP $B" && ok "the log records both commits" || ko "log fields"
   expect_code 0 "rolls back by hand" rollback
   [[ "$(git -C "$W/app" rev-parse HEAD)" == "$A" ]] && ok "the manual rollback restored A" || ko "manual rollback"
+  # The rollback drill (MIL-021 criterion 6): B deploys and passes, is treated as failed,
+  # and A comes back; the run fails and B is not recorded.
+  lines="$(wc -l <"$W/state-app/releases.log")"
+  expect_code 1 "a rollback drill fails the run" deploy $(good "$B") --drill
+  grep -q "rollback drill: the deploy of $APP passed" "$W/out" && grep -q "rolled back to $APP" "$W/out" &&
+    [[ "$(git -C "$W/app" rev-parse HEAD)" == "$A" ]] && ok "the drill rolls back to the previous release" || ko "drill: $(tail -3 "$W/out")"
+  [[ "$(wc -l <"$W/state-app/releases.log")" == "$lines" ]] && ok "the drilled release is not recorded" || ko "drill recorded"
+  expect_code 2 "refuses an unknown eighth argument" deploy $(good "$B") --other
 }
 
 (

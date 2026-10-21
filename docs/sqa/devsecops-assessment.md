@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | DSA-001 |
-| CrossReference | [BC-001], [ADR-0003], [ADR-0004], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0009], [ADR-0010], [MIL-021], [MIL-022], [MIL-023] |
+| CrossReference | [BC-001], [ADR-0003], [ADR-0004], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0009], [ADR-0010], [MIL-021], [MIL-022], [MIL-023], [RC-164] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | S01 (server inventory given in chat) | Section 2.4.2: `nf-hotel` confirmed as the production VM; the conclusion of 2.4.1 withdrawn; risks R15 and R16; D4 corrected | [1b94761] |
-| 2026-10-19 | Accepted | mikemike | AI as stand-in for S01 | Section 2.4.3: the repository boundary of ADR-0012 (NFHotel); accepted after RC-500 Go | [c1dc5f7] |
+| 2026-10-19 | Deprecated | mikemike | AI as stand-in for S01 | Section 2.4.3: the repository boundary of ADR-0012 (NFHotel); accepted after RC-500 Go | [c1dc5f7] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | D7 revised by S01: the off-VM copy goes to the legion laptop (ops/deploy/backup-target); accepted after RC-164 Go | pending |
 
 This document is a working assessment. Its type is not in `framework/registry/artifact-catalog.md`; a catalog type for it is proposed upstream (rule 5) before it is accepted.
 
@@ -412,7 +412,7 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 | D4 | Confirm that `nf-hotel` is the services VM and confirm its host key fingerprint | **Decided 2026-10-18, corrected the same day (section 2.4.2, ADR-0010):** `nf-hotel` (VMID 100) is the production VM and already runs NF Hotel; its host key is verified over the tailnet. CD deploys to it only after the running deployment is reconciled with the repository (MIL-021 task 10) | S03 (reconciliation) |
 | D5 | Ruleset changes: required status checks, dismiss stale reviews, approve last push, block deletion | Approve | S01 |
 | D6 | Turn on secret scanning with push protection, Dependabot alerts and updates, CodeQL default setup | Approve | S01 |
-| D7 | Backup target off the VM and who holds the decryption key | **Decided 2026-10-18:** an `age` key pair is created on the workstation of S01/S03; the private key stays off the VM in the password manager. Off-VM copies go by rsync over the tailnet to a dedicated user `nfhotel-backup` on the Proxmox node (a different disk and failure domain than the VM), and the Proxmox node keeps a weekly `vzdump` of the VM. A copy outside the Proxmox host is the residual gap (R7) | S03 |
+| D7 | Backup target off the VM and who holds the decryption key | **Decided 2026-10-18:** an `age` key pair is created on the workstation of S01/S03; the private key stays off the VM in the password manager. Off-VM copies go by rsync over the tailnet to a dedicated user `nfhotel-backup` on the Proxmox node (a different disk and failure domain than the VM), and the Proxmox node keeps a weekly `vzdump` of the VM. A copy outside the Proxmox host is the residual gap (R7). **Revised 2026-10-21 by S01 (in chat):** the off-VM copy goes to the legion laptop of S03, outside the Proxmox host, which closes the gap of R7. It goes to the write-only container `ops/deploy/backup-target`, published only on the tailnet address of the laptop. When the laptop is off, the backups stay on the VM, and the next run copies what is missing (`backup-database.sh`, MIL-021 task 7). The weekly `vzdump` on the Proxmox node stays | S03 |
 | D8 | Migrations applied by CD as reviewed scripts; `MigrateOnStart` off in production | Approve | S01 |
 | D9 | Trivy and CodeQL thresholds in section 8 | Approve | S01 |
 | D10 | Public TLS certificate method (ADR-0006 decision 4) before the VM serves the internet | **Decided 2026-10-18 in ADR-0009:** inside the tailnet, `tailscale cert` (Let's Encrypt, already in use on `nf-hotel`); for a public host name, certbot with the HTTP-01 webroot challenge through nginx, renewed by a systemd timer. Until a public name exists, the VM is not exposed to the internet | S01, S03 |
@@ -441,7 +441,6 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
-[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
-[1b94761]: https://github.com/NF-Hotel/NFHotel/commit/1b94761ddb5113cd0d34915c01fe7f0f278bba60
 [ADR-0012]: https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0012-devops-repository-ownership.md
 [c1dc5f7]: https://github.com/NF-Hotel/DevOps/commit/c1dc5f74e11ce4e10f7f1dbdf5ef304e4db8429e
+[RC-164]: ./reviews/rc-164-mil-021-amendment.md

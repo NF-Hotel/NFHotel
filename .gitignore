@@ -451,3 +451,6 @@ docs/test-data/real-specimens/
 /release-scan/
 /e2e-results/
 /dast-results/
+
+# The write-only backup target of ops/ (D7); the pattern Backup*/ above is for Visual Studio.
+!/ops/deploy/backup-target/

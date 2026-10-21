@@ -1,0 +1,26 @@
+# The write-only target of the off-VM backup copy (D7, ADR-0008), for the backup host
+# (the legion laptop of S03). Start it there with:
+#   docker compose --env-file backup-target.env up -d --build
+# It publishes ssh only on the tailnet address of the host, so only the tailnet reaches
+# it, and the tailnet policy lets only nf-hotel in. Settings in backup-target.env
+# (git-ignored); copy backup-target.env.example first.
+name: nfhotel-backup-target
+
+services:
+  backup-target:
+    build: .
+    image: nfhotel-backup-target:local
+    restart: unless-stopped
+    environment:
+      BACKUP_PUBLIC_KEY: ${BACKUP_PUBLIC_KEY:?set it to the .pub key of root on nf-hotel}
+    ports:
+      # BACKUP_TARGET_BIND: the tailnet address of this host (required)
+      - "${BACKUP_TARGET_BIND:?set it}:${BACKUP_TARGET_PORT:-2222}:22"
+    volumes:
+      - ${BACKUP_TARGET_DIR:-./backups}:/backups
+      - host-keys:/etc/ssh/keys
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  host-keys:

@@ -17,6 +17,10 @@ inputs:
     description: "'true' deploys; anything else is a dry run"
     required: false
     default: "false"
+  rollback-drill:
+    description: "'true' deploys, then rolls back to the previous release (MIL-021 crit. 6)"
+    required: false
+    default: "false"
   vm-host:
     description: The tailnet name of the VM
     required: false
@@ -84,6 +88,13 @@ runs:
         tags: tag:ci
         version: 1.102.4
 
+    - name: Check the tailnet scope of this node
+      if: ${{ inputs.apply == 'true' }}
+      shell: bash
+      env:
+        VM_HOST: ${{ inputs.vm-host }}
+      run: bash "$GITHUB_ACTION_PATH/../../../ops/scripts/cd-steps.sh" scope
+
     - name: Deploy on the VM
       id: deploy
       if: ${{ inputs.apply == 'true' }}
@@ -97,6 +108,7 @@ runs:
         ANALYSIS: ${{ steps.release.outputs.market_analysis }}
         BENCHMARK: ${{ steps.release.outputs.benchmark }}
         MIGRATIONS: ${{ steps.release.outputs.migrations }}
+        ROLLBACK_DRILL: ${{ inputs.rollback-drill }}
       run: bash "$GITHUB_ACTION_PATH/../../../ops/scripts/cd-steps.sh" deploy
 
     - name: Write the deployment summary
