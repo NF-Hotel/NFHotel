@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-093 Go | [f4649ad] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Records what runs and what is not yet done (RC-161): the copy off the VM (D7) is not in place | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Records what runs and what is not yet done (RC-161): the copy off the VM (D7) is not in place | [12a64c3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -86,3 +86,4 @@ WAL archiving is not chosen now: a daily dump with a tested restore fits the dat
 [ADR-0011]: ./adr-0011-postgresql-access-for-the-api.md
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493

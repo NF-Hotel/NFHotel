@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Accepted after RC-069 Go | [1593b34] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Names the later decisions that changed it (RC-161): ADR-0006, ADR-0008, ADR-0011, ADR-0015, ADR-0017 | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Names the later decisions that changed it (RC-161): ADR-0006, ADR-0008, ADR-0011, ADR-0015, ADR-0017 | [12a64c3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -89,3 +89,4 @@ Quality attributes: security improves (authentication, least privilege, defence 
 [ADR-0015]: ./adr-0015-mobile-app-staff-token-access.md
 [ADR-0017]: ./adr-0017-staff-passwords-and-audit.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493

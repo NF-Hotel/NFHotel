@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-19 | Deprecated | Claude (AI) | AI at the request of S01, not independent | Accepted after RC-109 Go | [b1daae2] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Path under ops/ (RC-161) | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Path under ops/ (RC-161) | [12a64c3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -75,3 +75,4 @@ Quality attributes: usability improves (one place, next to the results); securit
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
 [ADR-0500]: ./adr-0500-freeze-market-analysis-image.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493

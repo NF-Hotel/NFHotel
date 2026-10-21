@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | States that S01 decided and the AI wrote the reasons, which S01 accepted | [fdfc65c] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Matched to the repository (RC-161): ops/scripts/db, Ops CI on every pull request; state of decisions 7 and 8 | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Matched to the repository (RC-161): ops/scripts/db, Ops CI on every pull request; state of decisions 7 and 8 | [12a64c3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -94,3 +94,4 @@ We follow option 2: NF-Hotel/NFHotel holds the application and its operations; t
 [fdfc65c]: https://github.com/NF-Hotel/NFHotel/commit/fdfc65cf7e3e03cacac7a0e9393f031dc80679a4
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493

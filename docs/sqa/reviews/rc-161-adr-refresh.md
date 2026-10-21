@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [12a64c3] |
 
 ---
 
@@ -107,3 +107,4 @@ Go for the eleven updated ADRs.
 [ADR-0016]: ../../adr/adr-0016-one-repository-for-application-and-operations.md
 [ADR-0500]: ../../adr/adr-0500-freeze-market-analysis-image.md
 [QC-ADR-001]: ../../../framework/qc/artifacts/qc-adr.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493

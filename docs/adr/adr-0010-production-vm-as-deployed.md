@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-19 | Deprecated | mikemike | AI as stand-in for S01 | Decision 3 refined by ADR-0012 of NFHotel: the checkout on the VM is NF-Hotel/DevOps, and the reconciliation pull request goes to NF-Hotel/DevOps; accepted after RC-500 Go | [c1dc5f7] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Decision 3 follows ADR-0016 (NFHotel checkout); state of decisions 2 to 6 on nf-hotel (RC-161) | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Decision 3 follows ADR-0016 (NFHotel checkout); state of decisions 2 to 6 on nf-hotel (RC-161) | [12a64c3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -107,3 +107,4 @@ We follow option 3: `nf-hotel` (Proxmox VMID 100) is the production VM of ADR-00
 [c1dc5f7]: https://github.com/NF-Hotel/DevOps/commit/c1dc5f74e11ce4e10f7f1dbdf5ef304e4db8429e
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493

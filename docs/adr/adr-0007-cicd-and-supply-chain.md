@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Amended by ADR-0018: CD installs the deploy and backup commands from a reviewed `main` commit | [819a1d9] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Matched to the code (RC-161): four images, the installed deploy command, deploy by environment, a 5 minute health wait | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Matched to the code (RC-161): four images, the installed deploy command, deploy by environment, a 5 minute health wait | [12a64c3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -92,3 +92,4 @@ Amended by [ADR-0018] (2026-10-21): the deploy command is no longer installed on
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
 [ADR-0500]: ./adr-0500-freeze-market-analysis-image.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493

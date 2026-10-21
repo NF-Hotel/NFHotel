@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Decision unchanged; its statements on how the VM is made, the deploy layout and the published ports are replaced by ADR-0010 (RC-098) | [1b94761] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Brought up to date with the repository and nf-hotel (RC-161): path under ops/, size of the production VM | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Brought up to date with the repository and nf-hotel (RC-161): path under ops/, size of the production VM | [12a64c3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -90,3 +90,4 @@ compose file and one `<service>.env` per service, an external network
 [1b94761]: https://github.com/NF-Hotel/NFHotel/commit/1b94761ddb5113cd0d34915c01fe7f0f278bba60
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
