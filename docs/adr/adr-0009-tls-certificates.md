@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Paths under ops/ and the renewal as it runs on nf-hotel (RC-161); the renewal unit is not in the repository | [12a64c3] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | The renewal is in git and installed by CD (RC-162); the hand-made unit reloaded a stopped container | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | The renewal is in git and installed by CD (RC-162); the hand-made unit reloaded a stopped container | [e2e8a90] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -85,3 +85,4 @@ We use `tailscale cert` for the tailnet name now, and certbot with the HTTP-01 w
 [12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
 [RC-162]: ../sqa/reviews/rc-162-certificate-renewal.md
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
+[e2e8a90]: https://github.com/NF-Hotel/NFHotel/commit/e2e8a90e0082aa329e4d2da499e8b1e853c26ca8

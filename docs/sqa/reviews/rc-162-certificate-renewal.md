@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [e2e8a90] |
 
 ---
 
@@ -74,3 +74,4 @@ Go. QC-WF-001 criterion 22 closes with the first CD after the merge.
 [RC-161]: ./rc-161-adr-refresh.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[e2e8a90]: https://github.com/NF-Hotel/NFHotel/commit/e2e8a90e0082aa329e4d2da499e8b1e853c26ca8

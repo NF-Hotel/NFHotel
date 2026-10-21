@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-157 Go (accepted by S01 in chat) | [819a1d9] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | The certificate renewal is installed too, and CD runs update again after a new deploy command (RC-162) | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | The certificate renewal is installed too, and CD runs update again after a new deploy command (RC-162) | [e2e8a90] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -96,3 +96,4 @@ We follow option 3: during each CD run, before the migrations, the deploy comman
 [819a1d9]: https://github.com/NF-Hotel/NFHotel/commit/819a1d9d1bd8492f9164aac8416d56192d514e24
 [RC-162]: ../sqa/reviews/rc-162-certificate-renewal.md
 [ADR-0009]: ./adr-0009-tls-certificates.md
+[e2e8a90]: https://github.com/NF-Hotel/NFHotel/commit/e2e8a90e0082aa329e4d2da499e8b1e853c26ca8
