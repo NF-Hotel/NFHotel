@@ -1,6 +1,6 @@
 # Builds the application with the same SDK version as in global.json.
 # Base images pinned by digest (MIL-022 task 4); Dependabot proposes the next ones.
-FROM mcr.microsoft.com/dotnet/sdk:10.0.400@sha256:4beef5b8919dcaa2dc924233bd069257e883cc7a061e09088a97d152d6a48510 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.402@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa AS build
 
 # Arbejdsmappe i build-imaget.
 WORKDIR /source
