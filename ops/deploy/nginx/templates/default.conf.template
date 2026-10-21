@@ -1,0 +1,47 @@
+# NFHotel web application over TLS (MIL-017, ADR-0006). Rendered by the nginx image at
+# start: ${VAR} placeholders come from nginx.env, nginx's own $variables are left alone.
+
+# Port 80 only redirects; no page is served in clear text.
+server {
+  listen 80;
+  server_name ${NGINX_SERVER_NAME};
+
+  location / {
+    return 301 https://$host${NGINX_REDIRECT_PORT}$request_uri;
+  }
+}
+
+server {
+  listen 443 ssl;
+  http2 on;
+  server_name ${NGINX_SERVER_NAME};
+
+  # Certificate and key: files in deploy/nginx/tls (git-ignored), see scripts/make-dev-certificate.sh.
+  ssl_certificate /etc/nginx/tls/fullchain.pem;
+  ssl_certificate_key /etc/nginx/tls/privkey.pem;
+  include /etc/nginx/snippets/tls.conf;
+
+  # A plain HTTP request sent to this TLS port (nginx status 497), for example from a link that a tool builds as
+  # http://host:port, is sent on to the same address over HTTPS and not answered with 400 Bad Request.
+  error_page 497 =301 https://$http_host$request_uri;
+
+  # Empty NGINX_HSTS sends no header (a development certificate must not set HSTS).
+  add_header Strict-Transport-Security "${NGINX_HSTS}" always;
+
+  # Docker's embedded DNS. The upstream is resolved per request through a
+  # variable, so the proxy starts and stays up when the web service is down.
+  resolver 127.0.0.11 valid=10s;
+  set $upstream http://${UPSTREAM_HOST}:${UPSTREAM_PORT};
+
+  # Development only: routes of the mobile app (ADR-0015). The folder exists only when docker-compose.dev.yml
+  # mounts it, and an include that matches no file is allowed, so a release deployment has none of them.
+  include /etc/nginx/dev/*.conf;
+
+  location / {
+    proxy_pass $upstream;
+    include /etc/nginx/snippets/proxy.conf;
+  }
+
+  # Optional routes, off by default (ADR-0011): see snippets/locations.d/README.md.
+  include /etc/nginx/snippets/locations.d/*.conf;
+}

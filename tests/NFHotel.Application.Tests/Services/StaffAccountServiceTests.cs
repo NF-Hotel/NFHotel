@@ -42,7 +42,7 @@ public sealed class StaffAccountServiceTests
         var service = Build(world);
 
         // Act
-        var accepted = await service.CreateAsync(new CreateStaffRequest("a", new string('x', StaffAccountService.MinPasswordLength), StaffRole.Manager), TestContext.Current.CancellationToken);
+        var accepted = await service.CreateAsync(new CreateStaffRequest("a", new string('x', StaffAccountService.MinPasswordLength - 1) + "y", StaffRole.Manager), TestContext.Current.CancellationToken);
         var refused = await service.CreateAsync(new CreateStaffRequest("b", new string('x', StaffAccountService.MinPasswordLength - 1), StaffRole.Manager), TestContext.Current.CancellationToken);
 
         // Assert
@@ -189,7 +189,7 @@ public sealed class StaffAccountServiceTests
 
     #region Helpers
 
-    private static StaffAccountService Build(ServiceWorld world) => new(world.Staff, new FakePasswordHasher(), world.UnitOfWork);
+    private static StaffAccountService Build(ServiceWorld world) => world.StaffAccountService();
 
     #endregion
 }

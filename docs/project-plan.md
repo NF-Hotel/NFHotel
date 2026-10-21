@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | PP-001 |
-| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [MIL-016], [MIL-017], [MIL-018], [MIL-019], [MIL-020], [MIL-021], [MIL-022], [MIL-023], [US-001] |
+| CrossReference | [BC-001], [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-011], [MIL-012], [MIL-013], [MIL-014], [MIL-015], [MIL-016], [MIL-017], [MIL-018], [MIL-019], [MIL-020], [MIL-021], [MIL-022], [MIL-023], [MIL-030], [US-001] |
 | Language | en |
 | Domain | it |
 
@@ -22,7 +22,8 @@
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added MIL-017 (TLS) | [b174eeb] |
 | 2026-10-18 | Deprecated | Claude (AI) | AI at the request of S01 | Added MIL-018 (guest login) | [6b606da] |
 | 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Added MIL-019 and MIL-020 (benchmark results and start, with the notebook-benchmark repository) | [7fbeba1] |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Added MIL-021 to MIL-023 (secure CI/CD in three phases, DSA-001); accepted after RC-088 Go | [f4649ad] |
+| 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Added MIL-021 to MIL-023 (secure CI/CD in three phases, DSA-001); accepted after RC-088 Go | [f4649ad] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added MIL-030 (staff accounts and password change) (accepted after RC-151 Go) | [0891cf1] |
 
 ---
 
@@ -65,6 +66,7 @@ person ending 2026-10-17.
 | Secure CI/CD foundation | [MIL-021] | 2026-10-18 to 2026-11-15 | 2026-11-15 | S01 | none | ADR-0007, ADR-0008; required checks, release to GHCR, approved CD over Tailscale, backups and a restore drill | none yet |
 | Software supply chain security | [MIL-022] | 2026-11-15 to 2026-12-06 | 2026-12-06 | S01 | none | Trivy, SBOM, provenance verified in CD, pinned actions and images, CodeQL, migrations by CD | none yet |
 | Operational quality and maturity | [MIL-023] | 2026-12-06 to 2027-01-17 | 2027-01-17 | S01 | none | CIS-aligned hardening, nftables, patching, logs, Scorecard, SAMM, DORA, restore drills | none yet |
+| Staff accounts and password change | [MIL-030] | 2026-10-20 to 2026-11-10 | 2026-11-10 | S01 | none | ADR-0017; security stamp, change and reset of passwords, account management and audit pages, deploy and replacement of the production Manager password (UC-005, UC-006) | none yet |
 
 ```plantuml
 @startgantt
@@ -148,6 +150,7 @@ Project starts 2026-10-16
 | Approved pipeline and backups (objective 23) | MIL-021 |
 | Verified supply chain (objective 24) | MIL-022 |
 | Hardened and observed server (objective 25) | MIL-023 |
+| Staff accounts and passwords (objective 27) | MIL-030 |
 
 ## Dependencies
 
@@ -169,6 +172,7 @@ MIL-016 -> MIL-017
 MIL-017 -> MIL-018
 MIL-018 -> MIL-019 -> MIL-020
 MIL-021 -> MIL-022 -> MIL-023 (after PR #22, the CI workflow; independent of MIL-018 to MIL-020)
+MIL-016 -> MIL-030 (after MIL-017; independent of MIL-018 to MIL-023)
 ```
 
 A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file convention and shifts with it.
@@ -212,9 +216,10 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [MIL-018]: ./milestones/mil-018-guest-login.md
 [MIL-019]: ./milestones/mil-019-benchmark-results-api.md
 [MIL-020]: ./milestones/mil-020-start-benchmark-run.md
-[MIL-021]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-021-secure-cicd-foundation.md
-[MIL-022]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-022-supply-chain-security.md
-[MIL-023]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-023-operational-quality.md
+[MIL-030]: ./milestones/mil-030-staff-accounts-and-password.md
+[MIL-021]: ./milestones/mil-021-secure-cicd-foundation.md
+[MIL-022]: ./milestones/mil-022-supply-chain-security.md
+[MIL-023]: ./milestones/mil-023-operational-quality.md
 [US-001]: ./user-stories.md
 [GH-M1]: https://github.com/NF-Hotel/NFHotel/milestone/1
 [GH-M2]: https://github.com/NF-Hotel/NFHotel/milestone/2
@@ -248,3 +253,4 @@ A No-Go on MIL-001 moves its decision date; MIL-002 reuses its env-file conventi
 [6b606da]: https://github.com/NF-Hotel/NFHotel/commit/6b606da4c8584d71b7c2f754d71e14ceb6aca871
 [7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0
 [f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf

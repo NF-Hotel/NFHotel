@@ -32,6 +32,45 @@ public sealed class BackOfficeAccessTests(BrowserFixture fixture) : BrowserTest(
 
     #endregion
 
+    #region Own password
+
+    [E2EFact]
+    public async Task ChangePassword_WrongCurrentPassword_ShowsTheRefusalAndKeepsTheSession()
+    {
+        await StaffSignIn.AsAsync(Page, StaffRole.Receptionist);
+        await Pages.OpenAsync(Page, "admin/account/password");
+        await Page.Locator("#current-password").FillAsync("not the current password");
+        await Page.Locator("#new-password").FillAsync("E2E never used password " + Guid.NewGuid().ToString("N"));
+        await Page.Locator("#repeat-password").FillAsync(await Page.Locator("#new-password").InputValueAsync());
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Change password" }).ClickAsync();
+
+        await Assertions.Expect(Page.GetByText("The current password is wrong.")).ToBeVisibleAsync();
+        await Assertions.Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Sign out" })).ToBeVisibleAsync();
+    }
+
+    [E2EFact]
+    public async Task StaffPage_AsReceptionist_IsRefused()
+    {
+        await StaffSignIn.AsAsync(Page, StaffRole.Receptionist);
+        await Pages.OpenAsync(Page, "admin/staff");
+
+        Assert.Equal("/admin/denied", Pages.PathOf(Page));
+    }
+
+    [E2EFact]
+    public async Task StaffAndAuditPages_AsManager_ListTheAccountsAndTheirSignIns()
+    {
+        await StaffSignIn.AsAsync(Page, StaffRole.Manager);
+        await Pages.OpenAsync(Page, "admin/staff");
+        await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Staff" })).ToBeVisibleAsync();
+        await Assertions.Expect(Page.GetByRole(AriaRole.Cell, new() { Name = E2ESettings.UserName(StaffRole.Manager), Exact = true })).ToBeVisibleAsync();
+
+        await Pages.OpenAsync(Page, "admin/staff/audit");
+        await Assertions.Expect(Page.GetByRole(AriaRole.Cell, new() { Name = "SignedIn", Exact = true }).First).ToBeVisibleAsync();
+    }
+
+    #endregion
+
     #region Roles
 
     [E2EFact]

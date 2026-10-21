@@ -22,7 +22,8 @@
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Amended: objective 20, Serve the one service that the internet reaches only over TLS: HTTP redirects to (MIL-017) | [b174eeb] |
 | 2026-10-18 | Deprecated | Claude (AI) | AI at the request of S01 | Amended: objective 21, A guest signs in with the booking number and the email and reaches only their own booking (MIL-018) | [6b606da] |
 | 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Amended: objective 22, an administrator starts a benchmark run in the back office and reads its stored result later (MIL-019, MIL-020) | [7fbeba1] |
-| 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Amended: objectives 23 to 25, a secure CI/CD pipeline in three phases (MIL-021 to MIL-023, DSA-001); accepted after RC-088 Go | [f4649ad] |
+| 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Amended: objective 26, hotel staff sign in and work with rooms from the mobile app through the API on the staff token alone (MIL-029, ADR-0015); accepted after RC-133 Go | [1c3efb9] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Amended: objective 27, staff accounts and passwords (MIL-030), and success criterion 30 (accepted after RC-150 Go) | [0891cf1] |
 
 ---
 
@@ -94,6 +95,8 @@ basis for the hosting decision (Q-31).
 23. Release only through an approved pipeline: a change reaches the server only after the required CI checks pass, as an image built once in CI and deployed by digest after an approval, over a private connection; the database has a backup whose restore is tested (MIL-021).
 24. Deploy only scanned and attested images: every released image has a vulnerability scan, an SBOM and build provenance that the deploy verifies, and every dependency is pinned (MIL-022).
 25. Harden and observe the server: selected CIS items for Docker and Debian are applied with evidence, the firewall and patching are managed as code, and the posture and delivery performance are measured (MIL-023).
+26. Let hotel staff sign in and work with the rooms from the mobile app (Flutter) through the API, with the staff token alone and no shared secret in the app, so that a role sees and does in the app no more than in the back office (MIL-029, ADR-0015).
+27. Let the owner and the Managers manage staff accounts and passwords in the back office: a staff member changes their own password with the current one, a Manager creates, disables, enables and resets accounts, a change or a disable ends the old sessions at once, and account events are kept in an audit trail (MIL-030).
 
 ## Scope
 
@@ -124,6 +127,8 @@ basis for the hosting decision (Q-31).
 - The CI/CD and DevSecOps assessment DSA-001, ADR-0007 and ADR-0008; required checks and repository security settings; a release workflow to GHCR; an approved CD workflow over Tailscale with health checks and rollback; PostgreSQL backups and restore drills (MIL-021)
 - Vulnerability scanning, SBOMs, build provenance and its verification, pinned actions and images, CodeQL, and migrations applied by the deploy (MIL-022)
 - CIS-aligned hardening of Docker and Debian, nftables, unattended security updates, log rotation and an uptime check, OpenSSF Scorecard, an OWASP SAMM baseline and DORA metrics (MIL-023)
+- Access for the mobile app: the staff token alone on the sign-in and the rooms routes of the API, a per-address limit on sign-in, a development-only route on the development server, and in the `MobileApp` repository an API client, a working login and the rooms overview and room view with the cleaning and service actions, tested against the development server in Docker (MIL-029, ADR-0015)
+- A change-password function for every staff role, account management and an audit page for the Manager, a security stamp that ends old sessions, a password policy, the `reset-staff-password` recovery command, the deploy files and the replacement of the production Manager password, and ADR-0017 (MIL-030)
 
 ### Out of Scope
 
@@ -137,6 +142,7 @@ basis for the hosting decision (Q-31).
 - Tests that need a graphical interface.
 - PostgreSQL hosting: the web service only receives a connection string.
 - TLS certificates: the proxy serves plain HTTP for now.
+- The mobile app on the internet: a release build, its store publication and the public address and TLS of the API for it need their own ADR; the mobile bookings and guests screens are not part of MIL-029.
 
 ## Expected Benefits
 
@@ -189,6 +195,8 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 26 | Approved pipeline | A pull request with a failing required check cannot be merged; every deploy runs the image digests of a green release after an approval in `production`; 0 images built on the VM; a failed smoke test rolls back to the previous digests; 0 ssh keys or Tailscale secrets stored in GitHub; a restore of the daily backup is recorded | The ruleset API, the CD run record, `docker inspect` in the VM and the restore drill RC |
 | 27 | Verified supply chain | Every deployed digest has an SBOM and a provenance attestation that `gh attestation verify` accepts; 0 critical and 0 fixable high findings in the deployed images; 0 unpinned actions or image tags | The CD log, the Trivy SARIF and the Scorecard Pinned-Dependencies check |
 | 28 | Hardened server | Every selected CIS item has a status and evidence; only ports 80 and 443 answer from outside the tailnet; security updates install unattended; a Scorecard result, a SAMM baseline and a monthly DORA report exist | The CIS checklist, an nmap scan, the update log and the reports |
+| 29 | Mobile app access | The sign-in and `GET /api/rooms` answer to a valid staff token with no service token and give 401 without either; every other route group gives 401 to a staff token alone; Housekeeping gets 403 on room create, update and delete; the sixth failed sign-in in the window gives 429; 0 tokens or keys in the `MobileApp` repository; the app signs in as each development account and lists the seeded rooms on the development server | API and permission tests, a source search, and the end-to-end check in Docker |
+| 30 | Staff accounts and passwords | A password change with a wrong current password, a short, common or reused new password is refused, and the sixth wrong current password in the window gets 429; a token issued before a change, reset or disable gets 401; a Receptionist and a Housekeeping user get 403 on account management; the last active Manager cannot be disabled; every account event writes one audit row with no password, hash or token in it; in the VM the initial Manager password is refused after the owner changed it | Unit, API and page tests, the audit page and the deploy check in the VM |
 
 ## Risks
 
@@ -206,6 +214,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | The analysis application has no charts and no container image yet | The owner sees tables instead of diagrams | A gap task in MIL-004; the image is built from the repository at a pinned ref |
 | A restructuring of many files breaks behaviour | A regression in bookings, guests or rooms | One layer at a time, build and tests after each step, no behaviour change, the PostgreSQL tests run in a container |
 | A translation changes a rule or an identifier | A wrong business rule is read later | Identifiers are counted before and after; code blocks and tables are not edited; one reviewer record against the language checklist |
+| The staff token is stolen from a phone | Someone reads or changes rooms until the token expires | The token lives in the platform secure storage, expires after 8 hours and carries only the role of the member; it opens the rooms routes and nothing else, and the sign-in is limited per user name and per address |
 
 ## Assumptions
 
@@ -276,3 +285,5 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [6b606da]: https://github.com/NF-Hotel/NFHotel/commit/6b606da4c8584d71b7c2f754d71e14ceb6aca871
 [7fbeba1]: https://github.com/NF-Hotel/NFHotel/commit/7fbeba1c24eb3fb4b21f8fde5b83e76c26fdf2d0
 [f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
+[1c3efb9]: https://github.com/NF-Hotel/NFHotel/commit/1c3efb91f421c2b5ca0f4a62b7f0b2fe865eac70
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf

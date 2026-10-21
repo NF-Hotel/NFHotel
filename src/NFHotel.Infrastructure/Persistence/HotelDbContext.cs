@@ -67,6 +67,9 @@ public sealed class HotelDbContext : DbContext
     /// <summary>The requests of the benchmark runs.</summary>
     public DbSet<BenchmarkResult> BenchmarkResults => Set<BenchmarkResult>();
 
+    /// <summary>The audit trail of the staff accounts (ADR-0017).</summary>
+    public DbSet<StaffAuditEvent> StaffAuditEvents => Set<StaffAuditEvent>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -86,6 +89,7 @@ public sealed class HotelDbContext : DbContext
         modelBuilder.ApplyConfiguration(new MarketAnalysisRunConfiguration());
         modelBuilder.ApplyConfiguration(new BookingMarketDetailConfiguration());
         modelBuilder.ApplyConfiguration(new BenchmarkResultConfiguration());
+        modelBuilder.ApplyConfiguration(new StaffAuditEventConfiguration());
 
         // GuestConfiguration is registered explicitly and not via assembly scanning, because it
         // has a dependency: the value converter that encrypts the passport number (B-09).

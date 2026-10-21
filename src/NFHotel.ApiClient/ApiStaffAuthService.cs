@@ -26,4 +26,13 @@ public sealed class ApiStaffAuthService : IStaffAuthService
             .PostAnonymousAsync<StaffSessionDto>($"{ApiRoutes.Auth}/{ApiRoutes.Login}", request, cancellationToken)
             .ConfigureAwait(false);
     }
+
+    /// <inheritdoc />
+    public async Task<Result<StaffSessionDto>> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return await _api
+            .PostAsync<StaffSessionDto>($"{ApiRoutes.Staff}/{ApiRoutes.StaffMyPassword}", request, cancellationToken)
+            .ConfigureAwait(false);
+    }
 }

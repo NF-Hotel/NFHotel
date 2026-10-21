@@ -39,6 +39,7 @@ builder.Services.AddScoped(typeof(IUseCaseRunner<>), typeof(UseCaseRunner<>));
 // The staff sign-in: the cookie, one policy per permission, and the source of the staff token (ADR-0005).
 var requireTls = HttpsRequirement.IsRequired(builder.Configuration);
 builder.Services.AddStaffSignIn(requireTls);
+builder.Services.AddHttpContextAccessor();
 
 // ViewModels are Scoped: in Blazor Server a scope is one SignalR circuit, that is, one user's
 // session in one tab. That is exactly the lifetime the state of the screen should have.
@@ -63,6 +64,7 @@ app.UseHttpsRequirement(requireTls);
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMustChangePassword();
 app.UseAntiforgery();
 
 app.MapStaticAssets();

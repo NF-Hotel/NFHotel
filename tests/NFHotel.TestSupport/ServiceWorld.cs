@@ -11,6 +11,7 @@ using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Repositories;
 using NFHotel.Domain.ValueObjects;
@@ -284,6 +285,10 @@ public sealed class ServiceWorld
 
     public InMemoryStaffRepository Staff { get; } = new();
 
+    public InMemoryStaffAuditRepository StaffAudit { get; } = new();
+
+    public FakeStaffCallContext CallContext { get; } = new();
+
     public InMemoryBenchmarkRunRepository Benchmarks { get; } = new();
 
     public InMemoryAiDefaultRepository AiDefaults { get; } = new();
@@ -310,6 +315,12 @@ public sealed class ServiceWorld
         new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock);
 
     public GuestService GuestService() => new(Guests, GuestQueries, UnitOfWork);
+
+    public StaffAuthService StaffAuthService(IPasswordHasher? hasher = null, IStaffTokenIssuer? tokens = null, ILoginThrottle? throttle = null) =>
+        new(Staff, hasher ?? new FakePasswordHasher(), tokens ?? new FakeStaffTokenIssuer(), throttle ?? Substitute.For<ILoginThrottle>(), UnitOfWork, StaffAudit, CallContext, Clock);
+
+    public StaffAccountService StaffAccountService(ILoginThrottle? throttle = null) =>
+        new(Staff, new FakePasswordHasher(), UnitOfWork, throttle ?? Substitute.For<ILoginThrottle>(), StaffAudit, CallContext, Clock);
 
     public RoomService RoomService() => new(Rooms, RoomQueries, UnitOfWork);
 

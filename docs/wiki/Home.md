@@ -10,7 +10,7 @@ clean-architecture .NET solution. This wiki is written for the people who build 
 - [Proxmox Deployment](Proxmox-Deployment): set up the Proxmox virtual machine and the Docker
   containers that run the whole system (development environment).
 - [Appendix: Project Documents](Appendix): links to every document under `docs/`.
-- Infrastructure and operations (CI/CD, deployment, database preparation, Proxmox): the wiki pages of [NF-Hotel/DevOps](https://github.com/NF-Hotel/DevOps/tree/main/docs/wiki) (ADR-0012).
+- Infrastructure and operations (ADR-0016, in `ops/`): [CI-CD](CI-CD), [Database Preparation](Database-Preparation) and [Proxmox Deployment](Proxmox-Deployment).
 
 ## Where things live
 
@@ -18,6 +18,6 @@ clean-architecture .NET solution. This wiki is written for the people who build 
 | --- | --- |
 | Source code | `src/` (Domain, Application, Infrastructure, Web) |
 | Tests | `tests/` |
-| Container definitions | `deploy/` |
-| Deploy scripts | `scripts/deploy.sh`, `scripts/deploy-services.sh`, `scripts/create-docker-vm.sh` |
+| Container definitions | `ops/deploy/` |
+| Deploy scripts | `ops/scripts/deploy.sh`, `ops/scripts/deploy-services.sh`, `ops/scripts/create-docker-vm.sh` |
 | Project documents | `docs/` |

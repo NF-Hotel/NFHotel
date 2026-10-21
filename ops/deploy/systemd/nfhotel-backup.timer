@@ -1,0 +1,12 @@
+# Runs the NFHotel database backup every day at 02:00 UTC (ADR-0008). Persistent runs
+# a missed backup after the VM was off at that time.
+[Unit]
+Description=Daily NFHotel database backup
+
+[Timer]
+OnCalendar=*-*-* 02:00:00 UTC
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

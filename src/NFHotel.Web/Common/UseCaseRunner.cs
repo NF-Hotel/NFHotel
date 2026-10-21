@@ -17,6 +17,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<UseCaseRunner<TService>> _logger;
     private readonly IStaffTokenSource _tokenSource;
+    private readonly IHttpContextAccessor? _httpContext;
 
     /// <summary>
     /// Creates the runner.
@@ -24,10 +25,12 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     /// <param name="scopeFactory">The factory that makes a fresh DI scope per call.</param>
     /// <param name="logger">Logger for the technical errors the user never gets to see.</param>
     /// <param name="tokenSource">Gives the staff token of the signed-in user, if any.</param>
+    /// <param name="httpContext">Gives the request of a static page, whose address goes to the API for the audit trail (ADR-0017).</param>
     public UseCaseRunner(
         IServiceScopeFactory scopeFactory,
         ILogger<UseCaseRunner<TService>> logger,
-        IStaffTokenSource tokenSource)
+        IStaffTokenSource tokenSource,
+        IHttpContextAccessor? httpContext = null)
     {
         ArgumentNullException.ThrowIfNull(scopeFactory);
         ArgumentNullException.ThrowIfNull(logger);
@@ -36,6 +39,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
         _scopeFactory = scopeFactory;
         _logger = logger;
         _tokenSource = tokenSource;
+        _httpContext = httpContext;
     }
 
     /// <inheritdoc />
@@ -125,7 +129,21 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     private async Task GiveStaffTokenAsync(AsyncServiceScope scope)
     {
         var token = await _tokenSource.GetTokenAsync().ConfigureAwait(false);
-        scope.ServiceProvider.GetRequiredService<StaffCallContext>().Token = token;
+        var context = scope.ServiceProvider.GetRequiredService<StaffCallContext>();
+        context.Token = token;
+        context.ClientAddress = ClientAddressOf(_httpContext?.HttpContext);
+    }
+
+    // The first address of X-Forwarded-For (set by the proxy), or the address of the connection. A circuit has no request.
+    private static string? ClientAddressOf(HttpContext? request)
+    {
+        if (request is null)
+        {
+            return null;
+        }
+
+        var forwarded = request.Request.Headers["X-Forwarded-For"].ToString().Split(',')[0].Trim();
+        return forwarded.Length > 0 ? forwarded : request.Connection.RemoteIpAddress?.ToString();
     }
 
     private void Log(Exception exception) =>

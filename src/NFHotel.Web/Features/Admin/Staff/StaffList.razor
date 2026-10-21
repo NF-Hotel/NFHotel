@@ -1,0 +1,137 @@
+@page "/admin/staff"
+@layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.StaffManage)]
+@rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using NFHotel.Application.Dto.Staff
+@using NFHotel.Web.Common
+@using NFHotel.Web.Features.Admin.Staff
+@inject StaffListViewModel ViewModel
+
+@*
+    The staff accounts (UC-006, ADR-0017). Only markup and binding. The API checks the role of the caller and every rule
+    again: the own account and the last Manager cannot be disabled, a password must pass the policy.
+*@
+
+<PageTitle>Staff — administration</PageTitle>
+
+<div class="stack-lg">
+    <PageHeader Title="Staff" Subtitle="Create, disable and recover the accounts of the back office.">
+        <Actions>
+            <button type="button" class="btn btn-primary" disabled="@ViewModel.IsBusy" @onclick="ViewModel.BeginCreate">New account</button>
+            <a class="btn btn-secondary" href="/admin/staff/audit">Audit trail</a>
+        </Actions>
+    </PageHeader>
+
+    <ErrorAlert Errors="ViewModel.Errors" />
+
+    @if (ViewModel.SuccessMessage is { } success)
+    {
+        <AlertBox Kind="AlertKind.Ok" Message="@success" />
+    }
+
+    @if (ViewModel.PendingDisable is { } pending)
+    {
+        <ConfirmPanel Title="@($"Disable {pending.UserName}?")"
+                      Message="The person can no longer sign in, and every open session of the account ends now."
+                      ConfirmLabel="Disable account"
+                      IsBusy="ViewModel.IsBusy"
+                      OnConfirm="ConfirmDisableAsync"
+                      OnCancel="ViewModel.Cancel" />
+    }
+
+    @if (ViewModel.IsCreating)
+    {
+        <section class="card card-pad stack" aria-labelledby="new-account">
+            <h2 class="subtitle" id="new-account">New account</h2>
+            <FormField Label="User name" For="new-user" IsRequired="true">
+                <input id="new-user" class="field-input" maxlength="50" autocomplete="off" @bind="ViewModel.NewUserName" @bind:event="oninput" />
+            </FormField>
+            <FormField Label="Role" For="new-role" IsRequired="true">
+                <select id="new-role" class="field-input" @bind="ViewModel.NewRole">
+                    @foreach (var role in StaffListViewModel.Roles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </select>
+            </FormField>
+            <FormField Label="Temporary password" For="new-password" IsRequired="true" Hint="At least 12 characters. The person must change it at the first sign-in.">
+                <input id="new-password" type="password" class="field-input" autocomplete="new-password" @bind="ViewModel.NewPassword" @bind:event="oninput" />
+            </FormField>
+            <div class="row">
+                <button type="button" class="btn btn-primary" disabled="@ViewModel.IsBusy" @onclick="CreateAsync">Create account</button>
+                <button type="button" class="btn btn-secondary" disabled="@ViewModel.IsBusy" @onclick="ViewModel.Cancel">Go back</button>
+            </div>
+        </section>
+    }
+
+    @if (ViewModel.ResetTarget is { } target)
+    {
+        <section class="card card-pad stack" aria-labelledby="reset-password">
+            <h2 class="subtitle" id="reset-password">Set a temporary password for @target.UserName</h2>
+            <FormField Label="Temporary password" For="reset-value" IsRequired="true" Hint="At least 12 characters. All sessions of the account end, and the person must change it at the next sign-in.">
+                <input id="reset-value" type="password" class="field-input" autocomplete="new-password" @bind="ViewModel.ResetPassword" @bind:event="oninput" />
+            </FormField>
+            <div class="row">
+                <button type="button" class="btn btn-primary" disabled="@ViewModel.IsBusy" @onclick="ResetAsync">Set temporary password</button>
+                <button type="button" class="btn btn-secondary" disabled="@ViewModel.IsBusy" @onclick="ViewModel.Cancel">Go back</button>
+            </div>
+        </section>
+    }
+
+    @if (!ViewModel.IsLoaded)
+    {
+        <LoadingSkeleton />
+    }
+    else if (ViewModel.Accounts.Count > 0)
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">User name</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">State</th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var account in ViewModel.Accounts)
+                {
+                    <tr>
+                        <td>@account.UserName</td>
+                        <td>@account.Role</td>
+                        <td>@StateOf(account)</td>
+                        <td>
+                            <div class="row">
+                                <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => ViewModel.BeginReset(account)">Reset password</button>
+                                @if (account.IsActive)
+                                {
+                                    <button type="button" class="btn btn-danger btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => ViewModel.BeginDisable(account)">Disable</button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => EnableAsync(account)">Enable</button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
+
+    private static string StateOf(StaffAccountDto account) =>
+        !account.IsActive ? "Disabled" : account.MustChangePassword ? "Must change password" : "Active";
+
+    private Task CreateAsync() => ViewModel.CreateAsync(ComponentToken);
+
+    private Task ConfirmDisableAsync() => ViewModel.ConfirmDisableAsync(ComponentToken);
+
+    private Task EnableAsync(StaffAccountDto account) => ViewModel.EnableAsync(account, ComponentToken);
+
+    private Task ResetAsync() => ViewModel.ConfirmResetAsync(ComponentToken);
+}

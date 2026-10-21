@@ -1,6 +1,6 @@
 # End-to-end tests and DAST (MIL-027). On every pull request to main and every push to
-# main, the e2e-tests and dast-scan actions of NF-Hotel/DevOps, pinned by full commit SHA
-# (ADR-0012), start a throwaway stack from this commit. They run the browser tests of
+# main, the local e2e-tests and dast-scan actions (ADR-0016, with the scripts of ops/)
+# start a throwaway stack from this commit. They run the browser tests of
 # tests/NFHotel.E2E.Tests, and the OWASP ZAP baseline signed out and signed in. Every
 # Monday, and by hand, the ZAP full (active) scan runs against the same throwaway stack;
 # a failed full scan opens an issue, unless one is already open.
@@ -42,9 +42,7 @@ jobs:
           persist-credentials: false
 
       - name: Run the end-to-end tests against a throwaway stack
-        # A pinned action reference cannot be wrapped (ADR-0012: full commit SHA).
-        # yamllint disable-line rule:line-length
-        uses: NF-Hotel/DevOps/.github/actions/e2e-tests@68731885227ab554a3776800fe15ca2fd27c72a2
+        uses: ./.github/actions/e2e-tests
         with:
           app-path: .
 
@@ -63,12 +61,11 @@ jobs:
           persist-credentials: false
 
       - name: Scan a throwaway stack with the ZAP baseline
-        # yamllint disable-line rule:line-length
-        uses: NF-Hotel/DevOps/.github/actions/dast-scan@68731885227ab554a3776800fe15ca2fd27c72a2
+        uses: ./.github/actions/dast-scan
         with:
           app-path: .
           mode: baseline
-          rules: security/zap-rules.tsv
+          rules: ops/security/zap-rules.tsv
           upload-sarif: "true"
 
   dast-full:
@@ -87,12 +84,11 @@ jobs:
           persist-credentials: false
 
       - name: Scan a throwaway stack with the ZAP full scan
-        # yamllint disable-line rule:line-length
-        uses: NF-Hotel/DevOps/.github/actions/dast-scan@68731885227ab554a3776800fe15ca2fd27c72a2
+        uses: ./.github/actions/dast-scan
         with:
           app-path: .
           mode: full
-          rules: security/zap-rules.tsv
+          rules: ops/security/zap-rules.tsv
           upload-sarif: "true"
 
       - name: Open an issue for a failed full scan

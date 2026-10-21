@@ -49,4 +49,10 @@ public static class StaffPolicies
 
     /// <summary>Start a market analysis run.</summary>
     public const string MarketAnalysisStart = Permissions.MarketAnalysisStart;
+
+    /// <summary>Policy for creating, disabling, enabling and resetting staff accounts and reading the audit trail (ADR-0017).</summary>
+    public const string StaffManage = Permissions.StaffManage;
+
+    /// <summary>Policy for changing the own password (ADR-0017).</summary>
+    public const string StaffChangeOwnPassword = Permissions.StaffChangeOwnPassword;
 }

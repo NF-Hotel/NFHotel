@@ -7,7 +7,8 @@ namespace NFHotel.Api.Security;
 
 /// <summary>
 /// Lets a call to <c>/api</c> through only with the bearer token of the web application (ADR-0004). The
-/// comparison takes the same time whatever the first wrong character is. The health endpoint is open.
+/// comparison takes the same time whatever the first wrong character is. The health endpoint is open. A call that
+/// sends no bearer token at all may go on only on the routes of <see cref="StaffTokenRoutes"/> (ADR-0015).
 /// </summary>
 public sealed class ApiTokenMiddleware
 {
@@ -35,7 +36,7 @@ public sealed class ApiTokenMiddleware
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        if (context.Request.Path.StartsWithSegments(ApiPrefix, StringComparison.OrdinalIgnoreCase) && !IsAuthorized(context))
+        if (context.Request.Path.StartsWithSegments(ApiPrefix, StringComparison.OrdinalIgnoreCase) && !IsAuthorized(context) && !IsMobileRoute(context))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             context.Response.Headers.WWWAuthenticate = ApiAuthentication.Scheme;
@@ -47,6 +48,9 @@ public sealed class ApiTokenMiddleware
 
         await _next(context).ConfigureAwait(false);
     }
+
+    private static bool IsMobileRoute(HttpContext context) =>
+        StaffTokenRoutes.HasNoServiceToken(context.Request) && StaffTokenRoutes.Accepts(context.Request);
 
     private bool IsAuthorized(HttpContext context)
     {

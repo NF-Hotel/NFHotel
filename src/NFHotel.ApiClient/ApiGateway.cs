@@ -61,6 +61,14 @@ public sealed class ApiGateway
     public Task<Result> DeleteAsync(string path, CancellationToken cancellationToken) =>
         SendAsync(HttpMethod.Delete, path, null, ReadWithoutValueAsync, Result.Failure, cancellationToken);
 
+    /// <summary>Posts a body, or nothing, to an endpoint whose answer carries no value.</summary>
+    /// <param name="path">The path below the base address.</param>
+    /// <param name="body">The request body, or <c>null</c>.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The result.</returns>
+    public Task<Result> PostWithoutValueAsync(string path, object? body, CancellationToken cancellationToken) =>
+        SendAsync(HttpMethod.Post, path, body, ReadWithoutValueAsync, Result.Failure, cancellationToken);
+
     /// <summary>Posts a body to an endpoint that answers with a value, without a staff token, such as the sign-in.</summary>
     /// <typeparam name="TValue">The type of the value.</typeparam>
     /// <param name="path">The path below the base address.</param>
@@ -84,6 +92,11 @@ public sealed class ApiGateway
         if (withStaffToken && !string.IsNullOrEmpty(_staff?.Token))
         {
             request.Headers.TryAddWithoutValidation(ApiAuthentication.StaffTokenHeader, _staff.Token);
+        }
+
+        if (!string.IsNullOrEmpty(_staff?.ClientAddress))
+        {
+            request.Headers.TryAddWithoutValidation(ApiAuthentication.ClientAddressHeader, _staff.ClientAddress);
         }
 
         if (body is not null)
