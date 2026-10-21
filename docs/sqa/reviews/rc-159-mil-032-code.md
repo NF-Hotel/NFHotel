@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [f485ba7] |
 
 ---
 
@@ -77,3 +77,4 @@ None.
 [ADR-0018]: ../../adr/adr-0018-deploy-command-updates-itself.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[f485ba7]: https://github.com/NF-Hotel/NFHotel/commit/f485ba76f3a61cce643390c206872a0ee2c29860

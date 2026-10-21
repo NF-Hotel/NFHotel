@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [f485ba7] |
 
 ---
 
@@ -56,3 +56,4 @@ No-Go for now. Criteria 3 and 7 are open, and criterion 5 needs S01's check. NFH
 [ADR-0016]: ../../adr/adr-0016-one-repository-for-application-and-operations.md
 [RC-148]: ./rc-148-mil-031-consolidation-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[f485ba7]: https://github.com/NF-Hotel/NFHotel/commit/f485ba76f3a61cce643390c206872a0ee2c29860
