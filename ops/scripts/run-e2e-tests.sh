@@ -19,8 +19,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=ops/scripts/lib/common.sh
 . "$ROOT/scripts/lib/common.sh"
 
-# Playwright 1.62.0, the version of Microsoft.Playwright in NFHotel.E2E.Tests.csproj; bump both together.
-readonly PLAYWRIGHT="mcr.microsoft.com/playwright/dotnet:v1.62.0-noble@sha256:25e558a847d4ae1ff7d14fa263de7fa2fffd357c1e50471278e522cec5ac1bb5"
+# Playwright 1.63.0, the version of Microsoft.Playwright in NFHotel.E2E.Tests.csproj; bump both together.
+readonly PLAYWRIGHT="mcr.microsoft.com/playwright/dotnet:v1.63.0-noble@sha256:aa3eaf29a65df8c93fc32ab20cf9359f4d8ecc53e6e89f79378647ace87b46b3"
 readonly PROJECT="tests/NFHotel.E2E.Tests/NFHotel.E2E.Tests.csproj"
 
 app_dir="" stack_env="" results=""

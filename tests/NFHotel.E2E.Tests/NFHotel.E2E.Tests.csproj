@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <!-- The Playwright Docker image that runs the tests carries the browsers of this exact version. -->
-    <PackageReference Include="Microsoft.Playwright" Version="1.62.0" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.63.0" />
     <PackageReference Include="xunit.v3" Version="4.0.2" />
   </ItemGroup>
 
