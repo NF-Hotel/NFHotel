@@ -58,10 +58,17 @@ mkdir -p "$W/legacy/deployment" && echo "services: {}" >"$W/legacy/deployment/co
 git init -q --bare "$W/nfh-origin.git"
 git -C "$W/nfh-origin.git" config uploadpack.allowAnySHA1InWant true
 git clone -q "$W/nfh-origin.git" "$W/nfh-src" 2>/dev/null
+# Its first commit stands for a DevOps commit brought in with its history (files at the
+# root, settings missing there), the second for the layout with ops/.
+mkdir -p "$W/nfh-src/scripts"
+echo 'echo "old layout: postgres.env is missing" >&2; exit 1' >"$W/nfh-src/scripts/deploy-services.sh"
+git -C "$W/nfh-src" add -A && git -C "$W/nfh-src" commit -qm devops
+L="$(git -C "$W/nfh-src" rev-parse HEAD)"
+git -C "$W/nfh-src" rm -q -r scripts
 mkdir -p "$W/nfh-src/ops/scripts" "$W/nfh-src/ops/deploy/nginx" "$W/nfh-src/src"
 cat >"$W/nfh-src/ops/scripts/deploy-services.sh" <<EOF
 echo "ops-layout web=\$NFHOTEL_WEB_IMAGE" >>"$W/calls"
-echo good >"$W/health"
+if [[ "\$NFHOTEL_WEB_IMAGE" == *bbbbbbbb* ]]; then echo bad >"$W/health"; else echo good >"$W/health"; fi
 EOF
 git -C "$W/nfh-src" add -A && git -C "$W/nfh-src" commit -qm nfh
 N="$(git -C "$W/nfh-src" rev-parse HEAD)"
@@ -202,6 +209,19 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
   else
     ko "NFHotel layout: $(head -1 "$W/out")"
   fi
+  # The first deploy after the switch fails: the rollback goes to the last release from
+  # before it, whose operations commit has no ops/. It keeps the checkout of ops/ and
+  # starts the images of that release (the deploy of 1e284e2 on 2026-10-21).
+  rm -rf "$W/state-nfh"
+  if run "$W/nfh" deploy $(good "$L") && [[ "$(git -C "$W/nfh" rev-parse HEAD)" == "$N" ]]; then
+    ok "a release from before the switch keeps the checkout of ops/"
+  else
+    ko "pre-switch release: $(tail -2 "$W/out")"
+  fi
+  run "$W/nfh" deploy $(bad "$N")
+  grep -q "rolled back to $APP" "$W/out" && [[ "$(git -C "$W/nfh" rev-parse HEAD)" == "$N" ]] &&
+    [[ "$(cat "$W/health")" == good ]] && ok "the rollback across the switch starts the old images from ops/" ||
+    ko "rollback across the switch: $(tail -3 "$W/out")"
 }
 
 echo "RESULT: $pass passed, $fail failed"

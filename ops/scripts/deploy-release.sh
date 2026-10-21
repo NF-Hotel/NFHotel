@@ -152,10 +152,18 @@ smoke_test() {
 # commit and start one release.
 apply() {
   local sha="$2"
-  echo "==> release of NFHotel $1: checking out the operations commit $sha in $app_dir"
   as_app git fetch --quiet --depth 1 origin "$sha" || return 1
-  as_app git checkout --quiet --detach "$sha" || return 1
-  [[ "$(as_app git rev-parse HEAD)" == "$sha" ]] || return 1
+  if [[ "$(ops_rel)" == ops ]] && ! as_app git cat-file -e "$sha:ops/scripts/deploy-services.sh" 2>/dev/null; then
+    # A release from before the switch of ADR-0016 names an operations commit of
+    # NF-Hotel/DevOps, whose history NFHotel holds with the files at the root. That layout
+    # has no ops/ and the settings now live in ops/, so a rollback to such a release keeps
+    # the checkout and starts only the images of that release.
+    echo "==> release of NFHotel $1: $sha is from before ADR-0016; keeping the operations of $(as_app git rev-parse --short HEAD) in $app_dir"
+  else
+    echo "==> release of NFHotel $1: checking out the operations commit $sha in $app_dir"
+    as_app git checkout --quiet --detach "$sha" || return 1
+    [[ "$(as_app git rev-parse HEAD)" == "$sha" ]] || return 1
+  fi
 
   api_database_settings || return 1
   echo "==> starting the services from the release images (no build)"
