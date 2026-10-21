@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [7853a62] |
 
 ---
 
@@ -68,3 +68,4 @@ Go. QC-WF-001 criterion 22 closes with the runs of MIL-021 task 8.
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[7853a62]: https://github.com/NF-Hotel/NFHotel/commit/7853a620ea10e270620236ac74fea5f77cd29ac2

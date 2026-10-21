@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [7853a62] |
 
 ---
 
@@ -56,3 +56,4 @@ None.
 [DSA-001]: ../devsecops-assessment.md
 [ADR-0016]: ../../adr/adr-0016-one-repository-for-application-and-operations.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[7853a62]: https://github.com/NF-Hotel/NFHotel/commit/7853a620ea10e270620236ac74fea5f77cd29ac2

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-19 | Deprecated | mikemike | AI as stand-in for S01 | Moved to NF-Hotel/DevOps (ADR-0012): the workflows are NFHotel entry points calling the actions here, and criterion 10 expects a DevOps checkout; accepted after RC-500 Go | [c1dc5f7] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Criterion 10 follows ADR-0016 (NFHotel checkout); off-VM copy to legion (D7 revised); criteria 6 to 8 name how they are proven; accepted after RC-164 Go | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Criterion 10 follows ADR-0016 (NFHotel checkout); off-VM copy to legion (D7 revised); criteria 6 to 8 name how they are proven; accepted after RC-164 Go | [7853a62] |
 
 ---
 
@@ -117,3 +117,4 @@ Supply-chain checks (phase 2, MIL-022) and hardening (phase 3, MIL-023) follow.
 [c1dc5f7]: https://github.com/NF-Hotel/DevOps/commit/c1dc5f74e11ce4e10f7f1dbdf5ef304e4db8429e
 [ADR-0016]: ../adr/adr-0016-one-repository-for-application-and-operations.md
 [RC-164]: ../sqa/reviews/rc-164-mil-021-amendment.md
+[7853a62]: https://github.com/NF-Hotel/NFHotel/commit/7853a620ea10e270620236ac74fea5f77cd29ac2

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-19 | Deprecated | mikemike | AI as stand-in for S01 | Section 2.4.3: the repository boundary of ADR-0012 (NFHotel); accepted after RC-500 Go | [c1dc5f7] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | D7 revised by S01: the off-VM copy goes to the legion laptop (ops/deploy/backup-target); accepted after RC-164 Go | pending |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | D7 revised by S01: the off-VM copy goes to the legion laptop (ops/deploy/backup-target); accepted after RC-164 Go | [7853a62] |
 
 This document is a working assessment. Its type is not in `framework/registry/artifact-catalog.md`; a catalog type for it is proposed upstream (rule 5) before it is accepted.
 
@@ -444,3 +444,4 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 [ADR-0012]: https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0012-devops-repository-ownership.md
 [c1dc5f7]: https://github.com/NF-Hotel/DevOps/commit/c1dc5f74e11ce4e10f7f1dbdf5ef304e4db8429e
 [RC-164]: ./reviews/rc-164-mil-021-amendment.md
+[7853a62]: https://github.com/NF-Hotel/NFHotel/commit/7853a620ea10e270620236ac74fea5f77cd29ac2
