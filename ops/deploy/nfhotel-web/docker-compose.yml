@@ -1,0 +1,57 @@
+# NFHotel web application, reachable only through the nginx proxy (MIL-002
+# task 4). Read by Docker Compose. Settings live in nfhotel-web.env
+# (git-ignored); copy nfhotel-web.env.example to nfhotel-web.env first.
+# Start with:
+#   docker compose --env-file nfhotel-web.env up -d --build
+# The image comes from the repository root Dockerfile (already on main).
+# No host port is published: the proxy reaches the service by name on the
+# shared network (create it once: docker network create nfhotel-proxy).
+# The web service holds no database login and no passport key (ADR-0004): it reaches the
+# database API (deploy/nfhotel-api) by the name nfhotel-api on the internal network
+# nfhotel-api (docker network create --internal nfhotel-api). It is not on nfhotel-db.
+# It also reaches the benchmark service (notebook-benchmark, MIL-020) by the name
+# benchmark on the same network; BenchmarkService__BaseUrl and BenchmarkService__Token
+# are set in nfhotel-web.env.
+name: nfhotel-web
+
+services:
+  nfhotel-web:
+    image: ${NFHOTEL_WEB_IMAGE:-nfhotel-web:local}
+    build:
+      # The application source is the root of this repository by default (ADR-0016), or the
+      # NFHotel checkout in NFHOTEL_APP_DIR (the release action and e2e-stack.sh set it).
+      context: ${NFHOTEL_APP_DIR:-../../..}
+      dockerfile: Dockerfile
+      labels:
+        org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
+        org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
+    restart: unless-stopped
+    env_file: ${NFHOTEL_WEB_ENV_FILE:-nfhotel-web.env}
+    # The token for the API is written once, in deploy/nfhotel-api/nfhotel-api.env as
+    # Api__Token. scripts/deploy-services.sh exports it as API_TOKEN; when running
+    # compose by hand, export it first.
+    environment:
+      Api__BaseUrl: http://nfhotel-api:8080
+      Api__Token: ${API_TOKEN:?set it, from Api__Token in nfhotel-api.env}
+      BenchmarkService__BaseUrl: http://benchmark:8000
+      BenchmarkService__Token: ${BENCHMARK_API_TOKEN:-}
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+    networks:
+      - proxy
+      - api
+
+networks:
+  proxy:
+    name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
+    external: true
+  # Internal network shared with the database API only (no route out, no host port).
+  api:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
+    external: true

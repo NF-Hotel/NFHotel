@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 
 using NFHotel.Api.Contracts;
@@ -21,6 +22,9 @@ builder.Services.AddSingleton<ChannelMarketAnalysisRunLauncher>();
 builder.Services.AddSingleton<IMarketAnalysisRunLauncher>(provider => provider.GetRequiredService<ChannelMarketAnalysisRunLauncher>());
 builder.Services.AddHostedService<MarketAnalysisRunWorker>();
 builder.Services.AddStaffAuthentication();
+builder.Services.AddHttpContextAccessor();
+builder.Services.Replace(ServiceDescriptor.Scoped<IStaffCallContext, HttpStaffCallContext>());
+builder.Services.AddStaffWriteRateLimit();
 builder.Services.AddSingleton<AddressLoginThrottle>();   // the limit per client address for the mobile app (ADR-0015)
 builder.Services.AddScoped<LoginAddressLimitFilter>();
 
@@ -52,6 +56,7 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 
 app.UseMiddleware<ApiTokenMiddleware>();
 app.UseAuthentication();
+app.UseRateLimiter();
 
 await ApiStartup.MigrateIfRequestedAsync(app, app.Lifetime.ApplicationStopping).ConfigureAwait(false);
 await ApiStartup.EnsureFirstManagerAsync(app, app.Lifetime.ApplicationStopping).ConfigureAwait(false);
@@ -59,6 +64,12 @@ await ApiStartup.EnsureFirstManagerAsync(app, app.Lifetime.ApplicationStopping).
 if (ApiStartup.IsCreateStaff(args))
 {
     return await ApiStartup.RunCreateStaffAsync(
+        app.Services, args, Environment.GetEnvironmentVariable(ApiStartup.PasswordVariable), app.Lifetime.ApplicationStopping).ConfigureAwait(false);
+}
+
+if (ApiStartup.IsResetStaffPassword(args))
+{
+    return await ApiStartup.RunResetStaffPasswordAsync(
         app.Services, args, Environment.GetEnvironmentVariable(ApiStartup.PasswordVariable), app.Lifetime.ApplicationStopping).ConfigureAwait(false);
 }
 

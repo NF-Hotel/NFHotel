@@ -1,0 +1,13 @@
+# Daily backup of the NFHotel database (ADR-0008). Installed by scripts/install-backup.sh.
+[Unit]
+Description=NFHotel database backup
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/nfhotel-backup --apply
+Nice=10
+IOSchedulingClass=idle
+PrivateTmp=true
+NoNewPrivileges=true

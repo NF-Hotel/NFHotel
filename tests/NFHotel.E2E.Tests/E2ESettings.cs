@@ -14,6 +14,8 @@ public enum StaffRole
 /// </summary>
 public static class E2ESettings
 {
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<StaffRole, string> ChosenPasswords = new();
+
     /// <summary>True when the runner asks the tests to fail rather than skip without settings.</summary>
     public static bool IsRequired =>
         string.Equals(Environment.GetEnvironmentVariable("E2E_REQUIRE"), "true", StringComparison.OrdinalIgnoreCase);
@@ -33,8 +35,17 @@ public static class E2ESettings
     /// <summary>The user name of the test account of a role.</summary>
     public static string UserName(StaffRole role) => Required($"E2E_{role.ToString().ToUpperInvariant()}_USER");
 
-    /// <summary>The password of the test account of a role.</summary>
-    public static string Password(StaffRole role) => Required($"E2E_{role.ToString().ToUpperInvariant()}_PASSWORD");
+    /// <summary>
+    /// The password of the test account of a role. An account that had to choose a new password at its first sign-in
+    /// (the first Manager, ADR-0017) answers with the one it chose.
+    /// </summary>
+    public static string Password(StaffRole role) =>
+        ChosenPasswords.TryGetValue(role, out var chosen) ? chosen : Required($"E2E_{role.ToString().ToUpperInvariant()}_PASSWORD");
+
+    /// <summary>Remembers the password that a test account chose, so every later sign-in of the run uses it.</summary>
+    /// <param name="role">The role of the account.</param>
+    /// <param name="password">The new password.</param>
+    public static void RememberChosenPassword(StaffRole role, string password) => ChosenPasswords[role] = password;
 
     private static string Required(string name) =>
         Environment.GetEnvironmentVariable(name) is { Length: > 0 } value

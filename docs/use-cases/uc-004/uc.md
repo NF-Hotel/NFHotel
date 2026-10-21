@@ -12,7 +12,8 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-17 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version (MIL-016) | [1593b34] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 | Accepted after RC-070 Go | [1593b34] |
+| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Accepted after RC-070 Go | [1593b34] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Open issues closed by UC-005, UC-006 and ADR-0017 (MIL-030) (accepted after RC-154 Go) | [0891cf1] |
 
 ---
 
@@ -66,9 +67,9 @@
 ### Open Issues
 
 - The network carries the password in clear text until the public port has TLS (ADR-0005); the sign-in is not to be used over an untrusted network until then.
-- A stolen session works until it expires; there is no revocation list.
+- A stolen session works until it expires; there is no revocation list. (Closed by ADR-0017: the security stamp ends old sessions.)
 - The Guest role (a guest sees their own booking) is a later milestone; the booking receipt page is open by its number until then.
-- Staff accounts are made by the Manager's command line, not on a screen.
+- Staff accounts are made by the Manager's command line, not on a screen. (Closed by UC-006.)
 
 ---
 
@@ -77,3 +78,4 @@
 [SA-001]: ../../stakeholder-analysis.md
 [ADR-0005]: ../../adr/adr-0005-backoffice-login.md
 [1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf

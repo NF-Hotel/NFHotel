@@ -1,7 +1,11 @@
+using System.Globalization;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
 using NFHotel.Api.Contracts;
+using NFHotel.Domain.Repositories;
 using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Security;
 
@@ -39,6 +43,26 @@ public static class StaffAuthentication
                 };
                 bearer.Events = new JwtBearerEvents
                 {
+                    // A valid signature is not enough: the account must still exist, be active and have the stamp that the
+                    // token was issued with, so a password change, a reset or a disable ends the old sessions at once (ADR-0017).
+                    OnTokenValidated = async context =>
+                    {
+                        var principal = context.Principal;
+                        if (!int.TryParse(principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
+                            || !int.TryParse(principal?.FindFirst(JwtStaffTokenIssuer.StampClaim)?.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var stamp))
+                        {
+                            context.Fail("The token has no account or stamp.");
+                            return;
+                        }
+
+                        var accounts = context.HttpContext.RequestServices.GetRequiredService<IStaffRepository>();
+                        var member = await accounts.GetByIdAsync(id, context.HttpContext.RequestAborted).ConfigureAwait(false);
+                        if (member is null || !member.IsActive || member.SecurityStamp != stamp)
+                        {
+                            context.Fail("The account changed after the token was issued.");
+                        }
+                    },
+
                     // The Authorization header belongs to the token of the web application (ADR-0004).
                     OnMessageReceived = context =>
                     {

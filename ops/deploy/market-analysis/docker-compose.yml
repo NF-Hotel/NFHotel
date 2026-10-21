@@ -1,0 +1,110 @@
+# Market analysis service behind the nginx proxy (MIL-004 task 4). Read by Docker
+# Compose. Settings live in market-analysis.env (git-ignored); copy
+# market-analysis.env.example and market-analysis.toml.example first. Start with:
+#   docker compose --env-file market-analysis.env up -d --build
+# Two entries of the same image: the API (serve) and the read-only history
+# notebook (marimo). Neither publishes a host port; the proxy reaches them by
+# name on the shared network (create it once: docker network create nfhotel-proxy).
+name: market-analysis
+
+x-analysis-image: &analysis-image ${MARKET_ANALYSIS_IMAGE:-market-analysis:local}
+
+services:
+  market-analysis-api:
+    image: *analysis-image
+    build:
+      context: .
+      args:
+        ANALYSIS_REPO: ${ANALYSIS_REPO:-https://github.com/NF-Hotel/Notebook_Market_Analysis.git}
+        ANALYSIS_REF: ${ANALYSIS_REF:-6c11cbf2a32b7cd2f17b4ebb6384ac458f6b0fb2}
+      labels:
+        org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
+        org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
+    restart: unless-stopped
+    env_file: ${MARKET_ANALYSIS_ENV_FILE:-market-analysis.env}
+    command:
+      - python
+      - -m
+      - hotel_booking_analysis
+      - serve
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --config
+      - /app/work/hotel_analysis.toml
+    expose:
+      - "8000"
+    volumes:
+      - history:/app/work/output
+      - ${MARKET_ANALYSIS_CONFIG:-./market-analysis.toml}:/app/work/hotel_analysis.toml:ro
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    networks:
+      - proxy
+      - llm
+      # The NFHotel API sends the bookings to /analyze (MIL-026): it reaches this service
+      # by its name on this internal network.
+      - api
+
+  market-analysis-notebook:
+    image: *analysis-image
+    restart: unless-stopped
+    env_file: ${MARKET_ANALYSIS_ENV_FILE:-market-analysis.env}
+    command:
+      - python
+      - -m
+      - marimo
+      - run
+      - /usr/local/lib/python3.13/site-packages/hotel_booking_analysis/interface/history_notebook.py
+      - --host
+      - 0.0.0.0
+      - --port
+      - "2718"
+      - --headless
+    expose:
+      - "2718"
+    volumes:
+      - history:/app/work/output:ro
+      - ${MARKET_ANALYSIS_CONFIG:-./market-analysis.toml}:/app/work/hotel_analysis.toml:ro
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import socket; socket.create_connection(('127.0.0.1', 2718), 3)
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    depends_on:
+      - market-analysis-api
+    networks:
+      - proxy
+      - llm
+
+volumes:
+  history:
+
+networks:
+  proxy:
+    name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
+    external: true
+  # Ollama, the model server (deploy/ollama).
+  llm:
+    name: ${NFHOTEL_LLM_NETWORK:-nfhotel-llm}
+    external: true
+  # The internal network of the NFHotel API (MIL-026); it has no route out and no host port.
+  api:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
+    external: true

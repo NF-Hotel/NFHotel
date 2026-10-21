@@ -54,6 +54,24 @@ public static class ApiRoutes
     /// <summary>The sign-in below <see cref="Auth"/>.</summary>
     public const string Login = "login";
 
+    /// <summary>The route prefix of the staff accounts (ADR-0017).</summary>
+    public const string Staff = "api/staff";
+
+    /// <summary>The change of the own password below <see cref="Staff"/>.</summary>
+    public const string StaffMyPassword = "me/password";
+
+    /// <summary>Disabling an account below <see cref="Staff"/>.</summary>
+    public const string StaffDisable = "{id:int}/disable";
+
+    /// <summary>Enabling an account below <see cref="Staff"/>.</summary>
+    public const string StaffEnable = "{id:int}/enable";
+
+    /// <summary>The reset of the password of an account below <see cref="Staff"/>.</summary>
+    public const string StaffResetPassword = "{id:int}/password";
+
+    /// <summary>The audit trail below <see cref="Staff"/>; the query parameters <c>page</c> and <c>pageSize</c> select the page.</summary>
+    public const string StaffAudit = "audit";
+
     /// <summary>A resource by key: <c>{id}</c> after the prefix.</summary>
     public const string ById = "{id:int}";
 

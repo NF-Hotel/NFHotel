@@ -120,6 +120,16 @@ public static class Permissions
     public const string MarketAnalysisStart = "MarketAnalysis.Start";
 
     /// <summary>
+    /// Permission to create, disable, enable and reset staff accounts and to read the audit trail (ADR-0017).
+    /// </summary>
+    public const string StaffManage = "Staff.Manage";
+
+    /// <summary>
+    /// Permission to change one's own staff password (ADR-0017).
+    /// </summary>
+    public const string StaffChangeOwnPassword = "Staff.ChangeOwnPassword";
+
+    /// <summary>
     /// All permissions, to build one authorisation policy per permission.
     /// </summary>
     public static readonly IReadOnlyList<string> All =
@@ -146,5 +156,7 @@ public static class Permissions
         BenchmarkModelsManage,
         MarketAnalysisView,
         MarketAnalysisStart,
+        StaffManage,
+        StaffChangeOwnPassword,
     ];
 }
