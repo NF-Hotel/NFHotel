@@ -18,7 +18,8 @@ One repository holds it all (ADR-0016): the application, and its operations unde
 4. **Deploy.** After the approval:
    - the job joins the tailnet as a temporary node tagged `tag:ci`;
    - it logs in to the VM with Tailscale SSH as the user `deploy`;
-   - it runs `sudo -n /usr/local/sbin/nfhotel-deploy deploy <commit> <operations commit> <four digests>` (the `deploy-release` action).
+   - it runs `sudo -n /usr/local/sbin/nfhotel-deploy update <operations commit>` first. That installs the deploy command, the backup command and the backup timer of the release, and only when the commit is on `main` (ADR-0018);
+   - then it runs `migrate` with the migration script, and `deploy <commit> <operations commit> <four digests>` (the `deploy-release` action).
 5. **On the VM**, the deploy command (`ops/scripts/deploy-release.sh`):
    - backs up the database;
    - checks out the release commit in `/opt/nfhotel`, a checkout of `NF-Hotel/NFHotel`, and uses its `ops/` (a checkout of the archived `NF-Hotel/DevOps` is still accepted until the switch of MIL-031 task 6). The application runs from the images, not from this checkout;
@@ -48,7 +49,7 @@ A rollback changes the images and the compose files, not the database. Migration
 
 1. Change it in `ops/` or `.github/actions/` by a pull request; the CI (`NF Hotel Ops CI` included) must be green, and one other person must approve (CODEOWNERS covers `ops/` and `.github/`).
 2. The next release carries it: the workflows read the actions from the same commit, so there is no pin to move.
-3. A script that runs as root on the VM (`deploy-release.sh`, `backup-database.sh`) takes effect only after S03 installs it again with `install-deploy-user.sh --apply` or `install-backup.sh --apply`.
+3. A script that runs as root on the VM (`deploy-release.sh`, `backup-database.sh`, the backup service and timer) takes effect with the next approved CD. Its first step, `nfhotel-deploy update <sha>`, installs them from the release commit, and only when that commit is on `main` (ADR-0018). The replaced copy is kept as `<file>.previous`, and the release log (`nfhotel-deploy status`) shows the old and new SHA-256. Nobody installs them by hand after the first setup below.
 
 ## Back up and restore
 

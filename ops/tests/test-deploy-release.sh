@@ -108,6 +108,7 @@ run() {
   shift
   PATH="$W/bin:$PATH" NFHOTEL_USER=root NFHOTEL_STATE="$W/state-$(basename "$dir")" NFHOTEL_DIR="$dir" \
   NFHOTEL_SECRETS="${SECRETS:-$W/secrets}" NFHOTEL_BACKUP_COMMAND="${BACKUP:-$W/bin/backup}" \
+  NFHOTEL_COMMAND_DIR="$W/sbin" NFHOTEL_SYSTEMD_DIR="$W/systemd" NFHOTEL_SYSTEMCTL="$W/bin/systemctl" \
     bash /src/scripts/deploy-release.sh "$@" <"${STDIN:-/dev/null}" >"$W/out" 2>&1
 }
 expect_code() {
@@ -222,6 +223,68 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
   grep -q "rolled back to $APP" "$W/out" && [[ "$(git -C "$W/nfh" rev-parse HEAD)" == "$N" ]] &&
     [[ "$(cat "$W/health")" == good ]] && ok "the rollback across the switch starts the old images from ops/" ||
     ko "rollback across the switch: $(tail -3 "$W/out")"
+}
+
+# update (ADR-0018): the commands are installed from a commit on main, never from a commit
+# that is only on a pull-request ref, and only when they differ.
+# shellcheck disable=SC2046
+{
+  mkdir -p "$W/sbin" "$W/systemd" "$W/nfh-src/ops/deploy/systemd"
+  printf '#!/bin/bash\necho "systemctl $*" >>"%s/systemctl.log"\n' "$W" >"$W/bin/systemctl" && chmod +x "$W/bin/systemctl"
+  echo 'echo deploy v1' >"$W/nfh-src/ops/scripts/deploy-release.sh"
+  echo 'echo backup v1' >"$W/nfh-src/ops/scripts/backup-database.sh"
+  echo '[Service]' >"$W/nfh-src/ops/deploy/systemd/nfhotel-backup.service"
+  echo '[Timer]' >"$W/nfh-src/ops/deploy/systemd/nfhotel-backup.timer"
+  git -C "$W/nfh-src" add -A && git -C "$W/nfh-src" commit -qm commands
+  U1="$(git -C "$W/nfh-src" rev-parse HEAD)"
+  git -C "$W/nfh-src" push -q origin main
+  echo 'echo deploy unreviewed' >"$W/nfh-src/ops/scripts/deploy-release.sh"
+  git -C "$W/nfh-src" commit -qam unreviewed
+  P="$(git -C "$W/nfh-src" rev-parse HEAD)"
+  git -C "$W/nfh-src" push -q origin "HEAD:refs/pull/1/head"
+  git -C "$W/nfh-src" reset -q --hard "$U1"
+
+  expect_code 2 "update refuses a short commit" update abc
+  run "$W/nfh" update "$U1" && [[ "$(cat "$W/sbin/nfhotel-deploy")" == "echo deploy v1" ]] &&
+    [[ "$(cat "$W/sbin/nfhotel-backup")" == "echo backup v1" ]] && [[ -f "$W/systemd/nfhotel-backup.timer" ]] &&
+    [[ "$(stat -c %a "$W/sbin/nfhotel-deploy")" == 755 ]] && ok "update installs the commands and units of a main commit" ||
+    ko "update from main: $(tail -2 "$W/out")"
+  grep -q "try-restart nfhotel-backup.timer" "$W/systemctl.log" && ok "new units reload systemd and restart the timer" || ko "systemctl"
+  [[ "$(grep -c " update $U1 " "$W/state-nfh/releases.log")" == 4 ]] && ok "each installed file is logged with its hashes" || ko "update log"
+  : >"$W/systemctl.log"
+  lines="$(wc -l <"$W/state-nfh/releases.log")"
+  run "$W/nfh" update "$U1" && [[ "$(wc -l <"$W/state-nfh/releases.log")" == "$lines" ]] && [[ ! -s "$W/systemctl.log" ]] &&
+    ok "a second update with equal files changes and logs nothing" || ko "idempotent update: $(tail -2 "$W/out")"
+  run "$W/nfh" update "$P"
+  [[ $? == 2 ]] && grep -q "not on main" "$W/out" && [[ "$(cat "$W/sbin/nfhotel-deploy")" == "echo deploy v1" ]] &&
+    ok "update refuses a commit that is only on a pull-request ref" || ko "unreviewed commit: $(tail -2 "$W/out")"
+
+  echo 'echo deploy v2' >"$W/nfh-src/ops/scripts/deploy-release.sh"
+  git -C "$W/nfh-src" commit -qam v2 && git -C "$W/nfh-src" push -q origin main
+  U2="$(git -C "$W/nfh-src" rev-parse HEAD)"
+  run "$W/nfh" update "$U2" && [[ "$(cat "$W/sbin/nfhotel-deploy")" == "echo deploy v2" ]] &&
+    [[ "$(cat "$W/sbin/nfhotel-deploy.previous")" == "echo deploy v1" ]] && [[ ! -s "$W/systemctl.log" ]] &&
+    ok "a changed command is installed and the old one kept as .previous" || ko "update v2: $(tail -2 "$W/out")"
+
+  # The update lines in the release log do not hide the releases from the rollback.
+  run "$W/nfh" deploy $(good "$U2")
+  run "$W/nfh" update "$U2"
+  run "$W/nfh" deploy $(bad "$U2")
+  grep -q "rolled back to $APP" "$W/out" && [[ "$(cat "$W/health")" == good ]] &&
+    ok "the rollback finds the release past the update lines" || ko "rollback after update: $(tail -3 "$W/out")"
+
+  # The VM checkout is shallow (depth 1). update still finds a newer main commit, and still
+  # refuses a commit that is only on a pull-request ref.
+  git clone -q --depth 1 "file://$W/nfh-origin.git" "$W/nfhs"
+  git -C "$W/nfhs" remote set-url origin https://github.com/NF-Hotel/NFHotel.git
+  echo 'echo deploy v3' >"$W/nfh-src/ops/scripts/deploy-release.sh"
+  git -C "$W/nfh-src" commit -qam v3 && git -C "$W/nfh-src" push -q origin main
+  U3="$(git -C "$W/nfh-src" rev-parse HEAD)"
+  run "$W/nfhs" update "$U3" && [[ "$(cat "$W/sbin/nfhotel-deploy")" == "echo deploy v3" ]] &&
+    ok "update works in a shallow checkout" || ko "shallow update: $(tail -2 "$W/out")"
+  run "$W/nfhs" update "$P"
+  [[ $? == 2 ]] && [[ "$(cat "$W/sbin/nfhotel-deploy")" == "echo deploy v3" ]] &&
+    ok "a shallow checkout also refuses a pull-request commit" || ko "shallow refusal: $(tail -2 "$W/out")"
 }
 
 echo "RESULT: $pass passed, $fail failed"

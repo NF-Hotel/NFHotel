@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Prepare the NFHotel VM for the CD workflow (ADR-0007, MIL-021 task 5). S03 runs it
-# once as root in the checkout /opt/nfhotel, and again after scripts/deploy-release.sh
-# changes in git; the deploy command is a root-owned copy, so a change in git alone
-# never changes what runs as root.
+# once as root in the checkout /opt/nfhotel. The deploy command is a root-owned copy, so a
+# push alone never changes what runs as root: after this first install, the update command
+# of each approved CD run installs deploy-release.sh from the release commit, and only when
+# that commit is on main, past review and the required checks (ADR-0018).
 #
 # It:
 #   1. creates the user deploy (no password, not in the docker or sudo group)

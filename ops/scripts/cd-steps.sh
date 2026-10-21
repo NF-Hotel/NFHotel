@@ -18,7 +18,9 @@
 #                  both attestations stops the deploy before the tailnet is joined
 #   deploy         run the deploy command on the VM over Tailscale SSH; changes the VM,
 #                  so it is only called after the approval and, for a manual run, only
-#                  when APPLY is true. With MIGRATIONS set it first sends migrations.sql
+#                  when APPLY is true. It first runs update with DEVOPS_SHA, so the
+#                  commands of the release, taken only from a commit on main, do the
+#                  rest (ADR-0018, MIL-032). With MIGRATIONS set it then sends migrations.sql
 #                  to the migrate command (backup, then the script as nfhotel_migrator),
 #                  and deploys only when that succeeded (MIL-022 task 6)
 #   summary        append the audit record of the run to GITHUB_STEP_SUMMARY
@@ -132,6 +134,10 @@ verify() {
 deploy() {
   [[ "${VM_HOST:-}" =~ ^[a-z0-9.-]+$ ]] || fail "set the environment variable NFHOTEL_VM_HOST of production"
   local status=0
+  [[ "${DEVOPS_SHA:-}" =~ ^[0-9a-f]{40}$ ]] || fail "bad operations commit"
+  tailscale ssh "deploy@$VM_HOST" sudo -n /usr/local/sbin/nfhotel-deploy update "$DEVOPS_SHA" \
+    2>&1 | tee update.log || status=$?
+  ((status == 0)) || fail "the update of the commands on $VM_HOST failed (exit $status); nothing was migrated or deployed"
   if [[ -n "${MIGRATIONS:-}" ]]; then
     [[ "$MIGRATIONS" =~ ^[0-9a-f]{64}$ ]] || fail "bad migration script hash"
     tailscale ssh "deploy@$VM_HOST" sudo -n /usr/local/sbin/nfhotel-deploy migrate "$MIGRATIONS" \

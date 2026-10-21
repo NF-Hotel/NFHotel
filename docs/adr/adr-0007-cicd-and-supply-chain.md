@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0007 |
-| CrossReference | [BC-001], [ADR-0003], [ADR-0006], [MIL-021], [MIL-022] |
+| CrossReference | [BC-001], [ADR-0003], [ADR-0006], [MIL-021], [MIL-022], [ADR-0018] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | S01; S03 | Initial version | [f4649ad] |
 | 2026-10-18 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-092 Go | [f4649ad] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Amended by ADR-0018: CD installs the deploy and backup commands from a reviewed `main` commit | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -35,6 +35,8 @@ For access: Tailscale with an OAuth secret, Tailscale with workload identity fed
 ## Decision
 
 We follow option 2, with Tailscale workload identity federation and Tailscale SSH.
+
+Amended by [ADR-0018] (2026-10-21): the deploy command is no longer installed only by S03. During CD it installs itself, the backup command and the backup timer from the release commit, and only when that commit is on `main`.
 
 1. **Three workflows.**
    - `ci.yaml` runs on pull requests and on `main`, with a read-only token and no secrets.
@@ -74,6 +76,7 @@ We follow option 2, with Tailscale workload identity federation and Tailscale SS
 - [MIL-021]: phase 1 implements decisions 1, 2 and 4 to 8.
 - [MIL-022]: phase 2 adds the Trivy gate, the SBOM, the attestation and its verification (decision 3), and SHA pinning (decision 9).
 - [ADR-0003]: the VM no longer builds images; `deploy.sh` stays for creating the VM.
+- [ADR-0018]: amends the manual install of the deploy command.
 
 ---
 
@@ -82,4 +85,5 @@ We follow option 2, with Tailscale workload identity federation and Tailscale SS
 [ADR-0006]: https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0006-tls.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
+[ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
 [f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
