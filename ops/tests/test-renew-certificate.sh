@@ -81,8 +81,7 @@ grep -q "nf-hotel.taildb84b5.ts.net" "$W/log" && ok "tailscale is asked for the 
 [[ "$(cat "$W/mounted/fullchain.pem.previous")" == "cert v1" ]] && ok "the old pair is kept as .previous" || ko "previous"
 grep -q "nginx -t" "$W/log" && grep -q "nginx -s reload" "$W/log" && ok "nginx is checked, then reloaded" || ko "reload: $(cat "$W/log")"
 
-FAKE_NGINX=1 FAKE_CERT="cert v2" FAKE_KEY="key v2" run
-[[ $? == 0 ]] && grep -q "^unchanged" "$W/out" && ! grep -q exec "$W/log" &&
+FAKE_NGINX=1 FAKE_CERT="cert v2" FAKE_KEY="key v2" run && grep -q "^unchanged" "$W/out" && ! grep -q exec "$W/log" &&
   ok "an unchanged certificate changes and reloads nothing" || ko "unchanged: $(cat "$W/out")"
 
 FAKE_NGINX=1 FAKE_NGINX_BAD=1 FAKE_CERT="cert v3" FAKE_KEY="key v3" run
