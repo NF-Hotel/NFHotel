@@ -301,9 +301,13 @@ for s in "${ordered[@]}"; do
   if [[ "$s" != "nginx" ]]; then
     args+=(--wait --wait-timeout 300)
   else
-    # The proxy keeps nothing. Its templates are rendered into the container when it starts, so a container that is
-    # kept would still hold a file of a template that was removed; always start it fresh.
-    args+=(--force-recreate)
+    # The proxy keeps nothing, and its templates are rendered into the container when it starts. A hash of the
+    # templates, the snippets and the settings is part of its environment, so compose recreates it exactly when one
+    # of them changed, and a deploy that changes only an image keeps the running proxy (MIL-021 criterion 5). A new
+    # certificate is loaded by nfhotel-cert-renew with a reload.
+    export NGINX_CONFIG_HASH
+    NGINX_CONFIG_HASH="$(cd "$d" && find templates snippets -type f -print0 | sort -z | xargs -0 sha256sum |
+      cat - "$e" | sha256sum | cut -c1-16)" || die "cannot hash the configuration of the proxy"
   fi
   (cd "$d" && docker compose "${args[@]}") || die "deploying $s failed"
   if [[ "$s" == "analysis" ]] && ((analysis_changed)); then

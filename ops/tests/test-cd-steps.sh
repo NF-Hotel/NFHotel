@@ -215,8 +215,8 @@ grep -q "Ports 18081 of 127.0.0.1 do not answer" log && grep -q "No peer other t
   ok "the scope records the closed ports and no other peer" || ko "scope: $(tr '\n' '|' <log)"
 expect 0 "an open port is a warning, not a failure" scope 18080
 grep -q "::warning::tag:ci reaches ports 18080" log && ok "an open port is reported" || ko "open port: $(tr '\n' '|' <log)"
-FAKE_STATUS='{"Peer":{"k1":{"DNSName":"127.0.0.1."},"k2":{"DNSName":"legion.example.ts.net."}}}' expect 0 "another peer is a warning" scope 18081
-grep -q "Other peers seen:.*legion.example.ts.net" log && ok "another peer is reported" || ko "peer: $(tr '\n' '|' <log)"
+FAKE_STATUS='{"Peer":{"k1":{"DNSName":"127.0.0.1."},"k2":{"DNSName":"legion.example.ts.net."}}}' expect 0 "another peer seen does not fail the step" scope 18081
+grep -q "Peers seen .*legion.example.ts.net" log && ! grep -q "::warning::" log && ok "another peer is listed, without a warning" || ko "peer: $(tr '\n' '|' <log)"
 VM_HOST=127.0.0.1 SCOPE_SSH_PORT=18099 expect 1 "scope fails when ssh does not answer" step scope
 kill %1 %2 2>/dev/null
 
