@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [0aac8e5] |
 
 ---
 
@@ -66,3 +66,4 @@ Go-with-conditions. Criterion 5 closes with the CD of the merge of this record. 
 [RC-164]: ./rc-164-mil-021-amendment.md
 [RC-165]: ./rc-165-nginx-recreate-and-scope.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[0aac8e5]: https://github.com/NF-Hotel/NFHotel/commit/0aac8e50d72fd71b38b97ce6b19cefbcecec6ce0

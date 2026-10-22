@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Records what runs and what is not yet done (RC-161): the copy off the VM (D7) is not in place | [12a64c3] |
-| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | The copy off the VM is in place (legion, D7 revised); restore drill from the copy (RC-166) | pending |
+| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | The copy off the VM is in place (legion, D7 revised); restore drill from the copy (RC-166) | [0aac8e5] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -87,3 +87,4 @@ WAL archiving is not chosen now: a daily dump with a tested restore fits the dat
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
 [12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
 [RC-166]: ../sqa/reviews/rc-166-mil-021-gate.md
+[0aac8e5]: https://github.com/NF-Hotel/NFHotel/commit/0aac8e50d72fd71b38b97ce6b19cefbcecec6ce0
