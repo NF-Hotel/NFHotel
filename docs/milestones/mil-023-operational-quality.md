@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-091 Go | [f4649ad] |
-| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Observability follows ADR-0020: tasks 7 to 10 and criteria 7 and 8 added; uptime check moved out of task 4; accepted after RC-169 Go | pending |
+| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Observability follows ADR-0020: tasks 7 to 10 and criteria 7 and 8 added; uptime check moved out of task 4; accepted after RC-169 Go | [2b09b0b] |
 
 ---
 
@@ -118,3 +118,4 @@ Decide whether the VM and the containers are hardened and observed well enough t
 [f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [RC-169]: ../sqa/reviews/rc-169-mil-023-amendment.md
+[2b09b0b]: https://github.com/NF-Hotel/NFHotel/commit/2b09b0bffdff14a310d4a5dcac10d719d11dd7b5

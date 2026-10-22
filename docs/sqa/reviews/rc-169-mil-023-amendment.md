@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [2b09b0b] |
 
 ---
 
@@ -60,3 +60,4 @@ None.
 [MIL-023]: ../../milestones/mil-023-operational-quality.md
 [ADR-0020]: ../../adr/adr-0020-monitoring-stack.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[2b09b0b]: https://github.com/NF-Hotel/NFHotel/commit/2b09b0bffdff14a310d4a5dcac10d719d11dd7b5

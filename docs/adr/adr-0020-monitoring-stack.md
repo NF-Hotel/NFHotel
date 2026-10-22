@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the stack was chosen by S01 in chat on 2026-10-22, accepted after RC-168 Go | pending |
+| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the stack was chosen by S01 in chat on 2026-10-22, accepted after RC-168 Go | [2b09b0b] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -134,3 +134,4 @@ We follow option 1. Production is watched by Prometheus, Alertmanager, Grafana, 
 [ADR-0010]: ./adr-0010-production-vm-as-deployed.md
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
+[2b09b0b]: https://github.com/NF-Hotel/NFHotel/commit/2b09b0bffdff14a310d4a5dcac10d719d11dd7b5
