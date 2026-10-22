@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the decision was made and applied by S01 in chat on 2026-10-22, accepted after RC-167 Go | pending |
+| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the decision was made and applied by S01 in chat on 2026-10-22, accepted after RC-167 Go | [cd9cdf4] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -87,3 +87,4 @@ We follow option 3. A pull request needs no approving review, and its merge stil
 [ADR-0007]: ./adr-0007-cicd-and-supply-chain.md
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
+[cd9cdf4]: https://github.com/NF-Hotel/NFHotel/commit/cd9cdf46d68e881cc977f9a79fef4494a1a1048b

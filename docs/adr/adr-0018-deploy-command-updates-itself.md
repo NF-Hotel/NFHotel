@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | The certificate renewal is installed too, and CD runs update again after a new deploy command (RC-162) | [e2e8a90] |
-| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Notes ADR-0019: one person may now merge and approve (RC-167) | pending |
+| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Notes ADR-0019: one person may now merge and approve (RC-167) | [cd9cdf4] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -97,3 +97,4 @@ We follow option 3: during each CD run, before the migrations, the deploy comman
 [ADR-0009]: ./adr-0009-tls-certificates.md
 [e2e8a90]: https://github.com/NF-Hotel/NFHotel/commit/e2e8a90e0082aa329e4d2da499e8b1e853c26ca8
 [ADR-0019]: ./adr-0019-approvals-by-the-owner.md
+[cd9cdf4]: https://github.com/NF-Hotel/NFHotel/commit/cd9cdf46d68e881cc977f9a79fef4494a1a1048b
