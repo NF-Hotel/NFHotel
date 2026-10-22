@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0008 |
-| CrossReference | [BC-001], [ADR-0004], [ADR-0007], [MIL-021], [MIL-022], [ADR-0011], [ADR-0018], [RC-161] |
+| CrossReference | [BC-001], [ADR-0004], [ADR-0007], [MIL-021], [MIL-022], [ADR-0011], [ADR-0018], [RC-161], [RC-166] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-093 Go | [f4649ad] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Records what runs and what is not yet done (RC-161): the copy off the VM (D7) is not in place | [12a64c3] |
+| 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Records what runs and what is not yet done (RC-161): the copy off the VM (D7) is not in place | [12a64c3] |
+| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | The copy off the VM is in place (legion, D7 revised); restore drill from the copy (RC-166) | [0aac8e5] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -52,7 +52,7 @@ We take daily logical backups with a tested restore, and CD applies migrations a
 
 WAL archiving is not chosen now: a daily dump with a tested restore fits the data volume and the team's size. It is reviewed when the data grows.
 
-**Current state (2026-10-21, [RC-161]).** In place on `nf-hotel`: the timer `nfhotel-backup.timer` runs every day at 02:00 UTC; each dump is encrypted with `age`, and 14 dumps are on the VM. A dump runs before every migration and every deploy. CD applies the idempotent script as `nfhotel_migrator` ([ADR-0011]), and production runs with `Database__MigrateOnStart=false`. The restore drill ran once, on 2026-10-20 (RC-505). Since [ADR-0018], CD installs the backup command and its timer. **Not in place:** the copy off the VM. DSA-001 decision D7 names the target, the user `nfhotel-backup` on the Proxmox node over rsync. But `BACKUP_TARGET` is empty on `nf-hotel`, so every backup warns that it stays on the VM (NFHotel#124). Until then, a lost VM disk loses the database and its backups together. The monthly drill has run once.
+**Current state (2026-10-22, [RC-161], [RC-166]).** In place on `nf-hotel`: the timer `nfhotel-backup.timer` runs every day at 02:00 UTC; each dump is encrypted with `age`, and 14 dumps are on the VM. A dump runs before every migration and every deploy. CD applies the idempotent script as `nfhotel_migrator` ([ADR-0011]), and production runs with `Database__MigrateOnStart=false`. Since [ADR-0018], CD installs the backup command and its timer. **The copy off the VM is in place since 2026-10-22.** DSA-001 decision D7, revised by S01, sends it to the write-only target `ops/deploy/backup-target` on the legion laptop of S03, outside the Proxmox host. Every backup sends what the target lacks, and a laptop that is off gives a warning and a catch-up at the next run. The restore drill has run twice: on 2026-10-20 from the VM (RC-505), and on 2026-10-22 from the copy on the laptop (RC-166): 11 tables, 156 686 bookings, the latest migration `AddStaffPasswordAndAudit`. The monthly drill is not yet scheduled; that is planned for MIL-033.
 
 ## Consequences
 
@@ -82,8 +82,9 @@ WAL archiving is not chosen now: a daily dump with a tested restore fits the dat
 [ADR-0007]: ./adr-0007-cicd-and-supply-chain.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
-[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
 [ADR-0011]: ./adr-0011-postgresql-access-for-the-api.md
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
 [12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
+[RC-166]: ../sqa/reviews/rc-166-mil-021-gate.md
+[0aac8e5]: https://github.com/NF-Hotel/NFHotel/commit/0aac8e50d72fd71b38b97ce6b19cefbcecec6ce0
