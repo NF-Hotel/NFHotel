@@ -21,7 +21,7 @@ NF-Hotel/DevOps, where the operations lived under ADR-0012, is archived. Its his
 ## How to work
 
 - Follow the SQA/QC framework in `framework/` (`git submodule update --init --recursive`).
-- **Branches:** never commit on `main`. Open a pull request with one approving review from someone other than the author.
+- **Branches:** never commit on `main`. Open a pull request; it merges when the 19 required checks are green (no approving review is required, ADR-0019).
 - **CI:** it must be green. The required checks come from `ci.yaml` (the application), `ops-ci.yaml` (the operations), `release-check.yaml` (the release images) and `e2e-dast.yaml` (the browser tests and the DAST baseline).
 - **IDs:** MIL, ADR and RC numbers continue the sequences of `docs/artifact-registry.md`. The IDs from 500 that NF-Hotel/DevOps allocated (ADR-0500, RC-500 to RC-507) keep their numbers.
 - **Formatting:** English, LF line endings (`.editorconfig`, `.gitattributes`).

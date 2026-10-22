@@ -6,7 +6,7 @@ How a change reaches the NF Hotel server, how a deploy is approved and undone, a
 
 One repository holds it all (ADR-0016): the application, and its operations under `ops/`. The workflows (`ci.yaml`, `ops-ci.yaml`, `release.yaml`, `cd.yaml`) keep the triggers, the permissions, the `production` environment and the OIDC claims. Their steps are the local composite actions in `.github/actions/` (`release-images`, `deploy-release`, `e2e-tests`, `dast-scan`), read from the same commit, which run the scripts of `ops/scripts/`. Everything that runs on the VM is in `ops/` too.
 
-1. **Pull request.** `NF Hotel CI` builds, tests and checks the formatting on every pull request, with a read-only token and no secrets. One approving review is required.
+1. **Pull request.** `NF Hotel CI` builds, tests and checks the formatting on every pull request, with a read-only token and no secrets. A pull request merges when the required checks are green; no approving review is required (ADR-0019).
 2. **Merge to `main`.** CI runs again on `main`. When it is green, `NF Hotel Release` in NFHotel calls the `release-images` action. The action builds four images from that exact commit, with the compose files and scripts of `ops/` in it, and pushes them to the GitHub Container Registry:
    - `ghcr.io/nf-hotel/nfhotel-web`
    - `ghcr.io/nf-hotel/nfhotel-api`
@@ -14,7 +14,7 @@ One repository holds it all (ADR-0016): the application, and its operations unde
    - `ghcr.io/nf-hotel/benchmark`
 
    Each image is tagged `sha-<NFHotel commit>` and labelled with that commit (`org.opencontainers.image.revision`). The run summary and the artifact `release-manifest` (`release.json`) hold the commit, the operations commit (`devops_sha`, the same commit since ADR-0016), one digest per image and the hash of the migration script.
-3. **Approval.** `NF Hotel CD` starts and waits in the environment `production` until a required reviewer approves it. The person who started the run cannot approve it.
+3. **Approval.** `NF Hotel CD` starts and waits in the environment `production` until a required reviewer approves it (codemikemike or Tirsvad). The person who started the run may approve it (ADR-0019); the approval is recorded in the deployment history.
 4. **Deploy.** After the approval:
    - the job joins the tailnet as a temporary node tagged `tag:ci`;
    - it logs in to the VM with Tailscale SSH as the user `deploy`;
@@ -48,7 +48,7 @@ A rollback changes the images and the compose files, not the database. Migration
 
 ## Change an action or a deploy script
 
-1. Change it in `ops/` or `.github/actions/` by a pull request; the CI (`NF Hotel Ops CI` included) must be green, and one other person must approve (CODEOWNERS covers `ops/` and `.github/`).
+1. Change it in `ops/` or `.github/actions/` by a pull request; the CI (`NF Hotel Ops CI` included) must be green (CODEOWNERS asks codemikemike for review of `ops/` and `.github/`; no approval is required, ADR-0019).
 2. The next release carries it: the workflows read the actions from the same commit, so there is no pin to move.
 3. A script that runs as root on the VM (`deploy-release.sh`, `backup-database.sh`, the backup service and timer) takes effect with the next approved CD. Its first step, `nfhotel-deploy update <sha>`, installs them from the release commit, and only when that commit is on `main` (ADR-0018). The replaced copy is kept as `<file>.previous`, and the release log (`nfhotel-deploy status`) shows the old and new SHA-256. Nobody installs them by hand after the first setup below.
 
@@ -144,7 +144,7 @@ S03 and a repository administrator do this once, in this order.
 
 1. **Settings, Environments, New environment `production`:**
    - required reviewers (for example `codemikemike` and `Tirsvad`);
-   - tick "Prevent self-review";
+   - leave "Prevent self-review" off (ADR-0019);
    - deployment branches: selected branches, `main`.
 2. **Environment variables of `production`:**
    - `TS_OIDC_CLIENT_ID` and `TS_OIDC_AUDIENCE` (from Tailscale);
