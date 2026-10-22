@@ -7,7 +7,7 @@ namespace NFHotel.Application.UseCases.Staff;
 /// <summary>
 ///  Service responsible for handling staff authorization.
 /// </summary>
-public sealed class StaffAuthorizationService 
+public sealed class StaffAuthorizationService
 {
     private readonly IStaffCallContext _context;
     private readonly IStaffRepository _staff;
