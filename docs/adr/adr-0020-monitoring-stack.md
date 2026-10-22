@@ -19,7 +19,7 @@ Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Supers
 
 ## Context
 
-**Who wrote what.** The choice of tools is S01's, made in chat on 2026-10-22 after a comparison that the AI assistant prepared. S01 asked whether Prometheus and Grafana, with Loki and Alloy, would cover the needs, and answered "yes" to that stack with an external watchdog. The placement and the alert channel follow the assistant's recommendation, which S01 can change by a new row of this ADR. The reasons below were written by the AI assistant.
+**Who wrote what.** The choice of tools is S01's, made in chat on 2026-10-22 after a comparison that the AI assistant prepared. S01 asked whether Prometheus and Grafana, with Loki and Alloy, would cover the needs, and answered "yes" to that stack with an external watchdog. S01 confirmed the placement (an LXC on the Proxmox node) and the alert channel (Discord `#nf-hotel-alerts`) in chat the same day. The reasons below were written by the AI assistant.
 
 Nothing watches production today. Faults happen in silence:
 
