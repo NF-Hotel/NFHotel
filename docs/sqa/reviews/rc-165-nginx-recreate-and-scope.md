@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [fba412d] |
 
 ---
 
@@ -51,3 +51,4 @@ None.
 [RC-163]: ./rc-163-mil-021-finish-code.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[fba412d]: https://github.com/NF-Hotel/NFHotel/commit/fba412d553009541a343495a21f6fc972af16dd6
