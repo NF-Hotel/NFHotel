@@ -24,7 +24,7 @@
 #                  to the migrate command (backup, then the script as nfhotel_migrator),
 #                  and deploys only when that succeeded (MIL-022 task 6)
 #   scope          check what this CI node reaches in the tailnet: port 22 of the VM must
-#                  answer; other ports of the VM and other peers are warnings (MIL-021
+#                  answer; its other ports are warnings, and the peers seen are listed (MIL-021
 #                  criterion 7)
 #   summary        append the audit record of the run to GITHUB_STEP_SUMMARY
 #
@@ -168,10 +168,10 @@ reach() {
 }
 
 # scope: what this CI node reaches in the tailnet (MIL-021 criterion 7, ADR-0007
-# decision 4). Port 22 of the VM must answer. Its other ports, and any other peer, should
-# not: the policy grants tag:ci only tcp:22 of tag:nfhotel-vm. Such a finding is a warning
-# in the run and in the summary, not a failed deploy, so a change of the policy is seen
-# without blocking a release.
+# decision 4). Port 22 of the VM must answer, and its other ports should not: the policy
+# grants tag:ci only tcp:22 of tag:nfhotel-vm, and its tests deny the other nodes. An open
+# port is a warning in the run and in the summary, not a failed deploy, so a change of the
+# policy is seen without blocking a release. The peers seen are listed for the record.
 scope() {
   [[ "${VM_HOST:-}" =~ ^[a-z0-9.-]+$ ]] || fail "set the environment variable NFHOTEL_VM_HOST of production"
   local peers others port open=()
@@ -192,13 +192,14 @@ scope() {
       echo "- Ports $other_ports of $VM_HOST do not answer."
     fi
     if [[ -n "$others" ]]; then
-      echo "- **Other peers seen:** $(tr '\n' ' ' <<<"$others")"
+      # A peer is seen when either side may reach the other. Members may reach every node,
+      # this one too; what this node may reach is fixed by the policy and its tests.
+      echo "- Peers seen (they may reach this node; it reaches only port 22 of the VM): $(tr '\n' ' ' <<<"$others")"
     else
       echo "- No peer other than $VM_HOST is seen."
     fi
   } | tee scope.log
   ((${#open[@]} == 0)) || echo "::warning::tag:ci reaches ports ${open[*]} of $VM_HOST; the policy should allow only 22"
-  [[ -z "$others" ]] || echo "::warning::tag:ci sees other tailnet peers; the policy should show it only $VM_HOST"
 }
 
 summary() {

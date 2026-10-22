@@ -5,6 +5,8 @@
 #
 # Run it with the repository at /src or from a checkout:  bash tests/test-deploy-services-env.sh
 # Exit:  0 every check passed; 1 a check failed
+# shellcheck disable=SC2015 # ok and ko always return 0, so `test && ok || ko` runs
+# exactly one of them; the short form keeps each check on one line.
 set -uo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -45,5 +47,47 @@ else
   echo "FAIL  the database password lost its trailing ="
   fail=$((fail + 1))
 fi
+
+# The proxy (MIL-021 criterion 5): compose recreates it only when its configuration
+# changed. deploy-services.sh passes a hash of the templates, snippets and settings, and no
+# --force-recreate.
+n="$work/repo/deploy/nginx"
+mkdir -p "$n/templates" "$n/snippets" "$n/tls"
+echo "server {}" >"$n/templates/default.conf.template"
+echo "# snippet" >"$n/snippets/a.conf"
+echo "NGINX_SERVER_NAME=_" >"$n/nginx.env"
+echo cert >"$n/tls/fullchain.pem" && echo key >"$n/tls/privkey.pem"
+cat >"$work/bin/docker" <<FAKE
+#!/bin/bash
+case "\$*" in
+  *" up "*) echo "\$PWD hash=\${NGINX_CONFIG_HASH-} args=\$*" >>"$work/nginx-calls" ;;
+  inspect\ -f*) echo "true healthy" ;;
+esac
+exit 0
+FAKE
+nginx_hash() {
+  : >"$work/nginx-calls"
+  PATH="$work/bin:$PATH" bash "$work/repo/scripts/deploy-services.sh" --no-build nginx >"$work/out" 2>&1
+  sed -n 's/.* hash=\([0-9a-f]*\) .*/\1/p' "$work/nginx-calls" | tail -1
+}
+ok() {
+  echo "PASS  $1"
+  pass=$((pass + 1))
+}
+ko() {
+  echo "FAIL  $1"
+  fail=$((fail + 1))
+}
+first="$(nginx_hash)"
+[[ "$first" =~ ^[0-9a-f]{16}$ ]] && ok "the proxy gets a configuration hash" || ko "the proxy gets a configuration hash"
+[[ "$(nginx_hash)" == "$first" ]] && ok "the same configuration gives the same hash" || ko "the same configuration gives the same hash"
+! grep -q -- --force-recreate "$work/nginx-calls" && ok "the proxy is not forced to recreate" || ko "the proxy is not forced to recreate"
+echo "server { listen 81; }" >"$n/templates/default.conf.template"
+[[ "$(nginx_hash)" != "$first" ]] && ok "a changed template changes the hash" || ko "a changed template changes the hash"
+echo "# other" >"$n/snippets/a.conf"
+before="$(nginx_hash)"
+echo "NGINX_SERVER_NAME=x" >"$n/nginx.env"
+[[ "$(nginx_hash)" != "$before" ]] && ok "changed settings change the hash" || ko "changed settings change the hash"
+
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))
