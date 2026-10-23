@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial version (MIL-023 task 5); reviewed in RC-177 | pending |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Ported from NF-Hotel/DevOps#10 into NF-Hotel/NFHotel under ops/ (MIL-031 task 7, ADR-0016); IDs renumbered; accepted after RC-177 Go, ported in RC-178 | pending |
+| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial version (MIL-023 task 5); reviewed in RC-177 | [717dc18] |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Ported from NF-Hotel/DevOps#10 into NF-Hotel/NFHotel under ops/ (MIL-031 task 7, ADR-0016); IDs renumbered; accepted after RC-177 Go, ported in RC-178 | [717dc18] |
 
 This document type is not in `framework/registry/artifact-catalog.md`; like DSA-001, a catalog type for it is proposed upstream before it is accepted.
 
@@ -160,3 +160,4 @@ Repeat in three months (2027-01, with the close of MIL-023), answering the 90 qu
 [ADR-0008]: ../adr/adr-0008-database-migration-and-backup.md
 [ADR-0011]: ../adr/adr-0011-postgresql-access-for-the-api.md
 [ADR-0012]: https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0012-devops-repository-ownership.md
+[717dc18]: https://github.com/NF-Hotel/NFHotel/commit/717dc18e7bd3a6064272ef8fc9eb9ae123b89e55

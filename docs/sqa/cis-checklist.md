@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial selection (MIL-023 task 1); the evidence on `nf-hotel` is pending | pending |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Ported from NF-Hotel/DevOps#12 into NF-Hotel/NFHotel under ops/ (MIL-031 task 7, ADR-0016); IDs renumbered; accepted after RC-176 Go, ported in RC-178 | pending |
+| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial selection (MIL-023 task 1); the evidence on `nf-hotel` is pending | [717dc18] |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Ported from NF-Hotel/DevOps#12 into NF-Hotel/NFHotel under ops/ (MIL-031 task 7, ADR-0016); IDs renumbered; accepted after RC-176 Go, ported in RC-178 | [717dc18] |
 
 ---
 
@@ -233,3 +233,4 @@ The counts are by row; a row that covers several items counts once. What closes 
 [DSA-001]: ./devsecops-assessment.md
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
+[717dc18]: https://github.com/NF-Hotel/NFHotel/commit/717dc18e7bd3a6064272ef8fc9eb9ae123b89e55

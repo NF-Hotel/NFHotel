@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial version | pending |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Ported from NF-Hotel/DevOps#10 (was RC-507 there); paths under ops/ (RC-178) | pending |
+| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial version | [717dc18] |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Ported from NF-Hotel/DevOps#10 (was RC-507 there); paths under ops/ (RC-178) | [717dc18] |
 
 ---
 
@@ -90,3 +90,4 @@ Go. The workflow, the script and the two documents meet the checklists; the Scor
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[717dc18]: https://github.com/NF-Hotel/NFHotel/commit/717dc18e7bd3a6064272ef8fc9eb9ae123b89e55
