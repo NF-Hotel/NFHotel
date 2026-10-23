@@ -19,7 +19,7 @@ services:
       # discovery.docker lists the networks on every refresh to label each target; with "0" the
       # proxy answered 403 and no container log reached Loki (2026-10-23). POST "0" still
       # refuses every write, so this adds GET /networks only.
-      NETWORKS: "1"
+      NETWORKS: "0"
       POST: "0"
       INFO: "0"
       IMAGES: "0"
