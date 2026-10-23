@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-22 | Deprecated | mikemike | AI as stand-in for S01 | Observability follows ADR-0020: tasks 7 to 10 and criteria 7 and 8 added; uptime check moved out of task 4; accepted after RC-169 Go | [2b09b0b] |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Task 12 added: code findings that block the deploy gate of ADR-0021; accepted after RC-172 Go | pending |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Task 12 added: code findings that block the deploy gate of ADR-0021; accepted after RC-172 Go | [caaf6b8] |
 
 ---
 
@@ -121,3 +121,4 @@ Decide whether the VM and the containers are hardened and observed well enough t
 [2b09b0b]: https://github.com/NF-Hotel/NFHotel/commit/2b09b0bffdff14a310d4a5dcac10d719d11dd7b5
 [ADR-0021]: ../adr/adr-0021-automatic-deploy-when-green.md
 [RC-172]: ../sqa/reviews/rc-172-mil-023-task-12.md
+[caaf6b8]: https://github.com/NF-Hotel/NFHotel/commit/caaf6b8c9ed143ecaab254a3af2d9b3729240d73

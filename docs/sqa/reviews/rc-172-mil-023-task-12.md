@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [caaf6b8] |
 
 ---
 
@@ -55,3 +55,4 @@ None.
 [ADR-0021]: ../../adr/adr-0021-automatic-deploy-when-green.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[caaf6b8]: https://github.com/NF-Hotel/NFHotel/commit/caaf6b8c9ed143ecaab254a3af2d9b3729240d73
