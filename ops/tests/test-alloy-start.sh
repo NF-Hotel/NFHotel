@@ -132,7 +132,7 @@ done
   ko "no log line of t-alloy-logger in Loki: ${found:0:200}"
 logs="$(compose logs alloy 2>&1)"
 [[ "$logs" != *"Unable to refresh target groups"* && "$logs" != *"403 Forbidden"* ]] &&
-  ok "the Docker discovery logs no refused call" || ko "discovery: $(grep -m 2 -E 'target groups|403' <<<"$logs")"
+  ok "the Docker discovery logs no refused call" || ko "discovery: $(grep -m 2 -E 'target groups|403 Forbidden' <<<"$logs")"
 
 # The proxy allows what discovery needs, and still refuses the rest.
 code() { curl_on t-alloy_internal -o /dev/null -w '%{http_code}' "$@"; }
