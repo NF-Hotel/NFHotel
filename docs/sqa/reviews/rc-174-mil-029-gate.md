@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [6d810e2] |
 
 ---
 
@@ -56,3 +56,4 @@ None.
 [RC-135]: ./rc-135-mil-029-api-code.md
 [RC-136]: ./rc-136-mil-029-flutter-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[6d810e2]: https://github.com/NF-Hotel/NFHotel/commit/6d810e246e686f0cd529ba51581af9d88273a649
