@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # Test of the nginx configuration (MIL-017, ADR-0011 decision 7): the HTTPS server with no
 # optional route, with the optional API route and no API, and with an API reached from a
-# tailnet address and refused from another address.
+# tailnet address and refused from another address. Last, the hardened service of
+# deploy/nginx/docker-compose.yml (MIL-023 task 2) starts and turns healthy with a key as
+# production has it: 0600 and owned by another user than root.
 #
 # Usage: test-nginx.sh
 # Env:   REPO_HOST  the repository path as the Docker daemon sees it (default: this
 #                   checkout; on Windows give C:/... for Docker Desktop)
-# It starts the containers t-nginx and nfhotel-api and the networks t-ngnet and t-tsnet,
-# and removes them at the end.
+# It starts the containers t-nginx and nfhotel-api, the compose project t-hardened, and the
+# networks t-ngnet and t-tsnet, and removes them at the end.
 # Exit:  0 every check passed; 1 a check failed
 # Needs: bash 4+, docker
 
@@ -30,6 +32,8 @@ check() {
   fi
 }
 cleanup() {
+  docker compose -p t-hardened -f "$REPO/deploy/nginx/docker-compose.yml" --env-file "$W/hardened.env" \
+    down >/dev/null 2>&1
   docker rm -f t-nginx nfhotel-api >/dev/null 2>&1
   docker network rm t-ngnet t-tsnet >/dev/null 2>&1
   rm -rf "$W"
@@ -79,6 +83,43 @@ sleep 2
 ip="$(docker inspect -f '{{(index .NetworkSettings.Networks "t-tsnet").IPAddress}}' t-nginx)"
 check "a tailnet address reaches the API" api-reached "$(docker run --rm --network t-tsnet "$CURL" -sk "https://$ip/api/rooms")"
 check "another address is still refused" 403 "$(code https://t-nginx/api/rooms)"
+
+echo "== the hardened compose service with a key as production has it"
+# The key is 0600 and owned by uid 1000, as renew-certificate.sh installs it for the user of
+# the checkout. Root in the container needs DAC_READ_SEARCH to open it.
+mkdir -p "$W/hardened-tls"
+# The image's entrypoint is openssl, so sh is named as the entrypoint.
+docker run --rm --entrypoint sh -v "$W_HOST/tls:/s:ro" -v "$W_HOST/hardened-tls:/t" alpine/openssl -c \
+  'cp /s/fullchain.pem /s/privkey.pem /t/ && chown 1000:1000 /t/*.pem && chmod 600 /t/privkey.pem'
+cat >"$W/hardened.env" <<EOF
+NGINX_ENV_FILE=$W/hardened.env
+NGINX_SERVER_NAME=_
+NGINX_REDIRECT_PORT=
+NGINX_HSTS=
+UPSTREAM_HOST=nfhotel-web
+UPSTREAM_PORT=8080
+ANALYSIS_SERVER_NAME=analysis.localhost
+ANALYSIS_UPSTREAM_HOST=market-analysis-notebook
+ANALYSIS_UPSTREAM_PORT=2718
+ANALYSIS_API_SERVER_NAME=analysis-api.localhost
+ANALYSIS_API_UPSTREAM_HOST=market-analysis-api
+ANALYSIS_API_UPSTREAM_PORT=8000
+NGINX_BIND=127.0.0.1
+NGINX_HTTP_PORT=18080
+NGINX_HTTPS_PORT=18443
+NGINX_INTERNAL_PORT=18081
+NGINX_TLS_DIR=$W_HOST/hardened-tls
+NFHOTEL_PROXY_NETWORK=t-ngnet
+EOF
+docker compose -p t-hardened -f "$REPO/deploy/nginx/docker-compose.yml" --env-file "$W/hardened.env" \
+  up -d --wait --wait-timeout 90 >"$W/hardened.out" 2>&1
+check "the hardened proxy turns healthy with a 0600 key of another user" healthy \
+  "$(docker inspect -f '{{.State.Health.Status}}' t-hardened-nginx-1 2>/dev/null || echo missing)"
+check "the hardened proxy redirects port 80" 301 "$(code http://t-hardened-nginx-1/)"
+check "the hardened proxy serves HTTPS (no web application here)" 502 "$(code https://t-hardened-nginx-1/)"
+if ((fail)); then
+  { cat "$W/hardened.out" && docker logs --tail 20 t-hardened-nginx-1; } 2>&1 | sed 's/^/      /'
+fi
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))
