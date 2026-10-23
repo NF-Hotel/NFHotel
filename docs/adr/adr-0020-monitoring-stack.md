@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the stack was chosen by S01 in chat on 2026-10-22, accepted after RC-168 Go | [2b09b0b] |
+| 2026-10-22 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; the stack was chosen by S01 in chat on 2026-10-22, accepted after RC-168 Go | [2b09b0b] |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Consequences: how Alloy reaches Docker, as built and tested; accepted after RC-185 Go | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -113,7 +114,9 @@ We follow option 1. Production is watched by Prometheus, Alertmanager, Grafana, 
 - The LXC is on the same physical machine as `nf-hotel`. A dead Proxmox node is reported only through the watchdog, not with detail.
 - Healthchecks.io and Discord are third parties. Healthchecks.io receives only a ping; Discord receives the alert texts, which must hold no personal data or secrets.
 - Exceptions of the application are text lines in Loki, not grouped issues, until error tracking is decided.
-- Alloy on `nf-hotel` is one more agent on the production VM. It runs with read-only access to the Docker socket and the journal.
+- Alloy on `nf-hotel` is one more agent on the production VM.
+  - It reads the journal through the host's `systemd-journal` group, as its own user 473.
+  - It reaches Docker only through a socket proxy that allows GET of containers and networks, and refuses every write. The proxy is the one container that mounts the Docker socket (CIS-001 5.31), and Alloy has no socket of its own.
 
 ## Affected Artifacts
 
