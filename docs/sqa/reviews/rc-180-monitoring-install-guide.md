@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [6133e29] |
 
 ---
 
@@ -63,3 +63,4 @@ None beyond RC-179 action 1 (the installation by S03), which now follows this gu
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[6133e29]: https://github.com/NF-Hotel/NFHotel/commit/6133e2940dabe8874ae0428b338381e153654461
