@@ -77,14 +77,19 @@ settings() {
 }
 backup() {
   sleep 1 # each backup file is named by the second
-  PATH="$W/bin:$PATH" NFHOTEL_BACKUP_SETTINGS="$W/backup.env" bash "$REPO/scripts/backup-database.sh" --apply >"$W/out" 2>&1
+  rm -f "$W/metrics/"*.prom
+  PATH="$W/bin:$PATH" NFHOTEL_BACKUP_SETTINGS="$W/backup.env" NFHOTEL_METRICS_DIR="$W/metrics" \
+    bash "$REPO/scripts/backup-database.sh" --apply >"$W/out" 2>&1
 }
+reported() { grep -Eq "^nfhotel_task_last_success_timestamp_seconds\\{task=\"$1\"\\} [0-9]{10}\$" "$W/metrics/$1.prom" 2>/dev/null; }
 on_target() { find /srv/nfhotel-backups -name 'nfhotel-*-2*.dump.age' | wc -l; }
 settings 22
 backup && [[ "$(on_target)" == 1 && -f "$W/vm/.last-copy" ]] && ok "a backup is copied off the VM" || ko "copy: $(cat "$W/out")"
+reported backup && reported offvm_copy && ok "the backup and the copy report their success to the monitoring" || ko "reports: $(ls "$W/metrics" 2>&1)"
 settings 2299
 backup && grep -q "the copy to .* failed" "$W/out" && grep -q "the last copy off the VM was at" "$W/out" && [[ "$(on_target)" == 1 ]] &&
   ok "a target that is off gives a warning, and the backup stays on the VM" || ko "target off: $(cat "$W/out")"
+reported backup && ! reported offvm_copy && ok "a failed copy reports the backup but not the copy" || ko "reports when the target is off"
 backup
 [[ "$(find "$W/vm" -name 'nfhotel-*.dump.age' | wc -l)" == 3 ]] && ok "the backups are kept on the VM meanwhile" || ko "local count"
 settings 22

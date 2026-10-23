@@ -1,0 +1,3 @@
+# The settings and the secret files of the monitoring are never in git (ADR-0020).
+monitoring.env
+secrets/

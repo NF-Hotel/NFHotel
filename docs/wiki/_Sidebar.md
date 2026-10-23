@@ -3,4 +3,6 @@
 - [Proxmox Deployment](Proxmox-Deployment)
 - [CI-CD](CI-CD)
 - [Database Preparation](Database-Preparation)
+- [Host Hardening](Host-Hardening)
+- [Monitoring](Monitoring)
 - [Appendix](Appendix)

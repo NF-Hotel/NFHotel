@@ -256,6 +256,9 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
   echo 'echo renew v1' >"$W/nfh-src/ops/scripts/renew-certificate.sh"
   echo '[Service] cert' >"$W/nfh-src/ops/deploy/systemd/nfhotel-cert-renew.service"
   echo '[Timer] cert' >"$W/nfh-src/ops/deploy/systemd/nfhotel-cert-renew.timer"
+  echo 'echo health v1' >"$W/nfh-src/ops/scripts/report-health.sh"
+  echo '[Service] health' >"$W/nfh-src/ops/deploy/systemd/nfhotel-report-health.service"
+  echo '[Timer] health' >"$W/nfh-src/ops/deploy/systemd/nfhotel-report-health.timer"
   git -C "$W/nfh-src" add -A && git -C "$W/nfh-src" commit -qm commands
   U1="$(git -C "$W/nfh-src" rev-parse HEAD)"
   git -C "$W/nfh-src" push -q origin main
@@ -274,7 +277,10 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
   [[ "$(cat "$W/sbin/nfhotel-cert-renew")" == "echo renew v1" ]] && [[ -f "$W/systemd/nfhotel-cert-renew.timer" ]] &&
     grep -q "enable --now nfhotel-cert-renew.timer" "$W/systemctl.log" &&
     ok "update installs the certificate renewal and enables its timer" || ko "certificate renewal: $(cat "$W/systemctl.log")"
-  [[ "$(grep -c " update $U1 " "$W/state-nfh/releases.log")" == 7 ]] && ok "each installed file is logged with its hashes" || ko "update log"
+  [[ "$(cat "$W/sbin/nfhotel-report-health")" == "echo health v1" ]] && [[ -f "$W/systemd/nfhotel-report-health.timer" ]] &&
+    grep -q "enable --now nfhotel-report-health.timer" "$W/systemctl.log" &&
+    ok "update installs the health report and enables its timer" || ko "health report: $(cat "$W/systemctl.log")"
+  [[ "$(grep -c " update $U1 " "$W/state-nfh/releases.log")" == 10 ]] && ok "each installed file is logged with its hashes" || ko "update log"
   : >"$W/systemctl.log"
   lines="$(wc -l <"$W/state-nfh/releases.log")"
   run "$W/nfh" update "$U1" && [[ "$(wc -l <"$W/state-nfh/releases.log")" == "$lines" ]] && [[ ! -s "$W/systemctl.log" ]] &&

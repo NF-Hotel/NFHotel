@@ -16,13 +16,15 @@
 #              the models in ollama and delivers the result to the api; internal networks only, no published port
 #   nginx      (starts only when web is running and the analysis API is healthy) the reverse proxy: TLS on 443 and a redirect on 80 for web, loopback port for the rest;
 #              a development certificate is made when deploy/nginx/tls has none (MIL-017)
+#   alloy      (only when deploy/alloy/alloy.env exists) sends the logs and the host metrics
+#              to the monitoring (ADR-0020); left out with a note until the monitoring runs
 # Each service reads its git-ignored settings file next to its docker-compose.yml
 # (postgres.env, ollama.env, nfhotel-api.env, nfhotel-web.env, market-analysis.env, benchmark.env, nginx.env);
 # copy the matching *.example file first. The Docker networks are created if
 # missing: nfhotel-proxy, nfhotel-llm, and nfhotel-db and nfhotel-api with --internal (no route out).
 #
 # Usage: deploy-services.sh [--no-build] [--pull] [--down] [service...]
-#   service     postgres, ollama, api, web, analysis, benchmark, nginx (default: all seven)
+#   service     postgres, ollama, api, web, analysis, benchmark, nginx, alloy (default: all)
 #   --no-build  start without rebuilding the images
 #   --pull      git pull the repository (and submodules) before building
 #   --down      stop and remove the named services instead of deploying (volumes,
@@ -37,7 +39,7 @@ proxy_network="${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}"
 db_network="${NFHOTEL_DB_NETWORK:-nfhotel-db}"
 api_network="${NFHOTEL_API_NETWORK:-nfhotel-api}"
 llm_network="${NFHOTEL_LLM_NETWORK:-nfhotel-llm}"
-order=(postgres ollama api web analysis benchmark nginx)
+order=(postgres ollama api web analysis benchmark nginx alloy)
 
 build=1
 pull=0
@@ -62,7 +64,7 @@ for arg in "$@"; do
       usage
       exit 0
       ;;
-    postgres | ollama | api | web | analysis | benchmark | nginx) services+=("$arg") ;;
+    postgres | ollama | api | web | analysis | benchmark | nginx | alloy) services+=("$arg") ;;
     *)
       echo "error: unknown argument: $arg" >&2
       usage >&2
@@ -84,6 +86,7 @@ dir_of() {
     analysis) echo "$root/deploy/market-analysis" ;;
     benchmark) echo "$root/deploy/benchmark" ;;
     nginx) echo "$root/deploy/nginx" ;;
+    alloy) echo "$root/deploy/alloy" ;;
   esac
 }
 
@@ -96,6 +99,7 @@ env_of() {
     analysis) echo "market-analysis.env" ;;
     benchmark) echo "benchmark.env" ;;
     nginx) echo "nginx.env" ;;
+    alloy) echo "alloy.env" ;;
   esac
 }
 
@@ -118,6 +122,7 @@ docker info >/dev/null 2>&1 || die "cannot reach the Docker daemon (is it runnin
 
 if ((down)); then
   for s in "${ordered[@]}"; do
+    [[ "$s" == "alloy" && ! -f "$(dir_of alloy)/alloy.env" ]] && continue
     echo "==> stopping $s"
     (cd "$(dir_of "$s")" && docker compose --env-file "$(env_of "$s")" down)
   done
@@ -169,10 +174,18 @@ apply_default_model() {
   rm -f "$toml.tmp"
 }
 
+# Alloy is optional: it runs once the monitoring of ADR-0020 exists and alloy.env names it.
+alloy_skipped=0
+if [[ " ${ordered[*]} " == *" alloy "* && ! -f "$(dir_of alloy)/alloy.env" ]]; then
+  echo "note: $(dir_of alloy)/alloy.env is missing; alloy is left out until the monitoring runs (ADR-0020)"
+  alloy_skipped=1
+fi
+
 # Check every settings file before touching anything.
 for s in "${ordered[@]}"; do
   d="$(dir_of "$s")"
   e="$(env_of "$s")"
+  [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   [[ -f "$d/$e" ]] || die "$d/$e is missing; copy $e.example to $e and fill it in"
   if [[ "$s" == "analysis" && ! -f "$d/market-analysis.toml" ]]; then
     die "$d/market-analysis.toml is missing; copy market-analysis.toml.example to it"
@@ -263,6 +276,7 @@ analysis_skipped=0
 for s in "${ordered[@]}"; do
   d="$(dir_of "$s")"
   e="$(env_of "$s")"
+  [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   # A frozen image (ADR-0500) is never built: its source repository is gone. A build uses
   # the pinned digest instead. The package is private, so a host without a GHCR login (a
   # development VM) cannot pull it; the service is then left out, with the reason, and the
@@ -329,6 +343,7 @@ echo
 echo "==> status"
 for s in "${ordered[@]}"; do
   [[ "$s" == "analysis" ]] && ((analysis_skipped)) && continue
+  [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   (cd "$(dir_of "$s")" && docker compose --env-file "$(env_of "$s")" ps)
 done
 echo "Deployed: ${ordered[*]}$( ((analysis_skipped)) && echo ' (analysis left out: see the warning above)')"

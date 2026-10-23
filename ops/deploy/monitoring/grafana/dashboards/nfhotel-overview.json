@@ -1,0 +1,61 @@
+{
+  "uid": "nfhotel-overview",
+  "title": "NF Hotel overview",
+  "description": "The state of nf-hotel (ADR-0020): the site, the certificate, the disk, the containers, the tasks and the logs.",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "1m",
+  "tags": ["nfhotel"],
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Site over HTTPS",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "min(probe_success{job=\"site\"})" }],
+      "fieldConfig": { "defaults": {
+        "mappings": [{ "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }],
+        "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } } }
+    },
+    {
+      "id": 2, "type": "stat", "title": "Certificate, days left",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "min((probe_ssl_earliest_cert_expiry{job=\"site\"} - time()) / 86400)" }],
+      "fieldConfig": { "defaults": { "decimals": 0, "unit": "d",
+        "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 14 }, { "color": "green", "value": 21 }] } } }
+    },
+    {
+      "id": 3, "type": "gauge", "title": "Disk used on nf-hotel",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "1 - node_filesystem_avail_bytes{host=\"nf-hotel\", mountpoint=\"/\"} / node_filesystem_size_bytes{host=\"nf-hotel\", mountpoint=\"/\"}" }],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1,
+        "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 0.7 }, { "color": "red", "value": 0.8 }] } } }
+    },
+    {
+      "id": 4, "type": "stat", "title": "Hours since the last success",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "(time() - nfhotel_task_last_success_timestamp_seconds{host=\"nf-hotel\"}) / 3600", "legendFormat": "{{task}}" }],
+      "fieldConfig": { "defaults": { "decimals": 1, "unit": "h",
+        "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 26 }] } } }
+    },
+    {
+      "id": 5, "type": "state-timeline", "title": "Containers healthy",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "nfhotel_container_healthy{host=\"nf-hotel\"}", "legendFormat": "{{container}}" }],
+      "fieldConfig": { "defaults": {
+        "mappings": [{ "type": "value", "options": { "0": { "text": "unhealthy", "color": "red" }, "1": { "text": "healthy", "color": "green" } } }] } }
+    },
+    {
+      "id": 6, "type": "logs", "title": "Errors in the logs of nf-hotel",
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 13 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{ "refId": "A", "expr": "{host=\"nf-hotel\"} |~ \"(?i)(error|fail|exception)\"" }],
+      "options": { "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true }
+    }
+  ]
+}

@@ -13,6 +13,10 @@ insert_final_newline = true
 [*.{sh,bash}]
 trim_trailing_whitespace = false
 
+# Alloy configuration: alloy fmt indents with tabs, and CI checks it (MIL-023 task 8)
+[*.alloy]
+indent_style = tab
+
 # Code files
 [*.{cs,csx,vb,vbx}]
 indent_size = 4

@@ -16,10 +16,12 @@
 #   5. otherwise keep the old pair as *.previous, install the new one (certificate 0644,
 #      key 0600, the owner of the folder), check the nginx configuration and reload it;
 #      when the check fails, put the old pair back and exit 1
+#   6. on success, changed or not, report the time to the monitoring (cert_renew.prom in
+#      NFHOTEL_METRICS_DIR, ADR-0020)
 #
 # Usage: renew-certificate.sh
 # Env:   NFHOTEL_DIR (default /opt/nfhotel), NFHOTEL_TAILSCALE (default tailscale; for
-#        the tests)
+#        the tests), NFHOTEL_METRICS_DIR (default /var/lib/nfhotel-metrics)
 # Exit:  0 renewed, unchanged, or installed with no nginx running; 1 a step failed
 # Needs: bash 4+, root, tailscale, docker, install, cmp
 
@@ -32,6 +34,22 @@ settings="$app_dir/ops/deploy/nginx/nginx.env"
 die() {
   echo "error: $*" >&2
   exit 1
+}
+
+# report_success <task>: write the time of this success to <task>.prom in the folder that
+# Alloy reads (ADR-0020, MIL-023 task 9); Prometheus alerts when it grows old. The helper
+# is kept in this file because the file is installed alone. A failed write only warns.
+report_success() {
+  local dir="${NFHOTEL_METRICS_DIR:-/var/lib/nfhotel-metrics}" file
+  file="$dir/$1.prom"
+  {
+    install -d -m 0755 "$dir" &&
+      printf '%s\n%s\n%s{task="%s"} %s\n' \
+        '# HELP nfhotel_task_last_success_timestamp_seconds When the task last succeeded.' \
+        '# TYPE nfhotel_task_last_success_timestamp_seconds gauge' \
+        nfhotel_task_last_success_timestamp_seconds "$1" "$(date +%s)" >"$file.tmp" &&
+      chmod 0644 "$file.tmp" && mv "$file.tmp" "$file"
+  } 2>/dev/null || echo "warning: cannot write the report $file" >&2
 }
 
 host="$(sed -n 's/^NGINX_SERVER_NAME=\([A-Za-z0-9.-]*\)$/\1/p' "$settings" 2>/dev/null | tail -n 1)" || host=""
@@ -57,6 +75,7 @@ trap 'rm -rf "$work"' EXIT
 
 if cmp -s "$work/fullchain.pem" "$tls_dir/fullchain.pem" && cmp -s "$work/privkey.pem" "$tls_dir/privkey.pem"; then
   echo "unchanged: the certificate of $host in $tls_dir is current"
+  report_success cert_renew
   exit 0
 fi
 
@@ -70,6 +89,7 @@ echo "installed: a new certificate of $host in $tls_dir"
 
 if [[ -z "$nginx" ]]; then
   echo "warning: no nginx is running; it reads the new certificate when it starts" >&2
+  report_success cert_renew
   exit 0
 fi
 if ! docker exec "$nginx" nginx -t; then
@@ -80,3 +100,4 @@ if ! docker exec "$nginx" nginx -t; then
 fi
 docker exec "$nginx" nginx -s reload || die "nginx did not reload"
 echo "reloaded: nginx serves the new certificate of $host"
+report_success cert_renew
