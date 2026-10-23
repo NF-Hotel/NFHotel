@@ -88,7 +88,8 @@ echo "== the hardened compose service with a key as production has it"
 # The key is 0600 and owned by uid 1000, as renew-certificate.sh installs it for the user of
 # the checkout. Root in the container needs DAC_READ_SEARCH to open it.
 mkdir -p "$W/hardened-tls"
-docker run --rm -v "$W_HOST/tls:/s:ro" -v "$W_HOST/hardened-tls:/t" alpine/openssl sh -c \
+# The image's entrypoint is openssl, so sh is named as the entrypoint.
+docker run --rm --entrypoint sh -v "$W_HOST/tls:/s:ro" -v "$W_HOST/hardened-tls:/t" alpine/openssl -c \
   'cp /s/fullchain.pem /s/privkey.pem /t/ && chown 1000:1000 /t/*.pem && chmod 600 /t/privkey.pem'
 cat >"$W/hardened.env" <<EOF
 NGINX_ENV_FILE=$W/hardened.env
@@ -116,6 +117,9 @@ check "the hardened proxy turns healthy with a 0600 key of another user" healthy
   "$(docker inspect -f '{{.State.Health.Status}}' t-hardened-nginx-1 2>/dev/null || echo missing)"
 check "the hardened proxy redirects port 80" 301 "$(code http://t-hardened-nginx-1/)"
 check "the hardened proxy serves HTTPS (no web application here)" 502 "$(code https://t-hardened-nginx-1/)"
+if ((fail)); then
+  { cat "$W/hardened.out" && docker logs --tail 20 t-hardened-nginx-1; } 2>&1 | sed 's/^/      /'
+fi
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))
