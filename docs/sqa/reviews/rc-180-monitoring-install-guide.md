@@ -42,6 +42,7 @@ Two defects were found while the installation steps were written and checked aga
 | --- | --- | --- | --- |
 | SH 5, 8 | Errors; explicit flag for external changes | Pass | The owners change only with `--apply`, and only as root. The dry run checks that no group or other user can read a file |
 | SH 11 | Behaviour is tested | Pass | `test-monitoring-stack.sh` follows the wiki steps on the CI runner, as root, with stand-in secrets. It checks: the five services run; each container reads its own secret and Alertmanager cannot read the Grafana password; the Grafana login works with the file's password; Prometheus loaded the rules; the Watchdog reaches Alertmanager |
+| Found by the new test | Grafana answered before its first migration ended | Fixed | `up --wait` returned while Grafana was still migrating, because it had no health check, so the first login failed. Grafana now has a health check on `/api/health`, and the test passes 10 of 10 |
 | SH 12, 4 | shfmt, shellcheck | Pass | `ops/tests/lint.sh` is clean |
 | YML | Rules tested | Pass | `promtool test rules`: a missing report fires while `nf-hotel` sends metrics, and it does not fire when no metrics arrive |
 | WF 7 | Least permissions | Pass | `sudo` changes only the runner's own containers and files of the checkout, and the step's comment says so |
