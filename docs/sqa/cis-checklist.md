@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial selection (MIL-023 task 1); the evidence on `nf-hotel` is pending | [717dc18] |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Ported from NF-Hotel/DevOps#12 into NF-Hotel/NFHotel under ops/ (MIL-031 task 7, ADR-0016); IDs renumbered; accepted after RC-176 Go, ported in RC-178 | [717dc18] |
+| 2026-10-23 | Deprecated | mikemike | AI as stand-in for S01 | Ported from NF-Hotel/DevOps#12 into NF-Hotel/NFHotel under ops/ (MIL-031 task 7, ADR-0016); IDs renumbered; accepted after RC-176 Go, ported in RC-178 | [717dc18] |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | 5.31: the socket proxy of Alloy mounts the Docker socket (ADR-0020); the row records the exception and its limits; accepted after RC-185 Go | [4ff81cc] |
 
 ---
 
@@ -128,7 +128,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | 5.26 | Container health is checked at runtime | Pending VM | Health checks per service; the deploy checks 80 and 443 after each release | compose; ev:containers (`health`) |
 | 5.27 | Docker commands always use the latest version of their image | Applied | CD deploys the image digests of the release, never a moving tag | `ops/scripts/deploy-release.sh` |
 | 5.28 | The PIDs cgroup limit is used | Pending VM | `pids_limit` per service | compose; ev:containers (`pids_limit`) |
-| 5.31 | The Docker socket is not mounted inside any container | Applied | No service mounts it | compose; ev:containers (`mounts`) |
+| 5.31 | The Docker socket is not mounted inside any container | Applied with one exception | One container mounts it: `socket-proxy` of `ops/deploy/alloy` (ADR-0020). The `:ro` flag does not limit the API, so the limit is the proxy's own rules: GET of containers (list, inspect, logs) and networks (list) only, every POST refused, and no image, volume, exec or info call. The proxy is on an internal network with no route out, and only Alloy reaches it. Alloy has no socket. `ops/tests/test-alloy-start.sh` checks the allowed and the refused calls in CI | compose; ev:containers (`mounts`); CI |
 
 ### 6 and 7 Operations and Swarm
 
@@ -234,3 +234,4 @@ The counts are by row; a row that covers several items counts once. What closes 
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
 [717dc18]: https://github.com/NF-Hotel/NFHotel/commit/717dc18e7bd3a6064272ef8fc9eb9ae123b89e55
+[4ff81cc]: https://github.com/NF-Hotel/NFHotel/commit/4ff81ccd0f1d43a160f2f45d72845e942cf5728e

@@ -5,13 +5,21 @@
 # the hardening, reads the journal and the job reports, logs no permission error, and is
 # healthy again after a restart (its data volume holds across one).
 #
-# It found the failure of 2026-10-23: as root without DAC_OVERRIDE, Alloy could not enter
-# /var/lib/alloy and stopped with "mkdir /var/lib/alloy/data: permission denied".
+# It also checks the path that matters: the log lines of a real container are found through the
+# restricted socket proxy and reach a real Loki (the pinned image and the configuration of
+# deploy/monitoring), and the proxy still refuses writes and the calls it does not allow.
+#
+# It found two failures of 2026-10-23, both with a healthy-looking Alloy:
+#   - as root without DAC_OVERRIDE, Alloy could not enter /var/lib/alloy and stopped with
+#     "mkdir /var/lib/alloy/data: permission denied";
+#   - the proxy refused GET /networks, which discovery.docker needs, so no container log
+#     reached Loki ("error while computing network labels ... 403 Forbidden").
 #
 # Run it as root on a Linux host with Docker and systemd:
 #   sudo bash ops/tests/test-alloy-start.sh
-# It starts the compose project t-alloy and removes it, its volume and its test report at the
-# end. The monitoring addresses point to a closed local port, so nothing is sent anywhere.
+# It starts the compose project t-alloy, a Loki (t-alloy-loki) and a container that logs
+# (t-alloy-logger), and removes them, their volumes and its test report at the end. Metrics go
+# to a closed local port and logs to that Loki, so nothing leaves the host.
 # Exit:  0 every check passed; 1 a check failed
 # Needs: bash 4+, root, docker with the compose plugin, getent
 
@@ -44,7 +52,19 @@ NFHOTEL_JOURNAL_GID="$(getent group systemd-journal | cut -d: -f3)"
   exit 1
 }
 compose() { docker compose -p t-alloy -f "$OPS/deploy/alloy/docker-compose.yml" "$@"; }
+image() { sed -n "s|^    image: \(.*$1.*\)$|\1|p" "$2" | head -n 1; }
+LOKI="$(image grafana/loki "$OPS/deploy/monitoring/docker-compose.yml")"
+readonly LOKI CURL=curlimages/curl:8.10.1
+marker="t-alloy-marker-$$-$RANDOM"
+# curl_on <network> <curl arguments>: curl from a throwaway container on that network.
+curl_on() {
+  local net="$1"
+  shift
+  docker run --rm --network "$net" "$CURL" -s "$@"
+}
 cleanup() {
+  docker rm -f t-alloy-loki t-alloy-logger >/dev/null 2>&1
+  docker volume rm -f t-alloy-loki-data >/dev/null 2>&1
   compose down -v >/dev/null 2>&1
   rm -f "$report"
   rm -rf "$W"
@@ -57,7 +77,18 @@ install -d -m 0755 /var/lib/nfhotel-metrics
 printf '%s\n' 'nfhotel_task_last_success_timestamp_seconds{task="t_alloy"} 1761210000' >"$report"
 chmod 0644 "$report"
 printf '%s\n' "PROMETHEUS_REMOTE_WRITE_URL=http://127.0.0.1:9/api/v1/write" \
-  "LOKI_PUSH_URL=http://127.0.0.1:9/loki/api/v1/push" >"$ALLOY_ENV_FILE"
+  "LOKI_PUSH_URL=http://t-alloy-loki:3100/loki/api/v1/push" >"$ALLOY_ENV_FILE"
+
+# A real Loki on Alloy's egress network, and a container that logs a marker every second.
+compose up --no-start >/dev/null 2>&1
+docker run -d --name t-alloy-loki --network t-alloy_egress -v t-alloy-loki-data:/loki \
+  -v "$OPS/deploy/monitoring/loki:/etc/loki:ro" "$LOKI" -config.file=/etc/loki/config.yml >/dev/null
+docker run -d --name t-alloy-logger --entrypoint sh "$CURL" \
+  -c "while :; do echo $marker; sleep 1; done" >/dev/null
+for _ in $(seq 1 30); do
+  [[ "$(curl_on t-alloy_egress http://t-alloy-loki:3100/ready)" == ready* ]] && break
+  sleep 3
+done
 
 compose up -d --wait --wait-timeout 180 >"$W/up" 2>&1 && ok "Alloy turns healthy with the pinned image" ||
   ko "up: $(tail -3 "$W/up"); $(compose logs --tail 10 alloy 2>&1)"
@@ -88,6 +119,29 @@ metrics="$(get /api/v0/component/prometheus.exporter.unix.host/metrics)"
 logs="$(compose logs alloy 2>&1)"
 [[ "${logs,,}" != *"permission denied"* ]] && ok "Alloy logs no permission error" ||
   ko "logs: $(grep -i 'permission denied' <<<"$logs" | head -3)"
+
+# The path that a healthy Alloy alone does not prove: discovery through the proxy, then Loki.
+found=""
+for _ in $(seq 1 24); do
+  found="$(curl_on t-alloy_egress -G http://t-alloy-loki:3100/loki/api/v1/query_range \
+    --data-urlencode 'query={container="t-alloy-logger", host="nf-hotel"}' --data-urlencode limit=5)"
+  [[ "$found" == *"$marker"* ]] && break
+  sleep 5
+done
+[[ "$found" == *"$marker"* ]] && ok "the log lines of a real container reach Loki through the proxy" ||
+  ko "no log line of t-alloy-logger in Loki: ${found:0:200}"
+logs="$(compose logs alloy 2>&1)"
+[[ "$logs" != *"Unable to refresh target groups"* && "$logs" != *"403 Forbidden"* ]] &&
+  ok "the Docker discovery logs no refused call" || ko "discovery: $(grep -m 2 -E 'target groups|403 Forbidden' <<<"$logs")"
+
+# The proxy allows what discovery needs, and still refuses the rest.
+code() { curl_on t-alloy_internal -o /dev/null -w '%{http_code}' "$@"; }
+[[ "$(code http://socket-proxy:2375/containers/json)" == 200 && "$(code http://socket-proxy:2375/networks)" == 200 ]] &&
+  ok "the proxy allows listing containers and networks" || ko "the proxy refuses a read that discovery needs"
+refused="$(code -X POST http://socket-proxy:2375/networks/create) $(code -X POST http://socket-proxy:2375/containers/t-alloy-logger/stop)"
+refused+=" $(code http://socket-proxy:2375/images/json) $(code -X POST http://socket-proxy:2375/containers/t-alloy-logger/exec)"
+[[ "$refused" == "403 403 403 403" ]] && ok "the proxy refuses network creation, stop, exec and the image list" ||
+  ko "the proxy answered $refused (network create, stop, image list, exec); each must be 403"
 
 compose restart alloy >/dev/null 2>&1
 for _ in $(seq 1 24); do
