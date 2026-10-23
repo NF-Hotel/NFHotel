@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0007 |
-| CrossReference | [BC-001], [ADR-0003], [ADR-0006], [MIL-021], [MIL-022], [ADR-0018], [ADR-0016], [ADR-0500], [RC-161], [ADR-0019] |
+| CrossReference | [BC-001], [ADR-0003], [ADR-0006], [MIL-021], [MIL-022], [ADR-0018], [ADR-0016], [ADR-0500], [RC-161], [ADR-0019], [ADR-0021] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Matched to the code (RC-161): four images, the installed deploy command, deploy by environment, a 5 minute health wait | [12a64c3] |
-| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Amended by ADR-0019: no required review, and self-approval of a deploy (RC-167) | [cd9cdf4] |
+| 2026-10-22 | Deprecated | mikemike | AI as stand-in for S01 | Amended by ADR-0019: no required review, and self-approval of a deploy (RC-167) | [cd9cdf4] |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Amended by ADR-0021: deploy when every check is green, with no approval (RC-170) | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -36,7 +36,7 @@ For access: Tailscale with an OAuth secret, Tailscale with workload identity fed
 
 We follow option 2, with Tailscale workload identity federation and Tailscale SSH.
 
-Amended by [ADR-0019] (2026-10-22): a pull request needs no approving review, and the person who started a CD run may approve it in `production`; the required checks and the deploy approval stay. Amended by [ADR-0018] (2026-10-21): the deploy command is no longer installed only by S03. During CD it installs itself, the backup command and the backup timer from the release commit, and only when that commit is on `main`.
+Amended by [ADR-0021] (2026-10-23): no person approves a deploy; CD deploys a release only when every check of its commit has finished green, which replaces decision 2. Amended by [ADR-0019] (2026-10-22): a pull request needs no approving review, and the person who started a CD run may approve it in `production`; the required checks and the deploy approval stay. Amended by [ADR-0018] (2026-10-21): the deploy command is no longer installed only by S03. During CD it installs itself, the backup command and the backup timer from the release commit, and only when that commit is on `main`.
 
 1. **Three workflows.**
    - `ci.yaml` runs on pull requests and on `main`, with a read-only token and no secrets.
@@ -91,6 +91,6 @@ Amended by [ADR-0019] (2026-10-22): a pull request needs no approving review, an
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
 [ADR-0500]: ./adr-0500-freeze-market-analysis-image.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
-[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
 [ADR-0019]: ./adr-0019-approvals-by-the-owner.md
 [cd9cdf4]: https://github.com/NF-Hotel/NFHotel/commit/cd9cdf46d68e881cc977f9a79fef4494a1a1048b
+[ADR-0021]: ./adr-0021-automatic-deploy-when-green.md

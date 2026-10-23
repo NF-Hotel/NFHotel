@@ -40,6 +40,16 @@ if [[ "$1" == attestation ]]; then
   echo "$*" >>"${FAKE_GH_LOG:-/dev/null}"
   exit 0
 fi
+# gh api --paginate .../check-runs: the checks of the commit as name<TAB>status<TAB>conclusion,
+# one file per poll (FAKE_CHECKS_DIR/1, 2, ...); the last file repeats.
+if [[ "$*" == *"/check-runs"* ]]; then
+  n=$(($(cat "$FAKE_CHECKS_DIR/count" 2>/dev/null || echo 0) + 1))
+  echo "$n" >"$FAKE_CHECKS_DIR/count"
+  f="$FAKE_CHECKS_DIR/$n"
+  [[ -f "$f" ]] || f="$(ls "$FAKE_CHECKS_DIR"/[0-9]* | sort -V | tail -1)"
+  cat "$f"
+  exit 0
+fi
 case "${2##*/}" in
   1) echo '{"name":"NF Hotel Release","head_branch":"main","conclusion":"success","repository":{"full_name":"NF-Hotel/NFHotel"}}' ;;
   2) echo '{"name":"NF Hotel Release","head_branch":"feature","conclusion":"success","repository":{"full_name":"NF-Hotel/NFHotel"}}' ;;
@@ -219,6 +229,38 @@ FAKE_STATUS='{"Peer":{"k1":{"DNSName":"127.0.0.1."},"k2":{"DNSName":"legion.exam
 grep -q "Peers seen .*legion.example.ts.net" log && ! grep -q "::warning::" log && ok "another peer is listed, without a warning" || ko "peer: $(tr '\n' '|' <log)"
 VM_HOST=127.0.0.1 SCOPE_SSH_PORT=18099 expect 1 "scope fails when ssh does not answer" step scope
 kill %1 %2 2>/dev/null
+
+# The gate (ADR-0021): every check of the release commit must be green, this job left out.
+G="$W/checks"
+polls() {
+  rm -rf "$G" && mkdir -p "$G"
+  local i=0
+  for content in "$@"; do
+    i=$((i + 1))
+    printf '%b' "$content" >"$G/$i"
+  done
+}
+gate() { FAKE_CHECKS_DIR="$G" GATE_INTERVAL=0 GATE_TRIES="${TRIES:-5}" SHA="$APP" step gate; }
+T='\t'
+polls "NF Hotel CI${T}completed${T}success\nOps linters${T}completed${T}success\nDAST full scan${T}completed${T}skipped\nDeploy to production${T}in_progress${T}\n"
+expect 0 "the gate passes when every check is green or skipped" gate
+grep -q "All 3 checks" log && ok "the gate counts the checks without this job" || ko "gate count: $(tr '\n' '|' <log)"
+polls "NF Hotel CI${T}completed${T}success\nEnd-to-end tests${T}in_progress${T}\n" \
+  "NF Hotel CI${T}completed${T}success\nEnd-to-end tests${T}completed${T}success\n"
+expect 0 "the gate waits for a running check, then passes" gate
+grep -q "waiting (1/5) for: End-to-end tests" log && ok "the gate names the check it waits for" || ko "gate wait: $(tr '\n' '|' <log)"
+polls "NF Hotel CI${T}completed${T}success\nOps script tests (test-cd-steps.sh)${T}completed${T}failure\nDAST baseline${T}in_progress${T}\n"
+expect 1 "one red check stops the deploy at once" gate
+grep -q "Ops script tests (test-cd-steps.sh) (failure)" log && ok "the red check is named" || ko "gate red: $(tr '\n' '|' <log)"
+polls "NF Hotel CI${T}completed${T}cancelled\n"
+expect 1 "a cancelled check stops the deploy" gate
+polls "SonarCloud Code Analysis${T}completed${T}timed_out\n"
+expect 1 "a timed-out check of an app stops the deploy" gate
+polls "Deploy to production${T}in_progress${T}\n"
+expect 1 "a commit with no checks but this job is refused" gate
+polls "End-to-end tests${T}queued${T}\n"
+TRIES=3 expect 1 "checks still running after the wait fail the step" gate
+SHA=abc expect 1 "the gate refuses a bad commit" step gate
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))

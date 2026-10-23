@@ -79,6 +79,15 @@ runs:
         BENCHMARK: ${{ steps.release.outputs.benchmark }}
       run: bash "$GITHUB_ACTION_PATH/../../../ops/scripts/cd-steps.sh" verify
 
+    # Before any credential for the VM: every check of the release commit must have
+    # finished green (ADR-0021). A dry run reports it too.
+    - name: Wait until every check is green
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        SHA: ${{ steps.release.outputs.sha }}
+      run: bash "$GITHUB_ACTION_PATH/../../../ops/scripts/cd-steps.sh" gate
+
     - name: Join the tailnet
       if: ${{ inputs.apply == 'true' }}
       uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd  # v4.2.0

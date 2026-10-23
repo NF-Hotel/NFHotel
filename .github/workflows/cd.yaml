@@ -1,4 +1,4 @@
-# CD: deploy a release to the Proxmox VM after an approval (ADR-0007, ADR-0016). The steps
+# CD: deploy a release to the Proxmox VM when every check is green (ADR-0021, ADR-0016). The steps
 # are the local deploy-release action (.github/actions/deploy-release, with the scripts of
 # ops/), read from the commit of the release. This workflow keeps the trigger, the
 # permissions, the environment and the concurrency, which a composite action cannot set.
@@ -8,8 +8,10 @@
 #   rollback). A manual run is a dry run unless the input apply is true. A manual run
 #   with rollback_drill deploys the release and then rolls back to the previous one on
 #   purpose, and ends red: the proof of MIL-021 criterion 6.
-# Approval: the job runs in the environment production, whose required reviewers approve
-#   it before it starts; no credential exists before that.
+# Gate: no person approves (ADR-0021). The job runs in the environment production, which
+#   allows main only and holds the tailnet settings; before any credential for the VM,
+#   the step "Wait until every check is green" waits for every check of the release
+#   commit and stops the deploy unless all of them are green.
 # Access: the action joins the tailnet as an ephemeral node tagged tag:ci through GitHub
 #   OIDC (the claims name this repository and production; no stored Tailscale secret)
 #   and runs one command on the VM over Tailscale SSH as the user deploy (no stored key).
@@ -59,7 +61,8 @@ jobs:
       github.event.workflow_run.head_branch == 'main' &&
       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # The gate waits up to 45 minutes for the other checks of the commit.
+    timeout-minutes: 75
     environment:
       name: production
     permissions:
@@ -68,6 +71,7 @@ jobs:
       id-token: write
       attestations: read
       packages: read
+      checks: read
 
     steps:
       # The action is read from the commit of the release (main for a manual run), which
