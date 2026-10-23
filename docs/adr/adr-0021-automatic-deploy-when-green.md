@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the decision was made by S01 in chat on 2026-10-23, accepted after RC-170 Go | pending |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the decision was made by S01 in chat on 2026-10-23, accepted after RC-170 Go | [330b524] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -113,3 +113,4 @@ We follow option 3. CD deploys a release without a human approval, but only when
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
 [MIL-027]: ../milestones/mil-027-dast-and-end-to-end-tests.md
+[330b524]: https://github.com/NF-Hotel/NFHotel/commit/330b52465cc857807b7c427354cc42e0ec2c2c2e
