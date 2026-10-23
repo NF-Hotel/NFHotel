@@ -1,0 +1,12 @@
+# The dashboards of Grafana (ADR-0020) come from grafana/dashboards/ in git; edits in the UI
+# are not kept, so a change is a reviewed pull request.
+apiVersion: 1
+
+providers:
+  - name: nfhotel
+    folder: NF Hotel
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards

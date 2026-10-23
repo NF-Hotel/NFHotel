@@ -1,0 +1,116 @@
+# Alert rules of NF Hotel (ADR-0020, MIL-023 task 9). Each alert goes to Discord; the
+# Watchdog goes to Healthchecks.io, which alerts when it stops (a dead monitor). Checked in CI
+# with `promtool check rules` and unit-tested with `promtool test rules` (rules-test.yml).
+#
+# Metrics from nf-hotel arrive through Alloy with the label host="nf-hotel":
+#   node_*                     host metrics (disk, memory)
+#   nfhotel_container_healthy  1 when a container reports healthy (scripts/report-health.sh)
+#   nfhotel_task_last_success_timestamp_seconds{task}  written by the backup, the copy off
+#                              the VM and the certificate renewal when they succeed
+groups:
+  - name: nfhotel
+    rules:
+      - alert: SiteDown
+        expr: probe_success{job="site"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.instance }} does not answer over HTTPS"
+          description: >-
+            The probe of {{ $labels.instance }} has failed for 2 minutes. Runbook: wiki page CI-CD,
+            When a deploy does not start, and Host-Hardening.
+
+      - alert: RedirectBroken
+        expr: probe_success{job="redirect"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Port 80 of nf-hotel does not redirect to HTTPS"
+          description: "The probe of {{ $labels.instance }} has not seen a 301 for 5 minutes."
+
+      - alert: CertificateExpiresSoon
+        expr: (probe_ssl_earliest_cert_expiry{job="site"} - time()) / 86400 < 21
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The certificate of nf-hotel expires in {{ $value | humanize }} days"
+          description: >-
+            The renewal (nfhotel-cert-renew.timer, ADR-0009) has not replaced it. Check its journal
+            on nf-hotel.
+
+      - alert: NoMetricsFromNfHotel
+        expr: absent_over_time(node_uname_info{host="nf-hotel"}[10m])
+        labels:
+          severity: critical
+        annotations:
+          summary: "No metrics from nf-hotel for 10 minutes"
+          description: >-
+            Alloy on nf-hotel sends nothing: the VM, Alloy or the tailnet path to the monitoring is
+            down.
+
+      - alert: DiskAlmostFull
+        expr: >-
+          (1 - node_filesystem_avail_bytes{host="nf-hotel", mountpoint="/"} /
+          node_filesystem_size_bytes{host="nf-hotel", mountpoint="/"}) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The disk of nf-hotel is {{ $value | humanizePercentage }} full"
+          description: "Remove old images (docker image prune) or grow the disk."
+
+      - alert: ContainerUnhealthy
+        expr: nfhotel_container_healthy{host="nf-hotel"} == 0
+        # 30 s, so a stopped container alerts within 3 minutes (MIL-023 criterion 7): the
+        # report runs each minute, then scrape and evaluation (30 s each), and group_wait.
+        # A deploy raises none: a starting container counts as healthy (report-health.sh).
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.container }} on nf-hotel is not healthy"
+          description: "Read its log: sudo docker logs --tail 50 {{ $labels.container }}"
+
+      - alert: BackupStale
+        expr: >-
+          time() - nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup"} > 26
+          * 3600
+        labels:
+          severity: critical
+        annotations:
+          summary: "The last database backup is older than 26 hours"
+          description: "Check nfhotel-backup.timer and its journal on nf-hotel (ADR-0008)."
+
+      - alert: OffVmCopyStale
+        expr: >-
+          time() - nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="offvm_copy"} >
+          72 * 3600
+        labels:
+          severity: warning
+        annotations:
+          summary: "No backup has been copied off the VM for 72 hours"
+          description: >-
+            The backup target on the legion laptop is off or unreachable (D7). The backups stay on
+            the VM until it is back.
+
+      - alert: CertificateRenewalStale
+        expr: >-
+          time() - nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="cert_renew"} >
+          26 * 3600
+        labels:
+          severity: warning
+        annotations:
+          summary: "The certificate renewal has not succeeded for 26 hours"
+          description: "Check nfhotel-cert-renew.service on nf-hotel (ADR-0009, RC-162)."
+
+      # Always firing. Alertmanager sends it to Healthchecks.io every minute; when it stops,
+      # Healthchecks.io alerts that the monitoring itself is down.
+      - alert: Watchdog
+        expr: vector(1)
+        labels:
+          severity: none
+        annotations:
+          summary: "The monitoring is alive"

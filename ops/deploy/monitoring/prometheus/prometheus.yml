@@ -1,0 +1,50 @@
+# Prometheus of NF Hotel (ADR-0020, MIL-023 task 7). It probes the site through blackbox and
+# receives the metrics that Alloy on nf-hotel pushes (remote write). Checked in CI with
+# `promtool check config`.
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: [alertmanager:9093]
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: [localhost:9090]
+
+  - job_name: alertmanager
+    static_configs:
+      - targets: [alertmanager:9093]
+
+  # The pages and the API of the site over HTTPS, with the certificate checked.
+  - job_name: site
+    metrics_path: /probe
+    params:
+      module: [https_2xx]
+    static_configs:
+      - targets:
+          - https://nf-hotel.taildb84b5.ts.net/
+          - https://nf-hotel.taildb84b5.ts.net/book
+          - https://nf-hotel.taildb84b5.ts.net/admin/login
+    relabel_configs: &probe
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
+
+  # Port 80 answers only with a redirect to HTTPS (MIL-017).
+  - job_name: redirect
+    metrics_path: /probe
+    params:
+      module: [http_301]
+    static_configs:
+      - targets: [http://nf-hotel.taildb84b5.ts.net/]
+    relabel_configs: *probe

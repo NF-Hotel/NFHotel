@@ -1,0 +1,63 @@
+# Alloy on nf-hotel (ADR-0020, MIL-023 task 8): it sends the logs of the containers and of the
+# systemd journal to Loki, and the host metrics and the task reports (the text files in
+# /var/lib/nfhotel-metrics) to Prometheus, both in the monitoring LXC over the tailnet.
+# scripts/deploy-services.sh deploys it last, and only when alloy.env exists (copy
+# alloy.env.example): until the monitoring runs, nf-hotel deploys without it.
+#
+# Alloy reads the containers through a socket proxy that allows only the read calls on
+# containers (list, inspect, logs). Alloy itself never sees the Docker socket, whose access
+# would equal root on the host. The host's /, /proc and /sys and the journal are read-only.
+name: nfhotel-alloy
+
+services:
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.4.1@sha256:3400c429c5f9e1b21d62130fb93b16e2e772d4fb7695bd52fc2b743800b9fe9e
+    restart: unless-stopped
+    environment:
+      CONTAINERS: "1"
+      POST: "0"
+      INFO: "0"
+      IMAGES: "0"
+      NETWORKS: "0"
+      VOLUMES: "0"
+      EXEC: "0"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/run, /tmp]
+    mem_limit: 64m
+    cpus: 0.25
+    networks: [internal]
+
+  alloy:
+    image: grafana/alloy:v1.11.3@sha256:8c7256f412feb9f5f48f9f6f9394dc97ca887f63dea9304f347970ecc1787669
+    restart: unless-stopped
+    command: [run, --storage.path=/var/lib/alloy/data, /etc/alloy/config.alloy]
+    env_file: ${ALLOY_ENV_FILE:-alloy.env}
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - /:/host/root:ro,rslave
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/log/journal:/var/log/journal:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      - /var/lib/nfhotel-metrics:/host/metrics:ro
+      - alloy-data:/var/lib/alloy/data
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 512m
+    cpus: 0.5
+    depends_on: [socket-proxy]
+    networks: [internal, egress]
+
+volumes:
+  alloy-data:
+
+networks:
+  # The proxy has no route out; Alloy reaches it here and the monitoring through egress.
+  internal:
+    internal: true
+  egress: {}

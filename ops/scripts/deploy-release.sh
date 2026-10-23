@@ -39,8 +39,9 @@
 #           as root. From that commit (git show, never the working tree) it installs
 #           ops/scripts/deploy-release.sh as nfhotel-deploy, ops/scripts/backup-database.sh
 #           as nfhotel-backup, ops/scripts/renew-certificate.sh as nfhotel-cert-renew,
-#           and the services and timers of the backup and of the certificate renewal
-#           (enabled), each only when it differs.
+#           ops/scripts/report-health.sh as nfhotel-report-health, and the services and
+#           timers of the backup, the certificate renewal and the health report (the last
+#           two enabled), each only when it differs.
 #           The replaced copy is kept as <file>.previous, and each change is logged with
 #           the old and new SHA-256. The sudo rule does not change.
 # rollback: deploy the release before the latest one in the log again.
@@ -355,7 +356,7 @@ install_from() {
 }
 
 update() {
-  local sha="${1:-}" units=0 cert_units=0
+  local sha="${1:-}" units=0 cert_units=0 health_units=0
   [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || refuse "the commit must be 40 lower-case hex characters"
   update_dir="$(mktemp -d)"
   trap 'rm -rf "$update_dir"' EXIT
@@ -374,11 +375,14 @@ update() {
   install_from "$sha" ops/scripts/deploy-release.sh "$COMMAND_DIR/nfhotel-deploy" 0755 || true
   install_from "$sha" ops/scripts/backup-database.sh "$COMMAND_DIR/nfhotel-backup" 0755 || true
   install_from "$sha" ops/scripts/renew-certificate.sh "$COMMAND_DIR/nfhotel-cert-renew" 0755 || true
+  install_from "$sha" ops/scripts/report-health.sh "$COMMAND_DIR/nfhotel-report-health" 0755 || true
   install_from "$sha" ops/deploy/systemd/nfhotel-backup.service "$SYSTEMD_DIR/nfhotel-backup.service" 0644 && units=1
   install_from "$sha" ops/deploy/systemd/nfhotel-backup.timer "$SYSTEMD_DIR/nfhotel-backup.timer" 0644 && units=1
   install_from "$sha" ops/deploy/systemd/nfhotel-cert-renew.service "$SYSTEMD_DIR/nfhotel-cert-renew.service" 0644 && cert_units=1
   install_from "$sha" ops/deploy/systemd/nfhotel-cert-renew.timer "$SYSTEMD_DIR/nfhotel-cert-renew.timer" 0644 && cert_units=1
-  if ((units || cert_units)); then
+  install_from "$sha" ops/deploy/systemd/nfhotel-report-health.service "$SYSTEMD_DIR/nfhotel-report-health.service" 0644 && health_units=1
+  install_from "$sha" ops/deploy/systemd/nfhotel-report-health.timer "$SYSTEMD_DIR/nfhotel-report-health.timer" 0644 && health_units=1
+  if ((units || cert_units || health_units)); then
     "$SYSTEMCTL" daemon-reload || die "systemctl daemon-reload failed"
   fi
   if ((units)); then
@@ -387,6 +391,10 @@ update() {
   # The certificate timer is enabled here, so a new VM gets it from its first CD (ADR-0009).
   if ((cert_units)); then
     "$SYSTEMCTL" enable --now nfhotel-cert-renew.timer || die "the certificate timer did not start"
+  fi
+  # The health report runs whether or not the monitoring exists yet; Alloy reads it once it runs.
+  if ((health_units)); then
+    "$SYSTEMCTL" enable --now nfhotel-report-health.timer || die "the health report timer did not start"
   fi
   echo "==> update: the commands match $sha"
 }

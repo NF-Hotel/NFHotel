@@ -10,6 +10,8 @@
 #   3. copy every backup that the target lacks off the VM with rsync over ssh, when
 #      BACKUP_TARGET is set; a failed copy warns and is caught up by the next run
 #   4. keep 14 daily and 8 weekly (Sunday) files on the VM, delete older ones
+#   5. report the time of the backup, and of the copy when it succeeded, to the monitoring
+#      (backup.prom and offvm_copy.prom in NFHOTEL_METRICS_DIR, ADR-0020)
 #
 # Settings: /etc/nfhotel/backup.env (root, 0600), written by install-backup.sh:
 #   AGE_RECIPIENT   the age public key (age1...) of S03; required
@@ -44,6 +46,22 @@ apply=0
 die() {
   echo "error: $*" >&2
   exit 1
+}
+
+# report_success <task>: write the time of this success to <task>.prom in the folder that
+# Alloy reads (ADR-0020, MIL-023 task 9); Prometheus alerts when it grows old. The helper
+# is kept in this file because the file is installed alone. A failed write only warns.
+report_success() {
+  local dir="${NFHOTEL_METRICS_DIR:-/var/lib/nfhotel-metrics}" file
+  file="$dir/$1.prom"
+  {
+    install -d -m 0755 "$dir" &&
+      printf '%s\n%s\n%s{task="%s"} %s\n' \
+        '# HELP nfhotel_task_last_success_timestamp_seconds When the task last succeeded.' \
+        '# TYPE nfhotel_task_last_success_timestamp_seconds gauge' \
+        nfhotel_task_last_success_timestamp_seconds "$1" "$(date +%s)" >"$file.tmp" &&
+      chmod 0644 "$file.tmp" && mv "$file.tmp" "$file"
+  } 2>/dev/null || echo "warning: cannot write the report $file" >&2
 }
 
 for arg in "$@"; do
@@ -115,6 +133,7 @@ if [[ -n "${BACKUP_TARGET:-}" ]]; then
     --rsh "ssh -p $port -i $key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20" \
     "$backup_dir/" "$BACKUP_TARGET/"; then
     date -u +%Y-%m-%dT%H:%M:%SZ >"$backup_dir/.last-copy"
+    report_success offvm_copy
     echo "    copied off the VM"
   else
     echo "warning: the copy to $BACKUP_TARGET failed; the backups stay on the VM, and the next run sends what the target lacks" >&2
@@ -138,4 +157,5 @@ prune() {
 }
 prune daily "$DAILY_KEEP"
 prune weekly "$WEEKLY_KEEP"
+report_success backup
 echo "==> done"

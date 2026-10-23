@@ -1,6 +1,7 @@
 # CI of the operations code in ops/ (ADR-0016, formerly the CI of NF-Hotel/DevOps): the
-# linters of ops/ and of the workflows and actions, the script tests, the nginx routes,
-# the Proxmox tests (the live ones skip), and the PostgreSQL preparation with the real
+# linters of ops/ and of the workflows and actions, the script tests, the monitoring
+# configuration (ADR-0020), the nginx routes, the Proxmox tests (the live ones skip),
+# and the PostgreSQL preparation with the real
 # migrations of this commit. The release build and the throwaway end-to-end stack run in
 # release-check.yaml and e2e-dast.yaml, which use the same actions.
 #
@@ -56,6 +57,7 @@ jobs:
           - test-renew-certificate.sh
           - test-backup-target.sh
           - test-dora-metrics.sh
+          - test-report-health.sh
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -83,6 +85,18 @@ jobs:
         run: >-
           docker run --rm --cap-add NET_ADMIN --cap-add SYS_ADMIN --sysctl net.ipv4.ip_forward=1
           -v "$PWD/ops:/src:ro" debian:13-slim bash /src/tests/test-nftables.sh
+
+  monitoring:
+    name: Ops monitoring configuration (MIL-023)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check Prometheus, Alertmanager, Loki, blackbox, Alloy and the dashboards
+        run: bash ops/tests/check-monitoring.sh
 
   nginx:
     name: Ops nginx routes

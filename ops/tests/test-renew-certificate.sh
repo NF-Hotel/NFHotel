@@ -61,9 +61,11 @@ case "$1" in
 esac
 EOF
 chmod +x "$W/bin/"*
-export PATH="$W/bin:$PATH" FAKE_LOG="$W/log" FAKE_MOUNT="$W/mounted" NFHOTEL_DIR="$W/app"
+export PATH="$W/bin:$PATH" FAKE_LOG="$W/log" FAKE_MOUNT="$W/mounted" NFHOTEL_DIR="$W/app" NFHOTEL_METRICS_DIR="$W/metrics"
+report="$W/metrics/cert_renew.prom"
 run() {
   : >"$W/log"
+  rm -f "$report"
   bash "$REPO/scripts/renew-certificate.sh" >"$W/out" 2>&1
 }
 
@@ -80,14 +82,18 @@ grep -q "nf-hotel.taildb84b5.ts.net" "$W/log" && ok "tailscale is asked for the 
   ok "certificate 0644 and key 0600, owned as the folder" || ko "modes: $(stat -c '%n %a %U' "$W/mounted/"*)"
 [[ "$(cat "$W/mounted/fullchain.pem.previous")" == "cert v1" ]] && ok "the old pair is kept as .previous" || ko "previous"
 grep -q "nginx -t" "$W/log" && grep -q "nginx -s reload" "$W/log" && ok "nginx is checked, then reloaded" || ko "reload: $(cat "$W/log")"
+grep -Eq '^nfhotel_task_last_success_timestamp_seconds\{task="cert_renew"\} [0-9]{10}$' "$report" &&
+  [[ "$(stat -c '%a' "$report")" == 644 ]] && ok "a renewal reports its success to the monitoring" || ko "report: $(cat "$report" 2>&1)"
 
 FAKE_NGINX=1 FAKE_CERT="cert v2" FAKE_KEY="key v2" run && grep -q "^unchanged" "$W/out" && ! grep -q exec "$W/log" &&
   ok "an unchanged certificate changes and reloads nothing" || ko "unchanged: $(cat "$W/out")"
+[[ -s "$report" ]] && ok "an unchanged certificate is a success too" || ko "no report when unchanged"
 
 FAKE_NGINX=1 FAKE_NGINX_BAD=1 FAKE_CERT="cert v3" FAKE_KEY="key v3" run
 [[ $? == 1 && "$(cat "$W/mounted/fullchain.pem")" == "cert v2" && "$(cat "$W/mounted/privkey.pem")" == "key v2" ]] &&
   ! grep -q "reload" "$W/log" && ok "a refused configuration puts the old pair back and does not reload" ||
   ko "refused: $(cat "$W/out")"
+[[ ! -e "$report" ]] && ok "a failed renewal reports nothing" || ko "a failure was reported as a success"
 
 FAKE_TS_FAIL=1 FAKE_NGINX=1 run
 [[ $? == 1 && "$(cat "$W/mounted/fullchain.pem")" == "cert v2" ]] && ok "a failed tailscale changes nothing" || ko "tailscale fail"
