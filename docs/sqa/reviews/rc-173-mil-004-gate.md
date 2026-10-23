@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [eb87d37] |
 
 ---
 
@@ -53,3 +53,4 @@ None.
 [ADR-0010]: ../../adr/adr-0010-production-vm-as-deployed.md
 [ADR-0500]: ../../adr/adr-0500-freeze-market-analysis-image.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[eb87d37]: https://github.com/NF-Hotel/NFHotel/commit/eb87d37ad7eef91b51dd1193e315b7b63113530c
