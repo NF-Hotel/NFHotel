@@ -2,14 +2,18 @@
 # Check the throwaway stack of scripts/e2e-stack.sh (MIL-027 task 1 of NFHotel) from a
 # client on its Docker network: the public pages answer through nginx over TLS, the back
 # office sends a visitor to the login, port 80 redirects to HTTPS, no container of the
-# stack publishes a host port, the API and PostgreSQL are not on the proxy network, and
-# the three test accounts exist.
+# stack publishes a host port, every container has the hardening of MIL-023 task 2, the API
+# and PostgreSQL are not on the proxy network, and the three test accounts exist.
 #
 # Usage: check-e2e-stack.sh <stack.env> [<name>]
 # Exit:  0 every check passed; 1 a check failed; 2 usage error
 # Needs: bash 4+, docker
 
 set -uo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=ops/tests/lib/hardening.sh
+. "$ROOT/tests/lib/hardening.sh"
 
 [[ $# -ge 1 && -f "$1" ]] || {
   echo "usage: check-e2e-stack.sh <stack.env> [<name>]" >&2
@@ -45,6 +49,7 @@ ports=""
 for id in $(docker ps --quiet --filter "label=com.docker.compose.project" | xargs -r docker inspect \
   --format '{{index .Config.Labels "com.docker.compose.project"}} {{.Id}}' | awk -v p="$name-" 'index($1, p) == 1 {print $2}'); do
   ports+="$(docker port "$id" 2>/dev/null)"
+  check "$(docker inspect --format '{{.Name}}' "$id") has the hardening" "" "$(hardening_missing "$id")"
 done
 check "no container of the stack publishes a host port" "" "$ports"
 on_proxy="$(docker network inspect "$network" --format '{{range .Containers}}{{.Name}} {{end}}')"

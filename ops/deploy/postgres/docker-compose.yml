@@ -13,6 +13,17 @@ services:
     image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     restart: unless-stopped
     env_file: ${POSTGRES_ENV_FILE:-postgres.env}
+    # Hardening (MIL-023 task 2, CIS-001). The entrypoint starts as root, fixes the owner and
+    # mode of the data folder and drops to the user postgres: these five capabilities are the
+    # ones it needs. The data is in the volume; the socket folder and /tmp are tmpfs.
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/var/run/postgresql, /tmp]
+    mem_limit: 2g
+    cpus: 2
+    pids_limit: 512
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

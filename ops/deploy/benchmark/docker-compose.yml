@@ -23,6 +23,10 @@ services:
     env_file: ${BENCHMARK_ENV_FILE:-benchmark.env}
     environment:
       NFBENCH_WEB_TOKEN: ${API_TOKEN:?set it, from Api__Token in nfhotel-api.env}
+    # Limits (MIL-023 task 2, CIS-001); the hardening above is unchanged.
+    mem_limit: 1g
+    cpus: 1
+    pids_limit: 256
     expose:
       - "8000"
     volumes:

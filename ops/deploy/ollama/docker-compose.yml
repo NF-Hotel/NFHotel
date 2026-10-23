@@ -25,6 +25,16 @@ services:
     image: ollama/ollama:0.40.6@sha256:265409e1d931028a8f7d5a32bcbafddd7bffbc6cc629d77efe9560adf692a5e7
     restart: unless-stopped
     env_file: ${OLLAMA_ENV_FILE:-ollama.env}
+    # Hardening (MIL-023 task 2, CIS-001). The image runs as root, which owns the models
+    # volume, so it needs no capability. Models load into memory: the limit leaves room
+    # for the other services on the VM.
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 8g
+    cpus: 4
+    pids_limit: 1024
     expose:
       - "11434"
     volumes:
