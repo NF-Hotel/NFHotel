@@ -79,6 +79,9 @@ git -C "$W/nfh" remote set-url origin https://github.com/NF-Hotel/NFHotel.git
 cat >"$W/bin/curl" <<EOF
 #!/bin/bash
 for a in "\$@"; do case "\$a" in http*://*) echo "\$a" >>$W/urls ;; esac; done
+# A proxy that is not listening yet: the first \$(cat $W/not-yet) calls get no answer.
+n=\$(cat $W/not-yet 2>/dev/null || echo 0)
+if ((n > 0)); then echo \$((n - 1)) >$W/not-yet; echo 000; exit 0; fi
 [[ "\$(cat $W/health)" == good ]] || { echo 502; exit 0; }
 for a in "\$@"; do case "\$a" in http://*) echo 301; exit 0 ;; https://*) echo 200; exit 0 ;; esac; done
 EOF
@@ -107,7 +110,7 @@ run() {
   local dir="$1"
   shift
   PATH="$W/bin:$PATH" NFHOTEL_USER=root NFHOTEL_STATE="$W/state-$(basename "$dir")" NFHOTEL_DIR="$dir" \
-  NFHOTEL_SECRETS="${SECRETS:-$W/secrets}" NFHOTEL_BACKUP_COMMAND="${BACKUP:-$W/bin/backup}" \
+  NFHOTEL_SMOKE_WAIT=0 NFHOTEL_SECRETS="${SECRETS:-$W/secrets}" NFHOTEL_BACKUP_COMMAND="${BACKUP:-$W/bin/backup}" \
   NFHOTEL_COMMAND_DIR="${CMD_DIR:-$W/sbin}" NFHOTEL_SYSTEMD_DIR="$W/systemd" NFHOTEL_SYSTEMCTL="$W/bin/systemctl" \
     bash /src/scripts/deploy-release.sh "$@" <"${STDIN:-/dev/null}" >"$W/out" 2>&1
 }
@@ -152,6 +155,13 @@ expect_code() {
     [[ "$(git -C "$W/app" rev-parse HEAD)" == "$A" ]] && ok "the drill rolls back to the previous release" || ko "drill: $(tail -3 "$W/out")"
   [[ "$(wc -l <"$W/state-app/releases.log")" == "$lines" ]] && ok "the drilled release is not recorded" || ko "drill recorded"
   expect_code 2 "refuses an unknown eighth argument" deploy $(good "$B") --other
+  # A proxy that was just recreated (MIL-023 task 2) answers after a few seconds: the smoke
+  # test tries again before it counts the deploy as failed.
+  echo 2 >"$W/not-yet"
+  expect_code 0 "a proxy that answers on the third try passes the smoke test" deploy $(good "$B")
+  echo 99 >"$W/not-yet"
+  expect_code 1 "a proxy that never answers fails the deploy" deploy $(good "$A")
+  rm -f "$W/not-yet"
 }
 
 (

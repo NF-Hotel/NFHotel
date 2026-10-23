@@ -146,21 +146,33 @@ nginx_host() {
   fi
 }
 
+# smoke_test: port 80 answers 301 and HTTPS answers 200. A proxy that was just recreated may
+# need a few seconds to listen, so each check is tried up to SMOKE_TRIES times, SMOKE_WAIT
+# seconds apart (10 x 3 by default), before the deploy counts as failed.
 smoke_test() {
-  local host http_port https_port code
+  local host http_port https_port code n
+  local tries="${NFHOTEL_SMOKE_TRIES:-10}" wait="${NFHOTEL_SMOKE_WAIT:-3}"
   host="$(nginx_host)"
   http_port="$(nginx_port NGINX_HTTP_PORT 80)"
   https_port="$(nginx_port NGINX_HTTPS_PORT 443)"
+  for ((n = 1; n <= tries; n++)); do
+    code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 "http://$host:$http_port/")" || true # NOSONAR
+    [[ "$code" == "301" ]] && break
+    ((n < tries)) && sleep "$wait"
+  done
   # Plain HTTP on purpose: port 80 must answer only with a redirect to HTTPS (MIL-017), and
   # this checks that redirect on the VM itself; nothing is sent but the request line.
-  code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 "http://$host:$http_port/")" || true # NOSONAR
   [[ "$code" == "301" ]] || {
     echo "smoke test: $host:$http_port answered '$code', expected 301" >&2 # NOSONAR: a message, not a URL
     return 1
   }
   # The development certificate is self-signed, so the certificate is not checked here;
   # the TLS settings themselves are checked by the smoke test of MIL-017.
-  code="$(curl --silent --insecure --output /dev/null --write-out '%{http_code}' --max-time 10 "https://$host:$https_port/")" || true
+  for ((n = 1; n <= tries; n++)); do
+    code="$(curl --silent --insecure --output /dev/null --write-out '%{http_code}' --max-time 10 "https://$host:$https_port/")" || true
+    [[ "$code" == "200" ]] && break
+    ((n < tries)) && sleep "$wait"
+  done
   [[ "$code" == "200" ]] || {
     echo "smoke test: $host:$https_port answered '$code', expected 200" >&2
     return 1

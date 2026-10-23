@@ -297,10 +297,10 @@ for s in "${ordered[@]}"; do
   if ((build)) && [[ "$s" =~ ^(api|web|analysis|benchmark)$ ]] && [[ ! -f "$d/frozen-image" ]]; then
     args+=(--build)
   fi
-  # --wait returns once every service with a healthcheck is healthy.
-  if [[ "$s" != "nginx" ]]; then
-    args+=(--wait --wait-timeout 300)
-  else
+  # --wait returns once every service with a healthcheck is healthy; the proxy has one since
+  # MIL-023 task 2, so the smoke test that follows finds it listening.
+  args+=(--wait --wait-timeout 300)
+  if [[ "$s" == "nginx" ]]; then
     # The proxy keeps nothing, and its templates are rendered into the container when it starts. A hash of the
     # templates, the snippets and the settings is part of its environment, so compose recreates it exactly when one
     # of them changed, and a deploy that changes only an image keeps the running proxy (MIL-021 criterion 5). A new
