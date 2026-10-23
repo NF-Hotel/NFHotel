@@ -75,4 +75,4 @@ fi
 echo "==> starting the monitoring on $bind"
 (cd "$dir" && docker compose --env-file monitoring.env up -d --remove-orphans --wait --wait-timeout 180) ||
   die "the monitoring did not start; see: docker compose --env-file monitoring.env logs"
-echo "==> done: Grafana on http://$bind:3000 (user admin)"
+echo "==> done: Grafana answers on port 3000 of $bind, over the tailnet (user admin)"
