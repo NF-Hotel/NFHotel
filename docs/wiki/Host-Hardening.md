@@ -18,7 +18,7 @@ What each container needs, measured with the throwaway stack:
 
 | Service | Capabilities added after `ALL` is dropped | `tmpfs` | Memory, CPUs, PIDs |
 | --- | --- | --- | --- |
-| nginx | `CHOWN`, `SETGID`, `SETUID`, `NET_BIND_SERVICE` | `/etc/nginx/conf.d`, `/var/cache/nginx`, `/run`, `/tmp` | 256 MB, 1, 256 |
+| nginx | `CHOWN`, `SETGID`, `SETUID`, `NET_BIND_SERVICE`, `DAC_READ_SEARCH` (reads the 0600 key of the checkout user) | `/etc/nginx/conf.d`, `/var/cache/nginx`, `/run`, `/tmp` | 256 MB, 1, 256 |
 | nfhotel-web, nfhotel-api | none | `/tmp` | 1 GB, 2, 512 |
 | postgres | `CHOWN`, `DAC_OVERRIDE`, `FOWNER`, `SETGID`, `SETUID` | `/var/run/postgresql`, `/tmp` | 2 GB, 2, 512 |
 | ollama | none | `/tmp` | 8 GB, 4, 1024 |
