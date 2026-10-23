@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-22 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; the stack was chosen by S01 in chat on 2026-10-22, accepted after RC-168 Go | [2b09b0b] |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Consequences: how Alloy reaches Docker, as built and tested; accepted after RC-185 Go | pending |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Consequences: how Alloy reaches Docker, as built and tested; accepted after RC-185 Go | [4ff81cc] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -138,3 +138,4 @@ We follow option 1. Production is watched by Prometheus, Alertmanager, Grafana, 
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
 [2b09b0b]: https://github.com/NF-Hotel/NFHotel/commit/2b09b0bffdff14a310d4a5dcac10d719d11dd7b5
+[4ff81cc]: https://github.com/NF-Hotel/NFHotel/commit/4ff81ccd0f1d43a160f2f45d72845e942cf5728e
