@@ -91,6 +91,14 @@ services:
       - ./secrets/grafana-admin-password:/run/secrets/grafana-admin-password:ro
       - grafana-data:/var/lib/grafana
     tmpfs: [/tmp]
+    # Grafana migrates its database at the first start, which takes a while; the health check
+    # makes `up --wait` of deploy-monitoring.sh return only when it answers.
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
     ports:
       - "${MONITORING_BIND:?set it to the tailnet address of the LXC}:3000:3000"
     mem_limit: 512m

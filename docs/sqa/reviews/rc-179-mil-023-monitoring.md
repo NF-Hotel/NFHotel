@@ -73,8 +73,8 @@ Go.
 ---
 
 [MIL-023]: ../../milestones/mil-023-operational-quality.md
-[ADR-0020]: ../../adr/adr-0020-monitoring-and-alerting.md
-[ADR-0018]: ../../adr/adr-0018-cd-installs-the-operations-commands.md
+[ADR-0020]: ../../adr/adr-0020-monitoring-stack.md
+[ADR-0018]: ../../adr/adr-0018-deploy-command-updates-itself.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md

@@ -4,11 +4,12 @@
 # scripts/create-monitoring-lxc.sh, and again after a change of ops/deploy/monitoring/.
 #
 #   1. refuse unless monitoring.env names MONITORING_BIND as an address of this host
-#   2. refuse unless the three secret files exist, are not empty, and are readable by
-#      their owner only (0600)
+#   2. refuse unless the three secret files exist, are not empty, and no group or other
+#      user can read them
 #   3. check the configuration with the tools of the pinned images: promtool check
 #      config, promtool test rules, amtool check-config, loki -verify-config
-#   4. docker compose up -d --wait, so it returns once every service is running
+#   4. give each secret file to the user its container runs as (0400), the folder 0711
+#   5. docker compose up -d --wait, so it returns once every service is running
 #
 # Usage: deploy-monitoring.sh [--apply]
 #   --apply  start or update the services; without it the script only checks (a dry run)
@@ -44,13 +45,13 @@ ip -4 -o addr show | grep -q " $bind/" || die "$bind is not an address of this h
 for f in discord-webhook-url healthchecks-watchdog-url grafana-admin-password; do
   file="$dir/secrets/$f"
   [[ -s "$file" ]] || die "$file is missing or empty (see secrets.example/README.md)"
-  [[ "$(stat -c %a "$file")" == 600 ]] || die "$file must be readable by its owner only (chmod 600)"
+  ((8#$(stat -c %a "$file") & 8#077)) && die "$file must be readable by its owner only (chmod 600)"
 done
 [[ "$(head -c 33 "$dir/secrets/discord-webhook-url")" == "https://discord.com/api/webhooks/" ]] ||
   die "secrets/discord-webhook-url is not a Discord webhook URL"
 [[ "$(head -c 8 "$dir/secrets/healthchecks-watchdog-url")" == "https://" ]] ||
   die "secrets/healthchecks-watchdog-url is not an https URL"
-(($(wc -c <"$dir/secrets/grafana-admin-password") >= 17)) ||
+(($(tr -d '\n' <"$dir/secrets/grafana-admin-password" | wc -c) >= 16)) ||
   die "secrets/grafana-admin-password must be at least 16 characters"
 
 echo "==> checking the configuration with the pinned tools"
@@ -71,6 +72,18 @@ if ((! apply)); then
   echo "dry run: give --apply to start or update the monitoring on $bind"
   exit 0
 fi
+
+[[ "$(id -u)" == 0 ]] || die "run it as root: the secret files are given to the users of their containers"
+# Alertmanager runs as nobody (65534) and Grafana as 472 in their images, and cap_drop ALL
+# takes away the override that would let them read a file of root. So each file is owned by
+# the one container that reads it, 0400, and the folder is 0711: it can be passed, not listed.
+echo "==> giving each secret to the user of its container"
+chown 65534:65534 "$dir/secrets/discord-webhook-url" "$dir/secrets/healthchecks-watchdog-url" ||
+  die "cannot change the owner of the Alertmanager secrets"
+chown 472:472 "$dir/secrets/grafana-admin-password" || die "cannot change the owner of the Grafana password"
+chmod 0400 "$dir/secrets/discord-webhook-url" "$dir/secrets/healthchecks-watchdog-url" \
+  "$dir/secrets/grafana-admin-password" || die "cannot set the mode of the secrets"
+chmod 0711 "$dir/secrets" || die "cannot set the mode of $dir/secrets"
 
 echo "==> starting the monitoring on $bind"
 (cd "$dir" && docker compose --env-file monitoring.env up -d --remove-orphans --wait --wait-timeout 180) ||

@@ -106,6 +106,40 @@ groups:
           summary: "The certificate renewal has not succeeded for 26 hours"
           description: "Check nfhotel-cert-renew.service on nf-hotel (ADR-0009, RC-162)."
 
+      # A report that does not exist cannot grow old, so the alerts above would never fire for
+      # a job that never ran or a file that was removed (ADR-0020 decision 4). These fire only
+      # while nf-hotel sends metrics, so a VM that is down raises NoMetricsFromNfHotel alone.
+      - alert: TaskReportMissing
+        expr: >-
+          (label_replace(vector(1), "task", "backup", "", "")
+          or label_replace(vector(1), "task", "offvm_copy", "", "")
+          or label_replace(vector(1), "task", "cert_renew", "", ""))
+          unless on(task) nfhotel_task_last_success_timestamp_seconds{host="nf-hotel"}
+          and on() node_uname_info{host="nf-hotel"}
+        for: 30m
+        labels:
+          severity: warning
+          host: nf-hotel
+        annotations:
+          summary: "nf-hotel has no {{ $labels.task }} report"
+          description: >-
+            The job has not succeeded since /var/lib/nfhotel-metrics was made, or its report was
+            removed. Check its timer and journal on nf-hotel (wiki page Monitoring).
+
+      - alert: HealthReportMissing
+        expr: >-
+          absent(nfhotel_container_healthy{host="nf-hotel"})
+          and on() node_uname_info{host="nf-hotel"}
+        for: 10m
+        labels:
+          severity: warning
+          host: nf-hotel
+        annotations:
+          summary: "nf-hotel reports no container health"
+          description: >-
+            Check nfhotel-report-health.timer on nf-hotel: systemctl status
+            nfhotel-report-health.timer
+
       # Always firing. Alertmanager sends it to Healthchecks.io every minute; when it stops,
       # Healthchecks.io alerts that the monitoring itself is down.
       - alert: Watchdog
