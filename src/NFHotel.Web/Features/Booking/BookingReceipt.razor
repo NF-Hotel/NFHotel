@@ -56,5 +56,6 @@
     /// <summary>
     /// Looks up the booking — also when only the number in the address changes.
     /// </summary>
-    protected override Task OnParametersSetAsync() => ViewModel.LoadAsync(BookingNumber, ComponentToken);
+    // PROOF ONLY, never merged (MIL-027 criterion 1): the receipt page answers 500.
+    protected override Task OnParametersSetAsync() => throw new InvalidOperationException("proof: broken receipt");
 }
