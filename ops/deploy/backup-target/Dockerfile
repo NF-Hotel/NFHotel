@@ -11,6 +11,7 @@ RUN apt-get update \
     && passwd --lock nfhotel-backup \
     && install -d -o nfhotel-backup -m 0700 /backups
 
+# No EXPOSE: the compose file publishes ssh on the tailnet address of the host only
+# (SonarCloud docker:S6473, MIL-023 task 12).
 COPY entrypoint.sh /usr/local/sbin/backup-target
-EXPOSE 22
 ENTRYPOINT ["/usr/local/sbin/backup-target"]
