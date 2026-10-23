@@ -120,6 +120,14 @@ command -v docker >/dev/null || die "docker is not installed or not on PATH"
 docker compose version >/dev/null 2>&1 || die "the docker compose plugin is missing"
 docker info >/dev/null 2>&1 || die "cannot reach the Docker daemon (is it running, is DOCKER_HOST right?)"
 
+# Alloy runs as its own user and reads the journal through the host's systemd-journal group
+# (deploy/alloy/docker-compose.yml). Every compose call on that file needs the number.
+if [[ " ${ordered[*]} " == *" alloy "* && -f "$(dir_of alloy)/alloy.env" ]]; then
+  export NFHOTEL_JOURNAL_GID
+  NFHOTEL_JOURNAL_GID="$(getent group systemd-journal | cut -d: -f3)" || NFHOTEL_JOURNAL_GID=""
+  [[ "$NFHOTEL_JOURNAL_GID" =~ ^[0-9]+$ ]] || die "the host has no group systemd-journal; Alloy cannot read the journal"
+fi
+
 if ((down)); then
   for s in "${ordered[@]}"; do
     [[ "$s" == "alloy" && ! -f "$(dir_of alloy)/alloy.env" ]] && continue
@@ -323,6 +331,15 @@ for s in "${ordered[@]}"; do
     NGINX_CONFIG_HASH="$(cd "$d" && find templates snippets -type f -print0 | sort -z | xargs -0 sha256sum |
       cat - "$e" | sha256sum | cut -c1-16)" || die "cannot hash the configuration of the proxy"
   fi
+  if [[ "$s" == "alloy" ]]; then
+    # The monitoring agent must not take the hotel down: when it does not turn healthy, the
+    # deploy warns and goes on, and NoMetricsFromNfHotel alerts (ADR-0020).
+    if ! (cd "$d" && docker compose "${args[@]}"); then
+      echo "warning: alloy did not turn healthy; the release stays, and the monitoring alerts NoMetricsFromNfHotel" >&2
+      (cd "$d" && docker compose --env-file "$e" logs --tail 20 alloy) >&2 || true
+    fi
+    continue
+  fi
   (cd "$d" && docker compose "${args[@]}") || die "deploying $s failed"
   if [[ "$s" == "analysis" ]] && ((analysis_changed)); then
     # The service reads its settings when it starts, so a changed default model needs a restart.
@@ -346,4 +363,10 @@ for s in "${ordered[@]}"; do
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   (cd "$(dir_of "$s")" && docker compose --env-file "$(env_of "$s")" ps)
 done
-echo "Deployed: ${ordered[*]}$( ((analysis_skipped)) && echo ' (analysis left out: see the warning above)')"
+deployed=()
+for s in "${ordered[@]}"; do
+  [[ "$s" == "analysis" ]] && ((analysis_skipped)) && continue
+  [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
+  deployed+=("$s")
+done
+echo "Deployed: ${deployed[*]}$( ((analysis_skipped)) && echo ' (analysis left out: see the warning above)')$( ((alloy_skipped)) && echo ' (alloy left out: no alloy.env)')"

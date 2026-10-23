@@ -103,6 +103,10 @@ jobs:
       # give each one to the user of its container; only the runner's own containers change.
       - name: Start the stack as the wiki page says, and check it
         run: sudo bash ops/tests/test-monitoring-stack.sh
+      # Alloy with its pinned image and hardening, as nf-hotel runs it: user 473, the runner's
+      # systemd-journal group, the host mounts read-only.
+      - name: Start Alloy as nf-hotel runs it, and check it
+        run: sudo bash ops/tests/test-alloy-start.sh
 
   nginx:
     name: Ops nginx routes

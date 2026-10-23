@@ -35,6 +35,14 @@ services:
     restart: unless-stopped
     command: [run, --storage.path=/var/lib/alloy/data, /etc/alloy/config.alloy]
     env_file: ${ALLOY_ENV_FILE:-alloy.env}
+    # The image has no USER, so it ran as root. Without DAC_OVERRIDE (cap_drop ALL), root
+    # cannot enter /var/lib/alloy, which the image gives to alloy (473:473, 0770), and Alloy
+    # stopped with "mkdir /var/lib/alloy/data: permission denied". It runs as that user now.
+    # The journal is 2755 root:systemd-journal with 0640 files, so the host's group is
+    # added; scripts/deploy-services.sh reads its number on the host (getent). The other
+    # mounts are readable by everyone: the metrics files are 0644, /proc and /sys as usual.
+    user: "473:473"
+    group_add: ["${NFHOTEL_JOURNAL_GID:?set by scripts/deploy-services.sh}"]
     volumes:
       - ./config.alloy:/etc/alloy/config.alloy:ro
       - /:/host/root:ro,rslave
@@ -48,6 +56,20 @@ services:
     security_opt: [no-new-privileges:true]
     read_only: true
     tmpfs: [/tmp]
+    # Ready when every component has loaded. The image has no curl or wget, so bash asks
+    # Alloy's own HTTP server on the loopback.
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/12345 &&
+          printf 'GET /-/ready HTTP/1.0\r\n\r\n' >&3 && grep -q ' 200 ' <&3
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
     mem_limit: 512m
     cpus: 0.5
     depends_on: [socket-proxy]
