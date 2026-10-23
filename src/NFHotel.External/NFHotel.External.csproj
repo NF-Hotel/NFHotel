@@ -16,6 +16,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- PROOF ONLY, never merged (MIL-022 criterion 1): a package with a known critical vulnerability, CVE-2021-26701. -->
+    <PackageReference Include="System.Text.Encodings.Web" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\NFHotel.Application\NFHotel.Application.csproj" />
   </ItemGroup>
 
