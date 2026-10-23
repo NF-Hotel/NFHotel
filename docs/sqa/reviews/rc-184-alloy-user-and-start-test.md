@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [dd4f24b] |
 
 ---
 
@@ -83,3 +83,4 @@ Go. After the merge, CD redeploys Alloy on `nf-hotel`; RC-179 action 1 continues
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[dd4f24b]: https://github.com/NF-Hotel/NFHotel/commit/dd4f24b76615ad1cc75178870573ec1fefc7a295
