@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0018 |
-| CrossReference | [BC-001], [SA-001], [ADR-0007], [ADR-0008], [ADR-0016], [MIL-021], [MIL-032], [RC-162], [ADR-0009] |
+| CrossReference | [BC-001], [SA-001], [ADR-0007], [ADR-0008], [ADR-0016], [MIL-021], [MIL-032], [RC-162], [ADR-0009], [ADR-0019] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-157 Go (accepted by S01 in chat) | [819a1d9] |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | The certificate renewal is installed too, and CD runs update again after a new deploy command (RC-162) | [e2e8a90] |
+| 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | The certificate renewal is installed too, and CD runs update again after a new deploy command (RC-162) | [e2e8a90] |
+| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Notes ADR-0019: one person may now merge and approve (RC-167) | [cd9cdf4] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -35,7 +35,7 @@ Since ADR-0007, the path from git to the VM has gained the checks that the manua
 - the `ops` CI, which runs shellcheck, shfmt and the script tests on every change to these files;
 - the environment `production`, whose approver must be Tirsvad or codemikemike, cannot be the person who started the run, and cannot be bypassed by an admin.
 
-A change to the deploy command has therefore passed two people and its tests before CD can carry it. A third, manual step adds little and is skipped in practice.
+A change to the deploy command has therefore passed two people and its tests before CD can carry it. **Since [ADR-0019] (2026-10-22)** no review is required and S01 may approve a deploy alone. The human gate is then the deploy approval, and the reviewed-`main` rule now means a commit that passed the 19 required checks. A third, manual step adds little and is skipped in practice.
 
 Options considered:
 
@@ -93,7 +93,8 @@ We follow option 3: during each CD run, before the migrations, the deploy comman
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-032]: ../milestones/mil-032-self-updating-deploy-command.md
-[819a1d9]: https://github.com/NF-Hotel/NFHotel/commit/819a1d9d1bd8492f9164aac8416d56192d514e24
 [RC-162]: ../sqa/reviews/rc-162-certificate-renewal.md
 [ADR-0009]: ./adr-0009-tls-certificates.md
 [e2e8a90]: https://github.com/NF-Hotel/NFHotel/commit/e2e8a90e0082aa329e4d2da499e8b1e853c26ca8
+[ADR-0019]: ./adr-0019-approvals-by-the-owner.md
+[cd9cdf4]: https://github.com/NF-Hotel/NFHotel/commit/cd9cdf46d68e881cc977f9a79fef4494a1a1048b
