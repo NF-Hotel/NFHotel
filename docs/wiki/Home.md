@@ -3,6 +3,8 @@
 NF Hotel is a web-based hotel management system built with Blazor, PostgreSQL and a
 clean-architecture .NET solution. This wiki is written for the people who build and run it.
 
+The pages are written in [`docs/wiki/`](https://github.com/NF-Hotel/NFHotel/tree/main/docs/wiki) of the repository and reviewed there in pull requests. The workflow `NF Hotel Wiki` publishes them here after every merge (ADR-0022). An edit made directly in this wiki is overwritten at the next publish, so change the page in `docs/wiki/` instead.
+
 ## Pages
 
 - [Local Development Deploy](Local-Development-Deploy): run the whole deployment on your own machine with one
@@ -10,7 +12,7 @@ clean-architecture .NET solution. This wiki is written for the people who build 
 - [Proxmox Deployment](Proxmox-Deployment): set up the Proxmox virtual machine and the Docker
   containers that run the whole system (development environment).
 - [Appendix: Project Documents](Appendix): links to every document under `docs/`.
-- Infrastructure and operations (ADR-0016, in `ops/`): [CI-CD](CI-CD), [Database Preparation](Database-Preparation) and [Proxmox Deployment](Proxmox-Deployment).
+- Infrastructure and operations (ADR-0016, in `ops/`): [CI-CD](CI-CD), [Database Preparation](Database-Preparation), [Proxmox Deployment](Proxmox-Deployment), [Host Hardening](Host-Hardening) and [Monitoring](Monitoring).
 
 ## Where things live
 
