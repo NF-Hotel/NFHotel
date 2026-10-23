@@ -14,7 +14,7 @@ One repository holds it all (ADR-0016): the application, and its operations unde
    - `ghcr.io/nf-hotel/benchmark`
 
    Each image is tagged `sha-<NFHotel commit>` and labelled with that commit (`org.opencontainers.image.revision`). The run summary and the artifact `release-manifest` (`release.json`) hold the commit, the operations commit (`devops_sha`, the same commit since ADR-0016), one digest per image and the hash of the migration script.
-3. **Approval.** `NF Hotel CD` starts and waits in the environment `production` until a required reviewer approves it (codemikemike or Tirsvad). The person who started the run may approve it (ADR-0019); the approval is recorded in the deployment history.
+3. **Gate (ADR-0021).** `NF Hotel CD` starts by itself in the environment `production` (`main` only). No person approves. Before any credential for the VM, it waits until every check of the release commit has finished, and it deploys only when all of them are green (success, skipped or neutral). One red check stops it, and the run summary names that check.
 4. **Deploy.** After the approval:
    - the job joins the tailnet as a temporary node tagged `tag:ci`;
    - it logs in to the VM with Tailscale SSH as the user `deploy`;
@@ -30,12 +30,12 @@ One repository holds it all (ADR-0016): the application, and its operations unde
 
 Services whose image and settings did not change are not restarted. Docker volumes, and so the database, are never removed by a deploy.
 
-## Approve a deploy
+## When a deploy does not start
 
-Open the waiting `NF Hotel CD` run, choose **Review deployments**, tick `production` and approve. Before approving:
+A deploy needs no approval (ADR-0021). When `NF Hotel CD` stops at "Wait until every check is green":
 
-- read the release summary of the `NF Hotel Release` run it came from;
-- check that the commit is the one you expect.
+- its summary names the check that is not green: fix it or re-run it;
+- to deploy the commit after a re-run, start `NF Hotel CD` by hand with the run ID of its `NF Hotel Release` run and `apply` ticked. It passes the same gate.
 
 ## Roll back
 
@@ -143,8 +143,7 @@ S03 and a repository administrator do this once, in this order.
 ### In GitHub (repository administrator)
 
 1. **Settings, Environments, New environment `production`:**
-   - required reviewers (for example `codemikemike` and `Tirsvad`);
-   - leave "Prevent self-review" off (ADR-0019);
+   - no required reviewers (ADR-0021: the gate on the checks replaces the approval);
    - deployment branches: selected branches, `main`.
 2. **Environment variables of `production`:**
    - `TS_OIDC_CLIENT_ID` and `TS_OIDC_AUDIENCE` (from Tailscale);
@@ -166,7 +165,7 @@ S03 and a repository administrator do this once, in this order.
 | --- | --- | --- |
 | Build, tests, NuGet audit, formatting | `NF Hotel CI` | the merge (once the checks are required) |
 | Secret scanning with push protection, Dependabot alerts, CodeQL | repository settings | a push with a secret; alerts are reviewed |
-| Approval | environment `production` | the deploy |
+| Every check of the commit green | the gate of `NF Hotel CD` (ADR-0021) | the deploy |
 | Health and smoke test | `nfhotel-deploy` on the VM | the release; it rolls back |
 
 Phase 2 (MIL-022) adds Trivy, SBOMs, build provenance and its verification before the deploy. Phase 3 (MIL-023) adds the hardening of the VM.

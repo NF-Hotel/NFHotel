@@ -4,14 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0019 |
-| CrossReference | [SA-001], [ADR-0007], [ADR-0016], [ADR-0018] |
+| CrossReference | [SA-001], [ADR-0007], [ADR-0016], [ADR-0018], [ADR-0021] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the decision was made and applied by S01 in chat on 2026-10-22, accepted after RC-167 Go | [cd9cdf4] |
+| 2026-10-22 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; the decision was made and applied by S01 in chat on 2026-10-22, accepted after RC-167 Go | [cd9cdf4] |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Amended by ADR-0021: no deploy approval (RC-170) | [330b524] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -41,6 +42,8 @@ Options considered:
 3. **No approval for anyone; S01 approves deploys alone.** The required checks and the deploy approval stay; the second person goes.
 
 ## Decision
+
+Amended by [ADR-0021] (2026-10-23): the deploy approval of point 2 is removed; CD deploys when every check of the commit is green. The merge rule of point 1 is unchanged.
 
 We follow option 3. A pull request needs no approving review, and its merge still needs all 19 required checks (ruleset "Approve merges"). A deploy to `production` still needs an approval, and S01 may approve a run that S01 started. Tirsvad stays a possible approver and is no longer asked for review by CODEOWNERS.
 
@@ -88,3 +91,5 @@ We follow option 3. A pull request needs no approving review, and its merge stil
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
 [cd9cdf4]: https://github.com/NF-Hotel/NFHotel/commit/cd9cdf46d68e881cc977f9a79fef4494a1a1048b
+[ADR-0021]: ./adr-0021-automatic-deploy-when-green.md
+[330b524]: https://github.com/NF-Hotel/NFHotel/commit/330b52465cc857807b7c427354cc42e0ec2c2c2e

@@ -16,8 +16,15 @@
 #                  this repository (MIL-022 task 3); a frozen image (ADR-0500) is
 #                  accepted only by its exact pinned digest. Any other digest without
 #                  both attestations stops the deploy before the tailnet is joined
+#   gate           wait until every check of the release commit has finished, and stop
+#                  unless all of them are green: success, skipped or neutral (ADR-0021).
+#                  The checks are those GitHub records on the commit (the workflows of
+#                  this repository and the apps, such as SonarCloud), apart from this
+#                  job. One red, cancelled or timed-out check stops the deploy at once;
+#                  a commit with no checks is refused; checks still running after the
+#                  wait (GATE_TRIES x GATE_INTERVAL seconds, 45 minutes) fail the step
 #   deploy         run the deploy command on the VM over Tailscale SSH; changes the VM,
-#                  so it is only called after the approval and, for a manual run, only
+#                  so it is only called after the gate and, for a manual run, only
 #                  when APPLY is true. It first runs update with DEVOPS_SHA, so the
 #                  commands of the release, taken only from a commit on main, do the
 #                  rest (ADR-0018, MIL-032). With MIGRATIONS set it then sends migrations.sql
@@ -31,8 +38,9 @@
 # Environment (set by the workflow through env:, never interpolated):
 #   GITHUB_REPOSITORY, GITHUB_OUTPUT, GITHUB_STEP_SUMMARY, GITHUB_SERVER_URL,
 #   GITHUB_ACTOR, GITHUB_EVENT_NAME   set by the runner
-#   GH_TOKEN     the job token, for check-run and verify (attestations: read,
-#                packages: read)
+#   GH_TOKEN     the job token, for check-run, verify and gate (attestations: read,
+#                packages: read, checks: read)
+#   GATE_TRIES GATE_INTERVAL   the polls of gate (default 90 x 30 seconds)
 #   RUN_ID       the release run, for check-run and summary
 #   VM_HOST      the tailnet name of the VM, for deploy
 #   SHA DEVOPS_SHA WEB API ANALYSIS BENCHMARK   the checked manifest fields, for verify,
@@ -40,7 +48,7 @@
 #   MIGRATIONS   the checked SHA-256 of migrations.sql, for deploy (empty: none)
 #   OUTCOME      the job status, for summary
 #
-# Usage: cd-steps.sh check-run|read-manifest|verify|deploy|summary
+# Usage: cd-steps.sh check-run|read-manifest|verify|gate|scope|deploy|summary
 # Exit:  0 the step passed; 1 the step failed (with an ::error:: line); 2 usage error
 # Needs: bash 4+, gh, jq, docker (for verify), tailscale (for deploy)
 
@@ -56,6 +64,8 @@ readonly MIGRATIONS_FILE=migrations.sql
 readonly FENCE='```'
 readonly OWNER=NF-Hotel
 readonly SBOM_PREDICATE=https://spdx.dev/Document/v2.3
+# The check of this job, left out of the gate: it is running while the gate runs.
+readonly DEPLOY_CHECK="Deploy to production"
 
 fail() {
   echo "::error::$*"
@@ -162,6 +172,33 @@ deploy() {
   ((status == 0)) || fail "the deploy on $VM_HOST failed (exit $status); see the deploy log"
 }
 
+# gate: deploy only when everything on the release commit is green (ADR-0021).
+gate() {
+  [[ "${SHA:-}" =~ ^[0-9a-f]{40}$ ]] || fail "bad release commit"
+  local tries="${GATE_TRIES:-90}" interval="${GATE_INTERVAL:-30}" n checks pending failed count
+  [[ "$tries" =~ ^[0-9]+$ && "$interval" =~ ^[0-9]+$ ]] || fail "GATE_TRIES and GATE_INTERVAL must be numbers"
+  for ((n = 1; n <= tries; n++)); do
+    checks="$(gh api --paginate "repos/$GITHUB_REPOSITORY/commits/$SHA/check-runs?per_page=100" \
+      --jq '.check_runs[] | [.name, .status, (.conclusion // "")] | @tsv')" || fail "cannot read the checks of $SHA"
+    checks="$(awk -F'\t' -v self="$DEPLOY_CHECK" '$1 != self' <<<"$checks")"
+    [[ -n "$checks" ]] || fail "the commit $SHA has no checks; nothing is deployed"
+    count="$(wc -l <<<"$checks")"
+    failed="$(awk -F'\t' '$2 == "completed" && $3 !~ /^(success|skipped|neutral)$/ { print "  " $1 " (" $3 ")" }' <<<"$checks")"
+    if [[ -n "$failed" ]]; then
+      printf 'Not deployed: these checks of %s are not green:\n%s\n' "$SHA" "$failed" | tee gate.log
+      fail "not every check of $SHA is green; nothing is deployed"
+    fi
+    pending="$(awk -F'\t' '$2 != "completed" { print $1 }' <<<"$checks" | paste -sd, -)"
+    if [[ -z "$pending" ]]; then
+      echo "- All $count checks of \`$SHA\` are green." | tee gate.log
+      return 0
+    fi
+    echo "waiting ($n/$tries) for: $pending"
+    sleep "$interval"
+  done
+  fail "checks of $SHA still running after $((tries * interval)) seconds: $pending; nothing is deployed"
+}
+
 # reach <port>: whether a TCP connection to that port of the VM opens within 5 seconds.
 reach() {
   timeout 5 bash -c "exec 3<>/dev/tcp/$VM_HOST/$1" 2>/dev/null
@@ -213,6 +250,9 @@ summary() {
     if [[ -f "$MANIFEST" ]]; then
       printf '\n%sjson\n%s\n%s\n' "$FENCE" "$(cat "$MANIFEST")" "$FENCE"
     fi
+    if [[ -f gate.log ]]; then
+      printf '\n### Checks of the commit (ADR-0021)\n\n%s\n' "$(cat gate.log)"
+    fi
     if [[ -f scope.log ]]; then
       printf '\n### Tailnet scope of this CI node\n\n%s\n' "$(cat scope.log)"
     fi
@@ -227,6 +267,7 @@ case "${1:-}" in
   read-manifest) read_manifest ;;
   verify) verify ;;
   deploy) deploy ;;
+  gate) gate ;;
   scope) scope ;;
   summary) summary ;;
   -h | --help) usage ;;
