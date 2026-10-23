@@ -55,10 +55,11 @@ All traffic runs on the tailnet; no part is on the internet.
 
 | What | Where |
 | --- | --- |
-| Grafana (dashboard, logs) | `http://<LXC address>:3000`, user `admin`; tailnet admins only |
+| Grafana (dashboard, logs) | `http://<LXC address>:3000`, user `admin`, with the password of step C4 |
 | Alerts | Discord `#nf-hotel-alerts` |
 | Watchdog | Healthchecks.io check "NF Hotel monitoring watchdog" |
-| The LXC | Proxmox container `120`, host name `nf-monitoring`; shell: `pct enter 120` on the node, or `tailscale ssh root@nf-monitoring` |
+| The LXC | Proxmox container `102`, host name `nf-monitoring`; shell: `pct enter 102` on the node, or `tailscale ssh root@nf-monitoring` |
+| IDs on the Proxmox node | `100` nf-hotel (VM), `101` sports-club (VM), `102` nf-monitoring (LXC) |
 | The configuration in the LXC | `/opt/nfhotel-monitoring/ops/deploy/monitoring/` |
 | Alloy on the VM | `/opt/nfhotel/ops/deploy/alloy/`, started by CD once `alloy.env` exists |
 | Job reports on the VM | `/var/lib/nfhotel-metrics/*.prom` |
@@ -104,9 +105,11 @@ This is done once, by S03, in five parts, about 45 minutes in all. Do the parts 
 ]
 ```
 
-Merge each list into the one that is already in the policy. Then click *Save*.
+Merge each list into the one that is already in the policy, and keep the existing grants, `ssh` rules and tests. Then click *Save*.
 
 **Result:** the policy saves without an error. Its tests still pass.
+
+> **Who can open Grafana.** The grant above lets admins reach port 3000. If the policy already has a broad grant, such as `autogroup:member` to every destination on every port, that grant still lets every member reach Grafana too: grants only add access. Grafana's own login (user `admin`, the password of C4) then protects it. Narrowing the broad grant is a separate decision for the whole tailnet, so this guide does not remove it.
 
 ### Part B: the container (Proxmox node, as root)
 
@@ -118,17 +121,19 @@ Open the node's *Shell* in the Proxmox web interface.
 pct list; qm list
 ```
 
-Pick an ID that neither command lists. This guide uses `120`.
+Pick an ID that neither command lists. On the NF Hotel node, `100` is nf-hotel and `101` is sports-club, so the monitoring uses **`102`**. The script refuses an ID that a container or a VM already uses.
 
 **B2. Download the template.**
 
 ```bash
 pveam update
 pveam available --section system | grep debian-13
-pveam download local debian-13-standard_13.1-2_amd64.tar.zst
+pveam download local <the newest debian-13-standard file of the list>
 ```
 
-If the list shows a newer file, download that one. Then put `MONITORING_TEMPLATE=local:vztmpl/<file>` in front of the commands in B4.
+On 2026-10-23 the newest file was `debian-13-standard_13.6-1_amd64.tar.zst`. The script uses the newest Debian 13 template that `pveam list local` shows, so no setting is needed. To use another one, put `MONITORING_TEMPLATE=local:vztmpl/<file>` in front of the commands in B4.
+
+**Result:** `pveam list local` shows the file.
 
 **B3. Get the scripts.**
 
@@ -137,30 +142,35 @@ apt-get install -y git
 git clone --depth 1 https://github.com/NF-Hotel/NFHotel.git /root/nfhotel
 ```
 
+If `/root/nfhotel` exists from an earlier try, bring it up to date instead: `git -C /root/nfhotel pull --ff-only`. Only then does it find the template by itself.
+
 **B4. Check, then create the container.**
 
 ```bash
 pvesm status
-bash /root/nfhotel/ops/scripts/create-monitoring-lxc.sh 120
+ip -br link show vmbr0
+bash /root/nfhotel/ops/scripts/create-monitoring-lxc.sh 102
 ```
 
-The second command only prints what it would do. Check the storage and the bridge in that printout:
+The last command only prints what it would do, starting with the template it chose. Check the template, the storage and the bridge in that printout:
 
 - The storage must be one that `pvesm status` lists. The default is `local-lvm`; set `MONITORING_STORAGE=<name>` if yours differs.
-- The bridge default is `vmbr0`; set `MONITORING_BRIDGE=<name>` if yours differs.
+- The bridge default is `vmbr0`, and `ip -br link show vmbr0` must show it `UP`; set `MONITORING_BRIDGE=<name>` if yours differs.
 
 Then run it again with `--apply`:
 
 ```bash
-bash /root/nfhotel/ops/scripts/create-monitoring-lxc.sh 120 --apply
+bash /root/nfhotel/ops/scripts/create-monitoring-lxc.sh 102 --apply
 ```
 
-**Result:** the script ends with `==> done` and lists the next steps. `pct status 120` prints `status: running`.
+**Result:** the script ends with `==> done` and lists the next steps. `pct status 102` prints `status: running`.
+
+If it stops with `is not downloaded`, the script did not find the template: check `pveam list local`, or give `MONITORING_TEMPLATE` as in B2. Nothing was created then, so run it again.
 
 ### Part C: the monitoring (inside the container)
 
 ```bash
-pct enter 120
+pct enter 102
 ```
 
 **C1. Join the tailnet.**
@@ -313,13 +323,13 @@ Each alert in Discord names what failed. Start with the first step below. Once t
 | `CertificateRenewalStale` | warning | The renewal has not succeeded for 26 hours | `journalctl -u nfhotel-cert-renew` |
 | `TaskReportMissing` | warning | A job has never reported success, or its file is gone | Run the job's service once (`sudo systemctl start nfhotel-backup.service`) and read its journal |
 | `HealthReportMissing` | warning | The container health report is missing | `systemctl status nfhotel-report-health.timer` |
-| Healthchecks.io: down | — | The monitoring itself is silent | `pct status 120` on the node; then `docker compose ps` in the LXC |
+| Healthchecks.io: down | — | The monitoring itself is silent | `pct status 102` on the node; then `docker compose ps` in the LXC |
 
 ## Troubleshooting
 
 | Problem | Cause and fix |
 | --- | --- |
-| Grafana does not open | Your computer must be on the tailnet as an admin (grant A3). Check `tailscale status` in the LXC, and the `grafana` service in `docker compose ps` |
+| Grafana does not open | Your computer must be on the tailnet, with a grant to port 3000 of `tag:monitoring` (A3). Check `tailscale status` in the LXC, and the `grafana` service in `docker compose ps` |
 | `deploy-monitoring.sh` says a secret is readable by others | Run `chmod 600 secrets/*`, then run the script again |
 | `deploy-monitoring.sh` says the address is not of this host | `MONITORING_BIND` must be the output of `tailscale ip -4` in the LXC |
 | No logs or host data from `nf-hotel` | `alloy.env` is missing or has a wrong address (D1); or the grant `tag:nfhotel-vm` → `tag:monitoring` is missing (A3). On the VM, run `sudo docker logs nfhotel-alloy-alloy-1 --tail 20` |
