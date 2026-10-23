@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [4726c39] |
 
 ---
 
@@ -62,3 +62,4 @@ None.
 [RC-182]: rc-182-monitoring-wiki-guide.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[4726c39]: https://github.com/NF-Hotel/NFHotel/commit/4726c39f9ed39373d5a019ac8d79786ae96e01b6
