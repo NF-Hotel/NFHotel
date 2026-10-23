@@ -80,10 +80,14 @@ components="$(get /api/v0/web/components)"
   ok "the journal and host components are loaded" || ko "components: ${components:0:200}"
 [[ "$components" != *'"state":"unhealthy"'* ]] && ok "no component is unhealthy" ||
   ko "unhealthy: $(grep -o '"localID":"[^"]*"[^}]*"state":"unhealthy"' <<<"$components" | head -3)"
-get /api/v0/component/prometheus.exporter.unix.host/metrics | grep -q 'task="t_alloy"' &&
-  ok "Alloy reads the job reports in /var/lib/nfhotel-metrics" || ko "the job report is not in the host metrics"
-! compose logs alloy 2>&1 | grep -qi 'permission denied' && ok "Alloy logs no permission error" ||
-  ko "logs: $(compose logs alloy 2>&1 | grep -i 'permission denied' | head -3)"
+# Read into a variable first: under pipefail, grep -q would end the pipe early and fail it.
+metrics="$(get /api/v0/component/prometheus.exporter.unix.host/metrics)"
+[[ "$metrics" == *'task="t_alloy"'* ]] &&
+  ok "Alloy reads the job reports in /var/lib/nfhotel-metrics" ||
+  ko "the job report is not in the host metrics: $(grep -E 'textfile' <<<"$metrics" | head -3)"
+logs="$(compose logs alloy 2>&1)"
+[[ "${logs,,}" != *"permission denied"* ]] && ok "Alloy logs no permission error" ||
+  ko "logs: $(grep -i 'permission denied' <<<"$logs" | head -3)"
 
 compose restart alloy >/dev/null 2>&1
 for _ in $(seq 1 24); do

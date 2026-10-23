@@ -333,6 +333,7 @@ Each alert in Discord names what failed. Start with the first step below. Once t
 | `deploy-monitoring.sh` says a secret is readable by others | Run `chmod 600 secrets/*`, then run the script again |
 | `deploy-monitoring.sh` says the address is not of this host | `MONITORING_BIND` must be the output of `tailscale ip -4` in the LXC |
 | No logs or host data from `nf-hotel` | `alloy.env` is missing or has a wrong address (D1); or the grant `tag:nfhotel-vm` → `tag:monitoring` is missing (A3). On the VM, run `sudo docker logs nfhotel-alloy-alloy-1 --tail 20` |
+| Alloy restarts on `nf-hotel`, or the CD run warns "alloy did not turn healthy" | Run `sudo docker logs nfhotel-alloy-alloy-1 --tail 20`. Alloy runs as its own user 473 with the host's `systemd-journal` group, which CD finds with `getent group systemd-journal`. `permission denied` means a mount it cannot read; the CI job *Ops monitoring configuration* starts Alloy the same way, so a pull request shows it first |
 | The site probes fail but the site works | The grant `tag:monitoring` → `tag:nfhotel-vm` on 80 and 443 is missing (A3) |
 | No alert in Discord, but Grafana shows a red value | Run `docker compose logs alertmanager` in the LXC; a wrong webhook URL shows there as an error with `receiver=discord` |
 

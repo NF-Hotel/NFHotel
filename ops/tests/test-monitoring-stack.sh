@@ -69,7 +69,8 @@ modes="$(stat -c '%a %u' "$mon/secrets" "$mon/secrets/discord-webhook-url" "$mon
   ok "each secret belongs to the user of its container, 0400, in a 0711 folder" ||
   ko "secret modes: $(stat -c '%n %a %u' "$mon/secrets" "$mon/secrets/"*)"
 
-curl -fsS -u "admin:$password" http://127.0.0.1:3000/api/user 2>/dev/null | grep -q '"login":"admin"' &&
+user="$(curl -fsS -u "admin:$password" http://127.0.0.1:3000/api/user 2>/dev/null)"
+[[ "$user" == *'"login":"admin"'* ]] &&
   ok "Grafana takes the admin password from its file" || ko "Grafana login: $(compose logs --tail 10 grafana)"
 
 rules="$(curl -fsS http://127.0.0.1:9090/api/v1/rules 2>/dev/null)"
@@ -92,7 +93,8 @@ for _ in $(seq 1 24); do
   sleep 5
 done
 [[ "$alerts" == *'"alertname":"Watchdog"'* ]] && ok "the Watchdog reaches Alertmanager" || ko "alerts: ${alerts:0:200}"
-! compose logs alertmanager 2>&1 | grep -qi 'permission denied' && ok "Alertmanager logs no permission error" ||
+logs="$(compose logs alertmanager 2>&1)"
+[[ "${logs,,}" != *"permission denied"* ]] && ok "Alertmanager logs no permission error" ||
   ko "Alertmanager: $(compose logs alertmanager 2>&1 | grep -i 'permission denied' | head -2)"
 
 # The silence of the wiki page Monitoring (Daily use) works as written.
