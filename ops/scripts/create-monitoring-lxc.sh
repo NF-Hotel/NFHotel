@@ -2,7 +2,7 @@
 # Create the LXC container that runs the monitoring of NF Hotel (ADR-0020, MIL-023 task 7).
 # S03 runs it once as root on the Proxmox node. It changes nothing without --apply.
 #
-#   1. refuse an ID that is in use, and a template that is not downloaded
+#   1. refuse an ID that a container or a VM uses, and a template that is not downloaded
 #   2. create an unprivileged Debian 13 container with nesting and keyctl (for Docker),
 #      2 cores, 4 GiB memory and a 32 GiB disk, started at boot
 #   3. start it and install Docker, the compose plugin, git and Tailscale (from the
@@ -11,19 +11,20 @@
 #      tag:monitoring, the clone of NF-Hotel/NFHotel and scripts/deploy-monitoring.sh
 #
 # Usage: create-monitoring-lxc.sh <id> [--apply]
-#   <id>     a free container ID, for example 120
+#   <id>     a free ID that neither `pct list` nor `qm list` shows, for example 102
 #   --apply  create the container; without it the script prints what it would do
-# Env:   MONITORING_TEMPLATE (default local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst),
+# Env:   MONITORING_TEMPLATE (default: the newest debian-13-standard template that
+#        `pveam list local` shows, so a newer download needs no setting),
 #        MONITORING_STORAGE (default local-lvm), MONITORING_BRIDGE (default vmbr0)
 # Exit:  0 created (or a dry run); 1 a step failed; 2 usage error
-# Needs: bash 4+, root on a Proxmox VE node (pct, pveam)
+# Needs: bash 4+, root on a Proxmox VE node (pct, qm, pveam)
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=ops/scripts/lib/common.sh
 . "$ROOT/scripts/lib/common.sh"
-template="${MONITORING_TEMPLATE:-local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst}"
+template="${MONITORING_TEMPLATE:-}"
 storage="${MONITORING_STORAGE:-local-lvm}"
 bridge="${MONITORING_BRIDGE:-vmbr0}"
 id="" apply=0
@@ -46,7 +47,19 @@ done
   usage >&2
   exit 2
 }
-[[ "$template" =~ ^[a-z0-9_-]+:vztmpl/[A-Za-z0-9._-]+$ ]] || die "MONITORING_TEMPLATE is not a template volume"
+# The template: the one given, or the newest Debian 13 standard template downloaded to the
+# storage local. A fixed default goes out of date as soon as Proxmox offers a newer one.
+if [[ -z "$template" ]]; then
+  template="$(pveam list local 2>/dev/null | awk '{print $1}' |
+    grep -E '^local:vztmpl/debian-13-standard_[0-9.]+-[0-9]+_amd64\.tar\.zst$' | sort -V | tail -n 1)" || true
+  if [[ -z "$template" ]]; then
+    ((apply)) && die "no Debian 13 template is downloaded; run: pveam update; pveam available --section system | grep debian-13; pveam download local <file>"
+    template="local:vztmpl/debian-13-standard_<newest>_amd64.tar.zst"
+  fi
+fi
+[[ "$template" == *"<newest>"* || "$template" =~ ^[a-z0-9_-]+:vztmpl/[A-Za-z0-9._-]+$ ]] ||
+  die "MONITORING_TEMPLATE is not a template volume"
+echo "    template: $template"
 
 run() {
   if ((apply)); then
@@ -60,6 +73,7 @@ if ((apply)); then
   [[ "$(id -u)" == 0 ]] || die "run it as root on the Proxmox node"
   command -v pct >/dev/null || die "pct not found: run it on the Proxmox node"
   pct status "$id" >/dev/null 2>&1 && die "container $id exists already"
+  qm status "$id" >/dev/null 2>&1 && die "the VM $id uses this ID; choose one that neither pct list nor qm list shows"
   pveam list "${template%%:*}" | grep -q "${template#*:}" ||
     die "$template is not downloaded (pveam update && pveam download ${template%%:*} ${template##*/})"
 fi

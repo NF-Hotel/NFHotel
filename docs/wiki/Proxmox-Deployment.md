@@ -58,7 +58,9 @@ Docker network `nfhotel-proxy`.
 
 ## VM size
 
-The production VM `nf-hotel` (Proxmox VMID 100) has 4 vCPU, 20 GiB memory, a 111 GB disk and Debian 13. These values were read on the VM on 2026-10-21 (ADR-0010 decision 6). A new VM made by these scripts gets the default below.
+The production VM `nf-hotel` (Proxmox VMID 100) has 4 vCPU, 20 GiB memory, a 111 GB disk and Debian 13.
+
+The same node also runs the VM `sports-club` (101) and, for the monitoring of NF Hotel (ADR-0020), the unprivileged LXC `nf-monitoring` (102): 2 cores, 4 GiB memory, a 32 GiB disk on `local-lvm`, on `vmbr0`, started at boot. Its setup is in [Monitoring](Monitoring). These values were read on the VM on 2026-10-21 (ADR-0010 decision 6). A new VM made by these scripts gets the default below.
 
 12 GiB memory (12288 MiB), 4 vCPU, 60 GiB disk, Debian 12 with Docker and the compose plugin,
 built from the official cloud image by cloud-init. Change the size in `ops/deploy.env`.
