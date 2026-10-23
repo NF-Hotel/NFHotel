@@ -1,0 +1,44 @@
+# Publish docs/wiki to the GitHub wiki of this repository (ADR-0022). The pages are written
+# and reviewed in docs/wiki; this keeps the wiki equal to main, so nobody copies them by hand.
+#
+# Triggers: pushes to main that change docs/wiki or this workflow, and by hand.
+# Secrets: none; the job's GITHUB_TOKEN with contents: write, which GitHub requires to push to
+#   the wiki of this repository.
+# Verified with actionlint 1.7.7 (ops/tests/lint.sh).
+name: NF Hotel Wiki
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/wiki/**
+      - ops/scripts/publish-wiki.sh
+      - .github/workflows/publish-wiki.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One publish at a time, in order; a later one carries every page of main anyway.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish docs/wiki to the GitHub wiki
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: bash ops/scripts/publish-wiki.sh

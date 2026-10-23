@@ -58,6 +58,7 @@ jobs:
           - test-backup-target.sh
           - test-dora-metrics.sh
           - test-report-health.sh
+          - test-publish-wiki.sh
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
