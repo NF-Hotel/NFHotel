@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | MIL-023 |
-| CrossReference | [BC-001], [ADR-0003], [MIL-022], [DSA-001], [ADR-0020], [RC-169] |
+| CrossReference | [BC-001], [ADR-0003], [MIL-022], [DSA-001], [ADR-0020], [RC-169], [ADR-0021], [RC-172] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-091 Go | [f4649ad] |
-| 2026-10-22 | Accepted | mikemike | AI as stand-in for S01 | Observability follows ADR-0020: tasks 7 to 10 and criteria 7 and 8 added; uptime check moved out of task 4; accepted after RC-169 Go | [2b09b0b] |
+| 2026-10-22 | Deprecated | mikemike | AI as stand-in for S01 | Observability follows ADR-0020: tasks 7 to 10 and criteria 7 and 8 added; uptime check moved out of task 4; accepted after RC-169 Go | [2b09b0b] |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Task 12 added: code findings that block the deploy gate of ADR-0021; accepted after RC-172 Go | [caaf6b8] |
 
 ---
 
@@ -107,6 +107,7 @@ Decide whether the VM and the containers are hardened and observed well enough t
 | 8 | Alloy on nf-hotel | `ops/deploy/alloy/`: logs of the containers and the journal to Loki, host and container metrics to Prometheus, the job reports from a text file. Installed and updated by CD (ADR-0018). Read-only access to the Docker socket and the journal. | No | ADR-0020 |
 | 9 | Alerts and watchdog | Alert rules: site or API down, certificate under 21 days, disk over 80 %, container unhealthy, backup over 26 h, off-VM copy over 72 h, certificate renewal over 26 h. The backup, copy and renewal write their last success. Alertmanager sends to Discord, and the `Watchdog` goes to Healthchecks.io. Secrets are in git-ignored settings. | No | ADR-0020 |
 | 10 | Alarm drill | Raise each alert of criterion 7 on purpose, and record the times in an RC. | No | ADR-0020 |
+| 12 | Code findings that block the deploy gate | Clear the findings that make a check of `main` red, which the deploy gate of ADR-0021 waits on: SonarCloud S2068 (a password in the design-time placeholder connection string, never used to connect) and docker:S6473 (`EXPOSE 22` in the backup target), and the Danish comment of `NFHotel.Domain.csproj` (English only). | No | ADR-0021 |
 | 11 | Check and review | Prove the criteria; reviews against `qc-programming-shell`, `qc-yaml`, `qc-workflow`. | No | |
 
 ---
@@ -115,7 +116,9 @@ Decide whether the VM and the containers are hardened and observed well enough t
 [ADR-0003]: https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0003-proxmox-vm-for-services.md
 [MIL-022]: ./mil-022-supply-chain-security.md
 [DSA-001]: ../sqa/devsecops-assessment.md
-[f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [RC-169]: ../sqa/reviews/rc-169-mil-023-amendment.md
 [2b09b0b]: https://github.com/NF-Hotel/NFHotel/commit/2b09b0bffdff14a310d4a5dcac10d719d11dd7b5
+[ADR-0021]: ../adr/adr-0021-automatic-deploy-when-green.md
+[RC-172]: ../sqa/reviews/rc-172-mil-023-task-12.md
+[caaf6b8]: https://github.com/NF-Hotel/NFHotel/commit/caaf6b8c9ed143ecaab254a3af2d9b3729240d73

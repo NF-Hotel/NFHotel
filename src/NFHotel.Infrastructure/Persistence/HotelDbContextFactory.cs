@@ -24,8 +24,10 @@ public sealed class HotelDbContextFactory : IDesignTimeDbContextFactory<HotelDbC
     /// <summary>The environment variable that can override the connection string at design time.</summary>
     public const string ConnectionStringEnvironmentVariable = "NFHOTEL_CONNECTION";
 
+    // No password: the placeholder is only read to generate and script migrations and never
+    // connects, so it needs none (SonarCloud S2068, MIL-023 task 12).
     private const string PlaceholderConnectionString =
-        "Host=localhost;Port=5432;Database=nfhotel;Username=postgres;Password=postgres";
+        "Host=localhost;Port=5432;Database=nfhotel;Username=postgres";
 
     /// <inheritdoc />
     public HotelDbContext CreateDbContext(string[] args)

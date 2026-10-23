@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    NFHotel.Domain er kernen: nul projektreferencer, nul NuGet-pakker.
+    NFHotel.Domain is the core: no project references and no NuGet packages.
     If a <PackageReference> or a <ProjectReference> is ever added here,
     the Clean Architecture dependency direction is broken (Architecture.md section 2).
   -->
