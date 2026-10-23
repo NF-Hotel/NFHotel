@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [2db387b] |
 
 ---
 
@@ -56,3 +56,4 @@ None.
 [ADR-0022]: ../../adr/adr-0022-publish-the-wiki-from-docs.md
 [RC-180]: rc-180-monitoring-install-guide.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[2db387b]: https://github.com/NF-Hotel/NFHotel/commit/2db387bd26a891feec4f0f6d2d094f86b547af1a
