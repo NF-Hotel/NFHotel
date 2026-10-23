@@ -1,0 +1,6 @@
+// NF Hotel VM (MIL-023 task 4, CIS-001): refresh the package lists and run
+// unattended-upgrade once a day, through Debian's apt-daily timers. Installed by
+// scripts/install-patching.sh.
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT::Periodic::AutocleanInterval "7";

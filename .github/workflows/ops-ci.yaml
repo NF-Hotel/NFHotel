@@ -55,6 +55,7 @@ jobs:
           - test-switch-vm-checkout.sh
           - test-renew-certificate.sh
           - test-backup-target.sh
+          - test-dora-metrics.sh
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -64,6 +65,24 @@ jobs:
         env:
           TEST: ${{ matrix.test }}
         run: docker run --rm -v "$PWD/ops:/src:ro" debian:12-slim bash "/src/tests/$TEST"
+
+  host-hardening:
+    name: Ops host hardening (Debian 13, MIL-023)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test the Docker daemon, patching and evidence scripts
+        run: docker run --rm -v "$PWD/ops:/src:ro" debian:13-slim bash /src/tests/test-host-setup.sh
+      # NET_ADMIN and SYS_ADMIN let the test load nftables rules and make network namespaces
+      # inside its own container; nothing changes on the runner.
+      - name: Test the firewall in network namespaces
+        run: >-
+          docker run --rm --cap-add NET_ADMIN --cap-add SYS_ADMIN --sysctl net.ipv4.ip_forward=1
+          -v "$PWD/ops:/src:ro" debian:13-slim bash /src/tests/test-nftables.sh
 
   nginx:
     name: Ops nginx routes

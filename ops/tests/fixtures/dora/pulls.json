@@ -1,0 +1,14 @@
+[
+  {"number": 1, "title": "First change", "labels": [],
+   "first_commit_at": "2026-09-01T08:00:00Z", "merged_at": "2026-09-01T10:00:00Z",
+   "merge_commit_sha": "c2"},
+  {"number": 2, "title": "Change that broke the deploy", "labels": ["enhancement"],
+   "first_commit_at": "2026-09-02T13:00:00Z", "merged_at": "2026-09-03T08:00:00Z",
+   "merge_commit_sha": "c4"},
+  {"number": 4, "title": "Urgent fix", "labels": ["hotfix"],
+   "first_commit_at": "2026-09-09T09:00:00Z", "merged_at": "2026-09-10T08:00:00Z",
+   "merge_commit_sha": "c6"},
+  {"number": 3, "title": "Change not deployed yet", "labels": [],
+   "first_commit_at": "2026-09-19T08:00:00Z", "merged_at": "2026-09-20T08:00:00Z",
+   "merge_commit_sha": "c7"}
+]

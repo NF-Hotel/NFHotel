@@ -27,6 +27,15 @@ services:
         org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
     restart: unless-stopped
     env_file: ${NFHOTEL_WEB_ENV_FILE:-nfhotel-web.env}
+    # Hardening (MIL-023 task 2, CIS-001): the image runs as the user app on port 8080 and
+    # needs no capability; only /tmp is written.
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 1g
+    cpus: 2
+    pids_limit: 512
     # The token for the API is written once, in deploy/nfhotel-api/nfhotel-api.env as
     # Api__Token. scripts/deploy-services.sh exports it as API_TOKEN; when running
     # compose by hand, export it first.

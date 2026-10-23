@@ -8,9 +8,19 @@
 name: market-analysis
 
 x-analysis-image: &analysis-image ${MARKET_ANALYSIS_IMAGE:-market-analysis:local}
+# Hardening of both entries (MIL-023 task 2, CIS-001): the image runs as the user app and
+# needs no capability. The history is in the volume; marimo and Python write their caches
+# to /tmp and the home folder, which are tmpfs.
+x-hardening: &hardening
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  read_only: true
+  tmpfs: [/tmp, /home/app]
+  pids_limit: 256
 
 services:
   market-analysis-api:
+    <<: *hardening
     image: *analysis-image
     build:
       context: .
@@ -22,6 +32,8 @@ services:
         org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
     restart: unless-stopped
     env_file: ${MARKET_ANALYSIS_ENV_FILE:-market-analysis.env}
+    mem_limit: 2g
+    cpus: 2
     command:
       - python
       - -m
@@ -58,9 +70,12 @@ services:
       - api
 
   market-analysis-notebook:
+    <<: *hardening
     image: *analysis-image
     restart: unless-stopped
     env_file: ${MARKET_ANALYSIS_ENV_FILE:-market-analysis.env}
+    mem_limit: 1g
+    cpus: 1
     command:
       - python
       - -m
