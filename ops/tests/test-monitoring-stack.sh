@@ -95,5 +95,11 @@ done
 ! compose logs alertmanager 2>&1 | grep -qi 'permission denied' && ok "Alertmanager logs no permission error" ||
   ko "Alertmanager: $(compose logs alertmanager 2>&1 | grep -i 'permission denied' | head -2)"
 
+# The silence of the wiki page Monitoring (Daily use) works as written.
+am=(exec -T alertmanager amtool --alertmanager.url=http://localhost:9093)
+compose "${am[@]}" silence add --duration=1h --comment="test" 'alertname!=Watchdog' >/dev/null 2>&1 &&
+  [[ "$(compose "${am[@]}" silence query -q 2>/dev/null | wc -l)" == 1 ]] &&
+  ok "the silence of the wiki page is accepted" || ko "amtool silence add failed"
+
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))

@@ -1,126 +1,126 @@
 # Monitoring
 
-How NF Hotel is watched, why it is built this way, how to install it step by step, and what to do when an alert arrives. The decision and the options that were weighed are in ADR-0020; the work is MIL-023 tasks 7 to 10.
+The monitoring of NF Hotel tells the team in Discord when the site, a container or a nightly job fails, and keeps 14 days of logs and 30 days of metrics to find out why.
 
-## What it answers
+**For:** the people who install, run and change the monitoring (S03), and anyone who answers an alert.
+**Decision:** [ADR-0020](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0020-monitoring-stack.md), which explains why, with the options that were weighed. **Work:** MIL-023 tasks 7 to 10.
 
-The team should learn that something is wrong before a guest does, without anyone watching a screen:
+**Contents**
+1. [Overview](#overview)
+2. [Quick reference](#quick-reference)
+3. [Install the monitoring](#install-the-monitoring)
+4. [Daily use](#daily-use)
+5. [Runbook: when an alert arrives](#runbook-when-an-alert-arrives)
+6. [Troubleshooting](#troubleshooting)
+7. [Change the monitoring](#change-the-monitoring)
+8. [Reference](#reference)
+9. [Why it is built this way](#why-it-is-built-this-way)
 
-- Is the site up, does port 80 redirect, and is the certificate valid?
-- Is a container stopped or unhealthy, or is the disk filling up?
-- Did the backup, the copy off the VM and the certificate renewal succeed?
-- What did a container log before it failed, even after a deploy recreated it?
-- Is the monitoring itself alive?
+---
 
-## The parts, and why each was chosen
+## Overview
 
-| Part | Where | What it does | Why this one |
-| --- | --- | --- | --- |
-| [Prometheus](https://prometheus.io/docs/introduction/overview/) | Monitoring LXC | Keeps the metrics for 30 days and evaluates the alert rules | The standard for metrics and alert rules. The rules are plain files in git that CI tests with `promtool test rules`. It is free and self-hosted, so no data leaves the tailnet |
-| [blackbox_exporter](https://github.com/prometheus/blackbox_exporter) | Monitoring LXC | Probes `https://nf-hotel.taildb84b5.ts.net/` (status 200 and the certificate days) and port 80 (301) | It checks the site the way a user meets it, from outside the VM, so a dead VM is seen too |
-| [Alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/) | Monitoring LXC | Sends the alerts to Discord `#nf-hotel-alerts` | It groups alerts, repeats them every 4 hours while they last, and sends "resolved". It also silences the follow-on alerts: a dead site does not also report a broken redirect |
-| [Loki](https://grafana.com/docs/loki/latest/) | Monitoring LXC | Keeps the logs for 14 days | It indexes only labels (container, host), so it is light enough for a small LXC. The logs survive a container that is recreated |
-| [Grafana](https://grafana.com/docs/grafana/latest/) | Monitoring LXC, port 3000 on the tailnet | The dashboard "NF Hotel overview", and log search (Explore, data source Loki) | One place for metrics and logs. The data sources and the dashboard are provisioned from git, so nothing is clicked together by hand |
-| [Grafana Alloy](https://grafana.com/docs/alloy/latest/) | `nf-hotel` (`ops/deploy/alloy/`) | Sends the container logs and the journal to Loki, and the host metrics and the reports in `/var/lib/nfhotel-metrics` to Prometheus | One agent for logs and metrics instead of three (node_exporter, cAdvisor, Promtail). Promtail is deprecated in favour of Alloy |
-| [Healthchecks.io](https://healthchecks.io/docs/) | SaaS (free plan) | Alerts when the `Watchdog` stops arriving | A monitor cannot report its own death. Healthchecks.io runs somewhere else and alerts when the minute signal from Alertmanager stops |
-| Discord `#nf-hotel-alerts` | SaaS | Where alerts arrive | The team already uses Discord, and its phone app gives a push message. Nobody needs a new tool |
-
-### Why these choices
-
-- **The monitoring runs off the VM.** It runs in an LXC on the Proxmox node, not on `nf-hotel`, so it still reports when the VM is down. A VM monitoring itself goes silent at the exact moment it is needed.
-- **An LXC, not a second VM.**
-  - It shares the node's kernel, so it needs about 4 GiB of memory instead of a full guest.
-  - It is unprivileged (root inside is not root on the node).
-  - *nesting* and *keyctl* are the only features Docker needs.
-- **Tailnet only.**
-  - Grafana, Prometheus and Loki are published on the LXC's tailnet address only.
-  - The tailnet policy lets only the needed pairs talk.
-  - No port is opened on the internet, and no password protects a public page.
-- **Push from nf-hotel.**
-  - Alloy sends to Prometheus (remote write) and to Loki; the LXC never logs in to the VM.
-  - Nothing new listens on `nf-hotel`, and the firewall of MIL-023 task 3 stays as it is.
-- **Docker is read through a proxy.** Alloy reads the Docker API through a socket proxy that allows only read calls on containers. A bug in Alloy cannot start, stop or exec containers.
-- **The jobs report their success.** "Is the timer enabled?" is not enough: a timer can run a job that fails every night.
-  - Each job writes the time of its last success.
-  - An alert fires when that time grows old, or when the report is missing.
-- **Everything is code.**
-  - Every rule, route, dashboard and pipeline is a file in `ops/`.
-  - CI checks them with the tools of the pinned images on every pull request.
-  - CD installs the parts on `nf-hotel` (ADR-0018).
-
-### The jobs on nf-hotel
-
-| File in `/var/lib/nfhotel-metrics` | Written by | Alert when |
-| --- | --- | --- |
-| `backup.prom` | The database backup (`nfhotel-backup.timer`, and before every deploy) | Older than 26 hours (`BackupStale`) or missing (`TaskReportMissing`) |
-| `offvm_copy.prom` | The copy to the backup target on the legion laptop | Older than 72 hours (`OffVmCopyStale`); the laptop may be off for a weekend |
-| `cert_renew.prom` | The certificate renewal (`nfhotel-cert-renew.timer`) | Older than 26 hours (`CertificateRenewalStale`) |
-| `containers.prom` | `nfhotel-report-health.timer`, every minute | A container stopped or unhealthy for 30 s (`ContainerUnhealthy`), or no report (`HealthReportMissing`) |
-
-CD installs and enables these. They already run, before the monitoring exists.
-
-## Installation, step by step
-
-S03 does these steps once. They are in this order because each step needs the one before it. Every value that is a secret goes into a file and nowhere else: not into a chat, an issue, a commit or a screenshot.
-
-### Part A: in the browser (about 15 minutes)
-
-**A1. The Discord webhook.**
-1. In Discord, create the text channel `#nf-hotel-alerts` if it does not exist.
-2. Open its settings (the gear), then *Integrations*, then *Webhooks*, then *New Webhook*.
-3. Name it `NF Hotel monitoring` and click *Copy Webhook URL*. Keep the URL in your password manager until step C4.
-
-*Why:* anyone who has the URL can post in the channel, so it is a secret.
-
-**A2. The Healthchecks.io check.**
-1. Sign up at [healthchecks.io](https://healthchecks.io/) (the free plan is enough).
-2. Add a check named `NF Hotel monitoring watchdog` with *Period* 1 minute and *Grace time* 5 minutes.
-3. Under *Integrations*, add Discord (the same channel) or your e-mail.
-4. Copy the check's ping URL (`https://hc-ping.com/...`) to your password manager.
-
-*Why:* Alertmanager pings the URL every minute. When the pings stop for 5 minutes, Healthchecks.io alerts you that the monitoring itself is down.
-
-**A3. The tailnet policy.**
-1. In the [Tailscale admin console](https://login.tailscale.com/admin/acls), open *Access controls*.
-2. Add `tag:monitoring` to `tagOwners`, and add the three grants below to the existing `grants`:
-
-   ```json
-   "tagOwners": { "tag:monitoring": ["autogroup:admin"] },
-   "grants": [
-     { "src": ["tag:nfhotel-vm"], "dst": ["tag:monitoring"], "ip": ["tcp:9090", "tcp:3100"] },
-     { "src": ["tag:monitoring"], "dst": ["tag:nfhotel-vm"], "ip": ["tcp:80", "tcp:443"] },
-     { "src": ["autogroup:admin"], "dst": ["tag:monitoring"], "ip": ["tcp:3000"] }
-   ]
-   ```
-3. Save. The console refuses a policy that breaks its own tests, so a typing error cannot lock anyone out.
-
-*Why:*
-- Alloy on the VM may write to Prometheus (9090) and Loki (3100).
-- The probes may reach the site (80, 443).
-- Only admins may open Grafana (3000).
-- No other traffic is allowed.
-
-The tag must exist before step C1, which gives it to the LXC.
-
-Also add this entry to the existing `ssh` list. It lets an admin open a shell in the LXC with Tailscale SSH, after a fresh sign-in (`check`):
-
-```json
-{ "action": "check", "src": ["autogroup:admin"], "dst": ["tag:monitoring"], "users": ["root"] }
+```mermaid
+flowchart LR
+  subgraph VM["nf-hotel (VM)"]
+    C[Containers] -->|logs| A[Alloy]
+    J[systemd journal] -->|logs| A
+    T["Job reports<br/>/var/lib/nfhotel-metrics"] -->|metrics| A
+    H[Host] -->|metrics| A
+  end
+  subgraph LXC["nf-monitoring (LXC on the Proxmox node)"]
+    P[Prometheus] --> AM[Alertmanager]
+    L[Loki]
+    B[blackbox] -->|probe results| P
+    G[Grafana] --> P
+    G --> L
+  end
+  A -->|remote write :9090| P
+  A -->|push :3100| L
+  B -->|HTTPS and port 80| VM
+  AM -->|alerts| D[Discord #nf-hotel-alerts]
+  AM -->|Watchdog every minute| HC[Healthchecks.io]
+  HC -->|"silence = monitoring down"| D
 ```
 
-### Part B: on the Proxmox node, as root (about 10 minutes)
+- **Alloy** on `nf-hotel` sends logs and metrics to the LXC. Nothing on the VM listens for the monitoring.
+- **blackbox** checks the site from outside the VM, the way a user meets it.
+- **Prometheus** evaluates the alert rules, and **Alertmanager** sends the alerts to Discord.
+- **Healthchecks.io** alerts if the monitoring itself goes silent.
+- **Grafana** shows the dashboard and searches the logs.
+
+All traffic runs on the tailnet; no part is on the internet.
+
+## Quick reference
+
+| What | Where |
+| --- | --- |
+| Grafana (dashboard, logs) | `http://<LXC address>:3000`, user `admin`; tailnet admins only |
+| Alerts | Discord `#nf-hotel-alerts` |
+| Watchdog | Healthchecks.io check "NF Hotel monitoring watchdog" |
+| The LXC | Proxmox container `120`, host name `nf-monitoring`; shell: `pct enter 120` on the node, or `tailscale ssh root@nf-monitoring` |
+| The configuration in the LXC | `/opt/nfhotel-monitoring/ops/deploy/monitoring/` |
+| Alloy on the VM | `/opt/nfhotel/ops/deploy/alloy/`, started by CD once `alloy.env` exists |
+| Job reports on the VM | `/var/lib/nfhotel-metrics/*.prom` |
+| Retention | Metrics 30 days, logs 14 days |
+
+## Install the monitoring
+
+This is done once, by S03, in five parts, about 45 minutes in all. Do the parts in order: each part needs the one before it.
+
+> **Secrets.** The Discord webhook URL, the Healthchecks.io ping URL and the Grafana password are secrets. Keep them in your password manager until step C4, and put them only in the files of that step: never in a chat, an issue, a commit or a screenshot.
+
+### Before you start
+
+- An admin login for Discord, the Tailscale admin console and the Proxmox web interface.
+- Your own computer on the tailnet.
+- Shell access to `nf-hotel` (`nfadmin`).
+
+### Part A: accounts and access (browser)
+
+**A1. Create the Discord webhook.**
+1. In Discord, create the text channel `#nf-hotel-alerts` if it does not exist.
+2. Open the channel settings, then *Integrations*, then *Webhooks*, then *New Webhook*.
+3. Name it `NF Hotel monitoring`.
+4. Click *Copy Webhook URL*, and save the URL in your password manager.
+
+**A2. Create the Healthchecks.io check.**
+1. Sign up at [healthchecks.io](https://healthchecks.io/). The free plan is enough.
+2. Add a check named `NF Hotel monitoring watchdog`, with *Period* 1 minute and *Grace time* 5 minutes.
+3. Under *Integrations*, add Discord (the same channel) or your e-mail.
+4. Save the ping URL (`https://hc-ping.com/…`) in your password manager.
+
+**A3. Allow the traffic on the tailnet.** In the [Tailscale admin console](https://login.tailscale.com/admin/acls), open *Access controls* and add these to the policy. Keep the existing entries.
+
+```json
+"tagOwners": { "tag:monitoring": ["autogroup:admin"] },
+"grants": [
+  { "src": ["tag:nfhotel-vm"], "dst": ["tag:monitoring"], "ip": ["tcp:9090", "tcp:3100"] },
+  { "src": ["tag:monitoring"], "dst": ["tag:nfhotel-vm"], "ip": ["tcp:80", "tcp:443"] },
+  { "src": ["autogroup:admin"], "dst": ["tag:monitoring"], "ip": ["tcp:3000"] }
+],
+"ssh": [
+  { "action": "check", "src": ["autogroup:admin"], "dst": ["tag:monitoring"], "users": ["root"] }
+]
+```
+
+Merge each list into the one that is already in the policy. Then click *Save*.
+
+**Result:** the policy saves without an error. Its tests still pass.
+
+### Part B: the container (Proxmox node, as root)
 
 Open the node's *Shell* in the Proxmox web interface.
 
-**B1. Choose a free container ID.**
+**B1. Choose a free ID.**
 
 ```bash
 pct list; qm list
 ```
 
-Use an ID that neither list shows, for example `120`. The VM `nf-hotel` is 100.
+Pick an ID that neither command lists. This guide uses `120`.
 
-**B2. Download the Debian 13 template.**
+**B2. Download the template.**
 
 ```bash
 pveam update
@@ -128,9 +128,7 @@ pveam available --section system | grep debian-13
 pveam download local debian-13-standard_13.1-2_amd64.tar.zst
 ```
 
-If the list shows a newer file name, download that one, and later set `MONITORING_TEMPLATE=local:vztmpl/<file name>` in front of the script.
-
-*Why:* Debian 13 is the release `nf-hotel` runs, so the same commands and fixes apply to both.
+If the list shows a newer file, download that one. Then put `MONITORING_TEMPLATE=local:vztmpl/<file>` in front of the commands in B4.
 
 **B3. Get the scripts.**
 
@@ -139,29 +137,27 @@ apt-get install -y git
 git clone --depth 1 https://github.com/NF-Hotel/NFHotel.git /root/nfhotel
 ```
 
-**B4. Check, then create.**
+**B4. Check, then create the container.**
 
 ```bash
 pvesm status
 bash /root/nfhotel/ops/scripts/create-monitoring-lxc.sh 120
 ```
 
-The first command lists the storages. The second command only prints what it would do.
+The second command only prints what it would do. Check the storage and the bridge in that printout:
 
-- The storage defaults to `local-lvm`. If `pvesm status` shows another name, set `MONITORING_STORAGE=<name>` in front of the script.
-- The bridge defaults to `vmbr0`; set `MONITORING_BRIDGE` the same way if yours differs.
+- The storage must be one that `pvesm status` lists. The default is `local-lvm`; set `MONITORING_STORAGE=<name>` if yours differs.
+- The bridge default is `vmbr0`; set `MONITORING_BRIDGE=<name>` if yours differs.
 
-When the printout looks right, create the container:
+Then run it again with `--apply`:
 
 ```bash
 bash /root/nfhotel/ops/scripts/create-monitoring-lxc.sh 120 --apply
 ```
 
-The container gets the name `nf-monitoring`, 2 cores, 4 GiB of memory and a 32 GiB disk, and it starts at boot. The script also installs Docker, git and Tailscale inside it, from Tailscale's signed apt repository.
+**Result:** the script ends with `==> done` and lists the next steps. `pct status 120` prints `status: running`.
 
-*Why the dry run first:* `pct create` changes the node. The printout lets you check the storage, the bridge and the ID before anything happens.
-
-### Part C: inside the LXC (about 15 minutes)
+### Part C: the monitoring (inside the container)
 
 ```bash
 pct enter 120
@@ -173,15 +169,13 @@ pct enter 120
 tailscale up --ssh --advertise-tags=tag:monitoring --hostname=nf-monitoring
 ```
 
-Open the sign-in link it prints, in your own browser, and approve the machine. Then run:
+Open the link that it prints, and approve the machine. Then run:
 
 ```bash
 tailscale ip -4
 ```
 
-It prints the LXC's tailnet address, for example `100.x.y.z`. You need it in C3 and D1.
-
-*Why:* `--ssh` lets you reach the LXC later with `tailscale ssh root@nf-monitoring` without an open ssh port. The tag puts it under the grants of A3.
+**Result:** an address like `100.x.y.z`. This guide calls it the *LXC address*.
 
 **C2. Get the configuration.**
 
@@ -190,7 +184,7 @@ git clone https://github.com/NF-Hotel/NFHotel.git /opt/nfhotel-monitoring
 cd /opt/nfhotel-monitoring/ops/deploy/monitoring
 ```
 
-**C3. The settings.**
+**C3. Write the settings.**
 
 ```bash
 cp monitoring.env.example monitoring.env
@@ -198,7 +192,9 @@ sed -i "s/^MONITORING_BIND=.*/MONITORING_BIND=$(tailscale ip -4)/" monitoring.en
 cat monitoring.env
 ```
 
-**C4. The secrets.** These commands read the values without showing them, and keep them out of the shell history:
+**Result:** `MONITORING_BIND=` shows the LXC address.
+
+**C4. Write the secrets.** `read -s` shows nothing while you paste, and the values stay out of the shell history.
 
 ```bash
 install -d -m 700 secrets
@@ -211,15 +207,7 @@ chmod 600 secrets/*
 cat secrets/grafana-admin-password; echo
 ```
 
-The last command shows the Grafana password once. Save it in your password manager.
-
-*Why:*
-- The files are git-ignored, and readable only by root (0600). The start script refuses a file that a group or another user can read.
-- In C5, the start script gives each file to the one container that reads it, mode 0400:
-  - the two URLs to Alertmanager, which runs as `nobody`;
-  - the password to Grafana, which runs as user 472.
-
-  The containers drop every capability, so they cannot read a file of root. The folder becomes 0711, so it can be passed through but not listed.
+Save the Grafana password that the last command shows in your password manager.
 
 **C5. Check, then start.**
 
@@ -229,77 +217,171 @@ bash /opt/nfhotel-monitoring/ops/scripts/deploy-monitoring.sh --apply
 docker compose --env-file monitoring.env ps
 ```
 
-The first command checks the settings, the secrets and the configuration with the pinned tools, and starts nothing. When it ends with "configuration valid", the second command starts the stack. It returns when every service is healthy, and `ps` lists five services, all `healthy` or `running`.
+- The first command checks the settings, the secrets and the configuration, and starts nothing.
+- The second command gives each secret file to the container that reads it, then starts the stack. It returns when every service is up.
 
-**C6. Look.**
-1. On your own computer, which is on the tailnet, open `http://<the address of C1>:3000`.
-2. Sign in as `admin` with the password of C4.
-3. The dashboard "NF Hotel overview" shows the site probes at once. The host data appears after part D.
+**Result:** the first command ends with `configuration valid`, and `ps` lists five services (`alertmanager`, `blackbox`, `grafana`, `loki`, `prometheus`), all running.
 
-Within a few minutes, the Healthchecks.io check turns green, because the Watchdog arrives.
+**C6. Check that it works.**
+1. On your own computer, open `http://<LXC address>:3000` and sign in as `admin`.
+2. Open the dashboard *NF Hotel overview*. The panel *Site over HTTPS* shows 1.
+3. In Healthchecks.io, the check turns green within 2 minutes.
 
-### Part D: on nf-hotel (about 5 minutes)
+### Part D: the agent on nf-hotel
 
 **D1. Point Alloy at the LXC.**
 
 ```bash
 cd /opt/nfhotel/ops/deploy/alloy
 sudo -u nfhotel cp alloy.env.example alloy.env
-sudo -u nfhotel sed -i "s/100\.64\.0\.2/<the address of C1>/" alloy.env
+sudo -u nfhotel sed -i "s/100\.64\.0\.2/<LXC address>/" alloy.env
 sudo -u nfhotel cat alloy.env
 ```
 
-The next CD run starts Alloy by itself. Until the file exists, CD leaves Alloy out with a note, so CD never breaks because the monitoring is missing.
+**Result:** both URLs show the LXC address.
 
-*Why it is not started by hand:* CD owns what runs on `nf-hotel` (ADR-0018). A container started by hand would be replaced, or forgotten, at the next deploy.
+The next CD run starts Alloy by itself. You do not start it by hand: CD owns what runs on the VM (ADR-0018), and a container started by hand would be replaced at the next deploy.
 
-**D2. Check.** After that CD run, open *Explore* in Grafana, choose *Loki*, and run `{host="nf-hotel"}`: the container logs appear. Within 10 minutes, the dashboard shows the disk, the memory and the containers.
+**D2. Check that data arrives.** After that CD run:
+- In Grafana, *Explore*, data source *Loki*, the query `{host="nf-hotel"}` shows log lines.
+- Within 10 minutes, the dashboard shows the disk and the containers.
 
-### Part E: the alarm drill (MIL-023 task 10)
+### Part E: the alarm drill
 
-Raise each alert on purpose once, and record when it arrives in Discord (the record is an RC):
+Raise each alert once on purpose, and record when it arrives in Discord (MIL-023 task 10, recorded in an RC):
 
 | Alert | How to raise it | Must arrive within |
 | --- | --- | --- |
-| A stopped web container | `sudo docker stop nfhotel-web-nfhotel-web-1`, then start it again | 3 minutes |
-| A stale backup | Backdate `backup.prom` by 27 hours: `sudo sed -i 's/ [0-9]*$/ '"$(($(date +%s) - 97200))"'/' /var/lib/nfhotel-metrics/backup.prom` | The next evaluation; the next backup writes a fresh file |
-| The certificate check | Raise the threshold from 21 to 400 days in a branch of the rules, deploy it to the LXC, then set it back | 10 minutes |
-| A stopped Prometheus | `docker compose --env-file monitoring.env stop prometheus` in the LXC, then start it | 5 minutes (Healthchecks.io) |
+| `ContainerUnhealthy` | `sudo docker stop nfhotel-web-nfhotel-web-1`, then `sudo docker start nfhotel-web-nfhotel-web-1` | 3 minutes |
+| `BackupStale` | `sudo sed -i 's/ [0-9]*$/ '"$(($(date +%s) - 97200))"'/' /var/lib/nfhotel-metrics/backup.prom` (27 hours old) | 2 minutes; the next backup writes a fresh file |
+| `CertificateExpiresSoon` | In a branch, raise the threshold from 21 to 400 days, deploy it to the LXC, then set it back | 11 minutes |
+| Watchdog (Healthchecks.io) | `docker compose --env-file monitoring.env stop prometheus` in the LXC, then `start prometheus` | 6 minutes |
 
-## When an alert arrives
+## Daily use
 
-| Alert | First step |
+### Read the dashboard
+
+*NF Hotel overview* has these panels:
+- the site over HTTPS and the days left on the certificate;
+- the disk;
+- the hours since each job last succeeded;
+- the health of each container over time;
+- the error lines in the logs.
+
+### Search the logs
+
+In Grafana, open *Explore* and choose the data source *Loki*. Some useful queries:
+
+| To see | Query |
 | --- | --- |
-| `SiteDown` | Open the site. If it is down, run `sudo docker ps` on `nf-hotel`, then read the latest CD run (wiki page [CI-CD](CI-CD)) |
-| `RedirectBroken` | `curl -sI http://nf-hotel.taildb84b5.ts.net/` must answer 301; check the nginx container |
-| `CertificateExpiresSoon` | `systemctl status nfhotel-cert-renew.service` and its journal (ADR-0009) |
-| `NoMetricsFromNfHotel` | The VM, Alloy (`sudo docker ps` for `alloy`) or the tailnet path is down |
-| `DiskAlmostFull` | `df -h /`, then `sudo docker image prune` |
-| `ContainerUnhealthy` | `sudo docker logs --tail 50 <container>` |
-| `BackupStale` | `systemctl status nfhotel-backup.timer` and `journalctl -u nfhotel-backup` (ADR-0008) |
-| `OffVmCopyStale` | The backup target on the legion laptop is off or unreachable; the backups wait on the VM |
-| `CertificateRenewalStale` | `journalctl -u nfhotel-cert-renew` |
-| `TaskReportMissing` | The job never succeeded, or its file in `/var/lib/nfhotel-metrics` was removed; run the job's service and read its journal |
-| `HealthReportMissing` | `systemctl status nfhotel-report-health.timer` |
-| Healthchecks.io: watchdog down | The monitoring LXC or Alertmanager is down: run `pct status 120` on the node, then `docker ps` in the LXC |
+| Everything from the VM | `{host="nf-hotel"}` |
+| One container | `{container="nfhotel-web-nfhotel-web-1"}` |
+| Errors of the API | `{container="nfhotel-api-nfhotel-api-1"} \|~ "(?i)error\|exception"` |
+| The last backup runs | `{source="journal", unit="nfhotel-backup.service"}` |
+| The deploys | `{source="journal"} \|= "nfhotel-deploy"` |
 
-## Updating the monitoring
+Set the time range at the top right. The logs go back 14 days.
 
-A change of `ops/deploy/monitoring/` is reviewed in a pull request, and the job "Ops monitoring configuration" checks it. After the merge, run this in the LXC:
+### Silence an alert during planned work
+
+Before a planned stop, for example a VM reboot, silence the alerts so the channel is not flooded. Run this in the LXC:
+
+```bash
+cd /opt/nfhotel-monitoring/ops/deploy/monitoring
+docker compose --env-file monitoring.env exec alertmanager amtool silence add \
+  --alertmanager.url=http://localhost:9093 --duration=1h --comment="VM reboot" 'alertname!=Watchdog'
+```
+
+- List the silences with `amtool silence query`, using the same `--alertmanager.url`.
+- End a silence early with `amtool silence expire <id>`.
+- The matcher `alertname!=Watchdog` silences every alert except the Watchdog, so Healthchecks.io still knows that the monitoring is alive.
+
+## Runbook: when an alert arrives
+
+Each alert in Discord names what failed. Start with the first step below. Once the cause is gone, Alertmanager posts *RESOLVED* by itself.
+
+| Alert | Severity | Means | First step |
+| --- | --- | --- | --- |
+| `SiteDown` | critical | The site has not answered over HTTPS for 2 minutes | Open the site. Then run `sudo docker ps` on `nf-hotel`, and read the latest CD run ([CI-CD](CI-CD)) |
+| `RedirectBroken` | warning | Port 80 has not redirected to HTTPS for 5 minutes | `curl -sI http://nf-hotel.taildb84b5.ts.net/` must answer 301; check the nginx container |
+| `CertificateExpiresSoon` | warning | The certificate has fewer than 21 days left | `systemctl status nfhotel-cert-renew.service` and its journal (ADR-0009) |
+| `NoMetricsFromNfHotel` | critical | No data from the VM for 10 minutes | Is the VM up (`qm status 100` on the node)? Is Alloy running (`sudo docker ps \| grep alloy`)? |
+| `DiskAlmostFull` | warning | The root disk is more than 80 % full | `df -h /`, then `sudo docker image prune` |
+| `ContainerUnhealthy` | critical | A container has been stopped or unhealthy for 30 s | `sudo docker logs --tail 50 <container>` |
+| `BackupStale` | critical | The last good backup is more than 26 hours old | `systemctl status nfhotel-backup.timer` and `journalctl -u nfhotel-backup` (ADR-0008) |
+| `OffVmCopyStale` | warning | No backup has been copied off the VM for 72 hours | Turn on the legion laptop or bring it back on the tailnet. The backups wait on the VM |
+| `CertificateRenewalStale` | warning | The renewal has not succeeded for 26 hours | `journalctl -u nfhotel-cert-renew` |
+| `TaskReportMissing` | warning | A job has never reported success, or its file is gone | Run the job's service once (`sudo systemctl start nfhotel-backup.service`) and read its journal |
+| `HealthReportMissing` | warning | The container health report is missing | `systemctl status nfhotel-report-health.timer` |
+| Healthchecks.io: down | — | The monitoring itself is silent | `pct status 120` on the node; then `docker compose ps` in the LXC |
+
+## Troubleshooting
+
+| Problem | Cause and fix |
+| --- | --- |
+| Grafana does not open | Your computer must be on the tailnet as an admin (grant A3). Check `tailscale status` in the LXC, and the `grafana` service in `docker compose ps` |
+| `deploy-monitoring.sh` says a secret is readable by others | Run `chmod 600 secrets/*`, then run the script again |
+| `deploy-monitoring.sh` says the address is not of this host | `MONITORING_BIND` must be the output of `tailscale ip -4` in the LXC |
+| No logs or host data from `nf-hotel` | `alloy.env` is missing or has a wrong address (D1); or the grant `tag:nfhotel-vm` → `tag:monitoring` is missing (A3). On the VM, run `sudo docker logs nfhotel-alloy-alloy-1 --tail 20` |
+| The site probes fail but the site works | The grant `tag:monitoring` → `tag:nfhotel-vm` on 80 and 443 is missing (A3) |
+| No alert in Discord, but Grafana shows a red value | Run `docker compose logs alertmanager` in the LXC; a wrong webhook URL shows there as an error with `receiver=discord` |
+
+## Change the monitoring
+
+**Add or change an alert rule.**
+1. In a branch, edit [`prometheus/rules/nfhotel.yml`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/monitoring/prometheus/rules/nfhotel.yml).
+2. Add a test case to [`rules-test.yml`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/monitoring/prometheus/rules-test.yml) that shows the alert firing, and not firing when it should not.
+3. Add a row to the runbook above.
+4. Open a pull request. The job *Ops monitoring configuration* runs `promtool test rules`.
+
+**Deploy a merged change to the LXC.**
 
 ```bash
 cd /opt/nfhotel-monitoring && git pull --ff-only
 bash ops/scripts/deploy-monitoring.sh --apply
 ```
 
-The parts on `nf-hotel` (Alloy, the reports) are updated by CD.
+The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no step of yours.
 
-## Checks in CI
+## Reference
 
-The job "Ops monitoring configuration" runs `ops/tests/check-monitoring.sh` on every pull request. It uses the tools of the pinned images:
+**Files**
 
-- `promtool check config`, and `promtool test rules` (`prometheus/rules-test.yml`);
+| File | What it holds |
+| --- | --- |
+| [`ops/deploy/monitoring/docker-compose.yml`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/monitoring/docker-compose.yml) | The five services, pinned by digest and hardened |
+| [`prometheus/prometheus.yml`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/monitoring/prometheus/prometheus.yml) | The probes and the scrape settings (every 30 s) |
+| [`prometheus/rules/nfhotel.yml`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/monitoring/prometheus/rules/nfhotel.yml) | The alert rules |
+| [`alertmanager/alertmanager.yml`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/monitoring/alertmanager/alertmanager.yml) | The routes to Discord and Healthchecks.io |
+| [`ops/deploy/alloy/config.alloy`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/alloy/config.alloy) | What Alloy collects on `nf-hotel` |
+| [`ops/scripts/report-health.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/report-health.sh) | The container health report, every minute |
+| [`ops/scripts/deploy-monitoring.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/deploy-monitoring.sh) | Checks and starts the stack in the LXC |
+| [`ops/scripts/create-monitoring-lxc.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/create-monitoring-lxc.sh) | Creates the LXC on the Proxmox node |
+
+**Job reports on nf-hotel**
+
+| File | Written by | Alert when |
+| --- | --- | --- |
+| `backup.prom` | The backup (nightly, and before every deploy) | Older than 26 h, or missing |
+| `offvm_copy.prom` | The copy to the legion laptop | Older than 72 h, or missing |
+| `cert_renew.prom` | The certificate renewal (daily) | Older than 26 h, or missing |
+| `containers.prom` | `nfhotel-report-health.timer` (every minute) | A value of 0 for 30 s, or missing |
+
+**Checks in CI** (job *Ops monitoring configuration*, on every pull request):
+- `promtool check config` and `promtool test rules`;
 - `amtool check-config`;
 - `loki -verify-config` and `blackbox_exporter --config.check`;
 - `alloy fmt`;
-- a check that the dashboards are valid JSON.
+- a check that the dashboard is valid JSON;
+- a start of the whole stack as this guide does it.
+
+## Why it is built this way
+
+The full reasoning, with the options that were weighed, is in [ADR-0020](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0020-monitoring-stack.md). In short:
+
+- **Off the VM.** A VM that monitors itself goes silent at the moment it fails.
+- **An unprivileged LXC.** It runs the stack with far less memory than a second VM. Root in the container is not root on the node.
+- **Tailnet only, with pushes from the VM.** No port opens on the internet or on `nf-hotel`.
+- **Jobs report their success.** A timer that runs is not proof that the backup worked.
+- **A watchdog outside.** A monitor cannot report its own death.
+- **Everything is code.** It is reviewed, tested in CI, and the same after a rebuild.
