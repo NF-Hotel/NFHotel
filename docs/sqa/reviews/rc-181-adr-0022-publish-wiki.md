@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [2abf153] |
 
 ---
 
@@ -55,3 +55,4 @@ Go. The first run after the merge must show that the job's `GITHUB_TOKEN` may pu
 [QC-ADR-001]: ../../../framework/qc/artifacts/qc-adr.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[2abf153]: https://github.com/NF-Hotel/NFHotel/commit/2abf153a86440108d36bebadb79f07811616cd0b

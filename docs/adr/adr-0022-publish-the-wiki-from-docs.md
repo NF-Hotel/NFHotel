@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version; accepted after RC-181 Go | pending |
+| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version; accepted after RC-181 Go | [2abf153] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -71,3 +71,4 @@ We follow option 3.
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
 [ADR-0020]: ./adr-0020-monitoring-stack.md
+[2abf153]: https://github.com/NF-Hotel/NFHotel/commit/2abf153a86440108d36bebadb79f07811616cd0b
