@@ -4,9 +4,10 @@
 # scripts/deploy-services.sh deploys it last, and only when alloy.env exists (copy
 # alloy.env.example): until the monitoring runs, nf-hotel deploys without it.
 #
-# Alloy reads the containers through a socket proxy that allows only the read calls on
-# containers (list, inspect, logs). Alloy itself never sees the Docker socket, whose access
-# would equal root on the host. The host's /, /proc and /sys and the journal are read-only.
+# Alloy reads the containers through a socket proxy that allows only read calls: containers
+# (list, inspect, logs) and networks (list). Alloy itself never sees the Docker socket, whose
+# access would equal root on the host. The host's /, /proc and /sys and the journal are
+# read-only.
 name: nfhotel-alloy
 
 services:
@@ -15,10 +16,13 @@ services:
     restart: unless-stopped
     environment:
       CONTAINERS: "1"
+      # discovery.docker lists the networks on every refresh to label each target; with "0" the
+      # proxy answered 403 and no container log reached Loki (2026-10-23). POST "0" still
+      # refuses every write, so this adds GET /networks only.
+      NETWORKS: "1"
       POST: "0"
       INFO: "0"
       IMAGES: "0"
-      NETWORKS: "0"
       VOLUMES: "0"
       EXEC: "0"
     volumes:
