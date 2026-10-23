@@ -73,6 +73,53 @@ tests:
         alertname: OffVmCopyStale
         exp_alerts: []
 
+  - name: a missing report fires TaskReportMissing and HealthReportMissing, while nf-hotel sends
+    interval: 1m
+    input_series:
+      - series: 'node_uname_info{host="nf-hotel"}'
+        values: "1x60"
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup"}'
+        values: "0x60"
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="offvm_copy"}'
+        values: "0x60"
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: TaskReportMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+              task: cert_renew
+            exp_annotations:
+              summary: "nf-hotel has no cert_renew report"
+              description: >-
+                The job has not succeeded since /var/lib/nfhotel-metrics was made, or its report was
+                removed. Check its timer and journal on nf-hotel (wiki page Monitoring).
+      - eval_time: 40m
+        alertname: HealthReportMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "nf-hotel reports no container health"
+              description: >-
+                Check nfhotel-report-health.timer on nf-hotel: systemctl status
+                nfhotel-report-health.timer
+
+  - name: a VM that sends nothing raises no missing-report alert
+    interval: 1m
+    input_series:
+      - series: 'node_uname_info{host="other"}'
+        values: "1x60"
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: TaskReportMissing
+        exp_alerts: []
+      - eval_time: 40m
+        alertname: HealthReportMissing
+        exp_alerts: []
+
   - name: an unhealthy container fires ContainerUnhealthy
     interval: 1m
     input_series:

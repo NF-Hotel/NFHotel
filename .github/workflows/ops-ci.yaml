@@ -89,7 +89,7 @@ jobs:
   monitoring:
     name: Ops monitoring configuration (MIL-023)
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -97,6 +97,10 @@ jobs:
           persist-credentials: false
       - name: Check Prometheus, Alertmanager, Loki, blackbox, Alloy and the dashboards
         run: bash ops/tests/check-monitoring.sh
+      # Root makes the secret files 0600, as the wiki page says, and deploy-monitoring.sh must
+      # give each one to the user of its container; only the runner's own containers change.
+      - name: Start the stack as the wiki page says, and check it
+        run: sudo bash ops/tests/test-monitoring-stack.sh
 
   nginx:
     name: Ops nginx routes
