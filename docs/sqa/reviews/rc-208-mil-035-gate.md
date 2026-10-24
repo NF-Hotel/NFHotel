@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [84b9dfd] |
 
 ---
 
@@ -45,3 +45,4 @@ Go-with-conditions. Criteria 1, 2, 3 and 5 are met. Criterion 4 is met for every
 [RC-205]: rc-205-mil-035-code.md
 [ADR-0024]: ../../adr/adr-0024-secrets-as-files.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[84b9dfd]: https://github.com/NF-Hotel/NFHotel/commit/84b9dfdfbd878ce691ddd323535f37b76f5837e0
