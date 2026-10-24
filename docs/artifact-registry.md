@@ -23,7 +23,7 @@ Infrastructure documents (DSA-001, ADR-0007 to ADR-0011, MIL-021 to MIL-024 and 
 | CIS | CIS Benchmark checklist (no catalog type, proposed upstream) | docs/sqa/cis-checklist.md | 002 |
 | SAMM | OWASP SAMM assessment (no catalog type, proposed upstream) | docs/sqa/samm-baseline.md | 002 |
 | DORA | DORA metrics report (no catalog type, proposed upstream) | docs/sqa/dora/dora-NNN-*.md | 002 |
-| ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0024 |
+| ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0028 |
 | US | User Story | docs/user-stories.md | 002 |
 | UCD | Use Case Diagram | docs/use-case-diagram.md | 002 |
 | UC | Use Case | docs/use-cases/uc-*/uc.md | 007 |
