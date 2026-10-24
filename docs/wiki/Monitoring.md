@@ -264,8 +264,18 @@ Raise each alert once on purpose, and record when it arrives in Discord (MIL-023
 | --- | --- | --- |
 | `ContainerUnhealthy` | `sudo docker stop nfhotel-web-nfhotel-web-1`, then `sudo docker start nfhotel-web-nfhotel-web-1` | 3 minutes |
 | `BackupStale` | `sudo sed -i 's/ [0-9]*$/ '"$(($(date +%s) - 97200))"'/' /var/lib/nfhotel-metrics/backup.prom` (27 hours old) | 2 minutes; the next backup writes a fresh file |
-| `CertificateExpiresSoon` | In a branch, raise the threshold from 21 to 400 days, deploy it to the LXC, then set it back | 11 minutes |
-| Watchdog (Healthchecks.io) | `docker compose --env-file monitoring.env stop prometheus` in the LXC, then `start prometheus` | 6 minutes |
+| `CertificateExpiresSoon` | In the LXC, raise the threshold in the local copy only: `cd /opt/nfhotel-monitoring && sed -i 's/ \/ 86400 < 21$/ \/ 86400 < 400/' ops/deploy/monitoring/prometheus/rules/nfhotel.yml && bash ops/scripts/deploy-monitoring.sh --apply`. **After the alert**, set it back: `git checkout -- ops/deploy/monitoring/prometheus/rules/nfhotel.yml && bash ops/scripts/deploy-monitoring.sh --apply` | 11 minutes (the rule waits 10) |
+| Watchdog (Healthchecks.io) | `docker compose --env-file monitoring.env stop prometheus` in the LXC. **After the alert**, `start prometheus` | About 8 minutes: Alertmanager keeps the Watchdog until it expires, then Healthchecks.io waits its period and grace |
+
+Run the step that ends a drill only after the alert has arrived. Every alert needs a minute or more to pass the chain: report, scrape, rule evaluation, `for`, and the wait of Alertmanager. A step taken at once ends the drill before the monitoring can see it. Record the times in UTC (`date -u`), as Discord shows local time.
+
+Measured on 2026-10-24 (the alarm drill record, RC-189):
+
+| Drill | From cause to alert |
+| --- | --- |
+| `ContainerUnhealthy` | 2 min 45 s at most |
+| `BackupStale` | 49 s to 1 min 48 s |
+| Watchdog | About 8 minutes |
 
 ## Daily use
 

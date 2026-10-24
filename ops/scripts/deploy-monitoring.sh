@@ -9,7 +9,8 @@
 #   3. check the configuration with the tools of the pinned images: promtool check
 #      config, promtool test rules, amtool check-config, loki -verify-config
 #   4. give each secret file to the user its container runs as (0400), the folder 0711
-#   5. docker compose up -d --wait, so it returns once every service is running
+#   5. docker compose up -d --wait, so it returns once every service is running; each service
+#      whose configuration folder changed is recreated, so it reads the new files
 #
 # Usage: deploy-monitoring.sh [--apply]
 #   --apply  start or update the services; without it the script only checks (a dry run)
@@ -84,6 +85,17 @@ chown 472:472 "$dir/secrets/grafana-admin-password" || die "cannot change the ow
 chmod 0400 "$dir/secrets/discord-webhook-url" "$dir/secrets/healthchecks-watchdog-url" \
   "$dir/secrets/grafana-admin-password" || die "cannot set the mode of the secrets"
 chmod 0711 "$dir/secrets" || die "cannot set the mode of $dir/secrets"
+
+# The configuration files are bind mounts, so compose does not see a change in them, and a
+# running Prometheus kept its old rules (the alarm drill of 2026-10-24). A hash of each folder
+# goes into its service's environment: compose then recreates exactly the changed services.
+hash_of() { (cd "$dir" && find "$1" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16); }
+export PROMETHEUS_CONFIG_HASH ALERTMANAGER_CONFIG_HASH BLACKBOX_CONFIG_HASH LOKI_CONFIG_HASH GRAFANA_CONFIG_HASH
+PROMETHEUS_CONFIG_HASH="$(hash_of prometheus)" || die "cannot hash prometheus/"
+ALERTMANAGER_CONFIG_HASH="$(hash_of alertmanager)" || die "cannot hash alertmanager/"
+BLACKBOX_CONFIG_HASH="$(hash_of blackbox)" || die "cannot hash blackbox/"
+LOKI_CONFIG_HASH="$(hash_of loki)" || die "cannot hash loki/"
+GRAFANA_CONFIG_HASH="$(hash_of grafana)" || die "cannot hash grafana/"
 
 echo "==> starting the monitoring on $bind"
 (cd "$dir" && docker compose --env-file monitoring.env up -d --remove-orphans --wait --wait-timeout 180) ||
