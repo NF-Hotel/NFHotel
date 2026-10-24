@@ -32,6 +32,21 @@ limits_config:
   reject_old_samples: true
   reject_old_samples_max_age: 168h
 
+# Alert rules on the logs (MIL-036 task 2): rules/fake/*.yml of this folder (fake is the tenant
+# when auth is off), evaluated every minute and sent to the same Alertmanager as Prometheus.
+ruler:
+  storage:
+    type: local
+    local:
+      directory: /etc/loki/rules
+  rule_path: /loki/ruler
+  alertmanager_url: http://alertmanager:9093
+  evaluation_interval: 1m
+  enable_api: true
+  ring:
+    kvstore:
+      store: inmemory
+
 compactor:
   working_directory: /loki/compactor
   retention_enabled: true

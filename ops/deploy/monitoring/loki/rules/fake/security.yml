@@ -1,0 +1,20 @@
+# Alert rules on the logs of nf-hotel (MIL-036 task 2), evaluated by the ruler of Loki and sent
+# to Alertmanager. "fake" is the tenant of a Loki without auth. Proven by
+# ops/tests/test-monitoring-stack.sh, which pushes log lines and waits for the alert.
+groups:
+  - name: nfhotel-security-logs
+    rules:
+      # sshd answers on the tailnet only (MIL-023 task 3), so failed logins there come from a
+      # device of the tailnet: more than 10 in 10 minutes is someone guessing.
+      - alert: SshLoginFailures
+        expr: >-
+          sum(count_over_time({host="nf-hotel", source="journal", unit="ssh.service"}
+          |~ "Failed password|Invalid user|authentication failure" [10m])) > 10
+        labels:
+          severity: warning
+          host: nf-hotel
+        annotations:
+          summary: "{{ $value }} failed SSH logins on nf-hotel in 10 minutes"
+          description: >-
+            In Grafana: {source="journal", unit="ssh.service"} |~ "Failed|Invalid". Find the
+            device in tailscale status, and follow the incident procedure (wiki page Incidents).
