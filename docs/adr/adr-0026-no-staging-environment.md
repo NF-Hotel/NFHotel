@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-039, which S01 accepted in chat on 2026-10-24 | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-039, which S01 accepted in chat on 2026-10-24 | [c475cdd] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -75,3 +75,4 @@ We follow option 3: **no staging environment.**
 [ADR-0023]: ./adr-0023-application-telemetry.md
 [ADR-0024]: ./adr-0024-secrets-as-files.md
 [MIL-039]: ../milestones/mil-039-staging-environment.md
+[c475cdd]: https://github.com/NF-Hotel/NFHotel/commit/c475cdd6800351d6fa7e7852a39227b667296609
