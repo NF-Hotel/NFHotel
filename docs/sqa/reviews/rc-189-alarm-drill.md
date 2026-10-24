@@ -37,7 +37,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Stopped web container | 2026-10-23 14:23:15, `docker stop nfhotel-web-nfhotel-web-1` | `ContainerUnhealthy` 14:25 (16:25) | 2 min 45 s at most | 3 min | Started 14:24:01; *RESOLVED* in Discord |
 | 2 | Stale backup report | 2026-10-24 08:43:11, `backup.prom` backdated 27 h | `BackupStale` 08:44 (10:44) | 49 s to 1 min 48 s | Within minutes | Backup 08:47:47; *RESOLVED* 08:49 (10:49) |
-| 3 | Certificate below the threshold | 12:07:55, the threshold raised from 21 to 400 days in the LXC (72.4 days were left) | `CertificateExpiresSoon` *pending* 12:08:27, *firing* 12:18:35, in Discord 12:18 (14:18) | 10 min 40 s, of which the rule waits 10 min | 11 min | Rule put back at 12:18:49 (`git status` empty); *inactive* at 12:19:13 |
+| 3 | Certificate below the threshold | 12:07:55, the threshold raised from 21 to 400 days in the LXC (72.4 days were left) | `CertificateExpiresSoon` *pending* 12:08:27, *firing* 12:18:35, in Discord 12:18 (14:18) | 10 min 40 s, of which the rule waits 10 min | 11 min | Rule put back at 12:18:49 (`git status` empty); *inactive* at 12:19:13; *RESOLVED* in Discord 12:24 (14:24) |
 | 4 | Stopped Prometheus | 08:56:01, `docker compose stop prometheus` | Healthchecks.io "DOWN" about 09:03:58 | About 8 min | 6 min stated, about 8 measured | Started 09:06:09; Healthchecks.io "UP" 09:06:27 |
 
 **Verdict per drill:**
