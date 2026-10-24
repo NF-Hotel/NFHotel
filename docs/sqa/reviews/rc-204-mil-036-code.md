@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [c310ed5] |
 
 ---
 
@@ -66,3 +66,4 @@ Go.
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[c310ed5]: https://github.com/NF-Hotel/NFHotel/commit/c310ed55e5b2c580ea6f23484eee3023f479a862
