@@ -27,6 +27,29 @@ prometheus.relabel "host" {
 	}
 }
 
+// The metrics of the web application and the API, pushed over OTLP/HTTP on the internal network
+// nfhotel-api (MIL-034, ADR-0023). No port is published; only the applications reach it. The
+// service name of each application becomes the label job, and host is added as for the host.
+otelcol.receiver.otlp "apps" {
+	http {
+		endpoint = "0.0.0.0:4318"
+	}
+
+	output {
+		metrics = [otelcol.processor.batch.apps.input]
+	}
+}
+
+otelcol.processor.batch "apps" {
+	output {
+		metrics = [otelcol.exporter.prometheus.apps.input]
+	}
+}
+
+otelcol.exporter.prometheus "apps" {
+	forward_to = [prometheus.relabel.host.receiver]
+}
+
 prometheus.remote_write "monitoring" {
 	endpoint {
 		url = sys.env("PROMETHEUS_REMOTE_WRITE_URL")

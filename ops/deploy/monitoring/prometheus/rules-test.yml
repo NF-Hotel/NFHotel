@@ -2,6 +2,7 @@
 # `promtool test rules rules-test.yml` from the prometheus folder.
 rule_files:
   - rules/nfhotel.yml
+  - rules/applications.yml
 
 evaluation_interval: 30s
 
@@ -157,6 +158,139 @@ tests:
               description: >-
                 Alloy on nf-hotel sends nothing: the VM, Alloy or the tailnet path to the monitoring
                 is down.
+
+  - name: requests slower than 1 second at the 95th percentile fire ApplicationSlow
+    interval: 1m
+    input_series:
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/book", le="0.5"}
+        values: "0+1x30"
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/book", le="1"}
+        values: "0+1x30"
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/book", le="2.5"}
+        values: "0+10x30"
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/book", le="+Inf"}
+        values: "0+10x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: ApplicationSlow
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+              job: nfhotel-web
+            exp_annotations:
+              summary: "nfhotel-web answers slowly: 95 % of the requests take up to 2.417s"
+              description: >-
+                The objective is 1 second. Open the dashboard for the routes, and the logs of the
+                application in Grafana (wiki page Monitoring, runbook).
+
+  - name: a long Blazor circuit is not counted as a slow request
+    interval: 1m
+    input_series:
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/book", le="0.5"}
+        values: "0+10x30"
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/book", le="+Inf"}
+        values: "0+10x30"
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/_blazor", le="0.5"}
+        values: "0+0x30"
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/_blazor", le="+Inf"}
+        values: "0+10x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: ApplicationSlow
+        exp_alerts: []
+
+  - name: more than 5 % server errors with real traffic fire ApplicationErrors
+    interval: 1m
+    input_series:
+      - series: >-
+          http_server_request_duration_seconds_count{host="nf-hotel", job="nfhotel-web",
+          http_response_status_code="200"}
+        values: "0+10x30"
+      - series: >-
+          http_server_request_duration_seconds_count{host="nf-hotel", job="nfhotel-web",
+          http_response_status_code="500"}
+        values: "0+2x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: ApplicationErrors
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              host: nf-hotel
+              job: nfhotel-web
+            exp_annotations:
+              summary: "nfhotel-web answers 16.67% of its requests with a server error"
+              description: >-
+                Read its log in Grafana: {container=~".*nfhotel-web.*"} |= "fail"
+
+  - name: one server error at night is not an error rate
+    interval: 1m
+    input_series:
+      - series: >-
+          http_server_request_duration_seconds_count{host="nf-hotel", job="nfhotel-web",
+          http_response_status_code="500"}
+        values: "0+0.05x60"
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: ApplicationErrors
+        exp_alerts: []
+
+  - name: more than 5 unhandled exceptions in 10 minutes fire ApplicationExceptions
+    interval: 1m
+    input_series:
+      - series: >-
+          aspnetcore_diagnostics_exceptions_total{host="nf-hotel", job="nfhotel-api",
+          error_type="System.InvalidOperationException"}
+        values: "0+1x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: ApplicationExceptions
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+              job: nfhotel-api
+            exp_annotations:
+              summary: "nfhotel-api had 10 unhandled exceptions in 10 minutes"
+              description: >-
+                The type is the label error_type of aspnetcore_diagnostics_exceptions_total; the
+                stack trace is in the log of the application in Grafana.
+
+  - name: no request metrics while nf-hotel sends host metrics fire ApplicationMetricsMissing
+    interval: 1m
+    input_series:
+      - series: 'node_uname_info{host="nf-hotel"}'
+        values: "1x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: ApplicationMetricsMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+              job: nfhotel-web
+            exp_annotations:
+              summary: "nf-hotel sends no request metrics of the web application"
+              description: >-
+                Check Telemetry__OtlpEndpoint of nfhotel-web, and that Alloy is on the network
+                nfhotel-api (sudo docker logs nfhotel-alloy-alloy-1).
 
   - name: the Watchdog always fires
     interval: 1m

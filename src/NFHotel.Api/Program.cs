@@ -7,6 +7,7 @@ using NFHotel.Api.Security;
 using NFHotel.Api.Startup;
 using NFHotel.Application.Ports;
 using NFHotel.External;
+using NFHotel.External.Telemetry;
 using NFHotel.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,7 @@ builder.Services.AddControllers();
 builder.Services.AddSingleton(ApiToken.Read(builder.Configuration));
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHotelClock(builder.Configuration);
+builder.Services.AddServiceTelemetry(builder.Configuration, "nfhotel-api");   // metrics to the monitoring (MIL-034)
 builder.Services.AddMarketAnalysisService(builder.Configuration);   // the markets API that analyses the bookings (MIL-026)
 builder.Services.AddSingleton<ChannelMarketAnalysisRunLauncher>();
 builder.Services.AddSingleton<IMarketAnalysisRunLauncher>(provider => provider.GetRequiredService<ChannelMarketAnalysisRunLauncher>());

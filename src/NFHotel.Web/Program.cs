@@ -1,5 +1,6 @@
 using NFHotel.ApiClient;
 using NFHotel.External;
+using NFHotel.External.Telemetry;
 using NFHotel.Web.Common;
 using NFHotel.Web.Components;
 using NFHotel.Web.Features.Admin;
@@ -30,6 +31,7 @@ builder.Services.AddApiClient(builder.Configuration);
 builder.Services.AddHotelClock(builder.Configuration);
 builder.Services.AddHolidayApi(builder.Configuration);
 builder.Services.AddBenchmarkService(builder.Configuration);   // starts runs on the benchmark service (MIL-020)
+builder.Services.AddServiceTelemetry(builder.Configuration, "nfhotel-web");   // metrics to the monitoring (MIL-034)
 
 // Open generic scoped service: gives every use case call its own DI scope (Architecture.md section 8). The runner is
 // stateless, but it belongs to the circuit so that it can hand the staff token of the signed-in user to each call

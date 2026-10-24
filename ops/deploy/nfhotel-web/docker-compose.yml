@@ -44,6 +44,9 @@ services:
       Api__Token: ${API_TOKEN:?set it, from Api__Token in nfhotel-api.env}
       BenchmarkService__BaseUrl: http://benchmark:8000
       BenchmarkService__Token: ${BENCHMARK_API_TOKEN:-}
+      # The metrics go to Alloy on the network nfhotel-api (MIL-034). Without Alloy the export
+      # fails quietly and the application is not affected.
+      Telemetry__OtlpEndpoint: ${NFHOTEL_OTLP_ENDPOINT:-http://alloy:4318}
     expose:
       - "8080"
     healthcheck:

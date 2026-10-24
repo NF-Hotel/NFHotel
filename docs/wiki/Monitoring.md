@@ -278,6 +278,21 @@ Measured on 2026-10-24 (the alarm drill record, RC-189):
 | `CertificateExpiresSoon` | 10 min 40 s (the rule waits 10 min) |
 | Watchdog | About 8 minutes |
 
+## Service level objectives
+
+What a guest and a member of staff should get, measured from the applications themselves (MIL-034, ADR-0023). The web application and the API push their request metrics over OTLP to Alloy, which forwards them to Prometheus.
+
+| Objective | SLI (PromQL) | Alert |
+| --- | --- | --- |
+| **Availability:** the site answers over HTTPS 99.5 % of the time over 30 days | `avg_over_time(probe_success{job="site"}[30d])` | `SiteDown` after 2 minutes |
+| **Speed:** 95 % of the requests are answered within 1 second (the Blazor circuit not counted) | `job:http_server_request_duration_seconds:p95_5m` | `ApplicationSlow` after 10 minutes above 1 second |
+| **Errors:** fewer than 5 % of the answers are server errors | `job:http_server_requests:error_ratio_10m` | `ApplicationErrors` after 5 minutes above 5 %, with at least one request a minute |
+| **Exceptions:** an unhandled exception is rare | `increase(aspnetcore_diagnostics_exceptions_total[10m])` | `ApplicationExceptions` above 5 in 10 minutes |
+
+The panels "Requests per second", "95 % of the requests within" and "Server errors" of the dashboard show the SLIs per application (`job` is `nfhotel-web` or `nfhotel-api`). An exception's stack trace is in the log of its container: in *Explore*, `{container="nfhotel-web-nfhotel-web-1"} |= "fail"`.
+
+`ApplicationMetricsMissing` fires when the request metrics stop while the host still reports. The probes make requests every 30 seconds, so missing metrics mean that the export is broken, not that the site is quiet.
+
 ## Daily use
 
 ### Read the dashboard
@@ -334,6 +349,10 @@ Each alert in Discord names what failed. Start with the first step below. Once t
 | `CertificateRenewalStale` | warning | The renewal has not succeeded for 26 hours | `journalctl -u nfhotel-cert-renew` |
 | `TaskReportMissing` | warning | A job has never reported success, or its file is gone | Run the job's service once (`sudo systemctl start nfhotel-backup.service`) and read its journal |
 | `HealthReportMissing` | warning | The container health report is missing | `systemctl status nfhotel-report-health.timer` |
+| `ApplicationSlow` | warning | 95 % of the requests of an application take more than 1 second | The panel "95 % of the requests within", then the routes: `topk(5, histogram_quantile(0.95, sum by (http_route, le) (rate(http_server_request_duration_seconds_bucket{job="nfhotel-web"}[5m]))))` |
+| `ApplicationErrors` | critical | More than 5 % of the answers are server errors | The log of the application in Grafana; the error usually names the API or the database |
+| `ApplicationExceptions` | warning | More than 5 unhandled exceptions in 10 minutes | `sum by (error_type) (increase(aspnetcore_diagnostics_exceptions_total[1h]))`, then the stack trace in the log |
+| `ApplicationMetricsMissing` | warning | No request metrics from the web application | `Telemetry__OtlpEndpoint` of the container, and `sudo docker logs nfhotel-alloy-alloy-1` |
 | Healthchecks.io: down | — | The monitoring itself is silent | `pct status 102` on the node; then `docker compose ps` in the LXC |
 
 ## Troubleshooting

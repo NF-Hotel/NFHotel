@@ -80,7 +80,9 @@ services:
     mem_limit: 512m
     cpus: 0.5
     depends_on: [socket-proxy]
-    networks: [internal, egress]
+    # apps: the internal network of the web application and the API, which push their metrics
+    # to Alloy over OTLP (port 4318, not published; MIL-034).
+    networks: [internal, egress, apps]
 
 volumes:
   alloy-data:
@@ -90,3 +92,6 @@ networks:
   internal:
     internal: true
   egress: {}
+  apps:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
+    external: true
