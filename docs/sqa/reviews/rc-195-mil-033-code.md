@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [fc3da26] |
 
 ---
 
@@ -66,3 +66,4 @@ Go.
 [ADR-0006]: ../../adr/adr-0006-tls.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[fc3da26]: https://github.com/NF-Hotel/NFHotel/commit/fc3da26f3435d60fa0ab8b8af72592cf534bccc3
