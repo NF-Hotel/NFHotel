@@ -7,7 +7,8 @@
 # /etc/nginx/certs/ and reloaded the container nfhotel-nginx of the stack from before
 # the reconciliation; after that container stopped, the renewal failed (2026-10-21).
 #
-#   1. read the host name from NGINX_SERVER_NAME in ops/deploy/nginx/nginx.env
+#   1. read the host name from NGINX_SERVER_NAME in ops/deploy/nginx/nginx.env: the first of
+#      its names that is a tailnet name, as nginx's server_name may list several
 #   2. find the running nginx by its compose labels (project nfhotel-nginx, service
 #      nginx) and the folder it mounts as /etc/nginx/tls; without a running nginx, the
 #      folder ops/deploy/nginx/tls of the checkout
@@ -52,9 +53,20 @@ report_success() {
   } 2>/dev/null || echo "warning: cannot write the report $file" >&2
 }
 
-host="$(sed -n 's/^NGINX_SERVER_NAME=\([A-Za-z0-9.-]*\)$/\1/p' "$settings" 2>/dev/null | tail -n 1)" || host=""
-[[ "$host" =~ ^[a-z0-9-]+\.[a-z0-9.-]+\.ts\.net$ ]] ||
-  die "NGINX_SERVER_NAME in $settings is not a tailnet name (<host>.<tailnet>.ts.net): '$host'"
+# The line is read as deploy-services.sh reads it: a carriage return (a file saved on Windows)
+# and spaces around the names are not part of them. The old reader matched only a line that
+# ended right after one name, so it found nothing and the renewal failed every night from
+# 2026-10-21 until the monitoring reported it (TaskReportMissing, 2026-10-24).
+names="$(sed -n 's/^NGINX_SERVER_NAME=//p' "$settings" 2>/dev/null | tail -n 1 | tr -d '\r')" || names=""
+host=""
+for name in $names; do
+  if [[ "$name" =~ ^[a-z0-9-]+\.[a-z0-9.-]+\.ts\.net$ ]]; then
+    host="$name"
+    break
+  fi
+done
+[[ -n "$host" ]] ||
+  die "NGINX_SERVER_NAME in $settings has no tailnet name (<host>.<tailnet>.ts.net): '$names'"
 
 nginx="$(docker ps --quiet --filter label=com.docker.compose.project=nfhotel-nginx \
   --filter label=com.docker.compose.service=nginx | head -n 1)" || die "docker ps failed"

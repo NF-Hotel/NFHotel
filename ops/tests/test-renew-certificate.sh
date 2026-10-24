@@ -72,6 +72,15 @@ run() {
 echo "NGINX_SERVER_NAME=_" >"$W/app/ops/deploy/nginx/nginx.env"
 FAKE_NGINX=1 FAKE_CERT=x FAKE_KEY=y run && ko "accepted a host that is not a tailnet name" ||
   ok "refuses a host name that is not a tailnet name"
+
+# The forms of the line that the old reader missed: a file saved on Windows, a space after the
+# name, and several names as nginx's server_name allows. Each must find the tailnet name.
+for line in $'NGINX_SERVER_NAME=nf-hotel.taildb84b5.ts.net\r' 'NGINX_SERVER_NAME=nf-hotel.taildb84b5.ts.net ' \
+  'NGINX_SERVER_NAME=localhost nf-hotel.taildb84b5.ts.net 100.72.194.127'; do
+  printf '%s\n' "$line" >"$W/app/ops/deploy/nginx/nginx.env"
+  FAKE_NGINX=1 FAKE_CERT="cert v1" FAKE_KEY="key v1" run && grep -q "cert .*nf-hotel.taildb84b5.ts.net$" "$W/log" &&
+    ok "finds the tailnet name in: $(printf '%q' "$line")" || ko "$(printf '%q' "$line"): $(cat "$W/out")"
+done
 echo "NGINX_SERVER_NAME=nf-hotel.taildb84b5.ts.net" >"$W/app/ops/deploy/nginx/nginx.env"
 
 FAKE_NGINX=1 FAKE_CERT="cert v2" FAKE_KEY="key v2" run
