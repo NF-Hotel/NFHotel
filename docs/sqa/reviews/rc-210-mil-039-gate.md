@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [f765ee1] |
 
 ---
 
@@ -54,3 +54,4 @@ Go-with-conditions. The decision and its remaining risk are recorded and the che
 [ADR-0021]: ../../adr/adr-0021-automatic-deploy-when-green.md
 [QC-ADR-001]: ../../../framework/qc/artifacts/qc-adr.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[f765ee1]: https://github.com/NF-Hotel/NFHotel/commit/f765ee1e87ec760ffd0583e38b7c33680ff0fa21
