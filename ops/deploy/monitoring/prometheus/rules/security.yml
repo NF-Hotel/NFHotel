@@ -1,0 +1,19 @@
+# Security alerts from the metrics (MIL-036 task 2). The API counts its answers per route and
+# status (MIL-034), so failed staff sign-ins (401) and refused ones over the rate limit (429)
+# are seen here; the audit table of ADR-0017 keeps who and when.
+groups:
+  - name: nfhotel-security
+    rules:
+      - alert: StaffSignInFailures
+        expr: >-
+          sum(increase(http_server_request_duration_seconds_count{host="nf-hotel",
+          job="nfhotel-api", http_route="api/auth/login",
+          http_response_status_code=~"401|429"}[10m])) > 20
+        labels:
+          severity: warning
+          host: nf-hotel
+        annotations:
+          summary: "{{ $value | humanize }} failed or refused staff sign-ins in 10 minutes"
+          description: >-
+            Someone may be guessing passwords. The audit log of the back office names the user
+            names (ADR-0017); follow the incident procedure (wiki page Incidents).

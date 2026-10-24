@@ -12,7 +12,7 @@ The pages are written in [`docs/wiki/`](https://github.com/NF-Hotel/NFHotel/tree
 - [Proxmox Deployment](Proxmox-Deployment): set up the Proxmox virtual machine and the Docker
   containers that run the whole system (development environment).
 - [Appendix: Project Documents](Appendix): links to every document under `docs/`.
-- Infrastructure and operations (ADR-0016, in `ops/`): [CI-CD](CI-CD), [Database Preparation](Database-Preparation), [Proxmox Deployment](Proxmox-Deployment), [Host Hardening](Host-Hardening), [Monitoring](Monitoring) and [Disaster Recovery](Disaster-Recovery).
+- Infrastructure and operations (ADR-0016, in `ops/`): [CI-CD](CI-CD), [Database Preparation](Database-Preparation), [Proxmox Deployment](Proxmox-Deployment), [Host Hardening](Host-Hardening), [Monitoring](Monitoring) and [Disaster Recovery](Disaster-Recovery), and the incident procedure in [Incidents](Incidents).
 
 ## Where things live
 

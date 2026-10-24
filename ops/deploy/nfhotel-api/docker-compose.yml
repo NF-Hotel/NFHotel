@@ -1,7 +1,7 @@
 # NFHotel database API (MIL-015, ADR-0004): the only service that talks to PostgreSQL and
 # holds the passport key. Read by Docker Compose. Settings live in nfhotel-api.env
-# (git-ignored); copy nfhotel-api.env.example to nfhotel-api.env first. Start with:
-#   docker compose --env-file nfhotel-api.env up -d --build
+# (git-ignored); copy nfhotel-api.env.example to nfhotel-api.env first. Start it with
+# scripts/deploy-services.sh, which writes secrets/ from the settings first (ADR-0024).
 # The image comes from Dockerfile.api in the repository root. No host port is published
 # and the proxy has no route to it: the web service reaches it by the name nfhotel-api on
 # the internal network nfhotel-api (create it once: docker network create --internal nfhotel-api).
@@ -20,7 +20,7 @@ services:
         org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
         org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
     restart: unless-stopped
-    env_file: ${NFHOTEL_API_ENV_FILE:-nfhotel-api.env}
+    env_file: ${NFHOTEL_API_ENV_FILE:-secrets/settings.env}
     # Hardening (MIL-023 task 2, CIS-001): the image runs as the user app on port 8080 and
     # needs no capability; only /tmp is written.
     cap_drop: [ALL]
@@ -30,23 +30,29 @@ services:
     mem_limit: 1g
     cpus: 2
     pids_limit: 512
-    # The connection string is built here from postgres.env, so the database
-    # password lives in one file only. scripts/deploy-services.sh exports the
-    # POSTGRES_* values; when running compose by hand, export them first.
-    # Use no ; or quote in the password (openssl rand -hex 24 is safe).
-    # Once the roles of ADR-0011 exist, scripts/deploy-services.sh sets
-    # NFHOTEL_API_CONNECTION_STRING to the login of nfhotel_app and turns the migrations at
-    # start off, because the CD applies them (MIL-022 task 6). Without it, the superuser of
-    # postgres.env is used and the API migrates at start, as before.
+    # The secrets are files in /run/secrets, read with AddKeyPerFile (MIL-035, ADR-0024), never
+    # environment variables: scripts/write-secret-files.sh splits nfhotel-api.env into
+    # secrets/settings.env (no secret) and one file per secret, and builds the connection string
+    # from postgres.env, or from NFHOTEL_API_CONNECTION_STRING (the login of nfhotel_app,
+    # ADR-0011) when scripts/deploy-release.sh passes it. scripts/deploy-services.sh runs it at
+    # every deploy. Without NFHOTEL_API_CONNECTION_STRING the API migrates at start
+    # (MIL-022 task 6).
+    secrets:
+      - ConnectionStrings__HotelDatabase
+      - Encryption__PassportKey
+      - Api__Token
+      - Staff__Token__SigningKey
+      - Staff__InitialManager__Password
+      - MarketAnalysisService__Token
     environment:
-      ConnectionStrings__HotelDatabase: "${NFHOTEL_API_CONNECTION_STRING:-Host=postgres;Port=5432;\
-        Database=${POSTGRES_DB:-nfhotel};\
-        Username=${POSTGRES_USER:-nfhotel};\
-        Password=${POSTGRES_PASSWORD:?set it, it comes from deploy/postgres/postgres.env}}"
       Database__MigrateOnStart: "${NFHOTEL_API_MIGRATE_ON_START:-true}"
       # The metrics go to Alloy on the network nfhotel-api (MIL-034). Without Alloy the export
       # fails quietly and the application is not affected.
       Telemetry__OtlpEndpoint: ${NFHOTEL_OTLP_ENDPOINT:-http://alloy:4318}
+      # A hash of the secret files, set by scripts/deploy-services.sh: compose does not see a
+      # changed secret file, but it recreates the container when this value changes, so a rotated
+      # secret is read at the next deploy. It is a digest, not a secret.
+      NFHOTEL_SETTINGS_HASH: ${NFHOTEL_SETTINGS_HASH:-}
     expose:
       - "8080"
     healthcheck:
@@ -73,3 +79,18 @@ networks:
   db:
     name: ${NFHOTEL_DB_NETWORK:-nfhotel-db}
     external: true
+
+# One file per secret, written by scripts/write-secret-files.sh into NFHOTEL_API_SECRETS.
+secrets:
+  ConnectionStrings__HotelDatabase:
+    file: ${NFHOTEL_API_SECRETS:-secrets}/ConnectionStrings__HotelDatabase
+  Encryption__PassportKey:
+    file: ${NFHOTEL_API_SECRETS:-secrets}/Encryption__PassportKey
+  Api__Token:
+    file: ${NFHOTEL_API_SECRETS:-secrets}/Api__Token
+  Staff__Token__SigningKey:
+    file: ${NFHOTEL_API_SECRETS:-secrets}/Staff__Token__SigningKey
+  Staff__InitialManager__Password:
+    file: ${NFHOTEL_API_SECRETS:-secrets}/Staff__InitialManager__Password
+  MarketAnalysisService__Token:
+    file: ${NFHOTEL_API_SECRETS:-secrets}/MarketAnalysisService__Token

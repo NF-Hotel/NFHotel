@@ -74,7 +74,7 @@ if ((apply)); then
   command -v pct >/dev/null || die "pct not found: run it on the Proxmox node"
   pct status "$id" >/dev/null 2>&1 && die "container $id exists already"
   qm status "$id" >/dev/null 2>&1 && die "the VM $id uses this ID; choose one that neither pct list nor qm list shows"
-  pveam list "${template%%:*}" | grep -q "${template#*:}" ||
+  pveam list "${template%%:*}" | grep "${template#*:}" >/dev/null ||
     die "$template is not downloaded (pveam update && pveam download ${template%%:*} ${template##*/})"
 fi
 

@@ -41,7 +41,9 @@ esac
 [[ -f "$dir/monitoring.env" ]] || die "$dir/monitoring.env is missing; copy monitoring.env.example and fill it in"
 bind="$(sed -n 's/^MONITORING_BIND=\([0-9.]*\)$/\1/p' "$dir/monitoring.env" | tail -n 1)"
 [[ "$bind" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "MONITORING_BIND in monitoring.env is not an IPv4 address"
-ip -4 -o addr show | grep -q " $bind/" || die "$bind is not an address of this host (tailscale ip -4)"
+# grep reads all of the input: with grep -q, ip could get SIGPIPE, and pipefail made the check
+# fail at random on a host that had the address (2026-10-24).
+ip -4 -o addr show | grep " $bind/" >/dev/null || die "$bind is not an address of this host (tailscale ip -4)"
 
 for f in discord-webhook-url healthchecks-watchdog-url grafana-admin-password; do
   file="$dir/secrets/$f"

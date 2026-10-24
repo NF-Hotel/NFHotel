@@ -62,7 +62,7 @@ echo "==> 1. user $DEPLOY_USER"
 if id "$DEPLOY_USER" >/dev/null 2>&1; then
   echo "    exists"
   for group in docker sudo; do
-    if id -nG "$DEPLOY_USER" | tr ' ' '\n' | grep -qx "$group"; then
+    if id -nG "$DEPLOY_USER" | tr ' ' '\n' | grep -x "$group" >/dev/null; then
       die "$DEPLOY_USER is in the group $group; remove it first (gpasswd -d $DEPLOY_USER $group)"
     fi
   done

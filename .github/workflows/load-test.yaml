@@ -1,0 +1,57 @@
+# Load test of NF Hotel against a throwaway stack (MIL-036 task 3): k6 opens the public pages
+# and the staff sign-in page with twenty virtual guests, and fails when the objectives of
+# MIL-034 are broken under that load (95 % within 1 second, fewer than 5 % failed). It never
+# runs against the VM, the tailnet or a public host.
+#
+# Triggers: weekly (Wednesday night), and by hand, for example before a larger release.
+# Secrets: none; nothing is pushed.
+# Verified with actionlint 1.7.7 (ops/tests/lint.sh).
+name: NF Hotel load test
+
+on:
+  schedule:
+    - cron: "40 2 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  load:
+    name: Load test of a throwaway stack
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Start the stack
+        env:
+          STACK_DIR: ${{ runner.temp }}/e2e-stack
+        run: bash ops/scripts/e2e-stack.sh up --app-dir . --out "$STACK_DIR"
+      - name: Run the load test
+        env:
+          STACK_DIR: ${{ runner.temp }}/e2e-stack
+        run: |
+          bash ops/scripts/load-test.sh --stack-env "$STACK_DIR/stack.env" --results load-results
+          {
+            echo '```'
+            cat load-results/summary.txt
+            echo '```'
+          } >>"$GITHUB_STEP_SUMMARY"
+      - name: Keep the summary
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: load-test
+          path: load-results/
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Remove the stack
+        if: always()
+        run: bash ops/scripts/e2e-stack.sh down

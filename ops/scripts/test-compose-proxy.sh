@@ -96,14 +96,15 @@ compose_nginx() {
 }
 
 compose_web() {
-  NFHOTEL_WEB_ENV_FILE="$TMP_NATIVE/nfhotel-web.env" NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_API_NETWORK="$API_NETWORK" API_TOKEN="$SMOKE_API_TOKEN" \
+  NFHOTEL_WEB_ENV_FILE="$TMP_NATIVE/web/settings.env" NFHOTEL_WEB_SECRETS="$TMP_NATIVE/web" \
+    NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_API_NETWORK="$API_NETWORK" \
     docker compose --project-name "$WEB_PROJECT" \
     --file deploy/nfhotel-web/docker-compose.yml "$@"
 }
 
 compose_api() {
-  NFHOTEL_API_ENV_FILE="$TMP_NATIVE/nfhotel-api.env" NFHOTEL_API_NETWORK="$API_NETWORK" \
-    NFHOTEL_DB_NETWORK="$DB_NETWORK" POSTGRES_PASSWORD=smoke \
+  NFHOTEL_API_ENV_FILE="$TMP_NATIVE/api/settings.env" NFHOTEL_API_SECRETS="$TMP_NATIVE/api" \
+    NFHOTEL_API_NETWORK="$API_NETWORK" NFHOTEL_DB_NETWORK="$DB_NETWORK" \
     docker compose --project-name "$API_PROJECT" \
     --file deploy/nfhotel-api/docker-compose.yml "$@"
 }
@@ -158,6 +159,14 @@ HotelTime__TimeZoneId=Europe/Copenhagen
 Api__Token=$SMOKE_API_TOKEN
 Staff__Token__SigningKey=$(openssl rand -base64 48 | tr -d '\n')
 EOF
+  # The smoke test has no database; the API only needs a login to start.
+  printf 'POSTGRES_USER=smoke\nPOSTGRES_PASSWORD=smoke\nPOSTGRES_DB=smoke\n' >"$TMP_DIR/postgres.env"
+  # The containers read their secrets from files, as in production (ADR-0024).
+  local service
+  for service in api web; do
+    bash scripts/write-secret-files.sh "$service" --out "$TMP_DIR/$service" --postgres "$TMP_DIR/postgres.env" \
+      --api "$TMP_DIR/nfhotel-api.env" --web "$TMP_DIR/nfhotel-web.env" >/dev/null || die "cannot write the secret files of $service"
+  done
 }
 
 main() {
