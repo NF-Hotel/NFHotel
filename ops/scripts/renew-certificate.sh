@@ -7,8 +7,10 @@
 # /etc/nginx/certs/ and reloaded the container nfhotel-nginx of the stack from before
 # the reconciliation; after that container stopped, the renewal failed (2026-10-21).
 #
-#   1. read the host name from NGINX_SERVER_NAME in ops/deploy/nginx/nginx.env: the first of
-#      its names that is a tailnet name, as nginx's server_name may list several
+#   1. find the host name: the first tailnet name in NGINX_SERVER_NAME of
+#      ops/deploy/nginx/nginx.env (nginx's server_name may list several), or else the first
+#      of CertDomains in `tailscale status --json`, the names tailscale cert can issue for
+#      this machine; production has server_name _, which matches any name
 #   2. find the running nginx by its compose labels (project nfhotel-nginx, service
 #      nginx) and the folder it mounts as /etc/nginx/tls; without a running nginx, the
 #      folder ops/deploy/nginx/tls of the checkout
@@ -53,20 +55,25 @@ report_success() {
   } 2>/dev/null || echo "warning: cannot write the report $file" >&2
 }
 
-# The line is read as deploy-services.sh reads it: a carriage return (a file saved on Windows)
-# and spaces around the names are not part of them. The old reader matched only a line that
-# ended right after one name, so it found nothing and the renewal failed every night from
-# 2026-10-21 until the monitoring reported it (TaskReportMissing, 2026-10-24).
+# The renewal used to read only NGINX_SERVER_NAME, but production sets it to _ (any name), so
+# it found no name and failed every night from 2026-10-21 until the monitoring reported it
+# (TaskReportMissing, 2026-10-24, RC-187). The line is read as deploy-services.sh reads it: a
+# carriage return and spaces around the names are not part of them.
+tailnet_name='^[a-z0-9-]+\.[a-z0-9.-]+\.ts\.net$'
 names="$(sed -n 's/^NGINX_SERVER_NAME=//p' "$settings" 2>/dev/null | tail -n 1 | tr -d '\r')" || names=""
 host=""
 for name in $names; do
-  if [[ "$name" =~ ^[a-z0-9-]+\.[a-z0-9.-]+\.ts\.net$ ]]; then
+  if [[ "$name" =~ $tailnet_name ]]; then
     host="$name"
     break
   fi
 done
-[[ -n "$host" ]] ||
-  die "NGINX_SERVER_NAME in $settings has no tailnet name (<host>.<tailnet>.ts.net): '$names'"
+if [[ -z "$host" ]]; then
+  host="$("$tailscale" status --json 2>/dev/null | tr -d ' \t\r\n' |
+    sed -n 's/.*"CertDomains":\["\([^"]*\)".*/\1/p')" || host=""
+  [[ "$host" =~ $tailnet_name ]] ||
+    die "no tailnet name: NGINX_SERVER_NAME in $settings is '$names', and tailscale lists no CertDomains (is HTTPS enabled for the tailnet?)"
+fi
 
 nginx="$(docker ps --quiet --filter label=com.docker.compose.project=nfhotel-nginx \
   --filter label=com.docker.compose.service=nginx | head -n 1)" || die "docker ps failed"

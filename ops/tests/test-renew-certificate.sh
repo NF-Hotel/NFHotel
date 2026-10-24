@@ -38,6 +38,13 @@ chown -R nfhotel:nfhotel "$W/mounted"
 # tailscale cert writes FAKE_CERT and FAKE_KEY into the files it is given.
 cat >"$W/bin/tailscale" <<'EOF'
 #!/bin/bash
+# status --json lists the CertDomains as tailscale prints them (FAKE_CERT_DOMAIN, empty: none).
+if [[ "$1" == status ]]; then
+  printf '{\n  "Self": {\n    "DNSName": "nf-hotel.taildb84b5.ts.net."\n  },\n  "CertDomains": [\n'
+  [[ -n "${FAKE_CERT_DOMAIN-nf-hotel.taildb84b5.ts.net}" ]] && printf '    "%s"\n' "${FAKE_CERT_DOMAIN-nf-hotel.taildb84b5.ts.net}"
+  printf '  ]\n}\n'
+  exit 0
+fi
 [[ "${FAKE_TS_FAIL:-}" == 1 ]] && exit 1
 for a in "$@"; do
   case "$a" in
@@ -69,9 +76,15 @@ run() {
   bash "$REPO/scripts/renew-certificate.sh" >"$W/out" 2>&1
 }
 
-echo "NGINX_SERVER_NAME=_" >"$W/app/ops/deploy/nginx/nginx.env"
-FAKE_NGINX=1 FAKE_CERT=x FAKE_KEY=y run && ko "accepted a host that is not a tailnet name" ||
-  ok "refuses a host name that is not a tailnet name"
+# Production: server_name _ (any name). The name comes from tailscale's CertDomains.
+printf 'NGINX_SERVER_NAME=_\r\n' >"$W/app/ops/deploy/nginx/nginx.env"
+FAKE_NGINX=1 FAKE_CERT="cert v1" FAKE_KEY="key v1" run && grep -q "cert .*nf-hotel.taildb84b5.ts.net$" "$W/log" &&
+  ok "with server_name _, the name comes from tailscale's CertDomains" || ko "server_name _: $(cat "$W/out")"
+FAKE_CERT_DOMAIN="" FAKE_NGINX=1 FAKE_CERT=x FAKE_KEY=y run && ko "renewed with no tailnet name anywhere" ||
+  { grep -q "tailscale lists no CertDomains" "$W/out" && ok "with no tailnet name anywhere it refuses, and says why"; } ||
+  ko "no name: $(cat "$W/out")"
+FAKE_CERT_DOMAIN="evil.example.com" FAKE_NGINX=1 FAKE_CERT=x FAKE_KEY=y run && ko "accepted a CertDomain that is not a tailnet name" ||
+  ok "a CertDomain that is not a tailnet name is refused"
 
 # The forms of the line that the old reader missed: a file saved on Windows, a space after the
 # name, and several names as nginx's server_name allows. Each must find the tailnet name.

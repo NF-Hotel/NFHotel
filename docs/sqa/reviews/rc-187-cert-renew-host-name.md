@@ -1,4 +1,4 @@
-# RC-187 Review of the host name reader of renew-certificate.sh
+# RC-187 Review of how renew-certificate.sh finds the host name
 
 ## Metadata
 | Key | Value |
@@ -9,15 +9,15 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [1461731] |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the cause was NGINX_SERVER_NAME=_ on nf-hotel, so the host name now comes from tailscale CertDomains | pending |
 
 ---
 
 ## Artifact Under Review
 
 - **Instances reviewed:**
-  - the reading of `NGINX_SERVER_NAME` in `ops/scripts/renew-certificate.sh`;
-  - three new cases in `ops/tests/test-renew-certificate.sh`.
+  - how `ops/scripts/renew-certificate.sh` finds the host name: `NGINX_SERVER_NAME`, then tailscale's `CertDomains`;
+  - six new cases in `ops/tests/test-renew-certificate.sh`.
 - **Checklists used:** [QC-SH-001], the rows that the change touches.
 - **Mode:** autonomous, not independent (reviewer is `AI as stand-in for S01`).
 
@@ -27,20 +27,15 @@ On 2026-10-24, the monitoring raised `TaskReportMissing` for `cert_renew`. S03's
 
 `NGINX_SERVER_NAME in /opt/nfhotel/ops/deploy/nginx/nginx.env is not a tailnet name (<host>.<tailnet>.ts.net): ''`
 
-**Cause.** The renewal and the deploy read the same line in different ways.
+**Cause.** S03 read the line on `nf-hotel`: `NGINX_SERVER_NAME=_`. That is nginx's catch-all, and it is deliberate, the value of `nginx.env.example` too. The renewal took its host name only from that line, and `_` is not a name that `tailscale cert` can issue, so it failed every night.
 
-- The renewal accepted only a line that ended right after one name.
-- `deploy-services.sh` reads the same line and drops a carriage return, which is why the proxy deploys with that file.
-- It also splits the value into names, as nginx's `server_name` may list several.
-
-So a file saved on Windows, a space after the name, or a second name made the renewal find nothing, while the site kept working.
+**First fix, and why it was not enough.** The first commit of this pull request made the reader tolerate a carriage return, spaces and several names, the ways in which `deploy-services.sh` reads the same line. Those are real differences between the two readers, but `_` holds no tailnet name in any form. That commit alone would not have fixed `nf-hotel`.
 
 **Fix.**
-
-- The renewal reads the line as the deploy does: it drops the carriage return and splits the value into names.
-- It takes the first name that is a tailnet name.
-- The check of that name is as strict as before.
-- When no name matches, the message lists what the line holds.
+- The renewal takes the first tailnet name in `NGINX_SERVER_NAME` when there is one.
+- Otherwise it takes the first of `CertDomains` in `tailscale status --json`. That list holds exactly the names `tailscale cert` can issue for this machine, so it is the right source when nginx answers any name.
+- The name is checked as strictly as before.
+- When there is no name, the message shows the line and says that tailscale lists no CertDomains.
 
 Without the monitoring, the failure would have shown only as `CertificateExpiresSoon`, 21 days before the certificate expired. RC-162 moved the renewal into git and CD, but checked only that the timer was installed, not that a run succeeded on `nf-hotel`.
 
@@ -48,7 +43,7 @@ Without the monitoring, the failure would have shown only as `CertificateExpires
 
 | # | Criterion | Status | Evidence/Notes |
 | --- | --- | --- | --- |
-| SH 11 | Behaviour is tested | Pass | `test-renew-certificate.sh` passes 17. New cases: a CRLF line, a trailing space, and several names (`localhost nf-hotel.taildb84b5.ts.net 100.72.194.127`); each finds the tailnet name. `_` is still refused |
+| SH 11 | Behaviour is tested | Pass | `test-renew-certificate.sh` passes 19. **Production's case:** `_` with a CRLF ending takes the name from CertDomains. No name anywhere is refused, with the reason. A CertDomain that is not a tailnet name is refused. A CRLF line, a trailing space and several names each find the tailnet name in `NGINX_SERVER_NAME`. The fake prints `status --json` in tailscale's pretty-printed form |
 | SH 5 | Errors | Pass | The message shows the names it found, so the next failure needs no guessing |
 | SH 12, 4 | shfmt, shellcheck | Pass | `ops/tests/lint.sh` is clean |
 
@@ -68,4 +63,3 @@ Go.
 [ADR-0020]: ../../adr/adr-0020-monitoring-stack.md
 [RC-162]: rc-162-certificate-renewal.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
-[1461731]: https://github.com/NF-Hotel/NFHotel/commit/14617310d9ac6b9e4e18519fff67af567d78ae21
