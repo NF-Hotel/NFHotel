@@ -143,6 +143,10 @@ refused+=" $(code http://socket-proxy:2375/images/json) $(code -X POST http://so
 [[ "$refused" == "403 403 403 403" ]] && ok "the proxy refuses network creation, stop, exec and the image list" ||
   ko "the proxy answered $refused (network create, stop, image list, exec); each must be 403"
 
+proxy_log="$(compose logs socket-proxy 2>&1)"
+[[ "$proxy_log" != *dockerfrontend* ]] && ok "the proxy does not log each request of Alloy" ||
+  ko "the proxy logs requests: $(grep -c dockerfrontend <<<"$proxy_log") lines"
+
 compose restart alloy >/dev/null 2>&1
 for _ in $(seq 1 24); do
   [[ "$(docker inspect -f '{{.State.Health.Status}}' "$c" 2>/dev/null)" == healthy ]] && break
