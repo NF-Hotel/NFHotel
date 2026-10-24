@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Proposed | mikemike | S01 | Initial version, from a draft of 2026-10-20 that was never committed (it was numbered MIL-028, a number since given to the run API of the market analysis); the operations live in `ops/` of this repository since ADR-0016, so one pull request carries the work | [fb7531c] |
+| 2026-10-24 | Deprecated | mikemike | S01 | Initial version, from a draft of 2026-10-20 that was never committed (it was numbered MIL-028, a number since given to the run API of the market analysis); the operations live in `ops/` of this repository since ADR-0016, so one pull request carries the work | [fb7531c] |
+| 2026-10-24 | Accepted | mikemike | S01 | Accepted by S01 in chat on 2026-10-24 (autonomous mode), after RC-194 Go | pending |
 
 ---
 
