@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [dd22a11] |
 
 ---
 
@@ -79,3 +79,4 @@ Go for the work done. MIL-023 tasks 1 to 4 stay open for steps 3 to 6.
 [CIS-001]: ../cis-checklist.md
 [RC-176]: rc-176-mil-023-host-hardening.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[dd22a11]: https://github.com/NF-Hotel/NFHotel/commit/dd22a116927d5653b130e3d9762bdea6060468f9
