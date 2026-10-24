@@ -1,7 +1,7 @@
 # PostgreSQL 16 for the NFHotel web application. Read by Docker Compose. Settings
 # live in postgres.env (git-ignored); copy postgres.env.example to postgres.env
-# first. Start with:
-#   docker compose --env-file postgres.env up -d
+# first. Start it with scripts/deploy-services.sh, which writes secrets/ from the settings
+# first (ADR-0024).
 # The database is reachable only from the web service: it joins the internal
 # network nfhotel-db (created by scripts/deploy.sh with --internal, so it has no
 # route out and no published host port). Create it by hand once with:
@@ -12,7 +12,13 @@ services:
   postgres:
     image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     restart: unless-stopped
-    env_file: ${POSTGRES_ENV_FILE:-postgres.env}
+    env_file: ${POSTGRES_ENV_FILE:-secrets/settings.env}
+    # The password is a file (MIL-035, ADR-0024), written by scripts/write-secret-files.sh. The
+    # image reads it only to create the database the first time; a rotation is an ALTER ROLE.
+    secrets:
+      - POSTGRES_PASSWORD
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/POSTGRES_PASSWORD
     # Hardening (MIL-023 task 2, CIS-001). The entrypoint starts as root, fixes the owner and
     # mode of the data folder and drops to the user postgres: these five capabilities are the
     # ones it needs. The data is in the volume; the socket folder and /tmp are tmpfs.
@@ -42,3 +48,8 @@ networks:
   db:
     name: ${NFHOTEL_DB_NETWORK:-nfhotel-db}
     external: true
+
+# Written by scripts/write-secret-files.sh into POSTGRES_SECRETS.
+secrets:
+  POSTGRES_PASSWORD:
+    file: ${POSTGRES_SECRETS:-secrets}/POSTGRES_PASSWORD

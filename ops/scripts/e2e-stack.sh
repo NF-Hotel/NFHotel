@@ -6,7 +6,8 @@
 # TLS at nginx, the API and the database on internal networks with no host port.
 #
 # Every secret is generated for this run and written only to files under <out>, readable
-# by the owner; nothing is read from a real settings file. The API applies its migrations
+# by the owner; nothing is read from a real settings file. As in production (ADR-0024), the
+# containers read their secrets from /run/secrets, and `up` ends with check-secret-env.sh. The API applies its migrations
 # at start and creates one staff account per role. The stack never reaches the VM, the
 # tailnet or a public NF Hotel host: a client joins the Docker network <name>-proxy and
 # opens https://nginx.
@@ -85,8 +86,6 @@ down() {
 }
 
 if [[ "$action" == "down" ]]; then
-  # The compose files need their variables even to be taken down.
-  export POSTGRES_PASSWORD=unused API_TOKEN=unused
   down
   echo "==> removed the stack $name"
   exit 0
@@ -103,7 +102,7 @@ settings="$out/settings"
 
 # Secrets for this run only. hex keeps them free of ; and quotes (see the API compose file).
 secret() { openssl rand -hex "${1:-24}"; }
-export POSTGRES_PASSWORD API_TOKEN NFHOTEL_APP_DIR NFHOTEL_APP_SHA
+export NFHOTEL_APP_DIR NFHOTEL_APP_SHA
 POSTGRES_PASSWORD="$(secret)"
 API_TOKEN="$(secret)"
 NFHOTEL_APP_DIR="$(native "$(cd "$app_dir" && pwd)")"
@@ -154,15 +153,24 @@ docker network create "$PROXY_NET" >/dev/null
 docker network create --internal "$API_NET" >/dev/null
 docker network create --internal "$DB_NET" >/dev/null
 
+# Split the settings into the files the containers read (scripts/write-secret-files.sh).
+for service in postgres api web; do
+  bash "$ROOT/scripts/write-secret-files.sh" "$service" --out "$settings/$service" \
+    --postgres "$settings/postgres.env" --api "$settings/nfhotel-api.env" --web "$settings/nfhotel-web.env" >/dev/null ||
+    die "cannot write the secret files of $service"
+done
 native_settings="$(native "$settings")"
+export POSTGRES_ENV_FILE="$native_settings/postgres/settings.env" POSTGRES_SECRETS="$native_settings/postgres"
+export NFHOTEL_API_ENV_FILE="$native_settings/api/settings.env" NFHOTEL_API_SECRETS="$native_settings/api"
+export NFHOTEL_WEB_ENV_FILE="$native_settings/web/settings.env" NFHOTEL_WEB_SECRETS="$native_settings/web"
 echo "==> starting PostgreSQL"
-POSTGRES_ENV_FILE="$native_settings/postgres.env" compose postgres up --detach --wait --wait-timeout 120 >/dev/null ||
+compose postgres up --detach --wait --wait-timeout 120 >/dev/null ||
   die "PostgreSQL did not become healthy"
 echo "==> building and starting the API (migrations at start)"
-NFHOTEL_API_ENV_FILE="$native_settings/nfhotel-api.env" compose nfhotel-api up --detach --build --wait --wait-timeout 240 ||
+compose nfhotel-api up --detach --build --wait --wait-timeout 240 ||
   die "the API did not become healthy"
 echo "==> building and starting the web application"
-NFHOTEL_WEB_ENV_FILE="$native_settings/nfhotel-web.env" compose nfhotel-web up --detach --build --wait --wait-timeout 240 ||
+compose nfhotel-web up --detach --build --wait --wait-timeout 240 ||
   die "the web application did not become healthy"
 echo "==> starting nginx (TLS with a self-signed certificate, no host port)"
 NGINX_ENV_FILE="$native_settings/nginx.env" NGINX_TLS_DIR="$native_settings/tls" \
@@ -177,8 +185,7 @@ for role in "${ROLES[@]:1}"; do
   user="e2e-${role,,}"
   password="$(secret 16)"
   echo "==> creating the $role account $user"
-  STAFF_PASSWORD="$password" NFHOTEL_API_ENV_FILE="$native_settings/nfhotel-api.env" \
-    compose nfhotel-api run --rm --no-deps -e STAFF_PASSWORD nfhotel-api create-staff "$user" "$role" >/dev/null ||
+  STAFF_PASSWORD="$password" compose nfhotel-api run --rm --no-deps -e STAFF_PASSWORD nfhotel-api create-staff "$user" "$role" >/dev/null ||
     die "creating the $role account failed"
   users[$role]="$user"
   passwords[$role]="$password"
@@ -193,4 +200,6 @@ umask 077
     echo "E2E_${role^^}_PASSWORD=${passwords[$role]}"
   done
 } >"$out/stack.env"
+echo "==> checking that no secret is in the environment of a container (MIL-035)"
+bash "$ROOT/scripts/check-secret-env.sh" --name "$name-" || die "a secret is in the environment of a container"
 echo "==> the stack $name is up: join $PROXY_NET and open https://nginx (settings in $out/stack.env)"

@@ -1,9 +1,9 @@
 # CI of the operations code in ops/ (ADR-0016, formerly the CI of NF-Hotel/DevOps): the
 # linters of ops/ and of the workflows and actions, the script tests, the monitoring
 # configuration (ADR-0020), the nginx routes, the Proxmox tests (the live ones skip),
-# and the PostgreSQL preparation with the real
-# migrations of this commit. The release build and the throwaway end-to-end stack run in
-# release-check.yaml and e2e-dast.yaml, which use the same actions.
+# the PostgreSQL preparation with the real migrations of this commit, and the rotation
+# drill of the secrets (ADR-0024). The release build and the throwaway end-to-end stack
+# run in release-check.yaml and e2e-dast.yaml, which use the same actions.
 #
 # Triggers: pull requests to main, pushes to main, and by hand. It runs on every pull
 #   request, not only on changes of ops/, because its jobs are required checks.
@@ -60,6 +60,8 @@ jobs:
           - test-report-health.sh
           - test-publish-wiki.sh
           - test-create-monitoring-lxc.sh
+          - test-write-secret-files.sh
+          - test-check-secret-env.sh
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -160,3 +162,15 @@ jobs:
         run: >-
           bash ops/tests/test-database.sh ops/tests/output/database/migrations.sql
           nfhotel-api:test
+
+  secret-rotation:
+    name: Ops secret rotation drill (MIL-035)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Rotate each secret on a throwaway stack
+        run: bash ops/tests/test-secret-rotation.sh --app-dir .
