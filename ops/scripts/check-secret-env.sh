@@ -36,7 +36,7 @@ while (($#)); do
 done
 
 # The compose service of each container, and the service of write-secret-files.sh.
-declare -A SERVICES=([postgres]=postgres [nfhotel-api]=api [nfhotel-web]=web)
+declare -A SERVICES=(["postgres"]=postgres ["nfhotel-api"]=api ["nfhotel-web"]=web)
 # Settings whose name sounds like a secret but whose value is not one.
 readonly NOT_SECRET=" Staff__InitialManager__MustChangePassword "
 found=0
