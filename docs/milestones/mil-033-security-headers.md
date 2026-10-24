@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-24 | Deprecated | mikemike | S01 | Initial version, from a draft of 2026-10-20 that was never committed (it was numbered MIL-028, a number since given to the run API of the market analysis); the operations live in `ops/` of this repository since ADR-0016, so one pull request carries the work | [fb7531c] |
-| 2026-10-24 | Accepted | mikemike | S01 | Accepted by S01 in chat on 2026-10-24 (autonomous mode), after RC-194 Go | pending |
+| 2026-10-24 | Accepted | mikemike | S01 | Accepted by S01 in chat on 2026-10-24 (autonomous mode), after RC-194 Go | [0ac5045] |
 
 ---
 
@@ -105,3 +105,4 @@ Each alert is either fixed, or accepted with a reason and an expiry, so that a n
 [ADR-0006]: ../adr/adr-0006-tls.md
 [ADR-0016]: ../adr/adr-0016-one-repository-for-application-and-operations.md
 [fb7531c]: https://github.com/NF-Hotel/NFHotel/commit/fb7531cdd2ebddca9554fe33a83153b57e66d7c2
+[0ac5045]: https://github.com/NF-Hotel/NFHotel/commit/0ac5045bf847f598e2a343b8c44c84de8283ace2
