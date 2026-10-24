@@ -48,8 +48,9 @@ vm_checkout() {
   mkdir -p "$W/vm/opt"
   git init -q "$W/vm/opt/nfhotel"
   git -C "$W/vm/opt/nfhotel" remote add origin "${1:-https://github.com/NF-Hotel/DevOps.git}"
-  mkdir -p "$W/vm/opt/nfhotel/deploy/postgres" "$W/vm/opt/nfhotel/deploy/nginx/tls"
+  mkdir -p "$W/vm/opt/nfhotel/deploy/postgres" "$W/vm/opt/nfhotel/deploy/nginx/tls" "$W/vm/opt/nfhotel/deploy/market-analysis"
   echo "POSTGRES_PASSWORD=secret" >"$W/vm/opt/nfhotel/deploy/postgres/postgres.env"
+  echo "[llm]" >"$W/vm/opt/nfhotel/deploy/market-analysis/market-analysis.toml"
   echo "VM=1" >"$W/vm/opt/nfhotel/deploy.env"
   echo "cert" >"$W/vm/opt/nfhotel/deploy/nginx/tls/fullchain.pem"
 }
@@ -73,6 +74,8 @@ switch "$APP" --apply && ok "--apply switches" || ko "--apply: $(tail -1 "$W/out
 [[ "$(cat "$W/vm/opt/nfhotel/ops/deploy/postgres/postgres.env")" == "POSTGRES_PASSWORD=secret" ]] &&
   [[ "$(stat -c %a "$W/vm/opt/nfhotel/ops/deploy/postgres/postgres.env")" == 600 ]] &&
   ok "a settings file is copied into ops/ with mode 0600" || ko "settings copy"
+[[ "$(stat -c %a "$W/vm/opt/nfhotel/ops/deploy/market-analysis/market-analysis.toml" 2>/dev/null)" == 644 ]] &&
+  ok "the settings of the market analysis stay readable by its container (0644)" || ko "market-analysis.toml mode"
 [[ -f "$W/vm/opt/nfhotel/ops/deploy.env" && -f "$W/vm/opt/nfhotel/ops/deploy/nginx/tls/fullchain.pem" ]] &&
   ok "deploy.env and the TLS folder are copied" || ko "deploy.env or tls"
 grep -q "secret" "$W/out" && ko "no secret is printed" || ok "no secret is printed"

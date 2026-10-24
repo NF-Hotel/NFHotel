@@ -48,6 +48,22 @@ else
   fail=$((fail + 1))
 fi
 
+# The settings of the market analysis are read by its container as uid 1000 (MIL-023
+# task 2), so a file at 0600, as the VM had it, must become readable (HTTP 422, 2026-10-24).
+a="$work/repo/deploy/market-analysis"
+mkdir -p "$a"
+: >"$a/market-analysis.env"
+printf '[llm]\nmodel = ""\n' >"$a/market-analysis.toml"
+chmod 0600 "$a/market-analysis.toml"
+PATH="$work/bin:$PATH" bash "$work/repo/scripts/deploy-services.sh" --no-build analysis >"$work/out-analysis" 2>&1
+if [[ "$(stat -c %a "$a/market-analysis.toml")" == 644 ]]; then
+  echo "PASS  the settings of the market analysis become readable by its container"
+  pass=$((pass + 1))
+else
+  echo "FAIL  market-analysis.toml stays $(stat -c %a "$a/market-analysis.toml"): $(tail -2 "$work/out-analysis")"
+  fail=$((fail + 1))
+fi
+
 # The proxy (MIL-021 criterion 5): compose recreates it only when its configuration
 # changed. deploy-services.sh passes a hash of the templates, snippets and settings, and no
 # --force-recreate.
