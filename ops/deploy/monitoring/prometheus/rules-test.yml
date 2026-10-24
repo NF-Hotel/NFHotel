@@ -3,6 +3,7 @@
 rule_files:
   - rules/nfhotel.yml
   - rules/applications.yml
+  - rules/security.yml
 
 evaluation_interval: 30s
 
@@ -303,3 +304,35 @@ tests:
               severity: none
             exp_annotations:
               summary: "The monitoring is alive"
+
+  - name: many failed staff sign-ins fire StaffSignInFailures
+    interval: 1m
+    input_series:
+      - series: >-
+          http_server_request_duration_seconds_count{host="nf-hotel", job="nfhotel-api",
+          http_route="api/auth/login", http_response_status_code="401"}
+        values: "0+3x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: StaffSignInFailures
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "30 failed or refused staff sign-ins in 10 minutes"
+              description: >-
+                Someone may be guessing passwords. The audit log of the back office names the user
+                names (ADR-0017); follow the incident procedure (wiki page Incidents).
+
+  - name: a few failed sign-ins are not an attack
+    interval: 1m
+    input_series:
+      - series: >-
+          http_server_request_duration_seconds_count{host="nf-hotel", job="nfhotel-api",
+          http_route="api/auth/login", http_response_status_code="401"}
+        values: "0+0.2x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: StaffSignInFailures
+        exp_alerts: []
