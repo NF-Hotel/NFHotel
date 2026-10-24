@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Deprecated | mikemike | AI as stand-in for S01 | 5.31: the socket proxy of Alloy mounts the Docker socket (ADR-0020); the row records the exception and its limits; accepted after RC-185 Go | [4ff81cc] |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | The host firewall rows (4.1.1, 4.3.1, 4.3.2, 4.3.4 to 4.3.8) are Applied: the ruleset of git runs on nf-hotel, SSH over Tailscale only (S01 decision); accepted after RC-192 Go | [d9d9852] |
+| 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | The host firewall rows (4.1.1, 4.3.1, 4.3.2, 4.3.4 to 4.3.8) are Applied: the ruleset of git runs on nf-hotel, SSH over Tailscale only (S01 decision); accepted after RC-192 Go | [d9d9852] |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | The Docker daemon rows (2.2 to 2.6, 2.14 to 2.16, 2.18, 3.17, 3.18), 5.25 and journald (6.1.1.x) are Applied; 1.1.2 records that the group docker is not empty; accepted after RC-193 Go | [a919da3] |
 
 ---
 
@@ -54,7 +54,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | # | Item | Status | How, or why not | Evidence |
 | --- | --- | --- | --- | --- |
 | 1.1.1 | A separate partition for containers | Deferred | The VM has one disk; a separate `/var/lib/docker` needs a new disk and a move of the volumes, the database included. Taken up with the next disk change of S03 | ev:docker (`findmnt -T /var/lib/docker`) |
-| 1.1.2 | Only trusted users control the Docker daemon | Pending VM | The group `docker` should be empty: root administers, and the user `deploy` may run only `nfhotel-deploy` through sudo and is in no other group (`ops/scripts/install-deploy-user.sh`, `ops/tests/test-vm-setup.sh`) | ev:docker (`getent group docker`) |
+| 1.1.2 | Only trusted users control the Docker daemon | Pending VM | The group `docker` should be empty: root administers, and the user `deploy` may run only `nfhotel-deploy` through sudo and is in no other group (`ops/scripts/install-deploy-user.sh`, `ops/tests/test-vm-setup.sh`) **Finding 2026-10-24:** the group `docker` holds the user `nfhotel` (`getent group docker`), so it is not empty; removing it needs a check of what runs as `nfhotel` (RC-193). | ev:docker (`getent group docker`) |
 | 1.1.3 to 1.1.18 | Auditing of the Docker files and daemon | Deferred | `auditd` is a Level 2 item of the Debian Benchmark (6.2) and needs central logging to be read, which is phase 3 of DSA-001 | — |
 | 1.2.1 | The container host is hardened | Pending VM | The Debian part of this checklist | This document |
 | 1.2.2 | The version of Docker is up to date | Pending VM | Updated in the monthly window (wiki page Host-Hardening, Reboots) | ev:host, ev:docker (`docker version`, `apt-cache policy`) |
@@ -64,17 +64,17 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | # | Item | Status | How, or why not | Evidence |
 | --- | --- | --- | --- | --- |
 | 2.1 | Run the Docker daemon as a non-root user, if possible | Deferred | Rootless Docker changes the networking (no `DOCKER-USER`, no published 80 and 443 without extra capabilities) and the ownership of the volumes. User namespaces were evaluated (DSA-001 section 7) and not chosen for this milestone; the containers themselves drop their capabilities | — |
-| 2.2 | Network traffic is restricted between containers on the default bridge | Pending VM | `"icc": false`. The services use their own networks (`nfhotel-proxy`, `nfhotel-api`, `nfhotel-db`, `nfhotel-llm`), not the default bridge | daemon; ev:docker |
-| 2.3 | The logging level is set to `info` | Pending VM | Not set in `daemon.json`, so the default `info` holds | daemon; ev:docker |
-| 2.4 | Docker is allowed to make changes to iptables | Pending VM | Not turned off. The host firewall is a separate nftables table that runs beside Docker's rules (firewall) | daemon; ev:firewall (`nft list tables`) |
-| 2.5 | Insecure registries are not used | Pending VM | None configured; images come from Docker Hub, GHCR and MCR over TLS, by digest | ev:docker (`insecure-registries`) |
-| 2.6 | The aufs storage driver is not used | Pending VM | Debian 13 with a current Docker uses `overlay2` or the containerd snapshotter | ev:docker (`storage`) |
+| 2.2 | Network traffic is restricted between containers on the default bridge | Applied | `"icc": false`. The services use their own networks (`nfhotel-proxy`, `nfhotel-api`, `nfhotel-db`, `nfhotel-llm`), not the default bridge. Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | daemon; ev:docker |
+| 2.3 | The logging level is set to `info` | Applied | Not set in `daemon.json`, so the default `info` holds. `debug=false`. Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | daemon; ev:docker |
+| 2.4 | Docker is allowed to make changes to iptables | Applied | Not turned off. The host firewall is a separate nftables table that runs beside Docker's rules (firewall). Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | daemon; ev:firewall (`nft list tables`) |
+| 2.5 | Insecure registries are not used | Applied | None configured; images come from Docker Hub, GHCR and MCR over TLS, by digest. Only the loopback defaults of Docker. Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | ev:docker (`insecure-registries`) |
+| 2.6 | The aufs storage driver is not used | Applied | Debian 13 with a current Docker uses `overlay2` or the containerd snapshotter. `storage=overlayfs`. Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | ev:docker (`storage`) |
 | 2.7 | TLS authentication for the Docker daemon is configured | Not applicable | The daemon listens only on its Unix socket; no TCP listener is configured (`ss -tln` shows no 2375 or 2376) | ev:docker, ev:firewall |
 | 2.8 | The default ulimit is configured appropriately | Not applicable | A manual item: the defaults of Docker are kept and no service needs another limit; PIDs are limited per container (5.28) | — |
-| 2.14 | Containers are restricted from acquiring new privileges | Pending VM | `"no-new-privileges": true`, and per service in compose (5.25) | daemon; ev:docker |
-| 2.15 | Live restore is enabled | Pending VM | `"live-restore": true`: a restart of the daemon no longer stops the containers | daemon; ev:docker (`live-restore=true`) |
-| 2.16 | The userland proxy is disabled | Pending VM | `"userland-proxy": false`: published ports are forwarded by the kernel, which the firewall sees | daemon; ev:docker |
-| 2.18 | Experimental features are not used in production | Pending VM | Not set | ev:docker (`experimental=false`) |
+| 2.14 | Containers are restricted from acquiring new privileges | Applied | `"no-new-privileges": true`, and per service in compose (5.25). Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | daemon; ev:docker |
+| 2.15 | Live restore is enabled | Applied | `"live-restore": true`: a restart of the daemon no longer stops the containers. Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | daemon; ev:docker (`live-restore=true`) |
+| 2.16 | The userland proxy is disabled | Applied | `"userland-proxy": false`: published ports are forwarded by the kernel, which the firewall sees. Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | daemon; ev:docker |
+| 2.18 | Experimental features are not used in production | Applied | Not set. Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | ev:docker (`experimental=false`) |
 
 ### 3 Docker daemon configuration files
 
@@ -85,7 +85,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | 3.5, 3.6 | `/etc/docker`: owner `root:root`, mode 755 or stricter | Pending VM | The package defaults | ev:docker |
 | 3.7 to 3.14 | Registry certificates and the daemon's TLS files | Not applicable | No registry certificate and no TLS listener (2.7) | — |
 | 3.15, 3.16 | The Docker socket: owner `root:docker`, mode 660 or stricter | Pending VM | The package defaults; the group is empty (1.1.2) | ev:docker |
-| 3.17, 3.18 | `daemon.json`: owner `root:root`, mode 644 or stricter | Pending VM | Installed `root:root` 0644 by `ops/scripts/install-docker-daemon.sh` | daemon; ev:docker |
+| 3.17, 3.18 | `daemon.json`: owner `root:root`, mode 644 or stricter | Applied | Installed `root:root` 0644 by `ops/scripts/install-docker-daemon.sh`. Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | daemon; ev:docker |
 | 3.21 to 3.24 | The containerd socket: owner `root:root`, mode 660 or stricter | Pending VM | The package defaults | ev:docker |
 
 ### 4 Container images and build files
@@ -124,7 +124,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | 5.19 | Mount propagation mode is not set to shared | Applied | No propagation option | compose; ev:containers |
 | 5.21 | The default seccomp profile is not disabled | Applied | No `seccomp=unconfined` | compose; ev:containers (`security_opt`) |
 | 5.24 | The cgroup usage is confirmed | Applied | No `cgroup_parent` | compose |
-| 5.25 | The container is restricted from acquiring additional privileges | Pending VM | `security_opt: [no-new-privileges:true]` per service, and the daemon default (2.14) | compose; ev:containers |
+| 5.25 | The container is restricted from acquiring additional privileges | Applied | `security_opt: [no-new-privileges:true]` per service, and the daemon default (2.14). All 10 running containers. Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | compose; ev:containers |
 | 5.26 | Container health is checked at runtime | Pending VM | Health checks per service; the deploy checks 80 and 443 after each release | compose; ev:containers (`health`) |
 | 5.27 | Docker commands always use the latest version of their image | Applied | CD deploys the image digests of the release, never a moving tag | `ops/scripts/deploy-release.sh` |
 | 5.28 | The PIDs cgroup limit is used | Pending VM | `pids_limit` per service | compose; ev:containers (`pids_limit`) |
@@ -206,7 +206,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 
 | # | Item | Status | How, or why not | Evidence |
 | --- | --- | --- | --- | --- |
-| 6.1.1.x | journald: the service is enabled, its logs are compressed, written to persistent disk, and rotated | Pending VM | `Storage=persistent`, `Compress=yes`, `SystemMaxUse=1G`, `SystemKeepFree=2G`, `MaxFileSec=1month` | patching; ev:patching (`systemd-analyze cat-config`) |
+| 6.1.1.x | journald: the service is enabled, its logs are compressed, written to persistent disk, and rotated | Applied | `Storage=persistent`, `Compress=yes`, `SystemMaxUse=1G`, `SystemKeepFree=2G`, `MaxFileSec=1month`. Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | patching; ev:patching (`systemd-analyze cat-config`) |
 | 6.1.x | logrotate is configured; access to the log files is configured | Pending VM | logrotate is installed by `ops/scripts/install-patching.sh` with Debian's own rules; container logs are rotated by the `local` log driver of the daemon (5 files of 10 MB) | patching; daemon; ev:patching |
 | 6.3.1 | AIDE is installed | Deferred | File integrity checks need a place to report to; planned with central logging (DSA-001 phase 3) | — |
 
@@ -222,8 +222,8 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 
 | Benchmark | Applied | Pending VM | Not applicable | Deferred |
 | --- | --- | --- | --- | --- |
-| Docker | 17 | 31 | 6 | 4 |
-| Debian 12 | 8 | 17 | 6 | 13 |
+| Docker | 28 | 20 | 6 | 4 |
+| Debian 12 | 9 | 16 | 6 | 13 |
 
 The counts are by row; a row that covers several items counts once. What closes criterion 1: S01 runs the apply steps of the wiki page Host-Hardening, records `ops/scripts/cis-evidence.sh` before and after, moves every Pending VM row to Applied (or to Deferred, with the reason, where the evidence shows a gap), and adds the column "Verified on nf-hotel" with the date of the run.
 
@@ -236,3 +236,4 @@ The counts are by row; a row that covers several items counts once. What closes 
 [717dc18]: https://github.com/NF-Hotel/NFHotel/commit/717dc18e7bd3a6064272ef8fc9eb9ae123b89e55
 [4ff81cc]: https://github.com/NF-Hotel/NFHotel/commit/4ff81ccd0f1d43a160f2f45d72845e942cf5728e
 [d9d9852]: https://github.com/NF-Hotel/NFHotel/commit/d9d985227a317d6668c07115d37a8473c223be09
+[a919da3]: https://github.com/NF-Hotel/NFHotel/commit/a919da31b9a9ca2296643766efc3c651d28af4fa
