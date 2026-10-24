@@ -107,6 +107,54 @@ Run them as root in `/opt/nfhotel`, at the DevOps commit that holds this change,
 
 A unit that fails to start after step 5 most likely needs one capability more. The log names it (`Operation not permitted`). Add it to `cap_add` of that service by pull request, never `privileged`. If nginx cannot read the private key, check its owner: the master process reads it as root without `DAC_OVERRIDE`, so the key must belong to root.
 
+## Firewall: SSH over Tailscale only
+
+**Decision (S01, 2026-10-24).** SSH (TCP 22) is allowed only on `tailscale0`. SSH from the LAN (`192.168.10.0/24`) and from the internet is dropped, and the input policy stays drop. The reason: the server stands in S01's home, so the Proxmox console is the way in when Tailscale is down, and SSH from the LAN adds an access path without a need. This is the least privilege that MIL-023 criterion 2 asks for.
+
+**State on nf-hotel since 2026-10-24 15:37 UTC** (RC-192):
+- The ruleset is `ops/deploy/host/nftables/nfhotel.nft`, installed as `/etc/nfhotel/nftables.nft`.
+- `nfhotel-firewall.service` from `ops/deploy/systemd/` loads it at boot, before the network and Docker.
+- It replaced a ruleset set up by hand during MIL-021 (`/etc/nftables.d/nfhotel.nft`), which also allowed SSH from the LAN and had a unit whose `systemctl stop` removed the whole table.
+- The backup of the old state is in `/root/firewall-backup-20261024T153330Z/` on the VM:
+  - `ruleset.nft`, the complete ruleset;
+  - `table-inet-nfhotel.nft`;
+  - `nftables.d/`;
+  - the old `nfhotel-firewall.service`.
+
+**Check it** (read only), as root on the VM:
+
+```bash
+nft list chain inet nfhotel input
+```
+
+`tcp dport 22` appears only with `iifname "tailscale0"`, and no rule names `192.168.10.0/24`.
+
+### Rollback
+
+From an SSH session over Tailscale or from the Proxmox console, as root:
+
+1. Load the old table again, and keep it across reboots with the old unit:
+   ```bash
+   b=/root/firewall-backup-20261024T153330Z
+   nft -f "$b/nftables.d/nfhotel.nft"
+   cp "$b/nfhotel-firewall.service" /etc/systemd/system/nfhotel-firewall.service
+   systemctl daemon-reload
+   ```
+2. Record why in an RC. The planned state is the ruleset in git, so a rollback is temporary until a pull request changes it.
+
+To take a change back while it is still pending, use `bash ops/scripts/apply-firewall.sh --revert`. Without a confirmation, a pending change reverts by itself.
+
+### Recovery when Tailscale is down
+
+The firewall then lets no SSH in from anywhere. Use the console:
+
+1. In the Proxmox web interface, open VM 100 (`nf-hotel`), then *Console*, and sign in as `nfadmin`.
+2. Bring Tailscale back: `sudo systemctl restart tailscaled`, then `tailscale status`.
+3. Only if SSH is needed before Tailscale works, remove the table for the session. This opens the VM until the next boot or `systemctl restart nfhotel-firewall.service`:
+   ```bash
+   sudo nft delete table inet nfhotel
+   ```
+
 ## Monthly image rebuild
 
 DSA-001 risk R11 asks for images that are rebuilt with the latest security fixes, even when no code changes. Plan, from the first working day of December 2026, each month:
