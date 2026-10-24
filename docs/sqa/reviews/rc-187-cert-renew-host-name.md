@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the cause was NGINX_SERVER_NAME=_ on nf-hotel, so the host name now comes from tailscale CertDomains | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the cause was NGINX_SERVER_NAME=_ on nf-hotel, so the host name now comes from tailscale CertDomains | [f81cb46] |
 
 ---
 
@@ -63,3 +63,4 @@ Go.
 [ADR-0020]: ../../adr/adr-0020-monitoring-stack.md
 [RC-162]: rc-162-certificate-renewal.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[f81cb46]: https://github.com/NF-Hotel/NFHotel/commit/f81cb467aef99d0d377b4381e45d6f655b613242
