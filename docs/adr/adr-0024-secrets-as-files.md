@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-035, which S01 accepted in chat on 2026-10-24 | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-035, which S01 accepted in chat on 2026-10-24 | [9090645] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -71,3 +71,4 @@ We follow option 2.
 [ADR-0020]: ./adr-0020-monitoring-stack.md
 [MIL-035]: ../milestones/mil-035-secrets-as-files.md
 [RC-185]: ../sqa/reviews/rc-185-alloy-docker-discovery.md
+[9090645]: https://github.com/NF-Hotel/NFHotel/commit/90906459f40317be0fe2ac6e25862924cdccfee9
