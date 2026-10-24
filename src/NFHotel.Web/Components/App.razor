@@ -9,13 +9,15 @@
        means something other than the design system's, and everything visual must come from tokens. *@
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["NFHotel.Web.styles.css"]" />
-    <ImportMap />
+    @* No <ImportMap />: it is an inline script, which the Content Security Policy refuses, and no page loads a
+       JavaScript module (MIL-033). *@
     <link rel="icon" type="image/png" href="favicon.png" />
     <HeadOutlet />
 </head>
 
 <body>
     <Routes />
+    <ReconnectModal />
     <script src="_framework/blazor.web.js"></script>
 </body>
 

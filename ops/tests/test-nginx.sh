@@ -56,6 +56,7 @@ start_nginx() {
     -e 'NGINX_ENVSUBST_FILTER=^(NGINX_SERVER_NAME|NGINX_REDIRECT_PORT|NGINX_HSTS|UPSTREAM_HOST|UPSTREAM_PORT)$' \
     -v "$REPO_HOST/deploy/nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template:ro" \
     -v "$REPO_HOST/deploy/nginx/templates/00-upgrade.conf.template:/etc/nginx/templates/00-upgrade.conf.template:ro" \
+    -v "$REPO_HOST/deploy/nginx/templates/00-server-tokens.conf.template:/etc/nginx/templates/00-server-tokens.conf.template:ro" \
     -v "$W_HOST/snippets:/etc/nginx/snippets:ro" -v "$W_HOST/tls:/etc/nginx/tls:ro" "$NGINX" >/dev/null
   sleep 3
 }
@@ -65,6 +66,10 @@ echo "== no optional route"
 start_nginx none
 check "nginx runs" true "$(docker inspect -f '{{.State.Running}}' t-nginx)"
 check "port 80 redirects" 301 "$(code http://t-nginx/)"
+# The Server header names nginx without its version (MIL-033 criterion 6), on the redirect and on HTTPS.
+server() { docker run --rm --network t-ngnet "$CURL" -skI "$1" | tr -d '\r' | sed -n 's/^[Ss]erver: //p'; }
+check "port 80 names no nginx version" nginx "$(server http://t-nginx/)"
+check "HTTPS names no nginx version" nginx "$(server https://t-nginx/)"
 check "HTTPS proxies to the web application (absent here)" 502 "$(code https://t-nginx/)"
 check "/api/ goes to the web application" 502 "$(code https://t-nginx/api/rooms)"
 
