@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [f494ab3] |
 
 ---
 
@@ -70,3 +70,4 @@ Go.
 [MIL-023]: ../../milestones/mil-023-operational-quality.md
 [ADR-0016]: ../../adr/adr-0016-one-repository-for-application-and-operations.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[f494ab3]: https://github.com/NF-Hotel/NFHotel/commit/f494ab329f7b402b92e9c0fae17fbfb4068b5155
