@@ -56,6 +56,7 @@ jobs:
           - test-switch-vm-checkout.sh
           - test-renew-certificate.sh
           - test-backup-target.sh
+          - test-backup-settings.sh
           - test-dora-metrics.sh
           - test-report-health.sh
           - test-scan-running-release.sh
