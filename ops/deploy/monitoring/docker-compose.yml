@@ -28,8 +28,6 @@ services:
   prometheus:
     <<: *hardening
     image: prom/prometheus:v3.7.2@sha256:23031bfe0e74a13004252caaa74eccd0d62b6c6e7a04711d5b8bf5b7e113adc7
-    environment:
-      CONFIG_HASH: ${PROMETHEUS_CONFIG_HASH:-}
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
