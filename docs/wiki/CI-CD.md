@@ -169,3 +169,13 @@ S03 and a repository administrator do this once, in this order.
 | Health and smoke test | `nfhotel-deploy` on the VM | the release; it rolls back |
 
 Phase 2 (MIL-022) adds Trivy, SBOMs, build provenance and its verification before the deploy. Phase 3 (MIL-023) adds the hardening of the VM.
+
+## Why there is no staging environment
+
+A release goes from the checks of CI straight to production, without a staging environment ([ADR-0026](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0026-no-staging-environment.md), MIL-039). Each production incident of October 2026 came from the state of production itself (file modes, settings, the history of the VM), which a separate staging environment would not have had. Instead:
+
+- **Before the deploy:** every release runs on a throwaway stack in CI with the same images and compose files: the end-to-end tests, the DAST baseline, the log privacy check and the secret check.
+- **During the deploy:** a container that does not turn healthy, a secret in a container's environment, or a failed smoke test fails the deploy and rolls back to the previous release.
+- **After the deploy:** the alerts `ApplicationErrors`, `ApplicationSlow` and `ApplicationExceptions` ([Monitoring](Monitoring#service-level-objectives)) catch a release that starts but serves guests badly; then roll back as described under [Roll back](#roll-back).
+
+The decision is taken again when the hotel takes real bookings, when a migration cannot be rolled back, or when the Proxmox node turns out to have room for a staging VM.
