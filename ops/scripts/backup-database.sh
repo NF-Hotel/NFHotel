@@ -7,6 +7,11 @@
 #   1. pg_dump --format=custom inside the postgres container (no port is opened)
 #   2. encrypt the dump with age to the public key of S03; the VM cannot read its own
 #      backups, so a stolen VM disk does not reveal them
+#   2b. archive the settings and secrets that the rebuild of the VM needs (MIL-037, ADR-0025):
+#      the settings files of ops/deploy, the market analysis settings, the proxy certificate,
+#      /etc/nfhotel and the ssh key of the copy, encrypted the same way, as
+#      nfhotel-settings-<kind>-<time>.tar.age; the secret files that the deploy writes from the
+#      settings (ADR-0024) are left out, because the deploy writes them again
 #   3. copy every backup that the target lacks off the VM with rsync over ssh, when
 #      BACKUP_TARGET is set; a failed copy warns and is caught up by the next run
 #   4. keep 14 daily and 8 weekly (Sunday) files on the VM, delete older ones
@@ -39,6 +44,7 @@ set -euo pipefail
 
 settings="${NFHOTEL_BACKUP_SETTINGS:-/etc/nfhotel/backup.env}"
 app_dir="${NFHOTEL_DIR:-/opt/nfhotel}"
+etc_dir="${NFHOTEL_ETC:-/etc/nfhotel}"
 readonly DAILY_KEEP=14
 readonly WEEKLY_KEEP=8
 apply=0
@@ -120,6 +126,34 @@ chmod 0600 "$partial"
 mv "$partial" "$file"
 echo "    $(du -h "$file" | cut -f1)"
 
+# The settings and secrets, for a rebuild of the VM from nothing (MIL-037, ADR-0025). The paths
+# are relative to /, so a restore unpacks them in place with tar --directory /.
+settings_file="$backup_dir/nfhotel-settings-$kind-$stamp.tar.age"
+echo "==> archiving the settings to $settings_file"
+deploy_dir="$app_dir/ops/deploy"
+[[ -d "$deploy_dir" ]] || deploy_dir="$app_dir/deploy"
+mapfile -t paths < <(
+  find "$deploy_dir" -mindepth 2 -maxdepth 2 '(' -name '*.env' -o -name 'market-analysis.toml' ')' -type f 2>/dev/null
+  find "$deploy_dir/nginx/tls" -maxdepth 1 -name '*.pem' -type f 2>/dev/null
+  [[ -d "$etc_dir" ]] && echo "$etc_dir"
+  key="${BACKUP_SSH_KEY:-/root/.ssh/nfhotel-backup}"
+  [[ -f "$key" ]] && echo "$key"
+)
+if ((${#paths[@]} == 0)); then
+  # A host without the deployment, such as the CI test of the dump, has nothing to archive.
+  echo "warning: no settings found in $deploy_dir or $etc_dir; only the database is backed up" >&2
+else
+  tar --create --file - --absolute-names --transform 's,^/,,' "${paths[@]}" |
+    age --encrypt --recipient "$AGE_RECIPIENT" --output "$settings_file.partial" ||
+    {
+      rm -f "$settings_file.partial"
+      die "archiving or encrypting the settings failed"
+    }
+  chmod 0600 "$settings_file.partial"
+  mv "$settings_file.partial" "$settings_file"
+  echo "    ${#paths[@]} paths"
+fi
+
 if [[ -n "${BACKUP_TARGET:-}" ]]; then
   echo "==> copying the backups to $BACKUP_TARGET"
   key="${BACKUP_SSH_KEY:-/root/.ssh/nfhotel-backup}"
@@ -129,7 +163,7 @@ if [[ -n "${BACKUP_TARGET:-}" ]]; then
   # The target may be off, such as a laptop (D7). A failed copy is a warning: the backup
   # is safe on the VM, and the next run sends every file that the target lacks. The
   # target is write-only, so files there are never replaced (--ignore-existing).
-  if rsync --archive --partial --ignore-existing --include='nfhotel-*.dump.age' --exclude='*' \
+  if rsync --archive --partial --ignore-existing --include='nfhotel-*.dump.age' --include='nfhotel-settings-*.tar.age' --exclude='*' \
     --rsh "ssh -p $port -i $key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20" \
     "$backup_dir/" "$BACKUP_TARGET/"; then
     date -u +%Y-%m-%dT%H:%M:%SZ >"$backup_dir/.last-copy"
@@ -147,15 +181,17 @@ else
   echo "warning: BACKUP_TARGET is empty; the backup stays on the VM only (decision D7 is not in place)" >&2
 fi
 
-# prune <kind> <keep>: keep the newest <keep> files of a kind on the VM.
+# prune <name pattern> <keep>: keep the newest <keep> files of a kind on the VM.
 prune() {
   local old
-  mapfile -t old < <(find "$backup_dir" -maxdepth 1 -name "nfhotel-$1-*.dump.age" -printf '%f\n' | sort -r | tail -n +"$(($2 + 1))")
+  mapfile -t old < <(find "$backup_dir" -maxdepth 1 -name "$1" -printf '%f\n' | sort -r | tail -n +"$(($2 + 1))")
   for name in "${old[@]}"; do
     rm -f "${backup_dir:?}/$name"
   done
 }
-prune daily "$DAILY_KEEP"
-prune weekly "$WEEKLY_KEEP"
+prune 'nfhotel-daily-*.dump.age' "$DAILY_KEEP"
+prune 'nfhotel-weekly-*.dump.age' "$WEEKLY_KEEP"
+prune 'nfhotel-settings-daily-*.tar.age' "$DAILY_KEEP"
+prune 'nfhotel-settings-weekly-*.tar.age' "$WEEKLY_KEEP"
 report_success backup
 echo "==> done"

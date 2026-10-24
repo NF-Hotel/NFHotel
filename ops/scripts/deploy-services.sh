@@ -200,44 +200,32 @@ for s in "${ordered[@]}"; do
   fi
 done
 
-# The API builds its connection string from postgres.env, and the web service takes the API
-# token from nfhotel-api.env (docker-compose.yml of each), so each secret is written in one
-# file only. Export those values for compose. They are read, never printed. When the deploy
-# command passes NFHOTEL_API_CONNECTION_STRING (the login of nfhotel_app, ADR-0011) in the
-# environment, compose uses it instead of the superuser (deploy/nfhotel-api).
+# No secret goes into the environment of a container (MIL-035, ADR-0024): for PostgreSQL, the
+# API and the web application, scripts/write-secret-files.sh splits the settings into
+# secrets/settings.env and one file per secret, which compose mounts at /run/secrets. The web
+# application takes the API token from nfhotel-api.env and the benchmark token from benchmark.env,
+# so each secret is written in one settings file only. When the deploy command passes
+# NFHOTEL_API_CONNECTION_STRING (the login of nfhotel_app, ADR-0011), the API logs in with it
+# instead of the superuser of postgres.env. The values are read, never printed.
+secret_files() {
+  bash "$root/scripts/write-secret-files.sh" "$1" --out "$(dir_of "$1")/secrets" \
+    --postgres "$(dir_of postgres)/$(env_of postgres)" --api "$(dir_of api)/$(env_of api)" \
+    --web "$(dir_of web)/$(env_of web)" --benchmark "$(dir_of benchmark)/$(env_of benchmark)" >/dev/null
+}
 for s in "${ordered[@]}"; do
-  if [[ "$s" == "api" ]]; then
-    pg_env="$(dir_of postgres)/$(env_of postgres)"
-    [[ -f "$pg_env" ]] || die "$pg_env is missing; the API takes the database login from it"
-    # Split each line at the first = only: read with IFS== drops a trailing = (base64).
-    while IFS= read -r line || [[ -n "$line" ]]; do
-      key="${line%%=*}"
-      value="${line#*=}"
-      case "$key" in
-        POSTGRES_USER | POSTGRES_PASSWORD | POSTGRES_DB) export "$key=${value%$'\r'}" ;;
-      esac
-    done <"$pg_env"
-  fi
-  if [[ "$s" == "web" || "$s" == "benchmark" ]]; then
+  case "$s" in
+    postgres | api | web) secret_files "$s" || die "cannot write the secret files of $s" ;;
+  esac
+  if [[ "$s" == "benchmark" ]]; then
+    # The benchmark service is built from its own repository and reads the API token from its
+    # environment (deploy/benchmark).
     api_env="$(dir_of api)/$(env_of api)"
-    [[ -f "$api_env" ]] || die "$api_env is missing; the $s service takes the API token from it"
+    [[ -f "$api_env" ]] || die "$api_env is missing; the benchmark service takes the API token from it"
     while IFS= read -r line || [[ -n "$line" ]]; do
       key="${line%%=*}"
       value="${line#*=}"
       [[ "$key" == "Api__Token" ]] && export "API_TOKEN=${value%$'\r'}"
     done <"$api_env"
-  fi
-  if [[ "$s" == "web" ]]; then
-    # The web application calls the benchmark service with the token of that service; an empty value
-    # leaves the Start page saying that the service is not set up.
-    bench_env="$(dir_of benchmark)/$(env_of benchmark)"
-    if [[ -f "$bench_env" ]]; then
-      while IFS= read -r line || [[ -n "$line" ]]; do
-        key="${line%%=*}"
-        value="${line#*=}"
-        [[ "$key" == "NFBENCH_API_TOKEN" ]] && export "BENCHMARK_API_TOKEN=${value%$'\r'}"
-      done <"$bench_env"
-    fi
   fi
 done
 
@@ -335,6 +323,12 @@ for s in "${ordered[@]}"; do
     export NGINX_CONFIG_HASH
     NGINX_CONFIG_HASH="$(cd "$d" && find templates snippets -type f -print0 | sort -z | xargs -0 sha256sum |
       cat - "$e" | sha256sum | cut -c1-16)" || die "cannot hash the configuration of the proxy"
+  fi
+  if [[ "$s" == "api" || "$s" == "web" ]]; then
+    # Compose does not see a changed secret file; this hash of them makes it recreate the
+    # container after a rotation (ADR-0024).
+    export NFHOTEL_SETTINGS_HASH
+    NFHOTEL_SETTINGS_HASH="$(cat "$d"/secrets/* | sha256sum | cut -c1-16)" || die "cannot hash the secret files of $s"
   fi
   if [[ "$s" == "alloy" ]]; then
     # The monitoring agent must not take the hotel down: when it does not turn healthy, the

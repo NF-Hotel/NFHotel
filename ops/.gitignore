@@ -1,6 +1,8 @@
 # Settings files with secrets stay on the server (CONTRIBUTING.md, SECURITY.md).
 *.env
 !*.env.example
+# The secret files that scripts/write-secret-files.sh writes from them (ADR-0024).
+deploy/*/secrets/
 /deploy/market-analysis/market-analysis.toml
 deploy/nginx/tls/
 

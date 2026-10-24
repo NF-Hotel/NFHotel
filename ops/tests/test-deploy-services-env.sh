@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Test of the settings that scripts/deploy-services.sh reads from the settings files: a value
-# that ends with = (base64) must reach compose whole. A fake docker records API_TOKEN and
-# POSTGRES_PASSWORD at `compose up`, so no container runs.
+# Test of the settings that scripts/deploy-services.sh reads from the settings files: each secret
+# becomes a file (ADR-0024), a value that ends with = (base64) stays whole, and no secret is
+# exported to compose. A fake docker records API_TOKEN and POSTGRES_PASSWORD at `compose up`, so
+# no container runs.
 #
 # Run it with the repository at /src or from a checkout:  bash tests/test-deploy-services-env.sh
 # Exit:  0 every check passed; 1 a check failed
@@ -32,21 +33,29 @@ chmod +x "$work/bin/docker"
 
 pass=0
 fail=0
+ok() {
+  echo "PASS  $1"
+  pass=$((pass + 1))
+}
+ko() {
+  echo "FAIL  $1"
+  fail=$((fail + 1))
+}
 PATH="$work/bin:$PATH" bash "$work/repo/scripts/deploy-services.sh" --no-build postgres api web >"$work/out" 2>&1 || echo "note: the script exited non-zero: $(tail -1 "$work/out")"
-if grep -q "api_token=$token " "$work/calls" 2>/dev/null; then
-  echo "PASS  the API token keeps its trailing ="
-  pass=$((pass + 1))
-else
-  echo "FAIL  the API token lost its trailing = ($(grep -o 'api_token=[^ ]*' "$work/calls" 2>/dev/null | head -1))"
-  fail=$((fail + 1))
-fi
-if grep -q "pg=$password\$" "$work/calls" 2>/dev/null; then
-  echo "PASS  the database password keeps its trailing ="
-  pass=$((pass + 1))
-else
-  echo "FAIL  the database password lost its trailing ="
-  fail=$((fail + 1))
-fi
+d="$work/repo/deploy"
+# The secrets are files (MIL-035, ADR-0024), and a value that ends with = (base64) stays whole.
+[[ "$(cat "$d/nfhotel-api/secrets/Api__Token" 2>/dev/null)" == "$token" ]] &&
+  ok "the API token is a file and keeps its trailing =" || ko "the API token file: $(tail -2 "$work/out")"
+[[ "$(cat "$d/postgres/secrets/POSTGRES_PASSWORD" 2>/dev/null)" == "$password" ]] &&
+  ok "the database password is a file and keeps its trailing =" || ko "the database password file"
+grep -q "Password=$password\$" "$d/nfhotel-api/secrets/ConnectionStrings__HotelDatabase" 2>/dev/null &&
+  ok "the connection string of the API is built from postgres.env" || ko "the connection string"
+[[ "$(cat "$d/nfhotel-web/secrets/Api__Token" 2>/dev/null)" == "$token" ]] &&
+  ok "the web application takes the API token from nfhotel-api.env" || ko "the API token of the web application"
+grep -q "^Other=1$" "$d/nfhotel-api/secrets/settings.env" 2>/dev/null && ! grep -q Api__Token "$d/nfhotel-api/secrets/settings.env" &&
+  ok "the settings for the container keep the other settings and leave the secret out" || ko "the settings without secrets"
+! grep -q "api_token=[^ ]\|pg=[^ ]" "$work/calls" 2>/dev/null &&
+  ok "no secret is exported to compose" || ko "a secret is exported to compose: $(cat "$work/calls")"
 
 # The settings of the market analysis are read by its container as uid 1000 (MIL-023
 # task 2), so a file at 0600, as the VM had it, must become readable (HTTP 422, 2026-10-24).
@@ -85,14 +94,6 @@ nginx_hash() {
   : >"$work/nginx-calls"
   PATH="$work/bin:$PATH" bash "$work/repo/scripts/deploy-services.sh" --no-build nginx >"$work/out" 2>&1
   sed -n 's/.* hash=\([0-9a-f]*\) .*/\1/p' "$work/nginx-calls" | tail -1
-}
-ok() {
-  echo "PASS  $1"
-  pass=$((pass + 1))
-}
-ko() {
-  echo "FAIL  $1"
-  fail=$((fail + 1))
 }
 first="$(nginx_hash)"
 [[ "$first" =~ ^[0-9a-f]{16}$ ]] && ok "the proxy gets a configuration hash" || ko "the proxy gets a configuration hash"

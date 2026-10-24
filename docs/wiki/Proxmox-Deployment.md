@@ -106,25 +106,65 @@ The VM is the development environment, so `nfhotel-api.env` and `nfhotel-web.env
 `ASPNETCORE_ENVIRONMENT=Development`.
 
 - **Database.** Only `nfhotel-api` reads `ConnectionStrings__HotelDatabase`.
-  `ops/deploy/nfhotel-api/docker-compose.yml` builds it from the `POSTGRES_USER`, `POSTGRES_PASSWORD`
-  and `POSTGRES_DB` values of `ops/deploy/postgres/postgres.env` (`ops/scripts/deploy-services.sh` passes
-  them to compose) and points at the PostgreSQL container by name:
+  `ops/scripts/write-secret-files.sh` builds it from the `POSTGRES_USER`, `POSTGRES_PASSWORD`
+  and `POSTGRES_DB` values of `ops/deploy/postgres/postgres.env` (or takes the login of `nfhotel_app`,
+  ADR-0011) and points at the PostgreSQL container by name:
 
 ```text
 Host=postgres;Port=5432;Database=<POSTGRES_DB>;Username=<POSTGRES_USER>;Password=<from postgres.env>
 ```
 
-- **Web application.** It has `Api__BaseUrl=http://nfhotel-api:8080` and `Api__Token`, both set by
-  `ops/deploy/nfhotel-web/docker-compose.yml`. It has no database setting and no passport key, and its
-  container is not on `nfhotel-db`. Its program holds no Npgsql or EF Core code.
+- **Web application.** It has `Api__BaseUrl=http://nfhotel-api:8080` from
+  `ops/deploy/nfhotel-web/docker-compose.yml`, and `Api__Token` as a secret file. It has no database
+  setting, and its container is not on `nfhotel-db`. Its program holds no Npgsql or EF Core code.
 - **Check it.** In the VM: `docker inspect` of the web container shows no `nfhotel-db` network,
-  `docker exec <web> printenv` shows no `ConnectionStrings`, and a call to the API without the token
-  answers 401.
+  `sudo bash /opt/nfhotel/ops/scripts/check-secret-env.sh` shows no secret in any environment, and a
+  call to the API without the token answers 401.
 
 - **Schema.** With `Database__MigrateOnStart=true` in `nfhotel-api.env` the API applies the pending
   Entity Framework migrations when it starts. Running it again changes nothing.
 
 Settings files are git-ignored and never committed.
+
+## Secrets and their rotation
+
+**Decision:** [ADR-0024](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0024-secrets-as-files.md). **Work:** MIL-035.
+
+No secret reaches a container as an environment variable. You write each secret once, in the settings file of its service, as before. At every deploy, `ops/scripts/write-secret-files.sh` splits the file into `secrets/settings.env` (everything except the secrets) and one file per secret in `ops/deploy/<service>/secrets/`, and compose mounts each file at `/run/secrets/<name>`.
+
+*Why files:* an environment variable is shown by `docker inspect`, by `/proc/1/environ` and by the Docker socket proxy of the monitoring; a mounted file is not. *Why written by the deploy:* you keep one place to edit, and a changed value reaches the container at the next deploy.
+
+| Secret | Written in | Read by |
+| --- | --- | --- |
+| `POSTGRES_PASSWORD` | `postgres/postgres.env` | PostgreSQL (first start only), the API's connection string |
+| `Api__Token` | `nfhotel-api/nfhotel-api.env` | the API and the web application (and the benchmark service, from its environment) |
+| `Staff__Token__SigningKey` | `nfhotel-api/nfhotel-api.env` | the API |
+| `Staff__InitialManager__Password` | `nfhotel-api/nfhotel-api.env` | the API, only while no staff account exists |
+| `Encryption__PassportKey` | `nfhotel-api.env` and `nfhotel-web.env` | the API and the web application |
+| `MarketAnalysisService__Token`, `HolidayApi__ApiKey`, `BenchmarkService__Token` | their service's settings | the API or the web application |
+
+The login of `nfhotel_app` (ADR-0011) stays in root's `/etc/nfhotel/secrets/nfhotel-api-database.env`; the deploy passes it to the script, which writes it as the connection string.
+
+### Rotate a secret
+
+The same steps for every secret below, except where a step says otherwise. CI runs them on a throwaway stack (`ops/tests/test-secret-rotation.sh`), so they are known to work.
+
+1. **Make a new value** in a shell on `nf-hotel`: `openssl rand -hex 24` for a password or a token, `openssl rand -hex 32` for the signing key. *Why hex:* it has no `;` or quote, which would break the connection string.
+2. **Write it** in the settings file of its service, replacing the old line: `sudo -u nfhotel nano /opt/nfhotel/ops/deploy/<service>/<service>.env`.
+3. **Deploy:** re-run the latest successful `NF Hotel CD` run in GitHub Actions. The deploy writes the files again, and compose recreates the container because the hash of its secret files changed. *Why not `deploy-services.sh` by hand:* only the CD passes the login of `nfhotel_app`, so a deploy by hand would log the API in as the superuser.
+4. **Check** that the site and the back office sign-in work, and that `sudo bash /opt/nfhotel/ops/scripts/check-secret-env.sh` passes.
+
+What is special per secret:
+
+- **The API token.** The CD deploys the API, the web application and the benchmark service together, so all three get the new value; for the seconds in between, the web application gets 401 from the API. *Why it is safe:* the old token stops working the moment the API restarts, which is what a rotation is for.
+- **The signing key.** Every member of staff is signed out and signs in again. *Why:* the old sessions were signed with the old key, which is exactly what makes a stolen session useless.
+- **The database password.** Change the role first, then the settings, or the API cannot log in in between:
+  ```bash
+  sudo docker exec -i nfhotel-postgres-postgres-1 psql -U nfhotel -d nfhotel
+  ```
+  and type `ALTER ROLE nfhotel PASSWORD '<new value>';` at the prompt (*why at the prompt:* a password on the command line ends up in the shell history and in the process list). Then write it in `postgres.env` and re-run CD. PostgreSQL itself is not recreated: it reads the file only to create the database the first time. For the roles of ADR-0011, change the role with the same `ALTER ROLE`, then the matching file in `/etc/nfhotel/secrets`, and re-run CD.
+- **The first Manager's password** is read only while no staff account exists. Once the first Manager has signed in and chosen a new password (ADR-0017), delete the line from `nfhotel-api.env` and re-run CD.
+- **The passport key cannot be rotated yet.** It encrypts the passport numbers already stored, and the application has one key, so a new key would make them unreadable. If it leaks, treat it as an incident ([Incidents](Incidents#when-personal-data-may-have-leaked)); re-encryption is planned as later work (ADR-0024 decision 7).
 
 ## Staff sign-in (back office)
 
@@ -213,8 +253,8 @@ The benchmark service is a separate repository, `notebook-benchmark`, with its o
 joins the internal network `nfhotel-api` and publishes no host port.
 
 - The web application starts runs at `http://benchmark:8000` with the bearer token in
-  `BenchmarkService__Token` of `ops/deploy/nfhotel-web/nfhotel-web.env`. That value is the `NFBENCH_API_TOKEN` of the
-  benchmark service.
+  `BenchmarkService__Token`, which the deploy takes from the `NFBENCH_API_TOKEN` of the benchmark service's
+  `benchmark.env` and mounts as a secret file (ADR-0024).
 - The benchmark service delivers the finished result to `http://nfhotel-api:8080/api/benchmark/results` with the
   `Api__Token` of `ops/deploy/nfhotel-api/nfhotel-api.env`. That value is its `NFBENCH_WEB_TOKEN`.
 - A Manager starts a run at `/admin/benchmark/start` and reads the stored runs at `/admin/benchmark`.

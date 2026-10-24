@@ -152,7 +152,7 @@ if ((connect)); then
   fi
   [[ "$(docker network inspect --format '{{.Internal}}' "$NETWORK")" == "true" ]] ||
     die "$NETWORK exists but is not internal; refusing to join the database to it"
-  if docker inspect --format '{{range $name, $_ := .NetworkSettings.Networks}}{{println $name}}{{end}}' "$container" | grep -qx "$NETWORK"; then
+  if docker inspect --format '{{range $name, $_ := .NetworkSettings.Networks}}{{println $name}}{{end}}' "$container" | grep -x "$NETWORK" >/dev/null; then
     echo "    $container is already on $NETWORK"
   else
     docker network connect --alias "$ALIAS" "$NETWORK" "$container" || die "cannot join $container to $NETWORK"

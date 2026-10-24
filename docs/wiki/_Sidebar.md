@@ -5,4 +5,6 @@
 - [Database Preparation](Database-Preparation)
 - [Host Hardening](Host-Hardening)
 - [Monitoring](Monitoring)
+- [Incidents](Incidents)
+- [Disaster Recovery](Disaster-Recovery)
 - [Appendix](Appendix)
