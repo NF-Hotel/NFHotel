@@ -89,7 +89,7 @@ if ((dry_run)); then
 fi
 patterns="$(apt-config dump Unattended-Upgrade::Origins-Pattern | grep -c '^Unattended-Upgrade::Origins-Pattern:: ')" || true
 [[ "$patterns" == 1 ]] || die "unattended-upgrade has $patterns origin patterns, expected only the security one"
-apt-config dump Unattended-Upgrade::Origins-Pattern | grep -qF -- "-security,label=Debian-Security" ||
+apt-config dump Unattended-Upgrade::Origins-Pattern | grep -F -- "-security,label=Debian-Security" >/dev/null ||
   die "the security origin is not configured"
 unattended-upgrade --dry-run >/dev/null 2>&1 || die "unattended-upgrade --dry-run failed; see /var/log/unattended-upgrades"
 echo "==> done; unattended-upgrade installs Debian security updates only. Its log is"
