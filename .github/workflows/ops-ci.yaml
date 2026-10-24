@@ -58,6 +58,8 @@ jobs:
           - test-backup-target.sh
           - test-dora-metrics.sh
           - test-report-health.sh
+          - test-scan-running-release.sh
+          - test-check-log-privacy.sh
           - test-publish-wiki.sh
           - test-create-monitoring-lxc.sh
     steps:

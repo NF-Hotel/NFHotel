@@ -129,5 +129,23 @@ else
   } 2>&1 | sed 's/^/      /'
 fi
 
+# The ruler of Loki (MIL-036 task 2): failed SSH logins in the journal of nf-hotel reach
+# Alertmanager. Twelve lines are pushed as Alloy would push them; the rule wants more than 10.
+now="$(date +%s)"
+values=""
+for i in $(seq 1 12); do
+  values+="[\"$((now - i))000000000\",\"Failed password for invalid user t-test from 100.64.0.9 port 22 ssh2\"],"
+done
+push='{"streams":[{"stream":{"host":"nf-hotel","source":"journal","unit":"ssh.service"},"values":['"${values%,}"']}]}'
+pushed="$(curl -s -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' -d "$push" http://127.0.0.1:3100/loki/api/v1/push)"
+[[ "$pushed" == 204 ]] && ok "Loki accepts the log lines" || ko "push answered $pushed"
+for _ in $(seq 1 36); do
+  alerts="$(compose exec -T alertmanager wget -qO- http://localhost:9093/api/v2/alerts 2>/dev/null)"
+  [[ "$alerts" == *'"alertname":"SshLoginFailures"'* ]] && break
+  sleep 5
+done
+[[ "$alerts" == *'"alertname":"SshLoginFailures"'* ]] && ok "failed SSH logins in the journal reach Alertmanager" ||
+  ko "no SshLoginFailures in Alertmanager: $(compose logs --tail 5 loki 2>&1)"
+
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))
