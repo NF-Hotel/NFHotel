@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-038, which S01 accepted in chat on 2026-10-24 | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-038, which S01 accepted in chat on 2026-10-24 | [bfaa680] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -59,3 +59,4 @@ Options considered:
 [ADR-0020]: ./adr-0020-monitoring-stack.md
 [MIL-038]: ../milestones/mil-038-configuration-as-code.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[bfaa680]: https://github.com/NF-Hotel/NFHotel/commit/bfaa68027c5070fca1a3ac9cf35d339b87d6dd20
