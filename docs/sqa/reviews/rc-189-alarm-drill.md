@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [1d62ab2] |
 
 ---
 
@@ -102,3 +102,4 @@ Go. MIL-023 criterion 7 is met.
 [RC-187]: rc-187-cert-renew-host-name.md
 [RC-188]: rc-188-monitoring-reload-and-watchdog.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[1d62ab2]: https://github.com/NF-Hotel/NFHotel/commit/1d62ab28c11f12e87981602d4a8f91d69d7477f0
