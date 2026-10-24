@@ -110,8 +110,8 @@ compose "${am[@]}" silence add --duration=1h --comment="test" 'alertname!=Watchd
 # A changed rule takes effect with the next deploy, as the alarm drill of the wiki page does it.
 sed -i 's| / 86400 < 21$| / 86400 < 400|' "$rules"
 bash "$OPS/scripts/deploy-monitoring.sh" --apply >"$W/redeploy" 2>&1 || ko "redeploy: $(tail -3 "$W/redeploy")"
-# Prometheus's JSON escapes < as <, so both forms are matched.
-new_rule() { [[ "$1" == *'86400 < 400'* || "$1" == *'86400 < 400'* ]]; }
+# Prometheus's JSON escapes < as \u003c, so both forms are matched.
+new_rule() { [[ "$1" == *'86400 < 400'* || "$1" == *'86400 \u003c 400'* ]]; }
 for _ in $(seq 1 24); do
   loaded="$(curl -fsS http://127.0.0.1:9090/api/v1/rules 2>/dev/null)"
   new_rule "$loaded" && break
