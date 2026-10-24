@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-23 | Deprecated | mikemike | AI as stand-in for S01 | 5.31: the socket proxy of Alloy mounts the Docker socket (ADR-0020); the row records the exception and its limits; accepted after RC-185 Go | [4ff81cc] |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | The host firewall rows (4.1.1, 4.3.1, 4.3.2, 4.3.4 to 4.3.8) are Applied: the ruleset of git runs on nf-hotel, SSH over Tailscale only (S01 decision); accepted after RC-192 Go | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | The host firewall rows (4.1.1, 4.3.1, 4.3.2, 4.3.4 to 4.3.8) are Applied: the ruleset of git runs on nf-hotel, SSH over Tailscale only (S01 decision); accepted after RC-192 Go | [d9d9852] |
 
 ---
 
@@ -235,3 +235,4 @@ The counts are by row; a row that covers several items counts once. What closes 
 [RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
 [717dc18]: https://github.com/NF-Hotel/NFHotel/commit/717dc18e7bd3a6064272ef8fc9eb9ae123b89e55
 [4ff81cc]: https://github.com/NF-Hotel/NFHotel/commit/4ff81ccd0f1d43a160f2f45d72845e942cf5728e
+[d9d9852]: https://github.com/NF-Hotel/NFHotel/commit/d9d985227a317d6668c07115d37a8473c223be09

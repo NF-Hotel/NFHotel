@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [d9d9852] |
 
 ---
 
@@ -74,3 +74,4 @@ Go. CIS-001 rows 4.1.1, 4.3.1, 4.3.2 and 4.3.4 to 4.3.8 are Applied.
 [RC-176]: rc-176-mil-023-host-hardening.md
 [RC-191]: rc-191-host-hardening-apply-part-1.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[d9d9852]: https://github.com/NF-Hotel/NFHotel/commit/d9d985227a317d6668c07115d37a8473c223be09
