@@ -11,7 +11,8 @@
 #   3. clone NF-Hotel/NFHotel at the commit into /opt/nfhotel-next, owned by the app user
 #   4. copy the git-ignored settings of the old checkout into ops/ of the new one: every
 #      deploy/*/*.env, deploy/market-analysis/market-analysis.toml, deploy/nginx/tls/,
-#      deploy.env and pve.env (0600, the same owner)
+#      deploy.env and pve.env (0600, the same owner; the .toml 0644, as its container
+#      reads it as its own user)
 #   5. move /opt/nfhotel to /opt/nfhotel-devops (kept as the way back) and the new
 #      checkout to /opt/nfhotel; no container is stopped or recreated, and the volumes
 #      are untouched
@@ -91,8 +92,13 @@ git -C "$next" checkout -q --detach FETCH_HEAD
 [[ -f "$next/ops/scripts/deploy-release.sh" ]] || die "$sha has no ops/scripts/deploy-release.sh; is it a commit after ADR-0016?"
 
 # 4. The settings files, into ops/.
+# The .env files hold secrets and are read by compose as root (0600). The settings of the
+# market analysis are mounted into a container that runs as its own user, and hold no
+# secret, so they stay readable (0644).
 for f in "${settings[@]}"; do
-  install -D -m 0600 "$app_dir/$f" "$next/ops/$f"
+  mode=0600
+  [[ "$f" == *.toml ]] && mode=0644
+  install -D -m "$mode" "$app_dir/$f" "$next/ops/$f"
 done
 if ((tls)); then
   mkdir -p "$next/ops/deploy/nginx"

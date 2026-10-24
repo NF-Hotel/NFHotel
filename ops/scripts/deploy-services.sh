@@ -313,6 +313,11 @@ for s in "${ordered[@]}"; do
   fi
   if [[ "$s" == "analysis" ]]; then
     apply_default_model "$d/market-analysis.toml"
+    # The service runs as its own user (uid 1000, MIL-023 task 2) and reads this file through
+    # a read-only mount, so it must be readable by others. It holds no secret: addresses,
+    # the history size and the model name. At 0600, as switch-vm-checkout.sh had copied it,
+    # every analysis failed with "Permission denied" (HTTP 422, 2026-10-24).
+    chmod 0644 "$d/market-analysis.toml" || die "cannot make $d/market-analysis.toml readable"
   fi
   echo "==> deploying $s"
   args=(--env-file "$e" up -d --remove-orphans)
