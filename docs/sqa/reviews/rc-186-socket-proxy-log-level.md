@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [18da801] |
 
 ---
 
@@ -55,3 +55,4 @@ Go.
 [RC-185]: rc-185-alloy-docker-discovery.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[18da801]: https://github.com/NF-Hotel/NFHotel/commit/18da801063f1f1c8b8b51701b63b42b88f06e839
