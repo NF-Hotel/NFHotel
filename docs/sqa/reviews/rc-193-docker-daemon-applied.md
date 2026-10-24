@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [a919da3] |
 
 ---
 
@@ -80,3 +80,4 @@ Go.
 [RC-176]: rc-176-mil-023-host-hardening.md
 [RC-191]: rc-191-host-hardening-apply-part-1.md
 [RC-192]: rc-192-firewall-tailscale-only.md
+[a919da3]: https://github.com/NF-Hotel/NFHotel/commit/a919da31b9a9ca2296643766efc3c651d28af4fa

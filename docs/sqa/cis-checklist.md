@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | The host firewall rows (4.1.1, 4.3.1, 4.3.2, 4.3.4 to 4.3.8) are Applied: the ruleset of git runs on nf-hotel, SSH over Tailscale only (S01 decision); accepted after RC-192 Go | [d9d9852] |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | The Docker daemon rows (2.2 to 2.6, 2.14 to 2.16, 2.18, 3.17, 3.18), 5.25 and journald (6.1.1.x) are Applied; 1.1.2 records that the group docker is not empty; accepted after RC-193 Go | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | The Docker daemon rows (2.2 to 2.6, 2.14 to 2.16, 2.18, 3.17, 3.18), 5.25 and journald (6.1.1.x) are Applied; 1.1.2 records that the group docker is not empty; accepted after RC-193 Go | [a919da3] |
 
 ---
 
@@ -236,3 +236,4 @@ The counts are by row; a row that covers several items counts once. What closes 
 [717dc18]: https://github.com/NF-Hotel/NFHotel/commit/717dc18e7bd3a6064272ef8fc9eb9ae123b89e55
 [4ff81cc]: https://github.com/NF-Hotel/NFHotel/commit/4ff81ccd0f1d43a160f2f45d72845e942cf5728e
 [d9d9852]: https://github.com/NF-Hotel/NFHotel/commit/d9d985227a317d6668c07115d37a8473c223be09
+[a919da3]: https://github.com/NF-Hotel/NFHotel/commit/a919da31b9a9ca2296643766efc3c651d28af4fa
