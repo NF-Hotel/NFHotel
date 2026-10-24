@@ -1,0 +1,86 @@
+# Service level objectives of the web application and the API (MIL-034, ADR-0023). The
+# applications push their own request metrics over OTLP through Alloy, so these rules see what a
+# guest and a member of staff experience. The objectives and their SLIs are written in the wiki
+# page Monitoring. Unit-tested with `promtool test rules` (rules-test.yml).
+#
+# The Blazor circuit is one long websocket request (route /_blazor) that lasts as long as the tab
+# is open; it is left out of the latency, or it would be the slowest request by hours.
+groups:
+  - name: nfhotel-applications
+    rules:
+      # The latency SLI: the 95th percentile of the request duration per application, without the
+      # Blazor circuit. Recorded so the dashboard and the alert read the same series.
+      - record: job:http_server_request_duration_seconds:p95_5m
+        expr: >-
+          histogram_quantile(0.95, sum by (job, le)
+          (rate(http_server_request_duration_seconds_bucket{host="nf-hotel",
+          http_route!~".*_blazor.*"}[5m])))
+
+      # The error SLI: the share of answers with a 5xx status per application.
+      - record: job:http_server_requests:error_ratio_10m
+        expr: >-
+          sum by (job) (rate(http_server_request_duration_seconds_count{host="nf-hotel",
+          http_response_status_code=~"5.."}[10m])) / sum by (job)
+          (rate(http_server_request_duration_seconds_count{host="nf-hotel"}[10m]))
+
+      # Objective: 95 % of the requests answered within 1 second.
+      - alert: ApplicationSlow
+        expr: job:http_server_request_duration_seconds:p95_5m > 1
+        for: 10m
+        labels:
+          severity: warning
+          host: nf-hotel
+        annotations:
+          summary: >-
+            {{ $labels.job }} answers slowly: 95 % of the requests take up to {{ $value |
+            humanizeDuration }}
+          description: >-
+            The objective is 1 second. Open the dashboard for the routes, and the logs of the
+            application in Grafana (wiki page Monitoring, runbook).
+
+      # Objective: fewer than 5 % of the answers are server errors. Only with at least one request a
+      # minute (0.0167 per second), so one error at night is not a 100 % error rate.
+      - alert: ApplicationErrors
+        expr: >-
+          job:http_server_requests:error_ratio_10m > 0.05 and on (job) sum by (job)
+          (rate(http_server_request_duration_seconds_count{host="nf-hotel"}[10m])) > 0.0167
+        for: 5m
+        labels:
+          severity: critical
+          host: nf-hotel
+        annotations:
+          summary: >-
+            {{ $labels.job }} answers {{ $value | humanizePercentage }} of its requests with a
+            server error
+          description: >-
+            Read its log in Grafana: {container=~".*{{ $labels.job }}.*"} |= "fail"
+
+      # Unhandled exceptions, counted by ASP.NET Core with their type.
+      - alert: ApplicationExceptions
+        expr: >-
+          sum by (job) (increase(aspnetcore_diagnostics_exceptions_total{host="nf-hotel"}[10m])) > 5
+        labels:
+          severity: warning
+          host: nf-hotel
+        annotations:
+          summary: >-
+            {{ $labels.job }} had {{ $value | humanize }} unhandled exceptions in 10 minutes
+          description: >-
+            The type is the label error_type of aspnetcore_diagnostics_exceptions_total; the stack
+            trace is in the log of the application in Grafana.
+
+      # The probes make requests every 30 seconds, so the web application always has metrics. When
+      # they are missing while nf-hotel sends its host metrics, the telemetry itself is broken.
+      - alert: ApplicationMetricsMissing
+        expr: >-
+          absent(http_server_request_duration_seconds_count{host="nf-hotel", job="nfhotel-web"})
+          and on () node_uname_info{host="nf-hotel"}
+        for: 15m
+        labels:
+          severity: warning
+          host: nf-hotel
+        annotations:
+          summary: "nf-hotel sends no request metrics of the web application"
+          description: >-
+            Check Telemetry__OtlpEndpoint of nfhotel-web, and that Alloy is on the network
+            nfhotel-api (sudo docker logs nfhotel-alloy-alloy-1).

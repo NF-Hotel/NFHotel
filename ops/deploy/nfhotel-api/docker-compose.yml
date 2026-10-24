@@ -44,6 +44,9 @@ services:
         Username=${POSTGRES_USER:-nfhotel};\
         Password=${POSTGRES_PASSWORD:?set it, it comes from deploy/postgres/postgres.env}}"
       Database__MigrateOnStart: "${NFHOTEL_API_MIGRATE_ON_START:-true}"
+      # The metrics go to Alloy on the network nfhotel-api (MIL-034). Without Alloy the export
+      # fails quietly and the application is not affected.
+      Telemetry__OtlpEndpoint: ${NFHOTEL_OTLP_ENDPOINT:-http://alloy:4318}
     expose:
       - "8080"
     healthcheck:

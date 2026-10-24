@@ -51,8 +51,31 @@
         "mappings": [{ "type": "value", "options": { "0": { "text": "unhealthy", "color": "red" }, "1": { "text": "healthy", "color": "green" } } }] } }
     },
     {
+      "id": 7, "type": "timeseries", "title": "Requests per second (MIL-034)",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "sum by (job) (rate(http_server_request_duration_seconds_count{host=\"nf-hotel\"}[5m]))", "legendFormat": "{{job}}" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "95 % of the requests within (objective 1 s)",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "job:http_server_request_duration_seconds:p95_5m", "legendFormat": "{{job}}" }],
+      "fieldConfig": { "defaults": { "unit": "s",
+        "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } }
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Server errors (objective under 5 %)",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "job:http_server_requests:error_ratio_10m", "legendFormat": "{{job}}" }],
+      "fieldConfig": { "defaults": { "unit": "percentunit",
+        "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0.05 }] } } }
+    },
+    {
       "id": 6, "type": "logs", "title": "Errors in the logs of nf-hotel",
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 13 },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 21 },
       "datasource": { "type": "loki", "uid": "loki" },
       "targets": [{ "refId": "A", "expr": "{host=\"nf-hotel\"} |~ \"(?i)(error|fail|exception)\"" }],
       "options": { "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true }

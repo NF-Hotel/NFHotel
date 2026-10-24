@@ -45,7 +45,8 @@ ko() {
   echo "error: run it as root" >&2
   exit 1
 }
-export NFHOTEL_JOURNAL_GID ALLOY_ENV_FILE="$W/alloy.env"
+# The internal network of the applications, which push their metrics to Alloy (MIL-034).
+export NFHOTEL_JOURNAL_GID ALLOY_ENV_FILE="$W/alloy.env" NFHOTEL_API_NETWORK=t-alloy-api
 NFHOTEL_JOURNAL_GID="$(getent group systemd-journal | cut -d: -f3)"
 [[ "$NFHOTEL_JOURNAL_GID" =~ ^[0-9]+$ ]] || {
   echo "error: this host has no group systemd-journal" >&2
@@ -65,6 +66,7 @@ curl_on() {
 cleanup() {
   docker rm -f t-alloy-loki t-alloy-logger >/dev/null 2>&1
   docker volume rm -f t-alloy-loki-data >/dev/null 2>&1
+  docker network rm t-alloy-api >/dev/null 2>&1
   compose down -v >/dev/null 2>&1
   rm -f "$report"
   rm -rf "$W"
@@ -80,6 +82,7 @@ printf '%s\n' "PROMETHEUS_REMOTE_WRITE_URL=http://127.0.0.1:9/api/v1/write" \
   "LOKI_PUSH_URL=http://t-alloy-loki:3100/loki/api/v1/push" >"$ALLOY_ENV_FILE"
 
 # A real Loki on Alloy's egress network, and a container that logs a marker every second.
+docker network create --internal t-alloy-api >/dev/null
 compose up --no-start >/dev/null 2>&1
 docker run -d --name t-alloy-loki --network t-alloy_egress -v t-alloy-loki-data:/loki \
   -v "$OPS/deploy/monitoring/loki:/etc/loki:ro" "$LOKI" -config.file=/etc/loki/config.yml >/dev/null
@@ -133,6 +136,15 @@ done
 logs="$(compose logs alloy 2>&1)"
 [[ "$logs" != *"Unable to refresh target groups"* && "$logs" != *"403 Forbidden"* ]] &&
   ok "the Docker discovery logs no refused call" || ko "discovery: $(grep -m 2 -E 'target groups|403 Forbidden' <<<"$logs")"
+
+# An application on its internal network pushes a metric over OTLP/HTTP, as the web application
+# and the API do (MIL-034); Alloy accepts it.
+now="$(date +%s)000000000"
+metric='{"resourceMetrics":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"t-app"}}]},'
+metric+='"scopeMetrics":[{"metrics":[{"name":"t_alloy_requests","sum":{"aggregationTemporality":2,"isMonotonic":true,'
+metric+='"dataPoints":[{"asInt":"1","timeUnixNano":"'"$now"'"}]}}]}]}]}'
+otlp="$(curl_on t-alloy-api -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' -d "$metric" http://alloy:4318/v1/metrics)"
+[[ "$otlp" == 200 ]] && ok "Alloy accepts OTLP metrics from the applications' network" || ko "OTLP push answered $otlp"
 
 # The proxy allows what discovery needs, and still refuses the rest.
 code() { curl_on t-alloy_internal -o /dev/null -w '%{http_code}' "$@"; }
