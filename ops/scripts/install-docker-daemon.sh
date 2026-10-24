@@ -100,6 +100,6 @@ live="$(docker info --format '{{.LiveRestoreEnabled}} {{.LoggingDriver}}')"
 [[ "$live" == "true local" ]] || die "Docker runs with live-restore and log driver '$live', expected 'true local'"
 # Not every Docker version lists the daemon-wide no-new-privileges; docker inspect of each
 # container shows it too (CIS-001, row "no new privileges").
-docker info --format '{{.SecurityOptions}}' | grep -q no-new-privileges ||
+docker info --format '{{.SecurityOptions}}' | grep no-new-privileges >/dev/null ||
   echo "    note: docker info does not list no-new-privileges; check a container with docker inspect"
 echo "==> done; Docker runs with the new settings. Recreate the containers to limit their logs."

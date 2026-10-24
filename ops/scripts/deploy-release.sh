@@ -20,7 +20,8 @@
 #   5. run scripts/deploy-services.sh of the operations folder (ops/ of an NFHotel checkout,
 #      the root of a DevOps one) --no-build with the digests: images are pulled,
 #      never built, and compose recreates only the containers whose image or
-#      configuration changed; named volumes are never removed
+#      configuration changed; named volumes are never removed; then check that no
+#      secret is in the environment of a container (scripts/check-secret-env.sh, ADR-0024)
 #   6. smoke test: port 80 answers 301 and HTTPS answers 200 on the VM
 #   7. on success, append the release to the release log; on failure, deploy the
 #      previous release from the log again and exit 1
@@ -202,6 +203,11 @@ apply() {
   echo "==> starting the services from the release images (no build)"
   as_app env NFHOTEL_WEB_IMAGE="$3" NFHOTEL_API_IMAGE="$4" MARKET_ANALYSIS_IMAGE="$5" BENCHMARK_IMAGE="$6" \
     bash "$(ops_rel)/scripts/deploy-services.sh" --no-build || return 1
+  # No secret may be in the environment of a container (MIL-035, ADR-0024). A release from
+  # before then has no check, and puts its secrets in the environment as it always did.
+  if [[ -f "$app_dir/$(ops_rel)/scripts/check-secret-env.sh" ]]; then
+    bash "$app_dir/$(ops_rel)/scripts/check-secret-env.sh" || return 1
+  fi
   smoke_test
 }
 

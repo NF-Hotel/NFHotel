@@ -393,6 +393,8 @@ On Windows from PowerShell: `.\scripts\dev-up.ps1 --check` and `.\scripts\dev-up
 ```bash
 docker network create nfhotel-proxy
 
+bash ops/scripts/write-secret-files.sh web --out ops/deploy/nfhotel-web/secrets \
+  --web ops/deploy/nfhotel-web/nfhotel-web.env --api ops/deploy/nfhotel-api/nfhotel-api.env
 cd ops/deploy/nfhotel-web && docker compose --env-file nfhotel-web.env up -d --build
 cd ../nginx && docker compose --env-file nginx.env up -d
 ```

@@ -1,0 +1,111 @@
+# Scan the images that run in production every day, with today's vulnerability database
+# (MIL-036 task 1). The images were scanned when they were built (MIL-022); this finds a
+# vulnerability that was published after the deploy. A failed gate opens an issue, or adds to
+# the open one, and a clean scan closes it.
+#
+# The release in production is the one that the last successful run of NF Hotel CD deployed:
+# its commit is the head of that run, and its release.json is the artifact of NF Hotel Release
+# on that commit.
+#
+# Triggers: daily, and by hand. By hand, test_image scans one image instead (pinned by
+#   digest), to prove the issue path with an image that has known vulnerabilities.
+# Secrets: none; the job's GITHUB_TOKEN reads the artifacts and the packages and writes the
+#   issue.
+# Verified with actionlint 1.7.7 (ops/tests/lint.sh).
+name: NF Hotel running image scan
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+    inputs:
+      test_image:
+        description: "Scan this image instead (registry/path@sha256:digest), to test the issue path"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    name: Scan the release in production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      ISSUE_TITLE: "Vulnerabilities in the release in production"
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Find the release in production
+        env:
+          TEST_IMAGE: ${{ inputs.test_image }}
+        run: |
+          mkdir -p release
+          if [[ -n "$TEST_IMAGE" ]]; then
+            jq -n --arg sha "$GITHUB_SHA" --arg image "$TEST_IMAGE" \
+              '{sha: $sha, images: {test: $image}}' >release/release.json
+            exit 0
+          fi
+          sha="$(gh run list --repo "$REPO" --workflow cd.yaml --branch main --status success \
+            --limit 1 --json headSha --jq '.[0].headSha')"
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::no successful CD run found"; exit 1; }
+          run="$(gh run list --repo "$REPO" --workflow release.yaml --commit "$sha" \
+            --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+          [[ -n "$run" ]] || { echo "::error::no release run for $sha"; exit 1; }
+          gh run download "$run" --repo "$REPO" --name release-manifest --dir release
+          echo "Release in production: $sha (NF Hotel Release run $run)" >>"$GITHUB_STEP_SUMMARY"
+      - name: Sign in to GHCR to pull the private images
+        run: printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+      - name: Scan every image
+        id: scan
+        run: |
+          if bash ops/scripts/scan-running-release.sh --manifest release/release.json \
+            --results results; then
+            echo "failed=false" >>"$GITHUB_OUTPUT"
+          else
+            echo "failed=true" >>"$GITHUB_OUTPUT"
+          fi
+          cat results/summary.md >>"$GITHUB_STEP_SUMMARY"
+      - name: Open, update or close the issue
+        env:
+          FAILED: ${{ steps.scan.outputs.failed }}
+          SERVER: ${{ github.server_url }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          printf '\n\nRun: %s/%s/actions/runs/%s\n' "$SERVER" "$REPO" "$RUN_ID" >>results/summary.md
+          open="$(gh issue list --repo "$REPO" --state open --search "in:title \"$ISSUE_TITLE\"" \
+            --json number,title --jq "map(select(.title == env.ISSUE_TITLE))[0].number // empty")"
+          if [[ "$FAILED" == true ]]; then
+            if [[ -n "$open" ]]; then
+              gh issue comment "$open" --repo "$REPO" --body-file results/summary.md
+            else
+              gh issue create --repo "$REPO" --title "$ISSUE_TITLE" --body-file results/summary.md
+            fi
+            # A finding is reported by the issue, not by a red run: the run is a check of the
+            # commit on main, and the CD gate (ADR-0021) refuses a commit with a failed check,
+            # so a red run would block the very release that fixes the finding (2026-10-24).
+            echo "::warning::vulnerabilities found; see the issue \"$ISSUE_TITLE\""
+          elif [[ -n "$open" ]]; then
+            gh issue close "$open" --repo "$REPO" --comment "$(cat results/summary.md)"
+          fi
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: running-image-scan
+          path: results/
+          retention-days: 30
