@@ -63,7 +63,7 @@ public sealed partial class SecurityHeadersTests
 
     /// <summary>Positive: the policy names the directives with no fallback, and allows no inline code, eval or wildcard.</summary>
     [Fact]
-    public void ContentSecurityPolicy_IsStrict()
+    public void ContentSecurityPolicy_Directives_AllowNoInlineCodeOrForeignSource()
     {
         // Arrange
         var directives = SecurityHeaders.ContentSecurityPolicy.Split(';', StringSplitOptions.TrimEntries)
