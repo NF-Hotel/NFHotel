@@ -52,7 +52,7 @@ show findmnt -T /var/lib/docker
 section "ev:containers (Docker 4, 5, 6)"
 for id in $(docker ps --quiet 2>/dev/null); do
   docker inspect --format '{{.Name}}
-  image={{.Config.Image}} user={{if .Config.User}}{{.Config.User}}{{else}}(image default){{end}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}
+  image={{.Config.Image}} user={{if .Config.User}}{{.Config.User}}{{else}}(image default){{end}} health={{with index .State "Health"}}{{.Status}}{{else}}none{{end}}
   cap_drop={{.HostConfig.CapDrop}} cap_add={{.HostConfig.CapAdd}} security_opt={{.HostConfig.SecurityOpt}} apparmor={{.AppArmorProfile}} privileged={{.HostConfig.Privileged}}
   read_only={{.HostConfig.ReadonlyRootfs}} memory={{.HostConfig.Memory}} nano_cpus={{.HostConfig.NanoCpus}} pids_limit={{.HostConfig.PidsLimit}}
   network={{.HostConfig.NetworkMode}} pid={{.HostConfig.PidMode}} ipc={{.HostConfig.IpcMode}} uts={{.HostConfig.UTSMode}} userns={{.HostConfig.UsernsMode}}

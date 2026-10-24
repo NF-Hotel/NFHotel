@@ -57,6 +57,9 @@ systemd=0
 [[ -d /run/systemd/system ]] && systemd=1
 
 echo "==> 1. packages"
+# The lists first: with old ones, the check of step 5 asks the mirror for a security update
+# that a newer one has replaced, gets 404, and fails (nf-hotel, 2026-10-24).
+run apt-get update -q
 run apt-get install -y --no-install-recommends unattended-upgrades logrotate
 
 echo "==> 2. unattended-upgrades: Debian security updates, daily, no automatic reboot"
