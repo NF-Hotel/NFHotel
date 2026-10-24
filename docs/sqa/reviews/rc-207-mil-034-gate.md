@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [904b0ff] |
 
 ---
 
@@ -46,3 +46,4 @@ Go-with-conditions. Criteria 1 and 3 to 6 are met. Criterion 2 is met for the re
 [RC-203]: rc-203-mil-034-code.md
 [ADR-0023]: ../../adr/adr-0023-application-telemetry.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[904b0ff]: https://github.com/NF-Hotel/NFHotel/commit/904b0fff89ec44b4b2b473a7e55466abf84b603b
