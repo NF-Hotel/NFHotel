@@ -117,8 +117,17 @@ for _ in $(seq 1 24); do
   new_rule "$loaded" && break
   sleep 5
 done
-new_rule "$loaded" && ok "a changed rule is in use after deploy-monitoring.sh --apply" ||
-  ko "Prometheus still has the old rule after the redeploy: $(grep -o '"query":"[^"]*86400[^"]*"' <<<"$loaded")"
+if new_rule "$loaded"; then
+  ok "a changed rule is in use after deploy-monitoring.sh --apply"
+else
+  ko "Prometheus still has the old rule after the redeploy"
+  {
+    echo "rule file: $(grep -n '86400' "$rules")"
+    echo "served: $(grep -o '86400[^,]*' <<<"$loaded" | head -3)"
+    echo "hash in prometheus: $(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$(compose ps -q prometheus)" | grep CONFIG_HASH)"
+    tail -8 "$W/redeploy"
+  } 2>&1 | sed 's/^/      /'
+fi
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))
