@@ -28,11 +28,15 @@ tests:
                 The probe of https://nf-hotel.taildb84b5.ts.net/ has failed for 2 minutes. Runbook:
                 wiki page CI-CD, When a deploy does not start, and Host-Hardening.
 
-  - name: a certificate with 20 days left fires CertificateExpiresSoon
+  - name: a certificate with 20 days left fires CertificateExpiresSoon once for all its pages
     interval: 1m
     input_series:
       - series: >-
           probe_ssl_earliest_cert_expiry{job="site", instance="https://nf-hotel.taildb84b5.ts.net/"}
+        values: "1728000x20"
+      - series: >-
+          probe_ssl_earliest_cert_expiry{job="site",
+          instance="https://nf-hotel.taildb84b5.ts.net/book"}
         values: "1728000x20"
     alert_rule_test:
       - eval_time: 15m
@@ -41,7 +45,6 @@ tests:
           - exp_labels:
               severity: warning
               job: site
-              instance: https://nf-hotel.taildb84b5.ts.net/
             exp_annotations:
               summary: "The certificate of nf-hotel expires in 19.99 days"
               description: >-

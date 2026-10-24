@@ -275,6 +275,7 @@ Measured on 2026-10-24 (the alarm drill record, RC-189):
 | --- | --- |
 | `ContainerUnhealthy` | 2 min 45 s at most |
 | `BackupStale` | 49 s to 1 min 48 s |
+| `CertificateExpiresSoon` | 10 min 40 s (the rule waits 10 min) |
 | Watchdog | About 8 minutes |
 
 ## Daily use

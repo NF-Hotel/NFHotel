@@ -30,8 +30,10 @@ groups:
           summary: "Port 80 of nf-hotel does not redirect to HTTPS"
           description: "The probe of {{ $labels.instance }} has not seen a 301 for 5 minutes."
 
+      # One certificate serves every probed page, so the alert is per job, not per page: the
+      # drill of 2026-10-24 sent the same alert three times, one for each URL (RC-189).
       - alert: CertificateExpiresSoon
-        expr: (probe_ssl_earliest_cert_expiry{job="site"} - time()) / 86400 < 21
+        expr: min by (job) (probe_ssl_earliest_cert_expiry{job="site"} - time()) / 86400 < 21
         for: 10m
         labels:
           severity: warning
