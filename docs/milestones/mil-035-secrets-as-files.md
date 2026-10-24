@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-198 Go | pending |
+| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-198 Go | [737399d] |
 
 ---
 
@@ -77,3 +77,4 @@ Decide whether NF Hotel may claim that no secret is passed to a container as an 
 [ADR-0011]: ../adr/adr-0011-postgresql-access-for-the-api.md
 [MIL-023]: ./mil-023-operational-quality.md
 [RC-185]: ../sqa/reviews/rc-185-alloy-docker-discovery.md
+[737399d]: https://github.com/NF-Hotel/NFHotel/commit/737399d58692d9cf086cedcd8641a2d5f352e7d7

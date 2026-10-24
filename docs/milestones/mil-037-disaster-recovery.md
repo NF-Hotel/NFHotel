@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-200 Go | pending |
+| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-200 Go | [737399d] |
 
 ---
 
@@ -78,3 +78,4 @@ Decide whether NF Hotel may claim that it can bring the whole service back after
 [ADR-0008]: ../adr/adr-0008-database-migration-and-backup.md
 [MIL-021]: ./mil-021-secure-cicd-foundation.md
 [MIL-023]: ./mil-023-operational-quality.md
+[737399d]: https://github.com/NF-Hotel/NFHotel/commit/737399d58692d9cf086cedcd8641a2d5f352e7d7

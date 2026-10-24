@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-199 Go | pending |
+| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-199 Go | [737399d] |
 
 ---
 
@@ -76,3 +76,4 @@ Decide whether NF Hotel may claim that it notices a new vulnerability in what ru
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [MIL-022]: ./mil-022-supply-chain-security.md
 [MIL-023]: ./mil-023-operational-quality.md
+[737399d]: https://github.com/NF-Hotel/NFHotel/commit/737399d58692d9cf086cedcd8641a2d5f352e7d7

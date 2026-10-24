@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-202 Go | pending |
+| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-202 Go | [737399d] |
 
 ---
 
@@ -71,3 +71,4 @@ Decide whether NF Hotel deploys a release to a staging environment that is like 
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [ADR-0021]: ../adr/adr-0021-automatic-deploy-when-green.md
 [MIL-027]: ./mil-027-dast-and-end-to-end-tests.md
+[737399d]: https://github.com/NF-Hotel/NFHotel/commit/737399d58692d9cf086cedcd8641a2d5f352e7d7
