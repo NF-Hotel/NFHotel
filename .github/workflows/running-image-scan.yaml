@@ -95,7 +95,10 @@ jobs:
             else
               gh issue create --repo "$REPO" --title "$ISSUE_TITLE" --body-file results/summary.md
             fi
-            exit 1
+            # A finding is reported by the issue, not by a red run: the run is a check of the
+            # commit on main, and the CD gate (ADR-0021) refuses a commit with a failed check,
+            # so a red run would block the very release that fixes the finding (2026-10-24).
+            echo "::warning::vulnerabilities found; see the issue \"$ISSUE_TITLE\""
           elif [[ -n "$open" ]]; then
             gh issue close "$open" --repo "$REPO" --comment "$(cat results/summary.md)"
           fi
