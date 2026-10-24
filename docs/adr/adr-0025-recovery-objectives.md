@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-037, which S01 accepted in chat on 2026-10-24 | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-037, which S01 accepted in chat on 2026-10-24 | [0a76a9e] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -74,3 +74,4 @@ We follow option 2.
 [ADR-0020]: ./adr-0020-monitoring-stack.md
 [ADR-0024]: ./adr-0024-secrets-as-files.md
 [MIL-037]: ../milestones/mil-037-disaster-recovery.md
+[0a76a9e]: https://github.com/NF-Hotel/NFHotel/commit/0a76a9e7558fe649506a51ce47dd9c02d80b97bf
