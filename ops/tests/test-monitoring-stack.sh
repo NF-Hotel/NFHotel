@@ -39,11 +39,11 @@ ko() {
   exit 1
 }
 compose() { (cd "$mon" && docker compose --env-file monitoring.env "$@"); }
-rules="$mon/prometheus/rules/nfhotel.yml"
-cp "$rules" "$W/rules.yml"
+rule_file="$mon/prometheus/rules/nfhotel.yml"
+cp "$rule_file" "$W/rules.yml"
 cleanup() {
   compose down -v >/dev/null 2>&1
-  cp "$W/rules.yml" "$rules"
+  cp "$W/rules.yml" "$rule_file"
   rm -rf "$mon/secrets" "$mon/monitoring.env" "$W"
 }
 trap cleanup EXIT
@@ -108,7 +108,7 @@ compose "${am[@]}" silence add --duration=1h --comment="test" 'alertname!=Watchd
   ok "the silence of the wiki page is accepted" || ko "amtool silence add failed"
 
 # A changed rule takes effect with the next deploy, as the alarm drill of the wiki page does it.
-sed -i 's| / 86400 < 21$| / 86400 < 400|' "$rules"
+sed -i 's| / 86400 < 21$| / 86400 < 400|' "$rule_file"
 bash "$OPS/scripts/deploy-monitoring.sh" --apply >"$W/redeploy" 2>&1 || ko "redeploy: $(tail -3 "$W/redeploy")"
 # Prometheus's JSON escapes < as \u003c, so both forms are matched.
 new_rule() { [[ "$1" == *'86400 < 400'* || "$1" == *'86400 \u003c 400'* ]]; }
@@ -122,7 +122,7 @@ if new_rule "$loaded"; then
 else
   ko "Prometheus still has the old rule after the redeploy"
   {
-    echo "rule file: $(grep -n '86400' "$rules")"
+    echo "rule file: $(grep -n '86400' "$rule_file")"
     echo "served: $(grep -o '86400[^,]*' <<<"$loaded" | head -3)"
     echo "hash in prometheus: $(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$(compose ps -q prometheus)" | grep CONFIG_HASH)"
     tail -8 "$W/redeploy"
