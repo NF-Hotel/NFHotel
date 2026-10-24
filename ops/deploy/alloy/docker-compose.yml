@@ -21,6 +21,9 @@ services:
       # refuses every write, so this adds GET /networks only.
       NETWORKS: "1"
       POST: "0"
+      # At the default "info", HAProxy logs every request: Alloy's polling gave about 6,800
+      # lines an hour in Loki (2026-10-24). A refused call still shows in Alloy's own log.
+      LOG_LEVEL: warning
       INFO: "0"
       IMAGES: "0"
       VOLUMES: "0"
