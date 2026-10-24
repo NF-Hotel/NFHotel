@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [2c2babb] |
 
 ---
 
@@ -44,3 +44,4 @@ None.
 [RC-194]: rc-194-mil-033.md
 [RC-195]: rc-195-mil-033-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[2c2babb]: https://github.com/NF-Hotel/NFHotel/commit/2c2babb2055b26d11abe698e199920350de0b68b
