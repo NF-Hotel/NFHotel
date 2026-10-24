@@ -145,7 +145,6 @@ settings="$(mktemp -d)"
 trap 'rm -rf "$settings"' EXIT
 
 # Throwaway values for the variables that the compose files require (":?").
-export POSTGRES_PASSWORD="release-build"
 export API_TOKEN="release-build"
 
 # Build and scan every image first, and push only when all of them passed, so a failed
