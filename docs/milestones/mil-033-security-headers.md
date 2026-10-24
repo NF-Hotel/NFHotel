@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Proposed | mikemike | S01 | Initial version, from a draft of 2026-10-20 that was never committed (it was numbered MIL-028, a number since given to the run API of the market analysis); the operations live in `ops/` of this repository since ADR-0016, so one pull request carries the work | pending |
+| 2026-10-24 | Proposed | mikemike | S01 | Initial version, from a draft of 2026-10-20 that was never committed (it was numbered MIL-028, a number since given to the run API of the market analysis); the operations live in `ops/` of this repository since ADR-0016, so one pull request carries the work | [fb7531c] |
 
 ---
 
@@ -103,3 +103,4 @@ Each alert is either fixed, or accepted with a reason and an expiry, so that a n
 [MIL-027]: ./mil-027-dast-and-end-to-end-tests.md
 [ADR-0006]: ../adr/adr-0006-tls.md
 [ADR-0016]: ../adr/adr-0016-one-repository-for-application-and-operations.md
+[fb7531c]: https://github.com/NF-Hotel/NFHotel/commit/fb7531cdd2ebddca9554fe33a83153b57e66d7c2
