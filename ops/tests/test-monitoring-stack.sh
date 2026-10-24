@@ -8,7 +8,7 @@
 # Run it as root on a Linux host with Docker, in a checkout without monitoring settings:
 #   sudo bash ops/tests/test-monitoring-stack.sh
 # It starts the compose project of ops/deploy/monitoring on 127.0.0.1 and removes it, its
-# volumes, monitoring.env and secrets/ at the end.
+# volumes, monitoring.env and secrets/ at the end, and puts back the rule file it changes.
 # Exit:  0 every check passed; 1 a check failed
 # Needs: bash 4+, root, docker with the compose plugin, curl
 
@@ -18,6 +18,7 @@ set -uo pipefail
 
 OPS="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 mon="$OPS/deploy/monitoring"
+W="$(mktemp -d)"
 pass=0
 fail=0
 ok() {
@@ -38,9 +39,12 @@ ko() {
   exit 1
 }
 compose() { (cd "$mon" && docker compose --env-file monitoring.env "$@"); }
+rule_file="$mon/prometheus/rules/nfhotel.yml"
+cp "$rule_file" "$W/rules.yml"
 cleanup() {
   compose down -v >/dev/null 2>&1
-  rm -rf "$mon/secrets" "$mon/monitoring.env"
+  cp "$W/rules.yml" "$rule_file"
+  rm -rf "$mon/secrets" "$mon/monitoring.env" "$W"
 }
 trap cleanup EXIT
 
@@ -102,6 +106,28 @@ am=(exec -T alertmanager amtool --alertmanager.url=http://localhost:9093)
 compose "${am[@]}" silence add --duration=1h --comment="test" 'alertname!=Watchdog' >/dev/null 2>&1 &&
   [[ "$(compose "${am[@]}" silence query -q 2>/dev/null | wc -l)" == 1 ]] &&
   ok "the silence of the wiki page is accepted" || ko "amtool silence add failed"
+
+# A changed rule takes effect with the next deploy, as the alarm drill of the wiki page does it.
+sed -i 's| / 86400 < 21$| / 86400 < 400|' "$rule_file"
+bash "$OPS/scripts/deploy-monitoring.sh" --apply >"$W/redeploy" 2>&1 || ko "redeploy: $(tail -3 "$W/redeploy")"
+# Prometheus's JSON escapes < as \u003c, so both forms are matched.
+new_rule() { [[ "$1" == *'86400 < 400'* || "$1" == *'86400 \u003c 400'* ]]; }
+for _ in $(seq 1 24); do
+  loaded="$(curl -fsS http://127.0.0.1:9090/api/v1/rules 2>/dev/null)"
+  new_rule "$loaded" && break
+  sleep 5
+done
+if new_rule "$loaded"; then
+  ok "a changed rule is in use after deploy-monitoring.sh --apply"
+else
+  ko "Prometheus still has the old rule after the redeploy"
+  {
+    echo "rule file: $(grep -n '86400' "$rule_file")"
+    echo "served: $(grep -o '86400[^,]*' <<<"$loaded" | head -3)"
+    echo "hash in prometheus: $(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$(compose ps -q prometheus)" | grep CONFIG_HASH)"
+    tail -8 "$W/redeploy"
+  } 2>&1 | sed 's/^/      /'
+fi
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))

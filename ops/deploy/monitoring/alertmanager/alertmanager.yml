@@ -9,11 +9,14 @@ route:
   group_interval: 5m
   repeat_interval: 4h
   routes:
+    # A repeat goes out only at a group_interval tick. With 1m and 1m the tick came just too
+    # early, so the ping came every 2 minutes (Healthchecks.io, 2026-10-24); a 30 s tick and a
+    # 50 s repeat send it every minute, which the check's period of 1 minute expects.
     - matchers: [alertname="Watchdog"]
       receiver: healthchecks
       group_wait: 0s
-      group_interval: 1m
-      repeat_interval: 1m
+      group_interval: 30s
+      repeat_interval: 50s
 
 receivers:
   - name: discord
