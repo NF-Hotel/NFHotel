@@ -1,0 +1,16 @@
+@*
+    The dialog that Blazor shows while the connection to the server is lost (MIL-033). Without an element with this
+    id, blazor.web.js injects its own dialog with an inline style, which the Content Security Policy refuses
+    (style-src 'self'). With it, Blazor only sets one of the classes components-reconnect-show, -failed, -rejected
+    or -hide on the element, and app.css shows the matching text. The reload link is a plain link to the page,
+    not a javascript: link, which the policy refuses too.
+*@
+
+<div id="components-reconnect-modal" class="reconnect" role="alert" aria-live="assertive">
+    <div class="reconnect-box">
+        <p class="reconnect-text reconnect-text-show">Forbindelsen til serveren er afbrudt. Prøver igen …</p>
+        <p class="reconnect-text reconnect-text-failed">Forbindelsen kunne ikke genoprettes.</p>
+        <p class="reconnect-text reconnect-text-rejected">Sessionen er udløbet.</p>
+        <a class="reconnect-reload" href="">Genindlæs siden</a>
+    </div>
+</div>

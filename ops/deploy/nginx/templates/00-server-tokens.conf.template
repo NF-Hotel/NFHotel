@@ -1,0 +1,4 @@
+# Hide the version of nginx in the Server header and on its own error pages (MIL-033, ZAP rules
+# 10036 and 40025). In the http context, so every server of conf.d and the default error pages
+# follow it.
+server_tokens off;

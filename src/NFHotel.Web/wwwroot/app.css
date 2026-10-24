@@ -496,11 +496,12 @@ h1:focus-visible {
     min-height: 40px;
 }
 
-/* Own arrow, so the select does not inherit the look of the system. Inline SVG = offline. */
+/* Own arrow, so the select does not inherit the look of the system. A file of this site, not a data: URI, so the
+   Content Security Policy keeps img-src 'self' (MIL-033); it works offline all the same. */
 .field-select {
     appearance: none;
     padding-right: var(--s8);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%235a615c' stroke-width='1.6' d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+    background-image: url("select-arrow.svg");
     background-repeat: no-repeat;
     background-position: right var(--s3) center;
     background-size: 12px 8px;
@@ -1477,4 +1478,52 @@ h1:focus-visible {
   width: 9rem;
   justify-content: center;
   text-align: center;
+}
+
+/* The reconnect dialog (Components/Shared/ReconnectModal.razor, MIL-033). Blazor sets one class on it; each class
+   shows the dialog with its own text, and the reload link once the connection cannot come back. */
+.reconnect {
+    display: none;
+}
+
+.reconnect.components-reconnect-show,
+.reconnect.components-reconnect-failed,
+.reconnect.components-reconnect-rejected {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    background: rgba(13, 22, 40, .45);
+}
+
+.reconnect-box {
+    max-width: 360px;
+    padding: var(--s6);
+    border-radius: var(--radius);
+    background: var(--paper);
+    box-shadow: var(--shadow);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    text-align: center;
+}
+
+.reconnect-text,
+.reconnect-reload {
+    display: none;
+}
+
+.components-reconnect-show .reconnect-text-show,
+.components-reconnect-failed .reconnect-text-failed,
+.components-reconnect-rejected .reconnect-text-rejected,
+.components-reconnect-failed .reconnect-reload,
+.components-reconnect-rejected .reconnect-reload {
+    display: block;
+}
+
+.reconnect-reload {
+    margin-top: var(--s3);
+    color: var(--navy);
+    font-weight: 600;
 }
