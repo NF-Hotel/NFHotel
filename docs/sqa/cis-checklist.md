@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Deprecated | mikemike | AI as stand-in for S01 | Ported from NF-Hotel/DevOps#12 into NF-Hotel/NFHotel under ops/ (MIL-031 task 7, ADR-0016); IDs renumbered; accepted after RC-176 Go, ported in RC-178 | [717dc18] |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | 5.31: the socket proxy of Alloy mounts the Docker socket (ADR-0020); the row records the exception and its limits; accepted after RC-185 Go | [4ff81cc] |
+| 2026-10-23 | Deprecated | mikemike | AI as stand-in for S01 | 5.31: the socket proxy of Alloy mounts the Docker socket (ADR-0020); the row records the exception and its limits; accepted after RC-185 Go | [4ff81cc] |
+| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | The host firewall rows (4.1.1, 4.3.1, 4.3.2, 4.3.4 to 4.3.8) are Applied: the ruleset of git runs on nf-hotel, SSH over Tailscale only (S01 decision); accepted after RC-192 Go | pending |
 
 ---
 
@@ -176,16 +176,16 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 
 | # | Item | Status | How, or why not | Evidence |
 | --- | --- | --- | --- | --- |
-| 4.1.1 | A single firewall configuration utility is in use | Pending VM | nftables. Docker and Tailscale write their own rules through `iptables-nft`, which is the nftables backend; `ufw` is not used | firewall; ev:firewall |
+| 4.1.1 | A single firewall configuration utility is in use | Applied | nftables. Docker and Tailscale write their own rules through `iptables-nft`, which is the nftables backend; `ufw` is not used Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`). | firewall; ev:firewall |
 | 4.2.x | ufw items | Not applicable | ufw is not used (4.3.2) | — |
-| 4.3.1 | nftables is installed | Pending VM | `ops/scripts/apply-firewall.sh` refuses to run without `nft` | ev:firewall |
-| 4.3.2 | ufw is uninstalled or disabled with nftables | Pending VM | | ev:firewall (`ufw: enabled=`) |
+| 4.3.1 | nftables is installed | Applied | `ops/scripts/apply-firewall.sh` refuses to run without `nft` Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`). | ev:firewall |
+| 4.3.2 | ufw is uninstalled or disabled with nftables | Applied | | ev:firewall (`ufw: enabled=`) | Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`).
 | 4.3.3 | iptables are flushed with nftables | Not applicable | Docker and Tailscale keep their rules in iptables-nft tables; flushing them breaks the containers and the tailnet. The NF Hotel rules are in a table of their own instead | firewall |
-| 4.3.4 | A nftables table exists | Pending VM | `table inet nfhotel` | firewall; ev:firewall |
-| 4.3.5 | nftables base chains exist | Pending VM | `input` (hook input) and `docker-user` (hook forward, before Docker's chains) | firewall; ev:firewall |
-| 4.3.6 | nftables loopback traffic is configured | Pending VM | `iif lo` accepted; `127.0.0.0/8` and `::1` from another interface dropped | firewall |
-| 4.3.7 | nftables outbound and established connections are configured | Pending VM | Established and related traffic is accepted on input and forward; output is not filtered (4.3.8) | firewall |
-| 4.3.8 | nftables default deny firewall policy | Pending VM | Input: policy drop. Forward: everything from outside that is not a published 80 or 443 ends in a drop; Docker's own chains decide the rest. Output: accept, see the next row | firewall; `ops/tests/test-nftables.sh` |
+| 4.3.4 | A nftables table exists | Applied | `table inet nfhotel`. Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`). | firewall; ev:firewall |
+| 4.3.5 | nftables base chains exist | Applied | `input` (hook input) and `docker-user` (hook forward, before Docker's chains) Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`). | firewall; ev:firewall |
+| 4.3.6 | nftables loopback traffic is configured | Applied | `iif lo` accepted; `127.0.0.0/8` and `::1` from another interface dropped Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`). | firewall |
+| 4.3.7 | nftables outbound and established connections are configured | Applied | Established and related traffic is accepted on input and forward; output is not filtered (4.3.8) Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`). | firewall |
+| 4.3.8 | nftables default deny firewall policy | Applied | Input: policy drop. Forward: everything from outside that is not a published 80 or 443 ends in a drop; Docker's own chains decide the rest. Output: accept, see the next row Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`). | firewall; `ops/tests/test-nftables.sh` |
 | 4.3.8 | (same) for output | Deferred | An egress allow-list would have to follow Debian mirrors, the container registries, Tailscale's coordination and DERP servers, and the model downloads of Ollama; left to a change of its own | — |
 | 4.3.9 | nftables rules are permanent | Pending VM | `nfhotel-firewall.service` loads `/etc/nfhotel/nftables.nft` before the network at boot; Debian's `nftables.service` is not used because its `flush ruleset` removes Docker's rules | firewall; ev:firewall |
 
@@ -223,7 +223,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | Benchmark | Applied | Pending VM | Not applicable | Deferred |
 | --- | --- | --- | --- | --- |
 | Docker | 17 | 31 | 6 | 4 |
-| Debian 12 | 0 | 25 | 6 | 13 |
+| Debian 12 | 8 | 17 | 6 | 13 |
 
 The counts are by row; a row that covers several items counts once. What closes criterion 1: S01 runs the apply steps of the wiki page Host-Hardening, records `ops/scripts/cis-evidence.sh` before and after, moves every Pending VM row to Applied (or to Deferred, with the reason, where the evidence shows a gap), and adds the column "Verified on nf-hotel" with the date of the run.
 
