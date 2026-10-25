@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-039, which S01 accepted in chat on 2026-10-24 | [c475cdd] |
+| 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-039, which S01 accepted in chat on 2026-10-24 | [c475cdd] |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | The capacity of the node is not needed for this decision; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | [199bc05] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -23,7 +24,7 @@ Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Supers
 
 Today every release is built once, scanned, and tested on a throwaway stack of the same images and compose files in CI: the end-to-end tests in a browser and the DAST baseline (MIL-027). CD deploys only when every check of the commit is green, then runs a smoke test on the VM and rolls back to the previous release when it fails (ADR-0021). The database is dumped before every deploy (ADR-0008). Since MIL-034 and MIL-035, the deploy also fails when a secret is in a container's environment, and alerts fire when the requests get slow or fail.
 
-**Capacity, measured on 2026-10-24.** The production VM `nf-hotel` has 4 vCPU, 20 GiB of memory (1 GiB used, 19 GiB available) and a 111 GB disk (31 GB used). The node also runs the VM `sports-club` (101) and the monitoring LXC (102, 2 cores, 4 GiB). The free capacity of the node itself could not be read: that needs the root login of Proxmox, which only S03 holds. A staging VM like production would need 4 vCPU and 12 to 20 GiB more on the node.
+**Capacity, measured on 2026-10-24.** The production VM `nf-hotel` has 4 vCPU, 20 GiB of memory (1 GiB used, 19 GiB available) and a 111 GB disk (31 GB used). The node also runs the VM `sports-club` (101) and the monitoring LXC (102, 2 cores, 4 GiB). The free capacity of the node itself could not be read: that needs the root login of Proxmox, which only S03 holds. A staging VM like production would need 4 vCPU and 12 to 20 GiB more on the node. S01 decided on 2026-10-25 not to read it now: the incidents below decide the question whatever the capacity, and it is read first when the decision is taken again (decision 4).
 
 **What a staging environment would have caught.** The production incidents of October 2026, and whether each option would have stopped them before production:
 
@@ -76,3 +77,4 @@ We follow option 3: **no staging environment.**
 [ADR-0024]: ./adr-0024-secrets-as-files.md
 [MIL-039]: ../milestones/mil-039-staging-environment.md
 [c475cdd]: https://github.com/NF-Hotel/NFHotel/commit/c475cdd6800351d6fa7e7852a39227b667296609
+[199bc05]: https://github.com/NF-Hotel/NFHotel/commit/199bc05466d450b92157aa4daead871e7e6d76ce

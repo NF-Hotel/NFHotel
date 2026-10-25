@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-198 Go | [737399d] |
+| 2026-10-24 | Deprecated | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-198 Go | [737399d] |
+| 2026-10-25 | Accepted | mikemike | S01 | Criterion 4 narrowed: every secret except the passport key; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg"); accepted after RC-212 Go | [199bc05] |
 
 ---
 
@@ -35,6 +36,13 @@ Decide whether NF Hotel may claim that no secret is passed to a container as an 
 | 3 | Each container reads its secrets from `/run/secrets`, and the site, the sign-in and the API work after the deploy | Yes | No |
 | 4 | The rotation of each secret is written in the wiki and was done once on the throwaway stack in CI | Yes | No |
 | 5 | CI is green and the code review against `qc-programming-csharp` and `qc-programming-shell` is Go | Yes | No |
+
+## Scope change of 2026-10-25
+
+**Criterion 4** now reads: the rotation of each secret *except the passport key* is written in the wiki and was done once on the throwaway stack in CI.
+
+- **Why.** The passport key encrypts the passport numbers already stored, with one AES-GCM key. Rotating it needs a key ring in the application and a command that re-encrypts every stored value, which is a data migration: if it stops halfway, passport numbers are lost. For one hotel that does not yet take real guests, that risk is larger than the one it removes. The key is no longer in an environment variable (criterion 2), it is a 0444 file in a 0700 folder of `nfhotel`, and it is backed up encrypted with the other settings (MIL-037).
+- **Choice.** The limit is accepted as ADR-0024 decision 7 states it. A leak of the key is handled by the wiki page Incidents. The decision is taken again when the hotel starts storing real passport numbers.
 
 ## Dependencies
 
@@ -78,3 +86,4 @@ Decide whether NF Hotel may claim that no secret is passed to a container as an 
 [MIL-023]: ./mil-023-operational-quality.md
 [RC-185]: ../sqa/reviews/rc-185-alloy-docker-discovery.md
 [737399d]: https://github.com/NF-Hotel/NFHotel/commit/737399d58692d9cf086cedcd8641a2d5f352e7d7
+[199bc05]: https://github.com/NF-Hotel/NFHotel/commit/199bc05466d450b92157aa4daead871e7e6d76ce

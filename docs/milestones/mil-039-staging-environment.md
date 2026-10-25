@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-202 Go | [737399d] |
+| 2026-10-24 | Deprecated | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-202 Go | [737399d] |
+| 2026-10-25 | Accepted | mikemike | S01 | Criterion 1 narrowed: the capacity of the VM, not of the node; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg"); accepted after RC-215 Go | [199bc05] |
 
 ---
 
@@ -32,6 +33,13 @@ Decide whether NF Hotel deploys a release to a staging environment that is like 
 | 2 | If staging is chosen: CD deploys each release to staging, runs the smoke and end-to-end tests there, and deploys to production only when they pass; a release that fails in staging does not reach production | Yes | No |
 | 3 | If staging is not chosen: the ADR names the risk that remains and the check that covers it | Yes | No |
 | 4 | CI is green and the reviews are Go | Yes | No |
+
+## Scope change of 2026-10-25
+
+**Criterion 1** now asks for the capacity of the production VM instead of the free capacity of the node.
+
+- **Why.** The decision does not depend on it: ADR-0026 shows that a staging environment would have caught none of the incidents of October, however much room the node has. The free capacity only matters when the decision is taken again, and ADR-0026 decision 4 already makes reading it the first step then.
+- **Choice.** No staging environment, as ADR-0026 decides, without reading the node.
 
 ## Dependencies
 
@@ -72,3 +80,4 @@ Decide whether NF Hotel deploys a release to a staging environment that is like 
 [ADR-0021]: ../adr/adr-0021-automatic-deploy-when-green.md
 [MIL-027]: ./mil-027-dast-and-end-to-end-tests.md
 [737399d]: https://github.com/NF-Hotel/NFHotel/commit/737399d58692d9cf086cedcd8641a2d5f352e7d7
+[199bc05]: https://github.com/NF-Hotel/NFHotel/commit/199bc05466d450b92157aa4daead871e7e6d76ce

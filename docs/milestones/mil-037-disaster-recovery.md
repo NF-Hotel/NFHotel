@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-200 Go | [737399d] |
+| 2026-10-24 | Deprecated | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-200 Go | [737399d] |
+| 2026-10-25 | Accepted | mikemike | S01 | Criterion 3 (the rebuild drill) removed; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg"); accepted after RC-213 Go | [199bc05] |
 
 ---
 
@@ -35,6 +36,13 @@ Decide whether NF Hotel may claim that it can bring the whole service back after
 | 3 | A drill rebuilt the service on a throwaway VM within the RTO, from a backup within the RPO, recorded in an RC | Yes | No |
 | 4 | The settings and secrets of the VM and the LXC are backed up encrypted off the host, and a restore of them was tested | Yes | No |
 | 5 | The reviews are Go | Yes | No |
+
+## Scope change of 2026-10-25
+
+**Criterion 3** (a drill rebuilt the service on a throwaway VM within the RTO) is removed. Task 4 (#297) is not done.
+
+- **Why.** The drill needs S03 at the Proxmox node for half a day, because creating a VM needs its root login. Each step of the runbook is already proven on its own: the VM is built by `create-docker-vm.sh`, as `nf-hotel` was; the restore of the database is drilled (RC-505 from the VM, RC-166 from the laptop); the settings archive is decrypted and unpacked by a test in CI; and the services are deployed by CD several times a day. What stays unproven is the whole sequence in one go, and its time against the RTO.
+- **Choice.** That is accepted for a hotel without real guests. The drill stays described in the wiki page Disaster-Recovery and is run when the hotel goes live or when the node is replaced.
 
 ## Dependencies
 
@@ -79,3 +87,4 @@ Decide whether NF Hotel may claim that it can bring the whole service back after
 [MIL-021]: ./mil-021-secure-cicd-foundation.md
 [MIL-023]: ./mil-023-operational-quality.md
 [737399d]: https://github.com/NF-Hotel/NFHotel/commit/737399d58692d9cf086cedcd8641a2d5f352e7d7
+[199bc05]: https://github.com/NF-Hotel/NFHotel/commit/199bc05466d450b92157aa4daead871e7e6d76ce

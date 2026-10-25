@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-201 Go | [737399d] |
+| 2026-10-24 | Deprecated | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-201 Go | [737399d] |
+| 2026-10-25 | Accepted | mikemike | S01 | Criteria 2 and 3 deferred; the milestone closes with the decision; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg"); accepted after RC-214 Go | [199bc05] |
 
 ---
 
@@ -33,6 +34,13 @@ Decide whether NF Hotel may claim that the access rules of its tailnet and the s
 | 2 | A pull request that changes the policy runs the policy tests in CI; a merge to main applies it, and the console shows the same policy | Yes | No |
 | 3 | A script compares the VM and LXC definitions in git with the node and reports a difference | Yes | No |
 | 4 | CI is green and the reviews are Go | Yes | No |
+
+## Scope change of 2026-10-25
+
+**Criteria 2 and 3** (the tailnet policy applied from git, and the Proxmox definitions compared with the node) are deferred. Tasks 2 and 3 (#300, #301) are not done; the milestone closes with ADR-0027.
+
+- **Why.** The tailnet policy has one administrator and changes a few times a year; putting it in git needs an OAuth client as a repository secret and a first export, and adds a workflow to keep green. The node runs one VM and one LXC of NF Hotel that have not changed since they were made, and the comparison would be a manual step of S03. Both cost more to keep than the drift they would find.
+- **Choice.** ADR-0027 stays the decision for how to do it. It is built when the tailnet gets a second administrator, when a change of the policy causes an incident, or when the node gets more machines of NF Hotel.
 
 ## Dependencies
 
@@ -74,3 +82,4 @@ Decide whether NF Hotel may claim that the access rules of its tailnet and the s
 [ADR-0016]: ../adr/adr-0016-one-repository-for-application-and-operations.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
 [737399d]: https://github.com/NF-Hotel/NFHotel/commit/737399d58692d9cf086cedcd8641a2d5f352e7d7
+[199bc05]: https://github.com/NF-Hotel/NFHotel/commit/199bc05466d450b92157aa4daead871e7e6d76ce
