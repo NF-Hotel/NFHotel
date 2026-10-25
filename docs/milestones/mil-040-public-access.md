@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-25 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-25 for the site to be public in a safe way with a free certificate, chose Cloudflare Tunnel and bought the domain `devmatiker.com`; S01 accepted it in chat ("Jeg accepterer planen for MIL-040"); accepted after RC-217 Go | pending |
+| 2026-10-25 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-25 for the site to be public in a safe way with a free certificate, chose Cloudflare Tunnel and bought the domain `devmatiker.com`; S01 accepted it in chat ("Jeg accepterer planen for MIL-040"); accepted after RC-217 Go | [7e61d06] |
 
 ---
 
@@ -89,3 +89,4 @@ Decide whether NF Hotel may claim that guests and the mobile app reach it from t
 [ADR-0015]: ../adr/adr-0015-mobile-app-staff-token-access.md
 [ADR-0024]: ../adr/adr-0024-secrets-as-files.md
 [ADR-0025]: ../adr/adr-0025-recovery-objectives.md
+[7e61d06]: https://github.com/NF-Hotel/NFHotel/commit/7e61d06e11643d9ba346473ff12249a9a5cd63d5
