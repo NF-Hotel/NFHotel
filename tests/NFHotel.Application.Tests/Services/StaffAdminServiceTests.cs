@@ -54,21 +54,40 @@ public sealed class StaffAdminServiceTests
         Assert.Empty(world.StaffAudit.Events);
     }
 
-    /// <summary>State transition: the command on the server has no caller, so the actor is named <c>system</c>.</summary>
+    /// <summary>State transition: bootstrap creates the first Manager and records the system as actor.</summary>
     [Fact]
-    public async Task CreateAsync_WithoutACaller_RecordsTheSystemAsActor()
+    public async Task EnsureFirstManagerAsync_WithoutACaller_RecordsTheSystemAsActor()
     {
         // Arrange
         var world = new ServiceWorld();
         var service = world.StaffAccountService();
 
         // Act
-        await service.CreateAsync(new CreateStaffRequest("boss", Temporary, StaffRole.Manager), TestContext.Current.CancellationToken);
+        var result = await service.EnsureFirstManagerAsync("boss", Temporary, TestContext.Current.CancellationToken);
 
         // Assert
+        Assert.True(result.IsSuccess);
         var recorded = Assert.Single(world.StaffAudit.Events);
         Assert.Equal("system", recorded.ActorName);
         Assert.Null(recorded.ActorId);
+    }
+
+    /// <summary>Negative: a Receptionist cannot create staff accounts.</summary>
+    [Fact]
+    public async Task CreateAsync_WithoutStaffManagePermission_ReturnsForbidden()
+    {
+        // Arrange
+        var (service, world, _) = Build(callerRole: StaffRole.Receptionist);
+
+        // Act
+        var result = await service.CreateAsync(
+            new CreateStaffRequest("rita", Temporary, StaffRole.Receptionist),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Single(world.Staff.Items);
+        Assert.Empty(world.StaffAudit.Events);
     }
 
     /// <summary>Positive: the first Manager asks for a change by default, and not when told otherwise.</summary>
@@ -114,6 +133,27 @@ public sealed class StaffAdminServiceTests
         Assert.Equal(StaffAuditAction.AccountDisabled, world.StaffAudit.Events.Single().Action);
     }
 
+    /// <summary>Negative: a Receptionist cannot disable another staff account.</summary>
+    [Fact]
+    public async Task DisableAsync_WithoutStaffManagePermission_ReturnsForbidden()
+    {
+
+        // Arrange
+        var (service, world, _) = Build(callerRole: StaffRole.Receptionist);
+        var member = Add(world, "rita", StaffRole.Receptionist);
+
+        // Act
+        var result = await service.DisableAsync(
+            member.Id,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.True(member.IsActive);
+        Assert.Equal(1, member.SecurityStamp);
+        Assert.Empty(world.StaffAudit.Events);
+    }
+
     /// <summary>Negative: a Manager cannot disable their own account.</summary>
     [Fact]
     public async Task DisableAsync_OwnAccount_IsRefused()
@@ -135,13 +175,30 @@ public sealed class StaffAdminServiceTests
     public async Task DisableAsync_TheLastActiveManager_IsRefusedButNotWhenAnotherRemains()
     {
         // Arrange
-        var (service, world, _) = Build(callerRole: StaffRole.Receptionist);
+        var authorization = Substitute.For<IStaffAuthorizationService>();
+
+        // Allows this test to focus on the LastManager business rule.
+        authorization.HasPermissionAsync(
+            Permissions.StaffManage,
+            Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
+
+        var (service, world, _) = Build(
+            callerRole: StaffRole.Receptionist,
+            authorization: authorization);
+
         var only = Add(world, "boss", StaffRole.Manager);
 
         // Act
-        var refused = await service.DisableAsync(only.Id, TestContext.Current.CancellationToken);
+        var refused = await service.DisableAsync(
+            only.Id,
+            TestContext.Current.CancellationToken);
+
         var other = Add(world, "boss2", StaffRole.Manager);
-        var allowed = await service.DisableAsync(only.Id, TestContext.Current.CancellationToken);
+
+        var allowed = await service.DisableAsync(
+            only.Id,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Staff.LastManager, refused.FirstError?.Code);
@@ -180,6 +237,26 @@ public sealed class StaffAdminServiceTests
         Assert.Equal(StaffAuditAction.AccountEnabled, world.StaffAudit.Events.Single().Action);
     }
 
+    /// <summary>Negative: a Receptionist cannot enable a staff account.</summary>
+    [Fact]
+    public async Task EnableAsync_WithoutStaffManagePermission_ReturnsForbidden()
+    {
+        // Arrange
+        var (service, world, _) = Build(callerRole: StaffRole.Receptionist);
+        var member = Add(world, "rita", StaffRole.Receptionist);
+        member.Deactivate();
+
+
+        // Act
+        var result = await service.EnableAsync(member.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.False(member.IsActive);
+
+    }
+
+
     #endregion
 
     #region Reset
@@ -203,6 +280,28 @@ public sealed class StaffAdminServiceTests
         Assert.Equal(2, rita.SecurityStamp);
         throttle.Received(1).Reset("rita");
         Assert.Equal(StaffAuditAction.PasswordReset, world.StaffAudit.Events.Single().Action);
+    }
+
+    /// <summary>Negative: a Receptionist cannot reset another staff member's password.</summary>
+    [Fact]
+    public async Task ResetPasswordAsync_WithoutStaffManagePermission_ReturnsForbidden()
+    {
+        // Arrange
+        var (service, world, _) = Build(callerRole: StaffRole.Receptionist);
+        var member = Add(world, "rita", StaffRole.Receptionist);
+
+        var originalPasswordHash = member.PasswordHash;
+
+        // Act
+        var result = await service.ResetPasswordAsync(
+            member.Id,
+            new ResetPasswordRequest(Temporary),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Equal(originalPasswordHash, member.PasswordHash);
+        Assert.Empty(world.StaffAudit.Events);
     }
 
     /// <summary>Negative: a reset of the own account is refused, and a weak temporary password changes nothing.</summary>
@@ -263,6 +362,21 @@ public sealed class StaffAdminServiceTests
         Assert.False(result.Value.Single(item => item.UserName == "rita").IsActive);
     }
 
+    /// <summary>Negative: a Receptionist cannot access the staff account list.</summary>
+    [Fact]
+    public async Task ListAsync_WithoutStaffManagePermission_ReturnsForbidden()
+    {
+        // Arrange
+        var (service, world, _) = Build(callerRole: StaffRole.Receptionist);
+        Add(world, "rita", StaffRole.Receptionist);
+
+        // Act
+        var result = await service.ListAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+    }
+
     /// <summary>Boundary: the audit page is newest first, the page size is capped, and a page below one is page one.</summary>
     [Fact]
     public async Task ListAuditAsync_Pages_AreNewestFirstAndCapped()
@@ -287,19 +401,44 @@ public sealed class StaffAdminServiceTests
         Assert.Equal(StaffAccountService.MaxAuditPageSize, capped.Value.PageSize);
     }
 
+    /// <summary>Negative: a Receptionist cannot access the staff audit log.</summary>
+    [Fact]
+    public async Task ListAuditAsync_WithoutStaffManagePermission_ReturnsForbidden()
+    {
+        // Arrange
+        var (service, world, _) = Build(callerRole: StaffRole.Receptionist);
+
+        // Act
+        var result = await service.ListAuditAsync(
+            1,
+            10,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+    }
+
     #endregion
 
     #region Helpers
 
     private static (StaffAccountService Service, ServiceWorld World, StaffMember Caller) Build(
         ILoginThrottle? throttle = null,
-        StaffRole callerRole = StaffRole.Manager)
+        StaffRole callerRole = StaffRole.Manager,
+        IStaffAuthorizationService? authorization = null)
     {
         var world = new ServiceWorld();
         var caller = Add(world, "manager", callerRole);
+
         world.CallContext.StaffId = caller.Id;
         world.CallContext.StaffName = caller.UserName;
-        return (world.StaffAccountService(throttle), world, caller);
+
+        // Uses the real authorization service to check the caller's permissions.
+        authorization ??= new StaffAuthorizationService(
+                world.CallContext,
+                world.Staff);
+
+        return (world.StaffAccountService(throttle, authorization), world, caller);
     }
 
     private static StaffMember Add(ServiceWorld world, string name, StaffRole role)

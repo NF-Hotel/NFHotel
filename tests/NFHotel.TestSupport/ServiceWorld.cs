@@ -319,8 +319,9 @@ public sealed class ServiceWorld
     public StaffAuthService StaffAuthService(IPasswordHasher? hasher = null, IStaffTokenIssuer? tokens = null, ILoginThrottle? throttle = null) =>
         new(Staff, hasher ?? new FakePasswordHasher(), tokens ?? new FakeStaffTokenIssuer(), throttle ?? Substitute.For<ILoginThrottle>(), UnitOfWork, StaffAudit, CallContext, Clock);
 
-    public StaffAccountService StaffAccountService(ILoginThrottle? throttle = null) =>
-        new(Staff, new FakePasswordHasher(), UnitOfWork, throttle ?? Substitute.For<ILoginThrottle>(), StaffAudit, CallContext, Clock);
+    public StaffAccountService StaffAccountService(ILoginThrottle? throttle = null, IStaffAuthorizationService? authorization = null) =>
+        new(Staff, new FakePasswordHasher(), UnitOfWork, throttle ?? Substitute.For<ILoginThrottle>(), StaffAudit, CallContext, Clock,
+            authorization ?? Substitute.For<IStaffAuthorizationService>());
 
     public RoomService RoomService() => new(Rooms, RoomQueries, UnitOfWork);
 
