@@ -72,7 +72,7 @@ The order matters: Cloudflare adds the public host name only once the tunnel has
 
 ### Rotate the token
 
-If the token has been anywhere but step 8 (a chat, a screenshot, a file), rotate it: in the tunnel's settings, refresh the token, then repeat steps 5 to 9 with the new one. The old token stops working.
+If the token has been anywhere but step 8 (a chat, a screenshot, a file), rotate it: in the tunnel's settings, refresh (rotate) the token, then repeat steps 5 to 9 with the new one; the old token stops working. Where the dashboard offers no such action, delete the tunnel, create a new one with the same name, and repeat Parts B and C.
 
 ## Check it
 
