@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [0174f76] |
 
 ---
 
@@ -54,3 +54,4 @@ None.
 [RC-207]: rc-207-mil-034-gate.md
 [ADR-0023]: ../../adr/adr-0023-application-telemetry.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[0174f76]: https://github.com/NF-Hotel/NFHotel/commit/0174f76d093566e3bc40bb45ced66bcc2d932f74

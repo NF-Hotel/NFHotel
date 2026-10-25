@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-034, which S01 accepted in chat on 2026-10-24 | [f105724] |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 4: the counter appears at the first exception; S01 decided in chat on 2026-10-25 ("Så luk den med begrundelse") | pending |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 4: the counter appears at the first exception; S01 decided in chat on 2026-10-25 ("Så luk den med begrundelse") | [0174f76] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -65,3 +65,4 @@ We follow option 2, and we count errors as a metric instead of running an error 
 [ADR-0020]: ./adr-0020-monitoring-stack.md
 [MIL-034]: ../milestones/mil-034-application-observability.md
 [f105724]: https://github.com/NF-Hotel/NFHotel/commit/f10572471cf3c195934b767081a1e6166cbf7f0f
+[0174f76]: https://github.com/NF-Hotel/NFHotel/commit/0174f76d093566e3bc40bb45ced66bcc2d932f74
