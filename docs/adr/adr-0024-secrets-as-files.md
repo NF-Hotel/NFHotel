@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-035, which S01 accepted in chat on 2026-10-24 | [9090645] |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 7: the limit is accepted; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | pending |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 7: the limit is accepted; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | [199bc05] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -73,3 +73,4 @@ We follow option 2.
 [MIL-035]: ../milestones/mil-035-secrets-as-files.md
 [RC-185]: ../sqa/reviews/rc-185-alloy-docker-discovery.md
 [9090645]: https://github.com/NF-Hotel/NFHotel/commit/90906459f40317be0fe2ac6e25862924cdccfee9
+[199bc05]: https://github.com/NF-Hotel/NFHotel/commit/199bc05466d450b92157aa4daead871e7e6d76ce

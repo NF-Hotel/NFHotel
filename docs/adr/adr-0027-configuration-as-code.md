@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-038, which S01 accepted in chat on 2026-10-24 | [bfaa680] |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 4: the work is deferred until a trigger; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | pending |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 4: the work is deferred until a trigger; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | [199bc05] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -61,3 +61,4 @@ Options considered:
 [MIL-038]: ../milestones/mil-038-configuration-as-code.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
 [bfaa680]: https://github.com/NF-Hotel/NFHotel/commit/bfaa68027c5070fca1a3ac9cf35d339b87d6dd20
+[199bc05]: https://github.com/NF-Hotel/NFHotel/commit/199bc05466d450b92157aa4daead871e7e6d76ce

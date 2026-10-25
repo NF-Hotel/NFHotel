@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [199bc05] |
 
 ---
 
@@ -53,3 +53,4 @@ None.
 [RC-211]: rc-211-adr-0027.md
 [ADR-0027]: ../../adr/adr-0027-configuration-as-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[199bc05]: https://github.com/NF-Hotel/NFHotel/commit/199bc05466d450b92157aa4daead871e7e6d76ce
