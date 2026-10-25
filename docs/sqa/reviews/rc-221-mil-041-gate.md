@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [1868d87] |
 
 ---
 
@@ -45,3 +45,4 @@ Go. MIL-041 is complete; this pull request closes #337 and #340.
 [RC-220]: rc-220-mil-041.md
 [ADR-0029]: ../../adr/adr-0029-back-office-behind-cloudflare-access.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[1868d87]: https://github.com/NF-Hotel/NFHotel/commit/1868d87b99ee23b4348bcb4984b2df04db7699df
