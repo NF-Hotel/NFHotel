@@ -42,16 +42,18 @@ No arrow points into the home network: `cloudflared` opens the connection from t
 
 ## Set it up, step by step
 
+The order matters: Cloudflare adds the public host name only once the tunnel has a connected connector, so the token goes on the VM (Part B) before the name is added (Part C).
+
 ### Part A: Cloudflare (S01, in the browser)
 
-1. **Create the tunnel.** In the [Cloudflare dashboard](https://dash.cloudflare.com), open **Zero Trust → Networks → Tunnels → Create a tunnel**, choose **Cloudflared**, and name it `nf-hotel`. *Why this kind:* a tunnel managed in the dashboard needs only a token on the VM, no certificate file.
-2. **Copy the token.** On the "Install and run a connector" page, choose **Docker**. The command shown ends with `--token eyJ...`: copy only the long value after `--token`. Do not run the command, and do not paste the token anywhere else; it gives control of the tunnel. Keep the page open for step 3.
-3. **Add the public host name.** Under **Public Hostname**: subdomain `nfhotel`, domain `devmatiker.com`, service type **HTTP**, URL `nginx:8082`. *Why HTTP:* the hop from `cloudflared` to nginx stays inside the VM on a Docker network; the tunnel itself and the guest's connection to Cloudflare are encrypted.
-4. **Force HTTPS.** In the domain's **SSL/TLS → Edge Certificates**, turn on **Always Use HTTPS**. *Why:* a guest who types `http://` is sent to `https://` by Cloudflare before anything reaches the hotel.
-5. **Limit sign-in attempts.** In **Security → WAF → Rate limiting rules**, create one rule: when the URI path contains `/mobile-api/api/auth/login`, with the same IP, more than 5 requests in 10 seconds, **Block** for 10 seconds. *Why:* password guessing is stopped at Cloudflare; the API's own per-address limit stays as the second line.
+1. **Create the tunnel.** In the [Cloudflare dashboard](https://dash.cloudflare.com), open **Networking → Tunnels → Create a tunnel**, choose **Cloudflared**, and name it `nf-hotel`. *Why this kind:* a tunnel managed in the dashboard needs only a token on the VM, no certificate file.
+2. **Leave the install page.** It shows install commands with the token in them: do not run them and do not copy them anywhere. The token is fetched again in Part B.
+3. **Force HTTPS.** In the domain's **SSL/TLS → Edge Certificates**, turn on **Always Use HTTPS**. *Why:* a guest who types `http://` is sent to `https://` by Cloudflare before anything reaches the hotel.
+4. **Limit sign-in attempts.** In the domain's **Security → Security rules → Create rule → Rate limiting rules**, create one rule: when the URI path contains `/mobile-api/api/auth/login`, with the same IP, more than 5 requests in 10 seconds, **Block** for 10 seconds. *Why:* password guessing is stopped at Cloudflare; the API's own per-address limit stays as the second line.
 
 ### Part B: the token on `nf-hotel` (S01, over the tailnet)
 
+5. **Fetch the token.** In **Networking → Tunnels → nf-hotel → Edit**, the install command ends with a long value starting with `eyJ`: that value alone is the token. It gives control of the tunnel, so it goes only into the command of step 8.
 6. Open a shell on the VM: `tailscale ssh root@nf-hotel`.
 7. Create the settings file from its example, readable by its owner only:
    ```bash
@@ -62,7 +64,15 @@ No arrow points into the home network: `cloudflared` opens the connection from t
    sudo -u nfhotel bash -c 'f=/opt/nfhotel/ops/deploy/cloudflared/cloudflared.env; read -rs -p "Tunnel token: " t; echo; umask 077; { grep -v "^TUNNEL_TOKEN=" "$f"; printf "TUNNEL_TOKEN=%s\n" "$t"; } >"$f.new" && mv "$f.new" "$f"'
    ```
    *Why like this:* `read -s` does not echo, and `printf` is part of the shell, so the token is never a command argument that another user could see.
-9. **Deploy:** re-run the latest successful `NF Hotel CD` run in GitHub Actions. The deploy writes the token to a secret file (ADR-0024), starts `cloudflared`, and checks that no secret is in its environment.
+9. **Deploy:** re-run the latest successful `NF Hotel CD` run in GitHub Actions. The deploy writes the token to a secret file (ADR-0024), starts `cloudflared`, and checks that no secret is in its environment. In the dashboard the tunnel turns **Healthy**.
+
+### Part C: the public host name (S01, in the browser)
+
+10. In **Networking → Tunnels → nf-hotel → Edit → Routes → Add route → Published application**: subdomain `nfhotel`, domain `devmatiker.com`, path empty, service URL `http://nginx:8082`, HTTP Host Header empty, the other settings at their defaults. Cloudflare creates the DNS record itself. *Why HTTP:* the hop from `cloudflared` to nginx stays inside the VM on a Docker network; the tunnel itself and the guest's connection to Cloudflare are encrypted. *Why no Host Header:* the web application gets `nfhotel.devmatiker.com`, the name the guest typed.
+
+### Rotate the token
+
+If the token has been anywhere but step 8 (a chat, a screenshot, a file), rotate it: in the tunnel's settings, refresh the token, then repeat steps 5 to 9 with the new one. The old token stops working.
 
 ## Check it
 
@@ -75,7 +85,7 @@ From a phone with Tailscale turned off, or any machine outside the tailnet:
 
 ## Turn it off
 
-- **At once, from the browser:** in **Zero Trust → Networks → Tunnels**, open `nf-hotel` and delete its public host name. The site leaves the internet; the tailnet is unchanged.
+- **At once, from the browser:** in **Networking → Tunnels**, open `nf-hotel` and delete its route `nfhotel.devmatiker.com`. The site leaves the internet; the tailnet is unchanged.
 - **For good, on the VM:** delete `/opt/nfhotel/ops/deploy/cloudflared/cloudflared.env` and re-run CD; the deploy leaves the tunnel out. `PublicSiteDown` alerts, and stops 7 days after the last success.
 
 ## When the public site is down
