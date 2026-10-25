@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-25 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-25 for the back office to be reachable at `nfhotel.devmatiker.com/admin`, with Cloudflare in front ("ok lad os sætte en cloudflare foran"), for the team's e-mail addresses; S01 accepted it in chat ("Jeg accepterer planen for MIL-041"); accepted after RC-220 Go | pending |
+| 2026-10-25 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-25 for the back office to be reachable at `nfhotel.devmatiker.com/admin`, with Cloudflare in front ("ok lad os sætte en cloudflare foran"), for the team's e-mail addresses; S01 accepted it in chat ("Jeg accepterer planen for MIL-041"); accepted after RC-220 Go | [58af7e8] |
 
 ---
 
@@ -77,3 +77,4 @@ Decide whether NF Hotel may claim that its staff reach the back office from the 
 [BC-001]: ../business-case.md
 [ADR-0028]: ../adr/adr-0028-public-access-through-cloudflare-tunnel.md
 [MIL-040]: ../milestones/mil-040-public-access.md
+[58af7e8]: https://github.com/NF-Hotel/NFHotel/commit/58af7e8092d84266aa8df114f77cc273f6ab6980
