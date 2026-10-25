@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # Test of the nginx configuration (MIL-017, ADR-0011 decision 7): the HTTPS server with no
 # optional route, with the optional API route and no API, and with an API reached from a
-# tailnet address and refused from another address. Last, the hardened service of
+# tailnet address and refused from another address. Then the public listener of MIL-040 (port 8082,
+# Cloudflare Tunnel): the site with the client's scheme and address, no back office, and only the two
+# mobile routes of the API. Last, the hardened service of
 # deploy/nginx/docker-compose.yml (MIL-023 task 2) starts and turns healthy with a key as
 # production has it: 0600 and owned by another user than root.
 #
 # Usage: test-nginx.sh
 # Env:   REPO_HOST  the repository path as the Docker daemon sees it (default: this
 #                   checkout; on Windows give C:/... for Docker Desktop)
-# It starts the containers t-nginx and nfhotel-api, the compose project t-hardened, and the
-# networks t-ngnet and t-tsnet, and removes them at the end.
+# It starts the containers t-nginx, nfhotel-web and nfhotel-api, the compose project t-hardened, and the
+# networks t-ngnet, t-tsnet and t-apinet, and removes them at the end.
 # Exit:  0 every check passed; 1 a check failed
 # Needs: bash 4+, docker
 
@@ -34,8 +36,8 @@ check() {
 cleanup() {
   docker compose -p t-hardened -f "$REPO/deploy/nginx/docker-compose.yml" --env-file "$W/hardened.env" \
     down >/dev/null 2>&1
-  docker rm -f t-nginx nfhotel-api >/dev/null 2>&1
-  docker network rm t-ngnet t-tsnet >/dev/null 2>&1
+  docker rm -f t-nginx nfhotel-web nfhotel-api >/dev/null 2>&1
+  docker network rm t-ngnet t-tsnet t-apinet >/dev/null 2>&1
   rm -rf "$W"
 }
 trap cleanup EXIT
@@ -57,6 +59,8 @@ start_nginx() {
     -v "$REPO_HOST/deploy/nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template:ro" \
     -v "$REPO_HOST/deploy/nginx/templates/00-upgrade.conf.template:/etc/nginx/templates/00-upgrade.conf.template:ro" \
     -v "$REPO_HOST/deploy/nginx/templates/00-server-tokens.conf.template:/etc/nginx/templates/00-server-tokens.conf.template:ro" \
+    -v "$REPO_HOST/deploy/nginx/templates/00-forwarded.conf.template:/etc/nginx/templates/00-forwarded.conf.template:ro" \
+    -v "$REPO_HOST/deploy/nginx/templates/public.conf.template:/etc/nginx/templates/public.conf.template:ro" \
     -v "$W_HOST/snippets:/etc/nginx/snippets:ro" -v "$W_HOST/tls:/etc/nginx/tls:ro" "$NGINX" >/dev/null
   sleep 3
 }
@@ -89,6 +93,28 @@ ip="$(docker inspect -f '{{(index .NetworkSettings.Networks "t-tsnet").IPAddress
 check "a tailnet address reaches the API" api-reached "$(docker run --rm --network t-tsnet "$CURL" -sk "https://$ip/api/rooms")"
 check "another address is still refused" 403 "$(code https://t-nginx/api/rooms)"
 
+echo "== the public listener of Cloudflare Tunnel (MIL-040)"
+# A second nginx stands in for the web application and answers with the headers it got.
+mkdir -p "$W/web"
+# shellcheck disable=SC2016 # nginx variables, written as they are into its configuration
+printf 'server { listen 8080; location / { return 200 "$http_x_forwarded_proto $http_x_real_ip"; } }' >"$W/web/default.conf"
+docker run -d --name nfhotel-web --network t-ngnet -v "$W_HOST/web:/etc/nginx/conf.d:ro" "$NGINX" >/dev/null
+sleep 2
+public() { docker run --rm --network t-ngnet "$CURL" -s -o /dev/null -w '%{http_code}' "http://t-nginx:8082$1"; }
+check "the public site reaches the web application as HTTPS, with the client's address" "https 203.0.113.7" \
+  "$(docker run --rm --network t-ngnet "$CURL" -s -H 'CF-Connecting-IP: 203.0.113.7' http://t-nginx:8082/book)"
+check "the tailnet server still reports its own scheme" "https" \
+  "$(docker run --rm --network t-ngnet "$CURL" -sk https://t-nginx/ | cut -d' ' -f1)"
+check "the back office is not public" 404 "$(public /admin/login)"
+check "the back office root is not public" 404 "$(public /admin)"
+check "the mobile sign-in route reaches the API" api-reached \
+  "$(docker run --rm --network t-ngnet "$CURL" -s -X POST http://t-nginx:8082/mobile-api/api/auth/login)"
+check "the mobile rooms route reaches the API" 200 "$(public /mobile-api/api/rooms/3)"
+check "another API route is not public" 404 "$(public /mobile-api/api/bookings)"
+check "the API itself is not on the public site" 404 "$(public /mobile-api/)"
+# The stand-in leaves, so the hardened proxy below finds no web application, as before.
+docker rm -f nfhotel-web >/dev/null 2>&1
+
 echo "== the hardened compose service with a key as production has it"
 # The key is 0600 and owned by uid 1000, as renew-certificate.sh installs it for the user of
 # the checkout. Root in the container needs DAC_READ_SEARCH to open it.
@@ -115,7 +141,9 @@ NGINX_HTTPS_PORT=18443
 NGINX_INTERNAL_PORT=18081
 NGINX_TLS_DIR=$W_HOST/hardened-tls
 NFHOTEL_PROXY_NETWORK=t-ngnet
+NFHOTEL_API_NETWORK=t-apinet
 EOF
+docker network create --internal t-apinet >/dev/null
 docker compose -p t-hardened -f "$REPO/deploy/nginx/docker-compose.yml" --env-file "$W/hardened.env" \
   up -d --wait --wait-timeout 90 >"$W/hardened.out" 2>&1
 check "the hardened proxy turns healthy with a 0600 key of another user" healthy \

@@ -21,6 +21,23 @@ groups:
             The probe of {{ $labels.instance }} has failed for 2 minutes. Runbook: wiki page CI-CD,
             When a deploy does not start, and Host-Hardening.
 
+      # The public address of MIL-040. It alerts only after the address has answered at least
+      # once in the last 7 days, so it stays quiet until the tunnel is set up, and again 7 days
+      # after it was taken down on purpose.
+      - alert: PublicSiteDown
+        expr: >-
+          probe_success{job="public_site"} == 0
+          and on(instance) max_over_time(probe_success{job="public_site"}[7d]) == 1
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.instance }} does not answer from the internet"
+          description: >-
+            The public probe of {{ $labels.instance }} has failed for 3 minutes, so guests
+            cannot reach the site. Runbook: wiki page Public-Access, When the public site is
+            down.
+
       - alert: RedirectBroken
         expr: probe_success{job="redirect"} == 0
         for: 5m

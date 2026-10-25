@@ -23,7 +23,8 @@
 | 2026-10-18 | Deprecated | Claude (AI) | AI at the request of S01 | Amended: objective 21, A guest signs in with the booking number and the email and reaches only their own booking (MIL-018) | [6b606da] |
 | 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Amended: objective 22, an administrator starts a benchmark run in the back office and reads its stored result later (MIL-019, MIL-020) | [7fbeba1] |
 | 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Amended: objective 26, hotel staff sign in and work with rooms from the mobile app through the API on the staff token alone (MIL-029, ADR-0015); accepted after RC-133 Go | [1c3efb9] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Amended: objective 27, staff accounts and passwords (MIL-030), and success criterion 30 (accepted after RC-150 Go) | [0891cf1] |
+| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Amended: objective 27, staff accounts and passwords (MIL-030), and success criterion 30 (accepted after RC-150 Go) | [0891cf1] |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Amended: objective 28 and success criterion 31, NF Hotel on the public internet through Cloudflare Tunnel; the public address of the mobile app leaves the out-of-scope list (MIL-040, ADR-0028); S01 accepted MIL-040 in chat | [21ba03e] |
 
 ---
 
@@ -97,6 +98,7 @@ basis for the hosting decision (Q-31).
 25. Harden and observe the server: selected CIS items for Docker and Debian are applied with evidence, the firewall and patching are managed as code, and the posture and delivery performance are measured (MIL-023).
 26. Let hotel staff sign in and work with the rooms from the mobile app (Flutter) through the API, with the staff token alone and no shared secret in the app, so that a role sees and does in the app no more than in the back office (MIL-029, ADR-0015).
 27. Let the owner and the Managers manage staff accounts and passwords in the back office: a staff member changes their own password with the current one, a Manager creates, disables, enables and resets accounts, a change or a disable ends the old sessions at once, and account events are kept in an audit trail (MIL-030).
+28. Let guests book and the mobile app work from the public internet at `nfhotel.devmatiker.com`, without a port opened in the home network and with the back office kept on the tailnet, so that the hotel is reachable by anyone while its home stays closed (MIL-040, ADR-0028).
 
 ## Scope
 
@@ -142,7 +144,7 @@ basis for the hosting decision (Q-31).
 - Tests that need a graphical interface.
 - PostgreSQL hosting: the web service only receives a connection string.
 - TLS certificates: the proxy serves plain HTTP for now.
-- The mobile app on the internet: a release build, its store publication and the public address and TLS of the API for it need their own ADR; the mobile bookings and guests screens are not part of MIL-029.
+- The mobile app on the internet: a release build and its store publication need their own decision; the public address and TLS of the API for it are decided in ADR-0028 (MIL-040); the mobile bookings and guests screens are not part of MIL-029.
 
 ## Expected Benefits
 
@@ -197,6 +199,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 28 | Hardened server | Every selected CIS item has a status and evidence; only ports 80 and 443 answer from outside the tailnet; security updates install unattended; a Scorecard result, a SAMM baseline and a monthly DORA report exist | The CIS checklist, an nmap scan, the update log and the reports |
 | 29 | Mobile app access | The sign-in and `GET /api/rooms` answer to a valid staff token with no service token and give 401 without either; every other route group gives 401 to a staff token alone; Housekeeping gets 403 on room create, update and delete; the sixth failed sign-in in the window gives 429; 0 tokens or keys in the `MobileApp` repository; the app signs in as each development account and lists the seeded rooms on the development server | API and permission tests, a source search, and the end-to-end check in Docker |
 | 30 | Staff accounts and passwords | A password change with a wrong current password, a short, common or reused new password is refused, and the sixth wrong current password in the window gets 429; a token issued before a change, reset or disable gets 401; a Receptionist and a Housekeeping user get 403 on account management; the last active Manager cannot be disabled; every account event writes one audit row with no password, hash or token in it; in the VM the initial Manager password is refused after the owner changed it | Unit, API and page tests, the audit page and the deploy check in the VM |
+| 31 | Public access | From outside the tailnet, the site and `/book` answer 200 with a valid certificate; the back office and every API route but the two mobile routes answer 404; 0 ports opened in the home router; the tunnel token in no environment | A check from a GitHub runner, `check-secret-env.sh` and the router's port list |
 
 ## Risks
 
@@ -287,3 +290,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [f4649ad]: https://github.com/NF-Hotel/NFHotel/commit/f4649adfd68aa312e04533632f0f66ee32df245f
 [1c3efb9]: https://github.com/NF-Hotel/NFHotel/commit/1c3efb91f421c2b5ca0f4a62b7f0b2fe865eac70
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
+[21ba03e]: https://github.com/NF-Hotel/NFHotel/commit/21ba03eedb3836936f623ea3bd93871f097cab3c

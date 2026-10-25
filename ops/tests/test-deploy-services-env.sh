@@ -106,5 +106,24 @@ before="$(nginx_hash)"
 echo "NGINX_SERVER_NAME=x" >"$n/nginx.env"
 [[ "$(nginx_hash)" != "$before" ]] && ok "changed settings change the hash" || ko "changed settings change the hash"
 
+# The tunnel of MIL-040: left out without cloudflared.env; with it, the token becomes a secret file.
+mkdir -p "$d/cloudflared"
+cat >"$work/bin/docker" <<FAKE
+#!/bin/bash
+case "\$*" in
+  *" up "*) echo "\$PWD" >>"$work/tunnel-calls" ;;
+  inspect\ -f*) echo "true healthy" ;;
+esac
+exit 0
+FAKE
+: >"$work/tunnel-calls"
+PATH="$work/bin:$PATH" bash "$work/repo/scripts/deploy-services.sh" --no-build tunnel >"$work/out-tunnel" 2>&1
+grep -q "tunnel left out" "$work/out-tunnel" && ! grep -q cloudflared "$work/tunnel-calls" &&
+  ok "without cloudflared.env the tunnel is left out" || ko "tunnel skipped: $(tail -2 "$work/out-tunnel")"
+printf 'TUNNEL_TOKEN=tok-123\nNFHOTEL_PROXY_NETWORK=nfhotel-proxy\n' >"$d/cloudflared/cloudflared.env"
+PATH="$work/bin:$PATH" bash "$work/repo/scripts/deploy-services.sh" --no-build tunnel >"$work/out-tunnel" 2>&1
+[[ "$(cat "$d/cloudflared/secrets/TUNNEL_TOKEN" 2>/dev/null)" == tok-123 ]] && grep -q cloudflared "$work/tunnel-calls" &&
+  ok "with cloudflared.env the token is a secret file and the tunnel starts" || ko "tunnel: $(tail -3 "$work/out-tunnel")"
+
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))

@@ -7,4 +7,5 @@
 - [Monitoring](Monitoring)
 - [Incidents](Incidents)
 - [Disaster Recovery](Disaster-Recovery)
+- [Public Access](Public-Access)
 - [Appendix](Appendix)

@@ -51,10 +51,18 @@ services:
       # fullchain.pem and privkey.pem: made by scripts/make-dev-certificate.sh,
       # or put there by the owner (a real certificate).
       - ${NGINX_TLS_DIR:-./tls}:/etc/nginx/tls:ro
+    # The public listener of templates/public.conf.template (8082, MIL-040) is not published:
+    # Cloudflare Tunnel reaches it on the proxy network. The API network carries only the two
+    # mobile routes (snippets/mobile-api.conf).
     networks:
       - proxy
+      - api
 
 networks:
   proxy:
     name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
+    external: true
+  # Internal network of the database API (no route out, no host port).
+  api:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
     external: true

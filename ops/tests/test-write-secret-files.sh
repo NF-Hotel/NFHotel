@@ -68,5 +68,23 @@ write mail --out "$W/x" && ko "accepted an unknown service" || ok "an unknown se
 [[ "$(bash "$OPS/scripts/write-secret-files.sh" --list postgres)" == POSTGRES_PASSWORD ]] &&
   ok "--list prints the secrets of a service" || ko "list"
 
+# The tunnel token of MIL-040, and the environment that the deploy of a release sets.
+printf 'TUNNEL_TOKEN=eyJh.tok=\nNFHOTEL_PROXY_NETWORK=nfhotel-proxy\n' >"$W/cloudflared.env"
+write cloudflared --out "$W/cf" --cloudflared "$W/cloudflared.env" &&
+  [[ "$(cat "$W/cf/TUNNEL_TOKEN")" == "eyJh.tok=" ]] && ! grep -q TUNNEL_TOKEN "$W/cf/settings.env" &&
+  ok "the tunnel token is a file, and the settings for the container leave it out" || ko "tunnel: $(cat "$W/log")"
+printf 'TUNNEL_TOKEN=\n' >"$W/empty.env"
+write cloudflared --out "$W/cf2" --cloudflared "$W/empty.env" && ko "accepted an empty tunnel token" ||
+  ok "an empty tunnel token is refused"
+printf 'ASPNETCORE_ENVIRONMENT=Development\nTls__Require=true\n' >"$W/web-dev.env"
+NFHOTEL_ENVIRONMENT=Production write web --out "$W/webp" --web "$W/web-dev.env" --api "$W/api.env" &&
+  grep -qx "ASPNETCORE_ENVIRONMENT=Production" "$W/webp/settings.env" && ! grep -q "=Development" "$W/webp/settings.env" &&
+  ok "the deploy of a release runs the web application as Production" || ko "environment: $(cat "$W/webp/settings.env")"
+write web --out "$W/webd" --web "$W/web-dev.env" --api "$W/api.env" &&
+  grep -qx "ASPNETCORE_ENVIRONMENT=Development" "$W/webd/settings.env" &&
+  ok "without NFHOTEL_ENVIRONMENT the settings keep their own environment (development stack)" || ko "kept"
+NFHOTEL_ENVIRONMENT='Prod;rm' write web --out "$W/webx" --web "$W/web-dev.env" --api "$W/api.env" &&
+  ko "accepted a bad environment name" || ok "a bad environment name is refused"
+
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))
