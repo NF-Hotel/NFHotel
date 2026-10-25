@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-040, which S01 accepted in chat on 2026-10-25; the choice of Cloudflare Tunnel and the domain are S01's | pending |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-040, which S01 accepted in chat on 2026-10-25; the choice of Cloudflare Tunnel and the domain are S01's | [21ba03e] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -73,3 +73,4 @@ We follow option 3.
 [ADR-0024]: ./adr-0024-secrets-as-files.md
 [ADR-0025]: ./adr-0025-recovery-objectives.md
 [MIL-040]: ../milestones/mil-040-public-access.md
+[21ba03e]: https://github.com/NF-Hotel/NFHotel/commit/21ba03eedb3836936f623ea3bd93871f097cab3c
