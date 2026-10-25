@@ -112,6 +112,8 @@ check "the mobile sign-in route reaches the API" api-reached \
 check "the mobile rooms route reaches the API" 200 "$(public /mobile-api/api/rooms/3)"
 check "another API route is not public" 404 "$(public /mobile-api/api/bookings)"
 check "the API itself is not on the public site" 404 "$(public /mobile-api/)"
+# The stand-in leaves, so the hardened proxy below finds no web application, as before.
+docker rm -f nfhotel-web >/dev/null 2>&1
 
 echo "== the hardened compose service with a key as production has it"
 # The key is 0600 and owned by uid 1000, as renew-certificate.sh installs it for the user of
