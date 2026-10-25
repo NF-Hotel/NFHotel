@@ -1,6 +1,6 @@
 # Public Access
 
-NF Hotel is public at `https://nfhotel.devmatiker.com` through Cloudflare Tunnel: guests book and the mobile app works from anywhere, while no port is open in the home network and the back office stays on the tailnet.
+NF Hotel is public at `https://nfhotel.devmatiker.com` through Cloudflare Tunnel: guests book and the mobile app works from anywhere, while no port is open in the home network and the back office sits behind Cloudflare Access.
 
 **For:** S01, who owns the Cloudflare account and the domain, and anyone who answers `PublicSiteDown`.
 **Decision:** [ADR-0028](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0028-public-access-through-cloudflare-tunnel.md), which explains why, with the options that were weighed. **Work:** MIL-040.
@@ -22,7 +22,7 @@ NF Hotel is public at `https://nfhotel.devmatiker.com` through Cloudflare Tunnel
 | --- | --- | --- |
 | `/`, `/book`, `/booking/...` | Yes | Guests look, book and sign in to their booking |
 | `/mobile-api/api/auth/login`, `/mobile-api/api/rooms...` | Yes | The two routes of the mobile app (ADR-0015) |
-| `/admin...` | No, 404 | The back office stays on `https://nf-hotel.taildb84b5.ts.net/admin` |
+| `/admin...` | Behind Cloudflare Access | Only listed staff get past the e-mail code to the hotel's sign-in (MIL-041); without it, 404 |
 | Any other path of `/mobile-api/` | No, 404 | The API has no other public path |
 | SSH, the monitoring, PostgreSQL | No | Not on the tunnel at all |
 
@@ -74,12 +74,37 @@ The order matters: Cloudflare adds the public host name only once the tunnel has
 
 If the token has been anywhere but step 8 (a chat, a screenshot, a file), rotate it: in the tunnel's settings, refresh (rotate) the token, then repeat steps 5 to 9 with the new one; the old token stops working. Where the dashboard offers no such action, delete the tunnel, create a new one with the same name, and repeat Parts B and C.
 
+## The back office from the internet
+
+**Decision:** [ADR-0029](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0029-back-office-behind-cloudflare-access.md). **Work:** MIL-041.
+
+### Sign in as staff
+
+1. Open `https://nfhotel.devmatiker.com/admin` in any browser, without Tailscale.
+2. Cloudflare asks for your e-mail address. Type the one the team listed for you.
+3. A 6-digit code arrives by e-mail (look in the spam folder the first time). Type it in.
+4. The hotel's own sign-in appears: your user name and password, as before.
+
+Cloudflare remembers the browser for 24 hours. An address that is not on the list gets no code and never sees the hotel's sign-in. On the tailnet, `https://nf-hotel.taildb84b5.ts.net/admin` works as before, without a code.
+
+### Set it up (S01, in the browser, before the nginx change is deployed)
+
+1. **The Access application.** In **Zero Trust → Access controls → Applications → Add an application → Self-hosted**: name `NF Hotel back office`, session duration **24 hours**, public hostname `nfhotel` · `devmatiker.com`, path `admin`. Login method: **One-time PIN** only.
+2. **The policy.** Add a policy `Team`, action **Allow**, include **Emails**: the listed addresses. Save the application.
+3. **Note two values.** In **Zero Trust → Settings**, the *team domain* (`<team>.cloudflareaccess.com`); on the application's page, the **Application Audience (AUD) Tag**. Neither is a secret.
+4. **The validating route.** In **Networking → Tunnels → nf-hotel → Edit → Routes → Add route → Published application**: subdomain `nfhotel`, domain `devmatiker.com`, path `^/admin`, service URL `http://nginx:8082`. Under **Additional application settings → Access**, turn on **Validate the Access JWT at the tunnel** (or "Protect with Access") with the team name and the AUD tag of step 3. *Why:* a request for `/admin` that did not pass Access stops at the tunnel and never reaches the VM.
+5. **Check before the deploy:** `https://nfhotel.devmatiker.com/admin/login` in a private window shows Cloudflare's e-mail page. Only then is the nginx change of MIL-041 deployed, which lets a request with the Access token through to the back office.
+
+### Add or remove a member of staff
+
+In **Zero Trust → Access controls → Applications → NF Hotel back office → Policies → Team**, add or remove the address under **Emails** and save. Removing an address stops new codes at once; a session already open ends within 24 hours. Their hotel account is managed in the back office as before (Manager → staff accounts).
+
 ## Check it
 
 From a phone with Tailscale turned off, or any machine outside the tailnet:
 
 - `https://nfhotel.devmatiker.com/` and `/book` open, with a valid certificate.
-- `https://nfhotel.devmatiker.com/admin/login` answers 404.
+- `https://nfhotel.devmatiker.com/admin/login` shows Cloudflare's e-mail page, not the hotel's sign-in.
 - In the Cloudflare dashboard the tunnel `nf-hotel` shows **Healthy**.
 - In Grafana, the public probe (`job="public_site"`) shows success.
 
@@ -100,7 +125,7 @@ From a phone with Tailscale turned off, or any machine outside the tailnet:
 ## Why it is built this way
 
 - **A tunnel, not open ports.** The VM stands in a private home; with a tunnel the home address stays hidden and the router stays closed, and Cloudflare stops floods before they reach the home connection.
-- **A separate listener on 8082.** The public rules (no back office, the client's address from Cloudflare, HTTPS reported to the application) apply only to tunnel traffic; the tailnet server on 443 keeps working as before.
-- **The back office on the tailnet only.** Strangers cannot try passwords on a sign-in page they cannot see.
+- **A separate listener on 8082.** The public rules (the back office only behind Access, the client's address from Cloudflare, HTTPS reported to the application) apply only to tunnel traffic; the tailnet server on 443 keeps working as before.
+- **The back office behind Cloudflare Access.** Strangers cannot try passwords on a sign-in page they cannot see, and staff need no Tailscale (ADR-0029).
 - **The token as a file.** Like every other secret since ADR-0024, it is never an environment variable, so `docker inspect` and the monitoring cannot read it.
 - **Production on every release.** An error shows the error page, never a stack trace, to a guest.
