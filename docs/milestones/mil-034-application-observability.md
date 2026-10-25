@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-197 Go | [737399d] |
+| 2026-10-24 | Deprecated | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-24 for every gap of the DevOps review to be closed in autonomous mode ("Lav allesammen i automode on"), which accepts this plan; accepted after RC-197 Go | [737399d] |
+| 2026-10-25 | Accepted | mikemike | S01 | Criterion 2 narrowed: the exception counter is not required to exist before the first exception; S01 decided in chat on 2026-10-25 ("Så luk den med begrundelse"); accepted after RC-216 Go | [0174f76] |
 
 ---
 
@@ -36,6 +37,13 @@ Decide whether NF Hotel may claim that it measures what a guest and a member of 
 | 4 | `promtool test rules` shows that each objective alert fires on a breach and stays quiet otherwise | Yes | No |
 | 5 | The dashboard shows the rate, the 95th percentile of the duration and the error ratio per application | Yes | No |
 | 6 | CI is green, a request to the site after CD appears in Prometheus within two minutes, and the code review against `qc-programming-csharp` is Go | Yes | No |
+
+## Scope change of 2026-10-25
+
+**Criterion 2** now reads: in production, Prometheus has `http_server_request_duration_seconds` series for `nfhotel-web` and `nfhotel-api`, and the exception counter is exported by both *once an unhandled exception happens*.
+
+- **Why.** OpenTelemetry exports a counter only after its first measurement, so `aspnetcore_diagnostics_exceptions_total` cannot exist in Prometheus before the first unhandled exception. Production has had none since the deploy of 2026-10-24, which is the good outcome. Forcing one would mean a route that throws on purpose in the public site, only to make a series appear. The meter is registered (`Microsoft.AspNetCore.Diagnostics`, tested by `TelemetryRegistrationTests`), it travels the same OTLP path as the request series that are proven in production, and `ApplicationExceptions` is proven by its rule test.
+- **Choice.** Accepted. The first unhandled exception creates the series by itself, and `ApplicationExceptions` alerts on it then; a stack trace is in Loki meanwhile.
 
 ## Dependencies
 
@@ -77,3 +85,4 @@ Decide whether NF Hotel may claim that it measures what a guest and a member of 
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [MIL-023]: ./mil-023-operational-quality.md
 [737399d]: https://github.com/NF-Hotel/NFHotel/commit/737399d58692d9cf086cedcd8641a2d5f352e7d7
+[0174f76]: https://github.com/NF-Hotel/NFHotel/commit/0174f76d093566e3bc40bb45ced66bcc2d932f74
