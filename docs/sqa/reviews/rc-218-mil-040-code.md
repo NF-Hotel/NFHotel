@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [5619280] |
 
 ---
 
@@ -67,3 +67,4 @@ Go.
 [ADR-0024]: ../../adr/adr-0024-secrets-as-files.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[5619280]: https://github.com/NF-Hotel/NFHotel/commit/5619280ef07bcc2b30baedaa573be207c608283c
