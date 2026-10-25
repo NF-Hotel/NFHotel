@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-25 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-040, which S01 accepted in chat on 2026-10-25; the choice of Cloudflare Tunnel and the domain are S01's | [21ba03e] |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 3 changed by ADR-0029: `/admin` on the public name behind Cloudflare Access (MIL-041) | pending |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 3 changed by ADR-0029: `/admin` on the public name behind Cloudflare Access (MIL-041) | [1cc0e5d] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -75,3 +75,4 @@ We follow option 3.
 [ADR-0025]: ./adr-0025-recovery-objectives.md
 [MIL-040]: ../milestones/mil-040-public-access.md
 [21ba03e]: https://github.com/NF-Hotel/NFHotel/commit/21ba03eedb3836936f623ea3bd93871f097cab3c
+[1cc0e5d]: https://github.com/NF-Hotel/NFHotel/commit/1cc0e5d9c925b30a189e5e8ae8e93957c923bbaf

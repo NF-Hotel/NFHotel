@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-041, which S01 accepted in chat on 2026-10-25; the choice of Cloudflare Access and the list of addresses are S01's | pending |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-041, which S01 accepted in chat on 2026-10-25; the choice of Cloudflare Access and the list of addresses are S01's | [1cc0e5d] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -61,3 +61,4 @@ We follow option 3. It changes ADR-0028 decision 3 for `/admin` only.
 [ADR-0005]: ./adr-0005-backoffice-login.md
 [ADR-0028]: ./adr-0028-public-access-through-cloudflare-tunnel.md
 [MIL-041]: ../milestones/mil-041-admin-behind-cloudflare-access.md
+[1cc0e5d]: https://github.com/NF-Hotel/NFHotel/commit/1cc0e5d9c925b30a189e5e8ae8e93957c923bbaf
