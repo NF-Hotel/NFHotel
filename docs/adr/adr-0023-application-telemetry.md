@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-034, which S01 accepted in chat on 2026-10-24 | [f105724] |
+| 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-034, which S01 accepted in chat on 2026-10-24 | [f105724] |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 4: the counter appears at the first exception; S01 decided in chat on 2026-10-25 ("Så luk den med begrundelse") | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -39,7 +40,7 @@ We follow option 2, and we count errors as a metric instead of running an error 
 1. **The meters.** `Microsoft.AspNetCore.Hosting`, `Microsoft.AspNetCore.Diagnostics`, `Microsoft.AspNetCore.Server.Kestrel` and `System.Runtime`. The web application reports as `nfhotel-web` and the API as `nfhotel-api` (the label `job`).
 2. **The path.** OTLP/HTTP from each application to `http://alloy:4318` on the internal network `nfhotel-api`. Alloy joins that network, adds `host="nf-hotel"`, and remote-writes to Prometheus. No port is published, and the network has no route out.
 3. **Off by default.** The export runs only when `Telemetry:OtlpEndpoint` is set. Tests and local development send nothing. In production, compose sets it. Without Alloy, the export fails quietly, and the application is not affected.
-4. **Errors.** An unhandled exception is counted by `aspnetcore_diagnostics_exceptions_total`, with its type, and alerted on through the error rate of the objectives. The stack trace stays in the container's log in Loki, which Grafana searches.
+4. **Errors.** An unhandled exception is counted by `aspnetcore_diagnostics_exceptions_total`, with its type, and alerted on through the error rate of the objectives. The stack trace stays in the container's log in Loki, which Grafana searches. The counter is exported only after its first measurement, so it appears in Prometheus at the first unhandled exception and not before; S01 accepted on 2026-10-25 that MIL-034 closes without forcing one in production.
 5. **Not now.** Traces (option 4) and an error tracker (option 3) are not built. Either can follow on the same OTLP path, if the objectives show a need that the metrics and the logs cannot answer.
 
 ## Consequences
