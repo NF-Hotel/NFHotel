@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-040, which S01 accepted in chat on 2026-10-25; the choice of Cloudflare Tunnel and the domain are S01's | [21ba03e] |
+| 2026-10-25 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-040, which S01 accepted in chat on 2026-10-25; the choice of Cloudflare Tunnel and the domain are S01's | [21ba03e] |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 3 changed by ADR-0029: `/admin` on the public name behind Cloudflare Access (MIL-041) | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -35,7 +36,7 @@ We follow option 3.
 
 1. **The public name** is `nfhotel.devmatiker.com`, not the bare domain, so the domain stays free for other uses.
 2. **The path.** `cloudflared` (`ops/deploy/cloudflared`, pinned by digest, no published port, on the proxy network only) forwards the requests for the public name to a separate listener of nginx, port 8082 on the proxy network (`templates/public.conf.template`). The port is not published on the host. The tailnet server on 443 does not change.
-3. **What is public.** The site, the guest booking, and the two routes of the mobile app (`/mobile-api/api/auth/login` and `/mobile-api/api/rooms`, ADR-0015). The back office answers 404 on the public name and stays on the tailnet name; every other path of `/mobile-api/` answers 404, and the API has no other public path. *Why the back office stays off:* a staff sign-in that strangers cannot see cannot be guessed at; Cloudflare Access could add a login in front of it later, but the tailnet already gives that.
+3. **What is public.** The site, the guest booking, and the two routes of the mobile app (`/mobile-api/api/auth/login` and `/mobile-api/api/rooms`, ADR-0015). The back office answers 404 on the public name and stays on the tailnet name; every other path of `/mobile-api/` answers 404, and the API has no other public path. *Why the back office stays off:* a staff sign-in that strangers cannot see cannot be guessed at; Cloudflare Access could add a login in front of it later, but the tailnet already gives that. **Changed by ADR-0029 (2026-10-25):** `/admin` is now on the public name behind Cloudflare Access.
 4. **The client.** nginx takes the client's address from `CF-Connecting-IP` (trusted only from the Docker networks), so the per-address sign-in limit of the API sees the guest, not the tunnel. It reports `X-Forwarded-Proto: https`, because the client spoke HTTPS to Cloudflare; with the scheme of the plain hop, the web application would redirect for ever.
 5. **The token** is a secret file (ADR-0024): S01 writes it once into `cloudflared.env` on the VM, the deploy writes it to `secrets/TUNNEL_TOKEN`, and `cloudflared` reads it with `--token-file`. It is never in git, a log or an environment variable, and `check-secret-env.sh` checks the tunnel when it runs.
 6. **Production.** The deploy of a release runs the API and the web application as `Production` whatever the settings files say, so an error shows the error page and never a stack trace.

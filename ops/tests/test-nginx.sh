@@ -109,8 +109,11 @@ check "the public site reaches the web application as HTTPS, with the client's a
   "$(docker run --rm --network t-ngnet "$CURL" -s -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC/book")"
 check "the tailnet server still reports its own scheme" "https" \
   "$(docker run --rm --network t-ngnet "$CURL" -sk https://t-nginx/ | cut -d' ' -f1)"
-check "the back office is not public" 404 "$(public /admin/login)"
-check "the back office root is not public" 404 "$(public /admin)"
+check "the back office without the Access token is refused" 404 "$(public /admin/login)"
+check "the back office root without the Access token is refused" 404 "$(public /admin)"
+check "the back office with the Access token reaches the web application" "https 203.0.113.7" \
+  "$(docker run --rm --network t-ngnet "$CURL" -s -H 'Cf-Access-Jwt-Assertion: eyJ.test.token' \
+    -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC/admin/login")"
 check "the mobile sign-in route reaches the API" api-reached \
   "$(docker run --rm --network t-ngnet "$CURL" -s -X POST "$PUBLIC/mobile-api/api/auth/login")"
 check "the mobile rooms route reaches the API" 200 "$(public /mobile-api/api/rooms/3)"
