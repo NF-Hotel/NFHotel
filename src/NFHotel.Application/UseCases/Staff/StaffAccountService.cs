@@ -83,6 +83,14 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
             cancellationToken);
     }
 
+    // Creates staff accounts through the trusted CLI administration path.
+    Task<Result> IStaffAccountService.CreateAsync(
+        CreateStaffRequest request,
+        CancellationToken cancellationToken)
+    {
+        return CreateStaffInternalAsync(request, cancellationToken);
+    }
+
     /// <summary>Creates a staff account using the shared account creation logic.</summary>
     private async Task<Result> CreateStaffInternalAsync(CreateStaffRequest request, CancellationToken cancellationToken = default)
     {
