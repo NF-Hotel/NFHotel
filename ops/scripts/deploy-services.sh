@@ -16,6 +16,8 @@
 #              the models in ollama and delivers the result to the api; internal networks only, no published port
 #   nginx      (starts only when web is running and the analysis API is healthy) the reverse proxy: TLS on 443 and a redirect on 80 for web, loopback port for the rest;
 #              a development certificate is made when deploy/nginx/tls has none (MIL-017)
+#   tunnel     (only when deploy/cloudflared/cloudflared.env exists) Cloudflare Tunnel, the public entrance
+#              (MIL-040, ADR-0028): an outbound connection to Cloudflare, no published port
 #   alloy      (only when deploy/alloy/alloy.env exists) sends the logs and the host metrics
 #              to the monitoring (ADR-0020); left out with a note until the monitoring runs
 # Each service reads its git-ignored settings file next to its docker-compose.yml
@@ -24,7 +26,7 @@
 # missing: nfhotel-proxy, nfhotel-llm, and nfhotel-db and nfhotel-api with --internal (no route out).
 #
 # Usage: deploy-services.sh [--no-build] [--pull] [--down] [service...]
-#   service     postgres, ollama, api, web, analysis, benchmark, nginx, alloy (default: all)
+#   service     postgres, ollama, api, web, analysis, benchmark, nginx, tunnel, alloy (default: all)
 #   --no-build  start without rebuilding the images
 #   --pull      git pull the repository (and submodules) before building
 #   --down      stop and remove the named services instead of deploying (volumes,
@@ -39,7 +41,7 @@ proxy_network="${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}"
 db_network="${NFHOTEL_DB_NETWORK:-nfhotel-db}"
 api_network="${NFHOTEL_API_NETWORK:-nfhotel-api}"
 llm_network="${NFHOTEL_LLM_NETWORK:-nfhotel-llm}"
-order=(postgres ollama api web analysis benchmark nginx alloy)
+order=(postgres ollama api web analysis benchmark nginx tunnel alloy)
 
 build=1
 pull=0
@@ -64,7 +66,7 @@ for arg in "$@"; do
       usage
       exit 0
       ;;
-    postgres | ollama | api | web | analysis | benchmark | nginx | alloy) services+=("$arg") ;;
+    postgres | ollama | api | web | analysis | benchmark | nginx | tunnel | alloy) services+=("$arg") ;;
     *)
       echo "error: unknown argument: $arg" >&2
       usage >&2
@@ -86,6 +88,7 @@ dir_of() {
     analysis) echo "$root/deploy/market-analysis" ;;
     benchmark) echo "$root/deploy/benchmark" ;;
     nginx) echo "$root/deploy/nginx" ;;
+    tunnel) echo "$root/deploy/cloudflared" ;;
     alloy) echo "$root/deploy/alloy" ;;
   esac
 }
@@ -99,6 +102,7 @@ env_of() {
     analysis) echo "market-analysis.env" ;;
     benchmark) echo "benchmark.env" ;;
     nginx) echo "nginx.env" ;;
+    tunnel) echo "cloudflared.env" ;;
     alloy) echo "alloy.env" ;;
   esac
 }
@@ -131,6 +135,7 @@ fi
 if ((down)); then
   for s in "${ordered[@]}"; do
     [[ "$s" == "alloy" && ! -f "$(dir_of alloy)/alloy.env" ]] && continue
+    [[ "$s" == "tunnel" && ! -f "$(dir_of tunnel)/cloudflared.env" ]] && continue
     echo "==> stopping $s"
     (cd "$(dir_of "$s")" && docker compose --env-file "$(env_of "$s")" down)
   done
@@ -188,12 +193,19 @@ if [[ " ${ordered[*]} " == *" alloy "* && ! -f "$(dir_of alloy)/alloy.env" ]]; t
   echo "note: $(dir_of alloy)/alloy.env is missing; alloy is left out until the monitoring runs (ADR-0020)"
   alloy_skipped=1
 fi
+# The tunnel is optional too: without cloudflared.env the site stays on the tailnet only (MIL-040).
+tunnel_skipped=0
+if [[ " ${ordered[*]} " == *" tunnel "* && ! -f "$(dir_of tunnel)/cloudflared.env" ]]; then
+  echo "note: $(dir_of tunnel)/cloudflared.env is missing; the tunnel is left out and the site stays on the tailnet (ADR-0028)"
+  tunnel_skipped=1
+fi
 
 # Check every settings file before touching anything.
 for s in "${ordered[@]}"; do
   d="$(dir_of "$s")"
   e="$(env_of "$s")"
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
+  [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
   [[ -f "$d/$e" ]] || die "$d/$e is missing; copy $e.example to $e and fill it in"
   if [[ "$s" == "analysis" && ! -f "$d/market-analysis.toml" ]]; then
     die "$d/market-analysis.toml is missing; copy market-analysis.toml.example to it"
@@ -208,13 +220,16 @@ done
 # NFHOTEL_API_CONNECTION_STRING (the login of nfhotel_app, ADR-0011), the API logs in with it
 # instead of the superuser of postgres.env. The values are read, never printed.
 secret_files() {
-  bash "$root/scripts/write-secret-files.sh" "$1" --out "$(dir_of "$1")/secrets" \
+  # $1: the service of this script; $2: the service of write-secret-files.sh, when it has another name.
+  bash "$root/scripts/write-secret-files.sh" "${2:-$1}" --out "$(dir_of "$1")/secrets" \
     --postgres "$(dir_of postgres)/$(env_of postgres)" --api "$(dir_of api)/$(env_of api)" \
-    --web "$(dir_of web)/$(env_of web)" --benchmark "$(dir_of benchmark)/$(env_of benchmark)" >/dev/null
+    --web "$(dir_of web)/$(env_of web)" --benchmark "$(dir_of benchmark)/$(env_of benchmark)" \
+    --cloudflared "$(dir_of tunnel)/$(env_of tunnel)" >/dev/null
 }
 for s in "${ordered[@]}"; do
   case "$s" in
     postgres | api | web) secret_files "$s" || die "cannot write the secret files of $s" ;;
+    tunnel) ((tunnel_skipped)) || secret_files tunnel cloudflared || die "cannot write the secret file of the tunnel" ;;
   esac
   if [[ "$s" == "benchmark" ]]; then
     # The benchmark service is built from its own repository and reads the API token from its
@@ -273,6 +288,7 @@ for s in "${ordered[@]}"; do
   d="$(dir_of "$s")"
   e="$(env_of "$s")"
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
+  [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
   # A frozen image (ADR-0500) is never built: its source repository is gone. A build uses
   # the pinned digest instead. The package is private, so a host without a GHCR login (a
   # development VM) cannot pull it; the service is then left out, with the reason, and the
@@ -324,11 +340,21 @@ for s in "${ordered[@]}"; do
     NGINX_CONFIG_HASH="$(cd "$d" && find templates snippets -type f -print0 | sort -z | xargs -0 sha256sum |
       cat - "$e" | sha256sum | cut -c1-16)" || die "cannot hash the configuration of the proxy"
   fi
-  if [[ "$s" == "api" || "$s" == "web" ]]; then
+  if [[ "$s" == "api" || "$s" == "web" || "$s" == "tunnel" ]]; then
     # Compose does not see a changed secret file; this hash of them makes it recreate the
     # container after a rotation (ADR-0024).
     export NFHOTEL_SETTINGS_HASH
     NFHOTEL_SETTINGS_HASH="$(cat "$d"/secrets/* | sha256sum | cut -c1-16)" || die "cannot hash the secret files of $s"
+  fi
+  if [[ "$s" == "tunnel" ]]; then
+    # The public entrance must not take the hotel down: when the tunnel does not turn healthy (a wrong token,
+    # Cloudflare unreachable), the deploy warns and goes on, the site stays on the tailnet, and PublicSiteDown
+    # alerts (MIL-040).
+    if ! (cd "$d" && docker compose "${args[@]}"); then
+      echo "warning: the tunnel did not turn healthy; the release stays on the tailnet, and the monitoring alerts PublicSiteDown" >&2
+      (cd "$d" && docker compose --env-file "$e" logs --tail 20 cloudflared) >&2 || true
+    fi
+    continue
   fi
   if [[ "$s" == "alloy" ]]; then
     # The monitoring agent must not take the hotel down: when it does not turn healthy, the
@@ -360,12 +386,14 @@ echo "==> status"
 for s in "${ordered[@]}"; do
   [[ "$s" == "analysis" ]] && ((analysis_skipped)) && continue
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
+  [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
   (cd "$(dir_of "$s")" && docker compose --env-file "$(env_of "$s")" ps)
 done
 deployed=()
 for s in "${ordered[@]}"; do
   [[ "$s" == "analysis" ]] && ((analysis_skipped)) && continue
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
+  [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
   deployed+=("$s")
 done
-echo "Deployed: ${deployed[*]}$( ((analysis_skipped)) && echo ' (analysis left out: see the warning above)')$( ((alloy_skipped)) && echo ' (alloy left out: no alloy.env)')"
+echo "Deployed: ${deployed[*]}$( ((analysis_skipped)) && echo ' (analysis left out: see the warning above)')$( ((alloy_skipped)) && echo ' (alloy left out: no alloy.env)')$( ((tunnel_skipped)) && echo ' (tunnel left out: no cloudflared.env)')"

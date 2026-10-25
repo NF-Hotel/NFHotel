@@ -10,13 +10,15 @@
 # by every deploy (scripts/deploy-services.sh) and by the throwaway stacks, so a rotated value
 # reaches the containers at the next deploy. This file holds the one list of the secrets.
 #
-# Usage: write-secret-files.sh <postgres|api|web> --out <folder> [--postgres <postgres.env>]
+# Usage: write-secret-files.sh <postgres|api|web|cloudflared> --out <folder> [--postgres <postgres.env>]
 #          [--api <nfhotel-api.env>] [--web <nfhotel-web.env>] [--benchmark <benchmark.env>]
-#        write-secret-files.sh --list <postgres|api|web>
+#          [--cloudflared <cloudflared.env>]
+#        write-secret-files.sh --list <postgres|api|web|cloudflared>
 #   postgres  needs --postgres
 #   api       needs --api, and --postgres unless NFHOTEL_API_CONNECTION_STRING is set (the
 #             login of nfhotel_app, ADR-0011, passed by scripts/deploy-release.sh)
 #   web       needs --web and --api (the API token); --benchmark gives the benchmark token
+#   cloudflared  needs --cloudflared (the tunnel token of MIL-040, ADR-0028)
 #   --out     written: <folder>/settings.env (the settings without the secrets) and
 #             <folder>/<name> for each secret; the folder is 0700, so only its owner (the
 #             deploying user) and root read it on the host. The files are 0444 because the
@@ -25,6 +27,9 @@
 #             one file is mounted. A secret that is not set is written empty, which the
 #             applications read as not set.
 #   --list    print the names of the secrets of the service, one per line
+# Env:   NFHOTEL_ENVIRONMENT  when set, the settings of the API and the web application get
+#        ASPNETCORE_ENVIRONMENT with this value instead of their own (scripts/deploy-release.sh sets
+#        Production, MIL-040), so the VM never runs a release as Development
 # Exit:  0 written; 1 a settings file is missing or a value has a ; or quote in the connection
 #        string; 2 usage error
 # Needs: bash 4+
@@ -36,6 +41,7 @@ declare -A SECRETS=(
   [postgres]="POSTGRES_PASSWORD"
   [api]="ConnectionStrings__HotelDatabase Encryption__PassportKey Api__Token Staff__Token__SigningKey Staff__InitialManager__Password MarketAnalysisService__Token"
   [web]="Encryption__PassportKey Api__Token HolidayApi__ApiKey BenchmarkService__Token"
+  [cloudflared]="TUNNEL_TOKEN"
 )
 
 die() {
@@ -44,8 +50,8 @@ die() {
 }
 
 usage() {
-  echo "usage: write-secret-files.sh <postgres|api|web> --out <folder> [--postgres <file>] [--api <file>] [--web <file>] [--benchmark <file>]" >&2
-  echo "       write-secret-files.sh --list <postgres|api|web>" >&2
+  echo "usage: write-secret-files.sh <postgres|api|web|cloudflared> --out <folder> [--postgres <file>] [--api <file>] [--web <file>] [--benchmark <file>] [--cloudflared <file>]" >&2
+  echo "       write-secret-files.sh --list <postgres|api|web|cloudflared>" >&2
   exit 2
 }
 
@@ -72,7 +78,7 @@ fi
 service="${1:-}"
 [[ -n "$service" && -n "${SECRETS[$service]:-}" ]] || usage
 shift
-out="" postgres_env="" api_env="" web_env="" benchmark_env=""
+out="" postgres_env="" api_env="" web_env="" benchmark_env="" cloudflared_env=""
 while (($#)); do
   (($# >= 2)) || usage
   case "$1" in
@@ -81,6 +87,7 @@ while (($#)); do
     --api) api_env="$2" ;;
     --web) web_env="$2" ;;
     --benchmark) benchmark_env="$2" ;;
+    --cloudflared) cloudflared_env="$2" ;;
     *) usage ;;
   esac
   shift 2
@@ -128,6 +135,12 @@ case "$service" in
       values[BenchmarkService__Token]="$(setting "$benchmark_env" NFBENCH_API_TOKEN)"
     fi
     ;;
+  cloudflared)
+    need cloudflared "$cloudflared_env"
+    own="$cloudflared_env"
+    values[TUNNEL_TOKEN]="$(setting "$cloudflared_env" TUNNEL_TOKEN)"
+    [[ -n "${values[TUNNEL_TOKEN]}" ]] || die "TUNNEL_TOKEN in $cloudflared_env is empty"
+    ;;
 esac
 
 mkdir -p "$out"
@@ -143,5 +156,12 @@ done
 # The settings without the secrets: each line whose key is a secret is left out.
 pattern="^($(tr ' ' '|' <<<"${SECRETS[$service]}"))="
 grep -Ev "$pattern" "$own" | tr -d '\r' >"$out/.settings.env.new" || true
+# The deploy of a release decides the environment, not the settings file (MIL-040).
+if [[ -n "${NFHOTEL_ENVIRONMENT:-}" && ("$service" == api || "$service" == web) ]]; then
+  [[ "$NFHOTEL_ENVIRONMENT" =~ ^[A-Za-z]+$ ]] || die "NFHOTEL_ENVIRONMENT '$NFHOTEL_ENVIRONMENT' is not a name"
+  grep -v "^ASPNETCORE_ENVIRONMENT=" "$out/.settings.env.new" >"$out/.settings.env.tmp" || true
+  echo "ASPNETCORE_ENVIRONMENT=$NFHOTEL_ENVIRONMENT" >>"$out/.settings.env.tmp"
+  mv -f "$out/.settings.env.tmp" "$out/.settings.env.new"
+fi
 mv -f "$out/.settings.env.new" "$out/settings.env"
 echo "wrote the settings and $(wc -w <<<"${SECRETS[$service]}") secret files of $service to $out"

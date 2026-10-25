@@ -88,7 +88,7 @@ wait_for_status() {
 }
 
 compose_nginx() {
-  NGINX_ENV_FILE="$TMP_NATIVE/nginx.env" NFHOTEL_PROXY_NETWORK="$NETWORK" \
+  NGINX_ENV_FILE="$TMP_NATIVE/nginx.env" NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_API_NETWORK="$API_NETWORK" \
     NGINX_BIND=127.0.0.1 NGINX_HTTP_PORT="$PORT" NGINX_INTERNAL_PORT="$((PORT + 1))" \
     NGINX_HTTPS_PORT="$((PORT + 2))" NGINX_TLS_DIR="$TMP_NATIVE/tls" \
     docker compose --project-name "$NGINX_PROJECT" \

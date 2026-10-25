@@ -339,6 +339,7 @@ Each alert in Discord names what failed. Start with the first step below. Once t
 | Alert | Severity | Means | First step |
 | --- | --- | --- | --- |
 | `SiteDown` | critical | The site has not answered over HTTPS for 2 minutes | Open the site. Then run `sudo docker ps` on `nf-hotel`, and read the latest CD run ([CI-CD](CI-CD)) |
+| `PublicSiteDown` | critical | The public address has not answered from the internet for 3 minutes, after it had answered before | Follow [Public Access](Public-Access#when-the-public-site-is-down): tailnet name first, then the tunnel |
 | `RedirectBroken` | warning | Port 80 has not redirected to HTTPS for 5 minutes | `curl -sI http://nf-hotel.taildb84b5.ts.net/` must answer 301; check the nginx container |
 | `CertificateExpiresSoon` | warning | The certificate has fewer than 21 days left | `systemctl status nfhotel-cert-renew.service` and its journal (ADR-0009) |
 | `NoMetricsFromNfHotel` | critical | No data from the VM for 10 minutes | Is the VM up (`qm status 100` on the node)? Is Alloy running (`sudo docker ps \| grep alloy`)? |

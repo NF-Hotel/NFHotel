@@ -60,5 +60,17 @@ check
 
 check --extra && ko "accepted an unknown option" || ok "an unknown option is a usage error"
 
+# The tunnel of MIL-040 is checked when it runs, and its absence is no failure.
+echo "nfhotel-cloudflared-cloudflared-1" >"$W/ps/cloudflared"
+printf '%s\n' NFHOTEL_SETTINGS_HASH=abc TUNNEL_TOKEN=leaked >"$W/env/nfhotel-cloudflared-cloudflared-1"
+printf '%s\n' Database__MigrateOnStart=false >"$W/env/nfhotel-api-nfhotel-api-1"
+echo "Api__BaseUrl=http://nfhotel-api:8080" >"$W/env/nfhotel-web-nfhotel-web-1"
+check
+[[ $? == 1 ]] && grep -q "nfhotel-cloudflared-cloudflared-1 has secrets in its environment: TUNNEL_TOKEN" "$W/out" &&
+  ok "a tunnel token in the environment fails" || ko "tunnel: $(cat "$W/out")"
+echo "NFHOTEL_SETTINGS_HASH=abc" >"$W/env/nfhotel-cloudflared-cloudflared-1"
+check && grep -q "nfhotel-cloudflared-cloudflared-1 has no secret" "$W/out" &&
+  ok "the tunnel with its token as a file passes" || ko "tunnel clean: $(cat "$W/out")"
+
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))

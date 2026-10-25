@@ -40,6 +40,18 @@ scrape_configs:
       - target_label: __address__
         replacement: blackbox:9115
 
+  # The public address through Cloudflare Tunnel (MIL-040, ADR-0028), probed over the
+  # internet as a guest reaches it. PublicSiteDown alerts once it has answered at least once.
+  - job_name: public_site
+    metrics_path: /probe
+    params:
+      module: [https_2xx]
+    static_configs:
+      - targets:
+          - https://nfhotel.devmatiker.com/
+          - https://nfhotel.devmatiker.com/book
+    relabel_configs: *probe
+
   # Port 80 answers only with a redirect to HTTPS (MIL-017).
   - job_name: redirect
     metrics_path: /probe

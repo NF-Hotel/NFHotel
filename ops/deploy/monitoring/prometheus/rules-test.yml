@@ -30,6 +30,39 @@ tests:
                 The probe of https://nf-hotel.taildb84b5.ts.net/ has failed for 2 minutes. Runbook:
                 wiki page CI-CD, When a deploy does not start, and Host-Hardening.
 
+  - name: the public site down after it had answered fires PublicSiteDown
+    interval: 1m
+    input_series:
+      - series: 'probe_success{job="public_site", instance="https://nfhotel.devmatiker.com/"}'
+        values: "1 1 1 0 0 0 0 0"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: PublicSiteDown
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: PublicSiteDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: public_site
+              instance: https://nfhotel.devmatiker.com/
+            exp_annotations:
+              summary: "https://nfhotel.devmatiker.com/ does not answer from the internet"
+              description: >-
+                The public probe of https://nfhotel.devmatiker.com/ has failed for 3 minutes, so
+                guests cannot reach the site. Runbook: wiki page Public-Access, When the public
+                site is down.
+
+  - name: a public site that never answered (no tunnel yet) does not fire PublicSiteDown
+    interval: 1m
+    input_series:
+      - series: 'probe_success{job="public_site", instance="https://nfhotel.devmatiker.com/"}'
+        values: "0x20"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: PublicSiteDown
+        exp_alerts: []
+
   - name: a certificate with 20 days left fires CertificateExpiresSoon once for all its pages
     interval: 1m
     input_series:

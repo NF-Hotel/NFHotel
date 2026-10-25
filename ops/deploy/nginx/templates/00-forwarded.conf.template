@@ -1,0 +1,8 @@
+# The scheme the client used, sent as X-Forwarded-Proto by snippets/proxy.conf. The public listener of
+# public.conf.template (port 8082) gets the requests of Cloudflare Tunnel in plain HTTP inside the VM, but the
+# client spoke HTTPS to Cloudflare; with $scheme the web application would redirect it to HTTPS for ever
+# (Tls:Require, ADR-0006). Every other listener reports its own scheme.
+map $server_port $forwarded_proto {
+  8082 https;
+  default $scheme;
+}

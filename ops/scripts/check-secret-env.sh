@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Check that no secret is in the environment of the PostgreSQL, API and web containers (MIL-035
-# criterion 2, ADR-0024). It reads Config.Env with docker inspect and fails on a variable that
+# Check that no secret is in the environment of the PostgreSQL, API and web containers, and of the
+# tunnel when it runs (MIL-035 criterion 2, MIL-040, ADR-0024). It reads Config.Env with docker inspect and fails on a variable that
 # is one of the secrets of scripts/write-secret-files.sh, or whose name says it holds one
 # (password, token, secret, key), unless it names a file (_FILE) or is a setting of NOT_SECRET
 # below. Only the names are printed, never the values. Run by scripts/deploy-release.sh after
@@ -36,13 +36,17 @@ while (($#)); do
 done
 
 # The compose service of each container, and the service of write-secret-files.sh.
-declare -A SERVICES=(["postgres"]=postgres ["nfhotel-api"]=api ["nfhotel-web"]=web)
+declare -A SERVICES=(["postgres"]=postgres ["nfhotel-api"]=api ["nfhotel-web"]=web ["cloudflared"]=cloudflared)
 # Settings whose name sounds like a secret but whose value is not one.
 readonly NOT_SECRET=" Staff__InitialManager__MustChangePassword "
 found=0
-for compose_service in postgres nfhotel-api nfhotel-web; do
+for compose_service in postgres nfhotel-api nfhotel-web cloudflared; do
   mapfile -t names < <("$docker" ps --filter "label=com.docker.compose.service=$compose_service" \
     --format '{{.Names}}' | grep "^$prefix" || true)
+  # The tunnel is optional (MIL-040): it is checked when it runs.
+  if ((${#names[@]} == 0)) && [[ "$compose_service" == cloudflared ]]; then
+    continue
+  fi
   if ((${#names[@]} == 0)); then
     echo "FAIL  no running container of $compose_service${prefix:+ named $prefix*}"
     found=1

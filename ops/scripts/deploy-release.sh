@@ -201,8 +201,10 @@ apply() {
 
   api_database_settings || return 1
   echo "==> starting the services from the release images (no build)"
+  # A release always runs as Production, whatever the settings files say (MIL-040): no error page shows a
+  # stack trace to a guest of the public site.
   as_app env NFHOTEL_WEB_IMAGE="$3" NFHOTEL_API_IMAGE="$4" MARKET_ANALYSIS_IMAGE="$5" BENCHMARK_IMAGE="$6" \
-    bash "$(ops_rel)/scripts/deploy-services.sh" --no-build || return 1
+    NFHOTEL_ENVIRONMENT=Production bash "$(ops_rel)/scripts/deploy-services.sh" --no-build || return 1
   # No secret may be in the environment of a container (MIL-035, ADR-0024). A release from
   # before then has no check, and puts its secrets in the environment as it always did.
   if [[ -f "$app_dir/$(ops_rel)/scripts/check-secret-env.sh" ]]; then

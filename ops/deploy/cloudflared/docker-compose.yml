@@ -1,0 +1,45 @@
+# Cloudflare Tunnel: the public entrance of NF Hotel (MIL-040, ADR-0028). cloudflared makes an outbound connection
+# to Cloudflare and forwards the requests for the public host name to the public listener of nginx
+# (http://nginx:8082 on the proxy network). It publishes no port, so nothing is opened in the home router or on
+# the VM. The public host name and that address are set on the tunnel in the Cloudflare dashboard (wiki page
+# Public-Access). Started by scripts/deploy-services.sh only when cloudflared.env exists.
+name: nfhotel-cloudflared
+
+services:
+  cloudflared:
+    # cloudflared 2025.9.1; Dependabot does not see this line, so bump it by hand with the digest.
+    image: cloudflare/cloudflared:2025.9.1@sha256:4604b477520dc8322af5427da68b44f0bf814938e9d2e4814f2249ee4b03ffdf
+    restart: unless-stopped
+    # The token is a secret file (ADR-0024): scripts/write-secret-files.sh writes it from cloudflared.env, and it
+    # never becomes an environment variable. The metrics stay on the loopback of the container, for the health check.
+    command: [tunnel, --metrics, "127.0.0.1:20241", run, --token-file, /run/secrets/TUNNEL_TOKEN]
+    secrets:
+      - TUNNEL_TOKEN
+    environment:
+      # A hash of the secret file, set by scripts/deploy-services.sh, so a new token recreates the container.
+      NFHOTEL_SETTINGS_HASH: ${NFHOTEL_SETTINGS_HASH:-}
+    # Hardening as the other services (MIL-023 task 2): the image runs as its own user and needs no capability.
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    mem_limit: 256m
+    cpus: 1
+    pids_limit: 128
+    healthcheck:
+      test: [CMD, cloudflared, tunnel, --metrics, "127.0.0.1:20241", ready]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 20s
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
+    external: true
+
+# Written by scripts/write-secret-files.sh into CLOUDFLARED_SECRETS.
+secrets:
+  TUNNEL_TOKEN:
+    file: ${CLOUDFLARED_SECRETS:-secrets}/TUNNEL_TOKEN
