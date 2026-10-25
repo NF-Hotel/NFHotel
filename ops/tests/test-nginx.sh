@@ -100,15 +100,17 @@ mkdir -p "$W/web"
 printf 'server { listen 8080; location / { return 200 "$http_x_forwarded_proto $http_x_real_ip"; } }' >"$W/web/default.conf"
 docker run -d --name nfhotel-web --network t-ngnet -v "$W_HOST/web:/etc/nginx/conf.d:ro" "$NGINX" >/dev/null
 sleep 2
-public() { docker run --rm --network t-ngnet "$CURL" -s -o /dev/null -w '%{http_code}' "http://t-nginx:8082$1"; }
+# The public listener speaks plain HTTP on purpose: in production only cloudflared reaches it, inside the VM.
+readonly PUBLIC=http://t-nginx:8082 # NOSONAR: an internal Docker hop, as in production (ADR-0028)
+public() { docker run --rm --network t-ngnet "$CURL" -s -o /dev/null -w '%{http_code}' "$PUBLIC$1"; }
 check "the public site reaches the web application as HTTPS, with the client's address" "https 203.0.113.7" \
-  "$(docker run --rm --network t-ngnet "$CURL" -s -H 'CF-Connecting-IP: 203.0.113.7' http://t-nginx:8082/book)"
+  "$(docker run --rm --network t-ngnet "$CURL" -s -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC/book")"
 check "the tailnet server still reports its own scheme" "https" \
   "$(docker run --rm --network t-ngnet "$CURL" -sk https://t-nginx/ | cut -d' ' -f1)"
 check "the back office is not public" 404 "$(public /admin/login)"
 check "the back office root is not public" 404 "$(public /admin)"
 check "the mobile sign-in route reaches the API" api-reached \
-  "$(docker run --rm --network t-ngnet "$CURL" -s -X POST http://t-nginx:8082/mobile-api/api/auth/login)"
+  "$(docker run --rm --network t-ngnet "$CURL" -s -X POST "$PUBLIC/mobile-api/api/auth/login")"
 check "the mobile rooms route reaches the API" 200 "$(public /mobile-api/api/rooms/3)"
 check "another API route is not public" 404 "$(public /mobile-api/api/bookings)"
 check "the API itself is not on the public site" 404 "$(public /mobile-api/)"
