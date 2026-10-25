@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [4537604] |
 
 ---
 
@@ -57,3 +57,4 @@ Go. MIL-040 is complete; this pull request closes #325.
 [RC-218]: rc-218-mil-040-code.md
 [ADR-0028]: ../../adr/adr-0028-public-access-through-cloudflare-tunnel.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[4537604]: https://github.com/NF-Hotel/NFHotel/commit/45376044ae91bb1584a91d84c8446d61b661e4ae
