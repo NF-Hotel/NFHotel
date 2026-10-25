@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-035, which S01 accepted in chat on 2026-10-24 | [9090645] |
+| 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-035, which S01 accepted in chat on 2026-10-24 | [9090645] |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 7: the limit is accepted; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -42,7 +43,7 @@ We follow option 2.
 4. **Modes.** Each file is 0444. The container users (`app`, `postgres`) are not `nfhotel`, and Compose without Swarm cannot change the owner of a mounted secret, so the file must be readable by others; the 0700 folder keeps everyone but `nfhotel` and root out on the host, and inside the container only the one file is mounted.
 5. **Rotation reaches the container.** Compose does not recreate a container when only a secret file changed, so the deploy puts a hash of the secret files of the API and the web application in their environment (`NFHOTEL_SETTINGS_HASH`), the same way the proxy has its configuration hash. A digest of high-entropy values reveals none of them.
 6. **A check.** `scripts/check-secret-env.sh` reads `Config.Env` of the three containers after every deploy and at the end of every throwaway stack, and fails on a name of the list or a name that says password, token, secret or key (except `*_FILE`). It prints names, never values. A failure in production rolls the release back.
-7. **Not rotated by the drill:** the passport key. It encrypts the passport numbers in the database, and the application holds one key, so a new key needs every stored value re-encrypted first. That needs a key ring in `AesGcmStringEncryptor` and a re-encryption command, which is new work outside MIL-035.
+7. **Not rotated by the drill:** the passport key. It encrypts the passport numbers in the database, and the application holds one key, so a new key needs every stored value re-encrypted first. That needs a key ring in `AesGcmStringEncryptor` and a re-encryption command, which is new work outside MIL-035. **S01 accepted this limit on 2026-10-25:** a half-done re-encryption loses passport numbers, which weighs more than the risk of a key that is already out of the environment and backed up encrypted. It is decided again when the hotel stores real passport numbers.
 
 ## Consequences
 

@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-038, which S01 accepted in chat on 2026-10-24 | [bfaa680] |
+| 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-038, which S01 accepted in chat on 2026-10-24 | [bfaa680] |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 4: the work is deferred until a trigger; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -34,7 +35,7 @@ Options considered:
 1. **The tailnet policy follows option 2.** It lives in `ops/tailnet/policy.hujson` with `tests` that state what must stay true: the CD runner reaches `nf-hotel` on SSH, the monitoring LXC reaches `nf-hotel` for its probes, `nf-hotel` reaches the LXC for its metrics and logs, and nothing else reaches the VM's SSH. A pull request runs the test step; a merge to main applies it. The OAuth client has the scope `policy_file` only, and its id and secret are repository secrets.
 2. **The first policy in git is the policy that is live,** exported from the console by S01, unchanged. *Why:* a policy written from memory could lock the CD or the team out on the first merge; tightening `autogroup:member` is a separate, reviewed change after that.
 3. **The Proxmox definitions are recorded, not applied.** `ops/proxmox/vm-100.conf` and `ops/proxmox/lxc-102.conf` hold the output of `qm config 100` and `pct config 102`, without the volatile lines (the `digest`, the MAC addresses). A script compares them with the node and reports a difference; S03 runs it, because reading the node needs its root login. *Why not apply (option 3):* a token that can change VMs can change every VM of the node, and the node is S03's.
-4. **What waits for whom.** The policy needs S01 to export it and to create the OAuth client; the definitions need S03 to run `qm config` and `pct config` once. Until then this ADR holds, and nothing is applied.
+4. **What waits for whom.** The policy needs S01 to export it and to create the OAuth client; the definitions need S03 to run `qm config` and `pct config` once. Until then this ADR holds, and nothing is applied. **On 2026-10-25 S01 deferred both parts:** with one administrator and a policy that changes a few times a year, and a VM and an LXC that have not changed, they cost more to keep than the drift they would find. They are built when the tailnet gets a second administrator, when a policy change causes an incident, or when the node gets more machines of NF Hotel.
 
 ## Consequences
 

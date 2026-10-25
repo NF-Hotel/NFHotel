@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-037, which S01 accepted in chat on 2026-10-24 | [0a76a9e] |
+| 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-037, which S01 accepted in chat on 2026-10-24 | [0a76a9e] |
+| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 5: the rebuild drill is postponed and the proof rests on the drilled parts; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -46,7 +47,7 @@ We follow option 2.
    - *The legion laptop as the only off-VM copy.* If the VM and the laptop are lost together, the data is lost. A second off-site target is the next step if the hotel goes live.
    - *The private age key of S03.* Every backup is encrypted to it; if it is lost, no backup can be read. S03 keeps it offline, as ADR-0008 says; a second offline copy in another place is part of the runbook.
    - *The monitoring LXC.* Its secrets are the Discord webhook, the Healthchecks.io ping address and the Grafana password, all re-issued by their providers in minutes, and its history (14 days of logs, 30 days of metrics) is accepted as lost. It is rebuilt from `create-monitoring-lxc.sh` and `deploy-monitoring.sh`, not backed up.
-5. **The proof.** A drill rebuilds the service on a throwaway VM from the runbook and the latest off-VM backup, records the times in an RC, and removes the VM. It needs S03 at the node, because creating a VM needs the root login of Proxmox.
+5. **The proof.** A drill rebuilds the service on a throwaway VM from the runbook and the latest off-VM backup, records the times in an RC, and removes the VM. It needs S03 at the node, because creating a VM needs the root login of Proxmox. **On 2026-10-25 S01 postponed the drill** until the hotel goes live or the node is replaced: every step is proven on its own (the VM build, the drilled database restore, the settings archive in CI, the daily CD), so only the whole sequence and its time stay unproven, and the RTO is a target until then.
 
 ## Consequences
 
