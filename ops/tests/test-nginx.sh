@@ -102,7 +102,9 @@ docker run -d --name nfhotel-web --network t-ngnet -v "$W_HOST/web:/etc/nginx/co
 sleep 2
 # The public listener speaks plain HTTP on purpose: in production only cloudflared reaches it, inside the VM.
 readonly PUBLIC=http://t-nginx:8082 # NOSONAR: an internal Docker hop, as in production (ADR-0028)
-public() { docker run --rm --network t-ngnet "$CURL" -s -o /dev/null -w '%{http_code}' "$PUBLIC$1"; } # NOSONAR: see PUBLIC
+public() {
+  docker run --rm --network t-ngnet "$CURL" -s -o /dev/null -w '%{http_code}' "$PUBLIC$1" # NOSONAR: see PUBLIC
+}
 check "the public site reaches the web application as HTTPS, with the client's address" "https 203.0.113.7" \
   "$(docker run --rm --network t-ngnet "$CURL" -s -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC/book")"
 check "the tailnet server still reports its own scheme" "https" \
