@@ -78,7 +78,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('release-scan/nfhotel-web.sarif') != ''
-      uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
+      uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee  # v4.39.0
       with:
         sarif_file: release-scan/nfhotel-web.sarif
         category: trivy-nfhotel-web
@@ -86,7 +86,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('release-scan/nfhotel-api.sarif') != ''
-      uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
+      uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee  # v4.39.0
       with:
         sarif_file: release-scan/nfhotel-api.sarif
         category: trivy-nfhotel-api
@@ -94,7 +94,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('release-scan/market-analysis.sarif') != ''
-      uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
+      uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee  # v4.39.0
       with:
         sarif_file: release-scan/market-analysis.sarif
         category: trivy-market-analysis
@@ -102,7 +102,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('release-scan/benchmark.sarif') != ''
-      uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
+      uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee  # v4.39.0
       with:
         sarif_file: release-scan/benchmark.sarif
         category: trivy-benchmark
