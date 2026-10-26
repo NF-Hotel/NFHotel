@@ -1,4 +1,5 @@
 - [Home](Home)
+- [DevOps Lifecycle](DevOps-Lifecycle)
 - [Local Development Deploy](Local-Development-Deploy)
 - [Proxmox Deployment](Proxmox-Deployment)
 - [CI-CD](CI-CD)
