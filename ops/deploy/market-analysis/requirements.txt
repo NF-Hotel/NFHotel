@@ -1,0 +1,6 @@
+# Security fixes for the Python packages of the frozen market-analysis image (ADR-0030).
+# Each line replaces the version in the image; add a package here, with the hash of its
+# wheel, when the scan reports a fixable finding in it. Dependabot proposes newer versions.
+# GHSA-6q48-6c7w-9gw2: the image has certifi 2026.6.17.
+certifi==2026.10.19 \
+    --hash=sha256:42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b

@@ -160,7 +160,7 @@ The firewall then lets no SSH in from anywhere. Use the console:
 DSA-001 risk R11 asks for images that are rebuilt with the latest security fixes, even when no code changes. Plan, from the first working day of December 2026, each month:
 
 1. **Base images.** Merge the open Dependabot pull requests that move the pinned digests (`Images:` in this repository: nginx, PostgreSQL 16, Ollama and the benchmark base). The .NET images of NFHotel (`mcr.microsoft.com/dotnet/aspnet:10.0`) follow a tag, so a rebuild takes the latest patch of .NET 10 by itself.
-2. **Rebuild.** Run `NF Hotel Release` on the head of `main` of NF-Hotel/NFHotel. Today it starts only after `NF Hotel CI` on `main`, so a rebuild needs a merge to `main`. A `workflow_dispatch` and a monthly `schedule` trigger on `release.yaml` in NFHotel would remove that need (follow-up in NF-Hotel/NFHotel). The market-analysis image is frozen (ADR-0500) and is not rebuilt.
+2. **Rebuild.** Run `NF Hotel Release` on the head of `main` of NF-Hotel/NFHotel. Today it starts only after `NF Hotel CI` on `main`, so a rebuild needs a merge to `main`. A `workflow_dispatch` and a monthly `schedule` trigger on `release.yaml` in NFHotel would remove that need (follow-up in NF-Hotel/NFHotel). The market-analysis image is rebuilt too, as a patch layer on its frozen base (ADR-0030).
 3. **Gate.** The scan gate of MIL-022 blocks a release with a critical finding, or a high one with a fix, so a rebuild that still has one is fixed before the deploy.
 4. **Deploy** through CD with the approval, as any release.
 5. **Clean up** on the VM: `docker image prune --all --filter until=720h`. The deploy log keeps the digests of the previous release, so a rollback pulls it again if it is gone.

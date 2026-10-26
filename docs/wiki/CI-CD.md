@@ -10,7 +10,7 @@ One repository holds it all (ADR-0016): the application, and its operations unde
 2. **Merge to `main`.** CI runs again on `main`. When it is green, `NF Hotel Release` in NFHotel calls the `release-images` action. The action builds four images from that exact commit, with the compose files and scripts of `ops/` in it, and pushes them to the GitHub Container Registry:
    - `ghcr.io/nf-hotel/nfhotel-web`
    - `ghcr.io/nf-hotel/nfhotel-api`
-   - `ghcr.io/nf-hotel/market-analysis`
+   - `ghcr.io/nf-hotel/market-analysis`, a patch layer on its frozen base (see "The market-analysis image" below)
    - `ghcr.io/nf-hotel/benchmark`
 
    Each image is tagged `sha-<NFHotel commit>` and labelled with that commit (`org.opencontainers.image.revision`). The run summary and the artifact `release-manifest` (`release.json`) hold the commit, the operations commit (`devops_sha`, the same commit since ADR-0016), one digest per image and the hash of the migration script.
@@ -51,6 +51,18 @@ A rollback changes the images and the compose files, not the database. Migration
 1. Change it in `ops/` or `.github/actions/` by a pull request; the CI (`NF Hotel Ops CI` included) must be green (CODEOWNERS asks codemikemike for review of `ops/` and `.github/`; no approval is required, ADR-0019).
 2. The next release carries it: the workflows read the actions from the same commit, so there is no pin to move.
 3. A script that runs as root on the VM (`deploy-release.sh`, `backup-database.sh`, the backup service and timer) takes effect with the next approved CD. Its first step, `nfhotel-deploy update <sha>`, installs them from the release commit, and only when that commit is on `main` (ADR-0018). The replaced copy is kept as `<file>.previous`, and the release log (`nfhotel-deploy status`) shows the old and new SHA-256. Nobody installs them by hand after the first setup below.
+
+## The market-analysis image
+
+Its source repository was deleted, so the application cannot be built again (ADR-0500). The release builds a patch layer on the last good digest instead (ADR-0030): the Debian security updates, and the Python packages pinned in `ops/deploy/market-analysis/requirements.txt`. The application files stay those of the base; the release check proves it with `ops/tests/check-patch-layer.sh`. The image is scanned, attested and verified like the other three.
+
+When the scan reports a finding in it:
+
+- **A Debian package with a fix:** the next release installs it; merge any change to `main`, or re-run the release.
+- **A Python package with a fix:** add the package to `requirements.txt` with the fixed version and the SHA-256 of its wheel (from `https://pypi.org/pypi/<package>/<version>/json`), in a pull request. The release check shows that it builds and that the application files are unchanged. Dependabot proposes newer versions of the pinned packages.
+- **No fix yet, or the fix breaks the service:** accept it for at most 30 days in `ops/security/trivyignore.yaml`, with a reason, in a reviewed pull request.
+
+The base digest must never be deleted from GHCR: without it the image cannot be built at all.
 
 ## Back up and restore
 

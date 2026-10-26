@@ -139,8 +139,9 @@ grep -qx "devops_sha=$OPS" out && ok "action-ref writes the SHA of the ref" || k
 ACTION_REF=main expect 1 "action-ref refuses a branch" ref
 ACTION_REF=v1 expect 1 "action-ref refuses a tag" ref
 
-# verify (MIL-022 task 3): both attestations per built image, the frozen one by its pin.
-FROZEN="$(tr -d '[:space:]' </src/deploy/market-analysis/frozen-image)"
+# verify (MIL-022 task 3): both attestations for each of the four images; since ADR-0030
+# market-analysis is built by the release too, so no image is accepted by a pin alone.
+ANALYSIS_OK="ghcr.io/nf-hotel/market-analysis@sha256:$D"
 B="$(printf 'b%.0s' $(seq 64))"
 E="$(printf 'e%.0s' $(seq 64))"
 verify_with() {
@@ -148,16 +149,17 @@ verify_with() {
     ANALYSIS="$2" BENCHMARK="ghcr.io/nf-hotel/benchmark@sha256:$D" GH_TOKEN=t FAKE_GH_LOG="$W/gh.log" step verify
 }
 : >gh.log
-expect 0 "verify accepts attested digests and the frozen pin" verify_with "$D" "$FROZEN"
-[[ "$(grep -c -- '--signer-workflow NF-Hotel/NFHotel/.github/workflows/release.yaml' gh.log)" == 6 ]] &&
-  ok "verify checks provenance and SBOM of the three built images, signed by the release workflow" ||
+expect 0 "verify accepts attested digests" verify_with "$D" "$ANALYSIS_OK"
+[[ "$(grep -c -- '--signer-workflow NF-Hotel/NFHotel/.github/workflows/release.yaml' gh.log)" == 8 ]] &&
+  ok "verify checks provenance and SBOM of the four images, signed by the release workflow" ||
   ko "verify calls ($(wc -l <gh.log))"
-grep -q "market-analysis" gh.log && ko "verify does not query the frozen image" || ok "verify does not query the frozen image"
-expect 1 "verify refuses a digest without any attestation" verify_with "$B" "$FROZEN"
-expect 1 "verify refuses a digest with provenance but no SBOM" verify_with "$E" "$FROZEN"
-expect 1 "verify refuses a market-analysis digest other than the frozen pin" \
-  verify_with "$D" "ghcr.io/nf-hotel/market-analysis@sha256:$D"
-expect 1 "verify refuses a missing digest" verify_with "" "$FROZEN"
+grep -q "market-analysis" gh.log && ok "verify checks the attestations of market-analysis" ||
+  ko "verify does not query market-analysis"
+expect 1 "verify refuses a digest without any attestation" verify_with "$B" "$ANALYSIS_OK"
+expect 1 "verify refuses a digest with provenance but no SBOM" verify_with "$E" "$ANALYSIS_OK"
+expect 1 "verify refuses an unattested market-analysis digest" \
+  verify_with "$D" "ghcr.io/nf-hotel/market-analysis@sha256:$B"
+expect 1 "verify refuses a missing digest" verify_with "" "$ANALYSIS_OK"
 
 # Migrations by CD (MIL-022 task 6): the manifest names the script by its SHA-256, the
 # file must match it, and deploy runs migrate first and deploys only when it succeeded.

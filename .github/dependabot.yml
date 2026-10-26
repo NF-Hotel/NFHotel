@@ -23,8 +23,8 @@ updates:
       prefix: "Packages:"
 
   - package-ecosystem: docker
-    # The application images, and the benchmark image. Not ops/deploy/market-analysis: that
-    # image is frozen and not built (ADR-0500).
+    # The application images, and the benchmark image. Not ops/deploy/market-analysis: its
+    # base is the frozen digest of ADR-0500, which has no newer version (ADR-0030).
     directories:
       - /
       - /ops/deploy/benchmark
@@ -34,6 +34,17 @@ updates:
       default-days: 7
     commit-message:
       prefix: "Images:"
+
+  - package-ecosystem: pip
+    # The security pins of the patch layer on the frozen market-analysis image (ADR-0030):
+    # requirements.txt replaces vulnerable packages of the image with hashed versions.
+    directory: /ops/deploy/market-analysis
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "Packages:"
 
   - package-ecosystem: docker-compose
     directories:

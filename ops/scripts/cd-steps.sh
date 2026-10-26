@@ -13,9 +13,8 @@
 #                  SHA-256, which is written as migrations
 #   verify         check the build provenance and the SBOM attestation of every image
 #                  digest with gh attestation verify, signed by the release workflow of
-#                  this repository (MIL-022 task 3); a frozen image (ADR-0500) is
-#                  accepted only by its exact pinned digest. Any other digest without
-#                  both attestations stops the deploy before the tailnet is joined
+#                  this repository (MIL-022 task 3). A digest without both
+#                  attestations stops the deploy before the tailnet is joined
 #   gate           wait until every check of the release commit has finished, and stop
 #                  unless all of them are green: success, skipped or neutral (ADR-0021).
 #                  The checks are those GitHub records on the commit (the workflows of
@@ -109,7 +108,7 @@ read_manifest() {
 }
 
 verify() {
-  local name var ref frozen logged_in=""
+  local name var ref logged_in=""
   [[ -n "${GITHUB_REPOSITORY:-}" ]] || fail "GITHUB_REPOSITORY is not set"
   local signer="$GITHUB_REPOSITORY/.github/workflows/release.yaml"
   for name in "${IMAGE_NAMES[@]}"; do
@@ -121,13 +120,6 @@ verify() {
     esac
     ref="${!var:-}"
     [[ "$ref" =~ ^ghcr\.io/nf-hotel/${name}@sha256:[0-9a-f]{64}$ ]] || fail "no checked digest for $name"
-    frozen="$ROOT/deploy/$name/frozen-image"
-    if [[ -f "$frozen" ]]; then
-      [[ "$ref" == "$(tr -d '[:space:]' <"$frozen")" ]] ||
-        fail "$name is frozen (ADR-0500), but the release names $ref, not the pinned digest"
-      echo "==> $name is frozen at its pinned digest (ADR-0500): not built by a release, so no attestation"
-      continue
-    fi
     if [[ -z "${logged_in:-}" ]]; then
       # The packages are private: gh reads the digest through the Docker credentials.
       docker login ghcr.io --username "${GITHUB_ACTOR:-x}" --password-stdin <<<"${GH_TOKEN:?GH_TOKEN is not set}" >/dev/null ||
