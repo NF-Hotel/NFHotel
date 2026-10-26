@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [3b0def6] |
 
 ---
 
@@ -44,3 +44,4 @@ None.
 [RC-224]: rc-224-mil-042-code.md
 [ADR-0030]: ../../adr/adr-0030-patch-layer-on-frozen-market-analysis-image.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[3b0def6]: https://github.com/NF-Hotel/NFHotel/commit/3b0def68b650ac2b4c38d68f9089b09cdf5722b2
