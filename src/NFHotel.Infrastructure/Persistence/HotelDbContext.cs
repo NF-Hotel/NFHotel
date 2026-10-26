@@ -55,6 +55,9 @@ public sealed class HotelDbContext : DbContext
     /// <summary>The benchmark runs that the benchmark service delivered (ADR-0013).</summary>
     public DbSet<BenchmarkRun> BenchmarkRuns => Set<BenchmarkRun>();
 
+    /// <summary>The records of the benchmark runs that a Manager started (ADR-0031).</summary>
+    public DbSet<BenchmarkRequest> BenchmarkRequests => Set<BenchmarkRequest>();
+
     /// <summary>The default AI model per purpose (ADR-0014).</summary>
     public DbSet<AiDefault> AiDefaults => Set<AiDefault>();
 
@@ -85,6 +88,7 @@ public sealed class HotelDbContext : DbContext
         modelBuilder.ApplyConfiguration(new RoomConfiguration());
         modelBuilder.ApplyConfiguration(new StaffConfiguration());
         modelBuilder.ApplyConfiguration(new BenchmarkRunConfiguration());
+        modelBuilder.ApplyConfiguration(new BenchmarkRequestConfiguration());
         modelBuilder.ApplyConfiguration(new AiDefaultConfiguration());
         modelBuilder.ApplyConfiguration(new MarketAnalysisRunConfiguration());
         modelBuilder.ApplyConfiguration(new BookingMarketDetailConfiguration());

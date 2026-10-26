@@ -293,6 +293,8 @@ public sealed class ServiceWorld
 
     public InMemoryAiDefaultRepository AiDefaults { get; } = new();
 
+    public InMemoryBenchmarkRequestRepository BenchmarkRequests { get; } = new();
+
     public InMemoryMarketAnalysisRunRepository MarketAnalysisRuns { get; } = new();
 
     public FakeMarketAnalysisServiceClient MarketAnalysisClient { get; } = new();
@@ -327,6 +329,8 @@ public sealed class ServiceWorld
     public BenchmarkService BenchmarkService() => new(Benchmarks, BenchmarkQueries, UnitOfWork);
 
     public AiDefaultService AiDefaultService() => new(AiDefaults, UnitOfWork, Clock);
+
+    public BenchmarkRequestService BenchmarkRequestService() => new(BenchmarkRequests, UnitOfWork, Clock);
 
     public MarketAnalysisService MarketAnalysisService() => new(MarketAnalysisTracker, MarketAnalysisLauncher, MarketAnalysisRuns);
 

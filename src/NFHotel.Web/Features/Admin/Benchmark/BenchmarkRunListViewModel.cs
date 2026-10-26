@@ -8,26 +8,40 @@ using NFHotel.Web.Common;
 namespace NFHotel.Web.Features.Admin.Benchmark;
 
 /// <summary>
-/// State of the page of stored benchmark runs (ADR-0013): the list, the run that is open and the answer of one request.
-/// The page holds only markup and binding.
+/// State of the page of stored benchmark runs (ADR-0013): the list, the run that is open and the answer of one request,
+/// and the started runs that have no stored result: queued, running, failed or interrupted (ADR-0031). The page holds
+/// only markup and binding.
 /// </summary>
 public sealed class BenchmarkRunListViewModel
 {
     private readonly IUseCaseRunner<IBenchmarkService> _benchmark;
     private readonly IUseCaseRunner<IAiDefaultService> _aiDefaults;
+    private readonly BenchmarkRunTracker _tracker;
     private readonly Dictionary<string, string> _drafts = [];
 
     /// <summary>Creates the view model.</summary>
     /// <param name="benchmark">Runs the use cases with the staff token of the signed-in user.</param>
     /// <param name="aiDefaults">Reads and sets the default AI models with the same token.</param>
-    public BenchmarkRunListViewModel(IUseCaseRunner<IBenchmarkService> benchmark, IUseCaseRunner<IAiDefaultService> aiDefaults)
+    /// <param name="tracker">Reads the started runs and brings them up to date with the benchmark service.</param>
+    public BenchmarkRunListViewModel(
+        IUseCaseRunner<IBenchmarkService> benchmark,
+        IUseCaseRunner<IAiDefaultService> aiDefaults,
+        BenchmarkRunTracker tracker)
     {
         ArgumentNullException.ThrowIfNull(benchmark);
         ArgumentNullException.ThrowIfNull(aiDefaults);
+        ArgumentNullException.ThrowIfNull(tracker);
 
         _benchmark = benchmark;
         _aiDefaults = aiDefaults;
+        _tracker = tracker;
     }
+
+    /// <summary>
+    /// The started runs of the last days that have no stored result yet, newest first: queued, running, failed or
+    /// interrupted. Empty when they could not be read; the stored runs are shown anyway.
+    /// </summary>
+    public IReadOnlyList<BenchmarkRequestDto> StartedRuns { get; private set; } = [];
 
     /// <summary>The default AI models that are set, by purpose.</summary>
     public IReadOnlyList<AiDefaultDto> Defaults { get; private set; } = [];
@@ -171,6 +185,9 @@ public sealed class BenchmarkRunListViewModel
             Errors = [];
             Runs = result.Value;
             await LoadDefaultsAsync(cancellationToken).ConfigureAwait(false);
+
+            var started = await _tracker.LoadRecentAsync(cancellationToken).ConfigureAwait(false);
+            StartedRuns = started.IsSuccess ? started.Value : [];
         }
         finally
         {

@@ -42,7 +42,7 @@ echo "nfhotel-api-nfhotel-api-1" >"$W/ps/nfhotel-api"
 printf '%s\n' nfhotel-web-nfhotel-web-1 nfhotel-e2e-nfhotel-web-nfhotel-web-1 >"$W/ps/nfhotel-web"
 printf '%s\n' POSTGRES_USER=nfhotel POSTGRES_PASSWORD_FILE=/run/secrets/POSTGRES_PASSWORD PG_SHA256=abc >"$W/env/nfhotel-postgres-postgres-1"
 printf '%s\n' Database__MigrateOnStart=false APP_UID=1654 Staff__InitialManager__MustChangePassword=true >"$W/env/nfhotel-api-nfhotel-api-1"
-printf '%s\n' Api__BaseUrl=http://nfhotel-api:8080 >"$W/env/nfhotel-web-nfhotel-web-1"
+printf '%s\n' Api__BaseUrl=http://nfhotel-api:8080 DataProtection__KeysPath=/app/keys >"$W/env/nfhotel-web-nfhotel-web-1"
 check() { bash "$OPS/scripts/check-secret-env.sh" "$@" >"$W/out" 2>&1; }
 
 check --name nfhotel-e2e && ko "passed without the containers of the prefix" || ok "a missing service fails"

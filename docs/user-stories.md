@@ -11,10 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-012 Go | [469ff7a] |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.06 to US-001.08, the hotel staff stories (MIL-007) | [a29c54a] |
-| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added US-001.09, the staff sign-in story (MIL-016) | [1593b34] |
 | 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.10 and US-001.11, the password and account stories (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | US-001.04 gains a criterion: a run that a restart stops is shown as interrupted and can be started again (MIL-043, ADR-0031) | [43bcf70] |
 
 ---
 
@@ -92,6 +90,7 @@ model choice rests on measured results.
 - Given the Proxmox VM exists, when the service is started with Docker, then it runs as a container on that VM and is reachable only through the nginx proxy.
 - Given the service runs, when a benchmark is started, then response time and answer quality are measured per model and kept as results.
 - Given the local model servers (Ollama or LM Studio) are not reachable, when a benchmark is started, then the service reports which one is unavailable and does not hang.
+- Given a started run, when the benchmark service restarts before the run ends, then the back office shows the run as interrupted, with its models and start time, and offers to start the same choice again.
 
 | Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
 | --- | --- | --- | --- | --- |
@@ -226,7 +225,5 @@ for US-001.02.
 [SA-001]: ./stakeholder-analysis.md
 [fc8ec78]: https://github.com/NF-Hotel/NFHotel/commit/fc8ec78b24b805b10d5c056b19ed2785697ee8ff
 [MIL-016]: ./milestones/mil-016-backoffice-login.md
-[469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa
-[a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d
-[1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
+[43bcf70]: https://github.com/NF-Hotel/NFHotel/commit/43bcf70046d2f2537672030b83f39f8b3fda4551

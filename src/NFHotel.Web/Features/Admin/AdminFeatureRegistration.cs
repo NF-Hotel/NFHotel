@@ -47,6 +47,7 @@ public static class AdminFeatureRegistration
 
         services.AddScoped<BenchmarkRunListViewModel>();
         services.AddScoped<BenchmarkAnalysisViewModel>();
+        services.AddScoped<BenchmarkRunTracker>();
         services.AddScoped<BenchmarkStartViewModel>();
         services.AddScoped<BenchmarkModelsViewModel>();
 

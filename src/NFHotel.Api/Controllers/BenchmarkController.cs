@@ -5,12 +5,15 @@ using NFHotel.Api.Security;
 using NFHotel.Application.Dto.Benchmark;
 using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Staff;
+using NFHotel.Infrastructure.Security;
 
 namespace NFHotel.Api.Controllers;
 
 /// <summary>
 /// The benchmark runs (ADR-0013). The benchmark service posts a finished run with the service token only; a Manager reads
-/// the stored runs with a staff token that holds <see cref="Permissions.BenchmarkView"/>.
+/// the stored runs with a staff token that holds <see cref="Permissions.BenchmarkView"/>. The web application records
+/// the runs a Manager starts, and their states, with a staff token that holds <see cref="Permissions.BenchmarkRun"/>
+/// (ADR-0031).
 /// </summary>
 [ApiController]
 [Route(ApiRoutes.Benchmark)]
@@ -18,16 +21,20 @@ public sealed class BenchmarkController : ControllerBase
 {
     private readonly IBenchmarkIntake _intake;
     private readonly IBenchmarkService _benchmark;
+    private readonly IBenchmarkRequestService _requests;
 
     /// <summary>Creates the controller.</summary>
     /// <param name="intake">Receives a delivered run.</param>
     /// <param name="benchmark">Reads the stored runs.</param>
-    public BenchmarkController(IBenchmarkIntake intake, IBenchmarkService benchmark)
+    /// <param name="requests">Records the started runs.</param>
+    public BenchmarkController(IBenchmarkIntake intake, IBenchmarkService benchmark, IBenchmarkRequestService requests)
     {
         ArgumentNullException.ThrowIfNull(intake);
         ArgumentNullException.ThrowIfNull(benchmark);
+        ArgumentNullException.ThrowIfNull(requests);
         _intake = intake;
         _benchmark = benchmark;
+        _requests = requests;
     }
 
     /// <summary>
@@ -78,6 +85,41 @@ public sealed class BenchmarkController : ControllerBase
     [RequiresPermission(Permissions.BenchmarkDelete)]
     public async Task<IActionResult> DeleteRunAsync(Guid runId, CancellationToken cancellationToken) =>
         this.ToResponse(await _benchmark.DeleteRunAsync(runId, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Lists the started runs of the last days that are not done, newest first.</summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The records.</returns>
+    [HttpGet(ApiRoutes.BenchmarkRequests)]
+    [RequiresPermission(Permissions.BenchmarkView)]
+    public async Task<IActionResult> GetRequestsAsync(CancellationToken cancellationToken) =>
+        this.ToResponse(await _requests.GetRecentAsync(cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Records a run the benchmark service has just accepted; the same run id again changes nothing.</summary>
+    /// <param name="request">The run id and the choice.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The record, or the codes that say what is wrong.</returns>
+    [HttpPost(ApiRoutes.BenchmarkRequests)]
+    [RequiresPermission(Permissions.BenchmarkRun)]
+    public async Task<IActionResult> RecordRequestAsync(
+        [FromBody] RecordBenchmarkRequest request,
+        CancellationToken cancellationToken) =>
+        this.ToResponse(
+            await _requests
+                .RecordAsync(request, User.FindFirst(JwtStaffTokenIssuer.NameClaim)?.Value ?? string.Empty, cancellationToken)
+                .ConfigureAwait(false));
+
+    /// <summary>Records the state the benchmark service reported for a run.</summary>
+    /// <param name="runId">The run id of the service.</param>
+    /// <param name="request">The state and the error.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The record after the change, 404 for an unknown run, or 422 for a refused change.</returns>
+    [HttpPut(ApiRoutes.BenchmarkRequestState)]
+    [RequiresPermission(Permissions.BenchmarkRun)]
+    public async Task<IActionResult> SetRequestStateAsync(
+        Guid runId,
+        [FromBody] SetBenchmarkRequestStateRequest request,
+        CancellationToken cancellationToken) =>
+        this.ToResponse(await _requests.SetStateAsync(runId, request, cancellationToken).ConfigureAwait(false));
 
     /// <summary>Reads the answer text of one request.</summary>
     /// <param name="id">The key of the request.</param>

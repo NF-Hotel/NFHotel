@@ -14,4 +14,10 @@ public static class BenchmarkRunStates
 
     /// <summary>The run failed; the state carries the reason.</summary>
     public const string Failed = "failed";
+
+    /// <summary>
+    /// The service no longer knows the run because it restarted. The service never reports it; the hotel records it
+    /// (ADR-0031).
+    /// </summary>
+    public const string Interrupted = "interrupted";
 }

@@ -12,7 +12,9 @@
 
     The page is for the Manager only: the policy above is the check that ADR-0001 asks for before the benchmark service is
     called. The service checks its limits again. A start returns at once; the page then asks for the state every few
-    seconds until the run is done and its result is stored, and links to the list of runs.
+    seconds until the run is done and its result is stored, and links to the list of runs. Every run is recorded through
+    the API (ADR-0031): the page picks up a run that is still going, shows one that a restart of the service stopped, and
+    takes the choice of a run named by ?again= from the list of runs.
 *@
 
 <PageTitle>Start a benchmark run — administration</PageTitle>
@@ -22,6 +24,23 @@
                 Subtitle="Choose the installed models to compare. A run takes minutes and runs one model at a time." />
 
     <ErrorAlert Errors="ViewModel.Errors" />
+
+    @if (ViewModel.StoppedRun is { } stopped)
+    {
+        <section class="card card-pad stack-sm" aria-labelledby="stopped-run">
+            <h2 class="subtitle" id="stopped-run">The last run did not finish</h2>
+            <p>
+                @string.Join(", ", stopped.Models), started by @stopped.RequestedBy at
+                @stopped.RequestedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture):
+                <strong>@stopped.State</strong>@(stopped.Error is null ? "." : $". {stopped.Error}")
+            </p>
+            <div>
+                <button type="button" class="btn btn-secondary btn-sm" @onclick="() => ViewModel.UseChoiceOf(stopped)">
+                    Use the same choice
+                </button>
+            </div>
+        </section>
+    }
 
     <AuthorizeView Policy="@StaffPolicies.BenchmarkModelsManage">
         <ModelsPanel OnModelsChanged="ReloadModelsAsync" />
@@ -108,8 +127,19 @@
 </div>
 
 @code {
-    /// <summary>Loads the installed models when the page opens.</summary>
-    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
+    /// <summary>A recorded run whose choice is taken when the page opens (the list of runs links here with it).</summary>
+    [SupplyParameterFromQuery(Name = "again")]
+    public Guid? Again { get; set; }
+
+    /// <summary>Loads the installed models and the recorded runs, and follows a run that is still going.</summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.OpenAsync(Again, ComponentToken);
+        if (ViewModel.IsFollowing)
+        {
+            _ = FollowAsync();
+        }
+    }
 
     /// <summary>Offers the new list of models when a model was added or deleted in the panel.</summary>
     private Task ReloadModelsAsync() => ViewModel.InitializeAsync(ComponentToken);
