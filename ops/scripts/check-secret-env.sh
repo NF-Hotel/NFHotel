@@ -37,8 +37,9 @@ done
 
 # The compose service of each container, and the service of write-secret-files.sh.
 declare -A SERVICES=(["postgres"]=postgres ["nfhotel-api"]=api ["nfhotel-web"]=web ["cloudflared"]=cloudflared)
-# Settings whose name sounds like a secret but whose value is not one.
-readonly NOT_SECRET=" Staff__InitialManager__MustChangePassword "
+# Settings whose name sounds like a secret but whose value is not one: a flag, and the folder of the
+# Data Protection keys that the web image sets (ADR-0031); the keys are files in a volume, not in the environment.
+readonly NOT_SECRET=" Staff__InitialManager__MustChangePassword DataProtection__KeysPath "
 found=0
 for compose_service in postgres nfhotel-api nfhotel-web cloudflared; do
   mapfile -t names < <("$docker" ps --filter "label=com.docker.compose.service=$compose_service" \
