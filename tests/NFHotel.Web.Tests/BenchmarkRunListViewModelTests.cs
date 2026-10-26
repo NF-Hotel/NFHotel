@@ -471,7 +471,8 @@ public sealed class BenchmarkRunListViewModelTests
         client = Substitute.For<IBenchmarkServiceClient>();
         var tracker = new BenchmarkRunTracker(
             new PassThroughRunner<IBenchmarkServiceClient>(client),
-            new PassThroughRunner<IBenchmarkRequestService>(BenchmarkRequestDoubles.Requests(started)));
+            new PassThroughRunner<IBenchmarkRequestService>(BenchmarkRequestDoubles.Requests(started)),
+            new PassThroughRunner<IBenchmarkService>(BenchmarkRequestDoubles.Stored()));
         return new BenchmarkRunListViewModel(runner, defaultsRunner, tracker);
     }
 

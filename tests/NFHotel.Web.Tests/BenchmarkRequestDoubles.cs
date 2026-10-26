@@ -1,4 +1,5 @@
 using NFHotel.Application.Dto.Benchmark;
+using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.Benchmark;
 
@@ -23,6 +24,43 @@ public static class BenchmarkRequestDoubles
             .Returns(call => Result<BenchmarkRequestDto>.Success(Record(call.Arg<Guid>(), call.Arg<SetBenchmarkRequestStateRequest>().State)));
         return requests;
     }
+
+    /// <summary>The stored results: the given runs are stored, every other run is not found (MIL-046).</summary>
+    /// <param name="storedRunIds">The runs whose result is stored.</param>
+    /// <returns>The substitute.</returns>
+    public static IBenchmarkService Stored(params Guid[] storedRunIds)
+    {
+        var stored = Substitute.For<IBenchmarkService>();
+        stored.GetRunAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(call => storedRunIds.Contains(call.Arg<Guid>())
+                ? Result<BenchmarkRunDetailsDto>.Success(Details(call.Arg<Guid>()))
+                : Result<BenchmarkRunDetailsDto>.Failure(ErrorCodes.Benchmark.NotFound));
+        return stored;
+    }
+
+    /// <summary>A stored run of the models m1 and m2 that ran from 07:11 to 07:20 UTC.</summary>
+    /// <param name="runId">The run id.</param>
+    /// <returns>The stored run.</returns>
+    public static BenchmarkRunDetailsDto Details(Guid runId) =>
+        new(
+            new BenchmarkRunListItemDto(
+                runId,
+                new DateTimeOffset(2026, 10, 26, 7, 11, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 10, 26, 7, 20, 0, TimeSpan.Zero),
+                "d.csv",
+                "Test CPU",
+                16384,
+                null,
+                "ollama",
+                "0.5.1",
+                ["m1", "m2"],
+                12),
+            new string('a', 64),
+            10,
+            "hotel-v1",
+            8,
+            "Linux",
+            []);
 
     /// <summary>A record of a run of the models m1 and m2, with the hotel analysis and two repetitions.</summary>
     /// <param name="runId">The run id.</param>

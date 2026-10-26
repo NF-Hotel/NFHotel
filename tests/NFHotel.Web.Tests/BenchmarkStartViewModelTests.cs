@@ -454,7 +454,10 @@ public sealed class BenchmarkStartViewModelTests
                 Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<BenchmarkRunStateDto>>>>()(fake, call.Arg<CancellationToken>()));
         requests = BenchmarkRequestDoubles.Requests(recent);
-        var tracker = new BenchmarkRunTracker(runner, new PassThroughRunner<IBenchmarkRequestService>(requests));
+        var tracker = new BenchmarkRunTracker(
+            runner,
+            new PassThroughRunner<IBenchmarkRequestService>(requests),
+            new PassThroughRunner<IBenchmarkService>(BenchmarkRequestDoubles.Stored()));
         return new BenchmarkStartViewModel(runner, tracker);
     }
 
