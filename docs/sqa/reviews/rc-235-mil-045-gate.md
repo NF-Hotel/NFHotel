@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [5d48b68] |
 
 ---
 
@@ -48,3 +48,4 @@ Go. MIL-045 is complete; this pull request closes #363.
 [RC-231]: rc-231-mil-045.md
 [RC-232]: rc-232-mil-045-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[5d48b68]: https://github.com/NF-Hotel/NFHotel/commit/5d48b6818cdaad4d2ff233d2bb39421b67b18c1e
