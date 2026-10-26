@@ -4,3 +4,12 @@
 # IGNORE and WARN need a reason and an expiry at most 30 days ahead; S01 approves each
 # line in a reviewed pull request. A rule not listed keeps the ZAP default, and any
 # High alert of a rule that is not IGNORE fails the scan.
+10015	IGNORE	(The pages are rendered per request and carry no-store where they hold staff data; ZAP only asks to re-examine (MIL-044); expires 2026-11-25)
+10031	IGNORE	(Blazor HTML-encodes every attribute value; the reflected value is the returnUrl of the login form, which ReturnUrl checks (MIL-044); expires 2026-11-25)
+10049	IGNORE	(Informational: dynamic pages are not stored by caches on purpose (MIL-044); expires 2026-11-25)
+10104	IGNORE	(Informational: the answers to other user agents are listed, not a finding (MIL-044); expires 2026-11-25)
+10109	IGNORE	(Informational: Blazor is a modern web application, so ZAP's AJAX spider applies (MIL-044); expires 2026-11-25)
+10111	IGNORE	(Informational: the staff login form is found, as intended (MIL-044); expires 2026-11-25)
+10112	IGNORE	(Informational: the session cookie is found, as intended (MIL-044); expires 2026-11-25)
+40025	IGNORE	(nginx and Cloudflare in front are public knowledge (ADR-0028); no internal address is disclosed (MIL-044); expires 2026-11-25)
+90027	IGNORE	(Informational: static files and pages answer without the cookies, as intended (MIL-044); expires 2026-11-25)
