@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Check the patch layer of the market-analysis image (ADR-0030, MIL-042 criteria 2 and 4)
 # after the release-images action built it: the files of the application package are byte
-# for byte those of the frozen base, the image still runs as the user app, and every
-# package pinned in deploy/market-analysis/requirements.txt has its pinned version.
+# for byte those of the frozen base, the image still runs as the user app, every package
+# pinned in deploy/market-analysis/requirements.txt has its pinned version, and the
+# Copilot language server of marimo is gone while there is no Node.js to run it.
 # The base is read from the FROM line of the Dockerfile; the build has pulled it.
 #
 # Usage: check-patch-layer.sh <NFHotel commit> [<registry>]
@@ -37,6 +38,10 @@ app_files='cd '"$PACKAGES"' && find hotel_booking_analysis -type f -print0 | sor
 check "the application files equal those of the frozen base" "$(in_image "$base" "$app_files")" \
   "$(in_image "$image" "$app_files")"
 check "the image runs as the user app" app "$(docker image inspect --format '{{.Config.User}}' "$image")"
+check "the Copilot language server of marimo is removed" absent \
+  "$(in_image "$image" "test -e $PACKAGES/marimo/_lsp/copilot && echo present || echo absent")"
+check "there is no Node.js that could run it" absent \
+  "$(in_image "$image" "command -v node >/dev/null && echo present || echo absent")"
 
 while read -r name version; do
   check "$name is at its pinned version" "$version" \

@@ -12,6 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-26 for a patch layer on the frozen image with certifi 2026.10.19 and the Debian security updates, built by the release; written by the AI under MIL-042, which S01 accepted in chat on 2026-10-26; accepted after RC-223 Go | [4faf283] |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Decision 2: the layer also removes the Copilot language server that marimo bundles (zod, CVE-2023-54404), found by the release check; no Node.js runs it | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -36,7 +37,7 @@ Options considered:
 We follow option 3. It ends the "no rebuilds" part of ADR-0500; the frozen digest stays, as the base.
 
 1. **The base stays frozen.** `ops/deploy/market-analysis/Dockerfile` starts `FROM` the frozen digest, so the application is still exactly the one ADR-0500 kept. The file `frozen-image` is removed, and the release builds the image like the other three.
-2. **What the layer changes.** As root, `apt-get upgrade` for the Debian security updates, then `pip install --require-hashes` from `requirements-patch.txt`, which pins `certifi==2026.10.19` with its hash. Then the user is `app` again. The command, the entry point, the user, the working folder and the hardening of the compose file do not change.
+2. **What the layer changes.** As root, `apt-get upgrade` for the Debian security updates, then `pip install --require-hashes` from `requirements-patch.txt`, which pins `certifi==2026.10.19` with its hash. It removes `marimo/_lsp/copilot`, the Node.js packages of the Copilot language server of marimo's editor: the image has no Node.js and runs the notebook with `marimo run`, so they never run, and their `zod` carries a fixable high finding. Then the user is `app` again. The command, the entry point, the user, the working folder and the hardening of the compose file do not change.
 3. **The full release path.** The image is scanned by the release gate (a critical finding, or a high one with a fix, stops the release), gets an SBOM and a build provenance attestation, and CD verifies them like the others. CD no longer accepts the frozen pin for `market-analysis`.
 4. **Access to the base.** The base is a private package in GHCR. The release already logs in; the release check of a pull request logs in with its read-only job token (`packages: read`) to pull it.
 5. **Next findings.** A Python package with a fixable finding is added to `requirements-patch.txt` with its hash; Dependabot proposes newer versions of the pinned packages. A Debian finding is fixed by the next release, which upgrades again.

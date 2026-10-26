@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [5016380] |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
 
 ---
 
@@ -45,6 +45,7 @@
 
 - **No dead freeze code is left.** With `frozen-image` gone no image is frozen, so the frozen paths of the build, the CD verify, the deploy and `--report-only` of the scan were removed instead of kept unused. ADR-0500's digest lives on as the base.
 - **pip is removed from the layer,** as in the benchmark image: the service installs nothing, and pip's vendored libraries carry findings of their own. Each release builds from the base again, which still has pip.
+- **The first release check found a second blocker.** With certifi fixed, the gate stopped at `zod 4.4.3` (CVE-2023-54404, high, fixed in 4.6.6) in `marimo/_lsp/copilot/node_modules`: the Copilot language server that marimo's editor starts with Node.js. The image has no Node.js and runs `marimo run`, so the layer removes the folder; `check-patch-layer.sh` checks that it is gone and that no Node.js is present. ADR-0030 decision 2 records it.
 - **`scripts/test-compose-proxy.sh` and `tests/test-optional-services.sh`** now need a GHCR login (or a given image) for market-analysis; neither runs in CI.
 
 ## Overall Verdict
@@ -64,4 +65,3 @@ Go-with-conditions. Every Mandatory criterion that the change touches passes exc
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
-[5016380]: https://github.com/NF-Hotel/NFHotel/commit/5016380fccb812b9aae665c520b1c1e4b56badbe
