@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-26 for a patch layer on the frozen image with certifi 2026.10.19 and the Debian security updates, built by the release; written by the AI under MIL-042, which S01 accepted in chat on 2026-10-26; accepted after RC-223 Go | [4faf283] |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Decision 2: the layer also removes the Copilot language server that marimo bundles (zod, CVE-2023-54404), found by the release check; no Node.js runs it | pending |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Decision 2: the layer also removes the Copilot language server that marimo bundles (zod, CVE-2023-54404), found by the release check; no Node.js runs it | [070484b] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -73,3 +73,4 @@ We follow option 3. It ends the "no rebuilds" part of ADR-0500; the frozen diges
 [MIL-036]: ../milestones/mil-036-security-operations.md
 [MIL-042]: ../milestones/mil-042-patch-market-analysis-image.md
 [4faf283]: https://github.com/NF-Hotel/NFHotel/commit/4faf2836048366b52d0f6b4e995153384f6bb908
+[070484b]: https://github.com/NF-Hotel/NFHotel/commit/070484b6e8d0d987c38a150633acbc3b5700feb6
