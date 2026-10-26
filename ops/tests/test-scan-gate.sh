@@ -91,5 +91,23 @@ check && ko "the second entry is checked on its own" || ok "the second entry is 
 ignore "  - id: CVE-2026-1" "    statement: Old." "    expired_at: 2026-10-01"
 check && ok "an expired entry passes with a note (Trivy no longer ignores it)" || ko "an expired entry passes with a note"
 
+# --fixable (ADR-0032): code scanning gets the vulnerabilities with a fixed version and every
+# secret; a result without vulnerabilities and an empty report stay valid.
+fixable() { bash "$GATE" --fixable "$1" | jq -c "$2"; }
+[[ "$(fixable "$W/medium.json" '[.Results[].Vulnerabilities[].VulnerabilityID]')" == '["CVE-2026-0001","CVE-2026-0002"]' ]] &&
+  ok "--fixable keeps the findings with a fix and drops the one without" || ko "--fixable: $(fixable "$W/medium.json" '.')"
+[[ "$(fixable "$W/critical-nofix.json" '[.Results[].Vulnerabilities[]] | length')" == 0 ]] &&
+  ok "--fixable drops a critical finding without a fix" || ko "--fixable critical without fix"
+[[ "$(fixable "$W/none.json" '.Results | length')" == 1 ]] && ok "--fixable keeps a result without vulnerabilities" ||
+  ko "--fixable none"
+echo '{"ArtifactName":"a","Results":[{"Target":"t","Secrets":[{"RuleID":"aws-access-key-id","Severity":"CRITICAL"}]}]}' >"$W/secret.json"
+[[ "$(fixable "$W/secret.json" '[.Results[].Secrets[]] | length')" == 1 ]] && ok "--fixable keeps every secret" ||
+  ko "--fixable secret"
+echo '{"ArtifactName":"a"}' >"$W/no-results.json"
+[[ "$(fixable "$W/no-results.json" '.Results')" == "[]" ]] && ok "--fixable accepts a report without results" ||
+  ko "--fixable no results"
+bash "$GATE" --fixable "$W/missing.json" >/dev/null 2>&1
+[[ $? == 2 ]] && ok "--fixable refuses a missing report (exit 2)" || ko "--fixable missing report"
+
 echo "==> $pass passed, $fail failed"
 ((fail == 0))

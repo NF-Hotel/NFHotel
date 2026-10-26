@@ -10,6 +10,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+  <!-- Every package is pinned by its hash in a packages.lock.json per project; CI restores with
+       locked-mode, so a changed package fails the build (MIL-044, Scorecard Pinned-Dependencies).
+       The web project's lock file holds a package that comes with the SDK, so regenerate the files
+       with the exact SDK of global.json, also when global.json changes: run "dotnet restore NFHotel.sln"
+       with the option force-evaluate in the image mcr.microsoft.com/dotnet/sdk of that version. -->
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
   <!-- Path -->
   <PropertyGroup>
     <ArtifactsPath>$(MSBuildThisFileDirectory)g</ArtifactsPath>
