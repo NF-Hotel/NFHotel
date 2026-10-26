@@ -18,6 +18,12 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0.14@sha256:d247d17dd429d96580eeb96cfce2
 # Working folder of the final image.
 WORKDIR /app
 
+# The security updates that Ubuntu has published since the base image was built, so a fixed
+# package does not wait for the next base image (ADR-0032: a finding with a fix is acted on).
+RUN apt-get update \
+    && apt-get upgrade --yes --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copies the finished application from the build image.
 COPY --from=build /app/publish .
 

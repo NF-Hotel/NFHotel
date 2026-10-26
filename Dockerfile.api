@@ -15,6 +15,12 @@ RUN dotnet publish src/NFHotel.Api/NFHotel.Api.csproj -c Release -o /app/publish
 # The final image holds ASP.NET Core to run the API.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.14@sha256:d247d17dd429d96580eeb96cfce220c1089d860dbbf9f94d599ca64cf3604fe4 AS final
 
+# The security updates that Ubuntu has published since the base image was built, so a fixed
+# package does not wait for the next base image (ADR-0032: a finding with a fix is acted on).
+RUN apt-get update \
+    && apt-get upgrade --yes --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY --from=build /app/publish .
