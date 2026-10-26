@@ -11,7 +11,8 @@ This page says what the team does when NF Hotel is down, slow or attacked, how i
 3. [When personal data may have leaked](#when-personal-data-may-have-leaked)
 4. [Write the postmortem](#write-the-postmortem)
 5. [Log policy](#log-policy)
-6. [Why it is done this way](#why-it-is-done-this-way)
+6. [Postmortems](#postmortems)
+7. [Why it is done this way](#why-it-is-done-this-way)
 
 ---
 
@@ -103,6 +104,16 @@ How it is enforced:
 - **Retention:** 14 days in Loki, then deleted. The backups hold the database, not the logs.
 
 If guest data is found in a log anyway, it is an incident: fix the code, then delete the lines from Loki (`/loki/api/v1/delete` with the time window), and judge it under [When personal data may have leaked](#when-personal-data-may-have-leaked).
+
+## Postmortems
+
+### Benchmark runs could not store their results (2026-10-20 to 2026-10-26)
+
+- **Summary:** every benchmark run since 2026-10-20 ended `failed` with `[Errno 13] Permission denied: '/data/results.jsonl'`, so no result was stored. The container stayed healthy, and the back office only said that no run had been stored. MIL-043 made the failure visible on 2026-10-26.
+- **Cause:** the volume `benchmark_results` was created on 2026-10-20 by an earlier benchmark image whose user had uid 1000. The image of MIL-025 runs as `app`, uid 10001. Docker sets the owner of a named volume only when it creates it (and copies the image's folder into it only while it is empty), so the new user could not write to the old volume.
+- **Fix on the day:** `chown -R 10001:10001` of the volume, with the benchmark image as root.
+- **Lasting fix (MIL-045):** the one-shot service `results-owner` in `ops/deploy/benchmark/docker-compose.yml` gives `/data` to the image's user at every start, before the service starts; the healthcheck also writes to `/data`, so a volume the service cannot write fails the deploy. `ops/tests/test-benchmark-volume.sh` proves both in the ops CI.
+- **Lesson:** a healthcheck should prove what the service needs to do its job, not only that it answers.
 
 ## Why it is done this way
 
