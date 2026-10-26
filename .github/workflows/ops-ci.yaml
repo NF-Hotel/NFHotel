@@ -125,6 +125,18 @@ jobs:
       - name: Test the routes with and without the optional API route
         run: bash ops/tests/test-nginx.sh
 
+  benchmark-volume:
+    name: Ops benchmark results volume (MIL-045)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Give a volume of another uid to the service; fail the healthcheck without write
+        run: bash ops/tests/test-benchmark-volume.sh
+
   proxmox-tests:
     name: Ops Proxmox tests (live tests skip)
     runs-on: ubuntu-24.04

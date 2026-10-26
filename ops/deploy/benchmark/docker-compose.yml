@@ -8,9 +8,33 @@
 # API_TOKEN, so the token is written in nfhotel-api.env only.
 name: benchmark
 
+x-benchmark-image: &benchmark-image ${BENCHMARK_IMAGE:-benchmark:local}
+
 services:
+  # Docker sets the owner of a named volume only when it creates it, so a volume made by an
+  # image whose user had another uid stays unwritable (2026-10-26: every run failed with
+  # "Permission denied: /data/results.jsonl"). This one-shot service gives /data to the user
+  # of the image at every start, before the service starts (MIL-045). It runs as root with
+  # only the capabilities that change an owner, and no network.
+  results-owner:
+    image: *benchmark-image
+    user: "0"
+    entrypoint: ["sh", "-c", "chown -R \"$$(id -u app):$$(id -g app)\" /data"]
+    restart: "no"
+    network_mode: none
+    volumes:
+      - results:/data
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_READ_SEARCH
+    security_opt:
+      - no-new-privileges:true
+
   benchmark:
-    image: ${BENCHMARK_IMAGE:-benchmark:local}
+    image: *benchmark-image
     build:
       context: .
       args:
@@ -31,6 +55,9 @@ services:
       - "8000"
     volumes:
       - results:/data
+    depends_on:
+      results-owner:
+        condition: service_completed_successfully
     read_only: true
     tmpfs:
       - /tmp
@@ -38,12 +65,17 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
+    # Healthy means the API answers and the results folder is writable: a run that cannot store
+    # its result fails the deploy, not silently later (MIL-045).
     healthcheck:
       test:
         - CMD
         - python
         - -c
-        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)
+        - >-
+          import pathlib, urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3);
+          probe = pathlib.Path('/data/.healthcheck'); probe.write_text('ok'); probe.unlink()
       interval: 10s
       timeout: 5s
       retries: 12
