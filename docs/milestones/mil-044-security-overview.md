@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-26 to fix the security overview so nothing shows red ("Kan du fixe alt det her så det ikke viser rødt"), as a GitHub and security professional ; S01 accepted it in chat ("Jeg accepterer planerne for MIL-044 og MIL-045"; S01 chose the MIT licence; accepted after RC-230 Go) | pending |
+| 2026-10-26 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-26 to fix the security overview so nothing shows red ("Kan du fixe alt det her så det ikke viser rødt"), as a GitHub and security professional ; S01 accepted it in chat ("Jeg accepterer planerne for MIL-044 og MIL-045"; S01 chose the MIT licence; accepted after RC-230 Go) | [989973a] |
 
 ---
 
@@ -87,3 +87,4 @@ Decide whether NF Hotel may claim that its GitHub security overview shows no err
 [MIL-036]: ./mil-036-security-operations.md
 [ADR-0019]: ../adr/adr-0019-approvals-by-the-owner.md
 [ADR-0030]: ../adr/adr-0030-patch-layer-on-frozen-market-analysis-image.md
+[989973a]: https://github.com/NF-Hotel/NFHotel/commit/989973a4780193a81f30f3d06e76d25318142d36

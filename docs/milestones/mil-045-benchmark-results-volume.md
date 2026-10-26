@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-26 to fix the owner of the volume `benchmark_results` on the server at once and to plan a lasting fix in the deployment ("ret ejeren … og plan en varig rettelse i deploy-scriptet") ; S01 accepted it in chat ("Jeg accepterer planerne for MIL-044 og MIL-045"; accepted after RC-231 Go) | pending |
+| 2026-10-26 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-26 to fix the owner of the volume `benchmark_results` on the server at once and to plan a lasting fix in the deployment ("ret ejeren … og plan en varig rettelse i deploy-scriptet") ; S01 accepted it in chat ("Jeg accepterer planerne for MIL-044 og MIL-045"; accepted after RC-231 Go) | [989973a] |
 
 ---
 
@@ -77,3 +77,4 @@ Decide whether NF Hotel may claim that a benchmark run can always store its resu
 [MIL-025]: ./mil-025-devops-repository-consolidation.md
 [MIL-043]: ./mil-043-state-across-deploys.md
 [US-001.04]: ../user-stories.md
+[989973a]: https://github.com/NF-Hotel/NFHotel/commit/989973a4780193a81f30f3d06e76d25318142d36
