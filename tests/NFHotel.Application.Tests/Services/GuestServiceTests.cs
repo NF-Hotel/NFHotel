@@ -1,5 +1,7 @@
 using NFHotel.Application.Dto.Guests;
 using NFHotel.Application.Errors;
+using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.TestSupport;
 
@@ -14,6 +16,22 @@ namespace NFHotel.Application.Tests.Services;
 /// </summary>
 public sealed class GuestServiceTests
 {
+    private static IStaffAuthorizationService CreateAuthorization(
+    params string[] permissions)
+    {
+        var authorization = Substitute.For<IStaffAuthorizationService>();
+
+        foreach (var permission in permissions)
+        {
+            authorization.HasPermissionAsync(
+                permission,
+                Arg.Any<CancellationToken>())
+                .Returns(true);
+        }
+
+        return authorization;
+    }
+
     #region Reading
 
     /// <summary>Positive: an existing guest is returned as the query port describes it.</summary>
@@ -25,8 +43,14 @@ public sealed class GuestServiceTests
         var details = new GuestDetailsDto(1, "Anna", "Jensen", "Anna Jensen", "anna@example.com", "+4512345678", "Denmark", null);
         world.GuestQueries.GetDetailsAsync(1, TestContext.Current.CancellationToken).Returns(details);
 
+        var authorization = CreateAuthorization(
+            Permissions.ViewOtherGuestData,
+            Permissions.ViewGuestPassportData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().GetByIdAsync(1, TestContext.Current.CancellationToken);
+        var result = await service.GetByIdAsync(1, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(details, result.Value);
@@ -39,8 +63,14 @@ public sealed class GuestServiceTests
         // Arrange
         var world = new ServiceWorld();
 
+        var authorization = CreateAuthorization(
+            Permissions.ViewOtherGuestData,
+            Permissions.ViewGuestPassportData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().GetByIdAsync(99, TestContext.Current.CancellationToken);
+        var result = await service.GetByIdAsync(99, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Guest.NotFound, result.FirstError?.Code);
@@ -60,6 +90,43 @@ public sealed class GuestServiceTests
             () => service.GetByIdAsync(guestId, TestContext.Current.CancellationToken));
     }
 
+    /// <summary>Security: accessing guest details without permissions is forbidden.</summary>
+    [Fact]
+    public async Task GetByIdAsync_WithoutPermissions_ReturnsForbidden()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var service = world.GuestService();
+
+        // Act
+        var result = await service.GetByIdAsync(
+            1, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+    }
+
+    /// <summary>Security: guest details require both permissions.</summary>
+    [Theory]
+    [InlineData(Permissions.ViewOtherGuestData)]
+    [InlineData(Permissions.ViewGuestPassportData)]
+    public async Task GetByIdAsync_MissingOnePermission_ReturnsForbidden(
+        string permission)
+    {
+        // Arrange
+        var world = new ServiceWorld();
+
+        var authorization = CreateAuthorization(permission);
+        var service = world.GuestService(authorization);
+
+        // Act
+        var result = await service.GetByIdAsync(
+            1, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+    }
+
     #endregion
 
     #region Search
@@ -77,8 +144,13 @@ public sealed class GuestServiceTests
                 ListItem(1, "anna", "Jensen"),
             ]));
 
+        var authorization = CreateAuthorization(
+            Permissions.ViewOtherGuestData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().SearchAsync(null, TestContext.Current.CancellationToken);
+        var result = await service.SearchAsync(null, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal([1, 2], result.Value.Select(guest => guest.GuestId).ToArray());
@@ -93,8 +165,13 @@ public sealed class GuestServiceTests
         world.GuestQueries.SearchAsync(Arg.Any<IReadOnlyCollection<string>>(), TestContext.Current.CancellationToken)
             .Returns(Task.FromResult<IReadOnlyList<GuestListItemDto>>([]));
 
+        var authorization = CreateAuthorization(
+            Permissions.ViewOtherGuestData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        await world.GuestService().SearchAsync("  anna \t jensen\n", TestContext.Current.CancellationToken);
+        await service.SearchAsync("  anna \t jensen\n", TestContext.Current.CancellationToken);
 
         // Assert
         await world.GuestQueries.Received(1).SearchAsync(
@@ -114,8 +191,13 @@ public sealed class GuestServiceTests
         world.GuestQueries.SearchAsync(Arg.Any<IReadOnlyCollection<string>>(), TestContext.Current.CancellationToken)
             .Returns(Task.FromResult<IReadOnlyList<GuestListItemDto>>([]));
 
+        var authorization = CreateAuthorization(
+            Permissions.ViewOtherGuestData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().SearchAsync(searchText, TestContext.Current.CancellationToken);
+        var result = await service.SearchAsync(searchText, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -133,9 +215,31 @@ public sealed class GuestServiceTests
         world.GuestQueries.SearchAsync(Arg.Any<IReadOnlyCollection<string>>(), TestContext.Current.CancellationToken)
             .ThrowsAsync(new InvalidOperationException("database unavailable"));
 
+        var authorization = CreateAuthorization(
+            Permissions.ViewOtherGuestData);
+
+        var service = world.GuestService(authorization);
+
         // Act and assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => world.GuestService().SearchAsync("anna", TestContext.Current.CancellationToken));
+         () => service.SearchAsync(
+             "anna", TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>Security: searching guests without permission is forbidden.</summary>
+    [Fact]
+    public async Task SearchAsync_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var service = world.GuestService();
+
+        // Act
+        var result = await service.SearchAsync(
+            "anna", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
     }
 
     #endregion
@@ -150,8 +254,14 @@ public sealed class GuestServiceTests
         var world = new ServiceWorld();
         var request = new CreateGuestRequest(ServiceWorld.ValidGuestFields());
 
+        var authorization = CreateAuthorization(
+              Permissions.GuestsManage,
+              Permissions.ViewGuestPassportData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await service.CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -167,8 +277,14 @@ public sealed class GuestServiceTests
         var world = new ServiceWorld();
         var fields = ServiceWorld.ValidGuestFields() with { FirstName = " ", Email = "not-an-email", Country = " " };
 
+        var authorization = CreateAuthorization(
+            Permissions.GuestsManage,
+            Permissions.ViewGuestPassportData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().CreateAsync(new CreateGuestRequest(fields), TestContext.Current.CancellationToken);
+        var result = await service.CreateAsync(new CreateGuestRequest(fields),TestContext.Current.CancellationToken);
 
         // Assert
         var codes = result.Errors.Select(error => error.Code).ToArray();
@@ -187,9 +303,20 @@ public sealed class GuestServiceTests
         var atLimit = ServiceWorld.ValidGuestFields() with { FirstName = new string('a', Guest.MaxNameLength) };
         var aboveLimit = ServiceWorld.ValidGuestFields() with { FirstName = new string('a', Guest.MaxNameLength + 1) };
 
+        var authorization = CreateAuthorization(
+            Permissions.GuestsManage,
+            Permissions.ViewGuestPassportData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var accepted = await world.GuestService().CreateAsync(new CreateGuestRequest(atLimit), TestContext.Current.CancellationToken);
-        var rejected = await world.GuestService().CreateAsync(new CreateGuestRequest(aboveLimit), TestContext.Current.CancellationToken);
+        var accepted = await service.CreateAsync(
+            new CreateGuestRequest(atLimit),
+            TestContext.Current.CancellationToken);
+
+        var rejected = await service.CreateAsync(
+            new CreateGuestRequest(aboveLimit),
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(accepted.IsSuccess);
@@ -204,8 +331,16 @@ public sealed class GuestServiceTests
         var world = new ServiceWorld();
         var fields = ServiceWorld.ValidGuestFields() with { FirstName = "Søren", LastName = "Åkesson-Ørsted", PassportNumber = null };
 
+        var authorization = CreateAuthorization(
+            Permissions.GuestsManage,
+            Permissions.ViewGuestPassportData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().CreateAsync(new CreateGuestRequest(fields), TestContext.Current.CancellationToken);
+        var result = await service.CreateAsync(
+            new CreateGuestRequest(fields),
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("Søren Åkesson-Ørsted", result.Value.FullName);
@@ -219,9 +354,16 @@ public sealed class GuestServiceTests
         var world = new ServiceWorld();
         world.UnitOfWork.FailWith = new ConcurrencyConflictException("row changed");
 
+        var authorization = CreateAuthorization(
+            Permissions.GuestsManage,
+            Permissions.ViewGuestPassportData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().CreateAsync(
-            new CreateGuestRequest(ServiceWorld.ValidGuestFields()), TestContext.Current.CancellationToken);
+        var result = await service.CreateAsync(
+            new CreateGuestRequest(ServiceWorld.ValidGuestFields()),
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Guest.ConcurrencyConflict, result.FirstError?.Code);
@@ -239,6 +381,49 @@ public sealed class GuestServiceTests
             () => service.CreateAsync(null!, TestContext.Current.CancellationToken));
     }
 
+    /// <summary>Security: creating a guest without permissions is forbidden.</summary>
+    [Fact]
+    public async Task CreateAsync_WithoutPermissions_ReturnsForbidden()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var request = new CreateGuestRequest(ServiceWorld.ValidGuestFields());
+        var service = world.GuestService();
+
+        // Act
+        var result = await service.CreateAsync(
+            request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Empty(world.Guests.Items);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
+    }
+
+    /// <summary>Security: creating a guest requires both permissions.</summary>
+    [Theory]
+    [InlineData(Permissions.GuestsManage)]
+    [InlineData(Permissions.ViewGuestPassportData)]
+    public async Task CreateAsync_MissingOnePermission_ReturnsForbidden(
+        string permission)
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var request = new CreateGuestRequest(ServiceWorld.ValidGuestFields());
+
+        var authorization = CreateAuthorization(permission);
+        var service = world.GuestService(authorization);
+
+        // Act
+        var result = await service.CreateAsync(
+            request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Empty(world.Guests.Items);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
+    }
+
     #endregion
 
     #region Updating
@@ -252,8 +437,14 @@ public sealed class GuestServiceTests
         var guest = world.AddGuest();
         var request = new UpdateGuestRequest(guest.Id, ServiceWorld.ValidGuestFields() with { LastName = "Nielsen" });
 
+        var authorization = CreateAuthorization(
+            Permissions.GuestsManage,
+            Permissions.ViewGuestPassportData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().UpdateAsync(request, TestContext.Current.CancellationToken);
+        var result = await service.UpdateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("Nielsen", guest.LastName);
@@ -269,8 +460,14 @@ public sealed class GuestServiceTests
         var world = new ServiceWorld();
         var request = new UpdateGuestRequest(99, ServiceWorld.ValidGuestFields());
 
+        var authorization = CreateAuthorization(
+            Permissions.GuestsManage,
+            Permissions.ViewGuestPassportData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().UpdateAsync(request, TestContext.Current.CancellationToken);
+        var result = await service.UpdateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Guest.NotFound, result.FirstError?.Code);
@@ -285,8 +482,14 @@ public sealed class GuestServiceTests
         var guest = world.AddGuest();
         var request = new UpdateGuestRequest(guest.Id, ServiceWorld.ValidGuestFields() with { Email = "broken" });
 
+        var authorization = CreateAuthorization(
+            Permissions.GuestsManage,
+            Permissions.ViewGuestPassportData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().UpdateAsync(request, TestContext.Current.CancellationToken);
+        var result = await service.UpdateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Guest.EmailInvalid, result.FirstError?.Code);
@@ -303,12 +506,70 @@ public sealed class GuestServiceTests
         var guest = world.AddGuest();
         world.UnitOfWork.FailWith = new ConcurrencyConflictException("row changed");
 
+        var authorization = CreateAuthorization(
+            Permissions.GuestsManage,
+            Permissions.ViewGuestPassportData);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().UpdateAsync(
-            new UpdateGuestRequest(guest.Id, ServiceWorld.ValidGuestFields()), TestContext.Current.CancellationToken);
+        var result = await service.UpdateAsync(new UpdateGuestRequest(guest.Id, ServiceWorld.ValidGuestFields()),
+        TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Guest.ConcurrencyConflict, result.FirstError?.Code);
+    }
+
+    /// <summary>Security: updating a guest without permissions is forbidden.</summary>
+    [Fact]
+    public async Task UpdateAsync_WithoutPermissions_ReturnsForbidden()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var guest = world.AddGuest();
+
+        var request = new UpdateGuestRequest(
+            guest.Id,
+            ServiceWorld.ValidGuestFields() with { LastName = "Nielsen" });
+
+        var service = world.GuestService();
+
+        // Act
+        var result = await service.UpdateAsync(
+            request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Equal("Jensen", guest.LastName);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
+    }
+
+    /// <summary>Security: updating a guest requires both permissions.</summary>
+    [Theory]
+    [InlineData(Permissions.GuestsManage)]
+    [InlineData(Permissions.ViewGuestPassportData)]
+    public async Task UpdateAsync_MissingOnePermission_ReturnsForbidden(
+        string permission)
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var guest = world.AddGuest();
+
+        var request = new UpdateGuestRequest(
+            guest.Id,
+            ServiceWorld.ValidGuestFields() with { LastName = "Nielsen" });
+
+        var authorization = CreateAuthorization(permission);
+        var service = world.GuestService(authorization);
+
+        // Act
+        var result = await service.UpdateAsync(
+            request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Equal("Jensen", guest.LastName);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
     }
 
     #endregion
@@ -323,8 +584,13 @@ public sealed class GuestServiceTests
         var world = new ServiceWorld();
         var guest = world.AddGuest();
 
+        var authorization = CreateAuthorization(
+            Permissions.GuestsManage);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().DeleteAsync(guest.Id, TestContext.Current.CancellationToken);
+        var result = await service.DeleteAsync(guest.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -341,8 +607,13 @@ public sealed class GuestServiceTests
         var guest = world.AddGuest();
         world.Guests.GuestIdsWithBookings.Add(guest.Id);
 
+        var authorization = CreateAuthorization(
+            Permissions.GuestsManage);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().DeleteAsync(guest.Id, TestContext.Current.CancellationToken);
+        var result = await service.DeleteAsync(guest.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Guest.HasBookings, result.FirstError?.Code);
@@ -356,8 +627,13 @@ public sealed class GuestServiceTests
         // Arrange
         var world = new ServiceWorld();
 
+        var authorization = CreateAuthorization(
+            Permissions.GuestsManage);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().DeleteAsync(99, TestContext.Current.CancellationToken);
+        var result = await service.DeleteAsync(99, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Guest.NotFound, result.FirstError?.Code);
@@ -372,11 +648,36 @@ public sealed class GuestServiceTests
         var guest = world.AddGuest();
         world.UnitOfWork.FailWith = new ConcurrencyConflictException("row changed");
 
+        var authorization = CreateAuthorization(
+            Permissions.GuestsManage);
+
+        var service = world.GuestService(authorization);
+
         // Act
-        var result = await world.GuestService().DeleteAsync(guest.Id, TestContext.Current.CancellationToken);
+        var result = await service.DeleteAsync(guest.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Guest.ConcurrencyConflict, result.FirstError?.Code);
+    }
+
+    /// <summary>Security: deleting a guest without permission is forbidden.</summary>
+    [Fact]
+    public async Task DeleteAsync_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var guest = world.AddGuest();
+
+        var service = world.GuestService();
+
+        // Act
+        var result = await service.DeleteAsync(
+            guest.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Single(world.Guests.Items);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
     }
 
     #endregion

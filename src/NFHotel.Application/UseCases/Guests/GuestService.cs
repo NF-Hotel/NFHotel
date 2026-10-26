@@ -1,4 +1,5 @@
 using NFHotel.Application.Dto.Guests;
+using NFHotel.Application.UseCases.Staff;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
 using NFHotel.Domain.Entities;
@@ -22,6 +23,7 @@ public sealed class GuestService : IGuestService
     private readonly IGuestRepository _guestRepository;
     private readonly IGuestQueries _guestQueries;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IStaffAuthorizationService _authorization;
 
     /// <summary>
     /// Creates the service.
@@ -29,29 +31,52 @@ public sealed class GuestService : IGuestService
     /// <param name="guestRepository">Data access for guests.</param>
     /// <param name="guestQueries">Reading guests as projections (A-11).</param>
     /// <param name="unitOfWork">The transaction boundary.</param>
+    /// <param name="authorization">The service for checking staff permissions.</param>
     public GuestService(
         IGuestRepository guestRepository,
         IGuestQueries guestQueries,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IStaffAuthorizationService authorization)
     {
         ArgumentNullException.ThrowIfNull(guestRepository);
         ArgumentNullException.ThrowIfNull(guestQueries);
         ArgumentNullException.ThrowIfNull(unitOfWork);
+        ArgumentNullException.ThrowIfNull(authorization);
 
         _guestRepository = guestRepository;
         _guestQueries = guestQueries;
         _unitOfWork = unitOfWork;
+        _authorization = authorization;
     }
 
     /// <summary>Fetches one guest (BR-35, BR-115).</summary>
     /// <param name="guestId">The id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>The details of the guest, or <see cref="ErrorCodes.Guest.NotFound"/>.</returns>
+    /// <returns>
+    /// The guest details, or an error if the guest is not found
+    /// or the staff member lacks the required permissions.
+    /// </returns>
     public async Task<Result<GuestDetailsDto>> GetByIdAsync(
         int guestId,
         CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(guestId);
+
+        // Checks whether the staff member can view other guests' information.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.ViewOtherGuestData,
+            cancellationToken))
+        {
+            return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        // Checks whether the staff member can view guest passport data.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.ViewGuestPassportData,
+            cancellationToken))
+        {
+            return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
 
         var details = await _guestQueries.GetDetailsAsync(guestId, cancellationToken).ConfigureAwait(false);
 
@@ -73,6 +98,15 @@ public sealed class GuestService : IGuestService
         string? searchText,
         CancellationToken cancellationToken = default)
     {
+        // Checks whether the staff member can view other guests' information.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.ViewOtherGuestData,
+            cancellationToken))
+        {
+            return Result<IReadOnlyList<GuestListItemDto>>.Failure(
+                ErrorCodes.Api.Forbidden);
+        }
+
         var terms = Tokenize(searchText);
 
         var guests = await _guestQueries.SearchAsync(terms, cancellationToken).ConfigureAwait(false);
@@ -89,13 +123,36 @@ public sealed class GuestService : IGuestService
     /// <summary>Creates a guest (BR-52 to BR-57, BR-60, BR-91 to BR-96).</summary>
     /// <param name="request">The fields of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>The created guest, or all validation errors at once.</returns>
+    /// <returns>
+    /// The created guest, validation errors, or Forbidden if the staff member
+    /// lacks the required permissions.
+    /// </returns>
+    /// <remarks>
+    /// Requires GuestsManage and ViewGuestPassportData permissions.
+    /// </remarks>
     public async Task<Result<GuestDetailsDto>> CreateAsync(
         CreateGuestRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.Fields);
+
+
+        // Checks whether the staff member can manage guest records.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.GuestsManage,
+            cancellationToken))
+        {
+            return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        // Checks whether the staff member can access guest passport data.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.ViewGuestPassportData,
+            cancellationToken))
+        {
+            return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
 
         var fields = request.Fields;
         var errors = ValidateInternal(fields);
@@ -130,10 +187,15 @@ public sealed class GuestService : IGuestService
     /// <summary>Changes a guest (BR-62, BR-66, BR-72, BR-91 to BR-96).</summary>
     /// <param name="request">The new field values plus the id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>The updated guest, or all validation errors at once.</returns>
+    /// <returns>
+    /// The updated guest, validation errors, NotFound if the guest does not exist,
+    /// or Forbidden if the staff member lacks the required permissions.
+    /// </returns>
     /// <remarks>
-    /// The id comes from the request and is never changed (BR-72). If the guest does not exist, it becomes
-    /// an error code and not a silent non-update as in the old system.
+    /// Requires GuestsManage and ViewGuestPassportData permissions.
+    /// The id comes from the request and is never changed (BR-72).
+    /// If the guest does not exist, it becomes an error code and not a silent
+    /// non-update as in the old system.
     /// </remarks>
     public async Task<Result<GuestDetailsDto>> UpdateAsync(
         UpdateGuestRequest request,
@@ -142,6 +204,22 @@ public sealed class GuestService : IGuestService
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.Fields);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.GuestId);
+
+        // Checks whether the staff member can manage guest records.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.GuestsManage,
+            cancellationToken))
+        {
+            return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        // Checks whether the staff member can access guest passport data.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.ViewGuestPassportData,
+            cancellationToken))
+        {
+            return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
 
         var fields = request.Fields;
         var errors = ValidateInternal(fields);
@@ -181,10 +259,26 @@ public sealed class GuestService : IGuestService
     /// <summary>Deletes a guest (BR-N-02, follows from D-05).</summary>
     /// <param name="guestId">The id of the guest.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
-    /// <returns>Success, or <see cref="ErrorCodes.Guest.HasBookings"/>.</returns>
+    /// <returns>
+    /// Success, NotFound if the guest does not exist, HasBookings if the guest
+    /// has bookings, ConcurrencyConflict, or Forbidden if the staff member
+    /// lacks the required permission.
+    /// </returns>
+    /// <remarks>
+    /// Requires GuestsManage permission.
+    /// Guests with existing bookings cannot be deleted (D-05).
+    /// </remarks>
     public async Task<Result> DeleteAsync(int guestId, CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(guestId);
+
+        // Checks whether the staff member can manage guest records.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.GuestsManage,
+            cancellationToken))
+        {
+            return Result.Failure(ErrorCodes.Api.Forbidden);
+        }
 
         var guest = await _guestRepository.GetByIdAsync(guestId, cancellationToken).ConfigureAwait(false);
 
