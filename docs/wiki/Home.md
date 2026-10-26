@@ -7,6 +7,8 @@ The pages are written in [`docs/wiki/`](https://github.com/NF-Hotel/NFHotel/tree
 
 ## Pages
 
+- [DevOps Lifecycle](DevOps-Lifecycle): how the project covers Plan, Code, Build, Test, Release, Deploy, Operate and
+  Monitor, with the tools it uses; start here for the whole picture.
 - [Local Development Deploy](Local-Development-Deploy): run the whole deployment on your own machine with one
   script, to see a change working. Start here.
 - [Proxmox Deployment](Proxmox-Deployment): set up the Proxmox virtual machine and the Docker
