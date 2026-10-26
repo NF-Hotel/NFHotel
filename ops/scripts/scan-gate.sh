@@ -9,8 +9,13 @@
 # statement (the reason) and an expired_at date at most 30 days after <today>, so an
 # accepted risk always runs out and comes back to the gate.
 #
+# With --fixable it prints the report with only the vulnerabilities that have a fixed version,
+# and every secret: what code scanning shows, because someone can act on it (ADR-0032). The
+# full report stays the record of the release.
+#
 # Usage: scan-gate.sh <trivy report.json>
 #        scan-gate.sh --check-ignore <trivyignore.yaml> [<today as YYYY-MM-DD>]
+#        scan-gate.sh --fixable <trivy report.json>
 # Exit:  0 the gate passes; 1 it fails (the findings are printed); 2 usage error
 # Needs: bash 4+, jq, GNU date
 
@@ -56,6 +61,15 @@ check_ignore() {
 }
 
 case "${1:-}" in
+  --fixable)
+    [[ $# -eq 2 && -f "$2" ]] || {
+      usage >&2
+      exit 2
+    }
+    jq '.Results |= ((. // []) | map(if .Vulnerabilities then
+          .Vulnerabilities |= map(select((.FixedVersion // "") != "")) else . end))' "$2"
+    exit 0
+    ;;
   --check-ignore)
     [[ $# -ge 2 ]] || {
       usage >&2

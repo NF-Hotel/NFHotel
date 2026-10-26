@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Scan one release image with Trivy before it is pushed (MIL-022 tasks 1 and 2, DSA-001
-# section 8): a JSON report, the same findings as SARIF for code scanning, and an SPDX
+# section 8): a JSON report, the findings to act on as SARIF for code scanning, and an SPDX
 # SBOM of the image. Then the gate of scripts/scan-gate.sh decides.
 # Trivy runs in a container at a pinned digest and reads the image from the local
 # Docker daemon through its socket, so nothing is pushed and no registry login is needed.
@@ -44,10 +44,15 @@ trivy() {
 echo "==> scanning $image"
 trivy image --quiet --scanners vuln,secret --format json --ignorefile /tmp/trivyignore.yaml \
   "$image" >"$out/$name.trivy.json" || die "the Trivy scan of $image failed"
-# The SARIF report is made from the JSON one, so both hold the same findings.
+# The SARIF report, which code scanning shows, holds the findings someone can act on: the
+# vulnerabilities with a fixed version and every secret (ADR-0032). The JSON report and the
+# SBOM keep every finding as the record of the release.
+bash "$ROOT/scripts/scan-gate.sh" --fixable "$out/$name.trivy.json" >"$out/$name.fixable.json" ||
+  die "filtering the report of $image failed"
 MSYS_NO_PATHCONV=1 docker run --rm -i --entrypoint sh "$TRIVY" -c \
   'cat >/tmp/report.json && exec trivy convert --quiet --format sarif /tmp/report.json' \
-  <"$out/$name.trivy.json" >"$out/$name.sarif" || die "converting the report of $image to SARIF failed"
+  <"$out/$name.fixable.json" >"$out/$name.sarif" || die "converting the report of $image to SARIF failed"
+rm -f "$out/$name.fixable.json"
 trivy image --quiet --format spdx-json "$image" >"$out/$name.spdx.json" ||
   die "the SBOM of $image failed"
 jq -e '.spdxVersion and (.packages | length > 0)' "$out/$name.spdx.json" >/dev/null ||

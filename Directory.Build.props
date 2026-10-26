@@ -10,6 +10,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+  <!-- Every package is pinned by its hash in a packages.lock.json per project; CI restores with
+       locked-mode, so a changed package fails the build (MIL-044, Scorecard Pinned-Dependencies). -->
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
   <!-- Path -->
   <PropertyGroup>
     <ArtifactsPath>$(MSBuildThisFileDirectory)g</ArtifactsPath>

@@ -8,7 +8,7 @@ Only the release that runs on the NF Hotel server, built from the latest commit 
 
 Do not open a public issue for a security problem.
 
-Report it privately through GitHub. Open the **Security** tab of this repository and choose **Report a vulnerability**. If you cannot use that, contact a maintainer of the `NF-Hotel` organization directly.
+Report it privately through GitHub: <https://github.com/NF-Hotel/NFHotel/security/advisories/new> (the **Security** tab, **Report a vulnerability**). Only the maintainers see the report. If you cannot use that, contact a maintainer of the [NF-Hotel organization](https://github.com/NF-Hotel) directly.
 
 Please include:
 
@@ -20,4 +20,4 @@ We confirm a report within 5 working days and agree a disclosure date with you. 
 
 ## Secrets
 
-Settings files with secrets (`deploy/*/*.env`, `deploy/nginx/tls/`) are git-ignored and stay on the server. If a secret is ever committed or exposed, it is rotated at once; removing it from git alone is not enough.
+Settings files with secrets (`ops/deploy/*/*.env`, `ops/deploy/nginx/tls/`) are git-ignored and stay on the server. If a secret is ever committed or exposed, it is rotated at once; removing it from git alone is not enough.

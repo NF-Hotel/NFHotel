@@ -61,10 +61,11 @@ jobs:
           global-json-file: global.json
 
       # Scan both direct and indirect NuGet dependencies.
-      # Known vulnerabilities and other restore warnings fail the run.
+      # Known vulnerabilities and other restore warnings fail the run. Locked mode restores exactly
+      # the packages and hashes of the packages.lock.json files (MIL-044).
       - name: Restore and NuGet vulnerability check
         run: >-
-          dotnet restore NFHotel.sln
+          dotnet restore NFHotel.sln --locked-mode
           -p:NuGetAudit=true
           -p:NuGetAuditMode=all
           -p:NuGetAuditLevel=low
@@ -119,7 +120,7 @@ jobs:
           global-json-file: global.json
 
       - name: Restore
-        run: dotnet restore NFHotel.sln
+        run: dotnet restore NFHotel.sln --locked-mode
 
       # Check the formatting against .editorconfig without changing files.
       # Code style and analyzers are also handled by the build settings of the project.

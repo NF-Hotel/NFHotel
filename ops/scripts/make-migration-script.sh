@@ -31,7 +31,7 @@ dotnet tool update --global dotnet-ef --version "$EF_VERSION" >/dev/null || die 
 export PATH="$PATH:$HOME/.dotnet/tools"
 
 echo "==> the idempotent migration script"
-(cd "$app" && dotnet restore src/NFHotel.Infrastructure >/dev/null) || die "restore failed"
+(cd "$app" && dotnet restore src/NFHotel.Infrastructure --locked-mode >/dev/null) || die "restore failed"
 # The design-time factory needs a connection string; nothing connects to it.
 (cd "$app" && NFHOTEL_CONNECTION="Host=localhost;Database=x;Username=x;Password=x" dotnet ef migrations script --idempotent \
   --project src/NFHotel.Infrastructure --startup-project src/NFHotel.Infrastructure \
