@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI under MIL-044, which S01 accepted in chat on 2026-10-26; accepted after RC-233 Go | pending |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI under MIL-044, which S01 accepted in chat on 2026-10-26; accepted after RC-233 Go | [75926ba] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -64,3 +64,4 @@ We follow option 3.
 [MIL-036]: ../milestones/mil-036-security-operations.md
 [ADR-0019]: ./adr-0019-approvals-by-the-owner.md
 [DSA-001]: ../sqa/devsecops-assessment.md
+[75926ba]: https://github.com/NF-Hotel/NFHotel/commit/75926ba38f176863e218b2b5055531c6be101be6
