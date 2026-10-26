@@ -6,9 +6,7 @@
 # that CD deployed, and opens or updates an issue when the gate fails.
 #
 # Each image is pulled by its digest and scanned by scripts/scan-image.sh, with the gate of
-# scripts/scan-gate.sh: a critical finding, or a high one with a fix. The frozen image of
-# ADR-0500 (market-analysis) is scanned with --report-only, as when it is released: it cannot
-# be rebuilt to fix anything, so only a secret would fail it.
+# scripts/scan-gate.sh: a critical finding, or a high one with a fix.
 #
 # Usage: scan-running-release.sh --manifest <release.json> --results <folder>
 #   writes <folder>/summary.md (Markdown for the issue) and the reports of scan-image.sh
@@ -22,8 +20,6 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 scan_image="${NFHOTEL_SCAN_IMAGE:-$ROOT/scripts/scan-image.sh}"
 docker="${NFHOTEL_DOCKER:-docker}"
-# The images that cannot be rebuilt (ADR-0500): reported, never failed on a vulnerability.
-readonly FROZEN=(market-analysis)
 
 die() {
   echo "error: $*" >&2
@@ -73,15 +69,13 @@ for entry in "${entries[@]}"; do
   read -r name ref <<<"$entry"
   [[ "$name" =~ ^[a-z0-9-]+$ && "$ref" =~ ^[a-z0-9./-]+@sha256:[0-9a-f]{64}$ ]] ||
     die "$manifest has an image entry that is not <name> <registry/path@sha256:digest>: $entry"
-  args=()
-  [[ " ${FROZEN[*]} " == *" $name "* ]] && args+=(--report-only)
   echo "==> $name: $ref"
   if ! "$docker" pull -q "$ref" >/dev/null 2>&1; then
     echo "- **$name**: the image could not be pulled (\`$ref\`)" >>"$summary.body"
     failed=1
     continue
   fi
-  if bash "$scan_image" "${args[@]}" "$ref" "$name" "$results" >"$results/$name.gate.txt" 2>&1; then
+  if bash "$scan_image" "$ref" "$name" "$results" >"$results/$name.gate.txt" 2>&1; then
     echo "    passes"
   else
     failed=1

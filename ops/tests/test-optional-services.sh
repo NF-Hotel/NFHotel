@@ -10,7 +10,7 @@
 # t-opt-* and the networks t-opt-proxy and t-opt-llm, and removes them at the end.
 #
 # Usage: test-optional-services.sh
-# Env:   MARKET_ANALYSIS_IMAGE  the analysis image (default: the frozen digest of ADR-0500)
+# Env:   MARKET_ANALYSIS_IMAGE  the analysis image (required, e.g. ghcr.io/nf-hotel/market-analysis:sha-...)
 #        BENCHMARK_IMAGE        the benchmark image (required, e.g. ghcr.io/nf-hotel/benchmark:sha-...)
 # Exit:  0 every check passed; 1 a check failed; 2 usage error
 # Needs: bash 4+, docker with the compose plugin
@@ -20,12 +20,11 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=ops/tests/lib/hardening.sh
 . "$ROOT/tests/lib/hardening.sh"
-[[ -n "${BENCHMARK_IMAGE:-}" ]] || {
-  echo "usage: BENCHMARK_IMAGE=<image> test-optional-services.sh" >&2
+[[ -n "${BENCHMARK_IMAGE:-}" && -n "${MARKET_ANALYSIS_IMAGE:-}" ]] || {
+  echo "usage: MARKET_ANALYSIS_IMAGE=<image> BENCHMARK_IMAGE=<image> test-optional-services.sh" >&2
   exit 2
 }
 export BENCHMARK_IMAGE MARKET_ANALYSIS_IMAGE
-MARKET_ANALYSIS_IMAGE="${MARKET_ANALYSIS_IMAGE:-$(cat "$ROOT/deploy/market-analysis/frozen-image")}"
 export NFHOTEL_PROXY_NETWORK=t-opt-proxy NFHOTEL_LLM_NETWORK=t-opt-llm
 pass=0
 fail=0

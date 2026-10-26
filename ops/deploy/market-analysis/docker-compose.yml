@@ -22,11 +22,9 @@ services:
   market-analysis-api:
     <<: *hardening
     image: *analysis-image
+    # A patch layer on the frozen image (ADR-0030); the base is a private GHCR package.
     build:
       context: .
-      args:
-        ANALYSIS_REPO: ${ANALYSIS_REPO:-https://github.com/NF-Hotel/Notebook_Market_Analysis.git}
-        ANALYSIS_REF: ${ANALYSIS_REF:-6c11cbf2a32b7cd2f17b4ebb6384ac458f6b0fb2}
       labels:
         org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
         org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}

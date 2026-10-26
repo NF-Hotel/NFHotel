@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Tests of scripts/scan-running-release.sh (MIL-036 task 1): every image of the manifest is
-# pulled by its digest and scanned; the frozen image is scanned with --report-only; a failed
-# gate or a failed pull fails the run and is written to the summary for the issue; a clean
-# release passes; a manifest that is not as expected is refused. Fakes stand in for docker
+# pulled by its digest and scanned with the gate; a failed gate or a failed pull fails the
+# run and is written to the summary for the issue; a clean release passes; a manifest that
+# is not as expected is refused. Fakes stand in for docker
 # and for scan-image.sh, so nothing is pulled or scanned.
 #
 # Run it in Debian 12 with the repository at /src:
@@ -70,8 +70,9 @@ run && ok "a clean release passes" || ko "clean: $(cat "$W/stdout")"
 [[ "$(grep -c '^docker pull' "$W/log")" == 4 && "$(grep -c '^scan ' "$W/log")" == 4 ]] &&
   ok "every image is pulled and scanned" || ko "calls: $(cat "$W/log")"
 grep -q "pull -q ghcr.io/nf-hotel/nfhotel-web@$(d 1)" "$W/log" && ok "an image is pulled by its digest" || ko "pull by digest"
-grep -q "^scan --report-only ghcr.io/nf-hotel/market-analysis@" "$W/log" && ! grep -q "^scan --report-only ghcr.io/nf-hotel/nfhotel-web@" "$W/log" &&
-  ok "only the frozen image is scanned with --report-only" || ko "report-only: $(grep '^scan' "$W/log")"
+# Since ADR-0030 no image is exempt from the gate: market-analysis is scanned like the others.
+grep -q "^scan ghcr.io/nf-hotel/market-analysis@" "$W/log" &&
+  ok "market-analysis is scanned with the gate" || ko "market-analysis: $(grep '^scan' "$W/log")"
 grep -q "found nothing that the gate refuses" "$W/out/summary.md" && ok "a clean summary says so" || ko "clean summary"
 
 FAKE_FAIL_SCAN=nfhotel-api run

@@ -1,17 +1,14 @@
 #!/usr/bin/env bash
 # Scan one release image with Trivy before it is pushed (MIL-022 tasks 1 and 2, DSA-001
 # section 8): a JSON report, the same findings as SARIF for code scanning, and an SPDX
-# SBOM of the image. Then the gate of scripts/scan-gate.sh decides. With --report-only (the
-# frozen image of ADR-0500, which cannot be rebuilt to fix anything) its vulnerabilities
-# are only reported, but a secret still blocks.
+# SBOM of the image. Then the gate of scripts/scan-gate.sh decides.
 # Trivy runs in a container at a pinned digest and reads the image from the local
 # Docker daemon through its socket, so nothing is pushed and no registry login is needed.
 # Its vulnerability database is kept in the Docker volume nfhotel-trivy-cache.
 #
-# Usage: scan-image.sh [--report-only] <image> <name> <output folder>
+# Usage: scan-image.sh <image> <name> <output folder>
 #   writes <folder>/<name>.trivy.json, <name>.sarif and <name>.spdx.json
-# Exit:  0 the gate passes (or --report-only and no secret); 1 it fails or a scan failed;
-#        2 usage error
+# Exit:  0 the gate passes; 1 it fails or a scan failed; 2 usage error
 # Needs: bash 4+, docker, jq, GNU date
 
 set -euo pipefail
@@ -24,11 +21,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly TRIVY="aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa"
 readonly IGNORE="$ROOT/security/trivyignore.yaml"
 
-report_only=0
-if [[ "${1:-}" == "--report-only" ]]; then
-  report_only=1
-  shift
-fi
 [[ $# -eq 3 ]] || {
   usage >&2
   exit 2
@@ -62,13 +54,4 @@ jq -e '.spdxVersion and (.packages | length > 0)' "$out/$name.spdx.json" >/dev/n
   die "the SBOM of $image has no packages"
 echo "    $(jq '.packages | length' "$out/$name.spdx.json") packages in the SBOM"
 
-if ((report_only)); then
-  # A secret still blocks: it leaks whether or not the image can be rebuilt.
-  if jq -e '[.Results[]?.Secrets[]?] | length > 0' "$out/$name.trivy.json" >/dev/null; then
-    exec bash "$ROOT/scripts/scan-gate.sh" "$out/$name.trivy.json"
-  fi
-  bash "$ROOT/scripts/scan-gate.sh" "$out/$name.trivy.json" ||
-    echo "    report only: $name is frozen (ADR-0500), so its vulnerabilities do not block the release"
-  exit 0
-fi
 exec bash "$ROOT/scripts/scan-gate.sh" "$out/$name.trivy.json"

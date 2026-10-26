@@ -4,6 +4,15 @@ Runs `NF-Hotel/Notebook_Market_Analysis` as two containers of one image behind t
 nginx proxy: the API (`serve`, port 8000) and the read-only history notebook
 (marimo, port 2718). Neither publishes a host port.
 
+## The image
+
+The source repository was deleted, so the application cannot be built again (ADR-0500).
+`Dockerfile` is a patch layer on the last good digest (ADR-0030): the Debian security
+updates and the packages pinned in `requirements.txt`, nothing else. The base is a
+private GHCR package, so `--build` needs `docker login ghcr.io` with a token that can
+read packages. How to fix a finding of the scan: the wiki page CI-CD, "The
+market-analysis image".
+
 ## Start
 
 ```bash

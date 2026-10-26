@@ -289,15 +289,13 @@ for s in "${ordered[@]}"; do
   e="$(env_of "$s")"
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
-  # A frozen image (ADR-0500) is never built: its source repository is gone. A build uses
-  # the pinned digest instead. The package is private, so a host without a GHCR login (a
-  # development VM) cannot pull it; the service is then left out, with the reason, and the
-  # rest of the deployment goes on. A release (--no-build) always names its digests.
-  if [[ "$s" == "analysis" ]] && ((build)) && [[ -f "$d/frozen-image" ]]; then
-    export MARKET_ANALYSIS_IMAGE
-    MARKET_ANALYSIS_IMAGE="$(tr -d '[:space:]' <"$d/frozen-image")"
-    if ! docker pull -q "$MARKET_ANALYSIS_IMAGE" >/dev/null 2>&1; then
-      echo "warning: cannot pull the frozen image $MARKET_ANALYSIS_IMAGE (a private GHCR package, ADR-0500);" >&2
+  # The analysis image is a patch layer on a frozen digest (ADR-0030), a private GHCR
+  # package, so a host without a GHCR login (a development VM) cannot build it; the service
+  # is then left out, with the reason, and the rest of the deployment goes on. A release
+  # (--no-build) always names its digests.
+  if [[ "$s" == "analysis" ]] && ((build)); then
+    if ! (cd "$d" && docker compose --env-file "$e" build market-analysis-api) >&2; then
+      echo "warning: cannot build the analysis image on its frozen base (a private GHCR package, ADR-0030);" >&2
       echo "         analysis is left out. Log this host in to ghcr.io with a token that can read packages to run it." >&2
       analysis_skipped=1
       continue
@@ -325,7 +323,7 @@ for s in "${ordered[@]}"; do
   fi
   echo "==> deploying $s"
   args=(--env-file "$e" up -d --remove-orphans)
-  if ((build)) && [[ "$s" =~ ^(api|web|analysis|benchmark)$ ]] && [[ ! -f "$d/frozen-image" ]]; then
+  if ((build)) && [[ "$s" =~ ^(api|web|analysis|benchmark)$ ]]; then
     args+=(--build)
   fi
   # --wait returns once every service with a healthcheck is healthy; the proxy has one since

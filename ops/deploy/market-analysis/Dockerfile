@@ -1,30 +1,33 @@
-# Image for NF-Hotel/Notebook_Market_Analysis (MIL-004 task 4). The repository has
-# no Dockerfile, so this one fetches it at a pinned commit; change ANALYSIS_REF to
-# upgrade. Build context is this folder.
-# Pinned by digest (MIL-022 task 4); Dependabot proposes the next one.
-FROM python:3.13-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f
+# Patch layer on the frozen market-analysis image (ADR-0030, MIL-042). The source of the
+# image, NF-Hotel/Notebook_Market_Analysis at 6c11cbf, was deleted, so the application
+# cannot be built again (ADR-0500). This layer starts from the last good digest and adds
+# only security fixes: the Debian updates, the Python packages pinned in
+# requirements.txt, and the removal of bundled files that the service never uses and
+# that carry findings. The application files stay those of the digest, which
+# tests/check-patch-layer.sh checks on every pull request.
+# The base is a private GHCR package: building needs a login that can read packages.
+# Dependabot does not follow this line; the digest must stay in GHCR (ADR-0500).
+FROM ghcr.io/nf-hotel/market-analysis@sha256:6bd53d9e59afe80bb3104cebd7bb6e9e03cd1617ea9b1eb89d449968b377a093
 
-ARG ANALYSIS_REPO
-ARG ANALYSIS_REF
-ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+USER root
 
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends git ca-certificates \
+    && apt-get upgrade --yes --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git init /opt/analysis \
-    && git -C /opt/analysis remote add origin "$ANALYSIS_REPO" \
-    && git -C /opt/analysis fetch --depth 1 origin "$ANALYSIS_REF" \
-    && git -C /opt/analysis checkout FETCH_HEAD \
-    && rm -rf /opt/analysis/.git \
-    && pip wheel --only-binary :all: --no-deps --wheel-dir /tmp/wheels /opt/analysis \
-    && pip install --only-binary :all: /tmp/wheels/*.whl \
-    && rm -rf /tmp/wheels /opt/analysis
+# Hashed pins replace the vulnerable versions; --no-deps, so nothing else moves. pip is
+# removed afterwards: the service never installs anything, and the copies of urllib3 and
+# other libraries that pip vendors carry findings of their own (as in deploy/benchmark).
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --require-hashes --only-binary :all: --no-deps -r /tmp/requirements.txt \
+    && rm /tmp/requirements.txt \
+    && pip uninstall --yes pip
 
-RUN useradd --create-home app \
-    && mkdir -p /app/work/output \
-    && chown -R app /app/work
+# marimo bundles the Node.js packages of its Copilot language server, which only its
+# editor starts, with Node.js. The image has no Node.js and runs the notebook with
+# `marimo run`, so the folder is never used; its zod carries a fixable high finding
+# (CVE-2023-54404).
+RUN rm -rf /usr/local/lib/python3.13/site-packages/marimo/_lsp/copilot
+
 USER app
 WORKDIR /app/work
