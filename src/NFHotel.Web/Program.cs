@@ -40,6 +40,7 @@ builder.Services.AddScoped(typeof(IUseCaseRunner<>), typeof(UseCaseRunner<>));
 
 // The staff sign-in: the cookie, one policy per permission, and the source of the staff token (ADR-0005).
 var requireTls = HttpsRequirement.IsRequired(builder.Configuration);
+builder.Services.AddPersistentDataProtection(builder.Configuration);   // the keys survive a deploy (ADR-0031)
 builder.Services.AddStaffSignIn(requireTls);
 builder.Services.AddSecureAntiforgery(requireTls);   // the antiforgery cookie follows the staff cookie (MIL-033)
 builder.Services.AddHttpContextAccessor();

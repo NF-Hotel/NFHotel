@@ -27,11 +27,15 @@ services:
     restart: unless-stopped
     env_file: ${NFHOTEL_WEB_ENV_FILE:-secrets/settings.env}
     # Hardening (MIL-023 task 2, CIS-001): the image runs as the user app on port 8080 and
-    # needs no capability; only /tmp is written.
+    # needs no capability; only /tmp and the key folder are written.
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     read_only: true
     tmpfs: [/tmp]
+    # The Data Protection keys outlive the container, so a deploy keeps the staff signed in and an
+    # open form valid (ADR-0031). The image owns /app/keys by the user app and points to it.
+    volumes:
+      - keys:/app/keys
     mem_limit: 1g
     cpus: 2
     pids_limit: 512
@@ -65,6 +69,9 @@ services:
     networks:
       - proxy
       - api
+
+volumes:
+  keys:
 
 networks:
   proxy:
