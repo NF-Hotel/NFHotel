@@ -33,6 +33,12 @@ public static class ApiRoutes
     /// <summary>One run below <see cref="Benchmark"/>, by the run id of the contract.</summary>
     public const string BenchmarkRunById = "runs/{runId:guid}";
 
+    /// <summary>The records of the started runs below <see cref="Benchmark"/> (ADR-0031).</summary>
+    public const string BenchmarkRequests = "requests";
+
+    /// <summary>The state of one started run below <see cref="Benchmark"/>, by the run id of the service.</summary>
+    public const string BenchmarkRequestState = "requests/{runId:guid}/state";
+
     /// <summary>The answer text of one request below <see cref="Benchmark"/>.</summary>
     public const string BenchmarkOutput = "results/{id:int}/output";
 

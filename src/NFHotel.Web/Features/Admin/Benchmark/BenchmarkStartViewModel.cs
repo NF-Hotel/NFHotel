@@ -8,7 +8,8 @@ namespace NFHotel.Web.Features.Admin.Benchmark;
 /// <summary>
 /// State of the page where a Manager starts a benchmark run and follows it until its result is stored (MIL-020). The
 /// page holds only markup and binding; the limits here are the same as those of the benchmark service, and the service
-/// checks them again.
+/// checks them again. Every run is recorded through the API, so the page picks up a run that is still going when it
+/// opens, and shows a run that a restart of the service stopped (ADR-0031).
 /// </summary>
 public sealed class BenchmarkStartViewModel
 {
@@ -19,15 +20,19 @@ public sealed class BenchmarkStartViewModel
     public const int MaxRuns = 5;
 
     private readonly IUseCaseRunner<IBenchmarkServiceClient> _client;
+    private readonly BenchmarkRunTracker _tracker;
     private readonly List<string> _selected = [];
 
     /// <summary>Creates the view model.</summary>
     /// <param name="client">Runs the calls to the benchmark service.</param>
-    public BenchmarkStartViewModel(IUseCaseRunner<IBenchmarkServiceClient> client)
+    /// <param name="tracker">Records the runs and their states through the API.</param>
+    public BenchmarkStartViewModel(IUseCaseRunner<IBenchmarkServiceClient> client, BenchmarkRunTracker tracker)
     {
         ArgumentNullException.ThrowIfNull(client);
+        ArgumentNullException.ThrowIfNull(tracker);
 
         _client = client;
+        _tracker = tracker;
     }
 
     /// <summary>The installed models that can be chosen.</summary>
@@ -47,6 +52,12 @@ public sealed class BenchmarkStartViewModel
 
     /// <summary>The run that was started and is shown, or <c>null</c>.</summary>
     public BenchmarkRunStateDto? CurrentRun { get; private set; }
+
+    /// <summary>
+    /// The last run that ended without a result, failed or interrupted by a restart of the service, when no run is being
+    /// followed; its choice can be taken again with <see cref="UseChoiceOf"/>. <c>null</c> otherwise.
+    /// </summary>
+    public BenchmarkRequestDto? StoppedRun { get; private set; }
 
     /// <summary>The texts of the last refusal, empty when the last call succeeded.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = [];
@@ -75,7 +86,63 @@ public sealed class BenchmarkStartViewModel
         && (HotelAnalysis || DeterministicTasks)
         && Runs is >= 1 and <= MaxRuns;
 
-    /// <summary>Loads the installed models when the page opens.</summary>
+    /// <summary>
+    /// Loads the installed models when the page opens, then the recorded runs: a run that is still going is followed again,
+    /// and a run to start again (<paramref name="againRunId"/>) has its choice taken.
+    /// </summary>
+    /// <param name="againRunId">A recorded run whose choice is to be taken, or <c>null</c>.</param>
+    /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
+    /// <returns>A task that ends when the models and the runs are loaded.</returns>
+    public async Task OpenAsync(Guid? againRunId, CancellationToken cancellationToken = default)
+    {
+        await InitializeAsync(cancellationToken).ConfigureAwait(false);
+        if (Models.Count == 0)
+        {
+            return;
+        }
+
+        var recent = await _tracker.LoadRecentAsync(cancellationToken).ConfigureAwait(false);
+        if (recent.IsFailure)
+        {
+            // The runs could not be read; starting a new run still works.
+            return;
+        }
+
+        if (againRunId is { } id && recent.Value.FirstOrDefault(record => record.RunId == id) is { } again)
+        {
+            UseChoiceOf(again);
+            return;
+        }
+
+        if (recent.Value.FirstOrDefault(record => record.IsOpen) is { } open)
+        {
+            var state = await _tracker.RefreshAsync(open.RunId, open.State, cancellationToken).ConfigureAwait(false);
+            if (state.IsSuccess)
+            {
+                UseChoiceOf(open);
+                CurrentRun = state.Value;
+                return;
+            }
+        }
+
+        StoppedRun = recent.Value.FirstOrDefault(record => !record.IsOpen);
+    }
+
+    /// <summary>Takes the models and options of a recorded run, as far as its models are still installed.</summary>
+    /// <param name="record">The recorded run.</param>
+    public void UseChoiceOf(BenchmarkRequestDto record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+
+        _selected.Clear();
+        _selected.AddRange(record.Models.Where(Models.Contains).Take(MaxModels));
+        HotelAnalysis = record.HotelAnalysis;
+        DeterministicTasks = record.DeterministicTasks;
+        Runs = Math.Clamp(record.Runs, 1, MaxRuns);
+        StoppedRun = null;
+    }
+
+    /// <summary>Loads the installed models, also after a model was added or deleted.</summary>
     /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
     /// <returns>A task that ends when the models are loaded.</returns>
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -139,8 +206,12 @@ public sealed class BenchmarkStartViewModel
                 return;
             }
 
-            Errors = [];
             CurrentRun = result.Value;
+            StoppedRun = null;
+
+            // The run goes on even when it cannot be recorded; the page says so.
+            var recorded = await _tracker.RecordStartedAsync(result.Value, request, cancellationToken).ConfigureAwait(false);
+            Errors = recorded.IsSuccess ? [] : ErrorMessages.Describe(recorded);
         }
         finally
         {
@@ -148,7 +219,10 @@ public sealed class BenchmarkStartViewModel
         }
     }
 
-    /// <summary>Asks for the state of the run that is followed. A run the service has forgotten ends the following.</summary>
+    /// <summary>
+    /// Asks for the state of the run that is followed and records it. A run the service has forgotten is recorded as
+    /// interrupted and ends the following; the choice stays, so the same run can be started again.
+    /// </summary>
     /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
     /// <returns>A task that ends when the service has answered.</returns>
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
@@ -158,9 +232,7 @@ public sealed class BenchmarkStartViewModel
             return;
         }
 
-        var result = await _client
-            .RunAsync((client, token) => client.GetRunAsync(run.RunId, token), cancellationToken)
-            .ConfigureAwait(false);
+        var result = await _tracker.RefreshAsync(run.RunId, run.State, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
         {

@@ -258,6 +258,10 @@ joins the internal network `nfhotel-api` and publishes no host port.
 - The benchmark service delivers the finished result to `http://nfhotel-api:8080/api/benchmark/results` with the
   `Api__Token` of `ops/deploy/nfhotel-api/nfhotel-api.env`. That value is its `NFBENCH_WEB_TOKEN`.
 - A Manager starts a run at `/admin/benchmark/start` and reads the stored runs at `/admin/benchmark`.
+- Every run a Manager starts is recorded in the API (`/api/benchmark/requests`, ADR-0031), with its choice, who started it
+  and its last state. The benchmark service forgets its runs when it restarts, for example at a deploy: a run that it no
+  longer knows is then shown as interrupted, on `/admin/benchmark` under "Started runs without a stored result" and on
+  the start page, with "Start again" or "Use the same choice". Reopening the start page follows a run that is still going.
 - Opening a run on `/admin/benchmark` shows it like the notebook of the benchmark repository: the mean per model and
   phase (cold is the first request of a model, warm the later ones) with three bar charts, the pass and fail of the
   deterministic tasks, up to three answers side by side, the memory charts, and a CSV and JSON download of the rows

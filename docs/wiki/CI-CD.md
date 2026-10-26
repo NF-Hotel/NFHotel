@@ -28,7 +28,10 @@ One repository holds it all (ADR-0016): the application, and its operations unde
 
    If the check fails, it deploys the previous release again and the run turns red.
 
-Services whose image and settings did not change are not restarted. Docker volumes, and so the database, are never removed by a deploy.
+Docker volumes, and so the database, are never removed by a deploy. Every release builds each image again with a new digest, so a deploy recreates every service. What that keeps and what it stops (ADR-0031):
+
+- **Kept:** the database; the staff sign-ins and the forms that are open in a browser, because the web application keeps its Data Protection keys in the volume `nfhotel-web_keys`; the record of every benchmark run a Manager started.
+- **Stopped:** a benchmark run that is queued or running, because the benchmark service keeps its queue in memory. The back office then shows it as interrupted, and a Manager starts it again with the same choice. Deploy when no run is going if the result matters.
 
 ## When a deploy does not start
 

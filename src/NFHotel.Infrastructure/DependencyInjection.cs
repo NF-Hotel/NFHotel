@@ -138,6 +138,7 @@ public static class DependencyInjection
         services.AddScoped<IStaffRepository, StaffRepository>();
         services.AddScoped<IStaffAuditRepository, StaffAuditRepository>();
         services.AddScoped<IBenchmarkRunRepository, BenchmarkRunRepository>();
+        services.AddScoped<IBenchmarkRequestRepository, BenchmarkRequestRepository>();
         services.AddScoped<IAiDefaultRepository, AiDefaultRepository>();
         services.AddScoped<IMarketAnalysisRunRepository, MarketAnalysisRunRepository>();
         services.AddScoped<IBenchmarkQueries, BenchmarkRunRepository>();
@@ -180,6 +181,7 @@ public static class DependencyInjection
         services.AddScoped<BenchmarkService>();
         services.AddScoped<IBenchmarkService>(provider => provider.GetRequiredService<BenchmarkService>());
         services.AddScoped<IBenchmarkIntake>(provider => provider.GetRequiredService<BenchmarkService>());
+        services.AddScoped<IBenchmarkRequestService, BenchmarkRequestService>();
         services.AddScoped<IGuestService, GuestService>();
         services.AddScoped<IStaffAuthService, StaffAuthService>();
         services.AddScoped<StaffAccountService>();

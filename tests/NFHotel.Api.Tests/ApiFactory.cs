@@ -124,6 +124,8 @@ public class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IBenchmarkIntake>();
             services.RemoveAll<IAiDefaultService>();
             services.AddSingleton<IAiDefaultService>(_ => World.AiDefaultService());
+            services.RemoveAll<IBenchmarkRequestService>();
+            services.AddSingleton<IBenchmarkRequestService>(_ => World.BenchmarkRequestService());
             services.RemoveAll<IMarketAnalysisService>();
             services.RemoveAll<IMarketAnalysisServiceClient>();
             services.RemoveAll<IMarketAnalysisRunLauncher>();

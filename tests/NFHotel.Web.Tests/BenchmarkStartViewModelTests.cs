@@ -2,6 +2,7 @@ using NFHotel.Application.Dto.Benchmark;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Web.Common;
 using NFHotel.Web.Features.Admin.Benchmark;
 
@@ -241,12 +242,15 @@ public sealed class BenchmarkStartViewModelTests
         Assert.False(viewModel.ResultIsStored);
     }
 
-    /// <summary>Negative: a service that forgot the run shows the text and stops following.</summary>
+    /// <summary>
+    /// Negative: a service that forgot the run (it restarted) shows the text, records the run as interrupted and stops
+    /// following; the choice stays, so the same run can be started again (ADR-0031).
+    /// </summary>
     [Fact]
-    public async Task RefreshAsync_RunForgotten_ShowsTheTextAndStopsFollowing()
+    public async Task RefreshAsync_RunForgotten_RecordsInterruptedAndKeepsTheChoice()
     {
         // Arrange
-        var viewModel = Build(out var client);
+        var viewModel = Build(out var client, out var requests);
         await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
         viewModel.ToggleModel("m1");
         await viewModel.StartAsync(TestContext.Current.CancellationToken);
@@ -256,8 +260,14 @@ public sealed class BenchmarkStartViewModelTests
         await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Contains("no longer knows this run", Assert.Single(viewModel.Errors), StringComparison.Ordinal);
+        Assert.Contains("was restarted and the run was stopped", Assert.Single(viewModel.Errors), StringComparison.Ordinal);
         Assert.False(viewModel.IsFollowing);
+        await requests.Received(1).SetStateAsync(
+            RunId,
+            Arg.Is<SetBenchmarkRequestStateRequest>(request => request.State == BenchmarkRunStates.Interrupted),
+            Arg.Any<CancellationToken>());
+        Assert.Equal(["m1"], viewModel.SelectedModels);
+        Assert.True(viewModel.CanStart);
     }
 
     /// <summary>State: a short failure to reach the service keeps following, so the next look can succeed.</summary>
@@ -295,12 +305,138 @@ public sealed class BenchmarkStartViewModelTests
 
     #endregion
 
+    #region Recorded runs (ADR-0031)
+
+    /// <summary>Positive: a started run is recorded through the API with its choice.</summary>
+    [Fact]
+    public async Task StartAsync_Accepted_RecordsTheRun()
+    {
+        // Arrange
+        var viewModel = Build(out _, out var requests);
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        viewModel.ToggleModel("m2");
+        viewModel.Runs = 3;
+
+        // Act
+        await viewModel.StartAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await requests.Received(1).RecordAsync(
+            Arg.Is<RecordBenchmarkRequest>(request => request.RunId == RunId && request.Models.SequenceEqual(new[] { "m2" }) && request.Runs == 3),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+        Assert.Empty(viewModel.Errors);
+    }
+
+    /// <summary>Error handling: a run that cannot be recorded is still followed, and the page says why.</summary>
+    [Fact]
+    public async Task StartAsync_RecordFails_FollowsTheRunAndShowsTheText()
+    {
+        // Arrange
+        var viewModel = Build(out _, out var requests);
+        requests.RecordAsync(Arg.Any<RecordBenchmarkRequest>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Result<BenchmarkRequestDto>.Failure(ErrorCodes.Api.Unavailable));
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        viewModel.ToggleModel("m1");
+
+        // Act
+        await viewModel.StartAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(viewModel.IsFollowing);
+        Assert.Equal("We couldn't reach the hotel system. Please try again in a moment.", Assert.Single(viewModel.Errors));
+    }
+
+    /// <summary>State: a run that is still going when the page opens is followed again, with its choice shown.</summary>
+    [Fact]
+    public async Task OpenAsync_RunStillGoing_FollowsIt()
+    {
+        // Arrange
+        var viewModel = Build(out var client, out _, BenchmarkRequestDoubles.Record(RunId, BenchmarkRunStates.Running));
+        client.GetRunAsync(RunId, Arg.Any<CancellationToken>())
+            .Returns(Result<BenchmarkRunStateDto>.Success(State(BenchmarkRunStates.Running, BenchmarkDeliveryStates.NotReady)));
+
+        // Act
+        await viewModel.OpenAsync(null, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(viewModel.IsFollowing);
+        Assert.Equal(["m1", "m2"], viewModel.SelectedModels);
+        Assert.Null(viewModel.StoppedRun);
+    }
+
+    /// <summary>
+    /// State: a run that a restart stopped while nobody looked is shown as interrupted when the page opens, and its choice
+    /// can be taken to start it again.
+    /// </summary>
+    [Fact]
+    public async Task OpenAsync_RunForgottenWhileAway_ShowsItInterrupted()
+    {
+        // Arrange
+        var viewModel = Build(out var client, out _, BenchmarkRequestDoubles.Record(RunId, BenchmarkRunStates.Queued));
+        client.GetRunAsync(RunId, Arg.Any<CancellationToken>()).Returns(Result<BenchmarkRunStateDto>.Failure(ErrorCodes.BenchmarkRunner.RunNotFound));
+
+        // Act
+        await viewModel.OpenAsync(null, TestContext.Current.CancellationToken);
+        var stopped = viewModel.StoppedRun;
+        viewModel.UseChoiceOf(stopped!);
+
+        // Assert
+        Assert.Equal(BenchmarkRunStates.Interrupted, stopped?.State);
+        Assert.False(viewModel.IsFollowing);
+        Assert.Equal(["m1", "m2"], viewModel.SelectedModels);
+        Assert.Equal(2, viewModel.Runs);
+        Assert.True(viewModel.CanStart);
+        Assert.Null(viewModel.StoppedRun);
+    }
+
+    /// <summary>Edge: the choice of a run named by the list is taken; a model that is no longer installed is left out.</summary>
+    [Fact]
+    public async Task OpenAsync_AgainRunWithAModelGone_TakesTheRestOfTheChoice()
+    {
+        // Arrange
+        var record = BenchmarkRequestDoubles.Record(RunId, BenchmarkRunStates.Interrupted) with { Models = ["m2", "gone"] };
+        var viewModel = Build(out _, out _, record);
+
+        // Act
+        await viewModel.OpenAsync(RunId, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(["m2"], viewModel.SelectedModels);
+        Assert.True(viewModel.CanStart);
+        Assert.Null(viewModel.StoppedRun);
+    }
+
+    /// <summary>Error handling: when the recorded runs cannot be read, the page still offers the models.</summary>
+    [Fact]
+    public async Task OpenAsync_RecordsUnavailable_StillOffersTheModels()
+    {
+        // Arrange
+        var viewModel = Build(out _, out var requests);
+        requests.GetRecentAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<BenchmarkRequestDto>>.Failure(ErrorCodes.Api.Unavailable));
+
+        // Act
+        await viewModel.OpenAsync(null, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(5, viewModel.Models.Count);
+        Assert.Empty(viewModel.Errors);
+        Assert.Null(viewModel.StoppedRun);
+    }
+
+    #endregion
+
     #region Helpers
 
     private static BenchmarkRunStateDto State(string state, string delivery) =>
         new(RunId, state, delivery, ["m1"], Queued, null, null, null);
 
-    private static BenchmarkStartViewModel Build(out IBenchmarkServiceClient client)
+    private static BenchmarkStartViewModel Build(out IBenchmarkServiceClient client) => Build(out client, out _);
+
+    private static BenchmarkStartViewModel Build(
+        out IBenchmarkServiceClient client,
+        out IBenchmarkRequestService requests,
+        params BenchmarkRequestDto[] recent)
     {
         var fake = Substitute.For<IBenchmarkServiceClient>();
         fake.ListModelsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<string>>.Success(["m1", "m2", "m3", "m4", "m5"]));
@@ -317,7 +453,9 @@ public sealed class BenchmarkStartViewModelTests
                 Arg.Any<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<BenchmarkRunStateDto>>>>(),
                 Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<BenchmarkRunStateDto>>>>()(fake, call.Arg<CancellationToken>()));
-        return new BenchmarkStartViewModel(runner);
+        requests = BenchmarkRequestDoubles.Requests(recent);
+        var tracker = new BenchmarkRunTracker(runner, new PassThroughRunner<IBenchmarkRequestService>(requests));
+        return new BenchmarkStartViewModel(runner, tracker);
     }
 
     #endregion
