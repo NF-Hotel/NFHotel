@@ -72,5 +72,15 @@ uris="$(jq -r '[.runs[0].results[].locations[0].physicalLocation.artifactLocatio
   ok "the SARIF message keeps the full URL" || ko "the SARIF message keeps the full URL"
 [[ "$(jq '.runs[0].tool.driver.rules | length' <<<"$sarif")" == 2 ]] && ok "one SARIF rule per ZAP rule" || ko "one SARIF rule per ZAP rule"
 
+# With the rules file, the alerts of an IGNORE rule stay out of the SARIF (ADR-0032).
+printf '10038\tIGNORE\t(The CSP is set elsewhere; expires 2026-11-19)\n40012\tFAIL\t\n' >"$W/ignore.tsv"
+sarif="$(bash "$SCAN" --to-sarif "$W/report.json" "$W/ignore.tsv")"
+[[ "$(jq -r '[.runs[0].results[].ruleId] | join(",")' <<<"$sarif")" == "40012" ]] &&
+  ok "the alerts of an IGNORE rule are left out of the SARIF" || ko "IGNORE in SARIF: $(jq -c '[.runs[0].results[].ruleId]' <<<"$sarif")"
+[[ "$(jq -r '[.runs[0].tool.driver.rules[].id] | join(",")' <<<"$sarif")" == "40012" ]] &&
+  ok "an IGNORE rule is not listed as a SARIF rule" || ko "IGNORE rule listed"
+bash "$SCAN" --to-sarif "$W/report.json" "$W/missing.tsv" >/dev/null 2>&1
+[[ $? -eq 2 ]] && ok "a missing rules file is a usage error" || ko "a missing rules file is a usage error"
+
 echo "==> $pass passed, $fail failed"
 ((fail == 0))
