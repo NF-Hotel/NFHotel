@@ -110,7 +110,7 @@ public sealed class BenchmarkRequestsEndpointTests
 
     /// <summary>Negative: the service token alone can neither record a run nor read the list.</summary>
     [Fact]
-    public async Task ServiceTokenOnly_Returns401()
+    public async Task PostAndGet_ServiceTokenOnly_Returns401()
     {
         // Arrange
         using var factory = new ApiFactory();

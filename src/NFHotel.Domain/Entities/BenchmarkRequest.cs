@@ -114,10 +114,17 @@ public sealed class BenchmarkRequest : Entity<int>
         string requestedBy,
         DateTimeOffset requestedAt)
     {
+        // Plain loops, not lambdas: an entity file holds no compiler-made closure types (StructureTests).
+        var trimmed = new List<string>();
+        foreach (var model in models ?? [])
+        {
+            trimmed.Add(model?.Trim() ?? string.Empty);
+        }
+
         var request = new BenchmarkRequest
         {
             RunId = runId,
-            _models = models?.Select(model => model?.Trim() ?? string.Empty).ToList() ?? [],
+            _models = trimmed,
             HotelAnalysis = hotelAnalysis,
             DeterministicTasks = deterministicTasks,
             Runs = runs,
@@ -132,9 +139,7 @@ public sealed class BenchmarkRequest : Entity<int>
             codes.Add(BenchmarkRequestErrors.RunIdRequired);
         }
 
-        if (request._models.Count is 0 or > MaxModels
-            || request._models.Any(model => model.Length is 0 or > MaxTextLength)
-            || request._models.Distinct(StringComparer.Ordinal).Count() != request._models.Count)
+        if (!AreValidModels(trimmed))
         {
             codes.Add(BenchmarkRequestErrors.ModelsInvalid);
         }
@@ -159,6 +164,25 @@ public sealed class BenchmarkRequest : Entity<int>
         }
 
         return request;
+    }
+
+    private static bool AreValidModels(List<string> models)
+    {
+        if (models.Count is 0 or > MaxModels)
+        {
+            return false;
+        }
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var model in models)
+        {
+            if (model.Length is 0 or > MaxTextLength || !seen.Add(model))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>

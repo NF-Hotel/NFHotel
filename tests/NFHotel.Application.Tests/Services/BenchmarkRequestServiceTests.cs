@@ -12,6 +12,8 @@ public sealed class BenchmarkRequestServiceTests
     private static readonly Guid RunId = Guid.Parse("5b3f0e1a-0000-4000-8000-000000000001");
     private static readonly RecordBenchmarkRequest Choice = new(RunId, ["m1", "m2"], true, false, 2);
 
+    #region RecordAsync
+
     /// <summary>Positive: a started run is stored once, queued, with the user and the clock time.</summary>
     [Fact]
     public async Task RecordAsync_NewRun_StoresItQueued()
@@ -63,6 +65,10 @@ public sealed class BenchmarkRequestServiceTests
         Assert.Contains(BenchmarkRequestErrors.ModelsInvalid, result.Errors.Select(error => error.Code));
         Assert.Empty(world.BenchmarkRequests.Items);
     }
+
+    #endregion
+
+    #region SetStateAsync
 
     /// <summary>State: a reported state is recorded with its error and saved.</summary>
     [Fact]
@@ -130,6 +136,10 @@ public sealed class BenchmarkRequestServiceTests
         Assert.Equal(ErrorCodes.Benchmark.NotFound, Assert.Single(result.Errors).Code);
     }
 
+    #endregion
+
+    #region GetRecentAsync
+
     /// <summary>Boundary: the list holds the runs of the last seven days that are not done, newest first.</summary>
     [Fact]
     public async Task GetRecentAsync_MixedRuns_ListsTheRecentNotDoneNewestFirst()
@@ -152,4 +162,6 @@ public sealed class BenchmarkRequestServiceTests
         // Assert
         Assert.Equal([Id(3), Id(1)], result.Value.Select(request => request.RunId));
     }
+
+    #endregion
 }
