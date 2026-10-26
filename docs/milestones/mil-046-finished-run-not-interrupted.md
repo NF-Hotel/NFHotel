@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | S01 | Initial version; the fault found in the gate review of MIL-045 (RC-235), which S01 asked in chat on 2026-10-26 to have fixed ("ja sæt igang"); S01 accepted it in chat ("Jeg accepterer planen for MIL-046"); accepted after RC-238 Go | pending |
+| 2026-10-26 | Accepted | mikemike | S01 | Initial version; the fault found in the gate review of MIL-045 (RC-235), which S01 asked in chat on 2026-10-26 to have fixed ("ja sæt igang"); S01 accepted it in chat ("Jeg accepterer planen for MIL-046"); accepted after RC-238 Go | [16de13f] |
 
 ---
 
@@ -74,3 +74,4 @@ Decide whether NF Hotel may claim that the state of a recorded benchmark run is 
 [MIL-043]: ./mil-043-state-across-deploys.md
 [MIL-045]: ./mil-045-benchmark-results-volume.md
 [US-001.04]: ../user-stories.md
+[16de13f]: https://github.com/NF-Hotel/NFHotel/commit/16de13f844df7b38fcbd09ba666f4fb684aca40a

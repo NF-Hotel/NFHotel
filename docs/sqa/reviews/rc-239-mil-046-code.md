@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [14976d8] |
 
 ---
 
@@ -45,3 +45,4 @@ None.
 [MIL-046]: ../../milestones/mil-046-finished-run-not-interrupted.md
 [ADR-0031]: ../../adr/adr-0031-state-that-survives-a-deploy.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[14976d8]: https://github.com/NF-Hotel/NFHotel/commit/14976d8e41a0b7402d16eee952133da6186a18e8

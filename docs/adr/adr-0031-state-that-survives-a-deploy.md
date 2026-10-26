@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI under MIL-043, which S01 accepted in chat on 2026-10-26; accepted after RC-227 Go | [1e76397] |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Decisions 2 and 3: a run the service forgot is `done` when its result is stored, and `interrupted` may become `done` on that proof (MIL-046) | pending |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Decisions 2 and 3: a run the service forgot is `done` when its result is stored, and `interrupted` may become `done` on that proof (MIL-046) | [14976d8] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -79,3 +79,4 @@ We follow option 1 for both.
 [MIL-020]: ../milestones/mil-020-start-benchmark-run.md
 [MIL-043]: ../milestones/mil-043-state-across-deploys.md
 [1e76397]: https://github.com/NF-Hotel/NFHotel/commit/1e76397a9046a7150f155f27d60b270a8e2a1f99
+[14976d8]: https://github.com/NF-Hotel/NFHotel/commit/14976d8e41a0b7402d16eee952133da6186a18e8
