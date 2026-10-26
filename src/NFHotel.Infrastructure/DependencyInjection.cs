@@ -187,6 +187,9 @@ public static class DependencyInjection
         services.AddScoped<StaffAccountService>();
         services.AddScoped<IStaffAccountService>(provider => provider.GetRequiredService<StaffAccountService>());
         services.AddScoped<IStaffAdminService>(provider => provider.GetRequiredService<StaffAccountService>());
+
+        // Registers the staff authorization service for dependency injection.
+        services.AddScoped<IStaffAuthorizationService, StaffAuthorizationService>();
     }
 
     /// <summary>Reads the connection string and fails fast if it is missing.</summary>

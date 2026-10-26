@@ -1,3 +1,5 @@
+using NFHotel.Application.Ports;
+using NSubstitute;
 using NFHotel.Application.Dto.Staff;
 using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases.Staff;
@@ -189,7 +191,18 @@ public sealed class StaffAccountServiceTests
 
     #region Helpers
 
-    private static StaffAccountService Build(ServiceWorld world) => world.StaffAccountService();
+    private static StaffAccountService Build(ServiceWorld world)
+    {
+        // Allows existing tests to focus on account creation rules.
+        var authorization = Substitute.For<IStaffAuthorizationService>();
+
+        authorization.HasPermissionAsync(
+            Permissions.StaffManage,
+            Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
+
+        return world.StaffAccountService(authorization: authorization);
+    }
 
     #endregion
 }

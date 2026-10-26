@@ -23,6 +23,7 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
     private readonly ILoginThrottle _throttle;
     private readonly IStaffAuditRepository _audit;
     private readonly IStaffCallContext _context;
+    private readonly IStaffAuthorizationService _authorization;
     private readonly StaffAuditRecorder _recorder;
 
     /// <summary>Creates the service.</summary>
@@ -33,6 +34,7 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
     /// <param name="audit">The audit trail.</param>
     /// <param name="context">Who is calling.</param>
     /// <param name="clock">The source of the time.</param>
+    /// <param name="authorization">Service for checking staff permissions.</param>
     public StaffAccountService(
         IStaffRepository staff,
         IPasswordHasher hasher,
@@ -40,7 +42,8 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
         ILoginThrottle throttle,
         IStaffAuditRepository audit,
         IStaffCallContext context,
-        IClock clock)
+        IClock clock,
+        IStaffAuthorizationService authorization)
     {
         ArgumentNullException.ThrowIfNull(staff);
         ArgumentNullException.ThrowIfNull(hasher);
@@ -49,18 +52,47 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
         ArgumentNullException.ThrowIfNull(audit);
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(clock);
-
+        ArgumentNullException.ThrowIfNull(authorization);
         _staff = staff;
         _hasher = hasher;
         _unitOfWork = unitOfWork;
         _throttle = throttle;
+        _authorization = authorization;
         _audit = audit;
         _context = context;
         _recorder = new StaffAuditRecorder(audit, context, clock);
     }
 
     /// <inheritdoc />
-    public async Task<Result> CreateAsync(CreateStaffRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result> CreateAsync(
+        CreateStaffRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        // Checks whether the current staff member has permission to create staff accounts.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.StaffManage,
+            cancellationToken))
+        {
+            return Result.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        return await CreateStaffInternalAsync(
+            request,
+            cancellationToken);
+    }
+
+    // Creates staff accounts through the trusted CLI administration path.
+    Task<Result> IStaffAccountService.CreateAsync(
+        CreateStaffRequest request,
+        CancellationToken cancellationToken)
+    {
+        return CreateStaffInternalAsync(request, cancellationToken);
+    }
+
+    /// <summary>Creates a staff account using the shared account creation logic.</summary>
+    private async Task<Result> CreateStaffInternalAsync(CreateStaffRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -122,7 +154,7 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
             return Result.Success();
         }
 
-        var created = await CreateAsync(
+        var created = await CreateStaffInternalAsync(
                 new CreateStaffRequest(userName, password, StaffRole.Manager, mustChangePassword),
                 cancellationToken)
             .ConfigureAwait(false);
@@ -148,6 +180,16 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
     /// <inheritdoc />
     public async Task<Result<IReadOnlyList<StaffAccountDto>>> ListAsync(CancellationToken cancellationToken = default)
     {
+        // Checks whether the current staff member has permission to manage staff accounts.
+        // Authorization must occur before retrieving staff information.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.StaffManage,
+            cancellationToken))
+        {
+            return Result<IReadOnlyList<StaffAccountDto>>.Failure(
+                ErrorCodes.Api.Forbidden);
+        }
+
         var members = await _staff.ListAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<StaffAccountDto> items =
             [.. members.Select(member => new StaffAccountDto(member.Id, member.UserName, member.Role, member.IsActive, member.MustChangePassword))];
@@ -157,6 +199,17 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
     /// <inheritdoc />
     public async Task<Result> DisableAsync(int id, CancellationToken cancellationToken = default)
     {
+
+        // Checks whether the current staff member has permission to manage staff accounts.
+        // authorization must occur before the business logic.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.StaffManage,
+            cancellationToken))
+        {
+            // Denies access if the required permission is missing.
+            return Result.Failure(ErrorCodes.Api.Forbidden);
+        }
+
         if (id == _context.StaffId)
         {
             return Result.Failure(ErrorCodes.Staff.CannotDisableSelf);
@@ -185,6 +238,16 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
     /// <inheritdoc />
     public async Task<Result> EnableAsync(int id, CancellationToken cancellationToken = default)
     {
+        // Checks whether the current staff member has permission to manage staff accounts.
+        // Authorization must occur before the business logic.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.StaffManage,
+            cancellationToken))
+        {
+            // Denies access if the required permission is missing.
+            return Result.Failure(ErrorCodes.Api.Forbidden);
+        }
+
         var member = await _staff.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (member is null)
         {
@@ -208,6 +271,15 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        // Checks whether the current staff member has permission to manage staff accounts.
+        // Authorization must occur before the business logic.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.StaffManage,
+            cancellationToken))
+        {
+            return Result.Failure(ErrorCodes.Api.Forbidden);
+        }
+
         if (id == _context.StaffId)
         {
             return Result.Failure(ErrorCodes.Staff.CannotResetSelf);
@@ -225,6 +297,16 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
         int pageSize,
         CancellationToken cancellationToken = default)
     {
+        // Checks whether the current staff member has permission to manage staff accounts.
+        // Authorization must occur before retrieving audit information.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.StaffManage,
+            cancellationToken))
+        {
+            return Result<StaffAuditPageDto>.Failure(
+                ErrorCodes.Api.Forbidden);
+        }
+
         var size = Math.Clamp(pageSize, 1, MaxAuditPageSize);
         var number = Math.Max(page, 1);
         var events = await _audit.ListAsync((number - 1) * size, size, cancellationToken).ConfigureAwait(false);
