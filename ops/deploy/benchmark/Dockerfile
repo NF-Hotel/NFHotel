@@ -18,7 +18,10 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
+# apt-get upgrade installs the Debian security updates published since the base image was built
+# (ADR-0032: a finding with a fix is acted on).
 RUN apt-get update \
+    && apt-get upgrade --yes --no-install-recommends \
     && apt-get install --yes --no-install-recommends git ca-certificates \
     && git init /opt/benchmark \
     && git -C /opt/benchmark remote add origin "$BENCHMARK_REPO" \
