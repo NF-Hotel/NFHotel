@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-26 for Data Protection keys that survive a deploy and benchmark runs that do not disappear on a restart ("Ja, planlæg MIL-043"), after the deploy of MIL-042 broke a page and lost a queued run; S01 accepted it in chat ("Jeg accepterer planen for MIL-043"); accepted after RC-226 Go | pending |
+| 2026-10-26 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-26 for Data Protection keys that survive a deploy and benchmark runs that do not disappear on a restart ("Ja, planlæg MIL-043"), after the deploy of MIL-042 broke a page and lost a queued run; S01 accepted it in chat ("Jeg accepterer planen for MIL-043"); accepted after RC-226 Go | [9ea7f6f] |
 
 ---
 
@@ -85,3 +85,4 @@ Every release gives all four images a new digest, so this happens at every deplo
 [ADR-0013]: ../adr/adr-0013-benchmark-results.md
 [MIL-020]: ./mil-020-start-benchmark-run.md
 [US-001.04]: ../user-stories.md
+[9ea7f6f]: https://github.com/NF-Hotel/NFHotel/commit/9ea7f6f2a0f2544371a36b9f081a67f5025eec65

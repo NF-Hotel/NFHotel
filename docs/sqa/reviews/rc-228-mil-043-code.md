@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [43bcf70] |
 
 ---
 
@@ -62,3 +62,4 @@ None.
 [ADR-0031]: ../../adr/adr-0031-state-that-survives-a-deploy.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[43bcf70]: https://github.com/NF-Hotel/NFHotel/commit/43bcf70046d2f2537672030b83f39f8b3fda4551
