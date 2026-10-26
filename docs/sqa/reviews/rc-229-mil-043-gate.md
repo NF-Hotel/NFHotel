@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [be56726] |
 
 ---
 
@@ -44,3 +44,4 @@ None.
 [RC-228]: rc-228-mil-043-code.md
 [ADR-0031]: ../../adr/adr-0031-state-that-survives-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[be56726]: https://github.com/NF-Hotel/NFHotel/commit/be56726511eb9fd7f588bf89349166c342aa8ce2
