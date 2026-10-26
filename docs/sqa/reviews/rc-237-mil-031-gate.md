@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [14f0f2e] |
 
 ---
 
@@ -44,3 +44,4 @@ None.
 [MIL-031]: ../../milestones/mil-031-consolidate-devops-into-nfhotel.md
 [RC-160]: ./rc-160-mil-031-gate.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[14f0f2e]: https://github.com/NF-Hotel/NFHotel/commit/14f0f2e8186e8076b9dee03d8627e2c94edc0424
