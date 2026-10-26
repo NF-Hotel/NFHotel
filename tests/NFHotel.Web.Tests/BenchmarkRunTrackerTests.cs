@@ -125,6 +125,32 @@ public sealed class BenchmarkRunTrackerTests
         await requests.DidNotReceive().SetStateAsync(Arg.Any<Guid>(), Arg.Any<SetBenchmarkRequestStateRequest>(), Arg.Any<CancellationToken>());
     }
 
+    /// <summary>
+    /// State (MIL-046): a run the service forgot whose result is stored is recorded done, and the answer is the stored
+    /// run, delivered.
+    /// </summary>
+    [Fact]
+    public async Task RefreshAsync_RunForgottenButStored_RecordsDone()
+    {
+        // Arrange
+        var tracker = BuildWithStored([RunId], out var client, out var requests);
+        client.GetRunAsync(RunId, Arg.Any<CancellationToken>()).Returns(Result<BenchmarkRunStateDto>.Failure(ErrorCodes.BenchmarkRunner.RunNotFound));
+
+        // Act
+        var result = await tracker.RefreshAsync(RunId, BenchmarkRunStates.Running, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal((BenchmarkRunStates.Done, BenchmarkDeliveryStates.Delivered), (result.Value.State, result.Value.Delivery));
+        await requests.Received(1).SetStateAsync(
+            RunId,
+            Arg.Is<SetBenchmarkRequestStateRequest>(request => request.State == BenchmarkRunStates.Done && request.Error == null),
+            Arg.Any<CancellationToken>());
+        await requests.DidNotReceive().SetStateAsync(
+            RunId,
+            Arg.Is<SetBenchmarkRequestStateRequest>(request => request.State == BenchmarkRunStates.Interrupted),
+            Arg.Any<CancellationToken>());
+    }
+
     #endregion
 
     #region LoadRecentAsync
@@ -153,6 +179,34 @@ public sealed class BenchmarkRunTrackerTests
             result.Value.Select(record => (record.RunId, record.State)));
         await client.DidNotReceive().GetRunAsync(OtherRunId, Arg.Any<CancellationToken>());
         await requests.Received(1).SetStateAsync(RunId, Arg.Any<SetBenchmarkRequestStateRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>
+    /// State (MIL-046): a run recorded interrupted whose result turns out to be stored becomes done and leaves the list;
+    /// one without a stored result stays interrupted.
+    /// </summary>
+    [Fact]
+    public async Task LoadRecentAsync_InterruptedButStored_BecomesDoneAndLeavesTheList()
+    {
+        // Arrange
+        var tracker = BuildWithStored(
+            [RunId],
+            out var client,
+            out var requests,
+            BenchmarkRequestDoubles.Record(RunId, BenchmarkRunStates.Interrupted, BenchmarkRunTracker.InterruptedReason),
+            BenchmarkRequestDoubles.Record(OtherRunId, BenchmarkRunStates.Interrupted, BenchmarkRunTracker.InterruptedReason));
+
+        // Act
+        var result = await tracker.LoadRecentAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(OtherRunId, Assert.Single(result.Value).RunId);
+        await requests.Received(1).SetStateAsync(
+            RunId,
+            Arg.Is<SetBenchmarkRequestStateRequest>(request => request.State == BenchmarkRunStates.Done),
+            Arg.Any<CancellationToken>());
+        await requests.DidNotReceive().SetStateAsync(OtherRunId, Arg.Any<SetBenchmarkRequestStateRequest>(), Arg.Any<CancellationToken>());
+        await client.DidNotReceive().GetRunAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     /// <summary>Error handling: an open run whose state cannot be read stays as recorded.</summary>
@@ -193,12 +247,21 @@ public sealed class BenchmarkRunTrackerTests
     private static BenchmarkRunTracker Build(
         out IBenchmarkServiceClient client,
         out IBenchmarkRequestService requests,
+        params BenchmarkRequestDto[] recent) =>
+        BuildWithStored([], out client, out requests, recent);
+
+    private static BenchmarkRunTracker BuildWithStored(
+        Guid[] storedRuns,
+        out IBenchmarkServiceClient client,
+        out IBenchmarkRequestService requests,
         params BenchmarkRequestDto[] recent)
     {
         client = Substitute.For<IBenchmarkServiceClient>();
         requests = BenchmarkRequestDoubles.Requests(recent);
+        var stored = BenchmarkRequestDoubles.Stored(storedRuns);
         return new BenchmarkRunTracker(
             new PassThroughRunner<IBenchmarkServiceClient>(client),
-            new PassThroughRunner<IBenchmarkRequestService>(requests));
+            new PassThroughRunner<IBenchmarkRequestService>(requests),
+            new PassThroughRunner<IBenchmarkService>(stored));
     }
 }

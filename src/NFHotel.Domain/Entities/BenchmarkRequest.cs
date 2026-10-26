@@ -24,7 +24,10 @@ public sealed class BenchmarkRequest : Entity<int>
     /// <summary>The service gave up on the run.</summary>
     public const string Failed = "failed";
 
-    /// <summary>The service no longer knows the run: it was restarted before the run ended.</summary>
+    /// <summary>
+    /// The service no longer knows the run and no result of it is stored: it was restarted before the run ended. It may
+    /// still become <see cref="Done"/> when a stored result proves that the run finished (MIL-046).
+    /// </summary>
     public const string Interrupted = "interrupted";
 
     /// <summary>The most models in one run, as the benchmark service allows.</summary>
@@ -42,14 +45,15 @@ public sealed class BenchmarkRequest : Entity<int>
     /// <summary>The known states.</summary>
     public static readonly IReadOnlyList<string> States = [Queued, Running, Done, Failed, Interrupted];
 
-    // The states each state may change to; a final state changes to nothing.
+    // The states each state may change to; a final state changes to nothing. Interrupted may become Done only because a
+    // stored result can prove, later, that a forgotten run had finished (ADR-0031, MIL-046).
     private static readonly Dictionary<string, string[]> NextStates = new()
     {
         [Queued] = [Running, Done, Failed, Interrupted],
         [Running] = [Done, Failed, Interrupted],
         [Done] = [],
         [Failed] = [],
-        [Interrupted] = [],
+        [Interrupted] = [Done],
     };
 
     private List<string> _models = [];

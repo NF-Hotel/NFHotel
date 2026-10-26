@@ -110,6 +110,7 @@ public sealed class BenchmarkRequestTests
     [InlineData(BenchmarkRequest.Running, BenchmarkRequest.Done)]
     [InlineData(BenchmarkRequest.Running, BenchmarkRequest.Failed)]
     [InlineData(BenchmarkRequest.Running, BenchmarkRequest.Interrupted)]
+    [InlineData(BenchmarkRequest.Interrupted, BenchmarkRequest.Done)]
     public void ChangeState_AllowedChange_IsTaken(string from, string to)
     {
         // Arrange
@@ -132,7 +133,8 @@ public sealed class BenchmarkRequestTests
     [InlineData(BenchmarkRequest.Done, BenchmarkRequest.Interrupted)]
     [InlineData(BenchmarkRequest.Failed, BenchmarkRequest.Done)]
     [InlineData(BenchmarkRequest.Interrupted, BenchmarkRequest.Running)]
-    [InlineData(BenchmarkRequest.Interrupted, BenchmarkRequest.Done)]
+    [InlineData(BenchmarkRequest.Interrupted, BenchmarkRequest.Failed)]
+    [InlineData(BenchmarkRequest.Done, BenchmarkRequest.Failed)]
     public void ChangeState_RefusedChange_Throws(string from, string to)
     {
         // Arrange
@@ -198,7 +200,7 @@ public sealed class BenchmarkRequestTests
         Assert.Equal(valid ? BenchmarkRequest.Failed : BenchmarkRequest.Running, request.State);
     }
 
-    /// <summary>Edge: a blank error is stored as none.</summary>
+    /// <summary>Edge: a blank error is stored as none; an interrupted run is not final, since a stored result can still prove it done.</summary>
     [Fact]
     public void ChangeState_BlankError_IsStoredAsNone()
     {
@@ -210,7 +212,7 @@ public sealed class BenchmarkRequestTests
 
         // Assert
         Assert.Null(request.Error);
-        Assert.True(request.IsFinal);
+        Assert.False(request.IsFinal);
     }
 
     #endregion
