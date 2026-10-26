@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Paths under ops/ (RC-161); the freeze is still in force | [12a64c3] |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | The "no rebuilds" part ends: ADR-0030 builds a patch layer on the frozen digest, which stays as its base | pending |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | The "no rebuilds" part ends: ADR-0030 builds a patch layer on the frozen digest, which stays as its base | [4faf283] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -78,3 +78,4 @@ We freeze `market-analysis` at its last good digest until S01 decides the servic
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
 [12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
 [ADR-0030]: ./adr-0030-patch-layer-on-frozen-market-analysis-image.md
+[4faf283]: https://github.com/NF-Hotel/NFHotel/commit/4faf2836048366b52d0f6b4e995153384f6bb908

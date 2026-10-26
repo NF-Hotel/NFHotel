@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-26 for a patch layer on the frozen image with certifi 2026.10.19 and the Debian security updates, built by the release; written by the AI under MIL-042, which S01 accepted in chat on 2026-10-26; accepted after RC-223 Go | pending |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-26 for a patch layer on the frozen image with certifi 2026.10.19 and the Debian security updates, built by the release; written by the AI under MIL-042, which S01 accepted in chat on 2026-10-26; accepted after RC-223 Go | [4faf283] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -71,3 +71,4 @@ We follow option 3. It ends the "no rebuilds" part of ADR-0500; the frozen diges
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
 [MIL-036]: ../milestones/mil-036-security-operations.md
 [MIL-042]: ../milestones/mil-042-patch-market-analysis-image.md
+[4faf283]: https://github.com/NF-Hotel/NFHotel/commit/4faf2836048366b52d0f6b4e995153384f6bb908

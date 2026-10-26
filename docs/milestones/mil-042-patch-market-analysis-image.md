@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-26 for a patch layer on the frozen image with certifi 2026.10.19 and the Debian security updates, built by the release, with an ADR that replaces the freeze of ADR-0500 ("Lav et patch-lag oven på det låste image"); S01 accepted it in chat ("Jeg accepterer planen for MIL-042"); accepted after RC-222 Go | pending |
+| 2026-10-26 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-26 for a patch layer on the frozen image with certifi 2026.10.19 and the Debian security updates, built by the release, with an ADR that replaces the freeze of ADR-0500 ("Lav et patch-lag oven på det låste image"); S01 accepted it in chat ("Jeg accepterer planen for MIL-042"); accepted after RC-222 Go | [4faf283] |
 
 ---
 
@@ -79,3 +79,4 @@ Decide whether NF Hotel may claim again that its deployed images have no critica
 [ADR-0030]: ../adr/adr-0030-patch-layer-on-frozen-market-analysis-image.md
 [MIL-022]: ./mil-022-supply-chain-security.md
 [MIL-036]: ./mil-036-security-operations.md
+[4faf283]: https://github.com/NF-Hotel/NFHotel/commit/4faf2836048366b52d0f6b4e995153384f6bb908
