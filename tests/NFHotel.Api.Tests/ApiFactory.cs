@@ -135,7 +135,7 @@ public class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(World.MarketAnalysisTracker);
             services.AddSingleton<IMarketAnalysisService>(_ => World.MarketAnalysisService());
             services.AddSingleton<IBookingService>(_ => World.BookingService());
-            services.AddSingleton<IGuestService>(_ => World.GuestService());
+            services.AddScoped<IGuestService>(provider => World.GuestService(provider.GetRequiredService<IStaffAuthorizationService>()));
             services.AddSingleton<IRoomService>(_ => World.RoomService());
             services.AddSingleton(_ => World.BenchmarkService());
             services.AddSingleton<IBenchmarkService>(provider => provider.GetRequiredService<BenchmarkService>());

@@ -284,7 +284,7 @@ public sealed class GuestServiceTests
         var service = world.GuestService(authorization);
 
         // Act
-        var result = await service.CreateAsync(new CreateGuestRequest(fields),TestContext.Current.CancellationToken);
+        var result = await service.CreateAsync(new CreateGuestRequest(fields), TestContext.Current.CancellationToken);
 
         // Assert
         var codes = result.Errors.Select(error => error.Code).ToArray();

@@ -211,6 +211,7 @@ public sealed class ApiEndpointTests : IClassFixture<ApiFactory>
 
         // Act
         using var create = await client.PostAsJsonAsync(ApiRoutes.Guests, new CreateGuestRequest(fields), ApiJson.Options, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
         var created = await Read<GuestDetailsDto>(create);
         var id = created.Value!.GuestId;
         using var get = await client.GetAsync($"{ApiRoutes.Guests}/{id}", TestContext.Current.CancellationToken);

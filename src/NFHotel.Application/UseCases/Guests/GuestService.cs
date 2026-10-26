@@ -1,7 +1,7 @@
 using NFHotel.Application.Dto.Guests;
-using NFHotel.Application.UseCases.Staff;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.Repositories;
