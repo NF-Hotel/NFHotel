@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0500 |
-| CrossReference | [ADR-0007], [DSA-001], [MIL-021], [ADR-0016], [RC-161] |
+| CrossReference | [ADR-0007], [DSA-001], [MIL-021], [ADR-0016], [RC-161], [ADR-0030] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Accepted after RC-502 Go | [150af89] |
 | 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | Paths under ops/ (RC-161); the freeze is still in force | [12a64c3] |
+| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | The "no rebuilds" part ends: ADR-0030 builds a patch layer on the frozen digest, which stays as its base | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -43,7 +43,9 @@ We freeze `market-analysis` at its last good digest until S01 decides the servic
 3. The CI check `ops/tests/check-release-build.sh` checks that a frozen digest is well formed. The other three images are built and checked as before.
 4. The freeze ends with a reviewed pull request that removes the file. That pull request either restores the source (option 1, with a new ref) or removes the service (option 2).
 
-**Current state (2026-10-21, [RC-161]).** The freeze is still in force. The release of 2026-10-21 carried the digest above, and CD accepted it by its pin. The decision this ADR waits for, what becomes of the service of the new repository, is still open with S01. The files are under `ops/` since [ADR-0016].
+**Current state (2026-10-26, [ADR-0030]).** The digest stays frozen, but as the base of a patch layer that the release builds, scans and attests: the image is rebuilt again, with security fixes, while the application files stay those of the digest.
+
+**State on 2026-10-21 ([RC-161]).** The freeze is still in force. The release of 2026-10-21 carried the digest above, and CD accepted it by its pin. The decision this ADR waits for, what becomes of the service of the new repository, is still open with S01. The files are under `ops/` since [ADR-0016].
 
 ## Consequences
 
@@ -63,6 +65,7 @@ We freeze `market-analysis` at its last good digest until S01 decides the servic
 ## Affected Artifacts
 
 - [ADR-0007]: the release builds three images and carries one frozen digest.
+- [ADR-0030]: the successor of the "no rebuilds" part.
 - [DSA-001]: risk R17 is treated by this decision until S01 decides.
 - [MIL-021]: releases from `main` work again (criterion 2).
 
@@ -71,7 +74,7 @@ We freeze `market-analysis` at its last good digest until S01 decides the servic
 [ADR-0007]: ./adr-0007-cicd-and-supply-chain.md
 [DSA-001]: ../sqa/devsecops-assessment.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
-[150af89]: https://github.com/NF-Hotel/DevOps/commit/150af89418a891c0fe10d6da3e519ab54290b7cc
 [ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
 [12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
+[ADR-0030]: ./adr-0030-patch-layer-on-frozen-market-analysis-image.md
