@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [ab0d3d6] |
 
 ---
 
@@ -50,3 +50,4 @@ Go: every criterion is met. MIL-047 is closed.
 [RC-240]: ./rc-240-mil-047.md
 [RC-242]: ./rc-242-mil-047-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[ab0d3d6]: https://github.com/NF-Hotel/NFHotel/commit/ab0d3d691a04f609c5afcb5fc146d7ee9a6d8feb
