@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-27 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-27 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [6f7749b] |
 
 ---
 
@@ -55,3 +55,4 @@ None.
 [ADR-0033]: ../../adr/adr-0033-sonarqube-cloud-coverage.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[6f7749b]: https://github.com/NF-Hotel/NFHotel/commit/6f7749b4fe530edcf83694abb358090cd4da9050

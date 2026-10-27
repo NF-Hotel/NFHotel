@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Section 8: the evidence of the container scan names where its findings are shown (ADR-0032, MIL-044) | [75926ba] |
-| 2026-10-27 | Accepted | mikemike | AI as stand-in for S01 | Section 4: SonarQube Cloud analyses in CI with code coverage (ADR-0033, MIL-047) | pending |
+| 2026-10-27 | Accepted | mikemike | AI as stand-in for S01 | Section 4: SonarQube Cloud analyses in CI with code coverage (ADR-0033, MIL-047) | [6f7749b] |
 
 This document is a working assessment. Its type is not in `framework/registry/artifact-catalog.md`; a catalog type for it is proposed upstream (rule 5) before it is accepted.
 
@@ -446,3 +446,4 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 [RC-164]: ./reviews/rc-164-mil-021-amendment.md
 [7853a62]: https://github.com/NF-Hotel/NFHotel/commit/7853a620ea10e270620236ac74fea5f77cd29ac2
 [75926ba]: https://github.com/NF-Hotel/NFHotel/commit/75926ba38f176863e218b2b5055531c6be101be6
+[6f7749b]: https://github.com/NF-Hotel/NFHotel/commit/6f7749b4fe530edcf83694abb358090cd4da9050

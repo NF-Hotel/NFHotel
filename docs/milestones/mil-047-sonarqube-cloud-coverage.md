@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-27 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-27 to set up test coverage in SonarQube Cloud ("kan du sætte dette op") and accepted the plan ("Jeg accepterer planen for MIL-047"; accepted after RC-240 Go) | pending |
+| 2026-10-27 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-27 to set up test coverage in SonarQube Cloud ("kan du sætte dette op") and accepted the plan ("Jeg accepterer planen for MIL-047"; accepted after RC-240 Go) | [f1fe89b] |
 
 ---
 
@@ -75,3 +75,4 @@ Decide whether NF Hotel may claim that SonarQube Cloud shows the code coverage o
 [ADR-0021]: ../adr/adr-0021-automatic-deploy-when-green.md
 [ADR-0033]: ../adr/adr-0033-sonarqube-cloud-coverage.md
 [DSA-001]: ../sqa/devsecops-assessment.md
+[f1fe89b]: https://github.com/NF-Hotel/NFHotel/commit/f1fe89b89850791fa627bf25dbc2cd5122f4e39d
