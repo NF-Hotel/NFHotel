@@ -97,7 +97,7 @@ jobs:
       - name: Start the SonarQube Cloud analysis
         if: ${{ env.SONAR_TOKEN != '' }}
         run: >-
-          dotnet sonarscanner begin /k:NF-Hotel_NFHotel
+          dotnet sonarscanner begin /k:NF-Hotel_NFHotel /o:nf-hotel
           "/s:${{ github.workspace }}/SonarQube.Analysis.xml"
 
       - name: Build for the SonarQube Cloud analysis
