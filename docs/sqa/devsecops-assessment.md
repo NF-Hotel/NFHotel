@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | DSA-001 |
-| CrossReference | [BC-001], [ADR-0003], [ADR-0004], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0009], [ADR-0010], [MIL-021], [MIL-022], [MIL-023], [RC-164] |
+| CrossReference | [BC-001], [ADR-0003], [ADR-0004], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0009], [ADR-0010], [MIL-021], [MIL-022], [MIL-023], [ADR-0033], [RC-164] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | D7 revised by S01: the off-VM copy goes to the legion laptop (ops/deploy/backup-target); accepted after RC-164 Go | [7853a62] |
 | 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Section 8: the evidence of the container scan names where its findings are shown (ADR-0032, MIL-044) | [75926ba] |
+| 2026-10-27 | Accepted | mikemike | AI as stand-in for S01 | Section 4: SonarQube Cloud analyses in CI with code coverage (ADR-0033, MIL-047) | [6f7749b] |
 
 This document is a working assessment. Its type is not in `framework/registry/artifact-catalog.md`; a catalog type for it is proposed upstream (rule 5) before it is accepted.
 
@@ -43,7 +43,7 @@ Rules for this document:
 | Secret scanning and push protection | `security_and_analysis` | Disabled |
 | Dependabot | Alerts disabled (403); security updates disabled; no `.github/dependabot.yml` | Disabled |
 | CodeQL | `code-scanning/default-setup`: `not-configured`; no analysis found | Not configured |
-| SonarQube Cloud | PR comments from `sonarqubecloud[bot]`; no configuration file in the repository | Automatic analysis through the GitHub app; the quality gate passes. "0.0% coverage on new code": no coverage report is sent to SonarQube Cloud |
+| SonarQube Cloud | PR comments from `sonarqubecloud[bot]`; the scanner steps of the `build` job in `ci.yaml` | Analysed in CI by the SonarScanner for .NET since MIL-047 (ADR-0033), with the coverage of `dotnet-coverage` and the TRX files; quality gate `Sonar way`, 80 % coverage on new code |
 | Actions policy | `actions/permissions` | All actions allowed; SHA pinning not required; default `GITHUB_TOKEN` is read-only; Actions cannot approve pull requests |
 | Environments | `GET /environments` returns none | None |
 | Repository secrets and variables | Listing is empty | None |
@@ -230,7 +230,7 @@ Status values: **Met** (evidence exists), **Partial**, **Gap** (applicable, not 
 | SSDF PS.3 Archive and protect releases | Applicable | None | GHCR keeps images by digest; release record per deploy | GHCR listing; deployment history | Release notes with digests | S01 | Gap | Retention policy deletes old digests |
 | SSDF PW.4 Reuse secure components | Applicable | NuGet audit (all levels); pinned external repos | Dependabot (NuGet, Docker, Actions, pip); digest-pinned base images | Dependabot PRs; Trivy | Alerts and PRs | S01 | Partial | Zero-day without an advisory |
 | SSDF PW.7 Review code | Applicable | 1 review; SonarQube Cloud | CodeQL default setup for C#, Python, Actions | Code scanning API | Analyses per PR | S01 | Partial | False negatives |
-| SSDF PW.8 Test code | Applicable | 895 tests incl. Testcontainers; coverage | Required check; coverage sent to SonarQube Cloud | Required check status | CI run per PR | S01 | Partial | Coverage of the web UI is low (27 %) |
+| SSDF PW.8 Test code | Applicable | 895 tests incl. Testcontainers; coverage | Required check; coverage sent to SonarQube Cloud (ADR-0033) | Required check status | CI run per PR | S01 | Partial | Coverage of the web UI is low (27 %) |
 | SSDF PW.9 Secure defaults | Applicable | Non-root .NET images; internal networks | Compose hardening (section 7) | `docker inspect`; Trivy config scan | Inspect output | S03 | Partial | Third-party images run as root |
 | SSDF RV.1 Identify vulnerabilities | Applicable | NuGet audit only | Dependabot alerts, Trivy, secret scanning, CodeQL, `SECURITY.md` | Security tab | Alerts list | S01 | Gap | Unreviewed alerts |
 | SSDF RV.2 Assess and remediate | Applicable | None | Severity thresholds and time to fix (section 8) | Alert ages | Monthly review record | S01 | Gap | Backlog of open alerts |
@@ -438,6 +438,7 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 [ADR-0008]: ../adr/adr-0008-database-migration-and-backup.md
 [ADR-0009]: ../adr/adr-0009-tls-certificates.md
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
+[ADR-0033]: ../adr/adr-0033-sonarqube-cloud-coverage.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
@@ -445,3 +446,4 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 [RC-164]: ./reviews/rc-164-mil-021-amendment.md
 [7853a62]: https://github.com/NF-Hotel/NFHotel/commit/7853a620ea10e270620236ac74fea5f77cd29ac2
 [75926ba]: https://github.com/NF-Hotel/NFHotel/commit/75926ba38f176863e218b2b5055531c6be101be6
+[6f7749b]: https://github.com/NF-Hotel/NFHotel/commit/6f7749b4fe530edcf83694abb358090cd4da9050
