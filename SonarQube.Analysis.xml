@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings of the SonarQube Cloud analysis in the build job of NF Hotel CI (ADR-0033). The token is not here:
+     the scanner reads it from the environment variable SONAR_TOKEN. -->
+<SonarQubeAnalysisProperties xmlns="http://www.sonarsource.com/msbuild/integration/2015/1">
+  <Property Name="sonar.host.url">https://sonarcloud.io</Property>
+  <Property Name="sonar.organization">nf-hotel</Property>
+  <!-- Visual Studio XML from dotnet-coverage; the C# analyzer does not read Cobertura -->
+  <Property Name="sonar.cs.vscoveragexml.reportsPaths">TestResults/coverage.xml</Property>
+  <Property Name="sonar.cs.vstest.reportsPaths">TestResults/**/*.trx</Property>
+  <!-- The migrations are generated code, as in dotnet-coverage.config.xml -->
+  <Property Name="sonar.coverage.exclusions">**/Migrations/**</Property>
+</SonarQubeAnalysisProperties>

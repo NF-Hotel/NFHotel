@@ -6,7 +6,7 @@ How a change reaches the NF Hotel server, how a deploy is approved and undone, a
 
 One repository holds it all (ADR-0016): the application, and its operations under `ops/`. The workflows (`ci.yaml`, `ops-ci.yaml`, `release.yaml`, `cd.yaml`) keep the triggers, the permissions, the `production` environment and the OIDC claims. Their steps are the local composite actions in `.github/actions/` (`release-images`, `deploy-release`, `e2e-tests`, `dast-scan`), read from the same commit, which run the scripts of `ops/scripts/`. Everything that runs on the VM is in `ops/` too.
 
-1. **Pull request.** `NF Hotel CI` builds, tests and checks the formatting on every pull request, with a read-only token and no secrets. A pull request merges when the required checks are green; no approving review is required (ADR-0019).
+1. **Pull request.** `NF Hotel CI` builds, tests and checks the formatting on every pull request, with a read-only token. Its only secret is `SONAR_TOKEN`, the analysis token of SonarQube Cloud (ADR-0033); a run without it (a fork, Dependabot) skips the analysis. A pull request merges when the required checks are green; no approving review is required (ADR-0019).
 2. **Merge to `main`.** CI runs again on `main`. When it is green, `NF Hotel Release` in NFHotel calls the `release-images` action. The action builds four images from that exact commit, with the compose files and scripts of `ops/` in it, and pushes them to the GitHub Container Registry:
    - `ghcr.io/nf-hotel/nfhotel-web`
    - `ghcr.io/nf-hotel/nfhotel-api`
@@ -164,7 +164,7 @@ S03 and a repository administrator do this once, in this order.
    - `TS_OIDC_CLIENT_ID` and `TS_OIDC_AUDIENCE` (from Tailscale);
    - `NFHOTEL_VM_HOST` (the tailnet name of the VM, for example `nf-hotel`).
 
-   No secret is needed.
+   No secret is needed in the environment. The repository has one secret, `SONAR_TOKEN`: an analysis token from SonarQube Cloud (My Account, Security), used with Automatic Analysis turned off in the project (Administration, Analysis Method); renew it before it expires (ADR-0033).
 3. **After the first release, make the packages public (decision D2):**
    - Packages, each of the four images, Package settings, Change visibility.
    - Link each package to this repository if it is not linked.
@@ -180,6 +180,7 @@ S03 and a repository administrator do this once, in this order.
 | --- | --- | --- |
 | Build, tests, NuGet audit, formatting | `NF Hotel CI` | the merge (once the checks are required) |
 | Secret scanning with push protection, Dependabot alerts, CodeQL | repository settings | a push with a secret; alerts are reviewed |
+| Static analysis, code coverage, quality gate `Sonar way` | SonarQube Cloud, analysed in the `build` job of `NF Hotel CI` (ADR-0033) | the deploy, through the check `SonarCloud Code Analysis`; new code needs 80 % coverage |
 | Every check of the commit green | the gate of `NF Hotel CD` (ADR-0021) | the deploy |
 | Health and smoke test | `nfhotel-deploy` on the VM | the release; it rolls back |
 

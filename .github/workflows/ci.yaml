@@ -1,4 +1,6 @@
-# CI: build, test and check the code before deployment
+# CI: build, test and check the code before deployment. Secret: SONAR_TOKEN, the analysis token
+# of SonarQube Cloud (ADR-0033); without it the analysis is skipped. It changes nothing outside
+# the repository apart from the analysis it sends to SonarQube Cloud.
 name: NF Hotel CI
 
 on:
@@ -47,12 +49,21 @@ jobs:
   build:
     name: Build, tests and security
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
+
+    # The analysis token of SonarQube Cloud (ADR-0033). The scanner reads it from the environment;
+    # a run without it (a pull request from a fork, or Dependabot) builds and tests and skips the
+    # analysis.
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
-      # Fetch the code of the project
+      # Fetch the code of the project, with the whole history that the new-code period and the
+      # blame data of SonarQube Cloud need
       - name: Check out the code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
 
       # Use the SDK version of the project
       - name: Install .NET
@@ -75,6 +86,24 @@ jobs:
       - name: Build
         run: dotnet build NFHotel.sln --configuration Release --no-restore
 
+      # The SonarScanner for .NET wraps a build and the tests, so SonarQube Cloud analyses the code
+      # as it is built and imports the coverage and the test results (ADR-0033). The scanner turns
+      # warnings as errors off in the build it wraps, so that build comes after the one above, which
+      # keeps them as errors. The settings of the analysis are in SonarQube.Analysis.xml.
+      - name: Install the SonarScanner for .NET
+        if: ${{ env.SONAR_TOKEN != '' }}
+        run: dotnet tool install --global dotnet-sonarscanner --version 11.3.0
+
+      - name: Start the SonarQube Cloud analysis
+        if: ${{ env.SONAR_TOKEN != '' }}
+        run: >-
+          dotnet sonarscanner begin /k:NF-Hotel_NFHotel
+          "/s:${{ github.workspace }}/SonarQube.Analysis.xml"
+
+      - name: Build for the SonarQube Cloud analysis
+        if: ${{ env.SONAR_TOKEN != '' }}
+        run: dotnet build NFHotel.sln --configuration Release --no-restore --no-incremental
+
       # The integration tests use Testcontainers and start PostgreSQL themselves
       - name: Check Docker for the integration tests
         run: docker info
@@ -85,15 +114,29 @@ jobs:
       - name: Install dotnet-coverage
         run: dotnet tool install --global dotnet-coverage --version 18.12.0
 
-      # Run all test projects, keep a TRX file per project and measure code coverage
+      # Run all test projects, keep a TRX file per project and measure code coverage. The Visual
+      # Studio XML format is the one SonarQube Cloud reads for C#; it does not read Cobertura.
       - name: Tests and coverage
         run: >-
           dotnet-coverage collect
           --settings dotnet-coverage.config.xml
-          --output TestResults/coverage.cobertura.xml
-          --output-format cobertura
+          --output TestResults/coverage.xml
+          --output-format xml
           "dotnet test NFHotel.sln --configuration Release --no-build
           --results-directory TestResults --report-xunit-trx"
+
+      # The same coverage as Cobertura for the artifact, which other tools read
+      - name: Coverage as Cobertura
+        if: ${{ always() && hashFiles('TestResults/coverage.xml') != '' }}
+        run: >-
+          dotnet-coverage merge TestResults/coverage.xml
+          --output TestResults/coverage.cobertura.xml
+          --output-format cobertura
+
+      # Send the analysis; the quality gate is reported by the SonarQube Cloud app as its own check
+      - name: End the SonarQube Cloud analysis
+        if: ${{ env.SONAR_TOKEN != '' }}
+        run: dotnet sonarscanner end
 
       # Keep the reports also when tests fail
       - name: Keep test results and coverage
