@@ -18,6 +18,8 @@
 #              a development certificate is made when deploy/nginx/tls has none (MIL-017)
 #   tunnel     (only when deploy/cloudflared/cloudflared.env exists) Cloudflare Tunnel, the public entrance
 #              (MIL-040, ADR-0028): an outbound connection to Cloudflare, no published port
+#   dbrelay    (only when deploy/postgres-tailnet/postgres-tailnet.env exists) the database relay of the team
+#              (MIL-048, ADR-0034): publishes 5432 on the tailnet address only, forwards to postgres
 #   alloy      (only when deploy/alloy/alloy.env exists) sends the logs and the host metrics
 #              to the monitoring (ADR-0020); left out with a note until the monitoring runs
 # Each service reads its git-ignored settings file next to its docker-compose.yml
@@ -26,7 +28,7 @@
 # missing: nfhotel-proxy, nfhotel-llm, and nfhotel-db and nfhotel-api with --internal (no route out).
 #
 # Usage: deploy-services.sh [--no-build] [--pull] [--down] [service...]
-#   service     postgres, ollama, api, web, analysis, benchmark, nginx, tunnel, alloy (default: all)
+#   service     postgres, ollama, api, web, analysis, benchmark, nginx, tunnel, dbrelay, alloy (default: all)
 #   --no-build  start without rebuilding the images
 #   --pull      git pull the repository (and submodules) before building
 #   --down      stop and remove the named services instead of deploying (volumes,
@@ -41,7 +43,7 @@ proxy_network="${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}"
 db_network="${NFHOTEL_DB_NETWORK:-nfhotel-db}"
 api_network="${NFHOTEL_API_NETWORK:-nfhotel-api}"
 llm_network="${NFHOTEL_LLM_NETWORK:-nfhotel-llm}"
-order=(postgres ollama api web analysis benchmark nginx tunnel alloy)
+order=(postgres ollama api web analysis benchmark nginx tunnel dbrelay alloy)
 
 build=1
 pull=0
@@ -66,7 +68,7 @@ for arg in "$@"; do
       usage
       exit 0
       ;;
-    postgres | ollama | api | web | analysis | benchmark | nginx | tunnel | alloy) services+=("$arg") ;;
+    postgres | ollama | api | web | analysis | benchmark | nginx | tunnel | dbrelay | alloy) services+=("$arg") ;;
     *)
       echo "error: unknown argument: $arg" >&2
       usage >&2
@@ -89,6 +91,7 @@ dir_of() {
     benchmark) echo "$root/deploy/benchmark" ;;
     nginx) echo "$root/deploy/nginx" ;;
     tunnel) echo "$root/deploy/cloudflared" ;;
+    dbrelay) echo "$root/deploy/postgres-tailnet" ;;
     alloy) echo "$root/deploy/alloy" ;;
   esac
 }
@@ -103,6 +106,7 @@ env_of() {
     benchmark) echo "benchmark.env" ;;
     nginx) echo "nginx.env" ;;
     tunnel) echo "cloudflared.env" ;;
+    dbrelay) echo "postgres-tailnet.env" ;;
     alloy) echo "alloy.env" ;;
   esac
 }
@@ -136,6 +140,7 @@ if ((down)); then
   for s in "${ordered[@]}"; do
     [[ "$s" == "alloy" && ! -f "$(dir_of alloy)/alloy.env" ]] && continue
     [[ "$s" == "tunnel" && ! -f "$(dir_of tunnel)/cloudflared.env" ]] && continue
+    [[ "$s" == "dbrelay" && ! -f "$(dir_of dbrelay)/postgres-tailnet.env" ]] && continue
     echo "==> stopping $s"
     (cd "$(dir_of "$s")" && docker compose --env-file "$(env_of "$s")" down)
   done
@@ -199,6 +204,12 @@ if [[ " ${ordered[*]} " == *" tunnel "* && ! -f "$(dir_of tunnel)/cloudflared.en
   echo "note: $(dir_of tunnel)/cloudflared.env is missing; the tunnel is left out and the site stays on the tailnet (ADR-0028)"
   tunnel_skipped=1
 fi
+# The database relay of the team is optional: without postgres-tailnet.env no port is published (ADR-0034).
+dbrelay_skipped=0
+if [[ " ${ordered[*]} " == *" dbrelay "* && ! -f "$(dir_of dbrelay)/postgres-tailnet.env" ]]; then
+  echo "note: $(dir_of dbrelay)/postgres-tailnet.env is missing; the database relay is left out (ADR-0034)"
+  dbrelay_skipped=1
+fi
 
 # Check every settings file before touching anything.
 for s in "${ordered[@]}"; do
@@ -206,6 +217,7 @@ for s in "${ordered[@]}"; do
   e="$(env_of "$s")"
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
+  [[ "$s" == "dbrelay" ]] && ((dbrelay_skipped)) && continue
   [[ -f "$d/$e" ]] || die "$d/$e is missing; copy $e.example to $e and fill it in"
   if [[ "$s" == "analysis" && ! -f "$d/market-analysis.toml" ]]; then
     die "$d/market-analysis.toml is missing; copy market-analysis.toml.example to it"
@@ -289,6 +301,7 @@ for s in "${ordered[@]}"; do
   e="$(env_of "$s")"
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
+  [[ "$s" == "dbrelay" ]] && ((dbrelay_skipped)) && continue
   # The analysis image is a patch layer on a frozen digest (ADR-0030), a private GHCR
   # package, so a host without a GHCR login (a development VM) cannot build it; the service
   # is then left out, with the reason, and the rest of the deployment goes on. A release
@@ -354,6 +367,15 @@ for s in "${ordered[@]}"; do
     fi
     continue
   fi
+  if [[ "$s" == "dbrelay" ]]; then
+    # The relay serves the team only: when it does not turn healthy (the tailnet address is not up yet),
+    # the deploy warns and goes on, and the hotel keeps running (ADR-0034).
+    if ! (cd "$d" && docker compose "${args[@]}"); then
+      echo "warning: the database relay did not turn healthy; the team cannot reach the database until the next deploy" >&2
+      (cd "$d" && docker compose --env-file "$e" logs --tail 20 relay) >&2 || true
+    fi
+    continue
+  fi
   if [[ "$s" == "alloy" ]]; then
     # The monitoring agent must not take the hotel down: when it does not turn healthy, the
     # deploy warns and goes on, and NoMetricsFromNfHotel alerts (ADR-0020).
@@ -385,6 +407,7 @@ for s in "${ordered[@]}"; do
   [[ "$s" == "analysis" ]] && ((analysis_skipped)) && continue
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
+  [[ "$s" == "dbrelay" ]] && ((dbrelay_skipped)) && continue
   (cd "$(dir_of "$s")" && docker compose --env-file "$(env_of "$s")" ps)
 done
 deployed=()
@@ -392,6 +415,7 @@ for s in "${ordered[@]}"; do
   [[ "$s" == "analysis" ]] && ((analysis_skipped)) && continue
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
+  [[ "$s" == "dbrelay" ]] && ((dbrelay_skipped)) && continue
   deployed+=("$s")
 done
-echo "Deployed: ${deployed[*]}$( ((analysis_skipped)) && echo ' (analysis left out: see the warning above)')$( ((alloy_skipped)) && echo ' (alloy left out: no alloy.env)')$( ((tunnel_skipped)) && echo ' (tunnel left out: no cloudflared.env)')"
+echo "Deployed: ${deployed[*]}$( ((analysis_skipped)) && echo ' (analysis left out: see the warning above)')$( ((alloy_skipped)) && echo ' (alloy left out: no alloy.env)')$( ((tunnel_skipped)) && echo ' (tunnel left out: no cloudflared.env)')$( ((dbrelay_skipped)) && echo ' (dbrelay left out: no postgres-tailnet.env)')"

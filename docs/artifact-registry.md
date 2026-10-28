@@ -16,14 +16,14 @@ Infrastructure documents (DSA-001, ADR-0007 to ADR-0011, MIL-021 to MIL-024 and 
 | BC | Business Case | docs/business-case.md | 002 |
 | SA | Stakeholder Analysis | docs/stakeholder-analysis.md | 002 |
 | PP | Project Plan | docs/project-plan.md | 002 |
-| MIL | Milestone / Gateway | docs/milestones/*.md | 048 |
-| RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 245 |
+| MIL | Milestone / Gateway | docs/milestones/*.md | 049 |
+| RC | SQA Review Record | docs/sqa/reviews/rc-*.md | 248 |
 | TM | Traceability Matrix | docs/sqa/traceability-matrix.md | 002 |
 | DSA | CI/CD and DevSecOps Assessment (no catalog type, proposed upstream) | docs/sqa/devsecops-assessment.md | 002 |
 | CIS | CIS Benchmark checklist (no catalog type, proposed upstream) | docs/sqa/cis-checklist.md | 002 |
 | SAMM | OWASP SAMM assessment (no catalog type, proposed upstream) | docs/sqa/samm-baseline.md | 002 |
 | DORA | DORA metrics report (no catalog type, proposed upstream) | docs/sqa/dora/dora-NNN-*.md | 002 |
-| ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0034 |
+| ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0035 |
 | US | User Story | docs/user-stories.md | 002 |
 | UCD | Use Case Diagram | docs/use-case-diagram.md | 002 |
 | UC | Use Case | docs/use-cases/uc-*/uc.md | 007 |

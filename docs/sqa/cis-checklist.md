@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | The Docker daemon rows (2.2 to 2.6, 2.14 to 2.16, 2.18, 3.17, 3.18), 5.25 and journald (6.1.1.x) are Applied; 1.1.2 records that the group docker is not empty; accepted after RC-193 Go | [a919da3] |
-| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Every Pending VM row given its status from the evidence run of 2026-10-28, after the sshd, sudo and sysctl settings were installed; 2.1.x Deferred by S01's decision to keep the desktop; 5.3 and 5.28 wait for the release of the Alloy limits; accepted after RC-244 Go | [6ca419b] |
+| 2026-10-28 | Deprecated | mikemike | AI as stand-in for S01 | Every Pending VM row given its status from the evidence run of 2026-10-28, after the sshd, sudo and sysctl settings were installed; 2.1.x Deferred by S01's decision to keep the desktop; 5.3 and 5.28 wait for the release of the Alloy limits; accepted after RC-244 Go | [6ca419b] |
+| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Row 4.3.8: the forward chain also accepts the published 5432 of the database relay, from `tailscale0` only (ADR-0034, MIL-048) | [102cae2] |
 
 ---
 
@@ -185,7 +185,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | 4.3.5 | nftables base chains exist | Applied | `input` (hook input) and `docker-user` (hook forward, before Docker's chains) Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`). | firewall; ev:firewall |
 | 4.3.6 | nftables loopback traffic is configured | Applied | `iif lo` accepted; `127.0.0.0/8` and `::1` from another interface dropped Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`). | firewall |
 | 4.3.7 | nftables outbound and established connections are configured | Applied | Established and related traffic is accepted on input and forward; output is not filtered (4.3.8) Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`). | firewall |
-| 4.3.8 | nftables default deny firewall policy | Applied | Input: policy drop. Forward: everything from outside that is not a published 80 or 443 ends in a drop; Docker's own chains decide the rest. Output: accept, see the next row Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`). | firewall; `ops/tests/test-nftables.sh` |
+| 4.3.8 | nftables default deny firewall policy | Applied | Input: policy drop. Forward: everything from outside that is not a published 80 or 443, or the published 5432 of the database relay from `tailscale0` (ADR-0034, MIL-048, checked at its gate), ends in a drop; Docker's own chains decide the rest. Output: accept, see the next row Verified on nf-hotel 2026-10-24 (RC-192, `/root/cis-evidence-after-firewall.txt`). | firewall; `ops/tests/test-nftables.sh` |
 | 4.3.8 | (same) for output | Deferred | An egress allow-list would have to follow Debian mirrors, the container registries, Tailscale's coordination and DERP servers, and the model downloads of Ollama; left to a change of its own | — |
 | 4.3.9 | nftables rules are permanent | Applied | `nfhotel-firewall.service` is enabled and active, and loads `/etc/nfhotel/nftables.nft` before the network at boot. Debian's `nftables.service` is disabled, because its `flush ruleset` removes Docker's rules. The table survived a Docker restart (RC-193). Verified on nf-hotel 2026-10-28 (RC-244, `/root/cis-evidence-after-host-settings.txt`). | firewall; ev:firewall |
 
@@ -235,5 +235,5 @@ The counts are by row; a row that covers several items counts once. Applied coun
 [RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
 [717dc18]: https://github.com/NF-Hotel/NFHotel/commit/717dc18e7bd3a6064272ef8fc9eb9ae123b89e55
 [4ff81cc]: https://github.com/NF-Hotel/NFHotel/commit/4ff81ccd0f1d43a160f2f45d72845e942cf5728e
-[a919da3]: https://github.com/NF-Hotel/NFHotel/commit/a919da31b9a9ca2296643766efc3c651d28af4fa
 [6ca419b]: https://github.com/NF-Hotel/NFHotel/commit/6ca419bfc4ecf3eddee0c5244acea0009cc564d5
+[102cae2]: https://github.com/NF-Hotel/NFHotel/commit/102cae2e4dd44d67b4d8c71f0ad731456d1938e5

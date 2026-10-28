@@ -125,5 +125,28 @@ PATH="$work/bin:$PATH" bash "$work/repo/scripts/deploy-services.sh" --no-build t
 [[ "$(cat "$d/cloudflared/secrets/TUNNEL_TOKEN" 2>/dev/null)" == tok-123 ]] && grep -q cloudflared "$work/tunnel-calls" &&
   ok "with cloudflared.env the token is a secret file and the tunnel starts" || ko "tunnel: $(tail -3 "$work/out-tunnel")"
 
+# The database relay of MIL-048: left out without postgres-tailnet.env; with it, it starts and
+# a failure only warns, so the hotel keeps running (ADR-0034).
+mkdir -p "$d/postgres-tailnet"
+cat >"$work/bin/docker" <<FAKE
+#!/bin/bash
+case "\$*" in
+  *" up "*) echo "\$PWD" >>"$work/relay-calls"; [[ -f "$work/relay-fails" ]] && exit 1 ;;
+  inspect\ -f*) echo "true healthy" ;;
+esac
+exit 0
+FAKE
+: >"$work/relay-calls"
+PATH="$work/bin:$PATH" bash "$work/repo/scripts/deploy-services.sh" --no-build dbrelay >"$work/out-relay" 2>&1
+grep -q "dbrelay left out" "$work/out-relay" && ! grep -q postgres-tailnet "$work/relay-calls" &&
+  ok "without postgres-tailnet.env the database relay is left out" || ko "relay skipped: $(tail -2 "$work/out-relay")"
+printf 'NFHOTEL_TAILNET_IP=100.64.0.1
+' >"$d/postgres-tailnet/postgres-tailnet.env"
+PATH="$work/bin:$PATH" bash "$work/repo/scripts/deploy-services.sh" --no-build dbrelay >"$work/out-relay" 2>&1 &&
+  grep -q postgres-tailnet "$work/relay-calls" && ok "with postgres-tailnet.env the database relay starts" || ko "relay: $(tail -3 "$work/out-relay")"
+touch "$work/relay-fails"
+PATH="$work/bin:$PATH" bash "$work/repo/scripts/deploy-services.sh" --no-build dbrelay >"$work/out-relay" 2>&1 &&
+  grep -q "database relay did not turn healthy" "$work/out-relay" && ok "a failed relay warns and the deploy goes on" || ko "relay failure: $(tail -3 "$work/out-relay")"
+
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))

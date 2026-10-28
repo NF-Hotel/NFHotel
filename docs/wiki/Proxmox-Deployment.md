@@ -145,6 +145,8 @@ No secret reaches a container as an environment variable. You write each secret 
 
 The login of `nfhotel_app` (ADR-0011) stays in root's `/etc/nfhotel/secrets/nfhotel-api-database.env`; the deploy passes it to the script, which writes it as the connection string.
 
+The personal database logins of the team (ADR-0034) are in root's `/etc/nfhotel/secrets/team/`, one file per person; see [Database Access](Database-Access).
+
 ### Rotate a secret
 
 The same steps for every secret below, except where a step says otherwise. CI runs them on a throwaway stack (`ops/tests/test-secret-rotation.sh`), so they are known to work.

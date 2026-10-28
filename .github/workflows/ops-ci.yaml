@@ -178,6 +178,18 @@ jobs:
           bash ops/tests/test-database.sh ops/tests/output/database/migrations.sql
           nfhotel-api:test
 
+  team-database-roles:
+    name: Ops team database roles (MIL-048)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test the personal roles against PostgreSQL 16
+        run: bash ops/tests/test-team-db-users.sh
+
   secret-rotation:
     name: Ops secret rotation drill (MIL-035)
     runs-on: ubuntu-24.04

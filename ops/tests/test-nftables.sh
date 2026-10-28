@@ -6,7 +6,7 @@
 #
 # It checks: the dry run changes nothing; from the internet only 80 and 443 answer; from the
 # tailnet 22 answers too; the loopback is open; only the published ports 80 and 443 reach the
-# container while a published 5432 does not; the container reaches out; the table stays when
+# container from the internet, while a published 5432 reaches it from the tailnet only; the container reaches out; the table stays when
 # Docker's own table is replaced (as on a Docker restart); an unconfirmed change reverts by
 # itself, to no table or to the table before; --confirm keeps it and installs the boot unit.
 #
@@ -98,6 +98,7 @@ reach "$internet" 10.1.0.1 5432 && ko "internet: published 5432 answers" || ok "
 reach "$tailnet" 100.64.0.1 22 && ok "tailnet: 22 answers" || ko "tailnet: 22"
 reach "$tailnet" 100.64.0.1 443 && ok "tailnet: 443 answers" || ko "tailnet: 443"
 reach "$tailnet" 100.64.0.1 8080 && ko "tailnet: 8080 answers" || ok "tailnet: 8080 is closed"
+reach "$tailnet" 100.64.0.1 5432 && ok "tailnet: published 5432 reaches the container" || ko "tailnet: 5432"
 nc -z -w 2 127.0.0.1 8080 >/dev/null 2>&1 && ok "the loopback is open" || ko "loopback"
 reach "$container" 10.1.0.2 9000 && ok "the container reaches out" || ko "container out"
 
@@ -118,6 +119,7 @@ EOF
 nft list table inet nfhotel >/dev/null 2>&1 && ok "the table inet nfhotel stays" || ko "table gone"
 reach "$internet" 10.1.0.1 80 && ok "80 still reaches the container" || ko "80 after restart"
 reach "$internet" 10.1.0.1 5432 && ko "5432 answers after the restart" || ok "5432 is still filtered"
+reach "$tailnet" 100.64.0.1 5432 && ok "5432 still reaches the container from the tailnet" || ko "tailnet 5432 after restart"
 
 echo "== --confirm"
 bash "$APPLY" --confirm >/dev/null && ok "--confirm" || ko "--confirm"

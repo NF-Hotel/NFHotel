@@ -9,4 +9,5 @@
 - [Incidents](Incidents)
 - [Disaster Recovery](Disaster-Recovery)
 - [Public Access](Public-Access)
+- [Database Access](Database-Access)
 - [Appendix](Appendix)
