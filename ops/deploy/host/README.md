@@ -12,3 +12,7 @@ the wiki page `Host-Hardening.md`.
 | `nftables/nfhotel.nft` | `/etc/nfhotel/nftables.nft`, loaded by `nfhotel-firewall.service` | `ops/scripts/apply-firewall.sh` |
 | `apt/20auto-upgrades`, `apt/52nfhotel-unattended-upgrades` | `/etc/apt/apt.conf.d/` | `ops/scripts/install-patching.sh` |
 | `journald/nfhotel.conf` | `/etc/systemd/journald.conf.d/nfhotel.conf` | `ops/scripts/install-patching.sh` |
+| `ssh/nfhotel.conf` | `/etc/ssh/sshd_config.d/nfhotel.conf` | `ops/scripts/install-host-settings.sh` |
+| `sudo/nfhotel-logging` | `/etc/sudoers.d/nfhotel-logging` | `ops/scripts/install-host-settings.sh` |
+| `logrotate/nfhotel-sudo` | `/etc/logrotate.d/nfhotel-sudo` | `ops/scripts/install-host-settings.sh` |
+| `sysctl/60-nfhotel.conf` | `/etc/sysctl.d/60-nfhotel.conf` | `ops/scripts/install-host-settings.sh` |
