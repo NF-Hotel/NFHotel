@@ -316,7 +316,8 @@ public sealed class ServiceWorld
     public BookingService BookingService() =>
         new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock);
 
-    public GuestService GuestService() => new(Guests, GuestQueries, UnitOfWork);
+    public GuestService GuestService(IStaffAuthorizationService? authorization = null) =>
+      new(Guests, GuestQueries, UnitOfWork, authorization ?? Substitute.For<IStaffAuthorizationService>());
 
     public StaffAuthService StaffAuthService(IPasswordHasher? hasher = null, IStaffTokenIssuer? tokens = null, ILoginThrottle? throttle = null) =>
         new(Staff, hasher ?? new FakePasswordHasher(), tokens ?? new FakeStaffTokenIssuer(), throttle ?? Substitute.For<ILoginThrottle>(), UnitOfWork, StaffAudit, CallContext, Clock);
