@@ -64,7 +64,7 @@ internal static class RoomFactory
                 break;
 
             default:
-                throw new ArgumentOutOfRangeException(nameof(status), status, "Ukendt rengøringstilstand.");
+                throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown cleaning status.");
         }
 
         return room;

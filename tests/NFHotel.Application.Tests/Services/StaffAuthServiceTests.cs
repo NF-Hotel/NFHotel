@@ -115,7 +115,7 @@ public sealed class StaffAuthServiceTests
         // Arrange
         var world = new ServiceWorld();
         var hasher = Substitute.For<IPasswordHasher>();
-        var service = new StaffAuthService(world.Staff, hasher, new FakeStaffTokenIssuer(), Substitute.For<ILoginThrottle>());
+        var service = world.StaffAuthService(hasher);
 
         // Act
         await service.SignInAsync(new SignInRequest("nobody", Password), TestContext.Current.CancellationToken);
@@ -150,7 +150,7 @@ public sealed class StaffAuthServiceTests
         var world = new ServiceWorld();
         Add(world, "rita", StaffRole.Manager);
         var hasher = Substitute.For<IPasswordHasher>();
-        var service = new StaffAuthService(world.Staff, hasher, new FakeStaffTokenIssuer(), Substitute.For<ILoginThrottle>());
+        var service = world.StaffAuthService(hasher);
         var tooLong = new string('x', StaffAuthService.MaxPasswordLength + 1);
 
         // Act
@@ -175,7 +175,7 @@ public sealed class StaffAuthServiceTests
         var hasher = Substitute.For<IPasswordHasher>();
         var throttle = Substitute.For<ILoginThrottle>();
         throttle.IsBlocked("rita").Returns(true);
-        var service = new StaffAuthService(world.Staff, hasher, new FakeStaffTokenIssuer(), throttle);
+        var service = world.StaffAuthService(hasher, throttle: throttle);
 
         // Act
         var result = await service.SignInAsync(new SignInRequest("rita", Password), TestContext.Current.CancellationToken);
@@ -205,7 +205,7 @@ public sealed class StaffAuthServiceTests
     {
         var world = new ServiceWorld();
         var throttle = Substitute.For<ILoginThrottle>();
-        return (new StaffAuthService(world.Staff, new FakePasswordHasher(), new FakeStaffTokenIssuer(), throttle), world, throttle);
+        return (world.StaffAuthService(throttle: throttle), world, throttle);
     }
 
     private static StaffMember Add(ServiceWorld world, string name, StaffRole role)

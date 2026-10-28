@@ -14,6 +14,8 @@
 
     The list never carries an answer text: the answer of one request is read on its own with its button, because it can
     be long. The memory figures are what the machine had in use, not what the model alone used (BENCHMARK_METHODOLOGY.md).
+    Above it, the started runs without a stored result (ADR-0031): one that a restart of the service stopped is shown as
+    interrupted and can be started again with the same choice.
 *@
 
 <PageTitle>Benchmark runs — administration</PageTitle>
@@ -96,6 +98,47 @@
                 }
             }
         </section>
+    }
+
+    @if (ViewModel.StartedRuns.Count > 0)
+    {
+        <div class="table-wrap">
+            <table class="table">
+                <caption>Started runs without a stored result, newest first</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Started</th>
+                        <th scope="col">Models</th>
+                        <th scope="col">By</th>
+                        <th scope="col">State</th>
+                        <th scope="col" class="table-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var started in ViewModel.StartedRuns)
+                    {
+                        <tr>
+                            <td>@started.RequestedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) UTC</td>
+                            <td>@string.Join(", ", started.Models)</td>
+                            <td>@started.RequestedBy</td>
+                            <td><strong>@started.State</strong>@(started.Error is null ? string.Empty : $": {started.Error}")</td>
+                            <td class="table-actions">
+                                <AuthorizeView Policy="@StaffPolicies.BenchmarkRun">
+                                    @if (started.IsOpen)
+                                    {
+                                        <a class="btn btn-secondary btn-sm" href="/admin/benchmark/start">Follow</a>
+                                    }
+                                    else
+                                    {
+                                        <a class="btn btn-secondary btn-sm" href="@($"/admin/benchmark/start?again={started.RunId}")">Start again</a>
+                                    }
+                                </AuthorizeView>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
 
     @if (!ViewModel.IsLoaded)

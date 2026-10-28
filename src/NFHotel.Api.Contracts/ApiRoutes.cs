@@ -33,14 +33,50 @@ public static class ApiRoutes
     /// <summary>One run below <see cref="Benchmark"/>, by the run id of the contract.</summary>
     public const string BenchmarkRunById = "runs/{runId:guid}";
 
+    /// <summary>The records of the started runs below <see cref="Benchmark"/> (ADR-0031).</summary>
+    public const string BenchmarkRequests = "requests";
+
+    /// <summary>The state of one started run below <see cref="Benchmark"/>, by the run id of the service.</summary>
+    public const string BenchmarkRequestState = "requests/{runId:guid}/state";
+
     /// <summary>The answer text of one request below <see cref="Benchmark"/>.</summary>
     public const string BenchmarkOutput = "results/{id:int}/output";
+
+    /// <summary>The route prefix of the market analysis (MIL-026).</summary>
+    public const string MarketAnalysis = "api/market-analysis";
+
+    /// <summary>The latest stored report below <see cref="MarketAnalysis"/>.</summary>
+    public const string MarketAnalysisLatest = "latest";
+
+    /// <summary>The runs below <see cref="MarketAnalysis"/>: a start posts here.</summary>
+    public const string MarketAnalysisRuns = "runs";
+
+    /// <summary>One run below <see cref="MarketAnalysis"/>, by the run id of the data analysis service.</summary>
+    public const string MarketAnalysisRunById = "runs/{runId:guid}";
 
     /// <summary>The route prefix of the staff sign-in (ADR-0005).</summary>
     public const string Auth = "api/auth";
 
     /// <summary>The sign-in below <see cref="Auth"/>.</summary>
     public const string Login = "login";
+
+    /// <summary>The route prefix of the staff accounts (ADR-0017).</summary>
+    public const string Staff = "api/staff";
+
+    /// <summary>The change of the own password below <see cref="Staff"/>.</summary>
+    public const string StaffMyPassword = "me/password";
+
+    /// <summary>Disabling an account below <see cref="Staff"/>.</summary>
+    public const string StaffDisable = "{id:int}/disable";
+
+    /// <summary>Enabling an account below <see cref="Staff"/>.</summary>
+    public const string StaffEnable = "{id:int}/enable";
+
+    /// <summary>The reset of the password of an account below <see cref="Staff"/>.</summary>
+    public const string StaffResetPassword = "{id:int}/password";
+
+    /// <summary>The audit trail below <see cref="Staff"/>; the query parameters <c>page</c> and <c>pageSize</c> select the page.</summary>
+    public const string StaffAudit = "audit";
 
     /// <summary>A resource by key: <c>{id}</c> after the prefix.</summary>
     public const string ById = "{id:int}";

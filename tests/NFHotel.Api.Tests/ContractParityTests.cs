@@ -5,12 +5,15 @@ using NFHotel.ApiClient;
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Guests;
 using NFHotel.Application.Dto.Rooms;
+using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.Rooms;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.TestSupport;
+
+using NSubstitute;
 
 namespace NFHotel.Api.Tests;
 
@@ -32,7 +35,18 @@ public sealed class ContractParityTests : IAsyncLifetime
     {
         Seed(_direct);
         Seed(_factory.World);
-        _directServices = new Services(_direct.BookingService(), _direct.GuestService(), _direct.RoomService());
+        var authorization = Substitute.For<IStaffAuthorizationService>();
+
+        authorization.HasPermissionAsync(
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
+
+        _directServices = new Services(
+            _direct.BookingService(),
+            _direct.GuestService(authorization),
+            _direct.RoomService());
+
         var gateway = new ApiGateway(_factory.CreateAuthorizedClient());
         _viaApi = new Services(new ApiBookingService(gateway), new ApiGuestService(gateway), new ApiRoomService(gateway));
         return ValueTask.CompletedTask;

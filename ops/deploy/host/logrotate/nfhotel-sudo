@@ -1,0 +1,11 @@
+# NF Hotel VM (MIL-023): keep the sudo log of sudo/nfhotel-logging for 90 days, as the
+# deployment log. Installed by scripts/install-host-settings.sh as /etc/logrotate.d/nfhotel-sudo.
+/var/log/sudo.log {
+  weekly
+  rotate 13
+  compress
+  delaycompress
+  missingok
+  notifempty
+  create 0600 root root
+}

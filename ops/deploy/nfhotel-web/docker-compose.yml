@@ -1,0 +1,94 @@
+# NFHotel web application, reachable only through the nginx proxy (MIL-002
+# task 4). Read by Docker Compose. Settings live in nfhotel-web.env
+# (git-ignored); copy nfhotel-web.env.example to nfhotel-web.env first. Start it with
+# scripts/deploy-services.sh, which writes secrets/ from the settings first (ADR-0024).
+# The image comes from the repository root Dockerfile (already on main).
+# No host port is published: the proxy reaches the service by name on the
+# shared network (create it once: docker network create nfhotel-proxy).
+# The web service holds no database login and no passport key (ADR-0004): it reaches the
+# database API (deploy/nfhotel-api) by the name nfhotel-api on the internal network
+# nfhotel-api (docker network create --internal nfhotel-api). It is not on nfhotel-db.
+# It also reaches the benchmark service (notebook-benchmark, MIL-020) by the name
+# benchmark on the same network; BenchmarkService__BaseUrl and BenchmarkService__Token
+# are set in nfhotel-web.env.
+name: nfhotel-web
+
+services:
+  nfhotel-web:
+    image: ${NFHOTEL_WEB_IMAGE:-nfhotel-web:local}
+    build:
+      # The application source is the root of this repository by default (ADR-0016), or the
+      # NFHotel checkout in NFHOTEL_APP_DIR (the release action and e2e-stack.sh set it).
+      context: ${NFHOTEL_APP_DIR:-../../..}
+      dockerfile: Dockerfile
+      labels:
+        org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
+        org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
+    restart: unless-stopped
+    env_file: ${NFHOTEL_WEB_ENV_FILE:-secrets/settings.env}
+    # Hardening (MIL-023 task 2, CIS-001): the image runs as the user app on port 8080 and
+    # needs no capability; only /tmp and the key folder are written.
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/tmp]
+    # The Data Protection keys outlive the container, so a deploy keeps the staff signed in and an
+    # open form valid (ADR-0031). The image owns /app/keys by the user app and points to it.
+    volumes:
+      - keys:/app/keys
+    mem_limit: 1g
+    cpus: 2
+    pids_limit: 512
+    # The secrets are files in /run/secrets, read with AddKeyPerFile (MIL-035, ADR-0024):
+    # scripts/write-secret-files.sh writes them from nfhotel-web.env, the API token from
+    # deploy/nfhotel-api/nfhotel-api.env and the benchmark token from benchmark.env, so each is
+    # written in the settings of one service only.
+    secrets:
+      - Encryption__PassportKey
+      - Api__Token
+      - HolidayApi__ApiKey
+      - BenchmarkService__Token
+    environment:
+      Api__BaseUrl: http://nfhotel-api:8080
+      BenchmarkService__BaseUrl: http://benchmark:8000
+      # The metrics go to Alloy on the network nfhotel-api (MIL-034). Without Alloy the export
+      # fails quietly and the application is not affected.
+      Telemetry__OtlpEndpoint: ${NFHOTEL_OTLP_ENDPOINT:-http://alloy:4318}
+      # A hash of the secret files, set by scripts/deploy-services.sh: compose does not see a
+      # changed secret file, but it recreates the container when this value changes, so a rotated
+      # secret is read at the next deploy. It is a digest, not a secret.
+      NFHOTEL_SETTINGS_HASH: ${NFHOTEL_SETTINGS_HASH:-}
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+    networks:
+      - proxy
+      - api
+
+volumes:
+  keys:
+
+networks:
+  proxy:
+    name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
+    external: true
+  # Internal network shared with the database API only (no route out, no host port).
+  api:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
+    external: true
+
+# One file per secret, written by scripts/write-secret-files.sh into NFHOTEL_WEB_SECRETS.
+secrets:
+  Encryption__PassportKey:
+    file: ${NFHOTEL_WEB_SECRETS:-secrets}/Encryption__PassportKey
+  Api__Token:
+    file: ${NFHOTEL_WEB_SECRETS:-secrets}/Api__Token
+  HolidayApi__ApiKey:
+    file: ${NFHOTEL_WEB_SECRETS:-secrets}/HolidayApi__ApiKey
+  BenchmarkService__Token:
+    file: ${NFHOTEL_WEB_SECRETS:-secrets}/BenchmarkService__Token

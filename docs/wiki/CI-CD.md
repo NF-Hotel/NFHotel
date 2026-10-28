@@ -1,0 +1,197 @@
+# CI/CD
+
+How a change reaches the NF Hotel server, how a deploy is approved and undone, and how the database is backed up and restored. The decisions behind it are in ADR-0007 and ADR-0008. The assessment and the quality gates are in DSA-001 (`docs/sqa/devsecops-assessment.md`).
+
+## How a release flows
+
+One repository holds it all (ADR-0016): the application, and its operations under `ops/`. The workflows (`ci.yaml`, `ops-ci.yaml`, `release.yaml`, `cd.yaml`) keep the triggers, the permissions, the `production` environment and the OIDC claims. Their steps are the local composite actions in `.github/actions/` (`release-images`, `deploy-release`, `e2e-tests`, `dast-scan`), read from the same commit, which run the scripts of `ops/scripts/`. Everything that runs on the VM is in `ops/` too.
+
+1. **Pull request.** `NF Hotel CI` builds, tests and checks the formatting on every pull request, with a read-only token. Its only secret is `SONAR_TOKEN`, the analysis token of SonarQube Cloud (ADR-0033); a run without it (a fork, Dependabot) skips the analysis. A pull request merges when the required checks are green; no approving review is required (ADR-0019).
+2. **Merge to `main`.** CI runs again on `main`. When it is green, `NF Hotel Release` in NFHotel calls the `release-images` action. The action builds four images from that exact commit, with the compose files and scripts of `ops/` in it, and pushes them to the GitHub Container Registry:
+   - `ghcr.io/nf-hotel/nfhotel-web`
+   - `ghcr.io/nf-hotel/nfhotel-api`
+   - `ghcr.io/nf-hotel/market-analysis`, a patch layer on its frozen base (see "The market-analysis image" below)
+   - `ghcr.io/nf-hotel/benchmark`
+
+   Each image is tagged `sha-<NFHotel commit>` and labelled with that commit (`org.opencontainers.image.revision`). The run summary and the artifact `release-manifest` (`release.json`) hold the commit, the operations commit (`devops_sha`, the same commit since ADR-0016), one digest per image and the hash of the migration script.
+3. **Gate (ADR-0021).** `NF Hotel CD` starts by itself in the environment `production` (`main` only). No person approves. Before any credential for the VM, it waits until every check of the release commit has finished, and it deploys only when all of them are green (success, skipped or neutral). One red check stops it, and the run summary names that check.
+4. **Deploy.** After the approval:
+   - the job joins the tailnet as a temporary node tagged `tag:ci`;
+   - it logs in to the VM with Tailscale SSH as the user `deploy`;
+   - it runs `sudo -n /usr/local/sbin/nfhotel-deploy update <operations commit>` first. That installs the deploy command, the backup command and the backup timer of the release, and only when the commit is on `main` (ADR-0018);
+   - then it runs `migrate` with the migration script, and `deploy <commit> <operations commit> <four digests>` (the `deploy-release` action).
+5. **On the VM**, the deploy command (`ops/scripts/deploy-release.sh`):
+   - backs up the database;
+   - checks out the release commit in `/opt/nfhotel`, a checkout of `NF-Hotel/NFHotel`, and uses its `ops/` (a checkout of the archived `NF-Hotel/DevOps` is still accepted until the switch of MIL-031 task 6). The application runs from the images, not from this checkout;
+   - starts the services from the digests without building anything;
+   - checks that port 80 answers 301 and HTTPS answers 200.
+
+   If the check fails, it deploys the previous release again and the run turns red.
+
+Docker volumes, and so the database, are never removed by a deploy. Every release builds each image again with a new digest, so a deploy recreates every service. What that keeps and what it stops (ADR-0031):
+
+- **Kept:** the database; the staff sign-ins and the forms that are open in a browser, because the web application keeps its Data Protection keys in the volume `nfhotel-web_keys`; the record of every benchmark run a Manager started.
+- **Stopped:** a benchmark run that is queued or running, because the benchmark service keeps its queue in memory. The back office then shows it as interrupted, and a Manager starts it again with the same choice. Deploy when no run is going if the result matters.
+
+## When a deploy does not start
+
+A deploy needs no approval (ADR-0021). When `NF Hotel CD` stops at "Wait until every check is green":
+
+- its summary names the check that is not green: fix it or re-run it;
+- to deploy the commit after a re-run, start `NF Hotel CD` by hand with the run ID of its `NF Hotel Release` run and `apply` ticked. It passes the same gate.
+
+## Roll back
+
+- **To the release before the latest one:** on the VM, run `sudo /usr/local/sbin/nfhotel-deploy rollback`. Running it again switches back to where you came from.
+- **To any earlier release:** start `NF Hotel CD` by hand (Actions, NF Hotel CD, Run workflow) with the run ID of the `NF Hotel Release` run you want to deploy. It is approved like any other deploy.
+- **To see what is deployed:** `sudo /usr/local/sbin/nfhotel-deploy status` prints the release log (`/var/lib/nfhotel-deploy/releases.log`).
+- **Rollback drill (MIL-021 criterion 6):** start `NF Hotel CD` by hand with `apply` and `rollback_drill` ticked. The run deploys the release, then rolls back to the previous release on purpose, and ends red. The drilled release is not recorded in the release log. Run a normal deploy of the release afterwards.
+
+A rollback changes the images and the compose files, not the database. Migrations are written so that the previous release still runs on the new schema (ADR-0008, expand then contract).
+
+## Change an action or a deploy script
+
+1. Change it in `ops/` or `.github/actions/` by a pull request; the CI (`NF Hotel Ops CI` included) must be green (CODEOWNERS asks codemikemike for review of `ops/` and `.github/`; no approval is required, ADR-0019).
+2. The next release carries it: the workflows read the actions from the same commit, so there is no pin to move.
+3. A script that runs as root on the VM (`deploy-release.sh`, `backup-database.sh`, the backup service and timer) takes effect with the next approved CD. Its first step, `nfhotel-deploy update <sha>`, installs them from the release commit, and only when that commit is on `main` (ADR-0018). The replaced copy is kept as `<file>.previous`, and the release log (`nfhotel-deploy status`) shows the old and new SHA-256. Nobody installs them by hand after the first setup below.
+
+## The market-analysis image
+
+Its source repository was deleted, so the application cannot be built again (ADR-0500). The release builds a patch layer on the last good digest instead (ADR-0030): the Debian security updates, and the Python packages pinned in `ops/deploy/market-analysis/requirements.txt`. The application files stay those of the base; the release check proves it with `ops/tests/check-patch-layer.sh`. The image is scanned, attested and verified like the other three.
+
+When the scan reports a finding in it:
+
+- **A Debian package with a fix:** the next release installs it; merge any change to `main`, or re-run the release.
+- **A Python package with a fix:** add the package to `requirements.txt` with the fixed version and the SHA-256 of its wheel (from `https://pypi.org/pypi/<package>/<version>/json`), in a pull request. The release check shows that it builds and that the application files are unchanged. Dependabot proposes newer versions of the pinned packages.
+- **No fix yet, or the fix breaks the service:** accept it for at most 30 days in `ops/security/trivyignore.yaml`, with a reason, in a reviewed pull request.
+
+The base digest must never be deleted from GHCR: without it the image cannot be built at all.
+
+## Back up and restore
+
+- The timer `nfhotel-backup.timer` runs `/usr/local/sbin/nfhotel-backup` every day at 02:00 UTC, and every deploy runs it first.
+- Each backup is a `pg_dump` encrypted with `age` to the public key of S03, in `/var/backups/nfhotel`. Every backup that the target lacks is copied to `BACKUP_TARGET` (the backup target on the legion laptop, set in `/etc/nfhotel/backup.env`). When the copy fails, the run warns and shows the time of the last copy that worked.
+- 14 daily and 8 weekly backups are kept on the VM.
+- **Restore drill (monthly):** copy a backup to a machine with Docker and the private key, then run:
+
+  ```bash
+  bash ops/scripts/restore-drill.sh --identity nfhotel-backup.key nfhotel-daily-<stamp>.dump.age
+  ```
+
+  It restores into a throwaway container and lists the tables, row counts and the latest migration. Record the output in an RC.
+- **A real restore** is done by S03. Stop the API, restore the decrypted dump with `pg_restore --clean` into the `postgres` container, then start the API again.
+
+## One-time setup
+
+S03 and a repository administrator do this once, in this order.
+
+### On the VM (S03)
+
+1. The production VM is `nf-hotel` (Proxmox VMID 100, Debian 13, `nf-hotel.taildb84b5.ts.net`); its host key `SHA256:Ea/3dv5VefOgI6rlseLuRBtDBmB28zebBp2hZsXSi1w` was verified over the tailnet (DSA-001 section 2.4.2, ADR-0010).
+   - **It already runs NF Hotel** from `/opt/nfhotel/deployment/compose.yaml`, which is not in git. **Do not stop or replace anything on it** before the deployment is reconciled with the repository (MIL-021 task 10, ADR-0010). Until then the deploy command refuses to run.
+   - The reconciliation, done by S03 with S01:
+     - copy `/opt/nfhotel/deployment/compose.yaml` into a pull request, with every secret replaced by a reference to a git-ignored settings file;
+     - map its services to the release images, and its volumes, PostgreSQL included, to names the release keeps;
+     - take and test a backup of the database first.
+   - Turn off SSH password login (risk R14): set `PasswordAuthentication no` and `KbdInteractiveAuthentication no` in `/etc/ssh/sshd_config.d/10-nfhotel.conf`, then run `systemctl reload ssh`.
+2. In `/opt/nfhotel`, run `sudo bash ops/scripts/install-deploy-user.sh --apply` (without `--apply` it only shows what it would do). It creates the user `deploy`, the deploy command and its single sudo rule, then prints the Tailscale steps.
+3. Run `sudo tailscale set --ssh`.
+4. On your own machine, create the backup key with `age-keygen -o nfhotel-backup.key`. Keep it offline, and never copy it to the VM.
+5. Prepare the off-VM copy on the backup host, the legion laptop of S03 (decision D7, revised 2026-10-21). The copy is write-only and limited to one folder. The target is the container `ops/deploy/backup-target`; it needs Docker and Tailscale on the laptop.
+   - On the VM, create the key for the copy, and show its public half:
+
+     ```bash
+     sudo ssh-keygen -t ed25519 -N '' -C root@nf-hotel -f /root/.ssh/nfhotel-backup
+     sudo cat /root/.ssh/nfhotel-backup.pub
+     ```
+
+   - On the laptop, in `ops/deploy/backup-target`, copy `backup-target.env.example` to `backup-target.env`. Then fill in:
+     - `BACKUP_PUBLIC_KEY`: that public key;
+     - `BACKUP_TARGET_BIND`: the tailnet address of the laptop (`tailscale ip -4`);
+     - `BACKUP_TARGET_DIR`: where the backups land.
+
+     Start the container, and read the fingerprint of its host key from the first line of its log:
+
+     ```bash
+     docker compose --env-file backup-target.env up -d --build
+     docker compose --env-file backup-target.env logs backup-target | head -1
+     ```
+
+   - In the tailnet policy, let `tag:nfhotel-vm` reach the laptop on the port of the target (2222). Nothing else needs it.
+   - On the VM, pin the host key of the target for root, and check that its fingerprint matches the log line:
+
+     ```bash
+     sudo sh -c 'ssh-keyscan -p 2222 -t ed25519 <laptop tailnet address> >> /root/.ssh/known_hosts'
+     sudo ssh-keygen -l -F '[<laptop tailnet address>]:2222' -f /root/.ssh/known_hosts
+     ```
+
+   - In `/etc/nfhotel/backup.env` on the VM, set `BACKUP_TARGET=nfhotel-backup@<laptop tailnet address>:/` and `BACKUP_SSH_PORT=2222`.
+   - In Proxmox, keep the weekly `vzdump` backup job of the VM, to a storage other than its own disk.
+
+   When the laptop is off, the backup stays on the VM and warns. The next backup copies every file that the target lacks.
+6. On the VM, install the backup:
+
+   ```bash
+   sudo bash ops/scripts/install-backup.sh --recipient <age1... public key> --apply
+   ```
+
+   Then test it once with `sudo systemctl start nfhotel-backup.service`.
+
+### In Tailscale (S03)
+
+1. Give the VM the tag `tag:nfhotel-vm` (Machines, Edit ACL tags).
+2. Add to the tailnet policy:
+
+   ```json
+   "tagOwners": { "tag:ci": ["autogroup:admin"], "tag:nfhotel-vm": ["autogroup:admin"] },
+   "grants":    [ { "src": ["tag:ci"], "dst": ["tag:nfhotel-vm"], "ip": ["tcp:22"] } ],
+   "ssh":       [ { "action": "accept", "src": ["tag:ci"], "dst": ["tag:nfhotel-vm"], "users": ["deploy"] } ]
+   ```
+
+3. Create a trust credential (workload identity federation) for GitHub Actions:
+   - scope `auth_keys`;
+   - tag `tag:ci`;
+   - limited to the repository `NF-Hotel/NFHotel` and the environment `production`.
+
+   Note its client ID and audience.
+
+### In GitHub (repository administrator)
+
+1. **Settings, Environments, New environment `production`:**
+   - no required reviewers (ADR-0021: the gate on the checks replaces the approval);
+   - deployment branches: selected branches, `main`.
+2. **Environment variables of `production`:**
+   - `TS_OIDC_CLIENT_ID` and `TS_OIDC_AUDIENCE` (from Tailscale);
+   - `NFHOTEL_VM_HOST` (the tailnet name of the VM, for example `nf-hotel`).
+
+   No secret is needed in the environment. The repository has one secret, `SONAR_TOKEN`: an analysis token from SonarQube Cloud (My Account, Security), used with Automatic Analysis turned off in the project (Administration, Analysis Method); renew it before it expires (ADR-0033).
+3. **After the first release, make the packages public (decision D2):**
+   - Packages, each of the four images, Package settings, Change visibility.
+   - Link each package to this repository if it is not linked.
+4. **After PR #22 is merged (decision D5),** edit the ruleset `Approve merges`:
+   - require the status checks `Build, tests og sikkerhed`, `Formatering` and `Docker-build`;
+   - dismiss stale approvals;
+   - require approval of the most recent push;
+   - restrict deletions.
+
+## Which tool checks what
+
+| Gate | Where | Blocks |
+| --- | --- | --- |
+| Build, tests, NuGet audit, formatting | `NF Hotel CI` | the merge (once the checks are required) |
+| Secret scanning with push protection, Dependabot alerts, CodeQL | repository settings | a push with a secret; alerts are reviewed |
+| Static analysis, code coverage, quality gate `Sonar way` | SonarQube Cloud, analysed in the `build` job of `NF Hotel CI` (ADR-0033) | the deploy, through the check `SonarCloud Code Analysis`; new code needs 80 % coverage |
+| Every check of the commit green | the gate of `NF Hotel CD` (ADR-0021) | the deploy |
+| Health and smoke test | `nfhotel-deploy` on the VM | the release; it rolls back |
+
+Phase 2 (MIL-022) adds Trivy, SBOMs, build provenance and its verification before the deploy. Phase 3 (MIL-023) adds the hardening of the VM.
+
+## Why there is no staging environment
+
+A release goes from the checks of CI straight to production, without a staging environment ([ADR-0026](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0026-no-staging-environment.md), MIL-039). Each production incident of October 2026 came from the state of production itself (file modes, settings, the history of the VM), which a separate staging environment would not have had. Instead:
+
+- **Before the deploy:** every release runs on a throwaway stack in CI with the same images and compose files: the end-to-end tests, the DAST baseline, the log privacy check and the secret check.
+- **During the deploy:** a container that does not turn healthy, a secret in a container's environment, or a failed smoke test fails the deploy and rolls back to the previous release.
+- **After the deploy:** the alerts `ApplicationErrors`, `ApplicationSlow` and `ApplicationExceptions` ([Monitoring](Monitoring#service-level-objectives)) catch a release that starts but serves guests badly; then roll back as described under [Roll back](#roll-back).
+
+The decision is taken again when the hotel takes real bookings, when a migration cannot be rolled back, or when the Proxmox node turns out to have room for a staging VM.

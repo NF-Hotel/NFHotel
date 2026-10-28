@@ -1,0 +1,40 @@
+# NF Hotel on the public internet (MIL-040, ADR-0028). Cloudflare Tunnel (deploy/cloudflared) forwards the
+# requests for the public host name to this listener over the Docker network nfhotel-proxy. Port 8082 is not
+# published on the host, so nothing outside the Docker networks reaches it. Cloudflare ends TLS for the
+# client; the tunnel itself is encrypted, and this hop stays inside the VM.
+
+server {
+  listen 8082;
+  server_name _;
+
+  # The client's address, which Cloudflare sends as CF-Connecting-IP, replaces the address of cloudflared, so the
+  # per-address sign-in limit of the API and the logs see the guest. It is trusted only from the Docker networks.
+  set_real_ip_from 172.16.0.0/12;
+  set_real_ip_from 192.168.0.0/16;
+  set_real_ip_from 10.0.0.0/8;
+  real_ip_header CF-Connecting-IP;
+
+  # Docker's embedded DNS, as in default.conf.template: the proxy starts while an upstream is down.
+  resolver 127.0.0.11 valid=10s;
+  set $upstream http://${UPSTREAM_HOST}:${UPSTREAM_PORT};
+
+  # The back office (MIL-041, ADR-0029). Cloudflare Access stands in front of /admin, and the tunnel route for ^/admin
+  # validates its token, so a stranger sees Cloudflare's e-mail page and never the staff sign-in. A request that
+  # reaches this listener without the token header (another container on the proxy network, or a route that does
+  # not validate) still gets 404.
+  location ^~ /admin {
+    if ($http_cf_access_jwt_assertion = "") {
+      return 404;
+    }
+    proxy_pass $upstream;
+    include /etc/nginx/snippets/proxy.conf;
+  }
+
+  # The two routes of the mobile app (ADR-0015); every other path of /mobile-api/ answers 404.
+  include /etc/nginx/snippets/mobile-api.conf;
+
+  location / {
+    proxy_pass $upstream;
+    include /etc/nginx/snippets/proxy.conf;
+  }
+}

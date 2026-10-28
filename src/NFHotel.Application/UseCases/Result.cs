@@ -39,12 +39,12 @@ public class Result
 
         if (isSuccess && errors.Count > 0)
         {
-            throw new ArgumentException("Et vellykket resultat kan ikke bære fejl.", nameof(errors));
+            throw new ArgumentException("A successful result cannot carry errors.", nameof(errors));
         }
 
         if (!isSuccess && errors.Count == 0)
         {
-            throw new ArgumentException("Et fejlet resultat skal bære mindst én fejl.", nameof(errors));
+            throw new ArgumentException("A failed result must carry at least one error.", nameof(errors));
         }
 
         IsSuccess = isSuccess;

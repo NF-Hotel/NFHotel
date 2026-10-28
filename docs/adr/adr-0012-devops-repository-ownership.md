@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0012 |
-| CrossReference | [BC-001], [ADR-0003], [ADR-0006], [ADR-0007], [ADR-0010], [MIL-025] |
+| CrossReference | [BC-001], [ADR-0003], [ADR-0006], [ADR-0007], [ADR-0010], [MIL-025], [ADR-0016] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 | Deprecated | mikemike | S01; S03 | Initial version, the repository ownership decision given by S01 in chat | [4c8f103] |
 | 2026-10-19 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-102 Go | [4c8f103] |
+| 2026-10-20 | Superseded by ADR-0016 | mikemike | AI as stand-in for S01 | S01 decided to keep the application and its operations in NF-Hotel/NFHotel (ADR-0016, RC-146) | [1b46421] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -120,7 +120,9 @@ We follow option 4: `NF-Hotel/DevOps` owns infrastructure and operations, `NF-Ho
 [BC-001]: ../business-case.md
 [ADR-0003]: ./adr-0003-proxmox-vm-for-services.md
 [ADR-0006]: ./adr-0006-tls.md
-[ADR-0007]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md
-[ADR-0010]: https://github.com/NF-Hotel/DevOps/blob/main/docs/adr/adr-0010-production-vm-as-deployed.md
+[ADR-0007]: ./adr-0007-cicd-and-supply-chain.md
+[ADR-0010]: ./adr-0010-production-vm-as-deployed.md
 [MIL-025]: ../milestones/mil-025-devops-repository-consolidation.md
 [4c8f103]: https://github.com/NF-Hotel/NFHotel/commit/4c8f1030fdf53a5d9d827478244c55ecae73b8eb
+[ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
+[1b46421]: https://github.com/NF-Hotel/NFHotel/commit/1b46421e16ad0138fc39ab6aa7bf0fe3a1799f38

@@ -29,6 +29,14 @@ public sealed class StaffConfiguration : EntityConfiguration<StaffMember, int>
         builder.Property(member => member.IsActive)
             .IsRequired();
 
+        builder.Property(member => member.MustChangePassword)
+            .HasDefaultValue(false)
+            .IsRequired();
+
+        builder.Property(member => member.SecurityStamp)
+            .HasDefaultValue(1)
+            .IsRequired();
+
         // The user name is stored in lower case, so a plain unique index makes the name unique in any case.
         // It is also the race safeguard behind the check of the service.
         builder.HasIndex(member => member.UserName)

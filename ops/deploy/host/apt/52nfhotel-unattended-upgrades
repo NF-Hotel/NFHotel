@@ -1,0 +1,15 @@
+// NF Hotel VM (MIL-023 task 4, CIS-001; DSA-001 risk R11): install Debian security updates
+// only. Read after Debian's 50unattended-upgrades; #clear drops its list of origins, which
+// also takes the point releases of stable. Docker comes from Docker's own repository and is
+// not in the list: it is updated in a planned window. Installed by scripts/install-patching.sh.
+#clear Unattended-Upgrade::Origins-Pattern;
+Unattended-Upgrade::Origins-Pattern {
+  "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+};
+
+// Reboots are planned by S03 (wiki page Host-Hardening): a kernel or libc update writes
+// /var/run/reboot-required, and the VM is not restarted by itself.
+Unattended-Upgrade::Automatic-Reboot "false";
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+Unattended-Upgrade::SyslogEnable "true";

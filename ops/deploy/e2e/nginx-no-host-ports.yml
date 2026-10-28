@@ -1,0 +1,6 @@
+# Compose override for the throwaway end-to-end stack (scripts/e2e-stack.sh, MIL-027 of
+# NFHotel): nginx publishes no host port. The tests and the DAST scan join the stack's
+# Docker network and open https://nginx, so nothing of the stack answers on the host.
+services:
+  nginx:
+    ports: !reset []

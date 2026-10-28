@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    End-to-end tests of NF Hotel in a browser (MIL-027 tasks 3 to 5). They drive the public pages and the back
+    office of a running stack through nginx with Playwright (headless Chromium). The tests are skipped unless
+    E2E_BASE_URL is set, so the normal `dotnet test` of the solution passes them over; the stack and the
+    Playwright container are started by scripts/run-e2e-tests.sh of NF-Hotel/DevOps. No reference to src/:
+    the tests see the application only as a browser does.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The Playwright Docker image that runs the tests carries the browsers of this exact version. -->
+    <PackageReference Include="Microsoft.Playwright" Version="1.63.0" />
+    <PackageReference Include="xunit.v3" Version="4.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Microsoft.Playwright" />
+  </ItemGroup>
+
+</Project>

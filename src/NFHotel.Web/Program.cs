@@ -1,5 +1,6 @@
 using NFHotel.ApiClient;
 using NFHotel.External;
+using NFHotel.External.Telemetry;
 using NFHotel.Web.Common;
 using NFHotel.Web.Components;
 using NFHotel.Web.Features.Admin;
@@ -30,6 +31,7 @@ builder.Services.AddApiClient(builder.Configuration);
 builder.Services.AddHotelClock(builder.Configuration);
 builder.Services.AddHolidayApi(builder.Configuration);
 builder.Services.AddBenchmarkService(builder.Configuration);   // starts runs on the benchmark service (MIL-020)
+builder.Services.AddServiceTelemetry(builder.Configuration, "nfhotel-web");   // metrics to the monitoring (MIL-034)
 
 // Open generic scoped service: gives every use case call its own DI scope (Architecture.md section 8). The runner is
 // stateless, but it belongs to the circuit so that it can hand the staff token of the signed-in user to each call
@@ -38,7 +40,10 @@ builder.Services.AddScoped(typeof(IUseCaseRunner<>), typeof(UseCaseRunner<>));
 
 // The staff sign-in: the cookie, one policy per permission, and the source of the staff token (ADR-0005).
 var requireTls = HttpsRequirement.IsRequired(builder.Configuration);
+builder.Services.AddPersistentDataProtection(builder.Configuration);   // the keys survive a deploy (ADR-0031)
 builder.Services.AddStaffSignIn(requireTls);
+builder.Services.AddSecureAntiforgery(requireTls);   // the antiforgery cookie follows the staff cookie (MIL-033)
+builder.Services.AddHttpContextAccessor();
 
 // ViewModels are Scoped: in Blazor Server a scope is one SignalR circuit, that is, one user's
 // session in one tab. That is exactly the lifetime the state of the screen should have.
@@ -49,6 +54,10 @@ builder.Services.AddBookingFeature();   // the customer's booking flow: /book an
 builder.Services.AddAdminFeature();     // the staff's back office: /admin/**, behind the sign-in
 
 var app = builder.Build();
+
+// First in the pipeline, so every response gets the browser security headers, redirects and error pages included
+// (MIL-033).
+app.UseSecurityHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -63,12 +72,14 @@ app.UseHttpsRequirement(requireTls);
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMustChangePassword();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapStaffSignOut();
+// Blazor's own policy (frame-ancestors 'self') is turned off: UseSecurityHeaders sends the complete one.
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode(options => options.ContentSecurityFrameAncestorsPolicy = null);
 
 app.Run();
 /// <summary>The entry point, public so that the integration tests can start the web application.</summary>

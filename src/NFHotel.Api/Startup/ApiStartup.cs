@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 
 using NFHotel.Application.Dto.Staff;
+using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.Infrastructure.Persistence;
+using NFHotel.Infrastructure.Seeding;
 
 namespace NFHotel.Api.Startup;
 
@@ -21,6 +23,18 @@ public static class ApiStartup
 
     /// <summary>The command that creates a staff account.</summary>
     public const string CreateStaffCommand = "create-staff";
+
+    /// <summary>The command that sets a temporary password for an account, for a Manager who has lost theirs (ADR-0017).</summary>
+    public const string ResetStaffPasswordCommand = "reset-staff-password";
+
+    /// <summary>The command that loads the fake bookings of the hotel into the database (MIL-026).</summary>
+    public const string SeedMarketDataCommand = "seed-market-data";
+
+    /// <summary>The option of <see cref="SeedMarketDataCommand"/> that deletes the rooms, guests and bookings that exist.</summary>
+    public const string ReplaceOption = "--replace";
+
+    /// <summary>The option of <see cref="SeedMarketDataCommand"/> that repeats the file until this arrival date, <c>yyyy-MM-dd</c>.</summary>
+    public const string ThroughOption = "--through";
 
     /// <summary>The environment variable that holds the password for <see cref="CreateStaffCommand"/>.</summary>
     public const string PasswordVariable = "STAFF_PASSWORD";
@@ -64,7 +78,10 @@ public static class ApiStartup
 
         await using var scope = app.Services.CreateAsyncScope();
         var accounts = scope.ServiceProvider.GetRequiredService<IStaffAccountService>();
-        var result = await accounts.EnsureFirstManagerAsync(userName, password, cancellationToken).ConfigureAwait(false);
+
+        // The first Manager chooses a new password at the first sign-in, unless the setting says otherwise (ADR-0017).
+        var mustChange = !bool.TryParse(app.Configuration[$"{InitialManagerSection}:MustChangePassword"], out var configured) || configured;
+        var result = await accounts.EnsureFirstManagerAsync(userName, password, mustChange, cancellationToken).ConfigureAwait(false);
         if (result.IsFailure)
         {
             // The codes only: the password is never part of the message.
@@ -78,6 +95,86 @@ public static class ApiStartup
     /// <returns>True for <c>create-staff</c>.</returns>
     public static bool IsCreateStaff(string[] args) =>
         args is { Length: > 0 } && string.Equals(args[0], CreateStaffCommand, StringComparison.Ordinal);
+
+    /// <summary>Tells whether the arguments ask for the <c>reset-staff-password</c> command.</summary>
+    /// <param name="args">The command line.</param>
+    /// <returns>True for <c>reset-staff-password</c>.</returns>
+    public static bool IsResetStaffPassword(string[] args) =>
+        args is { Length: > 0 } && string.Equals(args[0], ResetStaffPasswordCommand, StringComparison.Ordinal);
+
+    /// <summary>Tells whether the command line is the <c>seed-market-data</c> command.</summary>
+    /// <param name="args">The command line.</param>
+    /// <returns>True for <c>seed-market-data</c>.</returns>
+    public static bool IsSeedMarketData(string[] args) =>
+        args is { Length: > 0 } && string.Equals(args[0], SeedMarketDataCommand, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Runs <c>seed-market-data &lt;file&gt; [--replace] [--through yyyy-MM-dd]</c>: reads <c>nf_hotel_bookings.csv</c> and writes
+    /// its rooms, guests and bookings to the database. It refuses a database that has data unless <see cref="ReplaceOption"/>
+    /// is given. With <see cref="ThroughOption"/> the bookings of the file are repeated back to back up to that arrival date.
+    /// </summary>
+    /// <param name="services">The services of the application.</param>
+    /// <param name="args">The command line.</param>
+    /// <param name="cancellationToken">Cancels the command.</param>
+    /// <returns>0 when the data was written; 1 when it was refused; 2 for a wrong command line or a file that cannot be read.</returns>
+    public static async Task<int> RunSeedMarketDataAsync(IServiceProvider services, string[] args, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(args);
+
+        var options = args.Skip(2).ToList();
+        var replace = options.Remove(ReplaceOption);
+        DateOnly? through = null;
+        var throughAt = options.IndexOf(ThroughOption);
+        if (throughAt >= 0)
+        {
+            if (throughAt + 1 >= options.Count
+                || !DateOnly.TryParseExact(options[throughAt + 1], "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsed))
+            {
+                options.Add("invalid");
+            }
+            else
+            {
+                through = parsed;
+                options.RemoveRange(throughAt, 2);
+            }
+        }
+
+        if (args.Length < 2 || options.Count > 0 || !File.Exists(args[1]))
+        {
+            await Console.Error.WriteLineAsync(
+                $"Usage: {SeedMarketDataCommand} <path of nf_hotel_bookings.csv> [{ReplaceOption}] [{ThroughOption} yyyy-MM-dd]").ConfigureAwait(false);
+            return 2;
+        }
+
+        MarketSeedPlan plan;
+        try
+        {
+            using var reader = new StreamReader(args[1]);
+            plan = MarketSeedPlanner.Plan(MarketSeedExpander.Expand(MarketSeedCsv.Parse(reader), through));
+        }
+        catch (Exception exception) when (exception is FormatException or ArgumentException or IOException)
+        {
+            await Console.Error.WriteLineAsync($"The file cannot be used: {exception.Message}").ConfigureAwait(false);
+            return 2;
+        }
+
+        await using var scope = services.CreateAsyncScope();
+        var seeder = new MarketDataSeeder(scope.ServiceProvider.GetRequiredService<HotelDbContext>());
+        try
+        {
+            await seeder.SeedAsync(plan, scope.ServiceProvider.GetRequiredService<IClock>().Today, replace, cancellationToken).ConfigureAwait(false);
+        }
+        catch (InvalidOperationException exception)
+        {
+            await Console.Error.WriteLineAsync($"Refused: {exception.Message}").ConfigureAwait(false);
+            return 1;
+        }
+
+        await Console.Out.WriteLineAsync(
+            $"Loaded {plan.Bookings.Count} bookings, {plan.RoomCount} rooms and {plan.GuestCountries.Count} guests.").ConfigureAwait(false);
+        return 0;
+    }
 
     /// <summary>Runs <c>create-staff &lt;user name&gt; &lt;role&gt;</c>; the password comes from <see cref="PasswordVariable"/>.</summary>
     /// <param name="services">The services of the application.</param>
@@ -108,6 +205,41 @@ public static class ApiStartup
         }
 
         await Console.Out.WriteLineAsync($"Created {args[1].Trim().ToLowerInvariant()} as {role}.").ConfigureAwait(false);
+        return 0;
+    }
+
+    /// <summary>
+    /// Runs <c>reset-staff-password &lt;user name&gt;</c>; the temporary password comes from <see cref="PasswordVariable"/>. The
+    /// account must choose a new password at the next sign-in and its old sessions end.
+    /// </summary>
+    /// <param name="services">The services of the application.</param>
+    /// <param name="args">The command line.</param>
+    /// <param name="password">The password, read by the caller from <see cref="PasswordVariable"/> so that it never appears on a command line.</param>
+    /// <param name="cancellationToken">Cancels the command.</param>
+    /// <returns>0 when the password was set, 1 when it was refused, 2 for a wrong command line.</returns>
+    public static async Task<int> RunResetStaffPasswordAsync(IServiceProvider services, string[] args, string? password, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(args);
+
+        if (args.Length != 2 || string.IsNullOrEmpty(password))
+        {
+            await Console.Error.WriteLineAsync(
+                $"Usage: {ResetStaffPasswordCommand} <user name> (the temporary password in {PasswordVariable})").ConfigureAwait(false);
+            return 2;
+        }
+
+        await using var scope = services.CreateAsyncScope();
+        var accounts = scope.ServiceProvider.GetRequiredService<IStaffAccountService>();
+        var result = await accounts.ResetPasswordByNameAsync(args[1], password, cancellationToken).ConfigureAwait(false);
+        if (result.IsFailure)
+        {
+            await Console.Error.WriteLineAsync(
+                $"Refused: {string.Join(", ", result.Errors.Select(error => error.Code))}").ConfigureAwait(false);
+            return 1;
+        }
+
+        await Console.Out.WriteLineAsync($"Set a temporary password for {args[1].Trim().ToLowerInvariant()}; it must be changed at the next sign-in.").ConfigureAwait(false);
         return 0;
     }
 

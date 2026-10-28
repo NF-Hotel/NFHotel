@@ -1,0 +1,110 @@
+// Alloy on nf-hotel (ADR-0020, MIL-023 task 8). Everything it sends carries host="nf-hotel".
+// Checked in CI with `alloy fmt`.
+
+// Host metrics, and the task reports and container health in /host/metrics/*.prom.
+prometheus.exporter.unix "host" {
+	rootfs_path = "/host/root"
+	procfs_path = "/host/proc"
+	sysfs_path  = "/host/sys"
+
+	textfile {
+		directory = "/host/metrics"
+	}
+}
+
+prometheus.scrape "host" {
+	targets         = prometheus.exporter.unix.host.targets
+	scrape_interval = "30s"
+	forward_to      = [prometheus.relabel.host.receiver]
+}
+
+prometheus.relabel "host" {
+	forward_to = [prometheus.remote_write.monitoring.receiver]
+
+	rule {
+		target_label = "host"
+		replacement  = "nf-hotel"
+	}
+}
+
+// The metrics of the web application and the API, pushed over OTLP/HTTP on the internal network
+// nfhotel-api (MIL-034, ADR-0023). No port is published; only the applications reach it. The
+// service name of each application becomes the label job, and host is added as for the host.
+otelcol.receiver.otlp "apps" {
+	http {
+		endpoint = "0.0.0.0:4318"
+	}
+
+	output {
+		metrics = [otelcol.processor.batch.apps.input]
+	}
+}
+
+otelcol.processor.batch "apps" {
+	output {
+		metrics = [otelcol.exporter.prometheus.apps.input]
+	}
+}
+
+otelcol.exporter.prometheus "apps" {
+	forward_to = [prometheus.relabel.host.receiver]
+}
+
+prometheus.remote_write "monitoring" {
+	endpoint {
+		url = sys.env("PROMETHEUS_REMOTE_WRITE_URL")
+	}
+}
+
+// The logs of every container, read through the socket proxy (list, inspect, logs only).
+discovery.docker "containers" {
+	host = "tcp://socket-proxy:2375"
+}
+
+discovery.relabel "containers" {
+	targets = discovery.docker.containers.targets
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "container"
+	}
+}
+
+loki.source.docker "containers" {
+	host          = "tcp://socket-proxy:2375"
+	targets       = discovery.docker.containers.targets
+	relabel_rules = discovery.relabel.containers.rules
+	forward_to    = [loki.process.host.receiver]
+}
+
+// The systemd journal: the timers of the backup, the renewal and the deploy command.
+loki.relabel "journal" {
+	forward_to = []
+
+	rule {
+		source_labels = ["__journal__systemd_unit"]
+		target_label  = "unit"
+	}
+}
+
+loki.source.journal "systemd" {
+	path          = "/var/log/journal"
+	relabel_rules = loki.relabel.journal.rules
+	labels        = {source = "journal"}
+	forward_to    = [loki.process.host.receiver]
+}
+
+loki.process "host" {
+	forward_to = [loki.write.monitoring.receiver]
+
+	stage.static_labels {
+		values = {host = "nf-hotel"}
+	}
+}
+
+loki.write "monitoring" {
+	endpoint {
+		url = sys.env("LOKI_PUSH_URL")
+	}
+}

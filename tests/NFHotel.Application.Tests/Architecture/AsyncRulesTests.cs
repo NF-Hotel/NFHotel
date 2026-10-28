@@ -81,9 +81,11 @@ public sealed partial class AsyncRulesTests
         var offenders = SourceFiles("NFHotel.Application", "NFHotel.Infrastructure", "NFHotel.Api", "NFHotel.ApiClient", "NFHotel.External")
             .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}Migrations{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .SelectMany(file => PublicTaskMethod().Matches(Code(file)).Select(match => (file, name: match.Groups["name"].Value, parameters: match.Groups["parameters"].Value)))
-            // A middleware receives the HttpContext, whose RequestAborted is the token of the call.
+            // A middleware receives the HttpContext, and an action filter the ActionExecutingContext; the RequestAborted of
+            // the HttpContext in both is the token of the call.
             .Where(method => !method.parameters.Contains("CancellationToken", StringComparison.Ordinal)
-                && !method.parameters.Contains("HttpContext", StringComparison.Ordinal))
+                && !method.parameters.Contains("HttpContext", StringComparison.Ordinal)
+                && !method.parameters.Contains("ActionExecutingContext", StringComparison.Ordinal))
             .Select(method => $"{Path.GetFileName(method.file)}: {method.name}")
             .ToArray();
 

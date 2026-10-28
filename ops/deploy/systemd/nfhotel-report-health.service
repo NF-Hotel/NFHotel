@@ -1,0 +1,11 @@
+# Writes the health of the containers for the monitoring (ADR-0020, MIL-023 task 9).
+# Installed by the update command of CD (ADR-0018) from ops/deploy/systemd/; it runs
+# ops/scripts/report-health.sh, installed as /usr/local/sbin/nfhotel-report-health.
+[Unit]
+Description=Report the health of the NF Hotel containers
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/nfhotel-report-health

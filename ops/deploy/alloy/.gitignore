@@ -1,0 +1,2 @@
+# The settings of Alloy are never in git (ADR-0020).
+alloy.env

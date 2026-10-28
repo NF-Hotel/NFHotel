@@ -87,7 +87,7 @@ public sealed partial class TestRulesTests
         return comment < 0 ? line : line[..comment];
     }
 
-    [GeneratedRegex(@"\[(?:Fact|Theory|LiveFact)[^\]]*\]\s*(?:\[[^\]]*\]\s*)*public\s+(?:async\s+)?(?:Task|ValueTask|void)\s+(?<name>\w+)\s*\(", RegexOptions.Singleline)]
+    [GeneratedRegex(@"\[(?:Fact|Theory|LiveFact|E2EFact)[^\]]*\]\s*(?:\[[^\]]*\]\s*)*public\s+(?:async\s+)?(?:Task|ValueTask|void)\s+(?<name>\w+)\s*\(", RegexOptions.Singleline)]
     private static partial Regex TestMethodName();
 
     [GeneratedRegex(@"Thread\.Sleep\s*\(|Task\.Delay\s*\(|(?:DateTime|DateTimeOffset)\.(?:Now|UtcNow)\b")]

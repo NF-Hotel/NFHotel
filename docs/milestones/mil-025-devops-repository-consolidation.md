@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 | Deprecated | mikemike | S01; S03 | Initial version | [4c8f103] |
 | 2026-10-19 | Accepted | mikemike | AI as stand-in for S01 | Accepted after RC-103 Go | [4c8f103] |
+| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Its goal is reversed by ADR-0016; the open tasks are replaced by MIL-031 | [1b46421] |
 
 ---
 
@@ -95,6 +95,7 @@ Decide whether `NF-Hotel/DevOps` can serve as the single authoritative repositor
 
 [BC-001]: ../business-case.md
 [ADR-0012]: ../adr/adr-0012-devops-repository-ownership.md
-[MIL-021]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-021-secure-cicd-foundation.md
-[MIL-024]: https://github.com/NF-Hotel/DevOps/blob/main/docs/milestones/mil-024-postgresql-api-readiness.md
+[MIL-021]: ./mil-021-secure-cicd-foundation.md
+[MIL-024]: ./mil-024-postgresql-api-readiness.md
 [4c8f103]: https://github.com/NF-Hotel/NFHotel/commit/4c8f1030fdf53a5d9d827478244c55ecae73b8eb
+[1b46421]: https://github.com/NF-Hotel/NFHotel/commit/1b46421e16ad0138fc39ab6aa7bf0fe3a1799f38

@@ -1,0 +1,203 @@
+# CI of the operations code in ops/ (ADR-0016, formerly the CI of NF-Hotel/DevOps): the
+# linters of ops/ and of the workflows and actions, the script tests, the monitoring
+# configuration (ADR-0020), the nginx routes, the Proxmox tests (the live ones skip),
+# the PostgreSQL preparation with the real migrations of this commit, and the rotation
+# drill of the secrets (ADR-0024). The release build and the throwaway end-to-end stack
+# run in release-check.yaml and e2e-dast.yaml, which use the same actions.
+#
+# Triggers: pull requests to main, pushes to main, and by hand. It runs on every pull
+#   request, not only on changes of ops/, because its jobs are required checks.
+# Secrets: none; nothing is pushed, and nothing outside the runner changes.
+# Verified with actionlint 1.7.7 (ops/tests/lint.sh).
+name: NF Hotel Ops CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Ops linters
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run actionlint, shellcheck, shfmt and yamllint
+        run: bash ops/tests/lint.sh
+
+  script-tests:
+    name: Ops script tests (${{ matrix.test }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - test-deploy-release.sh
+          - test-cd-steps.sh
+          - test-vm-setup.sh
+          - test-scan-gate.sh
+          - test-dast-rules.sh
+          - test-deploy-services-env.sh
+          - test-resolve-model-name.sh
+          - test-switch-vm-checkout.sh
+          - test-renew-certificate.sh
+          - test-backup-target.sh
+          - test-backup-settings.sh
+          - test-dora-metrics.sh
+          - test-report-health.sh
+          - test-scan-running-release.sh
+          - test-check-log-privacy.sh
+          - test-publish-wiki.sh
+          - test-create-monitoring-lxc.sh
+          - test-write-secret-files.sh
+          - test-check-secret-env.sh
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run the test in Debian 12
+        env:
+          TEST: ${{ matrix.test }}
+        run: docker run --rm -v "$PWD/ops:/src:ro" debian:12-slim bash "/src/tests/$TEST"
+
+  host-hardening:
+    name: Ops host hardening (Debian 13, MIL-023)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test the Docker daemon, patching, host settings and evidence scripts
+        run: docker run --rm -v "$PWD/ops:/src:ro" debian:13-slim bash /src/tests/test-host-setup.sh
+      # NET_ADMIN and SYS_ADMIN let the test load nftables rules and make network namespaces
+      # inside its own container; nothing changes on the runner.
+      - name: Test the firewall in network namespaces
+        run: >-
+          docker run --rm --cap-add NET_ADMIN --cap-add SYS_ADMIN --sysctl net.ipv4.ip_forward=1
+          -v "$PWD/ops:/src:ro" debian:13-slim bash /src/tests/test-nftables.sh
+
+  monitoring:
+    name: Ops monitoring configuration (MIL-023)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check Prometheus, Alertmanager, Loki, blackbox, Alloy and the dashboards
+        run: bash ops/tests/check-monitoring.sh
+      # Root makes the secret files 0600, as the wiki page says, and deploy-monitoring.sh must
+      # give each one to the user of its container; only the runner's own containers change.
+      - name: Start the stack as the wiki page says, and check it
+        run: sudo bash ops/tests/test-monitoring-stack.sh
+      # Alloy with its pinned image and hardening, as nf-hotel runs it: user 473, the runner's
+      # systemd-journal group, the host mounts read-only.
+      - name: Start Alloy as nf-hotel runs it, and check it
+        run: sudo bash ops/tests/test-alloy-start.sh
+
+  nginx:
+    name: Ops nginx routes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test the routes with and without the optional API route
+        run: bash ops/tests/test-nginx.sh
+
+  benchmark-volume:
+    name: Ops benchmark results volume (MIL-045)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Give a volume of another uid to the service; fail the healthcheck without write
+        run: bash ops/tests/test-benchmark-volume.sh
+
+  proxmox-tests:
+    name: Ops Proxmox tests (live tests skip)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
+        with:
+          global-json-file: ops/tests/NFHotel.Proxmox.Tests/global.json
+      # Without PVE_HOST the live tests skip; the read-only handler and the client run.
+      # ops/scripts/run-proxmox-tests.sh runs all of them against a local Proxmox VE.
+      - name: Run the tests
+        working-directory: ops/tests/NFHotel.Proxmox.Tests
+        run: dotnet test --solution NFHotel.Proxmox.Tests.sln
+
+  database:
+    name: Ops PostgreSQL preparation (real migrations)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Install age
+        run: sudo apt-get install -y --no-install-recommends age
+      - name: Prepare the migrations and the API image
+        run: bash ops/tests/prepare-database-test.sh . ops/tests/output/database
+      - name: Test roles, network, migrator, API, backup and restore
+        run: >-
+          bash ops/tests/test-database.sh ops/tests/output/database/migrations.sql
+          nfhotel-api:test
+
+  team-database-roles:
+    name: Ops team database roles (MIL-048)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test the personal roles against PostgreSQL 16
+        run: bash ops/tests/test-team-db-users.sh
+
+  secret-rotation:
+    name: Ops secret rotation drill (MIL-035)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Rotate each secret on a throwaway stack
+        run: bash ops/tests/test-secret-rotation.sh --app-dir .

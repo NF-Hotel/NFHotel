@@ -1,0 +1,96 @@
+# The benchmark service of the notebook-benchmark repository (ADR-0004, MIL-019, MIL-020 of
+# NFHotel): an API that the web application calls to start a run and that delivers the
+# result to the NFHotel API. It is built from the pinned commit of that repository
+# (Dockerfile), joins nfhotel-api (the web application reaches it as http://benchmark:8000)
+# and nfhotel-llm (the Ollama of NFHotel), and publishes no port. Settings live in
+# benchmark.env (git-ignored); copy benchmark.env.example first.
+# Start it with scripts/deploy-services.sh, which passes the service token of the API as
+# API_TOKEN, so the token is written in nfhotel-api.env only.
+name: benchmark
+
+x-benchmark-image: &benchmark-image ${BENCHMARK_IMAGE:-benchmark:local}
+
+services:
+  # Docker sets the owner of a named volume only when it creates it, so a volume made by an
+  # image whose user had another uid stays unwritable (2026-10-26: every run failed with
+  # "Permission denied: /data/results.jsonl"). This one-shot service gives /data to the user
+  # of the image at every start, before the service starts (MIL-045). It runs as root with
+  # only the capabilities that change an owner, and no network.
+  results-owner:
+    image: *benchmark-image
+    user: "0"
+    entrypoint: ["sh", "-c", "chown -R \"$$(id -u app):$$(id -g app)\" /data"]
+    restart: "no"
+    network_mode: none
+    volumes:
+      - results:/data
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_READ_SEARCH
+    security_opt:
+      - no-new-privileges:true
+
+  benchmark:
+    image: *benchmark-image
+    build:
+      context: .
+      args:
+        BENCHMARK_REPO: ${BENCHMARK_REPO:-https://github.com/NF-Hotel/notebook-benchmark.git}
+        BENCHMARK_REF: ${BENCHMARK_REF:-239143865b6293ce6f5f6496509c8fd0110c59c2}
+      labels:
+        org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
+        org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
+    restart: unless-stopped
+    env_file: ${BENCHMARK_ENV_FILE:-benchmark.env}
+    environment:
+      NFBENCH_WEB_TOKEN: ${API_TOKEN:?set it, from Api__Token in nfhotel-api.env}
+    # Limits (MIL-023 task 2, CIS-001); the hardening above is unchanged.
+    mem_limit: 1g
+    cpus: 1
+    pids_limit: 256
+    expose:
+      - "8000"
+    volumes:
+      - results:/data
+    depends_on:
+      results-owner:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # Healthy means the API answers and the results folder is writable: a run that cannot store
+    # its result fails the deploy, not silently later (MIL-045).
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import pathlib, urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3);
+          probe = pathlib.Path('/data/.healthcheck'); probe.write_text('ok'); probe.unlink()
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - llm
+      - api
+
+volumes:
+  results:
+
+networks:
+  llm:
+    name: ${NFHOTEL_LLM_NETWORK:-nfhotel-llm}
+    external: true
+  api:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
+    external: true

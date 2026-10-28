@@ -1,0 +1,105 @@
+# End-to-end tests and DAST (MIL-027). On every pull request to main and every push to
+# main, the local e2e-tests and dast-scan actions (ADR-0016, with the scripts of ops/)
+# start a throwaway stack from this commit. They run the browser tests of
+# tests/NFHotel.E2E.Tests, and the OWASP ZAP baseline signed out and signed in. Every
+# Monday, and by hand, the ZAP full (active) scan runs against the same throwaway stack;
+# a failed full scan opens an issue, unless one is already open.
+#
+# The stack runs on the runner's Docker networks with no host port; nothing is scanned
+# outside it: never the VM, the tailnet or a public NF Hotel host.
+# Secrets: none; every password of the stack is generated per run.
+# Permissions: contents: read; security-events: write for the ZAP SARIF; issues: write
+# for the full scan only.
+# Verified with actionlint 1.7.7.
+name: NF Hotel E2E and DAST
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: End-to-end tests
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run the end-to-end tests against a throwaway stack
+        uses: ./.github/actions/e2e-tests
+        with:
+          app-path: .
+
+  dast-baseline:
+    name: DAST baseline
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Scan a throwaway stack with the ZAP baseline
+        uses: ./.github/actions/dast-scan
+        with:
+          app-path: .
+          mode: baseline
+          rules: ops/security/zap-rules.tsv
+          upload-sarif: "true"
+
+  dast-full:
+    name: DAST full scan
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      security-events: write
+      issues: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Scan a throwaway stack with the ZAP full scan
+        uses: ./.github/actions/dast-scan
+        with:
+          app-path: .
+          mode: full
+          rules: ops/security/zap-rules.tsv
+          upload-sarif: "true"
+
+      - name: Open an issue for a failed full scan
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          TITLE: "DAST full scan found High alerts"
+        # One open issue at a time: a later failure while it is open adds nothing.
+        run: >-
+          open="$(gh issue list --state open --search "\"$TITLE\" in:title"
+          --json number --jq length)";
+          [[ "$open" != 0 ]] || gh issue create --title "$TITLE"
+          --body "The weekly ZAP full scan failed (MIL-027): run $RUN_ID of this workflow."

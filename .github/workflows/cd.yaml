@@ -1,13 +1,17 @@
-# CD: deploy a release to the Proxmox VM after an approval (ADR-0007, ADR-0012). An entry
-# point: the steps are the deploy-release action of NF-Hotel/DevOps, pinned by full
-# commit SHA. This workflow keeps the trigger, the permissions, the environment and the
-# concurrency, which a composite action cannot set.
+# CD: deploy a release to the Proxmox VM when every check is green (ADR-0021, ADR-0016). The steps
+# are the local deploy-release action (.github/actions/deploy-release, with the scripts of
+# ops/), read from the commit of the release. This workflow keeps the trigger, the
+# permissions, the environment and the concurrency, which a composite action cannot set.
 #
 # Triggers: a successful NF Hotel Release run of main in this repository
 #   (workflow_run), or by hand with the run ID of an earlier release (a redeploy or a
-#   rollback). A manual run is a dry run unless the input apply is true.
-# Approval: the job runs in the environment production, whose required reviewers approve
-#   it before it starts; no credential exists before that.
+#   rollback). A manual run is a dry run unless the input apply is true. A manual run
+#   with rollback_drill deploys the release and then rolls back to the previous one on
+#   purpose, and ends red: the proof of MIL-021 criterion 6.
+# Gate: no person approves (ADR-0021). The job runs in the environment production, which
+#   allows main only and holds the tailnet settings; before any credential for the VM,
+#   the step "Wait until every check is green" waits for every check of the release
+#   commit and stops the deploy unless all of them are green.
 # Access: the action joins the tailnet as an ephemeral node tagged tag:ci through GitHub
 #   OIDC (the claims name this repository and production; no stored Tailscale secret)
 #   and runs one command on the VM over Tailscale SSH as the user deploy (no stored key).
@@ -33,6 +37,11 @@ on:
         required: false
         type: boolean
         default: false
+      rollback_drill:
+        description: Rollback drill - deploy, then roll back on purpose; the run ends red
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -52,22 +61,33 @@ jobs:
       github.event.workflow_run.head_branch == 'main' &&
       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # The gate waits up to 45 minutes for the other checks of the commit.
+    timeout-minutes: 75
     environment:
       name: production
     permissions:
       contents: read
       actions: read
       id-token: write
+      attestations: read
+      packages: read
+      checks: read
 
     steps:
+      # The action is read from the commit of the release (main for a manual run), which
+      # holds no secret and gets no token to push.
+      - name: Check out the action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+
       - name: Deploy the release
-        # A pinned action reference cannot be wrapped (ADR-0012: full commit SHA).
-        # yamllint disable-line rule:line-length
-        uses: NF-Hotel/DevOps/.github/actions/deploy-release@82cb1f4fe99a21b54551c32cfa738d5982caf9d9
+        uses: ./.github/actions/deploy-release
         with:
           release-run-id: ${{ github.event.workflow_run.id || inputs.release_run_id }}
           apply: ${{ github.event_name == 'workflow_run' || inputs.apply }}
+          rollback-drill: ${{ github.event_name == 'workflow_dispatch' && inputs.rollback_drill }}
           vm-host: ${{ vars.NFHOTEL_VM_HOST }}
           ts-oidc-client-id: ${{ vars.TS_OIDC_CLIENT_ID }}
           ts-oidc-audience: ${{ vars.TS_OIDC_AUDIENCE }}

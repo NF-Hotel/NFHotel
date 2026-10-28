@@ -9,7 +9,9 @@ using NFHotel.Application.UseCases.AiDefaults;
 using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
+using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Repositories;
 using NFHotel.Domain.ValueObjects;
@@ -127,6 +129,8 @@ public sealed class InMemoryGuestRepository : InMemoryRepository<Guest>, IGuestR
 /// </summary>
 public sealed class ServiceWorld
 {
+    private MarketAnalysisRunTracker? _marketAnalysisTracker;
+
     public ServiceWorld()
     {
         BookingQueries.GetReadModelAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -281,9 +285,25 @@ public sealed class ServiceWorld
 
     public InMemoryStaffRepository Staff { get; } = new();
 
+    public InMemoryStaffAuditRepository StaffAudit { get; } = new();
+
+    public FakeStaffCallContext CallContext { get; } = new();
+
     public InMemoryBenchmarkRunRepository Benchmarks { get; } = new();
 
     public InMemoryAiDefaultRepository AiDefaults { get; } = new();
+
+    public InMemoryBenchmarkRequestRepository BenchmarkRequests { get; } = new();
+
+    public InMemoryMarketAnalysisRunRepository MarketAnalysisRuns { get; } = new();
+
+    public FakeMarketAnalysisServiceClient MarketAnalysisClient { get; } = new();
+
+    public FakeMarketAnalysisBookingQueries MarketAnalysisBookings { get; } = new();
+
+    public RecordingMarketAnalysisLauncher MarketAnalysisLauncher { get; } = new();
+
+    public MarketAnalysisRunTracker MarketAnalysisTracker => _marketAnalysisTracker ??= new(Clock);
 
     public IBookingQueries BookingQueries { get; } = Substitute.For<IBookingQueries>();
 
@@ -296,13 +316,28 @@ public sealed class ServiceWorld
     public BookingService BookingService() =>
         new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock);
 
-    public GuestService GuestService() => new(Guests, GuestQueries, UnitOfWork);
+    public GuestService GuestService(IStaffAuthorizationService? authorization = null) =>
+      new(Guests, GuestQueries, UnitOfWork, authorization ?? Substitute.For<IStaffAuthorizationService>());
+
+    public StaffAuthService StaffAuthService(IPasswordHasher? hasher = null, IStaffTokenIssuer? tokens = null, ILoginThrottle? throttle = null) =>
+        new(Staff, hasher ?? new FakePasswordHasher(), tokens ?? new FakeStaffTokenIssuer(), throttle ?? Substitute.For<ILoginThrottle>(), UnitOfWork, StaffAudit, CallContext, Clock);
+
+    public StaffAccountService StaffAccountService(ILoginThrottle? throttle = null, IStaffAuthorizationService? authorization = null) =>
+        new(Staff, new FakePasswordHasher(), UnitOfWork, throttle ?? Substitute.For<ILoginThrottle>(), StaffAudit, CallContext, Clock,
+            authorization ?? Substitute.For<IStaffAuthorizationService>());
 
     public RoomService RoomService() => new(Rooms, RoomQueries, UnitOfWork);
 
     public BenchmarkService BenchmarkService() => new(Benchmarks, BenchmarkQueries, UnitOfWork);
 
     public AiDefaultService AiDefaultService() => new(AiDefaults, UnitOfWork, Clock);
+
+    public BenchmarkRequestService BenchmarkRequestService() => new(BenchmarkRequests, UnitOfWork, Clock);
+
+    public MarketAnalysisService MarketAnalysisService() => new(MarketAnalysisTracker, MarketAnalysisLauncher, MarketAnalysisRuns);
+
+    public MarketAnalysisRunner MarketAnalysisRunner() =>
+        new(MarketAnalysisBookings, MarketAnalysisClient, MarketAnalysisRuns, UnitOfWork, MarketAnalysisTracker, Clock);
 
     public Room AddRoom(string number = "101", int floor = 1, RoomSize size = RoomSize.Double, int capacity = 2)
     {

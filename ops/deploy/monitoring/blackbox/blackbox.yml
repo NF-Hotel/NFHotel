@@ -1,0 +1,20 @@
+# Probe modules of blackbox_exporter (ADR-0020, MIL-023 task 7).
+modules:
+  # The page answers 2xx over TLS, and the certificate is valid for the name.
+  https_2xx:
+    prober: http
+    timeout: 10s
+    http:
+      preferred_ip_protocol: ip4
+      fail_if_not_ssl: true
+      tls_config:
+        insecure_skip_verify: false
+
+  # Port 80 answers 301 and does not serve the page itself.
+  http_301:
+    prober: http
+    timeout: 10s
+    http:
+      preferred_ip_protocol: ip4
+      no_follow_redirects: true
+      valid_status_codes: [301]

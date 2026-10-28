@@ -1,0 +1,21 @@
+# Loads the host firewall of the NF Hotel VM (deploy/host/nftables/nfhotel.nft, MIL-023
+# task 3) at boot, before the network and Docker come up. Installed by
+# scripts/apply-firewall.sh --confirm. It only adds the table inet nfhotel, so the rules that
+# Docker and Tailscale write stay; it does not flush the ruleset as Debian's nftables.service
+# does. Stopping it leaves the firewall in place; remove it with: nft delete table inet nfhotel
+[Unit]
+Description=NF Hotel host firewall (nftables table inet nfhotel)
+Documentation=https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/host/README.md
+DefaultDependencies=no
+Wants=network-pre.target
+Before=network-pre.target docker.service shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /etc/nfhotel/nftables.nft
+ExecReload=/usr/sbin/nft -f /etc/nfhotel/nftables.nft
+
+[Install]
+WantedBy=sysinit.target

@@ -1,0 +1,68 @@
+# nginx reverse proxy in front of the NFHotel web service (MIL-002 task 3).
+# Read by Docker Compose. Settings live in nginx.env (git-ignored); copy
+# nginx.env.example to nginx.env first. Start with:
+#   docker compose --env-file nginx.env up -d
+# The proxy joins the external network shared with the web service; create it
+# once with: docker network create nfhotel-proxy
+name: nfhotel-nginx
+
+services:
+  nginx:
+    image: nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+    restart: unless-stopped
+    env_file: ${NGINX_ENV_FILE:-nginx.env}
+    environment:
+      # Set by scripts/deploy-services.sh: a change of the templates, snippets or settings
+      # recreates the proxy; a deploy that changes only an image keeps it (MIL-021).
+      NGINX_CONFIG_HASH: ${NGINX_CONFIG_HASH:-}
+    # Hardening (MIL-023 task 2, CIS-001). The master process starts as root to bind 80 and
+    # 443 and drops to the user nginx for the workers; it chowns its cache folders. The image
+    # writes the rendered templates to conf.d at start, so that and the caches are tmpfs.
+    # DAC_READ_SEARCH lets the master read privkey.pem, which is 0600 and owned by the user of
+    # the checkout (renew-certificate.sh): without DAC_OVERRIDE, root cannot open another
+    # user's 0600 file, and nginx did not start (CD 39929490145 and 39931650395 rolled back).
+    # It only reads, the mounts are read-only, and the workers drop it with the user change.
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETGID, SETUID, NET_BIND_SERVICE, DAC_READ_SEARCH]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/etc/nginx/conf.d, /var/cache/nginx, /run, /tmp]
+    mem_limit: 256m
+    cpus: 1
+    pids_limit: 256
+    # nginx answers on port 80 with the redirect, without the upstream: the proxy stays healthy
+    # while the web application restarts.
+    healthcheck:
+      test: ["CMD", "curl", "-so", "/dev/null", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    ports:
+      # Public: only the NFHotel web application is served here: port 80 only redirects
+      # to HTTPS, port 443 serves it over TLS (MIL-017). Internal: the market analysis
+      # notebook and API, on the loopback of the host only; reach them with an SSH tunnel.
+      - "${NGINX_BIND:-0.0.0.0}:${NGINX_HTTP_PORT:-8080}:80"
+      - "${NGINX_BIND:-0.0.0.0}:${NGINX_HTTPS_PORT:-8443}:443"
+      - "127.0.0.1:${NGINX_INTERNAL_PORT:-8081}:8081"
+    volumes:
+      - ./templates:/etc/nginx/templates:ro
+      - ./snippets:/etc/nginx/snippets:ro
+      # fullchain.pem and privkey.pem: made by scripts/make-dev-certificate.sh,
+      # or put there by the owner (a real certificate).
+      - ${NGINX_TLS_DIR:-./tls}:/etc/nginx/tls:ro
+    # The public listener of templates/public.conf.template (8082, MIL-040) is not published:
+    # Cloudflare Tunnel reaches it on the proxy network. The API network carries only the two
+    # mobile routes (snippets/mobile-api.conf).
+    networks:
+      - proxy
+      - api
+
+networks:
+  proxy:
+    name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
+    external: true
+  # Internal network of the database API (no route out, no host port).
+  api:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
+    external: true

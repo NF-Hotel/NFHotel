@@ -1,0 +1,72 @@
+#!/usr/sbin/nft -f
+# Host firewall of the NF Hotel VM (MIL-023 task 3, CIS-001; DSA-001 risk R10). Loaded by
+# nfhotel-firewall.service from /etc/nfhotel/nftables.nft, and by scripts/apply-firewall.sh,
+# which reverts it automatically unless it is confirmed.
+#
+# Everything is in its own table, inet nfhotel (IPv4 and IPv6). Docker keeps its own rules
+# in the tables it writes through iptables-nft and rewrites them when it restarts; it never
+# touches this table, so the firewall stays in place across a Docker restart. A packet must
+# be accepted by every base chain of a hook, so a drop here is final, and an accept here
+# still leaves Docker's own chains to decide.
+#
+# input:       the policy drops; 80 and 443 are open to every interface, 22 only on
+#              tailscale0 (the tailnet).
+# docker-user: what Docker's DOCKER-USER chain is for, run before it (priority filter - 1):
+#              from outside, only the published ports 80 and 443 reach a container, and
+#              5432 (the database relay, MIL-048, ADR-0034) only from tailscale0;
+#              containers may open connections out and to each other.
+#
+# Load:   nft -f nfhotel.nft (replaces the table in one transaction)
+# Remove: nft delete table inet nfhotel
+
+define PUBLIC_TCP_PORTS = { 80, 443 }
+define TAILNET_INTERFACE = "tailscale0"
+# Published ports that only the tailnet may reach: the database relay (ADR-0034).
+define TAILNET_TCP_PORTS = { 5432 }
+# Tailscale's port for direct connections between nodes; without it the tailnet falls back
+# to the slower DERP relays.
+define TAILSCALE_UDP_PORT = 41641
+
+table inet nfhotel
+delete table inet nfhotel
+
+table inet nfhotel {
+  chain input {
+    type filter hook input priority filter; policy drop;
+
+    ct state vmap { established : accept, related : accept, invalid : drop }
+    iif "lo" accept
+    # The loopback addresses are never real on another interface.
+    ip saddr 127.0.0.0/8 drop
+    ip6 saddr ::1 drop
+
+    # Ping and the ICMP errors that path MTU discovery needs; IPv6 needs ICMPv6 for
+    # neighbour discovery and router advertisements.
+    icmp type { echo-request, destination-unreachable, time-exceeded, parameter-problem } accept
+    meta l4proto ipv6-icmp accept
+    # DHCP and DHCPv6 answers to the VM's own client.
+    udp sport 67 udp dport 68 accept
+    udp sport 547 udp dport 546 accept
+
+    udp dport $TAILSCALE_UDP_PORT accept
+    iifname $TAILNET_INTERFACE tcp dport 22 accept
+    tcp dport $PUBLIC_TCP_PORTS accept
+
+    limit rate 10/minute burst 20 packets log prefix "nfhotel-input-drop: " level info
+  }
+
+  chain docker-user {
+    type filter hook forward priority filter - 1; policy accept;
+
+    ct state vmap { established : accept, related : accept, invalid : drop }
+    # From a container: out to the internet, and between containers on a network.
+    iifname "docker0" accept
+    iifname "br-*" accept
+    # From outside: only to a port that Docker published as 80 or 443 (nginx).
+    meta l4proto tcp ct status dnat ct original proto-dst $PUBLIC_TCP_PORTS accept
+    iifname $TAILNET_INTERFACE meta l4proto tcp ct status dnat ct original proto-dst $TAILNET_TCP_PORTS accept
+
+    limit rate 10/minute burst 20 packets log prefix "nfhotel-forward-drop: " level info
+    drop
+  }
+}

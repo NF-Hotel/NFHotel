@@ -119,12 +119,13 @@ public sealed class StaffLoginTests : IClassFixture<ApiFactory>
         Assert.Contains(ErrorCodes.Staff.InvalidCredentials, unknown, StringComparison.Ordinal);
     }
 
-    /// <summary>Negative: the sign-in itself needs the token of the web application.</summary>
+    /// <summary>Negative: a wrong token of the web application is refused; only a call with no bearer token at all is the mobile app (ADR-0015).</summary>
     [Fact]
-    public async Task Login_WithoutServiceToken_ReturnsUnauthorizedWithTheServiceCode()
+    public async Task Login_WithWrongServiceToken_ReturnsUnauthorizedWithTheServiceCode()
     {
         // Arrange
         using var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new("Bearer", "wrong-token-0123456789-wrong-token-0123456789");
 
         // Act
         using var response = await client.PostAsJsonAsync(Login, new SignInRequest("anyone", Password), ApiJson.Options, TestContext.Current.CancellationToken);

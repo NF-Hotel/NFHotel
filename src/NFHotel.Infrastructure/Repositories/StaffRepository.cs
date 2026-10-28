@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Repositories;
+using NFHotel.Domain.ValueObjects;
 using NFHotel.Infrastructure.Persistence;
 
 namespace NFHotel.Infrastructure.Repositories;
@@ -24,6 +25,22 @@ public sealed class StaffRepository : Repository<StaffMember, int>, IStaffReposi
             .FirstOrDefaultAsync(member => member.UserName == key, cancellationToken)
             .ConfigureAwait(false);
     }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<StaffMember>> ListAsync(CancellationToken cancellationToken = default) =>
+        await Context.StaffMembers
+            .AsNoTracking()
+            .OrderBy(member => member.UserName)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<bool> AnotherActiveManagerExistsAsync(int excludingId, CancellationToken cancellationToken = default) =>
+        await Context.StaffMembers
+            .AnyAsync(
+                member => member.Id != excludingId && member.IsActive && member.Role == StaffRole.Manager,
+                cancellationToken)
+            .ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<bool> AnyAsync(CancellationToken cancellationToken = default) =>

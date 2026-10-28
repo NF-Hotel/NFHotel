@@ -1,0 +1,123 @@
+# The monitoring of NF Hotel (ADR-0020, MIL-023 task 7). It runs in the LXC container on the
+# Proxmox node, not on nf-hotel, so it still reports when that VM is down. Start it there with
+# scripts/deploy-monitoring.sh, which checks the settings and the configuration first.
+#
+#   Prometheus      metrics: probes of the site, and what Alloy on nf-hotel sends
+#   Alertmanager    sends alerts to Discord, and the Watchdog to Healthchecks.io
+#   Grafana         dashboards and logs, provisioned from grafana/
+#   blackbox        probes the HTTPS pages, the redirect and the certificate over the tailnet
+#   Loki            logs, sent by Alloy on nf-hotel
+#
+# Grafana, Prometheus and Loki are published on the tailnet address of the LXC only
+# (MONITORING_BIND): Grafana for the team, Prometheus and Loki for Alloy on nf-hotel.
+# CONFIG_HASH of each service is set by scripts/deploy-monitoring.sh to a hash of its
+# configuration folder: the files are bind mounts, so without it a changed rule or route would
+# never be read, as compose recreates a container only when its definition changes.
+# Alertmanager and blackbox publish no port. Settings in monitoring.env and the secret
+# files in secrets/ (both git-ignored); copy monitoring.env.example first.
+name: nfhotel-monitoring
+
+x-hardening: &hardening
+  restart: unless-stopped
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  read_only: true
+  pids_limit: 512
+
+services:
+  prometheus:
+    <<: *hardening
+    image: prom/prometheus:v3.7.2@sha256:23031bfe0e74a13004252caaa74eccd0d62b6c6e7a04711d5b8bf5b7e113adc7
+    environment:
+      CONFIG_HASH: ${PROMETHEUS_CONFIG_HASH:-}
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      # Alloy on nf-hotel pushes its metrics; Prometheus does not reach into the VM.
+      - --web.enable-remote-write-receiver
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${MONITORING_BIND:?set it to the tailnet address of the LXC}:9090:9090"
+    mem_limit: 1g
+    cpus: 1
+
+  alertmanager:
+    <<: *hardening
+    image: prom/alertmanager:v0.29.0@sha256:88743b63b3e09ea6e31e140ced5bf45f4a8e82c617c2a963f78841f4995ad1d7
+    environment:
+      CONFIG_HASH: ${ALERTMANAGER_CONFIG_HASH:-}
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    volumes:
+      - ./alertmanager:/etc/alertmanager:ro
+      # discord-webhook-url and healthchecks-watchdog-url, one line each (git-ignored).
+      - ./secrets:/etc/alertmanager-secrets:ro
+      - alertmanager-data:/alertmanager
+    mem_limit: 256m
+    cpus: 0.5
+
+  blackbox:
+    <<: *hardening
+    image: prom/blackbox-exporter:v0.27.0@sha256:a50c4c0eda297baa1678cd4dc4712a67fdea713b832d43ce7fcc5f9bea05094d
+    environment:
+      CONFIG_HASH: ${BLACKBOX_CONFIG_HASH:-}
+    command: [--config.file=/etc/blackbox/blackbox.yml]
+    volumes:
+      - ./blackbox:/etc/blackbox:ro
+    mem_limit: 128m
+    cpus: 0.5
+
+  loki:
+    <<: *hardening
+    image: grafana/loki:3.5.7@sha256:0eaee7bf39cc83aaef46914fb58f287d4f4c4be6ec96b86c2ed55719a75e49c8
+    environment:
+      CONFIG_HASH: ${LOKI_CONFIG_HASH:-}
+    command: [-config.file=/etc/loki/config.yml]
+    volumes:
+      - ./loki:/etc/loki:ro
+      - loki-data:/loki
+    tmpfs: [/tmp]
+    ports:
+      - "${MONITORING_BIND:?set it to the tailnet address of the LXC}:3100:3100"
+    mem_limit: 1g
+    cpus: 1
+
+  grafana:
+    <<: *hardening
+    image: grafana/grafana:12.2.1@sha256:35c41e0fd0295f5d0ee5db7e780cf33506abfaf47686196f825364889dee878b
+    environment:
+      CONFIG_HASH: ${GRAFANA_CONFIG_HASH:-}
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana-admin-password
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./secrets/grafana-admin-password:/run/secrets/grafana-admin-password:ro
+      - grafana-data:/var/lib/grafana
+    tmpfs: [/tmp]
+    # Grafana migrates its database at the first start, which takes a while; the health check
+    # makes `up --wait` of deploy-monitoring.sh return only when it answers.
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
+    ports:
+      - "${MONITORING_BIND:?set it to the tailnet address of the LXC}:3000:3000"
+    mem_limit: 512m
+    cpus: 1
+
+volumes:
+  prometheus-data:
+  alertmanager-data:
+  loki-data:
+  grafana-data:

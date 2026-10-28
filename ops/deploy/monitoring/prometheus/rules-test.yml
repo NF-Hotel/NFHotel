@@ -1,0 +1,371 @@
+# Unit tests of the alert rules (MIL-023 task 9), run in CI with
+# `promtool test rules rules-test.yml` from the prometheus folder.
+rule_files:
+  - rules/nfhotel.yml
+  - rules/applications.yml
+  - rules/security.yml
+
+evaluation_interval: 30s
+
+tests:
+  - name: the site down for 2 minutes fires SiteDown
+    interval: 30s
+    input_series:
+      - series: 'probe_success{job="site", instance="https://nf-hotel.taildb84b5.ts.net/"}'
+        values: "1 1 0 0 0 0 0 0"
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: SiteDown
+        exp_alerts: []
+      - eval_time: 3m30s
+        alertname: SiteDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: site
+              instance: https://nf-hotel.taildb84b5.ts.net/
+            exp_annotations:
+              summary: "https://nf-hotel.taildb84b5.ts.net/ does not answer over HTTPS"
+              description: >-
+                The probe of https://nf-hotel.taildb84b5.ts.net/ has failed for 2 minutes. Runbook:
+                wiki page CI-CD, When a deploy does not start, and Host-Hardening.
+
+  - name: the public site down after it had answered fires PublicSiteDown
+    interval: 1m
+    input_series:
+      - series: 'probe_success{job="public_site", instance="https://nfhotel.devmatiker.com/"}'
+        values: "1 1 1 0 0 0 0 0"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: PublicSiteDown
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: PublicSiteDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: public_site
+              instance: https://nfhotel.devmatiker.com/
+            exp_annotations:
+              summary: "https://nfhotel.devmatiker.com/ does not answer from the internet"
+              description: >-
+                The public probe of https://nfhotel.devmatiker.com/ has failed for 3 minutes, so
+                guests cannot reach the site. Runbook: wiki page Public-Access, When the public
+                site is down.
+
+  - name: a public site that never answered (no tunnel yet) does not fire PublicSiteDown
+    interval: 1m
+    input_series:
+      - series: 'probe_success{job="public_site", instance="https://nfhotel.devmatiker.com/"}'
+        values: "0x20"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: PublicSiteDown
+        exp_alerts: []
+
+  - name: a certificate with 20 days left fires CertificateExpiresSoon once for all its pages
+    interval: 1m
+    input_series:
+      - series: >-
+          probe_ssl_earliest_cert_expiry{job="site", instance="https://nf-hotel.taildb84b5.ts.net/"}
+        values: "1728000x20"
+      - series: >-
+          probe_ssl_earliest_cert_expiry{job="site",
+          instance="https://nf-hotel.taildb84b5.ts.net/book"}
+        values: "1728000x20"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: CertificateExpiresSoon
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: site
+            exp_annotations:
+              summary: "The certificate of nf-hotel expires in 19.99 days"
+              description: >-
+                The renewal (nfhotel-cert-renew.timer, ADR-0009) has not replaced it. Check its
+                journal on nf-hotel.
+
+  - name: a backup report older than 26 hours fires BackupStale, a fresh one does not
+    interval: 1h
+    input_series:
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup"}'
+        values: "0x30"
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="offvm_copy"}'
+        values: "0+3600x30"
+    alert_rule_test:
+      - eval_time: 25h
+        alertname: BackupStale
+        exp_alerts: []
+      - eval_time: 27h
+        alertname: BackupStale
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              host: nf-hotel
+              task: backup
+            exp_annotations:
+              summary: "The last database backup is older than 26 hours"
+              description: "Check nfhotel-backup.timer and its journal on nf-hotel (ADR-0008)."
+      - eval_time: 27h
+        alertname: OffVmCopyStale
+        exp_alerts: []
+
+  - name: a missing report fires TaskReportMissing and HealthReportMissing, while nf-hotel sends
+    interval: 1m
+    input_series:
+      - series: 'node_uname_info{host="nf-hotel"}'
+        values: "1x60"
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup"}'
+        values: "0x60"
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="offvm_copy"}'
+        values: "0x60"
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: TaskReportMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+              task: cert_renew
+            exp_annotations:
+              summary: "nf-hotel has no cert_renew report"
+              description: >-
+                The job has not succeeded since /var/lib/nfhotel-metrics was made, or its report was
+                removed. Check its timer and journal on nf-hotel (wiki page Monitoring).
+      - eval_time: 40m
+        alertname: HealthReportMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "nf-hotel reports no container health"
+              description: >-
+                Check nfhotel-report-health.timer on nf-hotel: systemctl status
+                nfhotel-report-health.timer
+
+  - name: a VM that sends nothing raises no missing-report alert
+    interval: 1m
+    input_series:
+      - series: 'node_uname_info{host="other"}'
+        values: "1x60"
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: TaskReportMissing
+        exp_alerts: []
+      - eval_time: 40m
+        alertname: HealthReportMissing
+        exp_alerts: []
+
+  - name: an unhealthy container fires ContainerUnhealthy
+    interval: 1m
+    input_series:
+      - series: 'nfhotel_container_healthy{host="nf-hotel", container="nfhotel-web-nfhotel-web-1"}'
+        values: "1 0 0 0 0 0"
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: ContainerUnhealthy
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              host: nf-hotel
+              container: nfhotel-web-nfhotel-web-1
+            exp_annotations:
+              summary: "nfhotel-web-nfhotel-web-1 on nf-hotel is not healthy"
+              description: "Read its log: sudo docker logs --tail 50 nfhotel-web-nfhotel-web-1"
+
+  - name: no metrics from nf-hotel fires NoMetricsFromNfHotel
+    interval: 1m
+    input_series:
+      - series: 'node_uname_info{host="other"}'
+        values: "1x20"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: NoMetricsFromNfHotel
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              host: nf-hotel
+            exp_annotations:
+              summary: "No metrics from nf-hotel for 10 minutes"
+              description: >-
+                Alloy on nf-hotel sends nothing: the VM, Alloy or the tailnet path to the monitoring
+                is down.
+
+  - name: requests slower than 1 second at the 95th percentile fire ApplicationSlow
+    interval: 1m
+    input_series:
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/book", le="0.5"}
+        values: "0+1x30"
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/book", le="1"}
+        values: "0+1x30"
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/book", le="2.5"}
+        values: "0+10x30"
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/book", le="+Inf"}
+        values: "0+10x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: ApplicationSlow
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+              job: nfhotel-web
+            exp_annotations:
+              summary: "nfhotel-web answers slowly: 95 % of the requests take up to 2.417s"
+              description: >-
+                The objective is 1 second. Open the dashboard for the routes, and the logs of the
+                application in Grafana (wiki page Monitoring, runbook).
+
+  - name: a long Blazor circuit is not counted as a slow request
+    interval: 1m
+    input_series:
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/book", le="0.5"}
+        values: "0+10x30"
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/book", le="+Inf"}
+        values: "0+10x30"
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/_blazor", le="0.5"}
+        values: "0+0x30"
+      - series: >-
+          http_server_request_duration_seconds_bucket{host="nf-hotel", job="nfhotel-web",
+          http_route="/_blazor", le="+Inf"}
+        values: "0+10x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: ApplicationSlow
+        exp_alerts: []
+
+  - name: more than 5 % server errors with real traffic fire ApplicationErrors
+    interval: 1m
+    input_series:
+      - series: >-
+          http_server_request_duration_seconds_count{host="nf-hotel", job="nfhotel-web",
+          http_response_status_code="200"}
+        values: "0+10x30"
+      - series: >-
+          http_server_request_duration_seconds_count{host="nf-hotel", job="nfhotel-web",
+          http_response_status_code="500"}
+        values: "0+2x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: ApplicationErrors
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              host: nf-hotel
+              job: nfhotel-web
+            exp_annotations:
+              summary: "nfhotel-web answers 16.67% of its requests with a server error"
+              description: >-
+                Read its log in Grafana: {container=~".*nfhotel-web.*"} |= "fail"
+
+  - name: one server error at night is not an error rate
+    interval: 1m
+    input_series:
+      - series: >-
+          http_server_request_duration_seconds_count{host="nf-hotel", job="nfhotel-web",
+          http_response_status_code="500"}
+        values: "0+0.05x60"
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: ApplicationErrors
+        exp_alerts: []
+
+  - name: more than 5 unhandled exceptions in 10 minutes fire ApplicationExceptions
+    interval: 1m
+    input_series:
+      - series: >-
+          aspnetcore_diagnostics_exceptions_total{host="nf-hotel", job="nfhotel-api",
+          error_type="System.InvalidOperationException"}
+        values: "0+1x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: ApplicationExceptions
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+              job: nfhotel-api
+            exp_annotations:
+              summary: "nfhotel-api had 10 unhandled exceptions in 10 minutes"
+              description: >-
+                The type is the label error_type of aspnetcore_diagnostics_exceptions_total; the
+                stack trace is in the log of the application in Grafana.
+
+  - name: no request metrics while nf-hotel sends host metrics fire ApplicationMetricsMissing
+    interval: 1m
+    input_series:
+      - series: 'node_uname_info{host="nf-hotel"}'
+        values: "1x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: ApplicationMetricsMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+              job: nfhotel-web
+            exp_annotations:
+              summary: "nf-hotel sends no request metrics of the web application"
+              description: >-
+                Check Telemetry__OtlpEndpoint of nfhotel-web, and that Alloy is on the network
+                nfhotel-api (sudo docker logs nfhotel-alloy-alloy-1).
+
+  - name: the Watchdog always fires
+    interval: 1m
+    input_series: []
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: Watchdog
+        exp_alerts:
+          - exp_labels:
+              severity: none
+            exp_annotations:
+              summary: "The monitoring is alive"
+
+  - name: many failed staff sign-ins fire StaffSignInFailures
+    interval: 1m
+    input_series:
+      - series: >-
+          http_server_request_duration_seconds_count{host="nf-hotel", job="nfhotel-api",
+          http_route="api/auth/login", http_response_status_code="401"}
+        values: "0+3x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: StaffSignInFailures
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "30 failed or refused staff sign-ins in 10 minutes"
+              description: >-
+                Someone may be guessing passwords. The audit log of the back office names the user
+                names (ADR-0017); follow the incident procedure (wiki page Incidents).
+
+  - name: a few failed sign-ins are not an attack
+    interval: 1m
+    input_series:
+      - series: >-
+          http_server_request_duration_seconds_count{host="nf-hotel", job="nfhotel-api",
+          http_route="api/auth/login", http_response_status_code="401"}
+        values: "0+0.2x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: StaffSignInFailures
+        exp_alerts: []

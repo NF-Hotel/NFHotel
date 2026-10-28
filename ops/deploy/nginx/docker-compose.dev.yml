@@ -1,0 +1,9 @@
+# Development only (ADR-0015, MIL-029): adds to docker-compose.yml the route that the mobile
+# app uses on the TLS port of the development server, by mounting ./dev, whose mobile-api.conf
+# default.conf.template includes. The proxy is on the API network already (MIL-040). A
+# release deployment does not use this file. scripts/dev-up.sh turns it on by putting
+# COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml into nginx.env.
+services:
+  nginx:
+    volumes:
+      - ./dev:/etc/nginx/dev:ro

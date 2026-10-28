@@ -1,0 +1,68 @@
+# OpenSSF Scorecard (MIL-023 task 5): score the security posture of this repository
+# (pinned dependencies, token permissions, branch protection, reviews, SAST, and more)
+# every week and on every push to main. The results go to code scanning as SARIF, and
+# are published to the Scorecard API so that anyone can read them.
+#
+# Trigger: pushes to main, a change of the branch protection rules, every Tuesday, and
+#   by hand. Not on pull requests: a pull request run cannot publish or upload results.
+# Secrets: none. Without a personal token, the Branch-Protection check sees only what
+#   the job token may read, so it scores lower than the rulesets deserve (recorded in
+#   the result of RC-140).
+# Permissions: contents: read at the top; the job adds actions: read,
+#   security-events: write to upload the SARIF, and id-token: write to sign the
+#   published results (Scorecard API).
+# Publishing restricts the job: no top-level env or defaults, no containers or
+#   services, and only the actions below (all pinned by full commit SHA).
+# Verified with actionlint 1.7.7.
+name: NF Hotel Scorecard
+
+on:
+  push:
+    branches: [main]
+  branch_protection_rule:
+  schedule:
+    - cron: "41 4 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+      id-token: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run the Scorecard analysis
+        uses: ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e  # v2.5.0
+        with:
+          results_file: scorecard.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Keep the SARIF as an artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: scorecard-sarif
+          path: scorecard.sarif
+          retention-days: 30
+
+      - name: Upload the results to code scanning
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee  # v4.39.0
+        with:
+          sarif_file: scorecard.sarif
+          category: scorecard

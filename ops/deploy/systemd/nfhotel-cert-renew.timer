@@ -1,0 +1,12 @@
+# Runs nfhotel-cert-renew.service every day (ADR-0009). tailscale cert renews the
+# certificate when it is close to expiry; on the other days nothing changes.
+[Unit]
+Description=Daily NF Hotel certificate renewal check
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

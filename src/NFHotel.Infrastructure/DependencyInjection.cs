@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases.AiDefaults;
 using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
+using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Application.UseCases.Rooms;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Repositories;
@@ -134,8 +136,11 @@ public static class DependencyInjection
         services.AddScoped<IGuestRepository, GuestRepository>();
         services.AddScoped<IGuestQueries, GuestRepository>();
         services.AddScoped<IStaffRepository, StaffRepository>();
+        services.AddScoped<IStaffAuditRepository, StaffAuditRepository>();
         services.AddScoped<IBenchmarkRunRepository, BenchmarkRunRepository>();
+        services.AddScoped<IBenchmarkRequestRepository, BenchmarkRequestRepository>();
         services.AddScoped<IAiDefaultRepository, AiDefaultRepository>();
+        services.AddScoped<IMarketAnalysisRunRepository, MarketAnalysisRunRepository>();
         services.AddScoped<IBenchmarkQueries, BenchmarkRunRepository>();
     }
 
@@ -150,6 +155,9 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<IStaffTokenIssuer, JwtStaffTokenIssuer>();
         services.AddSingleton<ILoginThrottle, InMemoryLoginThrottle>();
+
+        // A caller that is not an HTTP request knows nobody; the API replaces this with the one that reads the token (ADR-0017).
+        services.TryAddScoped<IStaffCallContext, AnonymousStaffCallContext>();
     }
 
     /// <summary>
@@ -164,12 +172,24 @@ public static class DependencyInjection
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<IRoomService, RoomService>();
         services.AddScoped<IAiDefaultService, AiDefaultService>();
+        services.AddScoped<IMarketAnalysisService, MarketAnalysisService>();
+        services.AddScoped<MarketAnalysisRunner>();
+        services.AddScoped<IMarketAnalysisBookingQueries, MarketAnalysisBookingQueries>();
+
+        // One run at a time for the whole API, so the tracker outlives a request.
+        services.AddSingleton<MarketAnalysisRunTracker>();
         services.AddScoped<BenchmarkService>();
         services.AddScoped<IBenchmarkService>(provider => provider.GetRequiredService<BenchmarkService>());
         services.AddScoped<IBenchmarkIntake>(provider => provider.GetRequiredService<BenchmarkService>());
+        services.AddScoped<IBenchmarkRequestService, BenchmarkRequestService>();
         services.AddScoped<IGuestService, GuestService>();
         services.AddScoped<IStaffAuthService, StaffAuthService>();
-        services.AddScoped<IStaffAccountService, StaffAccountService>();
+        services.AddScoped<StaffAccountService>();
+        services.AddScoped<IStaffAccountService>(provider => provider.GetRequiredService<StaffAccountService>());
+        services.AddScoped<IStaffAdminService>(provider => provider.GetRequiredService<StaffAccountService>());
+
+        // Registers the staff authorization service for dependency injection.
+        services.AddScoped<IStaffAuthorizationService, StaffAuthorizationService>();
     }
 
     /// <summary>Reads the connection string and fails fast if it is missing.</summary>

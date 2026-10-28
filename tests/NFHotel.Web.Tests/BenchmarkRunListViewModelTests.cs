@@ -1,6 +1,7 @@
 using NFHotel.Application.Dto.AiDefaults;
 using NFHotel.Application.Dto.Benchmark;
 using NFHotel.Application.Errors;
+using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.AiDefaults;
 using NFHotel.Application.UseCases.Benchmark;
@@ -68,6 +69,31 @@ public sealed class BenchmarkRunListViewModelTests
         Assert.Equal("We couldn't reach the hotel system. Please try again in a moment.", Assert.Single(viewModel.Errors));
         Assert.True(viewModel.IsLoaded);
         Assert.False(viewModel.IsEmpty);
+    }
+
+    #endregion
+
+    #region Started runs (ADR-0031)
+
+    /// <summary>
+    /// State: the started runs without a stored result are listed beside the stored ones, and a queued run that a restart
+    /// of the service stopped is shown as interrupted.
+    /// </summary>
+    [Fact]
+    public async Task InitializeAsync_StartedRunForgotten_ListsItInterrupted()
+    {
+        // Arrange
+        var startedId = Guid.Parse("5b3f0e1a-0000-4000-8000-0000000000aa");
+        var viewModel = Build(out _, out _, out var client, BenchmarkRequestDoubles.Record(startedId, BenchmarkRunStates.Queued));
+        client.GetRunAsync(startedId, Arg.Any<CancellationToken>()).Returns(Result<BenchmarkRunStateDto>.Failure(ErrorCodes.BenchmarkRunner.RunNotFound));
+
+        // Act
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        var started = Assert.Single(viewModel.StartedRuns);
+        Assert.Equal((startedId, BenchmarkRunStates.Interrupted), (started.RunId, started.State));
+        Assert.Single(viewModel.Runs);
     }
 
     #endregion
@@ -393,7 +419,14 @@ public sealed class BenchmarkRunListViewModelTests
 
     private static BenchmarkRunListViewModel Build(out IBenchmarkService service) => Build(out service, out _);
 
-    private static BenchmarkRunListViewModel Build(out IBenchmarkService service, out IAiDefaultService defaults)
+    private static BenchmarkRunListViewModel Build(out IBenchmarkService service, out IAiDefaultService defaults) =>
+        Build(out service, out defaults, out _);
+
+    private static BenchmarkRunListViewModel Build(
+        out IBenchmarkService service,
+        out IAiDefaultService defaults,
+        out IBenchmarkServiceClient client,
+        params BenchmarkRequestDto[] started)
     {
         var header = new BenchmarkRunListItemDto(RunId, Start, Start.AddMinutes(5), "d.csv", "Test CPU", 16384, null, "ollama", "0.5.1", ["m1"], 1);
         var details = new BenchmarkRunDetailsDto(header, new string('a', 64), 10, "hotel-v1", 8, "Linux", []);
@@ -435,7 +468,12 @@ public sealed class BenchmarkRunListViewModelTests
                 Arg.Any<Func<IBenchmarkService, CancellationToken, Task<Result>>>(),
                 Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<Func<IBenchmarkService, CancellationToken, Task<Result>>>()(fake, call.Arg<CancellationToken>()));
-        return new BenchmarkRunListViewModel(runner, defaultsRunner);
+        client = Substitute.For<IBenchmarkServiceClient>();
+        var tracker = new BenchmarkRunTracker(
+            new PassThroughRunner<IBenchmarkServiceClient>(client),
+            new PassThroughRunner<IBenchmarkRequestService>(BenchmarkRequestDoubles.Requests(started)),
+            new PassThroughRunner<IBenchmarkService>(BenchmarkRequestDoubles.Stored()));
+        return new BenchmarkRunListViewModel(runner, defaultsRunner, tracker);
     }
 
     #endregion

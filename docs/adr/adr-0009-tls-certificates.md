@@ -1,0 +1,88 @@
+# ADR-0009 TLS certificates for the tailnet and the public name
+
+## Metadata
+| Key | Value |
+| --- | --- |
+| ID | ADR-0009 |
+| CrossReference | [ADR-0006], [ADR-0007], [MIL-021], [MIL-023], [DSA-001], [ADR-0010], [ADR-0016], [RC-161], [RC-162], [ADR-0018] |
+| Language | en |
+| Domain | it |
+
+## Version History
+| Date | Status | Author | Reviewer | Change | Commit |
+| --- | --- | --- | --- | --- | --- |
+| 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Paths under ops/ and the renewal as it runs on nf-hotel (RC-161); the renewal unit is not in the repository | [12a64c3] |
+| 2026-10-21 | Accepted | mikemike | AI as stand-in for S01 | The renewal is in git and installed by CD (RC-162); the hand-made unit reloaded a stopped container | [e2e8a90] |
+
+Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
+
+---
+
+## Context
+
+ADR-0006 put TLS in nginx with a self-signed development certificate, and left open how a trusted certificate is issued and renewed (decision 4). DSA-001 made this decision D10.
+
+Two facts shape the choice:
+
+- **The tailnet name already has a trusted certificate.** The host `nf-hotel` serves a Let's Encrypt certificate for `nf-hotel.taildb84b5.ts.net`, valid to 2027-01-04 (DSA-001 section 2.4.1). That certificate comes from `tailscale cert`.
+- **No public host name exists.** The project does not control public DNS for NF Hotel yet, so no certificate can be issued for a public name today.
+
+Options considered:
+
+1. **Self-signed only.** No trust in browsers, and HSTS cannot be turned on. Acceptable for development only.
+2. **`tailscale cert` for the tailnet name.** Let's Encrypt, issued through Tailscale with no open port. The name is reachable only inside the tailnet, unless Tailscale Funnel is used.
+3. **certbot with the HTTP-01 webroot challenge** through the existing nginx. Needs a public name and port 80 reachable from the internet; renewed by a timer.
+4. **certbot with a DNS-01 challenge.** No inbound port, but it needs an API token for the DNS provider, which the project does not have.
+5. **A purchased certificate.** Manual renewal and a cost, with no benefit over Let's Encrypt here.
+
+## Decision
+
+We use `tailscale cert` for the tailnet name now, and certbot with the HTTP-01 webroot challenge for a public name once one exists. The VM is not exposed to the internet before that.
+
+1. **Tailnet name.**
+   - `tailscale cert` writes the certificate and key for `<host>.taildb84b5.ts.net` into the git-ignored `ops/deploy/nginx/tls/` that ADR-0006 already mounts read-only.
+   - A systemd timer renews them every month and reloads nginx when they change.
+   - `NGINX_SERVER_NAME` is set to the tailnet name, and HSTS is on (`NGINX_HSTS=on`), because the certificate is trusted.
+2. **Public name, later.**
+   - certbot runs on the VM with `--webroot`, and nginx serves `/.well-known/acme-challenge/` from a read-only mount. This path is the exception for a certificate authority that ADR-0006 decision 2 already allows.
+   - Renewal uses certbot's own timer, with a deploy hook that copies the files into `ops/deploy/nginx/tls/` and reloads nginx.
+3. **No private key in git** (unchanged from ADR-0006).
+4. **The smoke test of CD** stays at "HTTPS answers 200". It adds a certificate check (`curl` without `--insecure`) once the trusted certificate is installed.
+
+**Current state (2026-10-21, [RC-161]).** `nf-hotel` serves the Let's Encrypt (YE1) certificate for `nf-hotel.taildb84b5.ts.net`, valid to 2027-01-04. It is renewed by `nfhotel-cert-renew.timer` and its service, which run every day (not every month). That timer and service were installed on the VM by hand and were not in the repository, against the rule of [ADR-0010] that the repository is the source of truth for the VM (RC-161). They wrote to `/etc/nginx/certs/` and reloaded the container `nfhotel-nginx` of the stack from before the reconciliation. Since that container stopped, every run failed (the journal of 2026-10-21), so a renewed certificate would never have reached the running nginx. [RC-162] puts the renewal in git, as `ops/scripts/renew-certificate.sh` with `ops/deploy/systemd/nfhotel-cert-renew.{service,timer}`. The script writes into the folder that the running nginx mounts, found by its compose labels, and reloads nginx only when the certificate changed. CD installs and enables them ([ADR-0018]). The files are under `ops/` since [ADR-0016].
+
+## Consequences
+
+**Positive:**
+
+- Browsers inside the tailnet trust the site today, with no open port and no DNS token, and HSTS can be turned on.
+- The public path reuses nginx and needs no new service.
+
+**Negative:**
+
+- The tailnet certificate depends on Tailscale. If Tailscale stops issuing, the site falls back to the last certificate until it expires (90 days).
+- HTTP-01 needs port 80 open to the internet for the public name, which widens the exposure that MIL-023 must firewall.
+- Two issuing paths to maintain once a public name exists.
+
+**Quality:** security (trusted transport, HSTS) and usability (no certificate warnings) improve (ISO/IEC 25010:2023).
+
+## Affected Artifacts
+
+- [ADR-0006]: decision 4 is decided here; the rest of ADR-0006 is unchanged.
+- [MIL-021]: the CD smoke test adds a certificate check once a trusted certificate is installed.
+- [MIL-023]: the renewal timers and the firewall for port 80 are part of the hardening.
+
+---
+
+[ADR-0006]: https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0006-tls.md
+[ADR-0007]: ./adr-0007-cicd-and-supply-chain.md
+[MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
+[MIL-023]: ../milestones/mil-023-operational-quality.md
+[DSA-001]: ../sqa/devsecops-assessment.md
+[ADR-0010]: ./adr-0010-production-vm-as-deployed.md
+[ADR-0016]: ./adr-0016-one-repository-for-application-and-operations.md
+[RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
+[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
+[RC-162]: ../sqa/reviews/rc-162-certificate-renewal.md
+[ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
+[e2e8a90]: https://github.com/NF-Hotel/NFHotel/commit/e2e8a90e0082aa329e4d2da499e8b1e853c26ca8

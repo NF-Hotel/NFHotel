@@ -1,0 +1,104 @@
+# Alloy on nf-hotel (ADR-0020, MIL-023 task 8): it sends the logs of the containers and of the
+# systemd journal to Loki, and the host metrics and the task reports (the text files in
+# /var/lib/nfhotel-metrics) to Prometheus, both in the monitoring LXC over the tailnet.
+# scripts/deploy-services.sh deploys it last, and only when alloy.env exists (copy
+# alloy.env.example): until the monitoring runs, nf-hotel deploys without it.
+#
+# Alloy reads the containers through a socket proxy that allows only read calls: containers
+# (list, inspect, logs) and networks (list). Alloy itself never sees the Docker socket, whose
+# access would equal root on the host. The host's /, /proc and /sys and the journal are
+# read-only.
+name: nfhotel-alloy
+
+services:
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.4.1@sha256:3400c429c5f9e1b21d62130fb93b16e2e772d4fb7695bd52fc2b743800b9fe9e
+    restart: unless-stopped
+    environment:
+      CONTAINERS: "1"
+      # discovery.docker lists the networks on every refresh to label each target; with "0" the
+      # proxy answered 403 and no container log reached Loki (2026-10-23). POST "0" still
+      # refuses every write, so this adds GET /networks only.
+      NETWORKS: "1"
+      POST: "0"
+      # At the default "info", HAProxy logs every request: Alloy's polling gave about 6,800
+      # lines an hour in Loki (2026-10-24). A refused call still shows in Alloy's own log.
+      LOG_LEVEL: warning
+      INFO: "0"
+      IMAGES: "0"
+      VOLUMES: "0"
+      EXEC: "0"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # HAProxy runs as root, which owns the socket, so it reads it without a capability. With
+    # cap_drop ALL it answered the read calls 200 and a POST 403 (2026-10-28).
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/run, /tmp]
+    mem_limit: 64m
+    cpus: 0.25
+    # 5 processes on nf-hotel, 25 while HAProxy starts (2026-10-28)
+    pids_limit: 128
+    networks: [internal]
+
+  alloy:
+    image: grafana/alloy:v1.11.3@sha256:8c7256f412feb9f5f48f9f6f9394dc97ca887f63dea9304f347970ecc1787669
+    restart: unless-stopped
+    command: [run, --storage.path=/var/lib/alloy/data, /etc/alloy/config.alloy]
+    env_file: ${ALLOY_ENV_FILE:-alloy.env}
+    # The image has no USER, so it ran as root. Without DAC_OVERRIDE (cap_drop ALL), root
+    # cannot enter /var/lib/alloy, which the image gives to alloy (473:473, 0770), and Alloy
+    # stopped with "mkdir /var/lib/alloy/data: permission denied". It runs as that user now.
+    # The journal is 2755 root:systemd-journal with 0640 files, so the host's group is
+    # added; scripts/deploy-services.sh reads its number on the host (getent). The other
+    # mounts are readable by everyone: the metrics files are 0644, /proc and /sys as usual.
+    user: "473:473"
+    group_add: ["${NFHOTEL_JOURNAL_GID:?set by scripts/deploy-services.sh}"]
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - /:/host/root:ro,rslave
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/log/journal:/var/log/journal:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      - /var/lib/nfhotel-metrics:/host/metrics:ro
+      - alloy-data:/var/lib/alloy/data
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/tmp]
+    # Ready when every component has loaded. The image has no curl or wget, so bash asks
+    # Alloy's own HTTP server on the loopback.
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/12345 &&
+          printf 'GET /-/ready HTTP/1.0\r\n\r\n' >&3 && grep -q ' 200 ' <&3
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    mem_limit: 512m
+    cpus: 0.5
+    # 15 processes on nf-hotel (2026-10-28)
+    pids_limit: 256
+    depends_on: [socket-proxy]
+    # apps: the internal network of the web application and the API, which push their metrics
+    # to Alloy over OTLP (port 4318, not published; MIL-034).
+    networks: [internal, egress, apps]
+
+volumes:
+  alloy-data:
+
+networks:
+  # The proxy has no route out; Alloy reaches it here and the monitoring through egress.
+  internal:
+    internal: true
+  egress: {}
+  apps:
+    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
+    external: true

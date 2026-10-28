@@ -1,0 +1,6 @@
+2026-09-03T10:50:01.0000000Z ##[group]Run NF-Hotel/DevOps/.github/actions/deploy-release@abc
+2026-09-03T10:50:01.0000001Z with:
+2026-09-03T10:50:01.0000002Z   release-run-id: 202
+2026-09-03T10:50:01.0000003Z   apply: true
+2026-09-03T10:50:02.0000000Z   RUN_ID: 202
+2026-09-03T10:50:03.0000000Z   apply: false

@@ -185,6 +185,36 @@ public static class ErrorCodes
         /// <summary>The user name exists already.</summary>
         public const string UserNameTaken = "staff.user_name_taken";
 
+        /// <summary>The current password given for a password change is wrong (ADR-0017).</summary>
+        public const string CurrentPasswordInvalid = "staff.current_password_invalid";
+
+        /// <summary>The new password is the same as the user name, in any case (ADR-0017).</summary>
+        public const string PasswordSameAsUserName = "staff.password_same_as_user_name";
+
+        /// <summary>The new password is the same as the current one (ADR-0017).</summary>
+        public const string PasswordSameAsCurrent = "staff.password_same_as_current";
+
+        /// <summary>The new password is on the list of common passwords or is one repeated character (ADR-0017).</summary>
+        public const string PasswordTooCommon = "staff.password_too_common";
+
+        /// <summary>The account does not exist.</summary>
+        public const string NotFound = "staff.not_found";
+
+        /// <summary>The account is the last active Manager and cannot be disabled (ADR-0017).</summary>
+        public const string LastManager = "staff.last_manager";
+
+        /// <summary>A Manager cannot disable their own account (ADR-0017).</summary>
+        public const string CannotDisableSelf = "staff.cannot_disable_self";
+
+        /// <summary>A Manager cannot reset their own password; they change it with the current one (ADR-0017).</summary>
+        public const string CannotResetSelf = "staff.cannot_reset_self";
+
+        /// <summary>The account must choose a new password before anything else can be done (ADR-0017).</summary>
+        public const string PasswordChangeRequired = "staff.password_change_required";
+
+        /// <summary>The Manager endpoints were called too often by one account (ADR-0017).</summary>
+        public const string TooManyRequests = "staff.too_many_requests";
+
         /// <summary>The user name is empty.</summary>
         public const string UserNameRequired = StaffErrors.UserNameRequired;
 
@@ -328,5 +358,49 @@ public static class ErrorCodes
 
         /// <summary>Ollama could not be reached or refused the delete.</summary>
         public const string ModelServerError = "benchmark_runner.model_server_error";
+    }
+
+    /// <summary>Codes of the stored market analysis (MIL-026). The field codes are those of the domain.</summary>
+    public static class MarketAnalysis
+    {
+        /// <summary>No market analysis has been stored yet.</summary>
+        public const string NotFound = "market_analysis.not_found";
+
+        /// <summary>The result schema version is not the one that this API reads.</summary>
+        public const string SchemaVersionUnsupported = "market_analysis.schema_version_unsupported";
+
+        /// <summary>The result is missing a part, or the stored content cannot be read.</summary>
+        public const string BodyInvalid = "market_analysis.body_invalid";
+
+        /// <summary>The hotel has no booking to analyse in the period.</summary>
+        public const string NoBookings = "market_analysis.no_bookings";
+
+        /// <summary>The first date of the period is after the last date.</summary>
+        public const string PeriodInvalid = "market_analysis.period_invalid";
+    }
+
+    /// <summary>Codes of the calls to the markets API that runs the market analysis, and of the run itself (MIL-026).</summary>
+    public static class MarketAnalysisRunner
+    {
+        /// <summary>The address of the markets API is not set.</summary>
+        public const string NotConfigured = "market_analysis_runner.not_configured";
+
+        /// <summary>The markets API did not answer in time or could not be reached.</summary>
+        public const string Unavailable = "market_analysis_runner.unavailable";
+
+        /// <summary>The markets API refused the call (a gateway in front of it asked for a token).</summary>
+        public const string Unauthorized = "market_analysis_runner.unauthorized";
+
+        /// <summary>A run of the market analysis is already active.</summary>
+        public const string AlreadyRunning = "market_analysis_runner.already_running";
+
+        /// <summary>The markets API refused the bookings (an input error, status 422).</summary>
+        public const string InputRejected = "market_analysis_runner.input_rejected";
+
+        /// <summary>The API does not know this run (it keeps the last one in memory, and a restart forgets it).</summary>
+        public const string RunNotFound = "market_analysis_runner.run_not_found";
+
+        /// <summary>The markets API answered something this application cannot use.</summary>
+        public const string UnexpectedResponse = "market_analysis_runner.unexpected_response";
     }
 }

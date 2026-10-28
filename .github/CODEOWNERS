@@ -1,14 +1,14 @@
-# Owners are asked for review when these paths change (ADR-0012, CONTRIBUTING.md).
-# The workflow entry points and the Dockerfiles are shared with NF-Hotel/DevOps: they
-# decide what is built, released and deployed, so a second person always sees the change.
+# Owners are asked for review when these paths change (CONTRIBUTING.md). Since ADR-0019
+# no review is required to merge; the owner sees every change of what is built, released
+# and deployed, and approves its deploy to production.
 
-/.github/                       @codemikemike @Tirsvad
-/Dockerfile                     @codemikemike @Tirsvad
-/Dockerfile.api                 @codemikemike @Tirsvad
-/docs/adr/                      @codemikemike @Tirsvad
-/SECURITY.md                    @codemikemike @Tirsvad
-/CONTRIBUTING.md                @codemikemike @Tirsvad
+/.github/                       @codemikemike
+/Dockerfile                     @codemikemike
+/Dockerfile.api                 @codemikemike
+/docs/adr/                      @codemikemike
+/SECURITY.md                    @codemikemike
+/CONTRIBUTING.md                @codemikemike
 
-# Old copies of the infrastructure, kept until MIL-025 task 7; change them in NF-Hotel/DevOps.
-/deploy/                        @codemikemike @Tirsvad
-/scripts/                       @codemikemike @Tirsvad
+# The operations of NF Hotel (ADR-0016): deploy files, scripts, tests and security settings.
+/ops/                           @codemikemike
+/scripts/                       @codemikemike

@@ -1,9 +1,12 @@
 using NFHotel.Application.Dto.Staff;
 using NFHotel.Application.Errors;
+using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.TestSupport;
+
+using NSubstitute;
 
 namespace NFHotel.Application.Tests.Services;
 
@@ -42,7 +45,7 @@ public sealed class StaffAccountServiceTests
         var service = Build(world);
 
         // Act
-        var accepted = await service.CreateAsync(new CreateStaffRequest("a", new string('x', StaffAccountService.MinPasswordLength), StaffRole.Manager), TestContext.Current.CancellationToken);
+        var accepted = await service.CreateAsync(new CreateStaffRequest("a", new string('x', StaffAccountService.MinPasswordLength - 1) + "y", StaffRole.Manager), TestContext.Current.CancellationToken);
         var refused = await service.CreateAsync(new CreateStaffRequest("b", new string('x', StaffAccountService.MinPasswordLength - 1), StaffRole.Manager), TestContext.Current.CancellationToken);
 
         // Assert
@@ -189,7 +192,18 @@ public sealed class StaffAccountServiceTests
 
     #region Helpers
 
-    private static StaffAccountService Build(ServiceWorld world) => new(world.Staff, new FakePasswordHasher(), world.UnitOfWork);
+    private static StaffAccountService Build(ServiceWorld world)
+    {
+        // Allows existing tests to focus on account creation rules.
+        var authorization = Substitute.For<IStaffAuthorizationService>();
+
+        authorization.HasPermissionAsync(
+            Permissions.StaffManage,
+            Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
+
+        return world.StaffAccountService(authorization: authorization);
+    }
 
     #endregion
 }

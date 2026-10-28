@@ -1,5 +1,6 @@
 # Builds the database API (ADR-0004) with the same SDK version as global.json.
-FROM mcr.microsoft.com/dotnet/sdk:10.0.400 AS build
+# Base images pinned by digest (MIL-022 task 4); Dependabot proposes the next ones.
+FROM mcr.microsoft.com/dotnet/sdk:10.0.403@sha256:afd0ccff9d306812a69ef0f47458376b6acb544ae866cfc4b8d28ff0eef35ea7 AS build
 
 # Working folder in the build image.
 WORKDIR /source
@@ -12,7 +13,13 @@ COPY src/ ./src/
 RUN dotnet publish src/NFHotel.Api/NFHotel.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # The final image holds ASP.NET Core to run the API.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.14@sha256:d247d17dd429d96580eeb96cfce220c1089d860dbbf9f94d599ca64cf3604fe4 AS final
+
+# The security updates that Ubuntu has published since the base image was built, so a fixed
+# package does not wait for the next base image (ADR-0032: a finding with a fix is acted on).
+RUN apt-get update \
+    && apt-get upgrade --yes --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

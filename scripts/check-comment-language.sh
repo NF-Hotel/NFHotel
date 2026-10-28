@@ -23,9 +23,9 @@ set -euo pipefail
 
 # Danish words that are not English words. Short function words that are also English are left out on purpose
 # (see WEAK below): the letters and these words catch what is written in Danish.
-WORDS='og|ikke|til|af|som|skal|bliver|hvis|fra|også|når|eller|uden|efter|mellem|denne|dette|hvor|kun|være|blive|hent|bruger|bruge|brugeren|kontroller|kontrollér|ændringer|kode|byg|sikkerhed|afhængigheder|fejl|kørsel|projektets|både|alle|hvad|deres|disse|adgang|rollen|rolle|sammenlign|sammenligner|forventede|resultatet|forbered|forbered|opret|opretter|oprettet|ukendte|tilladelse|tilladelser|siden|sine|ligger|findes|hvilke|hvilken|hvilket|samme|kun|inde|ude|fordi|mange|nogle|ingen|hele|dette|først|første|anden|tredje|bliver|gemmer|henter|kalder|sender|viser|tilføjer|fjerner|returnerer|registrerer|opsat|klasse|metode|værdier|værdien|bookinger|gæster|booket|ledig|vedligehold'
+WORDS='og|ikke|til|af|som|skal|bliver|hvis|fra|også|når|eller|uden|efter|mellem|denne|dette|hvor|kun|være|blive|hent|bruger|bruge|brugeren|kontroller|kontrollér|ændringer|kode|byg|sikkerhed|afhængigheder|fejl|kørsel|projektets|både|alle|hvad|deres|disse|adgang|rollen|rolle|sammenlign|sammenligner|forventede|resultatet|forbered|forbered|opret|opretter|oprettet|ukendte|tilladelse|tilladelser|siden|sine|ligger|findes|hvilke|hvilken|hvilket|samme|kun|inde|ude|fordi|mange|nogle|ingen|hele|dette|først|første|anden|tredje|bliver|gemmer|henter|kalder|sender|viser|tilføjer|fjerner|returnerer|registrerer|opsat|klasse|metode|værdier|værdien|bookinger|gæster|booket|ledig|vedligehold|har|bestemt|kontrollerer|kontrollerede|medarbejder[a-z]*|gyldig[a-z]*|ugyldig[a-z]*|angiver|beskriver|indeholder|bestemmer|ellers|ifølge|inden|igen|altid|aldrig|skriver|læser|validerer|undtagelse[a-z]*|navnet|datoen|datoer|perioden|tidligere|senere|samt|dvs|paa|maa|praecis|slutter|rum'
 # Short Danish words that are rare in English but not impossible: two different ones in one comment make it Danish.
-WEAK='er|med|den|det|der|kan|ved|mod|nu|jeg'
+WEAK='er|med|den|det|der|kan|ved|mod|nu|jeg|om|en|et|på|sig|vi'
 LETTERS='æ|ø|å|Æ|Ø|Å'
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"

@@ -86,7 +86,7 @@ public class RolePermissionsTests
     #region Whole matrix per role
 
     /// <summary>
-    /// Kontrollerer housekeeping-rollens adgangsrettigheder.
+    /// Verifies the permissions of the housekeeping role.
     /// </summary>
     [Theory]
     [InlineData(Permissions.ViewHousekeeping, true)]
@@ -116,7 +116,7 @@ public class RolePermissionsTests
 
 
     /// <summary>
-    /// Kontrollerer Guest-rollens adgangsrettigheder.
+    /// Verifies the permissions of the Guest role.
     /// </summary>
     [Theory]
     [InlineData(Permissions.CreateBooking, true)]
@@ -144,7 +144,7 @@ public class RolePermissionsTests
 
 
     /// <summary>
-    /// Kontrollerer Receptionist-rollens adgangsrettigheder.
+    /// Verifies the permissions of the Receptionist role.
     /// </summary>
     [Theory]
     [InlineData(Permissions.CreateBooking, true)]
@@ -173,7 +173,7 @@ public class RolePermissionsTests
 
 
     /// <summary>
-    /// Kontrollerer Manager-rollens adgangsrettigheder.
+    /// Verifies the permissions of the Manager role.
     /// </summary>
     [Theory]
     [InlineData(Permissions.CreateBooking, true)]

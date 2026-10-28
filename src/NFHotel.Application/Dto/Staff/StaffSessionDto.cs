@@ -7,4 +7,5 @@ namespace NFHotel.Application.Dto.Staff;
 /// <param name="ExpiresAt">When the token stops being valid; the cookie ends then too.</param>
 /// <param name="UserName">The user name as stored.</param>
 /// <param name="Role">The role.</param>
-public sealed record StaffSessionDto(string Token, DateTimeOffset ExpiresAt, string UserName, StaffRole Role);
+/// <param name="MustChangePassword">True when the member may do nothing but change the password (ADR-0017).</param>
+public sealed record StaffSessionDto(string Token, DateTimeOffset ExpiresAt, string UserName, StaffRole Role, bool MustChangePassword = false);

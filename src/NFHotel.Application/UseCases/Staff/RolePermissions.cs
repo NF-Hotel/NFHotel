@@ -36,6 +36,7 @@ public static class RolePermissions
             Permissions.BookingsView,
             Permissions.GuestsManage,
             Permissions.RoomsView,
+            Permissions.StaffChangeOwnPassword,
         ],
 
         [Roles.Manager] =
@@ -58,14 +59,19 @@ public static class RolePermissions
             Permissions.BenchmarkRun,
             Permissions.BenchmarkDelete,
             Permissions.AiDefaultsManage,
-            Permissions.BenchmarkModelsManage
+            Permissions.BenchmarkModelsManage,
+            Permissions.MarketAnalysisView,
+            Permissions.MarketAnalysisStart,
+            Permissions.StaffManage,
+            Permissions.StaffChangeOwnPassword
         ],
 
         [Roles.Housekeeping] =
         [
             Permissions.ViewHousekeeping,
             Permissions.UpdateHousekeepingStatus,
-            Permissions.RoomsView
+            Permissions.RoomsView,
+            Permissions.StaffChangeOwnPassword
         ]
     };
 
@@ -82,7 +88,7 @@ public static class RolePermissions
     }
 
     /// <summary>
-    /// Kontrollerer om en medarbejderrolle har en bestemt permission.
+    /// Checks whether a staff role has a given permission.
     /// </summary>
     public static bool HasPermission(StaffRole role, string permission) =>
         HasPermission(role.ToString(), permission);

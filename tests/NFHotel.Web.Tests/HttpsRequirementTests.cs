@@ -76,6 +76,8 @@ public sealed class HttpsRequirementTests
         // Arrange
         using var factory = new TlsFactory();
         using var browser = factory.CreateBrowser();
+        // The browser speaks HTTPS to the proxy, so its cookie jar sends the Secure antiforgery cookie back (MIL-033).
+        browser.BaseAddress = new Uri("https://localhost/");
         browser.DefaultRequestHeaders.Add("X-Forwarded-Proto", "https");
 
         // Act
@@ -84,6 +86,24 @@ public sealed class HttpsRequirementTests
 
         // Assert
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("secure", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("httponly", cookie, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Positive: the antiforgery cookie is Secure and HttpOnly behind the proxy, like the staff cookie (MIL-033, ZAP 10011).</summary>
+    [Fact]
+    public async Task LoginPage_BehindTheProxy_SetsASecureAntiforgeryCookie()
+    {
+        // Arrange
+        using var factory = new TlsFactory();
+        using var browser = factory.CreateBrowser();
+        browser.DefaultRequestHeaders.Add("X-Forwarded-Proto", "https");
+
+        // Act
+        using var response = await browser.GetAsync("/admin/login", TestContext.Current.CancellationToken);
+        var cookie = AntiforgeryCookie(response);
+
+        // Assert
         Assert.Contains("secure", cookie, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("httponly", cookie, StringComparison.OrdinalIgnoreCase);
     }
@@ -125,9 +145,29 @@ public sealed class HttpsRequirementTests
         Assert.DoesNotContain("secure", cookie.Replace("httponly", string.Empty, StringComparison.OrdinalIgnoreCase), StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>Equivalence: without the setting the antiforgery cookie is HttpOnly but not Secure over HTTP, as in local development.</summary>
+    [Fact]
+    public async Task LoginPage_WithoutTheSetting_SetsAnHttpOnlyAntiforgeryCookie()
+    {
+        // Arrange
+        using var factory = new WebFactory();
+        using var browser = factory.CreateBrowser();
+
+        // Act
+        using var response = await browser.GetAsync("/admin/login", TestContext.Current.CancellationToken);
+        var cookie = AntiforgeryCookie(response);
+
+        // Assert
+        Assert.Contains("httponly", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("secure", cookie.Replace("httponly", string.Empty, StringComparison.OrdinalIgnoreCase), StringComparison.OrdinalIgnoreCase);
+    }
+
     #endregion
 
     #region Helpers
+
+    private static string AntiforgeryCookie(HttpResponseMessage response) =>
+        response.Headers.GetValues("Set-Cookie").Single(value => value.StartsWith(".AspNetCore.Antiforgery.", StringComparison.Ordinal));
 
     private sealed class TlsFactory : WebFactory
     {

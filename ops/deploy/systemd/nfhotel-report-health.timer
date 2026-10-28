@@ -1,0 +1,12 @@
+# Runs nfhotel-report-health.service every minute, so a stopped container raises an alert
+# within 3 minutes (MIL-023 criterion 7).
+[Unit]
+Description=Report the NF Hotel container health every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

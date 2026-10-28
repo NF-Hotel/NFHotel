@@ -44,6 +44,15 @@ public sealed class RequiresPermissionAttribute : Attribute, IAuthorizationFilte
         if (!allowed)
         {
             context.Result = Refuse(StatusCodes.Status403Forbidden, ErrorCodes.Api.Forbidden);
+            return;
+        }
+
+        // An account that must choose a new password may do nothing else until it has (ADR-0017).
+        if (Permission != Permissions.StaffChangeOwnPassword
+            && bool.TryParse(user.FindFirst(JwtStaffTokenIssuer.MustChangeClaim)?.Value, out var mustChange)
+            && mustChange)
+        {
+            context.Result = Refuse(StatusCodes.Status403Forbidden, ErrorCodes.Staff.PasswordChangeRequired);
         }
     }
 

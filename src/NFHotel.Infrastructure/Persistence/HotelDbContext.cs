@@ -55,11 +55,23 @@ public sealed class HotelDbContext : DbContext
     /// <summary>The benchmark runs that the benchmark service delivered (ADR-0013).</summary>
     public DbSet<BenchmarkRun> BenchmarkRuns => Set<BenchmarkRun>();
 
+    /// <summary>The records of the benchmark runs that a Manager started (ADR-0031).</summary>
+    public DbSet<BenchmarkRequest> BenchmarkRequests => Set<BenchmarkRequest>();
+
     /// <summary>The default AI model per purpose (ADR-0014).</summary>
     public DbSet<AiDefault> AiDefaults => Set<AiDefault>();
 
+    /// <summary>The market fields of the bookings (MIL-026).</summary>
+    public DbSet<BookingMarketDetail> BookingMarketDetails => Set<BookingMarketDetail>();
+
+    /// <summary>The market analyses that the data analysis service delivered (MIL-026).</summary>
+    public DbSet<MarketAnalysisRun> MarketAnalysisRuns => Set<MarketAnalysisRun>();
+
     /// <summary>The requests of the benchmark runs.</summary>
     public DbSet<BenchmarkResult> BenchmarkResults => Set<BenchmarkResult>();
+
+    /// <summary>The audit trail of the staff accounts (ADR-0017).</summary>
+    public DbSet<StaffAuditEvent> StaffAuditEvents => Set<StaffAuditEvent>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -76,8 +88,12 @@ public sealed class HotelDbContext : DbContext
         modelBuilder.ApplyConfiguration(new RoomConfiguration());
         modelBuilder.ApplyConfiguration(new StaffConfiguration());
         modelBuilder.ApplyConfiguration(new BenchmarkRunConfiguration());
+        modelBuilder.ApplyConfiguration(new BenchmarkRequestConfiguration());
         modelBuilder.ApplyConfiguration(new AiDefaultConfiguration());
+        modelBuilder.ApplyConfiguration(new MarketAnalysisRunConfiguration());
+        modelBuilder.ApplyConfiguration(new BookingMarketDetailConfiguration());
         modelBuilder.ApplyConfiguration(new BenchmarkResultConfiguration());
+        modelBuilder.ApplyConfiguration(new StaffAuditEventConfiguration());
 
         // GuestConfiguration is registered explicitly and not via assembly scanning, because it
         // has a dependency: the value converter that encrypts the passport number (B-09).

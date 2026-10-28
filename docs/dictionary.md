@@ -12,7 +12,8 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version | [c74d991] |
-| 2026-10-17 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added Staff member, User name, Role, Password and Active (MIL-016) | [1593b34] |
+| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added Staff member, User name, Role, Password and Active (MIL-016) | [1593b34] |
+| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Must change password, Security stamp and Audit event (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
 
 ---
 
@@ -54,6 +55,9 @@ English (en), domain it, as set in the registry.
 | Role | en | StaffRole | What a staff member does in the hotel: Receptionist, Manager or Housekeeping. | DM, UC, US | OC, SD, DCD, ERD |
 | Password | en | PasswordHash | The secret a staff member types to sign in; only a salted hash of it is kept. | DM, UC | OC, SD, DCD, ERD |
 | Active | en | IsActive | Whether a staff member may still sign in. | DM | OC, SD, DCD, ERD |
+| Must change password | en | MustChangePassword | Whether a staff member has to choose a new password before using any other function. | DM, UC | OC, SD, DCD, ERD |
+| Security stamp | en | SecurityStamp | A number on the account that rises when the password changes or the account is disabled or enabled; a session made with an older number has ended. | DM, UC | OC, SD, DCD, ERD |
+| Audit event | en | StaffAuditEvent | A record of an act on a staff account or at the sign-in: who, to whom, when, what and the result. | DM, UC | OC, SD, DCD, ERD |
 
 ## Rules
 
@@ -67,3 +71,4 @@ English (en), domain it, as set in the registry.
 [SA-001]: ./stakeholder-analysis.md
 [c74d991]: https://github.com/NF-Hotel/NFHotel/commit/c74d991b66d29df8c8cfb8d07848abed38ca386d
 [1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4
+[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
