@@ -73,7 +73,7 @@ else
     run cp -p "$SSHD_FILE" "$backup"
   fi
   run install -D -o root -g root -m 0644 "$HOST/ssh/nfhotel.conf" "$SSHD_FILE"
-  if ((!dry_run)) && ! sshd -t; then
+  if ((! dry_run)) && ! sshd -t; then
     if [[ -n "$backup" ]]; then
       mv "$backup" "$SSHD_FILE"
     else

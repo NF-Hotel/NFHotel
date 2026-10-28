@@ -13,6 +13,7 @@ Applying any step on the VM is the decision of S01, with S03 for the firewall an
 | Firewall | nftables table `inet nfhotel`: input dropped by default, 80 and 443 open, 22 only on `tailscale0`; from outside, only the published 80 and 443 reach a container | `ops/scripts/apply-firewall.sh` | None; reverted by itself unless confirmed |
 | Patching | `unattended-upgrades`: Debian security updates every day, no automatic reboot | `ops/scripts/install-patching.sh` | None |
 | Logs | A persistent journal of at most 1 GB; container logs limited by the daemon | `ops/scripts/install-patching.sh`, `ops/scripts/install-docker-daemon.sh` | None |
+| sshd, sudo, kernel | sshd takes keys only, no root login and no forwarding, with strong algorithms; sudo logs to `/var/log/sudo.log`; no ICMP redirects or source routing, martians logged, ptrace restricted | `ops/scripts/install-host-settings.sh` | None |
 
 What each container needs, measured with the throwaway stack:
 
@@ -97,7 +98,18 @@ Run them as root in `/opt/nfhotel`, at the DevOps commit that holds this change,
    ```
 
    Every service is `healthy`. Undo: roll back to the previous release (`nfhotel-deploy rollback`).
-6. **Evidence.**
+6. **sshd, sudo and sysctl.** No outage. The administrators and CD come in by Tailscale SSH, which this does not touch; sshd is the fallback, and after this it takes keys only and no root login.
+
+   ```bash
+   bash ops/scripts/install-host-settings.sh
+   ```
+
+   ```bash
+   bash ops/scripts/install-host-settings.sh --apply
+   ```
+
+   The script checks the sshd configuration with `sshd -t` before the reload, and takes it back if sshd refuses it. Undo: `rm /etc/ssh/sshd_config.d/nfhotel.conf /etc/sudoers.d/nfhotel-logging /etc/logrotate.d/nfhotel-sudo /etc/sysctl.d/60-nfhotel.conf`, `systemctl reload ssh` and `sysctl --system`.
+7. **Evidence.**
 
    ```bash
    bash ops/scripts/cis-evidence.sh > /root/cis-evidence-after.txt

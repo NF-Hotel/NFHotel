@@ -30,11 +30,16 @@ services:
       EXEC: "0"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    # HAProxy runs as root, which owns the socket, so it reads it without a capability. With
+    # cap_drop ALL it answered the read calls 200 and a POST 403 (2026-10-28).
+    cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     read_only: true
     tmpfs: [/run, /tmp]
     mem_limit: 64m
     cpus: 0.25
+    # 5 processes on nf-hotel, 25 while HAProxy starts (2026-10-28)
+    pids_limit: 128
     networks: [internal]
 
   alloy:
@@ -79,6 +84,8 @@ services:
       start_period: 20s
     mem_limit: 512m
     cpus: 0.5
+    # 15 processes on nf-hotel (2026-10-28)
+    pids_limit: 256
     depends_on: [socket-proxy]
     # apps: the internal network of the web application and the API, which push their metrics
     # to Alloy over OTLP (port 4318, not published; MIL-034).
