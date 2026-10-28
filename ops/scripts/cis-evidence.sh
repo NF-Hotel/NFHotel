@@ -93,7 +93,10 @@ show sysctl kernel.randomize_va_space kernel.yama.ptrace_scope fs.suid_dumpable 
 
 section "ev:mac-fs (Debian 1.1, 1.3; Docker 5.1)"
 show cat /sys/module/apparmor/parameters/enabled
-show aa-status --summary
+# aa-status of Debian 13 has no --summary; its counts are the lines before the profile lists.
+printf -- '--- %s
+' "aa-status (counts)"
+aa-status 2>&1 | grep -E 'module is loaded|^[0-9]+ (profiles|processes)' || echo "(not available)"
 show findmnt -n -o TARGET,SOURCE,FSTYPE,OPTIONS /tmp /dev/shm /var /var/log /home
 for module in cramfs freevxfs hfs hfsplus jffs2 udf usb-storage dccp tipc rds sctp; do
   echo "module $module: loaded=$(grep -qw "^${module//-/_}" /proc/modules && echo yes || echo no) install=$(modprobe -n -v "$module" 2>&1 | tail -n 1)"
@@ -105,6 +108,7 @@ show timedatectl show -p NTP -p NTPSynchronized
 
 section "ev:accounts (Debian 5.2, 5.4.2, 7)"
 show grep -rhE '^Defaults.*(use_pty|logfile)' /etc/sudoers /etc/sudoers.d
+show stat -c '%n %U:%G %a' /etc/sudoers.d/nfhotel-logging /etc/ssh/sshd_config.d/nfhotel.conf /etc/sysctl.d/60-nfhotel.conf
 show awk -F: '$3 == 0 { print "uid 0: " $1 }' /etc/passwd
 show awk -F: '$2 == "" { print "empty password: " $1 }' /etc/shadow
 show stat -c '%n %U:%G %a' /etc/passwd /etc/shadow /etc/group /etc/gshadow /etc/passwd- /etc/shadow-

@@ -1,0 +1,5 @@
+# NF Hotel VM (MIL-023, CIS-001 rows 5.2.1 to 5.2.3 of the Debian Benchmark): every sudo
+# command, the deploy of CD included, is written to its own log file as well as to the journal.
+# Debian's /etc/sudoers already sets use_pty. Installed by scripts/install-host-settings.sh as
+# /etc/sudoers.d/nfhotel-logging, mode 0440; logrotate/nfhotel-sudo rotates the file.
+Defaults logfile="/var/log/sudo.log"

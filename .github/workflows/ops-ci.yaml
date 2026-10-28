@@ -84,7 +84,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - name: Test the Docker daemon, patching and evidence scripts
+      - name: Test the Docker daemon, patching, host settings and evidence scripts
         run: docker run --rm -v "$PWD/ops:/src:ro" debian:13-slim bash /src/tests/test-host-setup.sh
       # NET_ADMIN and SYS_ADMIN let the test load nftables rules and make network namespaces
       # inside its own container; nothing changes on the runner.
