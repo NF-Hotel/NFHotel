@@ -108,18 +108,14 @@ public sealed class BenchmarkServiceClient : IBenchmarkServiceClient
             return Unexpected<IReadOnlyList<BenchmarkRunStateDto>>();
         }
 
-        var runs = new List<BenchmarkRunStateDto>();
-        foreach (var wire in result.Value.Runs)
+        var states = result.Value.Runs.Select(wire => ToState(Result<RunWire>.Success(wire))).ToList();
+        var failed = states.Find(state => state.IsFailure);
+        if (failed is not null)
         {
-            var state = ToState(Result<RunWire>.Success(wire));
-            if (state.IsFailure)
-            {
-                return Result<IReadOnlyList<BenchmarkRunStateDto>>.Failure(state.Errors);
-            }
-
-            runs.Add(state.Value);
+            return Result<IReadOnlyList<BenchmarkRunStateDto>>.Failure(failed.Errors);
         }
 
+        var runs = states.Select(state => state.Value).ToList();
         return Result<IReadOnlyList<BenchmarkRunStateDto>>.Success(runs);
     }
 
@@ -137,17 +133,14 @@ public sealed class BenchmarkServiceClient : IBenchmarkServiceClient
             return Unexpected<IReadOnlyList<ModelPullDto>>();
         }
 
-        var pulls = new List<ModelPullDto>();
-        foreach (var wire in result.Value.Pulls)
+        var states = result.Value.Pulls.Select(wire => ToPull(Result<PullWire>.Success(wire))).ToList();
+        var failed = states.Find(pull => pull.IsFailure);
+        if (failed is not null)
         {
-            var pull = ToPull(Result<PullWire>.Success(wire));
-            if (pull.IsFailure)
-            {
-                return Result<IReadOnlyList<ModelPullDto>>.Failure(pull.Errors);
-            }
-
-            pulls.Add(pull.Value);
+            return Result<IReadOnlyList<ModelPullDto>>.Failure(failed.Errors);
         }
+
+        var pulls = states.Select(pull => pull.Value).ToList();
 
         return Result<IReadOnlyList<ModelPullDto>>.Success(pulls);
     }
