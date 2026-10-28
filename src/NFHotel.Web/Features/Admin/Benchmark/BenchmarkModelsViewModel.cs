@@ -94,6 +94,58 @@ public sealed class BenchmarkModelsViewModel
         }
     }
 
+    /// <summary>False when the last read of the live state failed, so the panel can say that it is paused.</summary>
+    public bool IsLive { get; private set; } = true;
+
+    /// <summary>
+    /// Reads the downloads and the installed models again, so the panel follows a change that any caller made: a download
+    /// that someone else started, a model that was added or deleted elsewhere. A download that is active is shown with its
+    /// progress after a refresh of the page; a download that ended while the panel was open reloads the list.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
+    /// <returns>True when the list of installed models changed, so the page can offer the new list.</returns>
+    public async Task<bool> RefreshLiveAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsBusy)
+        {
+            return false;
+        }
+
+        var pulls = await _client
+            .RunAsync((client, token) => client.ListModelPullsAsync(token), cancellationToken)
+            .ConfigureAwait(false);
+        var models = await _client
+            .RunAsync((client, token) => client.ListModelsAsync(token), cancellationToken)
+            .ConfigureAwait(false);
+
+        IsLive = pulls.IsSuccess && models.IsSuccess;
+        if (pulls.IsSuccess)
+        {
+            var active = pulls.Value.FirstOrDefault(pull => !pull.IsFinished);
+            if (active is not null)
+            {
+                CurrentPull = active;
+            }
+            else if (CurrentPull is { IsFinished: false } following
+                && pulls.Value.FirstOrDefault(pull => pull.PullId == following.PullId) is { } ended)
+            {
+                CurrentPull = ended;
+                if (ended.State == ModelPullStates.Done)
+                {
+                    NewModelName = string.Empty;
+                }
+            }
+        }
+
+        if (models.IsSuccess && !models.Value.SequenceEqual(Models, StringComparer.Ordinal))
+        {
+            Models = models.Value;
+            return true;
+        }
+
+        return false;
+    }
+
     /// <summary>Starts the download of the model in the field.</summary>
     /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
     /// <returns>A task that ends when the service has answered.</returns>

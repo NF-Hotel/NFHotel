@@ -269,6 +269,11 @@ joins the internal network `nfhotel-api` and publishes no host port.
   deterministic tasks, up to three answers side by side, the memory charts, and a CSV and JSON download of the rows
   without the answer texts. The figures that the benchmark service calculates from the dataset are not delivered yet, so
   the Calculated column shows n/a.
+- The Start page lists the runs that the benchmark service knows (queued, running and the recent ones, whoever started
+  them) and the Installed models panel shows an active download. Both read the service every 3 seconds while the page
+  is open, so a refresh loses nothing and a change that any caller makes shows without a refresh. The service keeps
+  them in memory, so a restart of the benchmark service forgets them; results that were stored stay in the list of
+  runs.
 - A Manager adds a model (for example `phi4-mini`) and deletes an installed one in the Installed models panel of
   `/admin/benchmark/start`. The web application asks the benchmark service, which pulls into and deletes from the
   Ollama of the VM (ADR-0005 of notebook-benchmark): one download at a time, with progress; a model that a queued or

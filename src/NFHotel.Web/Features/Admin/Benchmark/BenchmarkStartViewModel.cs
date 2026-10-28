@@ -50,6 +50,15 @@ public sealed class BenchmarkStartViewModel
     /// <summary>Requests per model and task, from 1 to <see cref="MaxRuns"/>.</summary>
     public int Runs { get; set; } = 1;
 
+    /// <summary>
+    /// The runs that the benchmark service knows, newest first: queued, running and the recent finished ones. They come from
+    /// the service, so they are the same after a refresh of the page and for every Manager.
+    /// </summary>
+    public IReadOnlyList<BenchmarkRunStateDto> KnownRuns { get; private set; } = [];
+
+    /// <summary>False when the last read of the live state failed, so the page can say that it is paused.</summary>
+    public bool IsLive { get; private set; } = true;
+
     /// <summary>The run that was started and is shown, or <c>null</c>.</summary>
     public BenchmarkRunStateDto? CurrentRun { get; private set; }
 
@@ -168,6 +177,46 @@ public sealed class BenchmarkStartViewModel
         {
             IsBusy = false;
             IsLoaded = true;
+        }
+
+        await RefreshLiveAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Reads the runs and the installed models again, so the page follows a change that any caller made: a run that moved
+    /// from queued to running, a run that someone else started, a model that was added or deleted. A failing read keeps the
+    /// last state and sets <see cref="IsLive"/> to false.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
+    /// <returns>A task that ends when the service has answered.</returns>
+    public async Task RefreshLiveAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        var runs = await _client
+            .RunAsync((client, token) => client.ListRunsAsync(token), cancellationToken)
+            .ConfigureAwait(false);
+        var models = await _client
+            .RunAsync((client, token) => client.ListModelsAsync(token), cancellationToken)
+            .ConfigureAwait(false);
+
+        IsLive = runs.IsSuccess && models.IsSuccess;
+        if (runs.IsSuccess)
+        {
+            KnownRuns = runs.Value;
+            if (CurrentRun is { } current && runs.Value.FirstOrDefault(run => run.RunId == current.RunId) is { } fresh)
+            {
+                CurrentRun = fresh;
+            }
+        }
+
+        if (models.IsSuccess && !models.Value.SequenceEqual(Models, StringComparer.Ordinal))
+        {
+            Models = models.Value;
+            _selected.RemoveAll(model => !Models.Contains(model));
         }
     }
 

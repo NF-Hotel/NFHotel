@@ -248,6 +248,86 @@ public sealed class BenchmarkServiceClientTests
 
     #endregion
 
+    #region Listing runs and downloads
+
+    /// <summary>Boundary: with nothing in progress both lists are empty and not an error.</summary>
+    [Fact]
+    public async Task ListRunsAndPullsAsync_NothingInProgress_ReturnEmptyLists()
+    {
+        // Arrange
+        var client = CreateClient(new FakeBenchmarkService("m1"));
+
+        // Act
+        var runs = await client.ListRunsAsync(TestContext.Current.CancellationToken);
+        var pulls = await client.ListModelPullsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(runs.IsSuccess);
+        Assert.Empty(runs.Value);
+        Assert.True(pulls.IsSuccess);
+        Assert.Empty(pulls.Value);
+    }
+
+    /// <summary>Positive: the lists carry the run and the download that the service knows, read with GET and the token.</summary>
+    [Fact]
+    public async Task ListRunsAndPullsAsync_WorkInProgress_ReturnTheRunAndTheDownload()
+    {
+        // Arrange
+        var service = new FakeBenchmarkService("m1");
+        var client = CreateClient(service);
+        await client.StartRunAsync(new StartBenchmarkRunRequest(["m1"]), TestContext.Current.CancellationToken);
+        await client.StartModelPullAsync("phi4-mini", TestContext.Current.CancellationToken);
+
+        // Act
+        var runs = await client.ListRunsAsync(TestContext.Current.CancellationToken);
+        var runsPath = service.LastPath;
+        var pulls = await client.ListModelPullsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        var run = Assert.Single(runs.Value);
+        Assert.Equal((RunId, BenchmarkRunStates.Running), (run.RunId, run.State));
+        Assert.Equal("/runs", runsPath);
+        var pull = Assert.Single(pulls.Value);
+        Assert.Equal(("phi4-mini", ModelPullStates.Pulling, 40), (pull.Model, pull.State, pull.Percent));
+        Assert.Equal("/models/pulls", service.LastPath);
+        Assert.Equal($"Bearer {Token}", service.LastAuthorization);
+    }
+
+    /// <summary>Negative: a body that is not the list of the contract is the unexpected response code.</summary>
+    [Fact]
+    public async Task ListRunsAndPullsAsync_BodyIsNotAList_ReturnTheUnexpectedCode()
+    {
+        // Arrange
+        var client = CreateClient(new FakeBenchmarkService { RawBody = "{}" });
+
+        // Act
+        var runs = await client.ListRunsAsync(TestContext.Current.CancellationToken);
+        var pulls = await client.ListModelPullsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.BenchmarkRunner.UnexpectedResponse, Assert.Single(runs.Errors).Code);
+        Assert.Equal(ErrorCodes.BenchmarkRunner.UnexpectedResponse, Assert.Single(pulls.Errors).Code);
+    }
+
+    /// <summary>Negative: a service that is down and a wrong token give their codes.</summary>
+    [Fact]
+    public async Task ListRunsAndPullsAsync_ServiceDownOrWrongToken_ReturnTheirCodes()
+    {
+        // Arrange
+        var down = CreateClient(new FakeBenchmarkService { Throw = new HttpRequestException("down") });
+        var wrong = CreateClient(new FakeBenchmarkService(), token: "wrong");
+
+        // Act
+        var runs = await down.ListRunsAsync(TestContext.Current.CancellationToken);
+        var pulls = await wrong.ListModelPullsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.BenchmarkRunner.Unavailable, Assert.Single(runs.Errors).Code);
+        Assert.Equal(ErrorCodes.BenchmarkRunner.Unauthorized, Assert.Single(pulls.Errors).Code);
+    }
+
+    #endregion
+
     #region Starting a run
 
     /// <summary>Positive: a start posts the contract field names and returns the queued run.</summary>
@@ -608,6 +688,20 @@ public sealed class BenchmarkServiceClientTests
             if (LastAuthorization != $"Bearer {Token}")
             {
                 return Reply(HttpStatusCode.Unauthorized, """{"code":"unauthorized"}""");
+            }
+
+            if (LastPath == "/runs" && request.Method == HttpMethod.Get)
+            {
+                return Reply(HttpStatusCode.OK, _started
+                    ? "{\"runs\":[" + State("running", "not_ready", withTimes: false) + "]}"
+                    : "{\"runs\":[]}");
+            }
+
+            if (LastPath == "/models/pulls" && request.Method == HttpMethod.Get)
+            {
+                return Reply(HttpStatusCode.OK, _pulling is null
+                    ? "{\"pulls\":[]}"
+                    : "{\"pulls\":[" + Pull("pulling", 40, null) + "]}");
             }
 
             if (LastPath == "/models" && request.Method == HttpMethod.Post)

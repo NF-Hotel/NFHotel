@@ -305,6 +305,102 @@ public sealed class BenchmarkStartViewModelTests
 
     #endregion
 
+    #region Live state
+
+    /// <summary>Positive: the runs of the service are loaded with the models, so a refresh of the page keeps what runs.</summary>
+    [Fact]
+    public async Task InitializeAsync_RunsInTheService_ShowsThemNewestFirst()
+    {
+        // Arrange
+        var viewModel = Build(out var client);
+        var queued = State(BenchmarkRunStates.Queued, BenchmarkDeliveryStates.NotReady) with { RunId = Guid.Parse("5b3f0e1a-0000-4000-8000-000000000002") };
+        var running = State(BenchmarkRunStates.Running, BenchmarkDeliveryStates.NotReady);
+        client.ListRunsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<BenchmarkRunStateDto>>.Success([queued, running]));
+
+        // Act
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal([BenchmarkRunStates.Queued, BenchmarkRunStates.Running], viewModel.KnownRuns.Select(run => run.State));
+        Assert.True(viewModel.IsLive);
+    }
+
+    /// <summary>State: a change of state that the service made shows in the next read, also for the run this page started.</summary>
+    [Fact]
+    public async Task RefreshLiveAsync_RunChangesState_ShowsItAndUpdatesTheRunOfThisPage()
+    {
+        // Arrange
+        var viewModel = Build(out var client);
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        viewModel.ToggleModel("m1");
+        await viewModel.StartAsync(TestContext.Current.CancellationToken);
+        client.ListRunsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<BenchmarkRunStateDto>>.Success([State(BenchmarkRunStates.Running, BenchmarkDeliveryStates.NotReady)]));
+
+        // Act
+        await viewModel.RefreshLiveAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(BenchmarkRunStates.Running, Assert.Single(viewModel.KnownRuns).State);
+        Assert.Equal(BenchmarkRunStates.Running, viewModel.CurrentRun!.State);
+    }
+
+    /// <summary>State: a model that was deleted elsewhere leaves the list and the choice; a model that was added joins the list.</summary>
+    [Fact]
+    public async Task RefreshLiveAsync_ModelsChangedElsewhere_UpdatesTheListAndDropsAGoneChoice()
+    {
+        // Arrange
+        var viewModel = Build(out var client);
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        viewModel.ToggleModel("m1");
+        viewModel.ToggleModel("m2");
+        client.ListModelsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<string>>.Success(["m2", "m6"]));
+
+        // Act
+        await viewModel.RefreshLiveAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(["m2", "m6"], viewModel.Models);
+        Assert.Equal(["m2"], viewModel.SelectedModels);
+    }
+
+    /// <summary>Negative: a read that fails keeps the last state and says that the live view is paused.</summary>
+    [Fact]
+    public async Task RefreshLiveAsync_ServiceDown_KeepsTheLastStateAndIsNotLive()
+    {
+        // Arrange
+        var viewModel = Build(out var client);
+        client.ListRunsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<BenchmarkRunStateDto>>.Success([State(BenchmarkRunStates.Running, BenchmarkDeliveryStates.NotReady)]));
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        client.ListRunsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<BenchmarkRunStateDto>>.Failure(ErrorCodes.BenchmarkRunner.Unavailable));
+
+        // Act
+        await viewModel.RefreshLiveAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.False(viewModel.IsLive);
+        Assert.Single(viewModel.KnownRuns);
+        Assert.Equal(5, viewModel.Models.Count);
+    }
+
+    /// <summary>Boundary: nothing is read while a call of the user is running.</summary>
+    [Fact]
+    public async Task RefreshLiveAsync_NothingChanged_KeepsTheModelsAndTheChoice()
+    {
+        // Arrange
+        var viewModel = Build(out _);
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        viewModel.ToggleModel("m3");
+
+        // Act
+        await viewModel.RefreshLiveAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(["m3"], viewModel.SelectedModels);
+        Assert.Equal(5, viewModel.Models.Count);
+    }
+
+    #endregion
+
     #region Recorded runs (ADR-0031)
 
     /// <summary>Positive: a started run is recorded through the API with its choice.</summary>
@@ -442,9 +538,14 @@ public sealed class BenchmarkStartViewModelTests
         fake.ListModelsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<string>>.Success(["m1", "m2", "m3", "m4", "m5"]));
         fake.StartRunAsync(Arg.Any<StartBenchmarkRunRequest>(), Arg.Any<CancellationToken>())
             .Returns(Result<BenchmarkRunStateDto>.Success(State(BenchmarkRunStates.Queued, BenchmarkDeliveryStates.NotReady)));
+        fake.ListRunsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<BenchmarkRunStateDto>>.Success([]));
         client = fake;
 
         var runner = Substitute.For<IUseCaseRunner<IBenchmarkServiceClient>>();
+        runner.RunAsync(
+                Arg.Any<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<IReadOnlyList<BenchmarkRunStateDto>>>>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<IReadOnlyList<BenchmarkRunStateDto>>>>>()(fake, call.Arg<CancellationToken>()));
         runner.RunAsync(
                 Arg.Any<Func<IBenchmarkServiceClient, CancellationToken, Task<Result<IReadOnlyList<string>>>>>(),
                 Arg.Any<CancellationToken>())

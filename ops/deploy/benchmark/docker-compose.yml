@@ -39,7 +39,7 @@ services:
       context: .
       args:
         BENCHMARK_REPO: ${BENCHMARK_REPO:-https://github.com/NF-Hotel/notebook-benchmark.git}
-        BENCHMARK_REF: ${BENCHMARK_REF:-409693dfd64880f305541ca163877d9bbcfca40d}
+        BENCHMARK_REF: ${BENCHMARK_REF:-239143865b6293ce6f5f6496509c8fd0110c59c2}
       labels:
         org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
         org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
