@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-28 for one database login per team member, approved through Tailscale ("lav et username til hver af dem og de er godkendt via tailscale"), with read and write access; written by the AI under MIL-048, which S01 accepted in chat on 2026-10-28; accepted after RC-246 Go | pending |
+| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-28 for one database login per team member, approved through Tailscale ("lav et username til hver af dem og de er godkendt via tailscale"), with read and write access; written by the AI under MIL-048, which S01 accepted in chat on 2026-10-28; accepted after RC-246 Go | [102cae2] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -115,3 +115,4 @@ We follow option 3.
 [ADR-0024]: ./adr-0024-secrets-as-files.md
 [CIS-001]: ../sqa/cis-checklist.md
 [DSA-001]: ../sqa/devsecops-assessment.md
+[102cae2]: https://github.com/NF-Hotel/NFHotel/commit/102cae2e4dd44d67b4d8c71f0ad731456d1938e5

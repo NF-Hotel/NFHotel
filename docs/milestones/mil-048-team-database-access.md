@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-28 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-28 for a database login per team member, approved through Tailscale, with read and write access, and accepted the plan ("Accepter planen"); accepted after RC-245 Go | pending |
+| 2026-10-28 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-10-28 for a database login per team member, approved through Tailscale, with read and write access, and accepted the plan ("Accepter planen"); accepted after RC-245 Go | [102cae2] |
 
 ---
 
@@ -85,3 +85,4 @@ Decide whether the team (S01) can open the production database from DBeaver. Eac
 [MIL-023]: ./mil-023-operational-quality.md
 [CIS-001]: ../sqa/cis-checklist.md
 [DSA-001]: ../sqa/devsecops-assessment.md
+[102cae2]: https://github.com/NF-Hotel/NFHotel/commit/102cae2e4dd44d67b4d8c71f0ad731456d1938e5

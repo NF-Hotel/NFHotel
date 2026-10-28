@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [102cae2] |
 
 ---
 
@@ -62,3 +62,4 @@ Go-with-conditions. QC-WF-001 criterion 22 closes with the green Ops CI of this 
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[102cae2]: https://github.com/NF-Hotel/NFHotel/commit/102cae2e4dd44d67b4d8c71f0ad731456d1938e5

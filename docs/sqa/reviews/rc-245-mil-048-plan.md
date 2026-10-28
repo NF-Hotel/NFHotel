@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [102cae2] |
 
 ---
 
@@ -43,3 +43,4 @@ None.
 
 [MIL-048]: ../../milestones/mil-048-team-database-access.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[102cae2]: https://github.com/NF-Hotel/NFHotel/commit/102cae2e4dd44d67b4d8c71f0ad731456d1938e5

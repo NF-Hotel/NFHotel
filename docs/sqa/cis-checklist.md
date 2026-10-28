@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-28 | Deprecated | mikemike | AI as stand-in for S01 | Every Pending VM row given its status from the evidence run of 2026-10-28, after the sshd, sudo and sysctl settings were installed; 2.1.x Deferred by S01's decision to keep the desktop; 5.3 and 5.28 wait for the release of the Alloy limits; accepted after RC-244 Go | [6ca419b] |
-| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Row 4.3.8: the forward chain also accepts the published 5432 of the database relay, from `tailscale0` only (ADR-0034, MIL-048) | pending |
+| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Row 4.3.8: the forward chain also accepts the published 5432 of the database relay, from `tailscale0` only (ADR-0034, MIL-048) | [102cae2] |
 
 ---
 
@@ -236,3 +236,4 @@ The counts are by row; a row that covers several items counts once. Applied coun
 [717dc18]: https://github.com/NF-Hotel/NFHotel/commit/717dc18e7bd3a6064272ef8fc9eb9ae123b89e55
 [4ff81cc]: https://github.com/NF-Hotel/NFHotel/commit/4ff81ccd0f1d43a160f2f45d72845e942cf5728e
 [6ca419b]: https://github.com/NF-Hotel/NFHotel/commit/6ca419bfc4ecf3eddee0c5244acea0009cc564d5
+[102cae2]: https://github.com/NF-Hotel/NFHotel/commit/102cae2e4dd44d67b4d8c71f0ad731456d1938e5
