@@ -1,0 +1,44 @@
+# The database relay of the team (MIL-048, ADR-0034). HAProxy forwards TCP from 5432 on the
+# tailnet address of the VM to postgres:5432 on the internal network nfhotel-db, so a member
+# of the team can open the database from DBeaver with their own role. The port is published
+# on the tailnet address only, and the host firewall accepts it from tailscale0 only
+# (deploy/host/nftables/nfhotel.nft). Started by scripts/deploy-services.sh only when
+# postgres-tailnet.env exists.
+name: nfhotel-postgres-tailnet
+
+services:
+  relay:
+    # HAProxy 3.2.26 (LTS); Dependabot does not see this line, so bump it by hand with the digest.
+    image: haproxy:3.2-alpine@sha256:5893840576071e6217cd52ebdcc14f454c6f7a631056fa6f4e0f40d3cac4215b
+    restart: unless-stopped
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "${NFHOTEL_TAILNET_IP:?set NFHOTEL_TAILNET_IP in postgres-tailnet.env}:5432:5432"
+    # Hardening as the other services (MIL-023 task 2): the image runs as the user haproxy and
+    # binds a port above 1024, so it needs no capability.
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    healthcheck:
+      # The listener answers; the database behind it has its own health check.
+      test: [CMD, nc, -z, 127.0.0.1, "5432"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - db
+      - published
+
+networks:
+  db:
+    name: ${NFHOTEL_DB_NETWORK:-nfhotel-db}
+    external: true
+  # An internal network cannot publish a port, so the relay has its own bridge for that.
+  published:
+    name: nfhotel-postgres-tailnet

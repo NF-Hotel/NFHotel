@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | DSA-001 |
-| CrossReference | [BC-001], [ADR-0003], [ADR-0004], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0009], [ADR-0010], [MIL-021], [MIL-022], [MIL-023], [ADR-0033], [RC-164] |
+| CrossReference | [BC-001], [ADR-0003], [ADR-0004], [ADR-0006], [ADR-0007], [ADR-0008], [ADR-0009], [ADR-0010], [MIL-021], [MIL-022], [MIL-023], [ADR-0033], [ADR-0034], [RC-164] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | Section 8: the evidence of the container scan names where its findings are shown (ADR-0032, MIL-044) | [75926ba] |
 | 2026-10-27 | Accepted | mikemike | AI as stand-in for S01 | Section 4: SonarQube Cloud analyses in CI with code coverage (ADR-0033, MIL-047) | [6f7749b] |
+| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Section 11: the personal database roles of the team and their log (ADR-0034, MIL-048) | pending |
 
 This document is a working assessment. Its type is not in `framework/registry/artifact-catalog.md`; a catalog type for it is proposed upstream (rule 5) before it is accepted.
 
@@ -341,6 +341,9 @@ Summary of ADR-0008:
 | VM → GHCR | None if the packages are public; otherwise a read-only token on the VM | Pull only | Rotated every 90 days if used | VM, mode 600 |
 | Services | Settings files `deploy/*/*.env` | Per service | Rotated on staff change or suspected leak | VM only, mode 600 |
 | People (S01, S03) | GitHub accounts with 2FA; Tailscale accounts | Admin | — | — |
+| Team → database (ADR-0034, MIL-048) | One PostgreSQL role per person, `dev_<name>` in `nfhotel_team`, over the relay on the tailnet address (5432 accepted on `tailscale0` only; a tailnet grant names the people) | Rows of every table: read and write; no DDL, no TRUNCATE, not the migration history | Until `--remove`; a new password on request or when someone leaves | `/etc/nfhotel/secrets/team/`, root, 0600; given to the person in private |
+
+Every change made with a team role is logged with the role's name (`log_statement = 'mod'`, `%u@%d` in each line). The log keeps the written values, so it holds personal data for the 14 days of Loki (MIL-023), the same as the API logs.
 
 Untrusted pull requests run CI only. The `production` environment allows deployments from `main` only, and its jobs start only after a required reviewer approves, so no production credential exists before the approval.
 
@@ -439,11 +442,11 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 [ADR-0009]: ../adr/adr-0009-tls-certificates.md
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [ADR-0033]: ../adr/adr-0033-sonarqube-cloud-coverage.md
+[ADR-0034]: ../adr/adr-0034-team-database-access.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
 [ADR-0012]: https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0012-devops-repository-ownership.md
 [RC-164]: ./reviews/rc-164-mil-021-amendment.md
 [7853a62]: https://github.com/NF-Hotel/NFHotel/commit/7853a620ea10e270620236ac74fea5f77cd29ac2
-[75926ba]: https://github.com/NF-Hotel/NFHotel/commit/75926ba38f176863e218b2b5055531c6be101be6
 [6f7749b]: https://github.com/NF-Hotel/NFHotel/commit/6f7749b4fe530edcf83694abb358090cd4da9050
