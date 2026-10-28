@@ -137,19 +137,8 @@ public sealed class GuestService : IGuestService
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.Fields);
 
-
-        // Checks whether the staff member can manage guest records.
-        if (!await _authorization.HasPermissionAsync(
-            Permissions.GuestsManage,
-            cancellationToken))
-        {
-            return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
-        }
-
-        // Checks whether the staff member can access guest passport data.
-        if (!await _authorization.HasPermissionAsync(
-            Permissions.ViewGuestPassportData,
-            cancellationToken))
+        // Checks whether the staff member has the required permissions.
+        if (!await CanManageGuestDataAsync(cancellationToken))
         {
             return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
         }
@@ -205,18 +194,8 @@ public sealed class GuestService : IGuestService
         ArgumentNullException.ThrowIfNull(request.Fields);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.GuestId);
 
-        // Checks whether the staff member can manage guest records.
-        if (!await _authorization.HasPermissionAsync(
-            Permissions.GuestsManage,
-            cancellationToken))
-        {
-            return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
-        }
-
-        // Checks whether the staff member can access guest passport data.
-        if (!await _authorization.HasPermissionAsync(
-            Permissions.ViewGuestPassportData,
-            cancellationToken))
+        // Checks whether the staff member has the required permissions.
+        if (!await CanManageGuestDataAsync(cancellationToken))
         {
             return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
         }
@@ -399,5 +378,16 @@ public sealed class GuestService : IGuestService
         }
 
         return Result<GuestDetailsDto>.Success(guest.ToDetails());
+    }
+
+    // Checks whether the staff member can manage guest records and access passport data.
+    private async Task<bool> CanManageGuestDataAsync(CancellationToken cancellationToken)
+    {
+        return await _authorization.HasPermissionAsync(
+            Permissions.GuestsManage,
+            cancellationToken)
+            && await _authorization.HasPermissionAsync(
+                Permissions.ViewGuestPassportData,
+                cancellationToken);
     }
 }
