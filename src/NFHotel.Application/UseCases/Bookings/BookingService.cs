@@ -308,7 +308,7 @@ public sealed class BookingService : IBookingService
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.CheckInNotAllowed"/>.</returns>
-    public  async Task<Result<BookingDetailsDto>> CheckInAsync(
+    public async Task<Result<BookingDetailsDto>> CheckInAsync(
         int bookingId,
         CancellationToken cancellationToken = default)
     {

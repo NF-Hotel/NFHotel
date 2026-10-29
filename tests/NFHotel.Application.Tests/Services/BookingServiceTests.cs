@@ -686,7 +686,7 @@ public sealed class BookingServiceTests
         booking.Confirm();
 
         // Act
-        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckInAsync(booking.Id,TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -725,7 +725,7 @@ public sealed class BookingServiceTests
         booking.Confirm();
 
         // Act
-        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckInAsync(booking.Id,TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.CheckInNotAllowed, result.FirstError?.Code);
@@ -1192,7 +1192,7 @@ public sealed class BookingServiceTests
         room.MarkDailyCleaningDue();
 
         // Act
-        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckInAsync(booking.Id,TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
