@@ -182,8 +182,10 @@ apply_default_model() {
   if grep -q '^OLLAMA_MODEL=' "$envfile"; then
     sed "s|^OLLAMA_MODEL=.*|OLLAMA_MODEL=$model|" "$envfile" >"$envfile.tmp"
   else
-    { cat "$envfile"; printf 'OLLAMA_MODEL=%s
-' "$model"; } >"$envfile.tmp"
+    {
+      cat "$envfile"
+      printf 'OLLAMA_MODEL=%s\n' "$model"
+    } >"$envfile.tmp"
   fi
   if ! cmp -s "$envfile" "$envfile.tmp"; then
     # Written in place, so the owner and the mode of the file stay as they are.

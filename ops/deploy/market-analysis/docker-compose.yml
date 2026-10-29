@@ -2,8 +2,8 @@
 # the NFHotel web application calls with the header X-API-Key. It is built from the pinned commit of
 # that repository (Dockerfile), joins nfhotel-api (the web application and the API reach it as
 # http://market-analysis-api:8000), nfhotel-proxy (nginx publishes it on the internal listener) and
-# nfhotel-llm (the Ollama of NFHotel), and publishes no host port. Settings live in market-analysis.env
-# (git-ignored); copy market-analysis.env.example first. Start with:
+# nfhotel-llm (the Ollama of NFHotel), and publishes no host port. Settings live in
+# market-analysis.env (git-ignored); copy market-analysis.env.example first. Start with:
 #   docker compose --env-file market-analysis.env up -d --build
 name: market-analysis
 
@@ -22,8 +22,9 @@ services:
         org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
     restart: unless-stopped
     env_file: ${MARKET_ANALYSIS_ENV_FILE:-market-analysis.env}
-    # Hardening (MIL-023 task 2, CIS-001): its own user, no capability, a read-only root; the results
-    # are in the volume, Python and the notebooks write their caches to /tmp and the home folder.
+    # Hardening (MIL-023 task 2, CIS-001): its own user, no capability, a read-only root; the
+    # results are in the volume, Python and the notebooks write their caches to /tmp and the
+    # home folder.
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     read_only: true
@@ -38,7 +39,8 @@ services:
     networks:
       - proxy
       - llm
-      # The web application and the NFHotel API reach this service by its name on this internal network.
+      # The web application and the NFHotel API reach this service by its name on this
+      # internal network.
       - api
 
 volumes:
