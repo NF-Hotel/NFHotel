@@ -226,7 +226,8 @@ if ((local_code)); then
   # The source folders are replaced, not merged: a file removed from the checkout must not
   # stay in the build context.
   vm "rm -rf $remote_dir/src $remote_dir/tests"
-  (cd "$repo" && git ls-files -co --exclude-standard -z |
+  # A file deleted in the working tree is still in the index, so it is taken out of the list (tar fails on it).
+  (cd "$repo" && comm -z -23 <(git ls-files -co --exclude-standard -z | sort -z) <(git ls-files -d -z | sort -z) |
     tar --null --exclude=framework -T - -cf -) | vm "tar -xf - -C $remote_dir" ||
     die "could not copy the working tree to the VM"
 else
