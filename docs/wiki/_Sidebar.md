@@ -1,6 +1,7 @@
 - [Home](Home)
 - [DevOps Lifecycle](DevOps-Lifecycle)
 - [Local Development Deploy](Local-Development-Deploy)
+- [Environment Files](Environment-Files)
 - [Proxmox Deployment](Proxmox-Deployment)
 - [CI-CD](CI-CD)
 - [Database Preparation](Database-Preparation)

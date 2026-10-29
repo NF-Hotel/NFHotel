@@ -11,6 +11,7 @@ The pages are written in [`docs/wiki/`](https://github.com/NF-Hotel/NFHotel/tree
   Monitor, with the tools it uses; start here for the whole picture.
 - [Local Development Deploy](Local-Development-Deploy): run the whole deployment on your own machine with one
   script, to see a change working. Start here.
+- [Environment Files](Environment-Files): what every `*.env` file of the deployment holds, and which secrets must match.
 - [Proxmox Deployment](Proxmox-Deployment): set up the Proxmox virtual machine and the Docker
   containers that run the whole system (development environment).
 - [Appendix: Project Documents](Appendix): links to every document under `docs/`.
