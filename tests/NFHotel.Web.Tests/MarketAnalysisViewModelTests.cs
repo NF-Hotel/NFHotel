@@ -272,6 +272,27 @@ public sealed class MarketAnalysisViewModelTests
         Assert.NotNull(viewModel.Report);
     }
 
+    /// <summary>Positive: a run that failed in the service shows the error code of the service, and a failed run without one shows the plain text.</summary>
+    [Theory]
+    [InlineData("market_analysis_runner.run_failed:NO_DATA", "The market analysis run failed in the service (NO_DATA).")]
+    [InlineData("market_analysis_runner.run_failed", "The market analysis run failed in the service.")]
+    [InlineData("market_analysis_runner.run_failed:", "Something went wrong. Please try again.")]
+    public async Task FailureText_RunFailedInTheService_ShowsTheServiceCode(string code, string text)
+    {
+        // Arrange
+        var viewModel = Build(out var service);
+        service.GetRunStateAsync(RunId, Arg.Any<CancellationToken>()).Returns(
+            Result<MarketAnalysisRunStateDto>.Success(new(RunId, MarketAnalysisRunStates.Failed, null, null, code)));
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        await viewModel.StartAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(text, viewModel.FailureText);
+    }
+
     /// <summary>Negative: a run that the service has forgotten ends the following with the text.</summary>
     [Fact]
     public async Task RefreshAsync_RunNotFound_EndsTheFollowing()

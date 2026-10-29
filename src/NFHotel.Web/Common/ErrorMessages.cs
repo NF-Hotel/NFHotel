@@ -145,6 +145,7 @@ public static class ErrorMessages
             [ErrorCodes.MarketAnalysis.NoBookings] = "The hotel has no bookings to analyse in that period.",
             [ErrorCodes.MarketAnalysis.PeriodInvalid] = "The first date must not be after the last date.",
             [ErrorCodes.MarketAnalysisRunner.RunNotFound] = "The API no longer knows this run (it was restarted). The report below is the last stored one.",
+            [ErrorCodes.MarketAnalysisRunner.RunFailed] = "The market analysis run failed in the service.",
             [ErrorCodes.MarketAnalysisRunner.UnexpectedResponse] = "The market analysis service answered something we couldn't use. Please try again.",
             [ErrorCodes.Staff.PasswordInvalid] = "The password must be between 12 and 256 characters.",
             [ErrorCodes.Staff.CurrentPasswordInvalid] = "The current password is wrong.",
@@ -179,7 +180,17 @@ public static class ErrorMessages
     {
         ArgumentNullException.ThrowIfNull(error);
 
-        return Translations.TryGetValue(error.Code, out var text) ? text : Unexpected;
+        if (Translations.TryGetValue(error.Code, out var text))
+        {
+            return text;
+        }
+
+        // A failed run carries the sanitised error_code of the service after a colon; it is shown, because it is a reason from
+        // the service (for example NO_DATA) and not an exception text.
+        var failedPrefix = ErrorCodes.MarketAnalysisRunner.RunFailed + ":";
+        return error.Code.StartsWith(failedPrefix, StringComparison.Ordinal) && error.Code.Length > failedPrefix.Length
+            ? $"The market analysis run failed in the service ({error.Code[failedPrefix.Length..]})."
+            : Unexpected;
     }
 
     /// <summary>

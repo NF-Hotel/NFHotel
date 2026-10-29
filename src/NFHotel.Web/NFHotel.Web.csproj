@@ -28,6 +28,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="appsettings.Development.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="appsettings.Development.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\NFHotel.Application\NFHotel.Application.csproj" />
     <ProjectReference Include="..\NFHotel.ApiClient\NFHotel.ApiClient.csproj" />
     <ProjectReference Include="..\NFHotel.External\NFHotel.External.csproj" />

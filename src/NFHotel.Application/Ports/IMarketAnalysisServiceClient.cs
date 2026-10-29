@@ -4,17 +4,20 @@ using NFHotel.Application.UseCases;
 namespace NFHotel.Application.Ports;
 
 /// <summary>
-/// The markets API (repository <c>Notebook_Market_Analysis</c>, deployed in MIL-004) as the website API calls it: send the
-/// bookings and get the six analyses with the AI insights. The call is synchronous and with insights it takes up to twelve
-/// minutes, so the caller runs it in the background.
+/// The market analysis service (repository <c>notebook-market-analysis</c>) as the website API calls it: start a run with the
+/// bookings, follow it by its run id and read the nine analyses with their AI insights. No HTTP request stays open while the
+/// models work, but the call as a whole lasts until the run ends, up to many minutes, so the caller runs it in the background.
 /// </summary>
 public interface IMarketAnalysisServiceClient
 {
-    /// <summary>Runs the analyses on a list of bookings, with the AI insights.</summary>
-    /// <param name="bookings">The bookings; at least one.</param>
+    /// <summary>Runs the analyses on a list of bookings, with the AI insights, and waits for the result.</summary>
+    /// <param name="request">The bookings, the rooms of the hotel and the period.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
-    /// <returns>The result, or a code: input rejected, unavailable, not configured, unexpected response.</returns>
+    /// <returns>
+    /// The result, or a code: not configured, unauthorized, input rejected, already running, unavailable, unexpected response,
+    /// or <c>market_analysis_runner.run_failed:&lt;error_code&gt;</c> when the service ended the run as failed.
+    /// </returns>
     Task<Result<MarketAnalysisResultDto>> AnalyzeAsync(
-        IReadOnlyList<MarketBookingDto> bookings,
+        MarketAnalysisRunRequest request,
         CancellationToken cancellationToken = default);
 }

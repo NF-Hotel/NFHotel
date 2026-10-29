@@ -78,8 +78,8 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Registers the client of the data analysis service that runs the market analysis (MIL-026). The address and the
-    /// bearer token come from the section <c>MarketAnalysisService</c>; missing values are not a start-up error, the
+    /// Registers the client of the market analysis service that runs the market analysis (MIL-026). The address, the API key
+    /// and the time limits come from the section <c>MarketAnalysisService</c>; missing values are not a start-up error, the
     /// client answers <c>market_analysis_runner.not_configured</c>.
     /// </summary>
     /// <param name="services">The service collection.</param>
@@ -91,19 +91,16 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(configuration);
 
         var section = configuration.GetSection(MarketAnalysisServiceOptions.SectionName);
-        var timeout = int.TryParse(
-            section[MarketAnalysisServiceOptions.TimeoutSecondsName],
-            System.Globalization.NumberStyles.None,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out var seconds) && seconds > 0
-            ? seconds
-            : MarketAnalysisServiceOptions.DefaultTimeoutSeconds;
 
         var options = new MarketAnalysisServiceOptions
         {
             BaseUrl = section[MarketAnalysisServiceOptions.BaseUrlName]?.Trim() ?? string.Empty,
-            Token = section[MarketAnalysisServiceOptions.TokenName]?.Trim() ?? string.Empty,
-            TimeoutSeconds = timeout,
+            ApiKey = section[MarketAnalysisServiceOptions.ApiKeyName]?.Trim() ?? string.Empty,
+            TimeoutSeconds = Math.Min(
+                PositiveSeconds(section[MarketAnalysisServiceOptions.TimeoutSecondsName], MarketAnalysisServiceOptions.DefaultTimeoutSeconds),
+                MarketAnalysisServiceOptions.MaxTimeoutSeconds),
+            PollIntervalSeconds = PositiveSeconds(section[MarketAnalysisServiceOptions.PollIntervalSecondsName], MarketAnalysisServiceOptions.DefaultPollIntervalSeconds),
+            RunDeadlineSeconds = PositiveSeconds(section[MarketAnalysisServiceOptions.RunDeadlineSecondsName], MarketAnalysisServiceOptions.DefaultRunDeadlineSeconds),
         };
         services.AddSingleton(options);
 
@@ -114,16 +111,17 @@ public static class DependencyInjection
                 client.BaseAddress = baseUri;
             }
 
+            // Every call is short: the client follows the run by its id instead of keeping one request open.
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-
-            if (!string.IsNullOrWhiteSpace(options.Token))
-            {
-                client.DefaultRequestHeaders.Authorization = new("Bearer", options.Token);
-            }
         });
 
         return services;
     }
+
+    private static int PositiveSeconds(string? text, int fallback) =>
+        int.TryParse(text, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var seconds) && seconds > 0
+            ? seconds
+            : fallback;
 
     private static void AddTime(IServiceCollection services, HotelTimeOptions options)
     {

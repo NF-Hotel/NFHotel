@@ -140,7 +140,7 @@ No secret reaches a container as an environment variable. You write each secret 
 | `Staff__Token__SigningKey` | `nfhotel-api/nfhotel-api.env` | the API |
 | `Staff__InitialManager__Password` | `nfhotel-api/nfhotel-api.env` | the API, only while no staff account exists |
 | `Encryption__PassportKey` | `nfhotel-api.env` and `nfhotel-web.env` | the API and the web application |
-| `MarketAnalysisService__Token`, `HolidayApi__ApiKey`, `BenchmarkService__Token` | their service's settings | the API or the web application |
+| `MarketAnalysisService__ApiKey`, `HolidayApi__ApiKey`, `BenchmarkService__Token` | their service's settings | the API or the web application |
 
 The login of `nfhotel_app` (ADR-0011) stays in root's `/etc/nfhotel/secrets/nfhotel-api-database.env`; the deploy passes it to the script, which writes it as the connection string.
 
@@ -287,16 +287,17 @@ joins the internal network `nfhotel-api` and publishes no host port.
 
 ## The market analysis report (MIL-026)
 
-The report is made by the market analysis service (`NF-Hotel/notebook-market-analysis`, `ops/deploy/market-analysis/`). **Note:** the NFHotel API still calls `POST /analyze?insights=true` of the former service, which the new service does not have; the report works again when `src/NFHotel.External/MarketAnalysis` uses the runs API (`/api/v1/market-analysis/runs`). The NFHotel API,
-not the web application, calls it.
+The report is made by the market analysis service (`NF-Hotel/notebook-market-analysis`, `ops/deploy/market-analysis/`). The NFHotel API, not the web application, calls it, through the run API of the service (`/api/v1/market-analysis/runs`) with the key `MarketAnalysisService__ApiKey` as the header `X-API-Key`.
 
 - A Manager starts a run at `/admin/market-analysis`. The API answers at once and runs the analysis in the background: it
   reads every booking of the database (with the guest country and the market details of the booking), sends them as a
-  JSON array to `http://market-analysis-api:8000/analyze?insights=true`, and stores the result in the table
-  `market_analysis_run`. One run at a time; the page asks the API for the state every few seconds. A run with AI insights
-  takes up to 6 x `generation_timeout_seconds` of `market-analysis.toml`. A run is started at night on a machine without a
-  GPU, so the example allows 4 hours for one request (14400) and `MarketAnalysisService__TimeoutSeconds` in
-  `ops/deploy/nfhotel-api/nfhotel-api.env` is 90000 (25 hours); 240 and 1500 are enough for a short run. The time depends on
+  JSON body with the number of rooms to `http://market-analysis-api:8000/api/v1/market-analysis/runs?insights=true`, and
+  follows the run by its id: it asks for the state every `MarketAnalysisService__PollIntervalSeconds` (5) until it is
+  `completed` or `failed`, then reads the result and stores it in the table `market_analysis_run`. No HTTP request stays
+  open while the models work, so `MarketAnalysisService__TimeoutSeconds` (10, at most 60) is the limit of one call, and
+  `MarketAnalysisService__RunDeadlineSeconds` (3600) is how long one run is followed. One run at a time; the page asks the
+  API for the state every few seconds. A run with AI insights takes up to 6 x `generation_timeout_seconds` of the service
+  (12 minutes with its defaults); a run on a machine without a GPU needs a larger `RunDeadlineSeconds`. The time depends on
   the model and not on the number of bookings, because the model only sees the findings.
 - The state of a run is kept in the memory of the API. A restart forgets it, the page then says that the API no longer
   knows the run, and the stored report is not lost.

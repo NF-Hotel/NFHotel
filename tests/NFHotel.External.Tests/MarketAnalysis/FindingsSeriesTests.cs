@@ -8,6 +8,8 @@ namespace NFHotel.External.Tests.MarketAnalysis;
 /// <summary>Finding the charts in the free-form findings of an analysis of the markets API (MIL-026).</summary>
 public sealed class FindingsSeriesTests
 {
+    #region Group figures
+
     /// <summary>Positive: a list of group figures with a numerator and a denominator is a series of rates in percent.</summary>
     [Fact]
     public void Extract_RateGroups_AreAPercentSeries()
@@ -73,6 +75,69 @@ public sealed class FindingsSeriesTests
         Assert.Equal("g1", series[0].Points[0].Label);
     }
 
+    /// <summary>Positive: a monthly series of more than 30 points keeps its latest 30, and its title says how many of how many.</summary>
+    [Theory]
+    [InlineData(40)]
+    [InlineData(103)]
+    public void Extract_LongMonthlySeries_KeepsTheLatestPointsAndSaysSo(int months)
+    {
+        // Arrange
+        var labels = Enumerable.Range(0, months).Select(i => new DateTime(2018, 7, 1).AddMonths(i).ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture)).ToList();
+        var points = string.Join(",", labels.Select((label, i) => $"{{\"group\":\"{label}\",\"count\":{i}}}"));
+
+        // Act
+        var found = Assert.Single(Extract("{\"occupancy\":{\"monthly\":[" + points + "]}}"));
+
+        // Assert
+        Assert.Equal("occupancy.monthly", found.Id);
+        Assert.Equal($"Occupancy - monthly (latest 30 of {months} months)", found.Title);
+        Assert.Equal(labels.TakeLast(30), found.Points.Select(point => point.Label));
+        Assert.Equal(months - 1, found.Points[^1].Value);
+    }
+
+    /// <summary>Boundary: a monthly series of exactly 30 points is untouched, title included.</summary>
+    [Fact]
+    public void Extract_MonthlySeriesOf30_IsUntouched()
+    {
+        // Arrange
+        var points = string.Join(",", Enumerable.Range(1, 30).Select(i => $"{{\"group\":\"2020-{(i % 12) + 1:00}\",\"count\":{i}}}"));
+
+        // Act
+        var found = Assert.Single(Extract("{\"monthly\":[" + points + "]}"));
+
+        // Assert
+        Assert.Equal("Monthly", found.Title);
+        Assert.Equal(30, found.Points.Count);
+    }
+
+    /// <summary>Negative: a weekly series of 100 points is too dense and is left out.</summary>
+    [Fact]
+    public void Extract_DenseWeeklySeries_IsLeftOut()
+    {
+        // Arrange
+        var points = string.Join(",", Enumerable.Range(1, 100).Select(i => $"{{\"group\":\"{2018 + i / 52}-W{i % 52 + 1:00}\",\"count\":{i}}}"));
+
+        // Act and assert
+        Assert.Empty(Extract("{\"iso_week\":[" + points + "]}"));
+    }
+
+    /// <summary>Negative: a category series of 70 points is left out, and one of 40 keeps its first 30 with its title unchanged.</summary>
+    [Fact]
+    public void Extract_LongCategorySeries_KeepsTodaysRule()
+    {
+        // Arrange
+        string Series(int n) => "[" + string.Join(",", Enumerable.Range(1, n).Select(i => $"{{\"group\":\"c{i}\",\"count\":{i}}}")) + "]";
+
+        // Act
+        var dropped = Extract("{\"country\":" + Series(70) + "}");
+        var cut = Assert.Single(Extract("{\"country\":" + Series(40) + "}"));
+
+        // Assert
+        Assert.Empty(dropped);
+        Assert.Equal(("country", "Country"), (cut.Id, cut.Title));
+        Assert.Equal(Enumerable.Range(1, 30).Select(i => $"c{i}"), cut.Points.Select(point => point.Label));
+    }
+
     /// <summary>Positive: the group figures of the real findings are wrapped as <c>figure</c> beside other fields, and are read from it.</summary>
     [Fact]
     public void Extract_WrappedFigures_AreReadFromTheFigure()
@@ -102,6 +167,10 @@ public sealed class FindingsSeriesTests
         Assert.Equal(["top", "deep.deeper.deepest"], series.Select(found => found.Id));
     }
 
+    #endregion
+
+    #region Shapes of the findings
+
     /// <summary>Positive: lists nested in objects and in lists are found, with the path as the id.</summary>
     [Fact]
     public void Extract_NestedFindings_FindsTheListWithItsPath()
@@ -126,9 +195,41 @@ public sealed class FindingsSeriesTests
         Assert.Empty(Extract(findings));
     }
 
+    /// <summary>Positive: two group figures that sit directly in the findings are one series of rates, first; one figure alone is not.</summary>
+    [Fact]
+    public void Extract_TwoFiguresInTheRoot_AreOneSeries()
+    {
+        // Act
+        var pair = Extract("""{"monthly":[{"group":"2018-07","numerator":1,"denominator":4}],"holiday_days":{"group":"holiday_days","numerator":1,"denominator":4,"small_sample":true},"other_days":{"group":"other_days","numerator":3,"denominator":4}}""");
+        var single = Extract("""{"overall":{"group":"overall","numerator":1,"denominator":2}}""");
+
+        // Assert
+        Assert.Equal(["holiday_days+other_days", "monthly"], pair.Select(found => found.Id));
+        Assert.Equal([25.0, 75.0], pair[0].Points.Select(point => point.Value));
+        Assert.True(pair[0].Points[0].SmallSample);
+        Assert.Empty(single);
+    }
+
+    /// <summary>Boundary: a part of the findings that is marked unavailable gives no chart, and its sibling does.</summary>
+    [Fact]
+    public void Extract_UnavailablePart_IsNotDrawn()
+    {
+        // Act
+        var series = Extract("""{"estimated":{"status":"unavailable","groups":[{"group":"a","count":1}]},"stay":{"status":"available","groups":[{"group":"1","count":2}]}}""");
+
+        // Assert
+        Assert.Equal(["stay.groups"], series.Select(found => found.Id));
+    }
+
+    #endregion
+
+    #region Helpers
+
     private static IReadOnlyList<MarketAnalysisSeriesDto> Extract(string json)
     {
         using var document = JsonDocument.Parse(json);
         return FindingsSeries.Extract(document.RootElement);
     }
+
+    #endregion
 }

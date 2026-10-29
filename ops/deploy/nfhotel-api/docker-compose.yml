@@ -43,7 +43,7 @@ services:
       - Api__Token
       - Staff__Token__SigningKey
       - Staff__InitialManager__Password
-      - MarketAnalysisService__Token
+      - MarketAnalysisService__ApiKey
     environment:
       Database__MigrateOnStart: "${NFHOTEL_API_MIGRATE_ON_START:-true}"
       # The metrics go to Alloy on the network nfhotel-api (MIL-034). Without Alloy the export
@@ -92,5 +92,5 @@ secrets:
     file: ${NFHOTEL_API_SECRETS:-secrets}/Staff__Token__SigningKey
   Staff__InitialManager__Password:
     file: ${NFHOTEL_API_SECRETS:-secrets}/Staff__InitialManager__Password
-  MarketAnalysisService__Token:
-    file: ${NFHOTEL_API_SECRETS:-secrets}/MarketAnalysisService__Token
+  MarketAnalysisService__ApiKey:
+    file: ${NFHOTEL_API_SECRETS:-secrets}/MarketAnalysisService__ApiKey

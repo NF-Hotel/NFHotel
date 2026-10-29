@@ -24,7 +24,12 @@ public sealed class FakeMarketAnalysisBookingQueries : IMarketAnalysisBookingQue
     public static MarketBookingDto Booking(int id, bool canceled = false) =>
         new(id, "NF Hotel", canceled, 30, new DateOnly(2019, 1, 30), new DateOnly(2019, 3, 1), 1, 2, 2, 0, 0, "BB", "Portugal", "Direct", false, 0, "C", 0, "No Deposit", "Contract", 0, 1, 94.00m);
 
+    /// <summary>The number of rooms the hotel has.</summary>
+    public int RoomCount { get; set; } = 10;
+
     public (DateOnly? From, DateOnly? To)? LastPeriod { get; private set; }
+
+    public Task<int> CountRoomsAsync(CancellationToken cancellationToken = default) => Task.FromResult(RoomCount);
 
     public Task<IReadOnlyList<MarketBookingDto>> GetBookingsAsync(DateOnly? from, DateOnly? to, CancellationToken cancellationToken = default)
     {
@@ -53,6 +58,8 @@ public sealed class FakeMarketAnalysisServiceClient : IMarketAnalysisServiceClie
 
     public IReadOnlyList<MarketBookingDto> LastBookings { get; private set; } = [];
 
+    public MarketAnalysisRunRequest? LastRequest { get; private set; }
+
     public static MarketAnalysisResultDto SampleResult(int schemaVersion = 1) =>
         new(
             Guid.Parse("5b3f0e1a-0000-4000-8000-0000000000a1"),
@@ -78,10 +85,11 @@ public sealed class FakeMarketAnalysisServiceClient : IMarketAnalysisServiceClie
                     new MarketAnalysisSectionDto("room_value", "Room value and stay", "unavailable", "Missing field: price_per_night", [], null),
                 ]));
 
-    public async Task<Result<MarketAnalysisResultDto>> AnalyzeAsync(IReadOnlyList<MarketBookingDto> bookings, CancellationToken cancellationToken = default)
+    public async Task<Result<MarketAnalysisResultDto>> AnalyzeAsync(MarketAnalysisRunRequest request, CancellationToken cancellationToken = default)
     {
         Calls++;
-        LastBookings = bookings;
+        LastRequest = request;
+        LastBookings = request.Bookings;
         if (Gate is { } gate)
         {
             await gate.Task.ConfigureAwait(false);

@@ -86,7 +86,7 @@ The database API. It is the only service that holds the database login and the k
 | `Staff__Token__SigningKey` | Key that signs staff sign-in tokens, at least 32 characters. **Secret.** Only the API holds it |
 | `Staff__InitialManager__*` | The first Manager, made at start when no staff account exists. The password has at least 12 characters and must be changed at the first sign-in. Delete the password line afterwards |
 | `Database__MigrateOnStart` | Apply the pending migrations when the API starts. The deploy relies on it |
-| `MarketAnalysisService__BaseUrl`, `__TimeoutSeconds`, `__Token` | Where the API sends bookings for analysis (`market-analysis-api:8000`). The timeout is long (90000 seconds) because the AI models are slow. The token is only for a gateway in front of the service. An empty address makes the analysis page say the service is not set up |
+| `MarketAnalysisService__BaseUrl`, `__ApiKey`, `__TimeoutSeconds`, `__PollIntervalSeconds`, `__RunDeadlineSeconds` | Where the API starts market analysis runs (`market-analysis-api:8000`) and the key it sends as `X-API-Key` (**Secret**, never logged). The timeout (10 seconds, at most 60) is for one call, because the API follows a run by its id and keeps no request open; it asks for the state every `PollIntervalSeconds` (5) and gives up a run after `RunDeadlineSeconds` (3600). An empty address makes the analysis page say the service is not set up |
 | `NFHOTEL_API_NETWORK`, `NFHOTEL_DB_NETWORK` | Docker networks shared with the web service and with PostgreSQL |
 
 ### `nfhotel-web/nfhotel-web.env`

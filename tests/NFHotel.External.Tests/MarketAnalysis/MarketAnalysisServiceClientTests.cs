@@ -1,9 +1,9 @@
 using System.Net;
-using System.Text;
 using System.Text.Json;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using NFHotel.Application.Dto.MarketAnalysis;
@@ -15,96 +15,300 @@ using NFHotel.External.MarketAnalysis;
 namespace NFHotel.External.Tests.MarketAnalysis;
 
 /// <summary>
-/// The client of the markets API (MIL-026) against a fake that follows its HTTP API: <c>POST /analyze?insights=true</c> takes a
-/// JSON array of bookings and answers the result document.
+/// The client of the market analysis service (MIL-026) against <see cref="FakeMarketAnalysisService"/>, a fake that follows the
+/// three run paths of the contract: start, state and result.
 /// </summary>
 public sealed class MarketAnalysisServiceClientTests
 {
+    private const string BaseUrl = "http://market-analysis-api:8000";
+    private const string Key = "secret-key-that-must-not-be-logged";
+
     private static readonly MarketBookingDto Booking =
         new(7, "NF Hotel", true, 30, new DateOnly(2019, 1, 30), new DateOnly(2019, 3, 1), 1, 2, 2, 0, 0, "BB", "Portugal", "Direct", false, 0, "C", 0, "No Deposit", "Contract", 0, 1, 94.50m);
 
+    private static readonly MarketAnalysisRunRequest Request = new(120, [Booking]);
+
     #region Request
 
-    /// <summary>Positive: the bookings are posted as a snake_case JSON array to the analyze path with insights switched on.</summary>
+    /// <summary>Positive: a run is started on the run path with insights on, the room count and the bookings in snake_case.</summary>
     [Fact]
-    public async Task AnalyzeAsync_Bookings_PostsTheInputContractWithInsights()
+    public async Task AnalyzeAsync_Bookings_StartsTheRunOfTheContract()
     {
         // Arrange
-        var service = new FakeMarketsApi();
-        var client = CreateClient(service);
+        var service = new FakeMarketAnalysisService();
 
         // Act
-        var result = await client.AnalyzeAsync([Booking], TestContext.Current.CancellationToken);
+        var result = await CreateClient(service).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.Equal(("POST", "/analyze", "?insights=true", "application/json"), (service.LastMethod, service.LastPath, service.LastQuery, service.LastContentType));
-        using var sent = JsonDocument.Parse(service.LastBody!);
-        var row = Assert.Single(sent.RootElement.EnumerateArray());
+        Assert.Equal("POST /api/v1/market-analysis/runs?insights=true", service.Requests[0]);
+        using var sent = JsonDocument.Parse(service.StartedBody!);
+        Assert.Equal(120, sent.RootElement.GetProperty("room_count").GetInt32());
+        Assert.False(sent.RootElement.TryGetProperty("period", out _));
+        var row = Assert.Single(sent.RootElement.GetProperty("bookings").EnumerateArray());
         Assert.Equal(
             (7, "NF Hotel", true, 30, "2019-01-30", "2019-03-01", 1, 2, "Portugal", 94.5m),
             (row.GetProperty("booking_id").GetInt32(), row.GetProperty("hotel").GetString(), row.GetProperty("is_canceled").GetBoolean(), row.GetProperty("lead_time").GetInt32(), row.GetProperty("booking_date").GetString(), row.GetProperty("arrival_date").GetString(), row.GetProperty("stays_in_weekend_nights").GetInt32(), row.GetProperty("stays_in_week_nights").GetInt32(), row.GetProperty("country").GetString(), row.GetProperty("price_per_night").GetDecimal()));
         Assert.Equal("No Deposit", row.GetProperty("deposit_type").GetString());
-        Assert.Equal(1, row.GetProperty("total_of_special_requests").GetInt32());
+        Assert.Equal(("market-analysis-api", 8000), (service.LastAuthority.Split(':')[0], int.Parse(service.LastAuthority.Split(':')[1], System.Globalization.CultureInfo.InvariantCulture)));
     }
 
-    /// <summary>Boundary: a booking without market details leaves those fields out, so the markets API counts them as missing.</summary>
+    /// <summary>Positive: a period with both dates is sent as <c>period</c>; with one date or none it is left out.</summary>
+    [Theory]
+    [InlineData("2019-03-01", "2019-03-31", true)]
+    [InlineData("2019-03-01", null, false)]
+    [InlineData(null, "2019-03-31", false)]
+    [InlineData(null, null, false)]
+    public async Task AnalyzeAsync_Period_IsSentOnlyWithBothDates(string? first, string? last, bool sent)
+    {
+        // Arrange
+        var service = new FakeMarketAnalysisService();
+        var request = Request with { From = first is null ? null : DateOnly.Parse(first, System.Globalization.CultureInfo.InvariantCulture), To = last is null ? null : DateOnly.Parse(last, System.Globalization.CultureInfo.InvariantCulture) };
+
+        // Act
+        await CreateClient(service).AnalyzeAsync(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        using var body = JsonDocument.Parse(service.StartedBody!);
+        Assert.Equal(sent, body.RootElement.TryGetProperty("period", out var period));
+        if (sent)
+        {
+            Assert.Equal((first, last), (period.GetProperty("first_date").GetString(), period.GetProperty("last_date").GetString()));
+        }
+    }
+
+    /// <summary>Boundary: a booking without market details leaves those fields out, so the service counts them as missing.</summary>
     [Fact]
     public async Task AnalyzeAsync_BookingWithoutDetails_LeavesTheUnknownFieldsOut()
     {
         // Arrange
-        var service = new FakeMarketsApi();
+        var service = new FakeMarketAnalysisService();
         var bare = new MarketBookingDto(1, "NF Hotel", false, null, null, new DateOnly(2019, 3, 1), 0, 1, null, null, null, null, "Denmark", null, null, null, null, null, null, null, null, null, null);
 
         // Act
-        await CreateClient(service).AnalyzeAsync([bare], TestContext.Current.CancellationToken);
+        var result = await CreateClient(service).AnalyzeAsync(Request with { Bookings = [bare] }, TestContext.Current.CancellationToken);
 
         // Assert
-        using var sent = JsonDocument.Parse(service.LastBody!);
-        var names = sent.RootElement[0].EnumerateObject().Select(property => property.Name).Order().ToArray();
+        Assert.True(result.IsSuccess);
+        using var sent = JsonDocument.Parse(service.StartedBody!);
+        var names = sent.RootElement.GetProperty("bookings")[0].EnumerateObject().Select(property => property.Name).Order().ToArray();
         Assert.Equal(["arrival_date", "booking_id", "country", "hotel", "is_canceled", "stays_in_week_nights", "stays_in_weekend_nights"], names);
     }
 
-    /// <summary>Positive: no token is sent when none is set, and a bearer token when one is.</summary>
+    /// <summary>Positive: the API key is sent as X-API-Key on every call when it is set, and left out when it is empty.</summary>
     [Fact]
-    public async Task AnalyzeAsync_Token_IsSentOnlyWhenSet()
+    public async Task AnalyzeAsync_ApiKey_IsSentOnEveryCallOnlyWhenSet()
     {
         // Arrange
-        var without = new FakeMarketsApi();
-        var with = new FakeMarketsApi();
+        var with = new FakeMarketAnalysisService { RequiredKey = Key };
+        var without = new FakeMarketAnalysisService();
 
         // Act
-        await CreateClient(without).AnalyzeAsync([Booking], TestContext.Current.CancellationToken);
-        await CreateClient(with, token: "gateway-token").AnalyzeAsync([Booking], TestContext.Current.CancellationToken);
+        var keyed = await CreateClient(with, ApiKeyOptions()).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+        await CreateClient(without).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Null(without.LastAuthorization);
-        Assert.Equal("Bearer gateway-token", with.LastAuthorization);
+        Assert.True(keyed.IsSuccess);
+        Assert.Equal(Key, with.LastKey);
+        Assert.Null(without.LastKey);
+    }
+
+    #endregion
+
+    #region Following the run
+
+    /// <summary>Positive: the client follows the run by its id: the state until it is completed, then the result once.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_RunQueuedThenRunning_FollowsTheStateThenReadsTheResult()
+    {
+        // Arrange
+        var service = new FakeMarketAnalysisService();
+        var time = new ManualTimeProvider();
+
+        // Act
+        var result = await CreateClient(service, time: time).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(
+            ["POST /api/v1/market-analysis/runs?insights=true", "GET state", "GET state", "GET state", "GET result"],
+            service.Requests.Select(Describe));
+        Assert.All(service.Requests.Skip(1), request => Assert.Matches(@"^GET /api/v1/market-analysis/runs/[0-9a-f-]{36}(/result)?$", request));
+        Assert.Equal([TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5)], time.Delays);
+    }
+
+    /// <summary>Boundary: a run that is completed at the first ask is read at once, without waiting.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_RunCompletedAtOnce_DoesNotWait()
+    {
+        // Arrange
+        var time = new ManualTimeProvider();
+
+        // Act
+        var result = await CreateClient(new FakeMarketAnalysisService { States = ["completed"] }, time: time).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Empty(time.Delays);
+    }
+
+    /// <summary>Negative: a run that does not end within the deadline is given up as unavailable, asking at the poll interval.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_RunNeverEnds_IsGivenUpAtTheDeadline()
+    {
+        // Arrange
+        var service = new FakeMarketAnalysisService { States = ["running"] };
+        var time = new ManualTimeProvider();
+        var options = new MarketAnalysisServiceOptions { BaseUrl = BaseUrl, PollIntervalSeconds = 10, RunDeadlineSeconds = 60 };
+
+        // Act
+        var result = await CreateClient(service, options, time).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.MarketAnalysisRunner.Unavailable, Assert.Single(result.Errors).Code);
+        Assert.Equal(6, time.Delays.Count);
+        Assert.All(time.Delays, delay => Assert.Equal(TimeSpan.FromSeconds(10), delay));
+        Assert.DoesNotContain(service.Requests, request => request.EndsWith("/result", StringComparison.Ordinal));
+    }
+
+    /// <summary>Negative: a run that ends as failed shows the sanitised error code of the service and reads no result.</summary>
+    [Theory]
+    [InlineData("INPUT_ERROR", "market_analysis_runner.run_failed:INPUT_ERROR")]
+    [InlineData("bad code<script>", "market_analysis_runner.run_failed:badcodescript")]
+    [InlineData(null, "market_analysis_runner.run_failed")]
+    [InlineData("<>", "market_analysis_runner.run_failed")]
+    public async Task AnalyzeAsync_RunFailed_ReturnsTheSanitisedErrorCode(string? errorCode, string expected)
+    {
+        // Arrange
+        var service = new FakeMarketAnalysisService { States = ["running", "failed"], ErrorCode = errorCode };
+
+        // Act
+        var result = await CreateClient(service, time: new ManualTimeProvider()).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(expected, Assert.Single(result.Errors).Code);
+        Assert.DoesNotContain(service.Requests, request => request.EndsWith("/result", StringComparison.Ordinal));
+    }
+
+    /// <summary>Boundary: the error code of a failed run is cut to 64 characters.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_RunFailedWithLongCode_CutsTheCode()
+    {
+        // Arrange
+        var service = new FakeMarketAnalysisService { States = ["failed"], ErrorCode = new string('A', 200) };
+
+        // Act
+        var result = await CreateClient(service).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("market_analysis_runner.run_failed:" + new string('A', 64), Assert.Single(result.Errors).Code);
+    }
+
+    /// <summary>Positive: one lost answer while the run goes on is asked again, and the run is read to its end.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_OneStateAskFails_AsksAgain()
+    {
+        // Arrange
+        var service = new FakeMarketAnalysisService { ThrowOnStateRead = new HashSet<int> { 2 } };
+
+        // Act
+        var result = await CreateClient(service, time: new ManualTimeProvider()).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+    }
+
+    /// <summary>Negative: three lost answers in a row end the follow-up as unavailable.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_StateAsksFailThreeTimes_IsUnavailable()
+    {
+        // Arrange
+        var service = new FakeMarketAnalysisService { ThrowOnStateRead = new HashSet<int> { 1, 2, 3 } };
+
+        // Act
+        var result = await CreateClient(service, time: new ManualTimeProvider()).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.MarketAnalysisRunner.Unavailable, Assert.Single(result.Errors).Code);
     }
 
     #endregion
 
     #region Failures
 
-    /// <summary>Negative: each status of the markets API has its own code.</summary>
+    /// <summary>Negative: each answer of the start has its own code (the table of the contract errors).</summary>
     [Theory]
-    [InlineData(HttpStatusCode.UnprocessableEntity, "market_analysis_runner.input_rejected")]
-    [InlineData(HttpStatusCode.Unauthorized, "market_analysis_runner.unauthorized")]
-    [InlineData(HttpStatusCode.Forbidden, "market_analysis_runner.unauthorized")]
-    [InlineData(HttpStatusCode.InternalServerError, "market_analysis_runner.unavailable")]
-    [InlineData(HttpStatusCode.BadGateway, "market_analysis_runner.unavailable")]
-    [InlineData(HttpStatusCode.UnsupportedMediaType, "market_analysis_runner.unexpected_response")]
-    [InlineData(HttpStatusCode.NotFound, "market_analysis_runner.unexpected_response")]
-    public async Task AnalyzeAsync_ServiceRefuses_ReturnsTheMatchingCode(HttpStatusCode status, string code)
+    [InlineData(HttpStatusCode.Unauthorized, "unauthorized", "market_analysis_runner.unauthorized")]
+    [InlineData(HttpStatusCode.Forbidden, "forbidden", "market_analysis_runner.unauthorized")]
+    [InlineData(HttpStatusCode.BadRequest, "invalid_request", "market_analysis_runner.input_rejected")]
+    [InlineData(HttpStatusCode.UnprocessableEntity, "invalid_request", "market_analysis_runner.input_rejected")]
+    [InlineData(HttpStatusCode.Conflict, "run_active", "market_analysis_runner.already_running")]
+    [InlineData(HttpStatusCode.Conflict, "something_else", "market_analysis_runner.unexpected_response")]
+    [InlineData(HttpStatusCode.InternalServerError, "internal", "market_analysis_runner.unavailable")]
+    [InlineData(HttpStatusCode.BadGateway, "internal", "market_analysis_runner.unavailable")]
+    [InlineData(HttpStatusCode.NotFound, "not_found", "market_analysis_runner.unexpected_response")]
+    public async Task AnalyzeAsync_StartRefused_ReturnsTheMatchingCode(HttpStatusCode status, string problem, string code)
     {
         // Arrange
-        var client = CreateClient(new FakeMarketsApi { Status = status });
+        var service = new FakeMarketAnalysisService { StartStatus = status, StartProblem = problem };
 
         // Act
-        var result = await client.AnalyzeAsync([Booking], TestContext.Current.CancellationToken);
+        var result = await CreateClient(service).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(code, Assert.Single(result.Errors).Code);
+        Assert.Single(service.Requests);
+    }
+
+    /// <summary>Negative: another run is active in the service, so the start answers 409 run_active and the code says so.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_ServiceBusy_ReturnsAlreadyRunning()
+    {
+        // Act
+        var result = await CreateClient(new FakeMarketAnalysisService { Busy = true }).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.MarketAnalysisRunner.AlreadyRunning, Assert.Single(result.Errors).Code);
+    }
+
+    /// <summary>Negative: a wrong key is a 401 from the fake, and the key is not in the log.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_WrongKey_IsUnauthorizedAndTheKeyIsNotLogged()
+    {
+        // Arrange
+        var service = new FakeMarketAnalysisService { RequiredKey = "the-right-key" };
+        var log = new ListLogger();
+
+        // Act
+        var result = await CreateClient(service, ApiKeyOptions(), logger: log).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.MarketAnalysisRunner.Unauthorized, Assert.Single(result.Errors).Code);
+        Assert.NotEmpty(log.Messages);
+        Assert.DoesNotContain(log.Messages, message => message.Contains(Key, StringComparison.Ordinal) || message.Contains("the-right-key", StringComparison.Ordinal));
+    }
+
+    /// <summary>Negative: a 401 while the state is followed (the key was changed) is the unauthorized code too.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_StateAnswers401_IsUnauthorized()
+    {
+        // Act
+        var result = await CreateClient(new FakeMarketAnalysisService { StateStatus = HttpStatusCode.Unauthorized }, time: new ManualTimeProvider()).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.MarketAnalysisRunner.Unauthorized, Assert.Single(result.Errors).Code);
+    }
+
+    /// <summary>Negative: the service forgot the run (404 on the state, after a restart) is the unexpected response code.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_StateAnswers404_IsUnexpected()
+    {
+        // Act
+        var result = await CreateClient(new FakeMarketAnalysisService { StateStatus = HttpStatusCode.NotFound }, time: new ManualTimeProvider()).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.MarketAnalysisRunner.UnexpectedResponse, Assert.Single(result.Errors).Code);
     }
 
     /// <summary>Negative: a service that cannot be reached is the unavailable code and nothing is thrown.</summary>
@@ -112,22 +316,47 @@ public sealed class MarketAnalysisServiceClientTests
     public async Task AnalyzeAsync_ServiceDown_ReturnsTheUnavailableCode()
     {
         // Act
-        var result = await CreateClient(new FakeMarketsApi { Throw = true }).AnalyzeAsync([Booking], TestContext.Current.CancellationToken);
+        var result = await CreateClient(new FakeMarketAnalysisService { Throw = true }).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.MarketAnalysisRunner.Unavailable, Assert.Single(result.Errors).Code);
     }
 
-    /// <summary>Negative: an answer that is not JSON, or JSON that is not a result, is the unexpected response code.</summary>
-    [Theory]
-    [InlineData("<html>")]
-    [InlineData("[]")]
-    [InlineData("{\"status\":\"completed\"}")]
-    [InlineData("{\"schema_version\":\"1.1\",\"status\":\"failed\",\"error\":{\"code\":\"INPUT_ERROR\",\"message\":\"x\"}}")]
-    public async Task AnalyzeAsync_AnswerIsNotAResult_ReturnsTheUnexpectedCode(string body)
+    /// <summary>Negative: a call that times out (a cancellation that the caller did not ask for) is the unavailable code.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_CallTimesOut_ReturnsTheUnavailableCode()
     {
         // Act
-        var result = await CreateClient(new FakeMarketsApi { Body = body }).AnalyzeAsync([Booking], TestContext.Current.CancellationToken);
+        var result = await CreateClient(new FakeMarketAnalysisService { Timeout = true }).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.MarketAnalysisRunner.Unavailable, Assert.Single(result.Errors).Code);
+    }
+
+    /// <summary>Negative: unreadable JSON from the start, the state or the result is the unexpected response code.</summary>
+    [Theory]
+    [InlineData("start", "<html>")]
+    [InlineData("start", "{\"state\":\"queued\"}")]
+    [InlineData("start", "[]")]
+    [InlineData("state", "<html>")]
+    [InlineData("state", "{\"run_id\":\"5b3f0e1a-0000-4000-8000-0000000000a1\",\"state\":\"weird\"}")]
+    [InlineData("state", "{\"run_id\":\"5b3f0e1a-0000-4000-8000-0000000000a1\"}")]
+    [InlineData("result", "<html>")]
+    [InlineData("result", "[]")]
+    [InlineData("result", "{\"status\":\"completed\"}")]
+    [InlineData("result", "{\"schema_version\":\"1.1\",\"status\":\"failed\"}")]
+    public async Task AnalyzeAsync_AnswerIsNotUsable_ReturnsTheUnexpectedCode(string call, string body)
+    {
+        // Arrange
+        var service = call switch
+        {
+            "start" => new FakeMarketAnalysisService { StartBody = body },
+            "state" => new FakeMarketAnalysisService { StateBody = body },
+            _ => body == "<html>" ? new FakeMarketAnalysisService { ResultIsNotJson = true } : new FakeMarketAnalysisService { Result = body },
+        };
+
+        // Act
+        var result = await CreateClient(service, time: new ManualTimeProvider()).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.MarketAnalysisRunner.UnexpectedResponse, Assert.Single(result.Errors).Code);
@@ -138,15 +367,14 @@ public sealed class MarketAnalysisServiceClientTests
     public async Task AnalyzeAsync_NotConfigured_SendsNothing()
     {
         // Arrange
-        var service = new FakeMarketsApi();
-        var client = CreateClient(service, new MarketAnalysisServiceOptions());
+        var service = new FakeMarketAnalysisService();
 
         // Act
-        var result = await client.AnalyzeAsync([Booking], TestContext.Current.CancellationToken);
+        var result = await CreateClient(service, new MarketAnalysisServiceOptions()).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.MarketAnalysisRunner.NotConfigured, Assert.Single(result.Errors).Code);
-        Assert.Equal(0, service.Calls);
+        Assert.Empty(service.Requests);
     }
 
     /// <summary>Negative: a caller that cancels gets the cancellation and not a code.</summary>
@@ -159,116 +387,69 @@ public sealed class MarketAnalysisServiceClientTests
 
         // Act and assert
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => CreateClient(new FakeMarketsApi { Throw = true, ThrowCancellation = true }).AnalyzeAsync([Booking], cancelled.Token));
+            () => CreateClient(new FakeMarketAnalysisService()).AnalyzeAsync(Request, cancelled.Token));
     }
 
     #endregion
 
     #region Result
 
-    /// <summary>Positive: the sample result of the contract is read into the model, the figures, the sections, the charts and the insights.</summary>
+    /// <summary>Positive: the sample result of the service is read through the three calls into the nine sections.</summary>
     [Fact]
-    public async Task AnalyzeAsync_SampleOfTheContract_ReadsTheWholeResult()
+    public async Task AnalyzeAsync_SampleResult_ReadsTheNineAnalyses()
     {
         // Arrange
-        var client = CreateClient(new FakeMarketsApi { Body = SampleJson() });
+        var service = new FakeMarketAnalysisService { Result = SampleJson() };
 
         // Act
-        var result = await client.AnalyzeAsync([Booking], TestContext.Current.CancellationToken);
+        var result = await CreateClient(service, time: new ManualTimeProvider()).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
 
         // Assert
         var dto = result.Value;
-        Assert.Equal((1, "ollama", "phi3.5:latest"), (dto.SchemaVersion, dto.Provider, dto.Model));
-        Assert.Equal(["lead_time", "holidays", "seasonality", "cancellations", "room_value", "guest_mix"], dto.Content!.Sections.Select(section => section.Id));
+        Assert.Equal(1, dto.SchemaVersion);
+        Assert.Equal(
+            ["lead_time", "holidays", "seasonality", "cancellations", "room_value", "guest_mix", "occupancy", "occupancy_on_holidays", "correlations"],
+            dto.Content!.Sections.Select(section => section.Id));
         Assert.Equal(["Bookings analysed", "Bookings with a price of 0", "Duplicate booking ids"], dto.Content.Figures.Select(figure => figure.Label));
-        Assert.Equal((40060, 201), (dto.Content.Figures[0].Value, dto.Content.Figures[1].Value));
-    }
-
-    /// <summary>Positive: the real findings, with the group figures wrapped as <c>figure</c>, give the charts of an analysis, the overview first.</summary>
-    [Fact]
-    public async Task AnalyzeAsync_SampleOfTheContract_ReadsTheChartsOfTheFindings()
-    {
-        // Arrange
-        var client = CreateClient(new FakeMarketsApi { Body = SampleJson() });
-
-        // Act
-        var sections = (await client.AnalyzeAsync([Booking], TestContext.Current.CancellationToken)).Value.Content!.Sections;
-
-        // Assert
-        var cancellations = sections.Single(section => section.Id == "cancellations");
-        Assert.Contains("By deposit type", cancellations.Series.Select(series => series.Title));
-        var deposit = cancellations.Series.Single(series => series.Title == "By deposit type");
-        Assert.Equal("%", deposit.Unit);
-        Assert.Equal(["No Deposit", "Non Refund", "Refundable"], deposit.Points.Select(point => point.Label));
-        Assert.Equal(24.7, deposit.Points[0].Value);
-        Assert.Equal("Overall - bands", sections.Single(section => section.Id == "lead_time").Series[0].Title);
-        Assert.Empty(sections.Single(section => section.Id == "holidays").Series);
-    }
-
-    /// <summary>Positive: the AI insights are read: the executive summary and suggestions when available, the reason when not.</summary>
-    [Fact]
-    public async Task AnalyzeAsync_SampleOfTheContract_ReadsTheInsights()
-    {
-        // Arrange
-        var client = CreateClient(new FakeMarketsApi { Body = SampleJson() });
-
-        // Act
-        var sections = (await client.AnalyzeAsync([Booking], TestContext.Current.CancellationToken)).Value.Content!.Sections;
-
-        // Assert
-        var cancellations = sections.Single(section => section.Id == "cancellations").Insight!;
-        Assert.Equal("available", cancellations.Status);
-        Assert.StartsWith("About 28% of the bookings are cancelled", cancellations.ExecutiveSummary, StringComparison.Ordinal);
-        Assert.Equal([1719, 40060], cancellations.Suggestions.Select(suggestion => suggestion.SampleSize));
-        Assert.Equal(("unavailable", "GUARDRAIL_REJECTED", null), (sections.Single(section => section.Id == "room_value").Insight!.Status, sections.Single(section => section.Id == "room_value").Insight!.Reason, sections.Single(section => section.Id == "room_value").Insight!.ExecutiveSummary));
-    }
-
-    /// <summary>Positive: a version 1.0 result, made without insights, is read too, with no insight in its sections.</summary>
-    [Fact]
-    public async Task AnalyzeAsync_Version10_ReadsWithoutInsights()
-    {
-        // Arrange
-        var body = "{\"schema_version\":\"1.0\",\"result_id\":\"5b3f0e1a-0000-4000-8000-0000000000a1\",\"generated_at\":\"2026-10-19T10:04:00.000Z\",\"status\":\"completed\",\"analyses\":{\"guest_mix\":{\"status\":\"available\",\"findings\":{}}},\"notices\":[]}";
-
-        // Act
-        var result = await CreateClient(new FakeMarketsApi { Body = body }).AnalyzeAsync([Booking], TestContext.Current.CancellationToken);
-
-        // Assert
-        var section = Assert.Single(result.Value.Content!.Sections);
-        Assert.Equal((1, null, "Guest and booking mix"), (result.Value.SchemaVersion, section.Insight, section.Title));
-        Assert.Null(result.Value.Model);
     }
 
     #endregion
 
     #region Registration
 
-    /// <summary>Positive: the registration reads the section, sets the address and the long timeout.</summary>
+    /// <summary>Positive: the registration reads the section and the client uses the address and the key.</summary>
     [Fact]
-    public async Task AddMarketAnalysisService_Configured_UsesTheAddress()
+    public async Task AddMarketAnalysisService_Configured_UsesTheAddressAndTheKey()
     {
         // Arrange
-        var service = new FakeMarketsApi();
+        var service = new FakeMarketAnalysisService { RequiredKey = Key };
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?> { ["MarketAnalysisService:BaseUrl"] = "http://market-analysis-api:8000" })
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["MarketAnalysisService:BaseUrl"] = BaseUrl,
+                ["MarketAnalysisService:ApiKey"] = Key,
+                ["MarketAnalysisService:PollIntervalSeconds"] = "1",
+            })
             .Build();
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddMarketAnalysisService(configuration);
         services.AddHttpClient<IMarketAnalysisServiceClient, MarketAnalysisServiceClient>().ConfigurePrimaryHttpMessageHandler(() => service);
+        services.AddSingleton<TimeProvider>(new ManualTimeProvider());
         using var provider = services.BuildServiceProvider();
 
         // Act
-        var result = await provider.GetRequiredService<IMarketAnalysisServiceClient>().AnalyzeAsync([Booking], TestContext.Current.CancellationToken);
+        var result = await provider.GetRequiredService<IMarketAnalysisServiceClient>().AnalyzeAsync(Request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.Equal(("market-analysis-api", 8000), (service.LastHost, service.LastPort));
+        Assert.Equal("market-analysis-api:8000", service.LastAuthority);
+        Assert.Equal(Key, service.LastKey);
     }
 
-    /// <summary>Boundary: an empty section is not a start-up error; the options are not configured and the timeout is 25 minutes.</summary>
+    /// <summary>Boundary: an empty section is not a start-up error; the options are not configured and the limits are the short defaults.</summary>
     [Fact]
-    public void AddMarketAnalysisService_EmptySection_RegistersUnconfiguredOptionsWithTheLongTimeout()
+    public void AddMarketAnalysisService_EmptySection_RegistersUnconfiguredOptionsWithShortLimits()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -281,7 +462,33 @@ public sealed class MarketAnalysisServiceClientTests
 
         // Assert
         Assert.False(options.IsConfigured);
-        Assert.Equal(1500, options.TimeoutSeconds);
+        Assert.Equal((10, 5, 3600, string.Empty), (options.TimeoutSeconds, options.PollIntervalSeconds, options.RunDeadlineSeconds, options.ApiKey));
+    }
+
+    /// <summary>Boundary: an old timeout of 90000 seconds is cut to 60, so no call of the client can stay open for long.</summary>
+    [Theory]
+    [InlineData("90000", 60)]
+    [InlineData("60", 60)]
+    [InlineData("15", 15)]
+    [InlineData("0", 10)]
+    [InlineData("soon", 10)]
+    public void AddMarketAnalysisService_Timeout_IsNeverAbove60Seconds(string setting, int expected)
+    {
+        // Arrange
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["MarketAnalysisService:BaseUrl"] = BaseUrl, ["MarketAnalysisService:TimeoutSeconds"] = setting })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddMarketAnalysisService(configuration);
+        using var provider = services.BuildServiceProvider();
+
+        // Act
+        var http = provider.GetRequiredService<IHttpClientFactory>().CreateClient(nameof(IMarketAnalysisServiceClient));
+
+        // Assert
+        Assert.Equal(TimeSpan.FromSeconds(expected), http.Timeout);
+        Assert.Equal(expected, provider.GetRequiredService<MarketAnalysisServiceOptions>().TimeoutSeconds);
     }
 
     #endregion
@@ -291,87 +498,40 @@ public sealed class MarketAnalysisServiceClientTests
     private static string SampleJson() =>
         File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
 
-    private static MarketAnalysisServiceClient CreateClient(FakeMarketsApi service, MarketAnalysisServiceOptions? options = null, string token = "")
+    private static MarketAnalysisServiceOptions ApiKeyOptions() => new() { BaseUrl = BaseUrl, ApiKey = Key };
+
+    // Replaces the run id in a path, so a test can compare the sequence of calls.
+    private static string Describe(string request) =>
+        request.StartsWith("POST", StringComparison.Ordinal) ? request : request.EndsWith("/result", StringComparison.Ordinal) ? "GET result" : "GET state";
+
+    private static MarketAnalysisServiceClient CreateClient(
+        FakeMarketAnalysisService service,
+        MarketAnalysisServiceOptions? options = null,
+        ManualTimeProvider? time = null,
+        ILogger<MarketAnalysisServiceClient>? logger = null)
     {
-        options ??= new MarketAnalysisServiceOptions { BaseUrl = "http://market-analysis-api:8000", Token = token };
+        options ??= new MarketAnalysisServiceOptions { BaseUrl = BaseUrl };
         var http = new HttpClient(service, disposeHandler: false);
         if (options.TryGetBaseUri(out var baseUri))
         {
             http.BaseAddress = baseUri;
         }
 
-        if (!string.IsNullOrWhiteSpace(options.Token))
-        {
-            http.DefaultRequestHeaders.Authorization = new("Bearer", options.Token);
-        }
-
-        return new MarketAnalysisServiceClient(http, options, NullLogger<MarketAnalysisServiceClient>.Instance);
+        return new MarketAnalysisServiceClient(http, options, logger ?? NullLogger<MarketAnalysisServiceClient>.Instance, time ?? new ManualTimeProvider());
     }
 
-    /// <summary>A fake of the markets API: records the request and answers a fixed status and body.</summary>
-    private sealed class FakeMarketsApi : HttpMessageHandler
+    /// <summary>A log that keeps the formatted messages, to show that the API key is not in them.</summary>
+    private sealed class ListLogger : ILogger<MarketAnalysisServiceClient>
     {
-        public HttpStatusCode Status { get; init; } = HttpStatusCode.OK;
+        public List<string> Messages { get; } = [];
 
-        public string? Body { get; init; }
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull => null;
 
-        public bool Throw { get; init; }
+        public bool IsEnabled(LogLevel logLevel) => true;
 
-        public bool ThrowCancellation { get; init; }
-
-        public int Calls { get; private set; }
-
-        public string LastMethod { get; private set; } = string.Empty;
-
-        public string LastPath { get; private set; } = string.Empty;
-
-        public string LastQuery { get; private set; } = string.Empty;
-
-        public string LastHost { get; private set; } = string.Empty;
-
-        public int LastPort { get; private set; }
-
-        public string? LastAuthorization { get; private set; }
-
-        public string? LastContentType { get; private set; }
-
-        public string? LastBody { get; private set; }
-
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            Calls++;
-            LastMethod = request.Method.Method;
-            LastPath = request.RequestUri!.AbsolutePath;
-            LastQuery = request.RequestUri.Query;
-            LastHost = request.RequestUri.Host;
-            LastPort = request.RequestUri.Port;
-            LastAuthorization = request.Headers.Authorization?.ToString();
-            LastContentType = request.Content?.Headers.ContentType?.MediaType;
-            LastBody = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
-
-            if (ThrowCancellation)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-            }
-
-            if (Throw)
-            {
-                throw new HttpRequestException("connection refused");
-            }
-
-            if (Status != HttpStatusCode.OK)
-            {
-                return new HttpResponseMessage(Status);
-            }
-
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(Body ?? MinimalResult, Encoding.UTF8, "application/json"),
-            };
-        }
-
-        private const string MinimalResult =
-            "{\"schema_version\":\"1.1\",\"result_id\":\"5b3f0e1a-0000-4000-8000-0000000000a1\",\"generated_at\":\"2026-10-19T10:04:00.000Z\",\"status\":\"completed\",\"analyses\":{},\"notices\":[]}";
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+            Messages.Add(formatter(state, exception) + exception);
     }
 
     #endregion
