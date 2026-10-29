@@ -43,7 +43,7 @@ public sealed class ContractParityTests : IAsyncLifetime
             .Returns(Task.FromResult(true));
 
         _directServices = new Services(
-            _direct.BookingService(),
+            _direct.BookingService(authorization),
             _direct.GuestService(authorization),
             _direct.RoomService());
 
