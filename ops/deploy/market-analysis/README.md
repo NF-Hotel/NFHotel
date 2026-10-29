@@ -35,4 +35,4 @@ The frozen service (ADR-0030, ADR-0500) had `POST /analyze`, a history notebook 
 service has none of them. The NFHotel API starts a run with `POST /api/v1/market-analysis/runs`, follows its state and
 reads the result (the client in `src/NFHotel.External/MarketAnalysis`); it sends the key as `MarketAnalysisService__ApiKey`,
 which must equal `API_TOKEN` of this service. `MARKET_ANALYSIS_REF` must be a commit that has the runs API (the merge of
-pull request 14 or later). Until the AI adapters of the service are built, every insight is `AI_NOT_CONFIGURED`.
+pull request 16 or later for the AI insights). The AI insights (pull request 16 of the service) need `OLLAMA_MODEL`; while it is empty every insight is `AI_NOT_CONFIGURED`.
