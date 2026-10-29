@@ -16,7 +16,7 @@ services:
       context: .
       args:
         MARKET_ANALYSIS_REPO: ${MARKET_ANALYSIS_REPO:-https://github.com/NF-Hotel/notebook-market-analysis.git}
-        MARKET_ANALYSIS_REF: ${MARKET_ANALYSIS_REF:-423de1892dedc501c8feb5fa2113e49885cc4481}
+        MARKET_ANALYSIS_REF: ${MARKET_ANALYSIS_REF:-286889844e9608452ca1971c9f6d69fc7fbabbc7}
       labels:
         org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
         org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
