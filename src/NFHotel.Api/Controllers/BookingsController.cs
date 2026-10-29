@@ -61,8 +61,23 @@ public sealed class BookingsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The new booking.</returns>
     [HttpPost]
+    [RequiresPermission(Permissions.CreateBooking)]
     public async Task<IActionResult> CreateAsync([FromBody] CreateBookingRequest request, CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings.CreateAsync(request, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>
+    /// Creates a public booking for a new guest.
+    /// </summary>
+    /// <param name="request">The booking details and new guest information.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>The created booking or validation errors.</returns>
+    [HttpPost(ApiRoutes.PublicBooking)]
+    public async Task<IActionResult> CreatePublicAsync(
+        [FromBody] CreateBookingRequest request,
+        CancellationToken cancellationToken) =>
+        this.ToResponse(
+            await _bookings.CreatePublicAsync(request, cancellationToken)
+                .ConfigureAwait(false));
 
     /// <summary>Confirms a booking.</summary>
     /// <param name="id">The booking key.</param>

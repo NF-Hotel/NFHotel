@@ -229,6 +229,40 @@ public sealed class BookingService : IBookingService
             return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
         }
 
+        // Calls the shared booking creation logic.
+        return await CreateBookingInternalAsync(request, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Creates a booking through the public guest booking flow.
+    /// Only new guest details are accepted.
+    /// </summary>
+    public async Task<Result<BookingDetailsDto>> CreatePublicAsync(
+        CreateBookingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        // Public bookings must use new guest details.
+        if (request.GuestId is not null || request.NewGuest is null)
+        {
+            return Result<BookingDetailsDto>.Failure(
+                ErrorCodes.Booking.GuestSelectionInvalid);
+        }
+
+        // Uses the shared booking logic without requiring staff permissions.
+        return await CreateBookingInternalAsync(request, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Creates a booking using the shared booking rules.
+    /// </summary>
+    private async Task<Result<BookingDetailsDto>> CreateBookingInternalAsync(
+        CreateBookingRequest request,
+        CancellationToken cancellationToken)
+    {
         // BR-47: exactly one of the two guest paths. Both and neither are a rule error,
         // not a NullReferenceException down in a form.
         var hasExistingGuest = request.GuestId is > 0;

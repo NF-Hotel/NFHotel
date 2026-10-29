@@ -64,6 +64,19 @@ public sealed class ApiBookingService : IBookingService
     }
 
     /// <inheritdoc />
+    public async Task<Result<BookingDetailsDto>> CreatePublicAsync(
+        CreateBookingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await _api.PostAsync<BookingDetailsDto>(
+            $"{ApiRoutes.Bookings}/{ApiRoutes.PublicBooking}",
+            request,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public Task<Result<BookingDetailsDto>> ConfirmAsync(int bookingId, CancellationToken cancellationToken = default) =>
         ActionAsync(bookingId, "confirm", cancellationToken);
 

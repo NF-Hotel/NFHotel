@@ -78,6 +78,17 @@ public interface IBookingService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Creates a booking through the public guest booking flow.
+    /// Only new guest details are accepted.
+    /// </summary>
+    /// <param name="request">Booking details and new guest information.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>The created booking or validation errors.</returns>
+    Task<Result<BookingDetailsDto>> CreatePublicAsync(
+        CreateBookingRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Confirms a booking — payment is guaranteed (BR-02, BR-03, BR-05, BR-121).
     /// </summary>
     /// <param name="bookingId">Bookingens id.</param>
