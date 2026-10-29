@@ -5,6 +5,7 @@ using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.TestSupport;
 using NFHotel.Web.Common;
 using NFHotel.Web.Features.Admin.MarketAnalysis;
+using NFHotel.Web.Features.Admin.Shared;
 
 using NSubstitute;
 
@@ -31,10 +32,10 @@ public sealed class MarketAnalysisViewModelTests
         var cancellations = viewModel.Sections[0];
         var chart = Assert.Single(cancellations.Charts);
         Assert.Equal(["Cancellations", "Room value and stay"], viewModel.Sections.Select(view => view.Section.Title));
-        Assert.Equal("By deposit type", chart.Title);
-        Assert.Equal(["No Deposit", "Non Refund"], chart.Groups.Select(group => group.Label));
-        Assert.Equal(27.5, Assert.Single(chart.Groups[0].Bars).Value);
-        Assert.Equal(["%"], chart.SeriesNames);
+        Assert.Equal("By deposit type", chart.Series.Title);
+        Assert.Equal(["No Deposit", "Non Refund"], chart.Series.Points.Select(point => point.Label));
+        Assert.Equal(27.5, chart.Series.Points[0].Value);
+        Assert.Equal(ChartKind.Columns, chart.Kind);
         Assert.Equal("Non-refundable bookings are cancelled most often.", cancellations.Section.Insight!.ExecutiveSummary);
         Assert.Empty(viewModel.Sections[1].Charts);
         Assert.False(viewModel.HasNoReport);

@@ -28,6 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="..\..\docs\test-data\market-analysis-result.json" Link="TestData\market-analysis-result.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\NFHotel.Web\NFHotel.Web.csproj" />
     <ProjectReference Include="..\NFHotel.TestSupport\NFHotel.TestSupport.csproj" />
   </ItemGroup>

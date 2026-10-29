@@ -151,7 +151,7 @@
                             </div>
                         }
 
-                        @if (view.Charts.Count == 0)
+                        @if (!view.HasCharts)
                         {
                             <p class="muted">This analysis has no chart data.</p>
                         }
@@ -160,10 +160,14 @@
                             <div class="chart-grid">
                                 @foreach (var chart in view.Charts)
                                 {
-                                    <GroupedBarChart Title="@chart.Title"
-                                                     AxisTitle="@AxisText(chart)"
-                                                     SeriesNames="chart.SeriesNames"
-                                                     Groups="chart.Groups" />
+                                    <MarketChart Series="chart.Series" Section="section" />
+                                }
+                                @foreach (var matrix in view.Matrices)
+                                {
+                                    <div class="chart-block chart-wide">
+                                        <CorrelationHeatmap Matrix="matrix" />
+                                        <ChartCaption Model="ChartCaptionText.ForMatrix(matrix, section)" />
+                                    </div>
                                 }
                             </div>
                         }
@@ -216,9 +220,6 @@
 
     private static string[] Paragraphs(string text) =>
         text.Split(["\r\n\r\n", "\n\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-    private static string AxisText(MarketAnalysisChart chart) =>
-        string.IsNullOrWhiteSpace(chart.Unit) ? "value" : chart.Unit;
 
     private static string SinceText(MarketAnalysisRunStateDto run) =>
         run.StartedAt is { } started ? $" since {Time(started)}" : string.Empty;

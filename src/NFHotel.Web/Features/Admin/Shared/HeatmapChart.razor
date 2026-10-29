@@ -1,0 +1,82 @@
+@inherits SeriesChartBase
+@using System.Globalization
+
+@*
+    A heat map of a long series of months, laid out as months against years, drawn as inline SVG. The value is written in every
+    cell, so the colour is not the only cue; a month the series has no point for is a dash. The scale runs from the lowest to the
+    highest value of the series, with a legend. Hidden table for screen readers.
+*@
+
+@if (Points.Count == 0)
+{
+    <p class="muted">@Title: no data.</p>
+}
+else
+{
+    <figure class="chart">
+        <figcaption class="chart-title">@Title</figcaption>
+        @BuildSvg()
+        <ChartAlternative Title="@Title" Unit="@Unit" Points="Points" FirstColumn="Month" />
+    </figure>
+}
+
+@code {
+    private const int Width = 640;
+    private const int Left = 56;
+    private const int Top = 28;
+    private const int CellWidth = 44;
+    private const int CellHeight = 30;
+    private const int LegendWidth = 200;
+    private const int LegendHeight = 10;
+
+    private MarkupString BuildSvg()
+    {
+        var rows = MonthGrid.Rows(Points);
+        var known = rows.SelectMany(row => row.Values).OfType<double>().ToList();
+        var lowest = known.Count == 0 ? 0 : known.Min();
+        var highest = known.Count == 0 ? 0 : known.Max();
+        var legendTop = Top + (rows.Count * CellHeight) + 22;
+        var height = legendTop + 40;
+        var gradient = ElementId("scale");
+        var svg = OpenSvg(Width, height);
+
+        svg.Append(CultureInfo.InvariantCulture, $"<defs><linearGradient id=\"{gradient}\" x1=\"0\" x2=\"1\" y1=\"0\" y2=\"0\"><stop offset=\"0\" stop-color=\"{HeatColor.Sequential(0)}\"></stop><stop offset=\"1\" stop-color=\"{HeatColor.Sequential(1)}\"></stop></linearGradient></defs>");
+        for (var month = 0; month < MonthGrid.MonthsPerYear; month++)
+        {
+            svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-label\" x=\"{Left + (month * CellWidth) + (CellWidth / 2)}\" y=\"{Top - 8}\" text-anchor=\"middle\">{MonthGrid.MonthNames[month]}</text>");
+        }
+
+        for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+        {
+            var row = rows[rowIndex];
+            var top = Top + (rowIndex * CellHeight);
+            svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-label\" x=\"{Left - 8}\" y=\"{top + (CellHeight / 2) + 4}\" text-anchor=\"end\">{row.Year}</text>");
+            for (var month = 0; month < MonthGrid.MonthsPerYear; month++)
+            {
+                AppendCell(svg, row, month, Left + (month * CellWidth), top, lowest, highest);
+            }
+        }
+
+        svg.Append(CultureInfo.InvariantCulture, $"<rect x=\"{Left}\" y=\"{legendTop}\" width=\"{LegendWidth}\" height=\"{LegendHeight}\" fill=\"url(#{gradient})\"></rect>");
+        svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-axis-title\" x=\"{Left}\" y=\"{legendTop + 24}\">{ChartFormat.Encode(ChartFormat.Value(lowest, Unit))}</text>");
+        svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-axis-title\" x=\"{Left + LegendWidth}\" y=\"{legendTop + 24}\" text-anchor=\"end\">{ChartFormat.Encode(ChartFormat.Value(highest, Unit))}</text>");
+        svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-axis-title\" x=\"{Left + LegendWidth + 12}\" y=\"{legendTop + 9}\">{ChartFormat.Encode(AxisText)}: lighter is lower, darker is higher</text>");
+
+        return CloseSvg(svg);
+    }
+
+    private static void AppendCell(System.Text.StringBuilder svg, MonthRow row, int month, int x, int y, double lowest, double highest)
+    {
+        if (row.Values[month] is not { } value)
+        {
+            svg.Append(CultureInfo.InvariantCulture, $"<rect class=\"chart-cell chart-cell-empty\" x=\"{x}\" y=\"{y}\" width=\"{CellWidth}\" height=\"{CellHeight}\"></rect>");
+            svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-cell-text chart-missing\" x=\"{x + (CellWidth / 2)}\" y=\"{y + (CellHeight / 2) + 4}\" text-anchor=\"middle\">–</text>");
+            return;
+        }
+
+        var fill = HeatColor.Sequential(highest <= lowest ? 1 : (value - lowest) / (highest - lowest));
+        var text = ChartFormat.Value(value, string.Empty) + (row.SmallSamples[month] ? "*" : string.Empty);
+        svg.Append(CultureInfo.InvariantCulture, $"<rect class=\"chart-cell\" x=\"{x}\" y=\"{y}\" width=\"{CellWidth}\" height=\"{CellHeight}\" fill=\"{fill}\"><title>{MonthGrid.MonthNames[month]} {row.Year}: {ChartFormat.Encode(text)}</title></rect>");
+        svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-cell-text\" x=\"{x + (CellWidth / 2)}\" y=\"{y + (CellHeight / 2) + 4}\" text-anchor=\"middle\" fill=\"{HeatColor.TextOn(fill)}\">{ChartFormat.Encode(text)}</text>");
+    }
+}

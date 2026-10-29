@@ -39,6 +39,11 @@ public static partial class FindingsSeries
     private const string UnavailableStatus = "unavailable";
     private const string FieldsName = "fields";
     private const string MatrixName = "matrix";
+    private const string OverallName = "overall";
+    private const double WholeTolerance = 1e-9;
+
+    // Lists the service names after what they hold: bands and buckets are ordered however their labels read.
+    private static readonly HashSet<string> OrderedNames = new(StringComparer.Ordinal) { "bands", "buckets" };
 
     private static readonly HashSet<string> GenericNames = new(StringComparer.Ordinal) { "groups", "splits", "periods", "distributions", "buckets" };
     private const double PercentFactor = 100d;
@@ -75,13 +80,18 @@ public static partial class FindingsSeries
             return series;
         }
 
+        // A cut series no longer adds up to its whole, whichever end is kept.
         return IsMonthly(series)
-            ? series with { Title = $"{series.Title} (latest {MaxPoints} of {count} months)", Points = [.. series.Points.TakeLast(MaxPoints)] }
-            : series with { Points = [.. series.Points.Take(MaxPoints)] };
+            ? series with { Title = $"{series.Title} (latest {MaxPoints} of {count} months)", Points = [.. series.Points.TakeLast(MaxPoints)], IsPartsOfWhole = false }
+            : series with { Points = [.. series.Points.Take(MaxPoints)], IsPartsOfWhole = false };
     }
 
     [GeneratedRegex(@"^\d{4}-(0[1-9]|1[0-2])$", RegexOptions.CultureInvariant)]
     private static partial Regex MonthLabel();
+
+    // A number, a range of numbers (the lead time bands 0-7 and 8-30), an open end (91+, 7+) or an ISO week (2018-W26) has a natural order.
+    [GeneratedRegex(@"^(\d+(-\d+|\+)?|\d{4}-W\d{2})$", RegexOptions.CultureInvariant)]
+    private static partial Regex OrderedLabel();
 
     /// <summary>
     /// Reads the matrix of an analysis that has one, such as the correlations: a <c>matrix</c> of rows of numbers (a number or
@@ -173,6 +183,7 @@ public static partial class FindingsSeries
                     break;
                 }
 
+                var first = series.Count;
                 foreach (var property in node.EnumerateObject())
                 {
                     path.Add(property.Name);
@@ -180,6 +191,7 @@ public static partial class FindingsSeries
                     path.RemoveAt(path.Count - 1);
                 }
 
+                AddReference(node, path.Count + 1, series, first);
                 break;
 
             case JsonValueKind.Array:
@@ -205,9 +217,39 @@ public static partial class FindingsSeries
         }
     }
 
+    // The overall figure that sits next to a time series (the occupancy of the whole period next to that of each month) is the level
+    // the months are read against. Another series, such as the lead time bands whose overall figure is 100 %, has no such reference.
+    private static void AddReference(JsonElement node, int seriesDepth, List<(int Depth, MarketAnalysisSeriesDto Series)> series, int first)
+    {
+        if (!node.TryGetProperty(OverallName, out var overall)
+            || overall.ValueKind != JsonValueKind.Object
+            || !overall.TryGetProperty(GroupName, out _)
+            || Figure(overall) is not { } figure)
+        {
+            return;
+        }
+
+        for (var index = first; index < series.Count; index++)
+        {
+            var (depth, found) = series[index];
+            if (depth == seriesDepth && IsMonthly(found) && found.Unit == figure.Unit)
+            {
+                series[index] = (depth, found with { ReferenceValue = figure.Value, ReferenceLabel = "Overall" });
+            }
+        }
+    }
+
+    // A set of shares is the parts of one whole when every point is a share of the same denominator and the numerators add up to it.
+    private static bool AddsUpToWhole(List<(double Numerator, double Denominator)> shares, int pointCount) =>
+        shares.Count == pointCount
+        && shares.Count > 0
+        && shares.All(share => share.Denominator > 0 && share.Denominator == shares[0].Denominator)
+        && Math.Abs(shares.Sum(share => share.Numerator) - shares[0].Denominator) < WholeTolerance;
+
     private static MarketAnalysisSeriesDto? ToSeries(JsonElement array, List<string> path)
     {
         var points = new List<MarketAnalysisPointDto>();
+        var shares = new List<(double Numerator, double Denominator)>();
         var unit = string.Empty;
 
         foreach (var item in array.EnumerateArray())
@@ -227,6 +269,10 @@ public static partial class FindingsSeries
 
             unit = unit.Length == 0 ? figure.Unit : unit;
             points.Add(new MarketAnalysisPointDto(Label(group), figure.Value, SmallSample(figureItem)));
+            if (Number(figureItem, "numerator") is { } numerator && Number(figureItem, "denominator") is { } denominator)
+            {
+                shares.Add((numerator, denominator));
+            }
         }
 
         if (points.Count == 0)
@@ -235,7 +281,10 @@ public static partial class FindingsSeries
         }
 
         var id = string.Join('.', path);
-        return new MarketAnalysisSeriesDto(id, Title(path), unit, points);
+        var isOrdered = points.All(point => OrderedLabel().IsMatch(point.Label) || MonthLabel().IsMatch(point.Label))
+            || (path.Count > 0 && OrderedNames.Contains(path[^1]));
+
+        return new MarketAnalysisSeriesDto(id, Title(path), unit, points, isOrdered, AddsUpToWhole(shares, points.Count));
     }
 
     private static bool SmallSample(JsonElement item) =>
