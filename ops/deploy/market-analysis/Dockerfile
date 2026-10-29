@@ -1,33 +1,52 @@
-# Patch layer on the frozen market-analysis image (ADR-0030, MIL-042). The source of the
-# image, NF-Hotel/Notebook_Market_Analysis at 6c11cbf, was deleted, so the application
-# cannot be built again (ADR-0500). This layer starts from the last good digest and adds
-# only security fixes: the Debian updates, the Python packages pinned in
-# requirements.txt, and the removal of bundled files that the service never uses and
-# that carry findings. The application files stay those of the digest, which
-# tests/check-patch-layer.sh checks on every pull request.
-# The base is a private GHCR package: building needs a login that can read packages.
-# Dependabot does not follow this line; the digest must stay in GHCR (ADR-0500).
-FROM ghcr.io/nf-hotel/market-analysis@sha256:6bd53d9e59afe80bb3104cebd7bb6e9e03cd1617ea9b1eb89d449968b377a093
+# Image of the market analysis service of NF-Hotel/notebook-market-analysis (MIL-001 there): the HTTP API
+# that the NFHotel web application calls for the holiday calendar and the market analysis runs. That
+# repository has a Dockerfile of its own, but it installs with pip from version ranges; this one fetches
+# the source at a pinned commit and installs locked, hashed dependencies instead (as deploy/benchmark
+# does). Change MARKET_ANALYSIS_REF to upgrade. Build context is this folder.
+# The package is not installed: its source stays at /opt/market-analysis/src on PYTHONPATH, so no build
+# backend runs. requirements.lock pins every dependency with hashes for the pinned commit. After changing
+# MARKET_ANALYSIS_REF, regenerate it from that commit's pyproject.toml:
+#   uv pip compile pyproject.toml --generate-hashes --python-platform linux \
+#     --python-version 3.13 --no-header -o requirements.lock
+# Pinned by digest; Dependabot proposes the next one.
+FROM python:3.13-slim@sha256:2d44738ebf4ce5f63b9d9ea871e9c7cfdc0426f7b0c97cac915fd88ded1d86bb
 
-USER root
+ARG MARKET_ANALYSIS_REPO
+ARG MARKET_ANALYSIS_REF
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
+# apt-get upgrade installs the Debian security updates published since the base image was built
+# (ADR-0032: a finding with a fix is acted on).
 RUN apt-get update \
     && apt-get upgrade --yes --no-install-recommends \
+    && apt-get install --yes --no-install-recommends git ca-certificates \
+    && git init /opt/market-analysis \
+    && git -C /opt/market-analysis remote add origin "$MARKET_ANALYSIS_REPO" \
+    && git -C /opt/market-analysis fetch --depth 1 origin "$MARKET_ANALYSIS_REF" \
+    && git -C /opt/market-analysis checkout FETCH_HEAD \
+    && rm -rf /opt/market-analysis/.git /opt/market-analysis/framework \
+    && apt-get purge --yes --auto-remove git \
     && rm -rf /var/lib/apt/lists/*
 
-# Hashed pins replace the vulnerable versions; --no-deps, so nothing else moves. pip is
-# removed afterwards: the service never installs anything, and the copies of urllib3 and
-# other libraries that pip vendors carry findings of their own (as in deploy/benchmark).
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install --require-hashes --only-binary :all: --no-deps -r /tmp/requirements.txt \
-    && rm /tmp/requirements.txt \
+# Locked, hashed dependencies; no setup script runs at build time. pip is removed afterwards: the
+# service never installs anything, and the libraries that pip vendors carry findings of their own.
+COPY requirements.lock /tmp/requirements.lock
+RUN pip install --require-hashes --only-binary :all: -r /tmp/requirements.lock \
+    && rm /tmp/requirements.lock \
     && pip uninstall --yes pip
+ENV PYTHONPATH=/opt/market-analysis/src \
+    OUTPUT_DIRECTORY=/data
 
-# marimo bundles the Node.js packages of its Copilot language server, which only its
-# editor starts, with Node.js. The image has no Node.js and runs the notebook with
-# `marimo run`, so the folder is never used; its zod carries a fixable high finding
-# (CVE-2023-54404).
-RUN rm -rf /usr/local/lib/python3.13/site-packages/marimo/_lsp/copilot
-
+RUN useradd --create-home --uid 10001 app \
+    && mkdir -p /data \
+    && chown app /data
 USER app
-WORKDIR /app/work
+WORKDIR /opt/market-analysis
+EXPOSE 8000
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=6 \
+    CMD ["python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+
+CMD ["python", "-m", "uvicorn", "--factory", "app.infrastructure.main:create_app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Test that the services outside the end-to-end stack still start healthy with the hardening
-# of MIL-023 task 2 (CIS-001): ollama, the market analysis API and notebook, and the
+# of MIL-023 task 2 (CIS-001): ollama, the market analysis API, and the
 # benchmark notebook, each from its compose file in deploy/. Every container must have the
 # hardening (tests/lib/hardening.sh), be healthy, and be healthy again after a restart, which
 # shows that the read-only root filesystem holds across one.
@@ -53,7 +53,7 @@ cleanup() {
   for folder in benchmark market-analysis ollama; do
     compose "$folder" down --volumes --remove-orphans >/dev/null 2>&1
   done
-  docker network rm t-opt-proxy t-opt-llm >/dev/null 2>&1
+  docker network rm t-opt-proxy t-opt-llm t-opt-api >/dev/null 2>&1
   rm -rf "$settings"
 }
 trap cleanup EXIT
@@ -61,13 +61,13 @@ cleanup
 mkdir -p "$settings"
 docker network create t-opt-proxy >/dev/null
 docker network create t-opt-llm >/dev/null
+docker network create t-opt-api >/dev/null
 : >"$settings/ollama.env"
-: >"$settings/market-analysis.env"
+printf 'API_TOKEN=test-key-0123456789-test-key-0123456789\nCORS_ALLOWED_ORIGINS=https://localhost\nDATA_SOURCE=csv\n' >"$settings/market-analysis.env"
 : >"$settings/benchmark.env"
-cp "$ROOT/deploy/market-analysis/market-analysis.toml.example" "$settings/market-analysis.toml"
 native_settings="$(native "$settings")"
 export OLLAMA_ENV_FILE="$native_settings/ollama.env" MARKET_ANALYSIS_ENV_FILE="$native_settings/market-analysis.env"
-export BENCHMARK_ENV_FILE="$native_settings/benchmark.env" MARKET_ANALYSIS_CONFIG="$native_settings/market-analysis.toml"
+export BENCHMARK_ENV_FILE="$native_settings/benchmark.env" NFHOTEL_API_NETWORK=t-opt-api
 
 for folder in ollama market-analysis benchmark; do
   echo "== $folder"

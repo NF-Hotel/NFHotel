@@ -14,7 +14,7 @@ Docker container inside that VM (decision: ADR-0003).
 | `nfhotel-api` | this repository, `Dockerfile.api`, `ops/deploy/nfhotel-api` | `nfhotel-web` only, internal network |
 | `postgres` | `postgres:16-alpine`, `ops/deploy/postgres` | `nfhotel-api` only, internal network |
 | `ollama` | `ollama/ollama`, `ops/deploy/ollama` | benchmark and market analysis only, network `nfhotel-llm` |
-| `market-analysis-api`, `market-analysis-notebook` | `NF-Hotel/Notebook_Market_Analysis`, `ops/deploy/market-analysis` | VM loopback only |
+| `market-analysis-api` | `NF-Hotel/notebook-market-analysis`, `ops/deploy/market-analysis` | VM loopback only |
 | `benchmark` | `NF-Hotel/notebook-benchmark` (the API service), `ops/deploy/benchmark` | internal networks only, no published port |
 
 ### Network exposure
@@ -73,7 +73,6 @@ One command creates the VM if it is missing, then builds and starts every contai
    The node and the VM need key login.
 2. Copy each `ops/deploy/<service>/*.env.example` to the matching `.env` file and fill it in:
    `postgres.env`, `ollama.env`, `nfhotel-api.env`, `nfhotel-web.env`, `market-analysis.env`, `benchmark.env`, `nginx.env`.
-   For analysis also copy `market-analysis.toml.example` to `market-analysis.toml`.
 3. Put the database user, password and name in `postgres.env` only. Use a password without `;`
    or quotes (`openssl rand -hex 24`). The API builds its connection string from that file, so the
    password is never repeated. Put the API token (`Api__Token`, at least 32 characters,
@@ -227,7 +226,7 @@ docker compose --env-file ollama.env exec ollama ollama pull <model>
 ```
 
 Run that in `/opt/nfhotel/deploy/ollama` in the VM. Both services find Ollama at `http://ollama:11434`.
-The market analysis configuration (`market-analysis.toml`) points there. The benchmark service reads
+The market analysis service (`OLLAMA_BASE_URL` in `market-analysis.env`) points there. The benchmark service reads
 `NFBENCH_OLLAMA_URL` from `ops/deploy/benchmark/benchmark.env`. A GPU
 passed through to the VM is described in the comments of `ops/deploy/ollama/docker-compose.yml`.
 
@@ -282,13 +281,13 @@ joins the internal network `nfhotel-api` and publishes no host port.
 - A Manager sets the default AI model of the website and of the market analysis on `/admin/benchmark` (ADR-0014): type
   or choose a model, or press "Use for the website" or "Use for the market analysis" on a result row. `GET /api/ai-defaults`
   gives the defaults to a caller with the service token. `ops/scripts/deploy-services.sh` writes the model of the market
-  analysis as `model` in the `[llm]` section of `ops/deploy/market-analysis/market-analysis.toml` before it starts the analysis
+  analysis as `OLLAMA_MODEL` in `ops/deploy/market-analysis/market-analysis.env` before it starts the analysis
   service, so a new default applies at the next deployment of that service.
 - Until `BenchmarkService__Token` is set, the start page says that the service is not set up.
 
 ## The market analysis report (MIL-026)
 
-The report is made by the markets API of `Notebook_Market_Analysis` (`ops/deploy/market-analysis/`, MIL-004). The NFHotel API,
+The report is made by the market analysis service (`NF-Hotel/notebook-market-analysis`, `ops/deploy/market-analysis/`). **Note:** the NFHotel API still calls `POST /analyze?insights=true` of the former service, which the new service does not have; the report works again when `src/NFHotel.External/MarketAnalysis` uses the runs API (`/api/v1/market-analysis/runs`). The NFHotel API,
 not the web application, calls it.
 
 - A Manager starts a run at `/admin/market-analysis`. The API answers at once and runs the analysis in the background: it
@@ -307,7 +306,7 @@ not the web application, calls it.
 - The markets API joins the network `nfhotel-api` (`ops/deploy/market-analysis/docker-compose.yml`) so that the API reaches it;
   it publishes no host port and has no authentication, so keep that network internal.
 - Receptionist and Housekeeping users get 403 on `api/market-analysis` and do not see the menu entry.
-- The AI model of the analysis is the one in `ops/deploy/market-analysis/market-analysis.toml`, which `ops/scripts/deploy-services.sh`
+- The AI model of the analysis is `OLLAMA_MODEL` in `ops/deploy/market-analysis/market-analysis.env`, which `ops/scripts/deploy-services.sh`
   sets from the default AI model of the market analysis (ADR-0014).
 
 ### The fake bookings

@@ -1,113 +1,48 @@
-# Market analysis service behind the nginx proxy (MIL-004 task 4). Read by Docker
-# Compose. Settings live in market-analysis.env (git-ignored); copy
-# market-analysis.env.example and market-analysis.toml.example first. Start with:
+# Market analysis service of the notebook-market-analysis repository (MIL-001 there): an API that
+# the NFHotel web application calls with the header X-API-Key. It is built from the pinned commit of
+# that repository (Dockerfile), joins nfhotel-api (the web application and the API reach it as
+# http://market-analysis-api:8000), nfhotel-proxy (nginx publishes it on the internal listener) and
+# nfhotel-llm (the Ollama of NFHotel), and publishes no host port. Settings live in market-analysis.env
+# (git-ignored); copy market-analysis.env.example first. Start with:
 #   docker compose --env-file market-analysis.env up -d --build
-# Two entries of the same image: the API (serve) and the read-only history
-# notebook (marimo). Neither publishes a host port; the proxy reaches them by
-# name on the shared network (create it once: docker network create nfhotel-proxy).
 name: market-analysis
 
 x-analysis-image: &analysis-image ${MARKET_ANALYSIS_IMAGE:-market-analysis:local}
-# Hardening of both entries (MIL-023 task 2, CIS-001): the image runs as the user app and
-# needs no capability. The history is in the volume; marimo and Python write their caches
-# to /tmp and the home folder, which are tmpfs.
-x-hardening: &hardening
-  cap_drop: [ALL]
-  security_opt: [no-new-privileges:true]
-  read_only: true
-  tmpfs: [/tmp, /home/app]
-  pids_limit: 256
 
 services:
   market-analysis-api:
-    <<: *hardening
     image: *analysis-image
-    # A patch layer on the frozen image (ADR-0030); the base is a private GHCR package.
     build:
       context: .
+      args:
+        MARKET_ANALYSIS_REPO: ${MARKET_ANALYSIS_REPO:-https://github.com/NF-Hotel/notebook-market-analysis.git}
+        MARKET_ANALYSIS_REF: ${MARKET_ANALYSIS_REF:-b45b913a3895f93f182b76156b69d2edabf942ed}
       labels:
         org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
         org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
     restart: unless-stopped
     env_file: ${MARKET_ANALYSIS_ENV_FILE:-market-analysis.env}
+    # Hardening (MIL-023 task 2, CIS-001): its own user, no capability, a read-only root; the results
+    # are in the volume, Python and the notebooks write their caches to /tmp and the home folder.
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/tmp, /home/app]
+    pids_limit: 256
     mem_limit: 2g
     cpus: 2
-    command:
-      - python
-      - -m
-      - hotel_booking_analysis
-      - serve
-      - --host
-      - 0.0.0.0
-      - --port
-      - "8000"
-      - --config
-      - /app/work/hotel_analysis.toml
     expose:
       - "8000"
     volumes:
-      - history:/app/work/output
-      - ${MARKET_ANALYSIS_CONFIG:-./market-analysis.toml}:/app/work/hotel_analysis.toml:ro
-    extra_hosts:
-      - host.docker.internal:host-gateway
-    healthcheck:
-      test:
-        - CMD
-        - python
-        - -c
-        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)
-      interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 10s
+      - results:/data
     networks:
       - proxy
       - llm
-      # The NFHotel API sends the bookings to /analyze (MIL-026): it reaches this service
-      # by its name on this internal network.
+      # The web application and the NFHotel API reach this service by its name on this internal network.
       - api
 
-  market-analysis-notebook:
-    <<: *hardening
-    image: *analysis-image
-    restart: unless-stopped
-    env_file: ${MARKET_ANALYSIS_ENV_FILE:-market-analysis.env}
-    mem_limit: 1g
-    cpus: 1
-    command:
-      - python
-      - -m
-      - marimo
-      - run
-      - /usr/local/lib/python3.13/site-packages/hotel_booking_analysis/interface/history_notebook.py
-      - --host
-      - 0.0.0.0
-      - --port
-      - "2718"
-      - --headless
-    expose:
-      - "2718"
-    volumes:
-      - history:/app/work/output:ro
-      - ${MARKET_ANALYSIS_CONFIG:-./market-analysis.toml}:/app/work/hotel_analysis.toml:ro
-    healthcheck:
-      test:
-        - CMD
-        - python
-        - -c
-        - import socket; socket.create_connection(('127.0.0.1', 2718), 3)
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 20s
-    depends_on:
-      - market-analysis-api
-    networks:
-      - proxy
-      - llm
-
 volumes:
-  history:
+  results:
 
 networks:
   proxy:
@@ -117,7 +52,7 @@ networks:
   llm:
     name: ${NFHOTEL_LLM_NETWORK:-nfhotel-llm}
     external: true
-  # The internal network of the NFHotel API (MIL-026); it has no route out and no host port.
+  # The internal network of the NFHotel API; it has no route out and no host port.
   api:
     name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
     external: true

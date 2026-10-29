@@ -49,7 +49,7 @@ Write down the time at each step; the drill compares them with the RTO.
    ```bash
    tar --extract --file /root/settings.tar --directory / && shred -u /root/settings.tar
    ```
-   It brings back `ops/deploy/*/*.env`, `market-analysis.toml`, the proxy certificate, `/etc/nfhotel` and the ssh key of the backup copy. *Why on your machine:* decrypting on the VM would put the private key on it.
+   It brings back `ops/deploy/*/*.env`, the proxy certificate, `/etc/nfhotel` and the ssh key of the backup copy. *Why on your machine:* decrypting on the VM would put the private key on it.
 6. **Check out the repository** as the user `nfhotel` in `/opt/nfhotel` (Proxmox Deployment, "Deploy everything", step 4 does this), then repeat the `tar --extract` of step 5 if you ran it before.
 7. **Install the backup** again, so the first night is covered: `bash ops/scripts/install-backup.sh --recipient <age1...> --target <the target> --apply` (the values are in the restored `/etc/nfhotel/backup.env`).
 8. **Deploy:** re-run the latest successful `NF Hotel CD` run. It pulls the released images and starts every service with the restored settings; the database starts empty.

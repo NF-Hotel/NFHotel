@@ -14,7 +14,7 @@
 # Images, each tagged sha-<commit> and identified by its digest after the push:
 #   nfhotel-web       deploy/nfhotel-web      (root Dockerfile)
 #   nfhotel-api       deploy/nfhotel-api      (Dockerfile.api)
-#   market-analysis   deploy/market-analysis  (patch layer on a frozen digest, ADR-0030)
+#   market-analysis   deploy/market-analysis  (built from a pinned commit of NF-Hotel/notebook-market-analysis)
 #   benchmark         deploy/benchmark        (pinned external repository)
 #
 # The compose files need their settings files to load. The build uses the tracked
@@ -161,9 +161,6 @@ for entry in "${IMAGES[@]}"; do
   cp "${examples[0]}" "$settings/$folder.env"
   tag="$registry/$name:sha-$sha"
   export "$image_var=$tag" "$env_var=$settings/$folder.env"
-  if [[ "$folder" == "market-analysis" ]]; then
-    export MARKET_ANALYSIS_CONFIG="$dir/market-analysis.toml.example"
-  fi
 
   echo "==> building $tag"
   (cd "$dir" && docker compose build --pull "$service") || die "building $name failed"

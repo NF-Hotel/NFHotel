@@ -111,8 +111,7 @@ compose_api() {
 
 compose_analysis() {
   MARKET_ANALYSIS_ENV_FILE="$TMP_NATIVE/market-analysis.env" \
-    MARKET_ANALYSIS_CONFIG="$TMP_NATIVE/market-analysis.toml" \
-    NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_LLM_NETWORK="$LLM_NETWORK" \
+    NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_LLM_NETWORK="$LLM_NETWORK" NFHOTEL_API_NETWORK="$API_NETWORK" \
     docker compose --project-name "$ANALYSIS_PROJECT" \
     --file deploy/market-analysis/docker-compose.yml "$@"
 }
@@ -136,15 +135,18 @@ NGINX_HSTS=
 UPSTREAM_HOST=nfhotel-web
 UPSTREAM_PORT=8080
 ANALYSIS_SERVER_NAME=$ANALYSIS_HOST
-ANALYSIS_UPSTREAM_HOST=market-analysis-notebook
-ANALYSIS_UPSTREAM_PORT=2718
+ANALYSIS_UPSTREAM_HOST=market-analysis-api
+ANALYSIS_UPSTREAM_PORT=8000
 ANALYSIS_API_SERVER_NAME=$ANALYSIS_API_HOST
 ANALYSIS_API_UPSTREAM_HOST=market-analysis-api
 ANALYSIS_API_UPSTREAM_PORT=8000
 EOF
-  cp deploy/market-analysis/market-analysis.toml.example "$TMP_DIR/market-analysis.toml"
-  printf 'NFHOTEL_PROXY_NETWORK=%s
-' "$NETWORK" >"$TMP_DIR/market-analysis.env"
+  cat >"$TMP_DIR/market-analysis.env" <<EOF
+NFHOTEL_PROXY_NETWORK=$NETWORK
+API_TOKEN=smoke-key-0123456789-smoke-key-0123456789
+CORS_ALLOWED_ORIGINS=https://localhost
+DATA_SOURCE=csv
+EOF
   cat >"$TMP_DIR/nfhotel-web.env" <<EOF
 ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
@@ -242,9 +244,7 @@ main() {
     "https://127.0.0.1:$(https_port)/admin/login?returnUrl=%2Fadmin" \
     "$(curl --silent --output /dev/null --write-out '%{redirect_url}' --max-time 10 "http://127.0.0.1:$(https_port)/admin/login?returnUrl=%2Fadmin")"
 
-  wait_for_status GET / 200 30 "$ANALYSIS_HOST" "$((PORT + 1))" || true
-  check "GET / of the analysis notebook through the proxy" 200 \
-    "$(http_status GET / "$ANALYSIS_HOST" "$((PORT + 1))")"
+  wait_for_status GET /health 200 30 "$ANALYSIS_API_HOST" "$((PORT + 1))" || true
   check "GET /health of the analysis API through the proxy" 200 \
     "$(http_status GET /health "$ANALYSIS_API_HOST" "$((PORT + 1))")"
   check "analysis services publish no host port" "" \

@@ -23,7 +23,7 @@ What each container needs, measured with the throwaway stack:
 | nfhotel-web, nfhotel-api | none | `/tmp` | 1 GB, 2, 512 |
 | postgres | `CHOWN`, `DAC_OVERRIDE`, `FOWNER`, `SETGID`, `SETUID` | `/var/run/postgresql`, `/tmp` | 2 GB, 2, 512 |
 | ollama | none | `/tmp` | 8 GB, 4, 1024 |
-| market-analysis API and notebook | none | `/tmp`, `/home/app` | 2 GB and 1 GB, 2 and 1, 256 |
+| market-analysis API | none | `/tmp`, `/home/app` | 2 GB, 2, 256 |
 | benchmark | none | `/tmp`, `/home/app` | 1 GB, 1, 256 |
 
 The limits are first estimates, well above what the stack used in the tests (nginx 19 MB, web 42 MB, API 130 MB, PostgreSQL 40 MB with empty data). Check them on the VM with `docker stats --no-stream` a week after the deploy and change them by pull request.

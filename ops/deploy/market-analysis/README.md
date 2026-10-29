@@ -1,40 +1,36 @@
-# Market analysis service (MIL-004)
+# Market analysis service
 
-Runs `NF-Hotel/Notebook_Market_Analysis` as two containers of one image behind the
-nginx proxy: the API (`serve`, port 8000) and the read-only history notebook
-(marimo, port 2718). Neither publishes a host port.
+Runs `NF-Hotel/notebook-market-analysis` as one container behind the NFHotel web application. It serves the holiday
+calendar (`/api/v1/holidays`) and the market analysis runs (`/api/v1/market-analysis/runs`); every path except `/health`
+needs the header `X-API-Key`. It publishes no host port: the web application and the API reach it as
+`http://market-analysis-api:8000` on the internal network `nfhotel-api`, and nginx publishes it on the internal listener
+(`ANALYSIS_API_SERVER_NAME`).
 
 ## The image
 
-The source repository was deleted, so the application cannot be built again (ADR-0500).
-`Dockerfile` is a patch layer on the last good digest (ADR-0030): the Debian security
-updates and the packages pinned in `requirements.txt`, nothing else. The base is a
-private GHCR package, so `--build` needs `docker login ghcr.io` with a token that can
-read packages. How to fix a finding of the scan: the wiki page CI-CD, "The
-market-analysis image".
+`Dockerfile` fetches the source of the repository at the commit `MARKET_ANALYSIS_REF` and installs the dependencies from
+`requirements.lock`, with hashes (the same method as `deploy/benchmark`). Nothing is built from a version range and no
+private package is needed. The base image is pinned by digest and Dependabot proposes the next one.
+
+To upgrade, set `MARKET_ANALYSIS_REF` in `market-analysis.env.example` and in the default of `docker-compose.yml`,
+then regenerate the lock file from that commit's `pyproject.toml`:
+
+```bash
+uv pip compile pyproject.toml --generate-hashes --python-platform linux --python-version 3.13 --no-header -o requirements.lock
+```
 
 ## Start
 
 ```bash
-cp market-analysis.env.example market-analysis.env
-cp market-analysis.toml.example market-analysis.toml
-docker network create nfhotel-proxy        # once, shared with the proxy
+cp market-analysis.env.example market-analysis.env     # then set API_TOKEN (openssl rand -hex 32)
 docker compose --env-file market-analysis.env up -d --build
 ```
 
-Then start the proxy (`deploy/nginx`, `nginx.env` with the `ANALYSIS_*` names). The
-notebook answers on `ANALYSIS_SERVER_NAME` and the API on `ANALYSIS_API_SERVER_NAME`.
-Send bookings to `POST /analyze?insights=true` on the API host; the notebook shows the
-retained results. `scripts/test-compose-proxy.sh` proves both through the proxy.
+Put the same value as `HolidayApi__ApiKey` in `deploy/nfhotel-web/nfhotel-web.env`. `scripts/dev-up.sh` writes both.
+`scripts/deploy-services.sh` writes `OLLAMA_MODEL` from the default AI model chosen in the back office (ADR-0014).
 
-AI insights need a local model server (Ollama or LM Studio) that the container can
-reach; `market-analysis.toml` points at `host.docker.internal`. Without one the result
-says the insight is unavailable.
+## Not here any more
 
-## Gaps against US-001.01 ("see the market analysis with diagrams and an AI analysis")
-
-| Gap | Evidence | Owner | Action |
-| --- | --- | --- | --- |
-| No charts: the notebook shows tables | The source README says "Not built yet: charts"; the repository has no charting library | S02 | Raise an issue in `NF-Hotel/Notebook_Market_Analysis` for charts; this repository does not change its code |
-| AI analysis needs a reachable local model | `[llm]` in the configuration; without one the insight is `unavailable` | S02 | Decide where the model runs; the services run in a VM on Proxmox (ADR-0003), the model on a host the VM can reach |
-| No input is loaded by the service itself | A calling system posts the bookings | S02 | Decide who sends the bookings to `/analyze` |
+The frozen service (ADR-0030, ADR-0500) had `POST /analyze`, a history notebook and a `market-analysis.toml`. The new
+service has none of them. The NFHotel API still calls `POST /analyze?insights=true`, so the market analysis page needs
+the client in `src/NFHotel.External/MarketAnalysis` to be moved to the runs API before it works again.
