@@ -400,6 +400,12 @@ public static class ErrorCodes
         /// <summary>The API does not know this run (it keeps the last one in memory, and a restart forgets it).</summary>
         public const string RunNotFound = "market_analysis_runner.run_not_found";
 
+        /// <summary>
+        /// The market analysis service ended the run as failed. The code can carry the sanitised <c>error_code</c> of the service
+        /// after a colon: <c>market_analysis_runner.run_failed:NO_DATA</c>.
+        /// </summary>
+        public const string RunFailed = "market_analysis_runner.run_failed";
+
         /// <summary>The markets API answered something this application cannot use.</summary>
         public const string UnexpectedResponse = "market_analysis_runner.unexpected_response";
     }

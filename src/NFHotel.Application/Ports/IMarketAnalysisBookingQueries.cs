@@ -11,4 +11,9 @@ public interface IMarketAnalysisBookingQueries
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The bookings ordered by id; empty when the hotel has none in the period.</returns>
     Task<IReadOnlyList<MarketBookingDto>> GetBookingsAsync(DateOnly? from, DateOnly? to, CancellationToken cancellationToken = default);
+
+    /// <summary>Counts the rooms of the hotel, which the market analysis service needs for the occupancy.</summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The number of rooms.</returns>
+    Task<int> CountRoomsAsync(CancellationToken cancellationToken = default);
 }

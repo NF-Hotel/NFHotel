@@ -39,7 +39,7 @@ set -euo pipefail
 # The secrets of each service, by the name the container reads them under.
 declare -A SECRETS=(
   [postgres]="POSTGRES_PASSWORD"
-  [api]="ConnectionStrings__HotelDatabase Encryption__PassportKey Api__Token Staff__Token__SigningKey Staff__InitialManager__Password MarketAnalysisService__Token"
+  [api]="ConnectionStrings__HotelDatabase Encryption__PassportKey Api__Token Staff__Token__SigningKey Staff__InitialManager__Password MarketAnalysisService__ApiKey"
   [web]="Encryption__PassportKey Api__Token HolidayApi__ApiKey BenchmarkService__Token"
   [cloudflared]="TUNNEL_TOKEN"
 )
@@ -118,7 +118,7 @@ case "$service" in
       [[ "$password" != *[\;\"\']* ]] || die "the password in $postgres_env has a ; or a quote (use openssl rand -hex 24)"
       values[ConnectionStrings__HotelDatabase]="Host=postgres;Port=5432;Database=$(setting "$postgres_env" POSTGRES_DB);Username=$(setting "$postgres_env" POSTGRES_USER);Password=$password"
     fi
-    for name in Encryption__PassportKey Api__Token Staff__Token__SigningKey Staff__InitialManager__Password MarketAnalysisService__Token; do
+    for name in Encryption__PassportKey Api__Token Staff__Token__SigningKey Staff__InitialManager__Password MarketAnalysisService__ApiKey; do
       values[$name]="$(setting "$api_env" "$name")"
     done
     ;;

@@ -53,6 +53,10 @@ public sealed class MarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
         return [.. rows.Select(row => ToDto(row.Id, row.StartDate, row.EndDate, row.Status, row.Country, row.Detail))];
     }
 
+    /// <inheritdoc />
+    public Task<int> CountRoomsAsync(CancellationToken cancellationToken = default) =>
+        _context.Rooms.AsNoTracking().CountAsync(cancellationToken);
+
     private static MarketBookingDto ToDto(int id, DateOnly start, DateOnly end, BookingStatus status, string country, Domain.Entities.BookingMarketDetail? detail)
     {
         var (weekend, week) = StayNights.Split(start, end);

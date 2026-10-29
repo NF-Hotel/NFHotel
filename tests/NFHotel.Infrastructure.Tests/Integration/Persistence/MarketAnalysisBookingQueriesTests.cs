@@ -126,6 +126,25 @@ public sealed class MarketAnalysisBookingQueriesTests : IAsyncLifetime
         Assert.Empty(bookings);
     }
 
+    /// <summary>Positive: the rooms of the hotel are counted, because the service needs them for the occupancy; none is zero.</summary>
+    [Fact]
+    public async Task CountRoomsAsync_SeededRooms_AreCounted()
+    {
+        // Arrange
+        await using var empty = _fixture.CreateContext();
+        var none = await new MarketAnalysisBookingQueries(empty).CountRoomsAsync(TestContext.Current.CancellationToken);
+        await Seed(MarketSeedPlannerTests.Row(1, 0, 3), MarketSeedPlannerTests.Row(2, 0, 3));
+        await using var context = _fixture.CreateContext();
+
+        // Act
+        var rooms = await new MarketAnalysisBookingQueries(context).CountRoomsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(0, none);
+        Assert.Equal(await context.Rooms.CountAsync(TestContext.Current.CancellationToken), rooms);
+        Assert.True(rooms >= 2);
+    }
+
     /// <summary>Positive: the real file of 40,060 bookings is read in full, and the cancellations match the file.</summary>
     [Fact]
     public async Task GetBookingsAsync_TheRealFile_ReadsEveryBooking()

@@ -1,5 +1,6 @@
 using System.Text.Json;
 
+using NFHotel.Application.Dto.MarketAnalysis;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
 using NFHotel.Domain.Entities;
@@ -9,7 +10,7 @@ using NFHotel.Domain.Repositories;
 namespace NFHotel.Application.UseCases.MarketAnalysis;
 
 /// <summary>
-/// The work of one market analysis run (MIL-026): read the bookings of the hotel, send them to the markets API, check the
+/// The work of one market analysis run (MIL-026): read the bookings and the rooms of the hotel, send them to the market analysis service, check the
 /// result and store it. The launcher calls it in the background; every outcome is written to the tracker, so nothing is
 /// thrown to a caller that is not there.
 /// </summary>
@@ -74,7 +75,14 @@ public sealed class MarketAnalysisRunner
             return;
         }
 
-        var result = await _client.AnalyzeAsync(bookings, cancellationToken).ConfigureAwait(false);
+        var rooms = await _bookings.CountRoomsAsync(cancellationToken).ConfigureAwait(false);
+        if (rooms < 1)
+        {
+            _tracker.MarkFailed(runId, ErrorCodes.MarketAnalysisRunner.InputRejected);
+            return;
+        }
+
+        var result = await _client.AnalyzeAsync(new MarketAnalysisRunRequest(rooms, bookings, period.From, period.To), cancellationToken).ConfigureAwait(false);
         if (result.IsFailure)
         {
             _tracker.MarkFailed(runId, result.Errors[0].Code);

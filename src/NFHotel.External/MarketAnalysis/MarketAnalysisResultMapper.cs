@@ -6,9 +6,12 @@ using NFHotel.Application.Dto.MarketAnalysis;
 namespace NFHotel.External.MarketAnalysis;
 
 /// <summary>
-/// Reads the result document of the markets API (result schema 1.0 and 1.1, ADR-0002 and ADR-0011 of
-/// <c>Notebook_Market_Analysis</c>) into <see cref="MarketAnalysisResultDto"/>. The document is read as JSON and not as a
-/// fixed type, because the <c>findings</c> of every analysis have their own shape and a new MINOR version adds fields.
+/// Reads the result document of the market analysis service (result schema 1.0 and 1.1, <c>RunResult</c> of
+/// <c>openapi/market-contract.yaml</c> of <c>notebook-market-analysis</c>) into <see cref="MarketAnalysisResultDto"/>. The
+/// document is read as JSON and not as a fixed type, because the <c>findings</c> of every analysis have their own shape and a
+/// new MINOR version adds fields. It reads the nine analyses of 1.1 (lead time, holidays, seasonality, cancellations, room
+/// value, guest mix, occupancy, occupancy on holidays and correlations), the <c>formula</c> and <c>limitations</c> of each, and
+/// the <c>observations</c> of each insight; a document without them (1.0) is read with those fields empty.
 /// </summary>
 public static class MarketAnalysisResultMapper
 {
@@ -20,6 +23,9 @@ public static class MarketAnalysisResultMapper
         ["cancellations"] = "Cancellations",
         ["room_value"] = "Room value and stay",
         ["guest_mix"] = "Guest and booking mix",
+        ["occupancy"] = "Occupancy",
+        ["occupancy_on_holidays"] = "Occupancy on holidays",
+        ["correlations"] = "Correlations between booking fields",
     };
 
     /// <summary>Reads a result document.</summary>
@@ -95,7 +101,10 @@ public static class MarketAnalysisResultMapper
             Text(analysis, "status") ?? "unavailable",
             Text(analysis, "reason"),
             findings.ValueKind == JsonValueKind.Undefined ? [] : FindingsSeries.Extract(findings),
-            analysis.TryGetProperty("insight", out var insight) && insight.ValueKind == JsonValueKind.Object ? Insight(insight) : null);
+            analysis.TryGetProperty("insight", out var insight) && insight.ValueKind == JsonValueKind.Object ? Insight(insight) : null,
+            Text(analysis, "formula"),
+            Strings(analysis, "limitations"),
+            findings.ValueKind == JsonValueKind.Undefined ? null : FindingsSeries.ExtractMatrices(findings));
     }
 
     private static MarketAnalysisInsightDto Insight(JsonElement insight)
@@ -119,8 +128,32 @@ public static class MarketAnalysisResultMapper
             Text(insight, "status") ?? "unavailable",
             Text(insight, "reason"),
             Text(insight, "executive_summary"),
-            suggestions);
+            suggestions,
+            Observations(insight));
     }
+
+    // One observation per chart; an entry without text or without the path of its series cannot be shown under a chart.
+    private static List<MarketAnalysisObservationDto> Observations(JsonElement insight)
+    {
+        var observations = new List<MarketAnalysisObservationDto>();
+        if (insight.TryGetProperty("observations", out var list) && list.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in list.EnumerateArray())
+            {
+                if (Text(item, "series") is { Length: > 0 } series && Text(item, "text") is { Length: > 0 } text)
+                {
+                    observations.Add(new MarketAnalysisObservationDto(series, text, Text(item, "evidence") ?? string.Empty));
+                }
+            }
+        }
+
+        return observations;
+    }
+
+    private static List<string>? Strings(JsonElement source, string name) =>
+        source.ValueKind == JsonValueKind.Object && source.TryGetProperty(name, out var list) && list.ValueKind == JsonValueKind.Array
+            ? [.. list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
+            : null;
 
     private static string? Text(JsonElement source, string name) =>
         source.ValueKind == JsonValueKind.Object && source.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String

@@ -7,6 +7,8 @@ namespace NFHotel.Application.Tests.Services;
 /// <summary>The work of a market analysis run: read the bookings, send them to the markets API, store the result (MIL-026).</summary>
 public sealed class MarketAnalysisRunnerTests
 {
+    #region Sending and storing
+
     /// <summary>Positive: the bookings of the hotel are sent as they are and the result is stored once with the clock times.</summary>
     [Fact]
     public async Task ExecuteAsync_BookingsAndResult_SendsTheBookingsAndStoresTheResult()
@@ -25,6 +27,45 @@ public sealed class MarketAnalysisRunnerTests
         Assert.Equal((world.Clock.UtcNow, world.Clock.UtcNow), (stored.StartedAt, stored.FinishedAt));
         Assert.Equal(MarketAnalysisRunStates.Completed, world.MarketAnalysisTracker.Get(runId)!.State);
         Assert.Equal(1, world.UnitOfWork.SaveCount);
+    }
+
+    /// <summary>Positive: the rooms of the hotel and the period of the Manager go to the service with the bookings.</summary>
+    [Fact]
+    public async Task ExecuteAsync_RoomsAndPeriod_AreSentWithTheBookings()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        world.MarketAnalysisBookings.RoomCount = 187;
+        var runId = world.MarketAnalysisTracker.TryBegin(new DateOnly(2019, 1, 1), new DateOnly(2019, 12, 31)).Value.RunId;
+
+        // Act
+        await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
+
+        // Assert
+        var sent = world.MarketAnalysisClient.LastRequest!;
+        Assert.Equal((187, new DateOnly(2019, 1, 1), new DateOnly(2019, 12, 31)), (sent.RoomCount, sent.From, sent.To));
+        Assert.Equal(world.MarketAnalysisBookings.Bookings, sent.Bookings);
+    }
+
+    #endregion
+
+    #region Refusals
+
+    /// <summary>Negative: a hotel with no room cannot have its occupancy read, so nothing is sent and the run is refused.</summary>
+    [Fact]
+    public async Task ExecuteAsync_NoRooms_FailsAsInputRejectedWithoutCallingTheService()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        world.MarketAnalysisBookings.RoomCount = 0;
+        var runId = Begin(world);
+
+        // Act
+        await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
+
+        // Assert
+        AssertFailed(world, runId, ErrorCodes.MarketAnalysisRunner.InputRejected);
+        Assert.Equal(0, world.MarketAnalysisClient.Calls);
     }
 
     /// <summary>Negative: with no booking nothing is sent and the run fails with its code.</summary>
@@ -50,6 +91,9 @@ public sealed class MarketAnalysisRunnerTests
     [InlineData("market_analysis_runner.unavailable")]
     [InlineData("market_analysis_runner.not_configured")]
     [InlineData("market_analysis_runner.unexpected_response")]
+    [InlineData("market_analysis_runner.unauthorized")]
+    [InlineData("market_analysis_runner.already_running")]
+    [InlineData("market_analysis_runner.run_failed:NO_DATA")]
     public async Task ExecuteAsync_ServiceFails_FailsWithTheCodeAndStoresNothing(string code)
     {
         // Arrange
@@ -116,6 +160,10 @@ public sealed class MarketAnalysisRunnerTests
         Assert.Equal(MarketAnalysisRunStates.Failed, world.MarketAnalysisTracker.Get(second)!.State);
     }
 
+    #endregion
+
+    #region Helpers
+
     private static Guid Begin(ServiceWorld world) => world.MarketAnalysisTracker.TryBegin().Value.RunId;
 
     private static void AssertFailed(ServiceWorld world, Guid runId, string code)
@@ -125,4 +173,6 @@ public sealed class MarketAnalysisRunnerTests
         Assert.Empty(world.MarketAnalysisRuns.Items);
         Assert.Equal(0, world.UnitOfWork.SaveCount);
     }
+
+    #endregion
 }

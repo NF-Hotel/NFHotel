@@ -27,8 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The sample of the result contract (MIL-026) is the test input, so the contract and the client cannot drift apart. -->
+    <!-- The sample result of the market analysis service (MIL-026) is the test input, so the contract and the client cannot drift apart. -->
     <Content Include="..\..\docs\test-data\market-analysis-result.json" Link="TestData\market-analysis-result.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- A byte-identical copy of openapi/market-contract.yaml of the market analysis service: the fake of the service and the contract test read it. -->
+    <Content Include="..\..\docs\test-data\market-contract.yaml" Link="TestData\market-contract.yaml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

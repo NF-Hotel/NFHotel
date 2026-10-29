@@ -32,5 +32,7 @@ Put the same value as `HolidayApi__ApiKey` in `deploy/nfhotel-web/nfhotel-web.en
 ## Not here any more
 
 The frozen service (ADR-0030, ADR-0500) had `POST /analyze`, a history notebook and a `market-analysis.toml`. The new
-service has none of them. The NFHotel API still calls `POST /analyze?insights=true`, so the market analysis page needs
-the client in `src/NFHotel.External/MarketAnalysis` to be moved to the runs API before it works again.
+service has none of them. The NFHotel API starts a run with `POST /api/v1/market-analysis/runs`, follows its state and
+reads the result (the client in `src/NFHotel.External/MarketAnalysis`); it sends the key as `MarketAnalysisService__ApiKey`,
+which must equal `API_TOKEN` of this service. `MARKET_ANALYSIS_REF` must be a commit that has the runs API (the merge of
+pull request 14 or later). Until the AI adapters of the service are built, every insight is `AI_NOT_CONFIGURED`.
