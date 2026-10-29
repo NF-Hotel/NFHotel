@@ -11,7 +11,7 @@
 #              key; internal networks nfhotel-api and nfhotel-db, no published port
 #   web        NFHotel web application, the only service the proxy serves publicly; it
 #              holds only an API address and a token
-#   analysis   market analysis API and notebook, internal listener only
+#   analysis   market analysis API (NF-Hotel/notebook-market-analysis), internal listener only
 #   benchmark  the benchmark service (API of notebook-benchmark): the web application starts runs there, it runs
 #              the models in ollama and delivers the result to the api; internal networks only, no published port
 #   nginx      (starts only when web is running and the analysis API is healthy) the reverse proxy: TLS on 443 and a redirect on 80 for web, loopback port for the rest;
@@ -149,12 +149,12 @@ if ((down)); then
 fi
 
 # The default AI model of the market analysis (ADR-0014) is chosen in the back office and stored in the database
-# of the web application. Write it as `model` in the [llm] section of the analysis settings before the analysis
+# of the web application. Write it as OLLAMA_MODEL in the analysis settings (market-analysis.env) before the analysis
 # service starts, so that the service uses it. Does nothing when the database is not running, no default is set,
 # or the name has a character that a model name does not have.
 analysis_changed=0
 apply_default_model() {
-  local toml="$1" model
+  local envfile="$1" model
   model="$(docker exec nfhotel-postgres-postgres-1 sh -c \
     'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -A -c "select model from ai_default where purpose = '"'"'market_analysis'"'"'"' 2>/dev/null |
     tr -d '\r' | head -n 1 || true)"
@@ -162,7 +162,7 @@ apply_default_model() {
     return 0
   fi
   if [[ ! "$model" =~ ^[A-Za-z0-9._:/-]+$ ]]; then
-    echo "warning: the default model '$model' has an unusual character; $toml is not changed" >&2
+    echo "warning: the default model '$model' has an unusual character; $envfile is not changed" >&2
     return 0
   fi
   # The analysis service uses a model only when the name is exactly one that Ollama lists, tag included
@@ -175,21 +175,24 @@ apply_default_model() {
 ' "$installed" | bash "$root/scripts/resolve-model-name.sh" "$model")"; then
     model="$resolved"
   else
-    echo "warning: the default model $model is not installed in Ollama (see: ollama list); $toml is not changed" >&2
+    echo "warning: the default model $model is not installed in Ollama (see: ollama list); $envfile is not changed" >&2
     return 0
   fi
   echo "==> the default AI model of the market analysis is $model"
-  awk -v model="$model" '
-    /^\[/ { in_llm = ($0 == "[llm]") }
-    in_llm && /^model[[:space:]]*=/ { print "model = \"" model "\""; next }
-    { print }
-  ' "$toml" >"$toml.tmp"
-  if ! cmp -s "$toml" "$toml.tmp"; then
-    # Written in place: the container mounts this file, and a new file would leave it looking at the old one.
-    cat "$toml.tmp" >"$toml"
+  if grep -q '^OLLAMA_MODEL=' "$envfile"; then
+    sed "s|^OLLAMA_MODEL=.*|OLLAMA_MODEL=$model|" "$envfile" >"$envfile.tmp"
+  else
+    {
+      cat "$envfile"
+      printf 'OLLAMA_MODEL=%s\n' "$model"
+    } >"$envfile.tmp"
+  fi
+  if ! cmp -s "$envfile" "$envfile.tmp"; then
+    # Written in place, so the owner and the mode of the file stay as they are.
+    cat "$envfile.tmp" >"$envfile"
     analysis_changed=1
   fi
-  rm -f "$toml.tmp"
+  rm -f "$envfile.tmp"
 }
 
 # Alloy is optional: it runs once the monitoring of ADR-0020 exists and alloy.env names it.
@@ -219,9 +222,6 @@ for s in "${ordered[@]}"; do
   [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
   [[ "$s" == "dbrelay" ]] && ((dbrelay_skipped)) && continue
   [[ -f "$d/$e" ]] || die "$d/$e is missing; copy $e.example to $e and fill it in"
-  if [[ "$s" == "analysis" && ! -f "$d/market-analysis.toml" ]]; then
-    die "$d/market-analysis.toml is missing; copy market-analysis.toml.example to it"
-  fi
 done
 
 # No secret goes into the environment of a container (MIL-035, ADR-0024): for PostgreSQL, the
@@ -302,14 +302,13 @@ for s in "${ordered[@]}"; do
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
   [[ "$s" == "dbrelay" ]] && ((dbrelay_skipped)) && continue
-  # The analysis image is a patch layer on a frozen digest (ADR-0030), a private GHCR
-  # package, so a host without a GHCR login (a development VM) cannot build it; the service
-  # is then left out, with the reason, and the rest of the deployment goes on. A release
-  # (--no-build) always names its digests.
+  # The analysis image is built from a pinned commit of NF-Hotel/notebook-market-analysis, which
+  # needs the internet; a host that cannot reach it leaves the service out, with the reason, and the
+  # rest of the deployment goes on. A release (--no-build) always names its digests.
   if [[ "$s" == "analysis" ]] && ((build)); then
     if ! (cd "$d" && docker compose --env-file "$e" build market-analysis-api) >&2; then
-      echo "warning: cannot build the analysis image on its frozen base (a private GHCR package, ADR-0030);" >&2
-      echo "         analysis is left out. Log this host in to ghcr.io with a token that can read packages to run it." >&2
+      echo "warning: cannot build the analysis image from NF-Hotel/notebook-market-analysis (GitHub and PyPI must be reachable);" >&2
+      echo "         analysis is left out." >&2
       analysis_skipped=1
       continue
     fi
@@ -327,12 +326,7 @@ for s in "${ordered[@]}"; do
     bash "$root/scripts/make-dev-certificate.sh" "$d/tls" $names || die "no certificate for the proxy"
   fi
   if [[ "$s" == "analysis" ]]; then
-    apply_default_model "$d/market-analysis.toml"
-    # The service runs as its own user (uid 1000, MIL-023 task 2) and reads this file through
-    # a read-only mount, so it must be readable by others. It holds no secret: addresses,
-    # the history size and the model name. At 0600, as switch-vm-checkout.sh had copied it,
-    # every analysis failed with "Permission denied" (HTTP 422, 2026-10-24).
-    chmod 0644 "$d/market-analysis.toml" || die "cannot make $d/market-analysis.toml readable"
+    apply_default_model "$d/$e"
   fi
   echo "==> deploying $s"
   args=(--env-file "$e" up -d --remove-orphans)

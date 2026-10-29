@@ -19,10 +19,11 @@
 #      ASPNETCORE_ENVIRONMENT=Development in nfhotel-api.env, and never in a release deployment.
 #      The generated passwords are kept in ops/deploy/nfhotel-api/dev-staff.env (git-ignored).
 #
-# Usage: dev-up.sh [--check] [--all] [--seed] [--open] [--down] [--destroy] [web|api|benchmark|nginx ...]
+# Usage: dev-up.sh [--check] [--all] [--seed] [--open] [--down] [--destroy] [web|api|analysis|benchmark|nginx ...]
 #   --check    only test that this machine can run it (Docker, KVM, tools, ports, disk, memory) and say how to fix
 #              each problem; starts nothing. The same test runs at the start of every other run.
 #   web, api   rebuild and restart only these (default: web and api, the code of this repository)
+#   analysis   rebuild the market analysis service from MARKET_ANALYSIS_REF in ops/deploy/market-analysis/market-analysis.env
 #   benchmark  rebuild the benchmark service from BENCHMARK_REF in ops/deploy/benchmark/benchmark.env
 #   nginx      recreate the proxy, to read a changed template or the mobile-app route (ADR-0015)
 #   --all      rebuild and restart every service of the seven
@@ -77,7 +78,7 @@ for arg in "$@"; do
       usage
       exit 0
       ;;
-    web | api | benchmark | nginx) rebuild+=("$arg") ;;
+    web | api | analysis | benchmark | nginx) rebuild+=("$arg") ;;
     *)
       echo "error: unknown argument: $arg" >&2
       usage >&2
@@ -218,7 +219,7 @@ move_old_settings() {
     new="$ops/${old#"$root"/}"
     [[ -f "$new" ]] && continue
     mkdir -p "$(dirname "$new")" && cp -p "$old" "$new" && echo "==> copied $old to $new"
-  done < <(find "$root/deploy" -type f \( -name "*.env" -o -name "market-analysis.toml" \))
+  done < <(find "$root/deploy" -type f \( -name "*.env" \))
 }
 move_old_settings
 
@@ -270,14 +271,20 @@ if ! grep -q '^COMPOSE_FILE=' "$nginx_dir/nginx.env"; then
   printf '\nCOMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml\n' >> "$nginx_dir/nginx.env"
 fi
 make_env "$ops/deploy/ollama" ollama.env || true
-# The market analysis service reads its settings and its configuration file. Its image is
-# frozen (ADR-0500), so a development VM runs it only with a GHCR login; without one,
-# ops/scripts/deploy-services.sh leaves it out and says why.
+# The market analysis service (NF-Hotel/notebook-market-analysis, built from a pinned commit). An older
+# market-analysis.env of the frozen service has no API_TOKEN, so it is kept under another name and the new example
+# takes its place. The key of the service is made once; the web application sends the same value as HolidayApi__ApiKey.
 analysis_dir="$ops/deploy/market-analysis"
+if [[ -f "$analysis_dir/market-analysis.env" ]] && ! grep -q '^API_TOKEN=' "$analysis_dir/market-analysis.env"; then
+  mv "$analysis_dir/market-analysis.env" "$analysis_dir/market-analysis.env.old-frozen"
+  echo "==> kept the old $analysis_dir/market-analysis.env as market-analysis.env.old-frozen"
+fi
 make_env "$analysis_dir" market-analysis.env || true
-if [[ ! -f "$analysis_dir/market-analysis.toml" ]]; then
-  cp "$analysis_dir/market-analysis.toml.example" "$analysis_dir/market-analysis.toml"
-  echo "==> made $analysis_dir/market-analysis.toml from the example"
+if [[ "$(value_of "$analysis_dir/market-analysis.env" API_TOKEN)" == "change-me" ]]; then
+  sed -i "s#^API_TOKEN=.*#API_TOKEN=$(secret 32)#" "$analysis_dir/market-analysis.env"
+fi
+if [[ -z "$(value_of "$web_dir/nfhotel-web.env" HolidayApi__ApiKey)" ]]; then
+  sed -i "s#^HolidayApi__ApiKey=.*#HolidayApi__ApiKey=$(value_of "$analysis_dir/market-analysis.env" API_TOKEN)#" "$web_dir/nfhotel-web.env"
 fi
 # The benchmark service: an older benchmark.env from the notebook has none of the NFBENCH_ settings, so it is
 # kept under another name and the new example takes its place. The token of the service is made once; the web

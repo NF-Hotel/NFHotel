@@ -13,3 +13,4 @@ release.json
 # Build outputs of the Proxmox tests (tests/NFHotel.Proxmox.Tests).
 bin/
 obj/
+*.env.old-*

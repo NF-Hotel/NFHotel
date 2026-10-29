@@ -10,7 +10,7 @@ One repository holds it all (ADR-0016): the application, and its operations unde
 2. **Merge to `main`.** CI runs again on `main`. When it is green, `NF Hotel Release` in NFHotel calls the `release-images` action. The action builds four images from that exact commit, with the compose files and scripts of `ops/` in it, and pushes them to the GitHub Container Registry:
    - `ghcr.io/nf-hotel/nfhotel-web`
    - `ghcr.io/nf-hotel/nfhotel-api`
-   - `ghcr.io/nf-hotel/market-analysis`, a patch layer on its frozen base (see "The market-analysis image" below)
+   - `ghcr.io/nf-hotel/market-analysis`, built from a pinned commit of `NF-Hotel/notebook-market-analysis` (see "The market-analysis image" below)
    - `ghcr.io/nf-hotel/benchmark`
 
    Each image is tagged `sha-<NFHotel commit>` and labelled with that commit (`org.opencontainers.image.revision`). The run summary and the artifact `release-manifest` (`release.json`) hold the commit, the operations commit (`devops_sha`, the same commit since ADR-0016), one digest per image and the hash of the migration script.
@@ -57,15 +57,15 @@ A rollback changes the images and the compose files, not the database. Migration
 
 ## The market-analysis image
 
-Its source repository was deleted, so the application cannot be built again (ADR-0500). The release builds a patch layer on the last good digest instead (ADR-0030): the Debian security updates, and the Python packages pinned in `ops/deploy/market-analysis/requirements.txt`. The application files stay those of the base; the release check proves it with `ops/tests/check-patch-layer.sh`. The image is scanned, attested and verified like the other three.
+The image is built from a pinned commit of `NF-Hotel/notebook-market-analysis` (`MARKET_ANALYSIS_REF` in `ops/deploy/market-analysis/`), with the dependencies of `requirements.lock` installed with hashes, as the benchmark image is. It is scanned, attested and verified like the other three.
 
 When the scan reports a finding in it:
 
 - **A Debian package with a fix:** the next release installs it; merge any change to `main`, or re-run the release.
-- **A Python package with a fix:** add the package to `requirements.txt` with the fixed version and the SHA-256 of its wheel (from `https://pypi.org/pypi/<package>/<version>/json`), in a pull request. The release check shows that it builds and that the application files are unchanged. Dependabot proposes newer versions of the pinned packages.
+- **A Python package with a fix:** regenerate `requirements.lock` from the pinned commit (the command is in the README of the folder), in a pull request. If the fix needs a newer commit of the service, change `MARKET_ANALYSIS_REF` too.
 - **No fix yet, or the fix breaks the service:** accept it for at most 30 days in `ops/security/trivyignore.yaml`, with a reason, in a reviewed pull request.
 
-The base digest must never be deleted from GHCR: without it the image cannot be built at all.
+Dependabot proposes newer digests of the base image.
 
 ## Back up and restore
 

@@ -32,7 +32,7 @@ are secrets. The files live in `ops/` and `ops/deploy/<service>/`.
 | `ops/deploy/postgres/postgres.env` | PostgreSQL | always | yes: database password |
 | `ops/deploy/nfhotel-api/nfhotel-api.env` | database API | always | yes: four |
 | `ops/deploy/nfhotel-web/nfhotel-web.env` | web application | always | yes: passport key |
-| `ops/deploy/market-analysis/market-analysis.env` | market analysis | always | no |
+| `ops/deploy/market-analysis/market-analysis.env` | market analysis | always | yes: API key |
 | `ops/deploy/ollama/ollama.env` | Ollama (AI models) | always | no |
 | `ops/deploy/benchmark/benchmark.env` | benchmark service | always | yes: API token |
 | `ops/deploy/nginx/nginx.env` | nginx proxy | always | no |
@@ -100,15 +100,23 @@ The web application. It has no database login: it calls the API.
 | `Tls__Require` | Redirect HTTP to HTTPS and mark the staff cookie Secure. True behind the proxy |
 | `Encryption__PassportKey` | Same value as in the API file. **Secret** |
 | `HotelTime__TimeZoneId` | Time zone of the hotel |
-| `HolidayApi__BaseUrl`, `__TimeoutSeconds`, `__ApiKey` | The holiday data of the analysis service. The key is optional |
+| `HolidayApi__BaseUrl`, `__TimeoutSeconds`, `__ApiKey` | The holiday calendar of the analysis service. The key must equal `API_TOKEN` of `market-analysis.env` |
 | `BenchmarkService__BaseUrl`, `__TimeoutSeconds`, `__Token` | The benchmark service. The token is `NFBENCH_API_TOKEN` of `benchmark.env`. Empty means the Start page says the service is not set up |
 | `NFHOTEL_PROXY_NETWORK`, `NFHOTEL_API_NETWORK` | Docker networks shared with nginx and with the API |
 
 ### `market-analysis/market-analysis.env`
 
-No secret. `NFHOTEL_PROXY_NETWORK` and `NFHOTEL_LLM_NETWORK` name the networks shared with nginx and Ollama.
-`MARKET_ANALYSIS_CONFIG` is the settings file mounted into the containers: copy `market-analysis.toml.example` to
-`market-analysis.toml` first (the model server address, the history and the timeouts are there).
+The market analysis service, built from a pinned commit of `NF-Hotel/notebook-market-analysis`.
+
+| Key | Meaning |
+| --- | --- |
+| `APP_ENV` | `production` requires `API_TOKEN` and explicit CORS origins |
+| `API_TOKEN` | The key callers send in `X-API-Key`, at least 32 characters (`openssl rand -hex 32`). **Secret.** The web application sends the same value as `HolidayApi__ApiKey`; `dev-up.sh` writes both |
+| `CORS_ALLOWED_ORIGINS` | Only satisfies the production rule: the web application calls from the server, not from a browser |
+| `DATA_SOURCE` | `csv`: the service serves holidays for now and reads no market data |
+| `AI_PROVIDER`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `AI_TIMEOUT_SECONDS` | The AI model of a run. The deploy writes `OLLAMA_MODEL` from the default AI model chosen in the back office. Empty means no AI narrative |
+| `NFHOTEL_PROXY_NETWORK`, `NFHOTEL_LLM_NETWORK`, `NFHOTEL_API_NETWORK` | Docker networks shared with nginx, with Ollama and with the web application and API |
+| `MARKET_ANALYSIS_REPO`, `MARKET_ANALYSIS_REF` | Repository and commit the image is built from. Upgrade by changing the commit and regenerating `requirements.lock` (see the README of the folder) |
 
 ### `ollama/ollama.env`
 
@@ -175,6 +183,7 @@ See [Disaster Recovery](Disaster-Recovery).
 | --- | --- | --- |
 | `Api__Token` | `nfhotel-api.env` | web and benchmark, passed by the deploy |
 | `Encryption__PassportKey` | `nfhotel-api.env` | `nfhotel-web.env`, copy by hand: the two must be equal |
+| `API_TOKEN` | `market-analysis.env` | `HolidayApi__ApiKey` in `nfhotel-web.env`, copy by hand |
 | `NFBENCH_API_TOKEN` | `benchmark.env` | `BenchmarkService__Token` in `nfhotel-web.env`, copy by hand |
 | `POSTGRES_PASSWORD` | `postgres.env` | the API, built into its connection string by the deploy |
 
