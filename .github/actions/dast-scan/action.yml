@@ -64,7 +64,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('dast-results/baseline-public.sarif') != ''
-      uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee  # v4.39.0
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.39.1
       with:
         sarif_file: dast-results/baseline-public.sarif
         category: zap-baseline-public
@@ -72,7 +72,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('dast-results/baseline-admin.sarif') != ''
-      uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee  # v4.39.0
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.39.1
       with:
         sarif_file: dast-results/baseline-admin.sarif
         category: zap-baseline-admin
@@ -80,7 +80,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('dast-results/full.sarif') != ''
-      uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee  # v4.39.0
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.39.1
       with:
         sarif_file: dast-results/full.sarif
         category: zap-full
