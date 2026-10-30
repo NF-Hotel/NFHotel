@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-30 why each product was chosen over its alternatives (for example PostgreSQL rather than MySQL), with the reasons taken mainly from users on Reddit and Stack Overflow, for every step of the DevOps loop and for cybersecurity. S01 accepted the plan in chat and added every step of the CI/CD workflows and of the backup ("inkluder også alle de steps i workflowet CICD og backup osv."); accepted after RC-251 Go | pending |
-| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Criterion 4: Reddit refuses the research tools, so S01 chose in chat on 2026-10-30 Hacker News, the Stack Overflow survey and the Stack Overflow answers instead ("1"); reviewed in RC-252 | pending |
+| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-30 why each product was chosen over its alternatives (for example PostgreSQL rather than MySQL), with the reasons taken mainly from users on Reddit and Stack Overflow, for every step of the DevOps loop and for cybersecurity. S01 accepted the plan in chat and added every step of the CI/CD workflows and of the backup ("inkluder også alle de steps i workflowet CICD og backup osv."); accepted after RC-251 Go | [b4329fc] |
+| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Criterion 4: Reddit refuses the research tools, so S01 chose in chat on 2026-10-30 Hacker News, the Stack Overflow survey and the Stack Overflow answers instead ("1"); reviewed in RC-252 | [b4329fc] |
 
 ---
 
@@ -93,3 +93,4 @@ Decide whether a member of the team, or a teacher, can see from the wiki why NF 
 [ADR-0007]: ../adr/adr-0007-cicd-and-supply-chain.md
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [ADR-0028]: ../adr/adr-0028-public-access-through-cloudflare-tunnel.md
+[b4329fc]: https://github.com/NF-Hotel/NFHotel/commit/b4329fcf8655a3ab43a0a8e1eb9da93217c32349

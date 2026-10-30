@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [b4329fc] |
 
 ---
 
@@ -73,3 +73,4 @@ Go: every Mandatory criterion passes. Task 1 (the research) stays open until the
 [MIL-050]: ../../milestones/mil-050-technology-choices.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[b4329fc]: https://github.com/NF-Hotel/NFHotel/commit/b4329fcf8655a3ab43a0a8e1eb9da93217c32349

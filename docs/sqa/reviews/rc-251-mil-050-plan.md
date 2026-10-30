@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [7a87af2] |
 
 ---
 
@@ -43,3 +43,4 @@ None.
 
 [MIL-050]: ../../milestones/mil-050-technology-choices.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[7a87af2]: https://github.com/NF-Hotel/NFHotel/commit/7a87af2ffbfadbf6c6d24e85bda7ea6ffe46f32b
