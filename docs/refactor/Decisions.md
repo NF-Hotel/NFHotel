@@ -19,17 +19,28 @@ A lighter auth solution is used (e.g. `simpleauth.net` — an example, not a cho
 **D-02 (Q-36) — JWT is implemented.**
 → *Code:* token issuing in the auth middleware, validation in both Web and the later Api.
 
+
 **D-03 (Q-39) — Role-based access, four roles.**
 
-| Role | Mobile app | Website |
-|---|---|---|
-| Cleaning staff | ✅ | ✅ |
-| Service technician | ✅ | ✅ |
-| Manager / owner | ✅ | ✅ |
-| Guest | ❌ | ✅ |
+NFHotel uses four roles for role-based access control (RBAC), aligned with the current implementation.
 
-The roles control access to **schedules and logging**.
-→ *Code:* the role is a claim in the JWT. Authorisation is enforced in the Application layer, not only in the UI — otherwise the API does not inherit the rule.
+| Role | Responsibility |
+|---|---|
+| Guest | Hotel guest. Guest login and authorisation are planned for a later phase. |
+| Receptionist | Handles guests and bookings. |
+| Manager | Has extended administrative permissions. |
+| Housekeeping | Handles cleaning and housekeeping tasks. |
+
+The original role definitions have been updated to reflect the current RBAC implementation. Service technician is not a separate role in the current RBAC model.
+
+Role-based access controls permissions for bookings, guest information, passport data, prices and housekeeping operations.
+
+→ *Code:* JWT authentication identifies the staff member. Authorisation is enforced in the Application layer through `StaffAuthorizationService` and `RolePermissions`, not only in the UI.
+
+→ *Access rules:* See `docs/refactor/Access-Control-Matrix.md`. Permissions follow the principle of least privilege.
+
+
+
 
 **D-04 (Q-38) — Privacy by design. Passport numbers and similar personal data are encrypted. A delete policy is required.**
 → *Code:* **this is a Phase 1 decision**, not a later addition. An encrypted column cannot be searched or sorted normally, so it changes both the EF configuration and every query that touches the field. It must go into `Architecture.md`.
