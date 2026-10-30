@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-30 for documentation of every DevOps choice: the workflows, the containers and where their images come from, the security controls, and the monitoring and alerts, each with why it was chosen and its alternatives. S01 accepted the plan ("Accepter planen"); accepted after RC-249 Go | pending |
+| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-30 for documentation of every DevOps choice: the workflows, the containers and where their images come from, the security controls, and the monitoring and alerts, each with why it was chosen and its alternatives. S01 accepted the plan ("Accepter planen"); accepted after RC-249 Go | [a22d404] |
 
 ---
 
@@ -83,3 +83,4 @@ Decide whether a member of the team, or a teacher, can understand every DevOps a
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [ADR-0021]: ../adr/adr-0021-automatic-deploy-when-green.md
 [ADR-0032]: ../adr/adr-0032-what-code-scanning-shows.md
+[a22d404]: https://github.com/NF-Hotel/NFHotel/commit/a22d40469f62e21f27efd92e53b0867868827c2b

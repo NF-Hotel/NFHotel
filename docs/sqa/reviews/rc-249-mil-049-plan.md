@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [a22d404] |
 
 ---
 
@@ -43,3 +43,4 @@ None.
 
 [MIL-049]: ../../milestones/mil-049-devops-security-reference.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[a22d404]: https://github.com/NF-Hotel/NFHotel/commit/a22d40469f62e21f27efd92e53b0867868827c2b
