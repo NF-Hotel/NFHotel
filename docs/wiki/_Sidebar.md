@@ -15,4 +15,5 @@
 - [Containers and Images](Containers-and-Images)
 - [Security Controls](Security-Controls)
 - [Alerts](Alerts)
+- [Technology Choices](Technology-Choices)
 - [Appendix](Appendix)

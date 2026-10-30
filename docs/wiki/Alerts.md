@@ -1,6 +1,6 @@
 # Alerts
 
-**Decisions:** [ADR-0020](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0020-monitoring-stack.md) (the monitoring stack), [ADR-0023](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0023-application-telemetry.md) (application metrics and objectives). **Work:** MIL-023, MIL-034, MIL-036, MIL-040, MIL-049.
+**Decisions:** [ADR-0020](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0020-monitoring-stack.md) (the monitoring stack), [ADR-0023](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0023-application-telemetry.md) (application metrics and objectives). **Work:** MIL-023, MIL-034, MIL-036, MIL-040, MIL-049. **Why each product:** [Technology Choices](Technology-Choices).
 
 Every alert of NF Hotel: what it measures, when it fires, how serious it is, where it goes and what to do. How to set up and operate the monitoring is on [Monitoring](Monitoring); its runbook table has the first commands for each alert. The rules are in `ops/deploy/monitoring/` and are checked in Ops CI with `promtool check rules`, `promtool test rules` (`prometheus/rules-test.yml`) and `amtool check-config`; the Loki rule is proven by `ops/tests/test-monitoring-stack.sh`.
 

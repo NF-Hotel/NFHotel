@@ -10,6 +10,7 @@ Every document under `docs/` of the repository. Links point to the `main` branch
 - [Containers and Images](Containers-and-Images): every container, where its image comes from and how it is locked down.
 - [Security Controls](Security-Controls): the security controls layer by layer, mapped to CIS, SAMM and the OWASP Top 10.
 - [Alerts](Alerts): every alert rule, its threshold, route and action, and the service level objectives.
+- [Technology Choices](Technology-Choices): why each product was chosen over its alternatives, with the community's reasons, and the CI/CD pipeline and the backup step by step.
 
 ## Business and planning
 
