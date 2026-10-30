@@ -16,6 +16,7 @@ The pages are written in [`docs/wiki/`](https://github.com/NF-Hotel/NFHotel/tree
   containers that run the whole system (development environment).
 - [Appendix: Project Documents](Appendix): links to every document under `docs/`.
 - Infrastructure and operations (ADR-0016, in `ops/`): [CI-CD](CI-CD), [Database Preparation](Database-Preparation), [Proxmox Deployment](Proxmox-Deployment), [Host Hardening](Host-Hardening), [Monitoring](Monitoring), [Disaster Recovery](Disaster-Recovery) and [Public Access](Public-Access), and the incident procedure in [Incidents](Incidents).
+- Reference pages (MIL-049): every DevOps and security choice with why and its alternatives, in [Workflows](Workflows), [Containers and Images](Containers-and-Images), [Security Controls](Security-Controls) and [Alerts](Alerts).
 
 ## Where things live
 

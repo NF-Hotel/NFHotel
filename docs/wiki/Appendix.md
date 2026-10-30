@@ -4,6 +4,13 @@
 
 Every document under `docs/` of the repository. Links point to the `main` branch.
 
+## Reference pages in this wiki
+
+- [Workflows](Workflows): every workflow, composite action and GitHub setting, with why and its alternatives.
+- [Containers and Images](Containers-and-Images): every container, where its image comes from and how it is locked down.
+- [Security Controls](Security-Controls): the security controls layer by layer, mapped to CIS, SAMM and the OWASP Top 10.
+- [Alerts](Alerts): every alert rule, its threshold, route and action, and the service level objectives.
+
 ## Business and planning
 
 - [Business Case](https://github.com/NF-Hotel/NFHotel/blob/main/docs/business-case.md)

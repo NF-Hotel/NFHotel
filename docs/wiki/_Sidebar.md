@@ -11,4 +11,8 @@
 - [Disaster Recovery](Disaster-Recovery)
 - [Public Access](Public-Access)
 - [Database Access](Database-Access)
+- [Workflows](Workflows)
+- [Containers and Images](Containers-and-Images)
+- [Security Controls](Security-Controls)
+- [Alerts](Alerts)
 - [Appendix](Appendix)
