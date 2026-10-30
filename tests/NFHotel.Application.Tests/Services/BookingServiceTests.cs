@@ -1,6 +1,8 @@
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
+using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.TestSupport;
 
@@ -78,7 +80,7 @@ public sealed class BookingServiceTests
             .ReturnsForAnyArgs(Task.FromResult<IReadOnlyList<BookingReadModel>>([]));
 
         // Act
-        var result = await world.BookingService().GetOverviewAsync(query, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingOverviewAuthorization()).GetOverviewAsync(query, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -102,7 +104,7 @@ public sealed class BookingServiceTests
             .ReturnsForAnyArgs(Task.FromResult<IReadOnlyList<BookingReadModel>>([]));
 
         // Act
-        await world.BookingService().GetOverviewAsync(query, TestContext.Current.CancellationToken);
+        await world.BookingService(CreateBookingOverviewAuthorization()).GetOverviewAsync(query, TestContext.Current.CancellationToken);
 
         // Assert
         await world.BookingQueries.Received(1).GetOverviewAsync(
@@ -133,7 +135,7 @@ public sealed class BookingServiceTests
                 [world.ReadModelFor(early), world.ReadModelFor(late)]));
 
         // Act
-        var result = await world.BookingService().GetOverviewAsync(query, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingOverviewAuthorization()).GetOverviewAsync(query, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal([late.Id, early.Id], result.Value.Select(item => item.BookingId).ToArray());
@@ -149,6 +151,24 @@ public sealed class BookingServiceTests
         // Act and assert
         await Assert.ThrowsAsync<ArgumentNullException>(
             () => service.GetOverviewAsync(null!, TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>Security: viewing the booking overview without permission is forbidden.</summary>
+    [Fact]
+    public async Task GetOverviewAsync_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+
+        var query = new BookingOverviewQuery(world.Clock.Today, world.Clock.Today.AddDays(7));
+
+        // Act
+        var result = await world.BookingService().GetOverviewAsync(
+            query,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
     }
 
     #endregion
@@ -244,6 +264,32 @@ public sealed class BookingServiceTests
     #endregion
 
     #region Creating a booking
+    /// <summary>Security: creating a booking without permission is forbidden.</summary>
+    [Fact]
+    public async Task CreateAsync_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var room = world.AddRoom();
+        var guest = world.AddGuest();
+
+        var request = new CreateBookingRequest(
+            world.Clock.Today,
+            world.Clock.Today.AddDays(2),
+            room.Id,
+            guest.Id,
+            null);
+
+        // Act
+        var result = await world.BookingService().CreateAsync(
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Empty(world.Bookings.Items);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
+    }
 
     /// <summary>Positive: an existing guest and a free room give a pending booking, saved once.</summary>
     [Fact]
@@ -251,12 +297,18 @@ public sealed class BookingServiceTests
     {
         // Arrange
         var world = new ServiceWorld();
+        var authorization = Substitute.For<IStaffAuthorizationService>();
+        authorization.HasPermissionAsync(
+            Permissions.CreateBooking,
+            Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
+
         var room = world.AddRoom();
         var guest = world.AddGuest();
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(authorization).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -274,7 +326,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, null, ServiceWorld.ValidGuestFields());
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -290,6 +342,13 @@ public sealed class BookingServiceTests
     {
         // Arrange
         var world = new ServiceWorld();
+
+        var authorization = Substitute.For<IStaffAuthorizationService>();
+        authorization.HasPermissionAsync(
+            Permissions.CreateBooking,
+            Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
+
         var room = world.AddRoom();
         var guest = world.AddGuest();
         var request = new CreateBookingRequest(
@@ -300,7 +359,7 @@ public sealed class BookingServiceTests
             withNewGuest ? ServiceWorld.ValidGuestFields() : null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(authorization).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.GuestSelectionInvalid, result.FirstError?.Code);
@@ -318,7 +377,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(1), room.Id, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -335,7 +394,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today, room.Id, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.EndNotAfterStart, result.FirstError?.Code);
@@ -352,7 +411,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today.AddDays(-1), world.Clock.Today.AddDays(2), room.Id, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.StartDateInPast, result.FirstError?.Code);
@@ -368,7 +427,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), 0, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.RoomRequired, result.FirstError?.Code);
@@ -384,7 +443,8 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), 99, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(
+            request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Room.NotFound, result.FirstError?.Code);
@@ -402,7 +462,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.RoomNotBookable, result.FirstError?.Code);
@@ -420,7 +480,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today.AddDays(2), world.Clock.Today.AddDays(4), room.Id, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.RoomNotAvailable, result.FirstError?.Code);
@@ -438,7 +498,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today.AddDays(3), world.Clock.Today.AddDays(5), room.Id, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -456,7 +516,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(3), room.Id, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -472,7 +532,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, 99, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Guest.NotFound, result.FirstError?.Code);
@@ -489,7 +549,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, null, fields);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Contains(ErrorCodes.Guest.FirstNameRequired, result.Errors.Select(error => error.Code));
@@ -509,7 +569,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.RoomNotAvailable, result.FirstError?.Code);
@@ -527,7 +587,7 @@ public sealed class BookingServiceTests
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.ConcurrencyConflict, result.FirstError?.Code);
@@ -549,6 +609,25 @@ public sealed class BookingServiceTests
 
     #region State transitions
 
+    /// <summary>Security: confirming a booking without permission is forbidden.</summary>
+    [Fact]
+    public async Task ConfirmAsync_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
+
+        // Act
+        var result = await world.BookingService().ConfirmAsync(
+            booking.Id,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Equal(BookingStatus.Pending, booking.Status);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
+    }
+
     /// <summary>State transition: a pending booking is confirmed and saved.</summary>
     [Fact]
     public async Task ConfirmAsync_PendingBooking_ConfirmsAndSaves()
@@ -558,7 +637,7 @@ public sealed class BookingServiceTests
         var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
 
         // Act
-        var result = await world.BookingService().ConfirmAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).ConfirmAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -576,7 +655,7 @@ public sealed class BookingServiceTests
         booking.Cancel();
 
         // Act
-        var result = await world.BookingService().ConfirmAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).ConfirmAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.ConfirmNotAllowed, result.FirstError?.Code);
@@ -591,7 +670,7 @@ public sealed class BookingServiceTests
         var world = new ServiceWorld();
 
         // Act
-        var result = await world.BookingService().ConfirmAsync(99, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).ConfirmAsync(99, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.NotFound, result.FirstError?.Code);
@@ -607,12 +686,33 @@ public sealed class BookingServiceTests
         booking.Confirm();
 
         // Act
-        var result = await world.BookingService().CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(BookingStatus.CheckedIn, booking.Status);
         Assert.Equal(world.Clock.UtcNow, booking.CheckInTime);
+    }
+
+    /// <summary>Security: checking in without permission is forbidden.</summary>
+    [Fact]
+    public async Task CheckInAsync_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var booking = world.AddBooking(
+            world.AddRoom().Id,
+            world.AddGuest().Id);
+
+        // Act
+        var result = await world.BookingService().CheckInAsync(
+            booking.Id,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Equal(BookingStatus.Pending, booking.Status);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
     }
 
     /// <summary>Boundary: the day before the arrival date is too early to check in.</summary>
@@ -625,7 +725,7 @@ public sealed class BookingServiceTests
         booking.Confirm();
 
         // Act
-        var result = await world.BookingService().CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.CheckInNotAllowed, result.FirstError?.Code);
@@ -644,7 +744,7 @@ public sealed class BookingServiceTests
         world.Clock.TimeOfDay = TimeSpan.FromHours(18);
 
         // Act
-        var result = await world.BookingService().CheckOutAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckOutAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -661,7 +761,7 @@ public sealed class BookingServiceTests
         var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
 
         // Act
-        var result = await world.BookingService().CheckOutAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckOutAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.CheckOutNotAllowed, result.FirstError?.Code);
@@ -675,10 +775,31 @@ public sealed class BookingServiceTests
         var world = new ServiceWorld();
 
         // Act
-        var result = await world.BookingService().CheckOutAsync(99, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckOutAsync(99, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.NotFound, result.FirstError?.Code);
+    }
+
+    /// <summary>Security: checking out without permission is forbidden.</summary>
+    [Fact]
+    public async Task CheckOutAsync_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
+        booking.Confirm();
+        booking.CheckIn(world.Clock.UtcNow, world.Clock.Today);
+
+        // Act
+        var result = await world.BookingService().CheckOutAsync(
+            booking.Id,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Equal(BookingStatus.CheckedIn, booking.Status);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
     }
 
     /// <summary>State transition: a pending booking is cancelled, not deleted (BR-13).</summary>
@@ -690,12 +811,31 @@ public sealed class BookingServiceTests
         var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
 
         // Act
-        var result = await world.BookingService().CancelAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CancelAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(BookingStatus.Cancelled, booking.Status);
         Assert.Single(world.Bookings.Items);
+    }
+
+    /// <summary>Security: cancelling a booking without permission is forbidden.</summary>
+    [Fact]
+    public async Task CancelAsync_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
+
+        // Act
+        var result = await world.BookingService().CancelAsync(
+            booking.Id,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Equal(BookingStatus.Pending, booking.Status);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
     }
 
     /// <summary>State transition: a booking that is already checked out cannot be cancelled.</summary>
@@ -710,7 +850,7 @@ public sealed class BookingServiceTests
         booking.CheckOut(world.Clock.UtcNow.AddHours(6), world.Clock.Today, world.Clock.Today);
 
         // Act
-        var result = await world.BookingService().CancelAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CancelAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.CancelNotAllowed, result.FirstError?.Code);
@@ -726,7 +866,7 @@ public sealed class BookingServiceTests
         world.UnitOfWork.FailWith = new ConcurrencyConflictException("row changed");
 
         // Act
-        var result = await world.BookingService().CancelAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CancelAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.ConcurrencyConflict, result.FirstError?.Code);
@@ -747,11 +887,43 @@ public sealed class BookingServiceTests
         var request = new RescheduleBookingRequest(booking.Id, world.Clock.Today.AddDays(10), world.Clock.Today.AddDays(12), room.Id);
 
         // Act
-        var result = await world.BookingService().RescheduleAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).RescheduleAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(world.Clock.Today.AddDays(10), booking.StartDate);
+    }
+
+    /// <summary>Security: rescheduling a booking without permission is forbidden.</summary>
+    [Fact]
+    public async Task RescheduleAsync_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var room = world.AddRoom();
+        var booking = world.AddBooking(room.Id, world.AddGuest().Id, startOffsetDays: 0, nights: 2);
+
+        var originalStartDate = booking.StartDate;
+        var originalEndDate = booking.EndDate;
+        var originalRoomId = booking.RoomId;
+
+        var request = new RescheduleBookingRequest(
+            booking.Id,
+            world.Clock.Today.AddDays(10),
+            world.Clock.Today.AddDays(12),
+            room.Id);
+
+        // Act
+        var result = await world.BookingService().RescheduleAsync(
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        Assert.Equal(originalStartDate, booking.StartDate);
+        Assert.Equal(originalEndDate, booking.EndDate);
+        Assert.Equal(originalRoomId, booking.RoomId);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
     }
 
     /// <summary>Edge: the booking does not block its own old period, so a small shift is accepted.</summary>
@@ -765,7 +937,7 @@ public sealed class BookingServiceTests
         var request = new RescheduleBookingRequest(booking.Id, world.Clock.Today.AddDays(1), world.Clock.Today.AddDays(5), room.Id);
 
         // Act
-        var result = await world.BookingService().RescheduleAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).RescheduleAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -784,7 +956,7 @@ public sealed class BookingServiceTests
         var request = new RescheduleBookingRequest(moving.Id, world.Clock.Today.AddDays(11), world.Clock.Today.AddDays(13), room.Id);
 
         // Act
-        var result = await world.BookingService().RescheduleAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).RescheduleAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.RoomNotAvailable, result.FirstError?.Code);
@@ -800,7 +972,7 @@ public sealed class BookingServiceTests
         var request = new RescheduleBookingRequest(99, world.Clock.Today, world.Clock.Today.AddDays(2), room.Id);
 
         // Act
-        var result = await world.BookingService().RescheduleAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).RescheduleAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.NotFound, result.FirstError?.Code);
@@ -818,7 +990,7 @@ public sealed class BookingServiceTests
         var request = new RescheduleBookingRequest(booking.Id, world.Clock.Today.AddDays(5), world.Clock.Today.AddDays(7), room.Id);
 
         // Act
-        var result = await world.BookingService().RescheduleAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).RescheduleAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.RescheduleNotAllowed, result.FirstError?.Code);
@@ -835,7 +1007,7 @@ public sealed class BookingServiceTests
         var request = new RescheduleBookingRequest(booking.Id, world.Clock.Today.AddDays(5), world.Clock.Today.AddDays(5), room.Id);
 
         // Act
-        var result = await world.BookingService().RescheduleAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).RescheduleAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.EndNotAfterStart, result.FirstError?.Code);
@@ -858,11 +1030,11 @@ public sealed class BookingServiceTests
         booking.CheckIn(world.Clock.UtcNow, world.Clock.Today);
         world.Clock.Today = world.Clock.Today.AddDays(1);
         world.Clock.TimeOfDay = TimeSpan.FromHours(9);
-        await world.BookingService().CheckOutAsync(booking.Id, TestContext.Current.CancellationToken);
+        await world.BookingService(CreateBookingEditAuthorization()).CheckOutAsync(booking.Id, TestContext.Current.CancellationToken);
         var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, guest.Id, null);
 
         // Act
-        var result = await world.BookingService().CreateAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingAuthorization()).CreateAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -879,7 +1051,7 @@ public sealed class BookingServiceTests
         world.Clock.TimeOfDay = TimeSpan.FromHours(13);
 
         // Act
-        var result = await world.BookingService().CheckOutAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckOutAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -897,7 +1069,7 @@ public sealed class BookingServiceTests
         var request = new RescheduleBookingRequest(booking.Id, world.Clock.Today.AddDays(5), world.Clock.Today.AddDays(7), room.Id);
 
         // Act
-        var result = await world.BookingService().RescheduleAsync(request, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).RescheduleAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.RescheduleNotAllowed, result.FirstError?.Code);
@@ -910,10 +1082,10 @@ public sealed class BookingServiceTests
         // Arrange
         var world = new ServiceWorld();
         var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
-        await world.BookingService().CancelAsync(booking.Id, TestContext.Current.CancellationToken);
+        await world.BookingService(CreateBookingEditAuthorization()).CancelAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await world.BookingService().CancelAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CancelAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.CancelNotAllowed, result.FirstError?.Code);
@@ -927,7 +1099,7 @@ public sealed class BookingServiceTests
         var world = new ServiceWorld();
         var room = world.AddRoom();
         var guest = world.AddGuest();
-        var service = world.BookingService();
+        var service = world.BookingService(CreateBookingAuthorization());
         await service.CreateAsync(new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, guest.Id, null), TestContext.Current.CancellationToken);
         await service.CreateAsync(new CreateBookingRequest(world.Clock.Today.AddDays(2), world.Clock.Today.AddDays(4), room.Id, guest.Id, null), TestContext.Current.CancellationToken);
 
@@ -953,7 +1125,7 @@ public sealed class BookingServiceTests
         var query = new BookingOverviewQuery(world.Clock.Today, world.Clock.Today.AddDays(-1));
 
         // Act
-        var result = await world.BookingService().GetOverviewAsync(query, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingOverviewAuthorization()).GetOverviewAsync(query, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.OverviewPeriodInvalid, result.FirstError?.Code);
@@ -973,7 +1145,7 @@ public sealed class BookingServiceTests
             .ReturnsForAnyArgs(Task.FromResult<IReadOnlyList<BookingReadModel>>([]));
 
         // Act
-        var result = await world.BookingService().GetOverviewAsync(query, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingOverviewAuthorization()).GetOverviewAsync(query, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -1000,7 +1172,7 @@ public sealed class BookingServiceTests
         }
 
         // Act
-        var result = await world.BookingService().CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.RoomNotBookable, result.FirstError?.Code);
@@ -1020,7 +1192,7 @@ public sealed class BookingServiceTests
         room.MarkDailyCleaningDue();
 
         // Act
-        var result = await world.BookingService().CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingEditAuthorization()).CheckInAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -1042,6 +1214,40 @@ public sealed class BookingServiceTests
         world.BookingQueries.GetOccupancyAsync(
                 Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<IReadOnlyCollection<BookingStatus>>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(occupancies));
+    }
+
+    private static IStaffAuthorizationService CreateBookingAuthorization()
+    {
+        var authorization = Substitute.For<IStaffAuthorizationService>();
+
+        authorization.HasPermissionAsync(
+            Permissions.CreateBooking,
+            Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
+        return authorization;
+    }
+
+    private static IStaffAuthorizationService CreateBookingOverviewAuthorization()
+    {
+        var authorization = Substitute.For<IStaffAuthorizationService>();
+
+        authorization.HasPermissionAsync(
+            Permissions.BookingsView,
+            Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
+        return authorization;
+    }
+
+    private static IStaffAuthorizationService CreateBookingEditAuthorization()
+    {
+        var authorization = Substitute.For<IStaffAuthorizationService>();
+
+        authorization.HasPermissionAsync(
+            Permissions.EditOtherBookings,
+            Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
+
+        return authorization;
     }
 
     #endregion

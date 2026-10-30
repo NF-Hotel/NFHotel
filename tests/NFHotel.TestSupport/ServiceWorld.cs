@@ -313,8 +313,8 @@ public sealed class ServiceWorld
 
     public IBenchmarkQueries BenchmarkQueries { get; } = Substitute.For<IBenchmarkQueries>();
 
-    public BookingService BookingService() =>
-        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock);
+    public BookingService BookingService(IStaffAuthorizationService? authorization = null) =>
+        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>());
 
     public GuestService GuestService(IStaffAuthorizationService? authorization = null) =>
       new(Guests, GuestQueries, UnitOfWork, authorization ?? Substitute.For<IStaffAuthorizationService>());

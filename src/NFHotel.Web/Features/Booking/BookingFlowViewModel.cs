@@ -472,7 +472,7 @@ public sealed class BookingFlowViewModel
         try
         {
             result = await _bookings
-                .RunAsync((service, token) => service.CreateAsync(request, token), cancellationToken)
+                .RunAsync((service, token) => service.CreatePublicAsync(request, token), cancellationToken)
                 .ConfigureAwait(false);
         }
         finally

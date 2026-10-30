@@ -3,6 +3,7 @@ using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases.Guests;
+using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.Repositories;
@@ -42,6 +43,7 @@ public sealed class BookingService : IBookingService
     private readonly IRoomQueries _roomQueries;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IClock _clock;
+    private readonly IStaffAuthorizationService _authorization;
 
     /// <summary>
     /// Creates the service.
@@ -53,6 +55,7 @@ public sealed class BookingService : IBookingService
     /// <param name="roomQueries">Reading rooms as projections — used for the availability lookup (BR-110).</param>
     /// <param name="unitOfWork">The transaction boundary.</param>
     /// <param name="clock">Hotellets ur (A-05).</param>
+    /// <param name="authorization">The service for checking staff permissions.</param>
     public BookingService(
         IBookingRepository bookingRepository,
         IRoomRepository roomRepository,
@@ -60,7 +63,8 @@ public sealed class BookingService : IBookingService
         IBookingQueries bookingQueries,
         IRoomQueries roomQueries,
         IUnitOfWork unitOfWork,
-        IClock clock)
+        IClock clock,
+        IStaffAuthorizationService authorization)
     {
         ArgumentNullException.ThrowIfNull(bookingRepository);
         ArgumentNullException.ThrowIfNull(roomRepository);
@@ -69,6 +73,7 @@ public sealed class BookingService : IBookingService
         ArgumentNullException.ThrowIfNull(roomQueries);
         ArgumentNullException.ThrowIfNull(unitOfWork);
         ArgumentNullException.ThrowIfNull(clock);
+        ArgumentNullException.ThrowIfNull(authorization);
 
         _bookingRepository = bookingRepository;
         _roomRepository = roomRepository;
@@ -77,6 +82,7 @@ public sealed class BookingService : IBookingService
         _roomQueries = roomQueries;
         _unitOfWork = unitOfWork;
         _clock = clock;
+        _authorization = authorization;
     }
 
     // --------------------------------------------------------
@@ -111,6 +117,15 @@ public sealed class BookingService : IBookingService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(query);
+
+        // Checks whether the staff member can view the booking overview.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.BookingsView,
+            cancellationToken))
+        {
+            return Result<IReadOnlyList<BookingListItemDto>>.Failure(
+                ErrorCodes.Api.Forbidden);
+        }
 
         // MIL-013: an end before the start is a mistake, not an empty period. An end equal to the start
         // is the view of one day and is allowed, unlike a stay, which needs at least one night.
@@ -206,6 +221,48 @@ public sealed class BookingService : IBookingService
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        // Checks whether the staff member can create bookings.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.CreateBooking,
+            cancellationToken))
+        {
+            return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        // Calls the shared booking creation logic.
+        return await CreateBookingInternalAsync(request, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Creates a booking through the public guest booking flow.
+    /// Only new guest details are accepted.
+    /// </summary>
+    public async Task<Result<BookingDetailsDto>> CreatePublicAsync(
+        CreateBookingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        // Public bookings must use new guest details.
+        if (request.GuestId is not null || request.NewGuest is null)
+        {
+            return Result<BookingDetailsDto>.Failure(
+                ErrorCodes.Booking.GuestSelectionInvalid);
+        }
+
+        // Uses the shared booking logic without requiring staff permissions.
+        return await CreateBookingInternalAsync(request, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Creates a booking using the shared booking rules.
+    /// </summary>
+    private async Task<Result<BookingDetailsDto>> CreateBookingInternalAsync(
+        CreateBookingRequest request,
+        CancellationToken cancellationToken)
+    {
         // BR-47: exactly one of the two guest paths. Both and neither are a rule error,
         // not a NullReferenceException down in a form.
         var hasExistingGuest = request.GuestId is > 0;
@@ -263,23 +320,46 @@ public sealed class BookingService : IBookingService
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.ConfirmNotAllowed"/>.</returns>
-    public Task<Result<BookingDetailsDto>> ConfirmAsync(
+    public async Task<Result<BookingDetailsDto>> ConfirmAsync(
         int bookingId,
-        CancellationToken cancellationToken = default) =>
-        TransitionAsync(bookingId, static booking => booking.Confirm(), cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        // Checks whether the staff member can confirm bookings.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.EditOtherBookings,
+            cancellationToken))
+        {
+            return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        return await TransitionAsync(
+            bookingId,
+            static booking => booking.Confirm(),
+            cancellationToken);
+    }
 
     /// <summary>Checks the guest in (BR-06, BR-07, BR-08, B-01).</summary>
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.CheckInNotAllowed"/>.</returns>
-    public Task<Result<BookingDetailsDto>> CheckInAsync(
+    public async Task<Result<BookingDetailsDto>> CheckInAsync(
         int bookingId,
-        CancellationToken cancellationToken = default) =>
-        TransitionAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // Checks whether the staff member can check guests in.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.EditOtherBookings,
+            cancellationToken))
+        {
+            return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        return await TransitionAsync(
             bookingId,
             booking => booking.CheckIn(_clock.UtcNow, _clock.Today),
             cancellationToken,
             RoomMustBeBookableForCheckInAsync);
+    }
 
     /// <summary>Checks the guest out (BR-09, BR-10, BR-107, A-01, A-03, BR-N-06).</summary>
     /// <param name="bookingId">Bookingens id.</param>
@@ -302,6 +382,14 @@ public sealed class BookingService : IBookingService
         CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bookingId);
+
+        // Checks whether the staff member has permission to check guests out.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.EditOtherBookings,
+            cancellationToken))
+        {
+            return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
 
         var booking = await _bookingRepository.GetByIdAsync(bookingId, cancellationToken).ConfigureAwait(false);
 
@@ -335,10 +423,23 @@ public sealed class BookingService : IBookingService
     /// <param name="bookingId">Bookingens id.</param>
     /// <param name="cancellationToken">Annulleringstoken.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.CancelNotAllowed"/>.</returns>
-    public Task<Result<BookingDetailsDto>> CancelAsync(
+    public async Task<Result<BookingDetailsDto>> CancelAsync(
         int bookingId,
-        CancellationToken cancellationToken = default) =>
-        TransitionAsync(bookingId, static booking => booking.Cancel(), cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        // Checks whether the staff member has permission to cancel bookings.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.EditOtherBookings,
+            cancellationToken))
+        {
+            return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        return await TransitionAsync(
+            bookingId,
+            static booking => booking.Cancel(),
+            cancellationToken);
+    }
 
     /// <summary>
     /// Moves a booking (BR-14, BR-17, BR-18, BR-19, BR-20, BR-108, BR-123, B-03).
@@ -352,6 +453,14 @@ public sealed class BookingService : IBookingService
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.BookingId);
+
+        // Checks whether the staff member has permission to reschedule bookings.
+        if (!await _authorization.HasPermissionAsync(
+            Permissions.EditOtherBookings,
+            cancellationToken))
+        {
+            return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
 
         if (!TryCreatePeriod(request.NewStartDate, request.NewEndDate, out var period, out var periodError))
         {

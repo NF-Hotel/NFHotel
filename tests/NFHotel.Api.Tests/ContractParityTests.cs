@@ -43,7 +43,7 @@ public sealed class ContractParityTests : IAsyncLifetime
             .Returns(Task.FromResult(true));
 
         _directServices = new Services(
-            _direct.BookingService(),
+            _direct.BookingService(authorization),
             _direct.GuestService(authorization),
             _direct.RoomService());
 
@@ -148,6 +148,7 @@ public sealed class ContractParityTests : IAsyncLifetime
         AddB("CreateAsync inverted period", b => b.CreateAsync(new CreateBookingRequest(today.AddDays(9), today.AddDays(3), 3, 1, null), ct));
         AddB("CreateAsync unknown room", b => b.CreateAsync(new CreateBookingRequest(today.AddDays(30), today.AddDays(31), 99, 1, null), ct));
         AddThrows("IBookingService.CreateAsync null", s => s.Bookings.CreateAsync(null!, ct));
+        AddB("CreatePublicAsync invalid guest selection", b => b.CreatePublicAsync(new CreateBookingRequest(today.AddDays(30), today.AddDays(31), 99, 1, null), ct));
 
         // --- bookings: transitions and moving
         AddB("ConfirmAsync pending", b => b.ConfirmAsync(1, ct));

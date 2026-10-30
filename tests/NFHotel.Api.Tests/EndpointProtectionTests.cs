@@ -18,7 +18,7 @@ public sealed class EndpointProtectionTests
     [
         "BookingsController.GetByIdAsync",
         "BookingsController.GetAvailableRoomsAsync",
-        "BookingsController.CreateAsync",
+        "BookingsController.CreatePublicAsync",
         "AuthController.LoginAsync",
         "BenchmarkController.PostResultAsync",
         "AiDefaultsController.GetAllAsync",

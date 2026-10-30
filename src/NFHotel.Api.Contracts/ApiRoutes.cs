@@ -9,6 +9,9 @@ public static class ApiRoutes
     /// <summary>The route prefix of the booking endpoints.</summary>
     public const string Bookings = "api/bookings";
 
+    /// <summary>The route for public guest booking creation.</summary>
+    public const string PublicBooking = "public";
+
     /// <summary>The route prefix of the guest endpoints.</summary>
     public const string Guests = "api/guests";
 
