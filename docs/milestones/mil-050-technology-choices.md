@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-30 why each product was chosen over its alternatives (for example PostgreSQL rather than MySQL), with the reasons taken mainly from users on Reddit and Stack Overflow, for every step of the DevOps loop and for cybersecurity. S01 accepted the plan in chat and added every step of the CI/CD workflows and of the backup ("inkluder også alle de steps i workflowet CICD og backup osv.") | pending |
+| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-30 why each product was chosen over its alternatives (for example PostgreSQL rather than MySQL), with the reasons taken mainly from users on Reddit and Stack Overflow, for every step of the DevOps loop and for cybersecurity. S01 accepted the plan in chat and added every step of the CI/CD workflows and of the backup ("inkluder også alle de steps i workflowet CICD og backup osv."); accepted after RC-251 Go | pending |
 
 ---
 
