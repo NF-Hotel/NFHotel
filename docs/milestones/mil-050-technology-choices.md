@@ -12,6 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-30 why each product was chosen over its alternatives (for example PostgreSQL rather than MySQL), with the reasons taken mainly from users on Reddit and Stack Overflow, for every step of the DevOps loop and for cybersecurity. S01 accepted the plan in chat and added every step of the CI/CD workflows and of the backup ("inkluder også alle de steps i workflowet CICD og backup osv."); accepted after RC-251 Go | pending |
+| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Criterion 4: Reddit refuses the research tools, so S01 chose in chat on 2026-10-30 Hacker News, the Stack Overflow survey and the Stack Overflow answers instead ("1"); reviewed in RC-252 | pending |
 
 ---
 
@@ -43,7 +44,7 @@ Decide whether a member of the team, or a teacher, can see from the wiki why NF 
 | 1 | Every product in the list above, every third-party image of the compose files and every workflow file has an entry; `test-wiki-coverage.sh` passes in Ops CI | Yes | No |
 | 2 | Every named step of the ten workflows and four composite actions, and every numbered step of `backup-database.sh` and `restore-drill.sh`, is in a step-by-step section with its tool and the reason for it | Yes | No |
 | 3 | Each entry names at least two alternatives, advantages and drawbacks, and the project's reason or "Not decided in an ADR" | Yes | No |
-| 4 | Each entry cites at least one Reddit or Stack Overflow thread (or, where none exists, the product's own documentation, marked as such); every link opens; no quote is longer than one sentence | Yes | No |
+| 4 | Each entry cites at least one practitioner source: a Hacker News or Stack Exchange thread, or the Stack Overflow Developer Survey 2025 (or, where none exists, the product's own documentation, marked as such); every link opens; no quote is longer than one sentence. Reddit is not used, because it refuses the research tools; the answers of the Stack Exchange threads are summarised under task 1 once they have been read | Yes | No |
 | 5 | No secret, password, token or private address is on the page | Yes | No |
 | 6 | The page is linked from Home, the sidebar, Appendix and the MIL-049 pages, and the wiki on GitHub shows it after the merge | Yes | No |
 | 7 | The review of the page and of the test is Go, and CI and the wiki publish are green | Yes | No |

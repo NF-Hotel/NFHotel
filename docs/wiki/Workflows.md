@@ -1,6 +1,6 @@
 # Workflows
 
-**Decisions:** [ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md), [ADR-0016](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0016-one-repository-for-application-and-operations.md), [ADR-0021](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0021-automatic-deploy-when-green.md). **Work:** MIL-021, MIL-022, MIL-027, MIL-036, MIL-049.
+**Decisions:** [ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md), [ADR-0016](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0016-one-repository-for-application-and-operations.md), [ADR-0021](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0021-automatic-deploy-when-green.md). **Work:** MIL-021, MIL-022, MIL-027, MIL-036, MIL-049. **Why each product:** [Technology Choices](Technology-Choices).
 
 Every GitHub Actions workflow and composite action of NF Hotel: when it runs, what it checks, what it may do, why it exists and what else could have been used. For how to operate the pipeline (a deploy that does not start, a rollback), see [CI-CD](CI-CD). For the security controls behind the checks, see [Security Controls](Security-Controls).
 

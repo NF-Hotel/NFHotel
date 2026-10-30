@@ -1,6 +1,6 @@
 # Security Controls
 
-**Assessment:** [DSA-001](https://github.com/NF-Hotel/NFHotel/blob/main/docs/sqa/devsecops-assessment.md), [CIS-001](https://github.com/NF-Hotel/NFHotel/blob/main/docs/sqa/cis-checklist.md), [SAMM-001](https://github.com/NF-Hotel/NFHotel/blob/main/docs/sqa/samm-baseline.md). **Work:** MIL-016, MIL-017, MIL-021 to MIL-023, MIL-033 to MIL-036, MIL-040, MIL-041, MIL-049.
+**Assessment:** [DSA-001](https://github.com/NF-Hotel/NFHotel/blob/main/docs/sqa/devsecops-assessment.md), [CIS-001](https://github.com/NF-Hotel/NFHotel/blob/main/docs/sqa/cis-checklist.md), [SAMM-001](https://github.com/NF-Hotel/NFHotel/blob/main/docs/sqa/samm-baseline.md). **Work:** MIL-016, MIL-017, MIL-021 to MIL-023, MIL-033 to MIL-036, MIL-040, MIL-041, MIL-049. **Why each product:** [Technology Choices](Technology-Choices).
 
 Every security control of NF Hotel, layer by layer: what it is, what it catches, why it was chosen, what else could have been used, and what risk is left. Each control names the file or the decision it comes from. To report a vulnerability, see `SECURITY.md` in the repository; to handle an incident, see [Incidents](Incidents).
 
