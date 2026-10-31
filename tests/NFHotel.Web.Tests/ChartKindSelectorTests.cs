@@ -26,7 +26,7 @@ public sealed class ChartKindSelectorTests
     public void Select_PartsOfAWhole_AreADonutOnlyUpToFourParts(int parts, ChartKind expected)
     {
         // Arrange
-        var series = Whole([.. Enumerable.Range(1, parts).Select(index => $"part {index}")]);
+        MarketAnalysisSeriesDto series = Whole([.. Enumerable.Range(1, parts).Select(index => $"part {index}")]);
 
         // Act and assert
         Assert.Equal(expected, ChartKindSelector.Select(series));
@@ -40,7 +40,7 @@ public sealed class ChartKindSelectorTests
     public void Select_SeparateRates_AreColumnsAndNeverADonut(int rates)
     {
         // Arrange
-        var series = Series(false, false, [.. Enumerable.Range(1, rates).Select(index => $"rate {index}")]);
+        MarketAnalysisSeriesDto series = Series(false, false, [.. Enumerable.Range(1, rates).Select(index => $"rate {index}")]);
 
         // Act and assert
         Assert.Equal(ChartKind.Columns, ChartKindSelector.Select(series));
@@ -65,7 +65,7 @@ public sealed class ChartKindSelectorTests
     public void Select_OrderedBands_AreColumnsInTheirOrder(int bands)
     {
         // Arrange
-        var series = Series(true, true, [.. Enumerable.Range(1, bands).Select(index => index.ToString(System.Globalization.CultureInfo.InvariantCulture))]);
+        MarketAnalysisSeriesDto series = Series(true, true, [.. Enumerable.Range(1, bands).Select(index => index.ToString(System.Globalization.CultureInfo.InvariantCulture))]);
 
         // Act and assert
         Assert.Equal(ChartKind.Columns, ChartKindSelector.Select(series));
@@ -112,7 +112,7 @@ public sealed class ChartKindSelectorTests
     public void Select_Weeks_AreALine()
     {
         // Arrange
-        var series = Series(true, false, "2018-W26", "2018-W27", "2018-W28", "2018-W29");
+        MarketAnalysisSeriesDto series = Series(true, false, "2018-W26", "2018-W27", "2018-W28", "2018-W29");
 
         // Act and assert
         Assert.Equal(ChartKind.Line, ChartKindSelector.Select(series));
@@ -127,7 +127,7 @@ public sealed class ChartKindSelectorTests
     public void Select_NegativeValue_KeepsTheGroupedBars()
     {
         // Arrange
-        var series = new MarketAnalysisSeriesDto("s", "S", "%", [new("a", 1), new("b", -2), new("c", 3)]);
+        MarketAnalysisSeriesDto series = new MarketAnalysisSeriesDto("s", "S", "%", [new("a", 1), new("b", -2), new("c", 3)]);
 
         // Act and assert
         Assert.Equal(ChartKind.GroupedBars, ChartKindSelector.Select(series));
@@ -177,7 +177,7 @@ public sealed class ChartKindSelectorTests
     public void Select_RealSample_GivesTheExpectedKind(string analysis, string seriesId, ChartKind expected)
     {
         // Arrange
-        var series = MarketSample.Section(analysis).Series.Single(found => found.Id == seriesId);
+        MarketAnalysisSeriesDto series = MarketSample.Section(analysis).Series.Single(found => found.Id == seriesId);
 
         // Act and assert
         Assert.Equal(expected, ChartKindSelector.Select(series));
@@ -188,7 +188,7 @@ public sealed class ChartKindSelectorTests
     public void Select_RealSample_EverySeriesIsInTheTable()
     {
         // Act
-        var count = MarketSample.Sections().Sum(section => section.Series.Count);
+        int count = MarketSample.Sections().Sum(section => section.Series.Count);
 
         // Assert
         Assert.Equal(25, count);
@@ -199,7 +199,7 @@ public sealed class ChartKindSelectorTests
     public void Select_RealSample_NeverDrawsADonutForMoreThanFourPartsOrForSeparateRates()
     {
         // Arrange
-        var donuts = MarketSample.Sections().SelectMany(section => section.Series).Where(series => ChartKindSelector.Select(series) == ChartKind.Donut).ToList();
+        List<MarketAnalysisSeriesDto> donuts = MarketSample.Sections().SelectMany(section => section.Series).Where(series => ChartKindSelector.Select(series) == ChartKind.Donut).ToList();
 
         // Assert
         Assert.NotEmpty(donuts);
@@ -225,7 +225,7 @@ public sealed class ChartKindSelectorTests
 
     private static string Month(int startYear, int startMonth, int offset)
     {
-        var total = (startYear * 12) + (startMonth - 1) + offset;
+        int total = (startYear * 12) + (startMonth - 1) + offset;
 
         return $"{total / 12:0000}-{(total % 12) + 1:00}";
     }

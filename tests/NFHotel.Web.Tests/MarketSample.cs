@@ -12,8 +12,8 @@ internal static class MarketSample
     /// <returns>The nine analyses of the sample.</returns>
     public static IReadOnlyList<MarketAnalysisSectionDto> Sections()
     {
-        var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
-        using var document = JsonDocument.Parse(json);
+        string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
+        using JsonDocument document = JsonDocument.Parse(json);
 
         return MarketAnalysisResultMapper.Map(document.RootElement)?.Content?.Sections
             ?? throw new InvalidOperationException("The sample is not a result.");

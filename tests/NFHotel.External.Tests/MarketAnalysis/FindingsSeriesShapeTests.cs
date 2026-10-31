@@ -19,7 +19,7 @@ public sealed class FindingsSeriesShapeTests
     public void Extract_SharesThatAddUpToTheWhole_ArePartsOfAWhole()
     {
         // Act
-        var series = Single("""{"groups":[{"group":"a","numerator":30,"denominator":100},{"group":"b","numerator":70,"denominator":100}]}""");
+        MarketAnalysisSeriesDto series = Single("""{"groups":[{"group":"a","numerator":30,"denominator":100},{"group":"b","numerator":70,"denominator":100}]}""");
 
         // Assert
         Assert.True(series.IsPartsOfWhole);
@@ -31,7 +31,7 @@ public sealed class FindingsSeriesShapeTests
     public void Extract_RatesWithTheirOwnDenominators_AreNotPartsOfAWhole()
     {
         // Act
-        var series = Single("""{"groups":[{"group":"a","numerator":30,"denominator":50},{"group":"b","numerator":10,"denominator":100}]}""");
+        MarketAnalysisSeriesDto series = Single("""{"groups":[{"group":"a","numerator":30,"denominator":50},{"group":"b","numerator":10,"denominator":100}]}""");
 
         // Assert
         Assert.False(series.IsPartsOfWhole);
@@ -42,7 +42,7 @@ public sealed class FindingsSeriesShapeTests
     public void Extract_SharesThatDoNotAddUp_AreNotPartsOfAWhole()
     {
         // Act
-        var series = Single("""{"groups":[{"group":"a","numerator":30,"denominator":100},{"group":"b","numerator":60,"denominator":100}]}""");
+        MarketAnalysisSeriesDto series = Single("""{"groups":[{"group":"a","numerator":30,"denominator":100},{"group":"b","numerator":60,"denominator":100}]}""");
 
         // Assert
         Assert.False(series.IsPartsOfWhole);
@@ -53,7 +53,7 @@ public sealed class FindingsSeriesShapeTests
     public void Extract_Counts_AreNotPartsOfAWhole()
     {
         // Act
-        var series = Single("""{"groups":[{"group":"a","count":3},{"group":"b","count":7}]}""");
+        MarketAnalysisSeriesDto series = Single("""{"groups":[{"group":"a","count":3},{"group":"b","count":7}]}""");
 
         // Assert
         Assert.False(series.IsPartsOfWhole);
@@ -64,10 +64,10 @@ public sealed class FindingsSeriesShapeTests
     public void Extract_CutSeries_IsNotPartsOfAWhole()
     {
         // Arrange
-        var months = Enumerable.Range(0, 40).Select(index => $$"""{"group":"{{2015 + (index / 12)}}-{{(index % 12) + 1:00}}","numerator":1,"denominator":40}""");
+        IEnumerable<string> months = Enumerable.Range(0, 40).Select(index => $$"""{"group":"{{2015 + (index / 12)}}-{{(index % 12) + 1:00}}","numerator":1,"denominator":40}""");
 
         // Act
-        var series = Single($$"""{"periods":[{{string.Join(',', months)}}]}""");
+        MarketAnalysisSeriesDto series = Single($$"""{"periods":[{{string.Join(',', months)}}]}""");
 
         // Assert
         Assert.Equal(FindingsSeries.MaxPoints, series.Points.Count);
@@ -87,7 +87,7 @@ public sealed class FindingsSeriesShapeTests
     public void Extract_LabelsWithANaturalOrder_AreOrdered(string first, string second, string third)
     {
         // Act
-        var series = Single(Groups(first, second, third));
+        MarketAnalysisSeriesDto series = Single(Groups(first, second, third));
 
         // Assert
         Assert.True(series.IsOrdered);
@@ -98,7 +98,7 @@ public sealed class FindingsSeriesShapeTests
     public void Extract_Categories_AreNotOrdered()
     {
         // Act
-        var series = Single(Groups("Online TA", "Direct", "Corporate"));
+        MarketAnalysisSeriesDto series = Single(Groups("Online TA", "Direct", "Corporate"));
 
         // Assert
         Assert.False(series.IsOrdered);
@@ -109,7 +109,7 @@ public sealed class FindingsSeriesShapeTests
     public void Extract_ListNamedBands_IsOrdered()
     {
         // Act
-        var series = Single("""{"bands":[{"group":"short","numerator":1,"denominator":2},{"group":"long","numerator":1,"denominator":2}]}""");
+        MarketAnalysisSeriesDto series = Single("""{"bands":[{"group":"short","numerator":1,"denominator":2},{"group":"long","numerator":1,"denominator":2}]}""");
 
         // Assert
         Assert.True(series.IsOrdered);
@@ -124,7 +124,7 @@ public sealed class FindingsSeriesShapeTests
     public void Extract_OverallNextToMonths_IsTheReference()
     {
         // Act
-        var series = Single("""{"overall":{"group":"all","numerator":404,"denominator":1000},"monthly":[{"group":"2018-07","numerator":1,"denominator":4},{"group":"2018-08","numerator":2,"denominator":4}]}""");
+        MarketAnalysisSeriesDto series = Single("""{"overall":{"group":"all","numerator":404,"denominator":1000},"monthly":[{"group":"2018-07","numerator":1,"denominator":4},{"group":"2018-08","numerator":2,"denominator":4}]}""");
 
         // Assert
         Assert.Equal(40.4, series.ReferenceValue);
@@ -136,7 +136,7 @@ public sealed class FindingsSeriesShapeTests
     public void Extract_OverallNextToBands_HasNoReference()
     {
         // Act
-        var series = Single("""{"overall":{"figure":{"group":"all","numerator":4,"denominator":4},"bands":[{"group":"0-7","numerator":1,"denominator":4},{"group":"8-30","numerator":3,"denominator":4}]}}""");
+        MarketAnalysisSeriesDto series = Single("""{"overall":{"figure":{"group":"all","numerator":4,"denominator":4},"bands":[{"group":"0-7","numerator":1,"denominator":4},{"group":"8-30","numerator":3,"denominator":4}]}}""");
 
         // Assert
         Assert.Null(series.ReferenceValue);
@@ -155,7 +155,7 @@ public sealed class FindingsSeriesShapeTests
         const string Stored = """{"Id":"a","Title":"A","Unit":"%","Points":[{"Label":"x","Value":1,"SmallSample":false}]}""";
 
         // Act
-        var series = JsonSerializer.Deserialize<MarketAnalysisSeriesDto>(Stored)!;
+        MarketAnalysisSeriesDto series = JsonSerializer.Deserialize<MarketAnalysisSeriesDto>(Stored)!;
 
         // Assert
         Assert.False(series.IsOrdered);
@@ -173,10 +173,10 @@ public sealed class FindingsSeriesShapeTests
     public void Map_Sample_CarriesTheShapeOfEachSeries()
     {
         // Act
-        var lead = Sample("lead_time").Series;
-        var cancellations = Sample("cancellations").Series;
-        var occupancy = Assert.Single(Sample("occupancy").Series);
-        var holidays = Assert.Single(Sample("occupancy_on_holidays").Series);
+        IReadOnlyList<MarketAnalysisSeriesDto> lead = Sample("lead_time").Series;
+        IReadOnlyList<MarketAnalysisSeriesDto> cancellations = Sample("cancellations").Series;
+        MarketAnalysisSeriesDto occupancy = Assert.Single(Sample("occupancy").Series);
+        MarketAnalysisSeriesDto holidays = Assert.Single(Sample("occupancy_on_holidays").Series);
 
         // Assert
         Assert.True(lead.Single(series => series.Id == "splits.by_cancellation_status.groups").IsPartsOfWhole);
@@ -199,15 +199,15 @@ public sealed class FindingsSeriesShapeTests
 
     private static MarketAnalysisSeriesDto Single(string json)
     {
-        using var document = JsonDocument.Parse(json);
+        using JsonDocument document = JsonDocument.Parse(json);
 
         return Assert.Single(FindingsSeries.Extract(document.RootElement));
     }
 
     private static MarketAnalysisSectionDto Sample(string id)
     {
-        var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
-        using var document = JsonDocument.Parse(json);
+        string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
+        using JsonDocument document = JsonDocument.Parse(json);
 
         return MarketAnalysisResultMapper.Map(document.RootElement)!.Content!.Sections.Single(section => section.Id == id);
     }

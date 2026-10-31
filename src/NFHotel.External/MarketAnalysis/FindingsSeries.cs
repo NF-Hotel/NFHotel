@@ -53,7 +53,7 @@ public static partial class FindingsSeries
     /// <returns>The series in the order they are found; empty when the findings hold no group figures.</returns>
     public static IReadOnlyList<MarketAnalysisSeriesDto> Extract(JsonElement findings)
     {
-        var found = new List<(int Depth, MarketAnalysisSeriesDto Series)>();
+        List<(int Depth, MarketAnalysisSeriesDto Series)> found = new List<(int Depth, MarketAnalysisSeriesDto Series)>();
         Walk(findings, [], found);
         if (RootFigures(findings) is { } compared)
         {
@@ -74,7 +74,7 @@ public static partial class FindingsSeries
     // A long time series keeps its latest points and says so in the title; any other long series keeps its first points.
     private static MarketAnalysisSeriesDto Shorten(MarketAnalysisSeriesDto series)
     {
-        var count = series.Points.Count;
+        int count = series.Points.Count;
         if (count <= MaxPoints)
         {
             return series;
@@ -102,15 +102,15 @@ public static partial class FindingsSeries
     public static IReadOnlyList<MarketAnalysisMatrixDto> ExtractMatrices(JsonElement findings)
     {
         if (findings.ValueKind != JsonValueKind.Object
-            || !findings.TryGetProperty(FieldsName, out var fields) || fields.ValueKind != JsonValueKind.Array
-            || !findings.TryGetProperty(MatrixName, out var matrix) || matrix.ValueKind != JsonValueKind.Array)
+            || !findings.TryGetProperty(FieldsName, out JsonElement fields) || fields.ValueKind != JsonValueKind.Array
+            || !findings.TryGetProperty(MatrixName, out JsonElement matrix) || matrix.ValueKind != JsonValueKind.Array)
         {
             return [];
         }
 
-        var names = fields.EnumerateArray().Select(field => field.ValueKind == JsonValueKind.String ? field.GetString() ?? string.Empty : field.ToString()).ToList();
-        var rows = new List<IReadOnlyList<double?>>();
-        foreach (var row in matrix.EnumerateArray())
+        List<string> names = fields.EnumerateArray().Select(field => field.ValueKind == JsonValueKind.String ? field.GetString() ?? string.Empty : field.ToString()).ToList();
+        List<IReadOnlyList<double?>> rows = new List<IReadOnlyList<double?>>();
+        foreach (JsonElement row in matrix.EnumerateArray())
         {
             if (row.ValueKind != JsonValueKind.Array || row.GetArrayLength() != names.Count)
             {
@@ -125,7 +125,7 @@ public static partial class FindingsSeries
             return [];
         }
 
-        var method = findings.TryGetProperty("method", out var found) && found.ValueKind == JsonValueKind.String ? found.GetString() ?? string.Empty : string.Empty;
+        string method = findings.TryGetProperty("method", out JsonElement found) && found.ValueKind == JsonValueKind.String ? found.GetString() ?? string.Empty : string.Empty;
 
         return [new MarketAnalysisMatrixDto(MatrixName, Humanize(MatrixName), method, names, rows)];
     }
@@ -140,12 +140,12 @@ public static partial class FindingsSeries
             return null;
         }
 
-        var names = new List<string>();
-        var points = new List<MarketAnalysisPointDto>();
-        foreach (var property in findings.EnumerateObject())
+        List<string> names = new List<string>();
+        List<MarketAnalysisPointDto> points = new List<MarketAnalysisPointDto>();
+        foreach (JsonProperty property in findings.EnumerateObject())
         {
             if (property.Value.ValueKind == JsonValueKind.Object
-                && property.Value.TryGetProperty(GroupName, out var group)
+                && property.Value.TryGetProperty(GroupName, out JsonElement group)
                 && group.ValueKind == JsonValueKind.String
                 && Figure(property.Value) is { } figure)
             {
@@ -161,13 +161,13 @@ public static partial class FindingsSeries
 
     private static string ComparisonTitle(List<string> names)
     {
-        var words = names.Select(name => name.Replace('_', ' ')).ToList();
+        List<string> words = names.Select(name => name.Replace('_', ' ')).ToList();
         return char.ToUpperInvariant(words[0][0]) + string.Join(" and ", words)[1..];
     }
 
     private static string Humanize(string name)
     {
-        var text = name.Replace('_', ' ');
+        string text = name.Replace('_', ' ');
         return text.Length == 0 ? name : char.ToUpperInvariant(text[0]) + text[1..];
     }
 
@@ -178,13 +178,13 @@ public static partial class FindingsSeries
             case JsonValueKind.Object:
                 // A part of the findings that the service marks unavailable (for example the estimated value without a price)
                 // holds placeholders, not figures to draw.
-                if (node.TryGetProperty(StatusName, out var status) && status.ValueKind == JsonValueKind.String && status.GetString() == UnavailableStatus)
+                if (node.TryGetProperty(StatusName, out JsonElement status) && status.ValueKind == JsonValueKind.String && status.GetString() == UnavailableStatus)
                 {
                     break;
                 }
 
-                var first = series.Count;
-                foreach (var property in node.EnumerateObject())
+                int first = series.Count;
+                foreach (JsonProperty property in node.EnumerateObject())
                 {
                     path.Add(property.Name);
                     Walk(property.Value, path, series);
@@ -201,8 +201,8 @@ public static partial class FindingsSeries
                     break;
                 }
 
-                var index = 0;
-                foreach (var item in node.EnumerateArray())
+                int index = 0;
+                foreach (JsonElement item in node.EnumerateArray())
                 {
                     path.Add(index.ToString(CultureInfo.InvariantCulture));
                     Walk(item, path, series);
@@ -221,7 +221,7 @@ public static partial class FindingsSeries
     // the months are read against. Another series, such as the lead time bands whose overall figure is 100 %, has no such reference.
     private static void AddReference(JsonElement node, int seriesDepth, List<(int Depth, MarketAnalysisSeriesDto Series)> series, int first)
     {
-        if (!node.TryGetProperty(OverallName, out var overall)
+        if (!node.TryGetProperty(OverallName, out JsonElement overall)
             || overall.ValueKind != JsonValueKind.Object
             || !overall.TryGetProperty(GroupName, out _)
             || Figure(overall) is not { } figure)
@@ -229,9 +229,9 @@ public static partial class FindingsSeries
             return;
         }
 
-        for (var index = first; index < series.Count; index++)
+        for (int index = first; index < series.Count; index++)
         {
-            var (depth, found) = series[index];
+            (int depth, MarketAnalysisSeriesDto? found) = series[index];
             if (depth == seriesDepth && IsMonthly(found) && found.Unit == figure.Unit)
             {
                 series[index] = (depth, found with { ReferenceValue = figure.Value, ReferenceLabel = "Overall" });
@@ -243,21 +243,21 @@ public static partial class FindingsSeries
     private static bool AddsUpToWhole(List<(double Numerator, double Denominator)> shares, int pointCount) =>
         shares.Count == pointCount
         && shares.Count > 0
-        && shares.All(share => share.Denominator > 0 && share.Denominator == shares[0].Denominator)
+        && shares.All(share => share.Denominator > 0 && Math.Abs(share.Denominator - shares[0].Denominator) < WholeTolerance)
         && Math.Abs(shares.Sum(share => share.Numerator) - shares[0].Denominator) < WholeTolerance;
 
     private static MarketAnalysisSeriesDto? ToSeries(JsonElement array, List<string> path)
     {
-        var points = new List<MarketAnalysisPointDto>();
-        var shares = new List<(double Numerator, double Denominator)>();
-        var unit = string.Empty;
+        List<MarketAnalysisPointDto> points = new List<MarketAnalysisPointDto>();
+        List<(double Numerator, double Denominator)> shares = new List<(double Numerator, double Denominator)>();
+        string unit = string.Empty;
 
-        foreach (var item in array.EnumerateArray())
+        foreach (JsonElement item in array.EnumerateArray())
         {
-            var figureItem = item.ValueKind == JsonValueKind.Object && item.TryGetProperty(FigureName, out var wrapped) && wrapped.ValueKind == JsonValueKind.Object
+            JsonElement figureItem = item.ValueKind == JsonValueKind.Object && item.TryGetProperty(FigureName, out JsonElement wrapped) && wrapped.ValueKind == JsonValueKind.Object
                 ? wrapped
                 : item;
-            if (figureItem.ValueKind != JsonValueKind.Object || !figureItem.TryGetProperty(GroupName, out var group))
+            if (figureItem.ValueKind != JsonValueKind.Object || !figureItem.TryGetProperty(GroupName, out JsonElement group))
             {
                 return null;
             }
@@ -280,15 +280,15 @@ public static partial class FindingsSeries
             return null;
         }
 
-        var id = string.Join('.', path);
-        var isOrdered = points.All(point => OrderedLabel().IsMatch(point.Label) || MonthLabel().IsMatch(point.Label))
+        string id = string.Join('.', path);
+        bool isOrdered = points.All(point => OrderedLabel().IsMatch(point.Label) || MonthLabel().IsMatch(point.Label))
             || (path.Count > 0 && OrderedNames.Contains(path[^1]));
 
         return new MarketAnalysisSeriesDto(id, Title(path), unit, points, isOrdered, AddsUpToWhole(shares, points.Count));
     }
 
     private static bool SmallSample(JsonElement item) =>
-        item.TryGetProperty("small_sample", out var flag) && flag.ValueKind == JsonValueKind.True;
+        item.TryGetProperty("small_sample", out JsonElement flag) && flag.ValueKind == JsonValueKind.True;
 
     private static (double Value, string Unit)? Figure(JsonElement item)
     {
@@ -308,7 +308,7 @@ public static partial class FindingsSeries
     // Money is a decimal string in the markets API (ADR-0002), so a number can be a string.
     private static double? Number(JsonElement item, string name)
     {
-        if (!item.TryGetProperty(name, out var property))
+        if (!item.TryGetProperty(name, out JsonElement property))
         {
             return null;
         }
@@ -316,7 +316,7 @@ public static partial class FindingsSeries
         return property.ValueKind switch
         {
             JsonValueKind.Number => property.GetDouble(),
-            JsonValueKind.String when double.TryParse(property.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) => parsed,
+            JsonValueKind.String when double.TryParse(property.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed) => parsed,
             _ => null,
         };
     }
@@ -326,10 +326,10 @@ public static partial class FindingsSeries
 
     private static string Title(List<string> path)
     {
-        var words = path
+        IEnumerable<string> words = path
             .Where(part => !GenericNames.Contains(part) && !int.TryParse(part, NumberStyles.None, CultureInfo.InvariantCulture, out _))
             .TakeLast(2);
-        var text = string.Join(" - ", words.Select(part => part.Replace('_', ' ')));
+        string text = string.Join(" - ", words.Select(part => part.Replace('_', ' ')));
 
         return text.Length == 0 ? "Groups" : char.ToUpperInvariant(text[0]) + text[1..];
     }

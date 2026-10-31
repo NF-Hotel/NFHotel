@@ -7,27 +7,19 @@ namespace NFHotel.Web.Features.Admin.Shared;
 public sealed record NiceAxis(double Min, double Max, IReadOnlyList<double> Ticks);
 
 /// <summary>Maps values of a chart to pixels, and finds round axis limits.</summary>
-public sealed class LinearScale
+/// <remarks>Creates a scale.</remarks>
+/// <param name="domainMin">The value at the start of the range.</param>
+/// <param name="domainMax">The value at the end of the range.</param>
+/// <param name="rangeStart">The pixel of <paramref name="domainMin"/>.</param>
+/// <param name="rangeEnd">The pixel of <paramref name="domainMax"/>; smaller than the start for a vertical axis.</param>
+public sealed class LinearScale(double domainMin, double domainMax, double rangeStart, double rangeEnd)
 {
     private static readonly double[] StepFactors = [1, 2, 2.5, 5, 10];
 
-    private readonly double _domainMin;
-    private readonly double _domainMax;
-    private readonly double _rangeStart;
-    private readonly double _rangeEnd;
-
-    /// <summary>Creates a scale.</summary>
-    /// <param name="domainMin">The value at the start of the range.</param>
-    /// <param name="domainMax">The value at the end of the range.</param>
-    /// <param name="rangeStart">The pixel of <paramref name="domainMin"/>.</param>
-    /// <param name="rangeEnd">The pixel of <paramref name="domainMax"/>; smaller than the start for a vertical axis.</param>
-    public LinearScale(double domainMin, double domainMax, double rangeStart, double rangeEnd)
-    {
-        _domainMin = domainMin;
-        _domainMax = domainMax;
-        _rangeStart = rangeStart;
-        _rangeEnd = rangeEnd;
-    }
+    private readonly double _domainMin = domainMin;
+    private readonly double _domainMax = domainMax;
+    private readonly double _rangeStart = rangeStart;
+    private readonly double _rangeEnd = rangeEnd;
 
     /// <summary>Finds round limits and ticks that hold the values.</summary>
     /// <param name="min">The lowest value; use 0 to start at zero.</param>
@@ -38,22 +30,22 @@ public sealed class LinearScale
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(tickCount, 2);
 
-        var high = Math.Max(max, min);
+        double high = Math.Max(max, min);
         if (high - min <= 0)
         {
             // Every value is the same: give the axis a width so that the value is not on its edge.
-            high = min + (min == 0 ? 1 : Math.Abs(min));
+            high = min + (Math.Abs(min) < 1e-12 ? 1 : Math.Abs(min));
         }
 
-        var rough = (high - min) / (tickCount - 1);
-        var magnitude = Math.Pow(10, Math.Floor(Math.Log10(rough)));
-        var step = StepFactors.Select(factor => factor * magnitude).First(candidate => candidate >= rough);
-        var niceMin = Math.Floor(min / step) * step;
-        var niceMax = Math.Ceiling(high / step) * step;
+        double rough = (high - min) / (tickCount - 1);
+        double magnitude = Math.Pow(10, Math.Floor(Math.Log10(rough)));
+        double step = StepFactors.Select(factor => factor * magnitude).First(candidate => candidate >= rough);
+        double niceMin = Math.Floor(min / step) * step;
+        double niceMax = Math.Ceiling(high / step) * step;
 
-        var ticks = new List<double>();
-        var count = (int)Math.Round((niceMax - niceMin) / step);
-        for (var index = 0; index <= count; index++)
+        List<double> ticks = new List<double>();
+        int count = (int)Math.Round((niceMax - niceMin) / step);
+        for (int index = 0; index <= count; index++)
         {
             ticks.Add(Math.Round(niceMin + (index * step), 10));
         }

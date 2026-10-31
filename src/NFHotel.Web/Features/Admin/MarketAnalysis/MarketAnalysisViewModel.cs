@@ -47,7 +47,7 @@ public sealed class MarketAnalysisViewModel
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(years, 1);
 
-        var today = _clock.Today;
+        DateOnly today = _clock.Today;
         From = today.AddYears(-years);
         To = today;
     }
@@ -123,12 +123,12 @@ public sealed class MarketAnalysisViewModel
             return;
         }
 
-        var request = new StartMarketAnalysisRequest(From, To);
+        StartMarketAnalysisRequest request = new(From, To);
 
         IsBusy = true;
         try
         {
-            var result = await _service
+            Result<MarketAnalysisRunStateDto> result = await _service
                 .RunAsync((service, token) => service.StartRunAsync(request, token), cancellationToken)
                 .ConfigureAwait(false);
 
@@ -160,7 +160,7 @@ public sealed class MarketAnalysisViewModel
             return;
         }
 
-        var result = await _service
+        Result<MarketAnalysisRunStateDto> result = await _service
             .RunAsync((service, token) => service.GetRunStateAsync(run.RunId, token), cancellationToken)
             .ConfigureAwait(false);
 
@@ -187,7 +187,7 @@ public sealed class MarketAnalysisViewModel
 
     private async Task LoadReportAsync(CancellationToken cancellationToken)
     {
-        var result = await _service
+        Result<MarketAnalysisReportDto> result = await _service
             .RunAsync((service, token) => service.GetLatestReportAsync(token), cancellationToken)
             .ConfigureAwait(false);
 

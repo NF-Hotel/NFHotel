@@ -59,7 +59,7 @@ public abstract class SeriesChartBase : ComponentBase
     /// <returns>The builder, holding the opening of the SVG.</returns>
     protected StringBuilder OpenSvg(int width, int height)
     {
-        var svg = new StringBuilder();
+        StringBuilder svg = new StringBuilder();
         svg.Append(CultureInfo.InvariantCulture, $"<svg class=\"chart-svg\" viewBox=\"0 0 {width} {height}\" role=\"img\" aria-labelledby=\"{TitleId} {DescriptionId}\" preserveAspectRatio=\"xMinYMin meet\">");
         svg.Append(CultureInfo.InvariantCulture, $"<title id=\"{TitleId}\">{ChartFormat.Encode(Title)}</title><desc id=\"{DescriptionId}\">{ChartFormat.Encode(Description)}</desc>");
 

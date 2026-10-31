@@ -47,22 +47,22 @@ public static class MonthGrid
     /// <param name="points">Points whose labels are months.</param>
     /// <returns>The number of distinct years.</returns>
     public static int YearCount(IReadOnlyList<MarketAnalysisPointDto> points) =>
-        points.Select(point => TryParse(point.Label, out var year, out _) ? year : 0).Where(year => year > 0).Distinct().Count();
+        points.Select(point => TryParse(point.Label, out int year, out _) ? year : 0).Where(year => year > 0).Distinct().Count();
 
     /// <summary>Lays the points out as one row for each year, oldest first.</summary>
     /// <param name="points">Points whose labels are months; points with another label are left out.</param>
     /// <returns>The rows; empty when no label is a month.</returns>
     public static IReadOnlyList<MonthRow> Rows(IReadOnlyList<MarketAnalysisPointDto> points)
     {
-        var cells = new Dictionary<int, (double?[] Values, bool[] Small)>();
-        foreach (var point in points)
+        Dictionary<int, (double?[] Values, bool[] Small)> cells = new Dictionary<int, (double?[] Values, bool[] Small)>();
+        foreach (MarketAnalysisPointDto point in points)
         {
-            if (!TryParse(point.Label, out var year, out var month))
+            if (!TryParse(point.Label, out int year, out int month))
             {
                 continue;
             }
 
-            if (!cells.TryGetValue(year, out var row))
+            if (!cells.TryGetValue(year, out (double?[] Values, bool[] Small) row))
             {
                 row = (new double?[MonthsPerYear], new bool[MonthsPerYear]);
                 cells[year] = row;
