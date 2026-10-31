@@ -42,7 +42,7 @@ public static partial class ChartKindSelector
     {
         ArgumentNullException.ThrowIfNull(series);
 
-        var points = series.Points;
+        IReadOnlyList<MarketAnalysisPointDto> points = series.Points;
         if (points.Count == 1)
         {
             return ChartKind.Tile;

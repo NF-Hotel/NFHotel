@@ -17,7 +17,7 @@ public sealed class ChartGeometryTests
     public void Nice_Values_GivesRoundLimits(double min, double max, double expectedMin, double expectedMax)
     {
         // Act
-        var axis = LinearScale.Nice(min, max);
+        NiceAxis axis = LinearScale.Nice(min, max);
 
         // Assert
         Assert.Equal((expectedMin, expectedMax), (axis.Min, axis.Max));
@@ -33,7 +33,7 @@ public sealed class ChartGeometryTests
     public void Nice_NoSpread_GivesAnAxisWithAWidth(double min, double max)
     {
         // Act
-        var axis = LinearScale.Nice(min, max);
+        NiceAxis axis = LinearScale.Nice(min, max);
 
         // Assert
         Assert.True(axis.Max > axis.Min);
@@ -45,7 +45,7 @@ public sealed class ChartGeometryTests
     public void Map_VerticalScale_PutsZeroAtTheBottom()
     {
         // Arrange
-        var scale = new LinearScale(0, 50, 200, 20);
+        LinearScale scale = new LinearScale(0, 50, 200, 20);
 
         // Act and assert
         Assert.Equal(200, scale.Map(0));
@@ -81,7 +81,7 @@ public sealed class ChartGeometryTests
     public void IsShown_GapOfThree_WritesEveryThirdLabel()
     {
         // Act
-        var shown = Enumerable.Range(0, 30).Where(index => LabelThinner.IsShown(index, 3)).ToList();
+        List<int> shown = Enumerable.Range(0, 30).Where(index => LabelThinner.IsShown(index, 3)).ToList();
 
         // Assert
         Assert.Equal(10, shown.Count);
@@ -97,7 +97,7 @@ public sealed class ChartGeometryTests
     public void Slices_TwoEqualParts_AreHalfRings()
     {
         // Act
-        var slices = DonutGeometry.Slices([50, 50], 100, 100, 90, 50);
+        IReadOnlyList<DonutSlice> slices = DonutGeometry.Slices([50, 50], 100, 100, 90, 50);
 
         // Assert
         Assert.Equal([0.5, 0.5], slices.Select(slice => slice.Share));
@@ -111,7 +111,7 @@ public sealed class ChartGeometryTests
     public void Slices_OneWholePart_IsDrawnAndEmptyPartIsNot()
     {
         // Act
-        var slices = DonutGeometry.Slices([100, 0], 100, 100, 90, 50);
+        IReadOnlyList<DonutSlice> slices = DonutGeometry.Slices([100, 0], 100, 100, 90, 50);
 
         // Assert
         Assert.NotEmpty(slices[0].Path);
@@ -146,7 +146,7 @@ public sealed class ChartGeometryTests
     public void Diverging_NearZero_IsCloserToWhiteThanToTheEnds()
     {
         // Act
-        var near = HeatColor.Diverging(0.1);
+        string near = HeatColor.Diverging(0.1);
 
         // Assert: the red channel of a blue shade falls, and the blue channel of a red shade falls, from white.
         Assert.True(Convert.ToInt32(near[1..3], 16) > 0xe0);
@@ -186,7 +186,7 @@ public sealed class ChartGeometryTests
         MarketAnalysisPointDto[] points = [new("2017-12", 5), new("2016-06", 1), new("2016-07", 2, true), new("2017-01", 3)];
 
         // Act
-        var rows = MonthGrid.Rows(points);
+        IReadOnlyList<MonthRow> rows = MonthGrid.Rows(points);
 
         // Assert
         Assert.Equal([2016, 2017], rows.Select(row => row.Year));
@@ -214,7 +214,7 @@ public sealed class ChartGeometryTests
     [Fact]
     public void TryParse_Month_IsRead()
     {
-        Assert.True(MonthGrid.TryParse("2018-07", out var year, out var month));
+        Assert.True(MonthGrid.TryParse("2018-07", out int year, out int month));
         Assert.Equal((2018, 7), (year, month));
     }
 

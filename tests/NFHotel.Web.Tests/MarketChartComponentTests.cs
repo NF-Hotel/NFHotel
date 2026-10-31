@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.Web.HtmlRendering;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -18,7 +19,7 @@ public sealed class MarketChartComponentTests
     public async Task DonutChart_TwoParts_DrawsTheSlicesTheLegendAndTheTable()
     {
         // Act
-        var html = await RenderAsync<DonutChart>(Points("Cancelled", 46, "Not cancelled", 54));
+        string html = await RenderAsync<DonutChart>(Points("Cancelled", 46, "Not cancelled", 54));
 
         // Assert
         Assert.Equal(2, Count(html, "<path "));
@@ -34,7 +35,7 @@ public sealed class MarketChartComponentTests
     public async Task DonutChart_NoPoint_SaysThereIsNoData()
     {
         // Act
-        var html = await RenderAsync<DonutChart>(Points());
+        string html = await RenderAsync<DonutChart>(Points());
 
         // Assert
         Assert.Contains("no data", html, StringComparison.Ordinal);
@@ -50,7 +51,7 @@ public sealed class MarketChartComponentTests
     public async Task RankedBarChart_Points_AreLargestFirst()
     {
         // Act
-        var html = await RenderAsync<RankedBarChart>(Points("small", 5, "large", 50, "middle", 20));
+        string html = await RenderAsync<RankedBarChart>(Points("small", 5, "large", 50, "middle", 20));
 
         // Assert
         Assert.True(html.IndexOf(">large<", StringComparison.Ordinal) < html.IndexOf(">middle<", StringComparison.Ordinal));
@@ -64,12 +65,12 @@ public sealed class MarketChartComponentTests
     public async Task Charts_LabelWithMarkup_IsEncoded()
     {
         // Arrange
-        var parameters = Points("<script>alert(1)</script>", 5, "b", 50);
+        Dictionary<string, object?> parameters = Points("<script>alert(1)</script>", 5, "b", 50);
 
         // Act
-        var ranked = await RenderAsync<RankedBarChart>(parameters);
-        var columns = await RenderAsync<ColumnChart>(parameters);
-        var donut = await RenderAsync<DonutChart>(parameters);
+        string ranked = await RenderAsync<RankedBarChart>(parameters);
+        string columns = await RenderAsync<ColumnChart>(parameters);
+        string donut = await RenderAsync<DonutChart>(parameters);
 
         // Assert
         Assert.DoesNotContain("<script>", ranked + columns + donut, StringComparison.Ordinal);
@@ -80,7 +81,7 @@ public sealed class MarketChartComponentTests
     public async Task ColumnChart_OrderedBands_KeepTheirOrder()
     {
         // Act
-        var html = await RenderAsync<ColumnChart>(Points("0-7", 12, "8-30", 30, "31-90", 33, "91+", 25));
+        string html = await RenderAsync<ColumnChart>(Points("0-7", 12, "8-30", 30, "31-90", 33, "91+", 25));
 
         // Assert
         Assert.Equal(4, Count(html, "class=\"chart-bar"));
@@ -95,8 +96,8 @@ public sealed class MarketChartComponentTests
     public async Task ColumnChart_OneColumnAndZero_AreDrawn()
     {
         // Act
-        var one = await RenderAsync<ColumnChart>(Points("only", 7));
-        var zero = await RenderAsync<ColumnChart>(Points("none", 0, "some", 4));
+        string one = await RenderAsync<ColumnChart>(Points("only", 7));
+        string zero = await RenderAsync<ColumnChart>(Points("none", 0, "some", 4));
 
         // Assert
         Assert.Equal(1, Count(one, "class=\"chart-bar"));
@@ -108,7 +109,7 @@ public sealed class MarketChartComponentTests
     public async Task ColumnChart_SmallSample_IsMarkedAndExplained()
     {
         // Act
-        var html = await RenderAsync<ColumnChart>(new Dictionary<string, object?>
+        string html = await RenderAsync<ColumnChart>(new Dictionary<string, object?>
         {
             ["Title"] = "Split",
             ["Unit"] = "%",
@@ -129,10 +130,10 @@ public sealed class MarketChartComponentTests
     public async Task LineChart_ThirtyMonths_ThinsTheLabels()
     {
         // Arrange
-        var months = Enumerable.Range(0, 30).Select(index => new MarketAnalysisPointDto($"{2016 + (index / 12)}-{(index % 12) + 1:00}", 20 + (index % 7))).ToArray();
+        MarketAnalysisPointDto[] months = Enumerable.Range(0, 30).Select(index => new MarketAnalysisPointDto($"{2016 + (index / 12)}-{(index % 12) + 1:00}", 20 + (index % 7))).ToArray();
 
         // Act
-        var html = await RenderAsync<LineChart>(new Dictionary<string, object?> { ["Title"] = "Monthly", ["Unit"] = "%", ["Points"] = months });
+        string html = await RenderAsync<LineChart>(new Dictionary<string, object?> { ["Title"] = "Monthly", ["Unit"] = "%", ["Points"] = months });
 
         // Assert
         Assert.Equal(30, Count(html, "<circle "));
@@ -146,7 +147,7 @@ public sealed class MarketChartComponentTests
     public async Task LineChart_ReferenceValue_IsADashedLineWithALabel()
     {
         // Act
-        var html = await RenderAsync<LineChart>(new Dictionary<string, object?>
+        string html = await RenderAsync<LineChart>(new Dictionary<string, object?>
         {
             ["Title"] = "Monthly",
             ["Unit"] = "%",
@@ -166,8 +167,8 @@ public sealed class MarketChartComponentTests
     public async Task LineChart_OnePointAndNoPoint_AreHandled()
     {
         // Act
-        var one = await RenderAsync<LineChart>(Points("2018-07", 10));
-        var none = await RenderAsync<LineChart>(Points());
+        string one = await RenderAsync<LineChart>(Points("2018-07", 10));
+        string none = await RenderAsync<LineChart>(Points());
 
         // Assert
         Assert.Equal(1, Count(one, "<circle "));
@@ -185,10 +186,10 @@ public sealed class MarketChartComponentTests
     public async Task HeatmapChart_RealMonths_AreYearsAgainstMonths()
     {
         // Arrange
-        var series = MarketSample.Section("seasonality").Series.Single(found => found.Id == "bookings.monthly.periods");
+        MarketAnalysisSeriesDto series = MarketSample.Section("seasonality").Series.Single(found => found.Id == "bookings.monthly.periods");
 
         // Act
-        var html = await RenderAsync<HeatmapChart>(new Dictionary<string, object?> { ["Title"] = series.Title, ["Unit"] = series.Unit, ["Points"] = series.Points });
+        string html = await RenderAsync<HeatmapChart>(new Dictionary<string, object?> { ["Title"] = series.Title, ["Unit"] = series.Unit, ["Points"] = series.Points });
 
         // Assert
         Assert.Equal(4 * 12, Count(html, "<rect class=\"chart-cell"));
@@ -204,7 +205,7 @@ public sealed class MarketChartComponentTests
     public async Task FigureTile_OneFigure_ShowsTheFigure()
     {
         // Act
-        var html = await RenderAsync<FigureTile>(new Dictionary<string, object?> { ["Title"] = "Repeated guest", ["Label"] = "not_repeated", ["Value"] = 100.0, ["Unit"] = "%" });
+        string html = await RenderAsync<FigureTile>(new Dictionary<string, object?> { ["Title"] = "Repeated guest", ["Label"] = "not_repeated", ["Value"] = 100.0, ["Unit"] = "%" });
 
         // Assert
         Assert.Contains("<strong>100%</strong>", html, StringComparison.Ordinal);
@@ -221,11 +222,11 @@ public sealed class MarketChartComponentTests
     public async Task CorrelationHeatmap_RealMatrix_DrawsEveryCellWithItsValue()
     {
         // Arrange
-        var matrix = Assert.Single(MarketSample.Section("correlations").Matrices!);
-        var cells = matrix.Cells.SelectMany(row => row).ToList();
+        MarketAnalysisMatrixDto matrix = Assert.Single(MarketSample.Section("correlations").Matrices!);
+        List<double?> cells = matrix.Cells.SelectMany(row => row).ToList();
 
         // Act
-        var html = await RenderAsync<CorrelationHeatmap>(new Dictionary<string, object?> { ["Matrix"] = matrix });
+        string html = await RenderAsync<CorrelationHeatmap>(new Dictionary<string, object?> { ["Matrix"] = matrix });
 
         // Assert
         Assert.Equal(12 * 12, cells.Count);
@@ -246,10 +247,10 @@ public sealed class MarketChartComponentTests
     public async Task CorrelationHeatmap_LongFieldName_IsShortenedOnTheAxis()
     {
         // Arrange
-        var matrix = new MarketAnalysisMatrixDto("matrix", "Correlations", "spearman", ["required_car_parking_spaces", "adr"], [[1.0, -0.5], [-0.5, 1.0]]);
+        MarketAnalysisMatrixDto matrix = new MarketAnalysisMatrixDto("matrix", "Correlations", "spearman", ["required_car_parking_spaces", "adr"], [[1.0, -0.5], [-0.5, 1.0]]);
 
         // Act
-        var html = await RenderAsync<CorrelationHeatmap>(new Dictionary<string, object?> { ["Matrix"] = matrix });
+        string html = await RenderAsync<CorrelationHeatmap>(new Dictionary<string, object?> { ["Matrix"] = matrix });
 
         // Assert
         Assert.Contains("required car parkin…", html, StringComparison.Ordinal);
@@ -262,7 +263,7 @@ public sealed class MarketChartComponentTests
     public async Task CorrelationHeatmap_NoField_SaysThereIsNoData()
     {
         // Act
-        var html = await RenderAsync<CorrelationHeatmap>(new Dictionary<string, object?> { ["Matrix"] = new MarketAnalysisMatrixDto("matrix", "Correlations", string.Empty, [], []) });
+        string html = await RenderAsync<CorrelationHeatmap>(new Dictionary<string, object?> { ["Matrix"] = new MarketAnalysisMatrixDto("matrix", "Correlations", string.Empty, [], []) });
 
         // Assert
         Assert.Contains("no data", html, StringComparison.Ordinal);
@@ -277,11 +278,11 @@ public sealed class MarketChartComponentTests
     public void ForSeries_Occupancy_TakesTheLimitationsAndTheFormulaOfTheAnalysis()
     {
         // Arrange
-        var section = MarketSample.Section("occupancy");
-        var series = Assert.Single(section.Series);
+        MarketAnalysisSectionDto section = MarketSample.Section("occupancy");
+        MarketAnalysisSeriesDto series = Assert.Single(section.Series);
 
         // Act
-        var caption = ChartCaptionText.ForSeries(ChartKindSelector.Select(series), series, section);
+        ChartCaptionModel caption = ChartCaptionText.ForSeries(ChartKindSelector.Select(series), series, section);
 
         // Assert
         Assert.Contains("dashed line", caption.What, StringComparison.Ordinal);
@@ -296,13 +297,13 @@ public sealed class MarketChartComponentTests
     public void ForSeries_ObservationOfTheSeries_IsMatchedById()
     {
         // Arrange
-        var matching = new MarketAnalysisSeriesDto("splits.by_deposit_type.groups", "By deposit type", "%", [new("a", 1), new("b", 2)]);
-        var other = new MarketAnalysisSeriesDto("splits.by_market_segment.groups", "By segment", "%", [new("a", 1), new("b", 2)]);
-        var section = Section(new MarketAnalysisInsightDto("available", null, "Summary", [], [new("splits.by_deposit_type.groups", "Non refundable bookings cancel most.", "99.4%")]));
+        MarketAnalysisSeriesDto matching = new MarketAnalysisSeriesDto("splits.by_deposit_type.groups", "By deposit type", "%", [new("a", 1), new("b", 2)]);
+        MarketAnalysisSeriesDto other = new MarketAnalysisSeriesDto("splits.by_market_segment.groups", "By segment", "%", [new("a", 1), new("b", 2)]);
+        MarketAnalysisSectionDto section = Section(new MarketAnalysisInsightDto("available", null, "Summary", [], [new("splits.by_deposit_type.groups", "Non refundable bookings cancel most.", "99.4%")]));
 
         // Act
-        var found = ChartCaptionText.ForSeries(ChartKind.Columns, matching, section);
-        var none = ChartCaptionText.ForSeries(ChartKind.Columns, other, section);
+        ChartCaptionModel found = ChartCaptionText.ForSeries(ChartKind.Columns, matching, section);
+        ChartCaptionModel none = ChartCaptionText.ForSeries(ChartKind.Columns, other, section);
 
         // Assert
         Assert.Equal("Non refundable bookings cancel most.", found.Observation!.Text);
@@ -318,10 +319,10 @@ public sealed class MarketChartComponentTests
     public void ForSeries_InsightNotAvailable_SaysWhy(string status, string? reason, string expected)
     {
         // Arrange
-        var section = Section(new MarketAnalysisInsightDto(status, reason, null, []));
+        MarketAnalysisSectionDto section = Section(new MarketAnalysisInsightDto(status, reason, null, []));
 
         // Act
-        var caption = ChartCaptionText.ForSeries(ChartKind.Columns, Plain(), section);
+        ChartCaptionModel caption = ChartCaptionText.ForSeries(ChartKind.Columns, Plain(), section);
 
         // Assert
         Assert.Equal(expected, caption.NoObservation);
@@ -332,7 +333,7 @@ public sealed class MarketChartComponentTests
     public void ForSeries_NoInsight_SaysNoneWasAsked()
     {
         // Act
-        var caption = ChartCaptionText.ForSeries(ChartKind.Columns, Plain(), Section(null));
+        ChartCaptionModel caption = ChartCaptionText.ForSeries(ChartKind.Columns, Plain(), Section(null));
 
         // Assert
         Assert.Equal("No AI observation for this chart: no AI insight was asked for this analysis.", caption.NoObservation);
@@ -343,13 +344,13 @@ public sealed class MarketChartComponentTests
     public async Task ChartCaption_WithAndWithoutObservation_LabelsOrSaysNone()
     {
         // Arrange
-        var section = Section(new MarketAnalysisInsightDto("available", null, "Summary", [], [new("s", "Text of the AI.", "12%")]));
-        var with = ChartCaptionText.ForSeries(ChartKind.Columns, Plain(), section);
-        var without = ChartCaptionText.ForSeries(ChartKind.Columns, Plain() with { Id = "other" }, section);
+        MarketAnalysisSectionDto section = Section(new MarketAnalysisInsightDto("available", null, "Summary", [], [new("s", "Text of the AI.", "12%")]));
+        ChartCaptionModel with = ChartCaptionText.ForSeries(ChartKind.Columns, Plain(), section);
+        ChartCaptionModel without = ChartCaptionText.ForSeries(ChartKind.Columns, Plain() with { Id = "other" }, section);
 
         // Act
-        var withHtml = await RenderAsync<ChartCaption>(new Dictionary<string, object?> { ["Model"] = with });
-        var withoutHtml = await RenderAsync<ChartCaption>(new Dictionary<string, object?> { ["Model"] = without });
+        string withHtml = await RenderAsync<ChartCaption>(new Dictionary<string, object?> { ["Model"] = with });
+        string withoutHtml = await RenderAsync<ChartCaption>(new Dictionary<string, object?> { ["Model"] = without });
 
         // Assert
         Assert.Contains("AI-generated", withHtml, StringComparison.Ordinal);
@@ -368,11 +369,11 @@ public sealed class MarketChartComponentTests
     public void ForMatrix_Correlations_ExplainsTheScale()
     {
         // Arrange
-        var section = MarketSample.Section("correlations");
-        var matrix = Assert.Single(section.Matrices!);
+        MarketAnalysisSectionDto section = MarketSample.Section("correlations");
+        MarketAnalysisMatrixDto matrix = Assert.Single(section.Matrices!);
 
         // Act
-        var caption = ChartCaptionText.ForMatrix(matrix, section);
+        ChartCaptionModel caption = ChartCaptionText.ForMatrix(matrix, section);
 
         // Assert
         Assert.Contains("Blue is a negative", caption.Why, StringComparison.Ordinal);
@@ -388,10 +389,10 @@ public sealed class MarketChartComponentTests
     public async Task MarketChart_RealOccupancy_IsALineWithTheOverallLevel()
     {
         // Arrange
-        var section = MarketSample.Section("occupancy");
+        MarketAnalysisSectionDto section = MarketSample.Section("occupancy");
 
         // Act
-        var html = await RenderAsync<MarketChart>(new Dictionary<string, object?> { ["Series"] = Assert.Single(section.Series), ["Section"] = section });
+        string html = await RenderAsync<MarketChart>(new Dictionary<string, object?> { ["Series"] = Assert.Single(section.Series), ["Section"] = section });
 
         // Assert
         Assert.Contains("class=\"chart-line\"", html, StringComparison.Ordinal);
@@ -405,10 +406,10 @@ public sealed class MarketChartComponentTests
     public async Task MarketChart_RealOccupancyOnHolidays_IsTwoColumnsAndNoDonut()
     {
         // Arrange
-        var section = MarketSample.Section("occupancy_on_holidays");
+        MarketAnalysisSectionDto section = MarketSample.Section("occupancy_on_holidays");
 
         // Act
-        var html = await RenderAsync<MarketChart>(new Dictionary<string, object?> { ["Series"] = Assert.Single(section.Series), ["Section"] = section });
+        string html = await RenderAsync<MarketChart>(new Dictionary<string, object?> { ["Series"] = Assert.Single(section.Series), ["Section"] = section });
 
         // Assert
         Assert.Equal(2, Count(html, "class=\"chart-bar"));
@@ -420,15 +421,15 @@ public sealed class MarketChartComponentTests
     [Fact]
     public async Task MarketChart_EverySeriesOfTheRealSample_HasATextAlternativeAndACaption()
     {
-        foreach (var section in MarketSample.Sections())
+        foreach (MarketAnalysisSectionDto section in MarketSample.Sections())
         {
-            foreach (var series in section.Series)
+            foreach (MarketAnalysisSeriesDto series in section.Series)
             {
                 // Act
-                var html = await RenderAsync<MarketChart>(new Dictionary<string, object?> { ["Series"] = series, ["Section"] = section });
+                string html = await RenderAsync<MarketChart>(new Dictionary<string, object?> { ["Series"] = series, ["Section"] = section });
 
                 // Assert
-                var kind = ChartKindSelector.Select(series);
+                ChartKind kind = ChartKindSelector.Select(series);
                 Assert.True(
                     kind == ChartKind.Tile || html.Contains("role=\"img\"", StringComparison.Ordinal),
                     $"{section.Id} / {series.Id} has no text alternative");
@@ -449,10 +450,10 @@ public sealed class MarketChartComponentTests
     public async Task MarketChart_NegativeValue_KeepsTheGroupedBars()
     {
         // Arrange
-        var series = new MarketAnalysisSeriesDto("s", "Change", "%", [new("a", 1), new("b", -2)]);
+        MarketAnalysisSeriesDto series = new MarketAnalysisSeriesDto("s", "Change", "%", [new("a", 1), new("b", -2)]);
 
         // Act
-        var html = await RenderAsync<MarketChart>(new Dictionary<string, object?> { ["Series"] = series, ["Section"] = Section(null) });
+        string html = await RenderAsync<MarketChart>(new Dictionary<string, object?> { ["Series"] = series, ["Section"] = Section(null) });
 
         // Assert
         Assert.Contains("chart-legend", html, StringComparison.Ordinal);
@@ -470,8 +471,8 @@ public sealed class MarketChartComponentTests
 
     private static Dictionary<string, object?> Points(params object[] labelsAndValues)
     {
-        var points = new List<MarketAnalysisPointDto>();
-        for (var index = 0; index < labelsAndValues.Length; index += 2)
+        List<MarketAnalysisPointDto> points = new List<MarketAnalysisPointDto>();
+        for (int index = 0; index < labelsAndValues.Length; index += 2)
         {
             points.Add(new MarketAnalysisPointDto((string)labelsAndValues[index], Convert.ToDouble(labelsAndValues[index + 1], System.Globalization.CultureInfo.InvariantCulture)));
         }
@@ -484,12 +485,12 @@ public sealed class MarketChartComponentTests
     private static async Task<string> RenderAsync<TComponent>(IDictionary<string, object?> parameters)
         where TComponent : IComponent
     {
-        await using var services = new ServiceCollection().AddLogging().BuildServiceProvider();
-        await using var renderer = new HtmlRenderer(services, NullLoggerFactory.Instance);
+        await using ServiceProvider services = new ServiceCollection().AddLogging().BuildServiceProvider();
+        await using HtmlRenderer renderer = new HtmlRenderer(services, NullLoggerFactory.Instance);
 
         return await renderer.Dispatcher.InvokeAsync(async () =>
         {
-            var output = await renderer.RenderComponentAsync<TComponent>(ParameterView.FromDictionary(parameters));
+            HtmlRootComponent output = await renderer.RenderComponentAsync<TComponent>(ParameterView.FromDictionary(parameters));
             return output.ToHtmlString();
         });
     }

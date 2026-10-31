@@ -22,7 +22,7 @@ public static class HeatColor
     /// <returns>A colour as <c>#rrggbb</c>.</returns>
     public static string Diverging(double value)
     {
-        var clamped = Math.Clamp(value, -1d, 1d);
+        double clamped = Math.Clamp(value, -1d, 1d);
 
         return Hex(Mix(Neutral, clamped < 0 ? Negative : Positive, Math.Abs(clamped)));
     }
@@ -37,10 +37,10 @@ public static class HeatColor
     /// <returns>The text colour as <c>#rrggbb</c>.</returns>
     public static string TextOn(string fill)
     {
-        var red = Channel(fill, 1);
-        var green = Channel(fill, 3);
-        var blue = Channel(fill, 5);
-        var luminance = (0.2126 * Linear(red)) + (0.7152 * Linear(green)) + (0.0722 * Linear(blue));
+        double red = Channel(fill, 1);
+        double green = Channel(fill, 3);
+        double blue = Channel(fill, 5);
+        double luminance = (0.2126 * Linear(red)) + (0.7152 * Linear(green)) + (0.0722 * Linear(blue));
 
         return luminance > LightLuminance ? "#14171f" : "#ffffff";
     }

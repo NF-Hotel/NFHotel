@@ -37,8 +37,8 @@ public static class ChartCaptionText
         ArgumentNullException.ThrowIfNull(series);
         ArgumentNullException.ThrowIfNull(section);
 
-        var (what, why, limit) = Texts(kind, series);
-        var limits = new List<string> { limit };
+        (string? what, string? why, string? limit) = Texts(kind, series);
+        List<string> limits = new List<string> { limit };
         if (series.Points.Any(point => point.SmallSample))
         {
             limits.Add("A figure marked with a star rests on few bookings and can change a lot with one more booking.");
@@ -56,7 +56,7 @@ public static class ChartCaptionText
         ArgumentNullException.ThrowIfNull(matrix);
         ArgumentNullException.ThrowIfNull(section);
 
-        var method = string.IsNullOrWhiteSpace(matrix.Method) ? string.Empty : $" ({matrix.Method})";
+        string method = string.IsNullOrWhiteSpace(matrix.Method) ? string.Empty : $" ({matrix.Method})";
 
         return Build(
             $"How strongly each pair of the {matrix.Fields.Count} booking fields moves together{method}, from -1 (one rises as the other falls) to +1 (both rise together).",
@@ -70,7 +70,7 @@ public static class ChartCaptionText
     {
         limits.AddRange(section.Limitations ?? []);
 
-        var observation = section.Insight?.Observations?.FirstOrDefault(found => string.Equals(found.Series, seriesId, StringComparison.Ordinal));
+        MarketAnalysisObservationDto? observation = section.Insight?.Observations?.FirstOrDefault(found => string.Equals(found.Series, seriesId, StringComparison.Ordinal));
 
         return new ChartCaptionModel(what, why, limits, string.IsNullOrWhiteSpace(section.Formula) ? null : section.Formula, observation, NoObservation(section.Insight));
     }

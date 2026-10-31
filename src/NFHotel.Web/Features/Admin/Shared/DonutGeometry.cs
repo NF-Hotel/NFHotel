@@ -28,20 +28,20 @@ public static class DonutGeometry
     /// <returns>One slice for each value, in order; empty when the values add up to 0.</returns>
     public static IReadOnlyList<DonutSlice> Slices(IReadOnlyList<double> values, double centerX, double centerY, double outerRadius, double innerRadius)
     {
-        var total = values.Sum(value => Math.Max(0, value));
+        double total = values.Sum(value => Math.Max(0, value));
         if (total <= 0)
         {
             return [];
         }
 
-        var slices = new List<DonutSlice>();
-        var start = StartAngle;
-        for (var index = 0; index < values.Count; index++)
+        List<DonutSlice> slices = new List<DonutSlice>();
+        double start = StartAngle;
+        for (int index = 0; index < values.Count; index++)
         {
-            var share = Math.Max(0, values[index]) / total;
-            var sweep = Math.Min(share * FullTurn, MaxSweep);
-            var end = start + sweep;
-            var middle = Point(centerX, centerY, (outerRadius + innerRadius) / 2, start + (sweep / 2));
+            double share = Math.Max(0, values[index]) / total;
+            double sweep = Math.Min(share * FullTurn, MaxSweep);
+            double end = start + sweep;
+            (double X, double Y) middle = Point(centerX, centerY, (outerRadius + innerRadius) / 2, start + (sweep / 2));
             slices.Add(new DonutSlice(index, share, share <= 0 ? string.Empty : Path(centerX, centerY, outerRadius, innerRadius, start, end), middle.X, middle.Y));
             start += share * FullTurn;
         }
@@ -51,11 +51,11 @@ public static class DonutGeometry
 
     private static string Path(double centerX, double centerY, double outerRadius, double innerRadius, double start, double end)
     {
-        var outerStart = Point(centerX, centerY, outerRadius, start);
-        var outerEnd = Point(centerX, centerY, outerRadius, end);
-        var innerEnd = Point(centerX, centerY, innerRadius, end);
-        var innerStart = Point(centerX, centerY, innerRadius, start);
-        var large = end - start > HalfTurn ? 1 : 0;
+        (double X, double Y) outerStart = Point(centerX, centerY, outerRadius, start);
+        (double X, double Y) outerEnd = Point(centerX, centerY, outerRadius, end);
+        (double X, double Y) innerEnd = Point(centerX, centerY, innerRadius, end);
+        (double X, double Y) innerStart = Point(centerX, centerY, innerRadius, start);
+        int large = end - start > HalfTurn ? 1 : 0;
 
         return string.Create(
             CultureInfo.InvariantCulture,
@@ -64,7 +64,7 @@ public static class DonutGeometry
 
     private static (double X, double Y) Point(double centerX, double centerY, double radius, double degrees)
     {
-        var radians = degrees * Math.PI / HalfTurn;
+        double radians = degrees * Math.PI / HalfTurn;
 
         return (centerX + (radius * Math.Cos(radians)), centerY + (radius * Math.Sin(radians)));
     }

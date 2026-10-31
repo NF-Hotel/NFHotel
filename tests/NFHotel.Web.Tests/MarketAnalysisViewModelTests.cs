@@ -23,14 +23,14 @@ public sealed class MarketAnalysisViewModelTests
     public async Task InitializeAsync_ReportStored_LoadsTheSectionsWithChartsAndInsights()
     {
         // Arrange
-        var viewModel = Build(out _);
+        MarketAnalysisViewModel viewModel = Build(out _);
 
         // Act
         await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var cancellations = viewModel.Sections[0];
-        var chart = Assert.Single(cancellations.Charts);
+        MarketAnalysisSectionView cancellations = viewModel.Sections[0];
+        MarketAnalysisChart chart = Assert.Single(cancellations.Charts);
         Assert.Equal(["Cancellations", "Room value and stay"], viewModel.Sections.Select(view => view.Section.Title));
         Assert.Equal("By deposit type", chart.Series.Title);
         Assert.Equal(["No Deposit", "Non Refund"], chart.Series.Points.Select(point => point.Label));
@@ -46,7 +46,7 @@ public sealed class MarketAnalysisViewModelTests
     public async Task InitializeAsync_NothingStored_ShowsTheEmptyMessageAndNoError()
     {
         // Arrange
-        var viewModel = Build(out var service);
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
         service.GetLatestReportAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisReportDto>.Failure(ErrorCodes.MarketAnalysis.NotFound));
 
         // Act
@@ -63,7 +63,7 @@ public sealed class MarketAnalysisViewModelTests
     public async Task InitializeAsync_ApiFails_ShowsTheTextAndNotTheEmptyMessage()
     {
         // Arrange
-        var viewModel = Build(out var service);
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
         service.GetLatestReportAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisReportDto>.Failure(ErrorCodes.Api.Unavailable));
 
         // Act
@@ -80,8 +80,8 @@ public sealed class MarketAnalysisViewModelTests
     public async Task Sections_SeriesWithoutPoints_AreLeftOut()
     {
         // Arrange
-        var viewModel = Build(out var service);
-        var report = Report() with
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
+        MarketAnalysisReportDto report = Report() with
         {
             Content = new MarketAnalysisContentDto([], [new MarketAnalysisSectionDto("x", "X", "available", null, [new MarketAnalysisSeriesDto("empty", "Empty", "", [])], null)]),
         };
@@ -104,7 +104,7 @@ public sealed class MarketAnalysisViewModelTests
     public async Task StartAsync_ServiceUp_FollowsTheQueuedRunAndBlocksASecondStart()
     {
         // Arrange
-        var viewModel = Build(out var service);
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
         await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
@@ -122,7 +122,7 @@ public sealed class MarketAnalysisViewModelTests
     public async Task StartAsync_DatesChosen_SendsThePeriod()
     {
         // Arrange
-        var viewModel = Build(out var service);
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
         viewModel.From = new DateOnly(2019, 1, 1);
         viewModel.To = new DateOnly(2019, 12, 31);
 
@@ -138,7 +138,7 @@ public sealed class MarketAnalysisViewModelTests
     public async Task UseLastYears_ThreeYears_FillsTheDatesAndTheStartSendsThem()
     {
         // Arrange
-        var viewModel = Build(out var service);
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
 
         // Act
         viewModel.UseLastYears(3);
@@ -154,7 +154,7 @@ public sealed class MarketAnalysisViewModelTests
     public void UseLastYears_OneYear_GivesOneYearBack()
     {
         // Arrange
-        var viewModel = Build(out _);
+        MarketAnalysisViewModel viewModel = Build(out _);
 
         // Act
         viewModel.UseLastYears(1);
@@ -168,7 +168,7 @@ public sealed class MarketAnalysisViewModelTests
     public void UseLastYears_Zero_IsRefusedAndKeepsTheDates()
     {
         // Arrange
-        var viewModel = Build(out _);
+        MarketAnalysisViewModel viewModel = Build(out _);
         viewModel.From = new DateOnly(2019, 1, 1);
 
         // Act and assert
@@ -181,7 +181,7 @@ public sealed class MarketAnalysisViewModelTests
     public void UseAllBookings_DatesChosen_ClearsThem()
     {
         // Arrange
-        var viewModel = Build(out _);
+        MarketAnalysisViewModel viewModel = Build(out _);
         viewModel.UseLastYears(3);
 
         // Act
@@ -196,7 +196,7 @@ public sealed class MarketAnalysisViewModelTests
     public async Task StartAsync_NoDates_SendsAnOpenPeriod()
     {
         // Arrange
-        var viewModel = Build(out var service);
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
 
         // Act
         await viewModel.StartAsync(TestContext.Current.CancellationToken);
@@ -213,7 +213,7 @@ public sealed class MarketAnalysisViewModelTests
     public async Task StartAsync_Refused_ShowsTheTextAndFollowsNothing(string code, string text)
     {
         // Arrange
-        var viewModel = Build(out var service);
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
         service.StartRunAsync(Arg.Any<StartMarketAnalysisRequest>(), Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto>.Failure(code));
 
         // Act
@@ -230,7 +230,7 @@ public sealed class MarketAnalysisViewModelTests
     public async Task RefreshAsync_RunCompletes_LoadsTheNewReportAndStopsFollowing()
     {
         // Arrange
-        var viewModel = Build(out var service);
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
         service.GetLatestReportAsync(Arg.Any<CancellationToken>()).Returns(
             Result<MarketAnalysisReportDto>.Failure(ErrorCodes.MarketAnalysis.NotFound),
             Result<MarketAnalysisReportDto>.Success(Report()));
@@ -242,7 +242,7 @@ public sealed class MarketAnalysisViewModelTests
 
         // Act
         await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
-        var runningReport = viewModel.Report;
+        MarketAnalysisReportDto? runningReport = viewModel.Report;
         await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
 
         // Assert
@@ -257,7 +257,7 @@ public sealed class MarketAnalysisViewModelTests
     public async Task RefreshAsync_RunFails_StopsFollowingAndKeepsTheOldReport()
     {
         // Arrange
-        var viewModel = Build(out var service);
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
         service.GetRunStateAsync(RunId, Arg.Any<CancellationToken>()).Returns(
             Result<MarketAnalysisRunStateDto>.Success(new(RunId, MarketAnalysisRunStates.Failed, null, null, "market_analysis_runner.unexpected_response")));
         await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
@@ -281,7 +281,7 @@ public sealed class MarketAnalysisViewModelTests
     public async Task FailureText_RunFailedInTheService_ShowsTheServiceCode(string code, string text)
     {
         // Arrange
-        var viewModel = Build(out var service);
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
         service.GetRunStateAsync(RunId, Arg.Any<CancellationToken>()).Returns(
             Result<MarketAnalysisRunStateDto>.Success(new(RunId, MarketAnalysisRunStates.Failed, null, null, code)));
         await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
@@ -299,7 +299,7 @@ public sealed class MarketAnalysisViewModelTests
     public async Task RefreshAsync_RunNotFound_EndsTheFollowing()
     {
         // Arrange
-        var viewModel = Build(out var service);
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
         service.GetRunStateAsync(RunId, Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto>.Failure(ErrorCodes.MarketAnalysisRunner.RunNotFound));
         await viewModel.StartAsync(TestContext.Current.CancellationToken);
 
@@ -316,7 +316,7 @@ public sealed class MarketAnalysisViewModelTests
     public async Task RefreshAsync_NoRun_AsksForNothing()
     {
         // Arrange
-        var viewModel = Build(out var service);
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
 
         // Act
         await viewModel.RefreshAsync(TestContext.Current.CancellationToken);
@@ -333,19 +333,19 @@ public sealed class MarketAnalysisViewModelTests
 
     private static MarketAnalysisReportDto Report()
     {
-        var sample = FakeMarketAnalysisServiceClient.SampleResult();
+        MarketAnalysisResultDto sample = FakeMarketAnalysisServiceClient.SampleResult();
         return new(sample.RunId, sample.StartedAt, sample.FinishedAt, sample.Provider, sample.Model, sample.Content!);
     }
 
     private static MarketAnalysisViewModel Build(out IMarketAnalysisService service)
     {
-        var fake = Substitute.For<IMarketAnalysisService>();
+        IMarketAnalysisService fake = Substitute.For<IMarketAnalysisService>();
         fake.GetLatestReportAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisReportDto>.Success(Report()));
         fake.StartRunAsync(Arg.Any<StartMarketAnalysisRequest>(), Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto>.Success(State(MarketAnalysisRunStates.Queued)));
         fake.GetRunStateAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto>.Success(State(MarketAnalysisRunStates.Running)));
         service = fake;
 
-        var runner = Substitute.For<IUseCaseRunner<IMarketAnalysisService>>();
+        IUseCaseRunner<IMarketAnalysisService> runner = Substitute.For<IUseCaseRunner<IMarketAnalysisService>>();
         runner.RunAsync(
                 Arg.Any<Func<IMarketAnalysisService, CancellationToken, Task<Result<MarketAnalysisReportDto>>>>(),
                 Arg.Any<CancellationToken>())
