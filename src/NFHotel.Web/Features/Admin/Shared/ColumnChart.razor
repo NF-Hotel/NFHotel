@@ -1,0 +1,78 @@
+@inherits SeriesChartBase
+@using System.Globalization
+
+@*
+    A column chart drawn as inline SVG: ordered bands, numbers or a few separate rates, in the order the caller gives. The value is
+    written above each column, so the height is not the only cue. Labels that do not fit are turned. Hidden table for screen readers.
+*@
+
+@if (Points.Count == 0)
+{
+    <p class="muted">@Title: no data.</p>
+}
+else
+{
+    <figure class="chart">
+        <figcaption class="chart-title">@Title</figcaption>
+        @BuildSvg()
+        <ChartAlternative Title="@Title" Unit="@Unit" Points="Points" />
+    </figure>
+}
+
+@code {
+    private const int Width = 640;
+    private const int Left = 48;
+    private const int Right = 12;
+    private const int Top = 24;
+    private const int PlotHeight = 190;
+    private const int MaxColumnWidth = 64;
+    private const double ColumnShare = 0.62;
+    private const int TurnedAbove = 6;
+    private const int TurnedLabelLength = 10;
+    private const int MaxValueLabels = 16;
+    private const int LabelLength = 14;
+
+    private MarkupString BuildSvg()
+    {
+        var count = Points.Count;
+        var turned = count > TurnedAbove || Points.Any(point => point.Label.Length > TurnedLabelLength);
+        var bottom = turned ? 74 : 40;
+        var height = Top + PlotHeight + bottom;
+        var axis = LinearScale.Nice(0, Points.Max(point => point.Value));
+        var y = new LinearScale(axis.Min, axis.Max, Top + PlotHeight, Top);
+        var slot = (Width - Left - Right) / (double)count;
+        var columnWidth = Math.Min(slot * ColumnShare, MaxColumnWidth);
+        var step = LabelThinner.Step(count, MaxValueLabels);
+        var baseline = Top + PlotHeight;
+        var svg = OpenSvg(Width, height);
+
+        foreach (var tick in axis.Ticks)
+        {
+            svg.Append(CultureInfo.InvariantCulture, $"<line class=\"chart-gridline\" x1=\"{Left}\" y1=\"{ChartFormat.Num(y.Map(tick))}\" x2=\"{Width - Right}\" y2=\"{ChartFormat.Num(y.Map(tick))}\"></line>");
+            svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-tick\" x=\"{Left - 6}\" y=\"{ChartFormat.Num(y.Map(tick) + 4)}\" text-anchor=\"end\">{ChartFormat.Encode(ChartFormat.Value(tick, Unit))}</text>");
+        }
+
+        for (var index = 0; index < count; index++)
+        {
+            var point = Points[index];
+            var centre = Left + (slot * index) + (slot / 2);
+            var top = y.Map(point.Value);
+            var drawn = Math.Max(baseline - top, point.Value > 0 ? 1 : 0);
+            svg.Append(CultureInfo.InvariantCulture, $"<rect class=\"chart-bar chart-series-0\" x=\"{ChartFormat.Num(centre - (columnWidth / 2))}\" y=\"{ChartFormat.Num(baseline - drawn)}\" width=\"{ChartFormat.Num(columnWidth)}\" height=\"{ChartFormat.Num(drawn)}\" rx=\"2\"><title>{ChartFormat.Encode(point.Label)}: {ChartFormat.Encode(PointText(point))}</title></rect>");
+            if (LabelThinner.IsShown(index, step))
+            {
+                svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-value\" x=\"{ChartFormat.Num(centre)}\" y=\"{ChartFormat.Num(baseline - drawn - 4)}\" text-anchor=\"middle\">{ChartFormat.Encode(PointText(point))}</text>");
+            }
+
+            var label = ChartFormat.Encode(ChartFormat.Shorten(point.Label, LabelLength));
+            svg.Append(turned
+                ? FormattableString.Invariant($"<text class=\"chart-label\" x=\"{ChartFormat.Num(centre)}\" y=\"{baseline + 14}\" text-anchor=\"end\" transform=\"rotate(-35 {ChartFormat.Num(centre)} {baseline + 14})\">{label}</text>")
+                : FormattableString.Invariant($"<text class=\"chart-label\" x=\"{ChartFormat.Num(centre)}\" y=\"{baseline + 16}\" text-anchor=\"middle\">{label}</text>"));
+        }
+
+        svg.Append(CultureInfo.InvariantCulture, $"<line class=\"chart-axis\" x1=\"{Left}\" y1=\"{baseline}\" x2=\"{Width - Right}\" y2=\"{baseline}\"></line>");
+        svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-axis-title\" x=\"{Left}\" y=\"{height - 6}\">{ChartFormat.Encode(AxisText)}</text>");
+
+        return CloseSvg(svg);
+    }
+}

@@ -86,7 +86,7 @@ public sealed class MarketAnalysisViewModel
             ? ErrorMessages.Describe(new Error(run.Error ?? ErrorCodes.MarketAnalysisRunner.UnexpectedResponse))
             : null;
 
-    /// <summary>The analyses of the report as the page draws them: the charts of each and its AI insight.</summary>
+    /// <summary>The analyses of the report as the page draws them: the charts of each, with the kind the rule chose, and its AI insight.</summary>
     public IReadOnlyList<MarketAnalysisSectionView> Sections =>
         Report is null
             ? []
@@ -94,10 +94,7 @@ public sealed class MarketAnalysisViewModel
                 section,
                 [.. section.Series
                     .Where(series => series.Points.Count > 0)
-                    .Select(series => new MarketAnalysisChart(
-                        series.Title,
-                        series.Unit,
-                        [.. series.Points.Select(point => new ChartGroup(point.Label, [new ChartBar(SeriesName(series), point.Value)]))]))]))];
+                    .Select(series => new MarketAnalysisChart(series, ChartKindSelector.Select(series)))]))];
 
     /// <summary>Loads the stored report when the page opens.</summary>
     /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
@@ -188,9 +185,6 @@ public sealed class MarketAnalysisViewModel
         }
     }
 
-    private static string SeriesName(MarketAnalysisSeriesDto series) =>
-        string.IsNullOrWhiteSpace(series.Unit) ? series.Title : series.Unit;
-
     private async Task LoadReportAsync(CancellationToken cancellationToken)
     {
         var result = await _service
@@ -219,14 +213,16 @@ public sealed class MarketAnalysisViewModel
 /// <summary>One analysis of the report as the page draws it.</summary>
 /// <param name="Section">The analysis with its AI insight.</param>
 /// <param name="Charts">One chart for each series that has points.</param>
-public sealed record MarketAnalysisSectionView(MarketAnalysisSectionDto Section, IReadOnlyList<MarketAnalysisChart> Charts);
+public sealed record MarketAnalysisSectionView(MarketAnalysisSectionDto Section, IReadOnlyList<MarketAnalysisChart> Charts)
+{
+    /// <summary>The correlation matrices of the analysis, drawn as heat maps.</summary>
+    public IReadOnlyList<MarketAnalysisMatrixDto> Matrices => Section.Matrices ?? [];
+
+    /// <summary>True when the analysis has something to draw.</summary>
+    public bool HasCharts => Charts.Count > 0 || Matrices.Count > 0;
+}
 
 /// <summary>One chart of an analysis as the page draws it.</summary>
-/// <param name="Title">The title of the chart.</param>
-/// <param name="Unit">The unit of the values, or empty.</param>
-/// <param name="Groups">One group with one bar per point of the series.</param>
-public sealed record MarketAnalysisChart(string Title, string Unit, IReadOnlyList<ChartGroup> Groups)
-{
-    /// <summary>The one series of the chart, named by its unit, or by its title when there is no unit.</summary>
-    public IReadOnlyList<string> SeriesNames => [string.IsNullOrWhiteSpace(Unit) ? Title : Unit];
-}
+/// <param name="Series">The series to draw.</param>
+/// <param name="Kind">The kind of chart that the rule of <see cref="ChartKindSelector"/> chose for the series.</param>
+public sealed record MarketAnalysisChart(MarketAnalysisSeriesDto Series, ChartKind Kind);

@@ -1,0 +1,109 @@
+@inherits SeriesChartBase
+@using System.Globalization
+@using System.Text
+
+@*
+    A line chart of months or weeks drawn as inline SVG. The periods are evenly spaced in the order given. A dot and a value label mark
+    each point, so the line is not the only cue; with many points only every Nth label of the axis and of the values is written,
+    so that a series of 30 months stays readable (the hidden table has them all). The optional overall level is a dashed line
+    with its own label. One point is a dot with its label. Hidden table for screen readers.
+*@
+
+@if (Points.Count == 0)
+{
+    <p class="muted">@Title: no data.</p>
+}
+else
+{
+    <figure class="chart">
+        <figcaption class="chart-title">@Title</figcaption>
+        @BuildSvg()
+        <ChartAlternative Title="@Title" Unit="@Unit" Points="Points" FirstColumn="Period" />
+        @if (ReferenceValue is { } overall)
+        {
+            <p class="chart-note">Dashed line: @(ReferenceLabel ?? "Overall") @ChartFormat.Value(overall, Unit).</p>
+        }
+    </figure>
+}
+
+@code {
+    private const int Width = 640;
+    private const int Left = 48;
+    private const int Right = 28;
+    private const int Top = 24;
+    private const int PlotHeight = 190;
+    private const int Bottom = 74;
+    private const int MaxLabels = 12;
+    private const int DotRadius = 3;
+    private const int Inset = 12;
+
+    /// <summary>The overall level of the series, drawn as a dashed line, or <c>null</c> for none.</summary>
+    [Parameter]
+    public double? ReferenceValue { get; set; }
+
+    /// <summary>The name of the overall level.</summary>
+    [Parameter]
+    public string? ReferenceLabel { get; set; }
+
+    private MarkupString BuildSvg()
+    {
+        var count = Points.Count;
+        var height = Top + PlotHeight + Bottom;
+        var baseline = Top + PlotHeight;
+        var highest = Math.Max(Points.Max(point => point.Value), ReferenceValue ?? 0);
+        var axis = LinearScale.Nice(0, highest);
+        var y = new LinearScale(axis.Min, axis.Max, baseline, Top);
+        var x = new LinearScale(0, Math.Max(count - 1, 1), Left + Inset, Width - Right - Inset);
+        var step = LabelThinner.Step(count, MaxLabels);
+        var svg = OpenSvg(Width, height);
+
+        foreach (var tick in axis.Ticks)
+        {
+            svg.Append(CultureInfo.InvariantCulture, $"<line class=\"chart-gridline\" x1=\"{Left}\" y1=\"{ChartFormat.Num(y.Map(tick))}\" x2=\"{Width - Right}\" y2=\"{ChartFormat.Num(y.Map(tick))}\"></line>");
+            svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-tick\" x=\"{Left - 6}\" y=\"{ChartFormat.Num(y.Map(tick) + 4)}\" text-anchor=\"end\">{ChartFormat.Encode(ChartFormat.Value(tick, Unit))}</text>");
+        }
+
+        svg.Append(CultureInfo.InvariantCulture, $"<line class=\"chart-axis\" x1=\"{Left}\" y1=\"{baseline}\" x2=\"{Width - Right}\" y2=\"{baseline}\"></line>");
+        AppendReference(svg, y);
+        AppendLine(svg, x, y);
+
+        for (var index = 0; index < count; index++)
+        {
+            var point = Points[index];
+            var px = ChartFormat.Num(x.Map(index));
+            svg.Append(CultureInfo.InvariantCulture, $"<circle class=\"chart-dot\" cx=\"{px}\" cy=\"{ChartFormat.Num(y.Map(point.Value))}\" r=\"{DotRadius}\"><title>{ChartFormat.Encode(point.Label)}: {ChartFormat.Encode(PointText(point))}</title></circle>");
+            if (LabelThinner.IsShown(index, step))
+            {
+                svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-value\" x=\"{px}\" y=\"{ChartFormat.Num(y.Map(point.Value) - 8)}\" text-anchor=\"middle\">{ChartFormat.Encode(PointText(point))}</text>");
+                svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-label\" x=\"{px}\" y=\"{baseline + 14}\" text-anchor=\"end\" transform=\"rotate(-45 {px} {baseline + 14})\">{ChartFormat.Encode(point.Label)}</text>");
+            }
+        }
+
+        svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-axis-title\" x=\"{Left}\" y=\"{height - 6}\">{ChartFormat.Encode(AxisText)}, over time</text>");
+
+        return CloseSvg(svg);
+    }
+
+    private void AppendLine(StringBuilder svg, LinearScale x, LinearScale y)
+    {
+        if (Points.Count < 2)
+        {
+            return;
+        }
+
+        var path = string.Join(" ", Points.Select((point, index) => FormattableString.Invariant($"{(index == 0 ? "M" : "L")} {ChartFormat.Num(x.Map(index))} {ChartFormat.Num(y.Map(point.Value))}")));
+        svg.Append(CultureInfo.InvariantCulture, $"<path class=\"chart-line\" d=\"{path}\"></path>");
+    }
+
+    private void AppendReference(StringBuilder svg, LinearScale y)
+    {
+        if (ReferenceValue is not { } level)
+        {
+            return;
+        }
+
+        var ry = ChartFormat.Num(y.Map(level));
+        svg.Append(CultureInfo.InvariantCulture, $"<line class=\"chart-reference\" x1=\"{Left}\" y1=\"{ry}\" x2=\"{Width - Right}\" y2=\"{ry}\"></line>");
+        svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-reference-label\" x=\"{Width - Right}\" y=\"{ChartFormat.Num(y.Map(level) - 5)}\" text-anchor=\"end\">{ChartFormat.Encode(ReferenceLabel ?? "Overall")} {ChartFormat.Encode(ChartFormat.Value(level, Unit))}</text>");
+    }
+}

@@ -1441,6 +1441,150 @@ h1:focus-visible {
 .chart-series-0 { fill: #b5523b; background: #b5523b; }
 .chart-series-1 { fill: #2f6a9e; background: #2f6a9e; }
 .chart-series-2 { fill: #6b7280; background: #6b7280; }
+.chart-series-3 { fill: #4f7a3a; background: #4f7a3a; }
+
+/* Market analysis report (MIL-026): the other kinds of chart. Colours are tokens of the site; the heat maps colour each cell
+   themselves and pick a readable text colour, so they read the same on a dark theme. */
+.chart-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-width: 0;
+}
+
+.chart-wide {
+  grid-column: 1 / -1;
+}
+
+.chart-correlation .chart-svg {
+  max-width: 900px;
+}
+
+.chart-donut {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s6);
+}
+
+.chart-donut .chart-svg {
+  width: 200px;
+  flex: none;
+}
+
+.chart-legend-values {
+  flex-direction: column;
+  gap: var(--s2);
+  color: var(--ink);
+}
+
+.chart-slice {
+  stroke: var(--paper);
+  stroke-width: 1;
+}
+
+.chart-on-slice {
+  font-size: 12px;
+  font-weight: 600;
+  fill: #fff;
+}
+
+.chart-gridline {
+  stroke: var(--line);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.chart-tick {
+  font-size: 11px;
+  fill: var(--ink-soft);
+}
+
+.chart-line {
+  fill: none;
+  stroke: #2f6a9e;
+  stroke-width: 2;
+}
+
+.chart-dot {
+  fill: #2f6a9e;
+  stroke: var(--paper);
+  stroke-width: 1;
+}
+
+.chart-reference {
+  stroke: var(--ink-soft);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}
+
+.chart-reference-label {
+  font-size: 11px;
+  fill: var(--ink-soft);
+}
+
+.chart-cell {
+  stroke: var(--paper);
+  stroke-width: 1;
+}
+
+.chart-cell-empty {
+  fill: var(--sand);
+}
+
+.chart-cell-text {
+  font-size: 11px;
+}
+
+.chart-note {
+  margin: var(--s2) 0 0;
+  color: var(--ink-soft);
+  font-size: .875rem;
+}
+
+.figure-tile {
+  padding: var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--sand);
+}
+
+.figure-tile-value {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  color: var(--ink);
+}
+
+.chart-caption {
+  font-size: .9375rem;
+  color: var(--ink);
+}
+
+.chart-caption p {
+  margin: 0;
+}
+
+.chart-caption-limits {
+  margin: var(--s1) 0 0;
+  padding-left: var(--s6);
+}
+
+.chart-observation {
+  padding: var(--s3);
+  border-left: 3px solid var(--navy);
+  background: var(--sand);
+}
+
+.chart-ai-label {
+  display: inline-block;
+  margin-left: var(--s2);
+  padding: 0 var(--s2);
+  border: 1px solid var(--navy);
+  border-radius: var(--radius-sm);
+  font-size: .75rem;
+  color: var(--navy);
+}
 
 .outcome-pass { background: #e2efe8; color: #245740; }
 .outcome-fail { background: #f7e7e5; color: #7a302b; }

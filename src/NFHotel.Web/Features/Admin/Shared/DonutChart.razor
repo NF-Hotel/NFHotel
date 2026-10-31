@@ -1,0 +1,55 @@
+@inherits SeriesChartBase
+@using System.Globalization
+@using System.Text
+
+@*
+    A donut chart drawn as inline SVG: two to four parts of one whole. The caller (ChartKindSelector) only sends parts that add up
+    to 100 %. The share of each part is written on its slice when the slice is wide enough, and always in the legend next to the
+    colour, so the colour does not carry the meaning alone. Hidden table for screen readers.
+*@
+
+@if (Points.Count == 0)
+{
+    <p class="muted">@Title: no data.</p>
+}
+else
+{
+    <figure class="chart">
+        <figcaption class="chart-title">@Title</figcaption>
+        <div class="chart-donut">
+            @BuildSvg()
+            <ul class="chart-legend chart-legend-values">
+                @for (var index = 0; index < Points.Count; index++)
+                {
+                    <li><span class="chart-swatch chart-series-@(index % SeriesColours)"></span>@Points[index].Label: <strong>@PointText(Points[index])</strong></li>
+                }
+            </ul>
+        </div>
+        <ChartAlternative Title="@Title" Unit="@Unit" Points="Points" />
+    </figure>
+}
+
+@code {
+    private const int Size = 200;
+    private const int OuterRadius = 92;
+    private const int InnerRadius = 54;
+    private const int SeriesColours = 4;
+    private const double MinLabelledShare = 0.08;
+
+    private MarkupString BuildSvg()
+    {
+        var svg = OpenSvg(Size, Size);
+        var slices = DonutGeometry.Slices([.. Points.Select(point => point.Value)], Size / 2d, Size / 2d, OuterRadius, InnerRadius);
+        foreach (var slice in slices.Where(slice => slice.Path.Length > 0))
+        {
+            var point = Points[slice.Index];
+            svg.Append(CultureInfo.InvariantCulture, $"<path class=\"chart-slice chart-series-{slice.Index % SeriesColours}\" d=\"{slice.Path}\"><title>{ChartFormat.Encode(point.Label)}: {ChartFormat.Encode(PointText(point))}</title></path>");
+            if (slice.Share >= MinLabelledShare)
+            {
+                svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-on-slice\" x=\"{ChartFormat.Num(slice.LabelX)}\" y=\"{ChartFormat.Num(slice.LabelY + 4)}\" text-anchor=\"middle\">{ChartFormat.Encode(PointText(point))}</text>");
+            }
+        }
+
+        return CloseSvg(svg);
+    }
+}

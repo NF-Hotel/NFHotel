@@ -1,0 +1,46 @@
+@*
+    The caption under a chart: what it shows, why this kind of chart, what it cannot say, and the AI observation of the chart,
+    labelled as AI-generated. A chart without an observation says so in a short line and never shows an empty box.
+*@
+
+<div class="chart-caption stack-sm">
+    <p><strong>What it shows.</strong> @Model.What</p>
+    <p><strong>Why this chart.</strong> @Model.Why</p>
+    <div>
+        <strong>What it cannot say.</strong>
+        <ul class="chart-caption-limits">
+            @foreach (var limit in Model.Limits)
+            {
+                <li>@limit</li>
+            }
+        </ul>
+    </div>
+    @if (Model.Formula is { } formula)
+    {
+        <details>
+            <summary>How the figures are calculated</summary>
+            <p class="muted">@formula</p>
+        </details>
+    }
+    @if (Model.Observation is { } observation)
+    {
+        <div class="chart-observation" role="note">
+            <p><strong>AI observation</strong> <span class="chart-ai-label">AI-generated</span></p>
+            <p>@observation.Text</p>
+            @if (!string.IsNullOrWhiteSpace(observation.Evidence))
+            {
+                <p class="muted">Evidence: @observation.Evidence</p>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="muted">@Model.NoObservation</p>
+    }
+</div>
+
+@code {
+    /// <summary>The caption to show.</summary>
+    [Parameter, EditorRequired]
+    public ChartCaptionModel Model { get; set; } = new(string.Empty, string.Empty, [], null, null, string.Empty);
+}

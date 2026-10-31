@@ -1,0 +1,35 @@
+@*
+    One figure as a tile: the title of the series, the figure in large type with its unit, and what it is the figure of. A single
+    figure has nothing to be compared with, so it is not drawn as a chart.
+*@
+
+<figure class="chart figure-tile">
+    <figcaption class="chart-title">@Title</figcaption>
+    <p class="figure-tile-value"><strong>@ChartFormat.Value(Value, Unit)</strong></p>
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <p class="muted">@Label@(SmallSample ? " (few bookings)" : string.Empty)</p>
+    }
+</figure>
+
+@code {
+    /// <summary>The title of the series.</summary>
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>What the figure is the figure of, for example the group of the point.</summary>
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>The figure.</summary>
+    [Parameter, EditorRequired]
+    public double Value { get; set; }
+
+    /// <summary>The unit of the figure, <c>%</c> for a rate.</summary>
+    [Parameter]
+    public string Unit { get; set; } = string.Empty;
+
+    /// <summary>True when the figure rests on too few bookings for a firm reading.</summary>
+    [Parameter]
+    public bool SmallSample { get; set; }
+}

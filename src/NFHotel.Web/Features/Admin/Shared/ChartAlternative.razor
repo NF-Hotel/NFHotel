@@ -1,0 +1,47 @@
+@using NFHotel.Application.Dto.MarketAnalysis
+
+@*
+    The text alternative of a chart: the values in a table that only screen readers see, and a visible note when a value rests on
+    few bookings (the star on its label), so that the star does not carry the meaning alone.
+*@
+
+<table class="visually-hidden">
+    <caption>@Title</caption>
+    <thead>
+        <tr>
+            <th scope="col">@FirstColumn</th>
+            <th scope="col">@(string.IsNullOrWhiteSpace(Unit) ? "Value" : Unit)</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var point in Points)
+        {
+            <tr>
+                <th scope="row">@point.Label</th>
+                <td>@ChartFormat.Value(point.Value, Unit)@(point.SmallSample ? " (few bookings)" : string.Empty)</td>
+            </tr>
+        }
+    </tbody>
+</table>
+@if (Points.Any(point => point.SmallSample))
+{
+    <p class="chart-note">* Rests on few bookings, so read it with care.</p>
+}
+
+@code {
+    /// <summary>The title of the chart, the caption of the table.</summary>
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>The unit of the values.</summary>
+    [Parameter]
+    public string Unit { get; set; } = string.Empty;
+
+    /// <summary>The points of the chart.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<MarketAnalysisPointDto> Points { get; set; } = [];
+
+    /// <summary>The heading of the first column.</summary>
+    [Parameter]
+    public string FirstColumn { get; set; } = "Group";
+}
