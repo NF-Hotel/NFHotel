@@ -23,7 +23,7 @@
 - Mode: supervised, not independent. S01 asked in chat on 2026-11-01 for the implementation; the reviewer is the AI that wrote the code, so the review stays open to S01's challenge.
 
 **Evidence run on 2026-11-01** (Docker in WSL on S01's PC):
-- `ops/tests/test-scan-exporter.sh`: ruff check and format clean, `mypy --strict` no issues in 14 files, pytest 22 passed.
+- `ops/tests/test-scan-exporter.sh`: ruff check and format clean, `mypy --strict` no issues in 17 files, pytest 32 passed with 93 % line coverage (the script fails under 80 %).
 - `ops/tests/check-monitoring.sh`: 7 of 7 pass, with `promtool test rules` including the 7 new rule tests.
 - `ops/tests/test-monitoring-stack.sh` as root: 18 passed, 0 failed (six services, the token file, the scrape, the source state without a token).
 - `ops/tests/lint.sh`: actionlint, shellcheck, shfmt and yamllint clean.
@@ -38,7 +38,7 @@
 | --- | --- | --- | --- |
 | 1 | PEP 8 casing | Pass | Modules `snake_case`, classes `PascalCase`, constants `UPPER_SNAKE`; ruff `N` rules clean |
 | 2 | Names state purpose | Pass | `open_alert_samples`, `last_analysis_samples`, `read_token`, `SourceError`; no single-letter names outside comprehensions |
-| 3 | Formatter and linter, no unexplained suppressions | Pass | ruff format and check; each `noqa` has its reason (`S310` after the https check, `S104` on the compose network, `A002`/`N802` names fixed by `http.server`) |
+| 3 | Formatter and linter, no unexplained suppressions | Pass | ruff format and check; each `noqa` has its reason (`S310` after the https check, `S104` on the compose network, `A002`/`N802` names fixed by `http.server`). SonarQube Cloud flagged the plain HTTP of `/metrics` (python:S5332) on #434; it is marked `NOSONAR` with the reason: the compose network only, no published port, no secret in the metrics |
 | 4 | Every signature annotated | Pass | `mypy --strict` |
 | 5 | No bare except, cause kept | Pass | Narrow excepts, `raise ... from err`; a failed source is logged and reported as `nfhotel_scan_source_up 0`, not swallowed |
 | 6 | No mutable defaults, no shadowed builtins | Pass | `format` in `log_message` is the name `http.server` fixes, marked |
@@ -46,7 +46,7 @@
 | 8 | Docstrings | Pass | Every module, class and public function |
 | 9 | Logging, no secrets in logs | Pass | `logging` only; error messages carry the URL path and status, never the headers that hold the token; the token is never a metric |
 | 10 | Traces to the Design Class Diagram | N-A | A plain technical task of MIL-053 with no DCD; the design is the milestone's deliverable |
-| 11 | Tests for new behaviour, no network | Pass | 22 tests with a fake client: counting, pagination, a failed and a malformed source, the token sent to GitHub only, no token |
+| 11 | Tests for new behaviour, no network | Pass | 32 tests: the collector with a fake client (counting, pagination, a failed and a malformed source, the token sent to GitHub only, no token), the HTTP client with `urlopen` replaced, the settings, and the endpoint on a loopback server |
 | 12 | Strict type checking | Pass | `Any` only in the `Json` alias, with the reason in a comment |
 | 13 | Dependencies declared and pinned | Pass | Standard library only at run time; the test tools are pinned in `test-scan-exporter.sh` |
 | 14 | DRY | Pass | Metric names and help text once in `prometheus_text.py`; the Sonar metric list once in `samples.py`, used by the collector and the conversion |
@@ -74,6 +74,8 @@
 | 13 | Safe to re-run | Pass | `install` makes the empty file only when it is missing; the stack test redeploys |
 | 14 | Tools stated | Pass | |
 | 15 | Defined once | Pass | The python image is read from the compose file by `test-scan-exporter.sh`, as `check-monitoring.sh` does for its images |
+
+**Coverage in SonarQube Cloud.** The .NET job measures C# only, so `ops/**` is added to `sonar.coverage.exclusions` in `SonarQube.Analysis.xml`; the exporter's coverage is held at 80 % by its own test in Ops CI instead.
 
 ## Overall Verdict
 

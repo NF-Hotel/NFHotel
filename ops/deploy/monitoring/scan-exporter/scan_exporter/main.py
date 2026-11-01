@@ -33,4 +33,7 @@ def main() -> None:
     threading.Thread(target=refresh_forever, args=(collector, interval, stop), daemon=True).start()
     port = int(os.environ.get("SCAN_EXPORTER_PORT", "9120"))
     LOG.info("serving /metrics on port %d, reading every %d seconds", port, interval)
-    ThreadingHTTPServer(("0.0.0.0", port), make_handler(collector)).serve_forever()  # noqa: S104 - the compose network only
+    # Plain HTTP on the compose network, as every exporter that Prometheus scrapes here: no
+    # port is published, and the metrics hold no secret.
+    server = ThreadingHTTPServer(("0.0.0.0", port), make_handler(collector))  # noqa: S104  # NOSONAR
+    server.serve_forever()

@@ -18,8 +18,8 @@ groups:
 
       - alert: ScanStale
         expr: >-
-          time() - nfhotel_code_scanning_last_analysis_timestamp_seconds{tool=~"CodeQL|OWASP ZAP|Scorecard"}
-          > 8 * 86400
+          time() - nfhotel_code_scanning_last_analysis_timestamp_seconds{
+          tool=~"CodeQL|OWASP ZAP|Scorecard"} > 8 * 86400
         for: 1h
         labels:
           severity: warning
@@ -36,7 +36,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "The latest run of {{ $labels.workflow }} on main ended with {{ $labels.conclusion }}"
+          summary: >-
+            The latest run of {{ $labels.workflow }} on main ended with {{ $labels.conclusion }}
           description: >-
             A scan that fails gives no result, so its findings are unknown. Open the run in GitHub
             Actions and fix the cause or run it again.
@@ -58,7 +59,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "The scan exporter cannot read {{ with $labels.source }}{{ . }}{{ else }}any source{{ end }}"
+          summary: >-
+            The scan exporter cannot read
+            {{ with $labels.source }}{{ . }}{{ else }}any source{{ end }}
           description: >-
             The panels of the dashboard Security scans are stale. Run
             `docker compose logs scan-exporter` in the monitoring LXC; a missing or expired token

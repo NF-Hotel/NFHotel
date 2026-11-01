@@ -7,5 +7,7 @@
   <Property Name="sonar.cs.vscoveragexml.reportsPaths">TestResults/coverage.xml</Property>
   <Property Name="sonar.cs.vstest.reportsPaths">TestResults/**/*.trx</Property>
   <!-- The migrations are generated code, as in dotnet-coverage.config.xml -->
-  <Property Name="sonar.coverage.exclusions">**/Migrations/**</Property>
+  <!-- The operations code under ops/ is tested in Ops CI, not by this .NET job: the scan exporter's
+       coverage is measured and held at 80 % or more by ops/tests/test-scan-exporter.sh (MIL-053) -->
+  <Property Name="sonar.coverage.exclusions">**/Migrations/**,ops/**</Property>
 </SonarQubeAnalysisProperties>
