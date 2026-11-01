@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [de27b09] |
 
 ---
 
@@ -63,3 +63,4 @@ Go: every Mandatory criterion passes; the one failed criterion (QC-LANG-001 #10)
 [MIL-053]: ../../milestones/mil-053-security-scan-metrics.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[de27b09]: https://github.com/NF-Hotel/NFHotel/commit/de27b09fe2cff91b1db4c40ec2f609b0bf0ff29d

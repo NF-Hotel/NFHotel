@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [714af6a] |
 
 ---
 
@@ -90,3 +90,4 @@ Go: every Mandatory criterion passes or does not apply.
 [MIL-053]: ../../milestones/mil-053-security-scan-metrics.md
 [QC-PY-001]: ../../../framework/qc/code/qc-programming-python.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[714af6a]: https://github.com/NF-Hotel/NFHotel/commit/714af6a11a9a12e3b3caae7d08a0d4db888d8c45

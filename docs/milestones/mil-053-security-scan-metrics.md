@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-11-01 to see the results of the SAST and DAST scans of the workflows in Grafana, and to have it planned and implemented ("Ja og implementere det også"); accepted after RC-256 Go | pending |
+| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-11-01 to see the results of the SAST and DAST scans of the workflows in Grafana, and to have it planned and implemented ("Ja og implementere det også"); accepted after RC-256 Go | [de27b09] |
 
 ---
 
@@ -89,3 +89,4 @@ Decide whether the team can see in Grafana what the security scans of the pipeli
 [ADR-0007]: ../adr/adr-0007-cicd-and-supply-chain.md
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [MIL-051]: mil-051-monitoring-continuous-deployment.md
+[de27b09]: https://github.com/NF-Hotel/NFHotel/commit/de27b09fe2cff91b1db4c40ec2f609b0bf0ff29d
