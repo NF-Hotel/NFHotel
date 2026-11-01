@@ -141,6 +141,37 @@ public sealed class BookingServiceTests
         Assert.Equal([late.Id, early.Id], result.Value.Select(item => item.BookingId).ToArray());
     }
 
+    /// <summary>Equivalence: every sort column orders the list, with the booking number as tie-breaker (MIL-054).</summary>
+    [Theory]
+    [InlineData(BookingSortField.BookingNumber)]
+    [InlineData(BookingSortField.GuestName)]
+    [InlineData(BookingSortField.RoomNumber)]
+    [InlineData(BookingSortField.StartDate)]
+    [InlineData(BookingSortField.EndDate)]
+    [InlineData(BookingSortField.Status)]
+    [InlineData(BookingSortField.Nights)]
+    [InlineData((BookingSortField)99)]
+    public async Task GetOverviewAsync_EachSortColumnAscending_ReturnsEarlierBookingFirst(BookingSortField sortBy)
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var room = world.AddRoom();
+        var guest = world.AddGuest();
+        var early = world.AddBooking(room.Id, guest.Id, startOffsetDays: 1, nights: 1);
+        var late = world.AddBooking(room.Id, guest.Id, startOffsetDays: 10, nights: 1);
+        var query = new BookingOverviewQuery(world.Clock.Today, world.Clock.Today.AddDays(30), SortBy: sortBy);
+        world.BookingQueries
+            .GetOverviewAsync(default, default, default!, default, TestContext.Current.CancellationToken)
+            .ReturnsForAnyArgs(Task.FromResult<IReadOnlyList<BookingReadModel>>(
+                [world.ReadModelFor(late), world.ReadModelFor(early)]));
+
+        // Act
+        var result = await world.BookingService(CreateBookingOverviewAuthorization()).GetOverviewAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal([early.Id, late.Id], result.Value.Select(item => item.BookingId).ToArray());
+    }
+
     /// <summary>Negative: a missing query is a programming error.</summary>
     [Fact]
     public async Task GetOverviewAsync_NullQuery_ThrowsArgumentNull()
@@ -332,6 +363,48 @@ public sealed class BookingServiceTests
         Assert.True(result.IsSuccess);
         Assert.Equal(world.Guests.Items.Single().Id, world.Bookings.Items.Single().GuestId);
         Assert.Equal(2, world.UnitOfWork.SaveCount);
+    }
+
+    /// <summary>Positive: a guest books on the public page with new guest details, without staff permissions (MIL-054).</summary>
+    [Fact]
+    public async Task CreatePublicAsync_NewGuest_SavesTheGuestAndTheBooking()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var room = world.AddRoom();
+        var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, null, ServiceWorld.ValidGuestFields());
+
+        // Act
+        var result = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(world.Guests.Items.Single().Id, world.Bookings.Items.Single().GuestId);
+    }
+
+    /// <summary>Negative: the public page cannot book for an existing guest or without guest details (MIL-054).</summary>
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task CreatePublicAsync_ExistingOrNoGuest_ReturnsGuestSelectionInvalid(bool withGuestId, bool withNewGuest)
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var room = world.AddRoom();
+        var guest = world.AddGuest();
+        var request = new CreateBookingRequest(
+            world.Clock.Today,
+            world.Clock.Today.AddDays(2),
+            room.Id,
+            withGuestId ? guest.Id : null,
+            withNewGuest ? ServiceWorld.ValidGuestFields() : null);
+
+        // Act
+        var result = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.GuestSelectionInvalid, result.FirstError?.Code);
+        Assert.Empty(world.Bookings.Items);
     }
 
     /// <summary>Equivalence: neither of the two guest paths, and both of them, are the same rule error (BR-47).</summary>

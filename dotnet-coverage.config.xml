@@ -14,6 +14,8 @@
     <Sources>
       <Exclude>
         <Source>.*[\\/]Migrations[\\/].*\.cs$</Source>
+        <!-- Used only by dotnet ef to generate migrations, never at run time (MIL-054, ADR-0033) -->
+        <Source>.*[\\/]HotelDbContextFactory\.cs$</Source>
       </Exclude>
     </Sources>
   </CodeCoverage>

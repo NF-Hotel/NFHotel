@@ -138,6 +138,15 @@ jobs:
         if: ${{ env.SONAR_TOKEN != '' }}
         run: dotnet sonarscanner end
 
+      # The floor of the line coverage: 95 % in total and 90 % for each project (MIL-054, ADR-0033).
+      # It runs after the analysis is sent, so SonarQube Cloud also shows a run that falls under it.
+      # The tests of the check come first, so that a broken check cannot pass the coverage.
+      - name: Test the coverage floor check
+        run: bash scripts/test-check-coverage-floor.sh
+
+      - name: Coverage floor
+        run: bash scripts/check-coverage-floor.sh TestResults/coverage.cobertura.xml
+
       # Keep the reports also when tests fail
       - name: Keep test results and coverage
         if: ${{ always() }}

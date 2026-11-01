@@ -100,6 +100,64 @@ public sealed class UseCaseRunnerTests
             cancelled.Token));
     }
 
+    /// <summary>Positive and negative: the call without a value runs in its own scope, and a throw becomes the neutral code.</summary>
+    [Fact]
+    public async Task RunAsync_WithoutValue_RunsOrReturnsTheUnexpectedCode()
+    {
+        // Arrange
+        using var provider = Provider();
+        var runner = Runner(provider, "the-staff-token");
+
+        // Act
+        var success = await runner.RunAsync(
+            (service, _) => Task.FromResult(service.TokenSeen == "the-staff-token" ? Result.Success() : Result.Failure("wrong")),
+            TestContext.Current.CancellationToken);
+        var failure = await runner.RunAsync(
+            (_, _) => throw new InvalidOperationException("boom"),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(success.IsSuccess);
+        Assert.Equal(WebErrorCodes.Unexpected, failure.FirstError?.Code);
+    }
+
+    /// <summary>Positive and negative: the synchronous call runs in a scope, and a throw becomes the neutral code.</summary>
+    [Fact]
+    public void Run_Synchronous_RunsOrReturnsTheUnexpectedCode()
+    {
+        // Arrange
+        using var provider = Provider();
+        var runner = Runner(provider, null);
+
+        // Act
+        var success = runner.Run(service => service.ScopeId == Guid.Empty ? Result.Failure("no scope") : Result.Success());
+        var failure = runner.Run(_ => throw new InvalidOperationException("boom"));
+
+        // Assert
+        Assert.True(success.IsSuccess);
+        Assert.Equal(WebErrorCodes.Unexpected, failure.FirstError?.Code);
+    }
+
+    /// <summary>Negative: every dependency and every use case is required.</summary>
+    [Fact]
+    public async Task Constructor_AndCalls_MissingArguments_Throw()
+    {
+        // Arrange
+        using var provider = Provider();
+        var scopes = provider.GetRequiredService<IServiceScopeFactory>();
+        var logger = NullLogger<UseCaseRunner<Probe>>.Instance;
+        var tokens = new FixedTokenSource(null);
+        var runner = Runner(provider, null);
+
+        // Act and assert
+        Assert.Throws<ArgumentNullException>(() => new UseCaseRunner<Probe>(null!, logger, tokens));
+        Assert.Throws<ArgumentNullException>(() => new UseCaseRunner<Probe>(scopes, null!, tokens));
+        Assert.Throws<ArgumentNullException>(() => new UseCaseRunner<Probe>(scopes, logger, null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => runner.RunAsync<string>(null!, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => runner.RunAsync(null!, TestContext.Current.CancellationToken));
+        Assert.Throws<ArgumentNullException>(() => runner.Run(null!));
+    }
+
     #endregion
 
     #region Helpers
