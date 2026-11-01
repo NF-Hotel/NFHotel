@@ -19,7 +19,7 @@ public interface IRoomRepository : IRepository<Room, int>
     /// <param name="excludeRoomId">
     /// The room being edited, so it does not collide with itself. <c>null</c> on creation.
     /// </param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True if another room has the number.</returns>
     Task<bool> RoomNumberExistsAsync(
         string roomNumber,
@@ -29,8 +29,8 @@ public interface IRoomRepository : IRepository<Room, int>
     /// <summary>
     /// Decides whether there are bookings for the room (BR-78, BR-112).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True if at least one booking points to the room.</returns>
     /// <remarks>
     /// Replaces the old system's <c>catch (SqlException 547)</c>. The foreign key is kept as

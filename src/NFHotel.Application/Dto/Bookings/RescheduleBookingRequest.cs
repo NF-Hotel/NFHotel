@@ -7,7 +7,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// Deliberately not called <c>UpdateBookingRequest</c>: the use case is "move the booking", not
 /// "set arbitrary fields". Status, check-in and check-out have their own use cases.
 /// </remarks>
-/// <param name="BookingId">Bookingens id.</param>
+/// <param name="BookingId">The booking id.</param>
 /// <param name="NewStartDate">New arrival date. Must be today or later (BR-108).</param>
 /// <param name="NewEndDate">New departure date, exclusive.</param>
 /// <param name="RoomId">The id of the room — the same as before, or a new room.</param>

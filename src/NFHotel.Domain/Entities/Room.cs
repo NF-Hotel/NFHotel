@@ -94,7 +94,7 @@ public sealed class Room : Entity<int>
     /// <see cref="HousekeepingStatus"/> — status changes have their own methods (A-08).
     /// </summary>
     /// <param name="roomNumber">Room number.</param>
-    /// <param name="floor">Etage.</param>
+    /// <param name="floor">The floor.</param>
     /// <param name="size">Room type.</param>
     /// <param name="capacity">The number of people the room can hold.</param>
     /// <exception cref="DomainException">The same invariants as <see cref="Create"/>.</exception>

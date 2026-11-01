@@ -1,7 +1,7 @@
 namespace NFHotel.Infrastructure.Config;
 
 /// <summary>
-/// Indstillinger for feltkryptering (B-09).
+/// Settings of the field encryption (B-09).
 /// </summary>
 /// <remarks>
 /// The key comes from <c>dotnet user-secrets</c> in development and from environment variables or

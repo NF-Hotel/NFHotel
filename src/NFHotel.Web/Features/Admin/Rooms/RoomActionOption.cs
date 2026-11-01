@@ -8,5 +8,5 @@ namespace NFHotel.Web.Features.Admin.Rooms;
 /// so the markup can run through the list without knowing a single state transition.
 /// </remarks>
 /// <param name="Action">The transition the button performs.</param>
-/// <param name="Label">Knappens tekst.</param>
+/// <param name="Label">The text of the button.</param>
 public sealed record RoomActionOption(RoomAction Action, string Label);

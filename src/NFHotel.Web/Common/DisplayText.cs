@@ -26,7 +26,7 @@ public static class DisplayText
     /// <summary>
     /// Describes the life cycle state of a booking.
     /// </summary>
-    /// <param name="status">Bookingens status.</param>
+    /// <param name="status">The status of the booking.</param>
     /// <returns>The Danish text.</returns>
     public static string Describe(BookingStatus status) => status switch
     {
@@ -41,7 +41,7 @@ public static class DisplayText
     /// <summary>
     /// Describes the bookability of a room (B-04).
     /// </summary>
-    /// <param name="status">Rummets status.</param>
+    /// <param name="status">The status of the room.</param>
     /// <returns>The Danish text.</returns>
     public static string Describe(RoomStatus status) => status switch
     {

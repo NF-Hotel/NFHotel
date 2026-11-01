@@ -47,7 +47,7 @@ public sealed class RoomFormViewModel
     /// <summary>The id of the room being changed, or <c>null</c> when a new one is created.</summary>
     public int? EditingRoomId { get; private set; }
 
-    /// <summary>Formularens overskrift.</summary>
+    /// <summary>The heading of the form.</summary>
     public string Title => EditingRoomId is null ? "New room" : $"Edit room {RoomNumber}";
 
     /// <summary>Form field: room number (BR-97, BR-N-01).</summary>
@@ -105,8 +105,8 @@ public sealed class RoomFormViewModel
     /// <summary>
     /// Opens the form with the fields of an existing room.
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <remarks>
     /// Fetches the room again rather than using the row of the list, so the form works on the
     /// latest version and not on a view that may be minutes old.
@@ -166,7 +166,7 @@ public sealed class RoomFormViewModel
     /// <summary>
     /// Saves the form — creates a new room or changes the one being edited.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveAsync(CancellationToken cancellationToken = default)
     {
         SavedSuccessfully = false;

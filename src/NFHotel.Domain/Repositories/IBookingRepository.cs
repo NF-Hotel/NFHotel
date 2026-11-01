@@ -27,7 +27,7 @@ public interface IBookingRepository : IRepository<Booking, int>
     /// <param name="excludeBookingId">
     /// The booking being edited, so it does not block itself. <c>null</c> on creation.
     /// </param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// <b>Candidates</b>, not conflicts. The coarse filtering on room, status set and date window
     /// happens in SQL; the decision itself is made by <see cref="NFHotel.Domain.Entities.Booking.ConflictsWith"/>, so

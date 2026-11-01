@@ -30,15 +30,15 @@ public interface IRoomService
     /// <summary>
     /// Fetches one room (BR-115).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room, or <see cref="ErrorCodes.Room.NotFound"/>.</returns>
     Task<Result<RoomDetailsDto>> GetByIdAsync(int roomId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Fetches all rooms.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>All rooms as list rows.</returns>
     Task<Result<IReadOnlyList<RoomListItemDto>>> GetAllAsync(CancellationToken cancellationToken = default);
 
@@ -46,7 +46,7 @@ public interface IRoomService
     /// Searches rooms with a filter (BR-74, BR-76).
     /// </summary>
     /// <param name="filter">The filter. An empty filter corresponds to "clear filter" and gives all rooms.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The matching rooms.</returns>
     Task<Result<IReadOnlyList<RoomListItemDto>>> SearchAsync(
         RoomFilter filter,
@@ -55,7 +55,7 @@ public interface IRoomService
     /// <summary>
     /// Fetches the options of the filter (BR-75, BR-126).
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>Floors from data; size, status and cleaning state from enums.</returns>
     Task<Result<RoomFilterOptionsDto>> GetFilterOptionsAsync(CancellationToken cancellationToken = default);
 
@@ -66,8 +66,8 @@ public interface IRoomService
     /// <summary>
     /// Creates a room (BR-81, BR-84, BR-97, BR-98, BR-99, BR-100, BR-113, BR-N-01).
     /// </summary>
-    /// <param name="request">Rummets stamdata.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="request">The master data of the room.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The created room, or all validation errors at once.</returns>
     Task<Result<RoomDetailsDto>> CreateAsync(
         CreateRoomRequest request,
@@ -77,7 +77,7 @@ public interface IRoomService
     /// Changes the master data of a room (BR-82, BR-84, BR-97 to BR-100, BR-113, BR-N-01).
     /// </summary>
     /// <param name="request">The new master data. Does not carry status (A-08).</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The updated room, or all validation errors at once.</returns>
     Task<Result<RoomDetailsDto>> UpdateAsync(
         UpdateRoomRequest request,
@@ -86,8 +86,8 @@ public interface IRoomService
     /// <summary>
     /// Deletes a room (BR-78, BR-112).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>Success, or <see cref="ErrorCodes.Room.HasBookings"/> if the room is in use.</returns>
     Task<Result> DeleteAsync(int roomId, CancellationToken cancellationToken = default);
 
@@ -98,24 +98,24 @@ public interface IRoomService
     /// <summary>
     /// Takes the room out of service indefinitely (BR-110, BR-126). The room cannot be booked.
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room after the transition. A no-op if the room is already out of service.</returns>
     Task<Result<RoomDetailsDto>> TakeOutOfServiceAsync(int roomId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Blocks the room temporarily because of a fault that makes it uninhabitable (BR-110, BR-126).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room after the transition. A no-op if the room is already blocked.</returns>
     Task<Result<RoomDetailsDto>> SendToMaintenanceAsync(int roomId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Makes the room bookable again (BR-110, BR-126). Does not touch the cleaning state (B-04).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room after the transition. A no-op if the room is already bookable.</returns>
     Task<Result<RoomDetailsDto>> ReturnToServiceAsync(int roomId, CancellationToken cancellationToken = default);
 
@@ -126,8 +126,8 @@ public interface IRoomService
     /// <summary>
     /// Marks that the occupied room is waiting for daily cleaning (BR-N-06).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The details of the room, or
     /// <see cref="ErrorCodes.Room.MarkDailyCleaningDueNotAllowed"/> if the room is waiting for
@@ -138,8 +138,8 @@ public interface IRoomService
     /// <summary>
     /// Marks that the room is waiting for departure cleaning after departure (BR-N-06).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The details of the room, or
     /// <see cref="ErrorCodes.Room.MarkDepartureCleaningDueNotAllowed"/> if the room is under
@@ -154,8 +154,8 @@ public interface IRoomService
     /// <summary>
     /// The cleaning staff acknowledge and start work (BR-N-06).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The details of the room, or <see cref="ErrorCodes.Room.StartCleaningNotAllowed"/> if
     /// the room is not waiting for cleaning.
@@ -165,8 +165,8 @@ public interface IRoomService
     /// <summary>
     /// The cleaning is finished; the room is clean (BR-N-06).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The details of the room, or <see cref="ErrorCodes.Room.CompleteCleaningNotAllowed"/> if
     /// the cleaning is not in progress.
@@ -176,8 +176,8 @@ public interface IRoomService
     /// <summary>
     /// Reports that the room must be seen by a service technician (BR-N-06).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The details of the room, or <see cref="ErrorCodes.Room.ReportServiceNeededNotAllowed"/>
     /// if service is already in progress.
@@ -190,8 +190,8 @@ public interface IRoomService
     /// <summary>
     /// The service technician acknowledges and starts work (BR-N-06).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The details of the room, or <see cref="ErrorCodes.Room.StartServiceNotAllowed"/> if
     /// the room is not waiting for service.
@@ -201,12 +201,12 @@ public interface IRoomService
     /// <summary>
     /// The service is finished (BR-N-06).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
+    /// <param name="roomId">The room id.</param>
     /// <param name="requiresCleaning">
     /// True if the work left the room dirty; the room is then set to departure cleaning
     /// i stedet for rent.
     /// </param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The details of the room, or <see cref="ErrorCodes.Room.CompleteServiceNotAllowed"/> if
     /// the service is not in progress.

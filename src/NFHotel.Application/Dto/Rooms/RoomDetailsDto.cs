@@ -7,12 +7,12 @@ namespace NFHotel.Application.Dto.Rooms;
 /// <summary>
 /// A room with everything the detail screen needs.
 /// </summary>
-/// <param name="RoomId">Rummets id.</param>
+/// <param name="RoomId">The room id.</param>
 /// <param name="RoomNumber">Room number.</param>
-/// <param name="Floor">Etage.</param>
+/// <param name="Floor">The floor.</param>
 /// <param name="Size">Room type.</param>
 /// <param name="Capacity">The number of people the room can hold.</param>
-/// <param name="Status">Bookbarhed (B-04).</param>
+/// <param name="Status">Whether the room can be booked (B-04).</param>
 /// <param name="HousekeepingStatus">Cleaning and service state (B-04).</param>
 /// <param name="IsBookable">
 /// Whether the room may be let at all (BR-110). Computed by the domain's

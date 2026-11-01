@@ -19,7 +19,7 @@ namespace NFHotel.Application.UseCases.Bookings;
 /// <para>
 /// There is no <c>SalesService</c> in Phase 1: BR-31 always sets revenue to 0, and there
 /// is no price in the domain. A service that returns 0 is worse than none — it looks like
-/// en implementering.
+/// an implementation.
 /// </para>
 /// </remarks>
 public interface IBookingService
@@ -27,8 +27,8 @@ public interface IBookingService
     /// <summary>
     /// Fetches one booking (BR-115).
     /// </summary>
-    /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="bookingId">The booking id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the booking, or <see cref="ErrorCodes.Booking.NotFound"/>.</returns>
     Task<Result<BookingDetailsDto>> GetByIdAsync(int bookingId, CancellationToken cancellationToken = default);
 
@@ -36,7 +36,7 @@ public interface IBookingService
     /// Fetches the booking overview (BR-23, BR-24, BR-25, BR-32, BR-111).
     /// </summary>
     /// <param name="query">Date window, free text, sorting and whether cancelled bookings are included.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The rows of the overview, sorted as requested.</returns>
     /// <remarks>
     /// The period filter is always active. It fixes the fault where the week and month views did not
@@ -55,7 +55,7 @@ public interface IBookingService
     /// The booking being edited, so it does not block itself. <c>null</c> on creation.
     /// The parameter was missing in the old system and made BR-19 needlessly complicated.
     /// </param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The rooms that are both bookable (BR-110) and free for the whole period.</returns>
     Task<Result<IReadOnlyList<AvailableRoomDto>>> GetAvailableRoomsAsync(
         DateOnly checkInDate,
@@ -67,7 +67,7 @@ public interface IBookingService
     /// Creates a booking (BR-01, BR-19, BR-41 to BR-49, BR-51, BR-101 to BR-106, B-03).
     /// </summary>
     /// <param name="request">Period, room and either an existing or a new guest (BR-47).</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The created booking, or the broken rules.</returns>
     /// <remarks>
     /// The overlap check is <b>new</b> — it existed neither in the old system's
@@ -91,8 +91,8 @@ public interface IBookingService
     /// <summary>
     /// Confirms a booking — payment is guaranteed (BR-02, BR-03, BR-05, BR-121).
     /// </summary>
-    /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="bookingId">The booking id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.ConfirmNotAllowed"/>.</returns>
     /// <remarks>The confirmation dialog (BR-04) is UI and belongs in Web.</remarks>
     Task<Result<BookingDetailsDto>> ConfirmAsync(int bookingId, CancellationToken cancellationToken = default);
@@ -100,8 +100,8 @@ public interface IBookingService
     /// <summary>
     /// Checks the guest in (BR-06, BR-07, BR-08).
     /// </summary>
-    /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="bookingId">The booking id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.CheckInNotAllowed"/>.</returns>
     /// <remarks>
     /// Walk-in is allowed: <c>Pending</c> goes directly to <c>CheckedIn</c> bypassing
@@ -112,8 +112,8 @@ public interface IBookingService
     /// <summary>
     /// Checks the guest out (BR-09, BR-10, BR-107, A-01, A-03, BR-N-06).
     /// </summary>
-    /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="bookingId">The booking id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.CheckOutNotAllowed"/>.</returns>
     /// <remarks>
     /// Sets the hotel-local check-out date, which releases the remaining nights on early
@@ -125,8 +125,8 @@ public interface IBookingService
     /// <summary>
     /// Cancels a booking (BR-11, BR-13, BR-122).
     /// </summary>
-    /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="bookingId">The booking id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.CancelNotAllowed"/>.</returns>
     /// <remarks>
     /// Soft delete: the status is set, the row stays (BR-13). It is the only transition that
@@ -139,7 +139,7 @@ public interface IBookingService
     /// (BR-14, BR-17, BR-18, BR-19, BR-20, BR-108, BR-123, B-03).
     /// </summary>
     /// <param name="request">The id of the booking, the new period and the room.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The moved booking, or the broken rules.</returns>
     /// <remarks>
     /// Uses the same overlap function as <see cref="CreateAsync"/>, which closes

@@ -26,7 +26,7 @@ public interface IHolidayCalendarClient
     /// Limit to one year, or <c>null</c> for the whole export. The calendar's
     /// <c>FirstYear</c> and <c>LastYear</c> still describe the whole export.
     /// </param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The calendar, or an error from <see cref="ErrorCodes.Holidays"/>.
     /// </returns>
@@ -41,7 +41,7 @@ public interface IHolidayCalendarClient
     /// </remarks>
     /// <param name="firstYear">First year, or <c>null</c> for the service default (2022).</param>
     /// <param name="lastYear">Last year, or <c>null</c> for the service default (next year).</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The new calendar, or an error from <see cref="ErrorCodes.Holidays"/>.
     /// <see cref="ErrorCodes.Holidays.InvalidRequest"/> if <paramref name="firstYear"/>

@@ -5,7 +5,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// <summary>
 /// A booking as it is shown in the overview.
 /// </summary>
-/// <param name="BookingId">Bookingens id.</param>
+/// <param name="BookingId">The booking id.</param>
 /// <param name="BookingNumber">Displayed booking number, for example <c>FLZ-000123</c> (BR-109).</param>
 /// <param name="StartDate">Arrival date.</param>
 /// <param name="EndDate">Booked departure date. History — never changed by a check-out (A-01).</param>
@@ -14,10 +14,10 @@ namespace NFHotel.Application.Dto.Bookings;
 /// <paramref name="EndDate"/> when the guest has left early.
 /// </param>
 /// <param name="Nights">Number of booked nights (BR-109, BR-117).</param>
-/// <param name="Status">Bookingens livscyklustilstand.</param>
+/// <param name="Status">The lifecycle state of the booking.</param>
 /// <param name="CheckInTime">Actual check-in time, or <c>null</c>.</param>
 /// <param name="CheckOutTime">Actual check-out time, or <c>null</c>.</param>
-/// <param name="RoomId">Rummets id.</param>
+/// <param name="RoomId">The room id.</param>
 /// <param name="RoomNumber">The room number of the room.</param>
 /// <param name="GuestId">The id of the guest.</param>
 /// <param name="GuestFullName">The full name of the guest (BR-25).</param>

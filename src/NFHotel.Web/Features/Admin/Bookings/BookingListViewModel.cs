@@ -82,7 +82,7 @@ public sealed class BookingListViewModel
     /// <summary>The field to sort on (BR-32).</summary>
     public BookingSortField SortBy { get; private set; } = BookingSortField.StartDate;
 
-    /// <summary>Sorteringsretningen.</summary>
+    /// <summary>The sort direction.</summary>
     public SortDirection Direction { get; private set; } = SortDirection.Ascending;
 
     /// <summary>Whether cancelled bookings are fetched too (the soft delete of BR-13).</summary>
@@ -97,14 +97,14 @@ public sealed class BookingListViewModel
     /// <summary>
     /// Fetches the first list. Called from <c>OnInitializedAsync</c>.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         SearchAsync(cancellationToken);
 
     /// <summary>
     /// Fetches the bookings that match the current query.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SearchAsync(CancellationToken cancellationToken = default)
     {
         var query = new BookingOverviewQuery(
@@ -150,7 +150,7 @@ public sealed class BookingListViewModel
     /// <summary>
     /// Clears search field, status filter and cancelled, and fetches the list again.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public Task ClearFilterAsync(CancellationToken cancellationToken = default)
     {
         SearchText = null;
@@ -180,7 +180,7 @@ public sealed class BookingListViewModel
     /// Sorts on a field. A click on the field already sorted on reverses the direction.
     /// </summary>
     /// <param name="field">The field to sort on.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public Task SortByAsync(BookingSortField field, CancellationToken cancellationToken = default)
     {
         Direction = SortBy == field && Direction == SortDirection.Ascending
@@ -195,14 +195,14 @@ public sealed class BookingListViewModel
     /// <summary>
     /// Tells whether a column is the one currently sorted on.
     /// </summary>
-    /// <param name="field">Kolonnens felt.</param>
+    /// <param name="field">The field of the column.</param>
     /// <returns>True if the list is sorted on the field.</returns>
     public bool IsSortedBy(BookingSortField field) => SortBy == field;
 
     /// <summary>
     /// Gives the value for <c>aria-sort</c> on a column heading.
     /// </summary>
-    /// <param name="field">Kolonnens felt.</param>
+    /// <param name="field">The field of the column.</param>
     /// <returns><c>"ascending"</c>, <c>"descending"</c> or <c>"none"</c>.</returns>
     public string AriaSortFor(BookingSortField field)
     {
@@ -233,7 +233,7 @@ public sealed class BookingListViewModel
     /// <summary>
     /// Carries out the cancellation the user has confirmed (BR-04, BR-11).
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task ConfirmCancelAsync(CancellationToken cancellationToken = default)
     {
         var booking = BookingPendingCancellation;
@@ -250,8 +250,8 @@ public sealed class BookingListViewModel
     /// Performs one of the status transitions of the booking and fetches the list again.
     /// </summary>
     /// <param name="action">The transition to perform.</param>
-    /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="bookingId">The booking id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <remarks>
     /// The button is shown only when <c>Actions</c> says it is legal, but the service checks
     /// anyway: between render and click another user may have moved the booking on.
