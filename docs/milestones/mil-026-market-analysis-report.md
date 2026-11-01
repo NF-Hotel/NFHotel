@@ -11,6 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-01 | Proposed | Claude (AI) | S02 | Task 22 and criterion 22: a default model that Ollama has not installed is downloaded by the program (`/api/pull`) before it is saved, instead of every insight failing with `MODEL_ERROR`; asked for by S01 after the default `phi4-mini` was missing on the Ollama of the service | pending |
 | 2026-10-20 | Deprecated | Claude (AI) | AI at the request of the user, not independent | Tasks 20 and 21 and criteria 20 and 21: the number of rooms goes to the service for the occupancy analyses, a correlation matrix is drawn as a heat map, and each chart says what it shows and why that kind of chart was chosen (the course assignment of S01); accepted by the user in chat on 2026-10-20 after RC-128 Go | [5bc5cf0] |
 | 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Task 13 uses short timeouts, because a run is followed by its run id and no HTTP request stays open; `MarketAnalysisService__TimeoutSeconds` is set back to its default; accepted by the user in chat on 2026-10-20 after RC-130 Go | [c9f8d5c] |
 
@@ -31,6 +32,7 @@ Let a Manager start a market analysis of the hotel bookings and read its report 
 - A back office page `/admin/market-analysis` for a Manager: start a run, follow the state (`queued`, `running`, `completed`, `failed`), and read the report: charts of the market data and the AI analysis next to them, or a clear message when there is no result yet.
 - A fake of the Python service for the tests, so that no test needs Python, Ollama or the VM.
 - Deploy files: the service of `notebook-market-analysis` joins the internal network `nfhotel-api` as `market-analysis-api`; `deploy/market-analysis/` of this repository, whose Dockerfile fetched the vanished repository, is removed and its README points to the deploy folder of the service; the release check builds the image from the service repository.
+- Missing models: choosing a default AI model in the back office downloads it into the Ollama that the analysis service uses when that Ollama does not have it, shows the progress and saves the default only after the download has finished.
 - Unchanged: the benchmark pages, the staff and guest sign-in, TLS.
 
 ## Go / No-Go Criteria
@@ -58,6 +60,7 @@ Let a Manager start a market analysis of the hotel bookings and read its report 
 | 19 | A donut is never drawn for more than four parts or for figures that are not parts of one whole; every chart has a text alternative (title and the values in a table or `aria-label`), and the colours do not carry the meaning alone | Yes | No |
 | 20 | The run request carries `room_count`, the number of rooms in the database, and the result with the occupancy analyses is shown: a month chart of the occupancy and a comparison of the occupancy on holidays and on other days | Yes | No |
 | 21 | The correlation matrix is drawn as a heat map with a diverging scale from -1 to +1, the value in every cell and a legend; a chart of every kind has a caption with what it shows, why that kind was chosen and its limits, taken from the `limitations` of the analysis where it has them, and the AI observation of that chart labelled as AI-generated; a chart with no observation says why (for example the insight was rejected or timed out) and never shows an empty box | Yes | No |
+| 22 | A default AI model that the Ollama of the analysis service does not list is downloaded before it is saved: the download runs in the background with a visible state (`downloading`, `ready`, `failed`), a failed download or a name with a character that a model name does not have saves nothing and shows a clear text, and the same Ollama that the service uses is the one that is asked | Yes | No |
 
 ## Dependencies
 
@@ -112,6 +115,7 @@ Let a Manager start a market analysis of the hotel bookings and read its report 
 | 19 | Check and review the charts | Build, format, tests, a look at the page in the browser pane with the sample result of `docs/test-data/`; reviews against `qc-programming-csharp`; record the RC. | No | |
 | 20 | Send the number of rooms | `room_count` (the rooms of the database) in the bookings feed and the client of the service, and the occupancy analyses in the report model and the charts (a column chart per month and two columns or two tiles for holiday against other days, because they are two separate rates and not parts of one whole, so no donut). Tests against the fake of the service. | No | |
 | 21 | Correlation heat map and captions | `CorrelationHeatmap` in `Admin/Shared` (diverging scale, value in each cell, legend, text alternative) added to the rule of task 17, and a caption under every chart with what it shows, why this kind of chart and the limits, and the AI observation of the chart (matched to the chart by its `series` path, with a clear text when there is none); the texts come from the result where it has them. Component tests. | No | |
+| 22 | Download missing models | A port `IModelInstaller` (`ListInstalledAsync`, `PullAsync` with progress) and an Ollama adapter for `/api/tags` and `/api/pull`; one setting for the Ollama that the analysis service uses (today `OLLAMA_BASE_URL` of the service and `NFBENCH_OLLAMA_URL` of the benchmark point to a different Ollama than the one of the VM); `AiDefaultService` checks the model before saving, starts the pull as a background job when it is missing and saves the default when the pull has finished; the AI default page shows the state and the error; the name is checked against the characters of a model name. Tests with a fake Ollama (installed, missing, pull succeeds, pull fails, bad name); no test needs a running Ollama. The deploy script `apply_default_model` pulling a missing model is a later task. | No | |
 
 ---
 
