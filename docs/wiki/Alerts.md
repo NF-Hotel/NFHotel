@@ -86,6 +86,18 @@ The applications push their request metrics over OTLP (ADR-0023), so these rules
 | `StaffSignInFailures` | Prometheus: answers 401 and 429 of `api/auth/login` in the API's request metrics | More than 20 in 10 minutes | warning | Someone may be guessing staff passwords; the throttle answers 429, so refused attempts count too | The audit log of the back office names the user names (ADR-0017); follow [Incidents](Incidents) |
 | `SshLoginFailures` | Loki ruler: `Failed password`, `Invalid user` or `authentication failure` in the journal of `ssh.service` | More than 10 in 10 minutes | warning | sshd answers on the tailnet only, so a failed login comes from a device of the tailnet | `tailscale status` to find the device; follow [Incidents](Incidents) |
 
+### Security scans: `prometheus/rules/scans.yml`
+
+The scan exporter (MIL-053) reads GitHub code scanning (CodeQL, Trivy, OWASP ZAP, OpenSSF Scorecard), the latest run on `main` of each scan workflow and SonarQube Cloud every 15 minutes. Every rule waits longer than one read, so a finding fixed in the meantime does not alert.
+
+| Alert | Source | Fires when | Severity | Why | What to do |
+| --- | --- | --- | --- | --- | --- |
+| `ScanFindingsHigh` | `nfhotel_code_scanning_open_alerts` with severity `critical`, `high` or `error` | One or more, for 30 minutes, per tool | warning | A high finding in a released image or in the code is a known weakness; it is fixed or dismissed with a reason, never left open | Security, Code scanning of `NF-Hotel/NFHotel`: fix it, or dismiss it with the reason |
+| `ScanStale` | Age of the latest analysis of CodeQL, OWASP ZAP and Scorecard | Older than 8 days, for 1 hour | warning | They run at least weekly; a scan that stopped finds nothing, which looks like no findings | The latest run of its workflow in GitHub Actions; check that the schedule is not disabled |
+| `ScanWorkflowFailed` | `nfhotel_scan_workflow_last_run_info` of `ci.yaml`, `release.yaml`, `e2e-dast.yaml`, `running-image-scan.yaml`, `scorecard.yaml` | The latest completed run on `main` failed or timed out, for 30 minutes | warning | A failed scan gives no result | Open the run, fix the cause or run it again |
+| `SonarQualityGateFailed` | `nfhotel_sonar_quality_gate_passed` | 0 for 1 hour | warning | The new code of `main` does not meet the quality gate | The project on sonarcloud.io shows the failing condition |
+| `ScanSourceDown` | `nfhotel_scan_source_up`, or the exporter is not scraped | A source not read for 1 hour | warning | The dashboard *Security scans* is stale | `docker compose logs scan-exporter` in the LXC; a missing or expired token stops `github_code_scanning` ([Monitoring](Monitoring#security-scans)) |
+
 ## The watchdog
 
 An alerting system that is down sends no alerts, and silence looks like health. So `Watchdog` always fires, and Alertmanager sends it to Healthchecks.io every minute. When the pings stop (the LXC, Prometheus, Alertmanager, the node or the network is down), Healthchecks.io alerts on its own, outside our infrastructure. The drill of MIL-023 stops Prometheus and waits for that alert: about 8 minutes. Healthchecks.io receives only a ping, no data.
