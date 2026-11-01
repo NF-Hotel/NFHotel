@@ -93,6 +93,20 @@
                 }
             </p>
 
+            <nav class="card card-pad" aria-labelledby="contents-title">
+                <h2 class="subtitle" id="contents-title">Contents</h2>
+                <ol class="toc">
+                    @if (report.Content.Figures.Count > 0)
+                    {
+                        <li><a href="/admin/market-analysis#figures-title">Key figures</a></li>
+                    }
+                    @foreach (var entry in ViewModel.Sections)
+                    {
+                        <li><a href="/admin/market-analysis#analysis-@entry.Section.Id">@entry.Section.Title</a></li>
+                    }
+                </ol>
+            </nav>
+
             @if (report.Content.Figures.Count > 0)
             {
                 <section class="card card-pad" aria-labelledby="figures-title">
