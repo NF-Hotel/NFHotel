@@ -9,5 +9,7 @@
   <!-- The migrations are generated code, as in dotnet-coverage.config.xml -->
   <!-- The operations code under ops/ is tested in Ops CI, not by this .NET job: the scan exporter's
        coverage is measured and held at 80 % or more by ops/tests/test-scan-exporter.sh (MIL-053) -->
-  <Property Name="sonar.coverage.exclusions">**/Migrations/**,ops/**</Property>
+  <!-- The design-time HotelDbContextFactory is used only by dotnet ef, and scripts/dev-up.ps1 is the developer start
+       script for Windows, which has no test runner in CI (MIL-054) -->
+  <Property Name="sonar.coverage.exclusions">**/Migrations/**,ops/**,scripts/dev-up.ps1,**/HotelDbContextFactory.cs</Property>
 </SonarQubeAnalysisProperties>
