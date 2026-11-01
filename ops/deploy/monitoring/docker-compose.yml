@@ -116,6 +116,41 @@ services:
     mem_limit: 512m
     cpus: 1
 
+  # The results of the security scans of the pipeline (MIL-053): GitHub code scanning, the
+  # latest run of each scan workflow and SonarQube Cloud, read every 15 minutes. Standard
+  # library only, so the pinned image runs the mounted code and nothing is built. It runs as a
+  # user of its own, which owns the optional token file; no port is published.
+  scan-exporter:
+    <<: *hardening
+    image: python:3.13-slim@sha256:2d44738ebf4ce5f63b9d9ea871e9c7cfdc0426f7b0c97cac915fd88ded1d86bb
+    user: "10001:10001"
+    environment:
+      CONFIG_HASH: ${SCAN_EXPORTER_CONFIG_HASH:-}
+      GITHUB_TOKEN_FILE: /run/secrets/github-scan-token
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    command: [python, -B, -E, -s, /app/run.py]
+    working_dir: /app
+    volumes:
+      - ./scan-exporter:/app:ro
+      # deploy-monitoring.sh makes an empty file when there is no token, so compose never makes
+      # a folder here; an empty file means code scanning is not read.
+      - ./secrets/github-scan-token:/run/secrets/github-scan-token:ro
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:9120/metrics', timeout=3)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    mem_limit: 128m
+    cpus: 0.25
+
 volumes:
   prometheus-data:
   alertmanager-data:

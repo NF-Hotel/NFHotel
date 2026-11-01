@@ -52,6 +52,13 @@ scrape_configs:
           - https://nfhotel.devmatiker.com/book
     relabel_configs: *probe
 
+  # The results of the security scans (MIL-053). The exporter reads its sources every 15
+  # minutes, so a scrape every minute is plenty.
+  - job_name: scans
+    scrape_interval: 1m
+    static_configs:
+      - targets: [scan-exporter:9120]
+
   # Port 80 answers only with a redirect to HTTPS (MIL-017).
   - job_name: redirect
     metrics_path: /probe

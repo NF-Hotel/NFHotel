@@ -3,7 +3,8 @@
 # settings and secret files made by root with mode 0600, then deploy-monitoring.sh --apply.
 # Then check that every service runs, that each container can read its own secret files and
 # no other, that Grafana takes the admin password from its file, that Prometheus loaded the
-# rules, and that the Watchdog reaches Alertmanager. The stand-in secrets reach no real channel.
+# rules, that the Watchdog reaches Alertmanager, and that Prometheus scrapes the scan exporter
+# (MIL-053), which runs without a token here. The stand-in secrets reach no real channel.
 #
 # Run it as root on a Linux host with Docker, in a checkout without monitoring settings:
 #   sudo bash ops/tests/test-monitoring-stack.sh
@@ -66,12 +67,17 @@ bash "$OPS/scripts/deploy-monitoring.sh" --apply >/tmp/monitoring-deploy.out 2>&
   compose logs --tail 20
 }
 running="$(compose ps --status running --format '{{.Service}}' | sort | tr '\n' ' ')"
-[[ "$running" == "alertmanager blackbox grafana loki prometheus " ]] && ok "the five services run" || ko "running: $running"
+[[ "$running" == "alertmanager blackbox grafana loki prometheus scan-exporter " ]] && ok "the six services run" ||
+  ko "running: $running"
 
 modes="$(stat -c '%a %u' "$mon/secrets" "$mon/secrets/discord-webhook-url" "$mon/secrets/grafana-admin-password" | tr '\n' ' ')"
 [[ "$modes" == "711 0 400 65534 400 472 " ]] &&
   ok "each secret belongs to the user of its container, 0400, in a 0711 folder" ||
   ko "secret modes: $(stat -c '%n %a %u' "$mon/secrets" "$mon/secrets/"*)"
+# Without a token the deploy makes an empty file, so compose mounts a file and not a folder.
+[[ -f "$mon/secrets/github-scan-token" && "$(stat -c '%a %u %s' "$mon/secrets/github-scan-token")" == "400 10001 0" ]] &&
+  ok "the missing scan token becomes an empty file of the exporter's user, 0400" ||
+  ko "scan token: $(stat -c '%F %a %u %s' "$mon/secrets/github-scan-token" 2>&1)"
 
 user="$(curl -fsS -u "admin:$password" http://127.0.0.1:3000/api/user 2>/dev/null)"
 [[ "$user" == *'"login":"admin"'* ]] &&
@@ -89,6 +95,20 @@ compose exec -T grafana cat /run/secrets/grafana-admin-password >/dev/null 2>&1 
   ok "Grafana can read its password file" || ko "Grafana cannot read its password file"
 compose exec -T alertmanager cat /etc/alertmanager-secrets/grafana-admin-password >/dev/null 2>&1 &&
   ko "Alertmanager can read the Grafana password" || ok "Alertmanager cannot read the Grafana password"
+compose exec -T scan-exporter python -c 'open("/run/secrets/github-scan-token").read()' >/dev/null 2>&1 &&
+  ok "the scan exporter can read its token file" || ko "the scan exporter cannot read its token file"
+
+# Prometheus scrapes the scan exporter (job scans), which serves its source states.
+for _ in $(seq 1 24); do
+  scans="$(curl -fsS 'http://127.0.0.1:9090/api/v1/query?query=up%7Bjob%3D%22scans%22%7D' 2>/dev/null)"
+  [[ "$scans" == *'"value":['*',"1"]'* ]] && break
+  sleep 5
+done
+[[ "$scans" == *'"value":['*',"1"]'* ]] && ok "Prometheus scrapes the scan exporter" ||
+  ko "up{job=scans}: ${scans:0:200}; $(compose logs --tail 5 scan-exporter 2>&1)"
+metrics="$(compose exec -T scan-exporter python -c 'import urllib.request; print(urllib.request.urlopen("http://127.0.0.1:9120/metrics").read().decode())' 2>/dev/null)"
+[[ "$metrics" == *'nfhotel_scan_source_up{source="github_code_scanning"} 0'* ]] &&
+  ok "without a token the exporter reports code scanning as not read" || ko "metrics: ${metrics:0:300}"
 
 # The Watchdog fires at the first evaluation (30 s) and reaches Alertmanager.
 for _ in $(seq 1 24); do

@@ -81,6 +81,7 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 | `blackbox` (`monitoring`) | Monitoring LXC | Probes the site over HTTPS, the redirect and the public name | `prom/blackbox-exporter:v0.27.0` | Docker Hub | none |
 | `loki` (`monitoring`) | Monitoring LXC | Log store, kept 14 days; its ruler evaluates the log alert | `grafana/loki:3.5.7` | Docker Hub | 3100 on the LXC's tailnet address |
 | `grafana` (`monitoring`) | Monitoring LXC | Dashboards and log search | `grafana/grafana:12.2.1` | Docker Hub | 3000 on the LXC's tailnet address |
+| `scan-exporter` (`monitoring`) | Monitoring LXC | Reads the results of the security scans (GitHub code scanning, the scan workflows, SonarQube Cloud) every 15 minutes for Prometheus (MIL-053); the code is mounted read-only, nothing is built | `python:3.13-slim` | Docker Hub | none |
 | `backup-target` (`backup-target`) | Backup host (legion laptop of S03) | Write-only SSH target of the nightly off-VM copy of the encrypted backup (ADR-0008) | `nfhotel-backup-target:local`, built there from `debian:12-slim` | built locally | SSH on the host's tailnet address |
 | `proxmox` (`proxmox`) | CI and a developer machine only | Throwaway Proxmox VE for the Proxmox integration tests (MIL-003) | `dockurr/proxmox:9.2.20` | Docker Hub | `127.0.0.1:18006` |
 
