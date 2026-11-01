@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [4395227] |
 
 ---
 
@@ -150,3 +150,4 @@ Go: every Mandatory criterion passes. The floors are met in the merged measureme
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[4395227]: https://github.com/NF-Hotel/NFHotel/commit/4395227efef641b6f8939f00e52c3640334b1032

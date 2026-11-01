@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | mikemike | S01 | Initial version | pending |
+| 2026-11-01 | Accepted | mikemike | S01 | Initial version | [4395227] |
 
 ---
 
@@ -63,3 +63,4 @@ Go: every Mandatory criterion passes; the one failed criterion (QC-LANG-001 #10)
 [MIL-054]: ../../milestones/mil-054-test-coverage.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[4395227]: https://github.com/NF-Hotel/NFHotel/commit/4395227efef641b6f8939f00e52c3640334b1032

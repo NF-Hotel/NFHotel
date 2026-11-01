@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [4395227] |
 
 ---
 
@@ -51,3 +51,4 @@ None.
 [ADR-0033]: ../../adr/adr-0033-sonarqube-cloud-coverage.md
 [MIL-054]: ../../milestones/mil-054-test-coverage.md
 [QC-ADR-001]: ../../../framework/qc/artifacts/qc-adr.md
+[4395227]: https://github.com/NF-Hotel/NFHotel/commit/4395227efef641b6f8939f00e52c3640334b1032

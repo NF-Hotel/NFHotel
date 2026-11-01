@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-27 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-27 to set up test coverage in SonarQube Cloud ("kan du sætte dette op", with the page Test coverage overview of SonarQube Cloud); written by the AI under MIL-047, which S01 accepted in chat on 2026-10-27; accepted after RC-241 Go | [6f7749b] |
-| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Coverage target of 95 % in total and 90 % per project, held by a floor step in CI, and the design-time `HotelDbContextFactory` and `scripts/dev-up.ps1` out of coverage; S01 asked in chat on 2026-11-01 to reach close to 100 % and accepted MIL-054 ("Ja, godkend og byg"); accepted after RC-259 Go | pending |
+| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Coverage target of 95 % in total and 90 % per project, held by a floor step in CI, and the design-time `HotelDbContextFactory` and `scripts/dev-up.ps1` out of coverage; S01 asked in chat on 2026-11-01 to reach close to 100 % and accepted MIL-054 ("Ja, godkend og byg"); accepted after RC-259 Go | [4395227] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -70,3 +70,4 @@ We follow option 3.
 [ADR-0032]: ./adr-0032-what-code-scanning-shows.md
 [DSA-001]: ../sqa/devsecops-assessment.md
 [6f7749b]: https://github.com/NF-Hotel/NFHotel/commit/6f7749b4fe530edcf83694abb358090cd4da9050
+[4395227]: https://github.com/NF-Hotel/NFHotel/commit/4395227efef641b6f8939f00e52c3640334b1032
