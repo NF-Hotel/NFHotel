@@ -9,7 +9,8 @@
 # Models are kept in the volume models. Pull them with OLLAMA_PULL_MODELS in
 # ollama.env (scripts/deploy-services.sh does it) or by hand:
 #   docker compose --env-file ollama.env exec ollama ollama pull <model>
-# It runs on the CPU. For an NVIDIA GPU passed through to the VM (ADR-0003), install
+# It runs on the CPU. For an NVIDIA GPU passed through to the VM (ADR-0003; the steps are in
+# docs/wiki/GPU-Passthrough.md), install
 # the NVIDIA Container Toolkit in the VM and add under the ollama service:
 #   deploy:
 #     resources:
