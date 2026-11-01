@@ -36,4 +36,4 @@ def main() -> None:
     # Plain HTTP on the compose network, as every exporter that Prometheus scrapes here: no
     # port is published, and the metrics hold no secret.
     server = ThreadingHTTPServer(("0.0.0.0", port), make_handler(collector))  # noqa: S104  # NOSONAR
-    server.serve_forever()
+    server.serve_forever()  # NOSONAR - plain HTTP on purpose, see above
