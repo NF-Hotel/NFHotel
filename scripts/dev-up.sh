@@ -428,7 +428,7 @@ gpu_url=""
 if [[ "${DEV_GPU_OLLAMA:-auto}" != "off" ]] && command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
   if curl -fsS -m 3 http://localhost:11434/api/version >/dev/null 2>&1; then
     host_ip="$(pve getent hosts host.docker.internal 2>/dev/null | awk '{print $1; exit}')"
-    if [[ -n "$host_ip" ]] && vm "curl -fsS -m 5 http://${host_ip}:11434/api/version" >/dev/null 2>&1; then
+    if [[ -n "$host_ip" ]] && vm "curl -fsS -m 5 http://${host_ip}:11434/api/version" >/dev/null 2>&1; then # NOSONAR: Ollama on this machine, no TLS
       gpu_url="http://${host_ip}:11434"
     else
       echo "warning: the Ollama of this machine does not answer from the VM; keeping the Ollama of the VM (it runs on the CPU)" >&2
@@ -461,8 +461,8 @@ use_ollama_url() {
   ollama_changed=1
   echo "==> ${key} in $(basename "$file") is now ${want}"
 }
-use_ollama_url "$analysis_dir/market-analysis.env" OLLAMA_BASE_URL "${gpu_url:-http://ollama:11434}"
-use_ollama_url "$bench_dir/benchmark.env" NFBENCH_OLLAMA_URL "${gpu_url:-http://ollama:11434}"
+use_ollama_url "$analysis_dir/market-analysis.env" OLLAMA_BASE_URL "${gpu_url:-http://ollama:11434}" # NOSONAR: the default address of Ollama in the VM
+use_ollama_url "$bench_dir/benchmark.env" NFBENCH_OLLAMA_URL "${gpu_url:-http://ollama:11434}" # NOSONAR: the default address of Ollama in the VM
 if ((ollama_changed)); then
   bash "$ops/scripts/deploy.sh" --local analysis benchmark
 fi
