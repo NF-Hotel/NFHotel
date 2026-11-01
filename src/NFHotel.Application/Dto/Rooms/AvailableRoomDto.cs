@@ -12,7 +12,7 @@ namespace NFHotel.Application.Dto.Rooms;
 /// </remarks>
 /// <param name="RoomId">The room id.</param>
 /// <param name="RoomNumber">Room number.</param>
-/// <param name="Floor">Etage.</param>
+/// <param name="Floor">The floor.</param>
 /// <param name="Size">Room type.</param>
 /// <param name="Capacity">The number of people the room can hold.</param>
 public sealed record AvailableRoomDto(

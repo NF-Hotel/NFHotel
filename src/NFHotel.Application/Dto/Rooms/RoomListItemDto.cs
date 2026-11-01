@@ -18,10 +18,10 @@ namespace NFHotel.Application.Dto.Rooms;
 /// </remarks>
 /// <param name="RoomId">The room id.</param>
 /// <param name="RoomNumber">Room number, for example "101" or "12B".</param>
-/// <param name="Floor">Etage.</param>
+/// <param name="Floor">The floor.</param>
 /// <param name="Size">Room type.</param>
 /// <param name="Capacity">The number of people the room can hold.</param>
-/// <param name="Status">Bookbarhed (B-04).</param>
+/// <param name="Status">Whether the room can be booked (B-04).</param>
 /// <param name="HousekeepingStatus">Cleaning and service state (B-04, A-06).</param>
 public sealed record RoomListItemDto(
     int RoomId,
