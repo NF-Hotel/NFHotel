@@ -26,7 +26,7 @@
       the Npgsql provider pulls 9.0.4. Without this line the projects that reference
       Infrastructure inherit the lowest version and build with MSB3277 warnings.
     -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.14" />
 
     <!--
       compile-assets is switched on on purpose: HotelDbContextFactory implements
@@ -35,12 +35,12 @@
       DbContextOptions (IStringEncryptor, B-09). PrivateAssets=all sikrer stadig at
       the package does not flow on to Web or to the test projects.
     -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14">
       <IncludeAssets>compile; runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
 
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.14" />
 
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" />
 
