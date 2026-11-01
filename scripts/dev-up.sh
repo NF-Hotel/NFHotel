@@ -33,6 +33,7 @@
 #   --destroy  remove the Proxmox VE container, with the VM and the database in it (asks nothing: development only)
 # Env:   DEV_SITE_PORT port of the site on this machine (default 8443); DEV_PVE_PORT Proxmox web UI (default 8006);
 #        DEV_MODELS the Ollama models to pull, space separated (default "llama3.2:3b phi3.5"; empty pulls none)
+#        DEV_GPU_OLLAMA "off" keeps the Ollama of the VM; by default an Ollama on this machine is used when it has an NVIDIA GPU
 # Exit:  0 the site answers; 1 a step failed; 2 usage error
 # Needs: bash 4+, docker, curl, ssh, tar. The first run downloads the Proxmox image and the Debian image and
 # installs Docker in the VM: allow ten minutes or more. Later runs take seconds to a minute.
@@ -419,6 +420,52 @@ for dev_model in $dev_models; do
     vm "docker exec ollama-ollama-1 ollama pull ${dev_model}" >/dev/null || die "could not pull the model ${dev_model}"
   fi
 done
+
+# The GPU of this machine. Proxmox VE runs in a container here, so the VM cannot take a PCI device (a real Proxmox VE
+# host can: docs/wiki/GPU-Passthrough.md). Instead the analysis and the benchmark use the Ollama of this machine, which
+# runs on the GPU, when there is an NVIDIA GPU and that Ollama answers. DEV_GPU_OLLAMA=off keeps the Ollama of the VM.
+gpu_url=""
+if [[ "${DEV_GPU_OLLAMA:-auto}" != "off" ]] && command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
+  if curl -fsS -m 3 http://localhost:11434/api/version >/dev/null 2>&1; then
+    host_ip="$(pve getent hosts host.docker.internal 2>/dev/null | awk '{print $1; exit}')"
+    if [[ -n "$host_ip" ]] && vm "curl -fsS -m 5 http://${host_ip}:11434/api/version" >/dev/null 2>&1; then
+      gpu_url="http://${host_ip}:11434"
+    else
+      echo "warning: the Ollama of this machine does not answer from the VM; keeping the Ollama of the VM (it runs on the CPU)" >&2
+    fi
+  else
+    echo "==> an NVIDIA GPU was found, but Ollama does not answer on this machine (http://localhost:11434): start Ollama on it to run the models on the GPU"
+  fi
+fi
+if [[ -n "$gpu_url" ]]; then
+  host_tags="$(curl -fsS -m 10 http://localhost:11434/api/tags || true)"
+  for dev_model in $dev_models; do
+    if ! grep -q "\"name\":\"${dev_model}" <<<"$host_tags"; then
+      echo "==> pulling the model ${dev_model} into the Ollama of this machine (a few GB, the first time only)"
+      curl -fsS -m 3600 http://localhost:11434/api/pull -d "{\"model\":\"${dev_model}\",\"stream\":false}" >/dev/null ||
+        die "could not pull the model ${dev_model} into the Ollama of this machine"
+    fi
+  done
+fi
+# Point the two services at the chosen Ollama. An address that this script wrote earlier (an IP address) goes back to
+# the Ollama of the VM when the GPU route is not in use now; any other value is the user's and is left alone.
+ollama_changed=0
+use_ollama_url() {
+  local file="$1" key="$2" want="$3" current
+  current="$(value_of "$file" "$key")"
+  [[ "$current" == "$want" ]] && return 0
+  if [[ "$want" == "http://ollama:11434" && ! "$current" =~ ^http://[0-9.]+:11434$ ]]; then
+    return 0
+  fi
+  sed -i "s#^${key}=.*#${key}=${want}#" "$file"
+  ollama_changed=1
+  echo "==> ${key} in $(basename "$file") is now ${want}"
+}
+use_ollama_url "$analysis_dir/market-analysis.env" OLLAMA_BASE_URL "${gpu_url:-http://ollama:11434}"
+use_ollama_url "$bench_dir/benchmark.env" NFBENCH_OLLAMA_URL "${gpu_url:-http://ollama:11434}"
+if ((ollama_changed)); then
+  bash "$ops/scripts/deploy.sh" --local analysis benchmark
+fi
 
 # The proxy reads its snippets and templates at start; make it read the copy that was just shipped.
 vm "docker exec nfhotel-nginx-nginx-1 nginx -s reload" >/dev/null 2>&1 || true

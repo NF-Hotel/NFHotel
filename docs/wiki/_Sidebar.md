@@ -3,6 +3,7 @@
 - [Local Development Deploy](Local-Development-Deploy)
 - [Environment Files](Environment-Files)
 - [Proxmox Deployment](Proxmox-Deployment)
+- [GPU Passthrough](GPU-Passthrough)
 - [CI-CD](CI-CD)
 - [Database Preparation](Database-Preparation)
 - [Host Hardening](Host-Hardening)

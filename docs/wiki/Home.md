@@ -14,6 +14,7 @@ The pages are written in [`docs/wiki/`](https://github.com/NF-Hotel/NFHotel/tree
 - [Environment Files](Environment-Files): what every `*.env` file of the deployment holds, and which secrets must match.
 - [Proxmox Deployment](Proxmox-Deployment): set up the Proxmox virtual machine and the Docker
   containers that run the whole system (development environment).
+- [GPU Passthrough](GPU-Passthrough): give an NVIDIA GPU to the VM on a real Proxmox VE host, so the AI models run on it.
 - [Appendix: Project Documents](Appendix): links to every document under `docs/`.
 - Infrastructure and operations (ADR-0016, in `ops/`): [CI-CD](CI-CD), [Database Preparation](Database-Preparation), [Proxmox Deployment](Proxmox-Deployment), [Host Hardening](Host-Hardening), [Monitoring](Monitoring), [Disaster Recovery](Disaster-Recovery) and [Public Access](Public-Access), and the incident procedure in [Incidents](Incidents).
 - Reference pages (MIL-049): every DevOps and security choice with why and its alternatives, in [Workflows](Workflows), [Containers and Images](Containers-and-Images), [Security Controls](Security-Controls) and [Alerts](Alerts).
