@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [e8af9ea] |
 
 ---
 
@@ -63,3 +63,4 @@ Go: every Mandatory criterion passes; the one failed criterion (QC-LANG-001 #10)
 [MIL-052]: ../../milestones/mil-052-read-only-grafana-for-the-ai-assistant.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[e8af9ea]: https://github.com/NF-Hotel/NFHotel/commit/e8af9eaddb849b4dcf173376f581a0d690a2b24e
