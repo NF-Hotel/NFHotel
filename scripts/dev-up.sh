@@ -196,6 +196,23 @@ make_env() {
   [[ -f "$dir/$name.example" ]] || die "$dir/$name.example is missing"
   cp "$dir/$name.example" "$dir/$name"
   echo "==> made $dir/$name from the example"
+  if [[ -f "$dir/$name.dev" ]]; then
+    apply_dev_settings "$dir/$name" "$dir/$name.dev"
+  fi
+}
+
+# The example is the production template. The development values of a service are in <name>.dev next to it; they are
+# put over the new copy here, so a production file never gets one and a release deployment never reads them.
+apply_dev_settings() {
+  local file="$1" overlay="$2" line key
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || continue
+    key="${line%%=*}"
+    grep -v "^${key}=" "$file" >"$file.tmp" || true
+    printf '%s\n' "$line" >>"$file.tmp"
+    mv "$file.tmp" "$file"
+  done <"$overlay"
+  echo "==> put the development settings of $(basename "$overlay") in $file"
 }
 
 preflight || exit 1
