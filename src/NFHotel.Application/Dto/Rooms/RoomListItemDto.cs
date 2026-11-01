@@ -16,7 +16,7 @@ namespace NFHotel.Application.Dto.Rooms;
 /// buttons of the room sit on the selected list item.
 /// </para>
 /// </remarks>
-/// <param name="RoomId">Rummets id.</param>
+/// <param name="RoomId">The room id.</param>
 /// <param name="RoomNumber">Room number, for example "101" or "12B".</param>
 /// <param name="Floor">Etage.</param>
 /// <param name="Size">Room type.</param>

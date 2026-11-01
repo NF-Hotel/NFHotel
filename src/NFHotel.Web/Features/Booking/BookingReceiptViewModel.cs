@@ -65,7 +65,7 @@ public sealed class BookingReceiptViewModel
     /// Looks up the booking.
     /// </summary>
     /// <param name="bookingNumber">The booking number from the URL, for example <c>FLZ-000123</c>.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task LoadAsync(string? bookingNumber, CancellationToken cancellationToken = default)
     {
         if (IsBusy)

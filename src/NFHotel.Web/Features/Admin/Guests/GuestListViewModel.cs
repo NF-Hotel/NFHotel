@@ -67,7 +67,7 @@ public sealed class GuestListViewModel
     /// <summary>The id of the guest being changed, or <c>null</c> when a new one is created (BR-72).</summary>
     public int? EditingGuestId { get; private set; }
 
-    /// <summary>Formularens overskrift.</summary>
+    /// <summary>The heading of the form.</summary>
     public string FormTitle => EditingGuestId is null ? "New guest" : "Edit guest";
 
     /// <summary>The guest waiting for the user to confirm a deletion.</summary>
@@ -97,14 +97,14 @@ public sealed class GuestListViewModel
     /// <summary>
     /// Fetches the first list. Called from <c>OnInitializedAsync</c>.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         SearchAsync(cancellationToken);
 
     /// <summary>
     /// Searches guests on the current free text.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SearchAsync(CancellationToken cancellationToken = default)
     {
         IsBusy = true;
@@ -137,7 +137,7 @@ public sealed class GuestListViewModel
     /// <summary>
     /// Clears the search field and fetches the list again.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public Task ClearSearchAsync(CancellationToken cancellationToken = default)
     {
         SearchText = null;
@@ -169,7 +169,7 @@ public sealed class GuestListViewModel
     /// Opens the form with the fields of an existing guest.
     /// </summary>
     /// <param name="guestId">The id of the guest.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <remarks>
     /// Fetches the guest again rather than using the row of the list: only
     /// <see cref="GuestDetailsDto"/> carries the passport number, because every display of the field is a
@@ -245,7 +245,7 @@ public sealed class GuestListViewModel
     /// <summary>
     /// Saves the form — creates a new guest or changes the one being edited.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveAsync(CancellationToken cancellationToken = default)
     {
         if (IsBusy)
@@ -317,7 +317,7 @@ public sealed class GuestListViewModel
     /// <summary>
     /// Deletes the guest the user has confirmed (BR-N-02).
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <remarks>
     /// The service rejects guests with bookings; the screen tries and shows the answer.
     /// </remarks>

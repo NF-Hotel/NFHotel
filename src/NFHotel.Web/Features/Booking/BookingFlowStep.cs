@@ -24,6 +24,6 @@ public enum BookingFlowStep
     /// <summary>Step 3: the guest's details, entered without an account (BR-C-01).</summary>
     Guest = 2,
 
-    /// <summary>Trin 4: kvitteringen for den oprettede booking (BR-C-05).</summary>
+    /// <summary>Step 4: the receipt of the created booking (BR-C-05).</summary>
     Receipt = 3
 }

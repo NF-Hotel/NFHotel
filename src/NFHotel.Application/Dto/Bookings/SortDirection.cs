@@ -1,13 +1,13 @@
 namespace NFHotel.Application.Dto.Bookings;
 
 /// <summary>
-/// Sorteringsretning.
+/// The sort direction.
 /// </summary>
 public enum SortDirection
 {
-    /// <summary>Stigende.</summary>
+    /// <summary>Ascending.</summary>
     Ascending = 0,
 
-    /// <summary>Faldende.</summary>
+    /// <summary>Descending.</summary>
     Descending = 1
 }

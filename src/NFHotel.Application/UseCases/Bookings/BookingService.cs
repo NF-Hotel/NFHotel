@@ -90,8 +90,8 @@ public sealed class BookingService : IBookingService
     // --------------------------------------------------------
 
     /// <summary>Fetches one booking (BR-115).</summary>
-    /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="bookingId">The booking id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the booking, or <see cref="ErrorCodes.Booking.NotFound"/>.</returns>
     public async Task<Result<BookingDetailsDto>> GetByIdAsync(
         int bookingId,
@@ -110,7 +110,7 @@ public sealed class BookingService : IBookingService
 
     /// <summary>Fetches the booking overview (BR-23, BR-24, BR-25, BR-32, BR-111).</summary>
     /// <param name="query">Date window, free text, sorting and whether cancelled bookings are included.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The rows of the overview, sorted as requested.</returns>
     public async Task<Result<IReadOnlyList<BookingListItemDto>>> GetOverviewAsync(
         BookingOverviewQuery query,
@@ -153,7 +153,7 @@ public sealed class BookingService : IBookingService
     /// <param name="checkInDate">Arrival date, inclusive.</param>
     /// <param name="checkOutDate">Departure date, exclusive.</param>
     /// <param name="excludeBookingId">The booking being edited, or <c>null</c>.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The rooms that are both bookable and free for the whole period.</returns>
     public async Task<Result<IReadOnlyList<AvailableRoomDto>>> GetAvailableRoomsAsync(
         DateOnly checkInDate,
@@ -213,7 +213,7 @@ public sealed class BookingService : IBookingService
     /// Creates a booking (BR-01, BR-19, BR-41 to BR-49, BR-51, BR-101 to BR-106, B-03).
     /// </summary>
     /// <param name="request">Period, room and either an existing or a new guest (BR-47).</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The created booking, or the broken rules.</returns>
     public async Task<Result<BookingDetailsDto>> CreateAsync(
         CreateBookingRequest request,
@@ -317,8 +317,8 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>Confirms a booking (BR-02, BR-03, BR-05, BR-121).</summary>
-    /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="bookingId">The booking id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.ConfirmNotAllowed"/>.</returns>
     public async Task<Result<BookingDetailsDto>> ConfirmAsync(
         int bookingId,
@@ -339,8 +339,8 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>Checks the guest in (BR-06, BR-07, BR-08, B-01).</summary>
-    /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="bookingId">The booking id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.CheckInNotAllowed"/>.</returns>
     public async Task<Result<BookingDetailsDto>> CheckInAsync(
         int bookingId,
@@ -362,8 +362,8 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>Checks the guest out (BR-09, BR-10, BR-107, A-01, A-03, BR-N-06).</summary>
-    /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="bookingId">The booking id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.CheckOutNotAllowed"/>.</returns>
     /// <remarks>
     /// The hotel-local check-out date is supplied by the clock, because converting a timestamp →
@@ -420,8 +420,8 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>Cancels a booking (BR-11, BR-13, BR-122).</summary>
-    /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="bookingId">The booking id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.CancelNotAllowed"/>.</returns>
     public async Task<Result<BookingDetailsDto>> CancelAsync(
         int bookingId,
@@ -445,7 +445,7 @@ public sealed class BookingService : IBookingService
     /// Moves a booking (BR-14, BR-17, BR-18, BR-19, BR-20, BR-108, BR-123, B-03).
     /// </summary>
     /// <param name="request">The id of the booking, the new period and the room.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The moved booking, or the broken rules.</returns>
     public async Task<Result<BookingDetailsDto>> RescheduleAsync(
         RescheduleBookingRequest request,
@@ -514,9 +514,9 @@ public sealed class BookingService : IBookingService
     /// <summary>
     /// Runs one domain transition on a booking and saves.
     /// </summary>
-    /// <param name="bookingId">Bookingens id.</param>
+    /// <param name="bookingId">The booking id.</param>
     /// <param name="transition">The transition — always exactly one method call on <see cref="NFHotel.Domain.Entities.Booking"/>.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <param name="precondition">An optional check that needs more than the booking, run before the transition; returns an error code or <c>null</c>.</param>
     /// <returns>The details of the booking, or the error code of the domain if the transition was rejected.</returns>
     private async Task<Result<BookingDetailsDto>> TransitionAsync(
@@ -596,7 +596,7 @@ public sealed class BookingService : IBookingService
     /// checked in anyway, the transition reports that first, so the user sees the real reason.
     /// </summary>
     /// <param name="booking">The booking about to be checked in.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>An error code, or <c>null</c> if the check-in may go on.</returns>
     private Task<string?> RoomMustBeBookableForCheckInAsync(Booking booking, CancellationToken cancellationToken) =>
         booking.CanCheckIn(_clock.Today)
@@ -606,8 +606,8 @@ public sealed class BookingService : IBookingService
     /// <summary>
     /// Decides whether the room exists and may be let at all (BR-45, BR-105, BR-110).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>An error code, or <c>null</c> if the room is in order.</returns>
     private async Task<string?> CheckRoomIsBookableAsync(int roomId, CancellationToken cancellationToken)
     {
@@ -634,7 +634,7 @@ public sealed class BookingService : IBookingService
     /// <param name="roomId">The room.</param>
     /// <param name="period">The desired period.</param>
     /// <param name="excludeBookingId">The booking being edited, or <c>null</c>.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns><see cref="ErrorCodes.Booking.RoomNotAvailable"/>, or <c>null</c> if the room is free.</returns>
     /// <remarks>
     /// The repository filters coarsely; <see cref="NFHotel.Domain.Entities.Booking.ConflictsWith"/> decides. The predicate
@@ -671,8 +671,8 @@ public sealed class BookingService : IBookingService
     /// <summary>
     /// Finds the id of the guest — either the chosen guest or one just created (BR-47).
     /// </summary>
-    /// <param name="request">Oprettelsesanmodningen.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="request">The create request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The id of the guest, or the broken guest rules.</returns>
     /// <remarks>
     /// A new guest is saved in its own call, because <see cref="Booking.Create"/> requires an id
@@ -737,8 +737,8 @@ public sealed class BookingService : IBookingService
     /// <summary>
     /// Sets the room to departure cleaning after a check-out (BR-N-06).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task that completes when the room is marked, or deliberately skipped.</returns>
     /// <remarks>
     /// If the room is already under cleaning or service, the domain rejects the transition — and that
@@ -770,7 +770,7 @@ public sealed class BookingService : IBookingService
     /// Saves and builds the answer. Collects the translation of infrastructure errors in one place.
     /// </summary>
     /// <param name="booking">The booking that has just been changed.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the booking, or the error code of the safeguard that kicked in.</returns>
     /// <remarks>
     /// The details are read back as a projection instead of being mapped from the entity, so room
@@ -809,7 +809,7 @@ public sealed class BookingService : IBookingService
     /// </summary>
     /// <param name="items">The rows.</param>
     /// <param name="sortBy">The field to sort on.</param>
-    /// <param name="direction">Retningen.</param>
+    /// <param name="direction">The direction.</param>
     /// <returns>The sorted rows.</returns>
     /// <remarks>
     /// The sorting happens in memory, but only <i>after</i> the date window has limited the
@@ -843,7 +843,7 @@ public sealed class BookingService : IBookingService
     /// <typeparam name="TKey">The type of the key.</typeparam>
     /// <param name="items">The rows.</param>
     /// <param name="keySelector">The key.</param>
-    /// <param name="ascending">Sand for stigende.</param>
+    /// <param name="ascending">True for ascending.</param>
     /// <returns>The sorted rows.</returns>
     private static IOrderedEnumerable<BookingListItemDto> OrderBy<TKey>(
         IEnumerable<BookingListItemDto> items,

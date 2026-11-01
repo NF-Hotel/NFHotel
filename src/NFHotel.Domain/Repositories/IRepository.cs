@@ -18,7 +18,7 @@ public interface IRepository<TEntity, TKey>
 {
     /// <summary>Fetches the entity so the domain methods can be called on it.</summary>
     /// <param name="id">The key of the entity.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The entity, or <c>null</c> if it does not exist (BR-115).</returns>
     Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default);
 

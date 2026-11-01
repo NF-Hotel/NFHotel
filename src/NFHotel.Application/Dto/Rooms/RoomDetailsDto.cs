@@ -7,7 +7,7 @@ namespace NFHotel.Application.Dto.Rooms;
 /// <summary>
 /// A room with everything the detail screen needs.
 /// </summary>
-/// <param name="RoomId">Rummets id.</param>
+/// <param name="RoomId">The room id.</param>
 /// <param name="RoomNumber">Room number.</param>
 /// <param name="Floor">Etage.</param>
 /// <param name="Size">Room type.</param>

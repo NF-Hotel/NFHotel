@@ -38,7 +38,7 @@ public class AesGcmStringEncryptorTests
         // Testdata
         const string plainText = "abcd1234";
 
-        // Krypterer testdataene.
+        // Encrypts the test data.
         var cipherText = encryptor.Encrypt(plainText);
         var decryptedText = encryptor.Decrypt(cipherText);
 

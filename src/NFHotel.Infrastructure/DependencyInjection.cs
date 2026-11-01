@@ -41,7 +41,7 @@ public static class DependencyInjection
     /// <summary>
     /// Registers data access, repositories, clock, encryption and the services of the Application layer.
     /// </summary>
-    /// <param name="services">Servicesamlingen.</param>
+    /// <param name="services">The service collection.</param>
     /// <param name="configuration">The configuration. Must contain the connection string and the encryption key.</param>
     /// <returns>The same service collection, so calls can be chained.</returns>
     /// <exception cref="ArgumentNullException">

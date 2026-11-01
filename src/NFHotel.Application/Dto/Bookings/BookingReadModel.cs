@@ -19,14 +19,14 @@ namespace NFHotel.Application.Dto.Bookings;
 /// the service, not from the database (A-05).
 /// </para>
 /// </remarks>
-/// <param name="BookingId">Bookingens id.</param>
+/// <param name="BookingId">The booking id.</param>
 /// <param name="StartDate">Arrival date.</param>
 /// <param name="EndDate">Booked departure date.</param>
 /// <param name="EffectiveEndDate">
 /// Effective end date (A-01). Projected from the generated database column
 /// <c>effective_end_date</c>, which computes the same expression as <c>Booking.EffectiveEndDate</c>.
 /// </param>
-/// <param name="Status">Bookingens livscyklustilstand.</param>
+/// <param name="Status">The lifecycle state of the booking.</param>
 /// <param name="CheckInTime">Actual check-in time, or <c>null</c>.</param>
 /// <param name="CheckOutTime">Actual check-out time, or <c>null</c>.</param>
 /// <param name="CheckOutDate">Hotel-local check-out date, or <c>null</c>.</param>

@@ -69,7 +69,7 @@ public sealed class BookingFormViewModel
     /// <summary>The number of the booking being rescheduled, for the heading (BR-109).</summary>
     public string? BookingNumber { get; private set; }
 
-    /// <summary>Formularens overskrift.</summary>
+    /// <summary>The heading of the form.</summary>
     public string Title => Mode == BookingFormMode.Create
         ? "New booking"
         : $"Reschedule booking {BookingNumber}";
@@ -193,7 +193,7 @@ public sealed class BookingFormViewModel
     /// Opens the form to reschedule a booking (BR-14).
     /// </summary>
     /// <param name="booking">The booking to be moved.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <remarks>
     /// Searches for free rooms immediately, because the current period of the booking is already chosen.
     /// The booking itself is left out of the lookup, so it does not block its own room.
@@ -230,7 +230,7 @@ public sealed class BookingFormViewModel
     /// <summary>
     /// Fetches the rooms that are free in the chosen period.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <remarks>
     /// The dates are not checked here: the service answers with
     /// <c>booking.end_not_after_start</c> or <c>booking.start_date_in_past</c>, and
@@ -288,7 +288,7 @@ public sealed class BookingFormViewModel
     /// <summary>
     /// Chooses the room the booking should be on.
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
+    /// <param name="roomId">The room id.</param>
     public void SelectRoom(int roomId) => SelectedRoomId = roomId;
 
     /// <summary>
@@ -316,7 +316,7 @@ public sealed class BookingFormViewModel
     /// <summary>
     /// Searches among the existing guests.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SearchGuestsAsync(CancellationToken cancellationToken = default)
     {
         if (IsBusy)
@@ -377,7 +377,7 @@ public sealed class BookingFormViewModel
     /// <summary>
     /// Saves the form: creates the booking or moves it.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveAsync(CancellationToken cancellationToken = default)
     {
         SavedSuccessfully = false;

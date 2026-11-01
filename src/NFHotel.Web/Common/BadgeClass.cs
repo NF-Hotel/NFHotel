@@ -23,7 +23,7 @@ public static class BadgeClass
     /// <summary>
     /// Gives the badge classes for the status of a booking.
     /// </summary>
-    /// <param name="status">Bookingens status.</param>
+    /// <param name="status">The status of the booking.</param>
     /// <returns>The class string, for example <c>"badge badge-confirmed"</c>.</returns>
     public static string For(BookingStatus status) => status switch
     {
@@ -38,7 +38,7 @@ public static class BadgeClass
     /// <summary>
     /// Gives the badge classes for the bookability of a room.
     /// </summary>
-    /// <param name="status">Rummets status.</param>
+    /// <param name="status">The status of the room.</param>
     /// <returns>Klassestrengen.</returns>
     /// <remarks>
     /// <see cref="RoomStatus.Maintenance"/> is temporary and shares its appearance with service,

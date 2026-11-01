@@ -83,14 +83,14 @@ public sealed class AdminDashboardViewModel
     /// <summary>
     /// Fetches today's figures. Called from <c>OnInitializedAsync</c>.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public Task InitializeAsync(CancellationToken cancellationToken = default) =>
         RefreshAsync(cancellationToken);
 
     /// <summary>
     /// Fetches today's bookings and the state of the rooms from scratch.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
         if (IsBusy)
@@ -120,7 +120,7 @@ public sealed class AdminDashboardViewModel
     /// Fetches the bookings in today's window and divides them into arrivals and departures.
     /// </summary>
     /// <param name="messages">Error texts from this part of the fetching are put here.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <remarks>
     /// The window is one day: from today up to and including tomorrow, exclusive. The period filter is
     /// always active, precisely so as not to repeat the fault where an overview fetched the whole
@@ -161,7 +161,7 @@ public sealed class AdminDashboardViewModel
     /// Fetches all rooms and finds the ones waiting for cleaning.
     /// </summary>
     /// <param name="messages">Error texts from this part of the fetching are put here.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     private async Task LoadRoomsAsync(List<string> messages, CancellationToken cancellationToken)
     {
         var result = await _rooms

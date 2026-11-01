@@ -14,7 +14,7 @@ public interface IGuestQueries
     /// Fetches the details of a guest as a projection.
     /// </summary>
     /// <param name="guestId">The id of the guest.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details, or <c>null</c> if the guest does not exist (BR-115).</returns>
     Task<GuestDetailsDto?> GetDetailsAsync(int guestId, CancellationToken cancellationToken = default);
 
@@ -26,7 +26,7 @@ public interface IGuestQueries
     /// last name, country or email — that is, AND between words, OR between fields. An empty set
     /// returns all guests (BR-70).
     /// </param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The matching guests as list rows.</returns>
     /// <remarks>
     /// The semantics are consolidated from two disagreeing searches in the old system: the repository searched
