@@ -127,6 +127,8 @@ public sealed class MarketAnalysisRunWorkerTests
 
         await worker.StopAsync(TestContext.Current.CancellationToken);
 
-        Assert.True(worker.ExecuteTask!.IsCompletedSuccessfully);
+        // The loop starts on a thread of its own, so a stop that comes first ends it cancelled: either way it ends without a fault.
+        Assert.True(worker.ExecuteTask!.IsCompleted);
+        Assert.False(worker.ExecuteTask.IsFaulted);
     }
 }
