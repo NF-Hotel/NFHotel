@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Initial version (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-259 Go-with-conditions | pending |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Initial version (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-259 Go-with-conditions | [3a17eee] |
 
 ---
 
@@ -82,3 +82,4 @@
 [UC-004]: ../uc-004/uc.md
 [UC-006]: ../uc-006/uc.md
 [MIL-051]: ../../milestones/mil-051-room-price-suggestions.md
+[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118

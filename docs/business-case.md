@@ -25,7 +25,7 @@
 | 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Amended: objective 26, hotel staff sign in and work with rooms from the mobile app through the API on the staff token alone (MIL-029, ADR-0015); accepted after RC-133 Go | [1c3efb9] |
 | 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Amended: objective 27, staff accounts and passwords (MIL-030), and success criterion 30 (accepted after RC-150 Go) | [0891cf1] |
 | 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Amended: objective 28 and success criterion 31, NF Hotel on the public internet through Cloudflare Tunnel; the public address of the mobile app leaves the out-of-scope list (MIL-040, ADR-0028); S01 accepted MIL-040 in chat | [21ba03e] |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Amended: objective 29, success criterion 32 and one in-scope line, room price suggestions from the market analysis that a Manager approves with one click (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-258 Go | pending |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Amended: objective 29, success criterion 32 and one in-scope line, room price suggestions from the market analysis that a Manager approves with one click (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-258 Go | [3a17eee] |
 
 ---
 
@@ -295,3 +295,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [1c3efb9]: https://github.com/NF-Hotel/NFHotel/commit/1c3efb91f421c2b5ca0f4a62b7f0b2fe865eac70
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
 [21ba03e]: https://github.com/NF-Hotel/NFHotel/commit/21ba03eedb3836936f623ea3bd93871f097cab3c
+[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118

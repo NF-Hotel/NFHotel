@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Initial version; accepted by S01 in chat on 2026-11-01 after RC-257 Go | pending |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Initial version; accepted by S01 in chat on 2026-11-01 after RC-257 Go | [3a17eee] |
 
 ---
 
@@ -97,3 +97,4 @@ Decide whether the back office can suggest room price changes that a Manager app
 [MIL-026]: ./mil-026-market-analysis-report.md
 [MIL-028]: ./mil-028-market-analysis-run-api.md
 [MIL-030]: ./mil-030-staff-accounts-and-password.md
+[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118

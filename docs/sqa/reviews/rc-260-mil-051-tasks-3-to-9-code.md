@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Proposed | Claude (AI) | S01 | Initial version; review by the AI, not independent, for S01 to accept | pending |
+| 2026-11-02 | Proposed | Claude (AI) | S01 | Initial version; review by the AI, not independent, for S01 to accept | [3a17eee] |
 
 ---
 
@@ -181,3 +181,4 @@ The verdict becomes Go-with-conditions when F1, F2, F6 and F7 are fixed and re-r
 
 [MIL-051]: ../../milestones/mil-051-room-price-suggestions.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118

@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent; accepted by S01 in chat on 2026-11-01 | pending |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent; accepted by S01 in chat on 2026-11-01 | [3a17eee] |
 
 ---
 
@@ -90,3 +90,4 @@ Go-with-conditions: every Mandatory criterion of the delta passes. Criterion 8 o
 [QC-UC-001]: ../../../framework/qc/artifacts/qc-use-case.md
 [QC-DM-001]: ../../../framework/qc/artifacts/qc-domain-model.md
 [QC-DICT-001]: ../../../framework/qc/artifacts/qc-dictionary.md
+[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118

@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.10 and US-001.11, the password and account stories (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
 | 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | US-001.04 gains a criterion: a run that a restart stops is shown as interrupted and can be started again (MIL-043, ADR-0031) | [43bcf70] |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Added US-001.12, approve a price suggestion (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-258 Go | pending |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Added US-001.12, approve a price suggestion (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-258 Go | [3a17eee] |
 
 ---
 
@@ -247,3 +247,4 @@ for US-001.02.
 [MIL-051]: ./milestones/mil-051-room-price-suggestions.md
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
 [43bcf70]: https://github.com/NF-Hotel/NFHotel/commit/43bcf70046d2f2537672030b83f39f8b3fda4551
+[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118

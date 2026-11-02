@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | The traceability matrix covers BC, SA, PP, MIL-001 to MIL-005, US, UCD, ADR and RC-001 to RC-020 | [3db0f51] |
-| 2026-11-02 | Proposed | Claude (AI) | S01 | Added MIL-051, US-001.12, UC-007, the new dictionary terms and domain concepts, the code areas and the test classes of the room price suggestions, and the wiki page (MIL-051 task 10); the milestone is Accepted, the implementation is built and not yet merged | pending |
+| 2026-11-02 | Proposed | Claude (AI) | S01 | Added MIL-051, US-001.12, UC-007, the new dictionary terms and domain concepts, the code areas and the test classes of the room price suggestions, and the wiki page (MIL-051 task 10); the milestone is Accepted, the implementation is built and not yet merged | [3a17eee] |
 
 ---
 
@@ -201,3 +201,4 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-026]: ../milestones/mil-026-market-analysis-report.md
 [MIL-028]: ../milestones/mil-028-market-analysis-run-api.md
 [MIL-030]: ../milestones/mil-030-staff-accounts-and-password.md
+[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118

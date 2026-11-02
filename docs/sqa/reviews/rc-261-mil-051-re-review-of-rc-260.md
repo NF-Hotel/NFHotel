@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Proposed | Claude (AI) | S01 | Initial version; delta re-review by the AI, not independent, for S01 to accept | pending |
+| 2026-11-02 | Proposed | Claude (AI) | S01 | Initial version; delta re-review by the AI, not independent, for S01 to accept | [3a17eee] |
 
 ---
 
@@ -132,3 +132,4 @@ Not verified: the page in a browser, the real unique-index race and the HTTP 409
 [MIL-051]: ../../milestones/mil-051-room-price-suggestions.md
 [RC-260]: ./rc-260-mil-051-tasks-3-to-9-code.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
