@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "API and web",
+    "Projects": [
+      {
+        "Path": "src\\NFHotel.Api\\NFHotel.Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "NFHotel.Api"
+      },
+      {
+        "Path": "src\\NFHotel.Web\\NFHotel.Web.csproj",
+        "Action": "Start",
+        "DebugTarget": "https"
+      }
+    ]
+  }
+]

@@ -23,8 +23,13 @@
 # nginx straight in Docker with no Proxmox VE and no VM, at the same addresses (ADR-0035): dev-up.sh --lite [--check]
 # [--seed] [--open] [--down] [--destroy]; see scripts/dev-lite.sh.
 #
-# Usage: dev-up.sh [--lite] [--check] [--all] [--seed] [--open] [--down] [--destroy] [web|api|analysis|benchmark|nginx ...]
+# To debug in Visual Studio with F5, prepare the machine once with dev-up.sh --f5 [--check] [--down] [--destroy]: it
+# starts PostgreSQL in Docker and writes the user secrets of the API and the web application (ADR-0036,
+# scripts/dev-f5.sh).
+#
+# Usage: dev-up.sh [--lite | --f5] [--check] [--all] [--seed] [--open] [--down] [--destroy] [web|api|analysis|benchmark|nginx ...]
 #   --lite     run the light mode (scripts/dev-lite.sh) with the other arguments instead
+#   --f5       prepare F5 in Visual Studio (scripts/dev-f5.sh) with the other arguments instead
 #   --check    only test that this machine can run it (Docker, KVM, tools, ports, disk, memory) and say how to fix
 #              each problem; starts nothing. The same test runs at the start of every other run.
 #   web, api   rebuild and restart only these (default: web and api, the code of this repository)
@@ -51,15 +56,19 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ops="$root/ops"
 export MSYS_NO_PATHCONV=1
 
-# The light mode is its own script; checked before anything of bash 4, which macOS lacks, runs.
+# The light mode and the F5 preparation are their own scripts; checked before anything of bash 4, which macOS
+# lacks, runs.
 for arg in "$@"; do
-  if [[ "$arg" == "--lite" ]]; then
-    lite_args=()
-    for lite_arg in "$@"; do
-      [[ "$lite_arg" == "--lite" ]] || lite_args+=("$lite_arg")
-    done
-    exec bash "$root/scripts/dev-lite.sh" ${lite_args[@]+"${lite_args[@]}"}
-  fi
+  case "$arg" in
+    --lite) other_script=dev-lite.sh ;;
+    --f5) other_script=dev-f5.sh ;;
+    *) continue ;;
+  esac
+  other_args=()
+  for other_arg in "$@"; do
+    [[ "$other_arg" == "$arg" ]] || other_args+=("$other_arg")
+  done
+  exec bash "$root/scripts/$other_script" ${other_args[@]+"${other_args[@]}"}
 done
 
 site_port="${DEV_SITE_PORT:-8443}"

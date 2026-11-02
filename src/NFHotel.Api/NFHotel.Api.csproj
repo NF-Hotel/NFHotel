@@ -13,6 +13,11 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!--
+      Used by `dotnet user-secrets` for the development values of F5 (scripts/dev-f5.sh, ADR-0036): the connection
+      string, the tokens and the keys stay outside the working folder, so they cannot be committed by mistake.
+    -->
+    <UserSecretsId>nfhotel-api-6b1e4c2a-3f57-4d8e-b0a9-71c5e2d48f16</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
