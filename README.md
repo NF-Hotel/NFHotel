@@ -388,6 +388,8 @@ bash scripts/dev-up.sh --check   # does this machine meet the needs? starts noth
 bash scripts/dev-up.sh           # first run: ten minutes or more; later runs: about 30 seconds
 ```
 
+On a Mac, or without KVM: `bash scripts/dev-up.sh --lite`. It runs the database, the API, the web application and nginx straight in Docker at the same address, in about 3 GiB, with no VM (ADR-0035).
+
 On Windows from PowerShell: `.\scripts\dev-up.ps1 --check` and `.\scripts\dev-up.ps1`. Then open `https://localhost:8443/` (accept the development certificate) and sign in at `/admin/login`; the script prints the development accounts. What you need, what it does and how to fix problems: the wiki page [Local Development Deploy](docs/wiki/Local-Development-Deploy.md).
 
 ```bash

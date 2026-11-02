@@ -452,5 +452,8 @@ docs/test-data/real-specimens/
 /e2e-results/
 /dast-results/
 
+# Settings, secrets and development accounts of the light development mode (scripts/dev-lite.sh, ADR-0035).
+/ops/.dev-lite/
+
 # The write-only backup target of ops/ (D7); the pattern Backup*/ above is for Visual Studio.
 !/ops/deploy/backup-target/

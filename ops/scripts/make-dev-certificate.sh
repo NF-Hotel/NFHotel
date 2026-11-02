@@ -11,7 +11,6 @@
 # Exit:  0 the pair exists; 1 openssl failed; 2 usage error
 # Needs: bash 4+, openssl
 set -euo pipefail
-export MSYS_NO_PATHCONV=1 # Git Bash would turn the /CN=... subject into a path
 
 die() {
   echo "error: $*" >&2
@@ -41,9 +40,12 @@ mkdir -p "$dir"
 # A native Windows openssl needs a Windows path; elsewhere cygpath does not exist.
 native="$(cygpath -m "$dir" 2>/dev/null || echo "$dir")"
 umask 077
-openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes \
-  -keyout "$native/privkey.pem" -out "$native/fullchain.pem" \
-  -subj "/CN=nfhotel-dev" -addext "subjectAltName=$san" >/dev/null 2>&1 ||
+# The names go in through a configuration file, not -addext, which the LibreSSL of macOS may lack (MIL-056).
+trap 'rm -f "$dir/.openssl.cnf"' EXIT
+printf '[req]\ndistinguished_name = dn\nx509_extensions = v3\nprompt = no\n[dn]\nCN = nfhotel-dev\n[v3]\nsubjectAltName = %s\n' \
+  "$san" >"$dir/.openssl.cnf"
+openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes -config "$native/.openssl.cnf" \
+  -keyout "$native/privkey.pem" -out "$native/fullchain.pem" >/dev/null 2>&1 ||
   die "openssl could not make the certificate"
 # The proxy container reads the files as another user; the folder is mounted read-only.
 chmod 644 "$dir/fullchain.pem" "$dir/privkey.pem"
