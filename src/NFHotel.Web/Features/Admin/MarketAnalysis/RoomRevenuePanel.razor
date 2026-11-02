@@ -1,0 +1,55 @@
+@using NFHotel.Application.Dto.MarketAnalysis
+@using NFHotel.Web.Features.Admin.Shared
+
+@*
+    The room revenue of the room value analysis (MIL-026 task 25): the total, the mean per booking and the bookings left out as tiles,
+    and the revenue of each month of arrival as columns. The caption says what the figure is not: before taxes, fees, discounts and
+    extras, and the currency is not known.
+*@
+
+<div class="stack-sm" role="region" aria-label="Room revenue">
+    <h3 class="subtitle-small">Room revenue</h3>
+    <div class="chart-grid">
+        <FigureTile Title="Total room revenue" Value="Revenue.Total" Label="@($"{Revenue.RecordsWithPrice:N0} bookings that are not cancelled, in {Revenue.Unit}")" />
+        @if (Revenue.Mean is { } mean)
+        {
+            <FigureTile Title="Mean per booking" Value="mean" Label="@($"in {Revenue.Unit}")" />
+        }
+        <FigureTile Title="Bookings left out" Value="Revenue.RecordsWithoutPrice" Label="no price" />
+    </div>
+    @if (Revenue.Monthly.Count > 0)
+    {
+        <div class="chart-block chart-wide">
+            <ColumnChart Title="@MonthlyTitle" Unit="@Revenue.Unit" Points="Revenue.Monthly" />
+            <ChartCaption Model="MonthlyCaption" />
+        </div>
+    }
+    <p class="muted">@Caption</p>
+    @if (!string.IsNullOrWhiteSpace(Revenue.Limitation))
+    {
+        <p class="muted">@Revenue.Limitation</p>
+    }
+</div>
+
+@code {
+    /// <summary>What the figures are not, in the words of the page; the service adds its own limitation under it.</summary>
+    public const string Caption =
+        "Room revenue is the price per night times the nights of the bookings that are not cancelled, before taxes, fees, discounts and extras. "
+        + "The currency is not known, so the amounts are in the price units of the input. Bookings without a price are left out of the figures.";
+
+    private const string MonthlyTitle = "Room revenue by month of arrival";
+
+    /// <summary>The analysis the room revenue belongs to, for the limitations, the formula and the AI observation of the chart.</summary>
+    [Parameter]
+    public MarketAnalysisSectionDto Section { get; set; } = new(string.Empty, string.Empty, string.Empty, null, [], null);
+
+    private ChartCaptionModel MonthlyCaption =>
+        ChartCaptionText.ForSeries(
+            ChartKind.Columns,
+            new MarketAnalysisSeriesDto(MarketAnalysisViewModel.RoomRevenueSeriesId, MonthlyTitle, Revenue.Unit, Revenue.Monthly, IsOrdered: true),
+            Section);
+
+    /// <summary>The room revenue to show.</summary>
+    [Parameter, EditorRequired]
+    public MarketAnalysisRoomRevenueDto Revenue { get; set; } = new(string.Empty, string.Empty, 0, null, 0, 0, []);
+}

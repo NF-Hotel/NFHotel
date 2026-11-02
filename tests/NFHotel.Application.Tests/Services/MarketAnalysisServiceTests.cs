@@ -10,6 +10,25 @@ public sealed class MarketAnalysisServiceTests
 {
     #region Start and state
 
+    /// <summary>State: the current run is a success with no value before a start, then the run that goes on.</summary>
+    [Fact]
+    public async Task GetCurrentRunAsync_BeforeAndAfterAStart_IsNoneThenTheRun()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var service = world.MarketAnalysisService();
+
+        // Act
+        var before = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
+        var started = await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
+        var after = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(before.IsSuccess);
+        Assert.Null(before.Value);
+        Assert.Equal((started.Value.RunId, MarketAnalysisRunStates.Queued), (after.Value!.RunId, after.Value.State));
+    }
+
     /// <summary>Positive: a start returns at once with a queued run and hands it to the launcher; nothing has run yet.</summary>
     [Fact]
     public async Task StartRunAsync_NoRunActive_ReturnsTheQueuedRunAndLaunchesIt()

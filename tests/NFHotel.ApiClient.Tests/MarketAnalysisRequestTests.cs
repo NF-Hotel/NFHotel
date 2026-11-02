@@ -56,6 +56,52 @@ public sealed class MarketAnalysisRequestTests
         Assert.Null(handler.Method);
     }
 
+    /// <summary>Positive: the current run is a GET of the current path, with the state read.</summary>
+    [Fact]
+    public async Task GetCurrentRunAsync_RunGoesOn_GetsTheCurrentPathAndReadsTheState()
+    {
+        // Arrange
+        var (handler, service) = Build($$$"""{"value":{"runId":"{{{RunId}}}","state":"running","startedAt":null,"finishedAt":null,"error":null},"errors":[]}""");
+
+        // Act
+        var result = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal((HttpMethod.Get, "/api/market-analysis/runs/current"), (handler.Method!, handler.PathAndQuery!));
+        Assert.Equal((RunId, MarketAnalysisRunStates.Running), (result.Value!.RunId, result.Value.State));
+    }
+
+    /// <summary>Boundary: a 204 is a successful result with no run.</summary>
+    [Fact]
+    public async Task GetCurrentRunAsync_NoContent_IsSuccessWithNoRun()
+    {
+        // Arrange
+        var (_, service) = Build(string.Empty, HttpStatusCode.NoContent);
+
+        // Act
+        var result = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value);
+    }
+
+    /// <summary>Negative: a refused call keeps its code, and an API that is down is the unavailable code.</summary>
+    [Theory]
+    [InlineData(HttpStatusCode.Forbidden, """{"value":null,"errors":["staff.forbidden"]}""", "staff.forbidden")]
+    [InlineData(HttpStatusCode.ServiceUnavailable, "", ErrorCodes.Api.Unavailable)]
+    public async Task GetCurrentRunAsync_Refused_KeepsTheCode(HttpStatusCode status, string json, string code)
+    {
+        // Arrange
+        var (_, service) = Build(json, status);
+
+        // Act
+        var result = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(code, Assert.Single(result.Errors).Code);
+    }
+
     /// <summary>Positive: the latest report is a GET of the latest path, with the content read.</summary>
     [Fact]
     public async Task GetLatestReportAsync_Call_GetsTheLatestPathAndReadsTheContent()

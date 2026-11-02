@@ -61,6 +61,10 @@ public sealed class MarketAnalysisService : IMarketAnalysisService
                 : Result<MarketAnalysisRunStateDto>.Failure(ErrorCodes.MarketAnalysisRunner.RunNotFound));
 
     /// <inheritdoc />
+    public Task<Result<MarketAnalysisRunStateDto?>> GetCurrentRunAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(Result<MarketAnalysisRunStateDto?>.Success(_tracker.Current));
+
+    /// <inheritdoc />
     public async Task<Result<MarketAnalysisReportDto>> GetLatestReportAsync(CancellationToken cancellationToken = default)
     {
         var run = await _runs.FindLatestAsync(cancellationToken).ConfigureAwait(false);

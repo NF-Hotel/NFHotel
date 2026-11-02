@@ -27,6 +27,7 @@ public sealed class MarketAnalysisReportPageTests : IAsyncDisposable
     {
         _host.With(new MarketAnalysisViewModel(new PassThroughRunner<IMarketAnalysisService>(_service), new FakeClock { Today = Today }));
         _service.GetLatestReportAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisReportDto>.Success(Report()));
+        _service.GetCurrentRunAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto?>.Success(null));
     }
 
     public ValueTask DisposeAsync() => _host.DisposeAsync();

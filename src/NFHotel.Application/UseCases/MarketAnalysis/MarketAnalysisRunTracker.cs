@@ -55,6 +55,19 @@ public sealed class MarketAnalysisRunTracker
         }
     }
 
+    /// <summary>Reads the run that is going on, or the one that ended last.</summary>
+    /// <returns>The state, or <c>null</c> when no run has begun since the API started.</returns>
+    public MarketAnalysisRunStateDto? Current
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _current;
+            }
+        }
+    }
+
     /// <summary>Reads the period that a run was started for.</summary>
     /// <param name="runId">The run id.</param>
     /// <returns>The period, or an open period when this is not the run that the tracker holds.</returns>

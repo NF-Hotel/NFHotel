@@ -78,6 +78,9 @@ public static class ApiRoutes
     /// <summary>The runs below <see cref="MarketAnalysis"/>: a start posts here.</summary>
     public const string MarketAnalysisRuns = "runs";
 
+    /// <summary>The run that is going on, or the one that ended last, below <see cref="MarketAnalysis"/>; 204 when none.</summary>
+    public const string MarketAnalysisRunCurrent = "runs/current";
+
     /// <summary>One run below <see cref="MarketAnalysis"/>, by the run id of the data analysis service.</summary>
     public const string MarketAnalysisRunById = "runs/{runId:guid}";
 

@@ -96,6 +96,43 @@ public sealed class MarketAnalysisEndpointTests
         Assert.Contains(ErrorCodes.MarketAnalysis.NotFound, body!.Errors);
     }
 
+    /// <summary>Boundary: with no run the current run is a 204 without a body.</summary>
+    [Fact]
+    public async Task GetCurrentRun_NoRun_Returns204()
+    {
+        // Arrange
+        using var factory = new ApiFactory();
+        using var client = factory.CreateStaffClient(StaffRole.Manager);
+
+        // Act
+        using var response = await client.GetAsync($"{Route}/runs/current", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(string.Empty, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>Positive: with a run going on the current run is its state, and after it ended the state of that run.</summary>
+    [Fact]
+    public async Task GetCurrentRun_RunGoesOnThenEnds_ReturnsItsState()
+    {
+        // Arrange
+        using var factory = new ApiFactory();
+        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        var started = await (await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken))
+            .Content.ReadFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        var runId = started!.Value!.RunId;
+
+        // Act
+        var during = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>($"{Route}/runs/current", ApiJson.Options, TestContext.Current.CancellationToken);
+        await factory.World.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
+        var after = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>($"{Route}/runs/current", ApiJson.Options, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal((runId, MarketAnalysisRunStates.Queued), (during!.Value!.RunId, during.Value.State));
+        Assert.Equal((runId, MarketAnalysisRunStates.Completed), (after!.Value!.RunId, after.Value.State));
+    }
+
     /// <summary>Negative: a run the API does not know, for example after a restart, is a 404.</summary>
     [Fact]
     public async Task GetRun_UnknownRun_Returns404()
@@ -165,9 +202,12 @@ public sealed class MarketAnalysisEndpointTests
         using var start = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
         using var state = await client.GetAsync($"{Route}/runs/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
         using var latest = await client.GetAsync($"{Route}/latest", TestContext.Current.CancellationToken);
+        using var current = await client.GetAsync($"{Route}/runs/current", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal([HttpStatusCode.Forbidden, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden], [start.StatusCode, state.StatusCode, latest.StatusCode]);
+        Assert.Equal(
+            [HttpStatusCode.Forbidden, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden],
+            [start.StatusCode, state.StatusCode, latest.StatusCode, current.StatusCode]);
         Assert.Empty(factory.World.MarketAnalysisLauncher.Launched);
     }
 
@@ -182,9 +222,12 @@ public sealed class MarketAnalysisEndpointTests
         // Act
         using var start = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
         using var latest = await client.GetAsync($"{Route}/latest", TestContext.Current.CancellationToken);
+        using var current = await client.GetAsync($"{Route}/runs/current", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal([HttpStatusCode.Unauthorized, HttpStatusCode.Unauthorized], [start.StatusCode, latest.StatusCode]);
+        Assert.Equal(
+            [HttpStatusCode.Unauthorized, HttpStatusCode.Unauthorized, HttpStatusCode.Unauthorized],
+            [start.StatusCode, latest.StatusCode, current.StatusCode]);
     }
 
     #endregion

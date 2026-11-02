@@ -36,6 +36,15 @@ public sealed class ApiGateway
     public Task<Result<TValue>> GetAsync<TValue>(string path, CancellationToken cancellationToken) =>
         SendAsync(HttpMethod.Get, path, null, ReadValueAsync<TValue>, Result<TValue>.Failure, cancellationToken);
 
+    /// <summary>Gets a resource that may be absent: a 204 is a successful result with no value.</summary>
+    /// <typeparam name="TValue">The type of the value.</typeparam>
+    /// <param name="path">The path below the base address.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The result; its value is <c>null</c> when the API answered 204.</returns>
+    public Task<Result<TValue?>> GetOptionalAsync<TValue>(string path, CancellationToken cancellationToken)
+        where TValue : class =>
+        SendAsync(HttpMethod.Get, path, null, ReadOptionalValueAsync<TValue>, Result<TValue?>.Failure, cancellationToken);
+
     /// <summary>Posts a body, or nothing, to an endpoint.</summary>
     /// <typeparam name="TValue">The type of the value.</typeparam>
     /// <param name="path">The path below the base address.</param>
@@ -166,6 +175,19 @@ public sealed class ApiGateway
         return envelope.Errors is { Count: > 0 }
             ? Result<TValue>.FromCodes(envelope.Errors)
             : Result<TValue>.Failure(ErrorCodes.Api.UnexpectedResponse);
+    }
+
+    private static async Task<Result<TValue?>> ReadOptionalValueAsync<TValue>(HttpResponseMessage response, CancellationToken cancellationToken)
+        where TValue : class
+    {
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result<TValue?>.Success(null);
+        }
+
+        Result<TValue> read = await ReadValueAsync<TValue>(response, cancellationToken).ConfigureAwait(false);
+
+        return read.IsSuccess ? Result<TValue?>.Success(read.Value) : Result<TValue?>.Failure(read.Errors);
     }
 
     private static async Task<Result> ReadWithoutValueAsync(HttpResponseMessage response, CancellationToken cancellationToken)

@@ -79,6 +79,27 @@ public sealed class MarketAnalysisRunTrackerAndNightsTests
         Assert.Equal(MarketAnalysisRunStates.Queued, tracker.Get(runId)!.State);
     }
 
+    /// <summary>State: the current run is none before a begin, the run that goes on, and the run that ended last.</summary>
+    [Fact]
+    public void Tracker_Current_IsNoneThenTheRunThatGoesOnThenTheOneThatEnded()
+    {
+        // Arrange
+        var tracker = new MarketAnalysisRunTracker(new FakeClock());
+        var none = tracker.Current;
+        var runId = tracker.TryBegin().Value.RunId;
+        tracker.MarkRunning(runId);
+
+        // Act
+        var running = tracker.Current;
+        tracker.MarkCompleted(runId);
+        var ended = tracker.Current;
+
+        // Assert
+        Assert.Null(none);
+        Assert.Equal((runId, MarketAnalysisRunStates.Running), (running!.RunId, running.State));
+        Assert.Equal((runId, MarketAnalysisRunStates.Completed), (ended!.RunId, ended.State));
+    }
+
     /// <summary>Negative: a failed run keeps its code.</summary>
     [Fact]
     public void Tracker_Failed_KeepsTheCode()
