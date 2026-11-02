@@ -28,7 +28,7 @@ namespace NFHotel.Web.Features.Admin.Rooms;
 /// DI scope and its own <c>DbContext</c> (Architecture.md section 8).
 /// </para>
 /// <para>
-/// MIL-051: a user who may manage prices also sees the effective price per night of each room size today. The prices
+/// MIL-055: a user who may manage prices also sees the effective price per night of each room size today. The prices
 /// are asked for once per load of the page, in one call for all sizes, and not at all for a user who may not manage
 /// prices: the price endpoints need that permission, so asking for them would only be refused.
 /// </para>

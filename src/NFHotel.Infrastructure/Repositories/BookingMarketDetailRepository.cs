@@ -6,7 +6,7 @@ using NFHotel.Infrastructure.Persistence;
 
 namespace NFHotel.Infrastructure.Repositories;
 
-/// <summary>Stores the market details of the bookings (MIL-026, MIL-051).</summary>
+/// <summary>Stores the market details of the bookings (MIL-026, MIL-055).</summary>
 public sealed class BookingMarketDetailRepository : Repository<BookingMarketDetail, int>, IBookingMarketDetailRepository
 {
     /// <summary>Creates the repository.</summary>

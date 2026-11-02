@@ -12,7 +12,7 @@ using NSubstitute;
 
 namespace NFHotel.Web.Tests;
 
-/// <summary>The presentation logic of the room list: the price column that only a user who may manage prices sees (MIL-051).</summary>
+/// <summary>The presentation logic of the room list: the price column that only a user who may manage prices sees (MIL-055).</summary>
 public sealed class RoomListViewModelTests
 {
     private static readonly DateOnly Today = new(2026, 11, 2);

@@ -10,7 +10,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.UseCases.RoomRates;
 
-/// <summary>Reads and sets the nightly base rate per room size (MIL-051).</summary>
+/// <summary>Reads and sets the nightly base rate per room size (MIL-055).</summary>
 public sealed class RoomRateService : IRoomRateService
 {
     private const string NoneText = "(none)";

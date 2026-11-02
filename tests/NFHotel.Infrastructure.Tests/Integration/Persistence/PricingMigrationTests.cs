@@ -11,7 +11,7 @@ using Npgsql;
 namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
 
 /// <summary>
-/// The three migrations of MIL-051 (room rate and audit detail, pricing settings, price change) against a real PostgreSQL:
+/// The three migrations of MIL-055 (room rate and audit detail, pricing settings, price change) against a real PostgreSQL:
 /// on an empty database, over a database with the 187 rooms, and back down (milestone criterion 9). Each test makes a
 /// database of its own in the shared container, so the database the other tests share is not touched.
 /// </summary>
@@ -84,7 +84,7 @@ public sealed class PricingMigrationTests : IAsyncLifetime
 
     #region Over the 187 rooms
 
-    /// <summary>Integration: migrating up from the migration before MIL-051 over 187 rooms and an audit event keeps them and leaves the new tables empty.</summary>
+    /// <summary>Integration: migrating up from the migration before MIL-055 over 187 rooms and an audit event keeps them and leaves the new tables empty.</summary>
     [Fact]
     public async Task Migrate_DatabaseWith187Rooms_KeepsTheRoomsAndTheAuditEventAndAddsEmptyTables()
     {
@@ -152,13 +152,13 @@ public sealed class PricingMigrationTests : IAsyncLifetime
         return new HotelDbContext(optionsBuilder.Options, encryptor);
     }
 
-    /// <summary>The id of the migration that comes right before the first migration of MIL-051.</summary>
+    /// <summary>The id of the migration that comes right before the first migration of MIL-055.</summary>
     private static string BeforeThePricingMigrations(HotelDbContext context)
     {
         var migrations = context.Database.GetMigrations().ToList();
         var first = migrations.FindIndex(id => id.EndsWith(FirstPricingMigration, StringComparison.Ordinal));
         var last = migrations.FindIndex(id => id.EndsWith(LastPricingMigration, StringComparison.Ordinal));
-        Assert.True(first > 0, "The first migration of MIL-051 must have a predecessor.");
+        Assert.True(first > 0, "The first migration of MIL-055 must have a predecessor.");
         Assert.Equal(first + 2, last);
 
         return migrations[first - 1];

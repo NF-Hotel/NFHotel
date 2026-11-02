@@ -9,7 +9,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.UseCases.Pricing;
 
-/// <summary>Reads and saves the pricing settings of the Manager (MIL-051).</summary>
+/// <summary>Reads and saves the pricing settings of the Manager (MIL-055).</summary>
 public sealed class PricingSettingsService : IPricingSettingsService
 {
     private readonly IPricingSettingRepository _settings;

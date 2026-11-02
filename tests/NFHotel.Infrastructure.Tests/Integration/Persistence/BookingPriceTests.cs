@@ -12,7 +12,7 @@ using NFHotel.TestSupport;
 
 namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
 
-/// <summary>A new booking is given its price per night and the market analysis feed still returns it (MIL-051).</summary>
+/// <summary>A new booking is given its price per night and the market analysis feed still returns it (MIL-055).</summary>
 [Collection(PostgreSqlCollection.Name)]
 public sealed class BookingPriceTests : IAsyncLifetime
 {

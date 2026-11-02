@@ -3,7 +3,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.Tests.Security;
 
-/// <summary>The permission that sets the nightly base rates (MIL-051): only the Manager holds it.</summary>
+/// <summary>The permission that sets the nightly base rates (MIL-055): only the Manager holds it.</summary>
 public sealed class ManagePricesPermissionTests
 {
     /// <summary>Positive: the Manager holds the permission to manage prices.</summary>

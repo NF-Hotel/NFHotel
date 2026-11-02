@@ -6,7 +6,7 @@ using NFHotel.Infrastructure.Repositories;
 
 namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
 
-/// <summary>The pricing settings table against a real PostgreSQL: the round trip, the one-row rule and the migration (MIL-051).</summary>
+/// <summary>The pricing settings table against a real PostgreSQL: the round trip, the one-row rule and the migration (MIL-055).</summary>
 [Collection(PostgreSqlCollection.Name)]
 public sealed class PricingSettingRepositoryTests : IAsyncLifetime
 {

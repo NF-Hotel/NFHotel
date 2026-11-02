@@ -14,7 +14,7 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version | [ec58105] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the concepts Staff member and Role from DM-005 (MIL-016) | [1593b34] |
 | 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Audit event and two attributes of Staff member (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Added Room rate, Price change, Price suggestion and Pricing settings, and four actions of the Audit event (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-259 Go-with-conditions | [3a17eee] |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Added Room rate, Price change, Price suggestion and Pricing settings, and four actions of the Audit event (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-264 Go-with-conditions | [3a17eee] |
 
 ---
 

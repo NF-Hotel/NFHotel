@@ -6,7 +6,7 @@ using NFHotel.Application.Dto.MarketAnalysis;
 namespace NFHotel.Application.UseCases.Pricing;
 
 /// <summary>
-/// Reads the occupancy by month, and the text of its AI insight, from a market analysis report (MIL-051). Pure.
+/// Reads the occupancy by month, and the text of its AI insight, from a market analysis report (MIL-055). Pure.
 /// </summary>
 /// <remarks>
 /// Where the figures are: the section with the id <see cref="SectionId"/> (the <c>occupancy</c> analysis of the markets API),

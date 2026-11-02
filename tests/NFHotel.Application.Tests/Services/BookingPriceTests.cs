@@ -11,7 +11,7 @@ using NSubstitute;
 
 namespace NFHotel.Application.Tests.Services;
 
-/// <summary>The price per night that a new booking is given from the effective price of its room size on the arrival date (MIL-051).</summary>
+/// <summary>The price per night that a new booking is given from the effective price of its room size on the arrival date (MIL-055).</summary>
 public sealed class BookingPriceTests
 {
     private static readonly DateOnly Today = new(2027, 5, 1);

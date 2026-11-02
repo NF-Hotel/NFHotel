@@ -9,7 +9,7 @@ namespace NFHotel.ApiClient;
 
 /// <summary>
 /// Reads the open price suggestions, approves one, reverts a price change and lists the changes through the API for the web
-/// application (MIL-051). The API takes the name of the staff member from the staff token.
+/// application (MIL-055). The API takes the name of the staff member from the staff token.
 /// </summary>
 public sealed class ApiPriceSuggestionService : IPriceSuggestionService
 {

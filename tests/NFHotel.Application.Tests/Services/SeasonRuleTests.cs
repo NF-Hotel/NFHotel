@@ -2,7 +2,7 @@ using NFHotel.Application.UseCases.Pricing;
 
 namespace NFHotel.Application.Tests.Services;
 
-/// <summary>The season of an occupancy figure and of each calendar month (MIL-051, task 4).</summary>
+/// <summary>The season of an occupancy figure and of each calendar month (MIL-055, task 4).</summary>
 public sealed class SeasonRuleTests
 {
     private static readonly PricingSettings Defaults = PricingSettings.Defaults;

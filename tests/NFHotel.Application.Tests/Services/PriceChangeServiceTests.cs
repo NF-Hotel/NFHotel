@@ -5,7 +5,7 @@ using NFHotel.TestSupport;
 
 namespace NFHotel.Application.Tests.Services;
 
-/// <summary>Approving and reverting price changes, and the effective price of a room size on a day (MIL-051).</summary>
+/// <summary>Approving and reverting price changes, and the effective price of a room size on a day (MIL-055).</summary>
 public sealed class PriceChangeServiceTests
 {
     private static readonly DateOnly First = new(2027, 6, 1);
@@ -128,7 +128,7 @@ public sealed class PriceChangeServiceTests
         Assert.Equal(0, world.UnitOfWork.SaveCount);
     }
 
-    /// <summary>Negative (RC-260 F12): a period wholly before today is refused with the period code and nothing is saved.</summary>
+    /// <summary>Negative (RC-265 F12): a period wholly before today is refused with the period code and nothing is saved.</summary>
     [Fact]
     public async Task ApproveAsync_PeriodWhollyInThePast_ReturnsThePeriodCodeAndSavesNothing()
     {

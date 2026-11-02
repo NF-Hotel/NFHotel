@@ -6,7 +6,7 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Domain.Entities;
 
 /// <summary>
-/// The nightly base rate of one room size (MIL-051). There is at most one row per size. A Manager sets it; a room has
+/// The nightly base rate of one room size (MIL-055). There is at most one row per size. A Manager sets it; a room has
 /// no price of its own.
 /// </summary>
 public sealed class RoomRate : Entity<int>

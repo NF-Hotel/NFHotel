@@ -8,7 +8,7 @@ using NFHotel.TestSupport;
 
 namespace NFHotel.Application.Tests.Services;
 
-/// <summary>Reading and saving the pricing settings of the Manager, with their audit event (MIL-051).</summary>
+/// <summary>Reading and saving the pricing settings of the Manager, with their audit event (MIL-055).</summary>
 public sealed class PricingSettingsServiceTests
 {
     private static readonly SetPricingSettingsRequest DefaultsRequest = new(20m, 15m, 80m, 40m, 30m, 0m, ["Single"]);
@@ -308,7 +308,7 @@ public sealed class PricingSettingsServiceTests
         Assert.Empty(world.StaffAudit.Events);
     }
 
-    /// <summary>Negative (RC-260 F13): a simultaneous first save hits the unique index; the call returns the conflict code, not an exception.</summary>
+    /// <summary>Negative (RC-265 F13): a simultaneous first save hits the unique index; the call returns the conflict code, not an exception.</summary>
     [Fact]
     public async Task SetAsync_UniqueIndexBrokenBySimultaneousFirstSave_ReturnsTheConflictCode()
     {

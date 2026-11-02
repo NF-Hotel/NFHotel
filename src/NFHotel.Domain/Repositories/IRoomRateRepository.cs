@@ -3,7 +3,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Repositories;
 
-/// <summary>Storage of the nightly base rate per room size (MIL-051).</summary>
+/// <summary>Storage of the nightly base rate per room size (MIL-055).</summary>
 public interface IRoomRateRepository : IRepository<RoomRate, int>
 {
     /// <summary>Finds the rate of a room size.</summary>

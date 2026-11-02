@@ -2,7 +2,7 @@ namespace NFHotel.Application.UseCases.Pricing;
 
 /// <summary>
 /// Turns the monthly occupancy of the market analysis, the base rates and the settings into price suggestions for the
-/// next twelve months (MIL-051). Pure: it reads no clock, store, AI text or network, so the same input gives the same output.
+/// next twelve months (MIL-055). Pure: it reads no clock, store, AI text or network, so the same input gives the same output.
 /// </summary>
 public static class PriceSuggestionRule
 {

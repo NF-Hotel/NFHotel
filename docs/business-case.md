@@ -25,7 +25,7 @@
 | 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Amended: objective 26, hotel staff sign in and work with rooms from the mobile app through the API on the staff token alone (MIL-029, ADR-0015); accepted after RC-133 Go | [1c3efb9] |
 | 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Amended: objective 27, staff accounts and passwords (MIL-030), and success criterion 30 (accepted after RC-150 Go) | [0891cf1] |
 | 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Amended: objective 28 and success criterion 31, NF Hotel on the public internet through Cloudflare Tunnel; the public address of the mobile app leaves the out-of-scope list (MIL-040, ADR-0028); S01 accepted MIL-040 in chat | [21ba03e] |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Amended: objective 29, success criterion 32 and one in-scope line, room price suggestions from the market analysis that a Manager approves with one click (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-258 Go | [3a17eee] |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Amended: objective 29, success criterion 32 and one in-scope line, room price suggestions from the market analysis that a Manager approves with one click (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
 
 ---
 
@@ -100,7 +100,7 @@ basis for the hosting decision (Q-31).
 26. Let hotel staff sign in and work with the rooms from the mobile app (Flutter) through the API, with the staff token alone and no shared secret in the app, so that a role sees and does in the app no more than in the back office (MIL-029, ADR-0015).
 27. Let the owner and the Managers manage staff accounts and passwords in the back office: a staff member changes their own password with the current one, a Manager creates, disables, enables and resets accounts, a change or a disable ends the old sessions at once, and account events are kept in an audit trail (MIL-030).
 28. Let guests book and the mobile app work from the public internet at `nfhotel.devmatiker.com`, without a port opened in the home network and with the back office kept on the tailnet, so that the hotel is reachable by anyone while its home stays closed (MIL-040, ADR-0028).
-29. Let a Manager approve room price changes with one click: the back office suggests a surcharge in high season and a discount on single rooms in low season, calculated by a fixed rule from the occupancy and seasonality of the market analysis, and no price changes, and no AI text sets a price, until a Manager approves; every approval, undo and change of a rule is kept in the audit trail (MIL-051).
+29. Let a Manager approve room price changes with one click: the back office suggests a surcharge in high season and a discount on single rooms in low season, calculated by a fixed rule from the occupancy and seasonality of the market analysis, and no price changes, and no AI text sets a price, until a Manager approves; every approval, undo and change of a rule is kept in the audit trail (MIL-055).
 
 ## Scope
 
@@ -133,7 +133,7 @@ basis for the hosting decision (Q-31).
 - CIS-aligned hardening of Docker and Debian, nftables, unattended security updates, log rotation and an uptime check, OpenSSF Scorecard, an OWASP SAMM baseline and DORA metrics (MIL-023)
 - Access for the mobile app: the staff token alone on the sign-in and the rooms routes of the API, a per-address limit on sign-in, a development-only route on the development server, and in the `MobileApp` repository an API client, a working login and the rooms overview and room view with the cleaning and service actions, tested against the development server in Docker (MIL-029, ADR-0015)
 - A change-password function for every staff role, account management and an audit page for the Manager, a security stamp that ends old sessions, a password policy, the `reset-staff-password` recovery command, the deploy files and the replacement of the production Manager password, and ADR-0017 (MIL-030)
-- A nightly rate per room size, settings for the season rule, price suggestions from the market analysis report, a one-click approval and undo for a Manager, audit events and the page for them (MIL-051); a price on a booking that is already made is not changed.
+- A nightly rate per room size, settings for the season rule, price suggestions from the market analysis report, a one-click approval and undo for a Manager, audit events and the page for them (MIL-055); a price on a booking that is already made is not changed.
 
 ### Out of Scope
 

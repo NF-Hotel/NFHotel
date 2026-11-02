@@ -1,6 +1,6 @@
 namespace NFHotel.Application.Dto.Pricing;
 
-/// <summary>The price of a room size on a day: the base rate with the price change that counts on that day (MIL-051).</summary>
+/// <summary>The price of a room size on a day: the base rate with the price change that counts on that day (MIL-055).</summary>
 /// <param name="Size">The room size.</param>
 /// <param name="Day">The day.</param>
 /// <param name="BaseRate">The nightly base rate, or <c>null</c> when none is set.</param>

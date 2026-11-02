@@ -7,7 +7,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
-/// <summary>Maps <see cref="PricingSetting"/> to the table <c>pricing_settings</c> (MIL-051).</summary>
+/// <summary>Maps <see cref="PricingSetting"/> to the table <c>pricing_settings</c> (MIL-055).</summary>
 public sealed class PricingSettingConfiguration : EntityConfiguration<PricingSetting, int>
 {
     private const char SizeSeparator = ',';

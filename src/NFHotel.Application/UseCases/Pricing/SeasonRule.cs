@@ -1,6 +1,6 @@
 namespace NFHotel.Application.UseCases.Pricing;
 
-/// <summary>Tells the season of an occupancy figure and of each calendar month of a market analysis (MIL-051). Pure.</summary>
+/// <summary>Tells the season of an occupancy figure and of each calendar month of a market analysis (MIL-055). Pure.</summary>
 public static class SeasonRule
 {
     private const int MonthsInYear = 12;

@@ -9,7 +9,7 @@ using NSubstitute;
 
 namespace NFHotel.Web.Tests;
 
-/// <summary>The presentation logic of the room rates page (MIL-051).</summary>
+/// <summary>The presentation logic of the room rates page (MIL-055).</summary>
 public sealed class RoomRatesViewModelTests
 {
     private static readonly DateTimeOffset At = new(2026, 11, 1, 10, 0, 0, TimeSpan.Zero);

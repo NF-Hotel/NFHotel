@@ -61,13 +61,13 @@ public sealed class HotelDbContext : DbContext
     /// <summary>The default AI model per purpose (ADR-0014).</summary>
     public DbSet<AiDefault> AiDefaults => Set<AiDefault>();
 
-    /// <summary>The nightly base rate per room size (MIL-051).</summary>
+    /// <summary>The nightly base rate per room size (MIL-055).</summary>
     public DbSet<RoomRate> RoomRates => Set<RoomRate>();
 
-    /// <summary>The price changes of the room sizes (MIL-051).</summary>
+    /// <summary>The price changes of the room sizes (MIL-055).</summary>
     public DbSet<PriceChange> PriceChanges => Set<PriceChange>();
 
-    /// <summary>The one row of pricing settings (MIL-051).</summary>
+    /// <summary>The one row of pricing settings (MIL-055).</summary>
     public DbSet<PricingSetting> PricingSettings => Set<PricingSetting>();
 
     /// <summary>The market fields of the bookings (MIL-026).</summary>

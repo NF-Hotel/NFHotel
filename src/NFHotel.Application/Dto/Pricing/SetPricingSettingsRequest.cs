@@ -1,6 +1,6 @@
 namespace NFHotel.Application.Dto.Pricing;
 
-/// <summary>The body that saves the pricing settings (MIL-051). The numbers are rounded to two decimals.</summary>
+/// <summary>The body that saves the pricing settings (MIL-055). The numbers are rounded to two decimals.</summary>
 /// <param name="SurchargePercent">The surcharge of a high season in percent, from 0 to 100.</param>
 /// <param name="DiscountPercent">The discount of a low season in percent, from 0 to 100.</param>
 /// <param name="HighThresholdPercent">The occupancy at or above which a month is high season, from 0 to 100.</param>

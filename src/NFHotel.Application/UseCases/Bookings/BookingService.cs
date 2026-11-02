@@ -60,9 +60,9 @@ public sealed class BookingService : IBookingService
     /// <param name="unitOfWork">The transaction boundary.</param>
     /// <param name="clock">Hotellets ur (A-05).</param>
     /// <param name="authorization">The service for checking staff permissions.</param>
-    /// <param name="prices">Gives the effective price of a room size on the arrival date (MIL-051).</param>
-    /// <param name="marketDetails">Stores the price per night of a new booking (MIL-051).</param>
-    /// <param name="warnings">Where a lost price of a saved booking is reported (MIL-051).</param>
+    /// <param name="prices">Gives the effective price of a room size on the arrival date (MIL-055).</param>
+    /// <param name="marketDetails">Stores the price per night of a new booking (MIL-055).</param>
+    /// <param name="warnings">Where a lost price of a saved booking is reported (MIL-055).</param>
     public BookingService(
         IBookingRepository bookingRepository,
         IRoomRepository roomRepository,
@@ -327,7 +327,7 @@ public sealed class BookingService : IBookingService
             return Result<BookingDetailsDto>.Failure(exception.Code);
         }
 
-        // MIL-051: the price is looked up before the booking is saved and stored after it; a booking made
+        // MIL-055: the price is looked up before the booking is saved and stored after it; a booking made
         // without a price (no base rate, or the lookup failed) is created exactly as before.
         var pricePerNight = await FindPricePerNightAsync(request.RoomId, period.Start, cancellationToken)
             .ConfigureAwait(false);
@@ -345,7 +345,7 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>
-    /// Finds the effective price of the size of the booked room on the arrival date (MIL-051).
+    /// Finds the effective price of the size of the booked room on the arrival date (MIL-055).
     /// </summary>
     /// <param name="roomId">The booked room.</param>
     /// <param name="arrival">The arrival date.</param>
@@ -374,7 +374,7 @@ public sealed class BookingService : IBookingService
 
     /// <summary>
     /// Stores the price per night of a booking that has just been saved, in the market details that the market
-    /// analysis reads (MIL-051).
+    /// analysis reads (MIL-055).
     /// </summary>
     /// <param name="bookingId">The saved booking.</param>
     /// <param name="pricePerNight">The price per night.</param>

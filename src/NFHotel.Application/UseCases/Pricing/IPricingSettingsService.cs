@@ -3,7 +3,7 @@ using NFHotel.Application.Dto.Pricing;
 namespace NFHotel.Application.UseCases.Pricing;
 
 /// <summary>
-/// Reads and saves the pricing settings of the Manager (MIL-051). The API implements it with the repository, and the web
+/// Reads and saves the pricing settings of the Manager (MIL-055). The API implements it with the repository, and the web
 /// application with a client over HTTP.
 /// </summary>
 public interface IPricingSettingsService

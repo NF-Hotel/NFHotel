@@ -7,7 +7,7 @@ using NFHotel.Infrastructure.Persistence;
 
 namespace NFHotel.Infrastructure.Repositories;
 
-/// <summary>Stores the nightly base rate per room size (MIL-051).</summary>
+/// <summary>Stores the nightly base rate per room size (MIL-055).</summary>
 public sealed class RoomRateRepository : Repository<RoomRate, int>, IRoomRateRepository
 {
     /// <summary>Creates the repository.</summary>

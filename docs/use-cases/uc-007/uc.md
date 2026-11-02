@@ -4,14 +4,14 @@
 | Key | Value |
 | --- | --- |
 | ID | UC-007 |
-| CrossReference | [UCD-001], [US-001], [SA-001], [UC-004], [UC-006], [MIL-051] |
+| CrossReference | [UCD-001], [US-001], [SA-001], [UC-004], [UC-006], [MIL-055] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Initial version (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-259 Go-with-conditions | [3a17eee] |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Initial version (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-264 Go-with-conditions | [3a17eee] |
 
 ---
 
@@ -71,7 +71,7 @@
 
 ### Open Issues
 
-- Whether a price change touches bookings already made, how many years of the report the season is read from (proposed: the period of the report, which the Manager chooses, at least twelve months) and the default percentages are for S01 to confirm in MIL-051 task 2.
+- Whether a price change touches bookings already made, how many years of the report the season is read from (proposed: the period of the report, which the Manager chooses, at least twelve months) and the default percentages are for S01 to confirm in MIL-055 task 2.
 - Prices per night for suites and double rooms in low season are not suggested; a later story may add them.
 
 ---
@@ -81,5 +81,5 @@
 [SA-001]: ../../stakeholder-analysis.md
 [UC-004]: ../uc-004/uc.md
 [UC-006]: ../uc-006/uc.md
-[MIL-051]: ../../milestones/mil-051-room-price-suggestions.md
+[MIL-055]: ../../milestones/mil-055-room-price-suggestions.md
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118

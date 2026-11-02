@@ -9,7 +9,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Api.Tests;
 
-/// <summary>The nightly base rate endpoints (MIL-051): staff read the rates, only a Manager sets one, and the audit page shows the change.</summary>
+/// <summary>The nightly base rate endpoints (MIL-055): staff read the rates, only a Manager sets one, and the audit page shows the change.</summary>
 public sealed class RoomRatesEndpointTests
 {
     private const string Route = "/api/room-rates";

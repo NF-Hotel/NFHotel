@@ -3,7 +3,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Repositories;
 
-/// <summary>Storage of the price changes of the room sizes (MIL-051).</summary>
+/// <summary>Storage of the price changes of the room sizes (MIL-055).</summary>
 public interface IPriceChangeRepository : IRepository<PriceChange, int>
 {
     /// <summary>

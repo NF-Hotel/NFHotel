@@ -1,10 +1,10 @@
-# RC-259 Review of UC-007, the dictionary and the Domain Model for price suggestions
+# RC-264 Review of UC-007, the dictionary and the Domain Model for price suggestions
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | RC-259 |
-| CrossReference | [UC-007], [DICT-001], [DM-004], [MIL-051], [QC-UC-001], [QC-DM-001], [QC-DICT-001] |
+| ID | RC-264 |
+| CrossReference | [UC-007], [DICT-001], [DM-004], [MIL-055], [QC-UC-001], [QC-DM-001], [QC-DICT-001] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
@@ -15,7 +15,7 @@
 
 ## Artifact Under Review
 
-- Instances reviewed: [UC-007] (new), the delta of [DICT-001] (five terms) and of [DM-004] (four concepts, three associations, four audit actions), all made by task 2 of [MIL-051].
+- Instances reviewed: [UC-007] (new), the delta of [DICT-001] (five terms) and of [DM-004] (four concepts, three associations, four audit actions), all made by task 2 of [MIL-055].
 - Checklists used: [QC-UC-001] (Fully Dressed), [QC-DM-001] and [QC-DICT-001]
 - Scope: full review of UC-007; delta review of the dictionary and the Domain Model
 - Language and domain: en / it (the Metadata rows)
@@ -86,7 +86,7 @@ Go-with-conditions: every Mandatory criterion of the delta passes. Criterion 8 o
 [UC-007]: ../../use-cases/uc-007/uc.md
 [DICT-001]: ../../dictionary.md
 [DM-004]: ../../domain-model.md
-[MIL-051]: ../../milestones/mil-051-room-price-suggestions.md
+[MIL-055]: ../../milestones/mil-055-room-price-suggestions.md
 [QC-UC-001]: ../../../framework/qc/artifacts/qc-use-case.md
 [QC-DM-001]: ../../../framework/qc/artifacts/qc-domain-model.md
 [QC-DICT-001]: ../../../framework/qc/artifacts/qc-dictionary.md

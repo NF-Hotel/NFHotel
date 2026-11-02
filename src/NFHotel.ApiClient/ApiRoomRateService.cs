@@ -6,7 +6,7 @@ using NFHotel.Application.UseCases.RoomRates;
 namespace NFHotel.ApiClient;
 
 /// <summary>
-/// Reads and sets the nightly base rate per room size through the API for the web application (MIL-051). The API takes
+/// Reads and sets the nightly base rate per room size through the API for the web application (MIL-055). The API takes
 /// the name of the staff member from the staff token.
 /// </summary>
 public sealed class ApiRoomRateService : IRoomRateService

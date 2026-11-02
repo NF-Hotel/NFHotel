@@ -1,6 +1,6 @@
 namespace NFHotel.Application.Dto.Pricing;
 
-/// <summary>The pricing settings of the Manager (MIL-051), or the defaults when none are saved.</summary>
+/// <summary>The pricing settings of the Manager (MIL-055), or the defaults when none are saved.</summary>
 /// <param name="SurchargePercent">The surcharge of a high season in percent.</param>
 /// <param name="DiscountPercent">The discount of a low season in percent.</param>
 /// <param name="HighThresholdPercent">The occupancy at or above which a month is high season.</param>

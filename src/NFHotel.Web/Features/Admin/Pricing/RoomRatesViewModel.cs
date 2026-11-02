@@ -8,7 +8,7 @@ using NFHotel.Web.Common;
 namespace NFHotel.Web.Features.Admin.Pricing;
 
 /// <summary>
-/// State of the room rates page (MIL-051): the nightly base rate of each room size, who set it and when, and one price
+/// State of the room rates page (MIL-055): the nightly base rate of each room size, who set it and when, and one price
 /// field per size. The page holds only markup and binding; the API checks the role and every rule again.
 /// </summary>
 public sealed class RoomRatesViewModel

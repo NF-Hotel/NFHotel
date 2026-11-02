@@ -4,7 +4,7 @@ using NFHotel.TestSupport;
 
 namespace NFHotel.Application.Tests.Services;
 
-/// <summary>The audit events that an approval and a revert of a price change write in the same save (MIL-051).</summary>
+/// <summary>The audit events that an approval and a revert of a price change write in the same save (MIL-055).</summary>
 public sealed class PriceChangeAuditTests
 {
     private static readonly DateOnly First = new(2027, 6, 1);

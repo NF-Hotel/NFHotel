@@ -7,7 +7,7 @@ using NFHotel.Infrastructure.Repositories;
 
 namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
 
-/// <summary>The room rate table against a real PostgreSQL: one rate per size, the reads, and the audit detail column (MIL-051).</summary>
+/// <summary>The room rate table against a real PostgreSQL: one rate per size, the reads, and the audit detail column (MIL-055).</summary>
 [Collection(PostgreSqlCollection.Name)]
 public sealed class RoomRateRepositoryTests : IAsyncLifetime
 {

@@ -3,7 +3,7 @@ using NFHotel.Application.Dto.Pricing;
 namespace NFHotel.Application.UseCases.Pricing;
 
 /// <summary>
-/// The price suggestions of the Manager (MIL-051): the open suggestions from the latest market analysis, the approval of one,
+/// The price suggestions of the Manager (MIL-055): the open suggestions from the latest market analysis, the approval of one,
 /// the revert of a price change, the list of the price changes and the effective prices of a day. The staff member who acts
 /// is the caller of the use case.
 /// </summary>

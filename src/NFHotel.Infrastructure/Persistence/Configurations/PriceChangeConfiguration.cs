@@ -5,7 +5,7 @@ using NFHotel.Domain.Entities;
 
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
-/// <summary>Maps <see cref="PriceChange"/> to the table <c>price_change</c> (MIL-051).</summary>
+/// <summary>Maps <see cref="PriceChange"/> to the table <c>price_change</c> (MIL-055).</summary>
 public sealed class PriceChangeConfiguration : EntityConfiguration<PriceChange, int>
 {
     /// <inheritdoc />

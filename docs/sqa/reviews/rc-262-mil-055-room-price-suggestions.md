@@ -1,10 +1,10 @@
-# RC-257 Review of MIL-051 Room price suggestions
+# RC-262 Review of MIL-055 Room price suggestions
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | RC-257 |
-| CrossReference | [MIL-051], [QC-MIL-001], [QC-LANG-001] |
+| ID | RC-262 |
+| CrossReference | [MIL-055], [QC-MIL-001], [QC-LANG-001] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
@@ -15,10 +15,10 @@
 
 ## Artifact Under Review
 
-- Instance reviewed: [MIL-051]
+- Instance reviewed: [MIL-055]
 - Checklist used: [QC-MIL-001] and [QC-LANG-001]
 - Scope: full review
-- Language and domain: en / it (the Metadata rows of MIL-051)
+- Language and domain: en / it (the Metadata rows of MIL-055)
 - Language reviewer: none; the reviewer reads the language and knows the domain
 - Mode: supervised (the AI wrote the milestone and the pre-review; S01 reviews and accepts in chat)
 
@@ -49,19 +49,19 @@
 
 ## Overall Verdict
 
-Go: every Mandatory criterion passes; two pass on condition (criterion 4 of QC-MIL-001 and criterion 5 of QC-LANG-001), which tasks 1 and 2 fulfil before any code. S01 accepted MIL-051 in chat on 2026-11-01.
+Go: every Mandatory criterion passes; two pass on condition (criterion 4 of QC-MIL-001 and criterion 5 of QC-LANG-001), which tasks 1 and 2 fulfil before any code. S01 accepted MIL-055 in chat on 2026-11-01.
 
 ## Action Items
 
 | Action | Owner | Due |
 | --- | --- | --- |
 | Confirm the open points of task 2: thresholds 80 and 40 percent, discount 15 percent, cap 30 percent, years of the report read, effect on bookings already made | S01 | before task 3 |
-| Accept MIL-051 or ask for changes | S01 | 2026-11-06 |
+| Accept MIL-055 or ask for changes | S01 | 2026-11-06 |
 | Merge MIL-026 first, since the page reads its report | S01 | 2026-11-13 |
 
 ---
 
-[MIL-051]: ../../milestones/mil-051-room-price-suggestions.md
+[MIL-055]: ../../milestones/mil-055-room-price-suggestions.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118

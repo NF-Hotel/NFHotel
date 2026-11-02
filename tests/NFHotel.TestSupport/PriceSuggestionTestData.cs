@@ -6,7 +6,7 @@ using NFHotel.Domain.Entities;
 
 namespace NFHotel.TestSupport;
 
-/// <summary>Builds market analysis reports with an occupancy by month, and stores one as the latest report (MIL-051).</summary>
+/// <summary>Builds market analysis reports with an occupancy by month, and stores one as the latest report (MIL-055).</summary>
 public static class PriceSuggestionTestData
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

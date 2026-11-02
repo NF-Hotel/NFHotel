@@ -1,9 +1,9 @@
-# MIL-051 Room price suggestions with one-click approval
+# MIL-055 Room price suggestions with one-click approval
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | MIL-051 |
+| ID | MIL-055 |
 | CrossReference | [BC-001], [US-001], [MIL-026], [MIL-028], [MIL-030] |
 | Language | en |
 | Domain | it |
@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Initial version; accepted by S01 in chat on 2026-11-01 after RC-257 Go | [3a17eee] |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Initial version; accepted by S01 in chat on 2026-11-01 after RC-262 Go | [3a17eee] |
 
 ---
 

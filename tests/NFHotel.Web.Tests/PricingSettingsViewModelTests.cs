@@ -10,7 +10,7 @@ using NSubstitute;
 
 namespace NFHotel.Web.Tests;
 
-/// <summary>The presentation logic of the pricing settings page (MIL-051).</summary>
+/// <summary>The presentation logic of the pricing settings page (MIL-055).</summary>
 public sealed class PricingSettingsViewModelTests
 {
     private static readonly DateTimeOffset At = new(2026, 11, 1, 10, 30, 0, TimeSpan.Zero);

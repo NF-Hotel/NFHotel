@@ -10,7 +10,7 @@ using NFHotel.Web.Common;
 namespace NFHotel.Web.Features.Admin.Pricing;
 
 /// <summary>
-/// State of the price suggestions page (MIL-051): the open suggestions with the figures they rest on, the price changes, the
+/// State of the price suggestions page (MIL-055): the open suggestions with the figures they rest on, the price changes, the
 /// effective prices of today and the AI explanation. It calls only <see cref="IPriceSuggestionService"/>; the page holds only
 /// markup and binding. The API checks the role and every rule again, and the percentages come from the server, never from
 /// the AI text.

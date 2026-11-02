@@ -3,7 +3,7 @@ using NFHotel.Domain.Entities;
 namespace NFHotel.Application.UseCases.Pricing;
 
 /// <summary>
-/// The one place that knows how a percentage turns a base rate into a price (MIL-051). The suggestion rule, the approval and
+/// The one place that knows how a percentage turns a base rate into a price (MIL-055). The suggestion rule, the approval and
 /// the effective price all use it, so the price the page announces is the price the booking gets.
 /// </summary>
 internal static class PriceMath

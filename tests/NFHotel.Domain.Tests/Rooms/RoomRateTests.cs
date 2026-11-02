@@ -4,7 +4,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Tests.Rooms;
 
-/// <summary>The rules of the nightly base rate of a room size (MIL-051).</summary>
+/// <summary>The rules of the nightly base rate of a room size (MIL-055).</summary>
 public sealed class RoomRateTests
 {
     private static readonly DateTimeOffset At = new(2026, 11, 1, 10, 0, 0, TimeSpan.FromHours(1));

@@ -14,7 +14,7 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version | [c74d991] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added Staff member, User name, Role, Password and Active (MIL-016) | [1593b34] |
 | 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Must change password, Security stamp and Audit event (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Added Room rate, Price change, Price suggestion, Season and Pricing settings (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-259 Go-with-conditions | [3a17eee] |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Added Room rate, Price change, Price suggestion, Season and Pricing settings (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-264 Go-with-conditions | [3a17eee] |
 
 ---
 

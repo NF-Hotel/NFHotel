@@ -3,7 +3,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.Tests.Services;
 
-/// <summary>The pure rule that turns monthly occupancy and base rates into price suggestions (MIL-051, task 4).</summary>
+/// <summary>The pure rule that turns monthly occupancy and base rates into price suggestions (MIL-055, task 4).</summary>
 public sealed class PriceSuggestionRuleTests
 {
     // The horizon of this day is 2026-02 .. 2027-01, so June to August lie in 2026.

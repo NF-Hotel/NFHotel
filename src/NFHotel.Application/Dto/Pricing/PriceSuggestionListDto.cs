@@ -1,6 +1,6 @@
 namespace NFHotel.Application.Dto.Pricing;
 
-/// <summary>The open price suggestions of the day (MIL-051).</summary>
+/// <summary>The open price suggestions of the day (MIL-055).</summary>
 /// <param name="Basis"><see cref="PriceSuggestionBasis.Ok"/> or <see cref="PriceSuggestionBasis.NoBasis"/>.</param>
 /// <param name="GeneratedForDay">The day the suggestions were made for (today in the hotel time zone).</param>
 /// <param name="Items">The open suggestions ordered by first day and room size; empty without a basis.</param>

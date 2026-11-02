@@ -1,10 +1,10 @@
-# RC-260 Review of the code of MIL-051 tasks 3 to 9 against QC-CS-001
+# RC-265 Review of the code of MIL-055 tasks 3 to 9 against QC-CS-001
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | RC-260 |
-| CrossReference | [MIL-051], [QC-CS-001] |
+| ID | RC-265 |
+| CrossReference | [MIL-055], [QC-CS-001] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
@@ -15,9 +15,9 @@
 
 ## Artifact Under Review
 
-- Instance reviewed: the code of [MIL-051] tasks 3 to 9, uncommitted in the working tree of the branch `mil-051-price-suggestions`: `RoomRate`, `PricingSetting`, `PriceChange` (Domain); `SeasonRule`, `PriceSuggestionRule`, `OccupancyObservationReader`, `PricingSettings`, `RoomRateService`, `PricingSettingsService`, `PriceChangeService`, `PriceSuggestionService` and the DTOs (Application); `RoomRatesController`, `PricingSettingsController`, `PriceSuggestionsController`, `PriceChangesController` (Api); `ApiRoomRateService`, `ApiPricingSettingsService`, `ApiPriceSuggestionService` (ApiClient); the repositories, configurations and the migrations `AddRoomRateAndAuditDetail`, `AddPricingSettings`, `AddPriceChange` (Infrastructure); the pages `RoomRates`, `PricingSettings`, `PriceSuggestions`, their view models, the price column of `RoomList`, `NumberInput`, `ErrorMessages`, the menu and the Detail column of the audit page (Web); the change to `BookingService` (price of a new booking) and to `MarketAnalysisBookingQueries`; 65 new `.cs` files (without the designers), 18 changed `.cs` files under `src/` and the snapshot, and the tests that belong to them. Not part of this review: task 10 (wiki, traceability matrix) and criterion 11 of the milestone (the look on the dev VM).
+- Instance reviewed: the code of [MIL-055] tasks 3 to 9, uncommitted in the working tree of the branch `mil-055-price-suggestions`: `RoomRate`, `PricingSetting`, `PriceChange` (Domain); `SeasonRule`, `PriceSuggestionRule`, `OccupancyObservationReader`, `PricingSettings`, `RoomRateService`, `PricingSettingsService`, `PriceChangeService`, `PriceSuggestionService` and the DTOs (Application); `RoomRatesController`, `PricingSettingsController`, `PriceSuggestionsController`, `PriceChangesController` (Api); `ApiRoomRateService`, `ApiPricingSettingsService`, `ApiPriceSuggestionService` (ApiClient); the repositories, configurations and the migrations `AddRoomRateAndAuditDetail`, `AddPricingSettings`, `AddPriceChange` (Infrastructure); the pages `RoomRates`, `PricingSettings`, `PriceSuggestions`, their view models, the price column of `RoomList`, `NumberInput`, `ErrorMessages`, the menu and the Detail column of the audit page (Web); the change to `BookingService` (price of a new booking) and to `MarketAnalysisBookingQueries`; 65 new `.cs` files (without the designers), 18 changed `.cs` files under `src/` and the snapshot, and the tests that belong to them. Not part of this review: task 10 (wiki, traceability matrix) and criterion 11 of the milestone (the look on the dev VM).
 - Checklist used: [QC-CS-001] (`framework/qc/code/qc-programming-csharp.md`; its Metadata ID is `QC-CS-001`, the scaffold name `QC-PROGRAMMING-CSHARP` is not an ID in that file). It has 21 criteria; criteria 19 to 21 are newer than the earlier records of this repository, which stop at criterion 18.
-- Scope: full review; additionally the ten Go / No-Go criteria of [MIL-051] and the points (a) to (h) the review was asked to cover
+- Scope: full review; additionally the ten Go / No-Go criteria of [MIL-055] and the points (a) to (h) the review was asked to cover
 - Language and domain: n/a for a technical type
 - Language reviewer: none
 - Mode: supervised (the AI reviews; S01 accepts or challenges in chat). The review is not independent: the same AI built the code. The review changed, committed and fixed nothing.
@@ -59,7 +59,7 @@
 | 20 | SIMD / CUDA | N-A | No acceleration |
 | 21 | Every type under `src/` groups its members in `#region` blocks | **Fail** | 0 of the 65 new files and 0 of the 350 tracked `.cs` files under `src/` hold a `#region` (grep). The tests use regions (`PriceChangeRepositoryTests.cs:28`). The criterion is Mandatory and the build does not enforce it. See F4 |
 
-## Go / No-Go criteria of MIL-051 (1 to 10)
+## Go / No-Go criteria of MIL-055 (1 to 10)
 
 Criterion 11 (the look at the page on the dev VM) is not part of this review and is not judged here.
 
@@ -146,7 +146,7 @@ Criterion 11 (the look at the page on the dev VM) is not part of this review and
 | F4 | **Major** | all 65 new files; 0 of 350 tracked `src/` files | Criterion 21 requires named `#region` blocks in every type under `src/`; none has them | As F3: waive with a decision, or one mechanical conversion plus an architecture test (`TestRulesTests` already does this for tests, RC-054) |
 | F5 | Minor | `PriceSuggestionService.cs:17-20`; `PriceChangeConfiguration.cs:29-30`; `AddPriceChange.cs` | The rule "no two approved changes of a size overlap" is kept only by a per-process lock; the database has no exclusion constraint or check (`first_day <= last_day`, `percentage <> 0`); `IPriceChangeService.ApproveAsync` does not lock itself | Accept for one API instance and write the assumption in the Domain Model; or add a `btree_gist` exclusion constraint on size and the counted period for approved rows, plus the checks, in a new migration; move the lock into `PriceChangeService.ApproveAsync` |
 | F6 | Major (Mandatory criterion 14) | `PriceSuggestionRule.cs:84-85` and `PriceChangeService.cs:189-190`; `RoomSizeText.cs`, `RoomRateService.cs` (`TryParseSize`), `PricingSettingsService.cs` (`TryParseSizes`); `RoomRateService.Format`, `PricingSettingsService.Format`, `NumberInput.Format`; `ErrorMessages.cs` | The same knowledge is written more than once: the price formula (root of F1), the parsing of a size by its name, the `0.00` format, the limits | One `PriceMath.Apply(rate, signedPercent)` used by the rule and the effective price; `RoomRateService` and `PricingSettingsService` call `RoomSizeText.TryParse`; one money formatter in Application; build the error texts from the entity constants; English the `Annulleringstoken` param text |
-| F7 | Major | `tests/NFHotel.Infrastructure.Tests/Integration/Persistence/*RepositoryTests.cs` (`Migrations_AppliedToAnEmptyDatabase_*`); MIL-051 criterion 9 | No test applies the new migrations to a database that already has rooms (the 187 seeded), none runs `Down`; the test names say "MatchTheModel" but assert the migration id, the row count and the index | Add one integration test: migrate to the migration before `AddRoomRateAndAuditDetail`, insert 187 rooms with the seeder, migrate to the latest, assert the rooms and the empty new tables; assert that the model has no pending changes; rename the existing tests |
+| F7 | Major | `tests/NFHotel.Infrastructure.Tests/Integration/Persistence/*RepositoryTests.cs` (`Migrations_AppliedToAnEmptyDatabase_*`); MIL-055 criterion 9 | No test applies the new migrations to a database that already has rooms (the 187 seeded), none runs `Down`; the test names say "MatchTheModel" but assert the migration id, the row count and the index | Add one integration test: migrate to the migration before `AddRoomRateAndAuditDetail`, insert 187 rooms with the seeder, migrate to the latest, assert the rooms and the empty new tables; assert that the model has no pending changes; rename the existing tests |
 | F8 | Minor | `src/NFHotel.Infrastructure/Persistence/Configurations/PricingSettingConfiguration.cs:37` | `left!` and `right!` without the comment criterion 4 requires | Write why (the comparer is never given null) or compare with null checks |
 | F9 | Minor | `BookingService.cs` (remark of `FindPricePerNightAsync`, `:340-352`) | The comment says a lookup error is treated as "no price"; only a failed `Result` is, an exception propagates | Correct the comment, or catch as in F2 |
 | F10 | Minor | `MarketAnalysisBookingQueries.cs:66,95-108`; the milestone text | The "price-only row reads as unknown" heuristic would hide a real all-zero imported row and relies on an unwritten link to the zeros of `StorePricePerNightAsync`. Also: the permission is `Prices.Manage` (existing), the milestone says `Pricing.Manage`; the page is `/admin/pricing/suggestions`, the milestone says `Admin/PriceSuggestions` | An explicit marker (a nullable column or type) instead of the guess; or a test with an all-zero imported row and the limit noted in the Domain Model. Correct the milestone text |
@@ -167,10 +167,10 @@ The verdict becomes Go-with-conditions when F1, F2, F6 and F7 are fixed and re-r
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| Fix F1: make the percentage and the price agree under the minimum price, with a rule test and an approve-then-effective-price test | AI as stand-in for S01 | Before the pull request of MIL-051 |
-| Fix F2: one save with the navigation, or a logged catch | AI as stand-in for S01 | Before the pull request of MIL-051 |
-| Fix F7: the migration test with 187 rooms, the pending-model check, rename the tests | AI as stand-in for S01 | Before the pull request of MIL-051 |
-| Fix F6: one price function, one size parser, one money formatter | AI as stand-in for S01 | Before the pull request of MIL-051 |
+| Fix F1: make the percentage and the price agree under the minimum price, with a rule test and an approve-then-effective-price test | AI as stand-in for S01 | Before the pull request of MIL-055 |
+| Fix F2: one save with the navigation, or a logged catch | AI as stand-in for S01 | Before the pull request of MIL-055 |
+| Fix F7: the migration test with 187 rooms, the pending-model check, rename the tests | AI as stand-in for S01 | Before the pull request of MIL-055 |
+| Fix F6: one price function, one size parser, one money formatter | AI as stand-in for S01 | Before the pull request of MIL-055 |
 | Decide F3 and F4: waive `var` and `#region` for this repository in a recorded decision, or order a mechanical conversion as its own milestone | S01 | 2026-11-06 |
 | Re-review the changed code as a delta of this record (criteria 3, 4, 7, 12, 14, Go / No-Go 2 and 9) | AI as stand-in for S01 | After the fixes |
 | Decide F5, F10, F12, F13: accept as follow-ups, or add a database constraint for the overlap | S01 | 2026-11-06 |
@@ -179,6 +179,6 @@ The verdict becomes Go-with-conditions when F1, F2, F6 and F7 are fixed and re-r
 
 ---
 
-[MIL-051]: ../../milestones/mil-051-room-price-suggestions.md
+[MIL-055]: ../../milestones/mil-055-room-price-suggestions.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118

@@ -10,7 +10,7 @@ using NSubstitute;
 
 namespace NFHotel.Web.Tests;
 
-/// <summary>The presentation logic of the price suggestions page (MIL-051).</summary>
+/// <summary>The presentation logic of the price suggestions page (MIL-055).</summary>
 public sealed class PriceSuggestionsViewModelTests
 {
     private const string Key = "Single|High|2026-12-01|2027-02-28";

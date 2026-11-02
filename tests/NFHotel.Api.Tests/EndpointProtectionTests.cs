@@ -89,7 +89,7 @@ public sealed class EndpointProtectionTests
     }
 
     /// <summary>
-    /// The room rate routes are never public (MIL-051): the read needs the permission to see rooms and the write the
+    /// The room rate routes are never public (MIL-055): the read needs the permission to see rooms and the write the
     /// permission to manage prices.
     /// </summary>
     [Fact]
@@ -112,7 +112,7 @@ public sealed class EndpointProtectionTests
     }
 
     /// <summary>
-    /// The pricing settings routes are never public (MIL-051): the read and the write both need the permission to manage
+    /// The pricing settings routes are never public (MIL-055): the read and the write both need the permission to manage
     /// prices.
     /// </summary>
     [Fact]
@@ -135,7 +135,7 @@ public sealed class EndpointProtectionTests
     }
 
     /// <summary>
-    /// The price suggestion and price change routes are never public (MIL-051): every action needs the permission to manage
+    /// The price suggestion and price change routes are never public (MIL-055): every action needs the permission to manage
     /// prices.
     /// </summary>
     [Fact]

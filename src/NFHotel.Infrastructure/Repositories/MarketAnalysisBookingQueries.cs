@@ -61,7 +61,7 @@ public sealed class MarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
     {
         var (weekend, week) = StayNights.Split(start, end);
 
-        // A booking made in the hotel holds only its price (MIL-051): its guests, meal and so on are not known, and the
+        // A booking made in the hotel holds only its price (MIL-055): its guests, meal and so on are not known, and the
         // zeros of the row would count as "0 guests", "not a repeated guest" and "no special requests" in the analysis.
         var traits = detail is { } known && !IsPriceOnly(known) ? known : null;
 

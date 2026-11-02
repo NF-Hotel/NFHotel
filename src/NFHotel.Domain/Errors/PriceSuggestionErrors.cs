@@ -1,7 +1,7 @@
 namespace NFHotel.Domain.Errors;
 
 /// <summary>
-/// Error codes of the price suggestions (MIL-051). A code is a stable string; the text for the user is the concern of the
+/// Error codes of the price suggestions (MIL-055). A code is a stable string; the text for the user is the concern of the
 /// presentation layer.
 /// </summary>
 public static class PriceSuggestionErrors

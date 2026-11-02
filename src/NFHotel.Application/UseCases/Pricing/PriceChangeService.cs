@@ -11,7 +11,7 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Application.UseCases.Pricing;
 
 /// <summary>
-/// Creates and reverts price changes and gives the effective price of a room size on a day (MIL-051). An approval and a
+/// Creates and reverts price changes and gives the effective price of a room size on a day (MIL-055). An approval and a
 /// revert write their audit event in the same save as the change.
 /// </summary>
 public sealed class PriceChangeService : IPriceChangeService

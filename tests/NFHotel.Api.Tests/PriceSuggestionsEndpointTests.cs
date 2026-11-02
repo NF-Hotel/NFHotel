@@ -12,7 +12,7 @@ using NFHotel.TestSupport;
 namespace NFHotel.Api.Tests;
 
 /// <summary>
-/// The price suggestion and price change endpoints (MIL-051): a Manager lists the suggestions, approves one, reads the
+/// The price suggestion and price change endpoints (MIL-055): a Manager lists the suggestions, approves one, reads the
 /// changes and the effective prices, and reverts; every other caller is refused; the audit page shows both acts.
 /// </summary>
 public sealed class PriceSuggestionsEndpointTests

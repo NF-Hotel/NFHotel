@@ -2,7 +2,7 @@ using NFHotel.Domain.Entities;
 
 namespace NFHotel.Application.UseCases.Pricing;
 
-/// <summary>The one mapping from the stored pricing settings to the settings of the rule (MIL-051).</summary>
+/// <summary>The one mapping from the stored pricing settings to the settings of the rule (MIL-055).</summary>
 public static class PricingSettingMapping
 {
     /// <summary>Maps the stored settings to the record the pricing rule reads.</summary>

@@ -3,7 +3,7 @@ using NFHotel.Application.Dto.Pricing;
 namespace NFHotel.Application.UseCases.Pricing;
 
 /// <summary>
-/// Creates and reverts price changes and gives the effective price of a room size on a day (MIL-051). The staff member
+/// Creates and reverts price changes and gives the effective price of a room size on a day (MIL-055). The staff member
 /// who approves or reverts is the caller of the use case.
 /// </summary>
 public interface IPriceChangeService

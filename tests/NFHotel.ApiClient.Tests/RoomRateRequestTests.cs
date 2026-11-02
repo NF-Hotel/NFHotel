@@ -4,7 +4,7 @@ using NFHotel.Application.Dto.RoomRates;
 
 namespace NFHotel.ApiClient.Tests;
 
-/// <summary>The web application reads and sets the nightly base rates through the API (MIL-051).</summary>
+/// <summary>The web application reads and sets the nightly base rates through the API (MIL-055).</summary>
 public sealed class RoomRateRequestTests
 {
     private static readonly Uri Base = new("http://api.test/");

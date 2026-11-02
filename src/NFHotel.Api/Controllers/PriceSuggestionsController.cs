@@ -10,7 +10,7 @@ using NFHotel.Application.UseCases.Staff;
 namespace NFHotel.Api.Controllers;
 
 /// <summary>
-/// The open price suggestions of the Manager and their approval (MIL-051). Both need a staff token that holds
+/// The open price suggestions of the Manager and their approval (MIL-055). Both need a staff token that holds
 /// <see cref="Permissions.ManagePrices"/>. The approval is limited per account by the policy
 /// <see cref="StaffController.WriteLimitPolicy"/>.
 /// </summary>

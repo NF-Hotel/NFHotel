@@ -3,7 +3,7 @@ using NFHotel.Application.Dto.RoomRates;
 namespace NFHotel.Application.UseCases.RoomRates;
 
 /// <summary>
-/// Reads and sets the nightly base rate per room size (MIL-051). The API implements it with the repository, and the web
+/// Reads and sets the nightly base rate per room size (MIL-055). The API implements it with the repository, and the web
 /// application with a client over HTTP.
 /// </summary>
 public interface IRoomRateService

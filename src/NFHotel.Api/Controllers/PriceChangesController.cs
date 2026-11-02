@@ -9,7 +9,7 @@ using NFHotel.Application.UseCases.Staff;
 namespace NFHotel.Api.Controllers;
 
 /// <summary>
-/// The price changes of the Manager (MIL-051): the list, the revert and the effective prices of a day. Every action needs a
+/// The price changes of the Manager (MIL-055): the list, the revert and the effective prices of a day. Every action needs a
 /// staff token that holds <see cref="Permissions.ManagePrices"/>. The revert is limited per account by the policy
 /// <see cref="StaffController.WriteLimitPolicy"/>.
 /// </summary>

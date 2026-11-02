@@ -10,7 +10,7 @@ using NFHotel.Web.Common;
 namespace NFHotel.Web.Features.Admin.Pricing;
 
 /// <summary>
-/// State of the pricing settings page (MIL-051): the six numbers, the room sizes that get a discount, and who saved them
+/// State of the pricing settings page (MIL-055): the six numbers, the room sizes that get a discount, and who saved them
 /// last. The page holds only markup and binding; the API checks the role and every rule again.
 /// </summary>
 public sealed class PricingSettingsViewModel

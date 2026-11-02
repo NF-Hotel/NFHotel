@@ -10,7 +10,7 @@ using NFHotel.Application.UseCases.Staff;
 namespace NFHotel.Api.Controllers;
 
 /// <summary>
-/// The nightly base rate per room size (MIL-051). Staff who may see the rooms read the rates; only a Manager, with a staff
+/// The nightly base rate per room size (MIL-055). Staff who may see the rooms read the rates; only a Manager, with a staff
 /// token that holds <see cref="Permissions.ManagePrices"/>, sets one. The writes are limited per account by the policy
 /// <see cref="StaffController.WriteLimitPolicy"/>.
 /// </summary>

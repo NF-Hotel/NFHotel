@@ -6,7 +6,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Tests.Rooms;
 
-/// <summary>The rules of a price change of a room size: its fields, the days it counts on, and the revert (MIL-051).</summary>
+/// <summary>The rules of a price change of a room size: its fields, the days it counts on, and the revert (MIL-055).</summary>
 public sealed class PriceChangeTests
 {
     private static readonly DateTimeOffset At = new(2027, 5, 1, 10, 0, 0, TimeSpan.FromHours(1));

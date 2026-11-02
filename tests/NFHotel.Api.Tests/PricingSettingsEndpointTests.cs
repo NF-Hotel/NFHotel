@@ -9,7 +9,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Api.Tests;
 
-/// <summary>The pricing settings endpoints (MIL-051): only a Manager reads or saves them, and the audit page shows the change.</summary>
+/// <summary>The pricing settings endpoints (MIL-055): only a Manager reads or saves them, and the audit page shows the change.</summary>
 public sealed class PricingSettingsEndpointTests
 {
     private const string Route = "/api/pricing-settings";

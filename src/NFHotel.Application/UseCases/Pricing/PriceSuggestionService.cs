@@ -10,7 +10,7 @@ using NFHotel.Domain.Repositories;
 namespace NFHotel.Application.UseCases.Pricing;
 
 /// <summary>
-/// Makes the open price suggestions from the latest market analysis and approves one (MIL-051). The figures come from
+/// Makes the open price suggestions from the latest market analysis and approves one (MIL-055). The figures come from
 /// <see cref="PriceSuggestionRule"/> alone; the AI text of the report is passed on as an explanation and never read as a number.
 /// </summary>
 public sealed class PriceSuggestionService : IPriceSuggestionService

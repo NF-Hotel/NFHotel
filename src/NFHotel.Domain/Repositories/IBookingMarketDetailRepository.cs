@@ -2,7 +2,7 @@ using NFHotel.Domain.Entities;
 
 namespace NFHotel.Domain.Repositories;
 
-/// <summary>Stores the market details of a booking, such as the price per night it was made at (MIL-051).</summary>
+/// <summary>Stores the market details of a booking, such as the price per night it was made at (MIL-055).</summary>
 public interface IBookingMarketDetailRepository : IRepository<BookingMarketDetail, int>
 {
     /// <summary>

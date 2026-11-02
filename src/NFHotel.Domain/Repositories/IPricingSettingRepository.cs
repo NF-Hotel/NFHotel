@@ -2,7 +2,7 @@ using NFHotel.Domain.Entities;
 
 namespace NFHotel.Domain.Repositories;
 
-/// <summary>Storage of the one row of pricing settings (MIL-051).</summary>
+/// <summary>Storage of the one row of pricing settings (MIL-055).</summary>
 public interface IPricingSettingRepository : IRepository<PricingSetting, int>
 {
     /// <summary>Gets the stored settings.</summary>

@@ -6,7 +6,7 @@ using NFHotel.Infrastructure.Repositories;
 
 namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
 
-/// <summary>The price change table against a real PostgreSQL: the round trip, the reads by size and period, the revert and the index (MIL-051).</summary>
+/// <summary>The price change table against a real PostgreSQL: the round trip, the reads by size and period, the revert and the index (MIL-055).</summary>
 [Collection(PostgreSqlCollection.Name)]
 public sealed class PriceChangeRepositoryTests : IAsyncLifetime
 {

@@ -1,6 +1,6 @@
 namespace NFHotel.Application.UseCases.Pricing;
 
-/// <summary>The season of a calendar month, judged by its average occupancy (MIL-051).</summary>
+/// <summary>The season of a calendar month, judged by its average occupancy (MIL-055).</summary>
 public enum Season
 {
     /// <summary>Neither high nor low: no price suggestion.</summary>

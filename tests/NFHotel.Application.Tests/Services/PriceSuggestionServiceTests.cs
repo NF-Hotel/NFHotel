@@ -7,7 +7,7 @@ using NFHotel.TestSupport;
 
 namespace NFHotel.Application.Tests.Services;
 
-/// <summary>The open price suggestions, their approval and the revert, with the audit events (MIL-051, UC-007).</summary>
+/// <summary>The open price suggestions, their approval and the revert, with the audit events (MIL-055, UC-007).</summary>
 public sealed class PriceSuggestionServiceTests
 {
     private const string HighSingleKey = "single|2027-06-01|2027-08-31|20.00";
@@ -310,7 +310,7 @@ public sealed class PriceSuggestionServiceTests
     }
 
     /// <summary>
-    /// Regression (RC-260 F1): with a minimum of 90 and a base rate of 100 the low season suggestion says 90.00; approving it
+    /// Regression (RC-265 F1): with a minimum of 90 and a base rate of 100 the low season suggestion says 90.00; approving it
     /// gives an effective price of at least 90, the one the page announced, not 85.
     /// </summary>
     [Fact]

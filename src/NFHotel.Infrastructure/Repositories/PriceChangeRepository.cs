@@ -7,7 +7,7 @@ using NFHotel.Infrastructure.Persistence;
 
 namespace NFHotel.Infrastructure.Repositories;
 
-/// <summary>Stores the price changes of the room sizes (MIL-051).</summary>
+/// <summary>Stores the price changes of the room sizes (MIL-055).</summary>
 public sealed class PriceChangeRepository : Repository<PriceChange, int>, IPriceChangeRepository
 {
     /// <summary>Creates the repository.</summary>

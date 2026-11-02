@@ -1,10 +1,10 @@
-# RC-258 Review of objective 29, US-001.12 and the use case Approve a Price Suggestion
+# RC-263 Review of objective 29, US-001.12 and the use case Approve a Price Suggestion
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | RC-258 |
-| CrossReference | [BC-001], [US-001], [UCD-001], [MIL-051], [QC-BC-001], [QC-US-001], [QC-UCD-001] |
+| ID | RC-263 |
+| CrossReference | [BC-001], [US-001], [UCD-001], [MIL-055], [QC-BC-001], [QC-US-001], [QC-UCD-001] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
@@ -15,7 +15,7 @@
 
 ## Artifact Under Review
 
-- Instances reviewed: the delta of [BC-001] (objective 29, success criterion 32, one In Scope line), of [US-001] (US-001.12) and of [UCD-001] (the use case Approve a Price Suggestion, the Manager role), all made by task 1 of [MIL-051].
+- Instances reviewed: the delta of [BC-001] (objective 29, success criterion 32, one In Scope line), of [US-001] (US-001.12) and of [UCD-001] (the use case Approve a Price Suggestion, the Manager role), all made by task 1 of [MIL-055].
 - Checklists used: [QC-BC-001], [QC-US-001] and [QC-UCD-001]
 - Scope: delta review of the added text; the rest of each document is unchanged
 - Language and domain: en / it (the Metadata rows)
@@ -29,7 +29,7 @@
 | # | Criterion | Status | Evidence/Notes |
 | --- | --- | --- | --- |
 | 3 | Success criteria are measurable | Pass | Criterion 32 states 20 percent, single rooms only, one change per approval, 403 for two roles, one audit row per event, and the tests that check them |
-| 4 | Scope separates In Scope from Out of Scope | Pass | The In Scope line is added; it states that a booking already made keeps its price (proposed in MIL-051 task 2, for S01 to confirm) |
+| 4 | Scope separates In Scope from Out of Scope | Pass | The In Scope line is added; it states that a booking already made keeps its price (proposed in MIL-055 task 2, for S01 to confirm) |
 | 5 | Stakeholders cross-referenced by ID | Pass | No stakeholder is described inline |
 | 1, 2, 7, 8 | Cost-benefit, risks, assumptions, recommendation | N-A | Not changed by this delta |
 
@@ -41,7 +41,7 @@
 | 2 | As a / I want / So that | Pass | |
 | 3 | Testable acceptance criteria | Pass | Seven Given/When/Then criteria |
 | 4 | Traceable to a use case | Pass | UCD-001 "Approve a Price Suggestion" |
-| 5 | Fits one iteration | Fail (Optional) | Flagged in the Size column; MIL-051 tasks 3 to 8 are the split |
+| 5 | Fits one iteration | Fail (Optional) | Flagged in the Size column; MIL-055 tasks 3 to 8 are the split |
 | 6 | No technical implementation detail | Pass | The criteria name the thresholds and the roles, not tables or classes |
 | 7 | The role matches an actor of the Use Case Diagram | Pass | Hotel staff (Manager) |
 | 9 | Priority with a reason | Pass | Should, with the reason |
@@ -62,7 +62,7 @@
 | # | Criterion | Status | Evidence/Notes |
 | --- | --- | --- | --- |
 | 1 to 4, 6, 7 | Rows, code, language, register, English keys, no twin | Pass | English, IT Executive English for the Business Case and IT Professional English for the story and the diagram |
-| 5 | Domain terms are those of the dictionary | Pass, on condition | Season, price suggestion, price change and room rate are added to the dictionary by MIL-051 task 2 |
+| 5 | Domain terms are those of the dictionary | Pass, on condition | Season, price suggestion, price change and room rate are added to the dictionary by MIL-055 task 2 |
 | 8 | A change of language or domain has a Version History row | N-A | Unchanged |
 | 9 | A reviewer competent in the domain has confirmed the terms | Pass | S01 reads and confirms in chat |
 
@@ -82,7 +82,7 @@ Go: every Mandatory criterion passes; one Optional criterion (the size of US-001
 [BC-001]: ../../business-case.md
 [US-001]: ../../user-stories.md
 [UCD-001]: ../../use-case-diagram.md
-[MIL-051]: ../../milestones/mil-051-room-price-suggestions.md
+[MIL-055]: ../../milestones/mil-055-room-price-suggestions.md
 [QC-BC-001]: ../../../framework/qc/artifacts/qc-business-case.md
 [QC-US-001]: ../../../framework/qc/artifacts/qc-user-story.md
 [QC-UCD-001]: ../../../framework/qc/artifacts/qc-use-case-diagram.md

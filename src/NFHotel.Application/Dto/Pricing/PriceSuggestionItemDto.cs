@@ -1,6 +1,6 @@
 namespace NFHotel.Application.Dto.Pricing;
 
-/// <summary>An open price suggestion with the figures it rests on (MIL-051).</summary>
+/// <summary>An open price suggestion with the figures it rests on (MIL-055).</summary>
 /// <param name="Key">A stable text that names the suggestion; the approval sends it back and the server recomputes the rest.</param>
 /// <param name="Size">The room size: <c>Single</c>, <c>Double</c> or <c>Suite</c>.</param>
 /// <param name="Season">The season: <c>High</c> for a surcharge, <c>Low</c> for a discount.</param>

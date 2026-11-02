@@ -3,7 +3,7 @@ using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Domain.Tests.Staff;
 
-/// <summary>The detail text of an audit event, used for the old and the new value of a rate (MIL-051).</summary>
+/// <summary>The detail text of an audit event, used for the old and the new value of a rate (MIL-055).</summary>
 public sealed class StaffAuditEventDetailTests
 {
     private static readonly DateTimeOffset At = new(2026, 11, 1, 10, 0, 0, TimeSpan.Zero);

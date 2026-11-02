@@ -6,7 +6,7 @@ using NFHotel.Infrastructure.Persistence;
 
 namespace NFHotel.Infrastructure.Repositories;
 
-/// <summary>Stores the one row of pricing settings (MIL-051).</summary>
+/// <summary>Stores the one row of pricing settings (MIL-055).</summary>
 public sealed class PricingSettingRepository : Repository<PricingSetting, int>, IPricingSettingRepository
 {
     /// <summary>Creates the repository.</summary>

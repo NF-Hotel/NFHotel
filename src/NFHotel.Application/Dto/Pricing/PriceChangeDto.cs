@@ -1,6 +1,6 @@
 namespace NFHotel.Application.Dto.Pricing;
 
-/// <summary>A price change of one room size (MIL-051).</summary>
+/// <summary>A price change of one room size (MIL-055).</summary>
 /// <param name="Id">The key of the change.</param>
 /// <param name="Size">The room size: <c>Single</c>, <c>Double</c> or <c>Suite</c>.</param>
 /// <param name="Percentage">The change in percent: above 0 for a surcharge, below 0 for a discount.</param>

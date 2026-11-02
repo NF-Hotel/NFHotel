@@ -4,7 +4,7 @@
 
 The back office can suggest a change of the room prices for the busy and the quiet months, from the market analysis. A Manager reads the suggestion, approves it with one click and can undo it. No price changes until a Manager approves it.
 
-**For:** the Manager of the hotel (permission `Prices.Manage`). **Work:** MIL-051, user story US-001.12, use case UC-007.
+**For:** the Manager of the hotel (permission `Prices.Manage`). **Work:** MIL-055, user story US-001.12, use case UC-007.
 
 **Contents**
 1. [What the suggestions are](#what-the-suggestions-are)

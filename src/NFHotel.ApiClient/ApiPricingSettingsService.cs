@@ -6,7 +6,7 @@ using NFHotel.Application.UseCases.Pricing;
 namespace NFHotel.ApiClient;
 
 /// <summary>
-/// Reads and saves the pricing settings through the API for the web application (MIL-051). The API takes the name of the
+/// Reads and saves the pricing settings through the API for the web application (MIL-055). The API takes the name of the
 /// staff member from the staff token.
 /// </summary>
 public sealed class ApiPricingSettingsService : IPricingSettingsService

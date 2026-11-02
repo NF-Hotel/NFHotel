@@ -6,7 +6,7 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Domain.Entities;
 
 /// <summary>
-/// The pricing settings of the Manager (MIL-051): how much a price changes in a high or a low season, when a month is high
+/// The pricing settings of the Manager (MIL-055): how much a price changes in a high or a low season, when a month is high
 /// or low, and which room sizes get a discount. There is at most one row; <see cref="Slot"/> carries a unique index.
 /// </summary>
 public sealed class PricingSetting : Entity<int>

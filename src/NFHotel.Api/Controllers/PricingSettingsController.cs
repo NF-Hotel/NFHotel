@@ -10,7 +10,7 @@ using NFHotel.Application.UseCases.Staff;
 namespace NFHotel.Api.Controllers;
 
 /// <summary>
-/// The pricing settings of the Manager (MIL-051). They are the Manager's rules, so both the read and the write need a staff
+/// The pricing settings of the Manager (MIL-055). They are the Manager's rules, so both the read and the write need a staff
 /// token that holds <see cref="Permissions.ManagePrices"/>. The writes are limited per account by the policy
 /// <see cref="StaffController.WriteLimitPolicy"/>.
 /// </summary>

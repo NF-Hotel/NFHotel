@@ -6,7 +6,7 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.Domain.Entities;
 
 /// <summary>
-/// A change of the price of one room size for a period (MIL-051): a percentage on top of the base rate, positive for a
+/// A change of the price of one room size for a period (MIL-055): a percentage on top of the base rate, positive for a
 /// surcharge and negative for a discount. A change is never deleted. A revert withdraws a change that has not begun, or
 /// ends a change in force so that the base rate is back from the day of the revert.
 /// </summary>

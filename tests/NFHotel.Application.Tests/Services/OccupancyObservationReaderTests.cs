@@ -4,7 +4,7 @@ using NFHotel.TestSupport;
 
 namespace NFHotel.Application.Tests.Services;
 
-/// <summary>Reading the monthly occupancy and the explanation from a market analysis report (MIL-051).</summary>
+/// <summary>Reading the monthly occupancy and the explanation from a market analysis report (MIL-055).</summary>
 public sealed class OccupancyObservationReaderTests
 {
     private static MarketAnalysisContentDto Section(MarketAnalysisSectionDto section) => new([], [section]);

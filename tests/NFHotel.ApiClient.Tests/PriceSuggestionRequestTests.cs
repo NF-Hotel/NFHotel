@@ -4,7 +4,7 @@ using NFHotel.Application.Dto.Pricing;
 
 namespace NFHotel.ApiClient.Tests;
 
-/// <summary>The web application reads the suggestions, approves, reverts and lists the changes through the API (MIL-051).</summary>
+/// <summary>The web application reads the suggestions, approves, reverts and lists the changes through the API (MIL-055).</summary>
 public sealed class PriceSuggestionRequestTests
 {
     private static readonly Uri Base = new("http://api.test/");

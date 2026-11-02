@@ -5,7 +5,7 @@ using NFHotel.Domain.Entities;
 
 namespace NFHotel.Infrastructure.Persistence.Configurations;
 
-/// <summary>Maps <see cref="RoomRate"/> to the table <c>room_rate</c> (MIL-051).</summary>
+/// <summary>Maps <see cref="RoomRate"/> to the table <c>room_rate</c> (MIL-055).</summary>
 public sealed class RoomRateConfiguration : EntityConfiguration<RoomRate, int>
 {
     /// <inheritdoc />

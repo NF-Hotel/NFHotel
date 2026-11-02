@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | US-001 |
-| CrossReference | [UCD-001], [BC-001], [MIL-002], [MIL-016], [MIL-051] |
+| CrossReference | [UCD-001], [BC-001], [MIL-002], [MIL-016], [MIL-055] |
 | Language | en |
 | Domain | it |
 
@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.10 and US-001.11, the password and account stories (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
 | 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | US-001.04 gains a criterion: a run that a restart stops is shown as interrupted and can be started again (MIL-043, ADR-0031) | [43bcf70] |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Added US-001.12, approve a price suggestion (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-258 Go | [3a17eee] |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Added US-001.12, approve a price suggestion (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
 
 ---
 
@@ -218,7 +218,7 @@ analysis without anyone starting it by hand.
 
 | Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
 | --- | --- | --- | --- | --- |
-| UCD-001 use case "Approve a Price Suggestion" | does not yet fit one iteration | Small: splits into rates, the rule, the settings, the approval and the page (MIL-051 tasks 3 to 8) | Should | The owner wants the market analysis to lead to a price, and a room has no price today |
+| UCD-001 use case "Approve a Price Suggestion" | does not yet fit one iteration | Small: splits into rates, the rule, the settings, the approval and the page (MIL-055 tasks 3 to 8) | Should | The owner wants the market analysis to lead to a price, and a room has no price today |
 
 ## INVEST Check
 
@@ -244,7 +244,7 @@ for US-001.02.
 [SA-001]: ./stakeholder-analysis.md
 [fc8ec78]: https://github.com/NF-Hotel/NFHotel/commit/fc8ec78b24b805b10d5c056b19ed2785697ee8ff
 [MIL-016]: ./milestones/mil-016-backoffice-login.md
-[MIL-051]: ./milestones/mil-051-room-price-suggestions.md
+[MIL-055]: ./milestones/mil-055-room-price-suggestions.md
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
 [43bcf70]: https://github.com/NF-Hotel/NFHotel/commit/43bcf70046d2f2537672030b83f39f8b3fda4551
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
