@@ -23,7 +23,7 @@ name: ollama
 
 services:
   ollama:
-    image: ollama/ollama:0.40.8@sha256:2b8eecdb85aa6ea67c381c8ecffec04b2658496cf2821a8f88b0485bdff198e8
+    image: ollama/ollama:0.40.11@sha256:dea72d1e22270fe095b68fdf756d2b489d615643c5a2eaebbc5f569181e322d8
     restart: unless-stopped
     env_file: ${OLLAMA_ENV_FILE:-ollama.env}
     # Hardening (MIL-023 task 2, CIS-001). The image runs as root, which owns the models
