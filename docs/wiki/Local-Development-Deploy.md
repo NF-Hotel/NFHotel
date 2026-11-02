@@ -12,6 +12,9 @@ your machine ── Docker ── Proxmox VE container ── VM (Debian + Docke
       └──────────────────────── https://localhost:8443/  ◄────────────────────────────────────────────────────┘
 ```
 
+**On a Mac, or without KVM?** Use the [light mode](#the-light-mode-macos-or-no-kvm): `bash scripts/dev-up.sh --lite`. It
+runs the database, the API, the web application and nginx straight in Docker, at the same addresses, in about 3 GiB.
+
 ## What you need
 
 | Need | Why | Windows 11 | Linux |
@@ -60,6 +63,56 @@ your working tree to the VM and rebuild only what you name, in about 30 seconds.
 Settings through the environment: `DEV_SITE_PORT` (default 8443), `DEV_PVE_PORT` (default 8006) and `DEV_MODELS` (the
 Ollama models to pull, default `llama3.2:3b phi3.5`; an empty value pulls none) and `DEV_GPU_OLLAMA` (`off` keeps the
 Ollama of the VM even when your machine has an NVIDIA GPU).
+
+## The light mode (macOS, or no KVM)
+
+The Proxmox mode needs `/dev/kvm` inside Docker and about 14 GiB of memory, and it starts an x86 VM. Docker Desktop for
+Mac has no KVM, and an Apple Silicon Mac cannot start the VM, so on a Mac the check says
+`PROBLEM /dev/kvm is not available to Docker`. The light mode ([ADR-0035](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0035-light-local-development-stack.md))
+leaves Proxmox VE and the VM out and runs the containers of the deployed shape straight in your Docker:
+
+```text
+your machine ── Docker ── postgres, api, web, nginx
+      │                                    │
+      └── https://localhost:8443/ ◄────────┘
+```
+
+| Need | macOS | Windows 11 | Linux |
+| --- | --- | --- | --- |
+| Docker with compose 2.24.4 or later | Docker Desktop (Intel or Apple Silicon) | Docker Desktop | Docker Engine with the compose plugin |
+| bash 4 or later | `brew install bash`, then open a new terminal (macOS has bash 3.2) | Git for Windows (Git Bash) | the packages of your distribution |
+| `openssl`, `curl`, `git` | in macOS (`xcode-select --install` for git) | Git for Windows | the packages of your distribution |
+| Memory for Docker | about 3 GiB | about 3 GiB | about 3 GiB |
+| Free port | 8443 | 8443 | 8443 |
+
+No `/dev/kvm`, no privileged container. Run:
+
+```bash
+bash scripts/dev-up.sh --lite --check   # does this machine meet the needs? starts nothing
+bash scripts/dev-up.sh --lite --seed    # build, start and load the sample rooms, guests and bookings
+```
+
+The first run builds the API and the web application, a few minutes; later runs rebuild them from your working tree. At
+the end the script prints the three development accounts (`manager`, `receptionist`, `housekeeping`).
+
+| Command | What it does |
+| --- | --- |
+| `dev-up.sh --lite` | build the API and the web application from your working tree and start the four services |
+| `dev-up.sh --lite --seed` | the same, then load `db/seed_dev.sql` (once) |
+| `dev-up.sh --lite --open` | open the site in your browser when it is ready |
+| `dev-up.sh --lite --down` | stop the services; the database and the settings stay |
+| `dev-up.sh --lite --destroy` | remove the services, the database and `ops/.dev-lite/` |
+
+| What | Where |
+| --- | --- |
+| The back office | `https://localhost:8443/admin/login` (accept the development certificate) |
+| The API of the mobile app | `https://localhost:8443/mobile-api/`; from the Android emulator `https://10.0.2.2:8443/mobile-api/`, from the iOS simulator `https://localhost:8443/mobile-api/`. The debug build of the mobile app uses this address by default |
+| Settings, secrets and the passwords of the accounts | `ops/.dev-lite/` (git-ignored, readable by you only); the passwords are in `ops/.dev-lite/dev-staff.env` |
+| The database | the volume of the container `nfhotel-dev-postgres-postgres-1` |
+
+Not in the light mode: Ollama, the market analysis and the benchmark service. Their pages say the service is not
+reachable. Use the Proxmox mode for them. Run only one mode at a time: both use port 8443 (`dev-up.sh --down` stops the
+Proxmox mode, `dev-up.sh --lite --down` the light mode), or set `DEV_SITE_PORT`.
 
 ## Use the GPU of your machine
 
@@ -131,7 +184,9 @@ and the default AI model for the website and the market analysis are on `/admin/
 | --- | --- | --- |
 | The address starts with `http://` (for example the link that Docker Desktop shows for the container) | Docker Desktop writes every published port as `http://`; the site speaks HTTPS only | nothing: nginx sends `http://localhost:8443/` on to `https://localhost:8443/`. The Proxmox page on port 8006 is not behind nginx and needs `https://localhost:8006/` typed by hand |
 | The browser warns about the certificate | the certificate is made by the script | accept it for this site |
-| `/dev/kvm is not available to Docker` | KVM is off or WSL has not loaded it | turn on virtualization in the BIOS; on Windows start `wsl -d Debian` first; run `--check` |
+| `/dev/kvm is not available to Docker` | KVM is off or WSL has not loaded it; macOS has no KVM | on a Mac, use the light mode: `dev-up.sh --lite`; otherwise turn on virtualization in the BIOS, on Windows start `wsl -d Debian` first, and run `--check` |
+| `bash 3.2 is too old` on a Mac | macOS comes with bash 3.2 | `brew install bash`, open a new terminal, and run the script again |
+| `docker compose ... is older than 2.24.4` (light mode) | the override of nginx's port needs `!override` | update Docker Desktop |
 | `the Docker daemon does not answer` | Docker Desktop is not running | start it and wait until it says running |
 | A port is in use | another program holds 8443 or 8006 | stop it, or set `DEV_SITE_PORT` or `DEV_PVE_PORT` |
 | The first run stops at `waiting for ssh, cloud-init and Docker` | the VM is still installing Docker | run the script again; it continues |

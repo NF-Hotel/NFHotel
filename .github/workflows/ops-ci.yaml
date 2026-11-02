@@ -208,6 +208,40 @@ jobs:
       - name: Test the personal roles against PostgreSQL 16
         run: bash ops/tests/test-team-db-users.sh
 
+  # The light development mode of ADR-0035 as a developer runs it: build, start, sign in from the
+  # back office and the mobile app, --down keeps the data, --destroy removes it.
+  dev-lite:
+    name: Ops light development mode (MIL-056)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Start the light mode and check it
+        run: bash ops/tests/test-dev-lite.sh
+
+  # The scripts of the light mode with the tools of macOS (BSD, LibreSSL, bash 3.2 as
+  # /bin/bash). The runner has no Docker, so the stack itself runs in the job above.
+  dev-lite-macos:
+    name: Ops light development mode on macOS (MIL-056)
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      # A developer installs bash 4 or later with Homebrew, as dev-lite.sh says; so does the job.
+      - name: Run the portability test with the bash of Homebrew
+        run: |
+          prefix="$(brew --prefix)"
+          "$prefix/bin/bash" -c '((BASH_VERSINFO[0] >= 4))' 2>/dev/null || brew install bash
+          export PATH="$prefix/bin:$PATH"
+          bash --version | head -1
+          bash ops/tests/test-dev-lite-portable.sh
+
   secret-rotation:
     name: Ops secret rotation drill (MIL-035)
     runs-on: ubuntu-24.04

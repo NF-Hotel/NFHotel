@@ -19,7 +19,12 @@
 #      ASPNETCORE_ENVIRONMENT=Development in nfhotel-api.env, and never in a release deployment.
 #      The generated passwords are kept in ops/deploy/nfhotel-api/dev-staff.env (git-ignored).
 #
-# Usage: dev-up.sh [--check] [--all] [--seed] [--open] [--down] [--destroy] [web|api|analysis|benchmark|nginx ...]
+# No KVM, or less than 16 GiB for Docker (macOS, Apple Silicon)? Use the light mode, which runs postgres, api, web and
+# nginx straight in Docker with no Proxmox VE and no VM, at the same addresses (ADR-0035): dev-up.sh --lite [--check]
+# [--seed] [--open] [--down] [--destroy]; see scripts/dev-lite.sh.
+#
+# Usage: dev-up.sh [--lite] [--check] [--all] [--seed] [--open] [--down] [--destroy] [web|api|analysis|benchmark|nginx ...]
+#   --lite     run the light mode (scripts/dev-lite.sh) with the other arguments instead
 #   --check    only test that this machine can run it (Docker, KVM, tools, ports, disk, memory) and say how to fix
 #              each problem; starts nothing. The same test runs at the start of every other run.
 #   web, api   rebuild and restart only these (default: web and api, the code of this repository)
@@ -45,6 +50,17 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # The operations of the application, in this repository since ADR-0016.
 ops="$root/ops"
 export MSYS_NO_PATHCONV=1
+
+# The light mode is its own script; checked before anything of bash 4, which macOS lacks, runs.
+for arg in "$@"; do
+  if [[ "$arg" == "--lite" ]]; then
+    lite_args=()
+    for lite_arg in "$@"; do
+      [[ "$lite_arg" == "--lite" ]] || lite_args+=("$lite_arg")
+    done
+    exec bash "$root/scripts/dev-lite.sh" ${lite_args[@]+"${lite_args[@]}"}
+  fi
+done
 
 site_port="${DEV_SITE_PORT:-8443}"
 pve_port="${DEV_PVE_PORT:-8006}"
@@ -104,7 +120,7 @@ preflight() {
 
   echo "Checking this machine for dev-up.sh"
   if ((BASH_VERSINFO[0] < 4)); then
-    report PROBLEM "bash ${BASH_VERSION} is too old; install bash 4 or later (on Windows: Git for Windows)"
+    report PROBLEM "bash ${BASH_VERSION} is too old; install bash 4 or later (on Windows: Git for Windows; on macOS: brew install bash)"
   else
     report ok "bash ${BASH_VERSION%%(*}"
   fi
@@ -132,7 +148,7 @@ preflight() {
     if docker run --rm --privileged alpine sh -c 'test -e /dev/kvm' >/dev/null 2>&1; then
       report ok "/dev/kvm is available to Docker (Proxmox VE needs it)"
     else
-      report PROBLEM "/dev/kvm is not available to Docker. On Windows with WSL2: turn on virtualization in the BIOS, open a WSL distribution that loads the KVM modules (for example: wsl -d Debian), and try again. On Linux: install and load kvm for your CPU"
+      report PROBLEM "/dev/kvm is not available to Docker. On Windows with WSL2: turn on virtualization in the BIOS, open a WSL distribution that loads the KVM modules (for example: wsl -d Debian), and try again. On Linux: install and load kvm for your CPU. On macOS, or without KVM: use the light mode, bash scripts/dev-up.sh --lite (ADR-0035)"
     fi
 
     kib="$(docker info --format '{{.MemTotal}}' 2>/dev/null || echo 0)"
@@ -143,7 +159,7 @@ preflight() {
     if ((mem_mib >= need_mib)); then
       report ok "Docker has ${mem_mib} MiB of memory (the VM uses ${vm_mib} MiB)"
     else
-      report warning "Docker has ${mem_mib} MiB of memory and about ${need_mib} MiB are needed; on Windows raise the memory in %UserProfile%\\.wslconfig (memory=16GB) and run: wsl --shutdown"
+      report warning "Docker has ${mem_mib} MiB of memory and about ${need_mib} MiB are needed; on Windows raise the memory in %UserProfile%\\.wslconfig (memory=16GB) and run: wsl --shutdown; or use the light mode, which needs about 3 GiB: bash scripts/dev-up.sh --lite"
     fi
   fi
 
