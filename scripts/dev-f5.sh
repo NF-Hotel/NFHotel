@@ -11,7 +11,9 @@
 #      and no others. The secrets are passed to dotnet user-secrets as JSON on standard input, never on a command line.
 #   3. print the development Manager account (development only, as the other development modes do)
 #
-# Usage: dev-f5.sh [--check | --down | --destroy]
+# Usage: dev-f5.sh [--seed] [--check | --down | --destroy]
+#   --seed     load the sample rooms, guests and bookings of db/seed_dev.sql (it replaces those tables); the API makes
+#              the tables at its first start, so start it once (F5) before the first --seed
 #   --check    only test that this machine can run it, and say how to fix each problem
 #   --down     stop PostgreSQL; the database and the secrets stay
 #   --destroy  remove PostgreSQL, its volume, ops/.dev-f5/ and the user secrets this script wrote
@@ -40,9 +42,11 @@ readonly API_PROJECT="$root/src/NFHotel.Api/NFHotel.Api.csproj" WEB_PROJECT="$ro
 # The address of the API that the web application calls: the http address of the API's launch profile.
 readonly API_URL="http://localhost:59103"
 action=up
+seed=0
 
 for arg in "$@"; do
   case "$arg" in
+    --seed) seed=1 ;;
     --check) action=check ;;
     --down) action=down ;;
     --destroy) action=destroy ;;
@@ -260,6 +264,14 @@ for key in Api:Token Encryption:PassportKey; do
 done
 [[ "$(value_in "$web_secrets" Api:BaseUrl)" == "$API_URL" ]] ||
   echo "warning: Api:BaseUrl of NFHotel.Web is $(value_in "$web_secrets" Api:BaseUrl), not $API_URL" >&2
+
+if ((seed)); then
+  docker exec "$CONTAINER" psql -U nfhotel -d nfhotel -tAc "select to_regclass('public.room') is not null" | grep -q t ||
+    die "the tables do not exist yet: start the API once (F5 in Visual Studio), then run this again with --seed"
+  echo "==> loading db/seed_dev.sql"
+  docker exec -i -e PGOPTIONS=--client-min-messages=warning "$CONTAINER" psql -q -v ON_ERROR_STOP=1 -U nfhotel -d nfhotel <"$root/db/seed_dev.sql" >/dev/null ||
+    die "db/seed_dev.sql failed"
+fi
 
 echo
 echo "Ready. Open NFHotel.sln in Visual Studio, choose the launch profile \"API and web\" and press F5."

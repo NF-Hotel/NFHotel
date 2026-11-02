@@ -111,6 +111,11 @@ redirect="$(curl -sk -b "$W/jar" -c "$W/jar" -o /dev/null -w '%{http_code} %{red
 [[ "$redirect" == "302 $WEB/admin" ]] && [[ "$(curl -sk -b "$W/jar" "$WEB/admin" | grep -c 'Dashboard')" -ge 1 ]] &&
   ok "the back office signs in through the web form and the API" || ko "back office sign-in: $redirect"
 
+# The API made the tables at its start, so the sample data can be loaded now.
+f5 --seed >"$W/seed.log" 2>&1 &&
+  [[ "$(docker exec "$DEV_F5_NAME-postgres" psql -U nfhotel -d nfhotel -tAc 'select count(*) from room')" -gt 0 ]] &&
+  ok "--seed loads the sample rooms of db/seed_dev.sql" || ko "--seed: $(grep -E 'error|ERROR' "$W/seed.log" | head -n 3)"
+
 stop_apps
 f5 --destroy >/dev/null 2>&1
 [[ -z "$(docker ps -aq --filter "name=^$DEV_F5_NAME-postgres$")$(docker volume ls -q --filter "name=^$DEV_F5_NAME-pgdata$")" && ! -e "$DEV_F5_DIR" ]] &&

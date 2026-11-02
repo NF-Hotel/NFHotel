@@ -163,6 +163,7 @@ dotnet run --project src/NFHotel.Web --launch-profile https
 | Command | What it does |
 | --- | --- |
 | `dev-up.sh --f5` (or `dev-f5.ps1`) | start PostgreSQL and write the user secrets that are missing |
+| `dev-up.sh --f5 --seed` | the same, then load the sample rooms, guests and bookings of `db/seed_dev.sql` (it replaces those tables; start the API once with F5 first, so the tables exist) |
 | `dev-up.sh --f5 --down` | stop PostgreSQL; the database and the secrets stay |
 | `dev-up.sh --f5 --destroy` | remove PostgreSQL, its volume, `ops/.dev-f5/` and the user secrets the script wrote (yours stay) |
 
