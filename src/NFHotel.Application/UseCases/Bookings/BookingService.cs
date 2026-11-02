@@ -1,4 +1,5 @@
 using NFHotel.Application.Dto.Bookings;
+using NFHotel.Application.Dto.Pricing;
 using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
@@ -329,12 +330,12 @@ public sealed class BookingService : IBookingService
 
         // MIL-055: the price is looked up before the booking is saved and stored after it; a booking made
         // without a price (no base rate, or the lookup failed) is created exactly as before.
-        var pricePerNight = await FindPricePerNightAsync(request.RoomId, period.Start, cancellationToken)
+        decimal? pricePerNight = await FindPricePerNightAsync(request.RoomId, period.Start, cancellationToken)
             .ConfigureAwait(false);
 
         _bookingRepository.Add(booking);
 
-        var created = await SaveAndDescribeAsync(booking, cancellationToken).ConfigureAwait(false);
+        Result<BookingDetailsDto> created = await SaveAndDescribeAsync(booking, cancellationToken).ConfigureAwait(false);
 
         if (created.IsSuccess && pricePerNight is not null)
         {
@@ -358,14 +359,14 @@ public sealed class BookingService : IBookingService
     /// </remarks>
     private async Task<decimal?> FindPricePerNightAsync(int roomId, DateOnly arrival, CancellationToken cancellationToken)
     {
-        var room = await _roomRepository.GetByIdAsync(roomId, cancellationToken).ConfigureAwait(false);
+        Room? room = await _roomRepository.GetByIdAsync(roomId, cancellationToken).ConfigureAwait(false);
 
         if (room is null)
         {
             return null;
         }
 
-        var price = await _prices
+        Result<EffectivePriceDto> price = await _prices
             .GetEffectivePriceAsync(room.Size.ToString(), arrival, cancellationToken)
             .ConfigureAwait(false);
 

@@ -26,7 +26,7 @@ public sealed class PriceSuggestionsViewModel
     private readonly Dictionary<string, string> _firstDays = [];
     private readonly Dictionary<string, string> _lastDays = [];
     private List<PriceSuggestionItemDto> _items = [];
-    private bool _openLoaded;
+    private bool OpenLoaded { get; set; }
 
     /// <summary>Creates the view model.</summary>
     /// <param name="service">Runs the price suggestion use cases.</param>
@@ -75,7 +75,7 @@ public sealed class PriceSuggestionsViewModel
     public bool HasNoBasis { get; private set; }
 
     /// <summary>True when there is a basis but no price change is suggested.</summary>
-    public bool HasNoSuggestions => _openLoaded && !HasNoBasis && Suggestions.Count == 0;
+    public bool HasNoSuggestions => OpenLoaded && !HasNoBasis && Suggestions.Count == 0;
 
     /// <summary>The AI text that explains the suggestions, or <c>null</c>. It is never used for a price.</summary>
     public string? AiExplanation { get; private set; }
@@ -188,20 +188,20 @@ public sealed class PriceSuggestionsViewModel
         }
 
         SuccessMessage = null;
-        var item = _items.Find(candidate => string.Equals(candidate.Key, key, StringComparison.Ordinal));
+        PriceSuggestionItemDto? item = _items.Find(candidate => string.Equals(candidate.Key, key, StringComparison.Ordinal));
         if (item is null)
         {
             Errors = ErrorMessages.Describe(Result.Failure(PriceSuggestionErrors.NotFound));
             return;
         }
 
-        if (!TryReadDate(FirstDayOf(key), out var first) || !TryReadDate(LastDayOf(key), out var last))
+        if (!TryReadDate(FirstDayOf(key), out DateOnly first) || !TryReadDate(LastDayOf(key), out DateOnly last))
         {
             Errors = ErrorMessages.Describe(Result.Failure(PriceChangeErrors.PeriodInvalid));
             return;
         }
 
-        var request = new PriceSuggestionApproveRequest(
+        PriceSuggestionApproveRequest request = new(
             key,
             first == item.FirstDay ? null : first,
             last == item.LastDay ? null : last);
@@ -209,14 +209,14 @@ public sealed class PriceSuggestionsViewModel
         IsBusy = true;
         try
         {
-            var result = await _service.RunAsync((service, token) => service.ApproveAsync(request, token), cancellationToken).ConfigureAwait(false);
+            Result<ApprovedPriceChange> result = await _service.RunAsync((service, token) => service.ApproveAsync(request, token), cancellationToken).ConfigureAwait(false);
             if (result.IsFailure)
             {
                 Errors = ErrorMessages.Describe(result);
                 return;
             }
 
-            var change = result.Value.Change;
+            PriceChangeDto change = result.Value.Change;
             SuccessMessage =
                 $"{(result.Value.Created ? "Approved" : "Already approved")}: {change.Size} {FormatChange(change.Percentage)} " +
                 $"from {Date(change.FirstDay)} to {Date(change.LastDay)}";
@@ -243,15 +243,15 @@ public sealed class PriceSuggestionsViewModel
         IsBusy = true;
         try
         {
-            var result = await _service.RunAsync((service, token) => service.RevertAsync(id, token), cancellationToken).ConfigureAwait(false);
+            Result<PriceChangeDto> result = await _service.RunAsync((service, token) => service.RevertAsync(id, token), cancellationToken).ConfigureAwait(false);
             if (result.IsFailure)
             {
                 Errors = ErrorMessages.Describe(result);
                 return;
             }
 
-            var change = result.Value;
-            var label = $"{change.Size} {FormatChange(change.Percentage)}";
+            PriceChangeDto change = result.Value;
+            string label = $"{change.Size} {FormatChange(change.Percentage)}";
             SuccessMessage = StatusOf(change, _clock.Today) == ChangeStatus.Withdrawn
                 ? $"Withdrawn: {label} had not begun, so it never counted."
                 : $"Reverted: {label} counts no more.";
@@ -270,9 +270,9 @@ public sealed class PriceSuggestionsViewModel
 
     private static SuggestionRow ToRow(PriceSuggestionItemDto item)
     {
-        var high = string.Equals(item.Season, "High", StringComparison.Ordinal);
-        var occupancy = item.OccupancyPercent.ToString("0.0", CultureInfo.InvariantCulture);
-        var threshold = item.ThresholdPercent.ToString("0.##", CultureInfo.InvariantCulture);
+        bool high = string.Equals(item.Season, "High", StringComparison.Ordinal);
+        string occupancy = item.OccupancyPercent.ToString("0.0", CultureInfo.InvariantCulture);
+        string threshold = item.ThresholdPercent.ToString("0.##", CultureInfo.InvariantCulture);
         return new SuggestionRow(
             item.Key,
             item.Size,
@@ -287,7 +287,7 @@ public sealed class PriceSuggestionsViewModel
 
     private static ChangeRow ToRow(PriceChangeDto change, DateOnly today)
     {
-        var status = StatusOf(change, today);
+        ChangeStatus status = StatusOf(change, today);
         return new ChangeRow(
             change.Id,
             change.Size,
@@ -311,10 +311,10 @@ public sealed class PriceSuggestionsViewModel
 
     private async Task FillAsync(CancellationToken cancellationToken)
     {
-        var today = _clock.Today;
-        var errors = new List<string>();
+        DateOnly today = _clock.Today;
+        List<string> errors = new();
 
-        var open = await _service.RunAsync((service, token) => service.GetOpenAsync(token), cancellationToken).ConfigureAwait(false);
+        Result<PriceSuggestionListDto> open = await _service.RunAsync((service, token) => service.GetOpenAsync(token), cancellationToken).ConfigureAwait(false);
         if (open.IsFailure)
         {
             errors.AddRange(ErrorMessages.Describe(open));
@@ -324,7 +324,7 @@ public sealed class PriceSuggestionsViewModel
             ShowOpen(open.Value);
         }
 
-        var changes = await _service.RunAsync((service, token) => service.GetChangesAsync(token), cancellationToken).ConfigureAwait(false);
+        Result<IReadOnlyList<PriceChangeDto>> changes = await _service.RunAsync((service, token) => service.GetChangesAsync(token), cancellationToken).ConfigureAwait(false);
         if (changes.IsFailure)
         {
             errors.AddRange(ErrorMessages.Describe(changes));
@@ -334,7 +334,7 @@ public sealed class PriceSuggestionsViewModel
             Changes = [.. changes.Value.Select(change => ToRow(change, today))];
         }
 
-        var effective = await _service
+        Result<IReadOnlyList<EffectivePriceDto>> effective = await _service
             .RunAsync((service, token) => service.GetEffectivePricesAsync(today, token), cancellationToken)
             .ConfigureAwait(false);
         if (effective.IsFailure)
@@ -351,14 +351,14 @@ public sealed class PriceSuggestionsViewModel
 
     private void ShowOpen(PriceSuggestionListDto list)
     {
-        _openLoaded = true;
+        OpenLoaded = true;
         HasNoBasis = string.Equals(list.Basis, PriceSuggestionBasis.NoBasis, StringComparison.Ordinal);
         AiExplanation = string.IsNullOrWhiteSpace(list.AiExplanation) ? null : list.AiExplanation;
         _items = [.. list.Items];
         Suggestions = [.. _items.Select(ToRow)];
         _firstDays.Clear();
         _lastDays.Clear();
-        foreach (var item in _items)
+        foreach (PriceSuggestionItemDto item in _items)
         {
             _firstDays[item.Key] = Date(item.FirstDay);
             _lastDays[item.Key] = Date(item.LastDay);

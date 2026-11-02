@@ -22,7 +22,7 @@ public sealed class PriceChangeTests
     public void Approve_ValidFields_KeepsThemAndIsApproved()
     {
         // Arrange and act
-        var change = PriceChange.Approve(RoomSize.Suite, 12.345m, First, Last, " manager ", At);
+        PriceChange change = PriceChange.Approve(RoomSize.Suite, 12.345m, First, Last, " manager ", At);
 
         // Assert
         Assert.Equal((RoomSize.Suite, 12.35m, First, Last), (change.Size, change.Percentage, change.FirstDay, change.LastDay));
@@ -43,7 +43,7 @@ public sealed class PriceChangeTests
     public void Approve_PercentageAtTheLimit_IsAccepted(string percentage)
     {
         // Arrange and act
-        var change = PriceChange.Approve(RoomSize.Single, Parse(percentage), First, Last, "manager", At);
+        PriceChange change = PriceChange.Approve(RoomSize.Single, Parse(percentage), First, Last, "manager", At);
 
         // Assert
         Assert.Equal(Parse(percentage), change.Percentage);
@@ -60,7 +60,7 @@ public sealed class PriceChangeTests
     public void Approve_PercentageOutsideTheLimits_ThrowsThePercentageCode(string percentage)
     {
         // Arrange and act
-        var exception = Assert.Throws<DomainException>(() => PriceChange.Approve(RoomSize.Single, Parse(percentage), First, Last, "manager", At));
+        DomainException exception = Assert.Throws<DomainException>(() => PriceChange.Approve(RoomSize.Single, Parse(percentage), First, Last, "manager", At));
 
         // Assert
         Assert.Equal([PriceChangeErrors.PercentageInvalid], exception.Codes);
@@ -71,7 +71,7 @@ public sealed class PriceChangeTests
     public void Approve_UnknownSize_ThrowsTheSizeCode()
     {
         // Arrange and act
-        var exception = Assert.Throws<DomainException>(() => PriceChange.Approve((RoomSize)7, 10m, First, Last, "manager", At));
+        DomainException exception = Assert.Throws<DomainException>(() => PriceChange.Approve((RoomSize)7, 10m, First, Last, "manager", At));
 
         // Assert
         Assert.Equal([PriceChangeErrors.SizeInvalid], exception.Codes);
@@ -82,8 +82,8 @@ public sealed class PriceChangeTests
     public void Approve_PeriodAtTheLimits_IsAccepted()
     {
         // Arrange and act
-        var oneDay = PriceChange.Approve(RoomSize.Single, 10m, First, First, "manager", At);
-        var longest = PriceChange.Approve(RoomSize.Single, 10m, First, First.AddDays(365), "manager", At);
+        PriceChange oneDay = PriceChange.Approve(RoomSize.Single, 10m, First, First, "manager", At);
+        PriceChange longest = PriceChange.Approve(RoomSize.Single, 10m, First, First.AddDays(365), "manager", At);
 
         // Assert
         Assert.Equal(First, oneDay.LastDay);
@@ -95,8 +95,8 @@ public sealed class PriceChangeTests
     public void Approve_PeriodOutsideTheLimits_ThrowsThePeriodCode()
     {
         // Arrange and act
-        var backwards = Assert.Throws<DomainException>(() => PriceChange.Approve(RoomSize.Single, 10m, First, First.AddDays(-1), "manager", At));
-        var tooLong = Assert.Throws<DomainException>(() => PriceChange.Approve(RoomSize.Single, 10m, First, First.AddDays(366), "manager", At));
+        DomainException backwards = Assert.Throws<DomainException>(() => PriceChange.Approve(RoomSize.Single, 10m, First, First.AddDays(-1), "manager", At));
+        DomainException tooLong = Assert.Throws<DomainException>(() => PriceChange.Approve(RoomSize.Single, 10m, First, First.AddDays(366), "manager", At));
 
         // Assert
         Assert.Equal([PriceChangeErrors.PeriodInvalid], backwards.Codes);
@@ -108,7 +108,7 @@ public sealed class PriceChangeTests
     public void Approve_PastPeriod_IsAccepted()
     {
         // Arrange and act
-        var change = PriceChange.Approve(RoomSize.Single, 10m, new DateOnly(2020, 1, 1), new DateOnly(2020, 1, 31), "manager", At);
+        PriceChange change = PriceChange.Approve(RoomSize.Single, 10m, new DateOnly(2020, 1, 1), new DateOnly(2020, 1, 31), "manager", At);
 
         // Assert
         Assert.Equal(new DateOnly(2020, 1, 1), change.FirstDay);
@@ -122,7 +122,7 @@ public sealed class PriceChangeTests
     public void Approve_BlankApprovedBy_ThrowsTheApprovedByCode(string? approvedBy)
     {
         // Arrange and act
-        var exception = Assert.Throws<DomainException>(() => PriceChange.Approve(RoomSize.Single, 10m, First, Last, approvedBy!, At));
+        DomainException exception = Assert.Throws<DomainException>(() => PriceChange.Approve(RoomSize.Single, 10m, First, Last, approvedBy!, At));
 
         // Assert
         Assert.Equal([PriceChangeErrors.ApprovedByInvalid], exception.Codes);
@@ -133,8 +133,8 @@ public sealed class PriceChangeTests
     public void Approve_ApprovedByLength_AcceptsTheLimitAndRefusesOneMore()
     {
         // Arrange and act
-        var accepted = PriceChange.Approve(RoomSize.Single, 10m, First, Last, new string('m', PriceChange.MaxTextLength), At);
-        var exception = Assert.Throws<DomainException>(
+        PriceChange accepted = PriceChange.Approve(RoomSize.Single, 10m, First, Last, new string('m', PriceChange.MaxTextLength), At);
+        DomainException exception = Assert.Throws<DomainException>(
             () => PriceChange.Approve(RoomSize.Single, 10m, First, Last, new string('m', PriceChange.MaxTextLength + 1), At));
 
         // Assert
@@ -147,7 +147,7 @@ public sealed class PriceChangeTests
     public void Approve_SeveralFieldsWrong_ThrowsEveryCode()
     {
         // Arrange and act
-        var exception = Assert.Throws<DomainException>(() => PriceChange.Approve(RoomSize.Single, 0m, Last, First, string.Empty, At));
+        DomainException exception = Assert.Throws<DomainException>(() => PriceChange.Approve(RoomSize.Single, 0m, Last, First, string.Empty, At));
 
         // Assert
         Assert.Equal(3, exception.Codes.Count);
@@ -170,7 +170,7 @@ public sealed class PriceChangeTests
     public void CountsOn_ApprovedChange_CountsOnlyInsideThePeriod(string day, bool expected)
     {
         // Arrange
-        var change = Summer();
+        PriceChange change = Summer();
 
         // Act and assert
         Assert.Equal(expected, change.CountsOn(DateOnly.Parse(day, CultureInfo.InvariantCulture)));
@@ -181,7 +181,7 @@ public sealed class PriceChangeTests
     public void CountsOn_WithdrawnChange_CountsOnNoDay()
     {
         // Arrange
-        var change = Summer();
+        PriceChange change = Summer();
         change.Revert("manager", At, new DateOnly(2027, 5, 20));
 
         // Act and assert
@@ -200,7 +200,7 @@ public sealed class PriceChangeTests
     public void CountsOn_EndedChange_CountsUpToTheEndDay(string day, bool expected)
     {
         // Arrange
-        var change = Summer();
+        PriceChange change = Summer();
         change.Revert("manager", At, new DateOnly(2027, 7, 10));
 
         // Act and assert
@@ -212,8 +212,8 @@ public sealed class PriceChangeTests
     public void CountsWithin_Periods_SharesADayOrNot()
     {
         // Arrange
-        var change = Summer();
-        var withdrawn = Summer();
+        PriceChange change = Summer();
+        PriceChange withdrawn = Summer();
         withdrawn.Revert("manager", At, new DateOnly(2027, 5, 1));
 
         // Act and assert
@@ -233,8 +233,8 @@ public sealed class PriceChangeTests
     public void Revert_BeforeTheFirstDay_WithdrawsTheChange()
     {
         // Arrange
-        var change = Summer();
-        var revertedAt = At.AddDays(3);
+        PriceChange change = Summer();
+        DateTimeOffset revertedAt = At.AddDays(3);
 
         // Act
         change.Revert(" other ", revertedAt, new DateOnly(2027, 5, 31));
@@ -250,7 +250,7 @@ public sealed class PriceChangeTests
     public void Revert_InForce_EndsYesterday()
     {
         // Arrange
-        var change = Summer();
+        PriceChange change = Summer();
 
         // Act
         change.Revert("other", At, new DateOnly(2027, 7, 10));
@@ -265,7 +265,7 @@ public sealed class PriceChangeTests
     public void Revert_OnTheFirstDay_CountsForNoDay()
     {
         // Arrange
-        var change = Summer();
+        PriceChange change = Summer();
 
         // Act
         change.Revert("other", At, First);
@@ -281,7 +281,7 @@ public sealed class PriceChangeTests
     public void Revert_OnTheLastDay_EndsTheDayBefore()
     {
         // Arrange
-        var change = Summer();
+        PriceChange change = Summer();
 
         // Act
         change.Revert("other", At, Last);
@@ -295,11 +295,11 @@ public sealed class PriceChangeTests
     public void Revert_AlreadyReverted_ThrowsAndKeepsTheFirstRevert()
     {
         // Arrange
-        var change = Summer();
+        PriceChange change = Summer();
         change.Revert("first", At, new DateOnly(2027, 7, 10));
 
         // Act
-        var exception = Assert.Throws<DomainException>(() => change.Revert("second", At.AddDays(1), new DateOnly(2027, 7, 11)));
+        DomainException exception = Assert.Throws<DomainException>(() => change.Revert("second", At.AddDays(1), new DateOnly(2027, 7, 11)));
 
         // Assert
         Assert.Equal([PriceChangeErrors.AlreadyReverted], exception.Codes);
@@ -311,10 +311,10 @@ public sealed class PriceChangeTests
     public void Revert_AfterTheLastDay_ThrowsPeriodEnded()
     {
         // Arrange
-        var change = Summer();
+        PriceChange change = Summer();
 
         // Act
-        var exception = Assert.Throws<DomainException>(() => change.Revert("other", At, Last.AddDays(1)));
+        DomainException exception = Assert.Throws<DomainException>(() => change.Revert("other", At, Last.AddDays(1)));
 
         // Assert
         Assert.Equal([PriceChangeErrors.PeriodEnded], exception.Codes);
@@ -328,10 +328,10 @@ public sealed class PriceChangeTests
     public void Revert_BlankName_ThrowsAndStaysApproved(string name)
     {
         // Arrange
-        var change = Summer();
+        PriceChange change = Summer();
 
         // Act
-        var exception = Assert.Throws<DomainException>(() => change.Revert(name, At, new DateOnly(2027, 7, 10)));
+        DomainException exception = Assert.Throws<DomainException>(() => change.Revert(name, At, new DateOnly(2027, 7, 10)));
 
         // Assert
         Assert.Equal([PriceChangeErrors.RevertedByInvalid], exception.Codes);

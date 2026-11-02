@@ -19,7 +19,7 @@ public sealed class RoomRatesViewModelTests
     public async Task LoadAsync_OneRateSet_ShowsItAndLeavesTheOthersUnset()
     {
         // Arrange
-        var (viewModel, _) = Build();
+        (RoomRatesViewModel? viewModel, IRoomRateService _) = Build();
 
         // Act
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -38,7 +38,7 @@ public sealed class RoomRatesViewModelTests
     public async Task LoadAsync_ServiceDown_ShowsTheText()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (RoomRatesViewModel? viewModel, IRoomRateService? service) = Build();
         service.GetAllAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<RoomRateDto>>.Failure(ErrorCodes.Api.Unavailable));
 
         // Act
@@ -55,7 +55,7 @@ public sealed class RoomRatesViewModelTests
     public async Task SaveAsync_ValidPrice_SendsItAndShowsTheNewRate()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (RoomRatesViewModel? viewModel, IRoomRateService? service) = Build();
         service.SetAsync("Double", Arg.Any<SetRoomRateRequest>(), Arg.Any<CancellationToken>())
             .Returns(Result<RoomRateDto>.Success(new RoomRateDto("Double", 120.5m, "manager", At)));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -80,7 +80,7 @@ public sealed class RoomRatesViewModelTests
     public async Task SaveAsync_NotANumber_ShowsThePriceTextWithoutCalling(string typed)
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (RoomRatesViewModel? viewModel, IRoomRateService? service) = Build();
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         viewModel.SetInput(RoomSize.Suite, typed);
 
@@ -98,7 +98,7 @@ public sealed class RoomRatesViewModelTests
     public async Task SaveAsync_RefusedByTheApi_ShowsTheTextAndKeepsTheOldRate()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (RoomRatesViewModel? viewModel, IRoomRateService? service) = Build();
         service.SetAsync("Single", Arg.Any<SetRoomRateRequest>(), Arg.Any<CancellationToken>())
             .Returns(Result<RoomRateDto>.Failure(NFHotel.Domain.Errors.RoomRateErrors.PriceInvalid));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -115,7 +115,7 @@ public sealed class RoomRatesViewModelTests
 
     private static (RoomRatesViewModel ViewModel, IRoomRateService Service) Build()
     {
-        var service = Substitute.For<IRoomRateService>();
+        IRoomRateService service = Substitute.For<IRoomRateService>();
         service.GetAllAsync(Arg.Any<CancellationToken>()).Returns(
             Result<IReadOnlyList<RoomRateDto>>.Success([new RoomRateDto("Single", 80m, "manager", At)]));
         return (new RoomRatesViewModel(new PassThroughRunner<IRoomRateService>(service)), service);

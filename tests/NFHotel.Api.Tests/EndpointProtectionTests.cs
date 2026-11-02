@@ -96,12 +96,12 @@ public sealed class EndpointProtectionTests
     public void RoomRatesController_EveryAction_RequiresAPermission()
     {
         // Arrange
-        var actions = ActionsOfTheApi()
+        MethodInfo[] actions = ActionsOfTheApi()
             .Where(action => action.DeclaringType == typeof(NFHotel.Api.Controllers.RoomRatesController))
             .ToArray();
 
         // Act
-        var without = actions
+        string[] without = actions
             .Where(action => action.GetCustomAttribute<RequiresPermissionAttribute>() is null)
             .Select(Describe)
             .ToArray();
@@ -119,12 +119,12 @@ public sealed class EndpointProtectionTests
     public void PricingSettingsController_EveryAction_RequiresTheManagePricesPermission()
     {
         // Arrange
-        var actions = ActionsOfTheApi()
+        MethodInfo[] actions = ActionsOfTheApi()
             .Where(action => action.DeclaringType == typeof(NFHotel.Api.Controllers.PricingSettingsController))
             .ToArray();
 
         // Act
-        var wrong = actions
+        string[] wrong = actions
             .Where(action => action.GetCustomAttribute<RequiresPermissionAttribute>()?.Permission != NFHotel.Application.UseCases.Staff.Permissions.ManagePrices)
             .Select(Describe)
             .ToArray();
@@ -142,13 +142,13 @@ public sealed class EndpointProtectionTests
     public void PriceControllers_EveryAction_RequiresTheManagePricesPermission()
     {
         // Arrange
-        var actions = ActionsOfTheApi()
+        MethodInfo[] actions = ActionsOfTheApi()
             .Where(action => action.DeclaringType == typeof(NFHotel.Api.Controllers.PriceSuggestionsController)
                 || action.DeclaringType == typeof(NFHotel.Api.Controllers.PriceChangesController))
             .ToArray();
 
         // Act
-        var wrong = actions
+        string[] wrong = actions
             .Where(action => action.GetCustomAttribute<RequiresPermissionAttribute>()?.Permission != NFHotel.Application.UseCases.Staff.Permissions.ManagePrices)
             .Select(Describe)
             .ToArray();

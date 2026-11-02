@@ -24,11 +24,11 @@ public static class PriceSuggestionTestData
     /// <returns>The content.</returns>
     public static MarketAnalysisContentDto Content(double[]? percents = null, string unit = "%", string? explanation = null)
     {
-        var values = percents ?? SeasonalYear;
-        var points = values
+        double[] values = percents ?? SeasonalYear;
+        MarketAnalysisPointDto[] points = values
             .Select((value, index) => new MarketAnalysisPointDto(string.Create(CultureInfo.InvariantCulture, $"2019-{index + 1:00}"), value))
             .ToArray();
-        var insight = explanation is null
+        MarketAnalysisInsightDto? insight = explanation is null
             ? null
             : new MarketAnalysisInsightDto("available", null, explanation, []);
 

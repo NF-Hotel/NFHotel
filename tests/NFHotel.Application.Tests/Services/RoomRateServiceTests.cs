@@ -1,5 +1,8 @@
 using NFHotel.Application.Dto.RoomRates;
 using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.RoomRates;
+using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.TestSupport;
@@ -11,7 +14,7 @@ public sealed class RoomRateServiceTests
 {
     private static ServiceWorld WorldWithManager()
     {
-        var world = new ServiceWorld();
+        ServiceWorld world = new();
         world.CallContext.StaffId = 7;
         world.CallContext.StaffName = "manager";
         world.CallContext.RemoteAddress = "10.0.0.5";
@@ -25,14 +28,14 @@ public sealed class RoomRateServiceTests
     public async Task SetAsync_NoRateYet_StoresItOnceWithAnAuditEvent()
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
 
         // Act
-        var result = await world.RoomRateService().SetAsync("Single", new SetRoomRateRequest(90m), TestContext.Current.CancellationToken);
+        Result<RoomRateDto> result = await world.RoomRateService().SetAsync("Single", new SetRoomRateRequest(90m), TestContext.Current.CancellationToken);
 
         // Assert
-        var stored = Assert.Single(world.RoomRates.Items);
-        var audit = Assert.Single(world.StaffAudit.Events);
+        RoomRate stored = Assert.Single(world.RoomRates.Items);
+        StaffAuditEvent audit = Assert.Single(world.StaffAudit.Events);
         Assert.True(result.IsSuccess);
         Assert.Equal((RoomSize.Single, 90m, "manager"), (stored.Size, stored.NightlyPrice, stored.SetBy));
         Assert.Equal(world.Clock.UtcNow, stored.SetAt);
@@ -49,16 +52,16 @@ public sealed class RoomRateServiceTests
     public async Task SetAsync_RateExists_ReplacesItAndRecordsOldAndNew()
     {
         // Arrange
-        var world = WorldWithManager();
-        var service = world.RoomRateService();
+        ServiceWorld world = WorldWithManager();
+        RoomRateService service = world.RoomRateService();
         await service.SetAsync("single", new SetRoomRateRequest(80m), TestContext.Current.CancellationToken);
         world.CallContext.StaffName = "other";
 
         // Act
-        var result = await service.SetAsync("single", new SetRoomRateRequest(90.5m), TestContext.Current.CancellationToken);
+        Result<RoomRateDto> result = await service.SetAsync("single", new SetRoomRateRequest(90.5m), TestContext.Current.CancellationToken);
 
         // Assert
-        var stored = Assert.Single(world.RoomRates.Items);
+        RoomRate stored = Assert.Single(world.RoomRates.Items);
         Assert.Equal((90.5m, "other"), (stored.NightlyPrice, stored.SetBy));
         Assert.Equal(90.5m, result.Value.NightlyPrice);
         Assert.Equal(["Single: (none) -> 80.00", "Single: 80.00 -> 90.50"], world.StaffAudit.Events.Select(item => item.Detail));
@@ -73,10 +76,10 @@ public sealed class RoomRateServiceTests
     public async Task SetAsync_SizeInAnyCase_StoresThatSize(string size, RoomSize expected)
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
 
         // Act
-        var result = await world.RoomRateService().SetAsync(size, new SetRoomRateRequest(100m), TestContext.Current.CancellationToken);
+        Result<RoomRateDto> result = await world.RoomRateService().SetAsync(size, new SetRoomRateRequest(100m), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -92,10 +95,10 @@ public sealed class RoomRateServiceTests
     public async Task SetAsync_UnknownSize_ReturnsTheSizeCodeAndStoresNothing(string? size)
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
 
         // Act
-        var result = await world.RoomRateService().SetAsync(size!, new SetRoomRateRequest(100m), TestContext.Current.CancellationToken);
+        Result<RoomRateDto> result = await world.RoomRateService().SetAsync(size!, new SetRoomRateRequest(100m), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Contains(RoomRateErrors.SizeInvalid, result.Errors.Select(error => error.Code));
@@ -109,13 +112,13 @@ public sealed class RoomRateServiceTests
     public async Task SetAsync_PriceZero_ReturnsThePriceCodeAndKeepsTheOldRate()
     {
         // Arrange
-        var world = WorldWithManager();
-        var service = world.RoomRateService();
+        ServiceWorld world = WorldWithManager();
+        RoomRateService service = world.RoomRateService();
         await service.SetAsync("Double", new SetRoomRateRequest(120m), TestContext.Current.CancellationToken);
-        var saves = world.UnitOfWork.SaveCount;
+        int saves = world.UnitOfWork.SaveCount;
 
         // Act
-        var result = await service.SetAsync("Double", new SetRoomRateRequest(0m), TestContext.Current.CancellationToken);
+        Result<RoomRateDto> result = await service.SetAsync("Double", new SetRoomRateRequest(0m), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Contains(RoomRateErrors.PriceInvalid, result.Errors.Select(error => error.Code));
@@ -129,10 +132,10 @@ public sealed class RoomRateServiceTests
     public async Task SetAsync_NobodySignedIn_ReturnsTheSetByCodeAndWritesNothing()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new();
 
         // Act
-        var result = await world.RoomRateService().SetAsync("Single", new SetRoomRateRequest(100m), TestContext.Current.CancellationToken);
+        Result<RoomRateDto> result = await world.RoomRateService().SetAsync("Single", new SetRoomRateRequest(100m), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Contains(RoomRateErrors.SetByInvalid, result.Errors.Select(error => error.Code));
@@ -145,7 +148,7 @@ public sealed class RoomRateServiceTests
     public async Task SetAsync_ThreeDecimals_StoresAndAuditsTwo()
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
 
         // Act
         await world.RoomRateService().SetAsync("Suite", new SetRoomRateRequest(199.999m), TestContext.Current.CancellationToken);
@@ -160,11 +163,11 @@ public sealed class RoomRateServiceTests
     public async Task SetAsync_UniqueIndexBrokenBySimultaneousSave_ReturnsTheConflictCode()
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
         world.UnitOfWork.FailWith = new UniqueConstraintViolationException("duplicate key", "ux_room_rate_size");
 
         // Act
-        var result = await world.RoomRateService().SetAsync("Single", new SetRoomRateRequest(90m), TestContext.Current.CancellationToken);
+        Result<RoomRateDto> result = await world.RoomRateService().SetAsync("Single", new SetRoomRateRequest(90m), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -180,13 +183,13 @@ public sealed class RoomRateServiceTests
     public async Task GetAllAsync_TwoRates_ReturnsThemOrderedBySize()
     {
         // Arrange
-        var world = WorldWithManager();
-        var service = world.RoomRateService();
+        ServiceWorld world = WorldWithManager();
+        RoomRateService service = world.RoomRateService();
         await service.SetAsync("Suite", new SetRoomRateRequest(300m), TestContext.Current.CancellationToken);
         await service.SetAsync("Single", new SetRoomRateRequest(80m), TestContext.Current.CancellationToken);
 
         // Act
-        var result = await service.GetAllAsync(TestContext.Current.CancellationToken);
+        Result<IReadOnlyList<RoomRateDto>> result = await service.GetAllAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal([("Single", 80m), ("Suite", 300m)], result.Value.Select(value => (value.Size, value.NightlyPrice)));
@@ -197,10 +200,10 @@ public sealed class RoomRateServiceTests
     public async Task GetAllAsync_NothingSet_ReturnsAnEmptyList()
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
 
         // Act
-        var result = await world.RoomRateService().GetAllAsync(TestContext.Current.CancellationToken);
+        Result<IReadOnlyList<RoomRateDto>> result = await world.RoomRateService().GetAllAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);

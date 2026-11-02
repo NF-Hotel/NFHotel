@@ -52,5 +52,5 @@ public sealed class PricingSettingConfiguration : EntityConfiguration<PricingSet
         table.HasCheckConstraint("ck_pricing_settings_slot", $"slot = {PricingSetting.SingletonSlot}");
 
     private static IReadOnlyList<RoomSize> ParseSizes(string text) =>
-        [.. text.Split(SizeSeparator, StringSplitOptions.RemoveEmptyEntries).Select(name => Enum.Parse<RoomSize>(name))];
+        [.. text.Split(SizeSeparator, StringSplitOptions.RemoveEmptyEntries).Select(Enum.Parse<RoomSize>)];
 }

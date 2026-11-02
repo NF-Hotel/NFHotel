@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
+using NFHotel.Infrastructure.Persistence;
 using NFHotel.Infrastructure.Repositories;
 
 namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
@@ -32,12 +33,12 @@ public sealed class PriceChangeRepositoryTests : IAsyncLifetime
     public async Task Migrations_AppliedToAnEmptyDatabase_MatchTheModelAndHaveTheIndex()
     {
         // Arrange
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var migrations = context.Database.GetMigrations();
-        var count = await context.PriceChanges.CountAsync(TestContext.Current.CancellationToken);
-        var indexes = await context.Database
+        IEnumerable<string> migrations = context.Database.GetMigrations();
+        int count = await context.PriceChanges.CountAsync(TestContext.Current.CancellationToken);
+        List<string> indexes = await context.Database
             .SqlQueryRaw<string>("select indexname as \"Value\" from pg_indexes where tablename = 'price_change'")
             .ToListAsync(TestContext.Current.CancellationToken);
 
@@ -52,11 +53,11 @@ public sealed class PriceChangeRepositoryTests : IAsyncLifetime
     public async Task GetByIdAsync_StoredChange_ReturnsItWithItsFields()
     {
         // Arrange
-        var id = await AddAsync(RoomSize.Double, -12.5m, First, Last);
-        await using var context = _fixture.CreateContext();
+        int id = await AddAsync(RoomSize.Double, -12.5m, First, Last);
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var found = await new PriceChangeRepository(context).GetByIdAsync(id, TestContext.Current.CancellationToken);
+        PriceChange? found = await new PriceChangeRepository(context).GetByIdAsync(id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(found);
@@ -72,10 +73,10 @@ public sealed class PriceChangeRepositoryTests : IAsyncLifetime
     public async Task GetByIdAsync_NothingStored_ReturnsNull()
     {
         // Arrange
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var found = await new PriceChangeRepository(context).GetByIdAsync(42, TestContext.Current.CancellationToken);
+        PriceChange? found = await new PriceChangeRepository(context).GetByIdAsync(42, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(found);
@@ -86,10 +87,10 @@ public sealed class PriceChangeRepositoryTests : IAsyncLifetime
     public async Task Revert_StoredChange_UpdatesTheSameRow()
     {
         // Arrange
-        var id = await AddAsync(RoomSize.Single, 20m, First, Last);
-        await using (var context = _fixture.CreateContext())
+        int id = await AddAsync(RoomSize.Single, 20m, First, Last);
+        await using (HotelDbContext context = _fixture.CreateContext())
         {
-            var stored = await new PriceChangeRepository(context).GetByIdAsync(id, TestContext.Current.CancellationToken);
+            PriceChange? stored = await new PriceChangeRepository(context).GetByIdAsync(id, TestContext.Current.CancellationToken);
 
             // Act
             stored!.Revert("other", At.AddDays(40), new DateOnly(2027, 7, 10));
@@ -97,8 +98,8 @@ public sealed class PriceChangeRepositoryTests : IAsyncLifetime
         }
 
         // Assert
-        await using var check = _fixture.CreateContext();
-        var value = Assert.Single(check.PriceChanges);
+        await using HotelDbContext check = _fixture.CreateContext();
+        PriceChange value = Assert.Single(check.PriceChanges);
         Assert.Equal((id, PriceChangeState.Reverted, "other"), (value.Id, value.State, value.RevertedBy));
         Assert.Equal(At.AddDays(40), value.RevertedAt);
         Assert.Equal(new DateOnly(2027, 7, 9), value.EndedOn);
@@ -113,14 +114,14 @@ public sealed class PriceChangeRepositoryTests : IAsyncLifetime
     public async Task ListForSizeAsync_PeriodTouchesSome_ReturnsOnlyThoseOfTheSizeInOrder()
     {
         // Arrange
-        var late = await AddAsync(RoomSize.Single, 5m, new DateOnly(2027, 9, 1), new DateOnly(2027, 9, 30));
-        var summer = await AddAsync(RoomSize.Single, 20m, First, Last);
+        int late = await AddAsync(RoomSize.Single, 5m, new DateOnly(2027, 9, 1), new DateOnly(2027, 9, 30));
+        int summer = await AddAsync(RoomSize.Single, 20m, First, Last);
         await AddAsync(RoomSize.Single, 10m, new DateOnly(2027, 1, 1), new DateOnly(2027, 5, 31));
         await AddAsync(RoomSize.Suite, 30m, First, Last);
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var list = await new PriceChangeRepository(context).ListForSizeAsync(RoomSize.Single, Last, new DateOnly(2027, 9, 1), TestContext.Current.CancellationToken);
+        IReadOnlyList<PriceChange> list = await new PriceChangeRepository(context).ListForSizeAsync(RoomSize.Single, Last, new DateOnly(2027, 9, 1), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal([summer, late], list.Select(value => value.Id));
@@ -132,12 +133,12 @@ public sealed class PriceChangeRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await AddAsync(RoomSize.Single, 20m, First, Last);
-        await using var context = _fixture.CreateContext();
-        var repository = new PriceChangeRepository(context);
+        await using HotelDbContext context = _fixture.CreateContext();
+        PriceChangeRepository repository = new(context);
 
         // Act
-        var before = await repository.ListForSizeAsync(RoomSize.Single, new DateOnly(2027, 5, 1), First.AddDays(-1), TestContext.Current.CancellationToken);
-        var after = await repository.ListForSizeAsync(RoomSize.Single, Last.AddDays(1), new DateOnly(2027, 12, 31), TestContext.Current.CancellationToken);
+        IReadOnlyList<PriceChange> before = await repository.ListForSizeAsync(RoomSize.Single, new DateOnly(2027, 5, 1), First.AddDays(-1), TestContext.Current.CancellationToken);
+        IReadOnlyList<PriceChange> after = await repository.ListForSizeAsync(RoomSize.Single, Last.AddDays(1), new DateOnly(2027, 12, 31), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Empty(before);
@@ -149,20 +150,20 @@ public sealed class PriceChangeRepositoryTests : IAsyncLifetime
     public async Task ListAsync_SeveralChanges_ReturnsThemByFirstDayThenSize()
     {
         // Arrange
-        var suite = await AddAsync(RoomSize.Suite, 30m, First, Last);
-        var single = await AddAsync(RoomSize.Single, 20m, First, Last);
-        var earlier = await AddAsync(RoomSize.Double, 10m, new DateOnly(2027, 1, 1), new DateOnly(2027, 1, 31));
-        await using (var context = _fixture.CreateContext())
+        int suite = await AddAsync(RoomSize.Suite, 30m, First, Last);
+        int single = await AddAsync(RoomSize.Single, 20m, First, Last);
+        int earlier = await AddAsync(RoomSize.Double, 10m, new DateOnly(2027, 1, 1), new DateOnly(2027, 1, 31));
+        await using (HotelDbContext context = _fixture.CreateContext())
         {
-            var stored = await new PriceChangeRepository(context).GetByIdAsync(suite, TestContext.Current.CancellationToken);
+            PriceChange? stored = await new PriceChangeRepository(context).GetByIdAsync(suite, TestContext.Current.CancellationToken);
             stored!.Revert("other", At, new DateOnly(2027, 5, 15));
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using var read = _fixture.CreateContext();
+        await using HotelDbContext read = _fixture.CreateContext();
 
         // Act
-        var list = await new PriceChangeRepository(read).ListAsync(TestContext.Current.CancellationToken);
+        IReadOnlyList<PriceChange> list = await new PriceChangeRepository(read).ListAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal([earlier, single, suite], list.Select(value => value.Id));
@@ -172,8 +173,8 @@ public sealed class PriceChangeRepositoryTests : IAsyncLifetime
 
     private async Task<int> AddAsync(RoomSize size, decimal percentage, DateOnly first, DateOnly last)
     {
-        await using var context = _fixture.CreateContext();
-        var change = PriceChange.Approve(size, percentage, first, last, "manager", At);
+        await using HotelDbContext context = _fixture.CreateContext();
+        PriceChange change = PriceChange.Approve(size, percentage, first, last, "manager", At);
         new PriceChangeRepository(context).Add(change);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 

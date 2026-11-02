@@ -1,6 +1,7 @@
 using System.Net;
 
 using NFHotel.Application.Dto.Pricing;
+using NFHotel.Application.UseCases;
 
 namespace NFHotel.ApiClient.Tests;
 
@@ -17,8 +18,8 @@ public sealed class PriceSuggestionRequestTests
 
     private static (StubHandler Handler, ApiPriceSuggestionService Service) Build(string json)
     {
-        var handler = StubHandler.Json(HttpStatusCode.OK, json);
-        var gateway = new ApiGateway(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base });
+        StubHandler handler = StubHandler.Json(HttpStatusCode.OK, json);
+        ApiGateway gateway = new(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base });
         return (handler, new ApiPriceSuggestionService(gateway));
     }
 
@@ -27,10 +28,10 @@ public sealed class PriceSuggestionRequestTests
     public async Task GetOpenAsync_Call_GetsTheSuggestionsPath()
     {
         // Arrange
-        var (handler, service) = Build(ListJson);
+        (StubHandler? handler, ApiPriceSuggestionService? service) = Build(ListJson);
 
         // Act
-        var result = await service.GetOpenAsync(TestContext.Current.CancellationToken);
+        Result<PriceSuggestionListDto> result = await service.GetOpenAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -43,10 +44,10 @@ public sealed class PriceSuggestionRequestTests
     public async Task ApproveAsync_Request_PostsTheKeyToTheApprovePath()
     {
         // Arrange
-        var (handler, service) = Build($$"""{"value":{"change":{{ChangeJson}},"created":true},"errors":[]}""");
+        (StubHandler? handler, ApiPriceSuggestionService? service) = Build($$"""{"value":{"change":{{ChangeJson}},"created":true},"errors":[]}""");
 
         // Act
-        var result = await service.ApproveAsync(new PriceSuggestionApproveRequest("single|2027-06-01|2027-08-31|20.00", new DateOnly(2027, 6, 10)), TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await service.ApproveAsync(new PriceSuggestionApproveRequest("single|2027-06-01|2027-08-31|20.00", new DateOnly(2027, 6, 10)), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -61,10 +62,10 @@ public sealed class PriceSuggestionRequestTests
     public async Task RevertAsync_Id_PostsTheRevertPath()
     {
         // Arrange
-        var (handler, service) = Build($$"""{"value":{{ChangeJson}},"errors":[]}""");
+        (StubHandler? handler, ApiPriceSuggestionService? service) = Build($$"""{"value":{{ChangeJson}},"errors":[]}""");
 
         // Act
-        var result = await service.RevertAsync(4, TestContext.Current.CancellationToken);
+        Result<PriceChangeDto> result = await service.RevertAsync(4, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -76,10 +77,10 @@ public sealed class PriceSuggestionRequestTests
     public async Task GetChangesAsync_Call_GetsTheChangesPath()
     {
         // Arrange
-        var (handler, service) = Build($$"""{"value":[{{ChangeJson}}],"errors":[]}""");
+        (StubHandler? handler, ApiPriceSuggestionService? service) = Build($$"""{"value":[{{ChangeJson}}],"errors":[]}""");
 
         // Act
-        var result = await service.GetChangesAsync(TestContext.Current.CancellationToken);
+        Result<IReadOnlyList<PriceChangeDto>> result = await service.GetChangesAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(4, Assert.Single(result.Value).Id);
@@ -91,11 +92,11 @@ public sealed class PriceSuggestionRequestTests
     public async Task GetEffectivePricesAsync_WithAndWithoutDay_BuildsTheQuery()
     {
         // Arrange
-        var (handler, service) = Build("""{"value":[],"errors":[]}""");
+        (StubHandler? handler, ApiPriceSuggestionService? service) = Build("""{"value":[],"errors":[]}""");
 
         // Act
         await service.GetEffectivePricesAsync(new DateOnly(2027, 7, 1), TestContext.Current.CancellationToken);
-        var withDay = handler.PathAndQuery;
+        string? withDay = handler.PathAndQuery;
         await service.GetEffectivePricesAsync(null, TestContext.Current.CancellationToken);
 
         // Assert
@@ -108,11 +109,11 @@ public sealed class PriceSuggestionRequestTests
     public async Task ApproveAsync_Refused_ReturnsTheCodes()
     {
         // Arrange
-        var handler = StubHandler.Json(HttpStatusCode.Conflict, """{"value":null,"errors":["price_change.overlap"]}""");
-        var gateway = new ApiGateway(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base });
+        StubHandler handler = StubHandler.Json(HttpStatusCode.Conflict, """{"value":null,"errors":["price_change.overlap"]}""");
+        ApiGateway gateway = new(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base });
 
         // Act
-        var result = await new ApiPriceSuggestionService(gateway).ApproveAsync(new PriceSuggestionApproveRequest("k"), TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await new ApiPriceSuggestionService(gateway).ApproveAsync(new PriceSuggestionApproveRequest("k"), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -124,7 +125,7 @@ public sealed class PriceSuggestionRequestTests
     public async Task ApproveAsync_NullRequest_Throws()
     {
         // Arrange
-        var (_, service) = Build(ListJson);
+        (StubHandler _, ApiPriceSuggestionService? service) = Build(ListJson);
 
         // Act and assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => service.ApproveAsync(null!, TestContext.Current.CancellationToken));

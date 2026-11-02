@@ -41,9 +41,9 @@ public sealed class PricingMigrationTests : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await using var admin = new NpgsqlConnection(_fixture.ConnectionString);
+        await using NpgsqlConnection admin = new(_fixture.ConnectionString);
         await admin.OpenAsync(TestContext.Current.CancellationToken);
-        await using var create = new NpgsqlCommand($"CREATE DATABASE \"{_databaseName}\"", admin);
+        await using NpgsqlCommand create = new($"CREATE DATABASE \"{_databaseName}\"", admin);
         await create.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
 
         _connectionString = new NpgsqlConnectionStringBuilder(_fixture.ConnectionString)
@@ -55,9 +55,9 @@ public sealed class PricingMigrationTests : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
-        await using var admin = new NpgsqlConnection(_fixture.ConnectionString);
+        await using NpgsqlConnection admin = new(_fixture.ConnectionString);
         await admin.OpenAsync();
-        await using var drop = new NpgsqlCommand($"DROP DATABASE IF EXISTS \"{_databaseName}\" WITH (FORCE)", admin);
+        await using NpgsqlCommand drop = new($"DROP DATABASE IF EXISTS \"{_databaseName}\" WITH (FORCE)", admin);
         await drop.ExecuteNonQueryAsync();
     }
 
@@ -68,7 +68,7 @@ public sealed class PricingMigrationTests : IAsyncLifetime
     public async Task Migrate_EmptyDatabaseToTheLatest_CreatesTheNewTablesColumnIndexesAndCheck()
     {
         // Arrange
-        await using var context = CreateContext();
+        await using HotelDbContext context = CreateContext();
 
         // Act
         await context.Database.MigrateAsync(TestContext.Current.CancellationToken);
@@ -89,7 +89,7 @@ public sealed class PricingMigrationTests : IAsyncLifetime
     public async Task Migrate_DatabaseWith187Rooms_KeepsTheRoomsAndTheAuditEventAndAddsEmptyTables()
     {
         // Arrange
-        await using var context = CreateContext();
+        await using HotelDbContext context = CreateContext();
         await MigrateToAsync(context, BeforeThePricingMigrations(context));
         await ExecuteAsync(InsertRoomsSql);
         await ExecuteAsync(InsertAuditEventSql);
@@ -116,8 +116,8 @@ public sealed class PricingMigrationTests : IAsyncLifetime
     public async Task Migrate_DownOverDatabaseWith187Rooms_RemovesTheNewObjectsKeepsTheRoomsAndAppliesAgain()
     {
         // Arrange
-        await using var context = CreateContext();
-        var before = BeforeThePricingMigrations(context);
+        await using HotelDbContext context = CreateContext();
+        string before = BeforeThePricingMigrations(context);
         await MigrateToAsync(context, before);
         await ExecuteAsync(InsertRoomsSql);
         await ExecuteAsync(InsertAuditEventSql);
@@ -146,18 +146,18 @@ public sealed class PricingMigrationTests : IAsyncLifetime
 
     private HotelDbContext CreateContext()
     {
-        var optionsBuilder = new DbContextOptionsBuilder<HotelDbContext>();
+        DbContextOptionsBuilder<HotelDbContext> optionsBuilder = new();
         DependencyInjection.ConfigureHotelDbContext(optionsBuilder, _connectionString);
-        var encryptor = new AesGcmStringEncryptor(new EncryptionOptions { PassportKey = Convert.ToBase64String(new byte[32]) });
+        AesGcmStringEncryptor encryptor = new(new EncryptionOptions { PassportKey = Convert.ToBase64String(new byte[32]) });
         return new HotelDbContext(optionsBuilder.Options, encryptor);
     }
 
     /// <summary>The id of the migration that comes right before the first migration of MIL-055.</summary>
     private static string BeforeThePricingMigrations(HotelDbContext context)
     {
-        var migrations = context.Database.GetMigrations().ToList();
-        var first = migrations.FindIndex(id => id.EndsWith(FirstPricingMigration, StringComparison.Ordinal));
-        var last = migrations.FindIndex(id => id.EndsWith(LastPricingMigration, StringComparison.Ordinal));
+        List<string> migrations = context.Database.GetMigrations().ToList();
+        int first = migrations.FindIndex(id => id.EndsWith(FirstPricingMigration, StringComparison.Ordinal));
+        int last = migrations.FindIndex(id => id.EndsWith(LastPricingMigration, StringComparison.Ordinal));
         Assert.True(first > 0, "The first migration of MIL-055 must have a predecessor.");
         Assert.Equal(first + 2, last);
 
@@ -169,31 +169,31 @@ public sealed class PricingMigrationTests : IAsyncLifetime
 
     private async Task ExecuteAsync(string sql)
     {
-        await using var connection = new NpgsqlConnection(_connectionString);
+        await using NpgsqlConnection connection = new(_connectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
-        await using var command = new NpgsqlCommand(sql, connection);
+        await using NpgsqlCommand command = new(sql, connection);
         await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
     }
 
     private async Task<long> CountAsync(string sql)
     {
-        await using var connection = new NpgsqlConnection(_connectionString);
+        await using NpgsqlConnection connection = new(_connectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
-        await using var command = new NpgsqlCommand(sql, connection);
+        await using NpgsqlCommand command = new(sql, connection);
 
         return (long)(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
     }
 
     private async Task AssertPricingObjectsExistAsync(bool expected)
     {
-        var expectedCount = expected ? 1 : 0;
-        foreach (var table in new[] { "room_rate", "pricing_settings", "price_change" })
+        int expectedCount = expected ? 1 : 0;
+        foreach (string? table in new[] { "room_rate", "pricing_settings", "price_change" })
         {
             Assert.Equal(expectedCount, await CountAsync($"SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '{table}'"));
         }
 
         Assert.Equal(expectedCount, await CountAsync("SELECT count(*) FROM information_schema.columns WHERE table_name = 'staff_audit_event' AND column_name = 'detail'"));
-        foreach (var index in new[] { "ux_room_rate_size", "ux_pricing_settings_slot", "ix_price_change_size_first_day" })
+        foreach (string? index in new[] { "ux_room_rate_size", "ux_pricing_settings_slot", "ix_price_change_size_first_day" })
         {
             Assert.Equal(expectedCount, await CountAsync($"SELECT count(*) FROM pg_indexes WHERE schemaname = 'public' AND indexname = '{index}'"));
         }

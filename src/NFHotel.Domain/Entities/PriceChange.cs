@@ -90,7 +90,7 @@ public sealed class PriceChange : Entity<int>
         string approvedBy,
         DateTimeOffset approvedAt)
     {
-        var candidate = new PriceChange
+        PriceChange candidate = new PriceChange
         {
             Size = size,
             Percentage = Math.Round(percentage, PercentageDecimals, MidpointRounding.AwayFromZero),
@@ -101,7 +101,7 @@ public sealed class PriceChange : Entity<int>
             ApprovedAt = approvedAt.ToUniversalTime(),
         };
 
-        var codes = new List<string>();
+        List<string> codes = new List<string>();
         try
         {
             EntityValidation.ThrowIfInvalid(candidate);
@@ -144,7 +144,7 @@ public sealed class PriceChange : Entity<int>
     /// <returns><c>true</c> when at least one day is in both.</returns>
     public bool CountsWithin(DateOnly first, DateOnly last)
     {
-        var counted = CountedLastDay;
+        DateOnly? counted = CountedLastDay;
 
         return counted is not null && FirstDay <= last && counted.Value >= first && first <= last;
     }
@@ -162,7 +162,7 @@ public sealed class PriceChange : Entity<int>
     /// </exception>
     public void Revert(string revertedBy, DateTimeOffset revertedAt, DateOnly today)
     {
-        var name = revertedBy?.Trim() ?? string.Empty;
+        string name = revertedBy?.Trim() ?? string.Empty;
         if (State == PriceChangeState.Reverted)
         {
             throw new DomainException(PriceChangeErrors.AlreadyReverted);

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
+using NFHotel.Infrastructure.Persistence;
 using NFHotel.Infrastructure.Repositories;
 
 namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
@@ -33,11 +34,11 @@ public sealed class PricingSettingRepositoryTests : IAsyncLifetime
     public async Task Migrations_AppliedToAnEmptyDatabase_MatchTheModel()
     {
         // Arrange
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var migrations = context.Database.GetMigrations();
-        var rows = await context.PricingSettings.CountAsync(TestContext.Current.CancellationToken);
+        IEnumerable<string> migrations = context.Database.GetMigrations();
+        int rows = await context.PricingSettings.CountAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Contains(migrations, id => id.EndsWith("_AddPricingSettings", StringComparison.Ordinal));
@@ -49,10 +50,10 @@ public sealed class PricingSettingRepositoryTests : IAsyncLifetime
     public async Task GetAsync_NothingStored_ReturnsNull()
     {
         // Arrange
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var found = await new PricingSettingRepository(context).GetAsync(TestContext.Current.CancellationToken);
+        PricingSetting? found = await new PricingSettingRepository(context).GetAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(found);
@@ -63,16 +64,16 @@ public sealed class PricingSettingRepositoryTests : IAsyncLifetime
     public async Task GetAsync_StoredRow_ReturnsEveryFieldIncludingTheSizes()
     {
         // Arrange
-        await using (var context = _fixture.CreateContext())
+        await using (HotelDbContext context = _fixture.CreateContext())
         {
             new PricingSettingRepository(context).Add(Make());
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using var reader = _fixture.CreateContext();
+        await using HotelDbContext reader = _fixture.CreateContext();
 
         // Act
-        var found = await new PricingSettingRepository(reader).GetAsync(TestContext.Current.CancellationToken);
+        PricingSetting? found = await new PricingSettingRepository(reader).GetAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(found);
@@ -90,17 +91,17 @@ public sealed class PricingSettingRepositoryTests : IAsyncLifetime
     public async Task Add_SecondRow_IsRefusedByTheDatabase()
     {
         // Arrange
-        await using (var context = _fixture.CreateContext())
+        await using (HotelDbContext context = _fixture.CreateContext())
         {
             new PricingSettingRepository(context).Add(Make());
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using var second = _fixture.CreateContext();
+        await using HotelDbContext second = _fixture.CreateContext();
         new PricingSettingRepository(second).Add(Make(surcharge: 10m));
 
         // Act
-        var save = () => second.SaveChangesAsync(TestContext.Current.CancellationToken);
+        Func<Task<int>> save = () => second.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await Assert.ThrowsAsync<DbUpdateException>(save);
@@ -111,10 +112,10 @@ public sealed class PricingSettingRepositoryTests : IAsyncLifetime
     public async Task Insert_SlotOtherThanOne_IsRefusedByTheCheckConstraint()
     {
         // Arrange
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var insert = () => context.Database.ExecuteSqlRawAsync(
+        Func<Task<int>> insert = () => context.Database.ExecuteSqlRawAsync(
             "INSERT INTO pricing_settings (slot, surcharge_percent, discount_percent, high_threshold_percent, low_threshold_percent, max_change_percent, minimum_nightly_price, discount_sizes, set_by, set_at) "
             + "VALUES (2, 20, 15, 80, 40, 30, 0, 'Single', 'manager', now())",
             TestContext.Current.CancellationToken);
@@ -128,15 +129,15 @@ public sealed class PricingSettingRepositoryTests : IAsyncLifetime
     public async Task Change_StoredRow_UpdatesTheSameRowAndItsSizes()
     {
         // Arrange
-        await using (var context = _fixture.CreateContext())
+        await using (HotelDbContext context = _fixture.CreateContext())
         {
             new PricingSettingRepository(context).Add(Make(sizes: RoomSize.Single));
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using (var context = _fixture.CreateContext())
+        await using (HotelDbContext context = _fixture.CreateContext())
         {
-            var stored = await new PricingSettingRepository(context).GetAsync(TestContext.Current.CancellationToken);
+            PricingSetting? stored = await new PricingSettingRepository(context).GetAsync(TestContext.Current.CancellationToken);
 
             // Act
             stored!.Change(10m, 5m, 90m, 20m, 50m, 0m, [RoomSize.Double, RoomSize.Suite, RoomSize.Single], "other", At.AddHours(1));
@@ -144,8 +145,8 @@ public sealed class PricingSettingRepositoryTests : IAsyncLifetime
         }
 
         // Assert
-        await using var check = _fixture.CreateContext();
-        var value = Assert.Single(check.PricingSettings);
+        await using HotelDbContext check = _fixture.CreateContext();
+        PricingSetting value = Assert.Single(check.PricingSettings);
         Assert.Equal((10m, "other"), (value.SurchargePercent, value.SetBy));
         Assert.Equal([RoomSize.Single, RoomSize.Double, RoomSize.Suite], value.DiscountSizes);
     }

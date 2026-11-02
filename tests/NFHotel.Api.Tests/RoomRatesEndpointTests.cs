@@ -21,12 +21,12 @@ public sealed class RoomRatesEndpointTests
     public async Task Put_Manager_SetsTheRateAndNamesTheStaffMember()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        using var response = await client.PutAsJsonAsync($"{Route}/single", new SetRoomRateRequest(89.5m), ApiJson.Options, TestContext.Current.CancellationToken);
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<RoomRateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.PutAsJsonAsync($"{Route}/single", new SetRoomRateRequest(89.5m), ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<RoomRateDto>? body = await response.Content.ReadFromJsonAsync<ApiResponse<RoomRateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -42,16 +42,16 @@ public sealed class RoomRatesEndpointTests
     public async Task Get_StaffWithRoomsView_ListsTheRates(StaffRole role)
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var manager = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new();
+        using HttpClient manager = factory.CreateStaffClient(StaffRole.Manager);
         await manager.PutAsJsonAsync($"{Route}/suite", new SetRoomRateRequest(300m), ApiJson.Options, TestContext.Current.CancellationToken);
-        using var reader = factory.CreateStaffClient(role);
+        using HttpClient reader = factory.CreateStaffClient(role);
 
         // Act
-        var body = await reader.GetFromJsonAsync<ApiResponse<List<RoomRateDto>>>(Route, ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<List<RoomRateDto>>? body = await reader.GetFromJsonAsync<ApiResponse<List<RoomRateDto>>>(Route, ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
-        var value = Assert.Single(body!.Value!);
+        RoomRateDto value = Assert.Single(body!.Value!);
         Assert.Equal(("Suite", 300m), (value.Size, value.NightlyPrice));
     }
 
@@ -60,16 +60,16 @@ public sealed class RoomRatesEndpointTests
     public async Task Audit_AfterTwoChanges_ShowsTheOldAndTheNewPrice()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
         await client.PutAsJsonAsync($"{Route}/double", new SetRoomRateRequest(100m), ApiJson.Options, TestContext.Current.CancellationToken);
         await client.PutAsJsonAsync($"{Route}/Double", new SetRoomRateRequest(110m), ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Act
-        var body = await client.GetFromJsonAsync<ApiResponse<StaffAuditPageDto>>("/api/staff/audit?page=1&pageSize=50", ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<StaffAuditPageDto>? body = await client.GetFromJsonAsync<ApiResponse<StaffAuditPageDto>>("/api/staff/audit?page=1&pageSize=50", ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
-        var rateEvents = body!.Value!.Items.Where(item => item.Action == StaffAuditAction.RoomRateChanged).ToArray();
+        StaffAuditEventDto[] rateEvents = body!.Value!.Items.Where(item => item.Action == StaffAuditAction.RoomRateChanged).ToArray();
         Assert.Equal(["Double: 100.00 -> 110.00", "Double: (none) -> 100.00"], rateEvents.Select(item => item.Detail));
         Assert.All(rateEvents, item => Assert.Equal("tester-manager", item.ActorName));
     }
@@ -83,12 +83,12 @@ public sealed class RoomRatesEndpointTests
     public async Task Put_UnknownSize_Returns422WithTheSizeCode()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        using var response = await client.PutAsJsonAsync($"{Route}/penthouse", new SetRoomRateRequest(100m), ApiJson.Options, TestContext.Current.CancellationToken);
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<RoomRateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.PutAsJsonAsync($"{Route}/penthouse", new SetRoomRateRequest(100m), ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<RoomRateDto>? body = await response.Content.ReadFromJsonAsync<ApiResponse<RoomRateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
@@ -101,12 +101,12 @@ public sealed class RoomRatesEndpointTests
     public async Task Put_PriceZero_Returns422WithThePriceCode()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        using var response = await client.PutAsJsonAsync($"{Route}/single", new SetRoomRateRequest(0m), ApiJson.Options, TestContext.Current.CancellationToken);
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<RoomRateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.PutAsJsonAsync($"{Route}/single", new SetRoomRateRequest(0m), ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<RoomRateDto>? body = await response.Content.ReadFromJsonAsync<ApiResponse<RoomRateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
@@ -120,11 +120,11 @@ public sealed class RoomRatesEndpointTests
     public async Task Put_RoleWithoutThePermission_Returns403(StaffRole role)
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(role);
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateStaffClient(role);
 
         // Act
-        using var response = await client.PutAsJsonAsync($"{Route}/single", new SetRoomRateRequest(100m), ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.PutAsJsonAsync($"{Route}/single", new SetRoomRateRequest(100m), ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
@@ -137,12 +137,12 @@ public sealed class RoomRatesEndpointTests
     public async Task PutAndGet_ServiceTokenOnly_Return401()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateServiceClient();
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateServiceClient();
 
         // Act
-        using var put = await client.PutAsJsonAsync($"{Route}/single", new SetRoomRateRequest(100m), ApiJson.Options, TestContext.Current.CancellationToken);
-        using var get = await client.GetAsync(Route, TestContext.Current.CancellationToken);
+        using HttpResponseMessage put = await client.PutAsJsonAsync($"{Route}/single", new SetRoomRateRequest(100m), ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage get = await client.GetAsync(Route, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, put.StatusCode);
@@ -155,11 +155,11 @@ public sealed class RoomRatesEndpointTests
     public async Task Get_NoToken_Returns401()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateClient();
 
         // Act
-        using var response = await client.GetAsync(Route, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.GetAsync(Route, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

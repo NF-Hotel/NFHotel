@@ -1,5 +1,6 @@
 using NFHotel.Application.Dto.Pricing;
 using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
@@ -13,18 +14,18 @@ public sealed class PricingSettingsServiceTests
 {
     private static readonly SetPricingSettingsRequest DefaultsRequest = new(20m, 15m, 80m, 40m, 30m, 0m, ["Single"]);
 
-    public static IEnumerable<object?[]> BadSizes()
+    public static TheoryData<string[]> BadSizes => new()
     {
-        yield return [Array.Empty<string>()];
-        yield return [new[] { "Penthouse" }];
-        yield return [new[] { "Single", "1" }];
-        yield return [new[] { string.Empty }];
-        yield return [null];
-    }
+        Array.Empty<string>(),
+        new[] { "Penthouse" },
+        new[] { "Single", "1" },
+        new[] { string.Empty },
+        null!,
+    };
 
     private static ServiceWorld WorldWithManager()
     {
-        var world = new ServiceWorld();
+        ServiceWorld world = new();
         world.CallContext.StaffId = 7;
         world.CallContext.StaffName = "manager";
         world.CallContext.RemoteAddress = "10.0.0.5";
@@ -38,14 +39,14 @@ public sealed class PricingSettingsServiceTests
     public async Task GetAsync_NothingSaved_ReturnsTheDefaultsWithoutSaverAndTime()
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
 
         // Act
-        var result = await world.PricingSettingsService().GetAsync(TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await world.PricingSettingsService().GetAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
-        var value = result.Value;
+        PricingSettingsDto value = result.Value;
         Assert.Equal((20m, 15m, 80m, 40m, 30m, 0m), (value.SurchargePercent, value.DiscountPercent, value.HighThresholdPercent, value.LowThresholdPercent, value.MaxChangePercent, value.MinimumNightlyPrice));
         Assert.Equal(["Single"], value.DiscountSizes);
         Assert.Null(value.SetBy);
@@ -58,12 +59,12 @@ public sealed class PricingSettingsServiceTests
     public async Task GetAsync_SettingsSaved_ReturnsThemWithSaverAndTime()
     {
         // Arrange
-        var world = WorldWithManager();
-        var service = world.PricingSettingsService();
+        ServiceWorld world = WorldWithManager();
+        PricingSettingsService service = world.PricingSettingsService();
         await service.SetAsync(DefaultsRequest with { SurchargePercent = 25m, DiscountSizes = ["double", "Single"] }, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await service.GetAsync(TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await service.GetAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(25m, result.Value.SurchargePercent);
@@ -80,14 +81,14 @@ public sealed class PricingSettingsServiceTests
     public async Task SetAsync_FirstSave_ComparesWithTheDefaultsAndAuditsOnlyWhatChanged()
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
 
         // Act
-        var result = await world.PricingSettingsService().SetAsync(DefaultsRequest with { SurchargePercent = 25m }, TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await world.PricingSettingsService().SetAsync(DefaultsRequest with { SurchargePercent = 25m }, TestContext.Current.CancellationToken);
 
         // Assert
-        var stored = Assert.Single(world.PricingSettings.Items);
-        var audit = Assert.Single(world.StaffAudit.Events);
+        PricingSetting stored = Assert.Single(world.PricingSettings.Items);
+        StaffAuditEvent audit = Assert.Single(world.StaffAudit.Events);
         Assert.True(result.IsSuccess);
         Assert.Equal((25m, "manager"), (stored.SurchargePercent, stored.SetBy));
         Assert.Equal(world.Clock.UtcNow, stored.SetAt);
@@ -103,18 +104,18 @@ public sealed class PricingSettingsServiceTests
     public async Task SetAsync_SecondSave_ReplacesTheRowAndListsOnlyTheChangedFields()
     {
         // Arrange
-        var world = WorldWithManager();
-        var service = world.PricingSettingsService();
+        ServiceWorld world = WorldWithManager();
+        PricingSettingsService service = world.PricingSettingsService();
         await service.SetAsync(DefaultsRequest with { SurchargePercent = 25m }, TestContext.Current.CancellationToken);
         world.CallContext.StaffName = "other";
 
         // Act
-        var result = await service.SetAsync(
+        Result<PricingSettingsDto> result = await service.SetAsync(
             DefaultsRequest with { SurchargePercent = 25m, DiscountPercent = 10.5m, MinimumNightlyPrice = 60m, DiscountSizes = ["Single", "Double"] },
             TestContext.Current.CancellationToken);
 
         // Assert
-        var stored = Assert.Single(world.PricingSettings.Items);
+        PricingSetting stored = Assert.Single(world.PricingSettings.Items);
         Assert.Equal(("other", 10.5m), (stored.SetBy, stored.DiscountPercent));
         Assert.Equal("other", result.Value.SetBy);
         Assert.Equal(
@@ -128,7 +129,7 @@ public sealed class PricingSettingsServiceTests
     public async Task SetAsync_EveryFieldChanged_NamesEachOfThemInOrder()
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
 
         // Act
         await world.PricingSettingsService().SetAsync(new SetPricingSettingsRequest(21m, 16m, 90m, 30m, 40m, 5m, ["Suite"]), TestContext.Current.CancellationToken);
@@ -145,8 +146,8 @@ public sealed class PricingSettingsServiceTests
     public async Task SetAsync_LargestAuditText_NeverExceeds200Characters()
     {
         // Arrange
-        var world = WorldWithManager();
-        var service = world.PricingSettingsService();
+        ServiceWorld world = WorldWithManager();
+        PricingSettingsService service = world.PricingSettingsService();
         await service.SetAsync(new SetPricingSettingsRequest(100m, 100m, 99.99m, 0.01m, 100m, 999999.99m, ["Single", "Double", "Suite"]), TestContext.Current.CancellationToken);
 
         // Act
@@ -162,10 +163,10 @@ public sealed class PricingSettingsServiceTests
     public async Task SetAsync_SameSizesInAnotherOrder_SavesNothing()
     {
         // Arrange
-        var world = WorldWithManager();
-        var service = world.PricingSettingsService();
+        ServiceWorld world = WorldWithManager();
+        PricingSettingsService service = world.PricingSettingsService();
         await service.SetAsync(DefaultsRequest with { DiscountSizes = ["Single", "Suite"] }, TestContext.Current.CancellationToken);
-        var saves = world.UnitOfWork.SaveCount;
+        int saves = world.UnitOfWork.SaveCount;
 
         // Act
         await service.SetAsync(DefaultsRequest with { DiscountSizes = ["suite", "SINGLE", "Suite"] }, TestContext.Current.CancellationToken);
@@ -180,16 +181,16 @@ public sealed class PricingSettingsServiceTests
     public async Task SetAsync_NothingChanged_SavesNothingAndAuditsNothing()
     {
         // Arrange
-        var world = WorldWithManager();
-        var service = world.PricingSettingsService();
+        ServiceWorld world = WorldWithManager();
+        PricingSettingsService service = world.PricingSettingsService();
         await service.SetAsync(DefaultsRequest with { SurchargePercent = 25m }, TestContext.Current.CancellationToken);
-        var saves = world.UnitOfWork.SaveCount;
-        var firstSetAt = world.PricingSettings.Items[0].SetAt;
+        int saves = world.UnitOfWork.SaveCount;
+        DateTimeOffset firstSetAt = world.PricingSettings.Items[0].SetAt;
         world.Clock.TimeOfDay = TimeSpan.FromHours(13);
         world.CallContext.StaffName = "other";
 
         // Act
-        var result = await service.SetAsync(DefaultsRequest with { SurchargePercent = 25.001m }, TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await service.SetAsync(DefaultsRequest with { SurchargePercent = 25.001m }, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -205,10 +206,10 @@ public sealed class PricingSettingsServiceTests
     public async Task SetAsync_DefaultsWhileNothingStored_SavesNothing()
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
 
         // Act
-        var result = await world.PricingSettingsService().SetAsync(DefaultsRequest, TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await world.PricingSettingsService().SetAsync(DefaultsRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -227,10 +228,10 @@ public sealed class PricingSettingsServiceTests
     public async Task SetAsync_InvalidValue_ReturnsTheCodeAndSavesNothing()
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
 
         // Act
-        var result = await world.PricingSettingsService().SetAsync(DefaultsRequest with { SurchargePercent = 150m }, TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await world.PricingSettingsService().SetAsync(DefaultsRequest with { SurchargePercent = 150m }, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal([PricingSettingErrors.SurchargeInvalid], result.Errors.Select(error => error.Code));
@@ -244,13 +245,13 @@ public sealed class PricingSettingsServiceTests
     public async Task SetAsync_InvalidValueAfterASave_KeepsTheSavedSettings()
     {
         // Arrange
-        var world = WorldWithManager();
-        var service = world.PricingSettingsService();
+        ServiceWorld world = WorldWithManager();
+        PricingSettingsService service = world.PricingSettingsService();
         await service.SetAsync(DefaultsRequest with { SurchargePercent = 25m }, TestContext.Current.CancellationToken);
-        var saves = world.UnitOfWork.SaveCount;
+        int saves = world.UnitOfWork.SaveCount;
 
         // Act
-        var result = await service.SetAsync(DefaultsRequest with { SurchargePercent = 30m, LowThresholdPercent = 90m }, TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await service.SetAsync(DefaultsRequest with { SurchargePercent = 30m, LowThresholdPercent = 90m }, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Contains(PricingSettingErrors.ThresholdsOrderInvalid, result.Errors.Select(error => error.Code));
@@ -264,10 +265,10 @@ public sealed class PricingSettingsServiceTests
     public async Task SetAsync_SeveralFaults_ReturnsEveryCode()
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
 
         // Act
-        var result = await world.PricingSettingsService().SetAsync(new SetPricingSettingsRequest(-1m, 15m, 80m, 40m, 0m, 0m, ["Single"]), TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await world.PricingSettingsService().SetAsync(new SetPricingSettingsRequest(-1m, 15m, 80m, 40m, 0m, 0m, ["Single"]), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equivalent(
@@ -278,13 +279,13 @@ public sealed class PricingSettingsServiceTests
     /// <summary>Negative: no sizes, or a name that is not a size, is refused with the sizes code.</summary>
     [Theory]
     [MemberData(nameof(BadSizes))]
-    public async Task SetAsync_BadSizes_ReturnsTheSizesCodeAndSavesNothing(string[]? sizes)
+    public async Task SetAsync_BadSizes_ReturnsTheSizesCodeAndSavesNothing(string[] sizes)
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
 
         // Act
-        var result = await world.PricingSettingsService().SetAsync(DefaultsRequest with { DiscountSizes = sizes! }, TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await world.PricingSettingsService().SetAsync(DefaultsRequest with { DiscountSizes = sizes }, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal([PricingSettingErrors.DiscountSizesInvalid], result.Errors.Select(error => error.Code));
@@ -297,10 +298,10 @@ public sealed class PricingSettingsServiceTests
     public async Task SetAsync_NobodySignedIn_ReturnsTheSetByCodeAndWritesNothing()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new();
 
         // Act
-        var result = await world.PricingSettingsService().SetAsync(DefaultsRequest with { SurchargePercent = 25m }, TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await world.PricingSettingsService().SetAsync(DefaultsRequest with { SurchargePercent = 25m }, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal([PricingSettingErrors.SetByInvalid], result.Errors.Select(error => error.Code));
@@ -313,11 +314,11 @@ public sealed class PricingSettingsServiceTests
     public async Task SetAsync_UniqueIndexBrokenBySimultaneousFirstSave_ReturnsTheConflictCode()
     {
         // Arrange
-        var world = WorldWithManager();
+        ServiceWorld world = WorldWithManager();
         world.UnitOfWork.FailWith = new UniqueConstraintViolationException("duplicate key", "ux_pricing_settings_slot");
 
         // Act
-        var result = await world.PricingSettingsService().SetAsync(DefaultsRequest with { SurchargePercent = 25m }, TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await world.PricingSettingsService().SetAsync(DefaultsRequest with { SurchargePercent = 25m }, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -337,11 +338,11 @@ public sealed class PricingSettingsServiceTests
     {
         // Arrange
         decimal Parse(string text) => decimal.Parse(text, System.Globalization.CultureInfo.InvariantCulture);
-        var setting = PricingSetting.Create(Parse(surcharge), Parse(discount), Parse(high), Parse(low), Parse(maxChange), Parse(minimum), [RoomSize.Suite, RoomSize.Single], "manager", DateTimeOffset.UnixEpoch);
+        PricingSetting setting = PricingSetting.Create(Parse(surcharge), Parse(discount), Parse(high), Parse(low), Parse(maxChange), Parse(minimum), [RoomSize.Suite, RoomSize.Single], "manager", DateTimeOffset.UnixEpoch);
 
         // Act
-        var rule = setting.ToRule();
-        var check = rule.EnsureValid;
+        PricingSettings rule = setting.ToRule();
+        Action check = rule.EnsureValid;
 
         // Assert
         Assert.Null(Record.Exception(check));
@@ -354,11 +355,11 @@ public sealed class PricingSettingsServiceTests
     public async Task GetAsync_NothingSaved_MatchesTheDefaultsOfTheRule()
     {
         // Arrange
-        var world = WorldWithManager();
-        var defaults = PricingSettings.Defaults;
+        ServiceWorld world = WorldWithManager();
+        PricingSettings defaults = PricingSettings.Defaults;
 
         // Act
-        var value = (await world.PricingSettingsService().GetAsync(TestContext.Current.CancellationToken)).Value;
+        PricingSettingsDto value = (await world.PricingSettingsService().GetAsync(TestContext.Current.CancellationToken)).Value;
 
         // Assert
         Assert.Equal(

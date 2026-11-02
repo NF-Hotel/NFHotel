@@ -49,7 +49,7 @@ public sealed class RoomRate : Entity<int>
     /// <exception cref="DomainException">A field breaks an invariant.</exception>
     public static RoomRate Create(RoomSize size, decimal nightlyPrice, string setBy, DateTimeOffset setAt)
     {
-        var created = new RoomRate();
+        RoomRate created = new();
         created.Apply(size, nightlyPrice, setBy, setAt);
 
         return created;
@@ -65,7 +65,7 @@ public sealed class RoomRate : Entity<int>
 
     private void Apply(RoomSize size, decimal nightlyPrice, string setBy, DateTimeOffset setAt)
     {
-        var candidate = new RoomRate
+        RoomRate candidate = new()
         {
             Size = size,
             NightlyPrice = Math.Round(nightlyPrice, PriceDecimals, MidpointRounding.AwayFromZero),

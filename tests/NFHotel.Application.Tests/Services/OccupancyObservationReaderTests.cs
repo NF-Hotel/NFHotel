@@ -19,10 +19,10 @@ public sealed class OccupancyObservationReaderTests
     public void Read_MonthlySeriesInPercent_ReturnsOneObservationPerMonthAsPercent()
     {
         // Arrange
-        var content = PriceSuggestionTestData.Content();
+        MarketAnalysisContentDto content = PriceSuggestionTestData.Content();
 
         // Act
-        var observations = OccupancyObservationReader.Read(content);
+        IReadOnlyList<OccupancyObservation> observations = OccupancyObservationReader.Read(content);
 
         // Assert
         Assert.Equal(12, observations.Count);
@@ -35,10 +35,10 @@ public sealed class OccupancyObservationReaderTests
     public void Read_PercentAbove100WithDecimals_IsKept()
     {
         // Arrange
-        var series = new MarketAnalysisSeriesDto("monthly", "Monthly", "%", [new("2019-07", 112.5), new("2019-08", 89.2)]);
+        MarketAnalysisSeriesDto series = new("monthly", "Monthly", "%", [new("2019-07", 112.5), new("2019-08", 89.2)]);
 
         // Act
-        var observations = OccupancyObservationReader.Read(Section(Occupancy("available", series)));
+        IReadOnlyList<OccupancyObservation> observations = OccupancyObservationReader.Read(Section(Occupancy("available", series)));
 
         // Assert
         Assert.Equal([new OccupancyObservation(2019, 7, 112.5m), new OccupancyObservation(2019, 8, 89.2m)], observations);
@@ -49,10 +49,10 @@ public sealed class OccupancyObservationReaderTests
     public void Read_FractionsWithoutUnit_AreMultipliedBy100()
     {
         // Arrange
-        var series = new MarketAnalysisSeriesDto("monthly", "Monthly", string.Empty, [new("2019-07", 0.9), new("2019-08", 0.25)]);
+        MarketAnalysisSeriesDto series = new("monthly", "Monthly", string.Empty, [new("2019-07", 0.9), new("2019-08", 0.25)]);
 
         // Act
-        var observations = OccupancyObservationReader.Read(Section(Occupancy("available", series)));
+        IReadOnlyList<OccupancyObservation> observations = OccupancyObservationReader.Read(Section(Occupancy("available", series)));
 
         // Assert
         Assert.Equal([new OccupancyObservation(2019, 7, 90m), new OccupancyObservation(2019, 8, 25m)], observations);
@@ -65,10 +65,10 @@ public sealed class OccupancyObservationReaderTests
     public void Read_PercentSeries_IsNotScaled(string unit, double first, double second, double expectedFirst)
     {
         // Arrange
-        var series = new MarketAnalysisSeriesDto("monthly", "Monthly", unit, [new("2019-07", first), new("2019-08", second)]);
+        MarketAnalysisSeriesDto series = new("monthly", "Monthly", unit, [new("2019-07", first), new("2019-08", second)]);
 
         // Act
-        var observations = OccupancyObservationReader.Read(Section(Occupancy("available", series)));
+        IReadOnlyList<OccupancyObservation> observations = OccupancyObservationReader.Read(Section(Occupancy("available", series)));
 
         // Assert
         Assert.Equal((decimal)expectedFirst, observations[0].OccupancyPercent);
@@ -80,7 +80,7 @@ public sealed class OccupancyObservationReaderTests
     public void Read_UnparseablePoints_AreSkipped()
     {
         // Arrange
-        var series = new MarketAnalysisSeriesDto(
+        MarketAnalysisSeriesDto series = new(
             "monthly",
             "Monthly",
             "%",
@@ -95,7 +95,7 @@ public sealed class OccupancyObservationReaderTests
             ]);
 
         // Act
-        var observations = OccupancyObservationReader.Read(Section(Occupancy("available", series)));
+        IReadOnlyList<OccupancyObservation> observations = OccupancyObservationReader.Read(Section(Occupancy("available", series)));
 
         // Assert
         Assert.Equal([new OccupancyObservation(2019, 9, 77.5m), new OccupancyObservation(2019, 10, 61m)], observations);
@@ -106,13 +106,13 @@ public sealed class OccupancyObservationReaderTests
     public void Read_SeveralSeries_PrefersMonthlyThenTheFirstSeriesOfMonths()
     {
         // Arrange
-        var other = new MarketAnalysisSeriesDto("other", "Other", "%", [new("2019-01", 10)]);
-        var monthly = new MarketAnalysisSeriesDto("monthly", "Monthly", "%", [new("2019-02", 20)]);
-        var holidays = new MarketAnalysisSeriesDto("a+b", "Holidays", "%", [new("Holidays", 70), new("Other days", 40)]);
+        MarketAnalysisSeriesDto other = new("other", "Other", "%", [new("2019-01", 10)]);
+        MarketAnalysisSeriesDto monthly = new("monthly", "Monthly", "%", [new("2019-02", 20)]);
+        MarketAnalysisSeriesDto holidays = new("a+b", "Holidays", "%", [new("Holidays", 70), new("Other days", 40)]);
 
         // Act
-        var preferred = OccupancyObservationReader.Read(Section(Occupancy("available", holidays, other, monthly)));
-        var fallback = OccupancyObservationReader.Read(Section(Occupancy("available", holidays, other)));
+        IReadOnlyList<OccupancyObservation> preferred = OccupancyObservationReader.Read(Section(Occupancy("available", holidays, other, monthly)));
+        IReadOnlyList<OccupancyObservation> fallback = OccupancyObservationReader.Read(Section(Occupancy("available", holidays, other)));
 
         // Assert
         Assert.Equal([new OccupancyObservation(2019, 2, 20m)], preferred);
@@ -124,9 +124,9 @@ public sealed class OccupancyObservationReaderTests
     public void Read_NothingUsable_ReturnsEmpty()
     {
         // Arrange
-        var points = new MarketAnalysisSeriesDto("monthly", "Monthly", "%", [new("2019-01", 10)]);
-        var noMonths = new MarketAnalysisSeriesDto("monthly", "Monthly", "%", [new("Overall", 10)]);
-        var other = new MarketAnalysisSectionDto("lead_time", "Lead time", "available", null, [points], null);
+        MarketAnalysisSeriesDto points = new("monthly", "Monthly", "%", [new("2019-01", 10)]);
+        MarketAnalysisSeriesDto noMonths = new("monthly", "Monthly", "%", [new("Overall", 10)]);
+        MarketAnalysisSectionDto other = new("lead_time", "Lead time", "available", null, [points], null);
 
         // Act and assert
         Assert.Empty(OccupancyObservationReader.Read(null));
@@ -146,10 +146,10 @@ public sealed class OccupancyObservationReaderTests
     public void ReadExplanation_AvailableInsight_ReturnsTheSummary()
     {
         // Arrange
-        var content = PriceSuggestionTestData.Content(explanation: "  Summer is full.  ");
+        MarketAnalysisContentDto content = PriceSuggestionTestData.Content(explanation: "  Summer is full.  ");
 
         // Act
-        var text = OccupancyObservationReader.ReadExplanation(content);
+        string? text = OccupancyObservationReader.ReadExplanation(content);
 
         // Assert
         Assert.Equal("Summer is full.", text);
@@ -160,14 +160,14 @@ public sealed class OccupancyObservationReaderTests
     public void ReadExplanation_NoUsableInsight_ReturnsNull()
     {
         // Arrange
-        var unavailable = new MarketAnalysisSectionDto(
+        MarketAnalysisSectionDto unavailable = new(
             "occupancy",
             "Occupancy",
             "available",
             null,
             [],
             new MarketAnalysisInsightDto("unavailable", "TIMEOUT", "text", []));
-        var empty = unavailable with { Insight = new MarketAnalysisInsightDto("available", null, "  ", []) };
+        MarketAnalysisSectionDto empty = unavailable with { Insight = new MarketAnalysisInsightDto("available", null, "  ", []) };
 
         // Act and assert
         Assert.Null(OccupancyObservationReader.ReadExplanation(null));

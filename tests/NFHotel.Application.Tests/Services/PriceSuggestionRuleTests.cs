@@ -22,7 +22,7 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_HighMonth_RaisesEverySize()
     {
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m)), Rates, PricingSettings.Defaults, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m)), Rates, PricingSettings.Defaults, Today);
 
         Assert.Equal(3, result.Count);
         Assert.All(result, s => Assert.Equal(Season.High, s.Season));
@@ -38,9 +38,9 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_LowMonth_LowersOnlyTheDiscountSizes()
     {
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), Rates, PricingSettings.Defaults, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), Rates, PricingSettings.Defaults, Today);
 
-        var suggestion = Assert.Single(result);
+        PriceSuggestion suggestion = Assert.Single(result);
         Assert.Equal(RoomSize.Single, suggestion.Size);
         Assert.Equal(Season.Low, suggestion.Season);
         Assert.Equal(85.00m, suggestion.NewPrice);
@@ -53,9 +53,9 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_DiscountSizesWithDouble_LowersTheDoubleRoomToo()
     {
-        var settings = new PricingSettings(DiscountSizesOrNull: [RoomSize.Single, RoomSize.Double]);
+        PricingSettings settings = new(DiscountSizesOrNull: [RoomSize.Single, RoomSize.Double]);
 
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), Rates, settings, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), Rates, settings, Today);
 
         Assert.Equal([RoomSize.Single, RoomSize.Double], result.Select(s => s.Size));
     }
@@ -64,9 +64,9 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_SurchargeAboveTheCap_IsCutToTheCap()
     {
-        var settings = new PricingSettings(SurchargePercent: 40m, MaxChangePercent: 30m);
+        PricingSettings settings = new(SurchargePercent: 40m, MaxChangePercent: 30m);
 
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m)), Rates, settings, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m)), Rates, settings, Today);
 
         Assert.All(result, s => Assert.Equal(30m, s.Percentage));
         Assert.All(result, s => Assert.Equal(130.00m, s.NewPrice));
@@ -77,11 +77,11 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_DiscountBelowTheMinimum_IsRaisedToTheMinimum()
     {
-        var settings = new PricingSettings(MinimumNightlyPrice: 90m);
+        PricingSettings settings = new(MinimumNightlyPrice: 90m);
 
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), Rates, settings, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), Rates, settings, Today);
 
-        var suggestion = Assert.Single(result);
+        PriceSuggestion suggestion = Assert.Single(result);
         Assert.Equal(90.00m, suggestion.NewPrice);
         Assert.True(suggestion.WasLimited);
     }
@@ -90,11 +90,11 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_DiscountBelowTheMinimum_PercentageGivesTheCutPrice()
     {
-        var settings = new PricingSettings(MinimumNightlyPrice: 90m);
+        PricingSettings settings = new(MinimumNightlyPrice: 90m);
 
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), Rates, settings, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), Rates, settings, Today);
 
-        var suggestion = Assert.Single(result);
+        PriceSuggestion suggestion = Assert.Single(result);
         Assert.Equal(10m, suggestion.Percentage);
         Assert.Equal(90.00m, suggestion.NewPrice);
     }
@@ -117,16 +117,16 @@ public sealed class PriceSuggestionRuleTests
     [InlineData("250.00", "249.00")]
     public void Suggest_MinimumLimitsTheDiscount_ApprovedChangeGivesAtLeastTheMinimum(string rateText, string minimumText)
     {
-        var rate = decimal.Parse(rateText, System.Globalization.CultureInfo.InvariantCulture);
-        var minimum = decimal.Parse(minimumText, System.Globalization.CultureInfo.InvariantCulture);
-        var settings = new PricingSettings(MinimumNightlyPrice: minimum);
+        decimal rate = decimal.Parse(rateText, System.Globalization.CultureInfo.InvariantCulture);
+        decimal minimum = decimal.Parse(minimumText, System.Globalization.CultureInfo.InvariantCulture);
+        PricingSettings settings = new(MinimumNightlyPrice: minimum);
 
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), [new(RoomSize.Single, rate)], settings, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), [new(RoomSize.Single, rate)], settings, Today);
 
-        var suggestion = Assert.Single(result);
+        PriceSuggestion suggestion = Assert.Single(result);
 
         // The price of the stored change: the formula written out here on purpose, so the test does not use the code it tests.
-        var stored = Math.Round(rate * (1m - (Math.Round(suggestion.Percentage, 2) / 100m)), 2, MidpointRounding.AwayFromZero);
+        decimal stored = Math.Round(rate * (1m - (Math.Round(suggestion.Percentage, 2) / 100m)), 2, MidpointRounding.AwayFromZero);
         Assert.True(suggestion.WasLimited);
         Assert.Equal(stored, suggestion.NewPrice);
         Assert.True(suggestion.NewPrice >= minimum, $"{suggestion.NewPrice} is below the minimum {minimum}");
@@ -139,9 +139,9 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_MinimumLeavesNoRoomForTheSmallestDiscount_GivesNoSuggestion()
     {
-        var settings = new PricingSettings(MinimumNightlyPrice: 249.99m);
+        PricingSettings settings = new(MinimumNightlyPrice: 249.99m);
 
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), [new(RoomSize.Single, 250m)], settings, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), [new(RoomSize.Single, 250m)], settings, Today);
 
         Assert.Empty(result);
     }
@@ -150,9 +150,9 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_RateAtTheMinimum_GivesNoDiscount()
     {
-        var settings = new PricingSettings(MinimumNightlyPrice: 100m);
+        PricingSettings settings = new(MinimumNightlyPrice: 100m);
 
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), Rates, settings, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 30m)), Rates, settings, Today);
 
         Assert.Empty(result);
     }
@@ -163,7 +163,7 @@ public sealed class PriceSuggestionRuleTests
     {
         RoomRateValue[] rates = [new(RoomSize.Double, 99.99m)];
 
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m)), rates, PricingSettings.Defaults, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m)), rates, PricingSettings.Defaults, Today);
 
         Assert.Equal(119.99m, Assert.Single(result).NewPrice);
     }
@@ -173,9 +173,9 @@ public sealed class PriceSuggestionRuleTests
     public void Suggest_RoundingMidpoint_GoesAwayFromZero()
     {
         RoomRateValue[] rates = [new(RoomSize.Double, 10.25m)];
-        var settings = new PricingSettings(SurchargePercent: 10m);
+        PricingSettings settings = new(SurchargePercent: 10m);
 
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m)), rates, settings, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m)), rates, settings, Today);
 
         Assert.Equal(11.28m, Assert.Single(result).NewPrice);
     }
@@ -186,7 +186,7 @@ public sealed class PriceSuggestionRuleTests
     {
         RoomRateValue[] rates = [new(RoomSize.Suite, 200m)];
 
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m)), rates, PricingSettings.Defaults, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m)), rates, PricingSettings.Defaults, Today);
 
         Assert.Equal(RoomSize.Suite, Assert.Single(result).Size);
         Assert.Empty(PriceSuggestionRule.Suggest(Year(2025, (6, 90m)), [], PricingSettings.Defaults, Today));
@@ -200,7 +200,7 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_ThreeHighMonthsInARow_IsOneSuggestionPerSize()
     {
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m), (7, 85m), (8, 80m)), Rates, PricingSettings.Defaults, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m), (7, 85m), (8, 80m)), Rates, PricingSettings.Defaults, Today);
 
         Assert.Equal(3, result.Count);
         Assert.All(result, s => Assert.Equal(new DateOnly(2026, 6, 1), s.FirstDay));
@@ -212,9 +212,9 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_RunAcrossTheYearEnd_IsOneSuggestion()
     {
-        var observations = Year(2025, (12, 90m), (1, 90m), (2, 90m));
+        OccupancyObservation[] observations = Year(2025, (12, 90m), (1, 90m), (2, 90m));
 
-        var result = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, new DateOnly(2026, 6, 15));
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, new DateOnly(2026, 6, 15));
 
         Assert.Equal(3, result.Count);
         Assert.All(result, s => Assert.Equal(new DateOnly(2026, 12, 1), s.FirstDay));
@@ -225,9 +225,9 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_RunEndingInFebruaryOfALeapYear_EndsOnThe29th()
     {
-        var observations = Year(2025, (12, 90m), (1, 90m), (2, 90m));
+        OccupancyObservation[] observations = Year(2025, (12, 90m), (1, 90m), (2, 90m));
 
-        var result = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, new DateOnly(2027, 6, 15));
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, new DateOnly(2027, 6, 15));
 
         Assert.All(result, s => Assert.Equal(new DateOnly(2027, 12, 1), s.FirstDay));
         Assert.All(result, s => Assert.Equal(new DateOnly(2028, 2, 29), s.LastDay));
@@ -237,7 +237,7 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_TwoSeparateRuns_AreTwoSuggestionsOrderedByDayThenSize()
     {
-        var result = PriceSuggestionRule.Suggest(Year(2025, (3, 90m), (7, 90m)), Rates, PricingSettings.Defaults, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (3, 90m), (7, 90m)), Rates, PricingSettings.Defaults, Today);
 
         Assert.Equal(6, result.Count);
         Assert.Equal(
@@ -253,7 +253,7 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_HighMonthNextToLowMonth_AreSeparateRuns()
     {
-        var result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m), (7, 30m)), [new(RoomSize.Single, 100m)], PricingSettings.Defaults, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(Year(2025, (6, 90m), (7, 30m)), [new(RoomSize.Single, 100m)], PricingSettings.Defaults, Today);
 
         Assert.Equal([Season.High, Season.Low], result.Select(s => s.Season));
     }
@@ -262,9 +262,9 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_JuneOverTwoYears_UsesTheAverage()
     {
-        var observations = Year(2024, (6, 90m)).Concat(Year(2025, (6, 70m))).ToArray();
+        OccupancyObservation[] observations = Year(2024, (6, 90m)).Concat(Year(2025, (6, 70m))).ToArray();
 
-        var result = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, Today);
 
         Assert.Equal(3, result.Count);
         Assert.All(result, s => Assert.Equal(80m, s.OccupancyPercent));
@@ -278,7 +278,7 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_ElevenCalendarMonths_GivesNothing()
     {
-        var observations = Year(2025, (6, 90m)).Where(o => o.Month != 11).ToArray();
+        OccupancyObservation[] observations = Year(2025, (6, 90m)).Where(o => o.Month != 11).ToArray();
 
         Assert.Empty(PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, Today));
     }
@@ -287,7 +287,7 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_TwelveCalendarMonthsFromTwoYears_Works()
     {
-        var observations = Year(2025, (6, 90m)).Where(o => o.Month != 11).Append(new OccupancyObservation(2024, 11, 60m)).ToArray();
+        OccupancyObservation[] observations = Year(2025, (6, 90m)).Where(o => o.Month != 11).Append(new OccupancyObservation(2024, 11, 60m)).ToArray();
 
         Assert.Equal(3, PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, Today).Count);
     }
@@ -296,9 +296,9 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_DuplicateYearAndMonth_AreAveraged()
     {
-        var observations = Year(2025, (6, 100m)).Append(new OccupancyObservation(2025, 6, 60m)).ToArray();
+        OccupancyObservation[] observations = Year(2025, (6, 100m)).Append(new OccupancyObservation(2025, 6, 60m)).ToArray();
 
-        var result = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, Today);
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, Today);
 
         Assert.All(result, s => Assert.Equal(80m, s.OccupancyPercent));
         Assert.Equal(3, result.Count);
@@ -308,9 +308,9 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_TodayInNovember_StartsTheHorizonInDecember()
     {
-        var observations = Year(2025, (12, 90m), (11, 90m));
+        OccupancyObservation[] observations = Year(2025, (12, 90m), (11, 90m));
 
-        var result = PriceSuggestionRule.Suggest(observations, [new(RoomSize.Double, 100m)], PricingSettings.Defaults, new DateOnly(2026, 11, 30));
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(observations, [new(RoomSize.Double, 100m)], PricingSettings.Defaults, new DateOnly(2026, 11, 30));
 
         Assert.Equal([new DateOnly(2026, 12, 1), new DateOnly(2027, 11, 1)], result.Select(s => s.FirstDay));
         Assert.Equal(new DateOnly(2027, 11, 30), result[1].LastDay);
@@ -320,9 +320,9 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_TodayInDecember_StartsTheHorizonInJanuary()
     {
-        var observations = Year(2025, (1, 90m), (12, 90m));
+        OccupancyObservation[] observations = Year(2025, (1, 90m), (12, 90m));
 
-        var result = PriceSuggestionRule.Suggest(observations, [new(RoomSize.Double, 100m)], PricingSettings.Defaults, new DateOnly(2026, 12, 15));
+        IReadOnlyList<PriceSuggestion> result = PriceSuggestionRule.Suggest(observations, [new(RoomSize.Double, 100m)], PricingSettings.Defaults, new DateOnly(2026, 12, 15));
 
         Assert.Equal([new DateOnly(2027, 1, 1)], result.Select(s => s.FirstDay).Take(1));
         Assert.Equal(new DateOnly(2027, 1, 31), result[0].LastDay);
@@ -337,14 +337,14 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_SameInputTwice_GivesEqualSuggestions()
     {
-        var observations = Year(2025, (3, 90m), (6, 30m), (7, 85m));
+        OccupancyObservation[] observations = Year(2025, (3, 90m), (6, 30m), (7, 85m));
 
-        var first = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, Today);
-        var second = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, Today);
+        IReadOnlyList<PriceSuggestion> first = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, Today);
+        IReadOnlyList<PriceSuggestion> second = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, Today);
 
         Assert.NotEmpty(first);
         Assert.Equal(first.Count, second.Count);
-        for (var i = 0; i < first.Count; i++)
+        for (int i = 0; i < first.Count; i++)
         {
             Assert.Equal(first[i], second[i]);
         }
@@ -354,13 +354,13 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_ReorderedInput_GivesTheSameSuggestions()
     {
-        var observations = Year(2025, (3, 90m), (6, 30m), (7, 85m));
-        var expected = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, Today);
+        OccupancyObservation[] observations = Year(2025, (3, 90m), (6, 30m), (7, 85m));
+        IReadOnlyList<PriceSuggestion> expected = PriceSuggestionRule.Suggest(observations, Rates, PricingSettings.Defaults, Today);
 
-        var actual = PriceSuggestionRule.Suggest(observations.Reverse().ToArray(), Rates.Reverse().ToArray(), PricingSettings.Defaults, Today);
+        IReadOnlyList<PriceSuggestion> actual = PriceSuggestionRule.Suggest(observations.Reverse().ToArray(), Rates.Reverse().ToArray(), PricingSettings.Defaults, Today);
 
         Assert.Equal(expected.Count, actual.Count);
-        for (var i = 0; i < expected.Count; i++)
+        for (int i = 0; i < expected.Count; i++)
         {
             Assert.Equal(expected[i], actual[i]);
         }
@@ -370,7 +370,7 @@ public sealed class PriceSuggestionRuleTests
     [Fact]
     public void Suggest_LowThresholdNotBelowHigh_Throws()
     {
-        var settings = new PricingSettings(HighThreshold: 40m, LowThreshold: 40m);
+        PricingSettings settings = new(HighThreshold: 40m, LowThreshold: 40m);
 
         Assert.Throws<ArgumentException>(() => PriceSuggestionRule.Suggest(Year(2025), Rates, settings, Today));
     }

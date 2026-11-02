@@ -449,8 +449,8 @@ public sealed class RoomListViewModel
     /// </summary>
     private async Task LoadPricesAsync(CancellationToken cancellationToken)
     {
-        var today = _clock.Today;
-        var result = await _prices
+        DateOnly today = _clock.Today;
+        Result<IReadOnlyList<EffectivePriceDto>> result = await _prices
             .RunAsync((service, token) => service.GetEffectivePricesAsync(today, token), cancellationToken)
             .ConfigureAwait(false);
 
@@ -464,9 +464,9 @@ public sealed class RoomListViewModel
             return;
         }
 
-        foreach (var price in result.Value)
+        foreach (EffectivePriceDto? price in result.Value)
         {
-            if (Enum.TryParse<RoomSize>(price.Size, out var size))
+            if (Enum.TryParse<RoomSize>(price.Size, out RoomSize size))
             {
                 _priceTexts[size] = DescribePrice(price);
             }

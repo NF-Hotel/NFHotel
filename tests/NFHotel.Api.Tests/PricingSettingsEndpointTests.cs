@@ -23,11 +23,11 @@ public sealed class PricingSettingsEndpointTests
     public async Task Get_ManagerNothingSaved_ReturnsTheDefaults()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        var body = await client.GetFromJsonAsync<ApiResponse<PricingSettingsDto>>(Route, ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<PricingSettingsDto>? body = await client.GetFromJsonAsync<ApiResponse<PricingSettingsDto>>(Route, ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal((20m, 15m, 80m, 40m, 30m, 0m), (body!.Value!.SurchargePercent, body.Value.DiscountPercent, body.Value.HighThresholdPercent, body.Value.LowThresholdPercent, body.Value.MaxChangePercent, body.Value.MinimumNightlyPrice));
@@ -41,13 +41,13 @@ public sealed class PricingSettingsEndpointTests
     public async Task Put_Manager_SavesTheSettingsAndNamesTheStaffMember()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        using var response = await client.PutAsJsonAsync(Route, Valid, ApiJson.Options, TestContext.Current.CancellationToken);
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<PricingSettingsDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
-        var read = await client.GetFromJsonAsync<ApiResponse<PricingSettingsDto>>(Route, ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.PutAsJsonAsync(Route, Valid, ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<PricingSettingsDto>? body = await response.Content.ReadFromJsonAsync<ApiResponse<PricingSettingsDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<PricingSettingsDto>? read = await client.GetFromJsonAsync<ApiResponse<PricingSettingsDto>>(Route, ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -63,16 +63,16 @@ public sealed class PricingSettingsEndpointTests
     public async Task Audit_AfterTwoSaves_ShowsOnlyTheChangedFields()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
         await client.PutAsJsonAsync(Route, Valid, ApiJson.Options, TestContext.Current.CancellationToken);
         await client.PutAsJsonAsync(Route, Valid with { DiscountPercent = 10m }, ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Act
-        var body = await client.GetFromJsonAsync<ApiResponse<StaffAuditPageDto>>("/api/staff/audit?page=1&pageSize=50", ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<StaffAuditPageDto>? body = await client.GetFromJsonAsync<ApiResponse<StaffAuditPageDto>>("/api/staff/audit?page=1&pageSize=50", ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
-        var events = body!.Value!.Items.Where(item => item.Action == StaffAuditAction.PricingSettingsChanged).ToArray();
+        StaffAuditEventDto[] events = body!.Value!.Items.Where(item => item.Action == StaffAuditAction.PricingSettingsChanged).ToArray();
         Assert.Equal(["Discount: 15.00 -> 10.00", "Surcharge: 20.00 -> 25.00; DiscountSizes: Single -> Single,Double"], events.Select(item => item.Detail));
         Assert.All(events, item => Assert.Equal("tester-manager", item.ActorName));
     }
@@ -86,13 +86,13 @@ public sealed class PricingSettingsEndpointTests
     public async Task Put_BadValues_Returns422WithTheCodes()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
-        var bad = new SetPricingSettingsRequest(101m, 15m, 40m, 40m, 0m, -1m, ["Penthouse"]);
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
+        SetPricingSettingsRequest bad = new(101m, 15m, 40m, 40m, 0m, -1m, ["Penthouse"]);
 
         // Act
-        using var response = await client.PutAsJsonAsync(Route, bad, ApiJson.Options, TestContext.Current.CancellationToken);
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<PricingSettingsDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.PutAsJsonAsync(Route, bad, ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<PricingSettingsDto>? body = await response.Content.ReadFromJsonAsync<ApiResponse<PricingSettingsDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
@@ -100,8 +100,8 @@ public sealed class PricingSettingsEndpointTests
         Assert.Empty(factory.World.PricingSettings.Items);
 
         // Act
-        using var second = await client.PutAsJsonAsync(Route, bad with { DiscountSizes = ["Single"] }, ApiJson.Options, TestContext.Current.CancellationToken);
-        var secondBody = await second.Content.ReadFromJsonAsync<ApiResponse<PricingSettingsDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage second = await client.PutAsJsonAsync(Route, bad with { DiscountSizes = ["Single"] }, ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<PricingSettingsDto>? secondBody = await second.Content.ReadFromJsonAsync<ApiResponse<PricingSettingsDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.UnprocessableEntity, second.StatusCode);
@@ -124,12 +124,12 @@ public sealed class PricingSettingsEndpointTests
     public async Task GetAndPut_RoleWithoutThePermission_Return403(StaffRole role)
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(role);
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateStaffClient(role);
 
         // Act
-        using var get = await client.GetAsync(Route, TestContext.Current.CancellationToken);
-        using var put = await client.PutAsJsonAsync(Route, Valid, ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage get = await client.GetAsync(Route, TestContext.Current.CancellationToken);
+        using HttpResponseMessage put = await client.PutAsJsonAsync(Route, Valid, ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Forbidden, get.StatusCode);
@@ -143,15 +143,15 @@ public sealed class PricingSettingsEndpointTests
     public async Task GetAndPut_NoStaffToken_Return401()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var service = factory.CreateServiceClient();
-        using var anonymous = factory.CreateClient();
+        using ApiFactory factory = new();
+        using HttpClient service = factory.CreateServiceClient();
+        using HttpClient anonymous = factory.CreateClient();
 
         // Act
-        using var serviceGet = await service.GetAsync(Route, TestContext.Current.CancellationToken);
-        using var servicePut = await service.PutAsJsonAsync(Route, Valid, ApiJson.Options, TestContext.Current.CancellationToken);
-        using var anonymousGet = await anonymous.GetAsync(Route, TestContext.Current.CancellationToken);
-        using var anonymousPut = await anonymous.PutAsJsonAsync(Route, Valid, ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage serviceGet = await service.GetAsync(Route, TestContext.Current.CancellationToken);
+        using HttpResponseMessage servicePut = await service.PutAsJsonAsync(Route, Valid, ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage anonymousGet = await anonymous.GetAsync(Route, TestContext.Current.CancellationToken);
+        using HttpResponseMessage anonymousPut = await anonymous.PutAsJsonAsync(Route, Valid, ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.All(new[] { serviceGet, servicePut, anonymousGet, anonymousPut }, response => Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode));

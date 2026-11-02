@@ -35,7 +35,7 @@ internal static class PriceMath
         }
 
         // Multiply before dividing so that an exact result stays exact.
-        var hundredths = Math.Floor((rate - floor) * TenThousand / rate);
+        decimal hundredths = Math.Floor((rate - floor) * TenThousand / rate);
 
         return hundredths / Hundred;
     }

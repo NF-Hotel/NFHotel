@@ -61,7 +61,7 @@ public sealed class PriceChangeService : IPriceChangeService
         DateOnly lastDay,
         CancellationToken cancellationToken = default)
     {
-        if (!RoomSizeText.TryParse(size, out var parsed))
+        if (!RoomSizeText.TryParse(size, out RoomSize parsed))
         {
             return Result<ApprovedPriceChange>.FromCodes([PriceChangeErrors.SizeInvalid]);
         }
@@ -83,11 +83,11 @@ public sealed class PriceChangeService : IPriceChangeService
             return Result<ApprovedPriceChange>.FromCodes([PriceChangeErrors.PeriodInvalid]);
         }
 
-        var neighbours = await _changes.ListForSizeAsync(parsed, firstDay, lastDay, cancellationToken).ConfigureAwait(false);
-        var counting = neighbours.Where(item => item.CountsWithin(candidate.FirstDay, candidate.LastDay)).ToArray();
+        IReadOnlyList<PriceChange> neighbours = await _changes.ListForSizeAsync(parsed, firstDay, lastDay, cancellationToken).ConfigureAwait(false);
+        PriceChange[] counting = neighbours.Where(item => item.CountsWithin(candidate.FirstDay, candidate.LastDay)).ToArray();
 
         // A repeated click: the same approved change already exists, so nothing is created.
-        var same = counting.FirstOrDefault(item => IsSameChange(item, candidate));
+        PriceChange? same = counting.FirstOrDefault(item => IsSameChange(item, candidate));
         if (same is not null)
         {
             return Result<ApprovedPriceChange>.Success(new ApprovedPriceChange(same.ToDto(), Created: false));
@@ -101,7 +101,7 @@ public sealed class PriceChangeService : IPriceChangeService
         _changes.Add(candidate);
 
         // The audit event is added before the one save, so the change and its record are stored together or not at all.
-        var rate = await _rates.FindBySizeAsync(parsed, cancellationToken).ConfigureAwait(false);
+        RoomRate? rate = await _rates.FindBySizeAsync(parsed, cancellationToken).ConfigureAwait(false);
         _recorder.ByCallerWithDetail(
             StaffAuditAction.PriceChangeApproved,
             StaffAuditRecorder.Success,
@@ -115,7 +115,7 @@ public sealed class PriceChangeService : IPriceChangeService
     /// <inheritdoc />
     public async Task<Result<PriceChangeDto>> RevertAsync(int id, CancellationToken cancellationToken = default)
     {
-        var change = await _changes.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        PriceChange? change = await _changes.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (change is null)
         {
             return Result<PriceChangeDto>.FromCodes([PriceChangeErrors.NotFound]);
@@ -146,13 +146,13 @@ public sealed class PriceChangeService : IPriceChangeService
         DateOnly day,
         CancellationToken cancellationToken = default)
     {
-        if (!RoomSizeText.TryParse(size, out var parsed))
+        if (!RoomSizeText.TryParse(size, out RoomSize parsed))
         {
             return Result<EffectivePriceDto>.FromCodes([PriceChangeErrors.SizeInvalid]);
         }
 
-        var rate = await _rates.FindBySizeAsync(parsed, cancellationToken).ConfigureAwait(false);
-        var price = await EffectiveAsync(parsed, rate?.NightlyPrice, day, cancellationToken).ConfigureAwait(false);
+        RoomRate? rate = await _rates.FindBySizeAsync(parsed, cancellationToken).ConfigureAwait(false);
+        EffectivePriceDto price = await EffectiveAsync(parsed, rate?.NightlyPrice, day, cancellationToken).ConfigureAwait(false);
 
         return Result<EffectivePriceDto>.Success(price);
     }
@@ -162,11 +162,11 @@ public sealed class PriceChangeService : IPriceChangeService
         DateOnly day,
         CancellationToken cancellationToken = default)
     {
-        var rates = await _rates.ListAsync(cancellationToken).ConfigureAwait(false);
-        var prices = new List<EffectivePriceDto>();
-        foreach (var size in Enum.GetValues<RoomSize>())
+        IReadOnlyList<RoomRate> rates = await _rates.ListAsync(cancellationToken).ConfigureAwait(false);
+        List<EffectivePriceDto> prices = new();
+        foreach (RoomSize size in Enum.GetValues<RoomSize>())
         {
-            var rate = rates.FirstOrDefault(item => item.Size == size);
+            RoomRate? rate = rates.FirstOrDefault(item => item.Size == size);
             prices.Add(await EffectiveAsync(size, rate?.NightlyPrice, day, cancellationToken).ConfigureAwait(false));
         }
 
@@ -180,7 +180,7 @@ public sealed class PriceChangeService : IPriceChangeService
 
     private static string ApprovedDetail(PriceChange change, decimal? baseRate)
     {
-        var text = Describe(change);
+        string text = Describe(change);
 
         return baseRate is null
             ? text
@@ -204,10 +204,10 @@ public sealed class PriceChangeService : IPriceChangeService
         DateOnly day,
         CancellationToken cancellationToken)
     {
-        var candidates = await _changes.ListForSizeAsync(size, day, day, cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<PriceChange> candidates = await _changes.ListForSizeAsync(size, day, day, cancellationToken).ConfigureAwait(false);
 
         // The overlap rule leaves at most one; should the data hold two, the one approved last wins and nothing throws.
-        var counting = candidates
+        PriceChange? counting = candidates
             .Where(item => item.CountsOn(day))
             .OrderByDescending(item => item.ApprovedAt)
             .ThenByDescending(item => item.Id)
@@ -218,7 +218,7 @@ public sealed class PriceChangeService : IPriceChangeService
             return new EffectivePriceDto(size.ToString(), day, null, null, counting?.Percentage);
         }
 
-        var price = counting is null
+        decimal price = counting is null
             ? baseRate.Value
             : PriceMath.ApplyPercentage(baseRate.Value, counting.Percentage);
 

@@ -34,17 +34,17 @@ public static class SeasonRule
         ArgumentNullException.ThrowIfNull(settings);
         settings.EnsureValid();
 
-        var averages = observations
+        Dictionary<int, decimal> averages = observations
             .Where(o => o.Month is >= 1 and <= MonthsInYear)
             .GroupBy(o => o.Month)
             .ToDictionary(g => g.Key, g => g.Average(o => o.OccupancyPercent));
 
-        var hasBasis = averages.Count == MonthsInYear;
-        var months = Enumerable.Range(1, MonthsInYear)
+        bool hasBasis = averages.Count == MonthsInYear;
+        MonthSeason[] months = Enumerable.Range(1, MonthsInYear)
             .Select(month =>
             {
-                decimal? occupancy = averages.TryGetValue(month, out var average) ? average : null;
-                var season = hasBasis && occupancy is { } value ? Classify(value, settings) : Season.Normal;
+                decimal? occupancy = averages.TryGetValue(month, out decimal average) ? average : null;
+                Season season = hasBasis && occupancy is { } value ? Classify(value, settings) : Season.Normal;
                 return new MonthSeason(month, occupancy, season);
             })
             .ToArray();

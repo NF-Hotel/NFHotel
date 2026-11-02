@@ -1,6 +1,7 @@
 using System.Net;
 
 using NFHotel.Application.Dto.RoomRates;
+using NFHotel.Application.UseCases;
 
 namespace NFHotel.ApiClient.Tests;
 
@@ -14,10 +15,10 @@ public sealed class RoomRateRequestTests
     public async Task GetAllAsync_Call_GetsTheRoomRatesPath()
     {
         // Arrange
-        var (handler, service) = Build("""{"value":[],"errors":[]}""");
+        (StubHandler? handler, ApiRoomRateService? service) = Build("""{"value":[],"errors":[]}""");
 
         // Act
-        var result = await service.GetAllAsync(TestContext.Current.CancellationToken);
+        Result<IReadOnlyList<RoomRateDto>> result = await service.GetAllAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -29,10 +30,10 @@ public sealed class RoomRateRequestTests
     public async Task SetAsync_Size_PutsThePathOfThatSize()
     {
         // Arrange
-        var (handler, service) = Build("""{"value":{"size":"Single","nightlyPrice":90.0,"setBy":"manager","setAt":"2026-11-01T10:00:00+00:00"},"errors":[]}""");
+        (StubHandler? handler, ApiRoomRateService? service) = Build("""{"value":{"size":"Single","nightlyPrice":90.0,"setBy":"manager","setAt":"2026-11-01T10:00:00+00:00"},"errors":[]}""");
 
         // Act
-        var result = await service.SetAsync("Single", new SetRoomRateRequest(90m), TestContext.Current.CancellationToken);
+        Result<RoomRateDto> result = await service.SetAsync("Single", new SetRoomRateRequest(90m), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -45,7 +46,7 @@ public sealed class RoomRateRequestTests
     public async Task SetAsync_SizeWithASlash_EscapesItInThePath()
     {
         // Arrange
-        var (handler, service) = Build("""{"value":null,"errors":["room_rate.size_invalid"]}""");
+        (StubHandler? handler, ApiRoomRateService? service) = Build("""{"value":null,"errors":["room_rate.size_invalid"]}""");
 
         // Act
         await service.SetAsync("a/b", new SetRoomRateRequest(90m), TestContext.Current.CancellationToken);
@@ -56,8 +57,8 @@ public sealed class RoomRateRequestTests
 
     private static (StubHandler Handler, ApiRoomRateService Service) Build(string json)
     {
-        var handler = StubHandler.Json(HttpStatusCode.OK, json);
-        var gateway = new ApiGateway(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base });
+        StubHandler handler = StubHandler.Json(HttpStatusCode.OK, json);
+        ApiGateway gateway = new(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base });
         return (handler, new ApiRoomRateService(gateway));
     }
 }

@@ -13,7 +13,7 @@ public sealed class StaffAuditEventDetailTests
     public void Create_WithDetail_KeepsIt()
     {
         // Arrange and act
-        var auditEvent = StaffAuditEvent.Create(At, StaffAuditAction.RoomRateChanged, "Success", detail: "Single: 80.00 -> 90.00");
+        StaffAuditEvent auditEvent = StaffAuditEvent.Create(At, StaffAuditAction.RoomRateChanged, "Success", detail: "Single: 80.00 -> 90.00");
 
         // Assert
         Assert.Equal("Single: 80.00 -> 90.00", auditEvent.Detail);
@@ -24,7 +24,7 @@ public sealed class StaffAuditEventDetailTests
     public void Create_WithoutDetail_HasNone()
     {
         // Arrange and act
-        var auditEvent = StaffAuditEvent.Create(At, StaffAuditAction.SignedIn, "Success");
+        StaffAuditEvent auditEvent = StaffAuditEvent.Create(At, StaffAuditAction.SignedIn, "Success");
 
         // Assert
         Assert.Null(auditEvent.Detail);
@@ -35,8 +35,8 @@ public sealed class StaffAuditEventDetailTests
     public void Create_DetailLength_KeepsTheLimitAndCutsOneMore()
     {
         // Arrange and act
-        var kept = StaffAuditEvent.Create(At, StaffAuditAction.RoomRateChanged, "Success", detail: new string('d', StaffAuditEvent.MaxDetailLength));
-        var cut = StaffAuditEvent.Create(At, StaffAuditAction.RoomRateChanged, "Success", detail: new string('d', StaffAuditEvent.MaxDetailLength + 1));
+        StaffAuditEvent kept = StaffAuditEvent.Create(At, StaffAuditAction.RoomRateChanged, "Success", detail: new string('d', StaffAuditEvent.MaxDetailLength));
+        StaffAuditEvent cut = StaffAuditEvent.Create(At, StaffAuditAction.RoomRateChanged, "Success", detail: new string('d', StaffAuditEvent.MaxDetailLength + 1));
 
         // Assert
         Assert.Equal(StaffAuditEvent.MaxDetailLength, kept.Detail!.Length);

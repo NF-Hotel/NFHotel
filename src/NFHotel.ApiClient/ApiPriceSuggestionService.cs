@@ -49,7 +49,7 @@ public sealed class ApiPriceSuggestionService : IPriceSuggestionService
     /// <inheritdoc />
     public Task<Result<IReadOnlyList<EffectivePriceDto>>> GetEffectivePricesAsync(DateOnly? day, CancellationToken cancellationToken = default)
     {
-        var path = $"{ApiRoutes.PriceChanges}/{ApiRoutes.PriceChangesEffective}";
+        string path = $"{ApiRoutes.PriceChanges}/{ApiRoutes.PriceChangesEffective}";
         if (day is { } value)
         {
             path += string.Create(CultureInfo.InvariantCulture, $"?day={value:yyyy-MM-dd}");

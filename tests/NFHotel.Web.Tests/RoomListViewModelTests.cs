@@ -24,7 +24,7 @@ public sealed class RoomListViewModelTests
     public async Task InitializeAsync_CanSeePrices_ShowsTheEffectivePricePerSize()
     {
         // Arrange
-        var (viewModel, _, _) = Build();
+        (RoomListViewModel? viewModel, IRoomService _, IPriceSuggestionService _) = Build();
 
         // Act
         await viewModel.InitializeAsync(true, TestContext.Current.CancellationToken);
@@ -42,11 +42,11 @@ public sealed class RoomListViewModelTests
     public async Task PriceTextOf_SizeWithoutBaseRate_IsNotSet()
     {
         // Arrange
-        var (viewModel, _, _) = Build();
+        (RoomListViewModel? viewModel, IRoomService _, IPriceSuggestionService _) = Build();
         await viewModel.InitializeAsync(true, TestContext.Current.CancellationToken);
 
         // Act
-        var text = viewModel.PriceTextOf(RoomSize.Suite);
+        string text = viewModel.PriceTextOf(RoomSize.Suite);
 
         // Assert
         Assert.Equal("not set", text);
@@ -57,7 +57,7 @@ public sealed class RoomListViewModelTests
     public async Task InitializeAsync_DiscountInForce_ShowsTheMinusSign()
     {
         // Arrange
-        var (viewModel, _, prices) = Build();
+        (RoomListViewModel? viewModel, IRoomService _, IPriceSuggestionService? prices) = Build();
         prices.GetEffectivePricesAsync(Arg.Any<DateOnly?>(), Arg.Any<CancellationToken>()).Returns(
             Result<IReadOnlyList<EffectivePriceDto>>.Success([new EffectivePriceDto("Single", Today, 100m, 90m, -10m)]));
 
@@ -73,7 +73,7 @@ public sealed class RoomListViewModelTests
     public async Task InitializeAsync_CanSeePrices_AsksForTodaysPricesOnce()
     {
         // Arrange
-        var (viewModel, _, prices) = Build();
+        (RoomListViewModel? viewModel, IRoomService _, IPriceSuggestionService? prices) = Build();
 
         // Act
         await viewModel.InitializeAsync(true, TestContext.Current.CancellationToken);
@@ -90,7 +90,7 @@ public sealed class RoomListViewModelTests
     public async Task InitializeAsync_PriceServiceDown_KeepsTheRoomsAndShowsTheError()
     {
         // Arrange
-        var (viewModel, _, prices) = Build();
+        (RoomListViewModel? viewModel, IRoomService _, IPriceSuggestionService? prices) = Build();
         prices.GetEffectivePricesAsync(Arg.Any<DateOnly?>(), Arg.Any<CancellationToken>())
             .Returns(Result<IReadOnlyList<EffectivePriceDto>>.Failure(ErrorCodes.Api.Unavailable));
 
@@ -112,7 +112,7 @@ public sealed class RoomListViewModelTests
     public async Task InitializeAsync_CannotSeePrices_HidesThePricesAndDoesNotAskForThem()
     {
         // Arrange
-        var (viewModel, rooms, prices) = Build();
+        (RoomListViewModel? viewModel, IRoomService? rooms, IPriceSuggestionService? prices) = Build();
 
         // Act
         await viewModel.InitializeAsync(false, TestContext.Current.CancellationToken);
@@ -131,7 +131,7 @@ public sealed class RoomListViewModelTests
 
     private static (RoomListViewModel ViewModel, IRoomService Rooms, IPriceSuggestionService Prices) Build()
     {
-        var rooms = Substitute.For<IRoomService>();
+        IRoomService rooms = Substitute.For<IRoomService>();
         rooms.GetFilterOptionsAsync(Arg.Any<CancellationToken>()).Returns(
             Result<RoomFilterOptionsDto>.Success(new RoomFilterOptionsDto([1], Enum.GetValues<RoomSize>(), Enum.GetValues<RoomStatus>(), Enum.GetValues<HousekeepingStatus>())));
         rooms.SearchAsync(Arg.Any<RoomFilter>(), Arg.Any<CancellationToken>()).Returns(
@@ -141,7 +141,7 @@ public sealed class RoomListViewModelTests
                 new RoomListItemDto(2, "102", 1, RoomSize.Double, 2, RoomStatus.Available, HousekeepingStatus.Clean),
             ]));
 
-        var prices = Substitute.For<IPriceSuggestionService>();
+        IPriceSuggestionService prices = Substitute.For<IPriceSuggestionService>();
         prices.GetEffectivePricesAsync(Arg.Any<DateOnly?>(), Arg.Any<CancellationToken>()).Returns(
             Result<IReadOnlyList<EffectivePriceDto>>.Success(
             [
@@ -150,7 +150,7 @@ public sealed class RoomListViewModelTests
                 new EffectivePriceDto("Suite", Today, null, null, null),
             ]));
 
-        var viewModel = new RoomListViewModel(
+        RoomListViewModel viewModel = new(
             new PassThroughRunner<IRoomService>(rooms),
             new PassThroughRunner<IPriceSuggestionService>(prices),
             new FakeClock { Today = Today });

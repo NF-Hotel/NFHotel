@@ -31,13 +31,13 @@ public static partial class OccupancyObservationReader
     /// <returns>One observation per readable month point; empty when the section or its monthly series is missing.</returns>
     public static IReadOnlyList<OccupancyObservation> Read(MarketAnalysisContentDto? content)
     {
-        var section = SectionOf(content);
+        MarketAnalysisSectionDto? section = SectionOf(content);
         if (section is null || !string.Equals(section.Status, AvailableStatus, StringComparison.Ordinal))
         {
             return [];
         }
 
-        var candidates = (section.Series ?? [])
+        (MarketAnalysisSeriesDto Series, List<(int Year, int Month, double Value)> Points)[] candidates = (section.Series ?? [])
             .Select(series => (Series: series, Points: ReadPoints(series.Points)))
             .Where(item => item.Points.Count > 0)
             .ToArray();
@@ -47,14 +47,14 @@ public static partial class OccupancyObservationReader
         }
 
         // The monthly series by its id; another series of months is the fallback.
-        var chosen = candidates.FirstOrDefault(item => string.Equals(item.Series.Id, MonthlySeriesId, StringComparison.Ordinal));
+        (MarketAnalysisSeriesDto Series, List<(int Year, int Month, double Value)> Points) chosen = candidates.FirstOrDefault(item => string.Equals(item.Series.Id, MonthlySeriesId, StringComparison.Ordinal));
         if (chosen.Series is null)
         {
             chosen = candidates[0];
         }
 
-        var isPercent = chosen.Series.Unit?.Contains('%', StringComparison.Ordinal) == true;
-        var factor = !isPercent && chosen.Points.All(point => point.Value <= 1d) ? Hundred : 1m;
+        bool isPercent = chosen.Series.Unit?.Contains('%', StringComparison.Ordinal) == true;
+        decimal factor = !isPercent && chosen.Points.All(point => point.Value <= 1d) ? Hundred : 1m;
 
         return
         [
@@ -67,7 +67,7 @@ public static partial class OccupancyObservationReader
     /// <returns>The text, or <c>null</c> when the insight is missing, not available, or has no text.</returns>
     public static string? ReadExplanation(MarketAnalysisContentDto? content)
     {
-        var insight = SectionOf(content)?.Insight;
+        MarketAnalysisInsightDto? insight = SectionOf(content)?.Insight;
         if (insight is null || !string.Equals(insight.Status, AvailableStatus, StringComparison.Ordinal))
         {
             return null;
@@ -81,10 +81,10 @@ public static partial class OccupancyObservationReader
 
     private static List<(int Year, int Month, double Value)> ReadPoints(IReadOnlyList<MarketAnalysisPointDto>? points)
     {
-        var read = new List<(int Year, int Month, double Value)>();
-        foreach (var point in points ?? [])
+        List<(int Year, int Month, double Value)> read = new List<(int Year, int Month, double Value)>();
+        foreach (MarketAnalysisPointDto point in points ?? [])
         {
-            var match = point.Label is null ? null : MonthLabel().Match(point.Label.Trim());
+            Match? match = point.Label is null ? null : MonthLabel().Match(point.Label.Trim());
             if (match is null || !match.Success || !double.IsFinite(point.Value) || point.Value < 0d)
             {
                 continue;

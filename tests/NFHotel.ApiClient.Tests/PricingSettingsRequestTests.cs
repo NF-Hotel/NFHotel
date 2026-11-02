@@ -1,6 +1,7 @@
 using System.Net;
 
 using NFHotel.Application.Dto.Pricing;
+using NFHotel.Application.UseCases;
 
 namespace NFHotel.ApiClient.Tests;
 
@@ -17,10 +18,10 @@ public sealed class PricingSettingsRequestTests
     public async Task GetAsync_Call_GetsThePricingSettingsPath()
     {
         // Arrange
-        var (handler, service) = Build(SettingsJson);
+        (StubHandler? handler, ApiPricingSettingsService? service) = Build(SettingsJson);
 
         // Act
-        var result = await service.GetAsync(TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await service.GetAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -33,10 +34,10 @@ public sealed class PricingSettingsRequestTests
     public async Task SetAsync_Request_PutsThePricingSettingsPath()
     {
         // Arrange
-        var (handler, service) = Build(SettingsJson);
+        (StubHandler? handler, ApiPricingSettingsService? service) = Build(SettingsJson);
 
         // Act
-        var result = await service.SetAsync(new SetPricingSettingsRequest(25m, 15m, 80m, 40m, 30m, 0m, ["Single", "Double"]), TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await service.SetAsync(new SetPricingSettingsRequest(25m, 15m, 80m, 40m, 30m, 0m, ["Single", "Double"]), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -49,11 +50,11 @@ public sealed class PricingSettingsRequestTests
     public async Task SetAsync_Refused_ReturnsTheCodes()
     {
         // Arrange
-        var handler = StubHandler.Json(HttpStatusCode.UnprocessableEntity, """{"value":null,"errors":["pricing_setting.surcharge_invalid"]}""");
-        var gateway = new ApiGateway(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base });
+        StubHandler handler = StubHandler.Json(HttpStatusCode.UnprocessableEntity, """{"value":null,"errors":["pricing_setting.surcharge_invalid"]}""");
+        ApiGateway gateway = new(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base });
 
         // Act
-        var result = await new ApiPricingSettingsService(gateway).SetAsync(new SetPricingSettingsRequest(101m, 15m, 80m, 40m, 30m, 0m, ["Single"]), TestContext.Current.CancellationToken);
+        Result<PricingSettingsDto> result = await new ApiPricingSettingsService(gateway).SetAsync(new SetPricingSettingsRequest(101m, 15m, 80m, 40m, 30m, 0m, ["Single"]), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -62,8 +63,8 @@ public sealed class PricingSettingsRequestTests
 
     private static (StubHandler Handler, ApiPricingSettingsService Service) Build(string json)
     {
-        var handler = StubHandler.Json(HttpStatusCode.OK, json);
-        var gateway = new ApiGateway(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base });
+        StubHandler handler = StubHandler.Json(HttpStatusCode.OK, json);
+        ApiGateway gateway = new(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base });
         return (handler, new ApiPricingSettingsService(gateway));
     }
 }
