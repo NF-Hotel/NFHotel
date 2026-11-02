@@ -135,6 +135,49 @@ package "domain" {
     SEASONAL_HIGH
     SEASONAL_LOW
   }
+
+  ' === Price suggestions (MIL-055) ===
+  class RoomRate {
+    +int id
+    +RoomSize size
+    +decimal nightlyPrice
+    +String setBy
+    +DateTimeOffset setAt
+    +change(nightlyPrice, setBy, setAt)
+  }
+
+  class PriceChange {
+    +int id
+    +RoomSize size
+    +decimal percentage
+    +LocalDate firstDay
+    +LocalDate lastDay
+    +PriceChangeState state = Approved
+    +String approvedBy
+    +DateTimeOffset approvedAt
+    +String revertedBy ?
+    +DateTimeOffset revertedAt ?
+    +LocalDate endedOn ?
+    +countsOn(day) bool
+    +revert(revertedBy, revertedAt, today)
+  }
+
+  class PricingSetting {
+    +decimal surchargePercent
+    +decimal discountPercent
+    +decimal highThresholdPercent
+    +decimal lowThresholdPercent
+    +decimal maxChangePercent
+    +decimal minimumNightlyPrice
+    +RoomSize[] discountSizes
+    +String setBy
+    +DateTimeOffset setAt
+  }
+
+  enum PriceChangeState {
+    APPROVED
+    REVERTED
+  }
 }
 
 ' === Relationships ===
@@ -159,6 +202,12 @@ MaintenanceTask "0..*" --> "1" Staff : assigned to >
 CleaningTask .> CleaningStatus : uses >
 MaintenanceTask .> MaintenanceStatus : uses >
 RoomPrice .> PriceType : uses >
+
+' PriceSuggestion is computed (PriceSuggestionRule), never stored: it becomes a PriceChange when a Manager approves it.
+' Effective price of a size on a day = RoomRate x the one PriceChange that counts on that day (no overlap per size).
+PriceChange "0..*" --> "1" RoomRate : changes the price of its size >
+PriceChange .> PriceChangeState : uses >
+PricingSetting "1" ..> "0..*" PriceChange : bounds the suggestions of >
 
 
 ' === Notes ===
