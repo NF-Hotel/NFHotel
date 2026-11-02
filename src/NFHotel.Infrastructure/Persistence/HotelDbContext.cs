@@ -61,6 +61,9 @@ public sealed class HotelDbContext : DbContext
     /// <summary>The default AI model per purpose (ADR-0014).</summary>
     public DbSet<AiDefault> AiDefaults => Set<AiDefault>();
 
+    /// <summary>The service notes of the rooms.</summary>
+    public DbSet<RoomServiceNote> RoomServiceNotes => Set<RoomServiceNote>();
+
     /// <summary>The nightly base rate per room size (MIL-055).</summary>
     public DbSet<RoomRate> RoomRates => Set<RoomRate>();
 
@@ -95,6 +98,7 @@ public sealed class HotelDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new BookingConfiguration());
         modelBuilder.ApplyConfiguration(new RoomConfiguration());
+        modelBuilder.ApplyConfiguration(new RoomServiceNoteConfiguration());
         modelBuilder.ApplyConfiguration(new StaffConfiguration());
         modelBuilder.ApplyConfiguration(new BenchmarkRunConfiguration());
         modelBuilder.ApplyConfiguration(new BenchmarkRequestConfiguration());

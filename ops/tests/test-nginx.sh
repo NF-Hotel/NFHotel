@@ -117,6 +117,8 @@ check "the back office with the Access token reaches the web application" "https
 check "the mobile sign-in route reaches the API" api-reached \
   "$(docker run --rm --network t-ngnet "$CURL" -s -X POST "$PUBLIC/mobile-api/api/auth/login")"
 check "the mobile rooms route reaches the API" 200 "$(public /mobile-api/api/rooms/3)"
+check "the mobile service notes route reaches the API" 200 "$(public /mobile-api/api/room-service-notes)"
+check "a route that starts like the service notes is not public" 404 "$(public /mobile-api/api/room-service-notesXYZ)"
 check "another API route is not public" 404 "$(public /mobile-api/api/bookings)"
 check "the API itself is not on the public site" 404 "$(public /mobile-api/)"
 # The stand-in leaves, so the hardened proxy below finds no web application, as before.

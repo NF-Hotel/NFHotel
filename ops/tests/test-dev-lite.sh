@@ -56,6 +56,8 @@ token="$(login "$W/login.json" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')"
 printf 'header = "X-Staff-Token: %s"\n' "$token" >"$W/token.cfg"
 rooms="$(curl -sk --config "$W/token.cfg" "$URL/mobile-api/api/rooms" || true)"
 [[ "$rooms" == '{"value":[{'* ]] && ok "the rooms of the seed come back through /mobile-api/api/rooms" || ko "rooms: ${rooms:0:80}"
+notes="$(curl -sk --config "$W/token.cfg" "$URL/mobile-api/api/room-service-notes" || true)"
+[[ "$notes" == '{"value":['* ]] && ok "the service notes come back through /mobile-api/api/room-service-notes" || ko "notes: ${notes:0:80}"
 [[ "$(code "$URL/mobile-api/api/staff")" == 404 ]] && ok "another API path under /mobile-api/ answers 404" ||
   ko "/mobile-api/api/staff: $(code "$URL/mobile-api/api/staff")"
 

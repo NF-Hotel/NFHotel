@@ -11,6 +11,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Proposed | Claude (AI) | S01 | Initial version, from the decisions of S01 in chat: login and rooms, staff token only, Docker development server | [1c3efb9] |
 | 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Accepted after RC-131 Go | [1c3efb9] |
+| 2026-11-02 | Proposed | Claude (AI) | Not reviewed yet | The service notes of the rooms (`/api/room-service-notes`) join the routes that accept the staff token alone, so that staff can use them from the app | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -32,7 +33,7 @@ Options considered:
 
 We follow option 3.
 
-- **Which routes.** `POST /api/auth/login` and the rooms endpoints (`/api/rooms`, read and the housekeeping actions) accept a call that has a valid staff token and no service token. A call without either is still refused with 401. Every other route still needs the service token.
+- **Which routes.** `POST /api/auth/login`, the rooms endpoints (`/api/rooms`, read and the housekeeping actions) and the service notes of the rooms (`/api/room-service-notes`, read, write, mark as done and reopen) accept a call that has a valid staff token and no service token. A call without either is still refused with 401. Every other route still needs the service token.
 - **Order of checks.** The service-token middleware lets a call through when the service token is right, or when the route is on the list above and `X-Staff-Token` validates; the permission attribute then decides as before, so a Housekeeping member still cannot reach bookings or guests (those routes are not on the list, and the permission is not enough).
 - **Login without the service token.** The login is open to the internet on this route; the existing throttle (5 failures per user name in 15 minutes, 429 afterwards) is the protection. The throttle is also applied per client address so that one address cannot try many user names.
 - **App side.** The app keeps the staff token in the platform's secure storage (Keychain, Keystore), never in plain preferences, sends it in `X-Staff-Token`, and signs the member out on 401.

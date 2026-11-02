@@ -9,6 +9,7 @@
 @using NFHotel.Web.Features.Admin.Rooms
 @inject RoomListViewModel ViewModel
 @inject RoomFormViewModel Form
+@inject RoomServiceNotesViewModel Notes
 @inject AuthenticationStateProvider AuthenticationState
 @inject IAuthorizationService Authorization
 
@@ -51,6 +52,8 @@
     }
 
     <ErrorAlert Errors="ViewModel.Errors" />
+
+    <ErrorAlert Errors="Notes.Errors" />
 
     @if (Form.IsOpen)
     {
@@ -324,6 +327,9 @@
                                 </AuthorizeView>
                             </td>
                         </tr>
+                        <RoomServiceNotesRow Room="room"
+                                             ColumnCount="@(ViewModel.ShowsPrices ? 8 : 7)"
+                                             OnRoomChanged="SearchAsync" />
                     }
                 </tbody>
             </table>
@@ -332,6 +338,9 @@
 </div>
 
 @code {
+    /// <summary>How often the notes are read again, so a done mark moves to the history on time and new notes show up.</summary>
+    private static readonly TimeSpan NotesRefreshInterval = TimeSpan.FromSeconds(30);
+
     /// <summary>All room sizes, for the dropdown of the filter.</summary>
     private static readonly RoomSize[] Sizes = Enum.GetValues<RoomSize>();
 
@@ -358,6 +367,30 @@
         var prices = await Authorization.AuthorizeAsync(state.User, StaffPolicies.ManagePrices);
 
         await ViewModel.InitializeAsync(prices.Succeeded, ComponentToken);
+        await Notes.LoadAsync(ComponentToken);
+        _ = RefreshNotesAsync();
+    }
+
+    /// <summary>Reads the notes again every so often for as long as the page is open.</summary>
+    private async Task RefreshNotesAsync()
+    {
+        try
+        {
+            while (!ComponentToken.IsCancellationRequested)
+            {
+                await Task.Delay(NotesRefreshInterval, ComponentToken);
+                await Notes.RefreshAsync(ComponentToken);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The page was closed: there is nobody to show the notes to.
+        }
+        catch (ObjectDisposedException)
+        {
+            // The circuit ended between the answer and the redraw: the same case, the page is gone.
+        }
     }
 
     /// <summary>The policy that decides whether the user sees the button of an action (ADR-0005).</summary>

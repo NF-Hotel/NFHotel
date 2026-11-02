@@ -44,6 +44,7 @@ public static class DependencyInjection
         services.AddScoped<IBenchmarkRequestService, ApiBenchmarkRequestService>();
         services.AddScoped<IAiDefaultService, ApiAiDefaultService>();
         services.AddScoped<IRoomRateService, ApiRoomRateService>();
+        services.AddScoped<IRoomServiceNoteService, ApiRoomServiceNoteService>();
         services.AddScoped<IPricingSettingsService, ApiPricingSettingsService>();
         services.AddScoped<IPriceSuggestionService, ApiPriceSuggestionService>();
         services.AddScoped<IMarketAnalysisService, ApiMarketAnalysisService>();

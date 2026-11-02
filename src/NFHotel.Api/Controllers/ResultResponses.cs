@@ -21,6 +21,7 @@ internal static class ResultResponses
         ".last_manager",
         ".cannot_disable_self",
         ".cannot_reset_self",
+        ".undo_window_closed",
     ];
 
     private static readonly string[] UnavailableEndings =

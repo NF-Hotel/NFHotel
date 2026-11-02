@@ -144,6 +144,7 @@ public static class DependencyInjection
         services.AddScoped<IBenchmarkRequestRepository, BenchmarkRequestRepository>();
         services.AddScoped<IAiDefaultRepository, AiDefaultRepository>();
         services.AddScoped<IRoomRateRepository, RoomRateRepository>();
+        services.AddScoped<IRoomServiceNoteRepository, RoomServiceNoteRepository>();
         services.AddScoped<IBookingMarketDetailRepository, BookingMarketDetailRepository>();
         services.AddScoped<IPricingSettingRepository, PricingSettingRepository>();
         services.AddScoped<IPriceChangeRepository, PriceChangeRepository>();
@@ -181,6 +182,7 @@ public static class DependencyInjection
         services.AddScoped<IRoomService, RoomService>();
         services.AddScoped<IAiDefaultService, AiDefaultService>();
         services.AddScoped<IRoomRateService, RoomRateService>();
+        services.AddScoped<IRoomServiceNoteService, RoomServiceNoteService>();
         services.AddScoped<IPricingSettingsService, PricingSettingsService>();
         services.AddScoped<IPriceChangeService, PriceChangeService>();
         services.AddScoped<IPriceSuggestionService, PriceSuggestionService>();

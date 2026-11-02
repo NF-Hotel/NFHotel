@@ -1697,3 +1697,34 @@ h1:focus-visible {
   padding-left: 1.25rem;
   columns: 2 16rem;
 }
+
+/* The service notes under each room. */
+.room-notes-row > td {
+  padding-top: 0;
+}
+
+.room-note-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.room-note-meta {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.room-note-form {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+}
+
+.room-note-form .field-input {
+  flex: 1;
+  resize: vertical;
+}
+
+.room-note-history {
+  padding-left: var(--s4);
+  border-left: 2px solid var(--line, currentColor);
+}

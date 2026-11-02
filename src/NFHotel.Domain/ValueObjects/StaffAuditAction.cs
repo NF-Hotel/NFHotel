@@ -41,4 +41,7 @@ public enum StaffAuditAction
 
     /// <summary>A Manager reverted a price change of a room size (MIL-055).</summary>
     PriceChangeReverted = 13,
+
+    /// <summary>A Manager took a service note of a room back from the history.</summary>
+    RoomServiceNoteReopened = 14,
 }

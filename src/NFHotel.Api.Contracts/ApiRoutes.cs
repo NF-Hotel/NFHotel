@@ -18,6 +18,21 @@ public static class ApiRoutes
     /// <summary>The route prefix of the room endpoints.</summary>
     public const string Rooms = "api/rooms";
 
+    /// <summary>The route prefix of the service notes of the rooms.</summary>
+    public const string RoomServiceNotes = "api/room-service-notes";
+
+    /// <summary>The finished service of one room below <see cref="RoomServiceNotes"/>.</summary>
+    public const string RoomServiceNoteHistory = "history/{roomId:int}";
+
+    /// <summary>Marking a note as done below <see cref="RoomServiceNotes"/>.</summary>
+    public const string RoomServiceNoteDone = "{id:int}/done";
+
+    /// <summary>Undoing the mark of a note below <see cref="RoomServiceNotes"/>.</summary>
+    public const string RoomServiceNoteUndoDone = "{id:int}/undo-done";
+
+    /// <summary>Taking a note back from the history below <see cref="RoomServiceNotes"/>.</summary>
+    public const string RoomServiceNoteReopen = "{id:int}/reopen";
+
     /// <summary>The route prefix of the default AI models (ADR-0014).</summary>
     public const string AiDefaults = "api/ai-defaults";
 

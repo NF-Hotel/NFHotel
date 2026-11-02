@@ -1,0 +1,149 @@
+@using NFHotel.Domain.Entities
+@using NFHotel.Web.Features.Admin
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@inject RoomServiceNotesViewModel ViewModel
+
+@*
+    The row under a room: its current notes, the field for a new note and its history.
+
+    The service decides which notes are current and refuses a late undo. Who may tick a box in the history is only
+    drawn here; the API refuses everybody else as well.
+*@
+
+<tr class="room-notes-row">
+    <td colspan="@ColumnCount">
+        <div class="room-notes stack-sm">
+            @foreach (var note in ViewModel.NotesOf(Room.RoomId))
+            {
+                <div class="room-note">
+                    <label class="check">
+                        <input @key="(note.Id, note.IsDone, ViewModel.RefusedMarks)"
+                               type="checkbox"
+                               checked="@note.IsDone"
+                               disabled="@ViewModel.IsBusy"
+                               @onchange="() => ToggleDoneAsync(note)" />
+                        <span class="visually-hidden">Done:</span>
+                        <span class="room-note-text">@note.Text</span>
+                    </label>
+                    <p class="muted room-note-meta">
+                        Written by @note.WrittenBy, @Time(note.WrittenAt)
+                        @if (note.IsDone)
+                        {
+                            <text> · done by @note.DoneBy, @Time(note.DoneAt) · can be unticked until @Time(note.UndoableUntil)</text>
+                        }
+                    </p>
+                </div>
+            }
+
+            <AuthorizeView Policy="@StaffPolicies.HousekeepingUpdate">
+                <div class="room-note-form">
+                    <label class="visually-hidden" for="@DraftId">Service note for room @Room.RoomNumber</label>
+                    <textarea id="@DraftId"
+                              class="field-input"
+                              rows="1"
+                              maxlength="@RoomServiceNote.MaxTextLength"
+                              placeholder="What does the room need?"
+                              disabled="@ViewModel.IsBusy"
+                              value="@ViewModel.DraftOf(Room.RoomId)"
+                              @oninput="SetDraft"></textarea>
+                    <button type="button"
+                            class="btn btn-secondary btn-sm"
+                            disabled="@(ViewModel.IsBusy || !ViewModel.HasDraft(Room.RoomId))"
+                            @onclick="ReportAsync">
+                        Report service needed
+                    </button>
+                </div>
+            </AuthorizeView>
+
+            <div>
+                <button type="button"
+                        class="btn btn-ghost btn-sm"
+                        aria-expanded="@IsHistoryOpen.ToString().ToLowerInvariant()"
+                        @onclick="ToggleHistoryAsync">
+                    @(IsHistoryOpen ? "Hide history" : "History")
+                </button>
+            </div>
+
+            @if (IsHistoryOpen)
+            {
+                <section class="room-note-history stack-sm" aria-label="Service history of room @Room.RoomNumber">
+                    @if (ViewModel.History.Count == 0)
+                    {
+                        <p class="muted">No finished service on this room yet.</p>
+                    }
+
+                    @foreach (var note in ViewModel.History)
+                    {
+                        <div class="room-note">
+                            <AuthorizeView Policy="@StaffPolicies.RoomsManage">
+                                <Authorized>
+                                    <label class="check">
+                                        <input @key="(note.Id, ViewModel.RefusedMarks)"
+                                               type="checkbox"
+                                               checked
+                                               disabled="@ViewModel.IsBusy"
+                                               @onchange="() => ReopenAsync(note)" />
+                                        <span class="visually-hidden">Done, untick to reopen:</span>
+                                        <span class="room-note-text">@note.Text</span>
+                                    </label>
+                                </Authorized>
+                                <NotAuthorized>
+                                    <label class="check">
+                                        <input type="checkbox" checked disabled />
+                                        <span class="visually-hidden">Done:</span>
+                                        <span class="room-note-text">@note.Text</span>
+                                    </label>
+                                </NotAuthorized>
+                            </AuthorizeView>
+                            <p class="muted room-note-meta">
+                                Written by @note.WrittenBy, @Time(note.WrittenAt) · done by @note.DoneBy, @Time(note.DoneAt)
+                            </p>
+                        </div>
+                    }
+                </section>
+            }
+        </div>
+    </td>
+</tr>
+
+@code {
+    /// <summary>The room the row is under.</summary>
+    [Parameter, EditorRequired]
+    public RoomListItemDto Room { get; set; } = default!;
+
+    /// <summary>The number of columns in the table of rooms.</summary>
+    [Parameter, EditorRequired]
+    public int ColumnCount { get; set; }
+
+    /// <summary>Called when the state of the room may have changed, so the list can be fetched again.</summary>
+    [Parameter]
+    public EventCallback OnRoomChanged { get; set; }
+
+    private string DraftId => $"room-note-{Room.RoomId}";
+
+    private bool IsHistoryOpen => ViewModel.HistoryRoomId == Room.RoomId;
+
+    private static string Time(DateTimeOffset? value) => AdminFormat.DateAndTime(value?.ToLocalTime());
+
+    private void SetDraft(ChangeEventArgs change) => ViewModel.SetDraft(Room.RoomId, change.Value?.ToString());
+
+    private Task ToggleDoneAsync(RoomServiceNoteDto note) => ViewModel.ToggleDoneAsync(note, ComponentToken);
+
+    private Task ToggleHistoryAsync() => ViewModel.ToggleHistoryAsync(Room.RoomId, ComponentToken);
+
+    private async Task ReportAsync()
+    {
+        if (await ViewModel.ReportAsync(Room.RoomId, ComponentToken))
+        {
+            await OnRoomChanged.InvokeAsync();
+        }
+    }
+
+    private async Task ReopenAsync(RoomServiceNoteDto note)
+    {
+        if (await ViewModel.ReopenAsync(note, ComponentToken))
+        {
+            await OnRoomChanged.InvokeAsync();
+        }
+    }
+}

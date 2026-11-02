@@ -43,6 +43,7 @@ public static class AdminFeatureRegistration
 
         services.AddScoped<RoomListViewModel>();
         services.AddScoped<RoomFormViewModel>();
+        services.AddScoped<RoomServiceNotesViewModel>();
 
         services.AddScoped<GuestListViewModel>();
 

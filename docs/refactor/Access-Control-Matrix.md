@@ -41,6 +41,10 @@ Access control must be enforced not only in the user interface, but also in the 
 | Change prices/discounts | x | x | o | x |
 | See housekeeping information | x | o | o | o |
 | Change housekeeping status | x | x | o | o |
+| Write a service note on a room | x | x | o | o |
+| Mark a service note as done, and undo the mark for 5 minutes | x | o | o | o |
+| See the service history of a room | x | o | o | o |
+| Reopen a service note from the history | x | x | o | x |
 
 **Symbols:**
 

@@ -872,6 +872,59 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                     b.ToTable("room_rate", (string)null);
                 });
 
+            modelBuilder.Entity("NFHotel.Domain.Entities.RoomServiceNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("room_service_note_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("DoneAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("done_at");
+
+                    b.Property<string>("DoneBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("done_by");
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("integer")
+                        .HasColumnName("room_id");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("text");
+
+                    b.Property<DateTimeOffset>("WrittenAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("written_at");
+
+                    b.Property<string>("WrittenBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("written_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_room_service_note");
+
+                    b.HasIndex("DoneAt")
+                        .HasDatabaseName("ix_room_service_note_done_at");
+
+                    b.HasIndex("RoomId", "DoneAt")
+                        .HasDatabaseName("ix_room_service_note_room_done_at");
+
+                    b.ToTable("room_service_note", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_room_service_note_done_fields_together", "(done_by IS NULL) = (done_at IS NULL)");
+                        });
+                });
+
             modelBuilder.Entity("NFHotel.Domain.Entities.StaffAuditEvent", b =>
                 {
                     b.Property<int>("Id")
@@ -1028,6 +1081,16 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_booking_market_detail_booking_booking_id");
+                });
+
+            modelBuilder.Entity("NFHotel.Domain.Entities.RoomServiceNote", b =>
+                {
+                    b.HasOne("NFHotel.Domain.Entities.Room", null)
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_room_service_note_room_room_id");
                 });
 
             modelBuilder.Entity("NFHotel.Domain.Entities.BenchmarkRun", b =>
