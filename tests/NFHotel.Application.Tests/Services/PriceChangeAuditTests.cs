@@ -1,3 +1,8 @@
+using System.Globalization;
+
+using NFHotel.Application.Dto.Pricing;
+using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.TestSupport;
@@ -12,7 +17,7 @@ public sealed class PriceChangeAuditTests
 
     private static ServiceWorld World(bool withRate)
     {
-        var world = new ServiceWorld();
+        ServiceWorld world = new();
         world.CallContext.StaffId = 7;
         world.CallContext.StaffName = "manager";
         world.Clock.Today = new DateOnly(2027, 5, 1);
@@ -31,13 +36,13 @@ public sealed class PriceChangeAuditTests
     public async Task ApproveAsync_RateWithDecimals_AuditDetailShowsOldAndNewPrice()
     {
         // Arrange
-        var world = World(withRate: true);
-        var previous = Thread.CurrentThread.CurrentCulture;
+        ServiceWorld world = World(withRate: true);
+        CultureInfo previous = Thread.CurrentThread.CurrentCulture;
         Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("da-DK");
         try
         {
             // Act
-            var result = await world.PriceChangeService().ApproveAsync("single", -12.5m, First, Last, TestContext.Current.CancellationToken);
+            Result<ApprovedPriceChange> result = await world.PriceChangeService().ApproveAsync("single", -12.5m, First, Last, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -54,10 +59,10 @@ public sealed class PriceChangeAuditTests
     public async Task ApproveAsync_NoRate_AuditDetailHasNoPricePart()
     {
         // Arrange
-        var world = World(withRate: false);
+        ServiceWorld world = World(withRate: false);
 
         // Act
-        var result = await world.PriceChangeService().ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await world.PriceChangeService().ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -69,8 +74,8 @@ public sealed class PriceChangeAuditTests
     public async Task ApproveAsync_Invalid_WritesNoAuditEvent()
     {
         // Arrange
-        var world = World(withRate: true);
-        var service = world.PriceChangeService();
+        ServiceWorld world = World(withRate: true);
+        PriceChangeService service = world.PriceChangeService();
 
         // Act
         await service.ApproveAsync("Penthouse", 20m, First, Last, TestContext.Current.CancellationToken);
@@ -85,7 +90,7 @@ public sealed class PriceChangeAuditTests
     public async Task ApproveAsync_SaveFails_TheExceptionPassesAndBothAreOnlyPending()
     {
         // Arrange
-        var world = World(withRate: true);
+        ServiceWorld world = World(withRate: true);
         world.UnitOfWork.FailWith = new InvalidOperationException("db down");
 
         // Act and assert

@@ -1,5 +1,6 @@
 using System.Globalization;
 
+using NFHotel.Application.Dto.MarketAnalysis;
 using NFHotel.Application.Dto.Pricing;
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases.MarketAnalysis;
@@ -59,14 +60,14 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
     /// <inheritdoc />
     public async Task<Result<PriceSuggestionListDto>> GetOpenAsync(CancellationToken cancellationToken = default)
     {
-        var computed = await ComputeAsync(cancellationToken).ConfigureAwait(false);
+        Computed computed = await ComputeAsync(cancellationToken).ConfigureAwait(false);
         if (computed.Basis == PriceSuggestionBasis.NoBasis)
         {
             return Result<PriceSuggestionListDto>.Success(new PriceSuggestionListDto(computed.Basis, computed.Today, [], null));
         }
 
-        var existing = await _changes.ListAsync(cancellationToken).ConfigureAwait(false);
-        var open = computed.Items.Where(item => !IsCovered(item, existing)).ToArray();
+        IReadOnlyList<PriceChange> existing = await _changes.ListAsync(cancellationToken).ConfigureAwait(false);
+        PriceSuggestionItemDto[] open = computed.Items.Where(item => !IsCovered(item, existing)).ToArray();
 
         return Result<PriceSuggestionListDto>.Success(new PriceSuggestionListDto(computed.Basis, computed.Today, open, computed.Explanation));
     }
@@ -83,8 +84,8 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
         {
             // Not the list of open suggestions: a repeated click on a suggestion that is approved by now must still find it
             // so that the change service can answer that the change exists.
-            var computed = await ComputeAsync(cancellationToken).ConfigureAwait(false);
-            var match = computed.Items.FirstOrDefault(item => string.Equals(item.Key, request.Key, StringComparison.Ordinal));
+            Computed computed = await ComputeAsync(cancellationToken).ConfigureAwait(false);
+            PriceSuggestionItemDto? match = computed.Items.FirstOrDefault(item => string.Equals(item.Key, request.Key, StringComparison.Ordinal));
             if (match is null)
             {
                 return Result<ApprovedPriceChange>.FromCodes([PriceSuggestionErrors.NotFound]);
@@ -107,7 +108,7 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
     /// <inheritdoc />
     public async Task<Result<IReadOnlyList<PriceChangeDto>>> GetChangesAsync(CancellationToken cancellationToken = default)
     {
-        var changes = await _changes.ListAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<PriceChange> changes = await _changes.ListAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<PriceChangeDto> list =
         [
             .. changes
@@ -140,14 +141,14 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
     // A suggestion is covered when the days that changes of its size count on leave no day of its period free.
     private static bool IsCovered(PriceSuggestionItemDto item, IReadOnlyList<PriceChange> existing)
     {
-        var counting = existing
+        PriceChange[] counting = existing
             .Where(change => string.Equals(change.Size.ToString(), item.Size, StringComparison.Ordinal)
                 && change.CountsWithin(item.FirstDay, item.LastDay))
             .OrderBy(change => change.FirstDay)
             .ToArray();
 
-        var next = item.FirstDay;
-        foreach (var change in counting)
+        DateOnly next = item.FirstDay;
+        foreach (PriceChange? change in counting)
         {
             if (change.FirstDay > next)
             {
@@ -155,7 +156,7 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
             }
 
             // CountsWithin is true, so the last counted day exists.
-            var last = change.CountedLastDay!.Value;
+            DateOnly last = change.CountedLastDay!.Value;
             if (last >= next)
             {
                 next = last.AddDays(1);
@@ -167,30 +168,30 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
 
     private async Task<Computed> ComputeAsync(CancellationToken cancellationToken)
     {
-        var today = _clock.Today;
-        var report = await _reports.GetLatestReportAsync(cancellationToken).ConfigureAwait(false);
+        DateOnly today = _clock.Today;
+        Result<MarketAnalysisReportDto> report = await _reports.GetLatestReportAsync(cancellationToken).ConfigureAwait(false);
 
         // No stored report (or one that cannot be read) is the case 2a of the use case: nothing to suggest from.
-        var observations = report.IsSuccess ? OccupancyObservationReader.Read(report.Value.Content) : [];
+        IReadOnlyList<OccupancyObservation> observations = report.IsSuccess ? OccupancyObservationReader.Read(report.Value.Content) : [];
 
-        var stored = await _settings.GetAsync(cancellationToken).ConfigureAwait(false);
-        var settings = stored is null ? PricingSettings.Defaults : stored.ToRule();
+        PricingSetting? stored = await _settings.GetAsync(cancellationToken).ConfigureAwait(false);
+        PricingSettings settings = stored is null ? PricingSettings.Defaults : stored.ToRule();
         if (!SeasonRule.ByCalendarMonth(observations, settings).HasBasis)
         {
             return new Computed(PriceSuggestionBasis.NoBasis, today, [], null);
         }
 
-        var rates = await _rates.ListAsync(cancellationToken).ConfigureAwait(false);
-        var values = rates.Select(rate => new RoomRateValue(rate.Size, rate.NightlyPrice)).ToArray();
-        var items = PriceSuggestionRule.Suggest(observations, values, settings, today).Select(ToItem).ToArray();
+        IReadOnlyList<RoomRate> rates = await _rates.ListAsync(cancellationToken).ConfigureAwait(false);
+        RoomRateValue[] values = rates.Select(rate => new RoomRateValue(rate.Size, rate.NightlyPrice)).ToArray();
+        PriceSuggestionItemDto[] items = PriceSuggestionRule.Suggest(observations, values, settings, today).Select(ToItem).ToArray();
 
         return new Computed(PriceSuggestionBasis.Ok, today, items, OccupancyObservationReader.ReadExplanation(report.Value.Content));
     }
 
     private static PriceSuggestionItemDto ToItem(PriceSuggestion suggestion)
     {
-        var signed = suggestion.Season == Season.High ? suggestion.Percentage : -suggestion.Percentage;
-        var size = suggestion.Size.ToString();
+        decimal signed = suggestion.Season == Season.High ? suggestion.Percentage : -suggestion.Percentage;
+        string size = suggestion.Size.ToString();
 
         return new PriceSuggestionItemDto(
             KeyOf(size, suggestion.FirstDay, suggestion.LastDay, signed),

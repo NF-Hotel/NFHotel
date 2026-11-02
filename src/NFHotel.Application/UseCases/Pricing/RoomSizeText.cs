@@ -12,7 +12,7 @@ internal static class RoomSizeText
     public static bool TryParse(string? text, out RoomSize size)
     {
         size = default;
-        var trimmed = text?.Trim();
+        string? trimmed = text?.Trim();
 
         // Only the names count: Enum.TryParse would also accept "1" or "7".
         return !string.IsNullOrEmpty(trimmed)

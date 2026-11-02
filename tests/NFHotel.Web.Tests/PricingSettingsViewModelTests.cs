@@ -17,6 +17,8 @@ public sealed class PricingSettingsViewModelTests
 
     private static readonly PricingSettingsDto Defaults = new(20m, 15m, 80m, 40m, 30m, 0m, ["Single"], null, null);
 
+    private static readonly string[] SuiteOnly = ["Suite"];
+
     private static readonly PricingSettingsDto Saved = new(25m, 10m, 90m, 30m, 20m, 55.5m, ["Single", "Double"], "manager", At);
 
     #region Loading
@@ -26,7 +28,7 @@ public sealed class PricingSettingsViewModelTests
     public async Task LoadAsync_NothingSaved_ShowsTheDefaultsAndSaysSo()
     {
         // Arrange
-        var (viewModel, _) = Build(Defaults);
+        (PricingSettingsViewModel? viewModel, IPricingSettingsService _) = Build(Defaults);
 
         // Act
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -47,7 +49,7 @@ public sealed class PricingSettingsViewModelTests
     public async Task LoadAsync_SettingsSaved_ShowsThemAndWhoSavedThem()
     {
         // Arrange
-        var (viewModel, _) = Build(Saved);
+        (PricingSettingsViewModel? viewModel, IPricingSettingsService _) = Build(Saved);
 
         // Act
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -65,7 +67,7 @@ public sealed class PricingSettingsViewModelTests
     public async Task LoadAsync_ServiceDown_ShowsTheText()
     {
         // Arrange
-        var (viewModel, service) = Build(Defaults);
+        (PricingSettingsViewModel? viewModel, IPricingSettingsService? service) = Build(Defaults);
         service.GetAsync(Arg.Any<CancellationToken>()).Returns(Result<PricingSettingsDto>.Failure(ErrorCodes.Api.Unavailable));
 
         // Act
@@ -86,7 +88,7 @@ public sealed class PricingSettingsViewModelTests
     public async Task SaveAsync_ValidInput_SendsTheRequestAndShowsTheAnswer()
     {
         // Arrange
-        var (viewModel, service) = Build(Defaults);
+        (PricingSettingsViewModel? viewModel, IPricingSettingsService? service) = Build(Defaults);
         service.SetAsync(Arg.Any<SetPricingSettingsRequest>(), Arg.Any<CancellationToken>()).Returns(Result<PricingSettingsDto>.Success(Saved));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         viewModel.SetInput(PricingSettingsViewModel.Fields.Surcharge, "25");
@@ -106,7 +108,7 @@ public sealed class PricingSettingsViewModelTests
                 && request.LowThresholdPercent == 40m
                 && request.MaxChangePercent == 30m
                 && request.MinimumNightlyPrice == 0m
-                && request.DiscountSizes.SequenceEqual(new[] { "Suite" })),
+                && request.DiscountSizes.SequenceEqual(SuiteOnly)),
             Arg.Any<CancellationToken>());
         Assert.Equal("The pricing settings are saved.", viewModel.SuccessMessage);
         Assert.Equal("Last saved by manager at 2026-11-01 10:30 UTC.", viewModel.SavedText);
@@ -123,7 +125,7 @@ public sealed class PricingSettingsViewModelTests
     public async Task SaveAsync_NotANumber_ShowsTheFieldTextWithoutCalling(string typed)
     {
         // Arrange
-        var (viewModel, service) = Build(Defaults);
+        (PricingSettingsViewModel? viewModel, IPricingSettingsService? service) = Build(Defaults);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         viewModel.SetInput(PricingSettingsViewModel.Fields.Surcharge, typed);
 
@@ -141,7 +143,7 @@ public sealed class PricingSettingsViewModelTests
     public async Task SaveAsync_SeveralNotNumbers_ShowsEveryText()
     {
         // Arrange
-        var (viewModel, _) = Build(Defaults);
+        (PricingSettingsViewModel? viewModel, IPricingSettingsService _) = Build(Defaults);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         viewModel.SetInput(PricingSettingsViewModel.Fields.Discount, "x");
         viewModel.SetInput(PricingSettingsViewModel.Fields.MaxChange, "y");
@@ -158,7 +160,7 @@ public sealed class PricingSettingsViewModelTests
     public async Task SaveAsync_RefusedByTheApi_ShowsTheTextsAndKeepsTheCurrentSettings()
     {
         // Arrange
-        var (viewModel, service) = Build(Saved);
+        (PricingSettingsViewModel? viewModel, IPricingSettingsService? service) = Build(Saved);
         service.SetAsync(Arg.Any<SetPricingSettingsRequest>(), Arg.Any<CancellationToken>())
             .Returns(Result<PricingSettingsDto>.FromCodes([PricingSettingErrors.ThresholdsOrderInvalid, PricingSettingErrors.DiscountSizesInvalid]));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -181,7 +183,7 @@ public sealed class PricingSettingsViewModelTests
 
     private static (PricingSettingsViewModel ViewModel, IPricingSettingsService Service) Build(PricingSettingsDto current)
     {
-        var service = Substitute.For<IPricingSettingsService>();
+        IPricingSettingsService service = Substitute.For<IPricingSettingsService>();
         service.GetAsync(Arg.Any<CancellationToken>()).Returns(Result<PricingSettingsDto>.Success(current));
         return (new PricingSettingsViewModel(new PassThroughRunner<IPricingSettingsService>(service)), service);
     }

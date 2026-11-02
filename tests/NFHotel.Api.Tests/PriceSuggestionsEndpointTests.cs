@@ -24,8 +24,8 @@ public sealed class PriceSuggestionsEndpointTests
 
     private static ApiFactory FactoryWithReport()
     {
-        var factory = new ApiFactory();
-        var world = factory.World;
+        ApiFactory factory = new();
+        ServiceWorld world = factory.World;
         world.Clock.Today = new DateOnly(2027, 5, 1);
         world.RoomRates.Add(RoomRate.Create(RoomSize.Single, 100m, "manager", world.Clock.UtcNow));
         world.RoomRates.Add(RoomRate.Create(RoomSize.Double, 150m, "manager", world.Clock.UtcNow));
@@ -35,7 +35,7 @@ public sealed class PriceSuggestionsEndpointTests
 
     private static async Task<decimal?> PriceAsync(HttpClient client, string day, string size)
     {
-        var body = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<EffectivePriceDto>>>($"{Changes}/effective?day={day}", ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<IReadOnlyList<EffectivePriceDto>>? body = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<EffectivePriceDto>>>($"{Changes}/effective?day={day}", ApiJson.Options, TestContext.Current.CancellationToken);
         return body!.Value!.Single(price => price.Size == size).Price;
     }
 
@@ -46,23 +46,23 @@ public sealed class PriceSuggestionsEndpointTests
     public async Task Flow_Manager_ApprovesRevertsAndSeesBothInTheAudit()
     {
         // Arrange
-        using var factory = FactoryWithReport();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = FactoryWithReport();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        var open = await client.GetFromJsonAsync<ApiResponse<PriceSuggestionListDto>>(Suggestions, ApiJson.Options, TestContext.Current.CancellationToken);
-        using var approveResponse = await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest(HighSingleKey), ApiJson.Options, TestContext.Current.CancellationToken);
-        var approved = await approveResponse.Content.ReadFromJsonAsync<ApiResponse<ApprovedPriceChange>>(ApiJson.Options, TestContext.Current.CancellationToken);
-        var list = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<PriceChangeDto>>>(Changes, ApiJson.Options, TestContext.Current.CancellationToken);
-        var first = await PriceAsync(client, "2027-06-01", "Single");
-        var last = await PriceAsync(client, "2027-08-31", "Single");
-        var after = await PriceAsync(client, "2027-09-01", "Single");
+        ApiResponse<PriceSuggestionListDto>? open = await client.GetFromJsonAsync<ApiResponse<PriceSuggestionListDto>>(Suggestions, ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage approveResponse = await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest(HighSingleKey), ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<ApprovedPriceChange>? approved = await approveResponse.Content.ReadFromJsonAsync<ApiResponse<ApprovedPriceChange>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<IReadOnlyList<PriceChangeDto>>? list = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<PriceChangeDto>>>(Changes, ApiJson.Options, TestContext.Current.CancellationToken);
+        decimal? first = await PriceAsync(client, "2027-06-01", "Single");
+        decimal? last = await PriceAsync(client, "2027-08-31", "Single");
+        decimal? after = await PriceAsync(client, "2027-09-01", "Single");
         factory.World.Clock.Today = new DateOnly(2027, 7, 10);
-        using var revertResponse = await client.PostAsync($"{Changes}/{approved!.Value!.Change.Id}/revert", null, TestContext.Current.CancellationToken);
-        var reverted = await revertResponse.Content.ReadFromJsonAsync<ApiResponse<PriceChangeDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
-        var afterRevert = await PriceAsync(client, "2027-07-10", "Single");
-        var beforeRevert = await PriceAsync(client, "2027-07-09", "Single");
-        var audit = await client.GetFromJsonAsync<ApiResponse<StaffAuditPageDto>>("/api/staff/audit?page=1&pageSize=50", ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage revertResponse = await client.PostAsync($"{Changes}/{approved!.Value!.Change.Id}/revert", null, TestContext.Current.CancellationToken);
+        ApiResponse<PriceChangeDto>? reverted = await revertResponse.Content.ReadFromJsonAsync<ApiResponse<PriceChangeDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        decimal? afterRevert = await PriceAsync(client, "2027-07-10", "Single");
+        decimal? beforeRevert = await PriceAsync(client, "2027-07-09", "Single");
+        ApiResponse<StaffAuditPageDto>? audit = await client.GetFromJsonAsync<ApiResponse<StaffAuditPageDto>>("/api/staff/audit?page=1&pageSize=50", ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(PriceSuggestionBasis.Ok, open!.Value!.Basis);
@@ -76,7 +76,7 @@ public sealed class PriceSuggestionsEndpointTests
         Assert.Equal(HttpStatusCode.OK, revertResponse.StatusCode);
         Assert.Equal(("Reverted", "tester-manager"), (reverted!.Value!.State, reverted.Value.RevertedBy));
         Assert.Equal((100m, 120m), (afterRevert, beforeRevert));
-        var details = audit!.Value!.Items
+        (StaffAuditAction Action, string? Detail, string? ActorName)[] details = audit!.Value!.Items
             .Where(item => item.Action is StaffAuditAction.PriceChangeApproved or StaffAuditAction.PriceChangeReverted)
             .OrderBy(item => item.Action)
             .Select(item => (item.Action, item.Detail, item.ActorName))
@@ -94,13 +94,13 @@ public sealed class PriceSuggestionsEndpointTests
     public async Task GetEffective_NoDay_UsesToday()
     {
         // Arrange
-        using var factory = FactoryWithReport();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = FactoryWithReport();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
         await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest(HighSingleKey), ApiJson.Options, TestContext.Current.CancellationToken);
         factory.World.Clock.Today = new DateOnly(2027, 7, 1);
 
         // Act
-        var body = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<EffectivePriceDto>>>($"{Changes}/effective", ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<IReadOnlyList<EffectivePriceDto>>? body = await client.GetFromJsonAsync<ApiResponse<IReadOnlyList<EffectivePriceDto>>>($"{Changes}/effective", ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(new DateOnly(2027, 7, 1), body!.Value![0].Day);
@@ -112,14 +112,14 @@ public sealed class PriceSuggestionsEndpointTests
     public async Task Approve_Twice_CreatesOneChangeAndOneAuditEvent()
     {
         // Arrange
-        using var factory = FactoryWithReport();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
-        var request = new PriceSuggestionApproveRequest(HighSingleKey);
+        using ApiFactory factory = FactoryWithReport();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
+        PriceSuggestionApproveRequest request = new(HighSingleKey);
 
         // Act
-        using var first = await client.PostAsJsonAsync(Approve, request, ApiJson.Options, TestContext.Current.CancellationToken);
-        using var second = await client.PostAsJsonAsync(Approve, request, ApiJson.Options, TestContext.Current.CancellationToken);
-        var body = await second.Content.ReadFromJsonAsync<ApiResponse<ApprovedPriceChange>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage first = await client.PostAsJsonAsync(Approve, request, ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage second = await client.PostAsJsonAsync(Approve, request, ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<ApprovedPriceChange>? body = await second.Content.ReadFromJsonAsync<ApiResponse<ApprovedPriceChange>>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal((HttpStatusCode.OK, HttpStatusCode.OK), (first.StatusCode, second.StatusCode));
@@ -133,11 +133,11 @@ public sealed class PriceSuggestionsEndpointTests
     public async Task Get_NoReport_ReturnsNoBasis()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        var body = await client.GetFromJsonAsync<ApiResponse<PriceSuggestionListDto>>(Suggestions, ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<PriceSuggestionListDto>? body = await client.GetFromJsonAsync<ApiResponse<PriceSuggestionListDto>>(Suggestions, ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(PriceSuggestionBasis.NoBasis, body!.Value!.Basis);
@@ -153,12 +153,12 @@ public sealed class PriceSuggestionsEndpointTests
     public async Task Approve_UnknownKey_Returns404()
     {
         // Arrange
-        using var factory = FactoryWithReport();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = FactoryWithReport();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        using var response = await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest("single|2027-06-01|2027-08-31|99.00"), ApiJson.Options, TestContext.Current.CancellationToken);
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<ApprovedPriceChange>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest("single|2027-06-01|2027-08-31|99.00"), ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<ApprovedPriceChange>? body = await response.Content.ReadFromJsonAsync<ApiResponse<ApprovedPriceChange>>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -172,15 +172,15 @@ public sealed class PriceSuggestionsEndpointTests
     public async Task Approve_BadDatesAndOverlap_Return422And409()
     {
         // Arrange
-        using var factory = FactoryWithReport();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = FactoryWithReport();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
         factory.World.PriceChanges.Add(PriceChange.Approve(RoomSize.Single, -10m, new DateOnly(2027, 7, 1), new DateOnly(2027, 7, 31), "manager", factory.World.Clock.UtcNow));
 
         // Act
-        using var backwards = await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest(HighSingleKey, new DateOnly(2027, 8, 31), new DateOnly(2027, 6, 1)), ApiJson.Options, TestContext.Current.CancellationToken);
-        var backwardsBody = await backwards.Content.ReadFromJsonAsync<ApiResponse<ApprovedPriceChange>>(ApiJson.Options, TestContext.Current.CancellationToken);
-        using var overlap = await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest(HighSingleKey), ApiJson.Options, TestContext.Current.CancellationToken);
-        var overlapBody = await overlap.Content.ReadFromJsonAsync<ApiResponse<ApprovedPriceChange>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage backwards = await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest(HighSingleKey, new DateOnly(2027, 8, 31), new DateOnly(2027, 6, 1)), ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<ApprovedPriceChange>? backwardsBody = await backwards.Content.ReadFromJsonAsync<ApiResponse<ApprovedPriceChange>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage overlap = await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest(HighSingleKey), ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<ApprovedPriceChange>? overlapBody = await overlap.Content.ReadFromJsonAsync<ApiResponse<ApprovedPriceChange>>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.UnprocessableEntity, backwards.StatusCode);
@@ -196,17 +196,17 @@ public sealed class PriceSuggestionsEndpointTests
     public async Task Revert_UnknownAndAlreadyReverted_Return404And422()
     {
         // Arrange
-        using var factory = FactoryWithReport();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
-        var approved = await (await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest(HighSingleKey), ApiJson.Options, TestContext.Current.CancellationToken))
+        using ApiFactory factory = FactoryWithReport();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
+        ApiResponse<ApprovedPriceChange>? approved = await (await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest(HighSingleKey), ApiJson.Options, TestContext.Current.CancellationToken))
             .Content.ReadFromJsonAsync<ApiResponse<ApprovedPriceChange>>(ApiJson.Options, TestContext.Current.CancellationToken);
         await client.PostAsync($"{Changes}/{approved!.Value!.Change.Id}/revert", null, TestContext.Current.CancellationToken);
-        var auditBefore = factory.World.StaffAudit.Events.Count;
+        int auditBefore = factory.World.StaffAudit.Events.Count;
 
         // Act
-        using var unknown = await client.PostAsync($"{Changes}/999/revert", null, TestContext.Current.CancellationToken);
-        using var again = await client.PostAsync($"{Changes}/{approved.Value.Change.Id}/revert", null, TestContext.Current.CancellationToken);
-        var againBody = await again.Content.ReadFromJsonAsync<ApiResponse<PriceChangeDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage unknown = await client.PostAsync($"{Changes}/999/revert", null, TestContext.Current.CancellationToken);
+        using HttpResponseMessage again = await client.PostAsync($"{Changes}/{approved.Value.Change.Id}/revert", null, TestContext.Current.CancellationToken);
+        ApiResponse<PriceChangeDto>? againBody = await again.Content.ReadFromJsonAsync<ApiResponse<PriceChangeDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
@@ -222,11 +222,11 @@ public sealed class PriceSuggestionsEndpointTests
     public async Task EveryRoute_RoleWithoutThePermission_Returns403(StaffRole role)
     {
         // Arrange
-        using var factory = FactoryWithReport();
-        using var client = factory.CreateStaffClient(role);
+        using ApiFactory factory = FactoryWithReport();
+        using HttpClient client = factory.CreateStaffClient(role);
 
         // Act
-        var responses = new List<HttpResponseMessage>
+        List<HttpResponseMessage> responses = new()
         {
             await client.GetAsync(Suggestions, TestContext.Current.CancellationToken),
             await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest(HighSingleKey), ApiJson.Options, TestContext.Current.CancellationToken),
@@ -247,13 +247,13 @@ public sealed class PriceSuggestionsEndpointTests
     public async Task EveryRoute_NoStaffToken_Returns401()
     {
         // Arrange
-        using var factory = FactoryWithReport();
-        using var service = factory.CreateServiceClient();
-        using var anonymous = factory.CreateClient();
-        var responses = new List<HttpResponseMessage>();
+        using ApiFactory factory = FactoryWithReport();
+        using HttpClient service = factory.CreateServiceClient();
+        using HttpClient anonymous = factory.CreateClient();
+        List<HttpResponseMessage> responses = new();
 
         // Act
-        foreach (var client in new[] { service, anonymous })
+        foreach (HttpClient? client in new[] { service, anonymous })
         {
             responses.Add(await client.GetAsync(Suggestions, TestContext.Current.CancellationToken));
             responses.Add(await client.PostAsJsonAsync(Approve, new PriceSuggestionApproveRequest(HighSingleKey), ApiJson.Options, TestContext.Current.CancellationToken));

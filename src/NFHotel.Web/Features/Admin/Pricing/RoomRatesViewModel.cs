@@ -50,7 +50,7 @@ public sealed class RoomRatesViewModel
     /// <param name="size">The room size.</param>
     /// <returns>The text in the field: the current price after a load or a save, or what was typed.</returns>
     public string InputOf(RoomSize size) =>
-        _inputs.TryGetValue(size, out var text) ? text : string.Empty;
+        _inputs.TryGetValue(size, out string? text) ? text : string.Empty;
 
     /// <summary>Sets the text in the price field of a size.</summary>
     /// <param name="size">The room size.</param>
@@ -65,7 +65,7 @@ public sealed class RoomRatesViewModel
         IsBusy = true;
         try
         {
-            var result = await _rates.RunAsync((service, token) => service.GetAllAsync(token), cancellationToken).ConfigureAwait(false);
+            Result<IReadOnlyList<RoomRateDto>> result = await _rates.RunAsync((service, token) => service.GetAllAsync(token), cancellationToken).ConfigureAwait(false);
             if (result.IsFailure)
             {
                 Errors = ErrorMessages.Describe(result);
@@ -74,9 +74,9 @@ public sealed class RoomRatesViewModel
 
             Errors = Array.Empty<string>();
             _current.Clear();
-            foreach (var rate in result.Value.Where(rate => Enum.IsDefined(typeof(RoomSize), rate.Size)))
+            foreach (RoomRateDto? rate in result.Value.Where(rate => Enum.IsDefined(typeof(RoomSize), rate.Size)))
             {
-                var size = Enum.Parse<RoomSize>(rate.Size);
+                RoomSize size = Enum.Parse<RoomSize>(rate.Size);
                 _current[size] = rate;
                 _inputs[size] = Format(rate.NightlyPrice);
             }
@@ -100,7 +100,7 @@ public sealed class RoomRatesViewModel
         }
 
         SuccessMessage = null;
-        if (!NumberInput.TryParseDecimal(InputOf(size), out var price))
+        if (!NumberInput.TryParseDecimal(InputOf(size), out decimal price))
         {
             Errors = ErrorMessages.Describe(Result.Failure(RoomRateErrors.PriceInvalid));
             return;
@@ -109,7 +109,7 @@ public sealed class RoomRatesViewModel
         IsBusy = true;
         try
         {
-            var result = await _rates
+            Result<RoomRateDto> result = await _rates
                 .RunAsync((service, token) => service.SetAsync(size.ToString(), new SetRoomRateRequest(price), token), cancellationToken)
                 .ConfigureAwait(false);
             if (result.IsFailure)

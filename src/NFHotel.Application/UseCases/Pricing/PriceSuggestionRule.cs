@@ -25,26 +25,26 @@ public static class PriceSuggestionRule
         ArgumentNullException.ThrowIfNull(baseRates);
         ArgumentNullException.ThrowIfNull(settings);
 
-        var seasons = SeasonRule.ByCalendarMonth(observations, settings);
+        CalendarSeasons seasons = SeasonRule.ByCalendarMonth(observations, settings);
         if (!seasons.HasBasis)
         {
             return [];
         }
 
-        var firstMonth = new DateOnly(today.Year, today.Month, 1).AddMonths(1);
-        var horizon = Enumerable.Range(0, MonthsInHorizon)
-            .Select(offset => firstMonth.AddMonths(offset))
+        DateOnly firstMonth = new DateOnly(today.Year, today.Month, 1).AddMonths(1);
+        (DateOnly First, DateOnly Last, MonthSeason Month)[] horizon = Enumerable.Range(0, MonthsInHorizon)
+            .Select(firstMonth.AddMonths)
             .Select(first => (First: first, Last: first.AddMonths(1).AddDays(-1), Month: seasons.Months[first.Month - 1]))
             .ToArray();
 
-        var suggestions = new List<PriceSuggestion>();
-        foreach (var rate in baseRates.GroupBy(r => r.Size).Select(g => g.First()))
+        List<PriceSuggestion> suggestions = new();
+        foreach (RoomRateValue? rate in baseRates.GroupBy(r => r.Size).Select(g => g.First()))
         {
-            var start = 0;
+            int start = 0;
             while (start < horizon.Length)
             {
-                var season = horizon[start].Month.Season;
-                var end = start;
+                Season season = horizon[start].Month.Season;
+                int end = start;
                 while (end + 1 < horizon.Length && horizon[end + 1].Month.Season == season)
                 {
                     end++;
@@ -52,9 +52,9 @@ public static class PriceSuggestionRule
 
                 if (season != Season.Normal)
                 {
-                    var run = horizon[start..(end + 1)];
-                    var occupancy = run.Average(m => m.Month.OccupancyPercent ?? 0m);
-                    var suggestion = Build(rate, season, run[0].First, run[^1].Last, occupancy, settings);
+                    (DateOnly First, DateOnly Last, MonthSeason Month)[] run = horizon[start..(end + 1)];
+                    decimal occupancy = run.Average(m => m.Month.OccupancyPercent ?? 0m);
+                    PriceSuggestion? suggestion = Build(rate, season, run[0].First, run[^1].Last, occupancy, settings);
                     if (suggestion is not null)
                     {
                         suggestions.Add(suggestion);
@@ -71,16 +71,16 @@ public static class PriceSuggestionRule
     private static PriceSuggestion? Build(
         RoomRateValue rate, Season season, DateOnly first, DateOnly last, decimal occupancy, PricingSettings settings)
     {
-        var isHigh = season == Season.High;
+        bool isHigh = season == Season.High;
         if (!isHigh && !settings.DiscountSizes.Contains(rate.Size))
         {
             return null;
         }
 
-        var wanted = isHigh ? settings.SurchargePercent : settings.DiscountPercent;
-        var percentage = Math.Min(wanted, settings.MaxChangePercent);
-        var limited = percentage < wanted;
-        var newPrice = PriceMath.ApplyPercentage(rate.NightlyPrice, isHigh ? percentage : -percentage);
+        decimal wanted = isHigh ? settings.SurchargePercent : settings.DiscountPercent;
+        decimal percentage = Math.Min(wanted, settings.MaxChangePercent);
+        bool limited = percentage < wanted;
+        decimal newPrice = PriceMath.ApplyPercentage(rate.NightlyPrice, isHigh ? percentage : -percentage);
 
         if (!isHigh && newPrice < settings.MinimumNightlyPrice)
         {

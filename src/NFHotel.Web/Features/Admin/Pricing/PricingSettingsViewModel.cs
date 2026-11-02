@@ -82,7 +82,7 @@ public sealed class PricingSettingsViewModel
     /// <summary>Gets the text in a number field.</summary>
     /// <param name="field">One of <see cref="Fields"/>.</param>
     /// <returns>The text in the field.</returns>
-    public string InputOf(string field) => _inputs.TryGetValue(field, out var text) ? text : string.Empty;
+    public string InputOf(string field) => _inputs.TryGetValue(field, out string? text) ? text : string.Empty;
 
     /// <summary>Sets the text in a number field.</summary>
     /// <param name="field">One of <see cref="Fields"/>.</param>
@@ -117,7 +117,7 @@ public sealed class PricingSettingsViewModel
         IsBusy = true;
         try
         {
-            var result = await _settings.RunAsync((service, token) => service.GetAsync(token), cancellationToken).ConfigureAwait(false);
+            Result<PricingSettingsDto> result = await _settings.RunAsync((service, token) => service.GetAsync(token), cancellationToken).ConfigureAwait(false);
             if (result.IsFailure)
             {
                 Errors = ErrorMessages.Describe(result);
@@ -145,20 +145,20 @@ public sealed class PricingSettingsViewModel
         }
 
         SuccessMessage = null;
-        var codes = new List<string>();
-        var surcharge = Read(Fields.Surcharge, PricingSettingErrors.SurchargeInvalid, codes);
-        var discount = Read(Fields.Discount, PricingSettingErrors.DiscountInvalid, codes);
-        var high = Read(Fields.HighThreshold, PricingSettingErrors.HighThresholdInvalid, codes);
-        var low = Read(Fields.LowThreshold, PricingSettingErrors.LowThresholdInvalid, codes);
-        var maxChange = Read(Fields.MaxChange, PricingSettingErrors.MaxChangeInvalid, codes);
-        var minimum = Read(Fields.MinimumPrice, PricingSettingErrors.MinimumPriceInvalid, codes);
+        List<string> codes = new();
+        decimal surcharge = Read(Fields.Surcharge, PricingSettingErrors.SurchargeInvalid, codes);
+        decimal discount = Read(Fields.Discount, PricingSettingErrors.DiscountInvalid, codes);
+        decimal high = Read(Fields.HighThreshold, PricingSettingErrors.HighThresholdInvalid, codes);
+        decimal low = Read(Fields.LowThreshold, PricingSettingErrors.LowThresholdInvalid, codes);
+        decimal maxChange = Read(Fields.MaxChange, PricingSettingErrors.MaxChangeInvalid, codes);
+        decimal minimum = Read(Fields.MinimumPrice, PricingSettingErrors.MinimumPriceInvalid, codes);
         if (codes.Count > 0)
         {
             Errors = ErrorMessages.Describe(Result.FromCodes(codes));
             return;
         }
 
-        var request = new SetPricingSettingsRequest(
+        SetPricingSettingsRequest request = new(
             surcharge,
             discount,
             high,
@@ -170,7 +170,7 @@ public sealed class PricingSettingsViewModel
         IsBusy = true;
         try
         {
-            var result = await _settings
+            Result<PricingSettingsDto> result = await _settings
                 .RunAsync((service, token) => service.SetAsync(request, token), cancellationToken)
                 .ConfigureAwait(false);
             if (result.IsFailure)
@@ -191,7 +191,7 @@ public sealed class PricingSettingsViewModel
 
     private decimal Read(string field, string code, List<string> codes)
     {
-        if (NumberInput.TryParseDecimal(InputOf(field), out var value))
+        if (NumberInput.TryParseDecimal(InputOf(field), out decimal value))
         {
             return value;
         }
@@ -210,7 +210,7 @@ public sealed class PricingSettingsViewModel
         _inputs[Fields.MaxChange] = NumberInput.Format(value.MaxChangePercent);
         _inputs[Fields.MinimumPrice] = NumberInput.Format(value.MinimumNightlyPrice);
         _sizes.Clear();
-        foreach (var name in value.DiscountSizes.Where(name => Enum.IsDefined(typeof(RoomSize), name)))
+        foreach (string? name in value.DiscountSizes.Where(name => Enum.IsDefined(typeof(RoomSize), name)))
         {
             _sizes.Add(Enum.Parse<RoomSize>(name));
         }

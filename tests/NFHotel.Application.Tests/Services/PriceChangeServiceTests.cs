@@ -1,3 +1,6 @@
+using NFHotel.Application.Dto.Pricing;
+using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.ValueObjects;
@@ -13,7 +16,7 @@ public sealed class PriceChangeServiceTests
 
     private static ServiceWorld WorldWithBaseRate(decimal singleRate = 100m)
     {
-        var world = new ServiceWorld();
+        ServiceWorld world = new();
         world.CallContext.StaffId = 7;
         world.CallContext.StaffName = "manager";
         world.Clock.Today = new DateOnly(2027, 5, 1);
@@ -24,7 +27,7 @@ public sealed class PriceChangeServiceTests
 
     private static async Task<decimal?> PriceAsync(ServiceWorld world, string size, string day)
     {
-        var result = await world.PriceChangeService().GetEffectivePriceAsync(size, DateOnly.Parse(day, System.Globalization.CultureInfo.InvariantCulture), TestContext.Current.CancellationToken);
+        Result<EffectivePriceDto> result = await world.PriceChangeService().GetEffectivePriceAsync(size, DateOnly.Parse(day, System.Globalization.CultureInfo.InvariantCulture), TestContext.Current.CancellationToken);
         Assert.True(result.IsSuccess);
         return result.Value.Price;
     }
@@ -36,13 +39,13 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_ValidRequest_StoresOneApprovedChange()
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
 
         // Act
-        var result = await world.PriceChangeService().ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await world.PriceChangeService().ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
 
         // Assert
-        var stored = Assert.Single(world.PriceChanges.Items);
+        PriceChange stored = Assert.Single(world.PriceChanges.Items);
         Assert.True(result.IsSuccess);
         Assert.True(result.Value.Created);
         Assert.Equal((RoomSize.Single, 20m, First, Last), (stored.Size, stored.Percentage, stored.FirstDay, stored.LastDay));
@@ -60,10 +63,10 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_SizeInAnyCase_StoresThatSize(string size, RoomSize expected)
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
 
         // Act
-        var result = await world.PriceChangeService().ApproveAsync(size, 10m, First, Last, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await world.PriceChangeService().ApproveAsync(size, 10m, First, Last, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -79,10 +82,10 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_UnknownSize_ReturnsTheSizeCodeAndSavesNothing(string? size)
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
 
         // Act
-        var result = await world.PriceChangeService().ApproveAsync(size!, 10m, First, Last, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await world.PriceChangeService().ApproveAsync(size!, 10m, First, Last, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -96,10 +99,10 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_InvalidFields_ReturnsTheCodesAndSavesNothing()
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
 
         // Act
-        var result = await world.PriceChangeService().ApproveAsync("Single", 0m, Last, First, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await world.PriceChangeService().ApproveAsync("Single", 0m, Last, First, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -115,11 +118,11 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_NoActor_ReturnsTheApprovedByCode()
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
         world.CallContext.StaffName = null;
 
         // Act
-        var result = await world.PriceChangeService().ApproveAsync("Single", 10m, First, Last, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await world.PriceChangeService().ApproveAsync("Single", 10m, First, Last, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -133,10 +136,10 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_PeriodWhollyInThePast_ReturnsThePeriodCodeAndSavesNothing()
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
 
         // Act
-        var result = await world.PriceChangeService().ApproveAsync("Single", 10m, new DateOnly(2027, 4, 1), new DateOnly(2027, 4, 30), TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await world.PriceChangeService().ApproveAsync("Single", 10m, new DateOnly(2027, 4, 1), new DateOnly(2027, 4, 30), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -150,10 +153,10 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_LastDayIsToday_IsAllowed()
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
 
         // Act
-        var result = await world.PriceChangeService().ApproveAsync("Single", 10m, new DateOnly(2027, 4, 1), new DateOnly(2027, 5, 1), TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await world.PriceChangeService().ApproveAsync("Single", 10m, new DateOnly(2027, 4, 1), new DateOnly(2027, 5, 1), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -169,12 +172,12 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_OverlapsASameSizeChange_ReturnsTheOverlapCode()
     {
         // Arrange
-        var world = WorldWithBaseRate();
-        var service = world.PriceChangeService();
+        ServiceWorld world = WorldWithBaseRate();
+        PriceChangeService service = world.PriceChangeService();
         await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await service.ApproveAsync("Single", -15m, new DateOnly(2027, 8, 31), new DateOnly(2027, 9, 30), TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await service.ApproveAsync("Single", -15m, new DateOnly(2027, 8, 31), new DateOnly(2027, 9, 30), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -188,12 +191,12 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_OtherPercentageOnTheSamePeriod_ReturnsTheOverlapCode()
     {
         // Arrange
-        var world = WorldWithBaseRate();
-        var service = world.PriceChangeService();
+        ServiceWorld world = WorldWithBaseRate();
+        PriceChangeService service = world.PriceChangeService();
         await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await service.ApproveAsync("Single", 25m, First, Last, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await service.ApproveAsync("Single", 25m, First, Last, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -205,14 +208,14 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_OtherSizeOrAdjacentDays_IsAllowed()
     {
         // Arrange
-        var world = WorldWithBaseRate();
-        var service = world.PriceChangeService();
+        ServiceWorld world = WorldWithBaseRate();
+        PriceChangeService service = world.PriceChangeService();
         await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
 
         // Act
-        var otherSize = await service.ApproveAsync("Double", 10m, First, Last, TestContext.Current.CancellationToken);
-        var after = await service.ApproveAsync("Single", -15m, Last.AddDays(1), new DateOnly(2027, 9, 30), TestContext.Current.CancellationToken);
-        var before = await service.ApproveAsync("Single", 5m, new DateOnly(2027, 5, 1), First.AddDays(-1), TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> otherSize = await service.ApproveAsync("Double", 10m, First, Last, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> after = await service.ApproveAsync("Single", -15m, Last.AddDays(1), new DateOnly(2027, 9, 30), TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> before = await service.ApproveAsync("Single", 5m, new DateOnly(2027, 5, 1), First.AddDays(-1), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(otherSize.IsSuccess);
@@ -226,13 +229,13 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_AfterAWithdrawnChange_IsAllowed()
     {
         // Arrange
-        var world = WorldWithBaseRate();
-        var service = world.PriceChangeService();
-        var first = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
+        ServiceWorld world = WorldWithBaseRate();
+        PriceChangeService service = world.PriceChangeService();
+        Result<ApprovedPriceChange> first = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
         await service.RevertAsync(first.Value.Change.Id, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await service.ApproveAsync("Single", -15m, First, Last, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> result = await service.ApproveAsync("Single", -15m, First, Last, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -245,15 +248,15 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_AfterAnEndedChange_OnlyTheEndedDaysBlock()
     {
         // Arrange
-        var world = WorldWithBaseRate();
-        var service = world.PriceChangeService();
-        var first = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
+        ServiceWorld world = WorldWithBaseRate();
+        PriceChangeService service = world.PriceChangeService();
+        Result<ApprovedPriceChange> first = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
         world.Clock.Today = new DateOnly(2027, 7, 10);
         await service.RevertAsync(first.Value.Change.Id, TestContext.Current.CancellationToken);
 
         // Act
-        var overlapping = await service.ApproveAsync("Single", -15m, new DateOnly(2027, 7, 9), Last, TestContext.Current.CancellationToken);
-        var free = await service.ApproveAsync("Single", -15m, new DateOnly(2027, 7, 10), Last, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> overlapping = await service.ApproveAsync("Single", -15m, new DateOnly(2027, 7, 9), Last, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> free = await service.ApproveAsync("Single", -15m, new DateOnly(2027, 7, 10), Last, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(PriceChangeErrors.Overlap, overlapping.FirstError!.Code);
@@ -265,12 +268,12 @@ public sealed class PriceChangeServiceTests
     public async Task ApproveAsync_SameChangeTwice_ReturnsTheExistingOne()
     {
         // Arrange
-        var world = WorldWithBaseRate();
-        var service = world.PriceChangeService();
-        var first = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
+        ServiceWorld world = WorldWithBaseRate();
+        PriceChangeService service = world.PriceChangeService();
+        Result<ApprovedPriceChange> first = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
 
         // Act
-        var second = await service.ApproveAsync("single", 20m, First, Last, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> second = await service.ApproveAsync("single", 20m, First, Last, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(second.IsSuccess);
@@ -289,15 +292,15 @@ public sealed class PriceChangeServiceTests
     public async Task RevertAsync_FutureChange_WithdrawsItAndTheBaseRateAppliesAtOnce()
     {
         // Arrange
-        var world = WorldWithBaseRate();
-        var service = world.PriceChangeService();
-        var approved = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
+        ServiceWorld world = WorldWithBaseRate();
+        PriceChangeService service = world.PriceChangeService();
+        Result<ApprovedPriceChange> approved = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await service.RevertAsync(approved.Value.Change.Id, TestContext.Current.CancellationToken);
+        Result<PriceChangeDto> result = await service.RevertAsync(approved.Value.Change.Id, TestContext.Current.CancellationToken);
 
         // Assert
-        var stored = Assert.Single(world.PriceChanges.Items);
+        PriceChange stored = Assert.Single(world.PriceChanges.Items);
         Assert.True(result.IsSuccess);
         Assert.Equal(("Reverted", (DateOnly?)null, "manager"), (result.Value.State, result.Value.EndedOn, result.Value.RevertedBy));
         Assert.Equal(PriceChangeState.Reverted, stored.State);
@@ -313,13 +316,13 @@ public sealed class PriceChangeServiceTests
     public async Task RevertAsync_ChangeInForce_EndsItTodayAndKeepsYesterday()
     {
         // Arrange
-        var world = WorldWithBaseRate();
-        var service = world.PriceChangeService();
-        var approved = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
+        ServiceWorld world = WorldWithBaseRate();
+        PriceChangeService service = world.PriceChangeService();
+        Result<ApprovedPriceChange> approved = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
         world.Clock.Today = new DateOnly(2027, 7, 10);
 
         // Act
-        var result = await service.RevertAsync(approved.Value.Change.Id, TestContext.Current.CancellationToken);
+        Result<PriceChangeDto> result = await service.RevertAsync(approved.Value.Change.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -336,10 +339,10 @@ public sealed class PriceChangeServiceTests
     public async Task RevertAsync_UnknownId_ReturnsNotFound()
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
 
         // Act
-        var result = await world.PriceChangeService().RevertAsync(99, TestContext.Current.CancellationToken);
+        Result<PriceChangeDto> result = await world.PriceChangeService().RevertAsync(99, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -352,19 +355,19 @@ public sealed class PriceChangeServiceTests
     public async Task RevertAsync_AlreadyReverted_ReturnsTheCodeAndKeepsTheState()
     {
         // Arrange
-        var world = WorldWithBaseRate();
-        var service = world.PriceChangeService();
-        var approved = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
+        ServiceWorld world = WorldWithBaseRate();
+        PriceChangeService service = world.PriceChangeService();
+        Result<ApprovedPriceChange> approved = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
         world.Clock.Today = new DateOnly(2027, 7, 10);
         await service.RevertAsync(approved.Value.Change.Id, TestContext.Current.CancellationToken);
         world.Clock.Today = new DateOnly(2027, 7, 12);
         world.CallContext.StaffName = "other";
 
         // Act
-        var result = await service.RevertAsync(approved.Value.Change.Id, TestContext.Current.CancellationToken);
+        Result<PriceChangeDto> result = await service.RevertAsync(approved.Value.Change.Id, TestContext.Current.CancellationToken);
 
         // Assert
-        var stored = Assert.Single(world.PriceChanges.Items);
+        PriceChange stored = Assert.Single(world.PriceChanges.Items);
         Assert.Equal(PriceChangeErrors.AlreadyReverted, result.FirstError!.Code);
         Assert.Equal(("manager", new DateOnly(2027, 7, 9)), (stored.RevertedBy, stored.EndedOn));
         Assert.Equal(2, world.UnitOfWork.SaveCount);
@@ -375,13 +378,13 @@ public sealed class PriceChangeServiceTests
     public async Task RevertAsync_PeriodOver_ReturnsPeriodEnded()
     {
         // Arrange
-        var world = WorldWithBaseRate();
-        var service = world.PriceChangeService();
-        var approved = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
+        ServiceWorld world = WorldWithBaseRate();
+        PriceChangeService service = world.PriceChangeService();
+        Result<ApprovedPriceChange> approved = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
         world.Clock.Today = Last.AddDays(1);
 
         // Act
-        var result = await service.RevertAsync(approved.Value.Change.Id, TestContext.Current.CancellationToken);
+        Result<PriceChangeDto> result = await service.RevertAsync(approved.Value.Change.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(PriceChangeErrors.PeriodEnded, result.FirstError!.Code);
@@ -394,13 +397,13 @@ public sealed class PriceChangeServiceTests
     public async Task RevertAsync_NoActor_ReturnsTheRevertedByCode()
     {
         // Arrange
-        var world = WorldWithBaseRate();
-        var service = world.PriceChangeService();
-        var approved = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
+        ServiceWorld world = WorldWithBaseRate();
+        PriceChangeService service = world.PriceChangeService();
+        Result<ApprovedPriceChange> approved = await service.ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
         world.CallContext.StaffName = null;
 
         // Act
-        var result = await service.RevertAsync(approved.Value.Change.Id, TestContext.Current.CancellationToken);
+        Result<PriceChangeDto> result = await service.RevertAsync(approved.Value.Change.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(PriceChangeErrors.RevertedByInvalid, result.FirstError!.Code);
@@ -420,11 +423,11 @@ public sealed class PriceChangeServiceTests
     public async Task GetEffectivePriceAsync_AroundThePeriod_AppliesTheChangeOnlyInside(string day, string expected)
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
         await world.PriceChangeService().ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await world.PriceChangeService().GetEffectivePriceAsync("Single", DateOnly.Parse(day, System.Globalization.CultureInfo.InvariantCulture), TestContext.Current.CancellationToken);
+        Result<EffectivePriceDto> result = await world.PriceChangeService().GetEffectivePriceAsync("Single", DateOnly.Parse(day, System.Globalization.CultureInfo.InvariantCulture), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -437,11 +440,11 @@ public sealed class PriceChangeServiceTests
     public async Task GetEffectivePriceAsync_Discount_LowersThePrice()
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
         await world.PriceChangeService().ApproveAsync("Single", -15m, First, Last, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await world.PriceChangeService().GetEffectivePriceAsync("Single", First, TestContext.Current.CancellationToken);
+        Result<EffectivePriceDto> result = await world.PriceChangeService().GetEffectivePriceAsync("Single", First, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal((85m, -15m), (result.Value.Price, result.Value.Percentage));
@@ -452,11 +455,11 @@ public sealed class PriceChangeServiceTests
     public async Task GetEffectivePriceAsync_ManyDecimals_RoundsToTwo()
     {
         // Arrange
-        var world = WorldWithBaseRate(99.99m);
+        ServiceWorld world = WorldWithBaseRate(99.99m);
         await world.PriceChangeService().ApproveAsync("Single", 10m, First, Last, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await world.PriceChangeService().GetEffectivePriceAsync("Single", First, TestContext.Current.CancellationToken);
+        Result<EffectivePriceDto> result = await world.PriceChangeService().GetEffectivePriceAsync("Single", First, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(109.99m, result.Value.Price);
@@ -467,11 +470,11 @@ public sealed class PriceChangeServiceTests
     public async Task GetEffectivePriceAsync_NoBaseRate_ReturnsNullPrice()
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
         await world.PriceChangeService().ApproveAsync("Suite", 20m, First, Last, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await world.PriceChangeService().GetEffectivePriceAsync("Suite", First, TestContext.Current.CancellationToken);
+        Result<EffectivePriceDto> result = await world.PriceChangeService().GetEffectivePriceAsync("Suite", First, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -483,10 +486,10 @@ public sealed class PriceChangeServiceTests
     public async Task GetEffectivePriceAsync_UnknownSize_ReturnsTheSizeCode()
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
 
         // Act
-        var result = await world.PriceChangeService().GetEffectivePriceAsync("Penthouse", First, TestContext.Current.CancellationToken);
+        Result<EffectivePriceDto> result = await world.PriceChangeService().GetEffectivePriceAsync("Penthouse", First, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -498,12 +501,12 @@ public sealed class PriceChangeServiceTests
     public async Task GetEffectivePriceAsync_TwoChangesCountOnADay_TakesTheLastApproved()
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
         world.PriceChanges.Add(PriceChange.Approve(RoomSize.Single, 20m, First, Last, "manager", world.Clock.UtcNow));
         world.PriceChanges.Add(PriceChange.Approve(RoomSize.Single, 50m, First, Last, "manager", world.Clock.UtcNow.AddHours(1)));
 
         // Act
-        var result = await world.PriceChangeService().GetEffectivePriceAsync("Single", First, TestContext.Current.CancellationToken);
+        Result<EffectivePriceDto> result = await world.PriceChangeService().GetEffectivePriceAsync("Single", First, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(150m, result.Value.Price);
@@ -514,11 +517,11 @@ public sealed class PriceChangeServiceTests
     public async Task GetEffectivePricesAsync_AllSizes_ReturnsOnePricePerSize()
     {
         // Arrange
-        var world = WorldWithBaseRate();
+        ServiceWorld world = WorldWithBaseRate();
         await world.PriceChangeService().ApproveAsync("Single", 20m, First, Last, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await world.PriceChangeService().GetEffectivePricesAsync(First, TestContext.Current.CancellationToken);
+        Result<IReadOnlyList<EffectivePriceDto>> result = await world.PriceChangeService().GetEffectivePricesAsync(First, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);

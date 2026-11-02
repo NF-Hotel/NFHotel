@@ -24,7 +24,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task LoadAsync_AllThreeCallsSucceed_FillsTheThreeLists()
     {
         // Arrange
-        var (viewModel, _) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService _) = Build();
 
         // Act
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -33,7 +33,7 @@ public sealed class PriceSuggestionsViewModelTests
         Assert.True(viewModel.IsLoaded);
         Assert.False(viewModel.IsBusy);
         Assert.Empty(viewModel.Errors);
-        var row = Assert.Single(viewModel.Suggestions);
+        PriceSuggestionsViewModel.SuggestionRow row = Assert.Single(viewModel.Suggestions);
         Assert.Equal("Single", row.Size);
         Assert.Equal("High season", row.Season);
         Assert.Equal("2026-12-01", viewModel.FirstDayOf(Key));
@@ -49,7 +49,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task LoadAsync_NoBasis_ExposesTheNoBasisState()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         service.GetOpenAsync(Arg.Any<CancellationToken>()).Returns(
             Result<PriceSuggestionListDto>.Success(new PriceSuggestionListDto(PriceSuggestionBasis.NoBasis, Today, [], null)));
 
@@ -67,7 +67,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task LoadAsync_BasisOkAndNoItems_ExposesTheEmptyState()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         service.GetOpenAsync(Arg.Any<CancellationToken>()).Returns(
             Result<PriceSuggestionListDto>.Success(new PriceSuggestionListDto(PriceSuggestionBasis.Ok, Today, [], null)));
 
@@ -84,7 +84,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task LoadAsync_ServiceDown_ShowsTheTextAndIsLoaded()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         service.GetOpenAsync(Arg.Any<CancellationToken>()).Returns(Result<PriceSuggestionListDto>.Failure(ErrorCodes.Api.Unavailable));
 
         // Act
@@ -102,7 +102,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task LoadAsync_AiExplanationGiven_ExposesItApartFromTheRows()
     {
         // Arrange
-        var (viewModel, _) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService _) = Build();
 
         // Act
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -117,7 +117,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task LoadAsync_NoAiExplanation_ExposesNull()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         service.GetOpenAsync(Arg.Any<CancellationToken>()).Returns(Result<PriceSuggestionListDto>.Success(OpenList(null)));
 
         // Act
@@ -136,7 +136,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task ApproveAsync_DatesUnchanged_SendsTheKeyAndNullDates()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         // Act
@@ -156,7 +156,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task ApproveAsync_DatesChanged_SendsTheDates()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         viewModel.SetFirstDay(Key, "2026-12-15");
         viewModel.SetLastDay(Key, "2027-01-31");
@@ -176,14 +176,14 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task ApproveAsync_WhileRunning_IgnoresTheSecondCall()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
-        var gate = new TaskCompletionSource<Result<ApprovedPriceChange>>();
+        TaskCompletionSource<Result<ApprovedPriceChange>> gate = new();
         service.ApproveAsync(Arg.Any<PriceSuggestionApproveRequest>(), Arg.Any<CancellationToken>()).Returns(gate.Task);
 
         // Act
-        var first = viewModel.ApproveAsync(Key, TestContext.Current.CancellationToken);
-        var busy = viewModel.IsBusy;
+        Task first = viewModel.ApproveAsync(Key, TestContext.Current.CancellationToken);
+        bool busy = viewModel.IsBusy;
         await viewModel.ApproveAsync(Key, TestContext.Current.CancellationToken);
         gate.SetResult(Result<ApprovedPriceChange>.Success(new ApprovedPriceChange(Change(1, "Approved", null), true)));
         await first;
@@ -199,7 +199,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task ApproveAsync_Overlap_ShowsTheMessageAndKeepsTheList()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         service.ApproveAsync(Arg.Any<PriceSuggestionApproveRequest>(), Arg.Any<CancellationToken>())
             .Returns(Result<ApprovedPriceChange>.Failure(PriceChangeErrors.Overlap));
@@ -208,8 +208,8 @@ public sealed class PriceSuggestionsViewModelTests
         await viewModel.ApproveAsync(Key, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Single(viewModel.Errors);
-        Assert.StartsWith("Another price change of the same room size", viewModel.Errors[0], StringComparison.Ordinal);
+        string error = Assert.Single(viewModel.Errors);
+        Assert.StartsWith("Another price change of the same room size", error, StringComparison.Ordinal);
         Assert.Null(viewModel.SuccessMessage);
         Assert.Single(viewModel.Suggestions);
         Assert.False(viewModel.IsBusy);
@@ -220,7 +220,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task ApproveAsync_EmptyDate_ShowsThePeriodMessageAndCallsNothing()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         viewModel.SetLastDay(Key, string.Empty);
 
@@ -237,7 +237,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task ApproveAsync_UnknownKey_ShowsTheNotFoundMessage()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         // Act
@@ -257,7 +257,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task RevertAsync_ChangeThatWasInForce_SaysRevertedAndReloads()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         service.RevertAsync(7, Arg.Any<CancellationToken>())
             .Returns(Result<PriceChangeDto>.Success(Change(7, "Reverted", new DateOnly(2026, 11, 1))));
@@ -277,7 +277,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task RevertAsync_ChangeThatHadNotBegun_SaysWithdrawn()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         service.RevertAsync(7, Arg.Any<CancellationToken>()).Returns(Result<PriceChangeDto>.Success(Change(7, "Reverted", null)));
 
@@ -293,7 +293,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task RevertAsync_AlreadyReverted_ShowsTheMessage()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         service.RevertAsync(7, Arg.Any<CancellationToken>()).Returns(Result<PriceChangeDto>.Failure(PriceChangeErrors.AlreadyReverted));
 
@@ -310,13 +310,13 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task RevertAsync_WhileRunning_IgnoresTheSecondCall()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
-        var gate = new TaskCompletionSource<Result<PriceChangeDto>>();
+        TaskCompletionSource<Result<PriceChangeDto>> gate = new();
         service.RevertAsync(7, Arg.Any<CancellationToken>()).Returns(gate.Task);
 
         // Act
-        var first = viewModel.RevertAsync(7, TestContext.Current.CancellationToken);
+        Task first = viewModel.RevertAsync(7, TestContext.Current.CancellationToken);
         await viewModel.RevertAsync(7, TestContext.Current.CancellationToken);
         gate.SetResult(Result<PriceChangeDto>.Success(Change(7, "Reverted", new DateOnly(2026, 11, 1))));
         await first;
@@ -346,7 +346,7 @@ public sealed class PriceSuggestionsViewModelTests
         string text)
     {
         // Arrange
-        var change = new PriceChangeDto(
+        PriceChangeDto change = new(
             1,
             "Single",
             20m,
@@ -360,7 +360,7 @@ public sealed class PriceSuggestionsViewModelTests
             endedOn is null ? null : DateOnly.Parse(endedOn, System.Globalization.CultureInfo.InvariantCulture));
 
         // Act
-        var status = PriceSuggestionsViewModel.StatusOf(change, Today);
+        PriceSuggestionsViewModel.ChangeStatus status = PriceSuggestionsViewModel.StatusOf(change, Today);
 
         // Assert
         Assert.Equal(expected, status);
@@ -372,7 +372,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task LoadAsync_ChangesInEveryState_AllowsRevertOnlyForInForceAndComing()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
         service.GetChangesAsync(Arg.Any<CancellationToken>()).Returns(
             Result<IReadOnlyList<PriceChangeDto>>.Success(
             [
@@ -396,17 +396,17 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task LoadAsync_OneSizeWithoutBaseRate_ShowsNullValuesForIt()
     {
         // Arrange
-        var (viewModel, _) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService _) = Build();
 
         // Act
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var single = viewModel.EffectivePrices.Single(row => row.Size == "Single");
+        PriceSuggestionsViewModel.EffectiveRow single = viewModel.EffectivePrices.Single(row => row.Size == "Single");
         Assert.Equal("100.00", single.BaseRate);
         Assert.Equal("+20 %", single.Change);
         Assert.Equal("120.00", single.Price);
-        var suite = viewModel.EffectivePrices.Single(row => row.Size == "Suite");
+        PriceSuggestionsViewModel.EffectiveRow suite = viewModel.EffectivePrices.Single(row => row.Size == "Suite");
         Assert.Null(suite.BaseRate);
         Assert.Null(suite.Price);
         Assert.Equal("-", suite.Change);
@@ -417,7 +417,7 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task LoadAsync_Always_AsksForTheEffectivePricesOfTheClockDay()
     {
         // Arrange
-        var (viewModel, service) = Build();
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
 
         // Act
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -448,8 +448,8 @@ public sealed class PriceSuggestionsViewModelTests
     public async Task LoadAsync_HighAndLowSeasonItems_ShowTheFiguresTheyRestOn()
     {
         // Arrange
-        var (viewModel, service) = Build();
-        var low = new PriceSuggestionItemDto("low", "Double", "Low", new DateOnly(2027, 1, 1), new DateOnly(2027, 1, 31), -15m, 100m, 85m, 35m, 40m, true);
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
+        PriceSuggestionItemDto low = new("low", "Double", "Low", new DateOnly(2027, 1, 1), new DateOnly(2027, 1, 31), -15m, 100m, 85m, 35m, 40m, true);
         service.GetOpenAsync(Arg.Any<CancellationToken>()).Returns(
             Result<PriceSuggestionListDto>.Success(OpenList("x", [HighItem(), low])));
 
@@ -457,12 +457,12 @@ public sealed class PriceSuggestionsViewModelTests
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var high = viewModel.Suggestions[0];
+        PriceSuggestionsViewModel.SuggestionRow high = viewModel.Suggestions[0];
         Assert.Equal("+20 %", high.Change);
         Assert.Equal("100.00 → 120.00", high.Move);
         Assert.Equal("Occupancy 85.0 % at or above 80 %", high.Basis);
         Assert.False(high.WasLimited);
-        var lowRow = viewModel.Suggestions[1];
+        PriceSuggestionsViewModel.SuggestionRow lowRow = viewModel.Suggestions[1];
         Assert.Equal("Low season", lowRow.Season);
         Assert.Equal("−15 %", lowRow.Change);
         Assert.Equal("100.00 → 85.00", lowRow.Move);
@@ -476,7 +476,7 @@ public sealed class PriceSuggestionsViewModelTests
 
     private static (PriceSuggestionsViewModel ViewModel, IPriceSuggestionService Service) Build()
     {
-        var service = Substitute.For<IPriceSuggestionService>();
+        IPriceSuggestionService service = Substitute.For<IPriceSuggestionService>();
         service.GetOpenAsync(Arg.Any<CancellationToken>()).Returns(Result<PriceSuggestionListDto>.Success(OpenList("Summer is busy.")));
         service.GetChangesAsync(Arg.Any<CancellationToken>()).Returns(
             Result<IReadOnlyList<PriceChangeDto>>.Success([Change(1, "Approved", null)]));
@@ -489,7 +489,7 @@ public sealed class PriceSuggestionsViewModelTests
             ]));
         service.ApproveAsync(Arg.Any<PriceSuggestionApproveRequest>(), Arg.Any<CancellationToken>()).Returns(
             Result<ApprovedPriceChange>.Success(new ApprovedPriceChange(Change(1, "Approved", null), true)));
-        var viewModel = new PriceSuggestionsViewModel(new PassThroughRunner<IPriceSuggestionService>(service), new FakeClock { Today = Today });
+        PriceSuggestionsViewModel viewModel = new(new PassThroughRunner<IPriceSuggestionService>(service), new FakeClock { Today = Today });
         return (viewModel, service);
     }
 

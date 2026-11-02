@@ -47,7 +47,7 @@ public sealed class PricingSettingsService : IPricingSettingsService
     /// <inheritdoc />
     public async Task<Result<PricingSettingsDto>> GetAsync(CancellationToken cancellationToken = default)
     {
-        var stored = await _settings.GetAsync(cancellationToken).ConfigureAwait(false);
+        PricingSetting? stored = await _settings.GetAsync(cancellationToken).ConfigureAwait(false);
 
         return Result<PricingSettingsDto>.Success(stored is null ? DefaultsDto() : ToDto(stored));
     }
@@ -59,13 +59,13 @@ public sealed class PricingSettingsService : IPricingSettingsService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (!TryParseSizes(request.DiscountSizes, out var sizes))
+        if (!TryParseSizes(request.DiscountSizes, out List<RoomSize>? sizes))
         {
             return Result<PricingSettingsDto>.FromCodes([PricingSettingErrors.DiscountSizesInvalid]);
         }
 
-        var now = _clock.UtcNow;
-        var setBy = _context.StaffName ?? string.Empty;
+        DateTimeOffset now = _clock.UtcNow;
+        string setBy = _context.StaffName ?? string.Empty;
         PricingSetting candidate;
         try
         {
@@ -86,9 +86,9 @@ public sealed class PricingSettingsService : IPricingSettingsService
             return Result<PricingSettingsDto>.FromCodes(exception.Codes);
         }
 
-        var existing = await _settings.GetAsync(cancellationToken).ConfigureAwait(false);
-        var before = existing is null ? PricingSettings.Defaults : existing.ToRule();
-        var changes = Differences(before, candidate.ToRule());
+        PricingSetting? existing = await _settings.GetAsync(cancellationToken).ConfigureAwait(false);
+        PricingSettings before = existing is null ? PricingSettings.Defaults : existing.ToRule();
+        List<string> changes = Differences(before, candidate.ToRule());
         if (changes.Count == 0)
         {
             return Result<PricingSettingsDto>.Success(existing is null ? DefaultsDto() : ToDto(existing));
@@ -136,9 +136,9 @@ public sealed class PricingSettingsService : IPricingSettingsService
     private static bool TryParseSizes(IReadOnlyList<string>? names, out List<RoomSize> sizes)
     {
         sizes = [];
-        foreach (var name in names ?? [])
+        foreach (string name in names ?? [])
         {
-            if (!RoomSizeText.TryParse(name, out var size))
+            if (!RoomSizeText.TryParse(name, out RoomSize size))
             {
                 return false;
             }
@@ -151,7 +151,7 @@ public sealed class PricingSettingsService : IPricingSettingsService
 
     private static List<string> Differences(PricingSettings before, PricingSettings after)
     {
-        var changes = new List<string>();
+        List<string> changes = new();
         AddNumber(changes, "Surcharge", before.SurchargePercent, after.SurchargePercent);
         AddNumber(changes, "Discount", before.DiscountPercent, after.DiscountPercent);
         AddNumber(changes, "HighThreshold", before.HighThreshold, after.HighThreshold);
@@ -159,8 +159,8 @@ public sealed class PricingSettingsService : IPricingSettingsService
         AddNumber(changes, "MaxChange", before.MaxChangePercent, after.MaxChangePercent);
         AddNumber(changes, "MinimumPrice", before.MinimumNightlyPrice, after.MinimumNightlyPrice);
 
-        var oldSizes = SizesText(before.DiscountSizes);
-        var newSizes = SizesText(after.DiscountSizes);
+        string oldSizes = SizesText(before.DiscountSizes);
+        string newSizes = SizesText(after.DiscountSizes);
         if (oldSizes != newSizes)
         {
             changes.Add($"DiscountSizes: {oldSizes} -> {newSizes}");
@@ -182,7 +182,7 @@ public sealed class PricingSettingsService : IPricingSettingsService
 
     private static PricingSettingsDto DefaultsDto()
     {
-        var defaults = PricingSettings.Defaults;
+        PricingSettings defaults = PricingSettings.Defaults;
 
         return new PricingSettingsDto(
             defaults.SurchargePercent,

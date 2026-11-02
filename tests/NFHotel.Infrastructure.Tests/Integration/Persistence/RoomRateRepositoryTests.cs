@@ -31,11 +31,11 @@ public sealed class RoomRateRepositoryTests : IAsyncLifetime
     public async Task Migrations_AppliedToAnEmptyDatabase_MatchTheModel()
     {
         // Arrange
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var migrations = context.Database.GetMigrations();
-        var rates = await context.RoomRates.CountAsync(TestContext.Current.CancellationToken);
+        IEnumerable<string> migrations = context.Database.GetMigrations();
+        int rates = await context.RoomRates.CountAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Contains(migrations, id => id.EndsWith("_AddRoomRateAndAuditDetail", StringComparison.Ordinal));
@@ -48,10 +48,10 @@ public sealed class RoomRateRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await AddAsync(RoomSize.Double, 129.5m);
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var found = await new RoomRateRepository(context).FindBySizeAsync(RoomSize.Double, TestContext.Current.CancellationToken);
+        RoomRate? found = await new RoomRateRepository(context).FindBySizeAsync(RoomSize.Double, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(found);
@@ -64,10 +64,10 @@ public sealed class RoomRateRepositoryTests : IAsyncLifetime
     public async Task FindBySizeAsync_NothingStored_ReturnsNull()
     {
         // Arrange
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var found = await new RoomRateRepository(context).FindBySizeAsync(RoomSize.Suite, TestContext.Current.CancellationToken);
+        RoomRate? found = await new RoomRateRepository(context).FindBySizeAsync(RoomSize.Suite, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(found);
@@ -81,10 +81,10 @@ public sealed class RoomRateRepositoryTests : IAsyncLifetime
         await AddAsync(RoomSize.Suite, 300m);
         await AddAsync(RoomSize.Single, 80m);
         await AddAsync(RoomSize.Double, 120m);
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var list = await new RoomRateRepository(context).ListAsync(TestContext.Current.CancellationToken);
+        IReadOnlyList<RoomRate> list = await new RoomRateRepository(context).ListAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal([RoomSize.Single, RoomSize.Double, RoomSize.Suite], list.Select(value => value.Size));
@@ -96,11 +96,11 @@ public sealed class RoomRateRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await AddAsync(RoomSize.Single, 80m);
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
         new RoomRateRepository(context).Add(RoomRate.Create(RoomSize.Single, 90m, "manager", At));
 
         // Act
-        var save = () => context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        Func<Task<int>> save = () => context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await Assert.ThrowsAsync<DbUpdateException>(save);
@@ -116,9 +116,9 @@ public sealed class RoomRateRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await AddAsync(RoomSize.Single, 80m);
-        await using (var context = _fixture.CreateContext())
+        await using (HotelDbContext context = _fixture.CreateContext())
         {
-            var stored = await new RoomRateRepository(context).FindBySizeAsync(RoomSize.Single, TestContext.Current.CancellationToken);
+            RoomRate? stored = await new RoomRateRepository(context).FindBySizeAsync(RoomSize.Single, TestContext.Current.CancellationToken);
 
             // Act
             stored!.Change(95m, "other", At.AddHours(1));
@@ -126,8 +126,8 @@ public sealed class RoomRateRepositoryTests : IAsyncLifetime
         }
 
         // Assert
-        await using var check = _fixture.CreateContext();
-        var value = Assert.Single(check.RoomRates);
+        await using HotelDbContext check = _fixture.CreateContext();
+        RoomRate value = Assert.Single(check.RoomRates);
         Assert.Equal((95m, "other"), (value.NightlyPrice, value.SetBy));
     }
 
@@ -136,7 +136,7 @@ public sealed class RoomRateRepositoryTests : IAsyncLifetime
     public async Task SaveChanges_RateAndAuditEvent_AreStoredTogetherWithTheDetail()
     {
         // Arrange
-        await using (var context = _fixture.CreateContext())
+        await using (HotelDbContext context = _fixture.CreateContext())
         {
             new RoomRateRepository(context).Add(RoomRate.Create(RoomSize.Single, 90m, "manager", At));
             new StaffAuditRepository(context).Add(StaffAuditEvent.Create(At, StaffAuditAction.RoomRateChanged, "Success", 1, "manager", detail: "Single: (none) -> 90.00"));
@@ -144,8 +144,8 @@ public sealed class RoomRateRepositoryTests : IAsyncLifetime
         }
 
         // Act
-        await using var reader = _fixture.CreateContext();
-        var audit = Assert.Single(await new StaffAuditRepository(reader).ListAsync(0, 10, TestContext.Current.CancellationToken));
+        await using HotelDbContext reader = _fixture.CreateContext();
+        StaffAuditEvent audit = Assert.Single(await new StaffAuditRepository(reader).ListAsync(0, 10, TestContext.Current.CancellationToken));
 
         // Assert
         Assert.Equal(StaffAuditAction.RoomRateChanged, audit.Action);
@@ -155,7 +155,7 @@ public sealed class RoomRateRepositoryTests : IAsyncLifetime
 
     private async Task AddAsync(RoomSize size, decimal price)
     {
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
         new RoomRateRepository(context).Add(RoomRate.Create(size, price, "manager", At));
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
     }

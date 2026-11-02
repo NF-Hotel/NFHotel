@@ -14,7 +14,7 @@ public sealed class RoomRateTests
     public void Create_ValidFields_KeepsThemTrimmedAndInUtc()
     {
         // Arrange and act
-        var rate = RoomRate.Create(RoomSize.Suite, 250m, " manager ", At);
+        RoomRate rate = RoomRate.Create(RoomSize.Suite, 250m, " manager ", At);
 
         // Assert
         Assert.Equal((RoomSize.Suite, 250m, "manager"), (rate.Size, rate.NightlyPrice, rate.SetBy));
@@ -29,7 +29,7 @@ public sealed class RoomRateTests
     public void Create_PriceAtTheLimit_IsAccepted(string price)
     {
         // Arrange and act
-        var rate = RoomRate.Create(RoomSize.Single, decimal.Parse(price, System.Globalization.CultureInfo.InvariantCulture), "manager", At);
+        RoomRate rate = RoomRate.Create(RoomSize.Single, decimal.Parse(price, System.Globalization.CultureInfo.InvariantCulture), "manager", At);
 
         // Assert
         Assert.Equal(decimal.Parse(price, System.Globalization.CultureInfo.InvariantCulture), rate.NightlyPrice);
@@ -44,7 +44,7 @@ public sealed class RoomRateTests
     public void Create_PriceOutsideTheLimits_ThrowsThePriceCode(string price)
     {
         // Arrange and act
-        var exception = Assert.Throws<DomainException>(
+        DomainException exception = Assert.Throws<DomainException>(
             () => RoomRate.Create(RoomSize.Double, decimal.Parse(price, System.Globalization.CultureInfo.InvariantCulture), "manager", At));
 
         // Assert
@@ -58,7 +58,7 @@ public sealed class RoomRateTests
     public void Create_MoreThanTwoDecimals_RoundsToTwo(string price, string expected)
     {
         // Arrange and act
-        var rate = RoomRate.Create(RoomSize.Single, decimal.Parse(price, System.Globalization.CultureInfo.InvariantCulture), "manager", At);
+        RoomRate rate = RoomRate.Create(RoomSize.Single, decimal.Parse(price, System.Globalization.CultureInfo.InvariantCulture), "manager", At);
 
         // Assert
         Assert.Equal(decimal.Parse(expected, System.Globalization.CultureInfo.InvariantCulture), rate.NightlyPrice);
@@ -69,7 +69,7 @@ public sealed class RoomRateTests
     public void Create_UnknownSize_ThrowsTheSizeCode()
     {
         // Arrange and act
-        var exception = Assert.Throws<DomainException>(() => RoomRate.Create((RoomSize)42, 100m, "manager", At));
+        DomainException exception = Assert.Throws<DomainException>(() => RoomRate.Create((RoomSize)42, 100m, "manager", At));
 
         // Assert
         Assert.Contains(RoomRateErrors.SizeInvalid, exception.Codes);
@@ -82,7 +82,7 @@ public sealed class RoomRateTests
     public void Create_BlankSetBy_ThrowsTheSetByCode(string setBy)
     {
         // Arrange and act
-        var exception = Assert.Throws<DomainException>(() => RoomRate.Create(RoomSize.Single, 100m, setBy, At));
+        DomainException exception = Assert.Throws<DomainException>(() => RoomRate.Create(RoomSize.Single, 100m, setBy, At));
 
         // Assert
         Assert.Contains(RoomRateErrors.SetByInvalid, exception.Codes);
@@ -93,8 +93,8 @@ public sealed class RoomRateTests
     public void Create_SetByLength_AcceptsTheLimitAndRefusesOneMore()
     {
         // Arrange and act
-        var accepted = RoomRate.Create(RoomSize.Single, 100m, new string('m', RoomRate.MaxTextLength), At);
-        var exception = Assert.Throws<DomainException>(() => RoomRate.Create(RoomSize.Single, 100m, new string('m', RoomRate.MaxTextLength + 1), At));
+        RoomRate accepted = RoomRate.Create(RoomSize.Single, 100m, new string('m', RoomRate.MaxTextLength), At);
+        DomainException exception = Assert.Throws<DomainException>(() => RoomRate.Create(RoomSize.Single, 100m, new string('m', RoomRate.MaxTextLength + 1), At));
 
         // Assert
         Assert.Equal(RoomRate.MaxTextLength, accepted.SetBy.Length);
@@ -106,7 +106,7 @@ public sealed class RoomRateTests
     public void Create_PriceAndSetByWrong_ThrowsBothCodes()
     {
         // Arrange and act
-        var exception = Assert.Throws<DomainException>(() => RoomRate.Create(RoomSize.Single, 0m, string.Empty, At));
+        DomainException exception = Assert.Throws<DomainException>(() => RoomRate.Create(RoomSize.Single, 0m, string.Empty, At));
 
         // Assert
         Assert.Contains(RoomRateErrors.PriceInvalid, exception.Codes);
@@ -118,7 +118,7 @@ public sealed class RoomRateTests
     public void Change_ValidFields_ReplacesEverythingButTheSize()
     {
         // Arrange
-        var rate = RoomRate.Create(RoomSize.Double, 100m, "manager", At);
+        RoomRate rate = RoomRate.Create(RoomSize.Double, 100m, "manager", At);
 
         // Act
         rate.Change(120.5m, "other", At.AddHours(1));
@@ -133,10 +133,10 @@ public sealed class RoomRateTests
     public void Change_PriceZero_ThrowsAndKeepsTheOldRate()
     {
         // Arrange
-        var rate = RoomRate.Create(RoomSize.Double, 100m, "manager", At);
+        RoomRate rate = RoomRate.Create(RoomSize.Double, 100m, "manager", At);
 
         // Act
-        var exception = Assert.Throws<DomainException>(() => rate.Change(0m, "other", At.AddHours(1)));
+        DomainException exception = Assert.Throws<DomainException>(() => rate.Change(0m, "other", At.AddHours(1)));
 
         // Assert
         Assert.Contains(RoomRateErrors.PriceInvalid, exception.Codes);

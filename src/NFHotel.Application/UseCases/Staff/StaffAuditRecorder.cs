@@ -46,7 +46,7 @@ internal sealed class StaffAuditRecorder
     /// </summary>
     public void ByCallerWithDetail(StaffAuditAction action, string outcome, string detail)
     {
-        var actorName = _context.StaffName ?? (_context.StaffId is null ? SystemActor : null);
+        string? actorName = _context.StaffName ?? (_context.StaffId is null ? SystemActor : null);
         _audit.Add(StaffAuditEvent.Create(
             _clock.UtcNow, action, outcome, _context.StaffId, actorName, remoteAddress: _context.RemoteAddress, detail: detail));
     }

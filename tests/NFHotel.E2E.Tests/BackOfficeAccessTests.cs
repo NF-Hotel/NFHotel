@@ -98,7 +98,7 @@ public sealed class BackOfficeAccessTests(BrowserFixture fixture) : BrowserTest(
     {
         await StaffSignIn.AsAsync(Page, StaffRole.Manager);
 
-        foreach (var path in new[] { "admin", "admin/bookings", "admin/guests", "admin/rooms", "admin/revenue", "admin/pricing/rates", "admin/pricing/settings", "admin/pricing/suggestions" })
+        foreach (string? path in new[] { "admin", "admin/bookings", "admin/guests", "admin/rooms", "admin/revenue", "admin/pricing/rates", "admin/pricing/settings", "admin/pricing/suggestions" })
         {
             await AssertAllowedAsync(path);
         }

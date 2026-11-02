@@ -50,7 +50,7 @@ public sealed class RoomRateService : IRoomRateService
     /// <inheritdoc />
     public async Task<Result<IReadOnlyList<RoomRateDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var rates = await _rates.ListAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<RoomRate> rates = await _rates.ListAsync(cancellationToken).ConfigureAwait(false);
 
         return Result<IReadOnlyList<RoomRateDto>>.Success(rates.Select(ToDto).ToArray());
     }
@@ -63,18 +63,18 @@ public sealed class RoomRateService : IRoomRateService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (!RoomSizeText.TryParse(size, out var parsed))
+        if (!RoomSizeText.TryParse(size, out RoomSize parsed))
         {
             return Result<RoomRateDto>.FromCodes([RoomRateErrors.SizeInvalid]);
         }
 
-        var now = _clock.UtcNow;
-        var setBy = _context.StaffName ?? string.Empty;
+        DateTimeOffset now = _clock.UtcNow;
+        string setBy = _context.StaffName ?? string.Empty;
         RoomRate stored;
         string oldText;
         try
         {
-            var existing = await _rates.FindBySizeAsync(parsed, cancellationToken).ConfigureAwait(false);
+            RoomRate? existing = await _rates.FindBySizeAsync(parsed, cancellationToken).ConfigureAwait(false);
             if (existing is null)
             {
                 oldText = NoneText;

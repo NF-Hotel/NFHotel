@@ -29,7 +29,7 @@ public sealed class PricingSettingTests
     public void Create_ValidFields_KeepsThemTrimmedAndInUtc()
     {
         // Arrange and act
-        var setting = Make(25m, 10m, 90m, 30m, 20m, 55.5m, [RoomSize.Double, RoomSize.Single], " manager ");
+        PricingSetting setting = Make(25m, 10m, 90m, 30m, 20m, 55.5m, [RoomSize.Double, RoomSize.Single], " manager ");
 
         // Assert
         Assert.Equal((25m, 10m, 90m, 30m, 20m, 55.5m), (setting.SurchargePercent, setting.DiscountPercent, setting.HighThresholdPercent, setting.LowThresholdPercent, setting.MaxChangePercent, setting.MinimumNightlyPrice));
@@ -44,7 +44,7 @@ public sealed class PricingSettingTests
     public void Create_RepeatedAndUnorderedSizes_KeepsEachOnceInOrder()
     {
         // Arrange and act
-        var setting = Make(sizes: [RoomSize.Suite, RoomSize.Single, RoomSize.Suite]);
+        PricingSetting setting = Make(sizes: [RoomSize.Suite, RoomSize.Single, RoomSize.Suite]);
 
         // Assert
         Assert.Equal([RoomSize.Single, RoomSize.Suite], setting.DiscountSizes);
@@ -55,7 +55,7 @@ public sealed class PricingSettingTests
     public void Change_ValidFields_ReplacesEverything()
     {
         // Arrange
-        var setting = Make();
+        PricingSetting setting = Make();
 
         // Act
         setting.Change(5m, 6m, 70m, 10m, 50m, 99m, [RoomSize.Suite], "other", At.AddHours(1));
@@ -72,10 +72,10 @@ public sealed class PricingSettingTests
     public void Change_InvalidSurcharge_ThrowsAndKeepsTheOldSettings()
     {
         // Arrange
-        var setting = Make();
+        PricingSetting setting = Make();
 
         // Act
-        var codes = CodesOf(() => setting.Change(101m, 15m, 80m, 40m, 30m, 0m, [RoomSize.Double], "other", At.AddHours(1)));
+        string[] codes = CodesOf(() => setting.Change(101m, 15m, 80m, 40m, 30m, 0m, [RoomSize.Double], "other", At.AddHours(1)));
 
         // Assert
         Assert.Contains(PricingSettingErrors.SurchargeInvalid, codes);
@@ -95,10 +95,10 @@ public sealed class PricingSettingTests
     public void Create_PercentAtTheLimit_IsAccepted(string percent)
     {
         // Arrange
-        var value = decimal.Parse(percent, System.Globalization.CultureInfo.InvariantCulture);
+        decimal value = decimal.Parse(percent, System.Globalization.CultureInfo.InvariantCulture);
 
         // Act
-        var setting = Make(surcharge: value, discount: value);
+        PricingSetting setting = Make(surcharge: value, discount: value);
 
         // Assert
         Assert.Equal((value, value), (setting.SurchargePercent, setting.DiscountPercent));
@@ -111,10 +111,10 @@ public sealed class PricingSettingTests
     public void Create_SurchargeOutsideTheLimits_ThrowsTheSurchargeCode(string percent)
     {
         // Arrange
-        var value = decimal.Parse(percent, System.Globalization.CultureInfo.InvariantCulture);
+        decimal value = decimal.Parse(percent, System.Globalization.CultureInfo.InvariantCulture);
 
         // Act
-        var codes = CodesOf(() => Make(surcharge: value));
+        string[] codes = CodesOf(() => Make(surcharge: value));
 
         // Assert
         Assert.Equal([PricingSettingErrors.SurchargeInvalid], codes);
@@ -127,10 +127,10 @@ public sealed class PricingSettingTests
     public void Create_DiscountOutsideTheLimits_ThrowsTheDiscountCode(string percent)
     {
         // Arrange
-        var value = decimal.Parse(percent, System.Globalization.CultureInfo.InvariantCulture);
+        decimal value = decimal.Parse(percent, System.Globalization.CultureInfo.InvariantCulture);
 
         // Act
-        var codes = CodesOf(() => Make(discount: value));
+        string[] codes = CodesOf(() => Make(discount: value));
 
         // Assert
         Assert.Equal([PricingSettingErrors.DiscountInvalid], codes);
@@ -141,7 +141,7 @@ public sealed class PricingSettingTests
     public void Create_HighThresholdAbove100_ThrowsOnlyTheHighThresholdCode()
     {
         // Arrange and act
-        var codes = CodesOf(() => Make(high: 100.01m));
+        string[] codes = CodesOf(() => Make(high: 100.01m));
 
         // Assert
         Assert.Equal([PricingSettingErrors.HighThresholdInvalid], codes);
@@ -152,7 +152,7 @@ public sealed class PricingSettingTests
     public void Create_LowThresholdBelowZero_ThrowsOnlyTheLowThresholdCode()
     {
         // Arrange and act
-        var codes = CodesOf(() => Make(low: -1m));
+        string[] codes = CodesOf(() => Make(low: -1m));
 
         // Assert
         Assert.Equal([PricingSettingErrors.LowThresholdInvalid], codes);
@@ -165,10 +165,10 @@ public sealed class PricingSettingTests
     public void Create_MaxChangeAtTheLimit_IsAccepted(string percent)
     {
         // Arrange
-        var value = decimal.Parse(percent, System.Globalization.CultureInfo.InvariantCulture);
+        decimal value = decimal.Parse(percent, System.Globalization.CultureInfo.InvariantCulture);
 
         // Act
-        var setting = Make(maxChange: value);
+        PricingSetting setting = Make(maxChange: value);
 
         // Assert
         Assert.Equal(value, setting.MaxChangePercent);
@@ -183,10 +183,10 @@ public sealed class PricingSettingTests
     public void Create_MaxChangeOutsideTheLimits_ThrowsTheMaxChangeCode(string percent)
     {
         // Arrange
-        var value = decimal.Parse(percent, System.Globalization.CultureInfo.InvariantCulture);
+        decimal value = decimal.Parse(percent, System.Globalization.CultureInfo.InvariantCulture);
 
         // Act
-        var codes = CodesOf(() => Make(maxChange: value));
+        string[] codes = CodesOf(() => Make(maxChange: value));
 
         // Assert
         Assert.Equal([PricingSettingErrors.MaxChangeInvalid], codes);
@@ -199,10 +199,10 @@ public sealed class PricingSettingTests
     public void Create_MinimumPriceAtTheLimit_IsAccepted(string price)
     {
         // Arrange
-        var value = decimal.Parse(price, System.Globalization.CultureInfo.InvariantCulture);
+        decimal value = decimal.Parse(price, System.Globalization.CultureInfo.InvariantCulture);
 
         // Act
-        var setting = Make(minimum: value);
+        PricingSetting setting = Make(minimum: value);
 
         // Assert
         Assert.Equal(value, setting.MinimumNightlyPrice);
@@ -215,10 +215,10 @@ public sealed class PricingSettingTests
     public void Create_MinimumPriceOutsideTheLimits_ThrowsTheMinimumPriceCode(string price)
     {
         // Arrange
-        var value = decimal.Parse(price, System.Globalization.CultureInfo.InvariantCulture);
+        decimal value = decimal.Parse(price, System.Globalization.CultureInfo.InvariantCulture);
 
         // Act
-        var codes = CodesOf(() => Make(minimum: value));
+        string[] codes = CodesOf(() => Make(minimum: value));
 
         // Assert
         Assert.Equal([PricingSettingErrors.MinimumPriceInvalid], codes);
@@ -233,7 +233,7 @@ public sealed class PricingSettingTests
     public void Create_LowThresholdJustBelowHigh_IsAccepted()
     {
         // Arrange and act
-        var setting = Make(high: 50m, low: 49.99m);
+        PricingSetting setting = Make(high: 50m, low: 49.99m);
 
         // Assert
         Assert.Equal((50m, 49.99m), (setting.HighThresholdPercent, setting.LowThresholdPercent));
@@ -247,11 +247,11 @@ public sealed class PricingSettingTests
     public void Create_LowThresholdNotBelowHigh_ThrowsTheOrderCode(string high, string low)
     {
         // Arrange
-        var highValue = decimal.Parse(high, System.Globalization.CultureInfo.InvariantCulture);
-        var lowValue = decimal.Parse(low, System.Globalization.CultureInfo.InvariantCulture);
+        decimal highValue = decimal.Parse(high, System.Globalization.CultureInfo.InvariantCulture);
+        decimal lowValue = decimal.Parse(low, System.Globalization.CultureInfo.InvariantCulture);
 
         // Act
-        var codes = CodesOf(() => Make(high: highValue, low: lowValue));
+        string[] codes = CodesOf(() => Make(high: highValue, low: lowValue));
 
         // Assert
         Assert.Equal([PricingSettingErrors.ThresholdsOrderInvalid], codes);
@@ -262,7 +262,7 @@ public sealed class PricingSettingTests
     public void Create_NoSizes_ThrowsTheSizesCode()
     {
         // Arrange and act
-        var codes = CodesOf(() => Make(sizes: []));
+        string[] codes = CodesOf(() => Make(sizes: []));
 
         // Assert
         Assert.Equal([PricingSettingErrors.DiscountSizesInvalid], codes);
@@ -273,7 +273,7 @@ public sealed class PricingSettingTests
     public void Create_UnknownSize_ThrowsTheSizesCode()
     {
         // Arrange and act
-        var codes = CodesOf(() => Make(sizes: [RoomSize.Single, (RoomSize)42]));
+        string[] codes = CodesOf(() => Make(sizes: [RoomSize.Single, (RoomSize)42]));
 
         // Assert
         Assert.Equal([PricingSettingErrors.DiscountSizesInvalid], codes);
@@ -290,13 +290,13 @@ public sealed class PricingSettingTests
     public void Create_MoreThanTwoDecimals_RoundsToTwo(string typed, string expected)
     {
         // Arrange
-        var value = decimal.Parse(typed, System.Globalization.CultureInfo.InvariantCulture);
+        decimal value = decimal.Parse(typed, System.Globalization.CultureInfo.InvariantCulture);
 
         // Act
-        var setting = Make(surcharge: value, discount: value, high: 90m, low: value, maxChange: value, minimum: value);
+        PricingSetting setting = Make(surcharge: value, discount: value, high: 90m, low: value, maxChange: value, minimum: value);
 
         // Assert
-        var rounded = decimal.Parse(expected, System.Globalization.CultureInfo.InvariantCulture);
+        decimal rounded = decimal.Parse(expected, System.Globalization.CultureInfo.InvariantCulture);
         Assert.Equal(
             (rounded, rounded, rounded, rounded, rounded),
             (setting.SurchargePercent, setting.DiscountPercent, setting.LowThresholdPercent, setting.MaxChangePercent, setting.MinimumNightlyPrice));
@@ -307,8 +307,8 @@ public sealed class PricingSettingTests
     public void Create_RoundingAtTheUpperLimit_AcceptsTheRoundedValue()
     {
         // Arrange and act
-        var accepted = Make(surcharge: 100.004m);
-        var codes = CodesOf(() => Make(surcharge: 100.005m));
+        PricingSetting accepted = Make(surcharge: 100.004m);
+        string[] codes = CodesOf(() => Make(surcharge: 100.005m));
 
         // Assert
         Assert.Equal(100m, accepted.SurchargePercent);
@@ -322,7 +322,7 @@ public sealed class PricingSettingTests
     public void Create_BlankSetBy_ThrowsTheSetByCode(string setBy)
     {
         // Arrange and act
-        var codes = CodesOf(() => Make(setBy: setBy));
+        string[] codes = CodesOf(() => Make(setBy: setBy));
 
         // Assert
         Assert.Equal([PricingSettingErrors.SetByInvalid], codes);
@@ -333,8 +333,8 @@ public sealed class PricingSettingTests
     public void Create_SetByLength_AcceptsTheLimitAndRefusesOneMore()
     {
         // Arrange and act
-        var accepted = Make(setBy: new string('m', PricingSetting.MaxTextLength));
-        var codes = CodesOf(() => Make(setBy: new string('m', PricingSetting.MaxTextLength + 1)));
+        PricingSetting accepted = Make(setBy: new string('m', PricingSetting.MaxTextLength));
+        string[] codes = CodesOf(() => Make(setBy: new string('m', PricingSetting.MaxTextLength + 1)));
 
         // Assert
         Assert.Equal(PricingSetting.MaxTextLength, accepted.SetBy.Length);
@@ -346,7 +346,7 @@ public sealed class PricingSettingTests
     public void Create_SeveralFaults_ThrowsEveryCode()
     {
         // Arrange and act
-        var codes = CodesOf(() => Make(surcharge: -1m, maxChange: 0m, high: 10m, low: 20m, sizes: [], setBy: string.Empty));
+        string[] codes = CodesOf(() => Make(surcharge: -1m, maxChange: 0m, high: 10m, low: 20m, sizes: [], setBy: string.Empty));
 
         // Assert
         Assert.Equivalent(

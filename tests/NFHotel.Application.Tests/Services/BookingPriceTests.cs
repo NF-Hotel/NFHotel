@@ -2,6 +2,7 @@ using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Pricing;
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
@@ -25,14 +26,14 @@ public sealed class BookingPriceTests
     public async Task CreateAsync_ChangeCoversTheArrival_StoresTheChangedPrice()
     {
         // Arrange
-        var (world, room) = await WorldWithChangeAsync(20m);
+        (ServiceWorld? world, Room? room) = await WorldWithChangeAsync(20m);
 
         // Act
-        var result = await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> result = await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
-        var detail = Assert.Single(world.BookingMarketDetails.Items);
+        BookingMarketDetail detail = Assert.Single(world.BookingMarketDetails.Items);
         Assert.Equal((world.Bookings.Items.Single().Id, 120.00m, Today), (detail.BookingId, detail.PricePerNight, detail.BookedAt));
         Assert.Equal((0, 0, 0), (detail.Adults, detail.Children, detail.Babies));
         Assert.Null(detail.MarketSegment);
@@ -47,10 +48,10 @@ public sealed class BookingPriceTests
     public async Task CreateAsync_ArrivalOutsideTheChange_StoresTheBaseRate()
     {
         // Arrange
-        var (world, room) = await WorldWithChangeAsync(20m);
+        (ServiceWorld? world, Room? room) = await WorldWithChangeAsync(20m);
 
         // Act
-        var result = await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, room, OtherArrival), TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> result = await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, room, OtherArrival), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -62,8 +63,8 @@ public sealed class BookingPriceTests
     public async Task CreateAsync_DoubleRoom_StoresTheRateOfTheDoubleSize()
     {
         // Arrange
-        var (world, _) = await WorldWithChangeAsync(20m);
-        var doubleRoom = world.AddRoom("201", 2, RoomSize.Double);
+        (ServiceWorld? world, Room _) = await WorldWithChangeAsync(20m);
+        Room doubleRoom = world.AddRoom("201", 2, RoomSize.Double);
 
         // Act
         await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, doubleRoom, Arrival), TestContext.Current.CancellationToken);
@@ -77,11 +78,11 @@ public sealed class BookingPriceTests
     public async Task CreateAsync_NoBaseRateForTheSize_CreatesTheBookingWithoutADetail()
     {
         // Arrange
-        var world = NewWorld();
-        var suite = world.AddRoom("301", 3, RoomSize.Suite);
+        ServiceWorld world = NewWorld();
+        Room suite = world.AddRoom("301", 3, RoomSize.Suite);
 
         // Act
-        var result = await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, suite, Arrival), TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> result = await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, suite, Arrival), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -95,11 +96,11 @@ public sealed class BookingPriceTests
     public async Task CreateAsync_PriceLookupFails_CreatesTheBookingWithoutADetail()
     {
         // Arrange
-        var world = NewWorld();
-        var room = world.AddRoom("101", 1, RoomSize.Single);
+        ServiceWorld world = NewWorld();
+        Room room = world.AddRoom("101", 1, RoomSize.Single);
 
         // Act
-        var result = await world.BookingService(AllowAll(), FailingPrices()).CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> result = await world.BookingService(AllowAll(), FailingPrices()).CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -112,11 +113,11 @@ public sealed class BookingPriceTests
     public async Task CreateAsync_SavingTheDetailFails_KeepsTheBookingAndDiscardsTheDetail()
     {
         // Arrange
-        var (world, room) = await WorldWithChangeAsync(20m);
+        (ServiceWorld? world, Room? room) = await WorldWithChangeAsync(20m);
         world.UnitOfWork.FailOnSaveNumber = 2;
 
         // Act
-        var result = await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> result = await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -130,15 +131,15 @@ public sealed class BookingPriceTests
     public async Task CreateAsync_SavingTheDetailFails_WritesAWarningWithTheBookingIdAndTheException()
     {
         // Arrange
-        var (world, room) = await WorldWithChangeAsync(20m);
+        (ServiceWorld? world, Room? room) = await WorldWithChangeAsync(20m);
         world.UnitOfWork.FailOnSaveNumber = 2;
 
         // Act
-        var result = await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> result = await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
 
         // Assert
-        var bookingId = result.Value.BookingId;
-        var warning = Assert.Single(world.Warnings.Messages);
+        int bookingId = result.Value.BookingId;
+        string warning = Assert.Single(world.Warnings.Messages);
         Assert.Contains($"booking {bookingId} ", warning, StringComparison.Ordinal);
         Assert.Contains(nameof(InvalidOperationException), warning, StringComparison.Ordinal);
     }
@@ -148,7 +149,7 @@ public sealed class BookingPriceTests
     public async Task CreateAsync_DetailIsSaved_WritesNoWarning()
     {
         // Arrange
-        var (world, room) = await WorldWithChangeAsync(20m);
+        (ServiceWorld? world, Room? room) = await WorldWithChangeAsync(20m);
 
         // Act
         await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
@@ -162,12 +163,12 @@ public sealed class BookingPriceTests
     public async Task CreateAsync_RoomNotAvailable_StoresNoDetail()
     {
         // Arrange
-        var (world, room) = await WorldWithChangeAsync(20m);
-        var guest = world.AddGuest();
+        (ServiceWorld? world, Room? room) = await WorldWithChangeAsync(20m);
+        Guest guest = world.AddGuest();
         world.AddBooking(room.Id, guest.Id, Arrival.DayNumber - Today.DayNumber - 1, 4);
 
         // Act
-        var result = await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> result = await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -183,15 +184,15 @@ public sealed class BookingPriceTests
     public async Task CreatePublicAsync_ChangeCoversTheArrival_StoresTheChangedPrice()
     {
         // Arrange
-        var (world, room) = await WorldWithChangeAsync(20m);
-        var request = new CreateBookingRequest(Arrival, Arrival.AddDays(2), room.Id, null, ServiceWorld.ValidGuestFields());
+        (ServiceWorld? world, Room? room) = await WorldWithChangeAsync(20m);
+        CreateBookingRequest request = new(Arrival, Arrival.AddDays(2), room.Id, null, ServiceWorld.ValidGuestFields());
 
         // Act
-        var result = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> result = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
-        var detail = Assert.Single(world.BookingMarketDetails.Items);
+        BookingMarketDetail detail = Assert.Single(world.BookingMarketDetails.Items);
         Assert.Equal((world.Bookings.Items.Single().Id, 120.00m), (detail.BookingId, detail.PricePerNight));
     }
 
@@ -200,14 +201,14 @@ public sealed class BookingPriceTests
     public async Task CreatePublicAsync_NoPrice_CreatesTheBookingWithoutADetail()
     {
         // Arrange
-        var world = NewWorld();
-        var room = world.AddRoom("101", 1, RoomSize.Single);
-        var request = new CreateBookingRequest(Arrival, Arrival.AddDays(2), room.Id, null, ServiceWorld.ValidGuestFields());
-        var later = request with { CheckInDate = Arrival.AddDays(10), CheckOutDate = Arrival.AddDays(12) };
+        ServiceWorld world = NewWorld();
+        Room room = world.AddRoom("101", 1, RoomSize.Single);
+        CreateBookingRequest request = new(Arrival, Arrival.AddDays(2), room.Id, null, ServiceWorld.ValidGuestFields());
+        CreateBookingRequest later = request with { CheckInDate = Arrival.AddDays(10), CheckOutDate = Arrival.AddDays(12) };
 
         // Act
-        var withoutRate = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
-        var failed = await world.BookingService(null, FailingPrices()).CreatePublicAsync(later, TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> withoutRate = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> failed = await world.BookingService(null, FailingPrices()).CreatePublicAsync(later, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(withoutRate.IsSuccess);
@@ -225,13 +226,13 @@ public sealed class BookingPriceTests
     public async Task ApproveAsync_AfterTheBooking_LeavesTheStoredPriceAlone()
     {
         // Arrange
-        var (world, room) = await WorldWithChangeAsync(20m);
+        (ServiceWorld? world, Room? room) = await WorldWithChangeAsync(20m);
         await world.BookingService(AllowAll()).CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
-        var detail = Assert.Single(world.BookingMarketDetails.Items);
+        BookingMarketDetail detail = Assert.Single(world.BookingMarketDetails.Items);
 
         // Act
-        var later = await world.PriceChangeService().ApproveAsync("Single", 50m, new DateOnly(2027, 9, 1), new DateOnly(2027, 9, 30), TestContext.Current.CancellationToken);
-        var now = await world.PriceChangeService().GetEffectivePriceAsync("Single", OtherArrival, TestContext.Current.CancellationToken);
+        Result<ApprovedPriceChange> later = await world.PriceChangeService().ApproveAsync("Single", 50m, new DateOnly(2027, 9, 1), new DateOnly(2027, 9, 30), TestContext.Current.CancellationToken);
+        Result<EffectivePriceDto> now = await world.PriceChangeService().GetEffectivePriceAsync("Single", OtherArrival, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(later.IsSuccess);
@@ -246,16 +247,16 @@ public sealed class BookingPriceTests
     public async Task ConfirmRescheduleAndCancel_AfterTheBooking_KeepTheStoredPrice()
     {
         // Arrange
-        var (world, room) = await WorldWithChangeAsync(20m);
-        var service = world.BookingService(AllowAll());
-        var created = await service.CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
-        var detail = Assert.Single(world.BookingMarketDetails.Items);
-        var bookingId = created.Value.BookingId;
+        (ServiceWorld? world, Room? room) = await WorldWithChangeAsync(20m);
+        BookingService service = world.BookingService(AllowAll());
+        Result<BookingDetailsDto> created = await service.CreateAsync(ExistingGuestRequest(world, room, Arrival), TestContext.Current.CancellationToken);
+        BookingMarketDetail detail = Assert.Single(world.BookingMarketDetails.Items);
+        int bookingId = created.Value.BookingId;
 
         // Act
-        var confirmed = await service.ConfirmAsync(bookingId, TestContext.Current.CancellationToken);
-        var moved = await service.RescheduleAsync(new RescheduleBookingRequest(bookingId, OtherArrival, OtherArrival.AddDays(2), room.Id), TestContext.Current.CancellationToken);
-        var cancelled = await service.CancelAsync(bookingId, TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> confirmed = await service.ConfirmAsync(bookingId, TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> moved = await service.RescheduleAsync(new RescheduleBookingRequest(bookingId, OtherArrival, OtherArrival.AddDays(2), room.Id), TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> cancelled = await service.CancelAsync(bookingId, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(confirmed.IsSuccess);
@@ -273,7 +274,7 @@ public sealed class BookingPriceTests
 
     private static ServiceWorld NewWorld()
     {
-        var world = new ServiceWorld();
+        ServiceWorld world = new();
         world.CallContext.StaffId = 7;
         world.CallContext.StaffName = "manager";
         world.Clock.Today = Today;
@@ -282,11 +283,11 @@ public sealed class BookingPriceTests
 
     private static async Task<(ServiceWorld World, Room Room)> WorldWithChangeAsync(decimal percentage)
     {
-        var world = NewWorld();
+        ServiceWorld world = NewWorld();
         world.RoomRates.Add(RoomRate.Create(RoomSize.Single, 100m, "manager", world.Clock.UtcNow));
         world.RoomRates.Add(RoomRate.Create(RoomSize.Double, 150m, "manager", world.Clock.UtcNow));
-        var room = world.AddRoom("101", 1, RoomSize.Single);
-        var approved = await world.PriceChangeService().ApproveAsync("Single", percentage, new DateOnly(2027, 6, 1), new DateOnly(2027, 8, 31), TestContext.Current.CancellationToken);
+        Room room = world.AddRoom("101", 1, RoomSize.Single);
+        Result<ApprovedPriceChange> approved = await world.PriceChangeService().ApproveAsync("Single", percentage, new DateOnly(2027, 6, 1), new DateOnly(2027, 8, 31), TestContext.Current.CancellationToken);
         Assert.True(approved.IsSuccess);
         world.UnitOfWork.ResetSaveCount();
         return (world, room);
@@ -297,7 +298,7 @@ public sealed class BookingPriceTests
 
     private static IPriceChangeService FailingPrices()
     {
-        var prices = Substitute.For<IPriceChangeService>();
+        IPriceChangeService prices = Substitute.For<IPriceChangeService>();
         prices.GetEffectivePriceAsync(Arg.Any<string>(), Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(Result<EffectivePriceDto>.Failure("price.lookup_failed")));
         return prices;
@@ -305,7 +306,7 @@ public sealed class BookingPriceTests
 
     private static IStaffAuthorizationService AllowAll()
     {
-        var authorization = Substitute.For<IStaffAuthorizationService>();
+        IStaffAuthorizationService authorization = Substitute.For<IStaffAuthorizationService>();
         authorization.HasPermissionAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
         return authorization;
     }

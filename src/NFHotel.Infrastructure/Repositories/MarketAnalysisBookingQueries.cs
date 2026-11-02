@@ -63,7 +63,7 @@ public sealed class MarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
 
         // A booking made in the hotel holds only its price (MIL-055): its guests, meal and so on are not known, and the
         // zeros of the row would count as "0 guests", "not a repeated guest" and "no special requests" in the analysis.
-        var traits = detail is { } known && !IsPriceOnly(known) ? known : null;
+        Domain.Entities.BookingMarketDetail? traits = detail is { } known && !IsPriceOnly(known) ? known : null;
 
         return new MarketBookingDto(
             id,

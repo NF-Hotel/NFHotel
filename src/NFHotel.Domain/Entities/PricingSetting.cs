@@ -91,7 +91,7 @@ public sealed class PricingSetting : Entity<int>
         string setBy,
         DateTimeOffset setAt)
     {
-        var created = new PricingSetting();
+        PricingSetting created = new();
         created.Apply(
             surchargePercent, discountPercent, highThresholdPercent, lowThresholdPercent, maxChangePercent, minimumNightlyPrice,
             discountSizes, setBy, setAt);
@@ -127,14 +127,14 @@ public sealed class PricingSetting : Entity<int>
     // Plain loops: a lambda here would add a compiler-generated type to the entities, which the structure test refuses.
     private static RoomSize[] Canonical(IEnumerable<RoomSize>? sizes)
     {
-        var set = new SortedSet<RoomSize>(sizes ?? []);
+        SortedSet<RoomSize> set = new(sizes ?? []);
 
         return [.. set];
     }
 
     private static bool AllDefined(RoomSize[] sizes)
     {
-        foreach (var size in sizes)
+        foreach (RoomSize size in sizes)
         {
             if (!Enum.IsDefined(size))
             {
@@ -158,8 +158,8 @@ public sealed class PricingSetting : Entity<int>
         string setBy,
         DateTimeOffset setAt)
     {
-        var sizes = Canonical(discountSizes);
-        var candidate = new PricingSetting
+        RoomSize[] sizes = Canonical(discountSizes);
+        PricingSetting candidate = new()
         {
             SurchargePercent = Round(surchargePercent),
             DiscountPercent = Round(discountPercent),
@@ -172,7 +172,7 @@ public sealed class PricingSetting : Entity<int>
             SetAt = setAt.ToUniversalTime(),
         };
 
-        var codes = new List<string>();
+        List<string> codes = new();
         try
         {
             EntityValidation.ThrowIfInvalid(candidate);

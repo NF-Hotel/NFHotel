@@ -36,7 +36,7 @@ public sealed class SeasonRuleTests
     [InlineData(90, 80)]
     public void Classify_LowThresholdNotBelowHigh_Throws(int low, int high)
     {
-        var settings = new PricingSettings(HighThreshold: high, LowThreshold: low);
+        PricingSettings settings = new(HighThreshold: high, LowThreshold: low);
 
         Assert.Throws<ArgumentException>(() => SeasonRule.Classify(50m, settings));
     }
@@ -60,9 +60,9 @@ public sealed class SeasonRuleTests
     [Fact]
     public void ByCalendarMonth_AllMonths_ClassifiesEachMonth()
     {
-        var observations = Year(2025, (6, 85m), (1, 30m));
+        OccupancyObservation[] observations = Year(2025, (6, 85m), (1, 30m));
 
-        var result = SeasonRule.ByCalendarMonth(observations, Defaults);
+        CalendarSeasons result = SeasonRule.ByCalendarMonth(observations, Defaults);
 
         Assert.True(result.HasBasis);
         Assert.Equal(12, result.Months.Count);
@@ -75,12 +75,12 @@ public sealed class SeasonRuleTests
     [Fact]
     public void ByCalendarMonth_SeveralYearsAndDuplicates_AveragesTheMonth()
     {
-        var observations = Year(2024, (6, 90m))
+        OccupancyObservation[] observations = Year(2024, (6, 90m))
             .Concat(Year(2025, (6, 70m)))
             .Append(new OccupancyObservation(2025, 6, 70m))
             .ToArray();
 
-        var result = SeasonRule.ByCalendarMonth(observations, Defaults);
+        CalendarSeasons result = SeasonRule.ByCalendarMonth(observations, Defaults);
 
         // (90 + 70 + 70) / 3 = 76.67 is not high; the plain 90 and 70 average is covered by the rule tests.
         Assert.Equal(Season.Normal, result.Months[5].Season);
@@ -91,9 +91,9 @@ public sealed class SeasonRuleTests
     [Fact]
     public void ByCalendarMonth_ElevenCalendarMonths_HasNoBasis()
     {
-        var observations = Year(2025, (6, 90m)).Where(o => o.Month != 12).ToArray();
+        OccupancyObservation[] observations = Year(2025, (6, 90m)).Where(o => o.Month != 12).ToArray();
 
-        var result = SeasonRule.ByCalendarMonth(observations, Defaults);
+        CalendarSeasons result = SeasonRule.ByCalendarMonth(observations, Defaults);
 
         Assert.False(result.HasBasis);
         Assert.All(result.Months, m => Assert.Equal(Season.Normal, m.Season));
@@ -104,7 +104,7 @@ public sealed class SeasonRuleTests
     [Fact]
     public void ByCalendarMonth_LowThresholdNotBelowHigh_Throws()
     {
-        var settings = new PricingSettings(HighThreshold: 50m, LowThreshold: 60m);
+        PricingSettings settings = new(HighThreshold: 50m, LowThreshold: 60m);
 
         Assert.Throws<ArgumentException>(() => SeasonRule.ByCalendarMonth(Year(2025), settings));
     }
