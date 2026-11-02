@@ -117,6 +117,83 @@ public sealed class MarketAnalysisViewModelTests
         await service.Received(1).StartRunAsync(Arg.Any<StartMarketAnalysisRequest>(), Arg.Any<CancellationToken>());
     }
 
+    /// <summary>Positive: a page opened during a run follows it with its state, and the start is closed.</summary>
+    [Theory]
+    [InlineData(MarketAnalysisRunStates.Queued)]
+    [InlineData(MarketAnalysisRunStates.Running)]
+    public async Task InitializeAsync_RunGoesOn_FollowsItAndClosesTheStart(string state)
+    {
+        // Arrange
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
+        service.GetCurrentRunAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto?>.Success(State(state)));
+
+        // Act
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+        await viewModel.StartAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(state, viewModel.CurrentRun!.State);
+        Assert.True(viewModel.IsFollowing);
+        Assert.False(viewModel.CanStart);
+        Assert.NotEmpty(viewModel.Sections);
+        await service.DidNotReceive().StartRunAsync(Arg.Any<StartMarketAnalysisRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>Boundary: a run that has ended is not followed; the stored report shows and the start is open.</summary>
+    [Theory]
+    [InlineData(MarketAnalysisRunStates.Completed)]
+    [InlineData(MarketAnalysisRunStates.Failed)]
+    public async Task InitializeAsync_RunEnded_IsNotFollowed(string state)
+    {
+        // Arrange
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
+        service.GetCurrentRunAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto?>.Success(State(state)));
+
+        // Act
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Null(viewModel.CurrentRun);
+        Assert.False(viewModel.IsFollowing);
+        Assert.True(viewModel.CanStart);
+        Assert.NotEmpty(viewModel.Sections);
+    }
+
+    /// <summary>Boundary: with no run the page opens as before, with the start open.</summary>
+    [Fact]
+    public async Task InitializeAsync_NoRun_StartIsOpen()
+    {
+        // Arrange
+        MarketAnalysisViewModel viewModel = Build(out _);
+
+        // Act
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Null(viewModel.CurrentRun);
+        Assert.True(viewModel.CanStart);
+        Assert.Empty(viewModel.Errors);
+    }
+
+    /// <summary>Negative: a failing call for the current run shows nothing and does not break the page.</summary>
+    [Fact]
+    public async Task InitializeAsync_CurrentRunCallFails_ShowsTheReportAndNoError()
+    {
+        // Arrange
+        MarketAnalysisViewModel viewModel = Build(out IMarketAnalysisService? service);
+        service.GetCurrentRunAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto?>.Failure(ErrorCodes.Api.Unavailable));
+
+        // Act
+        await viewModel.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Null(viewModel.CurrentRun);
+        Assert.True(viewModel.CanStart);
+        Assert.Empty(viewModel.Errors);
+        Assert.NotEmpty(viewModel.Sections);
+        Assert.True(viewModel.IsLoaded);
+    }
+
     /// <summary>Positive: the dates chosen on the page are the period of the start; no date is an open period.</summary>
     [Fact]
     public async Task StartAsync_DatesChosen_SendsThePeriod()
@@ -337,10 +414,11 @@ public sealed class MarketAnalysisViewModelTests
         return new(sample.RunId, sample.StartedAt, sample.FinishedAt, sample.Provider, sample.Model, sample.Content!);
     }
 
-    internal static MarketAnalysisViewModel Build(out IMarketAnalysisService service)
+    internal static MarketAnalysisViewModel Build(out IMarketAnalysisService service, MarketAnalysisReportDto? report = null)
     {
         IMarketAnalysisService fake = Substitute.For<IMarketAnalysisService>();
-        fake.GetLatestReportAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisReportDto>.Success(Report()));
+        fake.GetLatestReportAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisReportDto>.Success(report ?? Report()));
+        fake.GetCurrentRunAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto?>.Success(null));
         fake.StartRunAsync(Arg.Any<StartMarketAnalysisRequest>(), Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto>.Success(State(MarketAnalysisRunStates.Queued)));
         fake.GetRunStateAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisRunStateDto>.Success(State(MarketAnalysisRunStates.Running)));
         service = fake;

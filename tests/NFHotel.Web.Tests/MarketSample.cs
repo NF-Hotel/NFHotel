@@ -19,6 +19,17 @@ internal static class MarketSample
             ?? throw new InvalidOperationException("The sample is not a result.");
     }
 
+    /// <summary>Reads the trimmed result of schema 1.2 (room revenue, forecast and the overall interpretation) the way the API stores it.</summary>
+    /// <returns>The content of the result.</returns>
+    public static MarketAnalysisContentDto Content12()
+    {
+        string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result-1.2.json"));
+        using JsonDocument document = JsonDocument.Parse(json);
+
+        return MarketAnalysisResultMapper.Map(document.RootElement)?.Content
+            ?? throw new InvalidOperationException("The 1.2 sample is not a result.");
+    }
+
     /// <summary>Finds one analysis of the sample.</summary>
     /// <param name="id">The id of the analysis, for example <c>occupancy</c>.</param>
     /// <returns>The analysis.</returns>

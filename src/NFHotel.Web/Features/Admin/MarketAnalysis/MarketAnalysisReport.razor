@@ -93,7 +93,10 @@
                 }
             </p>
 
-            <MarketAnalysisContents HasFigures="report.Content.Figures.Count > 0" Sections="ViewModel.Sections" />
+            <MarketAnalysisContents HasFigures="report.Content.Figures.Count > 0"
+                                    HasOverall="ViewModel.Overall is not null"
+                                    HasForecast="ViewModel.Forecast is not null"
+                                    Sections="ViewModel.Sections" />
 
             @if (report.Content.Figures.Count > 0)
             {
@@ -109,6 +112,11 @@
                         }
                     </dl>
                 </section>
+            }
+
+            @if (ViewModel.Overall is { } overall)
+            {
+                <MarketAnalysisInterpretation Overall="overall" />
             }
 
             @foreach (var view in ViewModel.Sections)
@@ -130,7 +138,7 @@
                                 <h3 class="subtitle-small">AI executive summary</h3>
                                 @if (insight.Status == "available" && !string.IsNullOrWhiteSpace(insight.ExecutiveSummary))
                                 {
-                                    <p>@insight.ExecutiveSummary</p>
+                                    <MarkdownText Text="@insight.ExecutiveSummary" />
                                     <p class="muted">Written by an AI model. It is a hypothesis to check, not a forecast.</p>
                                     @if (insight.Suggestions.Count > 0)
                                     {
@@ -139,8 +147,8 @@
                                             @foreach (var suggestion in insight.Suggestions)
                                             {
                                                 <li>
-                                                    <strong>@suggestion.Suggestion</strong>
-                                                    <span class="muted"> Evidence: @suggestion.Evidence (@suggestion.SampleSize bookings)</span>
+                                                    <MarkdownText Text="@suggestion.Suggestion" />
+                                                    <MarkdownText Text="@($"Evidence: {suggestion.Evidence} ({suggestion.SampleSize} bookings)")" CssClass="markdown-text muted" />
                                                 </li>
                                             }
                                         </ul>
@@ -151,6 +159,11 @@
                                     <p class="muted">No AI summary for this analysis@(string.IsNullOrWhiteSpace(insight.Reason) ? "." : $": {insight.Reason}")</p>
                                 }
                             </div>
+                        }
+
+                        @if (section.RoomRevenue is { } roomRevenue)
+                        {
+                            <RoomRevenuePanel Revenue="roomRevenue" Section="section" />
                         }
 
                         @if (!view.HasCharts)
@@ -176,6 +189,11 @@
                     }
                 </section>
             }
+
+            @if (ViewModel.Forecast is { } forecast)
+            {
+                <MarketAnalysisForecast Forecast="forecast" Charts="ViewModel.ForecastCharts" />
+            }
         </div>
     }
 </div>
@@ -183,7 +201,7 @@
 @code {
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
 
-    /// <summary>Loads the stored report when the page opens, and then follows a run that this page started.</summary>
+    /// <summary>Loads the stored report when the page opens, and then follows a run that is going on, whoever started it.</summary>
     protected override async Task OnInitializedAsync()
     {
         await ViewModel.InitializeAsync(ComponentToken);

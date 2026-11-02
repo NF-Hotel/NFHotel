@@ -1,0 +1,25 @@
+@*
+    Shows an AI text that is written in Markdown (paragraphs, lists, bold). The text is not trusted: MarkdownConverter does not
+    parse raw HTML, so it is shown as plain text and never run, and it removes links and images, so nothing in the text is
+    clickable or loaded. Nothing is drawn for an empty text.
+*@
+
+@if (!string.IsNullOrEmpty(_html))
+{
+    <div class="@CssClass">@((MarkupString)_html)</div>
+}
+
+@code {
+    private string _html = string.Empty;
+
+    /// <summary>The Markdown to show.</summary>
+    [Parameter, EditorRequired]
+    public string? Text { get; set; }
+
+    /// <summary>The class of the element; <c>markdown-text</c> by default, <c>markdown-text muted</c> for the evidence under a text.</summary>
+    [Parameter]
+    public string CssClass { get; set; } = "markdown-text";
+
+    /// <inheritdoc />
+    protected override void OnParametersSet() => _html = MarkdownConverter.ToHtml(Text);
+}

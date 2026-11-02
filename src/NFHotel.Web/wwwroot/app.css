@@ -1507,6 +1507,25 @@ h1:focus-visible {
   stroke-width: 2;
 }
 
+.chart-band {
+  fill: #2f6a9e;
+  fill-opacity: .15;
+  stroke: none;
+}
+
+.markdown-text > :first-child {
+  margin-top: 0;
+}
+
+.markdown-text > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-text ul,
+.markdown-text ol {
+  padding-left: var(--s6);
+}
+
 .chart-dot {
   fill: #2f6a9e;
   stroke: var(--paper);

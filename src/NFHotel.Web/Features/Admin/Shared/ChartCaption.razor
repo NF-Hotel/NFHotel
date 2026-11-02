@@ -26,10 +26,10 @@
     {
         <div class="chart-observation" role="note">
             <p><strong>AI observation</strong> <span class="chart-ai-label">AI-generated</span></p>
-            <p>@observation.Text</p>
+            <MarkdownText Text="@observation.Text" />
             @if (!string.IsNullOrWhiteSpace(observation.Evidence))
             {
-                <p class="muted">Evidence: @observation.Evidence</p>
+                <MarkdownText Text="@($"Evidence: {observation.Evidence}")" CssClass="markdown-text muted" />
             }
         </div>
     }

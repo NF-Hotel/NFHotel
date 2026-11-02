@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using NFHotel.Api.Contracts;
 using NFHotel.Api.Security;
 using NFHotel.Application.Dto.MarketAnalysis;
+using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Application.UseCases.Staff;
 
@@ -43,6 +44,18 @@ public sealed class MarketAnalysisController : ControllerBase
     [RequiresPermission(Permissions.MarketAnalysisView)]
     public async Task<IActionResult> GetRunAsync(Guid runId, CancellationToken cancellationToken) =>
         this.ToResponse(await _marketAnalysis.GetRunStateAsync(runId, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Reads the run that is going on, or the one that ended last.</summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The state, or 204 when the API holds no run.</returns>
+    [HttpGet(ApiRoutes.MarketAnalysisRunCurrent)]
+    [RequiresPermission(Permissions.MarketAnalysisView)]
+    public async Task<IActionResult> GetCurrentRunAsync(CancellationToken cancellationToken)
+    {
+        Result<MarketAnalysisRunStateDto?> result = await _marketAnalysis.GetCurrentRunAsync(cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess && result.Value is null ? NoContent() : this.ToResponse(result);
+    }
 
     /// <summary>Reads the report of the run that finished last.</summary>
     /// <param name="cancellationToken">Cancels the call.</param>

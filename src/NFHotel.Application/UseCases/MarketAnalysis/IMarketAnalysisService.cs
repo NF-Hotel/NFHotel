@@ -20,6 +20,13 @@ public interface IMarketAnalysisService
     /// <returns>The state, or a code.</returns>
     Task<Result<MarketAnalysisRunStateDto>> GetRunStateAsync(Guid runId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Reads the run that is going on, or the one that ended last, so a page that was reloaded can follow it again.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The state, or a successful result with <c>null</c> when the API holds no run.</returns>
+    Task<Result<MarketAnalysisRunStateDto?>> GetCurrentRunAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Reads the report of the run that finished last.</summary>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The report, or <c>market_analysis.not_found</c> when no run has been stored yet.</returns>

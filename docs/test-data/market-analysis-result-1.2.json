@@ -1,0 +1,221 @@
+{
+  "schema_version": "1.2",
+  "result_id": "a531343e-703a-4157-a5f2-ff9b6718b100",
+  "generated_at": "2026-11-01T07:29:37.885532+00:00",
+  "status": "completed_with_warnings",
+  "input": {
+    "source": "supplied",
+    "reference": "request-body",
+    "record_count": 156686,
+    "content_sha256": "42502cde63e2348e2897550a84d9a4d6b01a4b2b5407999c90f5772cefc38312",
+    "room_count": 294,
+    "period": {
+      "first_date": "2018-07-01",
+      "last_date": "2027-01-11"
+    }
+  },
+  "data_quality": {
+    "record_count": 156686,
+    "duplicate_booking_id_count": 0,
+    "zero_price_count": 794
+  },
+  "analyses": {
+    "room_value": {
+      "status": "available",
+      "reason": null,
+      "formula": "Length of stay is the weekend nights plus the week nights. The buckets are 1, 2, 3, 4, 5-7 and 8+ nights; a bucket figure is the records in it over the records with at least one night. The estimated value of a booking is price_per_night times nights, in the price units of the input; total is the sum and mean the mean over the bookings that have a price. Room revenue is the same value over the bookings that are not cancelled, summed by month of arrival.",
+      "limitations": [
+        "The estimated value is an ESTIMATE, not revenue: taxes, fees, discounts, extras, the currency and what a cancelled guest paid are not known.",
+        "Bookings of no nights are left out and counted in zero_night_records.",
+        "Bookings without a price are left out of the value and counted; a price of zero is included and counted in zero_price_records.",
+        "Cancelled bookings are valued like the others, so the value of cancelled bookings is not money lost.",
+        "Room revenue is price_per_night times nights of the bookings that are not cancelled, before taxes, fees, discounts and extras; the currency is not known and is taken as the price units of the input."
+      ],
+      "findings": {
+        "unit": "nights",
+        "records_used": 156686,
+        "total_nights": 674827,
+        "room_revenue": {
+          "status": "available",
+          "unit": "price units of the input",
+          "limitation": "Room revenue is price_per_night times nights of the bookings that are not cancelled, before taxes, fees, discounts and extras; the currency is not known and is taken as the price units of the input.",
+          "records_used": 113551,
+          "records_with_price": 113551,
+          "records_without_price": 12,
+          "total": "50769820.9",
+          "mean": "447.1103",
+          "small_sample": false,
+          "monthly": [
+            {
+              "group": "2018-07",
+              "value": "707980.5",
+              "bookings": 1058
+            },
+            {
+              "group": "2018-08",
+              "value": "739570.5",
+              "bookings": 1043
+            },
+            {
+              "group": "2018-09",
+              "value": "618741.4",
+              "bookings": 1034
+            },
+            {
+              "group": "2018-10",
+              "value": "430292.0",
+              "bookings": 1160
+            }
+          ],
+          "summary": "Room revenue of 113551 bookings that are not cancelled: total 50769820.9, mean 447.1103 per booking, in the price units of the input, before taxes, fees, discounts and extras."
+        }
+      },
+      "insight": {
+        "status": "available",
+        "reason": null,
+        "label": "AI-generated",
+        "provider": "ollama",
+        "model": "phi4:latest",
+        "generated_at": "2026-11-01T07:39:05.193216+00:00",
+        "executive_summary": "Room revenue is **concentrated** in the summer months.\n\n- Total room revenue is high.\n- The mean per booking is stable.\n\nSee <script>alert(1)</script> and [a link](http://example.com).",
+        "improvement_suggestions": [
+          {
+            "suggestion": "Review the **weekday** prices.",
+            "evidence": "27.5%, 43135.0",
+            "sample_size": 43135,
+            "series": "room_revenue.monthly"
+          },
+          {
+            "suggestion": "Investigate the characteristics of non-canceled bookings to identify successful factors.",
+            "evidence": "72.5%, 113551.0",
+            "sample_size": 113551,
+            "series": "room_revenue.monthly"
+          }
+        ],
+        "observations": [
+          {
+            "series": "room_revenue.monthly",
+            "text": "The chart presents the distribution of estimated value among bookings that are categorized as either 'canceled' or 'not_canceled'. 27.5% of the bookings are canceled with a count of 43,135, while 72.5% are not canceled, with a count of 113,551. The total number of bookings considered in this analysis is 156,686.",
+            "evidence": "27.5%, 43135.0, 72.5%, 113551.0, 156686.0"
+          }
+        ]
+      }
+    }
+  },
+  "forecast": {
+    "formula": "The history is the complete calendar months of the period of the occupancy analysis. The forecast of a month is the mean of the same calendar month in the history; when the history does not hold that calendar month it is the mean of all months of the history. The band is the forecast minus and plus one sample standard deviation of the same calendar month (of all months when the month was seen once), not below zero. Arrivals are the bookings that are not cancelled, by month of arrival; occupancy is the share of room nights taken, in percent; room revenue is as in the room value analysis, by month of arrival, and a month without a priced booking counts as zero. The forecast covers 6 months from a history of 12 months or more, else 3 months, starting the month after the last complete month.",
+    "limitations": [
+      "The forecast repeats the seasonal pattern of the history; a trend, a price change, a new event or a change of room_count is not in it.",
+      "The band is the spread of the history, not a probability; the real value can lie outside it.",
+      "A history shorter than 24 months is flagged as too short: with one year or less a month is seen once, and the band then rests on the spread of all months.",
+      "Revenue is before taxes, fees, discounts and extras, in the price units of the input."
+    ],
+    "history_months": 102,
+    "minimum_history_months": 24,
+    "history_too_short": false,
+    "horizon_months": 3,
+    "measures": {
+      "arrivals": {
+        "unit": "bookings",
+        "months": [
+          {
+            "group": "2027-01",
+            "value": "998.63",
+            "low": "888.61",
+            "high": "1108.64"
+          },
+          {
+            "group": "2027-02",
+            "value": "1128.50",
+            "low": "991.55",
+            "high": "1265.45"
+          },
+          {
+            "group": "2027-03",
+            "value": "1067.88",
+            "low": "875.64",
+            "high": "1260.11"
+          }
+        ]
+      },
+      "occupancy": {
+        "unit": "%",
+        "months": [
+          {
+            "group": "2027-01",
+            "value": "47.72",
+            "low": "32.85",
+            "high": "62.60"
+          },
+          {
+            "group": "2027-02",
+            "value": "47.95",
+            "low": "34.29",
+            "high": "61.60"
+          },
+          {
+            "group": "2027-03",
+            "value": "48.24",
+            "low": "34.53",
+            "high": "61.96"
+          }
+        ]
+      },
+      "room_revenue": {
+        "unit": "price units",
+        "months": [
+          {
+            "group": "2027-01",
+            "value": "408522.50",
+            "low": "272432.58",
+            "high": "544612.42"
+          },
+          {
+            "group": "2027-02",
+            "value": "416557.50",
+            "low": "305354.53",
+            "high": "527760.47"
+          },
+          {
+            "group": "2027-03",
+            "value": "393631.50",
+            "low": "268830.04",
+            "high": "518432.96"
+          }
+        ]
+      }
+    }
+  },
+  "notices": [
+    {
+      "code": "INSIGHTS_UNAVAILABLE",
+      "message": "The insight of some analyses is unavailable."
+    }
+  ],
+  "insights": {
+    "requested": true,
+    "provider": "ollama",
+    "model": "phi4:latest",
+    "prompt_version": "2",
+    "overall": {
+      "status": "available",
+      "source": "ai",
+      "label": "AI-generated",
+      "generated_at": "2026-11-01T07:40:00+00:00",
+      "text": "## Overall\n\nRoom revenue and arrivals follow the **same seasonal pattern**.\n\n- Arrivals peak in the summer.\n- Occupancy follows arrivals.",
+      "evidence": "50769820.9, 447.1103, 113551",
+      "recommendations": [
+        {
+          "suggestion": "Check the **summer** prices against the occupancy.",
+          "evidence": "occupancy 47.7%, 998.63 arrivals",
+          "sample_size": 113551
+        },
+        {
+          "suggestion": "Compare the cancellations of the peak months.",
+          "evidence": "27.5%",
+          "sample_size": 43135
+        }
+      ]
+    }
+  }
+}

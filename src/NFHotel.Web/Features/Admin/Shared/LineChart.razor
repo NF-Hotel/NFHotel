@@ -6,7 +6,8 @@
     A line chart of months or weeks drawn as inline SVG. The periods are evenly spaced in the order given. A dot and a value label mark
     each point, so the line is not the only cue; with many points only every Nth label of the axis and of the values is written,
     so that a series of 30 months stays readable (the hidden table has them all). The optional overall level is a dashed line
-    with its own label. One point is a dot with its label. Hidden table for screen readers.
+    with its own label. One point is a dot with its label. An optional band (a low and a high value for each point, as the forecast
+    has) is a shaded area behind the line. Hidden table for screen readers.
 *@
 
 @if (Points.Count == 0)
@@ -22,6 +23,10 @@ else
         @if (ReferenceValue is { } overall)
         {
             <p class="chart-note">Dashed line: @(ReferenceLabel ?? "Overall") @ChartFormat.Value(overall, Unit).</p>
+        }
+        @if (HasBand)
+        {
+            <p class="chart-note">Shaded area: the band from the low to the high value of each month.</p>
         }
     </figure>
 }
@@ -45,12 +50,26 @@ else
     [Parameter]
     public string? ReferenceLabel { get; set; }
 
+    /// <summary>The low end of the band for each point, or <c>null</c> for no band; a value is <c>null</c> where the band cannot be known.</summary>
+    [Parameter]
+    public IReadOnlyList<double?>? BandLow { get; set; }
+
+    /// <summary>The high end of the band for each point, or <c>null</c> for no band.</summary>
+    [Parameter]
+    public IReadOnlyList<double?>? BandHigh { get; set; }
+
+    // The band is drawn only when every point has both ends; a band with holes would suggest a certainty that the service did not give.
+    private bool HasBand =>
+        BandLow is { } low && BandHigh is { } high
+        && low.Count == Points.Count && high.Count == Points.Count
+        && low.All(value => value.HasValue) && high.All(value => value.HasValue);
+
     private MarkupString BuildSvg()
     {
         var count = Points.Count;
         var height = Top + PlotHeight + Bottom;
         var baseline = Top + PlotHeight;
-        var highest = Math.Max(Points.Max(point => point.Value), ReferenceValue ?? 0);
+        double highest = Math.Max(Math.Max(Points.Max(point => point.Value), ReferenceValue ?? 0), HasBand ? BandHigh!.Max(value => value!.Value) : 0);
         var axis = LinearScale.Nice(0, highest);
         var y = new LinearScale(axis.Min, axis.Max, baseline, Top);
         var x = new LinearScale(0, Math.Max(count - 1, 1), Left + Inset, Width - Right - Inset);
@@ -64,6 +83,7 @@ else
         }
 
         svg.Append(CultureInfo.InvariantCulture, $"<line class=\"chart-axis\" x1=\"{Left}\" y1=\"{baseline}\" x2=\"{Width - Right}\" y2=\"{baseline}\"></line>");
+        AppendBand(svg, x, y);
         AppendReference(svg, y);
         AppendLine(svg, x, y);
 
@@ -71,7 +91,7 @@ else
         {
             var point = Points[index];
             var px = ChartFormat.Num(x.Map(index));
-            svg.Append(CultureInfo.InvariantCulture, $"<circle class=\"chart-dot\" cx=\"{px}\" cy=\"{ChartFormat.Num(y.Map(point.Value))}\" r=\"{DotRadius}\"><title>{ChartFormat.Encode(point.Label)}: {ChartFormat.Encode(PointText(point))}</title></circle>");
+            svg.Append(CultureInfo.InvariantCulture, $"<circle class=\"chart-dot\" cx=\"{px}\" cy=\"{ChartFormat.Num(y.Map(point.Value))}\" r=\"{DotRadius}\"><title>{ChartFormat.Encode(point.Label)}: {ChartFormat.Encode(PointText(point))}{BandText(index)}</title></circle>");
             if (LabelThinner.IsShown(index, step))
             {
                 svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-value\" x=\"{px}\" y=\"{ChartFormat.Num(y.Map(point.Value) - 8)}\" text-anchor=\"middle\">{ChartFormat.Encode(PointText(point))}</text>");
@@ -93,6 +113,22 @@ else
 
         var path = string.Join(" ", Points.Select((point, index) => FormattableString.Invariant($"{(index == 0 ? "M" : "L")} {ChartFormat.Num(x.Map(index))} {ChartFormat.Num(y.Map(point.Value))}")));
         svg.Append(CultureInfo.InvariantCulture, $"<path class=\"chart-line\" d=\"{path}\"></path>");
+    }
+
+    // The `!` operators below are safe: HasBand is true only when both lists are set and every entry has a value.
+    private string BandText(int index) =>
+        HasBand ? $" (band {ChartFormat.Encode(ChartFormat.Value(BandLow![index]!.Value, Unit))} to {ChartFormat.Encode(ChartFormat.Value(BandHigh![index]!.Value, Unit))})" : string.Empty;
+
+    private void AppendBand(StringBuilder svg, LinearScale x, LinearScale y)
+    {
+        if (!HasBand || Points.Count < 2)
+        {
+            return;
+        }
+
+        IEnumerable<string> upper = BandHigh!.Select((value, index) => FormattableString.Invariant($"{ChartFormat.Num(x.Map(index))} {ChartFormat.Num(y.Map(value!.Value))}"));
+        IEnumerable<string> lower = BandLow!.Select((value, index) => FormattableString.Invariant($"{ChartFormat.Num(x.Map(index))} {ChartFormat.Num(y.Map(value!.Value))}")).Reverse();
+        svg.Append(CultureInfo.InvariantCulture, $"<path class=\"chart-band\" d=\"M {string.Join(" L ", upper.Concat(lower))} Z\"></path>");
     }
 
     private void AppendReference(StringBuilder svg, LinearScale y)

@@ -10,6 +10,7 @@ namespace NFHotel.Application.Dto.MarketAnalysis;
 /// <param name="Formula">How the figures of the analysis were calculated, or <c>null</c> (a report stored before result schema 1.1 of the run API has none).</param>
 /// <param name="Limitations">What the analysis cannot say; <c>null</c> when the result has none.</param>
 /// <param name="Matrices">The matrices of the findings, for example the correlations; <c>null</c> when there are none.</param>
+/// <param name="RoomRevenue">The room revenue of the room value analysis (result schema 1.2); <c>null</c> for any other analysis and when the result has none.</param>
 public sealed record MarketAnalysisSectionDto(
     string Id,
     string Title,
@@ -19,4 +20,5 @@ public sealed record MarketAnalysisSectionDto(
     MarketAnalysisInsightDto? Insight,
     string? Formula = null,
     IReadOnlyList<string>? Limitations = null,
-    IReadOnlyList<MarketAnalysisMatrixDto>? Matrices = null);
+    IReadOnlyList<MarketAnalysisMatrixDto>? Matrices = null,
+    MarketAnalysisRoomRevenueDto? RoomRevenue = null);

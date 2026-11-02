@@ -31,6 +31,8 @@
 
   <ItemGroup>
     <Content Include="..\..\docs\test-data\market-analysis-result.json" Link="TestData\market-analysis-result.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- A trimmed result of schema 1.2 (room revenue, forecast, overall interpretation) taken from a real run. -->
+    <Content Include="..\..\docs\test-data\market-analysis-result-1.2.json" Link="TestData\market-analysis-result-1.2.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

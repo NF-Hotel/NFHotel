@@ -279,6 +279,7 @@ public sealed class MobileAccessTests : IClassFixture<ApiFactory>
     [InlineData("/api/guests")]
     [InlineData("/api/benchmark/runs")]
     [InlineData("/api/market-analysis/latest")]
+    [InlineData("/api/market-analysis/runs/current")]
     [InlineData("/api/ai-defaults")]
     [InlineData("/api/auth/other")]
     public async Task Get_OtherRoutes_StaffTokenAlone_ReturnsUnauthorizedWithTheServiceCode(string path)

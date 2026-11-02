@@ -103,6 +103,11 @@
           "System.Diagnostics.EventLog": "6.0.0"
         }
       },
+      "Markdig": {
+        "type": "Transitive",
+        "resolved": "1.4.1",
+        "contentHash": "laiWlBRnwVqQlY9eWR56+uteUVtR+LpGw0doMSpirFuxdplSi3V59UOGRTepJaE8hJvfKGcCoguIZ8jmUHcEnA=="
+      },
       "Microsoft.ApplicationInsights": {
         "type": "Transitive",
         "resolved": "2.23.0",
@@ -757,6 +762,7 @@
       "nfhotel.web": {
         "type": "Project",
         "dependencies": {
+          "Markdig": "[1.4.1, )",
           "NFHotel.ApiClient": "[0.1.0, )",
           "NFHotel.Application": "[0.1.0, )",
           "NFHotel.External": "[0.1.0, )"

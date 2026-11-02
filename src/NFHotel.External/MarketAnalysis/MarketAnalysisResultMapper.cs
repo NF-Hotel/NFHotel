@@ -6,7 +6,7 @@ using NFHotel.Application.Dto.MarketAnalysis;
 namespace NFHotel.External.MarketAnalysis;
 
 /// <summary>
-/// Reads the result document of the market analysis service (result schema 1.0 and 1.1, <c>RunResult</c> of
+/// Reads the result document of the market analysis service (result schema 1.0, 1.1 and 1.2, <c>RunResult</c> of
 /// <c>openapi/market-contract.yaml</c> of <c>notebook-market-analysis</c>) into <see cref="MarketAnalysisResultDto"/>. The
 /// document is read as JSON and not as a fixed type, because the <c>findings</c> of every analysis have their own shape and a
 /// new MINOR version adds fields. It reads the nine analyses of 1.1 (lead time, holidays, seasonality, cancellations, room
@@ -67,7 +67,11 @@ public static class MarketAnalysisResultMapper
             generatedAt,
             provider,
             model,
-            new MarketAnalysisContentDto(Figures(document), sections));
+            new MarketAnalysisContentDto(
+                Figures(document),
+                sections,
+                Overall(document),
+                document.TryGetProperty("forecast", out JsonElement forecast) ? Forecast(forecast) : null));
     }
 
     private static IReadOnlyList<MarketAnalysisFigureDto> Figures(JsonElement document)
@@ -104,32 +108,157 @@ public static class MarketAnalysisResultMapper
             analysis.TryGetProperty("insight", out var insight) && insight.ValueKind == JsonValueKind.Object ? Insight(insight) : null,
             Text(analysis, "formula"),
             Strings(analysis, "limitations"),
-            findings.ValueKind == JsonValueKind.Undefined ? null : FindingsSeries.ExtractMatrices(findings));
+            findings.ValueKind == JsonValueKind.Undefined ? null : FindingsSeries.ExtractMatrices(findings),
+            name == "room_value" ? RoomRevenue(findings) : null);
     }
 
-    private static MarketAnalysisInsightDto Insight(JsonElement insight)
+    // Room revenue sits in the findings of the room value analysis (result schema 1.2); amounts are decimal numbers as text.
+    private static MarketAnalysisRoomRevenueDto? RoomRevenue(JsonElement findings)
     {
-        var suggestions = new List<MarketAnalysisSuggestionDto>();
-        if (insight.TryGetProperty("improvement_suggestions", out var list) && list.ValueKind == JsonValueKind.Array)
+        if (findings.ValueKind != JsonValueKind.Object
+            || !findings.TryGetProperty("room_revenue", out JsonElement revenue)
+            || revenue.ValueKind != JsonValueKind.Object
+            || Text(revenue, "status") != "available"
+            || Decimal(revenue, "total") is not { } total)
         {
-            foreach (var item in list.EnumerateArray())
+            return null;
+        }
+
+        List<MarketAnalysisPointDto> monthly = [];
+        if (revenue.TryGetProperty("monthly", out JsonElement months) && months.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement month in months.EnumerateArray())
+            {
+                if (Text(month, "group") is { Length: > 0 } group && Decimal(month, "value") is { } value)
+                {
+                    monthly.Add(new MarketAnalysisPointDto(group, value));
+                }
+            }
+        }
+
+        return new MarketAnalysisRoomRevenueDto(
+            Text(revenue, "unit") ?? string.Empty,
+            Text(revenue, "limitation") ?? string.Empty,
+            total,
+            Decimal(revenue, "mean"),
+            Integer(revenue, "records_with_price"),
+            Integer(revenue, "records_without_price"),
+            monthly);
+    }
+
+    // The overall interpretation of insights.overall (result schema 1.2); without a status of available and a text there is nothing to show.
+    private static MarketAnalysisOverallDto? Overall(JsonElement document)
+    {
+        if (!document.TryGetProperty("insights", out JsonElement insights)
+            || insights.ValueKind != JsonValueKind.Object
+            || !insights.TryGetProperty("overall", out JsonElement overall)
+            || overall.ValueKind != JsonValueKind.Object
+            || Text(overall, "status") != "available"
+            || Text(overall, "text") is not { Length: > 0 } text)
+        {
+            return null;
+        }
+
+        return new MarketAnalysisOverallDto(
+            Text(overall, "source") ?? string.Empty,
+            Text(overall, "label") ?? string.Empty,
+            Text(overall, "generated_at"),
+            text,
+            Text(overall, "evidence"),
+            Suggestions(overall, "recommendations"));
+    }
+
+    // The forecast (result schema 1.2): the months of each measure with the band; a measure without months is left out.
+    private static MarketAnalysisForecastDto? Forecast(JsonElement forecast)
+    {
+        if (forecast.ValueKind != JsonValueKind.Object
+            || !forecast.TryGetProperty("measures", out JsonElement measures)
+            || measures.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        List<MarketAnalysisForecastMeasureDto> list = [];
+        foreach (JsonProperty measure in measures.EnumerateObject())
+        {
+            List<MarketAnalysisForecastMonthDto> months = [];
+            if (measure.Value.ValueKind == JsonValueKind.Object
+                && measure.Value.TryGetProperty("months", out JsonElement found)
+                && found.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement month in found.EnumerateArray())
+                {
+                    if (Text(month, "group") is { Length: > 0 } group && Decimal(month, "value") is { } value)
+                    {
+                        months.Add(new MarketAnalysisForecastMonthDto(group, value, Decimal(month, "low"), Decimal(month, "high")));
+                    }
+                }
+            }
+
+            if (months.Count > 0)
+            {
+                list.Add(new MarketAnalysisForecastMeasureDto(measure.Name, Text(measure.Value, "unit") ?? string.Empty, months));
+            }
+        }
+
+        return new MarketAnalysisForecastDto(
+            Text(forecast, "formula") ?? string.Empty,
+            Strings(forecast, "limitations") ?? [],
+            Integer(forecast, "history_months"),
+            Integer(forecast, "minimum_history_months"),
+            forecast.TryGetProperty("history_too_short", out JsonElement tooShort) && tooShort.ValueKind == JsonValueKind.True,
+            Integer(forecast, "horizon_months"),
+            list);
+    }
+
+    private static int Integer(JsonElement source, string name) =>
+        source.ValueKind == JsonValueKind.Object && source.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int number)
+            ? number
+            : 0;
+
+    // An amount is a decimal number as text; a plain JSON number is read too. Anything else is no amount.
+    private static double? Decimal(JsonElement source, string name)
+    {
+        if (source.ValueKind != JsonValueKind.Object || !source.TryGetProperty(name, out JsonElement value))
+        {
+            return null;
+        }
+
+        return value.ValueKind switch
+        {
+            JsonValueKind.String when double.TryParse(value.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed) && double.IsFinite(parsed) => parsed,
+            JsonValueKind.Number => value.GetDouble(),
+            _ => null,
+        };
+    }
+
+    private static MarketAnalysisInsightDto Insight(JsonElement insight) =>
+        new(
+            Text(insight, "status") ?? "unavailable",
+            Text(insight, "reason"),
+            Text(insight, "executive_summary"),
+            Suggestions(insight, "improvement_suggestions"),
+            Observations(insight));
+
+    private static List<MarketAnalysisSuggestionDto> Suggestions(JsonElement source, string listName)
+    {
+        List<MarketAnalysisSuggestionDto> suggestions = [];
+        if (source.TryGetProperty(listName, out JsonElement list) && list.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement item in list.EnumerateArray())
             {
                 if (Text(item, "suggestion") is { } suggestion)
                 {
                     suggestions.Add(new MarketAnalysisSuggestionDto(
                         suggestion,
                         Text(item, "evidence") ?? string.Empty,
-                        item.TryGetProperty("sample_size", out var size) && size.ValueKind == JsonValueKind.Number ? size.GetInt32() : 0));
+                        Integer(item, "sample_size"),
+                        Text(item, "series")));
                 }
             }
         }
 
-        return new MarketAnalysisInsightDto(
-            Text(insight, "status") ?? "unavailable",
-            Text(insight, "reason"),
-            Text(insight, "executive_summary"),
-            suggestions,
-            Observations(insight));
+        return suggestions;
     }
 
     // One observation per chart; an entry without text or without the path of its series cannot be shown under a chart.

@@ -1,7 +1,7 @@
 @using NFHotel.Web.Features.Admin.MarketAnalysis
 
 @*
-    The contents of the market analysis report (MIL-026): a link to the key figures and to each analysis.
+    The contents of the market analysis report (MIL-026): a link to the key figures, the overall interpretation, each analysis and the forecast.
     A link carries the page path because the base href of the app would send a bare fragment to the start page.
 *@
 <nav class="card card-pad" aria-labelledby="contents-title">
@@ -11,9 +11,17 @@
         {
             <li><a href="@($"{PagePath}#figures-title")">Key figures</a></li>
         }
+        @if (HasOverall)
+        {
+            <li><a href="@($"{PagePath}#{MarketAnalysisInterpretation.SectionId}")">Overall interpretation</a></li>
+        }
         @foreach (MarketAnalysisSectionView entry in Sections)
         {
             <li><a href="@($"{PagePath}#analysis-{entry.Section.Id}")">@entry.Section.Title</a></li>
+        }
+        @if (HasForecast)
+        {
+            <li><a href="@($"{PagePath}#{MarketAnalysisForecast.SectionId}")">Forecast</a></li>
         }
     </ol>
 </nav>
@@ -24,6 +32,14 @@
     /// <summary>Whether the report has key figures to link to.</summary>
     [Parameter]
     public bool HasFigures { get; set; }
+
+    /// <summary>Whether the report has an overall interpretation to link to.</summary>
+    [Parameter]
+    public bool HasOverall { get; set; }
+
+    /// <summary>Whether the report has a forecast to link to.</summary>
+    [Parameter]
+    public bool HasForecast { get; set; }
 
     /// <summary>The analyses of the report, in the order of the page.</summary>
     [Parameter, EditorRequired]

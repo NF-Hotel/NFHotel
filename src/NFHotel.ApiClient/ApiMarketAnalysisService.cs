@@ -47,6 +47,10 @@ public sealed class ApiMarketAnalysisService : IMarketAnalysisService
     }
 
     /// <inheritdoc />
+    public Task<Result<MarketAnalysisRunStateDto?>> GetCurrentRunAsync(CancellationToken cancellationToken = default) =>
+        _api.GetOptionalAsync<MarketAnalysisRunStateDto>($"{ApiRoutes.MarketAnalysis}/{ApiRoutes.MarketAnalysisRunCurrent}", cancellationToken);
+
+    /// <inheritdoc />
     public Task<Result<MarketAnalysisReportDto>> GetLatestReportAsync(CancellationToken cancellationToken = default) =>
         _api.GetAsync<MarketAnalysisReportDto>($"{ApiRoutes.MarketAnalysis}/{ApiRoutes.MarketAnalysisLatest}", cancellationToken);
 }
