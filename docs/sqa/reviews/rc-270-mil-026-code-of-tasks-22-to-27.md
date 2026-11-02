@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Proposed | Claude (AI) | S01 | Initial version; review by the AI, not independent, for S01 to accept | pending |
+| 2026-11-02 | Proposed | Claude (AI) | S01 | Initial version; review by the AI, not independent, for S01 to accept | [913ed5f] |
 
 ---
 
@@ -85,3 +85,4 @@ Go with conditions. The code builds without warnings, the format check and all 2
 
 [MIL-026]: ../../milestones/mil-026-market-analysis-report.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[913ed5f]: https://github.com/NF-Hotel/NFHotel/commit/913ed5f581493e449ad76bedfba8a1cc2daf6ada
