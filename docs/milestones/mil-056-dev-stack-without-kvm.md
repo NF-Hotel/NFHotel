@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Accepted | mikemike | S01 | Initial version; a developer of the mobile track (S02) cannot start the API on macOS, because `scripts/dev-up.sh` needs `/dev/kvm`, and S01 asked in chat on 2026-11-02 to plan a way that works ("Ja, planlæg det"); S01 accepted the plan in chat ("Yes, accept and build") after RC-271 Go | pending |
+| 2026-11-02 | Accepted | mikemike | S01 | Initial version; a developer of the mobile track (S02) cannot start the API on macOS, because `scripts/dev-up.sh` needs `/dev/kvm`, and S01 asked in chat on 2026-11-02 to plan a way that works ("Ja, planlæg det"); S01 accepted the plan in chat ("Yes, accept and build") after RC-271 Go | [d566246] |
 
 ---
 
@@ -89,3 +89,4 @@ The answer is a second, lighter local mode: the containers of the deployed shape
 [ADR-0015]: ../adr/adr-0015-mobile-app-staff-token-access.md
 [ADR-0024]: ../adr/adr-0024-secrets-as-files.md
 [MIL-027]: mil-027-dast-and-end-to-end-tests.md
+[d566246]: https://github.com/NF-Hotel/NFHotel/commit/d5662462084d1fd23301de4d0e07db569a182d66

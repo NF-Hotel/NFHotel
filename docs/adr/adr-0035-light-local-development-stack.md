@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; written under MIL-056, which S01 accepted in chat on 2026-11-02 | pending |
+| 2026-11-02 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; written under MIL-056, which S01 accepted in chat on 2026-11-02 | [d566246] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -75,3 +75,4 @@ We follow option 3.
 [ADR-0015]: adr-0015-mobile-app-staff-token-access.md
 [ADR-0024]: adr-0024-secrets-as-files.md
 [MIL-027]: ../milestones/mil-027-dast-and-end-to-end-tests.md
+[d566246]: https://github.com/NF-Hotel/NFHotel/commit/d5662462084d1fd23301de4d0e07db569a182d66

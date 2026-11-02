@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Accepted | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent; S01 accepted the plan in chat on 2026-11-02 ("Yes, accept and build") | pending |
+| 2026-11-02 | Accepted | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent; S01 accepted the plan in chat on 2026-11-02 ("Yes, accept and build") | [d566246] |
 
 ---
 
@@ -62,3 +62,4 @@ Go: every Mandatory criterion passes. Criterion 3 of MIL-056 needs a Mac, which 
 [MIL-056]: ../../milestones/mil-056-dev-stack-without-kvm.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[d566246]: https://github.com/NF-Hotel/NFHotel/commit/d5662462084d1fd23301de4d0e07db569a182d66
