@@ -210,12 +210,9 @@ public sealed class PricingSettingsViewModel
         _inputs[Fields.MaxChange] = NumberInput.Format(value.MaxChangePercent);
         _inputs[Fields.MinimumPrice] = NumberInput.Format(value.MinimumNightlyPrice);
         _sizes.Clear();
-        foreach (var name in value.DiscountSizes)
+        foreach (var name in value.DiscountSizes.Where(name => Enum.IsDefined(typeof(RoomSize), name)))
         {
-            if (Enum.TryParse<RoomSize>(name, out var size))
-            {
-                _sizes.Add(size);
-            }
+            _sizes.Add(Enum.Parse<RoomSize>(name));
         }
     }
 }

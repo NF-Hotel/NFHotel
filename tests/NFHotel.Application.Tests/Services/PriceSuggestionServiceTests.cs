@@ -143,10 +143,8 @@ public sealed class PriceSuggestionServiceTests
             [],
             [good.Sections[0] with { Series = [good.Sections[0].Series[0] with { Points = [.. good.Sections[0].Series[0].Points.Take(11)] }] }]);
 
-        foreach (var content in new[] { unavailable, other, elevenMonths })
+        foreach (var world in new[] { unavailable, other, elevenMonths }.Select(content => WorldWithReport(content)))
         {
-            var world = WorldWithReport(content);
-
             // Act
             var list = await OpenAsync(world);
 

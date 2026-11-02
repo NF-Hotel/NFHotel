@@ -183,13 +183,6 @@ public sealed class PriceChange : Entity<int>
         RevertedAt = revertedAt.ToUniversalTime();
 
         // A change that has not begun counts for no day; one in force counted up to yesterday.
-        if (today < FirstDay)
-        {
-            EndedOn = null;
-        }
-        else
-        {
-            EndedOn = today.AddDays(-1);
-        }
+        EndedOn = today < FirstDay ? null : today.AddDays(-1);
     }
 }

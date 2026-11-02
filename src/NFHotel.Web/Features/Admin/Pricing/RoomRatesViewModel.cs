@@ -74,13 +74,11 @@ public sealed class RoomRatesViewModel
 
             Errors = Array.Empty<string>();
             _current.Clear();
-            foreach (var rate in result.Value)
+            foreach (var rate in result.Value.Where(rate => Enum.IsDefined(typeof(RoomSize), rate.Size)))
             {
-                if (Enum.TryParse<RoomSize>(rate.Size, out var size))
-                {
-                    _current[size] = rate;
-                    _inputs[size] = Format(rate.NightlyPrice);
-                }
+                var size = Enum.Parse<RoomSize>(rate.Size);
+                _current[size] = rate;
+                _inputs[size] = Format(rate.NightlyPrice);
             }
         }
         finally
