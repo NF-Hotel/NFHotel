@@ -37,7 +37,8 @@
         "Room revenue is the price per night times the nights of the bookings that are not cancelled, before taxes, fees, discounts and extras. "
         + "The currency is not known, so the amounts are in the price units of the input. Bookings without a price are left out of the figures.";
 
-    private const string MonthlyTitle = "Room revenue by month of arrival";
+    // The chart draws every month the service sends, while the AI observation under it reads the latest 30, so the title says how many.
+    private string MonthlyTitle => $"Room revenue by month of arrival (all {Revenue.Monthly.Count} months)";
 
     /// <summary>The analysis the room revenue belongs to, for the limitations, the formula and the AI observation of the chart.</summary>
     [Parameter]
