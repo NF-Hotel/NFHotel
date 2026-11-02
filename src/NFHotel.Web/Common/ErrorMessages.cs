@@ -1,5 +1,6 @@
 using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases;
+using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 
 namespace NFHotel.Web.Common;
@@ -108,6 +109,30 @@ public static class ErrorMessages
             [AiDefaultErrors.PurposeInvalid] = "The default AI model can be set for the website or the market analysis.",
             [AiDefaultErrors.ModelInvalid] = "Enter a model name of at most 100 characters.",
             [AiDefaultErrors.SetByInvalid] = "The staff member could not be named. Please sign in again.",
+            [RoomRateErrors.SizeInvalid] = "The room size must be Single, Double or Suite.",
+            [RoomRateErrors.PriceInvalid] = FormattableString.Invariant($"Enter a nightly price above 0 and at most {RoomRate.MaxNightlyPrice:N0}."),
+            [RoomRateErrors.ConcurrencyConflict] = "Someone else saved this rate at the same moment. Reload the page and try again.",
+            [RoomRateErrors.SetByInvalid] = "The staff member could not be named. Please sign in again.",
+            [PricingSettingErrors.SurchargeInvalid] = "Enter a surcharge from 0 to 100 percent.",
+            [PricingSettingErrors.DiscountInvalid] = "Enter a discount from 0 to 100 percent.",
+            [PricingSettingErrors.HighThresholdInvalid] = "Enter a high season threshold from 0 to 100 percent.",
+            [PricingSettingErrors.LowThresholdInvalid] = "Enter a low season threshold from 0 to 100 percent.",
+            [PricingSettingErrors.ThresholdsOrderInvalid] = "The low season threshold must be below the high season threshold.",
+            [PricingSettingErrors.MaxChangeInvalid] = "Enter a largest change above 0 and at most 100 percent.",
+            [PricingSettingErrors.MinimumPriceInvalid] = FormattableString.Invariant($"Enter a minimum nightly price from 0 to {PricingSetting.MaxMinimumPrice:N0}."),
+            [PricingSettingErrors.DiscountSizesInvalid] = "Choose at least one room size for the discount.",
+            [PricingSettingErrors.ConcurrencyConflict] = "Someone else saved the settings at the same moment. Reload the page and try again.",
+            [PricingSettingErrors.SetByInvalid] = "The staff member could not be named. Please sign in again.",
+            [PriceChangeErrors.SizeInvalid] = "The room size must be Single, Double or Suite.",
+            [PriceChangeErrors.PercentageInvalid] = FormattableString.Invariant($"Enter a change that is not 0, from a discount of just under 100 percent to a surcharge of {PriceChange.MaxPercentage:0} percent."),
+            [PriceChangeErrors.PeriodInvalid] = FormattableString.Invariant($"The last day must not be before the first day or before today, and the period can be at most {PriceChange.MaxPeriodDays} days."),
+            [PriceChangeErrors.ApprovedByInvalid] = "The staff member could not be named. Please sign in again.",
+            [PriceChangeErrors.RevertedByInvalid] = "The staff member could not be named. Please sign in again.",
+            [PriceChangeErrors.AlreadyReverted] = "The price change is already reverted.",
+            [PriceChangeErrors.PeriodEnded] = "The period of the price change has ended, so there is nothing left to revert.",
+            [PriceChangeErrors.NotFound] = "The price change was not found.",
+            [PriceChangeErrors.Overlap] = "Another price change of the same room size already counts on a day of this period. Shorten the period or revert the other change first.",
+            [PriceSuggestionErrors.NotFound] = "The suggestion is no longer open. Reload the list to see the current suggestions.",
             [ErrorCodes.Benchmark.NotFound] = "The benchmark run was not found.",
             [BenchmarkRequestErrors.RunIdRequired] = "The run was started, but the hotel could not record it: it has no id.",
             [BenchmarkRequestErrors.ModelsInvalid] = "The run was started, but the hotel could not record its models.",

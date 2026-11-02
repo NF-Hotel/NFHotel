@@ -319,7 +319,8 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
                 auditEvent.Action,
                 auditEvent.TargetName,
                 auditEvent.Outcome,
-                auditEvent.RemoteAddress)),
+                auditEvent.RemoteAddress,
+                auditEvent.Detail)),
         ];
         return Result<StaffAuditPageDto>.Success(new StaffAuditPageDto(items, number, size, total));
     }

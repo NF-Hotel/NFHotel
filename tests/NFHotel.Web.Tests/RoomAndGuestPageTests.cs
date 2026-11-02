@@ -5,8 +5,10 @@ using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.Guests;
+using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Application.UseCases.Rooms;
 using NFHotel.Domain.ValueObjects;
+using NFHotel.TestSupport;
 using NFHotel.Web.Features.Admin.Guests;
 using NFHotel.Web.Features.Admin.Rooms;
 using NFHotel.Web.Security;
@@ -28,7 +30,7 @@ public sealed class RoomListPageTests : IAsyncDisposable
     public RoomListPageTests()
     {
         var runner = new PassThroughRunner<IRoomService>(_rooms);
-        _host.With(new RoomListViewModel(runner)).With(new RoomFormViewModel(runner));
+        _host.With(new RoomListViewModel(runner, new PassThroughRunner<IPriceSuggestionService>(Substitute.For<IPriceSuggestionService>()), new FakeClock())).With(new RoomFormViewModel(runner));
         _rooms.GetFilterOptionsAsync(Arg.Any<CancellationToken>()).Returns(Ok(new RoomFilterOptionsDto(
             [1, 2],
             Enum.GetValues<RoomSize>(),

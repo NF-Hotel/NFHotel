@@ -41,6 +41,9 @@ public static class StaffPolicies
     /// <summary>Set the default AI model of the website and of the market analysis.</summary>
     public const string AiDefaultsManage = Permissions.AiDefaultsManage;
 
+    /// <summary>Set the nightly base rate per room size (MIL-055).</summary>
+    public const string ManagePrices = Permissions.ManagePrices;
+
     /// <summary>Add models to Ollama and delete installed ones.</summary>
     public const string BenchmarkModelsManage = Permissions.BenchmarkModelsManage;
 

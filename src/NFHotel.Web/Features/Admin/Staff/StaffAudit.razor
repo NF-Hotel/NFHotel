@@ -42,6 +42,7 @@
                     <th scope="col">Action</th>
                     <th scope="col">To</th>
                     <th scope="col">Result</th>
+                    <th scope="col">Detail</th>
                     <th scope="col">Address</th>
                 </tr>
             </thead>
@@ -54,6 +55,7 @@
                         <td>@line.Action</td>
                         <td>@(line.TargetName ?? "-")</td>
                         <td>@line.Outcome</td>
+                        <td>@(line.Detail ?? "-")</td>
                         <td>@(line.RemoteAddress ?? "-")</td>
                     </tr>
                 }

@@ -9,10 +9,12 @@ namespace NFHotel.Application.Dto.Staff;
 /// <param name="TargetName">To whom, or <c>null</c>.</param>
 /// <param name="Outcome"><c>Success</c> or the error code.</param>
 /// <param name="RemoteAddress">The address of the request, or <c>null</c>.</param>
+/// <param name="Detail">What changed, for example the old and the new value of a rate, or <c>null</c>.</param>
 public sealed record StaffAuditEventDto(
     DateTimeOffset OccurredAt,
     string? ActorName,
     StaffAuditAction Action,
     string? TargetName,
     string Outcome,
-    string? RemoteAddress);
+    string? RemoteAddress,
+    string? Detail = null);

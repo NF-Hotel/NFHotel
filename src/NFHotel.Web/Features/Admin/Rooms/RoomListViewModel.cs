@@ -1,8 +1,12 @@
+using NFHotel.Application.Dto.Pricing;
 using NFHotel.Application.Dto.Rooms;
+using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Application.UseCases.Rooms;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
+using NFHotel.Web.Features.Admin.Pricing;
 
 namespace NFHotel.Web.Features.Admin.Rooms;
 
@@ -23,24 +27,56 @@ namespace NFHotel.Web.Features.Admin.Rooms;
 /// Every call goes through <see cref="IUseCaseRunner{TService}"/> and thereby gets its own
 /// DI scope and its own <c>DbContext</c> (Architecture.md section 8).
 /// </para>
+/// <para>
+/// MIL-055: a user who may manage prices also sees the effective price per night of each room size today. The prices
+/// are asked for once per load of the page, in one call for all sizes, and not at all for a user who may not manage
+/// prices: the price endpoints need that permission, so asking for them would only be refused.
+/// </para>
 /// </remarks>
 public sealed class RoomListViewModel
 {
     /// <summary>The number of possible buttons — only for the initial capacity of the list.</summary>
     private const int RoomActionCount = 11;
 
+    private const string NotSetText = "not set";
+
     private readonly IUseCaseRunner<IRoomService> _rooms;
+    private readonly IUseCaseRunner<IPriceSuggestionService> _prices;
+    private readonly IClock _clock;
+    private readonly Dictionary<RoomSize, string> _priceTexts = [];
 
     /// <summary>
     /// Creates the view model.
     /// </summary>
     /// <param name="rooms">Runs use cases on <see cref="IRoomService"/>.</param>
-    public RoomListViewModel(IUseCaseRunner<IRoomService> rooms)
+    /// <param name="prices">Runs the price use cases; used only for a user who may manage prices.</param>
+    /// <param name="clock">Gives the date of today (A-05).</param>
+    public RoomListViewModel(
+        IUseCaseRunner<IRoomService> rooms,
+        IUseCaseRunner<IPriceSuggestionService> prices,
+        IClock clock)
     {
         ArgumentNullException.ThrowIfNull(rooms);
+        ArgumentNullException.ThrowIfNull(prices);
+        ArgumentNullException.ThrowIfNull(clock);
 
         _rooms = rooms;
+        _prices = prices;
+        _clock = clock;
     }
+
+    /// <summary>True when the price column is shown: the user may manage prices and the prices have been asked for.</summary>
+    public bool ShowsPrices { get; private set; }
+
+    /// <summary>
+    /// Gives the price text of a room size for the price column.
+    /// </summary>
+    /// <param name="size">The room size.</param>
+    /// <returns>
+    /// The base rate alone, for example <c>100.00</c>; the move and the change when a price change is in force today, for
+    /// example <c>100.00 → 120.00 (+20 %)</c>; or <c>not set</c> when the size has no base rate.
+    /// </returns>
+    public string PriceTextOf(RoomSize size) => _priceTexts.GetValueOrDefault(size, NotSetText);
 
     /// <summary>The rooms shown right now.</summary>
     public IReadOnlyList<RoomListItemDto> Rooms { get; private set; } = Array.Empty<RoomListItemDto>();
@@ -100,8 +136,9 @@ public sealed class RoomListViewModel
     /// <summary>
     /// Fetches filter options and the first list. Called from <c>OnInitializedAsync</c>.
     /// </summary>
+    /// <param name="canSeePrices">True when the user holds the permission to manage prices; only then are the prices asked for.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    public async Task InitializeAsync(bool canSeePrices, CancellationToken cancellationToken = default)
     {
         var optionsLoaded = await LoadFilterOptionsAsync(cancellationToken).ConfigureAwait(false);
 
@@ -115,6 +152,11 @@ public sealed class RoomListViewModel
         }
 
         await SearchAsync(cancellationToken).ConfigureAwait(false);
+
+        if (canSeePrices)
+        {
+            await LoadPricesAsync(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
@@ -400,4 +442,46 @@ public sealed class RoomListViewModel
             RoomAction.CompleteServiceClean => service.CompleteServiceAsync(roomId, requiresCleaning: false, cancellationToken),
             _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ukendt rumhandling.")
         };
+
+    /// <summary>
+    /// Asks once for the effective price of every room size today and keeps the texts of the price column. A failure
+    /// leaves the list as it is and adds the text of the code to <see cref="Errors"/>.
+    /// </summary>
+    private async Task LoadPricesAsync(CancellationToken cancellationToken)
+    {
+        var today = _clock.Today;
+        var result = await _prices
+            .RunAsync((service, token) => service.GetEffectivePricesAsync(today, token), cancellationToken)
+            .ConfigureAwait(false);
+
+        _priceTexts.Clear();
+        ShowsPrices = true;
+
+        if (result.IsFailure)
+        {
+            Errors = [.. Errors, .. ErrorMessages.Describe(result)];
+
+            return;
+        }
+
+        foreach (var price in result.Value)
+        {
+            if (Enum.TryParse<RoomSize>(price.Size, out var size))
+            {
+                _priceTexts[size] = DescribePrice(price);
+            }
+        }
+    }
+
+    private static string DescribePrice(EffectivePriceDto price)
+    {
+        if (price.BaseRate is not { } baseRate || price.Price is not { } now)
+        {
+            return NotSetText;
+        }
+
+        return price.Percentage is { } percentage
+            ? $"{PriceSuggestionsViewModel.FormatMove(baseRate, now)} ({PriceSuggestionsViewModel.FormatChange(percentage)})"
+            : NumberInput.Format(now);
+    }
 }

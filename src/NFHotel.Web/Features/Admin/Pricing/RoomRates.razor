@@ -1,0 +1,75 @@
+@page "/admin/pricing/rates"
+@layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.ManagePrices)]
+@rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using System.Globalization
+@using NFHotel.Domain.ValueObjects
+@using NFHotel.Web.Common
+@using NFHotel.Web.Features.Admin.Pricing
+@inject RoomRatesViewModel ViewModel
+
+@*
+    The nightly base rate per room size (MIL-055). Only markup and binding. The API checks the role of the caller and every
+    rule again, and writes each change to the audit trail with the old and the new price.
+*@
+
+<PageTitle>Room rates — administration</PageTitle>
+
+<div class="stack-lg">
+    <PageHeader Title="Room rates" Subtitle="The nightly base rate of each room size." />
+
+    <ErrorAlert Errors="ViewModel.Errors" />
+
+    @if (ViewModel.SuccessMessage is { } success)
+    {
+        <AlertBox Kind="AlertKind.Ok" Message="@success" />
+    }
+
+    @if (!ViewModel.IsLoaded)
+    {
+        <LoadingSkeleton />
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Room size</th>
+                    <th scope="col">Rate a night</th>
+                    <th scope="col">Set by</th>
+                    <th scope="col">Set at (UTC)</th>
+                    <th scope="col">New rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var size in RoomRatesViewModel.Sizes)
+                {
+                    var rate = ViewModel.RateOf(size);
+                    var id = $"rate-{size.ToString().ToLowerInvariant()}";
+                    <tr>
+                        <th scope="row">@size</th>
+                        <td>@(rate is null ? "not set" : rate.NightlyPrice.ToString("0.00", CultureInfo.InvariantCulture))</td>
+                        <td>@(rate?.SetBy ?? "-")</td>
+                        <td>@(rate is null ? "-" : rate.SetAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture))</td>
+                        <td>
+                            <div class="row">
+                                <label class="sr-only" for="@id">New nightly rate for @size</label>
+                                <input id="@id" class="field-input" inputmode="decimal" autocomplete="off"
+                                       value="@ViewModel.InputOf(size)" @oninput="e => ViewModel.SetInput(size, e.Value?.ToString())" />
+                                <button type="button" class="btn btn-primary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => SaveAsync(size)">Save</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="muted">Use a dot for the decimals, for example 89.50.</p>
+    }
+</div>
+
+@code {
+    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
+
+    private Task SaveAsync(RoomSize size) => ViewModel.SaveAsync(size, ComponentToken);
+}

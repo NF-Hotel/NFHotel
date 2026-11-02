@@ -1,8 +1,10 @@
 using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Application.UseCases.Rooms;
 using NFHotel.Domain.ValueObjects;
+using NFHotel.TestSupport;
 using NFHotel.Web.Features.Admin.Rooms;
 
 using NSubstitute;
@@ -20,7 +22,10 @@ public sealed class RoomViewModelTests
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    private RoomListViewModel CreateList() => new(new PassThroughRunner<IRoomService>(_rooms));
+    private RoomListViewModel CreateList() => new(
+        new PassThroughRunner<IRoomService>(_rooms),
+        new PassThroughRunner<IPriceSuggestionService>(Substitute.For<IPriceSuggestionService>()),
+        new FakeClock());
 
     private RoomFormViewModel CreateForm() => new(new PassThroughRunner<IRoomService>(_rooms));
 
@@ -48,7 +53,7 @@ public sealed class RoomViewModelTests
     [Fact]
     public void RoomList_MissingArguments_Throw()
     {
-        Assert.Throws<ArgumentNullException>(() => new RoomListViewModel(null!));
+        Assert.Throws<ArgumentNullException>(() => new RoomListViewModel(null!, new PassThroughRunner<IPriceSuggestionService>(Substitute.For<IPriceSuggestionService>()), new FakeClock()));
         var viewModel = CreateList();
         Assert.Throws<ArgumentNullException>(() => viewModel.ToggleSelection(null!));
         Assert.Throws<ArgumentNullException>(() => viewModel.IsSelected(null!));
@@ -63,7 +68,7 @@ public sealed class RoomViewModelTests
         SearchFinds(Room(1), Room(2));
         var viewModel = CreateList();
 
-        await viewModel.InitializeAsync(Token);
+        await viewModel.InitializeAsync(false, Token);
 
         Assert.Same(Options, viewModel.FilterOptions);
         Assert.Equal(2, viewModel.Rooms.Count);
@@ -79,7 +84,7 @@ public sealed class RoomViewModelTests
         _rooms.GetFilterOptionsAsync(Arg.Any<CancellationToken>()).Returns(Fail<RoomFilterOptionsDto>(ErrorCodes.Room.NotFound));
         var viewModel = CreateList();
 
-        await viewModel.InitializeAsync(Token);
+        await viewModel.InitializeAsync(false, Token);
 
         Assert.True(viewModel.IsLoaded);
         Assert.Equal([Text(ErrorCodes.Room.NotFound)], viewModel.Errors);

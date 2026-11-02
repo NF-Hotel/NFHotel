@@ -11,6 +11,9 @@ public sealed class StaffAuditEvent : Entity<int>
     /// <summary>The longest user name, outcome and address that are stored.</summary>
     public const int MaxTextLength = 100;
 
+    /// <summary>The longest detail text that is stored.</summary>
+    public const int MaxDetailLength = 200;
+
     private StaffAuditEvent()
     {
     }
@@ -39,6 +42,11 @@ public sealed class StaffAuditEvent : Entity<int>
     /// <summary>The address the request came from, or <c>null</c> when unknown.</summary>
     public string? RemoteAddress { get; private set; }
 
+    /// <summary>
+    /// What changed, as plain text such as the old and the new value of a rate, or <c>null</c>. It never holds a secret.
+    /// </summary>
+    public string? Detail { get; private set; }
+
     /// <summary>Creates a record. Long texts are cut to the column length.</summary>
     /// <param name="occurredAt">When it happened.</param>
     /// <param name="action">What happened.</param>
@@ -48,6 +56,7 @@ public sealed class StaffAuditEvent : Entity<int>
     /// <param name="targetId">The target account, if any.</param>
     /// <param name="targetName">The target's user name.</param>
     /// <param name="remoteAddress">The address of the request.</param>
+    /// <param name="detail">What changed, or <c>null</c>; it is cut to <see cref="MaxDetailLength"/> characters.</param>
     /// <returns>The record.</returns>
     public static StaffAuditEvent Create(
         DateTimeOffset occurredAt,
@@ -57,7 +66,8 @@ public sealed class StaffAuditEvent : Entity<int>
         string? actorName = null,
         int? targetId = null,
         string? targetName = null,
-        string? remoteAddress = null) =>
+        string? remoteAddress = null,
+        string? detail = null) =>
         new()
         {
             OccurredAt = occurredAt,
@@ -68,8 +78,9 @@ public sealed class StaffAuditEvent : Entity<int>
             TargetId = targetId,
             TargetName = Cut(targetName),
             RemoteAddress = Cut(remoteAddress),
+            Detail = Cut(detail, MaxDetailLength),
         };
 
-    private static string? Cut(string? text) =>
-        text is null ? null : text.Length <= MaxTextLength ? text : text[..MaxTextLength];
+    private static string? Cut(string? text, int maxLength = MaxTextLength) =>
+        text is null ? null : text.Length <= maxLength ? text : text[..maxLength];
 }

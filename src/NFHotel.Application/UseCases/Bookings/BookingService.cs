@@ -3,6 +3,7 @@ using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases.Guests;
+using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
@@ -44,6 +45,9 @@ public sealed class BookingService : IBookingService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IClock _clock;
     private readonly IStaffAuthorizationService _authorization;
+    private readonly IPriceChangeService _prices;
+    private readonly IBookingMarketDetailRepository _marketDetails;
+    private readonly IWarningLog _warnings;
 
     /// <summary>
     /// Creates the service.
@@ -56,6 +60,9 @@ public sealed class BookingService : IBookingService
     /// <param name="unitOfWork">The transaction boundary.</param>
     /// <param name="clock">Hotellets ur (A-05).</param>
     /// <param name="authorization">The service for checking staff permissions.</param>
+    /// <param name="prices">Gives the effective price of a room size on the arrival date (MIL-055).</param>
+    /// <param name="marketDetails">Stores the price per night of a new booking (MIL-055).</param>
+    /// <param name="warnings">Where a lost price of a saved booking is reported (MIL-055).</param>
     public BookingService(
         IBookingRepository bookingRepository,
         IRoomRepository roomRepository,
@@ -64,7 +71,10 @@ public sealed class BookingService : IBookingService
         IRoomQueries roomQueries,
         IUnitOfWork unitOfWork,
         IClock clock,
-        IStaffAuthorizationService authorization)
+        IStaffAuthorizationService authorization,
+        IPriceChangeService prices,
+        IBookingMarketDetailRepository marketDetails,
+        IWarningLog warnings)
     {
         ArgumentNullException.ThrowIfNull(bookingRepository);
         ArgumentNullException.ThrowIfNull(roomRepository);
@@ -74,6 +84,9 @@ public sealed class BookingService : IBookingService
         ArgumentNullException.ThrowIfNull(unitOfWork);
         ArgumentNullException.ThrowIfNull(clock);
         ArgumentNullException.ThrowIfNull(authorization);
+        ArgumentNullException.ThrowIfNull(prices);
+        ArgumentNullException.ThrowIfNull(marketDetails);
+        ArgumentNullException.ThrowIfNull(warnings);
 
         _bookingRepository = bookingRepository;
         _roomRepository = roomRepository;
@@ -83,6 +96,9 @@ public sealed class BookingService : IBookingService
         _unitOfWork = unitOfWork;
         _clock = clock;
         _authorization = authorization;
+        _prices = prices;
+        _marketDetails = marketDetails;
+        _warnings = warnings;
     }
 
     // --------------------------------------------------------
@@ -311,9 +327,95 @@ public sealed class BookingService : IBookingService
             return Result<BookingDetailsDto>.Failure(exception.Code);
         }
 
+        // MIL-055: the price is looked up before the booking is saved and stored after it; a booking made
+        // without a price (no base rate, or the lookup failed) is created exactly as before.
+        var pricePerNight = await FindPricePerNightAsync(request.RoomId, period.Start, cancellationToken)
+            .ConfigureAwait(false);
+
         _bookingRepository.Add(booking);
 
-        return await SaveAndDescribeAsync(booking, cancellationToken).ConfigureAwait(false);
+        var created = await SaveAndDescribeAsync(booking, cancellationToken).ConfigureAwait(false);
+
+        if (created.IsSuccess && pricePerNight is not null)
+        {
+            await StorePricePerNightAsync(booking.Id, pricePerNight.Value, cancellationToken).ConfigureAwait(false);
+        }
+
+        return created;
+    }
+
+    /// <summary>
+    /// Finds the effective price of the size of the booked room on the arrival date (MIL-055).
+    /// </summary>
+    /// <param name="roomId">The booked room.</param>
+    /// <param name="arrival">The arrival date.</param>
+    /// <param name="cancellationToken">The token that cancels the work.</param>
+    /// <returns>The price per night, or <c>null</c> when the size has no base rate or the lookup failed.</returns>
+    /// <remarks>
+    /// Pricing never stops a booking when the lookup answers with a failed result or the room is not found: both are
+    /// treated as "no price". An exception thrown by the lookup (a failing store, say) is not caught here; it fails the
+    /// request before the booking is saved.
+    /// </remarks>
+    private async Task<decimal?> FindPricePerNightAsync(int roomId, DateOnly arrival, CancellationToken cancellationToken)
+    {
+        var room = await _roomRepository.GetByIdAsync(roomId, cancellationToken).ConfigureAwait(false);
+
+        if (room is null)
+        {
+            return null;
+        }
+
+        var price = await _prices
+            .GetEffectivePriceAsync(room.Size.ToString(), arrival, cancellationToken)
+            .ConfigureAwait(false);
+
+        return price.IsSuccess ? price.Value.Price : null;
+    }
+
+    /// <summary>
+    /// Stores the price per night of a booking that has just been saved, in the market details that the market
+    /// analysis reads (MIL-055).
+    /// </summary>
+    /// <param name="bookingId">The saved booking.</param>
+    /// <param name="pricePerNight">The price per night.</param>
+    /// <param name="cancellationToken">The token that cancels the work.</param>
+    /// <returns>A task that completes when the price is stored, or deliberately skipped.</returns>
+    /// <remarks>
+    /// The booking has its key only after its save, and the details need it, so the details are a save of their own right
+    /// after it. The booking is made and stays, so a failure here is not rethrown: the booking is then without a price, and a
+    /// warning with the booking id and the type and text of the exception is written to the log. The
+    /// guest counts are 0 because a booking holds none; the market analysis feed reads such a row as
+    /// "party unknown".
+    /// </remarks>
+    private async Task StorePricePerNightAsync(int bookingId, decimal pricePerNight, CancellationToken cancellationToken)
+    {
+        BookingMarketDetail detail;
+
+        try
+        {
+            detail = BookingMarketDetail.Create(
+                bookingId,
+                _clock.Today,
+                new BookingMarketValues(pricePerNight, 0, 0, 0, null, null, null, null, null, false, 0, 0, 0, 0));
+        }
+        catch (DomainException)
+        {
+            return;
+        }
+
+        _marketDetails.Add(detail);
+
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _marketDetails.Discard(detail);
+
+            // Only the id and the exception are named: no guest data and no token.
+            _warnings.Warn($"The price per night of booking {bookingId} could not be stored; the booking is kept without a price. {exception.GetType().Name}: {exception.Message}");
+        }
     }
 
     /// <summary>Confirms a booking (BR-02, BR-03, BR-05, BR-121).</summary>

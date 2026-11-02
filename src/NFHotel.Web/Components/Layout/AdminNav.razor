@@ -35,6 +35,12 @@
         <NavLink class="admin-nav-link" href="/admin/market-analysis">Market analysis</NavLink>
     </AuthorizeView>
 
+    <AuthorizeView Policy="@StaffPolicies.ManagePrices">
+        <NavLink class="admin-nav-link" href="/admin/pricing/suggestions">Price suggestions</NavLink>
+        <NavLink class="admin-nav-link" href="/admin/pricing/rates">Room rates</NavLink>
+        <NavLink class="admin-nav-link" href="/admin/pricing/settings">Pricing settings</NavLink>
+    </AuthorizeView>
+
     <AuthorizeView Policy="@StaffPolicies.StaffManage">
         <NavLink class="admin-nav-link" href="/admin/staff" Match="NavLinkMatch.All">Staff</NavLink>
         <NavLink class="admin-nav-link" href="/admin/staff/audit">Audit</NavLink>

@@ -4,6 +4,7 @@ using NFHotel.Web.Features.Admin.Dashboard;
 using NFHotel.Web.Features.Admin.Guests;
 using NFHotel.Web.Features.Admin.Login;
 using NFHotel.Web.Features.Admin.MarketAnalysis;
+using NFHotel.Web.Features.Admin.Pricing;
 using NFHotel.Web.Features.Admin.Rooms;
 using NFHotel.Web.Features.Admin.Staff;
 
@@ -52,6 +53,10 @@ public static class AdminFeatureRegistration
         services.AddScoped<BenchmarkModelsViewModel>();
 
         services.AddScoped<MarketAnalysisViewModel>();
+
+        services.AddScoped<RoomRatesViewModel>();
+        services.AddScoped<PricingSettingsViewModel>();
+        services.AddScoped<PriceSuggestionsViewModel>();
 
         services.AddScoped<LoginViewModel>();
         services.AddScoped<ChangePasswordViewModel>();

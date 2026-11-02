@@ -1,0 +1,107 @@
+@page "/admin/pricing/settings"
+@layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.ManagePrices)]
+@rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using NFHotel.Domain.ValueObjects
+@using NFHotel.Web.Common
+@using NFHotel.Web.Features.Admin.Pricing
+@inject PricingSettingsViewModel ViewModel
+
+@*
+    The pricing settings of the Manager (MIL-055). Only markup and binding. The API checks the role of the caller and every
+    rule again, and writes each change to the audit trail with the old and the new value.
+*@
+
+<PageTitle>Pricing settings — administration</PageTitle>
+
+<div class="stack-lg">
+    <PageHeader Title="Pricing settings" Subtitle="How much a price changes in a high or a low season." />
+
+    <ErrorAlert Errors="ViewModel.Errors" />
+
+    @if (ViewModel.SuccessMessage is { } success)
+    {
+        <AlertBox Kind="AlertKind.Ok" Message="@success" />
+    }
+
+    @if (!ViewModel.IsLoaded)
+    {
+        <LoadingSkeleton />
+    }
+    else
+    {
+        <section class="card card-pad stack" aria-labelledby="pricing-settings-title">
+            <h2 class="subtitle" id="pricing-settings-title">Settings</h2>
+            <p class="muted" id="pricing-settings-saved">@ViewModel.SavedText</p>
+            <p class="muted">
+                The surcharge and the discount are percentages of the room rate. A low season discount applies to the checked
+                room sizes only. Use a dot for the decimals, for example 12.5.
+            </p>
+
+            <div class="field-row">
+                <FormField Label="Surcharge in a high season (%)" For="setting-surcharge">
+                    <input id="setting-surcharge" class="field-input" inputmode="decimal" autocomplete="off"
+                           value="@ViewModel.InputOf(PricingSettingsViewModel.Fields.Surcharge)"
+                           @oninput="e => ViewModel.SetInput(PricingSettingsViewModel.Fields.Surcharge, e.Value?.ToString())" />
+                </FormField>
+                <FormField Label="Discount in a low season (%)" For="setting-discount">
+                    <input id="setting-discount" class="field-input" inputmode="decimal" autocomplete="off"
+                           value="@ViewModel.InputOf(PricingSettingsViewModel.Fields.Discount)"
+                           @oninput="e => ViewModel.SetInput(PricingSettingsViewModel.Fields.Discount, e.Value?.ToString())" />
+                </FormField>
+            </div>
+
+            <div class="field-row">
+                <FormField Label="High season from occupancy (%)" For="setting-high-threshold">
+                    <input id="setting-high-threshold" class="field-input" inputmode="decimal" autocomplete="off"
+                           value="@ViewModel.InputOf(PricingSettingsViewModel.Fields.HighThreshold)"
+                           @oninput="e => ViewModel.SetInput(PricingSettingsViewModel.Fields.HighThreshold, e.Value?.ToString())" />
+                </FormField>
+                <FormField Label="Low season up to occupancy (%)" For="setting-low-threshold">
+                    <input id="setting-low-threshold" class="field-input" inputmode="decimal" autocomplete="off"
+                           value="@ViewModel.InputOf(PricingSettingsViewModel.Fields.LowThreshold)"
+                           @oninput="e => ViewModel.SetInput(PricingSettingsViewModel.Fields.LowThreshold, e.Value?.ToString())" />
+                </FormField>
+            </div>
+
+            <div class="field-row">
+                <FormField Label="Largest change of a price (%)" For="setting-max-change">
+                    <input id="setting-max-change" class="field-input" inputmode="decimal" autocomplete="off"
+                           value="@ViewModel.InputOf(PricingSettingsViewModel.Fields.MaxChange)"
+                           @oninput="e => ViewModel.SetInput(PricingSettingsViewModel.Fields.MaxChange, e.Value?.ToString())" />
+                </FormField>
+                <FormField Label="Minimum nightly price" For="setting-minimum-price">
+                    <input id="setting-minimum-price" class="field-input" inputmode="decimal" autocomplete="off"
+                           value="@ViewModel.InputOf(PricingSettingsViewModel.Fields.MinimumPrice)"
+                           @oninput="e => ViewModel.SetInput(PricingSettingsViewModel.Fields.MinimumPrice, e.Value?.ToString())" />
+                </FormField>
+            </div>
+
+            <fieldset class="stack-sm">
+                <legend>Room sizes that get a low season discount</legend>
+                @foreach (var size in PricingSettingsViewModel.Sizes)
+                {
+                    var current = size;
+                    <label class="check">
+                        <input type="checkbox"
+                               id="@($"setting-size-{current.ToString().ToLowerInvariant()}")"
+                               checked="@ViewModel.IsDiscounted(current)"
+                               @onchange="e => ViewModel.SetDiscounted(current, e.Value is true)" />
+                        @current
+                    </label>
+                }
+            </fieldset>
+
+            <div class="row">
+                <button type="button" class="btn btn-primary" disabled="@ViewModel.IsBusy" @onclick="SaveAsync">Save</button>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
+
+    private Task SaveAsync() => ViewModel.SaveAsync(ComponentToken);
+}

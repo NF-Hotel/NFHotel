@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | DM-004 |
-| CrossReference | [UC-001], [UC-002], [UC-003], [UCD-001], [DICT-001], [UC-004], [DM-001], [DM-002], [DM-003], [DM-005] |
+| CrossReference | [UC-001], [UC-002], [UC-003], [UCD-001], [DICT-001], [UC-004], [DM-001], [DM-002], [DM-003], [DM-005], [UC-007] |
 | Language | en |
 | Domain | it |
 
@@ -14,6 +14,7 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version | [ec58105] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the concepts Staff member and Role from DM-005 (MIL-016) | [1593b34] |
 | 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Audit event and two attributes of Staff member (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Added Room rate, Price change, Price suggestion and Pricing settings, and four actions of the Audit event (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-264 Go-with-conditions | [3a17eee] |
 
 ---
 
@@ -64,6 +65,37 @@ class "Staff member" as StaffMember {
   security stamp
 }
 class Role
+class "Room rate" as RoomRate {
+  room size
+  nightly price
+}
+class "Price change" as PriceChange {
+  room size
+  percentage
+  first day
+  last day
+  state
+  approved at
+}
+class "Price suggestion" as PriceSuggestion {
+  room size
+  season
+  first day
+  last day
+  percentage
+  /old price
+  /new price
+  occupancy
+  threshold
+}
+class "Pricing settings" as PricingSettings {
+  surcharge
+  discount
+  high threshold
+  low threshold
+  largest change
+  lowest price
+}
 class "Audit event" as AuditEvent {
   time
   action
@@ -75,6 +107,8 @@ StaffMember "0..*" -- "1" Role : has >
 AuditEvent "0..*" -- "0..1" StaffMember : done by >
 AuditEvent "0..*" -- "0..1" StaffMember : concerns >
 Booking "0..*" -- "1" Room : reserves >
+PriceChange "0..*" -- "1" StaffMember : is approved by >
+PriceSuggestion "0..1" -- "0..1" PriceChange : becomes >
 @enduml
 ```
 
@@ -87,7 +121,11 @@ Booking "0..*" -- "1" Room : reserves >
 | Guest | A person who stays, or will stay, in the hotel and for whom a booking is made | first name, last name, email, phone number, country, passport number (optional) | UC-003 steps 1 to 6; glossary: Guest, Passport number |
 | Staff member | A person of the hotel who signs in to the back office with a user name and a password | user name (the same in any case), password (kept only as a salted hash), active, must change password (set for the first Manager and after a reset), security stamp (rises when the password changes or the account is disabled or enabled, so older sessions end) | UC-004 steps 3 and 4; UC-005; UC-006; glossary: Staff member, User name |
 | Role | What a staff member does in the hotel, and so which functions the member may use: Receptionist, Manager or Housekeeping | none | UC-004 steps 4 and 6; glossary: Role |
-| Audit event | A record that something happened to a staff account or at the sign-in: who did it, to whom, when, what and with what result; never a password | time, action (sign-in, password change, reset, create, disable, enable, lockout), outcome, remote address | UC-006 step 9; UC-005; glossary: Audit event |
+| Audit event | A record that something happened to a staff account or at the sign-in: who did it, to whom, when, what and with what result; never a password | time, action (sign-in, password change, reset, create, disable, enable, lockout, price change approved, price change reverted, pricing settings changed, room rate changed), outcome, remote address | UC-006 step 9; UC-005; UC-007 steps 4 and 7; glossary: Audit event |
+| Room rate | The nightly price of a room size that a Manager sets, before any price change | room size, nightly price | UC-007 precondition and step 5; glossary: Room rate |
+| Price change | A percentage added to or taken from the room rate of a room size from a first day to a last day, approved by a Manager and reverted, never deleted | room size, percentage, first day, last day, state (approved, reverted), approved at | UC-007 steps 4 and 7; glossary: Price change |
+| Price suggestion | A price change that the system proposes from the market analysis; it is not kept until a Manager approves it | room size, season, first day, last day, percentage, /old price, /new price, occupancy, threshold | UC-007 step 2; glossary: Price suggestion, Season |
+| Pricing settings | The values a Manager sets for the rule of the price suggestions | surcharge, discount, high threshold, low threshold, largest change, lowest price, room sizes that qualify for a discount | UC-007 step 2 and rules; glossary: Pricing settings |
 
 ## Association Table
 
@@ -98,6 +136,8 @@ Booking "0..*" -- "1" Room : reserves >
 | Staff member | has | Role | Staff member 0..*, Role 1 |
 | Audit event | is done by | Staff member | Audit event 0..*, Staff member 0..1 (none for an unknown user name) |
 | Audit event | concerns | Staff member | Audit event 0..*, Staff member 0..1 |
+| Price change | is approved by | Staff member | Price change 0..*, Staff member 1 |
+| Price suggestion | becomes | Price change | Price suggestion 0..1, Price change 0..1 (a suggestion is kept only as the price change it became) |
 
 ## Generalizations
 
@@ -114,8 +154,10 @@ None. No concept is a kind of another concept.
 [DM-002]: ./use-cases/uc-002/dm.md
 [DM-003]: ./use-cases/uc-003/dm.md
 [UC-004]: ./use-cases/uc-004/uc.md
+[UC-007]: ./use-cases/uc-007/uc.md
 [DM-005]: ./use-cases/uc-004/dm.md
 [RC-036]: ./sqa/reviews/rc-036-domain-model.md
 [ec58105]: https://github.com/NF-Hotel/NFHotel/commit/ec581054576af2286ced648fbf6c605d6eddb26e
 [1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
+[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118

@@ -24,6 +24,30 @@ public static class ApiRoutes
     /// <summary>The default of one purpose below <see cref="AiDefaults"/>.</summary>
     public const string AiDefaultByPurpose = "{purpose}";
 
+    /// <summary>The route prefix of the nightly base rates per room size (MIL-055).</summary>
+    public const string RoomRates = "api/room-rates";
+
+    /// <summary>The rate of one room size below <see cref="RoomRates"/>.</summary>
+    public const string RoomRateBySize = "{size}";
+
+    /// <summary>The route of the pricing settings of the Manager (MIL-055).</summary>
+    public const string PricingSettings = "api/pricing-settings";
+
+    /// <summary>The route prefix of the open price suggestions (MIL-055).</summary>
+    public const string PriceSuggestions = "api/price-suggestions";
+
+    /// <summary>The approval of a suggestion below <see cref="PriceSuggestions"/>.</summary>
+    public const string PriceSuggestionApprove = "approve";
+
+    /// <summary>The route prefix of the price changes (MIL-055).</summary>
+    public const string PriceChanges = "api/price-changes";
+
+    /// <summary>The revert of one price change below <see cref="PriceChanges"/>.</summary>
+    public const string PriceChangeRevert = "{id:int}/revert";
+
+    /// <summary>The effective prices of a day below <see cref="PriceChanges"/>.</summary>
+    public const string PriceChangesEffective = "effective";
+
     /// <summary>The route prefix of the benchmark results (ADR-0013).</summary>
     public const string Benchmark = "api/benchmark";
 
