@@ -17,7 +17,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 
 - **Stack Overflow Developer Survey 2025** ([technology section](https://survey.stackoverflow.co/2025/technology)). The share of all respondents who used a technology in the past year. It shows what most practitioners know, not what is best.
 - **Hacker News discussions** (news.ycombinator.com). The threads linked are the most discussed ones about each product. The summary is taken from their highest-ranked comments, and it gives the arguments on both sides; one comment is an opinion, a pattern across threads is a signal.
-- **Stack Exchange threads.** Stack Overflow closes most "X or Y" questions as opinion-based, so few comparisons exist there. The answers of the classic threads (for example NUnit or xUnit, cron or systemd timers, environment variables for secrets) are added to the entries as their research is finished (MIL-050 task 1).
+- **Stack Exchange threads.** Stack Overflow closes most "X or Y" questions as opinion-based, so few comparisons exist there. The answers of the classic threads (for example NUnit or xUnit, cron or systemd timers, environment variables for secrets) were read through the Stack Exchange API on 2026-11-02, and each entry summarises the highest-voted and the accepted answers in our own words (MIL-050 task 1).
 - **Reddit** could not be used: its pages refuse the research tools of this project, so no Reddit thread is cited or summarised here.
 - **The ADRs** of this repository, for our own reasons. Where an ADR lists options, the entry follows it and links it.
 
@@ -107,7 +107,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 - **Alternatives:** R; C# for the analysis too.
 - **For it:** the language of data and AI work: notebooks, pandas, model clients; the services started as notebooks.
 - **Against it:** a second language and runtime to patch; packaging is slower to make reproducible than .NET.
-- **What practitioners say:** Python is used by 57.9% of respondents in the 2025 survey. The reference thread for the choice against R is the Data Science Stack Exchange question "Python vs R for machine learning" ([Data Science Stack Exchange](https://datascience.stackexchange.com/questions/326)); its answers are summarised here when the Stack Exchange research is finished.
+- **What practitioners say:** Python is used by 57.9% of respondents in the 2025 survey. The reference thread for the choice against R is the Data Science Stack Exchange question "Python vs R for machine learning" ([Data Science Stack Exchange](https://datascience.stackexchange.com/questions/326)). Its top answer finds the two even for building models, and gives Python the edge in production because it is a general-purpose language that organisations already run, while R stays strongest in academia; the other answers add that R is better for exploration and charts, Python for data handling since pandas, and that the team's existing skills matter more than the language.
 - **Our reason:** not decided in an ADR: the notebooks were written in Python, and their images are built and frozen as described on [Containers and Images](Containers-and-Images) ([ADR-0500](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0500-freeze-market-analysis-image.md)).
 - **Choose the alternative when:** the analysis becomes part of the booking logic (move it into C#).
 
@@ -207,7 +207,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 - **Alternatives:** NUnit, MSTest.
 - **For it:** the default of modern .NET templates; a fresh test class instance per test, so tests do not share state by accident; parallel by default; used by the .NET team itself.
 - **Against it:** less built-in for parameterised and setup-heavy suites than NUnit (fixtures instead of `[SetUp]`); fewer assertion helpers.
-- **What practitioners say:** the long-standing Stack Overflow comparison "NUnit vs. MbUnit vs. MSTest vs. xUnit.net" (over 400 votes) is the reference thread for this choice ([Stack Overflow](https://stackoverflow.com/questions/261139)). Its answers are summarised here when the Stack Exchange research is finished.
+- **What practitioners say:** the long-standing Stack Overflow comparison "NUnit vs. MbUnit vs. MSTest vs. xUnit.net" (over 400 votes) is the reference thread for this choice ([Stack Overflow](https://stackoverflow.com/questions/261139)). The accepted answer votes for xUnit.net for its modern model (facts and theories instead of fixtures) and because its attributes can be extended; the next answers call NUnit the oldest and best supported by third-party tools, advise against MSTest because it is hard to run outside Visual Studio and is tied to its releases, and agree that moving between NUnit and xUnit is easy, so the team's preference can decide.
 - **Our reason:** not decided in an ADR; the convention of the `coding-conventions` skill for C#.
 - **Choose the alternative when:** the team knows NUnit and its fixtures.
 
@@ -267,7 +267,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 - **Alternatives:** Burp Suite (Community or Professional), Nuclei, Nikto.
 - **For it:** free and open source; a baseline mode made for CI; rules can be tuned per finding; results go to code scanning.
 - **Against it:** more false positives and a slower full scan than Burp Professional; a scanner cannot find logic flaws.
-- **What practitioners say:** in the Information Security Stack Exchange question "What are the differences between Burp and OWASP ZAP?", the comparison is free and automatable against the stronger manual tooling of Burp Professional ([Security Stack Exchange](https://security.stackexchange.com/questions/215553)); its answers are added with the Stack Exchange research.
+- **What practitioners say:** in the Information Security Stack Exchange question "What are the differences between Burp and OWASP ZAP?", the comparison is free and automatable against the stronger manual tooling of Burp Professional ([Security Stack Exchange](https://security.stackexchange.com/questions/215553)). The accepted answer, from the ZAP project lead, notes that ZAP is free and open source and Burp commercial, and that many testers chain the two; another answer finds little that Burp Community can do and ZAP cannot, and sees Burp Professional's value in its unattended scanner.
 - **Our reason:** not decided in an ADR; set up in MIL-027 and MIL-036.
 - **Choose the alternative when:** a manual penetration test is done (Burp Professional).
 
@@ -365,7 +365,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 - **Alternatives:** nginx's `stream` module, socat, publishing the PostgreSQL port directly.
 - **For it:** made for TCP proxying, with health checks and timeouts; a small Alpine image; keeps the database container off a published port.
 - **Against it:** one more product to know besides nginx.
-- **What practitioners say:** in the reverse-proxy debates HAProxy is the load balancer that "just works" and is rarely benchmarked ([HAProxy vs. Nginx for load balancing](https://news.ycombinator.com/item?id=15345846), [Caddy vs. Nginx benchmark](https://news.ycombinator.com/item?id=32865497)); the Server Fault question "What are the differences between HAProxy and Nginx in reverse proxy mode?" is the reference ([Server Fault](https://serverfault.com/questions/229945)).
+- **What practitioners say:** in the reverse-proxy debates HAProxy is the load balancer that "just works" and is rarely benchmarked ([HAProxy vs. Nginx for load balancing](https://news.ycombinator.com/item?id=15345846), [Caddy vs. Nginx benchmark](https://news.ycombinator.com/item?id=32865497)); the Server Fault question "What are the differences between HAProxy and Nginx in reverse proxy mode?" is the reference ([Server Fault](https://serverfault.com/questions/229945)). Its answers describe HAProxy as a dedicated load balancer with TCP proxying, finer health checks and failover, a detailed status page and exportable metrics, and nginx as a web server that also proxies, with better caching; several answerers, among them Stack Overflow's own team, run nginx in front of HAProxy for TLS and HAProxy for the balancing. NF Hotel splits the work the same way by strength: nginx for the web traffic, HAProxy for the TCP relay of the database.
 - **Our reason:** ADR-0034.
 - **Choose the alternative when:** only HTTP is proxied (nginx alone).
 
@@ -441,7 +441,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 - **Alternatives:** restic or Borg (deduplicating, encrypted repositories), rclone to object storage, scp.
 - **For it:** on every Linux system; `--ignore-existing` copies only what the target lacks; `rrsync` limits the key to one write-only folder, so a stolen VM cannot delete the copies.
 - **Against it:** no deduplication or snapshots of its own; the retention on the target is separate.
-- **What practitioners say:** restic and Borg are praised for deduplicated, encrypted, versioned backups that saved their users ([Restic](https://news.ycombinator.com/item?id=29209455), [BorgBackup](https://news.ycombinator.com/item?id=34152369)); a Server Fault question shows how to restrict an SSH key to rsync only ([Server Fault](https://serverfault.com/questions/965053)).
+- **What practitioners say:** restic and Borg are praised for deduplicated, encrypted, versioned backups that saved their users ([Restic](https://news.ycombinator.com/item?id=29209455), [BorgBackup](https://news.ycombinator.com/item?id=34152369)); a Server Fault question shows how to restrict an SSH key to rsync only ([Server Fault](https://serverfault.com/questions/965053)). Its top answer recommends exactly our setup: rrsync as a forced command on the key, with `-wo` so the client can only write, `restrict` and a `from=` address, while the other answer (a passphrase on the key) is voted down because it does not limit what the key can do.
 - **Our reason:** ADR-0008 and decision D7 of the DevSecOps assessment (DSA-001). The files are already compressed and encrypted, so deduplication would gain little.
 - **Choose the alternative when:** the backups grow large or go to cloud storage (restic).
 
@@ -451,7 +451,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 - **Alternatives:** cron, a scheduler container.
 - **For it:** a missed run runs at the next boot (`Persistent=true`); the output goes to the journal and from there to Loki; a run can be started by hand with `systemctl start`; dependencies and timeouts.
 - **Against it:** two files per job instead of one crontab line.
-- **What practitioners say:** the 2026 thread "Love systemd timers" lists the same points (runs after a missed schedule, journal logging, manual start for debugging), while cron's defenders value its single file and decades of reliability ([Love systemd timers](https://news.ycombinator.com/item?id=48367904), [Systemd.timer, an alternative to cron](https://news.ycombinator.com/item?id=33911910)); the Unix and Linux Stack Exchange question "Cron vs systemd timers" is the reference ([Unix & Linux](https://unix.stackexchange.com/questions/278564)).
+- **What practitioners say:** the 2026 thread "Love systemd timers" lists the same points (runs after a missed schedule, journal logging, manual start for debugging), while cron's defenders value its single file and decades of reliability ([Love systemd timers](https://news.ycombinator.com/item?id=48367904), [Systemd.timer, an alternative to cron](https://news.ycombinator.com/item?id=33911910)); the Unix and Linux Stack Exchange question "Cron vs systemd timers" is the reference ([Unix & Linux](https://unix.stackexchange.com/questions/278564)). Its top answers give the journal logging, the resource and sandbox settings of a service, dependencies and starting a job by hand as the gains, and two files plus no built-in mail on failure (cron's `MAILTO`) as the costs; one answer warns that the debate repeats the emotional systemd debate.
 - **Our reason:** ADR-0008 and ADR-0009 name the timers; the choice over cron is not decided in an ADR.
 - **Choose the alternative when:** the host has no systemd.
 
@@ -481,7 +481,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 - **Alternatives:** environment variables, HashiCorp Vault or OpenBao, Infisical, SOPS-encrypted files in git, Docker Swarm secrets.
 - **For it:** not in `docker inspect`, `/proc/1/environ` or crash dumps; nothing new to run, unseal or back up.
 - **Against it:** the secrets are still plain files on the VM; no central rotation or audit.
-- **What practitioners say:** "Environment variables considered harmful for your secrets" started the debate; its critics answer that files are not safer by default ([thread](https://news.ycombinator.com/item?id=8826024)). For Vault against SOPS, Vault's own creator says it is worth it for dynamic secrets and policies, but for a small team it is infrastructure to maintain ([SOPS is underrated](https://news.ycombinator.com/item?id=23031628)). The Information Security Stack Exchange question "Is it unsafe to use environmental variables for secret data?" is the reference ([Security Stack Exchange](https://security.stackexchange.com/questions/197784)).
+- **What practitioners say:** "Environment variables considered harmful for your secrets" started the debate; its critics answer that files are not safer by default ([thread](https://news.ycombinator.com/item?id=8826024)). For Vault against SOPS, Vault's own creator says it is worth it for dynamic secrets and policies, but for a small team it is infrastructure to maintain ([SOPS is underrated](https://news.ycombinator.com/item?id=23031628)). The Information Security Stack Exchange question "Is it unsafe to use environmental variables for secret data?" is the reference ([Security Stack Exchange](https://security.stackexchange.com/questions/197784)). The accepted answer says environment variables have real downsides and recommends a secrets tool that hands the secret to the application at run time, generally as a file; another answer accepts environment variables only if the program removes them from its environment at once.
 - **Our reason:** ADR-0024, option 2, over environment variables, a vault and Swarm secrets.
 - **Choose the alternative when:** secrets must rotate automatically or be leased (OpenBao).
 
@@ -644,7 +644,7 @@ The controls themselves are on [Security Controls](Security-Controls). Most secu
 - **Alternatives:** mounting `/var/run/docker.sock` into Alloy, cAdvisor with the socket, no container discovery.
 - **For it:** the Docker socket is root on the host; the proxy gives read-only access to two endpoints.
 - **Against it:** one more container.
-- **What practitioners say:** "Don't expose the docker socket, even to a container" is the classic warning ([thread](https://news.ycombinator.com/item?id=10269200)); the Information Security Stack Exchange question "Is adding docker group not a good idea?" makes the same point for users ([Security Stack Exchange](https://security.stackexchange.com/questions/178542)).
+- **What practitioners say:** "Don't expose the docker socket, even to a container" is the classic warning ([thread](https://news.ycombinator.com/item?id=10269200)); the Information Security Stack Exchange question "Is adding docker group not a good idea?" makes the same point for users ([Security Stack Exchange](https://security.stackexchange.com/questions/178542)). Its accepted answer points to Docker's own documentation: the group grants rights equal to root, so the risk is whoever, or whatever, is given access to the socket.
 - **Our reason:** MIL-023 hardening; not decided in an ADR.
 - **Choose the alternative when:** none for production.
 
