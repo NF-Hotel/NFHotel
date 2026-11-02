@@ -230,7 +230,7 @@ docker compose --env-file monitoring.env ps
 - The first command checks the settings, the secrets and the configuration, and starts nothing.
 - The second command gives each secret file to the container that reads it, then starts the stack. It returns when every service is up.
 
-**Result:** the first command ends with `configuration valid`, and `ps` lists five services (`alertmanager`, `blackbox`, `grafana`, `loki`, `prometheus`), all running.
+**Result:** the first command ends with `configuration valid`, and `ps` lists six services (`alertmanager`, `blackbox`, `grafana`, `loki`, `prometheus`, `scan-exporter`), all running. Without the optional GitHub token of [Security scans](#security-scans) the first command warns that code scanning is not read.
 
 **C6. Check that it works.**
 1. On your own computer, open `http://<LXC address>:3000` and sign in as `admin`.
@@ -304,6 +304,38 @@ The panels "Requests per second", "95 % of the requests within" and "Server erro
 - the health of each container over time;
 - the error lines in the logs.
 
+### Security scans
+
+The dashboard *Security scans* (MIL-053) shows what the security scans of the pipeline find: SAST (static application security testing: CodeQL and SonarQube Cloud read the code), DAST (dynamic application security testing: OWASP ZAP probes the running site), the image scans of Trivy and the supply chain checks of OpenSSF Scorecard. The `scan-exporter` service reads them every 15 minutes:
+
+| Panel | Source |
+| --- | --- |
+| Open critical and high findings, all open findings, open findings by tool and severity | The open alerts of GitHub code scanning |
+| SonarQube Cloud quality gate and measures | The public project `NF-Hotel_NFHotel` on sonarcloud.io (no token needed) |
+| Age of the latest analysis | The newest analysis of each tool and category in GitHub code scanning |
+| Latest run of each scan workflow on main | `ci.yaml`, `release.yaml`, `e2e-dast.yaml`, `running-image-scan.yaml`, `scorecard.yaml` |
+| Sources read | Whether each source was read at the latest try |
+
+The numbers are those of GitHub and sonarcloud.io; the findings themselves, and their fix or dismissal, stay there. The alerts are on [Alerts](Alerts#security-scans-prometheusrulesscansyml).
+
+**The GitHub token.** Code scanning needs a token, even on a public repository. Without it the dashboard shows SonarQube Cloud and the workflow runs, and `ScanSourceDown` says that `github_code_scanning` is not read. S01 makes the token, never in a chat or a file in git:
+
+1. On GitHub, *Settings, Developer settings, Fine-grained tokens, Generate new token*. Resource owner `NF-Hotel`, repository `NF-Hotel/NFHotel` only, expiry 90 days. Repository permissions, all *Read-only*: *Code scanning alerts*, *Actions*, *Metadata*.
+2. In the LXC, as root:
+
+   ```bash
+   cd /opt/nfhotel-monitoring/ops/deploy/monitoring
+   umask 077
+   read -rsp 'GitHub token: ' v && printf '%s' "$v" > secrets/github-scan-token; echo
+   unset v
+   chmod 600 secrets/github-scan-token
+   bash /opt/nfhotel-monitoring/ops/scripts/deploy-monitoring.sh --apply
+   ```
+
+3. **Result:** within 15 minutes the panel *Sources read* shows `github_code_scanning` UP.
+
+Before the token expires, make a new one and repeat step 2. To revoke it, delete it on GitHub; the exporter then reports the source down.
+
 ### Search the logs
 
 In Grafana, open *Explore* and choose the data source *Loki*. Some useful queries:
@@ -354,6 +386,7 @@ Each alert in Discord names what failed. Start with the first step below. Once t
 | `ApplicationErrors` | critical | More than 5 % of the answers are server errors | The log of the application in Grafana; the error usually names the API or the database |
 | `ApplicationExceptions` | warning | More than 5 unhandled exceptions in 10 minutes | `sum by (error_type) (increase(aspnetcore_diagnostics_exceptions_total[1h]))`, then the stack trace in the log |
 | `ApplicationMetricsMissing` | warning | No request metrics from the web application | `Telemetry__OtlpEndpoint` of the container, and `sudo docker logs nfhotel-alloy-alloy-1` |
+| `ScanFindingsHigh`, `ScanStale`, `ScanWorkflowFailed`, `SonarQualityGateFailed`, `ScanSourceDown` | warning | A security scan found something, stopped, or cannot be read | The table on [Alerts](Alerts#security-scans-prometheusrulesscansyml); the dashboard *Security scans* |
 | Healthchecks.io: down | — | The monitoring itself is silent | `pct status 102` on the node; then `docker compose ps` in the LXC |
 
 ## Troubleshooting

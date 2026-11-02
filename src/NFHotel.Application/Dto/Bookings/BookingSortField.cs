@@ -24,7 +24,7 @@ public enum BookingSortField
     /// <summary>Booked departure date.</summary>
     EndDate = 4,
 
-    /// <summary>Bookingens status.</summary>
+    /// <summary>The status of the booking.</summary>
     Status = 5,
 
     /// <summary>Number of nights (BR-117).</summary>

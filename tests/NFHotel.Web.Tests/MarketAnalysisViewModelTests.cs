@@ -337,7 +337,7 @@ public sealed class MarketAnalysisViewModelTests
         return new(sample.RunId, sample.StartedAt, sample.FinishedAt, sample.Provider, sample.Model, sample.Content!);
     }
 
-    private static MarketAnalysisViewModel Build(out IMarketAnalysisService service)
+    internal static MarketAnalysisViewModel Build(out IMarketAnalysisService service)
     {
         IMarketAnalysisService fake = Substitute.For<IMarketAnalysisService>();
         fake.GetLatestReportAsync(Arg.Any<CancellationToken>()).Returns(Result<MarketAnalysisReportDto>.Success(Report()));

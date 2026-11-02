@@ -13,7 +13,7 @@ namespace NFHotel.Application.UseCases.Bookings;
 /// <para>
 /// <see cref="ToActions(BookingStatus, DateOnly, DateTimeOffset?, DateTimeOffset?, DateOnly, bool)"/>
 /// is not mapping but rule evaluation, and it must therefore be readable and testable rather than
-/// genereret.
+/// generated.
 /// </para>
 /// </remarks>
 public static class BookingMapping
@@ -27,7 +27,7 @@ public static class BookingMapping
     /// <summary>
     /// Formats the displayed booking number, for example <c>FLZ-000123</c> (BR-109).
     /// </summary>
-    /// <param name="bookingId">Bookingens id.</param>
+    /// <param name="bookingId">The booking id.</param>
     /// <returns>Bookingnummeret.</returns>
     /// <remarks>
     /// Mirrors <see cref="Booking.BookingNumber"/>, which can be computed only on the entity.
@@ -40,13 +40,13 @@ public static class BookingMapping
     /// <summary>
     /// Computes which actions are legal on a booking right now (BR-22).
     /// </summary>
-    /// <param name="status">Bookingens status.</param>
+    /// <param name="status">The status of the booking.</param>
     /// <param name="startDate">Arrival date.</param>
     /// <param name="checkInTime">Actual check-in time, or <c>null</c>.</param>
     /// <param name="checkOutTime">Actual check-out time, or <c>null</c>.</param>
     /// <param name="today">Today's date in the hotel's time zone, from <c>IClock.Today</c>.</param>
     /// <param name="roomIsBookable">Whether the room of the booking can be let (BR-110); a guest is checked in only to such a room (MIL-013).</param>
-    /// <returns>Handlingerne.</returns>
+    /// <returns>The actions.</returns>
     /// <remarks>
     /// The predicates mirror <see cref="Booking.CanConfirm"/>, <see cref="Booking.CanCheckIn"/>,
     /// <see cref="Booking.CanCheckOut"/>, <see cref="Booking.CanCancel"/> and
@@ -78,11 +78,11 @@ public static class BookingMapping
     }
 
     /// <summary>
-    /// Beregner de lovlige handlinger for en booking-entitet (BR-22).
+    /// Computes the legal actions for a booking entity (BR-22).
     /// </summary>
     /// <param name="booking">The booking.</param>
     /// <param name="today">Today's date in the hotel's time zone.</param>
-    /// <returns>Handlingerne.</returns>
+    /// <returns>The actions.</returns>
     public static BookingActionsDto ToActions(this Booking booking, DateOnly today)
     {
         ArgumentNullException.ThrowIfNull(booking);

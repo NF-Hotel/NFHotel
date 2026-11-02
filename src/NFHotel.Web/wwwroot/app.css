@@ -72,7 +72,8 @@
 }
 
 html {
-    -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -1670,4 +1671,10 @@ h1:focus-visible {
     margin-top: var(--s3);
     color: var(--navy);
     font-weight: 600;
+}
+
+.toc {
+  margin: 0;
+  padding-left: 1.25rem;
+  columns: 2 16rem;
 }

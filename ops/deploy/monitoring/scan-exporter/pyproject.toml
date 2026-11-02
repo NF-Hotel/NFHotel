@@ -1,0 +1,24 @@
+# The scan exporter of the monitoring (MIL-053). It uses the standard library only, so it runs
+# in the pinned python image with the code mounted read-only; these tools are for the tests.
+[project]
+name = "scan-exporter"
+version = "1.0.0"
+requires-python = ">=3.13"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "UP", "S", "A", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# assert is how pytest checks; the tokens of the tests are stand-ins.
+"tests/**/*.py" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+strict = true
+python_version = "3.13"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

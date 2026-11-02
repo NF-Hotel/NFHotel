@@ -5,7 +5,7 @@
 #
 #   1. refuse unless monitoring.env names MONITORING_BIND as an address of this host
 #   2. refuse unless the three secret files exist, are not empty, and no group or other
-#      user can read them
+#      user can read them; the GitHub token of the scan exporter (MIL-053) is optional
 #   3. check the configuration with the tools of the pinned images: promtool check
 #      config, promtool test rules, amtool check-config, loki -verify-config
 #   4. give each secret file to the user its container runs as (0400), the folder 0711
@@ -56,6 +56,16 @@ done
   die "secrets/healthchecks-watchdog-url is not an https URL"
 (($(tr -d '\n' <"$dir/secrets/grafana-admin-password" | wc -c) >= 16)) ||
   die "secrets/grafana-admin-password must be at least 16 characters"
+# The GitHub token of the scan exporter is optional (MIL-053): without it, code scanning is not
+# read and ScanSourceDown says so. With --apply a missing file is made empty below.
+scan_token="$dir/secrets/github-scan-token"
+if [[ -s "$scan_token" ]]; then
+  ((8#$(stat -c %a "$scan_token") & 8#077)) && die "$scan_token must be readable by its owner only (chmod 600)"
+  [[ "$(head -c 11 "$scan_token")" == "github_pat_" ]] ||
+    die "secrets/github-scan-token is not a fine-grained GitHub token (github_pat_...)"
+else
+  echo "warning: secrets/github-scan-token is missing or empty; code scanning is not read (wiki page Monitoring)" >&2
+fi
 
 echo "==> checking the configuration with the pinned tools"
 # The delimiter is | because the image names hold a slash.
@@ -84,20 +94,25 @@ echo "==> giving each secret to the user of its container"
 chown 65534:65534 "$dir/secrets/discord-webhook-url" "$dir/secrets/healthchecks-watchdog-url" ||
   die "cannot change the owner of the Alertmanager secrets"
 chown 472:472 "$dir/secrets/grafana-admin-password" || die "cannot change the owner of the Grafana password"
+# The scan exporter runs as 10001; an empty token file keeps compose from making a folder.
+[[ -e "$scan_token" ]] || install -m 0600 /dev/null "$scan_token" || die "cannot make $scan_token"
+chown 10001:10001 "$scan_token" || die "cannot change the owner of the scan exporter token"
 chmod 0400 "$dir/secrets/discord-webhook-url" "$dir/secrets/healthchecks-watchdog-url" \
-  "$dir/secrets/grafana-admin-password" || die "cannot set the mode of the secrets"
+  "$dir/secrets/grafana-admin-password" "$scan_token" || die "cannot set the mode of the secrets"
 chmod 0711 "$dir/secrets" || die "cannot set the mode of $dir/secrets"
 
 # The configuration files are bind mounts, so compose does not see a change in them, and a
 # running Prometheus kept its old rules (the alarm drill of 2026-10-24). A hash of each folder
 # goes into its service's environment: compose then recreates exactly the changed services.
 hash_of() { (cd "$dir" && find "$1" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16); }
-export PROMETHEUS_CONFIG_HASH ALERTMANAGER_CONFIG_HASH BLACKBOX_CONFIG_HASH LOKI_CONFIG_HASH GRAFANA_CONFIG_HASH
+export PROMETHEUS_CONFIG_HASH ALERTMANAGER_CONFIG_HASH BLACKBOX_CONFIG_HASH LOKI_CONFIG_HASH GRAFANA_CONFIG_HASH \
+  SCAN_EXPORTER_CONFIG_HASH
 PROMETHEUS_CONFIG_HASH="$(hash_of prometheus)" || die "cannot hash prometheus/"
 ALERTMANAGER_CONFIG_HASH="$(hash_of alertmanager)" || die "cannot hash alertmanager/"
 BLACKBOX_CONFIG_HASH="$(hash_of blackbox)" || die "cannot hash blackbox/"
 LOKI_CONFIG_HASH="$(hash_of loki)" || die "cannot hash loki/"
 GRAFANA_CONFIG_HASH="$(hash_of grafana)" || die "cannot hash grafana/"
+SCAN_EXPORTER_CONFIG_HASH="$(hash_of scan-exporter)" || die "cannot hash scan-exporter/"
 
 echo "==> starting the monitoring on $bind"
 (cd "$dir" && docker compose --env-file monitoring.env up -d --remove-orphans --wait --wait-timeout 180) ||

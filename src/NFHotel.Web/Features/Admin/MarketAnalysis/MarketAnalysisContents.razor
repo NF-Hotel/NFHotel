@@ -1,0 +1,31 @@
+@using NFHotel.Web.Features.Admin.MarketAnalysis
+
+@*
+    The contents of the market analysis report (MIL-026): a link to the key figures and to each analysis.
+    A link carries the page path because the base href of the app would send a bare fragment to the start page.
+*@
+<nav class="card card-pad" aria-labelledby="contents-title">
+    <h2 class="subtitle" id="contents-title">Contents</h2>
+    <ol class="toc">
+        @if (HasFigures)
+        {
+            <li><a href="@($"{PagePath}#figures-title")">Key figures</a></li>
+        }
+        @foreach (MarketAnalysisSectionView entry in Sections)
+        {
+            <li><a href="@($"{PagePath}#analysis-{entry.Section.Id}")">@entry.Section.Title</a></li>
+        }
+    </ol>
+</nav>
+
+@code {
+    private const string PagePath = "/admin/market-analysis";
+
+    /// <summary>Whether the report has key figures to link to.</summary>
+    [Parameter]
+    public bool HasFigures { get; set; }
+
+    /// <summary>The analyses of the report, in the order of the page.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<MarketAnalysisSectionView> Sections { get; set; } = [];
+}

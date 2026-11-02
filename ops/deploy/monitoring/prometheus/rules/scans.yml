@@ -1,0 +1,68 @@
+# Alerts on the results of the security scans of the pipeline (MIL-053). The scan exporter
+# reads GitHub code scanning, the scan workflows and SonarQube Cloud every 15 minutes, so each
+# rule waits longer than one read before it fires.
+groups:
+  - name: nfhotel-scans
+    rules:
+      - alert: ScanFindingsHigh
+        expr: >-
+          sum by (tool) (nfhotel_code_scanning_open_alerts{severity=~"critical|high|error"}) > 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} open critical or high findings of {{ $labels.tool }}"
+          description: >-
+            GitHub code scanning has open findings of high severity. Open Security, Code scanning
+            of NF-Hotel/NFHotel, fix or dismiss each with a reason (wiki page Alerts).
+
+      - alert: ScanStale
+        expr: >-
+          time() - nfhotel_code_scanning_last_analysis_timestamp_seconds{
+          tool=~"CodeQL|OWASP ZAP|Scorecard"} > 8 * 86400
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.tool }} ({{ $labels.category }}) has not scanned for 8 days"
+          description: >-
+            These scans run at least weekly. Check the latest run of its workflow in GitHub
+            Actions and whether the schedule is disabled.
+
+      - alert: ScanWorkflowFailed
+        expr: >-
+          nfhotel_scan_workflow_last_run_info{conclusion=~"failure|timed_out|startup_failure"} == 1
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: >-
+            The latest run of {{ $labels.workflow }} on main ended with {{ $labels.conclusion }}
+          description: >-
+            A scan that fails gives no result, so its findings are unknown. Open the run in GitHub
+            Actions and fix the cause or run it again.
+
+      - alert: SonarQualityGateFailed
+        expr: nfhotel_sonar_quality_gate_passed == 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "The SonarQube Cloud quality gate of NF Hotel fails"
+          description: >-
+            The new code of main does not meet the quality gate. Open the project on sonarcloud.io
+            to see which condition fails.
+
+      - alert: ScanSourceDown
+        expr: nfhotel_scan_source_up == 0 or absent(up{job="scans"} == 1)
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: >-
+            The scan exporter cannot read
+            {{ with $labels.source }}{{ . }}{{ else }}any source{{ end }}
+          description: >-
+            The panels of the dashboard Security scans are stale. Run
+            `docker compose logs scan-exporter` in the monitoring LXC; a missing or expired token
+            in secrets/github-scan-token stops github_code_scanning (wiki page Monitoring).

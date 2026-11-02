@@ -58,7 +58,26 @@ your working tree to the VM and rebuild only what you name, in about 30 seconds.
 | `dev-up.sh --destroy` | remove the Proxmox container with the VM and everything in it, including the database |
 
 Settings through the environment: `DEV_SITE_PORT` (default 8443), `DEV_PVE_PORT` (default 8006) and `DEV_MODELS` (the
-Ollama models to pull, default `llama3.2:3b phi3.5`; an empty value pulls none).
+Ollama models to pull, default `llama3.2:3b phi3.5`; an empty value pulls none) and `DEV_GPU_OLLAMA` (`off` keeps the
+Ollama of the VM even when your machine has an NVIDIA GPU).
+
+## Use the GPU of your machine
+
+The VM cannot take your GPU: Proxmox VE runs in a container here, and the VM is nested in it (on Windows the GPU is shared
+with containers as a paravirtual device, which a VM cannot use). To run the AI models on an NVIDIA GPU, run Ollama on your
+own machine. `dev-up.sh` does the rest when it finds an NVIDIA GPU (`nvidia-smi`) and an Ollama that answers on
+`http://localhost:11434`:
+
+1. It checks that the VM reaches your Ollama through the address of `host.docker.internal`.
+2. It pulls the `DEV_MODELS` into your Ollama.
+3. It writes that address as `OLLAMA_BASE_URL` in `market-analysis.env` and as `NFBENCH_OLLAMA_URL` in `benchmark.env`, and
+   redeploys the two services.
+
+Install Ollama from ollama.com and start it (on Windows it starts with the tray program). Set `DEV_GPU_OLLAMA=off` to keep
+the Ollama of the VM, which runs on the CPU; the next run writes `http://ollama:11434` back, but only over a value that
+the script wrote itself. The models are then in two places, your Ollama and the VM, and the VM's copy is the one the
+default-model check reads. For a real Proxmox VE host, where a GPU can be passed on to the VM, see
+[GPU Passthrough](GPU-Passthrough).
 
 ## What it does, step by step
 

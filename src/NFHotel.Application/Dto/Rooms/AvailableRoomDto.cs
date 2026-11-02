@@ -10,9 +10,9 @@ namespace NFHotel.Application.Dto.Rooms;
 /// could only have one value. The type lives in <c>Rooms</c> and not in <c>Bookings</c>, because
 /// it is a room — even though it is the booking use case that asks for it.
 /// </remarks>
-/// <param name="RoomId">Rummets id.</param>
+/// <param name="RoomId">The room id.</param>
 /// <param name="RoomNumber">Room number.</param>
-/// <param name="Floor">Etage.</param>
+/// <param name="Floor">The floor.</param>
 /// <param name="Size">Room type.</param>
 /// <param name="Capacity">The number of people the room can hold.</param>
 public sealed record AvailableRoomDto(

@@ -120,6 +120,8 @@ jobs:
           persist-credentials: false
       - name: Check Prometheus, Alertmanager, Loki, blackbox, Alloy and the dashboards
         run: bash ops/tests/check-monitoring.sh
+      - name: Lint, type-check and unit-test the scan exporter (MIL-053)
+        run: bash ops/tests/test-scan-exporter.sh
       # Root makes the secret files 0600, as the wiki page says, and deploy-monitoring.sh must
       # give each one to the user of its container; only the runner's own containers change.
       - name: Start the stack as the wiki page says, and check it

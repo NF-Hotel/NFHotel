@@ -8,6 +8,12 @@ are secrets. The files live in `ops/` and `ops/deploy/<service>/`.
 - Each file is made by copying its `*.env.example` to the name without `.example`. The example is in git, the copy is
   not: `ops/.gitignore` ignores `*.env`, so a secret never reaches a commit.
 - Values are plain text. Do not quote them.
+- **Production and development are separate.** An `*.env.example` is the production template: it holds no development
+  value (`ASPNETCORE_ENVIRONMENT=Production`, a placeholder site address in `CORS_ALLOWED_ORIGINS`, no development
+  proxy route). The development values are in `<name>.env.dev` next to it (`nfhotel-api.env.dev`, `nfhotel-web.env.dev`,
+  `market-analysis.env.dev`, `nginx.env.dev`). Only `scripts/dev-up.sh` reads them, and only when it makes a file; a
+  production deploy never does. On the production host you write each `*.env` by hand from the example and set the
+  values marked there, for example `API_TOKEN` and the site address of `market-analysis.env`.
 - `scripts/dev-up.sh` makes a missing file from its example, with fresh random secrets. **A file that exists is never
   changed.** So when an example changes (a new key, a new path), your copy keeps the old value. After you update the
   repository, compare them:

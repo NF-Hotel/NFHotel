@@ -14,7 +14,7 @@ namespace NFHotel.Infrastructure.Persistence.Configurations;
 /// <para>
 /// EF cannot fully model the exclusion constraint itself and the SQL of the generated column;
 /// the definition is in <see cref="BookingOverlapConstraint"/> and is written by
-/// migrationen.
+/// the migration.
 /// </para>
 /// </remarks>
 public sealed class BookingConfiguration : EntityConfiguration<Booking, int>

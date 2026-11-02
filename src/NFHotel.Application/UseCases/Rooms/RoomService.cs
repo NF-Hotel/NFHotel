@@ -48,8 +48,8 @@ public sealed class RoomService : IRoomService
     // --------------------------------------------------------
 
     /// <summary>Fetches one room (BR-115).</summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room, or <see cref="ErrorCodes.Room.NotFound"/>.</returns>
     public async Task<Result<RoomDetailsDto>> GetByIdAsync(
         int roomId,
@@ -65,7 +65,7 @@ public sealed class RoomService : IRoomService
     }
 
     /// <summary>Fetches all rooms.</summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>All rooms as list rows.</returns>
     public async Task<Result<IReadOnlyList<RoomListItemDto>>> GetAllAsync(
         CancellationToken cancellationToken = default)
@@ -77,7 +77,7 @@ public sealed class RoomService : IRoomService
 
     /// <summary>Searches rooms with a filter (BR-74, BR-76).</summary>
     /// <param name="filter">The filter. An empty filter means all rooms.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The matching rooms.</returns>
     public async Task<Result<IReadOnlyList<RoomListItemDto>>> SearchAsync(
         RoomFilter filter,
@@ -91,7 +91,7 @@ public sealed class RoomService : IRoomService
     }
 
     /// <summary>Fetches the options of the filter (BR-75, BR-126).</summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>Floors from data; the three other lists from enums.</returns>
     /// <remarks>
     /// Only floors can vary with data. That size, status and cleaning state come
@@ -118,8 +118,8 @@ public sealed class RoomService : IRoomService
     /// <summary>
     /// Creates a room (BR-81, BR-84, BR-97, BR-98, BR-99, BR-100, BR-113, BR-N-01).
     /// </summary>
-    /// <param name="request">Rummets stamdata.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="request">The master data of the room.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The created room, or all validation errors at once.</returns>
     /// <remarks>
     /// BR-84 (the form ignored the validation) cannot be repeated: the room cannot be
@@ -167,7 +167,7 @@ public sealed class RoomService : IRoomService
     /// Changes the master data of a room (BR-82, BR-84, BR-97 to BR-100, BR-113, BR-N-01).
     /// </summary>
     /// <param name="request">The new master data. Does not carry status (A-08).</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The updated room, or all validation errors at once.</returns>
     public async Task<Result<RoomDetailsDto>> UpdateAsync(
         UpdateRoomRequest request,
@@ -216,8 +216,8 @@ public sealed class RoomService : IRoomService
     /// <summary>
     /// Deletes a room (BR-78, BR-112).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>Success, or <see cref="ErrorCodes.Room.HasBookings"/>.</returns>
     /// <remarks>
     /// The guard is explicit and not a <c>catch</c> on a foreign key error. The foreign key
@@ -260,8 +260,8 @@ public sealed class RoomService : IRoomService
     // --------------------------------------------------------
 
     /// <summary>Takes the room out of service (BR-110, BR-126). Idempotent (A-08).</summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room after the transition.</returns>
     public Task<Result<RoomDetailsDto>> TakeOutOfServiceAsync(
         int roomId,
@@ -269,8 +269,8 @@ public sealed class RoomService : IRoomService
         TransitionAsync(roomId, static room => room.TakeOutOfService(), cancellationToken);
 
     /// <summary>Blocks the room temporarily (BR-110, BR-126). Idempotent (A-08).</summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room after the transition.</returns>
     public Task<Result<RoomDetailsDto>> SendToMaintenanceAsync(
         int roomId,
@@ -278,8 +278,8 @@ public sealed class RoomService : IRoomService
         TransitionAsync(roomId, static room => room.SendToMaintenance(), cancellationToken);
 
     /// <summary>Makes the room bookable again (BR-110, BR-126). Does not touch the cleaning state (B-04).</summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room after the transition.</returns>
     public Task<Result<RoomDetailsDto>> ReturnToServiceAsync(
         int roomId,
@@ -291,8 +291,8 @@ public sealed class RoomService : IRoomService
     // --------------------------------------------------------
 
     /// <summary>Marks daily cleaning as required (BR-N-06).</summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> MarkDailyCleaningDueAsync(
         int roomId,
@@ -300,8 +300,8 @@ public sealed class RoomService : IRoomService
         TransitionAsync(roomId, static room => room.MarkDailyCleaningDue(), cancellationToken);
 
     /// <summary>Marks departure cleaning as required after departure (BR-N-06).</summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> MarkDepartureCleaningDueAsync(
         int roomId,
@@ -309,8 +309,8 @@ public sealed class RoomService : IRoomService
         TransitionAsync(roomId, static room => room.MarkDepartureCleaningDue(), cancellationToken);
 
     /// <summary>The cleaning staff acknowledge and start work (BR-N-06).</summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> StartCleaningAsync(
         int roomId,
@@ -318,8 +318,8 @@ public sealed class RoomService : IRoomService
         TransitionAsync(roomId, static room => room.StartCleaning(), cancellationToken);
 
     /// <summary>The cleaning is finished (BR-N-06).</summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> CompleteCleaningAsync(
         int roomId,
@@ -327,8 +327,8 @@ public sealed class RoomService : IRoomService
         TransitionAsync(roomId, static room => room.CompleteCleaning(), cancellationToken);
 
     /// <summary>Reports the need for a service technician (BR-N-06). Does not block the room (B-04).</summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> ReportServiceNeededAsync(
         int roomId,
@@ -336,8 +336,8 @@ public sealed class RoomService : IRoomService
         TransitionAsync(roomId, static room => room.ReportServiceNeeded(), cancellationToken);
 
     /// <summary>The service technician acknowledges and starts work (BR-N-06).</summary>
-    /// <param name="roomId">Rummets id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="roomId">The room id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> StartServiceAsync(
         int roomId,
@@ -345,9 +345,9 @@ public sealed class RoomService : IRoomService
         TransitionAsync(roomId, static room => room.StartService(), cancellationToken);
 
     /// <summary>The service is finished (BR-N-06).</summary>
-    /// <param name="roomId">Rummets id.</param>
+    /// <param name="roomId">The room id.</param>
     /// <param name="requiresCleaning">True if the work left the room dirty.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room, or an error code if the transition is illegal.</returns>
     public Task<Result<RoomDetailsDto>> CompleteServiceAsync(
         int roomId,
@@ -362,12 +362,12 @@ public sealed class RoomService : IRoomService
     /// <summary>
     /// Runs one domain transition on a room and saves.
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
+    /// <param name="roomId">The room id.</param>
     /// <param name="transition">
     /// The transition — always exactly one method call on <see cref="Room"/>. The service never decides
     /// itself whether the transition is legal; the entity does (A-07).
     /// </param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room, or the error code of the domain if the transition was rejected.</returns>
     private async Task<Result<RoomDetailsDto>> TransitionAsync(
         int roomId,
@@ -403,7 +403,7 @@ public sealed class RoomService : IRoomService
     /// Saves and builds the answer. Collects the translation of infrastructure errors in one place.
     /// </summary>
     /// <param name="room">The room that has just been changed.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the room, or the error code of the constraint that kicked in.</returns>
     private async Task<Result<RoomDetailsDto>> SaveAndDescribeAsync(
         Room room,

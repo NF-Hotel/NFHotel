@@ -51,7 +51,7 @@ public sealed class GuestService : IGuestService
 
     /// <summary>Fetches one guest (BR-35, BR-115).</summary>
     /// <param name="guestId">The id of the guest.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The guest details, or an error if the guest is not found
     /// or the staff member lacks the required permissions.
@@ -87,7 +87,7 @@ public sealed class GuestService : IGuestService
 
     /// <summary>Searches guests (BR-68, BR-69, BR-70, BR-116, BR-N-05).</summary>
     /// <param name="searchText">Free text. Empty or only whitespace gives all guests (BR-70).</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The matching guests, sorted on "first name last name" in lowercase (BR-69).</returns>
     /// <remarks>
     /// The tokenisation is the <i>rule</i> (BR-68) and therefore belongs here; the matching is data access
@@ -122,7 +122,7 @@ public sealed class GuestService : IGuestService
 
     /// <summary>Creates a guest (BR-52 to BR-57, BR-60, BR-91 to BR-96).</summary>
     /// <param name="request">The fields of the guest.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The created guest, validation errors, or Forbidden if the staff member
     /// lacks the required permissions.
@@ -175,7 +175,7 @@ public sealed class GuestService : IGuestService
 
     /// <summary>Changes a guest (BR-62, BR-66, BR-72, BR-91 to BR-96).</summary>
     /// <param name="request">The new field values plus the id of the guest.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The updated guest, validation errors, NotFound if the guest does not exist,
     /// or Forbidden if the staff member lacks the required permissions.
@@ -237,7 +237,7 @@ public sealed class GuestService : IGuestService
 
     /// <summary>Deletes a guest (BR-N-02, follows from D-05).</summary>
     /// <param name="guestId">The id of the guest.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// Success, NotFound if the guest does not exist, HasBookings if the guest
     /// has bookings, ConcurrencyConflict, or Forbidden if the staff member
@@ -320,7 +320,7 @@ public sealed class GuestService : IGuestService
     /// attributes of <see cref="NFHotel.Domain.Entities.Guest"/> (ADR-0002). One call, one place — so
     /// <see cref="CreateAsync"/>, <see cref="UpdateAsync"/> and <see cref="ValidateFields"/> cannot validate differently.
     /// </summary>
-    /// <param name="fields">Felterne.</param>
+    /// <param name="fields">The fields.</param>
     /// <returns>Error codes in field order. An empty list means valid.</returns>
     internal static IReadOnlyList<string> ValidateInternal(GuestFields fields)
     {
@@ -362,7 +362,7 @@ public sealed class GuestService : IGuestService
     /// Saves and builds the answer. Collects the translation of infrastructure errors in one place.
     /// </summary>
     /// <param name="guest">The guest that has just been changed.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the guest, or an error code.</returns>
     private async Task<Result<GuestDetailsDto>> SaveAndDescribeAsync(
         Guest guest,

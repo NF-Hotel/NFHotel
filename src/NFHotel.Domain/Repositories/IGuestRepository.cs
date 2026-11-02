@@ -17,7 +17,7 @@ public interface IGuestRepository : IRepository<Guest, int>
     /// Decides whether the guest exists (BR-114).
     /// </summary>
     /// <param name="guestId">The id of the guest.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True if the guest exists. Does not fetch the whole graph.</returns>
     Task<bool> ExistsAsync(int guestId, CancellationToken cancellationToken = default);
 
@@ -25,7 +25,7 @@ public interface IGuestRepository : IRepository<Guest, int>
     /// Decides whether there are bookings for the guest.
     /// </summary>
     /// <param name="guestId">The id of the guest.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True if at least one booking points to the guest.</returns>
     /// <remarks>Guard for deletion (BR-N-02) and a trail for D-05's personal data deletion.</remarks>
     Task<bool> HasAnyBookingsAsync(int guestId, CancellationToken cancellationToken = default);

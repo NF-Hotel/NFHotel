@@ -116,7 +116,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     /// Decides whether the runner should answer with an error code instead of letting the exception propagate.
     /// </summary>
     /// <param name="exception">The exception that was thrown.</param>
-    /// <param name="cancellationToken">Kaldets annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token of the call.</param>
     /// <returns>True if the exception should become <see cref="WebErrorCodes.Unexpected"/>.</returns>
     /// <remarks>
     /// A cancellation is not an error — it means the user navigated away or closed

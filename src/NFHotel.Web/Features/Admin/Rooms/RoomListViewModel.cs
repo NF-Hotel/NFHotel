@@ -137,7 +137,7 @@ public sealed class RoomListViewModel
     /// Fetches filter options and the first list. Called from <c>OnInitializedAsync</c>.
     /// </summary>
     /// <param name="canSeePrices">True when the user holds the permission to manage prices; only then are the prices asked for.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task InitializeAsync(bool canSeePrices, CancellationToken cancellationToken = default)
     {
         var optionsLoaded = await LoadFilterOptionsAsync(cancellationToken).ConfigureAwait(false);
@@ -162,7 +162,7 @@ public sealed class RoomListViewModel
     /// <summary>
     /// Fetches the rooms that match the current filter.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SearchAsync(CancellationToken cancellationToken = default)
     {
         var filter = new RoomFilter(FilterFloor, FilterSize, FilterStatus, FilterHousekeepingStatus);
@@ -198,7 +198,7 @@ public sealed class RoomListViewModel
     /// <summary>
     /// Resets all filter fields and fetches the list again.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public Task ClearFilterAsync(CancellationToken cancellationToken = default)
     {
         FilterFloor = null;
@@ -237,7 +237,7 @@ public sealed class RoomListViewModel
     /// Performs one of the transitions of the room on the selected room and fetches the list again.
     /// </summary>
     /// <param name="action">The transition to perform.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task ExecuteAsync(RoomAction action, CancellationToken cancellationToken = default)
     {
         var room = SelectedRoom;
@@ -293,7 +293,7 @@ public sealed class RoomListViewModel
     /// <summary>
     /// Deletes the room the user has confirmed (BR-78, BR-112).
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <remarks>
     /// The service rejects rooms with bookings; the screen tries and shows the answer.
     /// </remarks>
@@ -351,7 +351,7 @@ public sealed class RoomListViewModel
     /// <summary>
     /// Fetches the options of the filter.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True if the options were fetched.</returns>
     private async Task<bool> LoadFilterOptionsAsync(CancellationToken cancellationToken)
     {

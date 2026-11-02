@@ -3,7 +3,7 @@ using NFHotel.Application.UseCases.Staff;
 namespace NFHotel.Application.Tests.Security;
 
 /// <summary>
-/// Tester adgangsrettighederne for systemets roller.
+/// Tests the access rights of the roles of the system.
 /// </summary>
 public class RolePermissionsTests
 {

@@ -22,7 +22,7 @@ public interface IUnitOfWork
     /// <summary>
     /// Persists all pending changes in one transaction.
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The number of affected rows.</returns>
     /// <exception cref="BookingOverlapConflictException">
     /// Thrown by Infrastructure when the database exclusion constraint rejects a

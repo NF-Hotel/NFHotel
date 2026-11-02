@@ -66,9 +66,9 @@ public static class RoomMapping
     /// <summary>
     /// Computes which transitions are legal on a room right now (A-07).
     /// </summary>
-    /// <param name="status">Rummets bookbarhed.</param>
+    /// <param name="status">Whether the room can be booked (its room status).</param>
     /// <param name="housekeepingStatus">The cleaning and service state of the room.</param>
-    /// <returns>Handlingerne.</returns>
+    /// <returns>The actions.</returns>
     /// <remarks>
     /// The predicates mirror <see cref="Room.CanTakeOutOfService"/> and the other
     /// <c>Room.Can*</c> properties, which the transition methods themselves use as a guard. They cannot be
@@ -106,7 +106,7 @@ public static class RoomMapping
     /// Computes the legal transitions for a room entity (A-07).
     /// </summary>
     /// <param name="room">The room.</param>
-    /// <returns>Handlingerne.</returns>
+    /// <returns>The actions.</returns>
     public static RoomActionsDto ToActions(this Room room)
     {
         ArgumentNullException.ThrowIfNull(room);

@@ -1,7 +1,7 @@
 namespace NFHotel.External.Config;
 
 /// <summary>
-/// Indstillinger for hotellets tidszone (A-05).
+/// Settings of the time zone of the hotel (A-05).
 /// </summary>
 /// <remarks>
 /// "Today" in BR-06, BR-44 and BR-104 is the hotel's calendar date — not the server's and not

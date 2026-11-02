@@ -15,8 +15,8 @@ public interface IBookingQueries
     /// <summary>
     /// Fetches the read model of one booking with room and guest.
     /// </summary>
-    /// <param name="bookingId">Bookingens id.</param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="bookingId">The booking id.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The read model, or <c>null</c> if the booking does not exist (BR-115).</returns>
     Task<BookingReadModel?> GetReadModelAsync(int bookingId, CancellationToken cancellationToken = default);
 
@@ -33,7 +33,7 @@ public interface IBookingQueries
     /// Free text on guest name or room number, or <c>null</c> for all. Filtered in
     /// the database, not in memory (BR-111).
     /// </param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The bookings whose effective period touches the window.</returns>
     Task<IReadOnlyList<BookingReadModel>> GetOverviewAsync(
         DateOnly periodStart,
@@ -50,7 +50,7 @@ public interface IBookingQueries
     /// <param name="blockingStatuses">
     /// The statuses that block a room. Comes from <see cref="NFHotel.Domain.ValueObjects.BookingStatusExtensions.BlocksRoom"/>.
     /// </param>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>Coarsely filtered occupations. The final overlap decision is made by the domain.</returns>
     /// <remarks>
     /// Returns projections and not entities, because the call is used only as a negation in

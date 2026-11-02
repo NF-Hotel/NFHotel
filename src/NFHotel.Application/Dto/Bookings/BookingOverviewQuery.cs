@@ -11,7 +11,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// <param name="PeriodEnd">Last date of the window, exclusive.</param>
 /// <param name="SearchText">Free text on guest name or room number (BR-23, BR-25). <c>null</c> for all.</param>
 /// <param name="SortBy">The field to sort on (BR-32).</param>
-/// <param name="Direction">Sorteringsretning.</param>
+/// <param name="Direction">The sort direction.</param>
 /// <param name="IncludeCancelled">Whether cancelled bookings are included (the soft delete of BR-13).</param>
 public sealed record BookingOverviewQuery(
     DateOnly PeriodStart,

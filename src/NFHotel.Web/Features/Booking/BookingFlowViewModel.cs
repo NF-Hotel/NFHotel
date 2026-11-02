@@ -71,7 +71,7 @@ public sealed class BookingFlowViewModel
     }
 
     // ------------------------------------------------------------------
-    // TILSTAND
+    // STATE
     // ------------------------------------------------------------------
 
     /// <summary>The step shown right now.</summary>
@@ -130,7 +130,7 @@ public sealed class BookingFlowViewModel
     private bool HasAttemptedDates { get; set; }
 
     // ------------------------------------------------------------------
-    // AFLEDT TILSTAND
+    // DERIVED STATE
     // ------------------------------------------------------------------
 
     /// <summary>
@@ -273,7 +273,7 @@ public sealed class BookingFlowViewModel
     /// <summary>
     /// Fetches the free rooms for the chosen dates and goes to step 2 (BR-C-02, BR-C-04).
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <remarks>
     /// Invalid dates keep the user on step 1 with a message at the field. The service call
     /// therefore never happens for a period we already know is illegal.
@@ -337,7 +337,7 @@ public sealed class BookingFlowViewModel
     /// <summary>
     /// Chooses a room and goes to step 3 (BR-C-04).
     /// </summary>
-    /// <param name="roomId">Rummets id.</param>
+    /// <param name="roomId">The room id.</param>
     /// <remarks>
     /// Only rooms from the fetched list can be chosen. Per BR-C-02 the list contains only rooms that
     /// are free in the period, so the customer cannot choose a room she has not been shown.
@@ -405,7 +405,7 @@ public sealed class BookingFlowViewModel
     /// <summary>
     /// Validates the guest details and creates the booking (BR-C-01, BR-C-03).
     /// </summary>
-    /// <param name="cancellationToken">Annulleringstoken.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <remarks>
     /// <c>ValidateFields</c> is called <b>before</b> the creation. It is not a duplication of
     /// the rules — it is the same rule, called without IO — and it is the difference between seeing
