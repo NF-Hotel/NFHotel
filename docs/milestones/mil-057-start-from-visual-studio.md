@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Accepted | mikemike | S01 | Initial version; Visual Studio 2026 builds NFHotel and every test passes, but F5 on `NFHotel.Web` stops with `'Api:BaseUrl' must be an absolute http or https address of the API`; S01 asked in chat on 2026-11-02 to plan an F5 setup ("Yes, plan F5"); S01 accepted the plan in chat ("Yes, accept and build") after RC-274 Go | pending |
+| 2026-11-02 | Accepted | mikemike | S01 | Initial version; Visual Studio 2026 builds NFHotel and every test passes, but F5 on `NFHotel.Web` stops with `'Api:BaseUrl' must be an absolute http or https address of the API`; S01 asked in chat on 2026-11-02 to plan an F5 setup ("Yes, plan F5"); S01 accepted the plan in chat ("Yes, accept and build") after RC-274 Go | [7459205] |
 
 ---
 
@@ -88,3 +88,4 @@ The plan: one setup script makes a local PostgreSQL container and the developmen
 [ADR-0024]: ../adr/adr-0024-secrets-as-files.md
 [ADR-0035]: ../adr/adr-0035-light-local-development-stack.md
 [MIL-056]: mil-056-dev-stack-without-kvm.md
+[7459205]: https://github.com/NF-Hotel/NFHotel/commit/7459205acf77cd47e170d53da34fb735bcedf291

@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | pending |
+| 2026-11-02 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version | [7459205] |
 
 ---
 
@@ -95,3 +95,4 @@ Go: every Mandatory criterion that applies passes; QC-SH-001 criterion 7 passes 
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[7459205]: https://github.com/NF-Hotel/NFHotel/commit/7459205acf77cd47e170d53da34fb735bcedf291

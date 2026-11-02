@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Accepted | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent; S01 accepted the plan in chat on 2026-11-02 ("Yes, accept and build") | pending |
+| 2026-11-02 | Accepted | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent; S01 accepted the plan in chat on 2026-11-02 ("Yes, accept and build") | [7459205] |
 
 ---
 
@@ -62,3 +62,4 @@ Go: every Mandatory criterion passes. Task 1 chooses between the setup script an
 [MIL-057]: ../../milestones/mil-057-start-from-visual-studio.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[7459205]: https://github.com/NF-Hotel/NFHotel/commit/7459205acf77cd47e170d53da34fb735bcedf291

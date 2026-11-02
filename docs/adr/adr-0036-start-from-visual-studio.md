@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; written under MIL-057, which S01 accepted in chat on 2026-11-02 | pending |
+| 2026-11-02 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; written under MIL-057, which S01 accepted in chat on 2026-11-02 | [7459205] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -86,3 +86,4 @@ We follow option 1.
 [MIL-057]: ../milestones/mil-057-start-from-visual-studio.md
 [ADR-0024]: adr-0024-secrets-as-files.md
 [ADR-0035]: adr-0035-light-local-development-stack.md
+[7459205]: https://github.com/NF-Hotel/NFHotel/commit/7459205acf77cd47e170d53da34fb735bcedf291
