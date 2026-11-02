@@ -2,9 +2,9 @@
 # linters of ops/ and of the workflows and actions, the coverage of the wiki reference pages
 # (MIL-049), the script tests, the monitoring configuration (ADR-0020), the nginx routes,
 # the Proxmox tests (the live ones skip), the PostgreSQL preparation with the real
-# migrations of this commit, and the rotation drill of the secrets (ADR-0024). The release
-# build and the throwaway end-to-end stack run in release-check.yaml and e2e-dast.yaml,
-# which use the same actions.
+# migrations of this commit, the two local development modes (ADR-0035, ADR-0036), and the
+# rotation drill of the secrets (ADR-0024). The release build and the throwaway end-to-end
+# stack run in release-check.yaml and e2e-dast.yaml, which use the same actions.
 #
 # Triggers: pull requests to main, pushes to main, and by hand. It runs on every pull
 #   request, not only on changes of ops/, because its jobs are required checks.
@@ -241,6 +241,28 @@ jobs:
           export PATH="$prefix/bin:$PATH"
           bash --version | head -1
           bash ops/tests/test-dev-lite-portable.sh
+
+  # F5 in Visual Studio as ADR-0036 prepares it: dev-f5.sh, then the API and the web application
+  # with dotnet run and their launch profiles, a sign-in through the API and through the web form,
+  # a second run that writes nothing, and --destroy.
+  dev-f5:
+    name: Ops start from Visual Studio (MIL-057)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
+        with:
+          global-json-file: global.json
+      # The https launch profile of the web application needs a development certificate.
+      - name: Make the development certificate
+        run: dotnet dev-certs https
+      - name: Prepare F5 and start both projects with their launch profiles
+        run: bash ops/tests/test-dev-f5.sh
 
   secret-rotation:
     name: Ops secret rotation drill (MIL-035)

@@ -455,5 +455,8 @@ docs/test-data/real-specimens/
 # Settings, secrets and development accounts of the light development mode (scripts/dev-lite.sh, ADR-0035).
 /ops/.dev-lite/
 
+# State of the F5 preparation (scripts/dev-f5.sh, ADR-0036): the database password and the keys it wrote.
+/ops/.dev-f5/
+
 # The write-only backup target of ops/ (D7); the pattern Backup*/ above is for Visual Studio.
 !/ops/deploy/backup-target/

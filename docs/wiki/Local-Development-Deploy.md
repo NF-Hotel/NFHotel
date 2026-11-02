@@ -15,6 +15,9 @@ your machine ── Docker ── Proxmox VE container ── VM (Debian + Docke
 **On a Mac, or without KVM?** Use the [light mode](#the-light-mode-macos-or-no-kvm): `bash scripts/dev-up.sh --lite`. It
 runs the database, the API, the web application and nginx straight in Docker, at the same addresses, in about 3 GiB.
 
+**Debugging in Visual Studio?** [Run from Visual Studio](#run-from-visual-studio-f5): prepare once with
+`bash scripts/dev-up.sh --f5`, then press F5 on the launch profile "API and web".
+
 ## What you need
 
 | Need | Why | Windows 11 | Linux |
@@ -114,6 +117,67 @@ Not in the light mode: Ollama, the market analysis and the benchmark service. Th
 reachable. Use the Proxmox mode for them. Run only one mode at a time: both use port 8443 (`dev-up.sh --down` stops the
 Proxmox mode, `dev-up.sh --lite --down` the light mode), or set `DEV_SITE_PORT`.
 
+## Run from Visual Studio (F5)
+
+The two modes above run the application as containers, so a breakpoint in Visual Studio is never hit. To debug, the API
+and the web application run as .NET processes from Visual Studio (or Rider, or `dotnet run`), and only PostgreSQL runs
+in Docker ([ADR-0036](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0036-start-from-visual-studio.md)):
+
+```text
+Visual Studio ── NFHotel.Web  https://localhost:7060/ ──► NFHotel.Api  http://localhost:59103/ ──► Docker: postgres 127.0.0.1:55432
+```
+
+| Need | macOS | Windows 11 | Linux |
+| --- | --- | --- | --- |
+| The .NET SDK of `global.json` | the .NET SDK, or Rider | Visual Studio 2026, or the .NET SDK | the .NET SDK |
+| Docker | Docker Desktop | Docker Desktop | Docker Engine |
+| bash 4 or later, `openssl` | `brew install bash` | Git for Windows (Git Bash) | the packages of your distribution |
+| A development certificate | `dotnet dev-certs https --trust` | `dotnet dev-certs https --trust` (Visual Studio offers it at the first F5) | `dotnet dev-certs https` |
+| Free ports | 55432, 59102, 59103, 7060 | the same | the same |
+
+Prepare the machine once:
+
+```bash
+bash scripts/dev-up.sh --f5 --check   # does this machine meet the needs? starts nothing
+bash scripts/dev-up.sh --f5           # start PostgreSQL and write the user secrets
+```
+
+From PowerShell: `.\scripts\dev-f5.ps1 --check` and `.\scripts\dev-f5.ps1`. The script starts PostgreSQL 16 on
+`127.0.0.1:55432` and writes the .NET user secrets of `NFHotel.Api` and `NFHotel.Web`:
+
+- the connection string, the API token, the signing key and the passport key;
+- the first Manager;
+- the address of the API.
+
+At the end it prints the account `manager` and its password. A second run changes nothing.
+
+Then open `NFHotel.sln`, choose the launch profile **API and web** in the toolbar, and press F5. Visual Studio starts
+both projects with the debugger; sign in at `https://localhost:7060/admin/login`. The API runs the migrations at its
+start. Without Visual Studio, start both projects in two terminals:
+
+```bash
+dotnet run --project src/NFHotel.Api --launch-profile NFHotel.Api
+dotnet run --project src/NFHotel.Web --launch-profile https
+```
+
+| Command | What it does |
+| --- | --- |
+| `dev-up.sh --f5` (or `dev-f5.ps1`) | start PostgreSQL and write the user secrets that are missing |
+| `dev-up.sh --f5 --seed` | the same, then load the sample rooms, guests and bookings of `db/seed_dev.sql` (it replaces those tables; start the API once with F5 first, so the tables exist) |
+| `dev-up.sh --f5 --down` | stop PostgreSQL; the database and the secrets stay |
+| `dev-up.sh --f5 --destroy` | remove PostgreSQL, its volume, `ops/.dev-f5/` and the user secrets the script wrote (yours stay) |
+
+| What | Where |
+| --- | --- |
+| The back office | `https://localhost:7060/admin/login` |
+| The API | `http://localhost:59103/` and `https://localhost:59102/`; `GET /health` answers 200 |
+| The API for the mobile app | `--dart-define=API_BASE_URL=http://10.0.2.2:59103` from the Android emulator, `http://localhost:59103` from the iOS simulator. The API serves `/api/auth/login` and `/api/rooms` itself, with no `/mobile-api` prefix and no nginx in front. Not yet tested with the app: the light mode stays the reference address |
+| The settings and secrets | .NET user secrets on your machine (Visual Studio: right-click the project, **Manage User Secrets**); the database password and the Manager password also in `ops/.dev-f5/` (git-ignored, readable by you only) |
+| The database | the container `nfhotel-f5-postgres` and its volume `nfhotel-f5-pgdata` |
+
+Not under F5: nginx and its TLS, Ollama, the market analysis and the benchmark service. The F5 mode can run next to
+the light mode or the Proxmox mode: their ports differ.
+
 ## Use the GPU of your machine
 
 The VM cannot take your GPU: Proxmox VE runs in a container here, and the VM is nested in it (on Windows the GPU is shared
@@ -188,6 +252,11 @@ and the default AI model for the website and the market analysis are on `/admin/
 | `bash 3.2 is too old` on a Mac | macOS comes with bash 3.2 | `brew install bash`, open a new terminal, and run the script again |
 | `docker compose ... is older than 2.24.4` (light mode) | the override of nginx's port needs `!override` | update Docker Desktop |
 | `the Docker daemon does not answer` | Docker Desktop is not running | start it and wait until it says running |
+| `dev-f5.sh` in PowerShell says `this is the bash of WSL`, or that the SDK of `global.json` is not installed | `bash` in PowerShell is the bash of WSL, with the Linux `dotnet` and Linux user secrets that Visual Studio never sees | run `.\scripts\dev-f5.ps1` from PowerShell; it finds Git Bash. Or run `bash scripts/dev-f5.sh` in Git Bash |
+| After a sign-in under F5, Visual Studio stops at `Navigation.NavigateTo` with `NavigationException` (Exception User-Unhandled), and the browser times out | Blazor sends a redirect by throwing `NavigationException`, which the framework catches; the debugger stops on it first and pauses every process, so the API and the web application do not answer | clear "Break when this exception type is user-unhandled" in the exception box and press Continue; Visual Studio remembers it |
+| F5 stops with `'Api:BaseUrl' must be an absolute http or https address of the API` | the user secrets are not written | run `dev-up.sh --f5` (or `dev-f5.ps1`) once, then F5 again |
+| Visual Studio: `Could not resolve SDK "Microsoft.NET.Sdk"`, while `dotnet build` in a terminal works | an update of Visual Studio failed halfway and left the .NET host without its SDK resolver (`Microsoft.DotNet.MSBuildSdkResolver`); the installer then fails with error 1714 on a missing cached `dotnet-host-*.msi` | in the Visual Studio Installer, **Repair** Visual Studio. If the repair stops on the missing MSI, download that exact .NET host version from `https://dotnet.microsoft.com/download/dotnet`, point the installer at its MSI, and repair again |
+| After a build, `git status` shows `src/NFHotel.Web/packages.lock.json` changed | your SDK is a newer patch of the band of `global.json`, and it locks another version of the implicit ASP.NET packages | do not commit it: `git checkout -- src/NFHotel.Web/packages.lock.json`. CI restores in locked mode with the SDK of `global.json` and fails on a changed lock file |
 | A port is in use | another program holds 8443 or 8006 | stop it, or set `DEV_SITE_PORT` or `DEV_PVE_PORT` |
 | The first run stops at `waiting for ssh, cloud-init and Docker` | the VM is still installing Docker | run the script again; it continues |
 | The Start page says the benchmark service is not set up | the service or the model is not ready | run `dev-up.sh benchmark`, then reload the page |
