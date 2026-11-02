@@ -379,6 +379,100 @@ public sealed class BenchmarkRunListViewModelTests
         await defaults.Received(1).SetAsync("website", Arg.Is<SetAiDefaultRequest>(request => request.Model == "m1" && request.SourceRunId == RunId), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
+    /// <summary>Positive: a model that the server does not list is downloaded first and nothing is saved yet.</summary>
+    [Fact]
+    public async Task SetDefaultAsync_ModelNotInstalled_StartsTheDownloadAndSavesNothing()
+    {
+        // Arrange
+        BenchmarkRunListViewModel viewModel = Build(out _, out IAiDefaultService defaults, out IBenchmarkServiceClient client);
+        client.StartModelPullAsync("phi4-mini:latest", Arg.Any<CancellationToken>())
+            .Returns(Result<ModelPullDto>.Success(new ModelPullDto("p1", "phi4-mini:latest", ModelPullStates.Queued, null, null)));
+
+        // Act
+        await viewModel.SetDefaultAsync("market_analysis", "phi4-mini:latest", null, TestContext.Current.CancellationToken);
+
+        // Assert
+        await client.Received(1).StartModelPullAsync("phi4-mini:latest", Arg.Any<CancellationToken>());
+        await defaults.DidNotReceive().SetAsync(Arg.Any<string>(), Arg.Any<SetAiDefaultRequest>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        Assert.True(viewModel.IsDownloadingDefault);
+        Assert.Equal("market_analysis", viewModel.PendingPurpose);
+    }
+
+    /// <summary>Positive: when the download is done the default is saved.</summary>
+    [Fact]
+    public async Task FollowDefaultDownloadAsync_Done_SavesTheDefault()
+    {
+        // Arrange
+        BenchmarkRunListViewModel viewModel = Build(out _, out IAiDefaultService defaults, out IBenchmarkServiceClient client);
+        client.StartModelPullAsync("phi4-mini:latest", Arg.Any<CancellationToken>())
+            .Returns(Result<ModelPullDto>.Success(new ModelPullDto("p1", "phi4-mini:latest", ModelPullStates.Pulling, 40, null)));
+        client.GetModelPullAsync("p1", Arg.Any<CancellationToken>())
+            .Returns(Result<ModelPullDto>.Success(new ModelPullDto("p1", "phi4-mini:latest", ModelPullStates.Done, 100, null)));
+        await viewModel.SetDefaultAsync("market_analysis", "phi4-mini:latest", null, TestContext.Current.CancellationToken);
+
+        // Act
+        await viewModel.FollowDefaultDownloadAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await defaults.Received(1).SetAsync("market_analysis", Arg.Is<SetAiDefaultRequest>(request => request.Model == "phi4-mini:latest"), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        Assert.False(viewModel.IsDownloadingDefault);
+        Assert.Null(viewModel.PendingPurpose);
+        Assert.Empty(viewModel.Errors);
+    }
+
+    /// <summary>Negative: a failed download saves nothing and says why.</summary>
+    [Fact]
+    public async Task FollowDefaultDownloadAsync_Failed_SavesNothingAndShowsTheReason()
+    {
+        // Arrange
+        BenchmarkRunListViewModel viewModel = Build(out _, out IAiDefaultService defaults, out IBenchmarkServiceClient client);
+        client.StartModelPullAsync("phi4-mini:latest", Arg.Any<CancellationToken>())
+            .Returns(Result<ModelPullDto>.Success(new ModelPullDto("p1", "phi4-mini:latest", ModelPullStates.Pulling, 40, null)));
+        client.GetModelPullAsync("p1", Arg.Any<CancellationToken>())
+            .Returns(Result<ModelPullDto>.Success(new ModelPullDto("p1", "phi4-mini:latest", ModelPullStates.Failed, null, "disk full")));
+        await viewModel.SetDefaultAsync("market_analysis", "phi4-mini:latest", null, TestContext.Current.CancellationToken);
+
+        // Act
+        await viewModel.FollowDefaultDownloadAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await defaults.DidNotReceive().SetAsync(Arg.Any<string>(), Arg.Any<SetAiDefaultRequest>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        Assert.Contains("disk full", Assert.Single(viewModel.Errors));
+        Assert.False(viewModel.IsDownloadingDefault);
+    }
+
+    /// <summary>Negative: a text that is not a model name starts no download and saves nothing.</summary>
+    [Fact]
+    public async Task SetDefaultAsync_NotAModelName_StartsNoDownload()
+    {
+        // Arrange
+        BenchmarkRunListViewModel viewModel = Build(out _, out IAiDefaultService defaults, out IBenchmarkServiceClient client);
+
+        // Act
+        await viewModel.SetDefaultAsync("website", "bad name;", null, TestContext.Current.CancellationToken);
+
+        // Assert
+        await client.DidNotReceive().StartModelPullAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await defaults.DidNotReceive().SetAsync(Arg.Any<string>(), Arg.Any<SetAiDefaultRequest>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        Assert.Single(viewModel.Errors);
+    }
+
+    /// <summary>Negative: when the list of models cannot be read the default is saved as before.</summary>
+    [Fact]
+    public async Task SetDefaultAsync_ListUnavailable_SavesTheDefault()
+    {
+        // Arrange
+        BenchmarkRunListViewModel viewModel = Build(out _, out IAiDefaultService defaults, out IBenchmarkServiceClient client);
+        client.ListModelsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<string>>.Failure(ErrorCodes.BenchmarkRunner.PullActive));
+
+        // Act
+        await viewModel.SetDefaultAsync("website", "phi4-mini:latest", null, TestContext.Current.CancellationToken);
+
+        // Assert
+        await defaults.Received(1).SetAsync("website", Arg.Any<SetAiDefaultRequest>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        Assert.False(viewModel.IsDownloadingDefault);
+    }
+
     /// <summary>Negative: a refused default shows the text of its code and reads nothing again.</summary>
     [Fact]
     public async Task SetDefaultAsync_Refused_ShowsTheText()
@@ -469,11 +563,12 @@ public sealed class BenchmarkRunListViewModelTests
                 Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<Func<IBenchmarkService, CancellationToken, Task<Result>>>()(fake, call.Arg<CancellationToken>()));
         client = Substitute.For<IBenchmarkServiceClient>();
+        client.ListModelsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<string>>.Success(["m1", "phi3.5"]));
         var tracker = new BenchmarkRunTracker(
             new PassThroughRunner<IBenchmarkServiceClient>(client),
             new PassThroughRunner<IBenchmarkRequestService>(BenchmarkRequestDoubles.Requests(started)),
             new PassThroughRunner<IBenchmarkService>(BenchmarkRequestDoubles.Stored()));
-        return new BenchmarkRunListViewModel(runner, defaultsRunner, tracker);
+        return new BenchmarkRunListViewModel(runner, defaultsRunner, new PassThroughRunner<IBenchmarkServiceClient>(client), tracker);
     }
 
     #endregion

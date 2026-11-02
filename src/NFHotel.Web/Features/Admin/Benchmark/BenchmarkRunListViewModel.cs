@@ -1,5 +1,8 @@
 using NFHotel.Application.Dto.AiDefaults;
 using NFHotel.Application.Dto.Benchmark;
+using NFHotel.Application.Errors;
+using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.AiDefaults;
 using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Domain.Entities;
@@ -16,24 +19,30 @@ public sealed class BenchmarkRunListViewModel
 {
     private readonly IUseCaseRunner<IBenchmarkService> _benchmark;
     private readonly IUseCaseRunner<IAiDefaultService> _aiDefaults;
+    private readonly IUseCaseRunner<IBenchmarkServiceClient> _models;
     private readonly BenchmarkRunTracker _tracker;
     private readonly Dictionary<string, string> _drafts = [];
+    private PendingDefault? _pending;
 
     /// <summary>Creates the view model.</summary>
     /// <param name="benchmark">Runs the use cases with the staff token of the signed-in user.</param>
     /// <param name="aiDefaults">Reads and sets the default AI models with the same token.</param>
+    /// <param name="models">Lists the installed models and downloads a missing one, with the same token.</param>
     /// <param name="tracker">Reads the started runs and brings them up to date with the benchmark service.</param>
     public BenchmarkRunListViewModel(
         IUseCaseRunner<IBenchmarkService> benchmark,
         IUseCaseRunner<IAiDefaultService> aiDefaults,
+        IUseCaseRunner<IBenchmarkServiceClient> models,
         BenchmarkRunTracker tracker)
     {
         ArgumentNullException.ThrowIfNull(benchmark);
         ArgumentNullException.ThrowIfNull(aiDefaults);
+        ArgumentNullException.ThrowIfNull(models);
         ArgumentNullException.ThrowIfNull(tracker);
 
         _benchmark = benchmark;
         _aiDefaults = aiDefaults;
+        _models = models;
         _tracker = tracker;
     }
 
@@ -99,10 +108,114 @@ public sealed class BenchmarkRunListViewModel
     /// <returns>A task that ends when the default is saved and read again.</returns>
     public async Task SetDefaultAsync(string purpose, string model, Guid? runId, CancellationToken cancellationToken = default)
     {
+        if (IsDownloadingDefault)
+        {
+            return;
+        }
+
         IsBusy = true;
         try
         {
-            var result = await _aiDefaults
+            Result<IReadOnlyList<string>> installed = await _models
+                .RunAsync((client, token) => client.ListModelsAsync(token), cancellationToken)
+                .ConfigureAwait(false);
+
+            // A model that the server does not list is downloaded first; the default is saved when the download is done.
+            // When the list cannot be read the default is saved as before, because the choice cannot be checked.
+            if (installed.IsSuccess && model.Trim().Length > 0 && !installed.Value.Contains(model, StringComparer.Ordinal))
+            {
+                await StartDownloadAsync(purpose, model, runId, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        await SaveDefaultCoreAsync(purpose, model, runId, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>The download of the model of a default that is not saved yet, or <c>null</c>.</summary>
+    public ModelPullDto? DefaultPull { get; private set; }
+
+    /// <summary>The purpose whose default waits for a download, or <c>null</c>.</summary>
+    public string? PendingPurpose => _pending?.Purpose;
+
+    /// <summary>Whether a download of a chosen default model is running.</summary>
+    public bool IsDownloadingDefault => _pending is not null && DefaultPull is { IsFinished: false };
+
+    /// <summary>
+    /// Reads the state of the download of a chosen default model; the default is saved when the model is installed,
+    /// and nothing is saved when the download fails.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
+    /// <returns>A task that ends when the state is read and, if the download is done, the default is saved.</returns>
+    public async Task FollowDefaultDownloadAsync(CancellationToken cancellationToken = default)
+    {
+        if (_pending is not { } pending || DefaultPull is not { } pull)
+        {
+            return;
+        }
+
+        Result<ModelPullDto> result = await _models
+            .RunAsync((client, token) => client.GetModelPullAsync(pull.PullId, token), cancellationToken)
+            .ConfigureAwait(false);
+
+        if (result.IsFailure)
+        {
+            Errors = ErrorMessages.Describe(result);
+            if (result.Errors.Any(error => error.Code == ErrorCodes.BenchmarkRunner.PullNotFound))
+            {
+                // The service restarted and forgot the download: there is nothing more to follow.
+                _pending = null;
+                DefaultPull = null;
+            }
+
+            return;
+        }
+
+        DefaultPull = result.Value;
+        if (result.Value.State == ModelPullStates.Failed)
+        {
+            Errors = [$"{pending.Model} could not be downloaded: {result.Value.Error ?? "the model server gave no reason"}. The default is not changed."];
+            _pending = null;
+        }
+        else if (result.Value.State == ModelPullStates.Done)
+        {
+            _pending = null;
+            await SaveDefaultCoreAsync(pending.Purpose, pending.Model, pending.RunId, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task StartDownloadAsync(string purpose, string model, Guid? runId, CancellationToken cancellationToken)
+    {
+        if (!ModelNames.IsValid(model))
+        {
+            Errors = [$"'{model}' is not a model name, so it is not downloaded and the default is not changed."];
+            return;
+        }
+
+        Result<ModelPullDto> pull = await _models
+            .RunAsync((client, token) => client.StartModelPullAsync(model, token), cancellationToken)
+            .ConfigureAwait(false);
+        if (pull.IsFailure)
+        {
+            Errors = ErrorMessages.Describe(pull);
+            return;
+        }
+
+        Errors = [];
+        _pending = new PendingDefault(purpose, model, runId);
+        DefaultPull = pull.Value;
+    }
+
+    private async Task SaveDefaultCoreAsync(string purpose, string model, Guid? runId, CancellationToken cancellationToken)
+    {
+        IsBusy = true;
+        try
+        {
+            Result<AiDefaultDto> result = await _aiDefaults
                 .RunAsync((service, token) => service.SetAsync(purpose, new SetAiDefaultRequest(model, runId), string.Empty, token), cancellationToken)
                 .ConfigureAwait(false);
 
@@ -122,6 +235,8 @@ public sealed class BenchmarkRunListViewModel
 
         await LoadDefaultsAsync(cancellationToken).ConfigureAwait(false);
     }
+
+    private sealed record PendingDefault(string Purpose, string Model, Guid? RunId);
 
     /// <summary>The words that name a purpose in a label, for example "the website".</summary>
     /// <param name="purpose">The purpose.</param>

@@ -2,6 +2,7 @@ using Bunit;
 
 using NFHotel.Application.Dto.AiDefaults;
 using NFHotel.Application.Dto.Benchmark;
+using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.AiDefaults;
@@ -62,6 +63,7 @@ public sealed class BenchmarkRunsPageTests : IAsyncDisposable
         client.GetRunAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(call => Result<BenchmarkRunStateDto>.Success(new BenchmarkRunStateDto(
                 call.Arg<Guid>(), BenchmarkRunStates.Running, BenchmarkDeliveryStates.NotReady, ["m1"], Start, Start, null, null)));
+        client.ListModelsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<string>>.Failure(ErrorCodes.BenchmarkRunner.Unavailable));
         var tracker = new BenchmarkRunTracker(
             new PassThroughRunner<IBenchmarkServiceClient>(client),
             new PassThroughRunner<IBenchmarkRequestService>(BenchmarkRequestDoubles.Requests(started)),
@@ -70,6 +72,7 @@ public sealed class BenchmarkRunsPageTests : IAsyncDisposable
         _host.With(new BenchmarkRunListViewModel(
             new PassThroughRunner<IBenchmarkService>(_service),
             new PassThroughRunner<IAiDefaultService>(_defaults),
+            new PassThroughRunner<IBenchmarkServiceClient>(client),
             tracker));
     }
 
