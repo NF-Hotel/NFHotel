@@ -38,12 +38,21 @@ stack_compose() {
     docker compose --project-name "$STACK_NAME-$folder" --file "$(stack_native "$STACK_OPS/deploy/$folder/docker-compose.yml")" "$@"
 }
 
-# stack_down [--volumes]: remove the containers and networks; --volumes removes the database too.
+# stack_down [--volumes]: remove the containers and networks; --volumes removes the volumes (the database) too.
+# It goes by the labels compose puts on what it makes, not through `compose down`: compose before 5 refuses down
+# when the settings files of a compose file are missing, as they are in a new shell.
 stack_down() {
-  local folder i
+  local folder label i
+  local -a ids
   for ((i = ${#STACK_FOLDERS[@]} - 1; i >= 0; i--)); do
     folder="${STACK_FOLDERS[$i]}"
-    stack_compose "$folder" down "$@" --remove-orphans >/dev/null 2>&1 || true
+    label="label=com.docker.compose.project=$STACK_NAME-$folder"
+    mapfile -t ids < <(docker ps -aq --filter "$label")
+    ((${#ids[@]} == 0)) || docker rm -f "${ids[@]}" >/dev/null
+    if [[ "${1:-}" == "--volumes" ]]; then
+      mapfile -t ids < <(docker volume ls -q --filter "$label")
+      ((${#ids[@]} == 0)) || docker volume rm -f "${ids[@]}" >/dev/null
+    fi
   done
   docker network rm "$STACK_PROXY_NET" "$STACK_API_NET" "$STACK_DB_NET" >/dev/null 2>&1 || true
 }

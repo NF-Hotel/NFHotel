@@ -35,6 +35,7 @@
 | `e2e-stack.sh` with the library | Starts, and `ops/tests/check-e2e-stack.sh` passes every check (TLS, redirects, hardening, no host port, networks, three accounts, no secret in an environment) |
 | Arm64 | Every image the light mode pulls or builds from (`dotnet/sdk`, `dotnet/aspnet`, `postgres:16-alpine`, `nginx:1.29-alpine`, at their pinned digests) has a `linux/arm64` manifest (`docker buildx imagetools inspect`) |
 | Linters | `ops/tests/lint.sh` clean: actionlint 1.7.7, shellcheck 0.11.0, shfmt 3.14.1, yamllint 1.35.1; `scripts/dev-lite.sh` and `scripts/dev-up.sh` also pass shellcheck |
+| First CI run | `Ops light development mode` failed: compose 2.x of the runner refused `down` without the settings files, so `--down` and `--destroy` left the containers (Docker Desktop's compose 5.5 did not). `stack_down` now removes by the compose labels; reproduced with compose 2.33 and fixed |
 | On a Mac | Not run yet: task 7, by a developer of S02 |
 
 ## Checklist Results
