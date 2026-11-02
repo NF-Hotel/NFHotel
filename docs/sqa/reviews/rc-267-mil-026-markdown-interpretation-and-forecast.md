@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Proposed | Claude (AI) | AI at the request of the user, not independent | Initial version | pending |
+| 2026-11-01 | Proposed | Claude (AI) | AI at the request of the user, not independent | Initial version | [e5aa58d] |
 
 ---
 
@@ -63,3 +63,4 @@ Go — every criterion of QC-MIL-001 passes after the dependency on result schem
 [MIL-026]: ../../milestones/mil-026-market-analysis-report.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[e5aa58d]: https://github.com/NF-Hotel/NFHotel/commit/e5aa58daf3105bf7f3dfa68a284ef2bc40861aeb

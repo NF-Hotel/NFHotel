@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Deprecated | Claude (AI) | AI at the request of the user, not independent | Task 26 and criterion 26: the page asks the API for the run that is going on when it opens and follows it, so a reload or a second visit shows `running since ...` and does not offer a second start; found when the Manager reopened the page during a run and saw no state; asked for by S01; accepted by the user in chat on 2026-11-01 after RC-268 Go | pending |
-| 2026-11-01 | Accepted | Claude (AI) | AI at the request of the user, not independent | Task 27 and criterion 27: the evidence under an AI observation and under a recommendation is shown with the Markdown component too, because the model writes bold figures in it and the page showed the signs `**30.9%**`; found on the dev VM after the deploy of tasks 23 to 26; asked for by S01; accepted by the user in chat on 2026-11-01 after RC-269 Go | pending |
+| 2026-11-01 | Deprecated | Claude (AI) | AI at the request of the user, not independent | Task 26 and criterion 26: the page asks the API for the run that is going on when it opens and follows it, so a reload or a second visit shows `running since ...` and does not offer a second start; found when the Manager reopened the page during a run and saw no state; asked for by S01; accepted by the user in chat on 2026-11-01 after RC-268 Go | [e5aa58d] |
+| 2026-11-01 | Accepted | Claude (AI) | AI at the request of the user, not independent | Task 27 and criterion 27: the evidence under an AI observation and under a recommendation is shown with the Markdown component too, because the model writes bold figures in it and the page showed the signs `**30.9%**`; found on the dev VM after the deploy of tasks 23 to 26; asked for by S01; accepted by the user in chat on 2026-11-01 after RC-269 Go | [e5aa58d] |
 
 ---
 
@@ -138,3 +138,4 @@ Let a Manager start a market analysis of the hotel bookings and read its report 
 [MIL-004]: ./mil-004-market-analysis-service.md
 [MIL-020]: ./mil-020-start-benchmark-run.md
 [MIL-028]: ./mil-028-market-analysis-run-api.md
+[e5aa58d]: https://github.com/NF-Hotel/NFHotel/commit/e5aa58daf3105bf7f3dfa68a284ef2bc40861aeb
