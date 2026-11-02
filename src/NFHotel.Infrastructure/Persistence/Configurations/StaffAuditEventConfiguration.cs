@@ -22,6 +22,7 @@ public sealed class StaffAuditEventConfiguration : EntityConfiguration<StaffAudi
         builder.Property(auditEvent => auditEvent.TargetName).HasMaxLength(StaffAuditEvent.MaxTextLength);
         builder.Property(auditEvent => auditEvent.Outcome).HasMaxLength(StaffAuditEvent.MaxTextLength).IsRequired();
         builder.Property(auditEvent => auditEvent.RemoteAddress).HasMaxLength(StaffAuditEvent.MaxTextLength);
+        builder.Property(auditEvent => auditEvent.Detail).HasMaxLength(StaffAuditEvent.MaxDetailLength);
 
         // The audit page reads newest first; the key breaks ties between events of the same moment.
         builder.HasIndex(auditEvent => auditEvent.OccurredAt)

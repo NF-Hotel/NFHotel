@@ -25,6 +25,7 @@
 | 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Amended: objective 26, hotel staff sign in and work with rooms from the mobile app through the API on the staff token alone (MIL-029, ADR-0015); accepted after RC-133 Go | [1c3efb9] |
 | 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Amended: objective 27, staff accounts and passwords (MIL-030), and success criterion 30 (accepted after RC-150 Go) | [0891cf1] |
 | 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Amended: objective 28 and success criterion 31, NF Hotel on the public internet through Cloudflare Tunnel; the public address of the mobile app leaves the out-of-scope list (MIL-040, ADR-0028); S01 accepted MIL-040 in chat | [21ba03e] |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Amended: objective 29, success criterion 32 and one in-scope line, room price suggestions from the market analysis that a Manager approves with one click (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-258 Go | pending |
 
 ---
 
@@ -99,6 +100,7 @@ basis for the hosting decision (Q-31).
 26. Let hotel staff sign in and work with the rooms from the mobile app (Flutter) through the API, with the staff token alone and no shared secret in the app, so that a role sees and does in the app no more than in the back office (MIL-029, ADR-0015).
 27. Let the owner and the Managers manage staff accounts and passwords in the back office: a staff member changes their own password with the current one, a Manager creates, disables, enables and resets accounts, a change or a disable ends the old sessions at once, and account events are kept in an audit trail (MIL-030).
 28. Let guests book and the mobile app work from the public internet at `nfhotel.devmatiker.com`, without a port opened in the home network and with the back office kept on the tailnet, so that the hotel is reachable by anyone while its home stays closed (MIL-040, ADR-0028).
+29. Let a Manager approve room price changes with one click: the back office suggests a surcharge in high season and a discount on single rooms in low season, calculated by a fixed rule from the occupancy and seasonality of the market analysis, and no price changes, and no AI text sets a price, until a Manager approves; every approval, undo and change of a rule is kept in the audit trail (MIL-051).
 
 ## Scope
 
@@ -131,6 +133,7 @@ basis for the hosting decision (Q-31).
 - CIS-aligned hardening of Docker and Debian, nftables, unattended security updates, log rotation and an uptime check, OpenSSF Scorecard, an OWASP SAMM baseline and DORA metrics (MIL-023)
 - Access for the mobile app: the staff token alone on the sign-in and the rooms routes of the API, a per-address limit on sign-in, a development-only route on the development server, and in the `MobileApp` repository an API client, a working login and the rooms overview and room view with the cleaning and service actions, tested against the development server in Docker (MIL-029, ADR-0015)
 - A change-password function for every staff role, account management and an audit page for the Manager, a security stamp that ends old sessions, a password policy, the `reset-staff-password` recovery command, the deploy files and the replacement of the production Manager password, and ADR-0017 (MIL-030)
+- A nightly rate per room size, settings for the season rule, price suggestions from the market analysis report, a one-click approval and undo for a Manager, audit events and the page for them (MIL-051); a price on a booking that is already made is not changed.
 
 ### Out of Scope
 
@@ -200,6 +203,7 @@ the rule that GUI and end-to-end tests never run on the host desktop
 | 29 | Mobile app access | The sign-in and `GET /api/rooms` answer to a valid staff token with no service token and give 401 without either; every other route group gives 401 to a staff token alone; Housekeeping gets 403 on room create, update and delete; the sixth failed sign-in in the window gives 429; 0 tokens or keys in the `MobileApp` repository; the app signs in as each development account and lists the seeded rooms on the development server | API and permission tests, a source search, and the end-to-end check in Docker |
 | 30 | Staff accounts and passwords | A password change with a wrong current password, a short, common or reused new password is refused, and the sixth wrong current password in the window gets 429; a token issued before a change, reset or disable gets 401; a Receptionist and a Housekeeping user get 403 on account management; the last active Manager cannot be disabled; every account event writes one audit row with no password, hash or token in it; in the VM the initial Manager password is refused after the owner changed it | Unit, API and page tests, the audit page and the deploy check in the VM |
 | 31 | Public access | From outside the tailnet, the site and `/book` answer 200 with a valid certificate; the back office and every API route but the two mobile routes answer 404; 0 ports opened in the home router; the tunnel token in no environment | A check from a GitHub runner, `check-secret-env.sh` and the router's port list |
+| 32 | Price suggestions | The same report gives the same suggestions on two runs, and changing only its AI text changes none; a high season month gives a surcharge of 20 percent and a low season month a discount on single rooms only; one approval creates one price change with the dates shown and a second approval of it creates none; an undo ends it the same day; a Receptionist and a Housekeeping user get 403 on the approval; every approval, undo, rate and setting change writes one audit row | Unit, API and page tests and the audit page |
 
 ## Risks
 

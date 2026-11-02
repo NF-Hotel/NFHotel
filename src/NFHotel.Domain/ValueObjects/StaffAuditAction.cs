@@ -29,4 +29,16 @@ public enum StaffAuditAction
 
     /// <summary>An account was enabled again.</summary>
     AccountEnabled = 9,
+
+    /// <summary>A Manager set or changed the nightly base rate of a room size (MIL-051).</summary>
+    RoomRateChanged = 10,
+
+    /// <summary>A Manager saved the pricing settings (MIL-051).</summary>
+    PricingSettingsChanged = 11,
+
+    /// <summary>A Manager approved a price change of a room size (MIL-051).</summary>
+    PriceChangeApproved = 12,
+
+    /// <summary>A Manager reverted a price change of a room size (MIL-051).</summary>
+    PriceChangeReverted = 13,
 }

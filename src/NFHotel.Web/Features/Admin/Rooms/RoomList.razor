@@ -9,6 +9,8 @@
 @using NFHotel.Web.Features.Admin.Rooms
 @inject RoomListViewModel ViewModel
 @inject RoomFormViewModel Form
+@inject AuthenticationStateProvider AuthenticationState
+@inject IAuthorizationService Authorization
 
 @*
     Room overview with filters, cleaning flow and create/change.
@@ -273,6 +275,10 @@
                         <th scope="col">Room</th>
                         <th scope="col" class="numeric">Floor</th>
                         <th scope="col">Size</th>
+                        @if (ViewModel.ShowsPrices)
+                        {
+                            <th scope="col" class="numeric">Price per night today</th>
+                        }
                         <th scope="col" class="numeric">Sleeps</th>
                         <th scope="col">Status</th>
                         <th scope="col">Housekeeping</th>
@@ -286,6 +292,10 @@
                             <td class="numeric-start">@room.RoomNumber</td>
                             <td class="numeric">@room.Floor</td>
                             <td>@DisplayText.Describe(room.Size)</td>
+                            @if (ViewModel.ShowsPrices)
+                            {
+                                <td class="numeric">@ViewModel.PriceTextOf(room.Size)</td>
+                            }
                             <td class="numeric">@room.Capacity</td>
                             <td><StatusBadge RoomStatus="room.Status" /></td>
                             <td><StatusBadge HousekeepingStatus="room.HousekeepingStatus" /></td>
@@ -338,8 +348,17 @@
     /// <summary>The heading in the confirmation of a deletion.</summary>
     private string DeleteTitle => $"Delete room {ViewModel.RoomPendingDeletion?.RoomNumber}?";
 
-    /// <summary>Fetches filter options and the first list when the screen opens.</summary>
-    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
+    /// <summary>
+    /// Fetches filter options and the first list when the screen opens. The prices are asked for only when the user passes
+    /// the same policy that shows the pricing links in the menu (MIL-051).
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthenticationState.GetAuthenticationStateAsync();
+        var prices = await Authorization.AuthorizeAsync(state.User, StaffPolicies.ManagePrices);
+
+        await ViewModel.InitializeAsync(prices.Succeeded, ComponentToken);
+    }
 
     /// <summary>The policy that decides whether the user sees the button of an action (ADR-0005).</summary>
     private static string PolicyFor(RoomAction action) =>

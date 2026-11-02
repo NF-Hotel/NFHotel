@@ -7,6 +7,8 @@ using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.MarketAnalysis;
+using NFHotel.Application.UseCases.Pricing;
+using NFHotel.Application.UseCases.RoomRates;
 using NFHotel.Application.UseCases.Rooms;
 using NFHotel.Application.UseCases.Staff;
 
@@ -41,6 +43,9 @@ public static class DependencyInjection
         services.AddScoped<IBenchmarkService, ApiBenchmarkService>();
         services.AddScoped<IBenchmarkRequestService, ApiBenchmarkRequestService>();
         services.AddScoped<IAiDefaultService, ApiAiDefaultService>();
+        services.AddScoped<IRoomRateService, ApiRoomRateService>();
+        services.AddScoped<IPricingSettingsService, ApiPricingSettingsService>();
+        services.AddScoped<IPriceSuggestionService, ApiPriceSuggestionService>();
         services.AddScoped<IMarketAnalysisService, ApiMarketAnalysisService>();
         services.AddScoped<IStaffAuthService, ApiStaffAuthService>();
         services.AddScoped<IStaffAdminService, ApiStaffAdminService>();

@@ -26,6 +26,9 @@ public sealed class AdminAccessTests : IClassFixture<WebFactory>
     [InlineData("/admin/revenue")]
     [InlineData("/admin/benchmark")]
     [InlineData("/admin/benchmark/start")]
+    [InlineData("/admin/pricing/rates")]
+    [InlineData("/admin/pricing/settings")]
+    [InlineData("/admin/pricing/suggestions")]
     public async Task Get_AdminPageWithoutSession_RedirectsToTheLogin(string path)
     {
         // Arrange

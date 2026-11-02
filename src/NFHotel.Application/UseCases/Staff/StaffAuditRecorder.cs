@@ -40,6 +40,17 @@ internal sealed class StaffAuditRecorder
             _clock.UtcNow, action, outcome, _context.StaffId, actorName, withTargetId ? target?.Id : null, target?.UserName, _context.RemoteAddress));
     }
 
+    /// <summary>
+    /// Records an act of the signed-in caller (or of the server when nobody is signed in) that has no target account, with
+    /// a text that says what changed. The text must never hold a secret.
+    /// </summary>
+    public void ByCallerWithDetail(StaffAuditAction action, string outcome, string detail)
+    {
+        var actorName = _context.StaffName ?? (_context.StaffId is null ? SystemActor : null);
+        _audit.Add(StaffAuditEvent.Create(
+            _clock.UtcNow, action, outcome, _context.StaffId, actorName, remoteAddress: _context.RemoteAddress, detail: detail));
+    }
+
     /// <summary>Records an act of an account on itself, for example a sign-in, where nobody is signed in yet.</summary>
     public void BySelf(StaffAuditAction action, string outcome, StaffMember member) =>
         _audit.Add(StaffAuditEvent.Create(

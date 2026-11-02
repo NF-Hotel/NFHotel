@@ -88,6 +88,76 @@ public sealed class EndpointProtectionTests
         Assert.True(without.Length == 0, $"Rooms actions without a permission: {string.Join(", ", without)}");
     }
 
+    /// <summary>
+    /// The room rate routes are never public (MIL-051): the read needs the permission to see rooms and the write the
+    /// permission to manage prices.
+    /// </summary>
+    [Fact]
+    public void RoomRatesController_EveryAction_RequiresAPermission()
+    {
+        // Arrange
+        var actions = ActionsOfTheApi()
+            .Where(action => action.DeclaringType == typeof(NFHotel.Api.Controllers.RoomRatesController))
+            .ToArray();
+
+        // Act
+        var without = actions
+            .Where(action => action.GetCustomAttribute<RequiresPermissionAttribute>() is null)
+            .Select(Describe)
+            .ToArray();
+
+        // Assert
+        Assert.Equal(2, actions.Length);
+        Assert.True(without.Length == 0, $"Room rate actions without a permission: {string.Join(", ", without)}");
+    }
+
+    /// <summary>
+    /// The pricing settings routes are never public (MIL-051): the read and the write both need the permission to manage
+    /// prices.
+    /// </summary>
+    [Fact]
+    public void PricingSettingsController_EveryAction_RequiresTheManagePricesPermission()
+    {
+        // Arrange
+        var actions = ActionsOfTheApi()
+            .Where(action => action.DeclaringType == typeof(NFHotel.Api.Controllers.PricingSettingsController))
+            .ToArray();
+
+        // Act
+        var wrong = actions
+            .Where(action => action.GetCustomAttribute<RequiresPermissionAttribute>()?.Permission != NFHotel.Application.UseCases.Staff.Permissions.ManagePrices)
+            .Select(Describe)
+            .ToArray();
+
+        // Assert
+        Assert.Equal(2, actions.Length);
+        Assert.True(wrong.Length == 0, $"Pricing settings actions without the manage prices permission: {string.Join(", ", wrong)}");
+    }
+
+    /// <summary>
+    /// The price suggestion and price change routes are never public (MIL-051): every action needs the permission to manage
+    /// prices.
+    /// </summary>
+    [Fact]
+    public void PriceControllers_EveryAction_RequiresTheManagePricesPermission()
+    {
+        // Arrange
+        var actions = ActionsOfTheApi()
+            .Where(action => action.DeclaringType == typeof(NFHotel.Api.Controllers.PriceSuggestionsController)
+                || action.DeclaringType == typeof(NFHotel.Api.Controllers.PriceChangesController))
+            .ToArray();
+
+        // Act
+        var wrong = actions
+            .Where(action => action.GetCustomAttribute<RequiresPermissionAttribute>()?.Permission != NFHotel.Application.UseCases.Staff.Permissions.ManagePrices)
+            .Select(Describe)
+            .ToArray();
+
+        // Assert
+        Assert.Equal(5, actions.Length);
+        Assert.True(wrong.Length == 0, $"Price actions without the manage prices permission: {string.Join(", ", wrong)}");
+    }
+
     #endregion
 
     #region Helpers

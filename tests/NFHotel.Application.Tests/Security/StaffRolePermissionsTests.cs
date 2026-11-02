@@ -26,6 +26,7 @@ public sealed class StaffRolePermissionsTests
         Permissions.BenchmarkModelsManage,
         Permissions.MarketAnalysisView,
         Permissions.MarketAnalysisStart,
+        Permissions.ManagePrices,
     ];
 
     private static readonly Dictionary<StaffRole, string[]> Expected = new()

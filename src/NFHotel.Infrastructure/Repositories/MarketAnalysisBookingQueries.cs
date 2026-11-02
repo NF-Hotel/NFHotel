@@ -61,6 +61,10 @@ public sealed class MarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
     {
         var (weekend, week) = StayNights.Split(start, end);
 
+        // A booking made in the hotel holds only its price (MIL-051): its guests, meal and so on are not known, and the
+        // zeros of the row would count as "0 guests", "not a repeated guest" and "no special requests" in the analysis.
+        var traits = detail is { } known && !IsPriceOnly(known) ? known : null;
+
         return new MarketBookingDto(
             id,
             HotelName,
@@ -70,20 +74,36 @@ public sealed class MarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
             start,
             weekend,
             week,
-            detail?.Adults,
-            detail?.Children,
-            detail?.Babies,
-            detail?.Meal,
+            traits?.Adults,
+            traits?.Children,
+            traits?.Babies,
+            traits?.Meal,
             country,
-            detail?.MarketSegment,
-            detail?.IsRepeatedGuest,
-            detail?.PreviousCancellations,
-            detail?.RoomType,
-            detail?.BookingChanges,
-            detail?.DepositType,
-            detail?.CustomerType,
-            detail?.ParkingSpaces,
-            detail?.SpecialRequests,
+            traits?.MarketSegment,
+            traits?.IsRepeatedGuest,
+            traits?.PreviousCancellations,
+            traits?.RoomType,
+            traits?.BookingChanges,
+            traits?.DepositType,
+            traits?.CustomerType,
+            traits?.ParkingSpaces,
+            traits?.SpecialRequests,
             detail?.PricePerNight);
     }
+
+    /// <summary>True when a row holds nothing but the date and the price: every count 0, the flag off and every text empty.</summary>
+    private static bool IsPriceOnly(Domain.Entities.BookingMarketDetail detail) =>
+        detail.Adults == 0
+        && detail.Children == 0
+        && detail.Babies == 0
+        && detail.PreviousCancellations == 0
+        && detail.BookingChanges == 0
+        && detail.SpecialRequests == 0
+        && detail.ParkingSpaces == 0
+        && !detail.IsRepeatedGuest
+        && detail.Meal is null
+        && detail.MarketSegment is null
+        && detail.CustomerType is null
+        && detail.DepositType is null
+        && detail.RoomType is null;
 }

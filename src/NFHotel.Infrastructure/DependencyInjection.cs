@@ -9,10 +9,13 @@ using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.MarketAnalysis;
+using NFHotel.Application.UseCases.Pricing;
+using NFHotel.Application.UseCases.RoomRates;
 using NFHotel.Application.UseCases.Rooms;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Repositories;
 using NFHotel.Infrastructure.Config;
+using NFHotel.Infrastructure.Logging;
 using NFHotel.Infrastructure.Persistence;
 using NFHotel.Infrastructure.Repositories;
 using NFHotel.Infrastructure.Security;
@@ -140,6 +143,10 @@ public static class DependencyInjection
         services.AddScoped<IBenchmarkRunRepository, BenchmarkRunRepository>();
         services.AddScoped<IBenchmarkRequestRepository, BenchmarkRequestRepository>();
         services.AddScoped<IAiDefaultRepository, AiDefaultRepository>();
+        services.AddScoped<IRoomRateRepository, RoomRateRepository>();
+        services.AddScoped<IBookingMarketDetailRepository, BookingMarketDetailRepository>();
+        services.AddScoped<IPricingSettingRepository, PricingSettingRepository>();
+        services.AddScoped<IPriceChangeRepository, PriceChangeRepository>();
         services.AddScoped<IMarketAnalysisRunRepository, MarketAnalysisRunRepository>();
         services.AddScoped<IBenchmarkQueries, BenchmarkRunRepository>();
     }
@@ -155,6 +162,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<IStaffTokenIssuer, JwtStaffTokenIssuer>();
         services.AddSingleton<ILoginThrottle, InMemoryLoginThrottle>();
+        services.AddSingleton<IWarningLog, LoggerWarningLog>();
 
         // A caller that is not an HTTP request knows nobody; the API replaces this with the one that reads the token (ADR-0017).
         services.TryAddScoped<IStaffCallContext, AnonymousStaffCallContext>();
@@ -172,6 +180,10 @@ public static class DependencyInjection
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<IRoomService, RoomService>();
         services.AddScoped<IAiDefaultService, AiDefaultService>();
+        services.AddScoped<IRoomRateService, RoomRateService>();
+        services.AddScoped<IPricingSettingsService, PricingSettingsService>();
+        services.AddScoped<IPriceChangeService, PriceChangeService>();
+        services.AddScoped<IPriceSuggestionService, PriceSuggestionService>();
         services.AddScoped<IMarketAnalysisService, MarketAnalysisService>();
         services.AddScoped<MarketAnalysisRunner>();
         services.AddScoped<IMarketAnalysisBookingQueries, MarketAnalysisBookingQueries>();

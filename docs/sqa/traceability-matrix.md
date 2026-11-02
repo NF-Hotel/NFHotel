@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S04 | Initial version | [b690b57] |
 | 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (instructed by the user) | The traceability matrix covers BC, SA, PP, MIL-001 to MIL-005, US, UCD, ADR and RC-001 to RC-020 | [3db0f51] |
+| 2026-11-02 | Proposed | Claude (AI) | S01 | Added MIL-051, US-001.12, UC-007, the new dictionary terms and domain concepts, the code areas and the test classes of the room price suggestions, and the wiki page (MIL-051 task 10); the milestone is Accepted, the implementation is built and not yet merged | pending |
 
 ---
 
@@ -24,7 +24,7 @@ updated whenever an artifact instance is created or reviewed.
 
 | Artifact Instance | Type | Language | Domain | Upstream (Backward Link) | Downstream (Forward Link) | Last Reviewed (RC-ID) |
 | --- | --- | --- | --- | --- | --- | --- |
-| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-021], [MIL-022], [MIL-023], [UCD-001], [US-001] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044], [RC-088] |
+| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-021], [MIL-022], [MIL-023], [UCD-001], [US-001], [MIL-051] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044], [RC-088] |
 | [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009], [RC-026] |
 | [MIL-001] | Milestone | en | it | [BC-001] | - | [RC-003] |
 | [MIL-002] | Milestone | en | it | [BC-001] | - | [RC-006] |
@@ -53,20 +53,34 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0012] | ADR | en | it | [BC-001], [ADR-0003], [ADR-0006] | [MIL-025] | [RC-102] |
 | [MIL-025] | Milestone | en | it | [BC-001], [ADR-0012] | - | [RC-103] |
 | [ADR-0011] | ADR | en | it | [ADR-0004], [ADR-0010], [DSA-001] | [MIL-024] | [RC-100] |
-| [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001] | [RC-013], [RC-028] |
-| [US-001] | User Story | en | it | [UCD-001], [BC-001] | - | [RC-012], [RC-027] |
-| [DICT-001] | Domain Dictionary | en | it | [BC-001], [SA-001] | [DM-004] | [RC-029] |
+| [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001], [UC-007] | [RC-013], [RC-028] |
+| [US-001] | User Story | en | it | [UCD-001], [BC-001] | [MIL-051], [UC-007] (US-001.12) | [RC-012], [RC-027], [RC-258] |
+| [DICT-001] | Domain Dictionary | en | it | [BC-001], [SA-001], [UC-007] | [DM-004] | [RC-029], [RC-259] |
 | [UC-001] | Use Case | en | it | [UCD-001], [US-001], [SA-001] | [DM-001] | [RC-030] |
 | [UC-002] | Use Case | en | it | [UCD-001], [US-001], [SA-001] | [DM-002] | [RC-031] |
 | [UC-003] | Use Case | en | it | [UCD-001], [US-001], [SA-001] | [DM-003] | [RC-032] |
 | [DM-001] | Domain Model | en | it | [UC-001], [UCD-001], [DICT-001] | [DM-004] | [RC-033] |
 | [DM-002] | Domain Model | en | it | [UC-002], [UCD-001], [DICT-001] | [DM-004] | [RC-034] |
 | [DM-003] | Domain Model | en | it | [UC-003], [UCD-001], [DICT-001] | [DM-004] | [RC-035] |
-| [DM-004] | Domain Model | en | it | [UC-001], [UC-002], [UC-003], [DM-001], [DM-002], [DM-003], [DICT-001] | - | [RC-036] |
+| [DM-004] | Domain Model | en | it | [UC-001], [UC-002], [UC-003], [DM-001], [DM-002], [DM-003], [DICT-001], [UC-007] | - | [RC-036], [RC-259] |
 | `tests/NFHotel.Proxmox.Tests`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-001] | - | [RC-004] |
 | `deploy/`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-002] | - | [RC-007] |
 | `deploy/proxmox`, `scripts/pve-token.sh`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-003] | - | [RC-011] |
 | `deploy/market-analysis`, `deploy/nginx`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-004] | - | [RC-016] |
+| [MIL-051] | Milestone (Accepted, Go) | en | it | [BC-001], [US-001], [MIL-026], [MIL-028], [MIL-030] | [UC-007], `docs/wiki/Price-Suggestions.md`, code and tests below | [RC-257] |
+| [UC-007] | Use Case (Accepted) | en | it | [UCD-001], [US-001], [SA-001], [MIL-051] | [DM-004], [DICT-001], code and tests below | [RC-259] (Go with conditions) |
+| `docs/wiki/Price-Suggestions.md` | Wiki page (Proposed) | en | - | [MIL-051] task 10, [US-001], [UC-007] | - | - (not yet reviewed) |
+| Dictionary terms and domain concepts: Room rate, Price change, Price suggestion, Season, Pricing settings; Audit event actions `PriceChangeApproved`, `PriceChangeReverted`, `PricingSettingsChanged`, `RoomRateChanged` | Domain terms (Accepted) | en | it | [UC-007], [US-001] | [DICT-001], [DM-004], `src/NFHotel.Domain` (`RoomRate`, `PriceChange`, `PricingSetting`) | [RC-259] |
+| `src/NFHotel.Domain` (`RoomRate`, `PriceChange`, `PricingSetting`, `PriceChangeState`), `src/NFHotel.Application/UseCases/Pricing` (`SeasonRule`, `PriceSuggestionRule`, `PriceSuggestionService`, `PriceChangeService`, `PricingSettingsService`, `OccupancyObservationReader`), `src/NFHotel.Application/UseCases/RoomRates` (`RoomRateService`), the price lookup in `BookingService` | Source code (built, not yet merged) | - | - | [MIL-051] tasks 3 to 9, [UC-007] | - | [RC-260] (No-Go), [RC-261] (Go-with-conditions, Proposed; criteria 3, 13 and 21 open) |
+| `src/NFHotel.Api/Controllers` (`RoomRatesController`, `PricingSettingsController`, `PriceSuggestionsController`, `PriceChangesController`), `src/NFHotel.ApiClient` (`ApiRoomRateService`, `ApiPricingSettingsService`, `ApiPriceSuggestionService`), permission `Prices.Manage` | Source code (built, not yet merged) | - | - | [MIL-051] tasks 3, 5 and 7, [US-001], [UC-007] | - | [RC-260] (No-Go), [RC-261] (Go-with-conditions, Proposed; criteria 3, 13 and 21 open) |
+| `src/NFHotel.Infrastructure` (configurations, repositories and migrations `AddRoomRateAndAuditDetail`, `AddPricingSettings`, `AddPriceChange`) | Source code (built, not yet merged) | - | - | [MIL-051] tasks 3, 5, 6 and 9 | - | [RC-260] (No-Go), [RC-261] (Go-with-conditions, Proposed; criteria 3, 13 and 21 open) |
+| `src/NFHotel.Web/Features/Admin/Pricing` (`RoomRates`, `PricingSettings`, `PriceSuggestions` pages and view models), `AdminNav` | Source code (built, not yet merged) | - | - | [MIL-051] tasks 3, 5 and 8, [UC-007] | - | [RC-260] (No-Go), [RC-261] (Go-with-conditions, Proposed; criteria 3, 13 and 21 open) |
+| Tests of the rule: `SeasonRuleTests`, `PriceSuggestionRuleTests`, `OccupancyObservationReaderTests`, `PriceSuggestionServiceTests` | Test code (built, not yet merged) | - | - | [MIL-051] tasks 4 and 7, [US-001] | - | - |
+| Tests of the services: `RoomRateServiceTests`, `PricingSettingsServiceTests`, `PriceChangeServiceTests`, `PriceChangeAuditTests`, `BookingPriceTests` (Application.Tests); `ManagePricesPermissionTests`, `StaffRolePermissionsTests` | Test code (built, not yet merged) | - | - | [MIL-051] tasks 3, 5, 7 and 9, [UC-007] | - | - |
+| Tests of the domain: `RoomRateTests`, `PricingSettingTests`, `PriceChangeTests`, `StaffAuditEventDetailTests` | Test code (built, not yet merged) | - | - | [MIL-051] tasks 3, 5 and 6 | - | - |
+| Tests of the persistence: `RoomRateRepositoryTests`, `PricingSettingRepositoryTests`, `PriceChangeRepositoryTests`, `BookingPriceTests` (Infrastructure.Tests) | Test code (built, not yet merged) | - | - | [MIL-051] tasks 3, 5, 6 and 9 | - | - |
+| Tests of the API and the client: `RoomRatesEndpointTests`, `PricingSettingsEndpointTests`, `PriceSuggestionsEndpointTests`, `EndpointProtectionTests`, `RoomRateRequestTests`, `PricingSettingsRequestTests`, `PriceSuggestionRequestTests` | Test code (built, not yet merged) | - | - | [MIL-051] tasks 3, 5 and 7, [UC-007] | - | - |
+| Tests of the pages: `RoomRatesViewModelTests`, `PricingSettingsViewModelTests`, `PriceSuggestionsViewModelTests`, `RoomListViewModelTests`, `AdminAccessTests`, `BackOfficeAccessTests` | Test code (built, not yet merged) | - | - | [MIL-051] tasks 3, 5 and 8, [UC-007] | - | - |
 
 ---
 
@@ -177,3 +191,13 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-025]: ../milestones/mil-025-devops-repository-consolidation.md
 [RC-102]: ./reviews/rc-102-adr-0012.md
 [RC-103]: ./reviews/rc-103-milestone-025.md
+[MIL-051]: ../milestones/mil-051-room-price-suggestions.md
+[UC-007]: ../use-cases/uc-007/uc.md
+[RC-257]: ./reviews/rc-257-mil-051-room-price-suggestions.md
+[RC-258]: ./reviews/rc-258-mil-051-task-1-objective-and-story.md
+[RC-259]: ./reviews/rc-259-mil-051-task-2-terms-and-model.md
+[RC-260]: ./reviews/rc-260-mil-051-tasks-3-to-9-code.md
+[RC-261]: ./reviews/rc-261-mil-051-re-review-of-rc-260.md
+[MIL-026]: ../milestones/mil-026-market-analysis-report.md
+[MIL-028]: ../milestones/mil-028-market-analysis-run-api.md
+[MIL-030]: ../milestones/mil-030-staff-accounts-and-password.md

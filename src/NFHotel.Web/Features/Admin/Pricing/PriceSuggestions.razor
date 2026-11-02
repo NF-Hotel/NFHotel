@@ -1,0 +1,228 @@
+@page "/admin/pricing/suggestions"
+@layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.ManagePrices)]
+@rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using NFHotel.Web.Common
+@using NFHotel.Web.Features.Admin.Pricing
+@inject PriceSuggestionsViewModel ViewModel
+
+@*
+    The price suggestions of the Manager (MIL-051). Only markup and binding. The percentages come from a fixed rule on the
+    occupancy of the market analysis and are recomputed by the API when a suggestion is approved; the AI text only explains
+    and never reaches a price. No price changes until the Manager approves.
+*@
+
+<PageTitle>Price suggestions — administration</PageTitle>
+
+<div class="stack-lg">
+    <PageHeader Title="Price suggestions"
+                Subtitle="The suggestions are calculated from the occupancy of the market analysis by a fixed rule. No price changes until you approve; the AI text only explains." />
+
+    <div class="row">
+        <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="ReloadAsync">Reload</button>
+    </div>
+
+    <ErrorAlert Errors="ViewModel.Errors" />
+
+    <div role="status" aria-live="polite">
+        @if (ViewModel.SuccessMessage is { } success)
+        {
+            <AlertBox Kind="AlertKind.Ok" Message="@success" />
+        }
+    </div>
+
+    @if (!ViewModel.IsLoaded)
+    {
+        <LoadingSkeleton Rows="4" />
+    }
+    else
+    {
+        <section class="card card-pad stack" aria-labelledby="open-suggestions">
+            <h2 class="subtitle" id="open-suggestions">Open suggestions</h2>
+
+            @if (ViewModel.HasNoBasis)
+            {
+                <AlertBox Kind="AlertKind.Info">
+                    <p>
+                        There is no basis for suggestions yet: the market analysis needs a completed report with occupancy for all
+                        twelve calendar months (and a room rate per room size).
+                    </p>
+                    <p>
+                        <a href="/admin/market-analysis">Market analysis</a> ·
+                        <a href="/admin/pricing/rates">Room rates</a>
+                    </p>
+                </AlertBox>
+            }
+            else if (ViewModel.HasNoSuggestions)
+            {
+                <p>No price change is suggested for the next twelve months.</p>
+            }
+            else if (ViewModel.Suggestions.Count > 0)
+            {
+                <div class="table-wrap">
+                    <table class="table">
+                        <caption class="sr-only">Open price suggestions</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Room size</th>
+                                <th scope="col">Season</th>
+                                <th scope="col">First day</th>
+                                <th scope="col">Last day</th>
+                                <th scope="col">Change</th>
+                                <th scope="col">Price a night (old → new)</th>
+                                <th scope="col">Basis</th>
+                                <th scope="col">Approve</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var index = 0; index < ViewModel.Suggestions.Count; index++)
+                            {
+                                var row = ViewModel.Suggestions[index];
+                                var key = row.Key;
+                                var firstId = $"first-{index}";
+                                var lastId = $"last-{index}";
+                                <tr>
+                                    <th scope="row">@row.Size</th>
+                                    <td>@row.Season</td>
+                                    <td>@row.FirstDay</td>
+                                    <td>@row.LastDay</td>
+                                    <td>@row.Change</td>
+                                    <td>@row.Move</td>
+                                    <td>
+                                        @row.Basis
+                                        @if (row.WasLimited)
+                                        {
+                                            <br />
+                                            <span class="muted">Limited by the cap or the minimum price.</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="stack">
+                                            <label for="@firstId">First day for @row.Size, @row.Season</label>
+                                            <input id="@firstId" class="field-input" type="date" value="@ViewModel.FirstDayOf(key)"
+                                                   @onchange="e => ViewModel.SetFirstDay(key, e.Value?.ToString())" />
+                                            <label for="@lastId">Last day for @row.Size, @row.Season</label>
+                                            <input id="@lastId" class="field-input" type="date" value="@ViewModel.LastDayOf(key)"
+                                                   @onchange="e => ViewModel.SetLastDay(key, e.Value?.ToString())" />
+                                            <button type="button" class="btn btn-primary btn-sm" disabled="@ViewModel.IsBusy"
+                                                    @onclick="() => ApproveAsync(key)">Approve</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        @if (ViewModel.AiExplanation is { } explanation)
+        {
+            <section class="card card-pad stack" aria-labelledby="ai-explanation">
+                <h2 class="subtitle" id="ai-explanation">Explanation from the market analysis (AI text, not used for the prices)</h2>
+                <p>@explanation</p>
+            </section>
+        }
+
+        <section class="card card-pad stack" aria-labelledby="price-changes">
+            <h2 class="subtitle" id="price-changes">Price changes</h2>
+            @if (ViewModel.Changes.Count == 0)
+            {
+                <p class="muted">No price change has been approved yet.</p>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="table">
+                        <caption class="sr-only">All price changes, the newest first</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Room size</th>
+                                <th scope="col">Change</th>
+                                <th scope="col">First day</th>
+                                <th scope="col">Last day</th>
+                                <th scope="col">State</th>
+                                <th scope="col">Approved by</th>
+                                <th scope="col">Approved at (UTC)</th>
+                                <th scope="col">Reverted by</th>
+                                <th scope="col">Reverted at (UTC)</th>
+                                <th scope="col">Revert</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var change in ViewModel.Changes)
+                            {
+                                var id = change.Id;
+                                <tr>
+                                    <th scope="row">@change.Size</th>
+                                    <td>@change.Change</td>
+                                    <td>@change.FirstDay</td>
+                                    <td>@change.LastDay</td>
+                                    <td>@change.State</td>
+                                    <td>@change.ApprovedBy</td>
+                                    <td>@change.ApprovedAt</td>
+                                    <td>@(change.RevertedBy ?? "-")</td>
+                                    <td>@(change.RevertedAt ?? "-")</td>
+                                    <td>
+                                        @if (change.CanRevert)
+                                        {
+                                            <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy"
+                                                    aria-label="@($"Revert the change of {change.Size} {change.Change} from {change.FirstDay}")"
+                                                    @onclick="() => RevertAsync(id)">Revert</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        <section class="card card-pad stack" aria-labelledby="effective-prices">
+            <h2 class="subtitle" id="effective-prices">Prices today</h2>
+            <div class="table-wrap">
+                <table class="table">
+                    <caption class="sr-only">The effective price of each room size today</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Room size</th>
+                            <th scope="col">Base rate</th>
+                            <th scope="col">Change</th>
+                            <th scope="col">Price today</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var price in ViewModel.EffectivePrices)
+                        {
+                            <tr>
+                                <th scope="row">@price.Size</th>
+                                @if (price.BaseRate is null)
+                                {
+                                    <td colspan="3">not set · <a href="/admin/pricing/rates">Room rates</a></td>
+                                }
+                                else
+                                {
+                                    <td>@price.BaseRate</td>
+                                    <td>@price.Change</td>
+                                    <td>@price.Price</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
+
+    private Task ReloadAsync() => ViewModel.LoadAsync(ComponentToken);
+
+    private Task ApproveAsync(string key) => ViewModel.ApproveAsync(key, ComponentToken);
+
+    private Task RevertAsync(int id) => ViewModel.RevertAsync(id, ComponentToken);
+}

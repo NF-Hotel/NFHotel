@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | US-001 |
-| CrossReference | [UCD-001], [BC-001], [MIL-002], [MIL-016] |
+| CrossReference | [UCD-001], [BC-001], [MIL-002], [MIL-016], [MIL-051] |
 | Language | en |
 | Domain | it |
 
@@ -13,6 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.10 and US-001.11, the password and account stories (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
 | 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | US-001.04 gains a criterion: a run that a restart stops is shown as interrupted and can be started again (MIL-043, ADR-0031) | [43bcf70] |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Added US-001.12, approve a price suggestion (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-258 Go | pending |
 
 ---
 
@@ -201,6 +202,24 @@ analysis without anyone starting it by hand.
 | --- | --- | --- | --- | --- |
 | UCD-001 use case "Manage Staff Accounts" | fits one iteration | none | Must | Accounts are made by a command on the server today |
 
+### US-001.12 — Approve a price suggestion
+
+**As** a Manager (S05), **I want** the back office to suggest a price change for the high and the low season that I approve with one click, **so that** the owner's pricing rule is applied on time without working out the prices by hand.
+
+**Acceptance Criteria**
+
+- Given a month of the market analysis with occupancy at or above the high threshold, when I open the suggestions, then I see a surcharge of 20 percent for every room size with the old and the new nightly price, the occupancy and the threshold it rests on.
+- Given a month with occupancy at or below the low threshold, when I open the suggestions, then I see a discount for single rooms only.
+- Given a suggestion, when I approve it, then a price change is created from the start date to the end date shown (the first and the last day of the season unless I change them) and the price on those days is the new one.
+- Given a price change I approved, when I revert it, then it ends the same day and the next day is at the base rate; the record stays in the list as reverted.
+- Given I am a Receptionist or Housekeeping, when I open the suggestions or call the approval, then I am told that the role has no access.
+- Given the report has an AI text, when the page shows a suggestion, then the text is labelled as an explanation and no price comes from it.
+- Given I approve, revert or change a rate or a setting, when I open the audit page, then I see who did what and when, with the old and the new value.
+
+| Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
+| --- | --- | --- | --- | --- |
+| UCD-001 use case "Approve a Price Suggestion" | does not yet fit one iteration | Small: splits into rates, the rule, the settings, the approval and the page (MIL-051 tasks 3 to 8) | Should | The owner wants the market analysis to lead to a price, and a room has no price today |
+
 ## INVEST Check
 
 - Independent: US-001.01 needs US-001.05; US-001.02 needs US-001.04; US-001.04 and US-001.05 need US-001.03. The order is stated in the Reason column.
@@ -225,5 +244,6 @@ for US-001.02.
 [SA-001]: ./stakeholder-analysis.md
 [fc8ec78]: https://github.com/NF-Hotel/NFHotel/commit/fc8ec78b24b805b10d5c056b19ed2785697ee8ff
 [MIL-016]: ./milestones/mil-016-backoffice-login.md
+[MIL-051]: ./milestones/mil-051-room-price-suggestions.md
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
 [43bcf70]: https://github.com/NF-Hotel/NFHotel/commit/43bcf70046d2f2537672030b83f39f8b3fda4551

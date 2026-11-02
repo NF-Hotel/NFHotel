@@ -15,6 +15,7 @@
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the actor Hotel staff and the use cases Manage Bookings, Manage Rooms and Manage Guests (MIL-007) | [a29c54a] |
 | 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the use case Sign In To The Back Office (MIL-016) | [1593b34] |
 | 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Change Own Password and Manage Staff Accounts (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
+| 2026-11-01 | Accepted | Claude (AI) | S01 | Added the use case Approve a Price Suggestion (MIL-051) ; accepted by S01 in chat on 2026-11-01 after RC-258 Go | pending |
 
 ---
 
@@ -49,6 +50,7 @@ rectangle "NFHotel platform" <<System>> {
   usecase "Sign In To The Back Office" as UC10
   usecase "Change Own Password" as UC11
   usecase "Manage Staff Accounts" as UC12
+  usecase "Approve a Price Suggestion" as UC13
 }
 Owner --> UC1
 Owner --> UC2
@@ -61,10 +63,12 @@ Staff --> UC9
 Staff --> UC10
 Staff --> UC11
 Staff --> UC12
+Staff --> UC13
 UC7 ..> UC10 : <<include>>
 UC8 ..> UC10 : <<include>>
 UC11 ..> UC10 : <<include>>
 UC12 ..> UC10 : <<include>>
+UC13 ..> UC10 : <<include>>
 UC9 ..> UC10 : <<include>>
 UC2 ..> UC6 : <<include>>
 UC4 ..> UC3 : <<include>>
@@ -78,7 +82,7 @@ UC5 ..> UC3 : <<include>>
 | --- | --- | --- | --- |
 | Owner | `<<Actor>>` | S01 | View Market Analysis; Choose Local AI Model |
 | DevOps | `<<Actor>>` | S02 | Route Services Through Nginx; Run Time and Quality Benchmark; Run Market Analysis Service |
-| Hotel staff | `<<Actor>>` | S05 | Manage Bookings; Manage Rooms; Manage Guests; Sign In To The Back Office; Change Own Password; Manage Staff Accounts |
+| Hotel staff | `<<Actor>>` | S05 | Manage Bookings; Manage Rooms; Manage Guests; Sign In To The Back Office; Change Own Password; Manage Staff Accounts; Approve a Price Suggestion |
 
 ## Use Case Table
 
@@ -96,6 +100,7 @@ UC5 ..> UC3 : <<include>>
 | Sign In To The Back Office | Hotel staff | Sign in with an own account and see only what the role needs | [US-001].09 | Must | The back office must not run on the public port without it |
 | Change Own Password | Hotel staff | Change the own password with the current one, so that older sessions end | [US-001].10 | Must | A password that others have seen must be replaceable |
 | Manage Staff Accounts | Hotel staff (Manager) | Create, disable, enable and reset accounts and read the audit trail | [US-001].11 | Must | Accounts are made by a command on the server today |
+| Approve a Price Suggestion | Hotel staff (Manager) | Approve or revert a suggested price change for the high or the low season | [US-001].12 | Should | The owner wants the market analysis to lead to a price |
 
 ## Role Matrix
 
@@ -117,6 +122,7 @@ the DevOps role operates the services; the Hotel staff role runs the back office
 | Sign In To The Back Office | - | - | performs |
 | Change Own Password | - | - | performs |
 | Manage Staff Accounts | - | - | performs (Manager only) |
+| Approve a Price Suggestion | - | - | performs (Manager only) |
 
 No use case is shared by two roles. Whether DevOps may also view the analysis
 is a question for the Product Owner.
@@ -129,7 +135,7 @@ is a question for the Product Owner.
 | Run Time and Quality Benchmark | `<<include>>` | Route Services Through Nginx | The benchmark service is only reachable behind the proxy |
 | Run Market Analysis Service | `<<include>>` | Route Services Through Nginx | The analysis service is only reachable behind the proxy |
 | Manage Bookings, Manage Rooms, Manage Guests | `<<include>>` | Sign In To The Back Office | Every back office function needs a signed-in member of staff |
-| Change Own Password, Manage Staff Accounts | `<<include>>` | Sign In To The Back Office | Both need a signed-in member of staff |
+| Change Own Password, Manage Staff Accounts, Approve a Price Suggestion | `<<include>>` | Sign In To The Back Office | Both need a signed-in member of staff |
 
 ---
 

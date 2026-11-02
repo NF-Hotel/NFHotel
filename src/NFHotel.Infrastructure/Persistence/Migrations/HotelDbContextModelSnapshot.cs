@@ -649,6 +649,133 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                     b.ToTable("market_analysis_run", (string)null);
                 });
 
+            modelBuilder.Entity("NFHotel.Domain.Entities.PriceChange", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("price_change_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at");
+
+                    b.Property<string>("ApprovedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("approved_by");
+
+                    b.Property<DateOnly?>("EndedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("ended_on");
+
+                    b.Property<DateOnly>("FirstDay")
+                        .HasColumnType("date")
+                        .HasColumnName("first_day");
+
+                    b.Property<DateOnly>("LastDay")
+                        .HasColumnType("date")
+                        .HasColumnName("last_day");
+
+                    b.Property<decimal>("Percentage")
+                        .HasColumnType("numeric(7,2)")
+                        .HasColumnName("percentage");
+
+                    b.Property<DateTimeOffset?>("RevertedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reverted_at");
+
+                    b.Property<string>("RevertedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("reverted_by");
+
+                    b.Property<int>("Size")
+                        .HasColumnType("integer")
+                        .HasColumnName("size");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer")
+                        .HasColumnName("state");
+
+                    b.HasKey("Id")
+                        .HasName("pk_price_change");
+
+                    b.HasIndex("Size", "FirstDay")
+                        .HasDatabaseName("ix_price_change_size_first_day");
+
+                    b.ToTable("price_change", (string)null);
+                });
+
+            modelBuilder.Entity("NFHotel.Domain.Entities.PricingSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("pricing_settings_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("discount_percent");
+
+                    b.Property<string>("DiscountSizes")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("discount_sizes");
+
+                    b.Property<decimal>("HighThresholdPercent")
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("high_threshold_percent");
+
+                    b.Property<decimal>("LowThresholdPercent")
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("low_threshold_percent");
+
+                    b.Property<decimal>("MaxChangePercent")
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("max_change_percent");
+
+                    b.Property<decimal>("MinimumNightlyPrice")
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("minimum_nightly_price");
+
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("set_at");
+
+                    b.Property<string>("SetBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("set_by");
+
+                    b.Property<int>("Slot")
+                        .HasColumnType("integer")
+                        .HasColumnName("slot");
+
+                    b.Property<decimal>("SurchargePercent")
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("surcharge_percent");
+
+                    b.HasKey("Id")
+                        .HasName("pk_pricing_settings");
+
+                    b.HasIndex("Slot")
+                        .IsUnique()
+                        .HasDatabaseName("ux_pricing_settings_slot");
+
+                    b.ToTable("pricing_settings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_pricing_settings_slot", "slot = 1");
+                        });
+                });
+
             modelBuilder.Entity("NFHotel.Domain.Entities.Room", b =>
                 {
                     b.Property<int>("Id")
@@ -708,6 +835,43 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("NFHotel.Domain.Entities.RoomRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("room_rate_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("NightlyPrice")
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("nightly_price");
+
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("set_at");
+
+                    b.Property<string>("SetBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("set_by");
+
+                    b.Property<int>("Size")
+                        .HasColumnType("integer")
+                        .HasColumnName("size");
+
+                    b.HasKey("Id")
+                        .HasName("pk_room_rate");
+
+                    b.HasIndex("Size")
+                        .IsUnique()
+                        .HasDatabaseName("ux_room_rate_size");
+
+                    b.ToTable("room_rate", (string)null);
+                });
+
             modelBuilder.Entity("NFHotel.Domain.Entities.StaffAuditEvent", b =>
                 {
                     b.Property<int>("Id")
@@ -729,6 +893,11 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("actor_name");
+
+                    b.Property<string>("Detail")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("detail");
 
                     b.Property<DateTimeOffset>("OccurredAt")
                         .HasColumnType("timestamp with time zone")

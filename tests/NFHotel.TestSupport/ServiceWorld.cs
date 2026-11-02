@@ -10,6 +10,8 @@ using NFHotel.Application.UseCases.Benchmark;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.MarketAnalysis;
+using NFHotel.Application.UseCases.Pricing;
+using NFHotel.Application.UseCases.RoomRates;
 using NFHotel.Application.UseCases.Rooms;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
@@ -31,6 +33,14 @@ public sealed class FakeClock : IClock
     public DateTimeOffset UtcNow => new(Today.ToDateTime(TimeOnly.MinValue) + TimeOfDay, TimeSpan.Zero);
 }
 
+/// <summary>Keeps the warnings the Application layer wrote.</summary>
+public sealed class RecordingWarningLog : IWarningLog
+{
+    public List<string> Messages { get; } = [];
+
+    public void Warn(string message) => Messages.Add(message);
+}
+
 /// <summary>A unit of work that counts saves and can fail on demand, as the database would.</summary>
 public sealed class FakeUnitOfWork : IUnitOfWork
 {
@@ -38,11 +48,22 @@ public sealed class FakeUnitOfWork : IUnitOfWork
 
     public Exception? FailWith { get; set; }
 
+    /// <summary>Makes the save with this number (1 is the first since the last reset) fail, as a database error would.</summary>
+    public int? FailOnSaveNumber { get; set; }
+
+    /// <summary>Sets the count of saves back to 0.</summary>
+    public void ResetSaveCount() => SaveCount = 0;
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         if (FailWith is not null)
         {
             throw FailWith;
+        }
+
+        if (FailOnSaveNumber == SaveCount + 1)
+        {
+            throw new InvalidOperationException("The database could not save.");
         }
 
         SaveCount++;
@@ -293,6 +314,12 @@ public sealed class ServiceWorld
 
     public InMemoryAiDefaultRepository AiDefaults { get; } = new();
 
+    public InMemoryRoomRateRepository RoomRates { get; } = new();
+
+    public InMemoryPricingSettingRepository PricingSettings { get; } = new();
+
+    public InMemoryPriceChangeRepository PriceChanges { get; } = new();
+
     public InMemoryBenchmarkRequestRepository BenchmarkRequests { get; } = new();
 
     public InMemoryMarketAnalysisRunRepository MarketAnalysisRuns { get; } = new();
@@ -313,8 +340,13 @@ public sealed class ServiceWorld
 
     public IBenchmarkQueries BenchmarkQueries { get; } = Substitute.For<IBenchmarkQueries>();
 
-    public BookingService BookingService(IStaffAuthorizationService? authorization = null) =>
-        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>());
+    public InMemoryBookingMarketDetailRepository BookingMarketDetails { get; } = new();
+
+    public RecordingWarningLog Warnings { get; } = new();
+
+    /// <summary>Builds the service; <paramref name="prices"/> replaces the real price lookup, for example to make it fail.</summary>
+    public BookingService BookingService(IStaffAuthorizationService? authorization = null, IPriceChangeService? prices = null) =>
+        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings);
 
     public GuestService GuestService(IStaffAuthorizationService? authorization = null) =>
       new(Guests, GuestQueries, UnitOfWork, authorization ?? Substitute.For<IStaffAuthorizationService>());
@@ -331,6 +363,18 @@ public sealed class ServiceWorld
     public BenchmarkService BenchmarkService() => new(Benchmarks, BenchmarkQueries, UnitOfWork);
 
     public AiDefaultService AiDefaultService() => new(AiDefaults, UnitOfWork, Clock);
+
+    public RoomRateService RoomRateService(IStaffCallContext? context = null) =>
+        new(RoomRates, StaffAudit, UnitOfWork, Clock, context ?? CallContext);
+
+    public PriceChangeService PriceChangeService(IStaffCallContext? context = null) =>
+        new(PriceChanges, RoomRates, StaffAudit, UnitOfWork, Clock, context ?? CallContext);
+
+    public PriceSuggestionService PriceSuggestionService(IStaffCallContext? context = null) =>
+        new(MarketAnalysisService(), RoomRates, PricingSettings, PriceChanges, PriceChangeService(context), Clock);
+
+    public PricingSettingsService PricingSettingsService(IStaffCallContext? context = null) =>
+        new(PricingSettings, StaffAudit, UnitOfWork, Clock, context ?? CallContext);
 
     public BenchmarkRequestService BenchmarkRequestService() => new(BenchmarkRequests, UnitOfWork, Clock);
 
