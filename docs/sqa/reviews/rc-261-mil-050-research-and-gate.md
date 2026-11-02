@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Accepted | mikemike | AI as stand-in for S01 | Initial version | pending |
+| 2026-11-02 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [4635b06] |
 
 ---
 
@@ -55,3 +55,4 @@ Go: every criterion of [MIL-050] passes, and task 1, the last open task, is done
 [MIL-050]: ../../milestones/mil-050-technology-choices.md
 [RC-252]: ./rc-252-mil-050-page-and-test.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[4635b06]: https://github.com/NF-Hotel/NFHotel/commit/4635b062f377d9c3c20a82a5e549c9cf1f03610c

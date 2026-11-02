@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Criterion 4: Reddit refuses the research tools, so S01 chose in chat on 2026-10-30 Hacker News, the Stack Overflow survey and the Stack Overflow answers instead ("1"); reviewed in RC-252 | [b4329fc] |
-| 2026-11-02 | Accepted | mikemike | AI as stand-in for S01 | Gate: task 1 done, the answers of the eight Stack Exchange threads summarised on the page; every criterion passes and the milestone is closed after RC-261 Go. S01 asked in chat on 2026-11-02 for autonomous mode to finish the open milestones ("Ja") | pending |
+| 2026-11-02 | Accepted | mikemike | AI as stand-in for S01 | Gate: task 1 done, the answers of the eight Stack Exchange threads summarised on the page; every criterion passes and the milestone is closed after RC-261 Go. S01 asked in chat on 2026-11-02 for autonomous mode to finish the open milestones ("Ja") | [4635b06] |
 
 ---
 
@@ -94,3 +94,4 @@ Decide whether a member of the team, or a teacher, can see from the wiki why NF 
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [ADR-0028]: ../adr/adr-0028-public-access-through-cloudflare-tunnel.md
 [b4329fc]: https://github.com/NF-Hotel/NFHotel/commit/b4329fcf8655a3ab43a0a8e1eb9da93217c32349
+[4635b06]: https://github.com/NF-Hotel/NFHotel/commit/4635b062f377d9c3c20a82a5e549c9cf1f03610c
