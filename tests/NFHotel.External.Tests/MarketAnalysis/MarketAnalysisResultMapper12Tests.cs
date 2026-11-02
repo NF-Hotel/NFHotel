@@ -224,7 +224,7 @@ public sealed class MarketAnalysisResultMapper12Tests
     public void Map_Version11Sample_HasNoNewFields()
     {
         // Arrange
-        string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
+        string json = File.ReadAllText(Path.Join(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
 
         // Act
         MarketAnalysisContentDto content = Map(json).Content!;
@@ -239,7 +239,7 @@ public sealed class MarketAnalysisResultMapper12Tests
     #endregion
 
     private static string Fixture() =>
-        File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result-1.2.json"));
+        File.ReadAllText(Path.Join(AppContext.BaseDirectory, "TestData", "market-analysis-result-1.2.json"));
 
     private static MarketAnalysisResultDto Map(string json)
     {

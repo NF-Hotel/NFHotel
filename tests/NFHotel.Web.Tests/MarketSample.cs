@@ -12,7 +12,7 @@ internal static class MarketSample
     /// <returns>The nine analyses of the sample.</returns>
     public static IReadOnlyList<MarketAnalysisSectionDto> Sections()
     {
-        string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
+        string json = File.ReadAllText(Path.Join(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
         using JsonDocument document = JsonDocument.Parse(json);
 
         return MarketAnalysisResultMapper.Map(document.RootElement)?.Content?.Sections
@@ -23,7 +23,7 @@ internal static class MarketSample
     /// <returns>The content of the result.</returns>
     public static MarketAnalysisContentDto Content12()
     {
-        string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result-1.2.json"));
+        string json = File.ReadAllText(Path.Join(AppContext.BaseDirectory, "TestData", "market-analysis-result-1.2.json"));
         using JsonDocument document = JsonDocument.Parse(json);
 
         return MarketAnalysisResultMapper.Map(document.RootElement)?.Content

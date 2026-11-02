@@ -186,13 +186,7 @@ public static class MarketAnalysisResultMapper
                 && measure.Value.TryGetProperty("months", out JsonElement found)
                 && found.ValueKind == JsonValueKind.Array)
             {
-                foreach (JsonElement month in found.EnumerateArray())
-                {
-                    if (Text(month, "group") is { Length: > 0 } group && Decimal(month, "value") is { } value)
-                    {
-                        months.Add(new MarketAnalysisForecastMonthDto(group, value, Decimal(month, "low"), Decimal(month, "high")));
-                    }
-                }
+                months.AddRange(found.EnumerateArray().Select(ForecastMonth).OfType<MarketAnalysisForecastMonthDto>());
             }
 
             if (months.Count > 0)
@@ -245,21 +239,21 @@ public static class MarketAnalysisResultMapper
         List<MarketAnalysisSuggestionDto> suggestions = [];
         if (source.TryGetProperty(listName, out JsonElement list) && list.ValueKind == JsonValueKind.Array)
         {
-            foreach (JsonElement item in list.EnumerateArray())
-            {
-                if (Text(item, "suggestion") is { } suggestion)
-                {
-                    suggestions.Add(new MarketAnalysisSuggestionDto(
-                        suggestion,
-                        Text(item, "evidence") ?? string.Empty,
-                        Integer(item, "sample_size"),
-                        Text(item, "series")));
-                }
-            }
+            suggestions.AddRange(list.EnumerateArray().Select(Suggestion).OfType<MarketAnalysisSuggestionDto>());
         }
 
         return suggestions;
     }
+
+    private static MarketAnalysisSuggestionDto? Suggestion(JsonElement item) =>
+        Text(item, "suggestion") is { } suggestion
+            ? new MarketAnalysisSuggestionDto(suggestion, Text(item, "evidence") ?? string.Empty, Integer(item, "sample_size"), Text(item, "series"))
+            : null;
+
+    private static MarketAnalysisForecastMonthDto? ForecastMonth(JsonElement month) =>
+        Text(month, "group") is { Length: > 0 } group && Decimal(month, "value") is { } value
+            ? new MarketAnalysisForecastMonthDto(group, value, Decimal(month, "low"), Decimal(month, "high"))
+            : null;
 
     // One observation per chart; an entry without text or without the path of its series cannot be shown under a chart.
     private static List<MarketAnalysisObservationDto> Observations(JsonElement insight)
