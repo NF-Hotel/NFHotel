@@ -119,7 +119,13 @@ preflight() {
   }
 
   echo "Checking this machine for F5 in Visual Studio"
-  report ok "bash ${BASH_VERSION%%(*}"
+  # `bash` in PowerShell is the bash of WSL: its dotnet and its user secrets are Linux ones, which Visual Studio on
+  # Windows never sees. A checkout on a Windows drive is prepared from Git Bash instead.
+  if grep -qi microsoft /proc/version 2>/dev/null && [[ "$root" == /mnt/[a-z]/* ]]; then
+    report PROBLEM "this is the bash of WSL, so the secrets would not reach Visual Studio; from PowerShell run .\\scripts\\dev-f5.ps1, or run the script in Git Bash"
+  else
+    report ok "bash ${BASH_VERSION%%(*}"
+  fi
   for tool in openssl dotnet; do
     if command -v "$tool" >/dev/null 2>&1; then
       report ok "$tool"
