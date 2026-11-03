@@ -25,6 +25,14 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!--
+      Blazor on .NET 10 sends the redirect of a static server-rendered page (the sign-in, the password change)
+      without throwing NavigationException when this is set, as the .NET 10 template sets it. Without it, Visual
+      Studio stops at every Navigation.NavigateTo under F5. Code after NavigateTo now runs, so a NavigateTo that
+      is not the last statement of its method needs a return. NFHotel.Web.Tests sets the same runtime switch.
+    -->
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
   </PropertyGroup>
 
   <ItemGroup>

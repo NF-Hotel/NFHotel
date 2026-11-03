@@ -30,6 +30,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      The runtime switch behind BlazorDisableThrowNavigationException in NFHotel.Web.csproj. WebFactory runs the web
+      application in this process, which reads the runtimeconfig of this project, not of the web application.
+    -->
+    <RuntimeHostConfigurationOption Include="Microsoft.AspNetCore.Components.Endpoints.NavigationManager.DisableThrowNavigationException" Value="true" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\..\docs\test-data\market-analysis-result.json" Link="TestData\market-analysis-result.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- A trimmed result of schema 1.2 (room revenue, forecast, overall interpretation) taken from a real run. -->
     <Content Include="..\..\docs\test-data\market-analysis-result-1.2.json" Link="TestData\market-analysis-result-1.2.json" CopyToOutputDirectory="PreserveNewest" />
