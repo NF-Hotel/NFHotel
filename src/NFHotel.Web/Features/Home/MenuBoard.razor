@@ -1,0 +1,113 @@
+@*
+    The departure board from the hotel's film: what the kitchen and the bar serve through the evening
+    and the night, one tile per letter. Static markup, no render mode — a board does not need a circuit.
+
+    TODO: the dishes and the times are the ones the film shows, not a menu from nfhotel.com. Confirm
+    them with the kitchen before the site goes live.
+*@
+
+<div class="pub-board">
+    <table>
+        <thead class="visually-hidden">
+            <tr>
+                <th scope="col">Time</th>
+                <th scope="col">On the menu</th>
+                <th scope="col">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="pub-board-head">
+                <th colspan="3" scope="rowgroup">Evening</th>
+            </tr>
+            @foreach (var (time, dish) in Evening)
+            {
+                <tr>
+                    <td>
+                        @foreach (var letter in Tiles(time, TimeWidth))
+                        {
+                            <span class="pub-flap">@letter</span>
+                        }
+                    </td>
+                    <td class="pub-board-menu">
+                        @foreach (var letter in Tiles(dish, DishWidth))
+                        {
+                            <span class="pub-flap">@letter</span>
+                        }
+                    </td>
+                    <td class="pub-board-open">
+                        @foreach (var letter in Tiles(Open, Open.Length))
+                        {
+                            <span class="pub-flap">@letter</span>
+                        }
+                    </td>
+                </tr>
+            }
+            <tr class="pub-board-head">
+                <th colspan="3" scope="rowgroup">Late night</th>
+            </tr>
+            @foreach (var (time, dish) in LateNight)
+            {
+                <tr>
+                    <td>
+                        @foreach (var letter in Tiles(time, TimeWidth))
+                        {
+                            <span class="pub-flap">@letter</span>
+                        }
+                    </td>
+                    <td class="pub-board-menu">
+                        @foreach (var letter in Tiles(dish, DishWidth))
+                        {
+                            <span class="pub-flap">@letter</span>
+                        }
+                    </td>
+                    <td class="pub-board-open">
+                        @foreach (var letter in Tiles(Open, Open.Length))
+                        {
+                            <span class="pub-flap">@letter</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <p class="pub-board-foot">Kitchen and bar open 24 hours. Prices at the bar.</p>
+</div>
+
+@code {
+    /// <summary>Tiles in the time column: <c>18:00</c>.</summary>
+    private const int TimeWidth = 5;
+
+    /// <summary>Tiles in the dish column: the longest dish on the board, so every row is as wide as the next.</summary>
+    private const int DishWidth = 19;
+
+    private const string Open = "OPEN";
+
+    /// <summary>A tile with nothing on it. A no-break space keeps the span from collapsing.</summary>
+    private const string Blank = " ";
+
+    private static readonly (string Time, string Dish)[] Evening =
+    [
+        ("18:00", "Cambodia Draft"),
+        ("19:00", "Chicken Satay"),
+        ("20:30", "Cambodian Curry"),
+        ("21:00", "Passionfruit Mojito"),
+        ("22:00", "Chili Cheese Fries"),
+        ("23:30", "Espresso Martini")
+    ];
+
+    private static readonly (string Time, string Dish)[] LateNight =
+    [
+        ("00:00", "Rodeo Bacon Burger"),
+        ("01:00", "Blue Margarita"),
+        ("02:00", "Mike's Beef Chili"),
+        ("03:00", "Mac n Cheese Balls"),
+        ("04:00", "Philly Cheesesteak"),
+        ("05:00", "Banana Pancakes")
+    ];
+
+    /// <summary>
+    /// Splits a text into one upper-case letter per tile, padded with blank tiles to the width of the column.
+    /// </summary>
+    private static IEnumerable<string> Tiles(string text, int width) =>
+        text.ToUpperInvariant().PadRight(width)[..width].Select(letter => letter == ' ' ? Blank : letter.ToString());
+}

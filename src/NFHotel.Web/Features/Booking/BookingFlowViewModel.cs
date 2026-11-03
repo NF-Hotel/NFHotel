@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Guests;
 using NFHotel.Application.Dto.Rooms;
@@ -40,12 +42,20 @@ public sealed class BookingFlowViewModel
     /// <summary>Default stay when the page is opened: one night, tomorrow.</summary>
     private const int DefaultNights = 1;
 
+    /// <summary>The most guests the flow asks about. A bigger party books two rooms, like at the desk.</summary>
+    public const int MaxGuests = 4;
+
+    /// <summary>The format of a date in the address of /book, as the booking box on the front page writes it.</summary>
+    private const string QueryDateFormat = "yyyy-MM-dd";
+
     private static readonly IReadOnlyList<string> NoMessages = Array.Empty<string>();
     private static readonly IReadOnlyList<AvailableRoomDto> NoRooms = Array.Empty<AvailableRoomDto>();
 
     private readonly IUseCaseRunner<IBookingService> _bookings;
     private readonly IUseCaseRunner<IGuestService> _guests;
     private readonly IClock _clock;
+
+    private int _party = 1;
 
     /// <summary>
     /// Creates the viewmodel with an empty flow and a suggestion for dates.
@@ -91,6 +101,28 @@ public sealed class BookingFlowViewModel
 
     /// <summary>The rooms that are free in the period (BR-C-02). Empty until step 2 has been fetched.</summary>
     public IReadOnlyList<AvailableRoomDto> AvailableRooms { get; private set; } = NoRooms;
+
+    /// <summary>
+    /// How many people the room must sleep. 1 shows every free room, and is the default, so nothing is hidden
+    /// from a guest who never touched the field. Kept between 1 and <see cref="MaxGuests"/>.
+    /// </summary>
+    /// <remarks>
+    /// A filter on the fetched list, not a parameter of the service: the service answers which rooms are free
+    /// (BR-C-02), and which of them are big enough is the guest's own question.
+    /// </remarks>
+    public int Guests
+    {
+        get => _party;
+        set => _party = Math.Clamp(value, 1, MaxGuests);
+    }
+
+    /// <summary>The choices of the guests field: 1 to <see cref="MaxGuests"/>.</summary>
+    public static IReadOnlyList<int> GuestOptions { get; } = Enumerable.Range(1, MaxGuests).ToArray();
+
+    /// <summary>The free rooms that sleep <see cref="Guests"/>. Every free room when the party is one.</summary>
+    public IReadOnlyList<AvailableRoomDto> VisibleRooms => Guests <= 1
+        ? AvailableRooms
+        : AvailableRooms.Where(room => room.Capacity >= Guests).ToArray();
 
     /// <summary>True when availability has been fetched at least once for the current dates.</summary>
     public bool AreRoomsLoaded { get; private set; }
@@ -201,6 +233,21 @@ public sealed class BookingFlowViewModel
     /// (BR-C-05, BR-31), and an empty field would look like a fault rather than a deliberate omission.
     /// </summary>
     public static string PaymentText => "Payment on arrival";
+
+    /// <summary>The party as text, for example <c>2 guests</c>.</summary>
+    public string GuestsText => DescribeGuests(Guests);
+
+    /// <summary>The title of the empty state when rooms are free but none sleeps the party.</summary>
+    public string NoRoomForGuestsText => $"No free room sleeps {Guests}";
+
+    /// <summary>
+    /// Describes a number of guests.
+    /// </summary>
+    /// <param name="guests">The number of guests.</param>
+    /// <returns>For example <c>1 guest</c> or <c>3 guests</c>.</returns>
+    public static string DescribeGuests(int guests) => guests == 1
+        ? "1 guest"
+        : $"{guests.ToString(CultureInfo.InvariantCulture)} guests";
 
     // ------------------------------------------------------------------
     // DISPLAY HELPERS
@@ -403,6 +450,41 @@ public sealed class BookingFlowViewModel
     }
 
     /// <summary>
+    /// Drops the guests filter, so every free room is listed. The guest's way out when nothing sleeps the party.
+    /// </summary>
+    public void ShowAllRooms() => Guests = 1;
+
+    /// <summary>
+    /// Takes the dates and the party from the address of the page, as the booking box on the front page
+    /// writes them: <c>?checkIn=2026-03-12&amp;checkOut=2026-03-15&amp;guests=2</c>.
+    /// </summary>
+    /// <param name="checkIn">The arrival date as <c>yyyy-MM-dd</c>, or <c>null</c>.</param>
+    /// <param name="checkOut">The departure date as <c>yyyy-MM-dd</c>, or <c>null</c>.</param>
+    /// <param name="guests">The number of guests, or <c>null</c>.</param>
+    /// <returns>
+    /// True when both dates were readable and make a valid stay, so the page can fetch the rooms at once.
+    /// A date that is missing or unreadable leaves the suggested dates alone and returns false; the party is
+    /// taken either way.
+    /// </returns>
+    public bool Prefill(string? checkIn, string? checkOut, int? guests)
+    {
+        if (guests is int party)
+        {
+            Guests = party;
+        }
+
+        if (!TryParseQueryDate(checkIn, out var start) || !TryParseQueryDate(checkOut, out var end))
+        {
+            return false;
+        }
+
+        CheckInDate = start;
+        CheckOutDate = end;
+
+        return HasValidDates;
+    }
+
+    /// <summary>
     /// Validates the guest details and creates the booking (BR-C-01, BR-C-03).
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -520,6 +602,7 @@ public sealed class BookingFlowViewModel
 
         CheckInDate = _clock.Today.AddDays(1);
         CheckOutDate = _clock.Today.AddDays(1 + DefaultNights);
+        Guests = 1;
         HasAttemptedDates = false;
         AvailableRooms = NoRooms;
         AreRoomsLoaded = false;
@@ -539,6 +622,10 @@ public sealed class BookingFlowViewModel
     // ------------------------------------------------------------------
     // PRIVAT
     // ------------------------------------------------------------------
+
+    /// <summary>Reads a date of the address. Only the exact <c>yyyy-MM-dd</c> of the booking box counts.</summary>
+    private static bool TryParseQueryDate(string? text, out DateOnly date) =>
+        DateOnly.TryParseExact(text, QueryDateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
 
     /// <summary>The error code at the arrival field, or <c>null</c>.</summary>
     private string? CheckInErrorCode

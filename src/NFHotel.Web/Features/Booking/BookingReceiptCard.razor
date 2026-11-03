@@ -32,46 +32,34 @@
 
 @if (Details is not null)
 {
-    <article class="card card-pad stack-lg">
+    <article class="card card-pad stack pub-receipt">
         <div class="stack-sm">
             <span class="eyebrow">Booking number</span>
-            <p class="display numeric">@Details.BookingNumber</p>
+            <p class="pub-receipt-number numeric">@Details.BookingNumber</p>
             <p class="muted">Keep this number. It is the key to this page.</p>
         </div>
 
         <div class="divider"></div>
 
-        <div class="grid-3">
-            <div class="stack-sm">
-                <span class="eyebrow">Check-in</span>
-                <p class="numeric">@PublicDateText.Long(Details.StartDate)</p>
-            </div>
+        <dl>
+            <dt>Check-in</dt>
+            <dd class="numeric">@PublicDateText.Long(Details.StartDate)</dd>
 
-            <div class="stack-sm">
-                <span class="eyebrow">Check-out</span>
-                <p class="numeric">@PublicDateText.Long(Details.EndDate)</p>
-            </div>
+            <dt>Check-out</dt>
+            <dd class="numeric">@PublicDateText.Long(Details.EndDate)</dd>
 
-            <div class="stack-sm">
-                <span class="eyebrow">Length of stay</span>
-                <p class="numeric">@PublicDateText.Nights(Details.Nights)</p>
-            </div>
+            <dt>Length of stay</dt>
+            <dd class="numeric">@PublicDateText.Nights(Details.Nights)</dd>
 
-            <div class="stack-sm">
-                <span class="eyebrow">Room</span>
-                <p>@RoomText</p>
-            </div>
+            <dt>Room</dt>
+            <dd>@RoomText</dd>
 
-            <div class="stack-sm">
-                <span class="eyebrow">Status</span>
-                <p><StatusBadge BookingStatus="Details.Status" /></p>
-            </div>
+            <dt>Status</dt>
+            <dd><StatusBadge BookingStatus="Details.Status" /></dd>
 
-            <div class="stack-sm">
-                <span class="eyebrow">Price</span>
-                <p>@BookingFlowViewModel.PaymentText</p>
-            </div>
-        </div>
+            <dt>Price</dt>
+            <dd>@BookingFlowViewModel.PaymentText</dd>
+        </dl>
     </article>
 }
 

@@ -1,99 +1,269 @@
 @page "/"
-@layout NFHotel.Web.Components.Layout.PublicLayout
+@inject NFHotel.Application.Ports.IClock Clock
 
 @*
-    The front page. Pure markup without a ViewModel, because the page fetches no data — it must be able to
-    be shown even when the database is down, so the way to /book never closes.
+    The front page. Markup without a ViewModel, because the page fetches no data — it must be able
+    to be shown even when the database is down, so the way to /book never closes. The one piece of
+    interactivity, the map of the neighbourhood, is its own component with its own render mode, so
+    this page still renders as static HTML when the circuit is gone.
 
-    All content comes from nfhotel.com. Nothing is deliberately made up here:
-    no phone number, no street number, no check-in times, no number of rooms.
-    If it is not on the hotel's own page, it is not here.
+    The content follows the mockup NFHotel-Forside-Mockup.html (2026-11-03). The facts of the
+    hotel's own page (24-hour bar, kitchen and reception; from $20 a night; renovated November
+    2023; nightly, monthly and short-term rates; Street 172) stand without a note. Everything the
+    mockup added on top is marked TODO and must be confirmed by reception before the site goes
+    live: the Double and Suite prices, the room sizes and what is in the rooms, the check-in and
+    check-out times, the airport transfer, and the dishes on the board.
+
+    The booking box is a plain GET form: no circuit, no JavaScript. It lands on /book with the
+    dates and the number of guests in the address, and Book.razor takes it from there.
 *@
 
 <PageTitle>NFHotel &amp; Bar — Street 172, Phnom Penh</PageTitle>
 
-<section class="hero">
-    <div class="hero-body">
-        <span class="eyebrow">Street 172 &middot; Phnom Penh, Cambodia</span>
+<div class="pub-hero">
+    <div class="pub-wrap">
+        <h1><span class="pub-logo-mark">NF</span>Hotel</h1>
+        <p class="pub-hero-sub">Hotel &amp; bar &middot; Street 172, Phnom Penh</p>
+        <p class="pub-hero-tag">Beds from $20 a night. Bar and kitchen open 24 hours.</p>
+    </div>
+</div>
 
-        <h1 class="display">NFHotel &amp; Bar</h1>
+<div class="pub-hero-pic">
+    <img src="@Assets["img/facade.svg"]" alt="Drawing of the front of NFHotel on Street 172 at dusk, with the bar lit up and a tuk-tuk parked outside" />
+</div>
 
-        <p class="lede">
-            Comfortable, quiet rooms in the middle of everything. At NFHotel there is
-            barely a reason to head out: the kitchen, the bar and reception are open
-            around the clock, and we have nightly, monthly and short-term rates.
-        </p>
+<div class="pub-wrap">
+    <div class="pub-bookbox">
+        <form method="get" action="/book">
+            <div class="field">
+                <label class="field-label" for="home-check-in">Check-in</label>
+                <input class="field-input numeric" id="home-check-in" name="checkIn" type="date" min="@Today" value="@DefaultCheckIn" required />
+            </div>
+            <div class="field">
+                <label class="field-label" for="home-check-out">Check-out</label>
+                <input class="field-input numeric" id="home-check-out" name="checkOut" type="date" min="@Tomorrow" value="@DefaultCheckOut" required />
+            </div>
+            <div class="field">
+                <label class="field-label" for="home-guests">Guests</label>
+                <select class="field-select" id="home-guests" name="guests">
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" type="submit">Check availability</button>
+            <p class="pub-bookbox-note">The day you leave doesn't count as a night. No booking fee, pay on arrival.</p>
+        </form>
+    </div>
+</div>
 
-        <div class="row">
-            <a class="btn btn-primary" href="/book">Book your stay</a>
-            <a class="btn btn-secondary" href="#rooms">See our rooms</a>
+<section class="pub-section" id="welcome">
+    <div class="pub-wrap pub-welcome">
+        <div class="pub-prose">
+            <h2>Welcome</h2>
+            <p>
+                NFHotel is a small hotel and bar on Street 172, in the old part of Phnom Penh between
+                the riverside and the Central Market. The rooms were fully renovated in November 2023.
+                They are quiet, the beds are good, and they start at $20 a night.
+            </p>
+            <p>
+                Downstairs, the bar and the kitchen are open all day and all night, and there is always
+                someone at reception. A lot of our guests stay for a while, so we have nightly, monthly
+                and short-term rates. If you are staying a week or more, email us and we will sort out a price.
+            </p>
+            @* TODO: the list repeats placeholders from the mockup (check-in times, luggage storage); confirm with reception. *@
+            <ul>
+                <li>Check-in from 2 pm, check-out by noon</li>
+                <li>Air-con and hot water in every room</li>
+                <li>Free Wi-Fi in the rooms and the bar</li>
+                <li>Pay when you arrive, cash or card</li>
+                <li>Two minutes' walk to the river</li>
+                <li>Luggage storage before and after your stay</li>
+            </ul>
         </div>
+        <figure class="pub-illus">
+            <img src="@Assets["img/bar.svg"]" alt="Drawing of the bar at night: bottles on the shelves, three lamps over the counter" />
+        </figure>
     </div>
 </section>
 
-<div class="page stack-lg">
+<section class="pub-section pub-section-soft" id="rooms">
+    <div class="pub-wrap">
+        <h2>Our rooms</h2>
+        <p class="pub-intro">
+            Three kinds of room over three floors. All of them have air-con, a private bathroom with
+            hot water, Wi-Fi and daily cleaning. Prices are per room per night, in US dollars.
+        </p>
 
-    <div class="grid-auto">
-        <div class="stat">
-            <div class="stat-value">24h</div>
-            <div class="stat-label">Bar &amp; kitchen</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value">172</div>
-            <div class="stat-label">The street we're on</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value">$20</div>
-            <div class="stat-label">Per night, from</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value">2023</div>
-            <div class="stat-label">Renovated in November</div>
-        </div>
+        @* TODO: the descriptions, sizes and what is in the rooms are placeholders. Only "from $20" is the hotel's own figure. *@
+        <article class="pub-room">
+            <figure class="pub-illus">
+                <img src="@Assets["img/single.svg"]" alt="Drawing of a single room with a bed, a bedside lamp and a window with teal shutters" />
+            </figure>
+            <div class="pub-prose">
+                <h3>Single room</h3>
+                <p class="pub-room-price">From $20 a night <span>&middot; sleeps 1 &middot; about 14 m&sup2;</span></p>
+                <p>
+                    A single bed, a small desk by the window, a wardrobe and your own bathroom. Good if you
+                    mostly need a quiet place to sleep and a cold shower after a day in the heat.
+                </p>
+                <ul>
+                    <li>Single bed</li>
+                    <li>Private bathroom, hot water</li>
+                    <li>Air-con</li>
+                    <li>Wi-Fi</li>
+                    <li>Desk and wardrobe</li>
+                    <li>Daily cleaning</li>
+                </ul>
+                <a class="btn btn-secondary" href="/book?guests=1">Check availability</a>
+            </div>
+        </article>
+
+        <article class="pub-room">
+            <figure class="pub-illus">
+                <img src="@Assets["img/double.svg"]" alt="Drawing of a double room with a wide bed, two pendant lamps and a big window with shutters" />
+            </figure>
+            <div class="pub-prose">
+                <h3>Double room</h3>
+                @* TODO: $28 is a placeholder; the Manager's room rate (MIL-055) is the real figure. *@
+                <p class="pub-room-price">From $28 a night <span>&middot; sleeps 2 &middot; about 20 m&sup2;</span></p>
+                <p>
+                    A double bed or two singles (say which when you book), a wardrobe and a window to the
+                    street or to the quiet side. This is the room most people book.
+                </p>
+                <ul>
+                    <li>Double bed or two singles</li>
+                    <li>Private bathroom, hot water</li>
+                    <li>Air-con</li>
+                    <li>Wi-Fi</li>
+                    <li>Fridge</li>
+                    <li>Daily cleaning</li>
+                </ul>
+                <a class="btn btn-secondary" href="/book?guests=2">Check availability</a>
+            </div>
+        </article>
+
+        <article class="pub-room">
+            <figure class="pub-illus">
+                <img src="@Assets["img/suite.svg"]" alt="Drawing of the suite, with a bed, a sofa, a coffee table and balcony doors onto the street" />
+            </figure>
+            <div class="pub-prose">
+                <h3>Suite</h3>
+                @* TODO: $45 is a placeholder; the Manager's room rate (MIL-055) is the real figure. *@
+                <p class="pub-room-price">From $45 a night <span>&middot; sleeps up to 4 &middot; about 32 m&sup2;</span></p>
+                <p>
+                    The corner rooms on the top floor. A double bed, a sitting area with a sofa that two
+                    children can sleep on, a bigger bathroom and the best view of the street. Popular for
+                    families and for longer stays.
+                </p>
+                <ul>
+                    <li>Double bed and sofa bed</li>
+                    <li>Sitting area, desk</li>
+                    <li>Bigger bathroom, hot water</li>
+                    <li>Air-con</li>
+                    <li>Wi-Fi, fridge</li>
+                    <li>Daily cleaning</li>
+                </ul>
+                <a class="btn btn-secondary" href="/book?guests=3">Check availability</a>
+            </div>
+        </article>
     </div>
+</section>
 
-    <div class="grid-3">
-        <section class="card card-pad stack" id="rooms">
-            <h2 class="subtitle">Rooms</h2>
+<section class="pub-section" id="food">
+    <div class="pub-wrap pub-food">
+        <div class="pub-prose">
+            <h2>Food &amp; drink, around the clock</h2>
             <p>
-                Comfortable, quiet rooms from $20 a night. Fully renovated in
-                November 2023.
+                The kitchen doesn't close. Burgers, a few Khmer dishes, cold Cambodia draught and breakfast
+                whenever you wake up, whether that is 7 in the morning or 4 in the afternoon.
             </p>
-            <p class="muted">
-                Nightly, monthly and short-term rates — tailored to whatever budget
-                you're travelling on.
-            </p>
-            <a class="btn btn-secondary btn-sm" href="/book">See available rooms</a>
-        </section>
-
-        <section class="card card-pad stack">
-            <h2 class="subtitle">Food &amp; bar</h2>
             <p>
-                Burgers, local specialities and ice-cold draught beer. The kitchen and
-                the bar are open 24 hours a day.
+                The board shows what is on in the evening and late at night. The full menu is at the bar,
+                and the kitchen will make most of it at any hour.
             </p>
-            <p class="muted">
-                You never have to leave the building for dinner — or for breakfast at
-                four in the morning.
-            </p>
-        </section>
-
-        <section class="card card-pad stack">
-            <h2 class="subtitle">Finding us</h2>
-            <p>
-                We're on Street 172 in Phnom Penh, Cambodia — one of the liveliest
-                streets in the city.
-            </p>
-            <p class="muted">
-                Questions before you book? Write to
-                <a href="mailto:help@nfhotel.com">help@nfhotel.com</a>.
-                Reception is staffed around the clock.
-            </p>
-        </section>
+            <p><em>"Last call?" is not something you will hear here.</em></p>
+            <figure class="pub-illus pub-illus-wide">
+                <img src="@Assets["img/food.svg"]" alt="Drawing of a burger, a basket of fries and a draught beer on the bar counter" />
+            </figure>
+        </div>
+        <MenuBoard />
     </div>
+</section>
 
-    <div class="row-between">
-        <p class="lede">Ready to pick your dates?</p>
+<section class="pub-section pub-section-soft" id="location">
+    <div class="pub-wrap">
+        <h2>Where we are</h2>
+        <p class="pub-intro">
+            We are on Street 172 in Daun Penh, two minutes' walk from the riverside and about ten from
+            the Royal Palace. Click a place on the map to see what it is and how long it takes to get
+            there from our front door.
+        </p>
+        <NeighbourhoodMap />
+    </div>
+</section>
+
+<section class="pub-section" id="info">
+    <div class="pub-wrap">
+        <h2>Good to know</h2>
+        @* TODO: check-in times, payment details and the airport transfer are placeholders until reception confirms them. *@
+        <table class="pub-facts">
+            <tbody>
+                <tr>
+                    <th scope="row">Check-in and check-out</th>
+                    <td>Check-in from 2 pm, check-out by 12 noon. Arriving in the middle of the night is fine, reception is awake. We can keep your luggage before and after.</td>
+                </tr>
+                <tr>
+                    <th scope="row">Payment</th>
+                    <td>When you arrive, in US dollars or riel, cash or card. No deposit and no booking fee. Small change comes back in riel (about 4,000 riel to the dollar).</td>
+                </tr>
+                <tr>
+                    <th scope="row">From the airport</th>
+                    <td>Techo International Airport is about an hour away by taxi. Book a taxi at the counter in arrivals, or ask us and we will arrange a pick-up.</td>
+                </tr>
+                <tr>
+                    <th scope="row">Getting around</th>
+                    <td>Tuk-tuks are everywhere. The PassApp and Grab apps give you a fixed price so you don't have to haggle.</td>
+                </tr>
+                <tr>
+                    <th scope="row">Weather</th>
+                    <td>Dry and pleasant from November to February, hot in March and April, and rain most afternoons from June to October.</td>
+                </tr>
+                <tr>
+                    <th scope="row">Longer stays</th>
+                    <td>We have monthly and short-term rates. Email us with your dates and we will quote a price before you book.</td>
+                </tr>
+                <tr>
+                    <th scope="row">Languages</th>
+                    <td>English and Khmer at reception.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="pub-section pub-section-soft">
+    <div class="pub-wrap pub-prose">
+        <h2>Book a room</h2>
+        <p class="pub-intro">
+            Pick your dates, choose a room and leave your details. Reception confirms your booking once
+            we've seen it, usually within a few hours. You pay when you arrive, and there is no booking fee.
+        </p>
         <a class="btn btn-primary" href="/book">Book your stay</a>
     </div>
-</div>
+</section>
+
+@code {
+    /// <summary>The booking box starts on the same dates as the flow on /book: tomorrow, for one night.</summary>
+    private string DefaultCheckIn => Iso(Clock.Today.AddDays(1));
+
+    private string DefaultCheckOut => Iso(Clock.Today.AddDays(2));
+
+    private string Today => Iso(Clock.Today);
+
+    private string Tomorrow => Iso(Clock.Today.AddDays(1));
+
+    /// <summary>The value format of a date input, whatever the culture of the server.</summary>
+    private static string Iso(DateOnly date) => date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+}

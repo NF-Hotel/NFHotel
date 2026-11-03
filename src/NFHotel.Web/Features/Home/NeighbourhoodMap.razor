@@ -1,0 +1,124 @@
+@rendermode InteractiveServer
+@inject NeighbourhoodViewModel ViewModel
+
+@*
+    The map of the neighbourhood: a schematic drawing of the streets around Street 172 with one pin per
+    place, the list of the same places, and a card that describes the chosen one.
+
+    The pins are drawn inside the SVG, so nothing needs an inline style (the Content Security Policy is
+    style-src 'self', MIL-033). A pin answers to the mouse and the finger; the list under the map is the
+    same choice for the keyboard and the screen reader, which is why the drawing is aria-hidden.
+
+    The component has its own render mode, so the front page stays static HTML: when the circuit is
+    down, the map still shows every pin and the card shows the hotel.
+*@
+
+<div class="pub-location">
+    <div>
+        <div class="pub-map">
+            <svg viewBox="0 0 800 620" aria-hidden="true" focusable="false">
+                <path class="m-water" d="M486 0C478 60 466 110 470 160S486 260 482 310S466 410 470 460S492 570 488 620L800 620L800 0Z" />
+                <g class="m-street">
+                    <line x1="0" y1="150" x2="470" y2="150" />
+                    <line x1="0" y1="268" x2="472" y2="268" />
+                    <line x1="0" y1="352" x2="476" y2="352" />
+                    <line x1="0" y1="400" x2="474" y2="400" />
+                    <line x1="0" y1="440" x2="470" y2="440" />
+                    <line x1="0" y1="580" x2="486" y2="580" />
+                    <line x1="430" y1="0" x2="430" y2="620" />
+                    <line x1="380" y1="0" x2="380" y2="620" />
+                    <line x1="240" y1="0" x2="240" y2="620" />
+                    <line x1="130" y1="0" x2="130" y2="620" />
+                </g>
+                <g class="m-main">
+                    <line x1="330" y1="0" x2="330" y2="620" />
+                    <line x1="0" y1="520" x2="478" y2="520" />
+                    <line x1="0" y1="60" x2="480" y2="60" />
+                    <path d="M478 0C470 60 458 110 462 160S478 260 474 310S458 410 462 460S484 570 480 620" />
+                </g>
+                <line class="m-172" x1="0" y1="310" x2="474" y2="310" />
+                <rect class="m-block" x="392" y="428" width="76" height="70" rx="3" />
+                <circle class="m-block" cx="344" cy="102" r="24" />
+                <circle class="m-block" cx="228" cy="230" r="20" />
+                <circle class="m-ring" cx="400" cy="310" r="90" />
+                <circle class="m-ring" cx="400" cy="310" r="190" />
+                <circle class="m-ring m-ring-far" cx="400" cy="310" r="275" />
+                <text class="m-label" x="400" y="212" text-anchor="middle">5 min on foot</text>
+                <text class="m-label" x="400" y="512" text-anchor="middle">15 min on foot</text>
+                <text class="m-label m-label-dim" x="400" y="28" text-anchor="middle">Take a tuk-tuk</text>
+                <text class="m-label" x="12" y="346">Street 178</text>
+                <text class="m-label" x="12" y="514">Sihanouk Blvd</text>
+                <text class="m-label" transform="translate(322 606) rotate(-90)">Norodom Blvd</text>
+                <text class="m-label m-label-small" transform="translate(458 126) rotate(-90)">Sisowath Quay</text>
+                <text class="m-label m-label-big" transform="translate(650 380) rotate(-90)" text-anchor="middle">Tonlé Sap river</text>
+
+                @foreach (var item in ViewModel.Places)
+                {
+                    <MapPin Place="item" Number="ViewModel.NumberOf(item)" PinClass="@ViewModel.PinClass(item)" OnSelect="() => ViewModel.Select(item.Id)" />
+                }
+
+                <g class="m-pin" transform="translate(@NeighbourhoodPlace.HotelX @NeighbourhoodPlace.HotelY)" @onclick="ViewModel.ShowHotel">
+                    <circle class="m-hotel-dot" r="15" />
+                    <text class="m-hotel-num">NF</text>
+                    <text class="m-hotel-label" y="34">NFHotel</text>
+                </g>
+            </svg>
+        </div>
+
+        <p class="pub-map-note">Not to scale. The directions are right; the walking times are ours, at a normal pace.</p>
+
+        <ul class="pub-places" aria-label="Places near the hotel">
+            @foreach (var item in ViewModel.Places)
+            {
+                <li>
+                    <button type="button" aria-pressed="@(ViewModel.IsSelected(item) ? "true" : "false")" @onclick="() => ViewModel.Select(item.Id)">
+                        <span>@ViewModel.NumberOf(item). @item.Name</span>
+                        <span class="pub-places-time">@NeighbourhoodViewModel.TimeText(item)</span>
+                    </button>
+                </li>
+            }
+        </ul>
+    </div>
+
+    <div>
+        <div class="pub-place pub-prose" aria-live="polite">
+            @if (ViewModel.Selected is { } selected)
+            {
+                <h3>@ViewModel.NumberOf(selected). @selected.Name</h3>
+                <p class="pub-place-meta">@NeighbourhoodViewModel.TimeText(selected) &middot; @selected.Distance from the hotel</p>
+                <p>@selected.Blurb</p>
+                <p><strong>Tip:</strong> @selected.Tip</p>
+                <p><a href="@NeighbourhoodViewModel.MapsUrl(selected)" target="_blank" rel="noopener">Open in Google Maps</a></p>
+
+                <div class="pub-place-nav">
+                    <button type="button" class="btn btn-ghost" @onclick="() => ViewModel.Select(ViewModel.Previous?.Id)">&lsaquo; @ViewModel.Previous?.Name</button>
+                    <button type="button" class="btn btn-ghost" @onclick="ViewModel.ShowHotel">Back to the hotel</button>
+                    <button type="button" class="btn btn-ghost" @onclick="() => ViewModel.Select(ViewModel.Next?.Id)">@ViewModel.Next?.Name &rsaquo;</button>
+                </div>
+            }
+            else
+            {
+                <h3>NFHotel</h3>
+                <p class="pub-place-meta">Street 172, Daun Penh. You are here.</p>
+                <p>
+                    Click a number on the map or in the list. The dashed rings are 5 and 15 minutes on foot
+                    from the front door. Anything outside them is a short tuk-tuk ride, a couple of dollars.
+                </p>
+                <p><strong>Closest to the door</strong></p>
+                <ul>
+                    @foreach (var near in ViewModel.Nearest)
+                    {
+                        <li>@near.Name, @NeighbourhoodViewModel.TimeText(near)</li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="pub-address pub-prose">
+            <h3>Address</h3>
+            <p>NFHotel &amp; Bar<br>Street 172, Daun Penh<br>Phnom Penh, Cambodia</p>
+            <p><a href="https://www.google.com/maps/search/?api=1&amp;query=Street+172+Phnom+Penh" target="_blank" rel="noopener">Open in Google Maps</a></p>
+            <p class="pub-small">Tell the tuk-tuk driver "Street 172, near Wat Ounalom". Most of them know it.</p>
+        </div>
+    </div>
+</div>

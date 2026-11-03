@@ -5,6 +5,7 @@ using NFHotel.Web.Common;
 using NFHotel.Web.Components;
 using NFHotel.Web.Features.Admin;
 using NFHotel.Web.Features.Booking;
+using NFHotel.Web.Features.Home;
 using NFHotel.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -50,6 +51,7 @@ builder.Services.AddHttpContextAccessor();
 //
 // Each UI area registers its own — so adding a screen touches one file,
 // not the composition root.
+builder.Services.AddHomeFeature();      // the front page: the map of the neighbourhood
 builder.Services.AddBookingFeature();   // the customer's booking flow: /book and /booking/{number}
 builder.Services.AddAdminFeature();     // the staff's back office: /admin/**, behind the sign-in
 
