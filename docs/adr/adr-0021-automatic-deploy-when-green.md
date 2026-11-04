@@ -4,14 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0021 |
-| CrossReference | [ADR-0007], [ADR-0018], [ADR-0019], [MIL-021], [MIL-022], [MIL-027] |
+| CrossReference | [ADR-0007], [ADR-0018], [ADR-0019], [MIL-021], [MIL-022], [MIL-027], [ADR-0038] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the decision was made by S01 in chat on 2026-10-23, accepted after RC-170 Go | [330b524] |
+| 2026-10-23 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; the decision was made by S01 in chat on 2026-10-23, accepted after RC-170 Go | [330b524] |
+| 2026-11-04 | Accepted | mikemike | AI as stand-in for S01 | Amended by ADR-0038: a required reviewer approves each deploy before the gate (RC-281) | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -55,6 +56,8 @@ Options considered:
 4. **Deploy on a schedule** (for example nightly) with a gate. That gives fewer deploys, but a fix waits for the next night, and it gives nothing that option 3 does not.
 
 ## Decision
+
+Amended by [ADR-0038] (2026-11-04): decision 2 is replaced. The environment `production` again requires an approval by S01 before the job starts, and the gate of decision 1 runs after the approval.
 
 We follow option 3. CD deploys a release without a human approval, but only when every check of its commit on `main` has finished green.
 
@@ -113,4 +116,5 @@ We follow option 3. CD deploys a release without a human approval, but only when
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
 [MIL-027]: ../milestones/mil-027-dast-and-end-to-end-tests.md
+[ADR-0038]: ./adr-0038-approval-before-a-deploy.md
 [330b524]: https://github.com/NF-Hotel/NFHotel/commit/330b52465cc857807b7c427354cc42e0ec2c2c2e
