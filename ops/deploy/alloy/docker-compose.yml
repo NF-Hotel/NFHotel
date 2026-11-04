@@ -43,7 +43,7 @@ services:
     networks: [internal]
 
   alloy:
-    image: grafana/alloy:v1.11.3@sha256:8c7256f412feb9f5f48f9f6f9394dc97ca887f63dea9304f347970ecc1787669
+    image: grafana/alloy:v1.21.2@sha256:89a5a320168387336b9ac3c850609c3ba7757eadd4ae5f1d819deb35e9854b18
     restart: unless-stopped
     command: [run, --storage.path=/var/lib/alloy/data, /etc/alloy/config.alloy]
     env_file: ${ALLOY_ENV_FILE:-alloy.env}
