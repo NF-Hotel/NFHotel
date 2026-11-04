@@ -9,14 +9,15 @@
 @inject StaffListViewModel ViewModel
 
 @*
-    The staff accounts (UC-006, ADR-0017). Only markup and binding. The API checks the role of the caller and every rule
-    again: the own account and the last Manager cannot be disabled, a password must pass the policy.
+    The staff accounts (UC-006, ADR-0017, MIL-059). Only markup and binding. The API checks the role of the caller and every
+    rule again: the own account and the last Manager cannot be disabled, deleted or given another role, a password must pass
+    the policy, and an e-mail address belongs to one account.
 *@
 
 <PageTitle>Staff — administration</PageTitle>
 
 <div class="stack-lg">
-    <PageHeader Title="Staff" Subtitle="Create, disable and recover the accounts of the back office.">
+    <PageHeader Title="Staff" Subtitle="Create, edit, disable, recover and delete the accounts of the back office and the mobile app.">
         <Actions>
             <button type="button" class="btn btn-primary" disabled="@ViewModel.IsBusy" @onclick="ViewModel.BeginCreate">New account</button>
             <a class="btn btn-secondary" href="/admin/staff/audit">Audit trail</a>
@@ -40,12 +41,31 @@
                       OnCancel="ViewModel.Cancel" />
     }
 
+    @if (ViewModel.PendingDelete is { } doomed)
+    {
+        <ConfirmPanel Title="@($"Delete {doomed.UserName}?")"
+                      Message="The account is removed for good and its open sessions end now. The audit trail and the service notes keep the user name. Disable the account instead if the person may come back."
+                      ConfirmLabel="Delete account"
+                      IsBusy="ViewModel.IsBusy"
+                      OnConfirm="ConfirmDeleteAsync"
+                      OnCancel="ViewModel.Cancel" />
+    }
+
     @if (ViewModel.IsCreating)
     {
         <section class="card card-pad stack" aria-labelledby="new-account">
             <h2 class="subtitle" id="new-account">New account</h2>
-            <FormField Label="User name" For="new-user" IsRequired="true">
+            <FormField Label="First name" For="new-first" IsRequired="true">
+                <input id="new-first" class="field-input" maxlength="50" autocomplete="off" @bind="ViewModel.NewFirstName" @bind:event="oninput" />
+            </FormField>
+            <FormField Label="Last name" For="new-last" IsRequired="true">
+                <input id="new-last" class="field-input" maxlength="50" autocomplete="off" @bind="ViewModel.NewLastName" @bind:event="oninput" />
+            </FormField>
+            <FormField Label="User name" For="new-user" IsRequired="true" Hint="The name the person signs in with.">
                 <input id="new-user" class="field-input" maxlength="50" autocomplete="off" @bind="ViewModel.NewUserName" @bind:event="oninput" />
+            </FormField>
+            <FormField Label="E-mail" For="new-email" Hint="Optional. Used to reach the person, not to sign in.">
+                <input id="new-email" type="email" class="field-input" maxlength="254" autocomplete="off" @bind="ViewModel.NewEmail" @bind:event="oninput" />
             </FormField>
             <FormField Label="Role" For="new-role" IsRequired="true">
                 <select id="new-role" class="field-input" @bind="ViewModel.NewRole">
@@ -60,6 +80,34 @@
             </FormField>
             <div class="row">
                 <button type="button" class="btn btn-primary" disabled="@ViewModel.IsBusy" @onclick="CreateAsync">Create account</button>
+                <button type="button" class="btn btn-secondary" disabled="@ViewModel.IsBusy" @onclick="ViewModel.Cancel">Go back</button>
+            </div>
+        </section>
+    }
+
+    @if (ViewModel.EditTarget is { } edited)
+    {
+        <section class="card card-pad stack" aria-labelledby="edit-account">
+            <h2 class="subtitle" id="edit-account">Edit @edited.UserName</h2>
+            <FormField Label="First name" For="edit-first" IsRequired="true">
+                <input id="edit-first" class="field-input" maxlength="50" autocomplete="off" @bind="ViewModel.EditFirstName" @bind:event="oninput" />
+            </FormField>
+            <FormField Label="Last name" For="edit-last" IsRequired="true">
+                <input id="edit-last" class="field-input" maxlength="50" autocomplete="off" @bind="ViewModel.EditLastName" @bind:event="oninput" />
+            </FormField>
+            <FormField Label="E-mail" For="edit-email" Hint="Leave it empty to remove the address.">
+                <input id="edit-email" type="email" class="field-input" maxlength="254" autocomplete="off" @bind="ViewModel.EditEmail" @bind:event="oninput" />
+            </FormField>
+            <FormField Label="Role" For="edit-role" IsRequired="true" Hint="A new role ends the open sessions of the account.">
+                <select id="edit-role" class="field-input" @bind="ViewModel.EditRole">
+                    @foreach (var role in StaffListViewModel.Roles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </select>
+            </FormField>
+            <div class="row">
+                <button type="button" class="btn btn-primary" disabled="@ViewModel.IsBusy" @onclick="EditAsync">Save changes</button>
                 <button type="button" class="btn btn-secondary" disabled="@ViewModel.IsBusy" @onclick="ViewModel.Cancel">Go back</button>
             </div>
         </section>
@@ -88,7 +136,9 @@
         <table class="table">
             <thead>
                 <tr>
+                    <th scope="col">Name</th>
                     <th scope="col">User name</th>
+                    <th scope="col">E-mail</th>
                     <th scope="col">Role</th>
                     <th scope="col">State</th>
                     <th scope="col"><span class="sr-only">Actions</span></th>
@@ -98,11 +148,14 @@
                 @foreach (var account in ViewModel.Accounts)
                 {
                     <tr>
+                        <td>@StaffListViewModel.NameOf(account)</td>
                         <td>@account.UserName</td>
+                        <td>@(account.Email ?? "—")</td>
                         <td>@account.Role</td>
                         <td>@StateOf(account)</td>
                         <td>
                             <div class="row">
+                                <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => ViewModel.BeginEdit(account)">Edit</button>
                                 <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => ViewModel.BeginReset(account)">Reset password</button>
                                 @if (account.IsActive)
                                 {
@@ -112,6 +165,7 @@
                                 {
                                     <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => EnableAsync(account)">Enable</button>
                                 }
+                                <button type="button" class="btn btn-danger btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => ViewModel.BeginDelete(account)">Delete</button>
                             </div>
                         </td>
                     </tr>
@@ -134,4 +188,8 @@
     private Task EnableAsync(StaffAccountDto account) => ViewModel.EnableAsync(account, ComponentToken);
 
     private Task ResetAsync() => ViewModel.ConfirmResetAsync(ComponentToken);
+
+    private Task EditAsync() => ViewModel.ConfirmEditAsync(ComponentToken);
+
+    private Task ConfirmDeleteAsync() => ViewModel.ConfirmDeleteAsync(ComponentToken);
 }

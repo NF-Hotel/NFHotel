@@ -146,10 +146,50 @@ public sealed class StaffAuthService : IStaffAuthService
         return Result<StaffSessionDto>.Success(SessionOf(member));
     }
 
+    /// <inheritdoc />
+    public async Task<Result<StaffSessionDto>> SetOwnNameAsync(
+        RenameStaffRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (_context.StaffId is not { } id
+            || await _staff.GetByIdAsync(id, cancellationToken).ConfigureAwait(false) is not { IsActive: true } member)
+        {
+            return Result<StaffSessionDto>.Failure(ErrorCodes.Api.StaffUnauthorized);
+        }
+
+        if (member.HasName)
+        {
+            return Result<StaffSessionDto>.Failure(ErrorCodes.Staff.NameAlreadySet);
+        }
+
+        try
+        {
+            member.Rename(request.FirstName, request.LastName);
+        }
+        catch (DomainException exception)
+        {
+            return Result<StaffSessionDto>.FromCodes(exception.Codes);
+        }
+
+        _staff.Update(member);
+        _recorder.BySelf(StaffAuditAction.NameChanged, StaffAuditRecorder.Success, member);
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return Result<StaffSessionDto>.Success(SessionOf(member));
+    }
+
     private StaffSessionDto SessionOf(StaffMember member)
     {
         var issued = _tokens.Issue(member);
-        return new StaffSessionDto(issued.Token, issued.ExpiresAt, member.UserName, member.Role, member.MustChangePassword);
+        return new StaffSessionDto(
+            issued.Token,
+            issued.ExpiresAt,
+            member.UserName,
+            member.Role,
+            member.MustChangePassword,
+            member.FirstName,
+            member.LastName);
     }
 
     private async Task<Result<StaffSessionDto>> RefuseChangeAsync(StaffMember member, string code, CancellationToken cancellationToken)

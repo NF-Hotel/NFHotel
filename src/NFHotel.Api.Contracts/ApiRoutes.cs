@@ -120,6 +120,18 @@ public static class ApiRoutes
     /// <summary>The reset of the password of an account below <see cref="Staff"/>.</summary>
     public const string StaffResetPassword = "{id:int}/password";
 
+    /// <summary>The own name, while the account has none, below <see cref="Staff"/> (MIL-059).</summary>
+    public const string StaffMyName = "me/name";
+
+    /// <summary>The name of an account below <see cref="Staff"/> (MIL-059).</summary>
+    public const string StaffName = "{id:int}/name";
+
+    /// <summary>The e-mail address of an account below <see cref="Staff"/> (MIL-059).</summary>
+    public const string StaffEmail = "{id:int}/email";
+
+    /// <summary>The role of an account below <see cref="Staff"/> (MIL-059).</summary>
+    public const string StaffRole = "{id:int}/role";
+
     /// <summary>The audit trail below <see cref="Staff"/>; the query parameters <c>page</c> and <c>pageSize</c> select the page.</summary>
     public const string StaffAudit = "audit";
 

@@ -44,4 +44,16 @@ public enum StaffAuditAction
 
     /// <summary>A Manager took a service note of a room back from the history.</summary>
     RoomServiceNoteReopened = 14,
+
+    /// <summary>The first and the last name of an account were set or changed, by a Manager or by the member at the first sign-in (MIL-059).</summary>
+    NameChanged = 15,
+
+    /// <summary>A Manager set, changed or cleared the e-mail address of an account (MIL-059).</summary>
+    EmailChanged = 16,
+
+    /// <summary>A Manager gave an account another role (MIL-059).</summary>
+    RoleChanged = 17,
+
+    /// <summary>A Manager deleted an account for good (MIL-059).</summary>
+    AccountDeleted = 18,
 }

@@ -41,6 +41,23 @@ internal sealed class StaffAuditRecorder
     }
 
     /// <summary>
+    /// Records an act of the signed-in caller on a target account, with a text that says what changed (MIL-059). The text
+    /// must never hold a secret.
+    /// </summary>
+    /// <param name="action">What happened.</param>
+    /// <param name="outcome"><see cref="Success"/> or an error code.</param>
+    /// <param name="target">The account it happened to.</param>
+    /// <param name="detail">What changed.</param>
+    public void ByCaller(StaffAuditAction action, string outcome, StaffMember target, string detail)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+
+        var actorName = _context.StaffName ?? (_context.StaffId is null ? SystemActor : null);
+        _audit.Add(StaffAuditEvent.Create(
+            _clock.UtcNow, action, outcome, _context.StaffId, actorName, target.Id, target.UserName, _context.RemoteAddress, detail));
+    }
+
+    /// <summary>
     /// Records an act of the signed-in caller (or of the server when nobody is signed in) that has no target account, with
     /// a text that says what changed. The text must never hold a secret.
     /// </summary>

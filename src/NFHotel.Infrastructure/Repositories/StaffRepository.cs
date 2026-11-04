@@ -43,6 +43,22 @@ public sealed class StaffRepository : Repository<StaffMember, int>, IStaffReposi
             .ConfigureAwait(false);
 
     /// <inheritdoc />
+    public async Task<StaffMember?> FindByEmailAsync(string? email, CancellationToken cancellationToken = default)
+    {
+        if (StaffMember.NormalizeEmail(email) is not { } key)
+        {
+            return null;
+        }
+
+        return await Context.StaffMembers
+            .FirstOrDefaultAsync(member => member.Email == key, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public void Remove(StaffMember member) => MarkForRemoval(member);
+
+    /// <inheritdoc />
     public async Task<bool> AnyAsync(CancellationToken cancellationToken = default) =>
         await Context.StaffMembers.AnyAsync(cancellationToken).ConfigureAwait(false);
 }

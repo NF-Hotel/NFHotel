@@ -1,3 +1,5 @@
+using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.Infrastructure.Persistence;
@@ -66,6 +68,77 @@ public sealed class StaffAccountPersistenceTests : IAsyncLifetime
         // Assert
         Assert.Equal(1, found!.SecurityStamp);
         Assert.True(found.MustChangePassword);
+    }
+
+    /// <summary>Integration: the name and the address survive a round trip, and the address is found in any case (MIL-059).</summary>
+    [Fact]
+    public async Task FindByEmailAsync_NamedMember_KeepsTheNameAndFindsTheAddressInAnyCase()
+    {
+        // Arrange
+        await using (var context = _fixture.CreateContext())
+        {
+            new StaffRepository(context).Add(StaffMember.Create("rita", "hash-1", StaffRole.Receptionist, firstName: "Rita", lastName: "Hansen", email: "rita@hotel.dk"));
+            await new UnitOfWork(context).SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using var reader = _fixture.CreateContext();
+
+        // Act
+        var found = await new StaffRepository(reader).FindByEmailAsync(" RITA@Hotel.dk ", TestContext.Current.CancellationToken);
+        var none = await new StaffRepository(reader).FindByEmailAsync(null, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(("rita", "Rita", "Hansen"), (found!.UserName, found.FirstName, found.LastName));
+        Assert.Null(none);
+    }
+
+    /// <summary>
+    /// Integration: two accounts without an address are fine, but a second account with the same address is refused by the
+    /// index the service names (MIL-059).
+    /// </summary>
+    [Fact]
+    public async Task SaveChangesAsync_SameEmailTwice_BreaksTheNamedIndexButNoAddressDoesNot()
+    {
+        // Arrange
+        await SeedAsync("rita", StaffRole.Receptionist);
+        await SeedAsync("lena", StaffRole.Housekeeping);
+        await using (var context = _fixture.CreateContext())
+        {
+            new StaffRepository(context).Add(StaffMember.Create("nora", "hash-1", StaffRole.Housekeeping, email: "front@hotel.dk"));
+            await new UnitOfWork(context).SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using var second = _fixture.CreateContext();
+        new StaffRepository(second).Add(StaffMember.Create("otto", "hash-1", StaffRole.Housekeeping, email: "front@hotel.dk"));
+
+        // Act
+        var error = await Assert.ThrowsAsync<UniqueConstraintViolationException>(
+            () => new UnitOfWork(second).SaveChangesAsync(TestContext.Current.CancellationToken));
+
+        // Assert
+        Assert.Equal(StaffAccountService.EmailIndexName, error.ConstraintName);
+    }
+
+    /// <summary>Integration: a removed account is gone from the table (MIL-059).</summary>
+    [Fact]
+    public async Task Remove_Member_DeletesTheRow()
+    {
+        // Arrange
+        await SeedAsync("rita", StaffRole.Receptionist);
+        await using (var context = _fixture.CreateContext())
+        {
+            var repository = new StaffRepository(context);
+            repository.Remove((await repository.FindByUserNameAsync("rita", TestContext.Current.CancellationToken))!);
+            await new UnitOfWork(context).SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using var reader = _fixture.CreateContext();
+
+        // Act
+        var found = await new StaffRepository(reader).FindByUserNameAsync("rita", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Null(found);
     }
 
     #endregion

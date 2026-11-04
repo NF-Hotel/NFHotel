@@ -55,6 +55,48 @@ public sealed class StaffAdminGatewayTests
         Assert.Equal(HttpMethod.Post, handler.Method);
     }
 
+    /// <summary>Equivalence: the name, the address and the role are each a POST to their own route (MIL-059).</summary>
+    [Theory]
+    [InlineData("name", "/api/staff/7/name", "\"firstName\":\"Rita\"")]
+    [InlineData("email", "/api/staff/7/email", "\"email\":\"rita@hotel.dk\"")]
+    [InlineData("role", "/api/staff/7/role", "\"role\":2")]
+    public async Task DetailChange_Success_PostsToItsRoute(string change, string path, string body)
+    {
+        // Arrange
+        var handler = StubHandler.Json(HttpStatusCode.OK, """{"errors":[]}""");
+        var service = new ApiStaffAdminService(Gateway(handler));
+
+        // Act
+        var result = change switch
+        {
+            "name" => await service.RenameAsync(7, new RenameStaffRequest("Rita", "Hansen"), TestContext.Current.CancellationToken),
+            "email" => await service.ChangeEmailAsync(7, new ChangeEmailRequest("rita@hotel.dk"), TestContext.Current.CancellationToken),
+            _ => await service.ChangeRoleAsync(7, new ChangeRoleRequest(StaffRole.Manager), TestContext.Current.CancellationToken),
+        };
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(path, handler.PathAndQuery);
+        Assert.Equal(HttpMethod.Post, handler.Method);
+        Assert.Contains(body, handler.Body, StringComparison.Ordinal);
+    }
+
+    /// <summary>Positive: a deletion is a DELETE of the account route (MIL-059).</summary>
+    [Fact]
+    public async Task DeleteAsync_Success_DeletesTheAccountRoute()
+    {
+        // Arrange
+        var handler = StubHandler.Json(HttpStatusCode.OK, """{"errors":[]}""");
+
+        // Act
+        var result = await new ApiStaffAdminService(Gateway(handler)).DeleteAsync(7, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal("/api/staff/7", handler.PathAndQuery);
+        Assert.Equal(HttpMethod.Delete, handler.Method);
+    }
+
     /// <summary>Positive: a create posts the request, and the audit read asks for the page and its size.</summary>
     [Fact]
     public async Task CreateAndAudit_Success_UseTheStaffRoutes()

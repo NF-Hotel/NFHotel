@@ -21,6 +21,10 @@ internal static class ResultResponses
         ".last_manager",
         ".cannot_disable_self",
         ".cannot_reset_self",
+        ".email_taken",
+        ".cannot_change_own_role",
+        ".cannot_delete_self",
+        ".name_already_set",
         ".undo_window_closed",
     ];
 

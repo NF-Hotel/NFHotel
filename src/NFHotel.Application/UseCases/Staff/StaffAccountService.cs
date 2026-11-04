@@ -17,6 +17,9 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
     /// <summary>The most lines that one page of the audit trail holds.</summary>
     public const int MaxAuditPageSize = 200;
 
+    /// <summary>The name of the unique index on the e-mail address, which tells a taken address from a taken user name.</summary>
+    public const string EmailIndexName = "ux_staff_member_email";
+
     private readonly IStaffRepository _staff;
     private readonly IPasswordHasher _hasher;
     private readonly IUnitOfWork _unitOfWork;
@@ -106,7 +109,14 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
         StaffMember member;
         try
         {
-            member = StaffMember.Create(request.UserName, _hasher.Hash(password), request.Role, request.MustChangePassword);
+            member = StaffMember.Create(
+                request.UserName,
+                _hasher.Hash(password),
+                request.Role,
+                request.MustChangePassword,
+                request.FirstName,
+                request.LastName,
+                request.Email);
         }
         catch (DomainException exception)
         {
@@ -118,6 +128,11 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
             return Result.Failure(ErrorCodes.Staff.UserNameTaken);
         }
 
+        if (await EmailTakenAsync(member.Email, member.Id, cancellationToken).ConfigureAwait(false))
+        {
+            return Result.Failure(ErrorCodes.Staff.EmailTaken);
+        }
+
         // The account has no key before it is saved, so the record names it by user name only. This keeps the account and
         // its record in one transaction.
         _staff.Add(member);
@@ -126,10 +141,10 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
         {
             await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch (UniqueConstraintViolationException)
+        catch (UniqueConstraintViolationException exception)
         {
-            // Two starts at the same moment: the other one created the account first.
-            return Result.Failure(ErrorCodes.Staff.UserNameTaken);
+            // Two starts at the same moment: the other one created the account, or took the address, first.
+            return Result.Failure(exception.ConstraintName == EmailIndexName ? ErrorCodes.Staff.EmailTaken : ErrorCodes.Staff.UserNameTaken);
         }
 
         return Result.Success();
@@ -192,7 +207,17 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
 
         var members = await _staff.ListAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<StaffAccountDto> items =
-            [.. members.Select(member => new StaffAccountDto(member.Id, member.UserName, member.Role, member.IsActive, member.MustChangePassword))];
+            [
+                .. members.Select(member => new StaffAccountDto(
+                    member.Id,
+                    member.UserName,
+                    member.Role,
+                    member.IsActive,
+                    member.MustChangePassword,
+                    member.FirstName,
+                    member.LastName,
+                    member.Email)),
+            ];
         return Result<IReadOnlyList<StaffAccountDto>>.Success(items);
     }
 
@@ -292,6 +317,164 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
     }
 
     /// <inheritdoc />
+    public async Task<Result> RenameAsync(int id, RenameStaffRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!await _authorization.HasPermissionAsync(Permissions.StaffManage, cancellationToken).ConfigureAwait(false))
+        {
+            return Result.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        var member = await _staff.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        if (member is null)
+        {
+            return Result.Failure(ErrorCodes.Staff.NotFound);
+        }
+
+        try
+        {
+            member.Rename(request.FirstName, request.LastName);
+        }
+        catch (DomainException exception)
+        {
+            return Result.FromCodes(exception.Codes);
+        }
+
+        _staff.Update(member);
+        _recorder.ByCaller(StaffAuditAction.NameChanged, StaffAuditRecorder.Success, member);
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return Result.Success();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> ChangeEmailAsync(int id, ChangeEmailRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!await _authorization.HasPermissionAsync(Permissions.StaffManage, cancellationToken).ConfigureAwait(false))
+        {
+            return Result.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        var member = await _staff.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        if (member is null)
+        {
+            return Result.Failure(ErrorCodes.Staff.NotFound);
+        }
+
+        if (await EmailTakenAsync(request.Email, member.Id, cancellationToken).ConfigureAwait(false))
+        {
+            return Result.Failure(ErrorCodes.Staff.EmailTaken);
+        }
+
+        try
+        {
+            member.ChangeEmail(request.Email);
+        }
+        catch (DomainException exception)
+        {
+            return Result.FromCodes(exception.Codes);
+        }
+
+        // The record says that the address changed, not what it is: the trail holds no more personal data than it needs.
+        _staff.Update(member);
+        _recorder.ByCaller(StaffAuditAction.EmailChanged, StaffAuditRecorder.Success, member);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (UniqueConstraintViolationException exception) when (exception.ConstraintName == EmailIndexName)
+        {
+            return Result.Failure(ErrorCodes.Staff.EmailTaken);
+        }
+
+        return Result.Success();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> ChangeRoleAsync(int id, ChangeRoleRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!await _authorization.HasPermissionAsync(Permissions.StaffManage, cancellationToken).ConfigureAwait(false))
+        {
+            return Result.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        if (id == _context.StaffId)
+        {
+            return Result.Failure(ErrorCodes.Staff.CannotChangeOwnRole);
+        }
+
+        var member = await _staff.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        if (member is null)
+        {
+            return Result.Failure(ErrorCodes.Staff.NotFound);
+        }
+
+        if (request.Role != StaffRole.Manager
+            && await IsLastActiveManagerAsync(member, cancellationToken).ConfigureAwait(false))
+        {
+            return Result.Failure(ErrorCodes.Staff.LastManager);
+        }
+
+        var previous = member.Role;
+        try
+        {
+            member.ChangeRole(request.Role);
+        }
+        catch (DomainException exception)
+        {
+            return Result.FromCodes(exception.Codes);
+        }
+
+        if (member.Role == previous)
+        {
+            return Result.Success();
+        }
+
+        _staff.Update(member);
+        _recorder.ByCaller(StaffAuditAction.RoleChanged, StaffAuditRecorder.Success, member, $"{previous} to {member.Role}");
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return Result.Success();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    {
+        if (!await _authorization.HasPermissionAsync(Permissions.StaffManage, cancellationToken).ConfigureAwait(false))
+        {
+            return Result.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        if (id == _context.StaffId)
+        {
+            return Result.Failure(ErrorCodes.Staff.CannotDeleteSelf);
+        }
+
+        var member = await _staff.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        if (member is null)
+        {
+            return Result.Failure(ErrorCodes.Staff.NotFound);
+        }
+
+        if (await IsLastActiveManagerAsync(member, cancellationToken).ConfigureAwait(false))
+        {
+            return Result.Failure(ErrorCodes.Staff.LastManager);
+        }
+
+        // Nothing refers to the row: the trail and the service notes keep the user name as text. A token of the account
+        // finds no account any more, so its sessions end with the row.
+        _staff.Remove(member);
+        _throttle.Reset(member.UserName);
+        _throttle.Reset(StaffAuthService.ChangeKey(member.Id));
+        _recorder.ByCaller(StaffAuditAction.AccountDeleted, StaffAuditRecorder.Success, member);
+        await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return Result.Success();
+    }
+
+    /// <inheritdoc />
     public async Task<Result<StaffAuditPageDto>> ListAuditAsync(
         int page,
         int pageSize,
@@ -324,6 +507,17 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
         ];
         return Result<StaffAuditPageDto>.Success(new StaffAuditPageDto(items, number, size, total));
     }
+
+    private async Task<bool> EmailTakenAsync(string? email, int ownerId, CancellationToken cancellationToken) =>
+        StaffMember.NormalizeEmail(email) is { } address
+        && await _staff.FindByEmailAsync(address, cancellationToken).ConfigureAwait(false) is { } holder
+        && holder.Id != ownerId;
+
+    // Taking the role or the account away from the last active Manager would leave nobody to manage the staff.
+    private async Task<bool> IsLastActiveManagerAsync(StaffMember member, CancellationToken cancellationToken) =>
+        member.IsActive
+        && member.Role == StaffRole.Manager
+        && !await _staff.AnotherActiveManagerExistsAsync(member.Id, cancellationToken).ConfigureAwait(false);
 
     private async Task<Result> ApplyResetAsync(StaffMember member, string? password, CancellationToken cancellationToken)
     {

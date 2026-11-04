@@ -38,6 +38,38 @@ public interface IStaffAdminService
     /// <returns>Success, <c>staff.not_found</c>, <c>staff.cannot_reset_self</c> or the code of a password rule.</returns>
     Task<Result> ResetPasswordAsync(int id, ResetPasswordRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Sets the first and the last name of an account (MIL-059).</summary>
+    /// <param name="id">The account.</param>
+    /// <param name="request">The names.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>Success, <c>staff.not_found</c>, or the codes of the names.</returns>
+    Task<Result> RenameAsync(int id, RenameStaffRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Sets or clears the e-mail address of an account (MIL-059).</summary>
+    /// <param name="id">The account.</param>
+    /// <param name="request">The address.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>Success, <c>staff.not_found</c>, <c>staff.email_taken</c>, or the codes of the address.</returns>
+    Task<Result> ChangeEmailAsync(int id, ChangeEmailRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Gives an account another role and ends its sessions (MIL-059).</summary>
+    /// <param name="id">The account.</param>
+    /// <param name="request">The role.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>
+    /// Success, <c>staff.not_found</c>, <c>staff.cannot_change_own_role</c>, <c>staff.last_manager</c> or
+    /// <c>staff.role_invalid</c>.
+    /// </returns>
+    Task<Result> ChangeRoleAsync(int id, ChangeRoleRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes an account for good, which also ends its sessions. The audit trail keeps its user name (MIL-059).
+    /// </summary>
+    /// <param name="id">The account.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>Success, <c>staff.not_found</c>, <c>staff.cannot_delete_self</c> or <c>staff.last_manager</c>.</returns>
+    Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default);
+
     /// <summary>Reads one page of the audit trail.</summary>
     /// <param name="page">The page, from 1.</param>
     /// <param name="pageSize">The lines per page, 1 to 200.</param>

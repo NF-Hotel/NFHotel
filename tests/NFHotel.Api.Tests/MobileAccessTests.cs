@@ -436,6 +436,43 @@ public sealed class MobileAccessTests : IClassFixture<ApiFactory>
 
     #endregion
 
+    #region The staff accounts (MIL-059)
+
+    /// <summary>Equivalence: the staff token alone reaches the staff accounts, and the permission still decides.</summary>
+    [Theory]
+    [InlineData(StaffRole.Manager, HttpStatusCode.OK)]
+    [InlineData(StaffRole.Housekeeping, HttpStatusCode.Forbidden)]
+    [InlineData(StaffRole.Receptionist, HttpStatusCode.Forbidden)]
+    public async Task Get_Staff_StaffTokenAlone_FollowsThePermission(StaffRole role, HttpStatusCode expected)
+    {
+        // Arrange
+        using var client = StaffTokenClient(_factory, role);
+
+        // Act
+        using var response = await client.GetAsync("/api/staff", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(expected, response.StatusCode);
+    }
+
+    /// <summary>Negative: neither token is 401 with the service code on the staff accounts too.</summary>
+    [Fact]
+    public async Task Get_Staff_NoToken_ReturnsUnauthorizedWithTheServiceCode()
+    {
+        // Arrange
+        using var client = _factory.CreateClient();
+
+        // Act
+        using var response = await client.GetAsync("/api/staff", TestContext.Current.CancellationToken);
+        var body = await response.Content.ReadFromJsonAsync<ApiResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal([ErrorCodes.Api.Unauthorized], body!.Errors);
+    }
+
+    #endregion
+
     #region Everything else still needs the service token
 
     /// <summary>Negative: a Manager staff token alone is 401 on every route group outside the list.</summary>
@@ -449,6 +486,7 @@ public sealed class MobileAccessTests : IClassFixture<ApiFactory>
     [InlineData("/api/ai-defaults")]
     [InlineData("/api/auth/other")]
     [InlineData("/api/room-service-notesXYZ")]
+    [InlineData("/api/staffXYZ")]
     public async Task Get_OtherRoutes_StaffTokenAlone_ReturnsUnauthorizedWithTheServiceCode(string path)
     {
         // Arrange

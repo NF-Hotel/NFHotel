@@ -13,6 +13,10 @@ public sealed class InMemoryStaffRepository : InMemoryRepository<StaffMember>, I
         Task.FromResult(Items.SingleOrDefault(member => member.UserName == StaffMember.NormalizeUserName(userName)));
 
     /// <inheritdoc />
+    public Task<StaffMember?> FindByEmailAsync(string? email, CancellationToken cancellationToken = default) =>
+        Task.FromResult(StaffMember.NormalizeEmail(email) is { } key ? Items.SingleOrDefault(member => member.Email == key) : null);
+
+    /// <inheritdoc />
     public Task<bool> AnyAsync(CancellationToken cancellationToken = default) => Task.FromResult(Items.Count > 0);
 
     /// <inheritdoc />

@@ -2,8 +2,8 @@
 # Test of the nginx configuration (MIL-017, ADR-0011 decision 7): the HTTPS server with no
 # optional route, with the optional API route and no API, and with an API reached from a
 # tailnet address and refused from another address. Then the public listener of MIL-040 (port 8082,
-# Cloudflare Tunnel): the site with the client's scheme and address, no back office, and only the two
-# mobile routes of the API. Last, the hardened service of
+# Cloudflare Tunnel): the site with the client's scheme and address, no back office, and only the
+# mobile routes of the API (sign-in, rooms, service notes, staff accounts). Last, the hardened service of
 # deploy/nginx/docker-compose.yml (MIL-023 task 2) starts and turns healthy with a key as
 # production has it: 0600 and owned by another user than root.
 #
@@ -119,6 +119,8 @@ check "the mobile sign-in route reaches the API" api-reached \
 check "the mobile rooms route reaches the API" 200 "$(public /mobile-api/api/rooms/3)"
 check "the mobile service notes route reaches the API" 200 "$(public /mobile-api/api/room-service-notes)"
 check "a route that starts like the service notes is not public" 404 "$(public /mobile-api/api/room-service-notesXYZ)"
+check "the mobile staff accounts route reaches the API" 200 "$(public /mobile-api/api/staff)"
+check "a route that starts like the staff accounts is not public" 404 "$(public /mobile-api/api/staffXYZ)"
 check "another API route is not public" 404 "$(public /mobile-api/api/bookings)"
 check "the API itself is not on the public site" 404 "$(public /mobile-api/)"
 # The stand-in leaves, so the hardened proxy below finds no web application, as before.

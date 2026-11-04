@@ -105,6 +105,131 @@ public sealed class StaffViewModelTests
         Assert.Empty(viewModel.Errors);
     }
 
+    /// <summary>Positive: the name and the address of a new account are sent trimmed, and an empty address as none (MIL-059).</summary>
+    [Fact]
+    public async Task CreateAsync_WithNames_SendsThemAndNoEmptyAddress()
+    {
+        // Arrange
+        var admin = Substitute.For<IStaffAdminService>();
+        admin.ListAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<StaffAccountDto>>.Success([]));
+        admin.CreateAsync(Arg.Any<CreateStaffRequest>(), Arg.Any<CancellationToken>()).Returns(Result.Success());
+        var viewModel = new StaffListViewModel(Runner(admin));
+        viewModel.BeginCreate();
+        viewModel.NewUserName = "lena";
+        viewModel.NewPassword = "a temporary phrase";
+        viewModel.NewFirstName = " Lena ";
+        viewModel.NewLastName = "Berg";
+        viewModel.NewEmail = "  ";
+
+        // Act
+        await viewModel.CreateAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await admin.Received(1).CreateAsync(
+            new CreateStaffRequest("lena", "a temporary phrase", StaffRole.Receptionist, true, "Lena", "Berg", null),
+            Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>State transition: an edit sends only what changed, in the order name, address, role (MIL-059).</summary>
+    [Fact]
+    public async Task ConfirmEditAsync_SomeFieldsChanged_SendsOnlyThose()
+    {
+        // Arrange
+        var admin = Substitute.For<IStaffAdminService>();
+        admin.ListAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<StaffAccountDto>>.Success([]));
+        admin.ChangeEmailAsync(Arg.Any<int>(), Arg.Any<ChangeEmailRequest>(), Arg.Any<CancellationToken>()).Returns(Result.Success());
+        admin.ChangeRoleAsync(Arg.Any<int>(), Arg.Any<ChangeRoleRequest>(), Arg.Any<CancellationToken>()).Returns(Result.Success());
+        var viewModel = new StaffListViewModel(Runner(admin));
+        var rita = new StaffAccountDto(4, "rita", StaffRole.Receptionist, true, false, "Rita", "Hansen", "rita@hotel.dk");
+        viewModel.BeginEdit(rita);
+        viewModel.EditEmail = "";
+        viewModel.EditRole = StaffRole.Manager;
+
+        // Act
+        await viewModel.ConfirmEditAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await admin.DidNotReceive().RenameAsync(Arg.Any<int>(), Arg.Any<RenameStaffRequest>(), Arg.Any<CancellationToken>());
+        await admin.Received(1).ChangeEmailAsync(4, new ChangeEmailRequest(null), Arg.Any<CancellationToken>());
+        await admin.Received(1).ChangeRoleAsync(4, new ChangeRoleRequest(StaffRole.Manager), Arg.Any<CancellationToken>());
+        Assert.Null(viewModel.EditTarget);
+        Assert.Contains("sessions", viewModel.SuccessMessage, StringComparison.Ordinal);
+    }
+
+    /// <summary>Negative: a refused name stops the edit before the role, and the form stays open with the text.</summary>
+    [Fact]
+    public async Task ConfirmEditAsync_NameRefused_StopsAndKeepsTheForm()
+    {
+        // Arrange
+        var admin = Substitute.For<IStaffAdminService>();
+        admin.RenameAsync(Arg.Any<int>(), Arg.Any<RenameStaffRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Failure(ErrorCodes.Staff.FirstNameRequired));
+        var viewModel = new StaffListViewModel(Runner(admin));
+        viewModel.BeginEdit(new StaffAccountDto(4, "rita", StaffRole.Receptionist, true, false));
+        viewModel.EditFirstName = "";
+        viewModel.EditLastName = "Hansen";
+        viewModel.EditRole = StaffRole.Housekeeping;
+
+        // Act
+        await viewModel.ConfirmEditAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await admin.DidNotReceive().ChangeRoleAsync(Arg.Any<int>(), Arg.Any<ChangeRoleRequest>(), Arg.Any<CancellationToken>());
+        Assert.Equal(["Enter a first name."], viewModel.Errors);
+        Assert.NotNull(viewModel.EditTarget);
+    }
+
+    /// <summary>Edge: an edit without a change calls nothing and closes the form.</summary>
+    [Fact]
+    public async Task ConfirmEditAsync_NothingChanged_CallsNothing()
+    {
+        // Arrange
+        var admin = Substitute.For<IStaffAdminService>();
+        var viewModel = new StaffListViewModel(Runner(admin));
+        viewModel.BeginEdit(new StaffAccountDto(4, "rita", StaffRole.Receptionist, true, false, "Rita", "Hansen", "rita@hotel.dk"));
+        viewModel.EditEmail = "RITA@hotel.dk";
+
+        // Act
+        await viewModel.ConfirmEditAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Empty(admin.ReceivedCalls());
+        Assert.Null(viewModel.EditTarget);
+    }
+
+    /// <summary>State transition: a deletion waits for the confirmation, then calls its use case once (MIL-059).</summary>
+    [Fact]
+    public async Task ConfirmDeleteAsync_AfterTheConfirmation_DeletesOnce()
+    {
+        // Arrange
+        var admin = Substitute.For<IStaffAdminService>();
+        admin.ListAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<StaffAccountDto>>.Success([]));
+        admin.DeleteAsync(4, Arg.Any<CancellationToken>()).Returns(Result.Success());
+        var viewModel = new StaffListViewModel(Runner(admin));
+        var rita = new StaffAccountDto(4, "rita", StaffRole.Receptionist, true, false);
+
+        // Act
+        await viewModel.ConfirmDeleteAsync(TestContext.Current.CancellationToken);
+        viewModel.BeginDelete(rita);
+        var pending = viewModel.PendingDelete;
+        await viewModel.ConfirmDeleteAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(rita, pending);
+        await admin.Received(1).DeleteAsync(4, Arg.Any<CancellationToken>());
+        Assert.Null(viewModel.PendingDelete);
+        Assert.Contains("rita", viewModel.SuccessMessage, StringComparison.Ordinal);
+    }
+
+    /// <summary>Equivalence: the list shows the two names together, or a dash while the account has none.</summary>
+    [Fact]
+    public void NameOf_WithAndWithoutName_ShowsTheNameOrADash()
+    {
+        // Act and assert
+        Assert.Equal("Rita Hansen", StaffListViewModel.NameOf(new StaffAccountDto(1, "rita", StaffRole.Manager, true, false, "Rita", "Hansen")));
+        Assert.Equal("—", StaffListViewModel.NameOf(new StaffAccountDto(1, "rita", StaffRole.Manager, true, false)));
+    }
+
     /// <summary>Negative: a refusal keeps the form open with the typed values and shows the translated text.</summary>
     [Fact]
     public async Task ConfirmDisableAsync_LastManager_KeepsTheConfirmationAndShowsTheText()
@@ -120,7 +245,7 @@ public sealed class StaffViewModelTests
         await viewModel.ConfirmDisableAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(["At least one active Manager must remain, so this account cannot be disabled."], viewModel.Errors);
+        Assert.Equal(["At least one active Manager must remain, so this account cannot be disabled, deleted or given another role."], viewModel.Errors);
         Assert.Equal(boss, viewModel.PendingDisable);
         Assert.Null(viewModel.SuccessMessage);
     }

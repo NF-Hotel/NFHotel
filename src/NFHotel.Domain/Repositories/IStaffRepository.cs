@@ -11,6 +11,16 @@ public interface IStaffRepository : IRepository<StaffMember, int>
     /// <returns>The member, or <c>null</c>.</returns>
     Task<StaffMember?> FindByUserNameAsync(string userName, CancellationToken cancellationToken = default);
 
+    /// <summary>Finds a member by the e-mail address, in any case.</summary>
+    /// <param name="email">The address as typed.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The member, or <c>null</c> for no match or a blank address.</returns>
+    Task<StaffMember?> FindByEmailAsync(string? email, CancellationToken cancellationToken = default);
+
+    /// <summary>Marks an account for removal; the unit of work deletes it (MIL-059).</summary>
+    /// <param name="member">The account.</param>
+    void Remove(StaffMember member);
+
     /// <summary>Tells whether any member exists, so the first account can be created once.</summary>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>True when the table has a row.</returns>

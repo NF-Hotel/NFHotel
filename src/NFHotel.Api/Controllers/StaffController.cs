@@ -9,8 +9,9 @@ using NFHotel.Application.UseCases.Staff;
 namespace NFHotel.Api.Controllers;
 
 /// <summary>
-/// The staff accounts over HTTP (ADR-0017): the change of the own password for every role, and account management and the
-/// audit trail for a Manager. The writes of a Manager are limited per account by the policy <see cref="WriteLimitPolicy"/>.
+/// The staff accounts over HTTP (ADR-0017, MIL-059): the change of the own password, and the own name while there is none,
+/// for every role; account management and the audit trail for a Manager. The writes of a Manager are limited per account by
+/// the policy <see cref="WriteLimitPolicy"/>. The mobile app reaches these routes with the staff token alone (ADR-0015).
 /// </summary>
 [ApiController]
 [Route(ApiRoutes.Staff)]
@@ -42,6 +43,15 @@ public sealed class StaffController : ControllerBase
     [RequiresPermission(Permissions.StaffChangeOwnPassword)]
     public async Task<IActionResult> ChangeOwnPasswordAsync([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken) =>
         this.ToResponse(await _auth.ChangePasswordAsync(request, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Gives the account of the caller a name while it has none (MIL-059).</summary>
+    /// <param name="request">The first and the last name.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>200 with the session, 401, 409 when the account has a name already, or 422 with the codes.</returns>
+    [HttpPost(ApiRoutes.StaffMyName)]
+    [RequiresPermission(Permissions.StaffSetOwnName)]
+    public async Task<IActionResult> SetOwnNameAsync([FromBody] RenameStaffRequest request, CancellationToken cancellationToken) =>
+        this.ToResponse(await _auth.SetOwnNameAsync(request, cancellationToken).ConfigureAwait(false));
 
     /// <summary>Lists the accounts.</summary>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
@@ -91,6 +101,49 @@ public sealed class StaffController : ControllerBase
     [EnableRateLimiting(WriteLimitPolicy)]
     public async Task<IActionResult> ResetPasswordAsync(int id, [FromBody] ResetPasswordRequest request, CancellationToken cancellationToken) =>
         this.ToResponse(await _admin.ResetPasswordAsync(id, request, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Sets the first and the last name of an account (MIL-059).</summary>
+    /// <param name="id">The account.</param>
+    /// <param name="request">The names.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>200, 404, or 422 with the codes.</returns>
+    [HttpPost(ApiRoutes.StaffName)]
+    [RequiresPermission(Permissions.StaffManage)]
+    [EnableRateLimiting(WriteLimitPolicy)]
+    public async Task<IActionResult> RenameAsync(int id, [FromBody] RenameStaffRequest request, CancellationToken cancellationToken) =>
+        this.ToResponse(await _admin.RenameAsync(id, request, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Sets or clears the e-mail address of an account (MIL-059).</summary>
+    /// <param name="id">The account.</param>
+    /// <param name="request">The address.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>200, 404, 409 for an address that another account has, or 422 with the codes.</returns>
+    [HttpPost(ApiRoutes.StaffEmail)]
+    [RequiresPermission(Permissions.StaffManage)]
+    [EnableRateLimiting(WriteLimitPolicy)]
+    public async Task<IActionResult> ChangeEmailAsync(int id, [FromBody] ChangeEmailRequest request, CancellationToken cancellationToken) =>
+        this.ToResponse(await _admin.ChangeEmailAsync(id, request, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Gives an account another role, which ends its sessions (MIL-059).</summary>
+    /// <param name="id">The account.</param>
+    /// <param name="request">The role.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>200, 404, 409 for the own account or the last Manager, or 422 for an unknown role.</returns>
+    [HttpPost(ApiRoutes.StaffRole)]
+    [RequiresPermission(Permissions.StaffManage)]
+    [EnableRateLimiting(WriteLimitPolicy)]
+    public async Task<IActionResult> ChangeRoleAsync(int id, [FromBody] ChangeRoleRequest request, CancellationToken cancellationToken) =>
+        this.ToResponse(await _admin.ChangeRoleAsync(id, request, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Deletes an account for good (MIL-059).</summary>
+    /// <param name="id">The account.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>200, 404, or 409 for the own account or the last Manager.</returns>
+    [HttpDelete(ApiRoutes.ById)]
+    [RequiresPermission(Permissions.StaffManage)]
+    [EnableRateLimiting(WriteLimitPolicy)]
+    public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken) =>
+        this.ToResponse(await _admin.DeleteAsync(id, cancellationToken).ConfigureAwait(false));
 
     /// <summary>Reads one page of the audit trail, newest first.</summary>
     /// <param name="page">The page, from 1.</param>

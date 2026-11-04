@@ -35,4 +35,14 @@ public sealed class ApiStaffAuthService : IStaffAuthService
             .PostAsync<StaffSessionDto>($"{ApiRoutes.Staff}/{ApiRoutes.StaffMyPassword}", request, cancellationToken)
             .ConfigureAwait(false);
     }
+
+    /// <inheritdoc />
+    public async Task<Result<StaffSessionDto>> SetOwnNameAsync(RenameStaffRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await _api
+            .PostAsync<StaffSessionDto>($"{ApiRoutes.Staff}/{ApiRoutes.StaffMyName}", request, cancellationToken)
+            .ConfigureAwait(false);
+    }
 }

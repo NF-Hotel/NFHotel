@@ -45,6 +45,9 @@ Access control must be enforced not only in the user interface, but also in the 
 | Mark a service note as done, and undo the mark for 5 minutes | x | o | o | o |
 | See the service history of a room | x | o | o | o |
 | Reopen a service note from the history | x | x | o | x |
+| Change own password | x | o | o | o |
+| Give own account a name while it has none (MIL-059) | x | o | o | o |
+| Manage staff accounts: create, name, e-mail, role, disable, enable, reset password, delete, audit trail (ADR-0017, MIL-059) | x | x | o | x |
 
 **Symbols:**
 

@@ -58,8 +58,10 @@ rooms="$(curl -sk --config "$W/token.cfg" "$URL/mobile-api/api/rooms" || true)"
 [[ "$rooms" == '{"value":[{'* ]] && ok "the rooms of the seed come back through /mobile-api/api/rooms" || ko "rooms: ${rooms:0:80}"
 notes="$(curl -sk --config "$W/token.cfg" "$URL/mobile-api/api/room-service-notes" || true)"
 [[ "$notes" == '{"value":['* ]] && ok "the service notes come back through /mobile-api/api/room-service-notes" || ko "notes: ${notes:0:80}"
-[[ "$(code "$URL/mobile-api/api/staff")" == 404 ]] && ok "another API path under /mobile-api/ answers 404" ||
-  ko "/mobile-api/api/staff: $(code "$URL/mobile-api/api/staff")"
+staff="$(curl -sk --config "$W/token.cfg" "$URL/mobile-api/api/staff" || true)"
+[[ "$staff" == '{"value":[{'* ]] && ok "the Manager lists the staff accounts through /mobile-api/api/staff" || ko "staff: ${staff:0:80}"
+[[ "$(code "$URL/mobile-api/api/bookings")" == 404 ]] && ok "another API path under /mobile-api/ answers 404" ||
+  ko "/mobile-api/api/bookings: $(code "$URL/mobile-api/api/bookings")"
 
 for user in receptionist housekeeping; do
   grep -q "^created-$user$" "$DEV_LITE_DIR/dev-staff.env" && ok "the $user account was made" || ko "the $user account is missing"

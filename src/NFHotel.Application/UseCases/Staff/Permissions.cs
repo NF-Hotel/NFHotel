@@ -120,7 +120,8 @@ public static class Permissions
     public const string MarketAnalysisStart = "MarketAnalysis.Start";
 
     /// <summary>
-    /// Permission to create, disable, enable and reset staff accounts and to read the audit trail (ADR-0017).
+    /// Permission to create, rename, disable, enable, reset and delete staff accounts, to change their e-mail address and
+    /// role, and to read the audit trail (ADR-0017, MIL-059).
     /// </summary>
     public const string StaffManage = "Staff.Manage";
 
@@ -128,6 +129,11 @@ public static class Permissions
     /// Permission to change one's own staff password (ADR-0017).
     /// </summary>
     public const string StaffChangeOwnPassword = "Staff.ChangeOwnPassword";
+
+    /// <summary>
+    /// Permission to give one's own account a name while it has none, at the first sign-in in the mobile app (MIL-059).
+    /// </summary>
+    public const string StaffSetOwnName = "Staff.SetOwnName";
 
     /// <summary>
     /// All permissions, to build one authorisation policy per permission.
@@ -158,5 +164,6 @@ public static class Permissions
         MarketAnalysisStart,
         StaffManage,
         StaffChangeOwnPassword,
+        StaffSetOwnName,
     ];
 }

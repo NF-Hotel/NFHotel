@@ -320,6 +320,121 @@ public sealed class StaffAccountEndpointTests : IClassFixture<ApiFactory>
 
     #endregion
 
+    #region Name, e-mail, role and deletion (MIL-059)
+
+    /// <summary>
+    /// Integration: a Manager names an account, gives it an address and lists both; another account with the same address
+    /// is refused with 409.
+    /// </summary>
+    [Fact]
+    public async Task RenameAndEmail_ByAManager_ShowInTheListAndTheAddressIsUnique()
+    {
+        // Arrange
+        _factory.AddStaff("boss-names", Password, StaffRole.Manager);
+        var rita = _factory.AddStaff("named-rita", Password, StaffRole.Receptionist);
+        var lena = _factory.AddStaff("named-lena", Password, StaffRole.Housekeeping);
+        using var manager = ClientWith(await SignInAsync("boss-names", Password));
+
+        // Act
+        using var renamed = await manager.PostAsJsonAsync($"/api/staff/{rita.Id}/name", new RenameStaffRequest("Rita", "Hansen"), ApiJson.Options, TestContext.Current.CancellationToken);
+        using var addressed = await manager.PostAsJsonAsync($"/api/staff/{rita.Id}/email", new ChangeEmailRequest("Rita@Hotel.dk"), ApiJson.Options, TestContext.Current.CancellationToken);
+        using var taken = await manager.PostAsJsonAsync($"/api/staff/{lena.Id}/email", new ChangeEmailRequest("rita@hotel.dk"), ApiJson.Options, TestContext.Current.CancellationToken);
+        var list = await manager.GetFromJsonAsync<ApiResponse<IReadOnlyList<StaffAccountDto>>>("/api/staff", ApiJson.Options, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, renamed.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, addressed.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, taken.StatusCode);
+        Assert.Equal([ErrorCodes.Staff.EmailTaken], await CodesAsync(taken));
+        var row = list!.Value!.Single(account => account.Id == rita.Id);
+        Assert.Equal(("Rita", "Hansen", "rita@hotel.dk"), (row.FirstName, row.LastName, row.Email));
+    }
+
+    /// <summary>Integration: a new role ends the sessions of the account; the next sign-in carries the new role.</summary>
+    [Fact]
+    public async Task ChangeRole_ByAManager_EndsTheOldSessionAndTheNewSignInHasTheRole()
+    {
+        // Arrange
+        _factory.AddStaff("boss-roles", Password, StaffRole.Manager);
+        var rita = _factory.AddStaff("role-rita", Password, StaffRole.Housekeeping);
+        var oldToken = await SignInAsync("role-rita", Password);
+        using var manager = ClientWith(await SignInAsync("boss-roles", Password));
+
+        // Act
+        using var response = await manager.PostAsJsonAsync($"/api/staff/{rita.Id}/role", new ChangeRoleRequest(StaffRole.Receptionist), ApiJson.Options, TestContext.Current.CancellationToken);
+        var oldStatus = await StatusAsync(oldToken, "/api/rooms");
+        var session = await SignInSessionAsync("role-rita", Password);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, oldStatus);
+        Assert.Equal(StaffRole.Receptionist, session.Role);
+    }
+
+    /// <summary>Integration: a deleted account can no longer sign in and its token is refused; the own account gives 409.</summary>
+    [Fact]
+    public async Task Delete_ByAManager_EndsTheAccountAndTheOwnAccountIsRefused()
+    {
+        // Arrange
+        var boss = _factory.AddStaff("boss-delete", Password, StaffRole.Manager);
+        var rita = _factory.AddStaff("deleted-rita", Password, StaffRole.Receptionist);
+        var ritaToken = await SignInAsync("deleted-rita", Password);
+        using var manager = ClientWith(await SignInAsync("boss-delete", Password));
+
+        // Act
+        using var deleted = await manager.DeleteAsync($"/api/staff/{rita.Id}", TestContext.Current.CancellationToken);
+        using var self = await manager.DeleteAsync($"/api/staff/{boss.Id}", TestContext.Current.CancellationToken);
+        using var missing = await manager.DeleteAsync($"/api/staff/{rita.Id}", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, deleted.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, await StatusAsync(ritaToken, "/api/rooms"));
+        Assert.Equal(HttpStatusCode.Unauthorized, await LoginStatusAsync("deleted-rita", Password));
+        Assert.Equal(HttpStatusCode.Conflict, self.StatusCode);
+        Assert.Equal([ErrorCodes.Staff.CannotDeleteSelf], await CodesAsync(self));
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+    }
+
+    /// <summary>Integration: an account without a name sets it once; a second try gives 409.</summary>
+    [Fact]
+    public async Task SetOwnName_WithoutAName_SetsItOnceAndTheSignInCarriesIt()
+    {
+        // Arrange
+        _factory.AddStaff("nameless", Password, StaffRole.Housekeeping);
+        using var client = ClientWith(await SignInAsync("nameless", Password));
+
+        // Act
+        using var first = await client.PostAsJsonAsync("/api/staff/me/name", new RenameStaffRequest("Nora", "Lund"), ApiJson.Options, TestContext.Current.CancellationToken);
+        using var second = await client.PostAsJsonAsync("/api/staff/me/name", new RenameStaffRequest("Other", "Name"), ApiJson.Options, TestContext.Current.CancellationToken);
+        var session = await SignInSessionAsync("nameless", Password);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        Assert.Equal(("Nora", "Lund"), (session.FirstName, session.LastName));
+    }
+
+    /// <summary>Negative: a Housekeeping member cannot rename, readdress, re-role or delete another account.</summary>
+    [Fact]
+    public async Task AccountChanges_Housekeeping_AreForbidden()
+    {
+        // Arrange
+        _factory.AddStaff("hk-changes", Password, StaffRole.Housekeeping);
+        var rita = _factory.AddStaff("hk-target", Password, StaffRole.Receptionist);
+        using var client = ClientWith(await SignInAsync("hk-changes", Password));
+
+        // Act
+        using var name = await client.PostAsJsonAsync($"/api/staff/{rita.Id}/name", new RenameStaffRequest("A", "B"), ApiJson.Options, TestContext.Current.CancellationToken);
+        using var email = await client.PostAsJsonAsync($"/api/staff/{rita.Id}/email", new ChangeEmailRequest("a@b.dk"), ApiJson.Options, TestContext.Current.CancellationToken);
+        using var role = await client.PostAsJsonAsync($"/api/staff/{rita.Id}/role", new ChangeRoleRequest(StaffRole.Manager), ApiJson.Options, TestContext.Current.CancellationToken);
+        using var delete = await client.DeleteAsync($"/api/staff/{rita.Id}", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.All([name, email, role, delete], response => Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode));
+    }
+
+    #endregion
+
     #region Helpers
 
     private async Task<StaffSessionDto> SignInSessionAsync(string userName, string password)

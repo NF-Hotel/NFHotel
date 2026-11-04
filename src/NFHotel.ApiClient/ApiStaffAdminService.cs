@@ -52,6 +52,41 @@ public sealed class ApiStaffAdminService : IStaffAdminService
     }
 
     /// <inheritdoc />
+    public async Task<Result> RenameAsync(int id, RenameStaffRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(id);
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await _api.PostWithoutValueAsync($"{ApiRoutes.Staff}/{id}/name", request, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> ChangeEmailAsync(int id, ChangeEmailRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(id);
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await _api.PostWithoutValueAsync($"{ApiRoutes.Staff}/{id}/email", request, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> ChangeRoleAsync(int id, ChangeRoleRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(id);
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await _api.PostWithoutValueAsync($"{ApiRoutes.Staff}/{id}/role", request, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(id);
+
+        return await _api.DeleteAsync($"{ApiRoutes.Staff}/{id}", cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<Result<StaffAuditPageDto>> ListAuditAsync(int page, int pageSize, CancellationToken cancellationToken = default) =>
         await _api.GetAsync<StaffAuditPageDto>(
             $"{ApiRoutes.Staff}/{ApiRoutes.StaffAudit}?page={page}&pageSize={pageSize}",

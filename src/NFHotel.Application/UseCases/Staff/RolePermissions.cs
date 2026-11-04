@@ -37,6 +37,7 @@ public static class RolePermissions
             Permissions.GuestsManage,
             Permissions.RoomsView,
             Permissions.StaffChangeOwnPassword,
+            Permissions.StaffSetOwnName,
         ],
 
         [Roles.Manager] =
@@ -63,7 +64,8 @@ public static class RolePermissions
             Permissions.MarketAnalysisView,
             Permissions.MarketAnalysisStart,
             Permissions.StaffManage,
-            Permissions.StaffChangeOwnPassword
+            Permissions.StaffChangeOwnPassword,
+            Permissions.StaffSetOwnName,
         ],
 
         [Roles.Housekeeping] =
@@ -71,7 +73,8 @@ public static class RolePermissions
             Permissions.ViewHousekeeping,
             Permissions.UpdateHousekeepingStatus,
             Permissions.RoomsView,
-            Permissions.StaffChangeOwnPassword
+            Permissions.StaffChangeOwnPassword,
+            Permissions.StaffSetOwnName,
         ]
     };
 

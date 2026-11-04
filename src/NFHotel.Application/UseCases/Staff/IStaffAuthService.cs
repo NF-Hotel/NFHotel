@@ -27,4 +27,16 @@ public interface IStaffAuthService
     /// the new password breaks, <c>staff.too_many_attempts</c>, or <c>api.staff_unauthorized</c> without a caller.
     /// </returns>
     Task<Result<StaffSessionDto>> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gives the account of the signed-in member a name while it has none, which the mobile app asks for after the first
+    /// sign-in (MIL-059). Once there is a name, only a Manager changes it.
+    /// </summary>
+    /// <param name="request">The first and the last name.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>
+    /// The session with the name, or <c>staff.name_already_set</c>, the codes of the names, or <c>api.staff_unauthorized</c>
+    /// without a caller.
+    /// </returns>
+    Task<Result<StaffSessionDto>> SetOwnNameAsync(RenameStaffRequest request, CancellationToken cancellationToken = default);
 }

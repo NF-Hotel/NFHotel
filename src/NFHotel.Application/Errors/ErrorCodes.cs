@@ -223,6 +223,36 @@ public static class ErrorCodes
 
         /// <summary>The role is not a known role.</summary>
         public const string RoleInvalid = StaffErrors.RoleInvalid;
+
+        /// <summary>The first name is empty (MIL-059).</summary>
+        public const string FirstNameRequired = StaffErrors.FirstNameRequired;
+
+        /// <summary>The first name is too long (MIL-059).</summary>
+        public const string FirstNameTooLong = StaffErrors.FirstNameTooLong;
+
+        /// <summary>The last name is empty (MIL-059).</summary>
+        public const string LastNameRequired = StaffErrors.LastNameRequired;
+
+        /// <summary>The last name is too long (MIL-059).</summary>
+        public const string LastNameTooLong = StaffErrors.LastNameTooLong;
+
+        /// <summary>The e-mail address is not valid (MIL-059).</summary>
+        public const string EmailInvalid = StaffErrors.EmailInvalid;
+
+        /// <summary>The e-mail address is too long (MIL-059).</summary>
+        public const string EmailTooLong = StaffErrors.EmailTooLong;
+
+        /// <summary>Another account has the e-mail address already (MIL-059).</summary>
+        public const string EmailTaken = "staff.email_taken";
+
+        /// <summary>A Manager cannot change their own role, so they cannot lock themselves out (MIL-059).</summary>
+        public const string CannotChangeOwnRole = "staff.cannot_change_own_role";
+
+        /// <summary>A Manager cannot delete their own account (MIL-059).</summary>
+        public const string CannotDeleteSelf = "staff.cannot_delete_self";
+
+        /// <summary>The account has a name already; only a Manager changes it then (MIL-059).</summary>
+        public const string NameAlreadySet = "staff.name_already_set";
     }
 
     /// <summary>Error codes for the holiday calendar of the analysis service.</summary>

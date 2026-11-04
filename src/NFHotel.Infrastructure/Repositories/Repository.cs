@@ -57,7 +57,7 @@ public abstract class Repository<TEntity, TKey> : IRepository<TEntity, TKey>
 
     /// <summary>
     /// Marks an entity for deletion. Protected, so only the repositories whose entity may be
-    /// deleted (guest, room) show it in their interface; a booking is never deleted (BR-13).
+    /// deleted (guest, room, staff account) show it in their interface; a booking is never deleted (BR-13).
     /// </summary>
     /// <param name="entity">Entiteten.</param>
     protected void MarkForRemoval(TEntity entity)
