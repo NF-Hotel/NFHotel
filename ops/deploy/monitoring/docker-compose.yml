@@ -73,7 +73,7 @@ services:
 
   loki:
     <<: *hardening
-    image: grafana/loki:3.5.7@sha256:0eaee7bf39cc83aaef46914fb58f287d4f4c4be6ec96b86c2ed55719a75e49c8
+    image: grafana/loki:3.7.9@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28
     environment:
       CONFIG_HASH: ${LOKI_CONFIG_HASH:-}
     command: [-config.file=/etc/loki/config.yml]
