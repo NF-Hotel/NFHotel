@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-23 | Deprecated | mikemike | AI as stand-in for S01 | Amended by ADR-0021: no deploy approval (RC-170) | [330b524] |
-| 2026-11-04 | Accepted | mikemike | AI as stand-in for S01 | Amended by ADR-0038: the deploy approval of point 2 is back, S01 as the only required reviewer (RC-281) | pending |
+| 2026-11-04 | Accepted | mikemike | AI as stand-in for S01 | Amended by ADR-0038: the deploy approval of point 2 is back, S01 as the only required reviewer (RC-281) | [7af26c6] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -93,3 +93,4 @@ We follow option 3. A pull request needs no approving review, and its merge stil
 [ADR-0021]: ./adr-0021-automatic-deploy-when-green.md
 [ADR-0038]: ./adr-0038-approval-before-a-deploy.md
 [330b524]: https://github.com/NF-Hotel/NFHotel/commit/330b52465cc857807b7c427354cc42e0ec2c2c2e
+[7af26c6]: https://github.com/NF-Hotel/NFHotel/commit/7af26c62c64d653f912ba876b1d2fd4c7c170f40

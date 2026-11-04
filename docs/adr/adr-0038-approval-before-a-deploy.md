@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the decision was made by S01 in chat on 2026-11-04 and the setting applied the same day; accepted after RC-281 Go | pending |
+| 2026-11-04 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the decision was made by S01 in chat on 2026-11-04 and the setting applied the same day; accepted after RC-281 Go | [7af26c6] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -81,3 +81,4 @@ We follow option 2. A deploy to production needs an approval by S01 in the envir
 [SAR-001]: ../sqa/security-audit-2026-11.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [SA-001]: ../stakeholder-analysis.md
+[7af26c6]: https://github.com/NF-Hotel/NFHotel/commit/7af26c62c64d653f912ba876b1d2fd4c7c170f40

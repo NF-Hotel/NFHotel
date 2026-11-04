@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-23 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; the decision was made by S01 in chat on 2026-10-23, accepted after RC-170 Go | [330b524] |
-| 2026-11-04 | Accepted | mikemike | AI as stand-in for S01 | Amended by ADR-0038: a required reviewer approves each deploy before the gate (RC-281) | pending |
+| 2026-11-04 | Accepted | mikemike | AI as stand-in for S01 | Amended by ADR-0038: a required reviewer approves each deploy before the gate (RC-281) | [7af26c6] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -118,3 +118,4 @@ We follow option 3. CD deploys a release without a human approval, but only when
 [MIL-027]: ../milestones/mil-027-dast-and-end-to-end-tests.md
 [ADR-0038]: ./adr-0038-approval-before-a-deploy.md
 [330b524]: https://github.com/NF-Hotel/NFHotel/commit/330b52465cc857807b7c427354cc42e0ec2c2c2e
+[7af26c6]: https://github.com/NF-Hotel/NFHotel/commit/7af26c62c64d653f912ba876b1d2fd4c7c170f40
