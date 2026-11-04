@@ -6,9 +6,9 @@ namespace NFHotel.ApiClient.Tests;
 /// <summary>A fake HTTP handler: remembers the calls it got and answers what the test asked for.</summary>
 internal sealed class StubHandler : HttpMessageHandler
 {
-    private readonly Func<HttpRequestMessage, Task<HttpResponseMessage>> _respond;
+    private readonly Func<HttpRequestMessage, HttpResponseMessage> _respond;
 
-    private StubHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> respond)
+    private StubHandler(Func<HttpRequestMessage, HttpResponseMessage> respond)
     {
         _respond = respond;
     }
@@ -36,20 +36,20 @@ internal sealed class StubHandler : HttpMessageHandler
     /// <param name="json">The body.</param>
     /// <returns>The handler.</returns>
     public static StubHandler Json(HttpStatusCode status, string json) =>
-        new(_ => Task.FromResult(new HttpResponseMessage(status)
+        new(_ => new HttpResponseMessage(status)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json"),
-        }));
+        });
 
     /// <summary>Answers with a status and a body that is not JSON.</summary>
     /// <param name="status">The status.</param>
     /// <param name="text">The body.</param>
     /// <returns>The handler.</returns>
     public static StubHandler Text(HttpStatusCode status, string text) =>
-        new(_ => Task.FromResult(new HttpResponseMessage(status)
+        new(_ => new HttpResponseMessage(status)
         {
             Content = new StringContent(text, Encoding.UTF8, "text/html"),
-        }));
+        });
 
     /// <summary>Throws instead of answering, as a broken network or a timeout does.</summary>
     /// <param name="exception">What to throw.</param>
@@ -66,6 +66,6 @@ internal sealed class StubHandler : HttpMessageHandler
         ForwardedFor = request.Headers.TryGetValues("X-Forwarded-For", out var forwarded) ? string.Join(",", forwarded) : null;
         Body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
-        return await _respond(request).ConfigureAwait(false);
+        return _respond(request);
     }
 }

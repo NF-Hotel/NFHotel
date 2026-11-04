@@ -63,7 +63,8 @@ public partial class WebFactory : WebApplicationFactory<Program>
         var fields = HiddenFields(html);
         fields[InputName(html, "login-user")] = userName;
         fields[InputName(html, "login-password")] = password;
-        return await browser.PostAsync(path, new FormUrlEncodedContent(fields), TestContext.Current.CancellationToken);
+        using var form = new FormUrlEncodedContent(fields);
+        return await browser.PostAsync(path, form, TestContext.Current.CancellationToken);
     }
 
     /// <summary>Reads the hidden fields of the first form, such as the antiforgery token and the form name.</summary>
@@ -72,13 +73,12 @@ public partial class WebFactory : WebApplicationFactory<Program>
     public static Dictionary<string, string> HiddenFields(string html)
     {
         var fields = new Dictionary<string, string>();
-        foreach (Match input in InputTag().Matches(html))
+        var hiddenInputs = InputTag().Matches(html)
+            .Select(input => input.Value)
+            .Where(tag => tag.Contains("type=\"hidden\"", StringComparison.Ordinal));
+        foreach (var tag in hiddenInputs)
         {
-            var tag = input.Value;
-            if (tag.Contains("type=\"hidden\"", StringComparison.Ordinal))
-            {
-                fields[Attribute(tag, "name")] = WebUtility.HtmlDecode(Attribute(tag, "value"));
-            }
+            fields[Attribute(tag, "name")] = WebUtility.HtmlDecode(Attribute(tag, "value"));
         }
 
         return fields;

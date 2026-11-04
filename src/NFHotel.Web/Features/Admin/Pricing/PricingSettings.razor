@@ -82,13 +82,12 @@
                 <legend>Room sizes that get a low season discount</legend>
                 @foreach (var size in PricingSettingsViewModel.Sizes)
                 {
-                    var current = size;
                     <label class="check">
                         <input type="checkbox"
-                               id="@($"setting-size-{current.ToString().ToLowerInvariant()}")"
-                               checked="@ViewModel.IsDiscounted(current)"
-                               @onchange="e => ViewModel.SetDiscounted(current, e.Value is true)" />
-                        @current
+                               id="@($"setting-size-{size.ToString().ToLowerInvariant()}")"
+                               checked="@ViewModel.IsDiscounted(size)"
+                               @onchange="e => ViewModel.SetDiscounted(size, e.Value is true)" />
+                        @size
                     </label>
                 }
             </fieldset>

@@ -82,10 +82,10 @@ public sealed class DatabaseIsolationTests
     #region Helpers
 
     private static string ProjectFile(string project) =>
-        Path.Combine(RepositoryRoot.Find(), "src", project, $"{project}.csproj");
+        Path.Join(RepositoryRoot.Find(), "src", project, $"{project}.csproj");
 
     private static string AssetsFile(string project) =>
-        Path.Combine(RepositoryRoot.Find(), "g", "obj", project, "project.assets.json");
+        Path.Join(RepositoryRoot.Find(), "g", "obj", project, "project.assets.json");
 
     #endregion
 }

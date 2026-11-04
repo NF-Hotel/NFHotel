@@ -32,7 +32,8 @@ class SourceError(Exception):
 class JsonClient(Protocol):
     """Fetches a URL and returns its decoded JSON, or raises SourceError."""
 
-    def get_json(self, url: str, headers: Mapping[str, str]) -> Json: ...
+    def get_json(self, url: str, headers: Mapping[str, str]) -> Json:
+        """Fetch the URL with the headers and return its JSON, or raise SourceError."""
 
 
 @dataclass(frozen=True)

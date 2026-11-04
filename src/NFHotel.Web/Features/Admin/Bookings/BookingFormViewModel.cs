@@ -272,8 +272,8 @@ public sealed class BookingFormViewModel
 
             // The previously chosen room may be occupied in the new period. Then it must be removed
             // from the selection rather than being sent along in the request.
-            if (SelectedRoomId is not null &&
-                !AvailableRooms.Any(room => room.RoomId == SelectedRoomId.Value))
+            if (SelectedRoomId is { } selectedRoomId &&
+                !AvailableRooms.Any(room => room.RoomId == selectedRoomId))
             {
                 SelectedRoomId = null;
             }

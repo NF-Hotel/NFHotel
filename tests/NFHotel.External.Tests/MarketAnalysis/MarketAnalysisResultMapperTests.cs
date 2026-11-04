@@ -296,7 +296,7 @@ public sealed class MarketAnalysisResultMapperTests
     #region Helpers
 
     private static string SampleJson() =>
-        File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
+        File.ReadAllText(Path.Join(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
 
     private static MarketAnalysisResultDto Map(string json)
     {

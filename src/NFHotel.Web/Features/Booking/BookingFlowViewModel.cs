@@ -607,18 +607,8 @@ public sealed class BookingFlowViewModel
     }
 
     /// <summary>Finds a room in the list, or <c>null</c>.</summary>
-    private static AvailableRoomDto? Find(IReadOnlyList<AvailableRoomDto> rooms, int roomId)
-    {
-        foreach (var room in rooms)
-        {
-            if (room.RoomId == roomId)
-            {
-                return room;
-            }
-        }
-
-        return null;
-    }
+    private static AvailableRoomDto? Find(IReadOnlyList<AvailableRoomDto> rooms, int roomId) =>
+        rooms.FirstOrDefault(room => room.RoomId == roomId);
 
     /// <summary>True if the list contains the room.</summary>
     private static bool Contains(IReadOnlyList<AvailableRoomDto> rooms, int roomId) =>

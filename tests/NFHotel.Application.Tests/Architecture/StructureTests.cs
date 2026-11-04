@@ -150,7 +150,7 @@ public sealed partial class StructureTests
     [Fact]
     public void Dto_EverySourceFile_DeclaresOneTopLevelType()
     {
-        var dtoDirectory = Path.Combine(RepositoryRoot.Find(), "src", "NFHotel.Application", "Dto");
+        var dtoDirectory = Path.Join(RepositoryRoot.Find(), "src", "NFHotel.Application", "Dto");
         var files = Directory.GetFiles(dtoDirectory, "*.cs", SearchOption.AllDirectories);
 
         Assert.NotEmpty(files);

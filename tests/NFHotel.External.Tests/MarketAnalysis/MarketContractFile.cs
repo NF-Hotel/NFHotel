@@ -15,7 +15,7 @@ internal sealed class MarketContractFile
 
     /// <summary>Reads the copy of the contract that is next to the test assembly.</summary>
     public static MarketContractFile Load() =>
-        new(File.ReadAllLines(Path.Combine(AppContext.BaseDirectory, "TestData", "market-contract.yaml")));
+        new(File.ReadAllLines(Path.Join(AppContext.BaseDirectory, "TestData", "market-contract.yaml")));
 
     /// <summary>The paths of the contract, for example <c>/api/v1/market-analysis/runs</c>.</summary>
     public IReadOnlyList<string> Paths()

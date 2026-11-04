@@ -202,7 +202,8 @@ public sealed class StaffPasswordPageTests : IClassFixture<WebFactory>
         fields[WebFactory.InputName(html, "current-password")] = current;
         fields[WebFactory.InputName(html, "new-password")] = fresh;
         fields[WebFactory.InputName(html, "repeat-password")] = repeat;
-        return await browser.PostAsync(ChangePath, new FormUrlEncodedContent(fields), TestContext.Current.CancellationToken);
+        using var form = new FormUrlEncodedContent(fields);
+        return await browser.PostAsync(ChangePath, form, TestContext.Current.CancellationToken);
     }
 
     #endregion

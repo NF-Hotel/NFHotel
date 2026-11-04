@@ -7,7 +7,7 @@ internal static class RepositoryRoot
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "NFHotel.sln")))
+            if (File.Exists(Path.Join(directory.FullName, "NFHotel.sln")))
             {
                 return directory.FullName;
             }

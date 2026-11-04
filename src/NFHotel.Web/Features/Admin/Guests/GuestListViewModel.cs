@@ -260,15 +260,15 @@ public sealed class GuestListViewModel
 
         try
         {
-            var result = guestId is null
+            var result = guestId is { } editedGuestId
                 ? await _guests
                     .RunAsync(
-                        (service, token) => service.CreateAsync(new CreateGuestRequest(fields), token),
+                        (service, token) => service.UpdateAsync(new UpdateGuestRequest(editedGuestId, fields), token),
                         cancellationToken)
                     .ConfigureAwait(false)
                 : await _guests
                     .RunAsync(
-                        (service, token) => service.UpdateAsync(new UpdateGuestRequest(guestId.Value, fields), token),
+                        (service, token) => service.CreateAsync(new CreateGuestRequest(fields), token),
                         cancellationToken)
                     .ConfigureAwait(false);
 

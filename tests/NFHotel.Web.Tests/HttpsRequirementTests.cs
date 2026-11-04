@@ -115,9 +115,10 @@ public sealed class HttpsRequirementTests
         // Arrange
         using var factory = new TlsFactory();
         using var browser = factory.CreateBrowser();
+        using var emptyForm = new FormUrlEncodedContent(new Dictionary<string, string>());
 
         // Act
-        using var response = await browser.PostAsync("/admin/login", new FormUrlEncodedContent(new Dictionary<string, string>()), TestContext.Current.CancellationToken);
+        using var response = await browser.PostAsync("/admin/login", emptyForm, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.PermanentRedirect, response.StatusCode);
