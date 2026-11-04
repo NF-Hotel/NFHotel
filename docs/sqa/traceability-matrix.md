@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-04 | Proposed | Claude (AI) | S01 | Added MIL-058 (Accepted after RC-277) and the code its tasks changed, reviewed in RC-278 with the findings report of the 57 CodeQL code quality findings | [457ff29] |
-| 2026-11-04 | Proposed | Claude (AI) | S01 | Added MIL-059 (Accepted after RC-279), ADR-0037 and the security audit report SAR-001 (both Accepted after RC-280), and the workflows, the Dependabot configuration and the policy test the milestone changed | pending |
+| 2026-11-04 | Proposed | Claude (AI) | S01 | Added MIL-059 (Accepted after RC-279), ADR-0037 and the security audit report SAR-001 (both Accepted after RC-280), and the workflows, the Dependabot configuration and the policy test the milestone changed | [742ce19] |
 
 ---
 
@@ -226,3 +226,4 @@ updated whenever an artifact instance is created or reviewed.
 [QC-YML-001]: ../../framework/qc/code/qc-yaml.md
 [QC-SH-001]: ../../framework/qc/code/qc-programming-shell.md
 [457ff29]: https://github.com/NF-Hotel/NFHotel/commit/457ff29bff4226e3bb212b88cd961626631d1245
+[742ce19]: https://github.com/NF-Hotel/NFHotel/commit/742ce193969dda9c8556362bd0c65c2d49f60c14

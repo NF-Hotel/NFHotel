@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version: the audit of 2026-11-04 under MIL-059, which S01 accepted in chat ("Ja, inkl. indstillinger"); accepted after RC-280 Go | pending |
+| 2026-11-04 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version: the audit of 2026-11-04 under MIL-059, which S01 accepted in chat ("Ja, inkl. indstillinger"); accepted after RC-280 Go | [742ce19] |
 
 ---
 
@@ -229,3 +229,4 @@ Run on 2026-11-04 on S01's PC (Git Bash for the policy test, WSL with Docker for
 [ADR-0021]: ../adr/adr-0021-automatic-deploy-when-green.md
 [ADR-0032]: ../adr/adr-0032-what-code-scanning-shows.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
+[742ce19]: https://github.com/NF-Hotel/NFHotel/commit/742ce193969dda9c8556362bd0c65c2d49f60c14

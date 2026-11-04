@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-11-04, in autonomous mode, for a security audit of the GitHub Actions workflows and the CI/CD supply chain against the techniques of the GhostAction campaign, with documentation of the findings, the fixes and the changes; S01 accepted the plan in chat the same day ("Ja, inkl. indstillinger") after RC-279 Go | pending |
+| 2026-11-04 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-11-04, in autonomous mode, for a security audit of the GitHub Actions workflows and the CI/CD supply chain against the techniques of the GhostAction campaign, with documentation of the findings, the fixes and the changes; S01 accepted the plan in chat the same day ("Ja, inkl. indstillinger") after RC-279 Go | [a089699] |
 
 ---
 
@@ -104,3 +104,4 @@ Not in this milestone: a rotation of a credential (none is exposed), a change on
 [ADR-0032]: ../adr/adr-0032-what-code-scanning-shows.md
 [MIL-022]: ./mil-022-supply-chain-security.md
 [MIL-044]: ./mil-044-security-overview.md
+[a089699]: https://github.com/NF-Hotel/NFHotel/commit/a08969941a98089df09010234b55aab754034982

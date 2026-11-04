@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; S01 accepted the plan of MIL-059 in chat on 2026-11-04 ("Ja, inkl. indstillinger") | pending |
+| 2026-11-04 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; S01 accepted the plan of MIL-059 in chat on 2026-11-04 ("Ja, inkl. indstillinger") | [742ce19] |
 
 ---
 
@@ -155,3 +155,4 @@ Go: every Mandatory criterion passes for the ADR, the workflows, the configurati
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[742ce19]: https://github.com/NF-Hotel/NFHotel/commit/742ce193969dda9c8556362bd0c65c2d49f60c14

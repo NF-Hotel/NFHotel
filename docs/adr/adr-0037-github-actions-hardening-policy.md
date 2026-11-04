@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI under MIL-059, which S01 accepted in chat on 2026-11-04; accepted after RC-280 Go | pending |
+| 2026-11-04 | Accepted | mikemike | AI as stand-in for S01 | Initial version; written by the AI under MIL-059, which S01 accepted in chat on 2026-11-04; accepted after RC-280 Go | [f7e9868] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -66,3 +66,4 @@ We follow option 3. The seven rules of `ops/tests/test-workflow-policy.sh` are t
 [ADR-0019]: ./adr-0019-approvals-by-the-owner.md
 [ADR-0021]: ./adr-0021-automatic-deploy-when-green.md
 [ADR-0032]: ./adr-0032-what-code-scanning-shows.md
+[f7e9868]: https://github.com/NF-Hotel/NFHotel/commit/f7e9868ef2889b4a15ea91d698d14fde5763ebb9
