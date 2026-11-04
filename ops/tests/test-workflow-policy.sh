@@ -23,6 +23,7 @@
 # Exit:  0 every rule holds (or every fixture failed as it should); 1 a rule is broken
 # Needs: bash 4+, grep, awk, sed, mktemp
 
+# No -e: every rule runs on every file and the broken ones are counted, as the other tests do.
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
