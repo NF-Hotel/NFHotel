@@ -73,12 +73,12 @@ public partial class WebFactory : WebApplicationFactory<Program>
     public static Dictionary<string, string> HiddenFields(string html)
     {
         var fields = new Dictionary<string, string>();
-        foreach (var tag in InputTag().Matches(html).Select(input => input.Value))
+        var hiddenInputs = InputTag().Matches(html)
+            .Select(input => input.Value)
+            .Where(tag => tag.Contains("type=\"hidden\"", StringComparison.Ordinal));
+        foreach (var tag in hiddenInputs)
         {
-            if (tag.Contains("type=\"hidden\"", StringComparison.Ordinal))
-            {
-                fields[Attribute(tag, "name")] = WebUtility.HtmlDecode(Attribute(tag, "value"));
-            }
+            fields[Attribute(tag, "name")] = WebUtility.HtmlDecode(Attribute(tag, "value"));
         }
 
         return fields;
