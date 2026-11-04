@@ -37,7 +37,7 @@
 
   <ItemGroup>
     <!-- Markdown of the AI texts of the market analysis report (MIL-026 task 23); HTML is disabled and links are removed in MarkdownText. -->
-    <PackageReference Include="Markdig" Version="1.4.1" />
+    <PackageReference Include="Markdig" Version="1.5.0" />
   </ItemGroup>
 
   <ItemGroup>
