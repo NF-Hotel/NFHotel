@@ -10,6 +10,7 @@ namespace NFHotel.Application.Dto.Staff;
 /// <param name="MustChangePassword">True when the member may do nothing but change the password (ADR-0017).</param>
 /// <param name="FirstName">The first name, or <c>null</c> while the account has no name; the mobile app asks for it then (MIL-059).</param>
 /// <param name="LastName">The last name, or <c>null</c> while the account has no name (MIL-059).</param>
+/// <param name="StaffId">The key of the account, so the mobile app tells the own shifts, rooms and trades apart (MIL-060).</param>
 public sealed record StaffSessionDto(
     string Token,
     DateTimeOffset ExpiresAt,
@@ -17,4 +18,5 @@ public sealed record StaffSessionDto(
     StaffRole Role,
     bool MustChangePassword = false,
     string? FirstName = null,
-    string? LastName = null);
+    string? LastName = null,
+    int StaffId = 0);

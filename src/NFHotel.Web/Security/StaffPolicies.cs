@@ -58,4 +58,10 @@ public static class StaffPolicies
 
     /// <summary>Policy for changing the own password (ADR-0017).</summary>
     public const string StaffChangeOwnPassword = Permissions.StaffChangeOwnPassword;
+
+    /// <summary>Policy for planning the shifts and approving their trades (MIL-060).</summary>
+    public const string ShiftsManage = Permissions.ShiftsManage;
+
+    /// <summary>Policy for assigning rooms to housekeepers and approving their trades (MIL-060).</summary>
+    public const string RoomAssignmentsManage = Permissions.RoomAssignmentsManage;
 }

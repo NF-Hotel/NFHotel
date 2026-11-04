@@ -38,6 +38,8 @@ public static class RolePermissions
             Permissions.RoomsView,
             Permissions.StaffChangeOwnPassword,
             Permissions.StaffSetOwnName,
+            Permissions.ShiftsView,
+            Permissions.ShiftsTrade,
         ],
 
         [Roles.Manager] =
@@ -66,6 +68,11 @@ public static class RolePermissions
             Permissions.StaffManage,
             Permissions.StaffChangeOwnPassword,
             Permissions.StaffSetOwnName,
+            Permissions.ShiftsView,
+            Permissions.ShiftsTrade,
+            Permissions.ShiftsManage,
+            Permissions.RoomAssignmentsView,
+            Permissions.RoomAssignmentsManage,
         ],
 
         [Roles.Housekeeping] =
@@ -75,6 +82,10 @@ public static class RolePermissions
             Permissions.RoomsView,
             Permissions.StaffChangeOwnPassword,
             Permissions.StaffSetOwnName,
+            Permissions.ShiftsView,
+            Permissions.ShiftsTrade,
+            Permissions.RoomAssignmentsView,
+            Permissions.RoomAssignmentsTrade,
         ]
     };
 

@@ -1,9 +1,11 @@
+using NFHotel.Web.Common;
 using NFHotel.Web.Features.Admin.Benchmark;
 using NFHotel.Web.Features.Admin.Bookings;
 using NFHotel.Web.Features.Admin.Dashboard;
 using NFHotel.Web.Features.Admin.Guests;
 using NFHotel.Web.Features.Admin.Login;
 using NFHotel.Web.Features.Admin.MarketAnalysis;
+using NFHotel.Web.Features.Admin.Planning;
 using NFHotel.Web.Features.Admin.Pricing;
 using NFHotel.Web.Features.Admin.Rooms;
 using NFHotel.Web.Features.Admin.Staff;
@@ -63,6 +65,10 @@ public static class AdminFeatureRegistration
         services.AddScoped<ChangePasswordViewModel>();
         services.AddScoped<StaffListViewModel>();
         services.AddScoped<StaffAuditViewModel>();
+
+        services.AddSingleton<HotelTimeZone>();
+        services.AddScoped<ShiftPlanViewModel>();
+        services.AddScoped<RoomAssignmentsViewModel>();
 
         return services;
     }

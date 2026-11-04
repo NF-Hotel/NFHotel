@@ -1,0 +1,107 @@
+@page "/admin/room-assignments"
+@layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.RoomAssignmentsManage)]
+@rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using NFHotel.Application.Dto.Rooms
+@using NFHotel.Web.Common
+@using NFHotel.Web.Features.Admin.Planning
+@inject RoomAssignmentsViewModel ViewModel
+
+@*
+    The room assignments of the housekeepers (MIL-060). Only markup and binding. A Manager assigns freely; the minimum
+    applies to the trades between housekeepers, and a trade that leaves somebody below it waits here for approval.
+*@
+
+<PageTitle>Room assignments — administration</PageTitle>
+
+<div class="stack-lg">
+    <PageHeader Title="Room assignments" Subtitle="Give each room a housekeeper, and approve trades that leave somebody with too few rooms." />
+
+    <ErrorAlert Errors="ViewModel.Errors" />
+
+    @if (ViewModel.SuccessMessage is { } success)
+    {
+        <AlertBox Kind="AlertKind.Ok" Message="@success" />
+    }
+
+    @if (ViewModel.AwaitingApproval.Count > 0)
+    {
+        <section class="card card-pad stack" aria-labelledby="room-approvals">
+            <h2 class="subtitle" id="room-approvals">Trades to approve</h2>
+            @foreach (var trade in ViewModel.AwaitingApproval)
+            {
+                <div class="row">
+                    <span>@RoomAssignmentsViewModel.Describe(trade)</span>
+                    <button type="button" class="btn btn-primary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => ApproveAsync(trade)">Approve</button>
+                    <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => RejectAsync(trade)">Reject</button>
+                </div>
+            }
+        </section>
+    }
+
+    @if (!ViewModel.IsLoaded)
+    {
+        <LoadingSkeleton />
+    }
+    else if (ViewModel.Overview is { } overview)
+    {
+        <section class="card card-pad stack" aria-labelledby="housekeepers">
+            <h2 class="subtitle" id="housekeepers">Housekeepers (at least @overview.MinimumRooms rooms each)</h2>
+            @foreach (var housekeeper in overview.Housekeepers)
+            {
+                <div class="row">
+                    <span>@housekeeper.Name: @housekeeper.RoomCount rooms</span>
+                    @if (ViewModel.IsBelowMinimum(housekeeper))
+                    {
+                        <strong>Below the minimum</strong>
+                    }
+                </div>
+            }
+        </section>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Room</th>
+                    <th scope="col">Floor</th>
+                    <th scope="col">Housekeeper</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var room in overview.Rooms)
+                {
+                    <tr>
+                        <td>@room.RoomNumber</td>
+                        <td>@room.Floor</td>
+                        <td>
+                            <select class="field-input" aria-label="@($"Housekeeper of room {room.RoomNumber}")" disabled="@ViewModel.IsBusy"
+                                    value="@(room.StaffId?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty)"
+                                    @onchange="args => AssignAsync(room, args.Value as string)">
+                                <option value="">Nobody</option>
+                                @foreach (var housekeeper in overview.Housekeepers)
+                                {
+                                    <option value="@housekeeper.Id">@housekeeper.Name</option>
+                                }
+                            </select>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
+
+    private Task AssignAsync(RoomAssignmentDto room, string? value) =>
+        ViewModel.AssignAsync(
+            room,
+            int.TryParse(value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var id) ? id : null,
+            ComponentToken);
+
+    private Task ApproveAsync(RoomTradeDto trade) => ViewModel.ApproveAsync(trade, ComponentToken);
+
+    private Task RejectAsync(RoomTradeDto trade) => ViewModel.RejectAsync(trade, ComponentToken);
+}

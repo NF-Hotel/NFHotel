@@ -136,6 +136,36 @@ public static class Permissions
     public const string StaffSetOwnName = "Staff.SetOwnName";
 
     /// <summary>
+    /// Permission to see the shifts of the own role and the trades open to oneself (MIL-060).
+    /// </summary>
+    public const string ShiftsView = "Shifts.View";
+
+    /// <summary>
+    /// Permission to give the own shifts away, swap them, and take or accept the shifts of colleagues (MIL-060).
+    /// </summary>
+    public const string ShiftsTrade = "Shifts.Trade";
+
+    /// <summary>
+    /// Permission to plan the shifts of everybody and to approve or reject their trades (MIL-060).
+    /// </summary>
+    public const string ShiftsManage = "Shifts.Manage";
+
+    /// <summary>
+    /// Permission to see which housekeeper looks after which room, and the own room trades (MIL-060).
+    /// </summary>
+    public const string RoomAssignmentsView = "RoomAssignments.View";
+
+    /// <summary>
+    /// Permission to give or trade the own rooms to another housekeeper and to answer such a trade (MIL-060).
+    /// </summary>
+    public const string RoomAssignmentsTrade = "RoomAssignments.Trade";
+
+    /// <summary>
+    /// Permission to assign rooms to housekeepers and to approve or reject their trades (MIL-060).
+    /// </summary>
+    public const string RoomAssignmentsManage = "RoomAssignments.Manage";
+
+    /// <summary>
     /// All permissions, to build one authorisation policy per permission.
     /// </summary>
     public static readonly IReadOnlyList<string> All =
@@ -165,5 +195,11 @@ public static class Permissions
         StaffManage,
         StaffChangeOwnPassword,
         StaffSetOwnName,
+        ShiftsView,
+        ShiftsTrade,
+        ShiftsManage,
+        RoomAssignmentsView,
+        RoomAssignmentsTrade,
+        RoomAssignmentsManage,
     ];
 }

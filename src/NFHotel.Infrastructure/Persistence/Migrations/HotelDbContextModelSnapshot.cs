@@ -835,6 +835,42 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("NFHotel.Domain.Entities.RoomAssignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("room_assignment_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("integer")
+                        .HasColumnName("room_id");
+
+                    b.Property<int>("StaffId")
+                        .HasColumnType("integer")
+                        .HasColumnName("staff_member_id");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_room_assignment");
+
+                    b.HasIndex("RoomId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_room_assignment_room_id");
+
+                    b.HasIndex("StaffId")
+                        .HasDatabaseName("ix_room_assignment_staff_id");
+
+                    b.ToTable("room_assignment", (string)null);
+                });
+
             modelBuilder.Entity("NFHotel.Domain.Entities.RoomRate", b =>
                 {
                     b.Property<int>("Id")
@@ -923,6 +959,180 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_room_service_note_done_fields_together", "(done_by IS NULL) = (done_at IS NULL)");
                         });
+                });
+
+            modelBuilder.Entity("NFHotel.Domain.Entities.RoomTrade", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("room_trade_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("AnsweredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("answered_at");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<int?>("DecidedById")
+                        .HasColumnType("integer")
+                        .HasColumnName("decided_by_id");
+
+                    b.Property<int>("FromStaffId")
+                        .HasColumnType("integer")
+                        .HasColumnName("from_staff_member_id");
+
+                    b.PrimitiveCollection<int[]>("GiveRoomIds")
+                        .IsRequired()
+                        .HasColumnType("integer[]")
+                        .HasColumnName("give_room_ids");
+
+                    b.Property<DateTimeOffset>("OfferedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("offered_at");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer")
+                        .HasColumnName("state");
+
+                    b.PrimitiveCollection<int[]>("TakeRoomIds")
+                        .IsRequired()
+                        .HasColumnType("integer[]")
+                        .HasColumnName("take_room_ids");
+
+                    b.Property<int>("ToStaffId")
+                        .HasColumnType("integer")
+                        .HasColumnName("to_staff_member_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_room_trade");
+
+                    b.HasIndex("FromStaffId")
+                        .HasDatabaseName("ix_room_trade_from_staff_id");
+
+                    b.HasIndex("State")
+                        .HasDatabaseName("ix_room_trade_state");
+
+                    b.HasIndex("ToStaffId")
+                        .HasDatabaseName("ix_room_trade_to_staff_id");
+
+                    b.ToTable("room_trade", (string)null);
+                });
+
+            modelBuilder.Entity("NFHotel.Domain.Entities.Shift", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("shift_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssigneeId")
+                        .HasColumnType("integer")
+                        .HasColumnName("assignee_staff_member_id");
+
+                    b.Property<DateTimeOffset>("EndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ends_at");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer")
+                        .HasColumnName("role");
+
+                    b.Property<DateTimeOffset>("StartsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("starts_at");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_shift");
+
+                    b.HasIndex("StartsAt")
+                        .HasDatabaseName("ix_shift_starts_at");
+
+                    b.HasIndex("AssigneeId", "StartsAt")
+                        .HasDatabaseName("ix_shift_assignee_starts_at");
+
+                    b.ToTable("shift", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_shift_ends_after_start", "ends_at > starts_at");
+                        });
+                });
+
+            modelBuilder.Entity("NFHotel.Domain.Entities.ShiftTrade", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("shift_trade_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("AnsweredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("answered_at");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<int?>("DecidedById")
+                        .HasColumnType("integer")
+                        .HasColumnName("decided_by_id");
+
+                    b.Property<DateTimeOffset>("OfferedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("offered_at");
+
+                    b.Property<int>("OfferedById")
+                        .HasColumnType("integer")
+                        .HasColumnName("offered_by_staff_member_id");
+
+                    b.Property<int>("ShiftId")
+                        .HasColumnType("integer")
+                        .HasColumnName("shift_id");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer")
+                        .HasColumnName("state");
+
+                    b.Property<int?>("SwapShiftId")
+                        .HasColumnType("integer")
+                        .HasColumnName("swap_shift_id");
+
+                    b.Property<int?>("TakenById")
+                        .HasColumnType("integer")
+                        .HasColumnName("taken_by_staff_member_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_shift_trade");
+
+                    b.HasIndex("OfferedById")
+                        .HasDatabaseName("ix_shift_trade_offered_by_staff_member_id");
+
+                    b.HasIndex("ShiftId")
+                        .HasDatabaseName("ix_shift_trade_shift_id");
+
+                    b.HasIndex("SwapShiftId")
+                        .HasDatabaseName("ix_shift_trade_swap_shift_id");
+
+                    b.HasIndex("TakenById")
+                        .HasDatabaseName("ix_shift_trade_taken_by_staff_member_id");
+
+                    b.HasIndex("State", "OfferedAt")
+                        .HasDatabaseName("ix_shift_trade_state_offered_at");
+
+                    b.ToTable("shift_trade", (string)null);
                 });
 
             modelBuilder.Entity("NFHotel.Domain.Entities.StaffAuditEvent", b =>
@@ -1103,6 +1313,23 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_booking_market_detail_booking_booking_id");
                 });
 
+            modelBuilder.Entity("NFHotel.Domain.Entities.RoomAssignment", b =>
+                {
+                    b.HasOne("NFHotel.Domain.Entities.Room", null)
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_room_assignment_room_room_id");
+
+                    b.HasOne("NFHotel.Domain.Entities.StaffMember", null)
+                        .WithMany()
+                        .HasForeignKey("StaffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_room_assignment_staff_members_staff_member_id");
+                });
+
             modelBuilder.Entity("NFHotel.Domain.Entities.RoomServiceNote", b =>
                 {
                     b.HasOne("NFHotel.Domain.Entities.Room", null)
@@ -1111,6 +1338,61 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_room_service_note_room_room_id");
+                });
+
+            modelBuilder.Entity("NFHotel.Domain.Entities.RoomTrade", b =>
+                {
+                    b.HasOne("NFHotel.Domain.Entities.StaffMember", null)
+                        .WithMany()
+                        .HasForeignKey("FromStaffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_room_trade_staff_members_from_staff_member_id");
+
+                    b.HasOne("NFHotel.Domain.Entities.StaffMember", null)
+                        .WithMany()
+                        .HasForeignKey("ToStaffId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_room_trade_staff_members_to_staff_member_id");
+                });
+
+            modelBuilder.Entity("NFHotel.Domain.Entities.Shift", b =>
+                {
+                    b.HasOne("NFHotel.Domain.Entities.StaffMember", null)
+                        .WithMany()
+                        .HasForeignKey("AssigneeId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_shift_staff_members_assignee_staff_member_id");
+                });
+
+            modelBuilder.Entity("NFHotel.Domain.Entities.ShiftTrade", b =>
+                {
+                    b.HasOne("NFHotel.Domain.Entities.StaffMember", null)
+                        .WithMany()
+                        .HasForeignKey("OfferedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_shift_trade_staff_members_offered_by_staff_member_id");
+
+                    b.HasOne("NFHotel.Domain.Entities.Shift", null)
+                        .WithMany()
+                        .HasForeignKey("ShiftId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_shift_trade_shift_shift_id");
+
+                    b.HasOne("NFHotel.Domain.Entities.Shift", null)
+                        .WithMany()
+                        .HasForeignKey("SwapShiftId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_shift_trade_shift_swap_shift_id");
+
+                    b.HasOne("NFHotel.Domain.Entities.StaffMember", null)
+                        .WithMany()
+                        .HasForeignKey("TakenById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_shift_trade_staff_members_taken_by_staff_member_id");
                 });
 
             modelBuilder.Entity("NFHotel.Domain.Entities.BenchmarkRun", b =>

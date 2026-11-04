@@ -387,6 +387,7 @@ public sealed class StaffAccountChangesTests
 
         // Assert
         Assert.Equal(("Rita", "Hansen"), (result.Value.FirstName, result.Value.LastName));
+        Assert.Equal(world.Staff.Items.Single().Id, result.Value.StaffId);
     }
 
     #endregion

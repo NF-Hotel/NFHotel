@@ -336,6 +336,10 @@ public sealed class ServiceWorld
 
     public IRoomQueries RoomQueries { get; } = Substitute.For<IRoomQueries>();
 
+    public InMemoryRoomAssignmentRepository RoomAssignments { get; } = new();
+
+    public InMemoryShiftRepository Shifts { get; } = new();
+
     public IGuestQueries GuestQueries { get; } = Substitute.For<IGuestQueries>();
 
     public IBenchmarkQueries BenchmarkQueries { get; } = Substitute.For<IBenchmarkQueries>();
@@ -353,6 +357,12 @@ public sealed class ServiceWorld
 
     public StaffAuthService StaffAuthService(IPasswordHasher? hasher = null, IStaffTokenIssuer? tokens = null, ILoginThrottle? throttle = null) =>
         new(Staff, hasher ?? new FakePasswordHasher(), tokens ?? new FakeStaffTokenIssuer(), throttle ?? Substitute.For<ILoginThrottle>(), UnitOfWork, StaffAudit, CallContext, Clock);
+
+    public RoomAssignmentService RoomAssignmentService(IStaffAuthorizationService? authorization = null, IStaffCallContext? context = null) =>
+        new(RoomAssignments, Rooms, RoomQueries, Staff, authorization ?? new StaffAuthorizationService(context ?? CallContext, Staff), context ?? CallContext, UnitOfWork, Clock);
+
+    public NFHotel.Application.UseCases.Shifts.ShiftService ShiftService(IStaffAuthorizationService? authorization = null, IStaffCallContext? context = null) =>
+        new(Shifts, Staff, authorization ?? new StaffAuthorizationService(context ?? CallContext, Staff), context ?? CallContext, UnitOfWork, Clock);
 
     public StaffAccountService StaffAccountService(ILoginThrottle? throttle = null, IStaffAuthorizationService? authorization = null) =>
         new(Staff, new FakePasswordHasher(), UnitOfWork, throttle ?? Substitute.For<ILoginThrottle>(), StaffAudit, CallContext, Clock,

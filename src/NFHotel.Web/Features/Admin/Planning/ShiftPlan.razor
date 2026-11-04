@@ -1,0 +1,152 @@
+@page "/admin/shifts"
+@layout NFHotel.Web.Components.Layout.AdminLayout
+@attribute [Authorize(Policy = StaffPolicies.ShiftsManage)]
+@rendermode InteractiveServer
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using NFHotel.Application.Dto.Shifts
+@using NFHotel.Web.Common
+@using NFHotel.Web.Features.Admin.Planning
+@using NFHotel.Web.Features.Admin.Staff
+@inject ShiftPlanViewModel ViewModel
+
+@*
+    The shift plan (MIL-060). Only markup and binding. The times are on the clock of the hotel. The API checks every rule
+    again: a shift goes to an active member with its role, nobody has two shifts at once, and a trade is approved only
+    while both shifts are still with the members who agreed to it.
+*@
+
+<PageTitle>Shifts — administration</PageTitle>
+
+<div class="stack-lg">
+    <PageHeader Title="Shifts" Subtitle="Plan the week, and approve the shifts that staff give away or swap.">
+        <Actions>
+            <button type="button" class="btn btn-secondary" disabled="@ViewModel.IsBusy" @onclick="PreviousAsync">Previous week</button>
+            <button type="button" class="btn btn-secondary" disabled="@ViewModel.IsBusy" @onclick="NextAsync">Next week</button>
+        </Actions>
+    </PageHeader>
+
+    <ErrorAlert Errors="ViewModel.Errors" />
+
+    @if (ViewModel.SuccessMessage is { } success)
+    {
+        <AlertBox Kind="AlertKind.Ok" Message="@success" />
+    }
+
+    @if (ViewModel.AwaitingApproval.Count > 0)
+    {
+        <section class="card card-pad stack" aria-labelledby="approvals">
+            <h2 class="subtitle" id="approvals">Trades to approve</h2>
+            @foreach (var trade in ViewModel.AwaitingApproval)
+            {
+                <div class="row">
+                    <span>@ViewModel.Describe(trade)</span>
+                    <button type="button" class="btn btn-primary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => ApproveAsync(trade)">Approve</button>
+                    <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => RejectAsync(trade)">Reject</button>
+                </div>
+            }
+        </section>
+    }
+
+    @if (ViewModel.PendingDelete is { } doomed)
+    {
+        <ConfirmPanel Title="@($"Delete the shift {ViewModel.WhenOf(doomed)}?")"
+                      Message="The shift and its open trades are removed."
+                      ConfirmLabel="Delete shift"
+                      IsBusy="ViewModel.IsBusy"
+                      OnConfirm="ConfirmDeleteAsync"
+                      OnCancel="ViewModel.Cancel" />
+    }
+
+    @if (ViewModel.IsEditing)
+    {
+        <section class="card card-pad stack" aria-labelledby="shift-form">
+            <h2 class="subtitle" id="shift-form">@(ViewModel.EditTarget is null ? "New shift" : "Edit shift")</h2>
+            <FormField Label="Date" For="shift-date" IsRequired="true">
+                <input id="shift-date" type="date" class="field-input" @bind="ViewModel.FormDate" />
+            </FormField>
+            <FormField Label="Start" For="shift-start" IsRequired="true">
+                <input id="shift-start" type="time" class="field-input" @bind="ViewModel.FormStart" />
+            </FormField>
+            <FormField Label="End" For="shift-end" IsRequired="true" Hint="A time before the start ends on the next day.">
+                <input id="shift-end" type="time" class="field-input" @bind="ViewModel.FormEnd" />
+            </FormField>
+            <FormField Label="Role" For="shift-role" IsRequired="true">
+                <select id="shift-role" class="field-input" @bind="ViewModel.FormRole">
+                    @foreach (var role in ShiftPlanViewModel.Roles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </select>
+            </FormField>
+            <FormField Label="Who" For="shift-assignee" Hint="Only staff with the role of the shift.">
+                <select id="shift-assignee" class="field-input" @bind="ViewModel.FormAssigneeId">
+                    <option value="">Nobody yet</option>
+                    @foreach (var account in ViewModel.StaffForRole)
+                    {
+                        <option value="@account.Id">@StaffListViewModel.NameOf(account) (@account.UserName)</option>
+                    }
+                </select>
+            </FormField>
+            <div class="row">
+                <button type="button" class="btn btn-primary" disabled="@ViewModel.IsBusy" @onclick="SaveAsync">Save shift</button>
+                <button type="button" class="btn btn-secondary" disabled="@ViewModel.IsBusy" @onclick="ViewModel.Cancel">Go back</button>
+            </div>
+        </section>
+    }
+
+    @if (!ViewModel.IsLoaded)
+    {
+        <LoadingSkeleton />
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Day</th>
+                    <th scope="col">Shifts</th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var day in ViewModel.Days)
+                {
+                    <tr>
+                        <td>@day.ToString("ddd d MMM", System.Globalization.CultureInfo.InvariantCulture)</td>
+                        <td>
+                            <div class="stack">
+                                @foreach (var shift in ViewModel.ShiftsOn(day))
+                                {
+                                    <div class="row">
+                                        <span>@ViewModel.TimesOf(shift) · @shift.Role · @(shift.AssigneeName ?? "Nobody yet")</span>
+                                        <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => ViewModel.BeginEdit(shift)">Edit</button>
+                                        <button type="button" class="btn btn-danger btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => ViewModel.BeginDelete(shift)">Delete</button>
+                                    </div>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => ViewModel.BeginCreate(day)">Add shift</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
+
+    private Task PreviousAsync() => ViewModel.PreviousWeekAsync(ComponentToken);
+
+    private Task NextAsync() => ViewModel.NextWeekAsync(ComponentToken);
+
+    private Task SaveAsync() => ViewModel.SaveAsync(ComponentToken);
+
+    private Task ConfirmDeleteAsync() => ViewModel.ConfirmDeleteAsync(ComponentToken);
+
+    private Task ApproveAsync(ShiftTradeDto trade) => ViewModel.ApproveAsync(trade, ComponentToken);
+
+    private Task RejectAsync(ShiftTradeDto trade) => ViewModel.RejectAsync(trade, ComponentToken);
+}

@@ -33,6 +33,7 @@ public sealed partial class StructureTests
         "NFHotel.Application.Dto.Pricing",
         "NFHotel.Application.Dto.RoomRates",
         "NFHotel.Application.Dto.Rooms",
+        "NFHotel.Application.Dto.Shifts",
         "NFHotel.Application.Dto.Staff",
     ];
 

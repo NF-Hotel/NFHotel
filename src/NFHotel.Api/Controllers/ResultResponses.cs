@@ -25,6 +25,11 @@ internal static class ResultResponses
         ".cannot_change_own_role",
         ".cannot_delete_self",
         ".name_already_set",
+        ".not_open",
+        ".rooms_changed",
+        ".shift_changed",
+        ".already_offered",
+        ".expired",
         ".undo_window_closed",
     ];
 
@@ -76,6 +81,12 @@ internal static class ResultResponses
         if (codes.Contains(ErrorCodes.Staff.InvalidCredentials) || codes.Contains(ErrorCodes.Api.StaffUnauthorized))
         {
             return StatusCodes.Status401Unauthorized;
+        }
+
+        // A trade that belongs to somebody else (MIL-060): the caller may not take that step.
+        if (codes.Any(code => code.EndsWith(".not_yours", StringComparison.Ordinal)))
+        {
+            return StatusCodes.Status403Forbidden;
         }
 
         if (codes.Any(code => code.EndsWith(".not_found", StringComparison.Ordinal)

@@ -473,6 +473,30 @@ public sealed class MobileAccessTests : IClassFixture<ApiFactory>
 
     #endregion
 
+    #region The shifts, the room assignments and their trades (MIL-060)
+
+    /// <summary>Equivalence: the staff token alone reaches the planning routes, and the permission still decides.</summary>
+    [Theory]
+    [InlineData("/api/shift-trades", StaffRole.Housekeeping, HttpStatusCode.OK)]
+    [InlineData("/api/shift-trades", StaffRole.Receptionist, HttpStatusCode.OK)]
+    [InlineData("/api/room-assignments", StaffRole.Housekeeping, HttpStatusCode.OK)]
+    [InlineData("/api/room-assignments", StaffRole.Receptionist, HttpStatusCode.Forbidden)]
+    [InlineData("/api/room-trades", StaffRole.Manager, HttpStatusCode.OK)]
+    [InlineData("/api/room-trades", StaffRole.Receptionist, HttpStatusCode.Forbidden)]
+    public async Task Get_Planning_StaffTokenAlone_FollowsThePermission(string path, StaffRole role, HttpStatusCode expected)
+    {
+        // Arrange
+        using var client = StaffTokenClient(_factory, role);
+
+        // Act
+        using var response = await client.GetAsync(path, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(expected, response.StatusCode);
+    }
+
+    #endregion
+
     #region Everything else still needs the service token
 
     /// <summary>Negative: a Manager staff token alone is 401 on every route group outside the list.</summary>
@@ -487,6 +511,8 @@ public sealed class MobileAccessTests : IClassFixture<ApiFactory>
     [InlineData("/api/auth/other")]
     [InlineData("/api/room-service-notesXYZ")]
     [InlineData("/api/staffXYZ")]
+    [InlineData("/api/shiftsXYZ")]
+    [InlineData("/api/room-assignmentsXYZ")]
     public async Task Get_OtherRoutes_StaffTokenAlone_ReturnsUnauthorizedWithTheServiceCode(string path)
     {
         // Arrange

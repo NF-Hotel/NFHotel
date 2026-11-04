@@ -21,6 +21,21 @@ public static class ApiRoutes
     /// <summary>The route prefix of the service notes of the rooms.</summary>
     public const string RoomServiceNotes = "api/room-service-notes";
 
+    /// <summary>The route prefix of the room assignments of the housekeepers (MIL-060).</summary>
+    public const string RoomAssignments = "api/room-assignments";
+
+    /// <summary>The route prefix of the trades of rooms between housekeepers (MIL-060).</summary>
+    public const string RoomTrades = "api/room-trades";
+
+    /// <summary>The route prefix of the shifts (MIL-060).</summary>
+    public const string Shifts = "api/shifts";
+
+    /// <summary>The route prefix of the trades of shifts (MIL-060).</summary>
+    public const string ShiftTrades = "api/shift-trades";
+
+    /// <summary>A room key below <see cref="RoomAssignments"/>.</summary>
+    public const string ByRoomId = "{roomId:int}";
+
     /// <summary>The finished service of one room below <see cref="RoomServiceNotes"/>.</summary>
     public const string RoomServiceNoteHistory = "history/{roomId:int}";
 

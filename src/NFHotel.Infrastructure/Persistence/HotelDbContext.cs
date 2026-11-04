@@ -64,6 +64,18 @@ public sealed class HotelDbContext : DbContext
     /// <summary>The service notes of the rooms.</summary>
     public DbSet<RoomServiceNote> RoomServiceNotes => Set<RoomServiceNote>();
 
+    /// <summary>The housekeeper of each room (MIL-060).</summary>
+    public DbSet<RoomAssignment> RoomAssignments => Set<RoomAssignment>();
+
+    /// <summary>The trades of rooms between housekeepers (MIL-060).</summary>
+    public DbSet<RoomTrade> RoomTrades => Set<RoomTrade>();
+
+    /// <summary>The shifts (MIL-060).</summary>
+    public DbSet<Shift> Shifts => Set<Shift>();
+
+    /// <summary>The trades of shifts (MIL-060).</summary>
+    public DbSet<ShiftTrade> ShiftTrades => Set<ShiftTrade>();
+
     /// <summary>The nightly base rate per room size (MIL-055).</summary>
     public DbSet<RoomRate> RoomRates => Set<RoomRate>();
 
@@ -99,6 +111,10 @@ public sealed class HotelDbContext : DbContext
         modelBuilder.ApplyConfiguration(new BookingConfiguration());
         modelBuilder.ApplyConfiguration(new RoomConfiguration());
         modelBuilder.ApplyConfiguration(new RoomServiceNoteConfiguration());
+        modelBuilder.ApplyConfiguration(new RoomAssignmentConfiguration());
+        modelBuilder.ApplyConfiguration(new RoomTradeConfiguration());
+        modelBuilder.ApplyConfiguration(new ShiftConfiguration());
+        modelBuilder.ApplyConfiguration(new ShiftTradeConfiguration());
         modelBuilder.ApplyConfiguration(new StaffConfiguration());
         modelBuilder.ApplyConfiguration(new BenchmarkRunConfiguration());
         modelBuilder.ApplyConfiguration(new BenchmarkRequestConfiguration());

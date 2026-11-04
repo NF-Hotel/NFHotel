@@ -464,8 +464,9 @@ public sealed class StaffAccountService : IStaffAccountService, IStaffAdminServi
             return Result.Failure(ErrorCodes.Staff.LastManager);
         }
 
-        // Nothing refers to the row: the trail and the service notes keep the user name as text. A token of the account
-        // finds no account any more, so its sessions end with the row.
+        // The trail and the service notes keep the user name as text. The database removes the room assignments and the
+        // trades of the account and leaves its shifts without a member (MIL-060). A token of the account finds no account
+        // any more, so its sessions end with the row.
         _staff.Remove(member);
         _throttle.Reset(member.UserName);
         _throttle.Reset(StaffAuthService.ChangeKey(member.Id));

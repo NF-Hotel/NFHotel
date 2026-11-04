@@ -10,6 +10,7 @@ using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Application.UseCases.RoomRates;
 using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Application.UseCases.Shifts;
 using NFHotel.Application.UseCases.Staff;
 
 namespace NFHotel.ApiClient;
@@ -45,6 +46,8 @@ public static class DependencyInjection
         services.AddScoped<IAiDefaultService, ApiAiDefaultService>();
         services.AddScoped<IRoomRateService, ApiRoomRateService>();
         services.AddScoped<IRoomServiceNoteService, ApiRoomServiceNoteService>();
+        services.AddScoped<IRoomAssignmentService, ApiRoomAssignmentService>();
+        services.AddScoped<IShiftService, ApiShiftService>();
         services.AddScoped<IPricingSettingsService, ApiPricingSettingsService>();
         services.AddScoped<IPriceSuggestionService, ApiPriceSuggestionService>();
         services.AddScoped<IMarketAnalysisService, ApiMarketAnalysisService>();

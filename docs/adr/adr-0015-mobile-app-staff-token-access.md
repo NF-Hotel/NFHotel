@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0015 |
-| CrossReference | [BC-001], [MIL-029], [MIL-059], [ADR-0004], [ADR-0005], [ADR-0017] |
+| CrossReference | [BC-001], [MIL-029], [MIL-059], [MIL-060], [ADR-0004], [ADR-0005], [ADR-0017] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
@@ -13,6 +13,7 @@
 | 2026-10-20 | Accepted | Claude (AI) | AI at the request of the user, not independent | Accepted after RC-131 Go | [1c3efb9] |
 | 2026-11-02 | Proposed | Claude (AI) | Not reviewed yet | The service notes of the rooms (`/api/room-service-notes`) join the routes that accept the staff token alone, so that staff can use them from the app | pending |
 | 2026-11-04 | Proposed | Claude (AI) | Not reviewed yet | The staff accounts (`/api/staff`) join the routes that accept the staff token alone, so that a Manager can manage accounts and every member can change the own password and set the own name in the app ([MIL-059]); the nginx filter of the app passes the service notes and the staff accounts too | pending |
+| 2026-11-04 | Proposed | Claude (AI) | Not reviewed yet | The shifts, the room assignments and their trades (`/api/shifts`, `/api/shift-trades`, `/api/room-assignments`, `/api/room-trades`) join the routes that accept the staff token alone ([MIL-060]) | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -34,7 +35,7 @@ Options considered:
 
 We follow option 3.
 
-- **Which routes.** `POST /api/auth/login`, the rooms endpoints (`/api/rooms`, read and the housekeeping actions), the service notes of the rooms (`/api/room-service-notes`, read, write, mark as done and reopen) and the staff accounts (`/api/staff`: the own password and the own name for every role; the list, creation, name, e-mail address, role, disabling, enabling, password reset, deletion and the audit trail for a Manager, [ADR-0017], [MIL-059]) accept a call that has a valid staff token and no service token. A call without either is still refused with 401. Every other route still needs the service token. nginx passes the same routes under `/mobile-api/` and no others (`ops/deploy/nginx/snippets/mobile-api.conf`).
+- **Which routes.** `POST /api/auth/login`, the rooms endpoints (`/api/rooms`, read and the housekeeping actions), the service notes of the rooms (`/api/room-service-notes`, read, write, mark as done and reopen) and the staff accounts (`/api/staff`: the own password and the own name for every role; the list, creation, name, e-mail address, role, disabling, enabling, password reset, deletion and the audit trail for a Manager, [ADR-0017], [MIL-059]), and the shifts, the room assignments and their trades (`/api/shifts`, `/api/shift-trades`, `/api/room-assignments`, `/api/room-trades`, [MIL-060]) accept a call that has a valid staff token and no service token. A call without either is still refused with 401. Every other route still needs the service token. nginx passes the same routes under `/mobile-api/` and no others (`ops/deploy/nginx/snippets/mobile-api.conf`).
 - **Order of checks.** The service-token middleware lets a call through when the service token is right, or when the route is on the list above and `X-Staff-Token` validates; the permission attribute then decides as before, so a Housekeeping member still cannot reach bookings or guests (those routes are not on the list, and the permission is not enough).
 - **Login without the service token.** The login is open to the internet on this route; the existing throttle (5 failures per user name in 15 minutes, 429 afterwards) is the protection. The throttle is also applied per client address so that one address cannot try many user names.
 - **App side.** The app keeps the staff token in the platform's secure storage (Keychain, Keystore), never in plain preferences, sends it in `X-Staff-Token`, and signs the member out on 401.
@@ -61,11 +62,13 @@ We follow option 3.
 - [ADR-0005] — the staff token may travel without the service token on those routes.
 - [MIL-029] — the plan that builds this.
 - [MIL-059] — the staff accounts in the app.
+- [MIL-060] — the shifts, the room assignments and their trades in the app.
 - [ADR-0017] — the rules of the staff accounts that the app now reaches.
 
 [BC-001]: ../business-case.md
 [MIL-029]: ../milestones/mil-029-mobile-app-staff-api.md
 [MIL-059]: ../milestones/mil-059-staff-accounts-in-the-app.md
+[MIL-060]: ../milestones/mil-060-shift-trading.md
 [ADR-0017]: ./adr-0017-staff-passwords-and-audit.md
 [ADR-0003]: ./adr-0003-proxmox-vm-for-services.md
 [ADR-0004]: ./adr-0004-database-api.md

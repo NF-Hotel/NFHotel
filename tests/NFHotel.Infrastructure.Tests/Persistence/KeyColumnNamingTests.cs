@@ -10,7 +10,8 @@ namespace NFHotel.Infrastructure.Tests.Persistence;
 
 /// <summary>
 /// Pins the rule from ADR-0001: the key column is called <c>&lt;table&gt;_id</c>, and a foreign key
-/// is called like the key of the referenced table. The test reads only the EF model and uses no database.
+/// is called like the key of the referenced table, with the role in front when a table holds two keys of the same
+/// table (MIL-060). The test reads only the EF model and uses no database.
 /// </summary>
 public sealed class KeyColumnNamingTests
 {
@@ -59,8 +60,13 @@ public sealed class KeyColumnNamingTests
             var table = foreignKey.DeclaringEntityType.GetTableName() ?? throw new InvalidOperationException("Entity has no table.");
             var principalTable = foreignKey.PrincipalEntityType.GetTableName() ?? throw new InvalidOperationException("Entity has no table.");
 
+            // A table with two keys of the same table names each after its role and that table, for example
+            // from_staff_member_id and to_staff_member_id (MIL-060).
             var property = Assert.Single(foreignKey.Properties);
-            Assert.Equal($"{principalTable}_id", ColumnOf(property, table));
+            var column = ColumnOf(property, table);
+            Assert.True(
+                column == $"{principalTable}_id" || column.EndsWith($"_{principalTable}_id", StringComparison.Ordinal),
+                $"{table}.{column} should be named after {principalTable}");
         }
     }
 }

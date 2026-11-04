@@ -64,6 +64,12 @@ public class ApiFactory : WebApplicationFactory<Program>
     public string IssueStaffToken(StaffRole role) =>
         Services.GetRequiredService<IStaffTokenIssuer>().Issue(AccountOf(role)).Token;
 
+    /// <summary>Issues a staff token for a stored account (MIL-060).</summary>
+    /// <param name="member">The account.</param>
+    /// <returns>The token.</returns>
+    public string IssueStaffToken(StaffMember member) =>
+        Services.GetRequiredService<IStaffTokenIssuer>().Issue(member).Token;
+
     /// <summary>Gets the stored account that the staff clients of a role sign in as, and stores it the first time (the API checks the account on each call).</summary>
     /// <param name="role">The role.</param>
     /// <returns>The account.</returns>
@@ -150,6 +156,13 @@ public class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(_ => World.BenchmarkService());
             services.AddSingleton<IBenchmarkService>(provider => provider.GetRequiredService<BenchmarkService>());
             services.AddSingleton<IBenchmarkIntake>(provider => provider.GetRequiredService<BenchmarkService>());
+
+            services.RemoveAll<IRoomAssignmentService>();
+            services.AddScoped<IRoomAssignmentService>(provider => World.RoomAssignmentService(
+                provider.GetRequiredService<IStaffAuthorizationService>(), provider.GetRequiredService<IStaffCallContext>()));
+            services.RemoveAll<NFHotel.Application.UseCases.Shifts.IShiftService>();
+            services.AddScoped<NFHotel.Application.UseCases.Shifts.IShiftService>(provider => World.ShiftService(
+                provider.GetRequiredService<IStaffAuthorizationService>(), provider.GetRequiredService<IStaffCallContext>()));
 
             services.RemoveAll<IStaffRepository>();
             services.RemoveAll<IUnitOfWork>();

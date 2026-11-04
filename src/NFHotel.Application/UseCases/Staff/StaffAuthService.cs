@@ -189,7 +189,8 @@ public sealed class StaffAuthService : IStaffAuthService
             member.Role,
             member.MustChangePassword,
             member.FirstName,
-            member.LastName);
+            member.LastName,
+            member.Id);
     }
 
     private async Task<Result<StaffSessionDto>> RefuseChangeAsync(StaffMember member, string code, CancellationToken cancellationToken)

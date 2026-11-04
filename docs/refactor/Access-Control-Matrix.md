@@ -48,6 +48,11 @@ Access control must be enforced not only in the user interface, but also in the 
 | Change own password | x | o | o | o |
 | Give own account a name while it has none (MIL-059) | x | o | o | o |
 | Manage staff accounts: create, name, e-mail, role, disable, enable, reset password, delete, audit trail (ADR-0017, MIL-059) | x | x | o | x |
+| See the shifts of the own role; give away, swap, take and answer trades of shifts (MIL-060) | x | o | o | o |
+| Plan shifts, and approve or reject trades of shifts (MIL-060) | x | x | o | x |
+| See the room assignments and the own trades of rooms (MIL-060) | x | x | o | o |
+| Give or trade the own rooms to another housekeeper, and answer such a trade (MIL-060) | x | x | x | o |
+| Assign rooms to housekeepers, and approve or reject trades of rooms (MIL-060) | x | x | o | x |
 
 **Symbols:**
 

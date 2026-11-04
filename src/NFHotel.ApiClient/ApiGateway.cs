@@ -63,6 +63,14 @@ public sealed class ApiGateway
     public Task<Result<TValue>> PutAsync<TValue>(string path, object body, CancellationToken cancellationToken) =>
         SendAsync(HttpMethod.Put, path, body, ReadValueAsync<TValue>, Result<TValue>.Failure, cancellationToken);
 
+    /// <summary>Puts a body to an endpoint whose answer carries no value (MIL-060).</summary>
+    /// <param name="path">The path below the base address.</param>
+    /// <param name="body">The request body.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The result.</returns>
+    public Task<Result> PutWithoutValueAsync(string path, object body, CancellationToken cancellationToken) =>
+        SendAsync(HttpMethod.Put, path, body, ReadWithoutValueAsync, Result.Failure, cancellationToken);
+
     /// <summary>Deletes a resource; the answer carries no value.</summary>
     /// <param name="path">The path below the base address.</param>
     /// <param name="cancellationToken">Cancels the call.</param>

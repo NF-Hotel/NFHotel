@@ -12,6 +12,7 @@ using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Application.UseCases.RoomRates;
 using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Application.UseCases.Shifts;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Repositories;
 using NFHotel.Infrastructure.Config;
@@ -145,6 +146,8 @@ public static class DependencyInjection
         services.AddScoped<IAiDefaultRepository, AiDefaultRepository>();
         services.AddScoped<IRoomRateRepository, RoomRateRepository>();
         services.AddScoped<IRoomServiceNoteRepository, RoomServiceNoteRepository>();
+        services.AddScoped<IRoomAssignmentRepository, RoomAssignmentRepository>();
+        services.AddScoped<IShiftRepository, ShiftRepository>();
         services.AddScoped<IBookingMarketDetailRepository, BookingMarketDetailRepository>();
         services.AddScoped<IPricingSettingRepository, PricingSettingRepository>();
         services.AddScoped<IPriceChangeRepository, PriceChangeRepository>();
@@ -183,6 +186,8 @@ public static class DependencyInjection
         services.AddScoped<IAiDefaultService, AiDefaultService>();
         services.AddScoped<IRoomRateService, RoomRateService>();
         services.AddScoped<IRoomServiceNoteService, RoomServiceNoteService>();
+        services.AddScoped<IRoomAssignmentService, RoomAssignmentService>();
+        services.AddScoped<IShiftService, ShiftService>();
         services.AddScoped<IPricingSettingsService, PricingSettingsService>();
         services.AddScoped<IPriceChangeService, PriceChangeService>();
         services.AddScoped<IPriceSuggestionService, PriceSuggestionService>();
