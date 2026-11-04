@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version: the audit of 2026-11-04 under MIL-059, which S01 accepted in chat ("Ja, inkl. indstillinger"); accepted after RC-280 Go | [742ce19] |
+| 2026-11-04 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version: the audit of 2026-11-04 under MIL-059, which S01 accepted in chat ("Ja, inkl. indstillinger"); accepted after RC-280 Go | [742ce19] |
+| 2026-11-04 | Accepted | Claude (AI) | AI as stand-in for S01 | Section 12 corrected: the new script was first linted by the pull request's Ops linters job, which found SC2016 in a self-test fixture, rewritten in the commit of this row (RC-280) | pending |
 
 ---
 
@@ -197,7 +198,7 @@ Run on 2026-11-04 on S01's PC (Git Bash for the policy test, WSL with Docker for
 
 - `bash ops/tests/test-workflow-policy.sh --self-test`: 8 passed, 0 failed (the good fixture passes; each of the seven fixtures fails with its rule).
 - `bash ops/tests/test-workflow-policy.sh`: the 14 workflows and actions of `.github` follow the policy.
-- `bash ops/tests/lint.sh`: layout, actionlint 1.7.7, shellcheck 0.11.0, shfmt 3.14.1 and yamllint 1.35.1 all clean on the changed workflows and the new script.
+- `bash ops/tests/lint.sh`: layout, actionlint 1.7.7, shellcheck 0.11.0, shfmt 3.14.1 and yamllint 1.35.1 clean on the changed workflows. The local run reads the tracked files, so the new script was first linted by the job Ops linters of the pull request, which found SC2016 (info) in a self-test fixture; the fixture was rewritten, and shellcheck and shfmt are clean on the file (RC-280).
 - `test-cd-steps.sh`: 74 passed, 0 failed; `test-deploy-release.sh`: 59 passed, 0 failed; both unchanged by this milestone.
 - `bash ops/tests/test-wiki-coverage.sh`: 91 passed.
 - The checks of the pull request of MIL-059, with the scanners still operational, are read after the push and recorded on the pull request.

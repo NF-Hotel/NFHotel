@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; S01 accepted the plan of MIL-059 in chat on 2026-11-04 ("Ja, inkl. indstillinger") | [742ce19] |
+| 2026-11-04 | Deprecated | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; S01 accepted the plan of MIL-059 in chat on 2026-11-04 ("Ja, inkl. indstillinger") | [742ce19] |
+| 2026-11-04 | Accepted | Claude (AI) | AI as stand-in for S01 | Evidence corrected: the local `lint.sh` had not read the new script; the job Ops linters of the pull request found SC2016 in a self-test fixture, rewritten in the commit of this row; S01 asked in chat to merge when green | pending |
 
 ---
 
@@ -25,7 +26,7 @@
 **Evidence run on 2026-11-04** (S01's PC; Git Bash for the policy test, WSL with Docker 29.7.2 for the containers):
 
 - `bash ops/tests/test-workflow-policy.sh --self-test`: 8 passed, 0 failed; `bash ops/tests/test-workflow-policy.sh`: the 14 workflows and actions follow the policy.
-- `bash ops/tests/lint.sh`: layout, actionlint 1.7.7, shellcheck 0.11.0, shfmt 3.14.1 and yamllint 1.35.1 clean.
+- `bash ops/tests/lint.sh`: layout, actionlint 1.7.7, shellcheck 0.11.0, shfmt 3.14.1 and yamllint 1.35.1 clean on the tracked files. The local run reads `git ls-files`, so the new script, not yet committed then, was first linted by the job Ops linters of the pull request, which found SC2016 (info) in a self-test fixture; the fixture was rewritten in the commit of the second Version History row, and shellcheck 0.11.0 and shfmt 3.14.1 are clean on the file.
 - `test-cd-steps.sh`: 74 passed; `test-deploy-release.sh`: 59 passed; both unchanged by the milestone.
 - `bash ops/tests/test-wiki-coverage.sh`: 91 passed.
 - The settings of SEC-03, SEC-07 and SEC-12 applied through the API at 10:45 UTC with the values before and after in SAR-001 section 11; SEC-08 did not apply through the API and is listed for S01.

