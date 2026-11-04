@@ -373,15 +373,13 @@ public sealed class RoomListViewModel
 
     private RoomListItemDto? FindSelectedIn(IReadOnlyList<RoomListItemDto> rooms)
     {
-        var selectedId = SelectedRoom?.RoomId;
-
-        if (selectedId is null)
+        if (SelectedRoom?.RoomId is not { } selectedId)
         {
             return null;
         }
 
         // The room must be found again in the new list, otherwise the action panel shows an outdated status.
-        return rooms.FirstOrDefault(room => room.RoomId == selectedId.Value);
+        return rooms.FirstOrDefault(room => room.RoomId == selectedId);
     }
 
     /// <summary>

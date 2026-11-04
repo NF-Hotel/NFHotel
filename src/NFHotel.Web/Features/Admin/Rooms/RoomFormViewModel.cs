@@ -186,18 +186,18 @@ public sealed class RoomFormViewModel
 
         try
         {
-            var result = roomId is null
+            var result = roomId is { } editedRoomId
                 ? await _rooms
                     .RunAsync(
-                        (service, token) => service.CreateAsync(
-                            new CreateRoomRequest(roomNumber, floor, size, capacity),
+                        (service, token) => service.UpdateAsync(
+                            new UpdateRoomRequest(editedRoomId, roomNumber, floor, size, capacity),
                             token),
                         cancellationToken)
                     .ConfigureAwait(false)
                 : await _rooms
                     .RunAsync(
-                        (service, token) => service.UpdateAsync(
-                            new UpdateRoomRequest(roomId.Value, roomNumber, floor, size, capacity),
+                        (service, token) => service.CreateAsync(
+                            new CreateRoomRequest(roomNumber, floor, size, capacity),
                             token),
                         cancellationToken)
                     .ConfigureAwait(false);

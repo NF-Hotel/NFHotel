@@ -299,9 +299,9 @@ public sealed class BookingListViewModel
     /// Applies the status filter to the fetched rows.
     /// </summary>
     private void ApplyStatusFilter() =>
-        Bookings = StatusFilter is null
-            ? _allBookings
-            : _allBookings.Where(booking => booking.Status == StatusFilter.Value).ToArray();
+        Bookings = StatusFilter is { } status
+            ? _allBookings.Where(booking => booking.Status == status).ToArray()
+            : _allBookings;
 
     private static Task<Result<BookingDetailsDto>> InvokeAsync(
         IBookingService service,
