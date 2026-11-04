@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Proposed | Claude (AI) | S01 | Added MIL-058 (Accepted after RC-277) and the code its tasks changed, reviewed in RC-278 with the findings report of the 57 CodeQL code quality findings | [457ff29] |
 | 2026-11-04 | Proposed | Claude (AI) | S01 | Added MIL-059 (Accepted after RC-279), ADR-0037 and the security audit report SAR-001 (both Accepted after RC-280), and the workflows, the Dependabot configuration and the policy test the milestone changed | [742ce19] |
+| 2026-11-04 | Proposed | Claude (AI) | S01 | Added ADR-0038 (Accepted after RC-281) and rows for ADR-0019 and ADR-0021, which it amends; the row of ADR-0007 names RC-281 | [7af26c6] |
 
 ---
 
@@ -45,7 +45,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-021] | Milestone | en | it | [BC-001], [DSA-001], [ADR-0007], [ADR-0008], [ADR-0010] | [MIL-022] | [RC-089], [RC-094], [RC-095], [RC-097] |
 | [MIL-022] | Milestone | en | it | [BC-001], [MIL-021] | [MIL-023] | [RC-090] |
 | [MIL-023] | Milestone | en | it | [BC-001], [MIL-022] | - | [RC-091] |
-| [ADR-0007] | ADR | en | it | [BC-001], [DSA-001], [ADR-0003] | [MIL-021], [MIL-022] | [RC-092] |
+| [ADR-0007] | ADR (Accepted, amended by ADR-0019, ADR-0021 and ADR-0038) | en | it | [BC-001], [DSA-001], [ADR-0003] | [MIL-021], [MIL-022], [ADR-0038] | [RC-092], [RC-281] |
 | [ADR-0008] | ADR | en | it | [BC-001], [DSA-001], [ADR-0004] | [MIL-021], [MIL-022] | [RC-093] |
 | [ADR-0009] | ADR | en | it | [ADR-0006], [DSA-001] | [MIL-021], [MIL-023] | [RC-096] |
 | [ADR-0010] | ADR | en | it | [ADR-0003], [ADR-0004], [DSA-001] | [MIL-021], [ADR-0011] | [RC-098] |
@@ -74,6 +74,9 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0037] | ADR (Accepted) | - | - | [MIL-059], [DSA-001], [ADR-0007], [ADR-0019], [ADR-0021], [ADR-0032] | `ops/tests/test-workflow-policy.sh`, the repository settings of SAR-001 section 11 | [RC-280] |
 | [SAR-001] | Security audit report (Accepted) | en | it | [MIL-059], [ADR-0037], [DSA-001], [ADR-0007], [ADR-0019], [ADR-0021], [ADR-0032], [MIL-022] | the manual actions of S01 (its section 14) | [RC-280] |
 | The code of MIL-059: `.github/workflows/ci.yaml`, `.github/workflows/running-image-scan.yaml`, `.github/workflows/ops-ci.yaml`, `.github/dependabot.yml`, `ops/tests/test-workflow-policy.sh` | Workflows, configuration and test code (built, not yet merged) | - | - | [MIL-059] tasks 2 to 4, [ADR-0037] | - | [RC-280] |
+| [ADR-0019] | ADR (Accepted, amended by ADR-0021 and ADR-0038) | en | it | [SA-001], [ADR-0007], [ADR-0018] | [ADR-0021], [ADR-0038] | [RC-167], [RC-281] |
+| [ADR-0021] | ADR (Accepted, amended by ADR-0038) | en | it | [ADR-0007], [ADR-0018], [ADR-0019], [MIL-021] | [ADR-0038], `ops/scripts/cd-steps.sh gate` | [RC-170], [RC-281] |
+| [ADR-0038] | ADR (Accepted) | - | - | [ADR-0021], [ADR-0019], [ADR-0007], [ADR-0018], [SAR-001], [MIL-021], [SA-001] | the header of `.github/workflows/cd.yaml`, the wiki pages CI-CD, Security-Controls, Workflows, DevOps-Lifecycle and Technology-Choices, the required reviewer of the environment `production` | [RC-281] |
 | [UC-007] | Use Case (Accepted) | en | it | [UCD-001], [US-001], [SA-001], [MIL-055] | [DM-004], [DICT-001], code and tests below | [RC-264] (Go with conditions) |
 | `docs/wiki/Price-Suggestions.md` | Wiki page (Proposed) | en | - | [MIL-055] task 10, [US-001], [UC-007] | - | - (not yet reviewed) |
 | Dictionary terms and domain concepts: Room rate, Price change, Price suggestion, Season, Pricing settings; Audit event actions `PriceChangeApproved`, `PriceChangeReverted`, `PricingSettingsChanged`, `RoomRateChanged` | Domain terms (Accepted) | en | it | [UC-007], [US-001] | [DICT-001], [DM-004], `src/NFHotel.Domain` (`RoomRate`, `PriceChange`, `PricingSetting`) | [RC-264] |
@@ -221,9 +224,14 @@ updated whenever an artifact instance is created or reviewed.
 [SAR-001]: ./security-audit-2026-11.md
 [RC-279]: ./reviews/rc-279-mil-059.md
 [RC-280]: ./reviews/rc-280-mil-059-code-and-report.md
+[RC-281]: ./reviews/rc-281-adr-0038.md
+[RC-170]: ./reviews/rc-170-adr-0021.md
+[RC-167]: ./reviews/rc-167-adr-0019.md
+[ADR-0018]: ../adr/adr-0018-deploy-command-updates-itself.md
+[ADR-0038]: ../adr/adr-0038-approval-before-a-deploy.md
 [QC-ADR-001]: ../../framework/qc/artifacts/qc-adr.md
 [QC-WF-001]: ../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../framework/qc/code/qc-yaml.md
 [QC-SH-001]: ../../framework/qc/code/qc-programming-shell.md
-[457ff29]: https://github.com/NF-Hotel/NFHotel/commit/457ff29bff4226e3bb212b88cd961626631d1245
 [742ce19]: https://github.com/NF-Hotel/NFHotel/commit/742ce193969dda9c8556362bd0c65c2d49f60c14
+[7af26c6]: https://github.com/NF-Hotel/NFHotel/commit/7af26c62c64d653f912ba876b1d2fd4c7c170f40
