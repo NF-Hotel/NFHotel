@@ -14,9 +14,10 @@ public sealed class MarketSeedCsvAndPricingTests
     {
         // Arrange
         var text = Header + "\n1;NF Hotel;1;342;27;2017-07-24;2018-07-01;1;2;3;2;1;0;BB;Portugal;Direct;1;2;C;3;No Deposit;0;No Contract (Single);1;4\n";
+        using var reader = new StringReader(text);
 
         // Act
-        var row = Assert.Single(MarketSeedCsv.Parse(new StringReader(text)));
+        var row = Assert.Single(MarketSeedCsv.Parse(reader));
 
         // Assert
         Assert.Equal((1, true, new DateOnly(2017, 7, 24), new DateOnly(2018, 7, 1), 5), (row.Number, row.IsCanceled, row.BookedAt, row.Arrival, row.Nights));
@@ -31,9 +32,10 @@ public sealed class MarketSeedCsvAndPricingTests
     {
         // Arrange
         var text = Header + "\n\n1;NF Hotel;0;0;27;2018-07-01;2018-07-01;1;0;0;2;0;0;BB;Portugal;Direct;0;0;C;0;No Deposit;0;X;0;0\n";
+        using var reader = new StringReader(text);
 
         // Act
-        var row = Assert.Single(MarketSeedCsv.Parse(new StringReader(text)));
+        var row = Assert.Single(MarketSeedCsv.Parse(reader));
 
         // Assert
         Assert.Equal(1, row.Nights);
@@ -43,8 +45,11 @@ public sealed class MarketSeedCsvAndPricingTests
     [Fact]
     public void Parse_MissingColumn_NamesTheColumn()
     {
+        // Arrange
+        using var reader = new StringReader("booking_id;hotel\n1;x\n");
+
         // Act
-        var exception = Assert.Throws<FormatException>(() => MarketSeedCsv.Parse(new StringReader("booking_id;hotel\n1;x\n")));
+        var exception = Assert.Throws<FormatException>(() => MarketSeedCsv.Parse(reader));
 
         // Assert
         Assert.Contains("arrival_date", exception.Message, StringComparison.Ordinal);
@@ -57,11 +62,14 @@ public sealed class MarketSeedCsvAndPricingTests
         // Arrange
         var badDate = Header + "\n1;NF Hotel;0;0;27;01-07-2018;2018-07-01;1;0;0;2;0;0;BB;Portugal;Direct;0;0;C;0;No Deposit;0;X;0;0\n";
         var shortRow = Header + "\n1;NF Hotel;0\n";
+        using var badDateReader = new StringReader(badDate);
+        using var shortRowReader = new StringReader(shortRow);
+        using var emptyReader = new StringReader(string.Empty);
 
         // Act and assert
-        Assert.Contains("Line 2", Assert.Throws<FormatException>(() => MarketSeedCsv.Parse(new StringReader(badDate))).Message, StringComparison.Ordinal);
-        Assert.Contains("Line 2", Assert.Throws<FormatException>(() => MarketSeedCsv.Parse(new StringReader(shortRow))).Message, StringComparison.Ordinal);
-        Assert.Throws<FormatException>(() => MarketSeedCsv.Parse(new StringReader(string.Empty)));
+        Assert.Contains("Line 2", Assert.Throws<FormatException>(() => MarketSeedCsv.Parse(badDateReader)).Message, StringComparison.Ordinal);
+        Assert.Contains("Line 2", Assert.Throws<FormatException>(() => MarketSeedCsv.Parse(shortRowReader)).Message, StringComparison.Ordinal);
+        Assert.Throws<FormatException>(() => MarketSeedCsv.Parse(emptyReader));
     }
 
     /// <summary>Positive: the price goes up with the room type letter and with the season, and does not change between calls.</summary>

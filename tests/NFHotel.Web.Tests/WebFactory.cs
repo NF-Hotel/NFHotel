@@ -63,7 +63,8 @@ public partial class WebFactory : WebApplicationFactory<Program>
         var fields = HiddenFields(html);
         fields[InputName(html, "login-user")] = userName;
         fields[InputName(html, "login-password")] = password;
-        return await browser.PostAsync(path, new FormUrlEncodedContent(fields), TestContext.Current.CancellationToken);
+        using var form = new FormUrlEncodedContent(fields);
+        return await browser.PostAsync(path, form, TestContext.Current.CancellationToken);
     }
 
     /// <summary>Reads the hidden fields of the first form, such as the antiforgery token and the form name.</summary>

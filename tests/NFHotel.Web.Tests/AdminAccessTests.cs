@@ -413,7 +413,7 @@ public sealed class AdminAccessTests : IClassFixture<WebFactory>
         using var browser = _factory.CreateBrowser();
         await WebFactory.SignInAsync(browser, "mona", WebFactory.Password);
         var page = await browser.GetStringAsync("/admin/rooms", TestContext.Current.CancellationToken);
-        var form = new FormUrlEncodedContent(WebFactory.HiddenFields(page));
+        using var form = new FormUrlEncodedContent(WebFactory.HiddenFields(page));
 
         // Act
         using var signOut = await browser.PostAsync("/admin/logout", form, TestContext.Current.CancellationToken);
@@ -432,9 +432,10 @@ public sealed class AdminAccessTests : IClassFixture<WebFactory>
         // Arrange
         using var browser = _factory.CreateBrowser();
         await WebFactory.SignInAsync(browser, "mona", WebFactory.Password);
+        using var emptyForm = new FormUrlEncodedContent(new Dictionary<string, string>());
 
         // Act
-        using var signOut = await browser.PostAsync("/admin/logout", new FormUrlEncodedContent(new Dictionary<string, string>()), TestContext.Current.CancellationToken);
+        using var signOut = await browser.PostAsync("/admin/logout", emptyForm, TestContext.Current.CancellationToken);
         using var stillSignedIn = await browser.GetAsync("/admin/revenue", TestContext.Current.CancellationToken);
 
         // Assert
