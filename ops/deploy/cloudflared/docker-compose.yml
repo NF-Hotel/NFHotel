@@ -11,7 +11,7 @@ services:
     # cloudflared 2026.10.3; Dependabot does not see this line, so bump it by hand with the digest.
     # Cloudflare marks a connector older than about a year as unsupported in the dashboard.
     image: >-
-      cloudflare/cloudflared:2026.10.3@sha256:faa8e0a1475f137c910be6025f43c8e4092fdd35461b31e19fd1390657a1ff39
+      cloudflare/cloudflared:2026.10.5@sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53
     restart: unless-stopped
     # The token is a secret file (ADR-0024): scripts/write-secret-files.sh writes it from
     # cloudflared.env, and it never becomes an environment variable. The metrics stay on the
