@@ -53,7 +53,7 @@ How NF Hotel covers the eight phases of the DevOps lifecycle (Plan, Code, Build,
 
 ## 6. Deploy
 
-- The workflow `NF Hotel CD` deploys automatically, but only when every check of the release commit is green (ADR-0021), and only after it has verified the attestations of every digest.
+- The workflow `NF Hotel CD` waits for S01's approval in the environment `production` (ADR-0038), then deploys, but only when every check of the release commit is green (ADR-0021), and only after it has verified the attestations of every digest.
 - It reaches the VM through **Tailscale**. The deploy command backs up the database, runs the migrations, starts the containers by digest, and runs a smoke test; a failed smoke test **rolls back** to the previous release.
 - Secrets are files, never environment variables (ADR-0024); sign-ins and benchmark runs survive a deploy (ADR-0031).
 - The public site goes through **Cloudflare Tunnel** (ADR-0028); the back office sits behind **Cloudflare Access** (ADR-0029).
