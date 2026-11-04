@@ -14,8 +14,8 @@ One repository holds it all (ADR-0016): the application, and its operations unde
    - `ghcr.io/nf-hotel/benchmark`
 
    Each image is tagged `sha-<NFHotel commit>` and labelled with that commit (`org.opencontainers.image.revision`). The run summary and the artifact `release-manifest` (`release.json`) hold the commit, the operations commit (`devops_sha`, the same commit since ADR-0016), one digest per image and the hash of the migration script.
-3. **Gate (ADR-0021).** `NF Hotel CD` starts by itself in the environment `production` (`main` only). No person approves. Before any credential for the VM, it waits until every check of the release commit has finished, and it deploys only when all of them are green (success, skipped or neutral). One red check stops it, and the run summary names that check.
-4. **Deploy.** After the approval:
+3. **Approval and gate (ADR-0038, ADR-0021).** `NF Hotel CD` starts by itself after a green Release, in the environment `production` (`main` only), and waits there until S01 approves the run: GitHub notifies the reviewer, and the run's page has "Review deployments" (approve or reject, with a comment). Nothing runs and no credential is issued before the approval; a run nobody approves expires after 30 days. After the approval, before any credential for the VM, it waits until every check of the release commit has finished, and it deploys only when all of them are green (success, skipped or neutral). One red check stops it, and the run summary names that check.
+4. **Deploy.** After the gate:
    - the job joins the tailnet as a temporary node tagged `tag:ci`;
    - it logs in to the VM with Tailscale SSH as the user `deploy`;
    - it runs `sudo -n /usr/local/sbin/nfhotel-deploy update <operations commit>` first. That installs the deploy command, the backup command and the backup timer of the release, and only when the commit is on `main` (ADR-0018);
@@ -35,7 +35,7 @@ Docker volumes, and so the database, are never removed by a deploy. Every releas
 
 ## When a deploy does not start
 
-A deploy needs no approval (ADR-0021). When `NF Hotel CD` stops at "Wait until every check is green":
+A deploy waits first for S01's approval (ADR-0038): open the run (Actions, NF Hotel CD) and use "Review deployments". A run nobody approves expires after 30 days; deploy its release by hand as below. After the approval, when `NF Hotel CD` stops at "Wait until every check is green":
 
 - its summary names the check that is not green: fix it or re-run it;
 - to deploy the commit after a re-run, start `NF Hotel CD` by hand with the run ID of its `NF Hotel Release` run and `apply` ticked. It passes the same gate.
@@ -158,7 +158,7 @@ S03 and a repository administrator do this once, in this order.
 ### In GitHub (repository administrator)
 
 1. **Settings, Environments, New environment `production`:**
-   - no required reviewers (ADR-0021: the gate on the checks replaces the approval);
+   - required reviewer `codemikemike` (S01), "Prevent self-review" off (ADR-0019, ADR-0038); the gate on the checks runs after the approval (ADR-0021);
    - deployment branches: selected branches, `main`.
 2. **Environment variables of `production`:**
    - `TS_OIDC_CLIENT_ID` and `TS_OIDC_AUDIENCE` (from Tailscale);
