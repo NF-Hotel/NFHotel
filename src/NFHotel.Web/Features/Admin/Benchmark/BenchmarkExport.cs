@@ -30,30 +30,8 @@ public static class BenchmarkExport
 
         var builder = new StringBuilder();
         builder.Append(string.Join(',', Columns)).Append("\r\n");
-        foreach (var result in results)
+        foreach (var cells in results.Select(Cells))
         {
-            string[] cells =
-            [
-                result.Model,
-                BenchmarkResultAnalysis.TaskName(result),
-                (result.RunNumber + 1).ToString(CultureInfo.InvariantCulture),
-                result.Cold ? BenchmarkResultAnalysis.Cold : BenchmarkResultAnalysis.Warm,
-                Number(result.TimeToFirstTokenSeconds),
-                Number(result.TotalSeconds),
-                result.CompletionTokens.ToString(CultureInfo.InvariantCulture),
-                Number(result.TokensPerSecond),
-                Flag(result.TokensEstimated),
-                Number(result.RamBeforeMb),
-                Number(result.RamAfterMb),
-                Number(result.RamPeakMb),
-                Number(result.VramBeforeMb),
-                Number(result.VramAfterMb),
-                Number(result.VramPeakMb),
-                result.Passed is { } passed ? Flag(passed) : string.Empty,
-                result.ResponseValid is { } valid ? Flag(valid) : string.Empty,
-                Flag(result.HasError),
-                result.FinishReason ?? string.Empty,
-            ];
             builder.Append(string.Join(',', cells.Select(Quote))).Append("\r\n");
         }
 
@@ -69,6 +47,30 @@ public static class BenchmarkExport
 
         return JsonSerializer.Serialize(results, JsonOptions);
     }
+
+    // The cells of one request, in the order of Columns.
+    private static string[] Cells(BenchmarkResultDto result) =>
+    [
+        result.Model,
+        BenchmarkResultAnalysis.TaskName(result),
+        (result.RunNumber + 1).ToString(CultureInfo.InvariantCulture),
+        result.Cold ? BenchmarkResultAnalysis.Cold : BenchmarkResultAnalysis.Warm,
+        Number(result.TimeToFirstTokenSeconds),
+        Number(result.TotalSeconds),
+        result.CompletionTokens.ToString(CultureInfo.InvariantCulture),
+        Number(result.TokensPerSecond),
+        Flag(result.TokensEstimated),
+        Number(result.RamBeforeMb),
+        Number(result.RamAfterMb),
+        Number(result.RamPeakMb),
+        Number(result.VramBeforeMb),
+        Number(result.VramAfterMb),
+        Number(result.VramPeakMb),
+        result.Passed is { } passed ? Flag(passed) : string.Empty,
+        result.ResponseValid is { } valid ? Flag(valid) : string.Empty,
+        Flag(result.HasError),
+        result.FinishReason ?? string.Empty,
+    ];
 
     private static string Number(double? value) =>
         value is { } number ? number.ToString("0.###", CultureInfo.InvariantCulture) : string.Empty;

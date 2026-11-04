@@ -42,17 +42,16 @@
         <ul class="stack-sm" aria-label="Installed models">
             @foreach (var model in ViewModel.Models)
             {
-                var name = model;
                 <li class="model-row">
-                    <span class="model-name">@name</span>
-                    @foreach (var purpose in ViewModel.DefaultPurposesOf(name))
+                    <span class="model-name">@model</span>
+                    @foreach (var purpose in ViewModel.DefaultPurposesOf(model))
                     {
                         <span class="badge badge-confirmed">default for @purpose</span>
                     }
                     <button type="button"
                             class="btn btn-danger btn-sm btn-fixed"
                             disabled="@(ViewModel.IsBusy || ViewModel.IsPulling)"
-                            @onclick="() => ViewModel.RequestDelete(name)">
+                            @onclick="() => ViewModel.RequestDelete(model)">
                         Delete
                     </button>
                 </li>

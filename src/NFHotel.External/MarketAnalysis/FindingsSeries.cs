@@ -246,17 +246,20 @@ public static partial class FindingsSeries
         && shares.All(share => share.Denominator > 0 && Math.Abs(share.Denominator - shares[0].Denominator) < WholeTolerance)
         && Math.Abs(shares.Sum(share => share.Numerator) - shares[0].Denominator) < WholeTolerance;
 
+    // An item of a series may carry its figure inside a wrapper object; the figure object is what is read.
+    private static JsonElement Unwrapped(JsonElement item) =>
+        item.ValueKind == JsonValueKind.Object && item.TryGetProperty(FigureName, out JsonElement wrapped) && wrapped.ValueKind == JsonValueKind.Object
+            ? wrapped
+            : item;
+
     private static MarketAnalysisSeriesDto? ToSeries(JsonElement array, List<string> path)
     {
         List<MarketAnalysisPointDto> points = new List<MarketAnalysisPointDto>();
         List<(double Numerator, double Denominator)> shares = new List<(double Numerator, double Denominator)>();
         string unit = string.Empty;
 
-        foreach (JsonElement item in array.EnumerateArray())
+        foreach (JsonElement figureItem in array.EnumerateArray().Select(Unwrapped))
         {
-            JsonElement figureItem = item.ValueKind == JsonValueKind.Object && item.TryGetProperty(FigureName, out JsonElement wrapped) && wrapped.ValueKind == JsonValueKind.Object
-                ? wrapped
-                : item;
             if (figureItem.ValueKind != JsonValueKind.Object || !figureItem.TryGetProperty(GroupName, out JsonElement group))
             {
                 return null;

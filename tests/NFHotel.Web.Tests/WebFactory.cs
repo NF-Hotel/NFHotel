@@ -73,9 +73,8 @@ public partial class WebFactory : WebApplicationFactory<Program>
     public static Dictionary<string, string> HiddenFields(string html)
     {
         var fields = new Dictionary<string, string>();
-        foreach (Match input in InputTag().Matches(html))
+        foreach (var tag in InputTag().Matches(html).Select(input => input.Value))
         {
-            var tag = input.Value;
             if (tag.Contains("type=\"hidden\"", StringComparison.Ordinal))
             {
                 fields[Attribute(tag, "name")] = WebUtility.HtmlDecode(Attribute(tag, "value"));

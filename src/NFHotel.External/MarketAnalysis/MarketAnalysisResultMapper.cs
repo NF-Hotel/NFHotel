@@ -127,13 +127,7 @@ public static class MarketAnalysisResultMapper
         List<MarketAnalysisPointDto> monthly = [];
         if (revenue.TryGetProperty("monthly", out JsonElement months) && months.ValueKind == JsonValueKind.Array)
         {
-            foreach (JsonElement month in months.EnumerateArray())
-            {
-                if (Text(month, "group") is { Length: > 0 } group && Decimal(month, "value") is { } value)
-                {
-                    monthly.Add(new MarketAnalysisPointDto(group, value));
-                }
-            }
+            monthly.AddRange(months.EnumerateArray().Select(RevenueMonth).OfType<MarketAnalysisPointDto>());
         }
 
         return new MarketAnalysisRoomRevenueDto(
@@ -255,23 +249,27 @@ public static class MarketAnalysisResultMapper
             ? new MarketAnalysisForecastMonthDto(group, value, Decimal(month, "low"), Decimal(month, "high"))
             : null;
 
+    private static MarketAnalysisPointDto? RevenueMonth(JsonElement month) =>
+        Text(month, "group") is { Length: > 0 } group && Decimal(month, "value") is { } value
+            ? new MarketAnalysisPointDto(group, value)
+            : null;
+
     // One observation per chart; an entry without text or without the path of its series cannot be shown under a chart.
     private static List<MarketAnalysisObservationDto> Observations(JsonElement insight)
     {
-        var observations = new List<MarketAnalysisObservationDto>();
+        List<MarketAnalysisObservationDto> observations = [];
         if (insight.TryGetProperty("observations", out var list) && list.ValueKind == JsonValueKind.Array)
         {
-            foreach (var item in list.EnumerateArray())
-            {
-                if (Text(item, "series") is { Length: > 0 } series && Text(item, "text") is { Length: > 0 } text)
-                {
-                    observations.Add(new MarketAnalysisObservationDto(series, text, Text(item, "evidence") ?? string.Empty));
-                }
-            }
+            observations.AddRange(list.EnumerateArray().Select(Observation).OfType<MarketAnalysisObservationDto>());
         }
 
         return observations;
     }
+
+    private static MarketAnalysisObservationDto? Observation(JsonElement item) =>
+        Text(item, "series") is { Length: > 0 } series && Text(item, "text") is { Length: > 0 } text
+            ? new MarketAnalysisObservationDto(series, text, Text(item, "evidence") ?? string.Empty)
+            : null;
 
     private static List<string>? Strings(JsonElement source, string name) =>
         source.ValueKind == JsonValueKind.Object && source.TryGetProperty(name, out var list) && list.ValueKind == JsonValueKind.Array

@@ -64,13 +64,12 @@
                 <legend class="visually-hidden-legend">Models, one to @BenchmarkStartViewModel.MaxModels</legend>
                 @foreach (var model in ViewModel.Models)
                 {
-                    var name = model;
                     <label class="check">
                         <input type="checkbox"
-                               checked="@ViewModel.SelectedModels.Contains(name)"
+                               checked="@ViewModel.SelectedModels.Contains(model)"
                                disabled="@(ViewModel.IsBusy || ViewModel.IsFollowing)"
-                               @onchange="() => ViewModel.ToggleModel(name)" />
-                        @name
+                               @onchange="() => ViewModel.ToggleModel(model)" />
+                        @model
                     </label>
                 }
             </fieldset>
