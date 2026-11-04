@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-11-04, in autonomous mode, to resolve the 57 CodeQL code quality findings that GitHub reports for commit `42b4dce`, the head of `main`; S01 accepted the plan in chat the same day ("Ja, inkl. CodeQL CLI") after RC-277 Go | pending |
+| 2026-11-04 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-11-04, in autonomous mode, to resolve the 57 CodeQL code quality findings that GitHub reports for commit `42b4dce`, the head of `main`; S01 accepted the plan in chat the same day ("Ja, inkl. CodeQL CLI") after RC-277 Go | [e02a0a8] |
 
 ---
 
@@ -108,3 +108,4 @@ Not in this milestone: the scanning configuration, a rule suppression or a dismi
 [MIL-022]: ./mil-022-supply-chain-security.md
 [MIL-044]: ./mil-044-security-overview.md
 [MIL-053]: ./mil-053-security-scan-metrics.md
+[e02a0a8]: https://github.com/NF-Hotel/NFHotel/commit/e02a0a87fb4b4b0b8cab5cfba5581c82d3bdf513

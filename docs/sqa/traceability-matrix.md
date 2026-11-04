@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-02 | Proposed | Claude (AI) | S01 | Added MIL-055, US-001.12, UC-007, the new dictionary terms and domain concepts, the code areas and the test classes of the room price suggestions, and the wiki page (MIL-055 task 10); the milestone is Accepted, the implementation is built and not yet merged | [3a17eee] |
-| 2026-11-04 | Proposed | Claude (AI) | S01 | Added MIL-058 (Accepted after RC-277) and the code its tasks changed, reviewed in RC-278 with the findings report of the 57 CodeQL code quality findings | pending |
+| 2026-11-04 | Proposed | Claude (AI) | S01 | Added MIL-058 (Accepted after RC-277) and the code its tasks changed, reviewed in RC-278 with the findings report of the 57 CodeQL code quality findings | [457ff29] |
 
 ---
 
@@ -211,3 +211,4 @@ updated whenever an artifact instance is created or reviewed.
 [QC-PY-001]: ../../framework/qc/code/qc-programming-python.md
 [RC-277]: ./reviews/rc-277-mil-058.md
 [RC-278]: ./reviews/rc-278-mil-058-code.md
+[457ff29]: https://github.com/NF-Hotel/NFHotel/commit/457ff29bff4226e3bb212b88cd961626631d1245

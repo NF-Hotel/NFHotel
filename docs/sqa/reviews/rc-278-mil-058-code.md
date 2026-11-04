@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; S01 accepted the plan of MIL-058 in chat on 2026-11-04 ("Ja, inkl. CodeQL CLI") | pending |
+| 2026-11-04 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; S01 accepted the plan of MIL-058 in chat on 2026-11-04 ("Ja, inkl. CodeQL CLI") | [457ff29] |
 
 ---
 
@@ -184,3 +184,4 @@ Go: every Mandatory criterion passes except 21, which the risk exception covers 
 [MIL-058]: ../../milestones/mil-058-codeql-code-quality-findings.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [QC-PY-001]: ../../../framework/qc/code/qc-programming-python.md
+[457ff29]: https://github.com/NF-Hotel/NFHotel/commit/457ff29bff4226e3bb212b88cd961626631d1245
