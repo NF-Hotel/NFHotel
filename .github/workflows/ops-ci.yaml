@@ -38,6 +38,13 @@ jobs:
           persist-credentials: false
       - name: Run actionlint, shellcheck, shfmt and yamllint
         run: bash ops/tests/lint.sh
+      # The policy of ADR-0037 (MIL-059): pinned actions, read-only tokens at the top, no credential
+      # kept in a checkout, no pull_request_target, secrets only on a step, no expression in a
+      # script, no download piped to a shell. Its own fixtures are tested first.
+      - name: Test the workflow policy check
+        run: bash ops/tests/test-workflow-policy.sh --self-test
+      - name: Check the workflows against the policy (ADR-0037)
+        run: bash ops/tests/test-workflow-policy.sh
 
   # The reference pages of MIL-049 name every workflow, action, compose service and alert. It
   # reads .github and docs, so it runs on the runner and not in the script-test container,
