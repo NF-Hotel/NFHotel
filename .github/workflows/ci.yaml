@@ -38,6 +38,8 @@ jobs:
     steps:
       - name: Check out the code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
 
       # The tests of the check come first, so that a broken check cannot pass the code.
       - name: Test the language check
@@ -51,19 +53,21 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
 
-    # The analysis token of SonarQube Cloud (ADR-0033). The scanner reads it from the environment;
-    # a run without it (a pull request from a fork, or Dependabot) builds and tests and skips the
-    # analysis.
+    # The SonarQube Cloud analysis runs only with its token (ADR-0033): a run without it (a pull
+    # request from a fork, or Dependabot) builds and tests and skips the analysis. Only whether
+    # the token exists is in the job's environment; the token itself goes to the two scanner
+    # steps that send the analysis, and to no other step (MIL-059).
     env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      HAS_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN != '' }}
 
     steps:
       # Fetch the code of the project, with the whole history that the new-code period and the
-      # blame data of SonarQube Cloud need
+      # blame data of SonarQube Cloud need; the job token is not kept in the checkout
       - name: Check out the code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       # Use the SDK version of the project
       - name: Install .NET
@@ -91,17 +95,19 @@ jobs:
       # warnings as errors off in the build it wraps, so that build comes after the one above, which
       # keeps them as errors. The settings of the analysis are in SonarQube.Analysis.xml.
       - name: Install the SonarScanner for .NET
-        if: ${{ env.SONAR_TOKEN != '' }}
+        if: ${{ env.HAS_SONAR_TOKEN == 'true' }}
         run: dotnet tool install --global dotnet-sonarscanner --version 11.3.0
 
       - name: Start the SonarQube Cloud analysis
-        if: ${{ env.SONAR_TOKEN != '' }}
+        if: ${{ env.HAS_SONAR_TOKEN == 'true' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >-
           dotnet sonarscanner begin /k:NF-Hotel_NFHotel /o:nf-hotel
-          "/s:${{ github.workspace }}/SonarQube.Analysis.xml"
+          "/s:$GITHUB_WORKSPACE/SonarQube.Analysis.xml"
 
       - name: Build for the SonarQube Cloud analysis
-        if: ${{ env.SONAR_TOKEN != '' }}
+        if: ${{ env.HAS_SONAR_TOKEN == 'true' }}
         run: dotnet build NFHotel.sln --configuration Release --no-restore --no-incremental
 
       # The integration tests use Testcontainers and start PostgreSQL themselves
@@ -135,7 +141,9 @@ jobs:
 
       # Send the analysis; the quality gate is reported by the SonarQube Cloud app as its own check
       - name: End the SonarQube Cloud analysis
-        if: ${{ env.SONAR_TOKEN != '' }}
+        if: ${{ env.HAS_SONAR_TOKEN == 'true' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end
 
       # The floor of the line coverage: 95 % in total and 90 % for each project (MIL-054, ADR-0033).
@@ -165,6 +173,8 @@ jobs:
     steps:
       - name: Check out the code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
@@ -188,6 +198,8 @@ jobs:
     steps:
       - name: Check out the code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
 
       # Check that the Dockerfile of the project can package the web application.
       # The image is built only locally on the runner; it is not published.
