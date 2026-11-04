@@ -62,15 +62,3 @@
         </dl>
     </article>
 }
-
-@code {
-    /// <summary>The booking the receipt is for. No receipt is shown if it is <c>null</c>.</summary>
-    [Parameter]
-    [EditorRequired]
-    public BookingDetailsDto? Details { get; set; }
-
-    /// <summary>The room as the customer reads it: number, type and floor.</summary>
-    private string RoomText => Details is null
-        ? string.Empty
-        : $"Room {Details.Room.RoomNumber} · {DisplayText.Describe(Details.Room.Size)} · {BookingFlowViewModel.DescribeFloor(Details.Room.Floor)}";
-}

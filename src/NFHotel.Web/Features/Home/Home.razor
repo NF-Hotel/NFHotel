@@ -1,5 +1,4 @@
 @page "/"
-@inject NFHotel.Application.Ports.IClock Clock
 
 @*
     The front page. Markup without a ViewModel, because the page fetches no data — it must be able
@@ -253,17 +252,3 @@
         <a class="btn btn-primary" href="/book">Book your stay</a>
     </div>
 </section>
-
-@code {
-    /// <summary>The booking box starts on the same dates as the flow on /book: tomorrow, for one night.</summary>
-    private string DefaultCheckIn => Iso(Clock.Today.AddDays(1));
-
-    private string DefaultCheckOut => Iso(Clock.Today.AddDays(2));
-
-    private string Today => Iso(Clock.Today);
-
-    private string Tomorrow => Iso(Clock.Today.AddDays(1));
-
-    /// <summary>The value format of a date input, whatever the culture of the server.</summary>
-    private static string Iso(DateOnly date) => date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-}
