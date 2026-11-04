@@ -77,7 +77,7 @@ public sealed partial class TestRulesTests
     #region Helpers
 
     private static IEnumerable<string> TestFiles() =>
-        Directory.EnumerateFiles(Path.Combine(RepositoryRoot.Find(), "tests"), "*.cs", SearchOption.AllDirectories)
+        Directory.EnumerateFiles(Path.Join(RepositoryRoot.Find(), "tests"), "*.cs", SearchOption.AllDirectories)
             .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                 && !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
 

@@ -496,7 +496,7 @@ public sealed class MarketAnalysisServiceClientTests
     #region Helpers
 
     private static string SampleJson() =>
-        File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
+        File.ReadAllText(Path.Join(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
 
     private static MarketAnalysisServiceOptions ApiKeyOptions() => new() { BaseUrl = BaseUrl, ApiKey = Key };
 

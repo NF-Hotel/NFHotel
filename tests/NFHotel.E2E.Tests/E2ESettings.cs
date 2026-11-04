@@ -30,7 +30,7 @@ public static class E2ESettings
     public static string ResultsDirectory =>
         Environment.GetEnvironmentVariable("E2E_RESULTS") is { Length: > 0 } folder
             ? folder
-            : Path.Combine(AppContext.BaseDirectory, "e2e-results");
+            : Path.Join(AppContext.BaseDirectory, "e2e-results");
 
     /// <summary>The user name of the test account of a role.</summary>
     public static string UserName(StaffRole role) => Required($"E2E_{role.ToString().ToUpperInvariant()}_USER");

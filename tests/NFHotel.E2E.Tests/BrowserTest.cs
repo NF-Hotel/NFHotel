@@ -39,10 +39,10 @@ public abstract class BrowserTest(BrowserFixture fixture) : IAsyncLifetime
         Directory.CreateDirectory(E2ESettings.ResultsDirectory);
         if (TestContext.Current.TestState?.Result == TestResult.Failed)
         {
-            await Page.ScreenshotAsync(new() { Path = Path.Combine(E2ESettings.ResultsDirectory, name + ".png"), FullPage = true });
+            await Page.ScreenshotAsync(new() { Path = Path.Join(E2ESettings.ResultsDirectory, name + ".png"), FullPage = true });
         }
 
-        await _context.Tracing.StopAsync(new() { Path = Path.Combine(E2ESettings.ResultsDirectory, name + ".trace.zip") });
+        await _context.Tracing.StopAsync(new() { Path = Path.Join(E2ESettings.ResultsDirectory, name + ".trace.zip") });
         await _context.DisposeAsync();
         GC.SuppressFinalize(this);
 

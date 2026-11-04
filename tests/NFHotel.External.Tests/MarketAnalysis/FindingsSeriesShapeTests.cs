@@ -206,7 +206,7 @@ public sealed class FindingsSeriesShapeTests
 
     private static MarketAnalysisSectionDto Sample(string id)
     {
-        string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
+        string json = File.ReadAllText(Path.Join(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
         using JsonDocument document = JsonDocument.Parse(json);
 
         return MarketAnalysisResultMapper.Map(document.RootElement)!.Content!.Sections.Single(section => section.Id == id);

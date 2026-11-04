@@ -116,10 +116,10 @@ public sealed partial class AsyncRulesTests
 
     private static IEnumerable<string> SourceFiles(params string[] projects)
     {
-        var src = Path.Combine(RepositoryRoot.Find(), "src");
+        var src = Path.Join(RepositoryRoot.Find(), "src");
         var selected = projects.Length == 0
             ? Directory.EnumerateDirectories(src)
-            : projects.Select(project => Path.Combine(src, project));
+            : projects.Select(project => Path.Join(src, project));
 
         return selected
             .SelectMany(directory => Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories))

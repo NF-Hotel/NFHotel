@@ -246,7 +246,7 @@ public sealed class MarketDataSeederTests : IAsyncLifetime
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
         {
-            var candidate = Path.Combine(directory.FullName, "src", "NFHotel.DataAnalysis", "data", "nf_hotel_bookings.csv");
+            var candidate = Path.Join(directory.FullName, "src", "NFHotel.DataAnalysis", "data", "nf_hotel_bookings.csv");
             if (File.Exists(candidate))
             {
                 return candidate;

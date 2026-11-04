@@ -14,7 +14,7 @@ public sealed class ErrorCodeTextTests
     public void ErrorCodes_EveryConstant_HasATextInErrorMessages()
     {
         // Arrange
-        var messages = File.ReadAllText(Path.Combine(RepositoryRoot.Find(), "src", "NFHotel.Web", "Common", "ErrorMessages.cs"));
+        var messages = File.ReadAllText(Path.Join(RepositoryRoot.Find(), "src", "NFHotel.Web", "Common", "ErrorMessages.cs"));
         var missing = typeof(ErrorCodes)
             .GetNestedTypes(BindingFlags.Public)
             .SelectMany(group => group

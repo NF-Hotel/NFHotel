@@ -33,7 +33,7 @@ public sealed class SeedMarketDataCommandTests : IDisposable
     public async Task Run_WrongCommandLine_ReturnsTwo()
     {
         Assert.Equal(2, await RunAsync(ApiStartup.SeedMarketDataCommand));
-        Assert.Equal(2, await RunAsync(ApiStartup.SeedMarketDataCommand, Path.Combine(Path.GetTempPath(), "no-such-file.csv")));
+        Assert.Equal(2, await RunAsync(ApiStartup.SeedMarketDataCommand, Path.Join(Path.GetTempPath(), "no-such-file.csv")));
         Assert.Equal(2, await RunAsync(ApiStartup.SeedMarketDataCommand, _file, "--unknown"));
         Assert.Equal(2, await RunAsync(ApiStartup.SeedMarketDataCommand, _file, ApiStartup.ThroughOption));
         Assert.Equal(2, await RunAsync(ApiStartup.SeedMarketDataCommand, _file, ApiStartup.ThroughOption, "01-03-2026"));
