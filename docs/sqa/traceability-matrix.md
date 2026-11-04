@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Proposed | Claude (AI) | S01 | Added MIL-055, US-001.12, UC-007, the new dictionary terms and domain concepts, the code areas and the test classes of the room price suggestions, and the wiki page (MIL-055 task 10); the milestone is Accepted, the implementation is built and not yet merged | [3a17eee] |
 | 2026-11-04 | Proposed | Claude (AI) | S01 | Added MIL-058 (Accepted after RC-277) and the code its tasks changed, reviewed in RC-278 with the findings report of the 57 CodeQL code quality findings | [457ff29] |
+| 2026-11-04 | Proposed | Claude (AI) | S01 | Added MIL-059 (Accepted after RC-279), ADR-0037 and the security audit report SAR-001 (both Accepted after RC-280), and the workflows, the Dependabot configuration and the policy test the milestone changed | [742ce19] |
 
 ---
 
@@ -70,6 +70,10 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-055] | Milestone (Accepted, Go) | en | it | [BC-001], [US-001], [MIL-026], [MIL-028], [MIL-030] | [UC-007], `docs/wiki/Price-Suggestions.md`, code and tests below | [RC-262] |
 | [MIL-058] | Milestone (Accepted, Go) | en | it | [BC-001], [DSA-001], [ADR-0032], [MIL-022], [MIL-044], [MIL-053] | `docs/wiki/Security-Controls.md` (the code quality row), the code and tests of the findings below | [RC-277] |
 | The code of MIL-058: the back-office view models of `src/NFHotel.Web/Features/Admin` (bookings, guests, rooms) and `Booking/BookingFlowViewModel`, `BenchmarkExport` and the Razor loops of `Benchmark` and `Pricing`, `src/NFHotel.External/MarketAnalysis` (`FindingsSeries`, `MarketAnalysisResultMapper`), the test paths and the disposables of `tests/`, `StubHandler`, and `JsonClient.get_json` of the scan exporter | Source and test code (built, not yet merged) | - | - | [MIL-058] tasks 2 to 5 | - | [RC-278] (the findings report of the 57 findings) |
+| [MIL-059] | Milestone (Accepted, Go) | en | it | [BC-001], [DSA-001], [ADR-0007], [ADR-0019], [ADR-0021], [ADR-0032], [MIL-022], [MIL-044] | [ADR-0037], [SAR-001], `docs/wiki/Security-Controls.md` and `docs/wiki/Workflows.md` (the policy rows), the code below | [RC-279] |
+| [ADR-0037] | ADR (Accepted) | - | - | [MIL-059], [DSA-001], [ADR-0007], [ADR-0019], [ADR-0021], [ADR-0032] | `ops/tests/test-workflow-policy.sh`, the repository settings of SAR-001 section 11 | [RC-280] |
+| [SAR-001] | Security audit report (Accepted) | en | it | [MIL-059], [ADR-0037], [DSA-001], [ADR-0007], [ADR-0019], [ADR-0021], [ADR-0032], [MIL-022] | the manual actions of S01 (its section 14) | [RC-280] |
+| The code of MIL-059: `.github/workflows/ci.yaml`, `.github/workflows/running-image-scan.yaml`, `.github/workflows/ops-ci.yaml`, `.github/dependabot.yml`, `ops/tests/test-workflow-policy.sh` | Workflows, configuration and test code (built, not yet merged) | - | - | [MIL-059] tasks 2 to 4, [ADR-0037] | - | [RC-280] |
 | [UC-007] | Use Case (Accepted) | en | it | [UCD-001], [US-001], [SA-001], [MIL-055] | [DM-004], [DICT-001], code and tests below | [RC-264] (Go with conditions) |
 | `docs/wiki/Price-Suggestions.md` | Wiki page (Proposed) | en | - | [MIL-055] task 10, [US-001], [UC-007] | - | - (not yet reviewed) |
 | Dictionary terms and domain concepts: Room rate, Price change, Price suggestion, Season, Pricing settings; Audit event actions `PriceChangeApproved`, `PriceChangeReverted`, `PricingSettingsChanged`, `RoomRateChanged` | Domain terms (Accepted) | en | it | [UC-007], [US-001] | [DICT-001], [DM-004], `src/NFHotel.Domain` (`RoomRate`, `PriceChange`, `PricingSetting`) | [RC-264] |
@@ -202,7 +206,6 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-026]: ../milestones/mil-026-market-analysis-report.md
 [MIL-028]: ../milestones/mil-028-market-analysis-run-api.md
 [MIL-030]: ../milestones/mil-030-staff-accounts-and-password.md
-[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
 [MIL-044]: ../milestones/mil-044-security-overview.md
 [MIL-053]: ../milestones/mil-053-security-scan-metrics.md
 [MIL-058]: ../milestones/mil-058-codeql-code-quality-findings.md
@@ -211,4 +214,16 @@ updated whenever an artifact instance is created or reviewed.
 [QC-PY-001]: ../../framework/qc/code/qc-programming-python.md
 [RC-277]: ./reviews/rc-277-mil-058.md
 [RC-278]: ./reviews/rc-278-mil-058-code.md
+[MIL-059]: ../milestones/mil-059-github-actions-security-audit.md
+[ADR-0019]: ../adr/adr-0019-approvals-by-the-owner.md
+[ADR-0021]: ../adr/adr-0021-automatic-deploy-when-green.md
+[ADR-0037]: ../adr/adr-0037-github-actions-hardening-policy.md
+[SAR-001]: ./security-audit-2026-11.md
+[RC-279]: ./reviews/rc-279-mil-059.md
+[RC-280]: ./reviews/rc-280-mil-059-code-and-report.md
+[QC-ADR-001]: ../../framework/qc/artifacts/qc-adr.md
+[QC-WF-001]: ../../framework/qc/code/qc-workflow.md
+[QC-YML-001]: ../../framework/qc/code/qc-yaml.md
+[QC-SH-001]: ../../framework/qc/code/qc-programming-shell.md
 [457ff29]: https://github.com/NF-Hotel/NFHotel/commit/457ff29bff4226e3bb212b88cd961626631d1245
+[742ce19]: https://github.com/NF-Hotel/NFHotel/commit/742ce193969dda9c8556362bd0c65c2d49f60c14

@@ -23,9 +23,10 @@ updates:
       prefix: "Packages:"
 
   - package-ecosystem: docker
-    # The application images, and the benchmark and market analysis images.
+    # The application images, the benchmark and market analysis images, and the backup target.
     directories:
       - /
+      - /ops/deploy/backup-target
       - /ops/deploy/benchmark
       - /ops/deploy/market-analysis
     schedule:
@@ -36,10 +37,15 @@ updates:
       prefix: "Images:"
 
   - package-ecosystem: docker-compose
+    # Every compose folder whose images are pinned by digest, so no pin stays behind (MIL-059).
     directories:
+      - /ops/deploy/alloy
+      - /ops/deploy/cloudflared
+      - /ops/deploy/monitoring
       - /ops/deploy/nginx
       - /ops/deploy/ollama
       - /ops/deploy/postgres
+      - /ops/deploy/postgres-tailnet
       - /ops/deploy/proxmox
     schedule:
       interval: weekly

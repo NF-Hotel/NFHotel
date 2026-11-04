@@ -33,12 +33,13 @@ flowchart LR
 
 | Rule | Why | Checked by |
 | --- | --- | --- |
-| Every action is pinned by its full commit SHA, with the version in a comment | A tag can be moved to other code; a SHA cannot (OpenSSF Scorecard "Pinned-Dependencies") | actionlint and Dependabot, which proposes the next SHA |
-| `permissions: contents: read` at the top; a job adds only what it needs | A stolen or misused job token can do only what its job needs | Scorecard "Token-Permissions"; review |
-| `persist-credentials: false` on checkouts that do not push | The token is not left in `.git/config` for later steps | Review |
+| Every action is pinned by its full commit SHA, with the version in a comment | A tag can be moved to other code; a SHA cannot (OpenSSF Scorecard "Pinned-Dependencies") | `ops/tests/test-workflow-policy.sh` (rule 1, [ADR-0037](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0037-github-actions-hardening-policy.md)), the repository setting that requires the SHA, actionlint, and Dependabot, which proposes the next SHA |
+| `permissions: contents: read` at the top; a job adds only what it needs | A stolen or misused job token can do only what its job needs | `test-workflow-policy.sh` (rule 2); Scorecard "Token-Permissions" |
+| `persist-credentials: false` on every checkout; the one job that pushes (the wiki) gives the token to its script through `env:` | The token is not left in `.git/config` for later steps, nor for the tests of a pull request | `test-workflow-policy.sh` (rule 3) |
+| No `pull_request_target`; event data reaches a script through `env:`, never as `${{ }}` in a `run:`; nothing downloaded is piped to a shell | The techniques of the GhostAction campaign: a privileged run of untrusted code, a script injection, a hidden download | `test-workflow-policy.sh` (rules 4, 6 and 7); actionlint |
 | A `timeout-minutes` on every job | A hung job does not hold a runner or a deploy for 6 hours | actionlint |
 | `concurrency` per workflow and branch; `production` and `release` never cancel | A newer push cancels an older test run; a deploy is never stopped halfway | Review |
-| No secret in a workflow except `SONAR_TOKEN`; Tailscale and GHCR use OIDC and the job token | Nothing long-lived to leak or rotate | Secret scanning; review |
+| No secret in a workflow except `SONAR_TOKEN`, given only to the two steps that send the analysis; Tailscale and GHCR use OIDC and the job token | Nothing long-lived to leak or rotate, and a step that was added later gets no credential it was not given | `test-workflow-policy.sh` (rule 5); secret scanning |
 | Logic lives in `ops/scripts/`, tested by Ops CI; workflows only wire it up | A script can be tested locally and in CI; YAML cannot | Ops CI |
 | Comments and names in English | The PO language (BC-001) | The CI job "Comments are in English" |
 
