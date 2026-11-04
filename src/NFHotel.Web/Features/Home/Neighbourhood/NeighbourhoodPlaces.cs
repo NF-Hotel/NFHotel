@@ -1,4 +1,4 @@
-namespace NFHotel.Web.Features.Home;
+namespace NFHotel.Web.Features.Home.Neighbourhood;
 
 /// <summary>
 /// The places around Street 172 that the front page shows on its map, nearest first.

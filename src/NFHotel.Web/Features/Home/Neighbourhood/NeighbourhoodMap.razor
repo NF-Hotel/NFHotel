@@ -1,5 +1,5 @@
 @rendermode InteractiveServer
-@inject NeighbourhoodViewModel ViewModel
+@inject NeighbourhoodMapViewModel ViewModel
 
 @*
     The map of the neighbourhood: a schematic drawing of the streets around Street 172 with one pin per
@@ -73,7 +73,7 @@
                 <li>
                     <button type="button" aria-pressed="@(ViewModel.IsSelected(item) ? "true" : "false")" @onclick="() => ViewModel.Select(item.Id)">
                         <span>@ViewModel.NumberOf(item). @item.Name</span>
-                        <span class="pub-places-time">@NeighbourhoodViewModel.TimeText(item)</span>
+                        <span class="pub-places-time">@NeighbourhoodMapViewModel.TimeText(item)</span>
                     </button>
                 </li>
             }
@@ -85,10 +85,10 @@
             @if (ViewModel.Selected is { } selected)
             {
                 <h3>@ViewModel.NumberOf(selected). @selected.Name</h3>
-                <p class="pub-place-meta">@NeighbourhoodViewModel.TimeText(selected) &middot; @selected.Distance from the hotel</p>
+                <p class="pub-place-meta">@NeighbourhoodMapViewModel.TimeText(selected) &middot; @selected.Distance from the hotel</p>
                 <p>@selected.Blurb</p>
                 <p><strong>Tip:</strong> @selected.Tip</p>
-                <p><a href="@NeighbourhoodViewModel.MapsUrl(selected)" target="_blank" rel="noopener">Open in Google Maps</a></p>
+                <p><a href="@NeighbourhoodMapViewModel.MapsUrl(selected)" target="_blank" rel="noopener">Open in Google Maps</a></p>
 
                 <div class="pub-place-nav">
                     <button type="button" class="btn btn-ghost" @onclick="() => ViewModel.Select(ViewModel.Previous?.Id)">&lsaquo; @ViewModel.Previous?.Name</button>
@@ -108,7 +108,7 @@
                 <ul>
                     @foreach (var near in ViewModel.Nearest)
                     {
-                        <li>@near.Name, @NeighbourhoodViewModel.TimeText(near)</li>
+                        <li>@near.Name, @NeighbourhoodMapViewModel.TimeText(near)</li>
                     }
                 </ul>
             }

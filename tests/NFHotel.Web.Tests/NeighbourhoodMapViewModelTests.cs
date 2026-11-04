@@ -1,9 +1,9 @@
-using NFHotel.Web.Features.Home;
+using NFHotel.Web.Features.Home.Neighbourhood;
 
 namespace NFHotel.Web.Tests;
 
 /// <summary>The map of the neighbourhood on the front page: the places, the pins and the chosen place.</summary>
-public sealed class NeighbourhoodViewModelTests
+public sealed class NeighbourhoodMapViewModelTests
 {
     #region Places
 
@@ -48,7 +48,7 @@ public sealed class NeighbourhoodViewModelTests
     [Fact]
     public void Select_KnownId_ShowsThePlace()
     {
-        var viewModel = new NeighbourhoodViewModel();
+        var viewModel = new NeighbourhoodMapViewModel();
         Assert.Null(viewModel.Selected);
         Assert.Null(viewModel.Previous);
         Assert.Null(viewModel.Next);
@@ -66,7 +66,7 @@ public sealed class NeighbourhoodViewModelTests
     [Fact]
     public void Select_UnknownId_ShowsTheHotel()
     {
-        var viewModel = new NeighbourhoodViewModel();
+        var viewModel = new NeighbourhoodMapViewModel();
         viewModel.Select("palace");
 
         viewModel.Select("nowhere");
@@ -81,7 +81,7 @@ public sealed class NeighbourhoodViewModelTests
     [Fact]
     public void Neighbours_AtTheEnds_WrapRound()
     {
-        var viewModel = new NeighbourhoodViewModel();
+        var viewModel = new NeighbourhoodMapViewModel();
         var first = viewModel.Places[0];
         var last = viewModel.Places[^1];
 
@@ -97,7 +97,7 @@ public sealed class NeighbourhoodViewModelTests
     [Fact]
     public void Nearest_ListsFourPlacesOnFoot_NearestFirst()
     {
-        var viewModel = new NeighbourhoodViewModel();
+        var viewModel = new NeighbourhoodMapViewModel();
 
         var nearest = viewModel.Nearest;
 
@@ -117,18 +117,18 @@ public sealed class NeighbourhoodViewModelTests
         var onFoot = Place(bearing: 0, radius: 50, mode: TravelMode.OnFoot, minutes: 6);
         var byTukTuk = Place(bearing: 0, radius: 50, mode: TravelMode.TukTuk, minutes: 12);
 
-        Assert.Equal("6 min on foot", NeighbourhoodViewModel.TimeText(onFoot));
-        Assert.Equal("12 min by tuk-tuk", NeighbourhoodViewModel.TimeText(byTukTuk));
-        Assert.Equal("https://www.google.com/maps/search/?api=1&query=Wat%20Phnom", NeighbourhoodViewModel.MapsUrl(onFoot));
+        Assert.Equal("6 min on foot", NeighbourhoodMapViewModel.TimeText(onFoot));
+        Assert.Equal("12 min by tuk-tuk", NeighbourhoodMapViewModel.TimeText(byTukTuk));
+        Assert.Equal("https://www.google.com/maps/search/?api=1&query=Wat%20Phnom", NeighbourhoodMapViewModel.MapsUrl(onFoot));
     }
 
     /// <summary>Negative: the texts refuse a missing place rather than writing nonsense.</summary>
     [Fact]
     public void Texts_MissingPlace_Throw()
     {
-        Assert.Throws<ArgumentNullException>(() => NeighbourhoodViewModel.TimeText(null!));
-        Assert.Throws<ArgumentNullException>(() => NeighbourhoodViewModel.MapsUrl(null!));
-        Assert.Throws<ArgumentNullException>(() => new NeighbourhoodViewModel().IsSelected(null!));
+        Assert.Throws<ArgumentNullException>(() => NeighbourhoodMapViewModel.TimeText(null!));
+        Assert.Throws<ArgumentNullException>(() => NeighbourhoodMapViewModel.MapsUrl(null!));
+        Assert.Throws<ArgumentNullException>(() => new NeighbourhoodMapViewModel().IsSelected(null!));
     }
 
     #endregion

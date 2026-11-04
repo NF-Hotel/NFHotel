@@ -1,4 +1,4 @@
-namespace NFHotel.Web.Features.Home;
+namespace NFHotel.Web.Features.Home.Neighbourhood;
 
 /// <summary>
 /// One place on the map of the neighbourhood on the front page: what it is, how far it is from the front

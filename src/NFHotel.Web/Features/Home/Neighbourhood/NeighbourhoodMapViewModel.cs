@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace NFHotel.Web.Features.Home;
+namespace NFHotel.Web.Features.Home.Neighbourhood;
 
 /// <summary>
 /// The state of the map of the neighbourhood on the front page: which place the guest is looking at.
@@ -11,7 +11,7 @@ namespace NFHotel.Web.Features.Home;
 /// the map without a browser (B-10, UI-Spec section 4). No service is involved: the places are content
 /// (<see cref="NeighbourhoodPlaces"/>), and nothing about them changes while the guest looks.
 /// </remarks>
-public sealed class NeighbourhoodViewModel
+public sealed class NeighbourhoodMapViewModel
 {
     /// <summary>How many of the nearest places the hotel card lists.</summary>
     private const int NearestCount = 4;

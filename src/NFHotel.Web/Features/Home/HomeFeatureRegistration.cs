@@ -1,3 +1,5 @@
+using NFHotel.Web.Features.Home.Neighbourhood;
+
 namespace NFHotel.Web.Features.Home;
 
 /// <summary>
@@ -22,7 +24,7 @@ public static class HomeFeatureRegistration
     {
         ArgumentNullException.ThrowIfNull(services);
 
-        services.AddScoped<NeighbourhoodViewModel>();
+        services.AddScoped<NeighbourhoodMapViewModel>();
 
         return services;
     }

@@ -1,4 +1,4 @@
-namespace NFHotel.Web.Features.Home;
+namespace NFHotel.Web.Features.Home.Neighbourhood;
 
 /// <summary>How a guest gets from the hotel to a place.</summary>
 public enum TravelMode
