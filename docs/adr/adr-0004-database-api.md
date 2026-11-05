@@ -4,13 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0004 |
-| CrossReference | [BC-001], [MIL-015], [ADR-0003] |
+| CrossReference | [BC-001], [MIL-015], [ADR-0003], [ADR-0015], [ADR-0039] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (decision given by the user in chat) | Initial version, accepted after RC-064 Go | [b8170b7] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Clarified: no endpoint for ValidateFields, the client runs the rule locally (reviewed in RC-065) | [b8170b7] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Clarified: no endpoint for ValidateFields, the client runs the rule locally (reviewed in RC-065) | [b8170b7] |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Network bullet amended by ADR-0039 (MIL-061): the API joins `nfhotel-python` too, and nginx routes the two mobile routes of ADR-0015 to it; accepted after RC-288 Go | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -46,7 +46,7 @@ API address and a token.
 
 - **Contract.** One endpoint per interface method, except `ValidateFields`: it reads and writes nothing, so the client runs the same domain rule locally (`GuestService.Validate`) and the API has no endpoint for it. The Application DTOs are the request and response bodies. Every response is `{ "value": ..., "errors": ["code", ...] }`; the HTTP status says which kind of failure: 404 for a `*.not_found` code, 409 for a conflict, 422 for another rule error, 401 for a missing or wrong token. The routes and the envelope live in `NFHotel.Api.Contracts`, shared by both sides, so they cannot drift.
 - **Same behaviour.** The client returns the same `Result` as the service would: the error codes of the envelope, and the same `ArgumentOutOfRangeException` for a key below one. A contract test sends every method through the client and the API and compares.
-- **Network.** The API publishes no port and nginx has no route to it. It joins two Docker networks: `nfhotel-db` (with PostgreSQL) and `nfhotel-api` (with the web application). The web container leaves `nfhotel-db`.
+- **Network.** The API publishes no port. It joins three Docker networks: `nfhotel-db` (with PostgreSQL), `nfhotel-api` (with the web application, and with nginx, which routes only the two mobile routes of [ADR-0015] to it) and, since [ADR-0039], `nfhotel-python` (with the web application and the Python services, which it calls and which deliver results to it). The web container leaves `nfhotel-db`. Amended 2026-11-05: the original said two networks and no route from nginx.
 - **Token.** The web application sends a bearer token from its environment; the API compares it in constant time and answers 401 otherwise. The token is a secret in the git-ignored env files, never in the repository.
 - **Secrets move.** `ConnectionStrings__HotelDatabase` (built from `postgres.env`) and `Encryption__PassportKey` leave `nfhotel-web.env` and go to `nfhotel-api.env`.
 - **External adapters.** The holiday client and the system clock do not touch the database. They move to a new project `NFHotel.External`, used by the API (the clock) and the web application (both), so that the web assembly holds no Npgsql or EF Core. The milestone named this project `NFHotel.Holidays`; it also holds the clock, hence the name.
@@ -80,4 +80,6 @@ Quality attributes: security improves (smaller attack surface of the exposed pro
 [BC-001]: ../business-case.md
 [MIL-015]: ../milestones/mil-015-database-api.md
 [ADR-0003]: ./adr-0003-proxmox-vm-for-services.md
+[ADR-0015]: ./adr-0015-mobile-app-staff-token-access.md
+[ADR-0039]: ./adr-0039-python-services-network.md
 [b8170b7]: https://github.com/NF-Hotel/NFHotel/commit/b8170b7a84409f6e19f209090c310a9f42c53bc9
