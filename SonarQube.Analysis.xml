@@ -12,4 +12,7 @@
   <!-- The design-time HotelDbContextFactory is used only by dotnet ef, and scripts/*.ps1 are the developer launchers
        for Windows (dev-up.ps1, MIL-054; dev-f5.ps1, MIL-057), which have no test runner in CI -->
   <Property Name="sonar.coverage.exclusions">**/Migrations/**,ops/**,scripts/*.ps1,**/HotelDbContextFactory.cs</Property>
+  <!-- NeighbourhoodPlaces is content, not code: eleven records of the same shape, which the copy-paste
+       detector reads as copies of one another -->
+  <Property Name="sonar.cpd.exclusions">**/NeighbourhoodPlaces.cs</Property>
 </SonarQubeAnalysisProperties>
