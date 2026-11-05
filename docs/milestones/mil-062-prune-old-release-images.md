@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the alert `DiskAlmostFull` of 2026-11-05 (80.4 % of the disk of `nf-hotel`), which S01 asked in chat to fix ("Fix.") and then to plan the cleanup for ("Planlæg oprydning"); S01 accepted the plan in chat on 2026-11-05 ("Accepter planen") after RC-290 Go | pending |
+| 2026-11-05 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the alert `DiskAlmostFull` of 2026-11-05 (80.4 % of the disk of `nf-hotel`), which S01 asked in chat to fix ("Fix.") and then to plan the cleanup for ("Planlæg oprydning"); S01 accepted the plan in chat on 2026-11-05 ("Accepter planen") after RC-290 Go | [6e16eae] |
 
 ---
 
@@ -88,3 +88,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [ADR-0038]: ../adr/adr-0038-approval-before-a-deploy.md
 [MIL-021]: ./mil-021-secure-cicd-foundation.md
 [MIL-023]: ./mil-023-operational-quality.md
+[6e16eae]: https://github.com/NF-Hotel/NFHotel/commit/6e16eae96a19ab495fc88f12f08d89ef6b016f92

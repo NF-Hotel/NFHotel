@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-061: gate passed (RC-289, Go) after the deploy of 2026-11-05; the code row deployed | [95f1059] |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-062 (plan review RC-290, Go) | pending |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-062 (plan review RC-290, Go) | [6e16eae] |
 
 ---
 
@@ -285,3 +285,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [95f1059]: https://github.com/NF-Hotel/NFHotel/commit/95f105969a0e97415ff384ac670674987cac9177
+[6e16eae]: https://github.com/NF-Hotel/NFHotel/commit/6e16eae96a19ab495fc88f12f08d89ef6b016f92
