@@ -7,7 +7,8 @@
 #
 # It runs on a developer machine, not in CI: the images are large and the analysis and
 # benchmark images come from the registry. No model is pulled. It starts the compose projects
-# t-opt-* and the networks t-opt-proxy and t-opt-llm, and removes them at the end.
+# t-opt-* and the networks t-opt-python, t-opt-llm and t-opt-proxy (a stand-in for the network of
+# nginx, which must not reach the Python services, ADR-0039), and removes them at the end.
 #
 # Usage: test-optional-services.sh
 # Env:   MARKET_ANALYSIS_IMAGE  the analysis image (required, e.g. ghcr.io/nf-hotel/market-analysis:sha-...)
@@ -25,7 +26,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
   exit 2
 }
 export BENCHMARK_IMAGE MARKET_ANALYSIS_IMAGE
-export NFHOTEL_PROXY_NETWORK=t-opt-proxy NFHOTEL_LLM_NETWORK=t-opt-llm
+export NFHOTEL_PYTHON_NETWORK=t-opt-python NFHOTEL_LLM_NETWORK=t-opt-llm
 pass=0
 fail=0
 check() {
@@ -53,21 +54,21 @@ cleanup() {
   for folder in benchmark market-analysis ollama; do
     compose "$folder" down --volumes --remove-orphans >/dev/null 2>&1
   done
-  docker network rm t-opt-proxy t-opt-llm t-opt-api >/dev/null 2>&1
+  docker network rm t-opt-python t-opt-llm t-opt-proxy >/dev/null 2>&1
   rm -rf "$settings"
 }
 trap cleanup EXIT
 cleanup
 mkdir -p "$settings"
-docker network create t-opt-proxy >/dev/null
+docker network create --internal t-opt-python >/dev/null
 docker network create t-opt-llm >/dev/null
-docker network create t-opt-api >/dev/null
+docker network create t-opt-proxy >/dev/null
 : >"$settings/ollama.env"
 printf 'API_TOKEN=test-key-0123456789-test-key-0123456789\nCORS_ALLOWED_ORIGINS=https://localhost\nDATA_SOURCE=csv\n' >"$settings/market-analysis.env"
 : >"$settings/benchmark.env"
 native_settings="$(native "$settings")"
 export OLLAMA_ENV_FILE="$native_settings/ollama.env" MARKET_ANALYSIS_ENV_FILE="$native_settings/market-analysis.env"
-export BENCHMARK_ENV_FILE="$native_settings/benchmark.env" NFHOTEL_API_NETWORK=t-opt-api
+export BENCHMARK_ENV_FILE="$native_settings/benchmark.env"
 
 for folder in ollama market-analysis benchmark; do
   echo "== $folder"
@@ -87,8 +88,12 @@ for folder in ollama market-analysis benchmark; do
 done
 check "ollama answers on the network" 200 "$(MSYS_NO_PATHCONV=1 docker run --rm --network t-opt-llm curlimages/curl:8.10.1 \
   -s -o /dev/null -w '%{http_code}' http://ollama:11434/api/tags)"
-check "the analysis API answers its health check" 200 "$(MSYS_NO_PATHCONV=1 docker run --rm --network t-opt-proxy \
-  curlimages/curl:8.10.1 -s -o /dev/null -w '%{http_code}' http://market-analysis-api:8000/health)"
+check "the analysis API answers its health check on the python network" 200 "$(MSYS_NO_PATHCONV=1 docker run --rm \
+  --network t-opt-python curlimages/curl:8.10.1 -s -o /dev/null -w '%{http_code}' http://market-analysis-api:8000/health)"
+check "the proxy network does not reach the analysis API (ADR-0039)" 000 "$(MSYS_NO_PATHCONV=1 docker run --rm \
+  --network t-opt-proxy curlimages/curl:8.10.1 -s -o /dev/null -w '%{http_code}' --max-time 5 http://market-analysis-api:8000/health || true)"
+check "the proxy network does not reach the benchmark (ADR-0039)" 000 "$(MSYS_NO_PATHCONV=1 docker run --rm \
+  --network t-opt-proxy curlimages/curl:8.10.1 -s -o /dev/null -w '%{http_code}' --max-time 5 http://benchmark:8000/ || true)"
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))

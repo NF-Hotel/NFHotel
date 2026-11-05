@@ -34,37 +34,37 @@ check() {
 # the compose file in alphabetical order. A new service gets a row here and on the wiki page in
 # the same pull request (the page, "Rules for a new service").
 declare -A EXPECTED=(
-  [nginx/nginx]="api proxy"
-  [nfhotel-web/nfhotel-web]="api proxy python"
-  [nfhotel-api/nfhotel-api]="api db python"
-  [market-analysis/market-analysis-api]="llm python"
-  [benchmark/benchmark]="llm python"
-  [benchmark/results-owner]=""
-  [ollama/ollama]="llm"
-  [postgres/postgres]="db"
-  [postgres-tailnet/relay]="db published"
-  [cloudflared/cloudflared]="proxy"
-  [alloy/alloy]="apps egress internal"
-  [alloy/socket-proxy]="internal"
+  ["nginx/nginx"]="api proxy"
+  ["nfhotel-web/nfhotel-web"]="api proxy python"
+  ["nfhotel-api/nfhotel-api"]="api db python"
+  ["market-analysis/market-analysis-api"]="llm python"
+  ["benchmark/benchmark"]="llm python"
+  ["benchmark/results-owner"]=""
+  ["ollama/ollama"]="llm"
+  ["postgres/postgres"]="db"
+  ["postgres-tailnet/relay"]="db published"
+  ["cloudflared/cloudflared"]="proxy"
+  ["alloy/alloy"]="apps egress internal"
+  ["alloy/socket-proxy"]="internal"
 )
 # The host ports a service may publish, as the ports inside the container.
 declare -A PORTS=(
-  [nginx/nginx]="80 443"
-  [postgres-tailnet/relay]="5432"
+  ["nginx/nginx"]="80 443"
+  ["postgres-tailnet/relay"]="5432"
 )
 # What each compose file needs to be read: the example file in place of the git-ignored
 # settings file, and the values the deploy passes.
 declare -A SETTINGS=(
-  [nginx]="NGINX_ENV_FILE=nginx.env.example"
-  [nfhotel-web]="NFHOTEL_WEB_ENV_FILE=nfhotel-web.env.example"
-  [nfhotel-api]="NFHOTEL_API_ENV_FILE=nfhotel-api.env.example"
-  [market-analysis]="MARKET_ANALYSIS_ENV_FILE=market-analysis.env.example"
-  [benchmark]="BENCHMARK_ENV_FILE=benchmark.env.example API_TOKEN=test-token"
-  [ollama]="OLLAMA_ENV_FILE=ollama.env.example"
-  [postgres]="POSTGRES_ENV_FILE=postgres.env.example"
-  [postgres-tailnet]="NFHOTEL_TAILNET_IP=100.64.0.1"
-  [cloudflared]=""
-  [alloy]="ALLOY_ENV_FILE=alloy.env.example NFHOTEL_JOURNAL_GID=999"
+  ["nginx"]="NGINX_ENV_FILE=nginx.env.example"
+  ["nfhotel-web"]="NFHOTEL_WEB_ENV_FILE=nfhotel-web.env.example"
+  ["nfhotel-api"]="NFHOTEL_API_ENV_FILE=nfhotel-api.env.example"
+  ["market-analysis"]="MARKET_ANALYSIS_ENV_FILE=market-analysis.env.example"
+  ["benchmark"]="BENCHMARK_ENV_FILE=benchmark.env.example API_TOKEN=test-token"
+  ["ollama"]="OLLAMA_ENV_FILE=ollama.env.example"
+  ["postgres"]="POSTGRES_ENV_FILE=postgres.env.example"
+  ["postgres-tailnet"]="NFHOTEL_TAILNET_IP=100.64.0.1"
+  ["cloudflared"]=""
+  ["alloy"]="ALLOY_ENV_FILE=alloy.env.example NFHOTEL_JOURNAL_GID=999"
 )
 readonly FOLDERS=(nginx nfhotel-web nfhotel-api market-analysis benchmark ollama postgres postgres-tailnet cloudflared alloy)
 
@@ -79,15 +79,17 @@ seen=" "
 for folder in "${FOLDERS[@]}"; do
   json="$(config "$folder")"
   check "deploy/$folder/docker-compose.yml is read" 0 "$?"
-  while IFS=$'\t' read -r service networks ports mode; do
+  # The fields are joined with |, not tabs: a tab is whitespace to read, so an empty field would vanish.
+  while IFS='|' read -r service networks ports mode; do
     [[ -n "$service" ]] || continue
     key="$folder/$service"
     seen+="$key "
     [[ "$mode" == "none" ]] && networks=""
-    check "$key is on the networks of the table" "${EXPECTED[$key]:-<not in the table>}" "$networks"
+    # No colon: a service with no network (network_mode none) has an empty row in the table, not a missing one.
+    check "$key is on the networks of the table" "${EXPECTED[$key]-<not in the table>}" "$networks"
     check "$key publishes only what the table allows" "${PORTS[$key]:-}" "$ports"
   done < <(jq -r '.services | to_entries[] | [.key, ((.value.networks // {}) | keys | join(" ")),
-    ([(.value.ports // [])[].target | tostring] | join(" ")), (.value.network_mode // "")] | @tsv' <<<"$json")
+    ([(.value.ports // [])[].target | tostring] | join(" ")), (.value.network_mode // "")] | join("|")' <<<"$json" | tr -d '\r')
 done
 for key in "${!EXPECTED[@]}"; do
   [[ "$seen" == *" $key "* ]] || check "$key is still in a compose file" yes no
@@ -95,8 +97,8 @@ done
 
 echo "== the scripts make the python network as an internal network"
 check "deploy-services.sh creates the python network --internal" 1 \
-  "$(grep -c 'docker network create --internal "\$python_network"' "$OPS/scripts/deploy-services.sh")"
-check "stack.sh names the python network of a stack" 1 "$(grep -c 'STACK_PYTHON_NET="\$1-python"' "$OPS/scripts/lib/stack.sh")"
+  "$(grep -cF "docker network create --internal \"\$python_network\"" "$OPS/scripts/deploy-services.sh")"
+check "stack.sh names the python network of a stack" 1 "$(grep -cF "STACK_PYTHON_NET=\"\$1-python\"" "$OPS/scripts/lib/stack.sh")"
 
 echo "== nothing under ops/ carries the internal listener of nginx"
 check "no nginx template listens on 8081" "" "$(grep -rl 'listen 8081' "$OPS/deploy/nginx" || true)"
@@ -118,7 +120,7 @@ docker network create --internal t-net-python >/dev/null
 docker network create t-net-llm >/dev/null
 docker network create --internal t-net-db >/dev/null
 # networks_of <folder> <service>: the network keys of the service, from its compose file.
-networks_of() { jq -r --arg s "$2" '.services[$s].networks // {} | keys | join(" ")' <<<"$(config "$1")"; }
+networks_of() { jq -r --arg s "$2" '.services[$s].networks // {} | keys | join(" ")' <<<"$(config "$1")" | tr -d '\r'; }
 # standin <container> <service name> <port> <network keys...>: an http-echo that answers as the
 # service, on the throwaway networks that match the keys of its compose file.
 standin() {
