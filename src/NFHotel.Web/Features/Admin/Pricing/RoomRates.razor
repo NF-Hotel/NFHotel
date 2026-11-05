@@ -4,7 +4,6 @@
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
 @using System.Globalization
-@using NFHotel.Domain.ValueObjects
 @using NFHotel.Web.Common
 @using NFHotel.Web.Features.Admin.Pricing
 @inject RoomRatesViewModel ViewModel
@@ -68,8 +67,3 @@
     }
 </div>
 
-@code {
-    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
-
-    private Task SaveAsync(RoomSize size) => ViewModel.SaveAsync(size, ComponentToken);
-}
