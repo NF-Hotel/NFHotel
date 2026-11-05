@@ -20,6 +20,7 @@ stack_init() {
   STACK_PROXY_NET="$1-proxy"
   STACK_API_NET="$1-api"
   STACK_DB_NET="$1-db"
+  STACK_PYTHON_NET="$1-python"
 }
 
 # stack_native <path>: a native path for the Docker daemon (Git Bash on Windows has cygpath).
@@ -35,6 +36,7 @@ stack_compose() {
   local folder="$1"
   shift
   NFHOTEL_PROXY_NETWORK="$STACK_PROXY_NET" NFHOTEL_API_NETWORK="$STACK_API_NET" NFHOTEL_DB_NETWORK="$STACK_DB_NET" \
+    NFHOTEL_PYTHON_NETWORK="$STACK_PYTHON_NET" \
     docker compose --project-name "$STACK_NAME-$folder" --file "$(stack_native "$STACK_OPS/deploy/$folder/docker-compose.yml")" "$@"
 }
 
@@ -54,13 +56,15 @@ stack_down() {
       ((${#ids[@]} == 0)) || docker volume rm -f "${ids[@]}" >/dev/null
     fi
   done
-  docker network rm "$STACK_PROXY_NET" "$STACK_API_NET" "$STACK_DB_NET" >/dev/null 2>&1 || true
+  docker network rm "$STACK_PROXY_NET" "$STACK_API_NET" "$STACK_DB_NET" "$STACK_PYTHON_NET" >/dev/null 2>&1 || true
 }
 
-# stack_networks: create the networks that are missing; the API and database networks are internal.
+# stack_networks: create the networks that are missing; the API, database and python networks are internal.
+# The python network carries the calls to the Python services (ADR-0039), which the stacks do not run; the
+# compose files of the web application and the API name it, so it must exist.
 stack_networks() {
   local net
-  for net in "$STACK_PROXY_NET" "$STACK_API_NET" "$STACK_DB_NET"; do
+  for net in "$STACK_PROXY_NET" "$STACK_API_NET" "$STACK_DB_NET" "$STACK_PYTHON_NET"; do
     docker network inspect "$net" >/dev/null 2>&1 && continue
     if [[ "$net" == "$STACK_PROXY_NET" ]]; then
       docker network create "$net" >/dev/null
@@ -107,12 +111,6 @@ NGINX_REDIRECT_PORT=
 NGINX_HSTS=
 UPSTREAM_HOST=nfhotel-web
 UPSTREAM_PORT=8080
-ANALYSIS_SERVER_NAME=analysis.localhost
-ANALYSIS_UPSTREAM_HOST=market-analysis-notebook
-ANALYSIS_UPSTREAM_PORT=2718
-ANALYSIS_API_SERVER_NAME=analysis-api.localhost
-ANALYSIS_API_UPSTREAM_HOST=market-analysis-api
-ANALYSIS_API_UPSTREAM_PORT=8000
 EOF
   )
   bash "$STACK_OPS/scripts/make-dev-certificate.sh" "$settings/tls" nginx >/dev/null ||

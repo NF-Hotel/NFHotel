@@ -8,13 +8,14 @@
 #   ollama     model server for analysis and benchmark, network nfhotel-llm, no
 #              published port
 #   api        database API: the only service with the database login and the passport
-#              key; internal networks nfhotel-api and nfhotel-db, no published port
-#   web        NFHotel web application, the only service the proxy serves publicly; it
-#              holds only an API address and a token
-#   analysis   market analysis API (NF-Hotel/notebook-market-analysis), internal listener only
+#              key; internal networks nfhotel-api, nfhotel-db and nfhotel-python, no published port
+#   web        NFHotel web application, the only service the proxy serves publicly; it holds only
+#              an API address and a token; networks nfhotel-proxy, nfhotel-api and nfhotel-python
+#   analysis   market analysis API (NF-Hotel/notebook-market-analysis): the web application and the api call it
+#              on nfhotel-python, it runs the models in ollama; no published port, no route from the proxy (ADR-0039)
 #   benchmark  the benchmark service (API of notebook-benchmark): the web application starts runs there, it runs
-#              the models in ollama and delivers the result to the api; internal networks only, no published port
-#   nginx      (starts only when web is running and the analysis API is healthy) the reverse proxy: TLS on 443 and a redirect on 80 for web, loopback port for the rest;
+#              the models in ollama and delivers the result to the api; nfhotel-python and nfhotel-llm, no published port
+#   nginx      (starts only when web is running) the reverse proxy: TLS on 443 and a redirect on 80 for web;
 #              a development certificate is made when deploy/nginx/tls has none (MIL-017)
 #   tunnel     (only when deploy/cloudflared/cloudflared.env exists) Cloudflare Tunnel, the public entrance
 #              (MIL-040, ADR-0028): an outbound connection to Cloudflare, no published port
@@ -24,8 +25,8 @@
 #              to the monitoring (ADR-0020); left out with a note until the monitoring runs
 # Each service reads its git-ignored settings file next to its docker-compose.yml
 # (postgres.env, ollama.env, nfhotel-api.env, nfhotel-web.env, market-analysis.env, benchmark.env, nginx.env);
-# copy the matching *.example file first. The Docker networks are created if
-# missing: nfhotel-proxy, nfhotel-llm, and nfhotel-db and nfhotel-api with --internal (no route out).
+# copy the matching *.example file first. The Docker networks are created if missing:
+# nfhotel-proxy, nfhotel-llm, and nfhotel-db, nfhotel-api and nfhotel-python with --internal (no route out).
 #
 # Usage: deploy-services.sh [--no-build] [--pull] [--down] [service...]
 #   service     postgres, ollama, api, web, analysis, benchmark, nginx, tunnel, dbrelay, alloy (default: all)
@@ -43,6 +44,7 @@ proxy_network="${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}"
 db_network="${NFHOTEL_DB_NETWORK:-nfhotel-db}"
 api_network="${NFHOTEL_API_NETWORK:-nfhotel-api}"
 llm_network="${NFHOTEL_LLM_NETWORK:-nfhotel-llm}"
+python_network="${NFHOTEL_PYTHON_NETWORK:-nfhotel-python}"
 order=(postgres ollama api web analysis benchmark nginx tunnel dbrelay alloy)
 
 build=1
@@ -278,6 +280,10 @@ if ! docker network inspect "$api_network" >/dev/null 2>&1; then
   echo "==> creating internal network $api_network"
   docker network create --internal "$api_network" >/dev/null
 fi
+if ! docker network inspect "$python_network" >/dev/null 2>&1; then
+  echo "==> creating internal network $python_network"
+  docker network create --internal "$python_network" >/dev/null
+fi
 
 # The services are separate Compose projects, so Compose cannot order them. Check the order here:
 # web needs a healthy database and API, the proxy needs a running web service. Waits up to 60 seconds,
@@ -292,7 +298,7 @@ require() {
     esac
     sleep 2
   done
-  die "$service needs $container to be $wanted; deploy it first (postgres, api, web, analysis, nginx, in that order)"
+  die "$service needs $container to be $wanted; deploy it first (postgres, api, web, nginx, in that order)"
 }
 
 analysis_skipped=0
@@ -319,7 +325,6 @@ for s in "${ordered[@]}"; do
   fi
   if [[ "$s" == "nginx" ]]; then
     require nginx running nfhotel-web-nfhotel-web-1
-    ((analysis_skipped)) || require nginx healthy market-analysis-market-analysis-api-1
     # The proxy needs a certificate to start. A pair put there by the owner is never replaced.
     names="$(sed -n 's/^NGINX_SERVER_NAME=//p' "$d/$e" | tr -d '\r') $(hostname -I 2>/dev/null || true)"
     # shellcheck disable=SC2086 # the names are split on purpose

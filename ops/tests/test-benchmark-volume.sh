@@ -7,7 +7,7 @@
 #
 # Usage: test-benchmark-volume.sh
 # It builds the image t-benchvol-standin and starts the compose project t-benchvol with the
-# networks t-benchvol-llm and t-benchvol-api, and removes them at the end.
+# networks t-benchvol-llm and t-benchvol-python, and removes them at the end.
 # Exit:  0 every check passed; 1 a check failed
 # Needs: bash 4+, docker with the compose plugin
 
@@ -30,13 +30,13 @@ check() {
   fi
 }
 compose() {
-  NFHOTEL_LLM_NETWORK=t-benchvol-llm NFHOTEL_API_NETWORK=t-benchvol-api BENCHMARK_IMAGE="$IMAGE" \
+  NFHOTEL_LLM_NETWORK=t-benchvol-llm NFHOTEL_PYTHON_NETWORK=t-benchvol-python BENCHMARK_IMAGE="$IMAGE" \
     BENCHMARK_ENV_FILE=benchmark.env.example API_TOKEN=test-token \
     docker compose -p "$PROJECT" -f "$COMPOSE" "$@"
 }
 cleanup() {
   compose down -v >/dev/null 2>&1
-  docker network rm t-benchvol-llm t-benchvol-api >/dev/null 2>&1
+  docker network rm t-benchvol-llm t-benchvol-python >/dev/null 2>&1
   docker image rm -f "$IMAGE" >/dev/null 2>&1
 }
 # to_uid_1000: give the volume to uid 1000, with a file in it, as the server's volume was. Docker
@@ -56,7 +56,7 @@ USER app
 CMD ["python", "-m", "http.server", "8000", "--directory", "/srv"]
 EOF
 docker network create t-benchvol-llm >/dev/null
-docker network create t-benchvol-api >/dev/null
+docker network create --internal t-benchvol-python >/dev/null
 
 echo "== a volume made by another uid"
 # Compose makes the volume, as on the server; then it is given to uid 1000, as the image of

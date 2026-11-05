@@ -1,8 +1,9 @@
 # The benchmark service of the notebook-benchmark repository (ADR-0004, MIL-019, MIL-020 of
 # NFHotel): an API that the web application calls to start a run and that delivers the
 # result to the NFHotel API. It is built from the pinned commit of that repository
-# (Dockerfile), joins nfhotel-api (the web application reaches it as http://benchmark:8000)
-# and nfhotel-llm (the Ollama of NFHotel), and publishes no port. Settings live in
+# (Dockerfile), joins nfhotel-python (the web application reaches it as http://benchmark:8000 and
+# it reaches the NFHotel API as http://nfhotel-api:8080; nginx is not on it, ADR-0039) and
+# nfhotel-llm (the Ollama of NFHotel), and publishes no port. Settings live in
 # benchmark.env (git-ignored); copy benchmark.env.example first.
 # Start it with scripts/deploy-services.sh, which passes the service token of the API as
 # API_TOKEN, so the token is written in nfhotel-api.env only.
@@ -82,7 +83,7 @@ services:
       start_period: 20s
     networks:
       - llm
-      - api
+      - python
 
 volumes:
   results:
@@ -91,6 +92,8 @@ networks:
   llm:
     name: ${NFHOTEL_LLM_NETWORK:-nfhotel-llm}
     external: true
-  api:
-    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
+  # The internal network of the Python services (ADR-0039), shared with the web application and the
+  # NFHotel API; nginx is not on it.
+  python:
+    name: ${NFHOTEL_PYTHON_NETWORK:-nfhotel-python}
     external: true

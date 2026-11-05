@@ -1,7 +1,7 @@
 # Market analysis service of the notebook-market-analysis repository (MIL-001 there): an API that
-# the NFHotel web application calls with the header X-API-Key. It is built from the pinned commit of
-# that repository (Dockerfile), joins nfhotel-api (the web application and the API reach it as
-# http://market-analysis-api:8000), nfhotel-proxy (nginx publishes it on the internal listener) and
+# the NFHotel web application and the NFHotel API call with the header X-API-Key. It is built from
+# the pinned commit of that repository (Dockerfile), joins nfhotel-python (the web application and
+# the API reach it as http://market-analysis-api:8000; nginx is not on it, ADR-0039) and
 # nfhotel-llm (the Ollama of NFHotel), and publishes no host port. Settings live in
 # market-analysis.env (git-ignored); copy market-analysis.env.example first. Start with:
 #   docker compose --env-file market-analysis.env up -d --build
@@ -37,24 +37,21 @@ services:
     volumes:
       - results:/data
     networks:
-      - proxy
       - llm
       # The web application and the NFHotel API reach this service by its name on this
-      # internal network.
-      - api
+      # internal network; nginx has no route to it (ADR-0039).
+      - python
 
 volumes:
   results:
 
 networks:
-  proxy:
-    name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
-    external: true
   # Ollama, the model server (deploy/ollama).
   llm:
     name: ${NFHOTEL_LLM_NETWORK:-nfhotel-llm}
     external: true
-  # The internal network of the NFHotel API; it has no route out and no host port.
-  api:
-    name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
+  # The internal network of the Python services (ADR-0039): the web application and the NFHotel API
+  # are on it, nginx is not; it has no route out and no host port.
+  python:
+    name: ${NFHOTEL_PYTHON_NETWORK:-nfhotel-python}
     external: true

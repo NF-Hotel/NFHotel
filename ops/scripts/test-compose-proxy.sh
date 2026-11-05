@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Smoke test for the nginx proxy and the NFHotel web service (MIL-002 task 6).
 #
-# Starts the Docker Compose services (nginx, web, market analysis) on a private
+# Starts the Docker Compose services (nginx, web, the database API) on a private
 # network with throwaway
 # settings, checks the web application through the proxy, then removes every
 # container, image layer reference, network and temporary file it created.
@@ -20,14 +20,12 @@ set -euo pipefail
 readonly NETWORK="nfhotel-smoke-net"
 readonly DB_NETWORK="nfhotel-smoke-db"
 readonly API_NETWORK="nfhotel-smoke-api"
+# The internal network of the Python services (ADR-0039); no Python service runs in this test.
+readonly PYTHON_NETWORK="nfhotel-smoke-python"
 readonly SMOKE_API_TOKEN="smoke-token-0123456789-smoke-token-0123456789"
-readonly LLM_NETWORK="nfhotel-smoke-llm"
 readonly NGINX_PROJECT="nfhotel-smoke-nginx"
 readonly WEB_PROJECT="nfhotel-smoke-web"
 readonly API_PROJECT="nfhotel-smoke-api"
-readonly ANALYSIS_PROJECT="nfhotel-smoke-analysis"
-readonly ANALYSIS_HOST="analysis.localhost"
-readonly ANALYSIS_API_HOST="analysis-api.localhost"
 
 TMP_DIR=""
 TMP_NATIVE=""
@@ -89,7 +87,7 @@ wait_for_status() {
 
 compose_nginx() {
   NGINX_ENV_FILE="$TMP_NATIVE/nginx.env" NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_API_NETWORK="$API_NETWORK" \
-    NGINX_BIND=127.0.0.1 NGINX_HTTP_PORT="$PORT" NGINX_INTERNAL_PORT="$((PORT + 1))" \
+    NGINX_BIND=127.0.0.1 NGINX_HTTP_PORT="$PORT" \
     NGINX_HTTPS_PORT="$((PORT + 2))" NGINX_TLS_DIR="$TMP_NATIVE/tls" \
     docker compose --project-name "$NGINX_PROJECT" \
     --file deploy/nginx/docker-compose.yml "$@"
@@ -97,23 +95,16 @@ compose_nginx() {
 
 compose_web() {
   NFHOTEL_WEB_ENV_FILE="$TMP_NATIVE/web/settings.env" NFHOTEL_WEB_SECRETS="$TMP_NATIVE/web" \
-    NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_API_NETWORK="$API_NETWORK" \
+    NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_API_NETWORK="$API_NETWORK" NFHOTEL_PYTHON_NETWORK="$PYTHON_NETWORK" \
     docker compose --project-name "$WEB_PROJECT" \
     --file deploy/nfhotel-web/docker-compose.yml "$@"
 }
 
 compose_api() {
   NFHOTEL_API_ENV_FILE="$TMP_NATIVE/api/settings.env" NFHOTEL_API_SECRETS="$TMP_NATIVE/api" \
-    NFHOTEL_API_NETWORK="$API_NETWORK" NFHOTEL_DB_NETWORK="$DB_NETWORK" \
+    NFHOTEL_API_NETWORK="$API_NETWORK" NFHOTEL_DB_NETWORK="$DB_NETWORK" NFHOTEL_PYTHON_NETWORK="$PYTHON_NETWORK" \
     docker compose --project-name "$API_PROJECT" \
     --file deploy/nfhotel-api/docker-compose.yml "$@"
-}
-
-compose_analysis() {
-  MARKET_ANALYSIS_ENV_FILE="$TMP_NATIVE/market-analysis.env" \
-    NFHOTEL_PROXY_NETWORK="$NETWORK" NFHOTEL_LLM_NETWORK="$LLM_NETWORK" NFHOTEL_API_NETWORK="$API_NETWORK" \
-    docker compose --project-name "$ANALYSIS_PROJECT" \
-    --file deploy/market-analysis/docker-compose.yml "$@"
 }
 
 cleanup() {
@@ -121,8 +112,7 @@ cleanup() {
     compose_nginx down --volumes --remove-orphans >/dev/null 2>&1 || true
     compose_web down --volumes --remove-orphans >/dev/null 2>&1 || true
     compose_api down --volumes --remove-orphans >/dev/null 2>&1 || true
-    compose_analysis down --volumes --remove-orphans >/dev/null 2>&1 || true
-    docker network rm "$NETWORK" "$DB_NETWORK" "$LLM_NETWORK" "$API_NETWORK" >/dev/null 2>&1 || true
+    docker network rm "$NETWORK" "$DB_NETWORK" "$API_NETWORK" "$PYTHON_NETWORK" >/dev/null 2>&1 || true
   fi
   [[ -n "$TMP_DIR" ]] && rm -rf "$TMP_DIR"
 }
@@ -134,18 +124,6 @@ NGINX_REDIRECT_PORT=:$((PORT + 2))
 NGINX_HSTS=
 UPSTREAM_HOST=nfhotel-web
 UPSTREAM_PORT=8080
-ANALYSIS_SERVER_NAME=$ANALYSIS_HOST
-ANALYSIS_UPSTREAM_HOST=market-analysis-api
-ANALYSIS_UPSTREAM_PORT=8000
-ANALYSIS_API_SERVER_NAME=$ANALYSIS_API_HOST
-ANALYSIS_API_UPSTREAM_HOST=market-analysis-api
-ANALYSIS_API_UPSTREAM_PORT=8000
-EOF
-  cat >"$TMP_DIR/market-analysis.env" <<EOF
-NFHOTEL_PROXY_NETWORK=$NETWORK
-API_TOKEN=smoke-key-0123456789-smoke-key-0123456789
-CORS_ALLOWED_ORIGINS=https://localhost
-DATA_SOURCE=csv
 EOF
   cat >"$TMP_DIR/nfhotel-web.env" <<EOF
 ASPNETCORE_ENVIRONMENT=Production
@@ -172,7 +150,7 @@ EOF
 }
 
 main() {
-  local root web_id api_id
+  local root web_id api_id nginx_id
   root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
   while [[ $# -gt 0 ]]; do
@@ -211,16 +189,13 @@ main() {
   docker network create "$NETWORK" >/dev/null
   docker network create --internal "$DB_NETWORK" >/dev/null
   docker network create --internal "$API_NETWORK" >/dev/null
-  docker network create "$LLM_NETWORK" >/dev/null
+  docker network create --internal "$PYTHON_NETWORK" >/dev/null
   echo "Building and starting the database API..."
   compose_api up --detach --build --wait --wait-timeout 180 >/dev/null ||
     die "the database API did not become healthy"
   echo "Building and starting the web service..."
   compose_web up --detach --build --wait --wait-timeout 180 >/dev/null ||
     die "the web service did not become healthy"
-  echo "Building and starting the market analysis service..."
-  compose_analysis up --detach --build --wait --wait-timeout 300 >/dev/null ||
-    die "the market analysis service did not become healthy"
   echo "Starting the proxy..."
   compose_nginx up --detach --wait --wait-timeout 60 >/dev/null ||
     die "the proxy did not start"
@@ -244,12 +219,6 @@ main() {
     "https://127.0.0.1:$(https_port)/admin/login?returnUrl=%2Fadmin" \
     "$(curl --silent --output /dev/null --write-out '%{redirect_url}' --max-time 10 "http://127.0.0.1:$(https_port)/admin/login?returnUrl=%2Fadmin")"
 
-  wait_for_status GET /health 200 30 "$ANALYSIS_API_HOST" "$((PORT + 1))" || true
-  check "GET /health of the analysis API through the proxy" 200 \
-    "$(http_status GET /health "$ANALYSIS_API_HOST" "$((PORT + 1))")"
-  check "analysis services publish no host port" "" \
-    "$(for id in $(compose_analysis ps --quiet); do docker port "$id" 2>/dev/null; done)"
-
   web_id="$(compose_web ps --quiet nfhotel-web)"
   check "web service publishes no host port" "" \
     "$(docker port "$web_id" 2>/dev/null || true)"
@@ -257,6 +226,16 @@ main() {
   api_id="$(compose_api ps --quiet nfhotel-api)"
   check "database API publishes no host port" "" \
     "$(docker port "$api_id" 2>/dev/null || true)"
+  # The Python services are reached on their own network, which nginx is not on (ADR-0039).
+  nginx_id="$(compose_nginx ps --quiet nginx)"
+  check "proxy publishes the ports 80 and 443 only" "80/tcp 443/tcp" \
+    "$(docker port "$nginx_id" 2>/dev/null | cut -d' ' -f1 | sort | tr '\n' ' ' | sed 's/ $//')"
+  check "proxy is not on the python network" "" \
+    "$(docker inspect --format '{{range $name, $net := .NetworkSettings.Networks}}{{$name}} {{end}}' "$nginx_id" | tr ' ' '\n' | grep -x "$PYTHON_NETWORK" || true)"
+  check "web service is on the python network" "$PYTHON_NETWORK" \
+    "$(docker inspect --format '{{range $name, $net := .NetworkSettings.Networks}}{{$name}} {{end}}' "$web_id" | tr ' ' '\n' | grep -x "$PYTHON_NETWORK" || true)"
+  check "database API is on the python network" "$PYTHON_NETWORK" \
+    "$(docker inspect --format '{{range $name, $net := .NetworkSettings.Networks}}{{$name}} {{end}}' "$api_id" | tr ' ' '\n' | grep -x "$PYTHON_NETWORK" || true)"
   check "web service is not on the database network" "" \
     "$(docker inspect --format '{{range $name, $net := .NetworkSettings.Networks}}{{$name}} {{end}}' "$web_id" | tr ' ' '\n' | grep -x "$DB_NETWORK" || true)"
   check "database API is on the database network" "$DB_NETWORK" \

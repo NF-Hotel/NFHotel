@@ -8,9 +8,10 @@
 # The web service holds no database login and no passport key (ADR-0004): it reaches the
 # database API (deploy/nfhotel-api) by the name nfhotel-api on the internal network
 # nfhotel-api (docker network create --internal nfhotel-api). It is not on nfhotel-db.
-# It also reaches the benchmark service (notebook-benchmark, MIL-020) by the name
-# benchmark on the same network; BenchmarkService__BaseUrl and BenchmarkService__Token
-# are set in nfhotel-web.env.
+# It reaches the Python services on the internal network nfhotel-python (ADR-0039): the
+# benchmark service (notebook-benchmark, MIL-020) by the name benchmark and the market
+# analysis (MIL-026) by the name market-analysis-api; BenchmarkService__BaseUrl,
+# BenchmarkService__Token and HolidayApi__BaseUrl are set in nfhotel-web.env.
 name: nfhotel-web
 
 services:
@@ -69,6 +70,7 @@ services:
     networks:
       - proxy
       - api
+      - python
 
 volumes:
   keys:
@@ -77,9 +79,13 @@ networks:
   proxy:
     name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
     external: true
-  # Internal network shared with the database API only (no route out, no host port).
+  # Internal network shared with the database API and nginx (no route out, no host port).
   api:
     name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
+    external: true
+  # Internal network of the Python services, the benchmark and the market analysis (ADR-0039).
+  python:
+    name: ${NFHOTEL_PYTHON_NETWORK:-nfhotel-python}
     external: true
 
 # One file per secret, written by scripts/write-secret-files.sh into NFHOTEL_WEB_SECRETS.
