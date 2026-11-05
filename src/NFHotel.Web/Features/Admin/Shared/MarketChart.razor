@@ -1,4 +1,3 @@
-@using NFHotel.Application.Dto.MarketAnalysis
 
 @*
     Draws one series of the market analysis report with the chart of its kind (ChartKindSelector) and puts its caption under it.
@@ -37,21 +36,3 @@
     <ChartCaption Model="Caption" />
 </div>
 
-@code {
-    /// <summary>The series to draw.</summary>
-    [Parameter, EditorRequired]
-    public MarketAnalysisSeriesDto Series { get; set; } = new(string.Empty, string.Empty, string.Empty, []);
-
-    /// <summary>The analysis the series belongs to, for its limitations, its formula and the observations of its insight.</summary>
-    [Parameter, EditorRequired]
-    public MarketAnalysisSectionDto Section { get; set; } = new(string.Empty, string.Empty, string.Empty, null, [], null);
-
-    private ChartKind Kind => ChartKindSelector.Select(Series);
-
-    private ChartCaptionModel Caption => ChartCaptionText.ForSeries(Kind, Series, Section);
-
-    private IReadOnlyList<string> SeriesNames => [string.IsNullOrWhiteSpace(Series.Unit) ? Series.Title : Series.Unit];
-
-    private IReadOnlyList<ChartGroup> Groups =>
-        [.. Series.Points.Select(point => new ChartGroup(point.Label, [new ChartBar(SeriesNames[0], point.Value)]))];
-}

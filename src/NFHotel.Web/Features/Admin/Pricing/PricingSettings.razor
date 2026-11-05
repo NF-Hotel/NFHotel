@@ -3,7 +3,6 @@
 @attribute [Authorize(Policy = StaffPolicies.ManagePrices)]
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
-@using NFHotel.Domain.ValueObjects
 @using NFHotel.Web.Common
 @using NFHotel.Web.Features.Admin.Pricing
 @inject PricingSettingsViewModel ViewModel
@@ -99,8 +98,3 @@
     }
 </div>
 
-@code {
-    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
-
-    private Task SaveAsync() => ViewModel.SaveAsync(ComponentToken);
-}

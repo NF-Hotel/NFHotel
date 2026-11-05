@@ -4,8 +4,6 @@
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
 @using System.Globalization
-@using NFHotel.Web.Common
-@using NFHotel.Web.Features.Admin.Staff
 @inject StaffAuditViewModel ViewModel
 
 @*
@@ -70,12 +68,3 @@
     }
 </div>
 
-@code {
-    private int Pages => Math.Max(1, (ViewModel.Total + StaffAuditViewModel.PageSize - 1) / StaffAuditViewModel.PageSize);
-
-    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(1, ComponentToken);
-
-    private Task PreviousAsync() => ViewModel.LoadAsync(ViewModel.Page - 1, ComponentToken);
-
-    private Task NextAsync() => ViewModel.LoadAsync(ViewModel.Page + 1, ComponentToken);
-}

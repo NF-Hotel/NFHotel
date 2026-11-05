@@ -3,7 +3,6 @@
 @attribute [Authorize(Policy = StaffPolicies.StaffManage)]
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
-@using NFHotel.Application.Dto.Staff
 @using NFHotel.Web.Common
 @using NFHotel.Web.Features.Admin.Staff
 @inject StaffListViewModel ViewModel
@@ -121,17 +120,3 @@
     }
 </div>
 
-@code {
-    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
-
-    private static string StateOf(StaffAccountDto account) =>
-        !account.IsActive ? "Disabled" : account.MustChangePassword ? "Must change password" : "Active";
-
-    private Task CreateAsync() => ViewModel.CreateAsync(ComponentToken);
-
-    private Task ConfirmDisableAsync() => ViewModel.ConfirmDisableAsync(ComponentToken);
-
-    private Task EnableAsync(StaffAccountDto account) => ViewModel.EnableAsync(account, ComponentToken);
-
-    private Task ResetAsync() => ViewModel.ConfirmResetAsync(ComponentToken);
-}
