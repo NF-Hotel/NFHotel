@@ -1,43 +1,105 @@
 @inherits LayoutComponentBase
+@inject NFHotel.Application.Ports.IClock Clock
 
 @*
-    The face of the hotel towards the outside. No side menu, no toolbar — a top bar, the content
-    centred in --maxw, and a discreet footer. Anything that resembles the staff's work tool
+    The face of the hotel towards the outside: a top bar with the address, the logo and the menu, the
+    content, and a navy footer with the contact details. Anything that resembles the staff's work tool
     belongs in AdminLayout.
+
+    Everything sits inside .public, the hook for the guest-facing skin (app.css section 11), so the
+    admin keeps its own look. The menu on a phone is a <details> element: no JavaScript, and no
+    hidden state that would survive a page change in Blazor Server (the same reasoning as the
+    admin menu, app.css section 14). The links point at the sections of the front page, so they work
+    from /book and from the receipt as well.
 *@
 
-<a class="skip-link" href="#content">Skip to content</a>
+<div class="public">
+    <a class="skip-link" href="#content">Skip to content</a>
 
-<header class="site-header">
-    <div class="row-between">
-        <a class="site-brand" href="/">NFHotel &amp; Bar</a>
-
-        <nav class="site-nav" aria-label="Primary">
-            <a class="btn btn-primary" href="/book">Book your stay</a>
-        </nav>
+    <div class="pub-topbar">
+        <div class="pub-wrap">
+            <span>Street 172, Daun Penh, Phnom Penh &middot; Reception open 24 hours</span>
+            <span>
+                @* TODO: the phone number is a placeholder (not on nfhotel.com). Replace it, or remove the link, when reception confirms the number. *@
+                <a href="tel:+855120000000">+855 (0)12 000 000</a> &middot;
+                <a href="mailto:help@nfhotel.com">help@nfhotel.com</a>
+            </span>
+        </div>
     </div>
-</header>
 
-<main id="content">
-    @Body
-</main>
+    <header class="site-header">
+        <div class="pub-wrap">
+            <a class="pub-logo" href="/">
+                <span class="pub-logo-mark">NF</span>Hotel
+                <small>Hotel &amp; bar, Street 172</small>
+            </a>
 
-<footer class="site-footer">
-    <div class="row-between">
-        <p>
-            NFHotel &amp; Bar &middot; Street 172, Phnom Penh, Cambodia &middot;
-            <a href="mailto:help@nfhotel.com">help@nfhotel.com</a>
-        </p>
-        <p>Bar, kitchen and reception open around the clock</p>
+            <nav class="site-nav" aria-label="Primary">
+                <a href="/#rooms">Rooms</a>
+                <a href="/#food">Food &amp; drink</a>
+                <a href="/#location">Location</a>
+                <a href="/#info">Good to know</a>
+                <a href="/#contact">Contact</a>
+                <a class="btn btn-primary" href="/book">Book now</a>
+            </nav>
+
+            <details class="pub-menu">
+                <summary>Menu</summary>
+                <nav class="pub-menu-list" aria-label="Primary">
+                    <a href="/#rooms">Rooms</a>
+                    <a href="/#food">Food &amp; drink</a>
+                    <a href="/#location">Location</a>
+                    <a href="/#info">Good to know</a>
+                    <a href="/#contact">Contact</a>
+                    <a class="btn btn-primary" href="/book">Book now</a>
+                </nav>
+            </details>
+        </div>
+    </header>
+
+    <main id="content">
+        @Body
+    </main>
+
+    <footer class="site-footer" id="contact">
+        <div class="pub-wrap">
+            <div>
+                <a class="pub-logo" href="/"><span class="pub-logo-mark">NF</span>Hotel</a>
+                <p>Street 172, Daun Penh<br>Phnom Penh, Cambodia</p>
+                <p>Beds from $20 a night. Bar and kitchen open 24 hours.</p>
+            </div>
+
+            <div>
+                <h4>Contact</h4>
+                @* TODO: phone and WhatsApp are placeholders until reception confirms them. *@
+                <p>Phone: <a href="tel:+855120000000">+855 (0)12 000 000</a></p>
+                <p>WhatsApp: same number</p>
+                <p>Email: <a href="mailto:help@nfhotel.com">help@nfhotel.com</a></p>
+                <p>Reception is open 24 hours, so write or call whenever.</p>
+            </div>
+
+            <div>
+                <h4>Hours</h4>
+                <p>Reception: 24 hours</p>
+                <p>Bar and kitchen: 24 hours</p>
+                @* TODO: the check-in and check-out times are placeholders until reception confirms them. *@
+                <p>Check-in from 2 pm, check-out by noon</p>
+            </div>
+
+            <div class="pub-footer-copy">
+                <span>&copy; @Clock.Today.Year NFHotel, Phnom Penh. Prices in US dollars.</span>
+                <span>Street 172 &middot; Phnom Penh</span>
+            </div>
+        </div>
+    </footer>
+
+    @*
+        Last net under the error handling: catches what no ViewModel could translate to an
+        error code. The text is neutral and never reveals an exception (Conventions.md).
+    *@
+    <div id="blazor-error-ui" data-nosnippet>
+        Something went wrong.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">&#128473;</span>
     </div>
-</footer>
-
-@*
-    Last net under the error handling: catches what no ViewModel could translate to an
-    error code. The text is neutral and never reveals an exception (Conventions.md).
-*@
-<div id="blazor-error-ui" data-nosnippet>
-    Something went wrong.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">&#128473;</span>
 </div>

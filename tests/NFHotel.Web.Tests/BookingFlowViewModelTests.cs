@@ -400,6 +400,76 @@ public sealed class BookingFlowViewModelTests
     }
 
     #endregion
+
+    #region Guests and prefill
+
+    /// <summary>Positive: the address of the page sets the dates and the party, and says the rooms can be fetched.</summary>
+    [Fact]
+    public void Prefill_ValidAddress_SetsDatesAndParty()
+    {
+        var viewModel = Create();
+
+        var ready = viewModel.Prefill("2026-03-12", "2026-03-15", 3);
+
+        Assert.True(ready);
+        Assert.Equal(new DateOnly(2026, 3, 12), viewModel.CheckInDate);
+        Assert.Equal(new DateOnly(2026, 3, 15), viewModel.CheckOutDate);
+        Assert.Equal(3, viewModel.Guests);
+        Assert.Equal("3 guests", viewModel.GuestsText);
+    }
+
+    /// <summary>Negative: an unreadable or missing date leaves the suggested dates alone; the party is still taken, within its bounds.</summary>
+    [Fact]
+    public void Prefill_BadAddress_KeepsTheSuggestedDates()
+    {
+        var viewModel = Create();
+
+        Assert.False(viewModel.Prefill("12/03/2026", "2026-03-15", 9));
+        Assert.False(viewModel.Prefill(null, null, null));
+
+        Assert.Equal(Today.AddDays(1), viewModel.CheckInDate);
+        Assert.Equal(Today.AddDays(2), viewModel.CheckOutDate);
+        Assert.Equal(BookingFlowViewModel.MaxGuests, viewModel.Guests);
+    }
+
+    /// <summary>Boundary: a past check-in from the address is read but is not valid, so the page stays on the dates.</summary>
+    [Fact]
+    public void Prefill_PastDate_IsNotReady()
+    {
+        var viewModel = Create();
+
+        Assert.False(viewModel.Prefill("2026-03-01", "2026-03-04", 2));
+        Assert.Equal(new DateOnly(2026, 3, 1), viewModel.CheckInDate);
+        Assert.False(viewModel.HasValidDates);
+    }
+
+    /// <summary>Equivalence: the party filters the fetched rooms by capacity; one guest, or "show all", lists every room.</summary>
+    [Fact]
+    public async Task VisibleRooms_Party_FiltersRoomsByCapacity()
+    {
+        RoomsAre(FreeRoom(1), new AvailableRoomDto(3, "301", 3, RoomSize.Suite, 4));
+        var viewModel = Create();
+        await viewModel.FindRoomsAsync(Token);
+
+        Assert.Equal(2, viewModel.VisibleRooms.Count);
+
+        viewModel.Guests = 3;
+        Assert.Single(viewModel.VisibleRooms);
+        Assert.Equal(3, viewModel.VisibleRooms[0].RoomId);
+        Assert.Equal("No free room sleeps 3", viewModel.NoRoomForGuestsText);
+
+        viewModel.Guests = 0;
+        Assert.Equal(1, viewModel.Guests);
+
+        viewModel.Guests = 4;
+        viewModel.ShowAllRooms();
+        Assert.Equal(2, viewModel.VisibleRooms.Count);
+
+        viewModel.StartOver();
+        Assert.Equal(1, viewModel.Guests);
+    }
+
+    #endregion
 }
 
 /// <summary>The receipt page, the guest field errors, the booking number and the public dates (MIL-054 task 3).</summary>

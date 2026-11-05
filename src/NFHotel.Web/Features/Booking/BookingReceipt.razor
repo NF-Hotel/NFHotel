@@ -17,44 +17,37 @@
 
 <PageTitle>Your booking — NFHotel</PageTitle>
 
-<div class="page-narrow stack-lg">
-    <PageHeader Title="Your booking"
-                Subtitle="Save or bookmark this page. The booking number is the key to it." />
+<div class="pub-section">
+    <div class="pub-wrap">
+        <div class="pub-booking stack-lg">
+            <PageHeader Title="Your booking"
+                        Subtitle="Save or bookmark this page. The booking number is the key to it." />
 
-    @if (!ViewModel.IsLoaded)
-    {
-        <LoadingSkeleton Rows="6" />
-    }
-    else if (ViewModel.Details is null)
-    {
-        <EmptyState Title="We couldn't find that booking" Description="@ViewModel.NotFoundText">
-            <a class="btn btn-primary" href="/book">Book your stay</a>
-            <a class="btn btn-secondary" href="/">Go to the front page</a>
-        </EmptyState>
+            @if (!ViewModel.IsLoaded)
+            {
+                <LoadingSkeleton Rows="6" />
+            }
+            else if (ViewModel.Details is null)
+            {
+                <EmptyState Title="We couldn't find that booking" Description="@ViewModel.NotFoundText">
+                    <a class="btn btn-primary" href="/book">Book your stay</a>
+                    <a class="btn btn-secondary" href="/">Go to the front page</a>
+                </EmptyState>
 
-        <p class="muted">
-            Check the number on your confirmation — it looks like this: FLZ-000123.
-            If it still doesn't work, email help@nfhotel.com and reception will find it for you.
-        </p>
-    }
-    else
-    {
-        <BookingReceiptCard Details="ViewModel.Details" />
+                <p class="muted">
+                    Check the number on your confirmation — it looks like this: FLZ-000123.
+                    If it still doesn't work, email help@nfhotel.com and reception will find it for you.
+                </p>
+            }
+            else
+            {
+                <BookingReceiptCard Details="ViewModel.Details" />
 
-        <div class="row">
-            <a class="btn btn-secondary" href="/">Go to the front page</a>
-            <a class="btn btn-ghost" href="/book">Book another stay</a>
+                <div class="row">
+                    <a class="btn btn-secondary" href="/">Go to the front page</a>
+                    <a class="btn btn-ghost" href="/book">Book another stay</a>
+                </div>
+            }
         </div>
-    }
+    </div>
 </div>
-
-@code {
-    /// <summary>The booking number from the address, for example <c>FLZ-000123</c>.</summary>
-    [Parameter]
-    public string? BookingNumber { get; set; }
-
-    /// <summary>
-    /// Looks up the booking — also when only the number in the address changes.
-    /// </summary>
-    protected override Task OnParametersSetAsync() => ViewModel.LoadAsync(BookingNumber, ComponentToken);
-}

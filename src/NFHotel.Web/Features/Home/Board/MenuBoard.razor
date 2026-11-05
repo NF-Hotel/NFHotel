@@ -1,0 +1,74 @@
+@*
+    The departure board from the hotel's film: what the kitchen and the bar serve through the evening
+    and the night, one tile per letter. Static markup, no render mode — a board does not need a circuit.
+
+    TODO: the dishes and the times are the ones the film shows, not a menu from nfhotel.com. Confirm
+    them with the kitchen before the site goes live.
+*@
+
+<div class="pub-board">
+    <table>
+        <thead class="visually-hidden">
+            <tr>
+                <th scope="col">Time</th>
+                <th scope="col">On the menu</th>
+                <th scope="col">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="pub-board-head">
+                <th colspan="3" scope="rowgroup">Evening</th>
+            </tr>
+            @foreach (var (time, dish) in Evening)
+            {
+                <tr>
+                    <td>
+                        @foreach (var letter in Tiles(time, TimeWidth))
+                        {
+                            <span class="pub-flap">@letter</span>
+                        }
+                    </td>
+                    <td class="pub-board-menu">
+                        @foreach (var letter in Tiles(dish, DishWidth))
+                        {
+                            <span class="pub-flap">@letter</span>
+                        }
+                    </td>
+                    <td class="pub-board-open">
+                        @foreach (var letter in Tiles(Open, Open.Length))
+                        {
+                            <span class="pub-flap">@letter</span>
+                        }
+                    </td>
+                </tr>
+            }
+            <tr class="pub-board-head">
+                <th colspan="3" scope="rowgroup">Late night</th>
+            </tr>
+            @foreach (var (time, dish) in LateNight)
+            {
+                <tr>
+                    <td>
+                        @foreach (var letter in Tiles(time, TimeWidth))
+                        {
+                            <span class="pub-flap">@letter</span>
+                        }
+                    </td>
+                    <td class="pub-board-menu">
+                        @foreach (var letter in Tiles(dish, DishWidth))
+                        {
+                            <span class="pub-flap">@letter</span>
+                        }
+                    </td>
+                    <td class="pub-board-open">
+                        @foreach (var letter in Tiles(Open, Open.Length))
+                        {
+                            <span class="pub-flap">@letter</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <p class="pub-board-foot">Kitchen and bar open 24 hours. Prices at the bar.</p>
+</div>

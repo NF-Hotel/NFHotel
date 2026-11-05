@@ -3,282 +3,270 @@
 @inherits NFHotel.Web.Common.CancellableComponentBase
 
 @inject BookingFlowViewModel ViewModel
-@inject NavigationManager Navigation
 
 @*
     The customer's booking flow: dates → free rooms → details → receipt, on one page.
 
     The file is markup. All state, all validation and all service calls are in
-    BookingFlowViewModel (UI-Spec section 4, B-10). @code below contains only
-    forwarding and the one navigation that belongs to the browser.
+    BookingFlowViewModel (UI-Spec section 4, B-10). Book.razor.cs contains only forwarding, the
+    hand-over of the address to the viewmodel, and the one navigation that belongs to the browser.
 
     PublicLayout is the default layout (Routes.razor), so there is no @@layout line.
 
     The steps cannot be skipped: the button to step 2 is disabled until the dates are
     valid, and the viewmodel checks them again at every transition (BR-C-04).
+
+    The booking box on the front page lands here with ?checkIn=…&checkOut=…&guests=… in the
+    address. Valid dates skip straight to the rooms; anything else starts at step 1 as before.
 *@
 
-<PageTitle>Book your stay — NFHotel</PageTitle>
+<PageTitle>Book a room — NFHotel</PageTitle>
 
-<div class="page-narrow stack-lg">
-    <PageHeader Title="Book your stay"
-                Subtitle="Four steps, no account needed. Reception confirms your booking once we've seen it." />
+<div class="pub-section">
+    <div class="pub-wrap">
+        <div class="pub-prose">
+            <h1 class="title">Book a room</h1>
+            <p class="pub-intro">
+                Pick your dates, choose a room and leave your details. Reception confirms your booking once
+                we've seen it, usually within a few hours. You pay when you arrive, and there is no booking fee.
+            </p>
+        </div>
 
-    <ol class="steps" aria-label="Booking steps">
-        <li class="@ViewModel.StepClass(BookingFlowStep.Dates)"
-            aria-current="@ViewModel.StepAria(BookingFlowStep.Dates)">Dates</li>
-        <li class="@ViewModel.StepClass(BookingFlowStep.Room)"
-            aria-current="@ViewModel.StepAria(BookingFlowStep.Room)">Room</li>
-        <li class="@ViewModel.StepClass(BookingFlowStep.Guest)"
-            aria-current="@ViewModel.StepAria(BookingFlowStep.Guest)">Your details</li>
-        <li class="@ViewModel.StepClass(BookingFlowStep.Receipt)"
-            aria-current="@ViewModel.StepAria(BookingFlowStep.Receipt)">Confirmation</li>
-    </ol>
+        <div class="pub-booking stack-lg">
+            <ol class="steps" aria-label="Booking steps">
+                <li class="@ViewModel.StepClass(BookingFlowStep.Dates)"
+                    aria-current="@ViewModel.StepAria(BookingFlowStep.Dates)">Dates</li>
+                <li class="@ViewModel.StepClass(BookingFlowStep.Room)"
+                    aria-current="@ViewModel.StepAria(BookingFlowStep.Room)">Room</li>
+                <li class="@ViewModel.StepClass(BookingFlowStep.Guest)"
+                    aria-current="@ViewModel.StepAria(BookingFlowStep.Guest)">Your details</li>
+                <li class="@ViewModel.StepClass(BookingFlowStep.Receipt)"
+                    aria-current="@ViewModel.StepAria(BookingFlowStep.Receipt)">Confirmation</li>
+            </ol>
 
-    <ErrorAlert Errors="ViewModel.Errors" />
+            <ErrorAlert Errors="ViewModel.Errors" />
 
-    @if (ViewModel.CurrentStep == BookingFlowStep.Dates)
-    {
-        <section class="card card-pad stack" aria-labelledby="step-dates">
-            <h2 class="subtitle" id="step-dates">When would you like to stay?</h2>
-
-            <div class="field-row">
-                <FormField Label="Check-in" For="check-in" IsRequired="true" Error="@ViewModel.CheckInError">
-                    <input id="check-in"
-                           class="field-input numeric"
-                           type="date"
-                           disabled="@ViewModel.IsBusy"
-                           aria-invalid="@Invalid(ViewModel.CheckInError)"
-                           @bind="ViewModel.CheckInDate" />
-                </FormField>
-
-                <FormField Label="Check-out" For="check-out" IsRequired="true" Error="@ViewModel.CheckOutError"
-                           Hint="The day you leave doesn't count as a night.">
-                    <input id="check-out"
-                           class="field-input numeric"
-                           type="date"
-                           disabled="@ViewModel.IsBusy"
-                           aria-invalid="@Invalid(ViewModel.CheckOutError)"
-                           @bind="ViewModel.CheckOutDate" />
-                </FormField>
-            </div>
-
-            <p class="muted" role="status">@ViewModel.NightsText</p>
-
-            <div class="row">
-                <button type="button"
-                        class="btn btn-primary"
-                        disabled="@(!ViewModel.CanFindRooms)"
-                        @onclick="FindRoomsAsync">
-                    Find available rooms
-                </button>
-            </div>
-        </section>
-    }
-    else if (ViewModel.CurrentStep == BookingFlowStep.Room)
-    {
-        <section class="card card-pad stack" aria-labelledby="step-room">
-            <div class="row-between">
-                <h2 class="subtitle" id="step-room">Choose a room</h2>
-                <p class="muted numeric">@ViewModel.PeriodText &middot; @ViewModel.NightsText</p>
-            </div>
-
-            @if (ViewModel.IsBusy)
+            @if (ViewModel.CurrentStep == BookingFlowStep.Dates)
             {
-                @* Placeholders in the shape of the cards, so the list does not push the page when it lands. *@
-                <LoadingSkeleton Rows="6" />
+                <section class="card card-pad stack" aria-labelledby="step-dates">
+                    <h2 class="subtitle" id="step-dates">When would you like to stay?</h2>
+
+                    <div class="field-row">
+                        <FormField Label="Check-in" For="check-in" IsRequired="true" Error="@ViewModel.CheckInError">
+                            <input id="check-in"
+                                   class="field-input numeric"
+                                   type="date"
+                                   disabled="@ViewModel.IsBusy"
+                                   aria-invalid="@Invalid(ViewModel.CheckInError)"
+                                   @bind="ViewModel.CheckInDate" />
+                        </FormField>
+
+                        <FormField Label="Check-out" For="check-out" IsRequired="true" Error="@ViewModel.CheckOutError"
+                                   Hint="The day you leave doesn't count as a night.">
+                            <input id="check-out"
+                                   class="field-input numeric"
+                                   type="date"
+                                   disabled="@ViewModel.IsBusy"
+                                   aria-invalid="@Invalid(ViewModel.CheckOutError)"
+                                   @bind="ViewModel.CheckOutDate" />
+                        </FormField>
+                    </div>
+
+                    <div class="field-row">
+                        <FormField Label="Guests" For="guests" Hint="Shows the rooms with room enough for everyone.">
+                            <select id="guests" class="field-select" disabled="@ViewModel.IsBusy" @bind="ViewModel.Guests">
+                                @foreach (var guests in BookingFlowViewModel.GuestOptions)
+                                {
+                                    <option value="@guests">@BookingFlowViewModel.DescribeGuests(guests)</option>
+                                }
+                            </select>
+                        </FormField>
+                    </div>
+
+                    <p class="muted" role="status">@ViewModel.NightsText</p>
+
+                    <div class="row">
+                        <button type="button"
+                                class="btn btn-primary"
+                                disabled="@(!ViewModel.CanFindRooms)"
+                                @onclick="FindRoomsAsync">
+                            Find available rooms
+                        </button>
+                    </div>
+                </section>
             }
-            else if (ViewModel.AvailableRooms.Count == 0)
+            else if (ViewModel.CurrentStep == BookingFlowStep.Room)
             {
-                @* No free rooms is not an error — it is an answer to a question. *@
-                <EmptyState Title="No rooms are free for those dates"
-                            Description="Try a day or two either side, or shorten the stay. If your dates can't move, email help@nfhotel.com and reception will look for something.">
-                    <button type="button" class="btn btn-primary" @onclick="BackToDates">
-                        Pick other dates
-                    </button>
-                </EmptyState>
+                <section class="card card-pad stack" aria-labelledby="step-room">
+                    <div class="row-between">
+                        <h2 class="subtitle" id="step-room">Choose a room</h2>
+                        <p class="muted numeric">@ViewModel.PeriodText &middot; @ViewModel.NightsText &middot; @ViewModel.GuestsText</p>
+                    </div>
+
+                    @if (ViewModel.IsBusy)
+                    {
+                        @* Placeholders in the shape of the rows, so the list does not push the page when it lands. *@
+                        <LoadingSkeleton Rows="6" />
+                    }
+                    else if (ViewModel.AvailableRooms.Count == 0)
+                    {
+                        @* No free rooms is not an error — it is an answer to a question. *@
+                        <EmptyState Title="No rooms are free for those dates"
+                                    Description="Try a day or two either side, or shorten the stay. If your dates can't move, email help@nfhotel.com and reception will look for something.">
+                            <button type="button" class="btn btn-primary" @onclick="BackToDates">
+                                Pick other dates
+                            </button>
+                        </EmptyState>
+                    }
+                    else if (ViewModel.VisibleRooms.Count == 0)
+                    {
+                        @* Rooms are free, but none sleeps the party. The guest decides whether to see them anyway. *@
+                        <EmptyState Title="@ViewModel.NoRoomForGuestsText"
+                                    Description="The free rooms are smaller. You can see them all, or book two rooms.">
+                            <button type="button" class="btn btn-primary" @onclick="ViewModel.ShowAllRooms">
+                                Show all free rooms
+                            </button>
+                        </EmptyState>
+                    }
+                    else
+                    {
+                        <ul class="pub-roomlist">
+                            @foreach (var room in ViewModel.VisibleRooms)
+                            {
+                                <li>
+                                    <div>
+                                        <div class="pub-roomlist-name">Room @room.RoomNumber, @DisplayText.Describe(room.Size)</div>
+                                        <div class="pub-roomlist-desc">
+                                            @BookingFlowViewModel.DescribeFloor(room.Floor), @BookingFlowViewModel.DescribeCapacity(room.Capacity)
+                                            &middot; @BookingFlowViewModel.PaymentText
+                                        </div>
+                                    </div>
+                                    <button type="button"
+                                            class="btn btn-primary"
+                                            disabled="@ViewModel.IsBusy"
+                                            @onclick="() => ViewModel.SelectRoom(room.RoomId)">
+                                        Choose room @room.RoomNumber
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    <div class="row">
+                        <button type="button" class="btn btn-ghost" disabled="@ViewModel.IsBusy" @onclick="BackToDates">
+                            Back to dates
+                        </button>
+                    </div>
+                </section>
+            }
+            else if (ViewModel.CurrentStep == BookingFlowStep.Guest)
+            {
+                <section class="card card-pad stack" aria-labelledby="step-details">
+                    <h2 class="subtitle" id="step-details">Your details</h2>
+                    <p class="muted">@ViewModel.SelectionSummary</p>
+
+                    <div class="field-row">
+                        <FormField Label="First name" For="first-name" IsRequired="true" Error="@ViewModel.GuestErrors.FirstName">
+                            <input id="first-name"
+                                   class="field-input"
+                                   type="text"
+                                   autocomplete="given-name"
+                                   disabled="@ViewModel.IsBusy"
+                                   aria-invalid="@Invalid(ViewModel.GuestErrors.FirstName)"
+                                   @bind="ViewModel.FirstName" />
+                        </FormField>
+
+                        <FormField Label="Last name" For="last-name" IsRequired="true" Error="@ViewModel.GuestErrors.LastName">
+                            <input id="last-name"
+                                   class="field-input"
+                                   type="text"
+                                   autocomplete="family-name"
+                                   disabled="@ViewModel.IsBusy"
+                                   aria-invalid="@Invalid(ViewModel.GuestErrors.LastName)"
+                                   @bind="ViewModel.LastName" />
+                        </FormField>
+                    </div>
+
+                    <div class="field-row">
+                        <FormField Label="Email" For="email" IsRequired="true" Error="@ViewModel.GuestErrors.Email"
+                                   Hint="We send the confirmation here.">
+                            <input id="email"
+                                   class="field-input"
+                                   type="email"
+                                   autocomplete="email"
+                                   disabled="@ViewModel.IsBusy"
+                                   aria-invalid="@Invalid(ViewModel.GuestErrors.Email)"
+                                   @bind="ViewModel.Email" />
+                        </FormField>
+
+                        <FormField Label="Phone" For="phone" IsRequired="true" Error="@ViewModel.GuestErrors.PhoneNumber">
+                            <input id="phone"
+                                   class="field-input"
+                                   type="tel"
+                                   autocomplete="tel"
+                                   disabled="@ViewModel.IsBusy"
+                                   aria-invalid="@Invalid(ViewModel.GuestErrors.PhoneNumber)"
+                                   @bind="ViewModel.PhoneNumber" />
+                        </FormField>
+                    </div>
+
+                    <div class="field-row">
+                        <FormField Label="Country" For="country" IsRequired="true" Error="@ViewModel.GuestErrors.Country">
+                            <input id="country"
+                                   class="field-input"
+                                   type="text"
+                                   autocomplete="country-name"
+                                   disabled="@ViewModel.IsBusy"
+                                   aria-invalid="@Invalid(ViewModel.GuestErrors.Country)"
+                                   @bind="ViewModel.Country" />
+                        </FormField>
+
+                        <FormField Label="Passport number" For="passport" Error="@ViewModel.GuestErrors.PassportNumber"
+                                   Hint="Optional. It saves time at check-in.">
+                            <input id="passport"
+                                   class="field-input"
+                                   type="text"
+                                   disabled="@ViewModel.IsBusy"
+                                   aria-invalid="@Invalid(ViewModel.GuestErrors.PassportNumber)"
+                                   @bind="ViewModel.PassportNumber" />
+                        </FormField>
+                    </div>
+
+                    <p class="field-hint">
+                        Your booking starts out as "Pending". Reception confirms it once we've seen it, usually within
+                        a few hours. @BookingFlowViewModel.PaymentText.
+                    </p>
+
+                    <div class="row">
+                        <button type="button"
+                                class="btn btn-primary"
+                                disabled="@(!ViewModel.CanSubmit)"
+                                @onclick="SubmitAsync">
+                            Send booking request
+                        </button>
+
+                        <button type="button" class="btn btn-ghost" disabled="@ViewModel.IsBusy" @onclick="BackToRooms">
+                            Back to rooms
+                        </button>
+                    </div>
+                </section>
             }
             else
             {
-                <div class="grid-auto">
-                    @foreach (var room in ViewModel.AvailableRooms)
-                    {
-                        <article class="roomcard card-hover">
-                            <div class="roomcard-media" aria-hidden="true">
-                                @DisplayText.Describe(room.Size)
-                            </div>
+                <section class="stack" aria-labelledby="step-confirmation">
+                    <AlertBox Kind="AlertKind.Ok"
+                              Message="Thank you — we've got your booking request. Reception will confirm it shortly." />
 
-                            <div class="stack-sm">
-                                <h3 class="subtitle">Room @room.RoomNumber</h3>
-                                <p class="muted">
-                                    @DisplayText.Describe(room.Size)
-                                    &middot; @BookingFlowViewModel.DescribeFloor(room.Floor)
-                                    &middot; @BookingFlowViewModel.DescribeCapacity(room.Capacity)
-                                </p>
-                                <p class="muted">@BookingFlowViewModel.PaymentText</p>
-                            </div>
+                    <h2 class="subtitle" id="step-confirmation">Your confirmation</h2>
 
-                            <div class="row">
-                                <button type="button"
-                                        class="btn btn-primary btn-block"
-                                        disabled="@ViewModel.IsBusy"
-                                        @onclick="() => ViewModel.SelectRoom(room.RoomId)">
-                                    Choose room @room.RoomNumber
-                                </button>
-                            </div>
-                        </article>
-                    }
-                </div>
+                    <BookingReceiptCard Details="ViewModel.Confirmation" />
+
+                    <div class="row">
+                        <a class="btn btn-secondary" href="@ReceiptUrl">Open the confirmation on its own page</a>
+                        <button type="button" class="btn btn-ghost" @onclick="StartOver">Book another stay</button>
+                    </div>
+                </section>
             }
-
-            <div class="row">
-                <button type="button" class="btn btn-ghost" disabled="@ViewModel.IsBusy" @onclick="BackToDates">
-                    Back to dates
-                </button>
-            </div>
-        </section>
-    }
-    else if (ViewModel.CurrentStep == BookingFlowStep.Guest)
-    {
-        <section class="card card-pad stack" aria-labelledby="step-details">
-            <h2 class="subtitle" id="step-details">Your details</h2>
-            <p class="muted">@ViewModel.SelectionSummary</p>
-
-            <div class="field-row">
-                <FormField Label="First name" For="first-name" IsRequired="true" Error="@ViewModel.GuestErrors.FirstName">
-                    <input id="first-name"
-                           class="field-input"
-                           type="text"
-                           autocomplete="given-name"
-                           disabled="@ViewModel.IsBusy"
-                           aria-invalid="@Invalid(ViewModel.GuestErrors.FirstName)"
-                           @bind="ViewModel.FirstName" />
-                </FormField>
-
-                <FormField Label="Last name" For="last-name" IsRequired="true" Error="@ViewModel.GuestErrors.LastName">
-                    <input id="last-name"
-                           class="field-input"
-                           type="text"
-                           autocomplete="family-name"
-                           disabled="@ViewModel.IsBusy"
-                           aria-invalid="@Invalid(ViewModel.GuestErrors.LastName)"
-                           @bind="ViewModel.LastName" />
-                </FormField>
-            </div>
-
-            <div class="field-row">
-                <FormField Label="Email" For="email" IsRequired="true" Error="@ViewModel.GuestErrors.Email"
-                           Hint="We'll send your confirmation here.">
-                    <input id="email"
-                           class="field-input"
-                           type="email"
-                           autocomplete="email"
-                           disabled="@ViewModel.IsBusy"
-                           aria-invalid="@Invalid(ViewModel.GuestErrors.Email)"
-                           @bind="ViewModel.Email" />
-                </FormField>
-
-                <FormField Label="Phone" For="phone" IsRequired="true" Error="@ViewModel.GuestErrors.PhoneNumber">
-                    <input id="phone"
-                           class="field-input"
-                           type="tel"
-                           autocomplete="tel"
-                           disabled="@ViewModel.IsBusy"
-                           aria-invalid="@Invalid(ViewModel.GuestErrors.PhoneNumber)"
-                           @bind="ViewModel.PhoneNumber" />
-                </FormField>
-            </div>
-
-            <div class="field-row">
-                <FormField Label="Country" For="country" IsRequired="true" Error="@ViewModel.GuestErrors.Country">
-                    <input id="country"
-                           class="field-input"
-                           type="text"
-                           autocomplete="country-name"
-                           disabled="@ViewModel.IsBusy"
-                           aria-invalid="@Invalid(ViewModel.GuestErrors.Country)"
-                           @bind="ViewModel.Country" />
-                </FormField>
-
-                <FormField Label="Passport number" For="passport" Error="@ViewModel.GuestErrors.PassportNumber"
-                           Hint="Optional. It speeds up check-in at the front desk.">
-                    <input id="passport"
-                           class="field-input"
-                           type="text"
-                           disabled="@ViewModel.IsBusy"
-                           aria-invalid="@Invalid(ViewModel.GuestErrors.PassportNumber)"
-                           @bind="ViewModel.PassportNumber" />
-                </FormField>
-            </div>
-
-            <p class="field-hint">
-                Your booking starts out as "Pending". Reception confirms it once we've seen it.
-                @BookingFlowViewModel.PaymentText.
-            </p>
-
-            <div class="row">
-                <button type="button"
-                        class="btn btn-primary"
-                        disabled="@(!ViewModel.CanSubmit)"
-                        @onclick="SubmitAsync">
-                    Send booking request
-                </button>
-
-                <button type="button" class="btn btn-ghost" disabled="@ViewModel.IsBusy" @onclick="BackToRooms">
-                    Back to rooms
-                </button>
-            </div>
-        </section>
-    }
-    else
-    {
-        <section class="stack" aria-labelledby="step-confirmation">
-            <AlertBox Kind="AlertKind.Ok"
-                      Message="Thank you — we've got your booking request. Reception will confirm it shortly." />
-
-            <h2 class="subtitle" id="step-confirmation">Your confirmation</h2>
-
-            <BookingReceiptCard Details="ViewModel.Confirmation" />
-
-            <div class="row">
-                <a class="btn btn-secondary" href="@ReceiptUrl">Open the confirmation on its own page</a>
-                <button type="button" class="btn btn-ghost" @onclick="StartOver">Book another stay</button>
-            </div>
-        </section>
-    }
+        </div>
+    </div>
 </div>
-
-@code {
-    /// <summary>Marks an input as invalid for screen readers, or omits the attribute.</summary>
-    private static string? Invalid(string? error) => error is null ? null : "true";
-
-    /// <summary>The address of the bookmarkable receipt for the booking just created.</summary>
-    private string ReceiptUrl =>
-        ViewModel.Confirmation is null ? "/book" : $"/booking/{ViewModel.Confirmation.BookingNumber}";
-
-    private Task FindRoomsAsync() => ViewModel.FindRoomsAsync(ComponentToken);
-
-    private void BackToDates() => ViewModel.BackToDates();
-
-    private void BackToRooms() => ViewModel.BackToRooms();
-
-    private void StartOver() => ViewModel.StartOver();
-
-    /// <summary>
-    /// Sends the order and takes the customer on to the bookmarkable receipt.
-    /// </summary>
-    /// <remarks>
-    /// The navigation is here and not in the viewmodel: a URL is a concept of the browser, not
-    /// of the booking. Step 4 is nevertheless drawn first, so the receipt is on the screen even
-    /// if the navigation should happen to fail.
-    /// </remarks>
-    private async Task SubmitAsync()
-    {
-        await ViewModel.SubmitAsync(ComponentToken);
-
-        if (ViewModel.Confirmation is not null)
-        {
-            Navigation.NavigateTo(ReceiptUrl);
-        }
-    }
-}

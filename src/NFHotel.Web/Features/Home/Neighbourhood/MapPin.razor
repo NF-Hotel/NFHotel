@@ -1,0 +1,11 @@
+@*
+    One pin on the map of the neighbourhood: the dot, its number and the name beside it. Its own component
+    because Razor reserves <text> inside a code block, and the pins are drawn in a loop. The name goes to the
+    left of the dot when the place says so, so it does not cover a neighbour.
+*@
+
+<g class="@PinClass" transform="translate(@Place.X @Place.Y)" @onclick="OnSelect">
+    <circle class="m-pin-dot" r="12" />
+    <text class="m-pin-num">@Number</text>
+    <text class="@LabelClass" x="@LabelX" y="4">@Place.Name</text>
+</g>
