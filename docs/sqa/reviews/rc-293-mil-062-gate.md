@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-062 after the first deploy with the prune | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-062 after the first deploy with the prune | [5bdab74] |
 
 ---
 
@@ -64,3 +64,4 @@ Go: the six criteria pass on the green runs, the CD run of b645ef9, the monitori
 [RC-290]: ./rc-290-mil-062.md
 [RC-291]: ./rc-291-mil-062-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[5bdab74]: https://github.com/NF-Hotel/NFHotel/commit/5bdab7435b5c0e20403dbc71a3cc782bb0913bba
