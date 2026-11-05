@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; S01 accepted the plan to close the four open milestones in chat on 2026-11-05 ("Accepter planen") | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; S01 accepted the plan to close the four open milestones in chat on 2026-11-05 ("Accepter planen") | [9a18561] |
 
 ---
 
@@ -62,3 +62,4 @@ Go. Every criterion passes, and the one that waited for production, criterion 4,
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [RC-238]: ./rc-238-mil-046.md
 [RC-239]: ./rc-239-mil-046-code.md
+[9a18561]: https://github.com/NF-Hotel/NFHotel/commit/9a18561ca66b5c10d38d74ac1ffae259ca99e84a

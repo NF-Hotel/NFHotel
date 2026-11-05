@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-060 (Accepted after RC-282), its section "Dependency updates" on the wiki page CI-CD, and the project file and lock files of its task 1 | [07ec8fc] |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-046 (gate passed, RC-283) and ADR-0031, MIL-056 and ADR-0035 with their review records, missing since 2026-10-26 and 2026-11-02 | pending |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-046 (gate passed, RC-283) and ADR-0031, MIL-056 and ADR-0035 with their review records, missing since 2026-10-26 and 2026-11-02 | [9a18561] |
 
 ---
 
@@ -253,3 +253,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-272]: ./reviews/rc-272-mil-056-code.md
 [RC-273]: ./reviews/rc-273-adr-0035.md
 [RC-283]: ./reviews/rc-283-mil-046-gate.md
+[9a18561]: https://github.com/NF-Hotel/NFHotel/commit/9a18561ca66b5c10d38d74ac1ffae259ca99e84a
