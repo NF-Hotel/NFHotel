@@ -5,7 +5,9 @@
 #   1. clone the wiki repository into a temporary folder
 #   2. make its Markdown pages equal to docs/wiki: copy every page, and remove the pages
 #      that docs/wiki no longer has
-#   3. commit, naming the source commit, and push; with no change, push nothing
+#   3. do the same for the pictures in docs/wiki/images (only that folder; other files of the
+#      wiki are kept)
+#   4. commit, naming the source commit, and push; with no change, push nothing
 #
 # The token reaches git as an HTTP header through the environment (GIT_CONFIG_*), never in
 # the URL or on a command line, so it is not in the clone's configuration or a process list.
@@ -49,6 +51,16 @@ for page in "$work"/wiki/*.md; do
 done
 cp "$src"/*.md "$work/wiki/"
 git -C "$work/wiki" add --all -- '*.md'
+
+# The pictures of the pages: docs/wiki/images is the whole of wiki/images.
+if [[ -d "$src/images" ]]; then
+  mkdir -p "$work/wiki/images"
+  for pic in "$work"/wiki/images/*; do
+    [[ -f "$src/images/${pic##*/}" ]] || git -C "$work/wiki" rm --quiet "images/${pic##*/}"
+  done
+  cp "$src"/images/* "$work/wiki/images/"
+  git -C "$work/wiki" add --all -- images
+fi
 
 if git -C "$work/wiki" diff --cached --quiet; then
   echo "unchanged: the wiki already matches docs/wiki of ${SHA:0:7}"
