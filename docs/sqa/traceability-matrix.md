@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-060 (Accepted after RC-282), its section "Dependency updates" on the wiki page CI-CD, and the project file and lock files of its task 1 | [07ec8fc] |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-046 (gate passed, RC-283) and ADR-0031, MIL-056 and ADR-0035 with their review records, missing since 2026-10-26 and 2026-11-02 | [9a18561] |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-023 names its review records since RC-091, the two restore drills (RC-505, RC-284) and ADR-0020 | pending |
 
 ---
 
@@ -44,7 +44,7 @@ updated whenever an artifact instance is created or reviewed.
 | [DSA-001] | CI/CD and DevSecOps Assessment (no catalog type) | en | it | [BC-001], [ADR-0003], [ADR-0006] | [ADR-0007], [ADR-0008], [ADR-0009], [MIL-021], [MIL-022], [MIL-023] | - (no checklist; decisions approved in chat) |
 | [MIL-021] | Milestone | en | it | [BC-001], [DSA-001], [ADR-0007], [ADR-0008], [ADR-0010] | [MIL-022] | [RC-089], [RC-094], [RC-095], [RC-097] |
 | [MIL-022] | Milestone | en | it | [BC-001], [MIL-021] | [MIL-023] | [RC-090] |
-| [MIL-023] | Milestone | en | it | [BC-001], [MIL-022] | - | [RC-091] |
+| [MIL-023] | Milestone (Accepted; tasks 6 and 11 open at the gate) | en | it | [BC-001], [MIL-022], [ADR-0020] | CIS-001, SAMM-001, DORA-001, the host hardening and the firewall of `ops/deploy/host`, the monitoring stack and Alloy of `ops/deploy/monitoring` and `ops/deploy/alloy`, the wiki pages Host-Hardening, Monitoring and Alerts | [RC-091], [RC-169], [RC-172], [RC-176], [RC-177], [RC-179], [RC-189], [RC-191], [RC-192], [RC-193], [RC-244], [RC-505] (drill 1), [RC-284] (drill 2) |
 | [ADR-0007] | ADR (Accepted, amended by ADR-0019, ADR-0021 and ADR-0038) | en | it | [BC-001], [DSA-001], [ADR-0003] | [MIL-021], [MIL-022], [ADR-0038] | [RC-092], [RC-281] |
 | [ADR-0008] | ADR | en | it | [BC-001], [DSA-001], [ADR-0004] | [MIL-021], [MIL-022] | [RC-093] |
 | [ADR-0009] | ADR | en | it | [ADR-0006], [DSA-001] | [MIL-021], [MIL-023] | [RC-096] |
@@ -241,7 +241,6 @@ updated whenever an artifact instance is created or reviewed.
 [QC-SH-001]: ../../framework/qc/code/qc-programming-shell.md
 [MIL-060]: ../milestones/mil-060-dependabot-nuget-lock-files.md
 [RC-282]: ./reviews/rc-282-mil-060.md
-[07ec8fc]: https://github.com/NF-Hotel/NFHotel/commit/07ec8fc7f9b8bceb4d81ba323d6203a0d00d984d
 [MIL-046]: ../milestones/mil-046-finished-run-not-interrupted.md
 [ADR-0031]: ../adr/adr-0031-state-that-survives-a-deploy.md
 [MIL-056]: ../milestones/mil-056-dev-stack-without-kvm.md
@@ -254,3 +253,16 @@ updated whenever an artifact instance is created or reviewed.
 [RC-273]: ./reviews/rc-273-adr-0035.md
 [RC-283]: ./reviews/rc-283-mil-046-gate.md
 [9a18561]: https://github.com/NF-Hotel/NFHotel/commit/9a18561ca66b5c10d38d74ac1ffae259ca99e84a
+[ADR-0020]: ../adr/adr-0020-monitoring-stack.md
+[RC-169]: ./reviews/rc-169-mil-023-amendment.md
+[RC-172]: ./reviews/rc-172-mil-023-task-12.md
+[RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
+[RC-177]: ./reviews/rc-177-mil-023-scorecard-samm-dora.md
+[RC-179]: ./reviews/rc-179-mil-023-monitoring.md
+[RC-189]: ./reviews/rc-189-alarm-drill.md
+[RC-191]: ./reviews/rc-191-host-hardening-apply-part-1.md
+[RC-192]: ./reviews/rc-192-firewall-tailscale-only.md
+[RC-193]: ./reviews/rc-193-docker-daemon-applied.md
+[RC-244]: ./reviews/rc-244-mil-023-host-settings.md
+[RC-505]: ./reviews/rc-505-restore-drill-2026-10-20.md
+[RC-284]: ./reviews/rc-284-restore-drill-2026-11-05.md
