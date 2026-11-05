@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The code row of MIL-062 (code review RC-291, Go); RC-291 on the row of MIL-062 | [c258f9b] |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-048: gate passed (RC-292, Go) with the test of the public address from outside by S01 | [37e47e5] |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-062: gate passed (RC-293, Go) after the first deploy with the prune; the code row deployed | pending |
 
 ---
 
@@ -82,8 +82,8 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-061] | Milestone (Accepted, Go; gate passed 2026-11-05, RC-289) | en | it | [BC-001], [ADR-0004], [ADR-0006], ADR-0015, ADR-0028, [ADR-0038], MIL-015, MIL-020, [MIL-026] | ADR-0039, the network `nfhotel-python` in `ops/scripts/deploy-services.sh` and `ops/scripts/lib/stack.sh`, the compose files of the web application, the API, the market analysis and the benchmark, nginx without the listener on 8081, `ops/tests/test-service-networks.sh` and its Ops CI job, the wiki pages Network Isolation, Containers and Images, Environment Files and Proxmox Deployment | [RC-287], [RC-288] (the code), [RC-289] (the gate) |
 | [ADR-0039] | ADR (Accepted) | - | - | [MIL-061], [ADR-0003], [ADR-0004], [ADR-0006], ADR-0015, ADR-0028 | the network `nfhotel-python` in `ops/scripts` and `ops/deploy`, nginx without the listener on 8081, `ops/tests/test-service-networks.sh` | [RC-288] |
 | The code of MIL-061: `ops/scripts/deploy-services.sh`, `ops/scripts/lib/stack.sh`, the compose files and settings examples of `ops/deploy/nfhotel-web`, `nfhotel-api`, `market-analysis`, `benchmark` and `nginx`, `ops/tests/test-service-networks.sh` with its job in `.github/workflows/ops-ci.yaml`, and the tests that follow the move | Shell, compose and workflow files (deployed on `nf-hotel` by CD run 42066748612 on 2026-11-05) | - | - | [MIL-061] tasks 2 to 5 | - | [RC-288], [RC-289] |
-| [MIL-062] | Milestone (Accepted, Go) | en | it | [BC-001], [ADR-0018], [ADR-0021], [ADR-0038], [MIL-021], [MIL-023] | the command `prune` of `ops/scripts/deploy-release.sh`, its tests in `ops/tests/test-deploy-release.sh`, the wiki pages Alerts, CI-CD and Proxmox Deployment | [RC-290], [RC-291] (the code) |
-| The code of MIL-062: the command `prune` of `ops/scripts/deploy-release.sh` and its nine checks in `ops/tests/test-deploy-release.sh` | Shell (built, not yet deployed) | - | - | [MIL-062] tasks 1 and 2 | - | [RC-291] |
+| [MIL-062] | Milestone (Accepted, Go; gate passed 2026-11-05, RC-293) | en | it | [BC-001], [ADR-0018], [ADR-0021], [ADR-0038], [MIL-021], [MIL-023] | the command `prune` of `ops/scripts/deploy-release.sh`, its tests in `ops/tests/test-deploy-release.sh`, the wiki pages Alerts, CI-CD and Proxmox Deployment | [RC-290], [RC-291] (the code), [RC-293] (the gate) |
+| The code of MIL-062: the command `prune` of `ops/scripts/deploy-release.sh` and its nine checks in `ops/tests/test-deploy-release.sh` | Shell (deployed on `nf-hotel` by CD run 42078898723 on 2026-11-05, which removed 352 images) | - | - | [MIL-062] tasks 1 and 2 | - | [RC-291], [RC-293] |
 | [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
 | [ADR-0031] | ADR (Accepted; decisions 2 and 3 added 2026-10-26) | - | - | ADR-0005, ADR-0013, [ADR-0004], ADR-0024, MIL-020, MIL-043 | the sign-in keys and the benchmark run tracker of `src/NFHotel.Web`, [MIL-046] | [RC-227], [RC-239] |
 | [MIL-056] | Milestone (Accepted, Go; gate passed 2026-11-05 after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding) | en | it | [BC-001], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | [ADR-0035], `scripts/dev-up.sh --lite`, `ops/scripts/lib/`, the Ops CI test and the macOS job, the wiki page Local Development Deploy | [RC-271], [RC-272], [RC-286] |
@@ -267,6 +267,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-290]: ./reviews/rc-290-mil-062.md
 [RC-291]: ./reviews/rc-291-mil-062-code.md
 [RC-292]: ./reviews/rc-292-mil-048-gate-re-review.md
+[RC-293]: ./reviews/rc-293-mil-062-gate.md
 [RC-273]: ./reviews/rc-273-adr-0035.md
 [RC-283]: ./reviews/rc-283-mil-046-gate.md
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
@@ -287,5 +288,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-245]: ./reviews/rc-245-mil-048-plan.md
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
-[c258f9b]: https://github.com/NF-Hotel/NFHotel/commit/c258f9bff2ba46862f45fc7b78be6080e7c959ff
 [37e47e5]: https://github.com/NF-Hotel/NFHotel/commit/37e47e5c542544f56957be3d8755384ac3d34fa7
