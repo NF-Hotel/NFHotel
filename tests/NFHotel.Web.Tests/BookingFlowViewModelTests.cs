@@ -445,7 +445,7 @@ public sealed class BookingFlowViewModelTests
 
     /// <summary>Equivalence: the party filters the fetched rooms by capacity; one guest, or "show all", lists every room.</summary>
     [Fact]
-    public async Task VisibleRooms_FollowTheParty()
+    public async Task VisibleRooms_Party_FiltersRoomsByCapacity()
     {
         RoomsAre(FreeRoom(1), new AvailableRoomDto(3, "301", 3, RoomSize.Suite, 4));
         var viewModel = Create();
