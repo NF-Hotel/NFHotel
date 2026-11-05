@@ -1,0 +1,83 @@
+@startuml network-communication
+title NF Hotel: how the services communicate (target network design)
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam ArrowFontSize 15
+skinparam ArrowThickness 2
+skinparam nodesep 140
+skinparam ranksep 170
+top to bottom direction
+
+actor "Guest / staff\n(browser)" as browser
+cloud "Cloudflare tunnel" as cf
+node "Phone" as phone {
+  component "MobileApp\n(Flutter)" as app
+}
+
+node "Docker host (VM)" {
+
+  rectangle "net: nfhotel-proxy + nfhotel-api" as netfront #F5F5F5 {
+    component "nginx\n:443 public\n:8082 via tunnel" as nginx
+  }
+
+  rectangle "net: nfhotel-api" as netapi #F5F5F5 {
+    component "nfhotel-web\nBlazor Server\n:8080" as web
+    component "nfhotel-api\n.NET API\n:8080" as api
+  }
+
+  rectangle "net: nfhotel-db" as netdb #F5F5F5 {
+    database "postgres\n:5432" as pg
+  }
+
+  rectangle "net: nfhotel-python (new, without nginx)" as netpy #E8F0FA {
+    component "market-analysis-api\nFastAPI\n:8000" as ma
+    component "benchmark\n:8000" as bench
+    component "market-analysis-notebook\nmarimo\n:2718" as manb
+  }
+
+  rectangle "net: nfhotel-llm" as netllm #F5F5F5 {
+    component "ollama\nOllama API\n:11434" as ollama
+  }
+}
+
+browser "<color:#E6194B>**1**</color>" -[#E6194B,thickness=2]-> "<color:#E6194B>**1**</color>" cf
+browser "<color:#3CB44B>**2**</color>" -[#3CB44B,thickness=2]-> "<color:#3CB44B>**2**</color>" nginx
+cf "<color:#4363D8>**3**</color>" -[#4363D8,thickness=2]-> "<color:#4363D8>**3**</color>" nginx
+app "<color:#F58231>**4**</color>" -[#F58231,thickness=2]-> "<color:#F58231>**4**</color>" nginx
+
+nginx "<color:#911EB4>**5**</color>" -down[#911EB4,thickness=2]-> "<color:#911EB4>**5**</color>" web
+nginx "<color:#008080>**6**</color>" -down[#008080,thickness=2]-> "<color:#008080>**6**</color>" api
+
+web "<color:#9A6324>**7**</color>" -right[#9A6324,thickness=2]-> "<color:#9A6324>**7**</color>" api
+web "<color:#808000>**8**</color>" -down[#808000,thickness=2]-> "<color:#808000>**8**</color>" ma
+web "<color:#F032E6>**9**</color>" -down[#F032E6,thickness=2]-> "<color:#F032E6>**9**</color>" bench
+api "<color:#000075>**10**</color>" -down[#000075,thickness=2]-> "<color:#000075>**10**</color>" ma
+api "<color:#800000>**11**</color>" -right[#800000,thickness=2]-> "<color:#800000>**11**</color>" pg
+bench "<color:#555555>**12**</color>" -up[#555555,thickness=2]-> "<color:#555555>**12**</color>" api
+bench "<color:#00A0D0>**13**</color>" -down[#00A0D0,thickness=2]-> "<color:#00A0D0>**13**</color>" ollama
+ma "<color:#FF6F91>**14**</color>" -down[#FF6F91,thickness=2]-> "<color:#FF6F91>**14**</color>" ollama
+
+legend right
+  |= # |= From |= To |= Address |= Calls |
+  | <color:#E6194B>**1**</color> | browser | Cloudflare | https | |
+  | <color:#3CB44B>**2**</color> | browser | nginx | https :443 (dev :8443) | Blazor pages |
+  | <color:#4363D8>**3**</color> | Cloudflare | nginx | http :8082 | |
+  | <color:#F58231>**4**</color> | MobileApp | nginx | https nfhotel.devmatiker.com/mobile-api (dev 10.0.2.2:8443) | REST/JSON |
+  | <color:#911EB4>**5**</color> | nginx | nfhotel-web | nfhotel-web:8080 | all except /mobile-api |
+  | <color:#008080>**6**</color> | nginx | nfhotel-api | nfhotel-api:8080 | POST /mobile-api/api/auth/login\nGET /mobile-api/api/rooms |
+  | <color:#9A6324>**7**</color> | nfhotel-web | nfhotel-api | nfhotel-api:8080 | Api__BaseUrl |
+  | <color:#808000>**8**</color> | nfhotel-web | market-analysis | market-analysis-api:8000 | GET /api/v1/holidays\nPOST /api/v1/holidays/update\nX-API-Key |
+  | <color:#F032E6>**9**</color> | nfhotel-web | benchmark | benchmark:8000 (token) | POST /runs, GET /runs, GET /runs/{id}\nGET /models, POST /models, DELETE /models/{name} |
+  | <color:#000075>**10**</color> | nfhotel-api | market-analysis | market-analysis-api:8000 | POST /api/v1/market-analysis (start, 202)\nGET /api/v1/market-analysis/{run_id}\nGET /api/v1/market-analysis/{run_id}/result\nX-API-Key |
+  | <color:#800000>**11**</color> | nfhotel-api | postgres | postgres:5432 | tcp |
+  | <color:#555555>**12**</color> | benchmark | nfhotel-api | nfhotel-api:8080 | POST /api/benchmark/results |
+  | <color:#00A0D0>**13**</color> | benchmark | ollama | ollama:11434 | POST /v1/chat/completions\n/api/pull, /api/delete, /api/version |
+  | <color:#FF6F91>**14**</color> | market-analysis | ollama | ollama:11434 | POST /api/chat |
+endlegend
+
+note bottom of netpy
+  nginx has no connection to the Python services.
+  nfhotel-web and nfhotel-api are also on nfhotel-python.
+  market-analysis does NOT call nfhotel-api.
+end note
+@enduml

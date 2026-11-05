@@ -14,6 +14,7 @@
 - [Database Access](Database-Access)
 - [Workflows](Workflows)
 - [Containers and Images](Containers-and-Images)
+- [Network Isolation](Network-Isolation)
 - [Security Controls](Security-Controls)
 - [Alerts](Alerts)
 - [Price Suggestions](Price-Suggestions)
