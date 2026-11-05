@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-062 before its pull request | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-062 before its pull request | [c258f9b] |
 
 ---
 
@@ -70,3 +70,4 @@ Go. Every Mandatory criterion of QC-SH-001 passes on the files as they are, and 
 
 [MIL-062]: ../../milestones/mil-062-prune-old-release-images.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[c258f9b]: https://github.com/NF-Hotel/NFHotel/commit/c258f9bff2ba46862f45fc7b78be6080e7c959ff
