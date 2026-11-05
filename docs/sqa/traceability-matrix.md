@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Proposed | Claude (AI) | S01 | Added MIL-059 (Accepted after RC-279), ADR-0037 and the security audit report SAR-001 (both Accepted after RC-280), and the workflows, the Dependabot configuration and the policy test the milestone changed | [742ce19] |
 | 2026-11-04 | Proposed | Claude (AI) | S01 | Added ADR-0038 (Accepted after RC-281) and rows for ADR-0019 and ADR-0021, which it amends; the row of ADR-0007 names RC-281 | [7af26c6] |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-060 (Accepted after RC-282), its section "Dependency updates" on the wiki page CI-CD, and the project file and lock files of its task 1 | pending |
 
 ---
 
@@ -77,6 +77,8 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0019] | ADR (Accepted, amended by ADR-0021 and ADR-0038) | en | it | [SA-001], [ADR-0007], [ADR-0018] | [ADR-0021], [ADR-0038] | [RC-167], [RC-281] |
 | [ADR-0021] | ADR (Accepted, amended by ADR-0038) | en | it | [ADR-0007], [ADR-0018], [ADR-0019], [MIL-021] | [ADR-0038], `ops/scripts/cd-steps.sh gate` | [RC-170], [RC-281] |
 | [ADR-0038] | ADR (Accepted) | - | - | [ADR-0021], [ADR-0019], [ADR-0007], [ADR-0018], [SAR-001], [MIL-021], [SA-001] | the header of `.github/workflows/cd.yaml`, the wiki pages CI-CD, Security-Controls, Workflows, DevOps-Lifecycle and Technology-Choices, the required reviewer of the environment `production` | [RC-281] |
+| [MIL-060] | Milestone (Accepted, Go) | en | it | [BC-001], [ADR-0038], [MIL-022], [MIL-044] | `docs/wiki/CI-CD.md` (the section "Dependency updates"), the code below | [RC-282] |
+| The code of MIL-060: `src/NFHotel.Web/NFHotel.Web.csproj` and `src/NFHotel.Web/packages.lock.json` (the commit of Dependabot from pull request #489) and `tests/NFHotel.Web.Tests/packages.lock.json` (three lines) | Project file and lock files (built, not yet merged) | - | - | [MIL-060] task 1 | - | [RC-282] (the evidence of criteria 1 and 2) |
 | [UC-007] | Use Case (Accepted) | en | it | [UCD-001], [US-001], [SA-001], [MIL-055] | [DM-004], [DICT-001], code and tests below | [RC-264] (Go with conditions) |
 | `docs/wiki/Price-Suggestions.md` | Wiki page (Proposed) | en | - | [MIL-055] task 10, [US-001], [UC-007] | - | - (not yet reviewed) |
 | Dictionary terms and domain concepts: Room rate, Price change, Price suggestion, Season, Pricing settings; Audit event actions `PriceChangeApproved`, `PriceChangeReverted`, `PricingSettingsChanged`, `RoomRateChanged` | Domain terms (Accepted) | en | it | [UC-007], [US-001] | [DICT-001], [DM-004], `src/NFHotel.Domain` (`RoomRate`, `PriceChange`, `PricingSetting`) | [RC-264] |
@@ -233,5 +235,6 @@ updated whenever an artifact instance is created or reviewed.
 [QC-WF-001]: ../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../framework/qc/code/qc-yaml.md
 [QC-SH-001]: ../../framework/qc/code/qc-programming-shell.md
-[742ce19]: https://github.com/NF-Hotel/NFHotel/commit/742ce193969dda9c8556362bd0c65c2d49f60c14
 [7af26c6]: https://github.com/NF-Hotel/NFHotel/commit/7af26c62c64d653f912ba876b1d2fd4c7c170f40
+[MIL-060]: ../milestones/mil-060-dependabot-nuget-lock-files.md
+[RC-282]: ./reviews/rc-282-mil-060.md
