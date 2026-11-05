@@ -13,7 +13,7 @@ flowchart LR
   PR --> E2E[NF Hotel E2E and DAST]
   PR --> RCHK[NF Hotel Release check]
   PR --> APPS[CodeQL and SonarQube Cloud]
-  CI & OPS & E2E & RCHK & APPS --> RULES{Ruleset: 19 required checks}
+  CI & OPS & E2E & RCHK & APPS --> RULES{Ruleset: 41 required checks}
   RULES -->|merge| MAIN[main]
   MAIN --> CI2[NF Hotel CI on main]
   CI2 -->|success| REL[NF Hotel Release]
@@ -23,7 +23,7 @@ flowchart LR
   MAIN --> SC[NF Hotel Scorecard]
 ```
 
-1. A pull request runs CI, Ops CI, E2E and DAST, the release check, CodeQL and SonarQube Cloud. The ruleset "Approve merges" requires 19 of these checks to be green before the merge.
+1. A pull request runs CI, Ops CI, E2E and DAST, the release check, CodeQL and SonarQube Cloud. The ruleset "Approve merges" requires all 41 of these checks to be green before the merge: every check that runs on a pull request, CodeQL and SonarQube Cloud ([SAR-001](https://github.com/NF-Hotel/NFHotel/blob/main/docs/sqa/security-audit-2026-11.md), SEC-03). A run that Dependabot triggers has no secrets, so the SonarQube Cloud check never appears on it; the owner updates the branch first ([CI-CD](CI-CD), "Dependency updates").
 2. The merge to `main` runs CI again. When it succeeds, `workflow_run` starts Release, which builds the four images once, scans them, pushes them to GHCR and attests them.
 3. When Release succeeds, `workflow_run` starts CD. CD verifies the attestations, waits until every check of the commit is green, joins the tailnet and runs the deploy command on the VM.
 
@@ -184,7 +184,7 @@ The workflows keep the trigger, the permissions, the environment and the concurr
 
 | Setting | What it does | Why |
 | --- | --- | --- |
-| Ruleset **Approve merges** on `main` | A pull request is required, no force push, no deletion, and 19 checks must pass: `Build, tests and security`, `Formatting`, `Docker build`, `End-to-end tests`, `DAST baseline`, `Release build (no push)`, `Ops linters`, `Ops nginx routes`, `Ops Proxmox tests (live tests skip)`, `Ops PostgreSQL preparation (real migrations)` and nine `Ops script tests` | No change reaches `main` without the checks; no approving review is required (ADR-0019) |
+| Ruleset **Approve merges** on `main` | A pull request is required, no force push, no deletion, and 41 checks must pass, every check that runs on a pull request (SAR-001, SEC-03): `Build, tests and security`, `Formatting`, `Docker build`, `End-to-end tests`, `DAST baseline`, `Release build (no push)`, `Comments are in English`, `CodeQL`, `SonarCloud Code Analysis`, the Ops CI jobs `Ops linters`, `Ops nginx routes`, `Ops Proxmox tests (live tests skip)`, `Ops PostgreSQL preparation (real migrations)`, `Ops host hardening (Debian 13, MIL-023)`, `Ops monitoring configuration (MIL-023)`, `Ops secret rotation drill (MIL-035)`, `Ops benchmark results volume (MIL-045)`, `Ops team database roles (MIL-048)`, `Ops light development mode (MIL-056)`, `Ops light development mode on macOS (MIL-056)`, `Ops start from Visual Studio (MIL-057)` and `Ops wiki coverage`, and nineteen `Ops script tests` | No change reaches `main` without the checks; no approving review is required (ADR-0019) |
 | Environment **production** | Only `main` may deploy; holds the tailnet settings `TS_OIDC_CLIENT_ID`, `TS_OIDC_AUDIENCE` and `NFHOTEL_VM_HOST` | A branch cannot deploy; the settings are not secrets, because OIDC proves who asks |
 | **CodeQL** default setup | Static analysis of C#, JavaScript and TypeScript, and of the workflows themselves (`actions`), on every pull request and push | Finds injection and unsafe workflow patterns; managed by GitHub, so there is no workflow to maintain |
 | **SonarQube Cloud** app | Reports the quality gate as the check `SonarCloud Code Analysis`; new code needs 80 % coverage | The analysis runs in CI (ADR-0033); the CD gate waits for this check too |
