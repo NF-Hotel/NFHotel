@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-063 after the first CD run with the wait | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-063 after the first CD run with the wait | [cad9fba] |
 
 ---
 
@@ -58,3 +58,4 @@ Go: the five criteria pass on the green pull request, RC-296 and the CD run of t
 [RC-295]: ./rc-295-mil-063.md
 [RC-296]: ./rc-296-mil-063-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[cad9fba]: https://github.com/NF-Hotel/NFHotel/commit/cad9fbabdd517896b4db30f18e28e0571000fefc

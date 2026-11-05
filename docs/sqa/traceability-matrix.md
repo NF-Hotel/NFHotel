@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | The code row of MIL-063 (code review RC-296, Go); RC-296 on the row of MIL-063 | [9733183] |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-063: gate passed (RC-297, Go) with the CD run of the merge; the code row run | pending |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-063: gate passed (RC-297, Go) with the CD run of the merge; the code row run | [cad9fba] |
 
 ---
 
@@ -296,3 +296,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [9733183]: https://github.com/NF-Hotel/NFHotel/commit/97331830763d21212772ed14e622bc57b10c1724
+[cad9fba]: https://github.com/NF-Hotel/NFHotel/commit/cad9fbabdd517896b4db30f18e28e0571000fefc
