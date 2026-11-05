@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-048 (gate review RC-285, Go-with-conditions) and ADR-0034 with their review records, missing since 2026-10-28 | [e58a634] |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-056: gate passed (RC-286, Go) after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding | pending |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-056: gate passed (RC-286, Go) after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding | [bb59aa4] |
 
 ---
 
@@ -274,3 +274,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [e58a634]: https://github.com/NF-Hotel/NFHotel/commit/e58a6341cf1d489e7256b297eb9764d1ecb56332
+[bb59aa4]: https://github.com/NF-Hotel/NFHotel/commit/bb59aa4cca8d7d5974d76174bfc69283d3559aac

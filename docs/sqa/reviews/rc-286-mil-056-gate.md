@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; S01 decided in chat on 2026-11-05 to amend criterion 3 instead of waiting for the run on a Mac by S02 ("ændre til nu", amend it now) | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; S01 decided in chat on 2026-11-05 to amend criterion 3 instead of waiting for the run on a Mac by S02 ("ændre til nu", amend it now) | [bb59aa4] |
 
 ---
 
@@ -96,3 +96,4 @@ Go. The amendment keeps QC-MIL-001 criterion 2 (an objectively checkable criteri
 [RC-272]: ./rc-272-mil-056-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[bb59aa4]: https://github.com/NF-Hotel/NFHotel/commit/bb59aa4cca8d7d5974d76174bfc69283d3559aac

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-02 | Deprecated | mikemike | S01 | Initial version; a developer of the mobile track (S02) cannot start the API on macOS, because `scripts/dev-up.sh` needs `/dev/kvm`, and S01 asked in chat on 2026-11-02 to plan a way that works ("Ja, planlæg det"); S01 accepted the plan in chat ("Yes, accept and build") after RC-271 Go | [d566246] |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Criterion 3, task 7 and the macOS tester row amended by S01's decision in chat on 2026-11-05 ("ændre til nu", amend it now): the gate takes the run without KVM on the machine of S01 (RC-272) and the `linux/arm64` manifests of the images, and the run on a Mac by a developer of S02 moves to S02's onboarding; accepted after RC-286 Go | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Criterion 3, task 7 and the macOS tester row amended by S01's decision in chat on 2026-11-05 ("ændre til nu", amend it now): the gate takes the run without KVM on the machine of S01 (RC-272) and the `linux/arm64` manifests of the images, and the run on a Mac by a developer of S02 moves to S02's onboarding; accepted after RC-286 Go | [bb59aa4] |
 
 ---
 
@@ -91,3 +91,4 @@ The answer is a second, lighter local mode: the containers of the deployed shape
 [ADR-0024]: ../adr/adr-0024-secrets-as-files.md
 [MIL-027]: mil-027-dast-and-end-to-end-tests.md
 [d566246]: https://github.com/NF-Hotel/NFHotel/commit/d5662462084d1fd23301de4d0e07db569a182d66
+[bb59aa4]: https://github.com/NF-Hotel/NFHotel/commit/bb59aa4cca8d7d5974d76174bfc69283d3559aac
