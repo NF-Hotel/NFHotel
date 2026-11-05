@@ -2,10 +2,12 @@
 # holds the passport key. Read by Docker Compose. Settings live in nfhotel-api.env
 # (git-ignored); copy nfhotel-api.env.example to nfhotel-api.env first. Start it with
 # scripts/deploy-services.sh, which writes secrets/ from the settings first (ADR-0024).
-# The image comes from Dockerfile.api in the repository root. No host port is published
-# and the proxy has no route to it: the web service reaches it by the name nfhotel-api on
-# the internal network nfhotel-api (create it once: docker network create --internal nfhotel-api).
-# It joins nfhotel-db with PostgreSQL; the web service does not.
+# The image comes from Dockerfile.api in the repository root. No host port is published:
+# the web service reaches it by the name nfhotel-api on the internal network nfhotel-api
+# (create it once: docker network create --internal nfhotel-api), where the proxy routes only
+# the two mobile routes to it (ADR-0015). It joins nfhotel-db with PostgreSQL; the web service
+# does not. It joins nfhotel-python (ADR-0039) to start market analysis runs and to take the
+# results of the benchmark.
 name: nfhotel-api
 
 services:
@@ -69,15 +71,20 @@ services:
     networks:
       - api
       - db
+      - python
 
 networks:
-  # Internal network shared with the web service only (no route out, no host port).
+  # Internal network shared with the web service and nginx (no route out, no host port).
   api:
     name: ${NFHOTEL_API_NETWORK:-nfhotel-api}
     external: true
   # Internal network shared with PostgreSQL only (no route out, no host port).
   db:
     name: ${NFHOTEL_DB_NETWORK:-nfhotel-db}
+    external: true
+  # Internal network of the Python services, the market analysis and the benchmark (ADR-0039).
+  python:
+    name: ${NFHOTEL_PYTHON_NETWORK:-nfhotel-python}
     external: true
 
 # One file per secret, written by scripts/write-secret-files.sh into NFHOTEL_API_SECRETS.

@@ -35,9 +35,6 @@
 #   --dry-run   print what step 1 would run on the node and stop
 #   --no-build  start without rebuilding the images
 #   --down      stop and remove the named services (data volumes are kept)
-# Reach the internal services from your machine with an ssh tunnel, for example
-#   ssh -L 8081:127.0.0.1:8081 nfhotel@<vm address>
-#   then open analysis.localhost:8081 or analysis-api.localhost:8081 in a browser
 # Exit:  0 deployed; 1 a step failed; 2 usage error
 # Needs: bash 4+, ssh, tar, and key login to the Proxmox node and to the VM user
 
@@ -252,4 +249,3 @@ vm "cd $remote_dir && NFHOTEL_APP_DIR=$remote_dir bash ops/scripts/deploy-servic
 echo
 echo "Done. VM $VM_ID at $VM_IP."
 echo "Public:   port 80 of $VM_IP serves NFHotel web, through nginx"
-echo "Internal: ssh -L 8081:127.0.0.1:8081 $VM_USER@$VM_IP, then analysis.localhost:8081 and analysis-api.localhost:8081"

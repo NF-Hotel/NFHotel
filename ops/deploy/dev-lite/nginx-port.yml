@@ -1,8 +1,8 @@
 # Compose override for the light development mode (scripts/dev-lite.sh, ADR-0035,
 # MIL-056): nginx publishes only its TLS port, on the loopback of the developer's
-# machine, at the address of the Proxmox mode (default 8443). Port 80 and the internal
-# listener 8081 are not published, so they cannot clash with another service of the
-# machine. Needs docker compose 2.24.4 or later for !override.
+# machine, at the address of the Proxmox mode (default 8443). Port 80 is not published, so
+# it cannot clash with another service of the machine. Needs docker compose 2.24.4 or later
+# for !override.
 services:
   nginx:
     ports: !override
