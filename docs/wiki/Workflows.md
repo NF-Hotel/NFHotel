@@ -161,7 +161,7 @@ The script tests are: `test-deploy-release.sh`, `test-cd-steps.sh`, `test-vm-set
 | --- | --- |
 | **Runs on** | Pushes to `main` that change `docs/wiki/`, the publish script or this workflow; by hand |
 | **Jobs** | `Publish docs/wiki to the GitHub wiki` |
-| **Does** | Makes the GitHub wiki equal to `docs/wiki/`: adds, changes and removes pages in one commit that names the source commit |
+| **Does** | Makes the GitHub wiki equal to `docs/wiki/`: adds, changes and removes the Markdown pages and the pictures of `docs/wiki/images/` in one commit that names the source commit; other files of the wiki are kept |
 | **Permissions** | `contents: write`, which GitHub requires to push to the wiki |
 | **Why** | The pages are reviewed with the code they describe, and the wiki follows within a minute. |
 | **Alternatives** | Copying by hand (it drifted within days); writing in the wiki only (no review); dropping the wiki (readers lose the sidebar). |
