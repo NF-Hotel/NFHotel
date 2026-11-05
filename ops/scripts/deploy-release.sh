@@ -435,7 +435,7 @@ rollback() {
 # stopped, so the one-shot services too) and the images of the two latest releases of the log,
 # resolved from their digests; every other image id of docker image ls goes.
 prune_images() {
-  local apply=0 n line ref id keep=" " removed=0 failed=0 before after
+  local apply=0 n line ref id keep=" " removed=0 failed=0 before after web api analysis benchmark
   if [[ $# -gt 0 ]]; then
     [[ "$1" == "--apply" && $# -eq 1 ]] || refuse "prune takes --apply or nothing"
     apply=1
@@ -448,8 +448,8 @@ prune_images() {
   for n in 1 2; do
     line="$(previous_release "$n" || true)"
     [[ -n "$line" ]] || continue
-    # shellcheck disable=SC2046 # the four image references of the release line, split on purpose
-    for ref in $(cut -d' ' -f3-6 <<<"$line"); do
+    read -r _ _ web api analysis benchmark <<<"$line"
+    for ref in "$web" "$api" "$analysis" "$benchmark"; do
       id="$(docker image inspect --format '{{.Id}}' "$ref" 2>/dev/null || true)"
       [[ -n "$id" ]] && keep+="$id "
     done

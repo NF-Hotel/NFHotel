@@ -351,7 +351,8 @@ D2="sha256:$(printf '2%.0s' $(seq 64))"
 D3="sha256:$(printf '3%.0s' $(seq 64))"
 : >"$W/image-refs"
 for i in 1 2 3; do
-  eval "d=\$D$i"
+  v="D$i"
+  d="${!v}"
   for name in web api ana ben; do
     case "$name" in web) repo=nfhotel-web ;; api) repo=nfhotel-api ;; ana) repo=market-analysis ;; ben) repo=benchmark ;; esac
     echo "$R/$repo@$d id-$name$i" >>"$W/image-refs"
