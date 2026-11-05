@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-048: gate passed (RC-292, Go) with the test of the public address from outside by S01 | [37e47e5] |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-062: gate passed (RC-293, Go) after the first deploy with the prune; the code row deployed | [5bdab74] |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-023: gate passed (RC-294, Go); CIS-001 and ADR-0020 amended at the gate | [803ceae] |
 
 ---
 
@@ -44,7 +44,7 @@ updated whenever an artifact instance is created or reviewed.
 | [DSA-001] | CI/CD and DevSecOps Assessment (no catalog type) | en | it | [BC-001], [ADR-0003], [ADR-0006] | [ADR-0007], [ADR-0008], [ADR-0009], [MIL-021], [MIL-022], [MIL-023] | - (no checklist; decisions approved in chat) |
 | [MIL-021] | Milestone | en | it | [BC-001], [DSA-001], [ADR-0007], [ADR-0008], [ADR-0010] | [MIL-022] | [RC-089], [RC-094], [RC-095], [RC-097] |
 | [MIL-022] | Milestone | en | it | [BC-001], [MIL-021] | [MIL-023] | [RC-090] |
-| [MIL-023] | Milestone (Accepted; tasks 6 and 11 open at the gate) | en | it | [BC-001], [MIL-022], [ADR-0020] | CIS-001, SAMM-001, DORA-001, the host hardening and the firewall of `ops/deploy/host`, the monitoring stack and Alloy of `ops/deploy/monitoring` and `ops/deploy/alloy`, the wiki pages Host-Hardening, Monitoring and Alerts | [RC-091], [RC-169], [RC-172], [RC-176], [RC-177], [RC-179], [RC-189], [RC-191], [RC-192], [RC-193], [RC-244], [RC-505] (drill 1), [RC-284] (drill 2) |
+| [MIL-023] | Milestone (Accepted, Go; gate passed 2026-11-05, RC-294) | en | it | [BC-001], [MIL-022], [ADR-0020] | CIS-001, SAMM-001, DORA-001, the host hardening and the firewall of `ops/deploy/host`, the monitoring stack and Alloy of `ops/deploy/monitoring` and `ops/deploy/alloy`, the wiki pages Host-Hardening, Monitoring and Alerts | [RC-091], [RC-169], [RC-172], [RC-176], [RC-177], [RC-179], [RC-189], [RC-191], [RC-192], [RC-193], [RC-244], [RC-505] (drill 1), [RC-284] (drill 2), [RC-294] (gate) |
 | [ADR-0007] | ADR (Accepted, amended by ADR-0019, ADR-0021 and ADR-0038) | en | it | [BC-001], [DSA-001], [ADR-0003] | [MIL-021], [MIL-022], [ADR-0038] | [RC-092], [RC-281] |
 | [ADR-0008] | ADR | en | it | [BC-001], [DSA-001], [ADR-0004] | [MIL-021], [MIL-022] | [RC-093] |
 | [ADR-0009] | ADR | en | it | [ADR-0006], [DSA-001] | [MIL-021], [MIL-023] | [RC-096] |
@@ -261,6 +261,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-271]: ./reviews/rc-271-mil-056-dev-stack-without-kvm.md
 [RC-272]: ./reviews/rc-272-mil-056-code.md
 [RC-286]: ./reviews/rc-286-mil-056-gate.md
+[RC-294]: ./reviews/rc-294-mil-023-gate.md
 [RC-287]: ./reviews/rc-287-mil-061.md
 [RC-288]: ./reviews/rc-288-mil-061-code.md
 [RC-289]: ./reviews/rc-289-mil-061-gate.md
@@ -288,5 +289,5 @@ updated whenever an artifact instance is created or reviewed.
 [RC-245]: ./reviews/rc-245-mil-048-plan.md
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
-[37e47e5]: https://github.com/NF-Hotel/NFHotel/commit/37e47e5c542544f56957be3d8755384ac3d34fa7
 [5bdab74]: https://github.com/NF-Hotel/NFHotel/commit/5bdab7435b5c0e20403dbc71a3cc782bb0913bba
+[803ceae]: https://github.com/NF-Hotel/NFHotel/commit/803ceae78c9552d30230894be4f86c724a730859
