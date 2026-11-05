@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S03 | Initial version; mode autonomous, not independent; S01 accepted the plan in chat on 2026-11-05 ("Accepter planen") with the drill today rather than on 2026-11-20 | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S03 | Initial version; mode autonomous, not independent; S01 accepted the plan in chat on 2026-11-05 ("Accepter planen") with the drill today rather than on 2026-11-20 | [c6a8e10] |
 
 ---
 
@@ -57,3 +57,4 @@ Go for the restore procedure and this backup. MIL-023 criterion 6, two monthly r
 [ADR-0008]: ../../adr/adr-0008-database-migration-and-backup.md
 [MIL-021]: ../../milestones/mil-021-secure-cicd-foundation.md
 [RC-505]: ./rc-505-restore-drill-2026-10-20.md
+[c6a8e10]: https://github.com/NF-Hotel/NFHotel/commit/c6a8e107296f35bf1ef99511403cd752e79c5a1a

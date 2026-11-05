@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-046 (gate passed, RC-283) and ADR-0031, MIL-056 and ADR-0035 with their review records, missing since 2026-10-26 and 2026-11-02 | [9a18561] |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-023 names its review records since RC-091, the two restore drills (RC-505, RC-284) and ADR-0020 | pending |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-023 names its review records since RC-091, the two restore drills (RC-505, RC-284) and ADR-0020 | [c6a8e10] |
 
 ---
 
@@ -266,3 +266,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-244]: ./reviews/rc-244-mil-023-host-settings.md
 [RC-505]: ./reviews/rc-505-restore-drill-2026-10-20.md
 [RC-284]: ./reviews/rc-284-restore-drill-2026-11-05.md
+[c6a8e10]: https://github.com/NF-Hotel/NFHotel/commit/c6a8e107296f35bf1ef99511403cd752e79c5a1a
