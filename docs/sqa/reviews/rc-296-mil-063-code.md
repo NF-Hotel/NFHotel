@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-063 before its pull request | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-063 before its pull request | [9733183] |
 
 ---
 
@@ -65,3 +65,4 @@ Go. Every Mandatory criterion of QC-SH-001 passes, and criteria 1, 2 and 4 of MI
 
 [MIL-063]: ../../milestones/mil-063-cd-scope-waits-for-the-tailnet.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[9733183]: https://github.com/NF-Hotel/NFHotel/commit/97331830763d21212772ed14e622bc57b10c1724

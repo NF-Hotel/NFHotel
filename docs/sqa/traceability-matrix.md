@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-063 (plan review RC-295, Go) | [da64c2d] |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The code row of MIL-063 (code review RC-296, Go); RC-296 on the row of MIL-063 | pending |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | The code row of MIL-063 (code review RC-296, Go); RC-296 on the row of MIL-063 | [9733183] |
 
 ---
 
@@ -295,3 +295,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [da64c2d]: https://github.com/NF-Hotel/NFHotel/commit/da64c2d69a7595eb0b46f7125b504b3e0268e97f
+[9733183]: https://github.com/NF-Hotel/NFHotel/commit/97331830763d21212772ed14e622bc57b10c1724
