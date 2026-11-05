@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-061 after the deploy of 2026-11-05 | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-061 after the deploy of 2026-11-05 | [95f1059] |
 
 ---
 
@@ -69,3 +69,4 @@ Go: the eight criteria pass on the green runs of the pull request and of `main`,
 [RC-287]: ./rc-287-mil-061.md
 [RC-288]: ./rc-288-mil-061-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[95f1059]: https://github.com/NF-Hotel/NFHotel/commit/95f105969a0e97415ff384ac670674987cac9177
