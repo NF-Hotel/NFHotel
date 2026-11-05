@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; S01 accepted the plan to close the open milestones in chat on 2026-11-05 ("Accepter planen"); the verdict is Go-with-conditions, so the milestone stays open | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; S01 accepted the plan to close the open milestones in chat on 2026-11-05 ("Accepter planen"); the verdict is Go-with-conditions, so the milestone stays open | [e58a634] |
 
 ---
 
@@ -69,3 +69,4 @@ Go-with-conditions. Everything the AI can check holds: the roles, the relay, the
 [RC-247]: ./rc-247-mil-048-code.md
 [RC-192]: ./rc-192-firewall-tailscale-only.md
 [RC-244]: ./rc-244-mil-023-host-settings.md
+[e58a634]: https://github.com/NF-Hotel/NFHotel/commit/e58a6341cf1d489e7256b297eb9764d1ecb56332
