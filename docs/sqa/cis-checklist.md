@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-28 | Deprecated | mikemike | AI as stand-in for S01 | Every Pending VM row given its status from the evidence run of 2026-10-28, after the sshd, sudo and sysctl settings were installed; 2.1.x Deferred by S01's decision to keep the desktop; 5.3 and 5.28 wait for the release of the Alloy limits; accepted after RC-244 Go | [6ca419b] |
-| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Row 4.3.8: the forward chain also accepts the published 5432 of the database relay, from `tailscale0` only (ADR-0034, MIL-048) | [102cae2] |
+| 2026-10-28 | Deprecated | mikemike | AI as stand-in for S01 | Row 4.3.8: the forward chain also accepts the published 5432 of the database relay, from `tailscale0` only (ADR-0034, MIL-048) | [102cae2] |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Rows 5.3 and 5.28 Applied from the read of 2026-11-05 (all 11 containers with `cap_drop ALL` and a `pids_limit`); row 7.1.11, 7.1.12 records S01's decision of 2026-11-05 to keep `/opt/nfhotel-legacy`; the summary counts and the closing sentence of criterion 1; accepted after RC-294 Go | pending |
 
 ---
 
@@ -107,7 +107,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | # | Item | Status | How, or why not | Evidence |
 | --- | --- | --- | --- | --- |
 | 5.1 | An AppArmor profile is enabled, if applicable | Applied | `docker-default` on all 11 containers; AppArmor is loaded with 22 profiles in enforce mode. Verified on nf-hotel 2026-10-28 (RC-244, `/root/cis-evidence-after-host-settings.txt`). | ev:containers (`apparmor`), ev:mac-fs |
-| 5.3 | Linux kernel capabilities are restricted within containers | Pending VM | `cap_drop: [ALL]` for every service; only nginx and PostgreSQL add the ones they need, measured one by one (wiki page Host-Hardening). On 2026-10-28, 10 of 11 containers had it. The socket proxy of `ops/deploy/alloy` gets it in the change of RC-244 (tested: the read calls answer 200, a POST 403), which the next release deploys; checked again at the MIL-023 gate | compose; ev:containers |
+| 5.3 | Linux kernel capabilities are restricted within containers | Applied | `cap_drop: [ALL]` for every service; only nginx and PostgreSQL add the ones they need, measured one by one (wiki page Host-Hardening). On 2026-10-28, 10 of 11 containers had it; the socket proxy of `ops/deploy/alloy` got it in the change of RC-244 (tested: the read calls answer 200, a POST 403). On 2026-11-05, `docker inspect` on `nf-hotel` showed `cap_drop ALL` on all 11 containers (MIL-023 gate, RC-294) | compose; ev:containers |
 | 5.4 | Privileged containers are not used | Applied | No service is privileged (`privileged=false` on all 11). `ops/deploy/proxmox` is privileged but is a test container for a developer's machine only and never runs on the VM. Verified on nf-hotel 2026-10-28 (RC-244, `/root/cis-evidence-after-host-settings.txt`). | compose; ev:containers |
 | 5.5 | Sensitive host system directories are not mounted | Applied | Only named volumes and the configuration folders of `deploy/`, read-only | compose; ev:containers (`mounts`) |
 | 5.6 | sshd is not run within containers | Applied | No image runs sshd | images |
@@ -127,7 +127,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | 5.25 | The container is restricted from acquiring additional privileges | Applied | `security_opt: [no-new-privileges:true]` per service, and the daemon default (2.14). All 10 running containers. Verified on nf-hotel 2026-10-24 (RC-193, `/root/cis-evidence-after.txt`). | compose; ev:containers |
 | 5.26 | Container health is checked at runtime | Applied with one exception | As 4.6: 10 of 11 are `healthy`, and the deploy checks the site after each release. Verified on nf-hotel 2026-10-28 (RC-244, `/root/cis-evidence-after-host-settings.txt`). | compose; ev:containers (`health`) |
 | 5.27 | Docker commands always use the latest version of their image | Applied | CD deploys the image digests of the release, never a moving tag | `ops/scripts/deploy-release.sh` |
-| 5.28 | The PIDs cgroup limit is used | Pending VM | `pids_limit` per service. On 2026-10-28, 9 of 11 containers had it. Alloy (256; 15 in use) and its socket proxy (128; 5 in use) get it in the change of RC-244, which the next release deploys; checked again at the MIL-023 gate | compose; ev:containers (`pids_limit`) |
+| 5.28 | The PIDs cgroup limit is used | Applied | `pids_limit` per service. On 2026-10-28, 9 of 11 containers had it; Alloy (256) and its socket proxy (128) got it in the change of RC-244. On 2026-11-05, `docker inspect` on `nf-hotel` showed a `pids_limit` on all 11 containers, Alloy 256 and the socket proxy 128 among them (MIL-023 gate, RC-294) | compose; ev:containers (`pids_limit`) |
 | 5.31 | The Docker socket is not mounted inside any container | Applied with one exception | One container mounts it: `socket-proxy` of `ops/deploy/alloy` (ADR-0020). The `:ro` flag does not limit the API, so the limit is the proxy's own rules: GET of containers (list, inspect, logs) and networks (list) only, every POST refused, and no image, volume, exec or info call. The proxy is on an internal network with no route out, and only Alloy reaches it. Alloy has no socket. `ops/tests/test-alloy-start.sh` checks the allowed and the refused calls in CI | compose; ev:containers (`mounts`); CI |
 
 ### 6 and 7 Operations and Swarm
@@ -215,17 +215,17 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | # | Item | Status | How, or why not | Evidence |
 | --- | --- | --- | --- | --- |
 | 7.1.1 to 7.1.10 | Permissions on `/etc/passwd`, `/etc/shadow`, `/etc/group`, `/etc/gshadow` and their backups | Applied | `passwd`, `group` and `passwd-` `root:root 644`; `shadow`, `gshadow` and `shadow-` `root:shadow 640`. Verified on nf-hotel 2026-10-28 (RC-244, `/root/cis-evidence-after-host-settings.txt`). | ev:accounts (`stat`) |
-| 7.1.11, 7.1.12 | No world-writable files, no unowned files or folders | Deferred | No world-writable file. One file has no group: `/opt/nfhotel-legacy/deployment/secrets/ConnectionStrings__HotelDatabase` (owner root, group 1654, mode 440), left from the deployment before MIL-021. S01 decides whether `/opt/nfhotel-legacy` is still needed; until then, `chgrp root` on the file closes the item | ev:accounts (`find`) |
+| 7.1.11, 7.1.12 | No world-writable files, no unowned files or folders | Deferred | No world-writable file. One file has no group: `/opt/nfhotel-legacy/deployment/secrets/ConnectionStrings__HotelDatabase` (owner root, group 1654, mode 440), left from the deployment before MIL-021 and still there on 2026-11-05. S01 decided in chat on 2026-11-05 to keep `/opt/nfhotel-legacy` as it is ("Behold hvis det er nemmest", keep it if that is easiest), so no `chgrp` was run; the file is readable by root only, and the row stays Deferred with that decision as its reason (RC-294) | ev:accounts (`find`) |
 | 7.2.x | Shadowed passwords, no empty password fields, no duplicate UIDs, GIDs, user or group names | Applied | No empty password field; `pwck -r` and `grpck -r` pass. Verified on nf-hotel 2026-10-28 (RC-244, `/root/cis-evidence-after-host-settings.txt`). | ev:accounts; `pwck -r`, `grpck -r` |
 
 ## Summary
 
 | Benchmark | Applied | Pending VM | Not applicable | Deferred |
 | --- | --- | --- | --- | --- |
-| Docker | 44 | 2 | 6 | 6 |
+| Docker | 46 | 0 | 6 | 6 |
 | Debian 12 | 24 | 0 | 6 | 14 |
 
-The counts are by row; a row that covers several items counts once. Applied counts the rows Applied with an exception too. What closes criterion 1: the two Pending VM rows (5.3, 5.28) are Applied once the release with the Alloy limits runs on `nf-hotel`, checked by `ops/scripts/cis-evidence.sh` at the MIL-023 gate.
+The counts are by row; a row that covers several items counts once. Applied counts the rows Applied with an exception too. Criterion 1 is met since 2026-11-05: the two rows that were Pending VM (5.3, 5.28) are Applied, read with `docker inspect` on `nf-hotel` (the fields `ops/scripts/cis-evidence.sh` reads) at the MIL-023 gate (RC-294); no row is Pending VM.
 
 ---
 
@@ -233,7 +233,4 @@ The counts are by row; a row that covers several items counts once. Applied coun
 [DSA-001]: ./devsecops-assessment.md
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
-[717dc18]: https://github.com/NF-Hotel/NFHotel/commit/717dc18e7bd3a6064272ef8fc9eb9ae123b89e55
-[4ff81cc]: https://github.com/NF-Hotel/NFHotel/commit/4ff81ccd0f1d43a160f2f45d72845e942cf5728e
-[6ca419b]: https://github.com/NF-Hotel/NFHotel/commit/6ca419bfc4ecf3eddee0c5244acea0009cc564d5
 [102cae2]: https://github.com/NF-Hotel/NFHotel/commit/102cae2e4dd44d67b4d8c71f0ad731456d1938e5
