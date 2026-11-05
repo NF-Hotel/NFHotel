@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-062: gate passed (RC-293, Go) after the first deploy with the prune; the code row deployed | [5bdab74] |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-023: gate passed (RC-294, Go); CIS-001 and ADR-0020 amended at the gate | [803ceae] |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-063 (plan review RC-295, Go) | [da64c2d] |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | The code row of MIL-063 (code review RC-296, Go); RC-296 on the row of MIL-063 | [9733183] |
 
 ---
 
@@ -84,6 +84,8 @@ updated whenever an artifact instance is created or reviewed.
 | The code of MIL-061: `ops/scripts/deploy-services.sh`, `ops/scripts/lib/stack.sh`, the compose files and settings examples of `ops/deploy/nfhotel-web`, `nfhotel-api`, `market-analysis`, `benchmark` and `nginx`, `ops/tests/test-service-networks.sh` with its job in `.github/workflows/ops-ci.yaml`, and the tests that follow the move | Shell, compose and workflow files (deployed on `nf-hotel` by CD run 42066748612 on 2026-11-05) | - | - | [MIL-061] tasks 2 to 5 | - | [RC-288], [RC-289] |
 | [MIL-062] | Milestone (Accepted, Go; gate passed 2026-11-05, RC-293) | en | it | [BC-001], [ADR-0018], [ADR-0021], [ADR-0038], [MIL-021], [MIL-023] | the command `prune` of `ops/scripts/deploy-release.sh`, its tests in `ops/tests/test-deploy-release.sh`, the wiki pages Alerts, CI-CD and Proxmox Deployment | [RC-290], [RC-291] (the code), [RC-293] (the gate) |
 | The code of MIL-062: the command `prune` of `ops/scripts/deploy-release.sh` and its nine checks in `ops/tests/test-deploy-release.sh` | Shell (deployed on `nf-hotel` by CD run 42078898723 on 2026-11-05, which removed 352 images) | - | - | [MIL-062] tasks 1 and 2 | - | [RC-291], [RC-293] |
+| [MIL-063] | Milestone (Accepted, Go) | en | it | [BC-001], [ADR-0007], [ADR-0021], [ADR-0038], [MIL-021] | the wait for port 22 in `scope` of `ops/scripts/cd-steps.sh`, its tests in `ops/tests/test-cd-steps.sh`, the "Does" row of the CD workflow on the wiki page Workflows | [RC-295], [RC-296] (the code) |
+| The code of MIL-063: `wait_reach` and the wait in `scope` of `ops/scripts/cd-steps.sh`, and its checks in `ops/tests/test-cd-steps.sh` | Shell (built, not yet run by a deploy) | - | - | [MIL-063] tasks 1 and 2 | - | [RC-296] |
 | [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
 | [ADR-0031] | ADR (Accepted; decisions 2 and 3 added 2026-10-26) | - | - | ADR-0005, ADR-0013, [ADR-0004], ADR-0024, MIL-020, MIL-043 | the sign-in keys and the benchmark run tracker of `src/NFHotel.Web`, [MIL-046] | [RC-227], [RC-239] |
 | [MIL-056] | Milestone (Accepted, Go; gate passed 2026-11-05 after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding) | en | it | [BC-001], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | [ADR-0035], `scripts/dev-up.sh --lite`, `ops/scripts/lib/`, the Ops CI test and the macOS job, the wiki page Local Development Deploy | [RC-271], [RC-272], [RC-286] |
@@ -250,6 +252,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-060]: ../milestones/mil-060-dependabot-nuget-lock-files.md
 [MIL-061]: ../milestones/mil-061-python-services-network.md
 [MIL-062]: ../milestones/mil-062-prune-old-release-images.md
+[MIL-063]: ../milestones/mil-063-cd-scope-waits-for-the-tailnet.md
 [RC-282]: ./reviews/rc-282-mil-060.md
 [MIL-046]: ../milestones/mil-046-finished-run-not-interrupted.md
 [ADR-0031]: ../adr/adr-0031-state-that-survives-a-deploy.md
@@ -262,6 +265,8 @@ updated whenever an artifact instance is created or reviewed.
 [RC-272]: ./reviews/rc-272-mil-056-code.md
 [RC-286]: ./reviews/rc-286-mil-056-gate.md
 [RC-294]: ./reviews/rc-294-mil-023-gate.md
+[RC-295]: ./reviews/rc-295-mil-063.md
+[RC-296]: ./reviews/rc-296-mil-063-code.md
 [RC-287]: ./reviews/rc-287-mil-061.md
 [RC-288]: ./reviews/rc-288-mil-061-code.md
 [RC-289]: ./reviews/rc-289-mil-061-gate.md
@@ -289,5 +294,5 @@ updated whenever an artifact instance is created or reviewed.
 [RC-245]: ./reviews/rc-245-mil-048-plan.md
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
-[5bdab74]: https://github.com/NF-Hotel/NFHotel/commit/5bdab7435b5c0e20403dbc71a3cc782bb0913bba
-[803ceae]: https://github.com/NF-Hotel/NFHotel/commit/803ceae78c9552d30230894be4f86c724a730859
+[da64c2d]: https://github.com/NF-Hotel/NFHotel/commit/da64c2d69a7595eb0b46f7125b504b3e0268e97f
+[9733183]: https://github.com/NF-Hotel/NFHotel/commit/97331830763d21212772ed14e622bc57b10c1724

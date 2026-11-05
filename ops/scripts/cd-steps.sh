@@ -30,8 +30,9 @@
 #                  to the migrate command (backup, then the script as nfhotel_migrator),
 #                  and deploys only when that succeeded (MIL-022 task 6)
 #   scope          check what this CI node reaches in the tailnet: port 22 of the VM must
-#                  answer; its other ports are warnings, and the peers seen are listed (MIL-021
-#                  criterion 7)
+#                  answer, waited for up to SCOPE_WAIT_SECONDS (default 60), because the path
+#                  from a node that has just joined is not always up at once (MIL-063); its
+#                  other ports are warnings, and the peers seen are listed (MIL-021 criterion 7)
 #   summary        append the audit record of the run to GITHUB_STEP_SUMMARY
 #
 # Environment (set by the workflow through env:, never interpolated):
@@ -196,6 +197,25 @@ reach() {
   timeout 5 bash -c "exec 3<>/dev/tcp/$VM_HOST/$1" 2>/dev/null
 }
 
+# wait_reach <port> <seconds>: try reach until the port answers or the seconds have passed, and
+# print the seconds it took (MIL-063). A node that has just joined the tailnet may need a moment
+# before its path to the VM is up: on 2026-11-05 a deploy failed five seconds after the join,
+# while the VM answered ten minutes later. A port that must answer gets that moment; the ports
+# that must not answer are tried once.
+wait_reach() {
+  local port="$1" deadline="$2" start now
+  start="$(date +%s)"
+  while :; do
+    now="$(date +%s)"
+    if reach "$port"; then
+      echo "$((now - start))"
+      return 0
+    fi
+    ((now - start < deadline)) || return 1
+    sleep 1
+  done
+}
+
 # scope: what this CI node reaches in the tailnet (MIL-021 criterion 7, ADR-0007
 # decision 4). Port 22 of the VM must answer, and its other ports should not: the policy
 # grants tag:ci only tcp:22 of tag:nfhotel-vm, and its tests deny the other nodes. An open
@@ -203,18 +223,19 @@ reach() {
 # policy is seen without blocking a release. The peers seen are listed for the record.
 scope() {
   [[ "${VM_HOST:-}" =~ ^[a-z0-9.-]+$ ]] || fail "set the environment variable NFHOTEL_VM_HOST of production"
-  local peers others port open=()
+  local peers others port open=() wait_seconds="${SCOPE_WAIT_SECONDS:-60}" waited
   peers="$(tailscale status --json | jq -r '(.Peer // {}) | to_entries[] | .value.DNSName | sub("[.]$"; "")')" ||
     fail "cannot read the tailnet status"
   others="$(grep -v -e "^${VM_HOST}\$" -e "^${VM_HOST}[.]" <<<"$peers" | grep . || true)"
   # The ports are variables for the tests only.
   local ssh_port="${SCOPE_SSH_PORT:-22}" other_ports="${SCOPE_OTHER_PORTS:-80 443 5432 8081}"
-  reach "$ssh_port" || fail "port $ssh_port of $VM_HOST does not answer"
+  waited="$(wait_reach "$ssh_port" "$wait_seconds")" ||
+    fail "port $ssh_port of $VM_HOST did not answer within $wait_seconds s"
   for port in $other_ports; do
     if reach "$port"; then open+=("$port"); fi
   done
   {
-    echo "- Port $ssh_port of $VM_HOST answers."
+    echo "- Port $ssh_port of $VM_HOST answers (after $waited s)."
     if ((${#open[@]})); then
       echo "- **Also open from tag:ci:** ${open[*]} (the policy should allow only $ssh_port)."
     else
