@@ -93,7 +93,7 @@ The database API. It is the only service that holds the database login and the k
 | `Staff__InitialManager__*` | The first Manager, made at start when no staff account exists. The password has at least 12 characters and must be changed at the first sign-in. Delete the password line afterwards |
 | `Database__MigrateOnStart` | Apply the pending migrations when the API starts. The deploy relies on it |
 | `MarketAnalysisService__BaseUrl`, `__ApiKey`, `__TimeoutSeconds`, `__PollIntervalSeconds`, `__RunDeadlineSeconds` | Where the API starts market analysis runs (`market-analysis-api:8000`) and the key it sends as `X-API-Key` (**Secret**, never logged). The timeout (10 seconds, at most 60) is for one call, because the API follows a run by its id and keeps no request open; it asks for the state every `PollIntervalSeconds` (5) and gives up a run after `RunDeadlineSeconds` (3600). An empty address makes the analysis page say the service is not set up |
-| `NFHOTEL_API_NETWORK`, `NFHOTEL_DB_NETWORK` | Docker networks shared with the web service and with PostgreSQL |
+| `NFHOTEL_API_NETWORK`, `NFHOTEL_DB_NETWORK`, `NFHOTEL_PYTHON_NETWORK` | Docker networks shared with the web service and nginx, with PostgreSQL, and with the web service and the Python services (ADR-0039) |
 
 ### `nfhotel-web/nfhotel-web.env`
 
@@ -108,7 +108,7 @@ The web application. It has no database login: it calls the API.
 | `HotelTime__TimeZoneId` | Time zone of the hotel |
 | `HolidayApi__BaseUrl`, `__TimeoutSeconds`, `__ApiKey` | The holiday calendar of the analysis service. The key must equal `API_TOKEN` of `market-analysis.env` |
 | `BenchmarkService__BaseUrl`, `__TimeoutSeconds`, `__Token` | The benchmark service. The token is `NFBENCH_API_TOKEN` of `benchmark.env`. Empty means the Start page says the service is not set up |
-| `NFHOTEL_PROXY_NETWORK`, `NFHOTEL_API_NETWORK` | Docker networks shared with nginx and with the API |
+| `NFHOTEL_PROXY_NETWORK`, `NFHOTEL_API_NETWORK`, `NFHOTEL_PYTHON_NETWORK` | Docker networks shared with nginx, with the API, and with the API and the Python services (ADR-0039) |
 
 ### `market-analysis/market-analysis.env`
 
@@ -121,7 +121,7 @@ The market analysis service, built from a pinned commit of `NF-Hotel/notebook-ma
 | `CORS_ALLOWED_ORIGINS` | Only satisfies the production rule: the web application calls from the server, not from a browser |
 | `DATA_SOURCE` | `csv`: the service serves holidays for now and reads no market data |
 | `AI_PROVIDER`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `AI_TIMEOUT_SECONDS` | The AI model of a run. The deploy writes `OLLAMA_MODEL` from the default AI model chosen in the back office. Empty means no AI narrative |
-| `NFHOTEL_PROXY_NETWORK`, `NFHOTEL_LLM_NETWORK`, `NFHOTEL_API_NETWORK` | Docker networks shared with nginx, with Ollama and with the web application and API |
+| `NFHOTEL_PYTHON_NETWORK`, `NFHOTEL_LLM_NETWORK` | Docker networks shared with the web application and the API, and with Ollama; nginx is on neither (ADR-0039) |
 | `MARKET_ANALYSIS_REPO`, `MARKET_ANALYSIS_REF` | Repository and commit the image is built from. Upgrade by changing the commit and regenerating `requirements.lock` (see the README of the folder) |
 
 ### `ollama/ollama.env`
@@ -140,7 +140,7 @@ Ollama. `OLLAMA_PULL_MODELS` lists the models the deploy pulls, separated by spa
 | `NFBENCH_OLLAMA_URL` | The Ollama of NFHotel |
 | `NFBENCH_DATASET` | Path of the dataset **inside the image**. The built-in one is `/opt/benchmark/data/example/synthetic_hotel_bookings.csv` |
 | `NFBENCH_DATA_DIR` | Where results and unsent results are kept (the volume `results`) |
-| `NFHOTEL_API_NETWORK`, `NFHOTEL_LLM_NETWORK` | Docker networks made by NFHotel |
+| `NFHOTEL_PYTHON_NETWORK`, `NFHOTEL_LLM_NETWORK` | Docker networks made by NFHotel: the Python services with the web application and the API (ADR-0039), and Ollama |
 | `BENCHMARK_REPO`, `BENCHMARK_REF` | Repository and commit the image is built from. Upgrade by changing the commit |
 
 ### `nginx/nginx.env`
@@ -155,8 +155,6 @@ The proxy that publishes the site. No secret.
 | `NGINX_HSTS` | `Strict-Transport-Security` value. Empty with a self-signed certificate; `max-age=31536000` with a real one |
 | `NGINX_TLS_DIR` | Folder with `fullchain.pem` and `privkey.pem` (git-ignored) |
 | `UPSTREAM_HOST`, `UPSTREAM_PORT` | The web application |
-| `ANALYSIS_*`, `ANALYSIS_API_*` | Host names and upstreams of the analysis notebook and API (`*.localhost` locally) |
-| `NGINX_INTERNAL_PORT` | Loopback port of the internal listener for the analysis (not public) |
 | `NFHOTEL_PROXY_NETWORK` | Docker network shared with the web service |
 
 ### `cloudflared/cloudflared.env`

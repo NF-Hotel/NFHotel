@@ -1,6 +1,6 @@
 # Containers and Images
 
-**Decisions:** [ADR-0003](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0003-proxmox-vm-for-services.md), [ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md), [ADR-0024](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0024-secrets-as-files.md). **Work:** MIL-002, MIL-022, MIL-023, MIL-049. **Why each product:** [Technology Choices](Technology-Choices).
+**Decisions:** [ADR-0003](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0003-proxmox-vm-for-services.md), [ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md), [ADR-0024](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0024-secrets-as-files.md), [ADR-0039](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0039-python-services-network.md). **Work:** MIL-002, MIL-022, MIL-023, MIL-049, MIL-061. **Why each product:** [Technology Choices](Technology-Choices).
 
 Every container of NF Hotel: where it runs, what it does, which image it runs and where that image comes from, and how it is locked down. For how to deploy them, see [Proxmox Deployment](Proxmox-Deployment); for their settings files, see [Environment Files](Environment-Files).
 
@@ -14,9 +14,11 @@ flowchart TB
   subgraph VM["nf-hotel (Proxmox VM, Debian 13)"]
     cloudflared --> nginx
     nginx --> web[nfhotel-web]
-    nginx --> mapi[market-analysis-api]
     web --> api[nfhotel-api]
+    web --> mapi[market-analysis-api]
     web --> bench[benchmark]
+    api --> mapi
+    bench --> api
     api --> postgres
     relay[postgres-tailnet relay] --> postgres
     bench --> ollama
@@ -49,13 +51,13 @@ Every service publishes no host port unless the table says so; the others are re
 | Service (compose folder) | What it does | Image | Registry | Networks | Published port |
 | --- | --- | --- | --- | --- | --- |
 | `cloudflared` (`cloudflared`) | Outbound tunnel to Cloudflare; forwards the public host name to nginx (ADR-0028) | `cloudflare/cloudflared:2026.10.3` | Docker Hub | proxy | none |
-| `nginx` (`nginx`) | Reverse proxy and TLS end: HTTPS on the tailnet, the public listener for the tunnel, the internal listener for the market analysis | `nginx:1.29-alpine` | Docker Hub | proxy, api | 80 and 443 (tailnet and LAN, firewalled to 80 and 443 only); `127.0.0.1:8081` |
-| `nfhotel-web` (`nfhotel-web`) | The Blazor web application: guest pages and back office | `ghcr.io/nf-hotel/nfhotel-web` | GHCR (our build) | proxy, api | none |
-| `nfhotel-api` (`nfhotel-api`) | NFHotel.Api: the only container that reaches the database (ADR-0004) | `ghcr.io/nf-hotel/nfhotel-api` | GHCR (our build) | api, db | none |
+| `nginx` (`nginx`) | Reverse proxy and TLS end: HTTPS on the tailnet and the public listener for the tunnel; no route to the Python services (ADR-0039) | `nginx:1.29-alpine` | Docker Hub | proxy, api | 80 and 443 (tailnet and LAN, firewalled to 80 and 443 only) |
+| `nfhotel-web` (`nfhotel-web`) | The Blazor web application: guest pages and back office | `ghcr.io/nf-hotel/nfhotel-web` | GHCR (our build) | proxy, api, python | none |
+| `nfhotel-api` (`nfhotel-api`) | NFHotel.Api: the only container that reaches the database (ADR-0004) | `ghcr.io/nf-hotel/nfhotel-api` | GHCR (our build) | api, db, python | none |
 | `postgres` (`postgres`) | PostgreSQL 16, the production database | `postgres:16-alpine` | Docker Hub | db | none |
 | `relay` (`postgres-tailnet`) | HAProxy in TCP mode: the team's DBeaver access to PostgreSQL (ADR-0034) | `haproxy:3.2-alpine` | Docker Hub | db, published | Port 5432 on the tailnet address of `nf-hotel` only |
-| `market-analysis-api` (`market-analysis`) | The market analysis service of `NF-Hotel/notebook-market-analysis` | `ghcr.io/nf-hotel/market-analysis` | GHCR (our build) | proxy, llm, api | none |
-| `benchmark` (`benchmark`) | The benchmark service of `NF-Hotel/notebook-benchmark`: compares the local AI models | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | llm, api | none |
+| `market-analysis-api` (`market-analysis`) | The market analysis service of `NF-Hotel/notebook-market-analysis` | `ghcr.io/nf-hotel/market-analysis` | GHCR (our build) | python, llm | none |
+| `benchmark` (`benchmark`) | The benchmark service of `NF-Hotel/notebook-benchmark`: compares the local AI models | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | python, llm | none |
 | `results-owner` (`benchmark`) | One-shot job before `benchmark`: gives the results volume to the service's user (MIL-045), with no network | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | none | none |
 | `ollama` (`ollama`) | Local model server for the benchmark and the market analysis | `ollama/ollama:0.40.8` | Docker Hub | llm | none |
 | `alloy` (`alloy`) | Agent that sends the logs and metrics of the VM to the monitoring LXC | `grafana/alloy:v1.11.3` | Docker Hub | internal, egress, apps | none |
@@ -65,12 +67,13 @@ Every service publishes no host port unless the table says so; the others are re
 
 | Network | Who is on it | Why |
 | --- | --- | --- |
-| `nfhotel-proxy` | cloudflared, nginx, web, market-analysis | What nginx may route to |
-| `nfhotel-api` | nginx, web, API, benchmark, market-analysis, Alloy | Calls between the applications, and their metrics to Alloy |
+| `nfhotel-proxy` | cloudflared, nginx, web | What nginx may route to |
+| `nfhotel-api` | nginx, web, API, Alloy | Calls between the .NET applications (nginx only for the two mobile routes), and their telemetry to Alloy |
+| `nfhotel-python` | web, API, market-analysis, benchmark | Calls to and from the Python services; nginx is not on it (ADR-0039) |
 | `nfhotel-db` | API, PostgreSQL, the relay | Only the API and the relay reach the database |
 | `nfhotel-llm` | Ollama, benchmark, market-analysis | Only the AI services reach the model server |
 
-A container on `nfhotel-proxy` cannot open the database, because it is not on `nfhotel-db`. This is the network part of ADR-0004 and [ADR-0011](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0011-postgresql-access-for-the-api.md).
+A container on `nfhotel-proxy` cannot open the database, because it is not on `nfhotel-db`. This is the network part of ADR-0004 and [ADR-0011](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0011-postgresql-access-for-the-api.md). It cannot open a connection to the Python services either, because it is not on `nfhotel-python` (ADR-0039); why the networks are kept apart is on [Network Isolation](Network-Isolation), and `ops/tests/test-service-networks.sh` keeps this table true on every pull request.
 
 ## The containers elsewhere
 

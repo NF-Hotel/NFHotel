@@ -22,19 +22,21 @@ Docker container inside that VM (decision: ADR-0003).
 - Only nginx publishes ports to the outside: port 443 serves only the NFHotel web application over
   TLS 1.2 and 1.3, and port 80 answers only a redirect to HTTPS (ADR-0006). Any host name sent to
   these ports reaches NFHotel.
-- The analysis notebook and API are served by a second nginx listener on `127.0.0.1:8081`
-  inside the VM. Reach them with an SSH tunnel (below).
+- The Python services, the market analysis and the benchmark, sit on the internal network
+  `nfhotel-python` with the web application and the API, which nginx is not on (ADR-0039). Nothing
+  outside the VM reaches them; a person reads them on the VM (below).
 - PostgreSQL sits on the Docker network `nfhotel-db`, created with `--internal`: it has no route
   out and no published port. Only the database API `nfhotel-api` joins it (ADR-0004).
 - The database API is the only process with the database login and the passport key. It sits on
-  `nfhotel-db` and on a second internal network, `nfhotel-api`, that it shares with the web
-  application. It publishes no port and nginx has no route to it. The web application proves
-  itself with a bearer token; a call without it gets 401.
+  `nfhotel-db`, on a second internal network, `nfhotel-api`, that it shares with the web
+  application and nginx (the two mobile routes only), and on `nfhotel-python` with the Python
+  services. It publishes no port. The web application proves itself with a bearer token; a call
+  without it gets 401.
 - Ollama sits on the network `nfhotel-llm`, joined only by the benchmark and the analysis service.
   It publishes no port and nginx does not route to it. The network has outbound access so Ollama
   can download models.
-- The proxy network `nfhotel-proxy` joins nginx, the web application, the analysis service and
-  the benchmark.
+- The proxy network `nfhotel-proxy` joins cloudflared, nginx and the web application; the analysis
+  service and the benchmark are not on it (ADR-0039).
 
 ## TLS
 
@@ -232,12 +234,13 @@ passed through to the VM is described in the comments of `ops/deploy/ollama/dock
 
 ## Reach the internal services
 
-```bash
-ssh -L 8081:127.0.0.1:8081 nfhotel@<vm address>
-```
+The Python services have no route through nginx and no published port (ADR-0039, [Network Isolation](Network-Isolation)).
+On the VM, `docker logs market-analysis-market-analysis-api-1` and `docker logs benchmark-benchmark-1` show their
+requests, and a one-off client on their network answers a health check:
 
-Then open `http://analysis.localhost:8081` (market analysis notebook)
-or `http://analysis-api.localhost:8081` (analysis API).
+```bash
+docker run --rm --network nfhotel-python curlimages/curl:8.10.1 -s http://market-analysis-api:8000/health
+```
 
 ## Known limits
 
