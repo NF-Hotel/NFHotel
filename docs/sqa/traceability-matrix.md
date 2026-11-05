@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-062 (plan review RC-290, Go) | [6e16eae] |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | The code row of MIL-062 (code review RC-291, Go); RC-291 on the row of MIL-062 | [c258f9b] |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-048: gate passed (RC-292, Go) with the test of the public address from outside by S01 | [37e47e5] |
 
 ---
 
@@ -88,7 +88,7 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0031] | ADR (Accepted; decisions 2 and 3 added 2026-10-26) | - | - | ADR-0005, ADR-0013, [ADR-0004], ADR-0024, MIL-020, MIL-043 | the sign-in keys and the benchmark run tracker of `src/NFHotel.Web`, [MIL-046] | [RC-227], [RC-239] |
 | [MIL-056] | Milestone (Accepted, Go; gate passed 2026-11-05 after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding) | en | it | [BC-001], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | [ADR-0035], `scripts/dev-up.sh --lite`, `ops/scripts/lib/`, the Ops CI test and the macOS job, the wiki page Local Development Deploy | [RC-271], [RC-272], [RC-286] |
 | [ADR-0035] | ADR (Accepted) | - | - | [MIL-056], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | the light mode of `scripts/dev-up.sh` | [RC-273] |
-| [MIL-048] | Milestone (Accepted, Go; tasks 4 and 6 open: the Tailscale grant and the people of the team) | en | it | [BC-001], [ADR-0011], [ADR-0034], [MIL-023], CIS-001, [DSA-001] | [ADR-0034], `ops/scripts/db/team-roles.sql`, `ops/scripts/manage-team-db-users.sh`, `ops/deploy/postgres-tailnet/`, the rule for 5432 in `nfhotel.nft`, the wiki page Database-Access | [RC-245], [RC-247], [RC-285] (Go-with-conditions) |
+| [MIL-048] | Milestone (Accepted, Go; gate passed 2026-11-05, RC-292, after RC-285 Go-with-conditions) | en | it | [BC-001], [ADR-0011], [ADR-0034], [MIL-023], CIS-001, [DSA-001] | [ADR-0034], `ops/scripts/db/team-roles.sql`, `ops/scripts/manage-team-db-users.sh`, `ops/deploy/postgres-tailnet/`, the rule for 5432 in `nfhotel.nft`, the wiki page Database-Access | [RC-245], [RC-247], [RC-285] (Go-with-conditions), [RC-292] (the re-review, Go) |
 | [ADR-0034] | ADR (Accepted) | - | - | [MIL-048], [ADR-0011], ADR-0024, CIS-001, [DSA-001] | the team roles, the relay on the tailnet and the firewall rule of MIL-048 | [RC-247] |
 | [UC-007] | Use Case (Accepted) | en | it | [UCD-001], [US-001], [SA-001], [MIL-055] | [DM-004], [DICT-001], code and tests below | [RC-264] (Go with conditions) |
 | `docs/wiki/Price-Suggestions.md` | Wiki page (Proposed) | en | - | [MIL-055] task 10, [US-001], [UC-007] | - | - (not yet reviewed) |
@@ -266,6 +266,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-289]: ./reviews/rc-289-mil-061-gate.md
 [RC-290]: ./reviews/rc-290-mil-062.md
 [RC-291]: ./reviews/rc-291-mil-062-code.md
+[RC-292]: ./reviews/rc-292-mil-048-gate-re-review.md
 [RC-273]: ./reviews/rc-273-adr-0035.md
 [RC-283]: ./reviews/rc-283-mil-046-gate.md
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
@@ -286,5 +287,5 @@ updated whenever an artifact instance is created or reviewed.
 [RC-245]: ./reviews/rc-245-mil-048-plan.md
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
-[6e16eae]: https://github.com/NF-Hotel/NFHotel/commit/6e16eae96a19ab495fc88f12f08d89ef6b016f92
 [c258f9b]: https://github.com/NF-Hotel/NFHotel/commit/c258f9bff2ba46862f45fc7b78be6080e7c959ff
+[37e47e5]: https://github.com/NF-Hotel/NFHotel/commit/37e47e5c542544f56957be3d8755384ac3d34fa7
