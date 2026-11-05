@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the failed first attempt of CD run #170 on 2026-11-05, read in the journal of the VM, and S01's request in chat to plan the fix ("Ja, planlæg"); S01 accepted the plan in chat on 2026-11-05 ("Accepter planen") after RC-295 Go | pending |
+| 2026-11-05 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the failed first attempt of CD run #170 on 2026-11-05, read in the journal of the VM, and S01's request in chat to plan the fix ("Ja, planlæg"); S01 accepted the plan in chat on 2026-11-05 ("Accepter planen") after RC-295 Go | [da64c2d] |
 
 ---
 
@@ -83,3 +83,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [ADR-0021]: ../adr/adr-0021-automatic-deploy-when-green.md
 [ADR-0038]: ../adr/adr-0038-approval-before-a-deploy.md
 [MIL-021]: ./mil-021-secure-cicd-foundation.md
+[da64c2d]: https://github.com/NF-Hotel/NFHotel/commit/da64c2d69a7595eb0b46f7125b504b3e0268e97f
