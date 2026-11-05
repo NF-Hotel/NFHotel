@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the re-review that RC-285 asked for, with the evidence read on 2026-11-05, the answers of S01 in chat and the test of the public address from outside the home network by S01 | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the re-review that RC-285 asked for, with the evidence read on 2026-11-05, the answers of S01 in chat and the test of the public address from outside the home network by S01 | [37e47e5] |
 
 ---
 
@@ -70,3 +70,4 @@ Go: every criterion passes on the evidence of 2026-11-05, the statements of S01 
 [RC-245]: ./rc-245-mil-048-plan.md
 [RC-247]: ./rc-247-mil-048-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[37e47e5]: https://github.com/NF-Hotel/NFHotel/commit/37e47e5c542544f56957be3d8755384ac3d34fa7
