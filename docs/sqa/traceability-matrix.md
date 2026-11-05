@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-056: gate passed (RC-286, Go) after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding | [bb59aa4] |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-061 (plan review RC-287, Go) | pending |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-061 (plan review RC-287, Go) | [ee31f9e] |
 
 ---
 
@@ -277,3 +277,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [bb59aa4]: https://github.com/NF-Hotel/NFHotel/commit/bb59aa4cca8d7d5974d76174bfc69283d3559aac
+[ee31f9e]: https://github.com/NF-Hotel/NFHotel/commit/ee31f9e0e0468453f3b2690a4571c2719b7cf3d0

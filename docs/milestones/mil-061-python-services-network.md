@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the target design of the wiki page Network Isolation, written by a developer of S01 and merged on 2026-11-05 (pull request #501), which S01 asked in chat to build ("Nu må du gerne starte med at lave det som Jens ønsker det", now build it as Jens wants it); S01 accepted the plan in chat on 2026-11-05 ("Accepter planen") after RC-287 Go | pending |
+| 2026-11-05 | Accepted | mikemike | AI as stand-in for S01 | Initial version; the target design of the wiki page Network Isolation, written by a developer of S01 and merged on 2026-11-05 (pull request #501), which S01 asked in chat to build ("Nu må du gerne starte med at lave det som Jens ønsker det", now build it as Jens wants it); S01 accepted the plan in chat on 2026-11-05 ("Accepter planen") after RC-287 Go | [ee31f9e] |
 
 ---
 
@@ -100,3 +100,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-015]: ./mil-015-database-api.md
 [MIL-020]: ./mil-020-start-benchmark-run.md
 [MIL-026]: ./mil-026-market-analysis-report.md
+[ee31f9e]: https://github.com/NF-Hotel/NFHotel/commit/ee31f9e0e0468453f3b2690a4571c2719b7cf3d0
