@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-023 names its review records since RC-091, the two restore drills (RC-505, RC-284) and ADR-0020 | [c6a8e10] |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-048 (gate review RC-285, Go-with-conditions) and ADR-0034 with their review records, missing since 2026-10-28 | [e58a634] |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-056: gate passed (RC-286, Go) after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding | [bb59aa4] |
 
 ---
 
@@ -81,7 +81,7 @@ updated whenever an artifact instance is created or reviewed.
 | The code of MIL-060: `src/NFHotel.Web/NFHotel.Web.csproj` and `src/NFHotel.Web/packages.lock.json` (the commit of Dependabot from pull request #489) and `tests/NFHotel.Web.Tests/packages.lock.json` (three lines) | Project file and lock files (built, not yet merged) | - | - | [MIL-060] task 1 | - | [RC-282] (the evidence of criteria 1 and 2) |
 | [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
 | [ADR-0031] | ADR (Accepted; decisions 2 and 3 added 2026-10-26) | - | - | ADR-0005, ADR-0013, [ADR-0004], ADR-0024, MIL-020, MIL-043 | the sign-in keys and the benchmark run tracker of `src/NFHotel.Web`, [MIL-046] | [RC-227], [RC-239] |
-| [MIL-056] | Milestone (Accepted, Go; task 7 open: the test on a Mac by S02) | en | it | [BC-001], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | [ADR-0035], `scripts/dev-up.sh --lite`, `ops/scripts/lib/`, the Ops CI test and the macOS job, the wiki page Local Development Deploy | [RC-271], [RC-272] |
+| [MIL-056] | Milestone (Accepted, Go; gate passed 2026-11-05 after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding) | en | it | [BC-001], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | [ADR-0035], `scripts/dev-up.sh --lite`, `ops/scripts/lib/`, the Ops CI test and the macOS job, the wiki page Local Development Deploy | [RC-271], [RC-272], [RC-286] |
 | [ADR-0035] | ADR (Accepted) | - | - | [MIL-056], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | the light mode of `scripts/dev-up.sh` | [RC-273] |
 | [MIL-048] | Milestone (Accepted, Go; tasks 4 and 6 open: the Tailscale grant and the people of the team) | en | it | [BC-001], [ADR-0011], [ADR-0034], [MIL-023], CIS-001, [DSA-001] | [ADR-0034], `ops/scripts/db/team-roles.sql`, `ops/scripts/manage-team-db-users.sh`, `ops/deploy/postgres-tailnet/`, the rule for 5432 in `nfhotel.nft`, the wiki page Database-Access | [RC-245], [RC-247], [RC-285] (Go-with-conditions) |
 | [ADR-0034] | ADR (Accepted) | - | - | [MIL-048], [ADR-0011], ADR-0024, CIS-001, [DSA-001] | the team roles, the relay on the tailnet and the firewall rule of MIL-048 | [RC-247] |
@@ -252,6 +252,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-239]: ./reviews/rc-239-mil-046-code.md
 [RC-271]: ./reviews/rc-271-mil-056-dev-stack-without-kvm.md
 [RC-272]: ./reviews/rc-272-mil-056-code.md
+[RC-286]: ./reviews/rc-286-mil-056-gate.md
 [RC-273]: ./reviews/rc-273-adr-0035.md
 [RC-283]: ./reviews/rc-283-mil-046-gate.md
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
@@ -267,10 +268,10 @@ updated whenever an artifact instance is created or reviewed.
 [RC-244]: ./reviews/rc-244-mil-023-host-settings.md
 [RC-505]: ./reviews/rc-505-restore-drill-2026-10-20.md
 [RC-284]: ./reviews/rc-284-restore-drill-2026-11-05.md
-[c6a8e10]: https://github.com/NF-Hotel/NFHotel/commit/c6a8e107296f35bf1ef99511403cd752e79c5a1a
 [MIL-048]: ../milestones/mil-048-team-database-access.md
 [ADR-0034]: ../adr/adr-0034-team-database-access.md
 [RC-245]: ./reviews/rc-245-mil-048-plan.md
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [e58a634]: https://github.com/NF-Hotel/NFHotel/commit/e58a6341cf1d489e7256b297eb9764d1ecb56332
+[bb59aa4]: https://github.com/NF-Hotel/NFHotel/commit/bb59aa4cca8d7d5974d76174bfc69283d3559aac

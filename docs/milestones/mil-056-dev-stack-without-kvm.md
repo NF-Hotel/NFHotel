@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Accepted | mikemike | S01 | Initial version; a developer of the mobile track (S02) cannot start the API on macOS, because `scripts/dev-up.sh` needs `/dev/kvm`, and S01 asked in chat on 2026-11-02 to plan a way that works ("Ja, planlæg det"); S01 accepted the plan in chat ("Yes, accept and build") after RC-271 Go | [d566246] |
+| 2026-11-02 | Deprecated | mikemike | S01 | Initial version; a developer of the mobile track (S02) cannot start the API on macOS, because `scripts/dev-up.sh` needs `/dev/kvm`, and S01 asked in chat on 2026-11-02 to plan a way that works ("Ja, planlæg det"); S01 accepted the plan in chat ("Yes, accept and build") after RC-271 Go | [d566246] |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Criterion 3, task 7 and the macOS tester row amended by S01's decision in chat on 2026-11-05 ("ændre til nu", amend it now): the gate takes the run without KVM on the machine of S01 (RC-272) and the `linux/arm64` manifests of the images, and the run on a Mac by a developer of S02 moves to S02's onboarding; accepted after RC-286 Go | [bb59aa4] |
 
 ---
 
@@ -36,7 +37,7 @@ The answer is a second, lighter local mode: the containers of the deployed shape
 | --- | --- | --- | --- |
 | 1 | `dev-up.sh --lite` on a clean clone starts the stack, and `https://localhost:8443/admin/login` and `POST https://localhost:8443/mobile-api/api/auth/login` answer, in an Ops CI test on Linux | Yes | No |
 | 2 | The light mode runs with 6 GiB of memory for Docker or less, and needs no `/dev/kvm` and no privileged container | Yes | No |
-| 3 | A developer of S02 runs `dev-up.sh --lite` on a Mac (Apple Silicon) and signs in to the back office and to the mobile app against it; the result is written in the review record | Yes | No |
+| 3 | The light mode runs on a developer's machine without KVM: `dev-up.sh --lite --seed` starts the stack, the sign-in to the back office and to the routes of the mobile app succeeds there, and every image the light mode pulls or builds from has a `linux/arm64` manifest; the result is written in the review record. The run on an Apple Silicon Mac by a developer of S02 is recorded at S02's onboarding to the light mode, outside this gate (S01's decision in chat on 2026-11-05) | Yes | No |
 | 4 | A CI job on a macOS runner runs `dev-up.sh --check` and the portability check of the scripts, and both pass | Yes | No |
 | 5 | `e2e-stack.sh` and the light mode use the same library for the shared steps, and the end-to-end tests of MIL-027 still pass | Yes | No |
 | 6 | No secret is put on a command line, in the environment of a container or outside the settings folder of the stack, which is readable by its owner only (ADR-0024); only the passwords of the local development accounts are printed, as `dev-up.sh` does | Yes | No |
@@ -64,7 +65,7 @@ The answer is a second, lighter local mode: the containers of the deployed shape
 | --- | --- |
 | Owner | S01 |
 | Approving reviewer | S01 |
-| Tester on macOS | S02 |
+| Tester on macOS, at S02's onboarding, outside the gate | S02 |
 
 ## Target Date
 
@@ -80,7 +81,7 @@ The answer is a second, lighter local mode: the containers of the deployed shape
 | 4 | Portable scripts and a better check | Replace the GNU-only options in the scripts the light mode runs, tell a macOS user how to get bash 4, and point `--check` to `--lite` when KVM or memory is missing. | No | criteria 4, 7 |
 | 5 | Tests in Ops CI and on macOS | An Ops CI test that starts the light mode and calls the two addresses of criterion 1; a job on a macOS runner that runs `--check` and a portability check (no Docker there). | No | criteria 1, 4, 7 |
 | 6 | Docs | The macOS column and the light mode on the wiki page Local Development Deploy, the address of the mobile app, and both modes in `README.md`. | No | criterion 3 |
-| 7 | Test on a Mac and code review | A developer of S02 runs the light mode on a Mac and signs in from the back office and the mobile app; the review record against `QC-SH-001` and `QC-WF-001` holds the result. | No | criteria 3, 8 |
+| 7 | Test on a Mac and code review | The light mode is run on a developer's machine without KVM and the sign-ins from the back office and the routes of the mobile app are checked (S01, Windows 11 with Docker Desktop, RC-272); the review record against `QC-SH-001` and `QC-WF-001` holds the result. The run on a Mac by a developer of S02 moved to S02's onboarding by S01's decision of 2026-11-05; the title is kept so the sync keeps the issue. | No | criteria 3, 8 |
 
 ---
 
@@ -90,3 +91,4 @@ The answer is a second, lighter local mode: the containers of the deployed shape
 [ADR-0024]: ../adr/adr-0024-secrets-as-files.md
 [MIL-027]: mil-027-dast-and-end-to-end-tests.md
 [d566246]: https://github.com/NF-Hotel/NFHotel/commit/d5662462084d1fd23301de4d0e07db569a182d66
+[bb59aa4]: https://github.com/NF-Hotel/NFHotel/commit/bb59aa4cca8d7d5974d76174bfc69283d3559aac
