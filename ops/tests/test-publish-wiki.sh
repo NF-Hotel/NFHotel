@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tests of scripts/publish-wiki.sh (ADR-0022) against a local bare repository that stands in
 # for the GitHub wiki: new and changed pages are published, a page that docs/wiki no longer
-# has is removed, a second run pushes nothing, a file that is not a page is kept, and a bad
+# has is removed, the pictures of docs/wiki/images are published, a second run pushes nothing, a file that is not a page is kept, and a bad
 # commit or repository name is refused. No network and no token are used.
 #
 # Run it in Debian 12 with the repository at /src:
@@ -44,6 +44,8 @@ git -C "$W/wiki.git" symbolic-ref HEAD refs/heads/master
 
 echo "new home" >"$W/repo/docs/wiki/Home.md"
 echo "monitoring" >"$W/repo/docs/wiki/Monitoring.md"
+mkdir -p "$W/repo/docs/wiki/images"
+echo "diagram" >"$W/repo/docs/wiki/images/diagram.png"
 SHA="$(printf 'a%.0s' {1..40})"
 run() { REPO=NF-Hotel/NFHotel SHA="${1:-$SHA}" WIKI_URL="$W/wiki.git" bash "$W/repo/ops/scripts/publish-wiki.sh" >"$W/out" 2>&1; }
 wiki() {
@@ -57,6 +59,8 @@ wiki
   ok "new and changed pages reach the wiki" || ko "pages: $(ls "$W/check")"
 [[ ! -e "$W/check/Gone.md" ]] && ok "a page that docs/wiki no longer has is removed" || ko "Gone.md is still there"
 [[ -f "$W/check/logo.png" ]] && ok "a file that is not a page is kept" || ko "logo.png was removed"
+[[ "$(cat "$W/check/images/diagram.png")" == diagram ]] && ok "a picture of docs/wiki/images reaches the wiki" ||
+  ko "images: $(ls "$W/check/images" 2>&1)"
 git -C "$W/check" log -1 --format=%B | grep -q "tree/$SHA/docs/wiki" && ok "the commit names the source commit" ||
   ko "message: $(git -C "$W/check" log -1 --format=%B)"
 
