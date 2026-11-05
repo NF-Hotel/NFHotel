@@ -42,7 +42,7 @@ A deploy waits first for S01's approval (ADR-0038): open the run (Actions, NF Ho
 
 ## Roll back
 
-- **To the release before the latest one:** on the VM, run `sudo /usr/local/sbin/nfhotel-deploy rollback`. Running it again switches back to where you came from.
+- **To the release before the latest one:** on the VM, run `sudo /usr/local/sbin/nfhotel-deploy rollback`. Running it again switches back to where you came from. The images of that release are still on the VM: the deploy keeps the images of the two latest releases and removes the older ones (MIL-062), so this rollback pulls nothing.
 - **To any earlier release:** start `NF Hotel CD` by hand (Actions, NF Hotel CD, Run workflow) with the run ID of the `NF Hotel Release` run you want to deploy. It is approved like any other deploy.
 - **To see what is deployed:** `sudo /usr/local/sbin/nfhotel-deploy status` prints the release log (`/var/lib/nfhotel-deploy/releases.log`).
 - **Rollback drill (MIL-021 criterion 6):** start `NF Hotel CD` by hand with `apply` and `rollback_drill` ticked. The run deploys the release, then rolls back to the previous release on purpose, and ends red. The drilled release is not recorded in the release log. Run a normal deploy of the release afterwards.
@@ -200,7 +200,7 @@ Phase 2 (MIL-022) adds Trivy, SBOMs, build provenance and its verification befor
 A release goes from the checks of CI straight to production, without a staging environment ([ADR-0026](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0026-no-staging-environment.md), MIL-039). Each production incident of October 2026 came from the state of production itself (file modes, settings, the history of the VM), which a separate staging environment would not have had. Instead:
 
 - **Before the deploy:** every release runs on a throwaway stack in CI with the same images and compose files: the end-to-end tests, the DAST baseline, the log privacy check and the secret check.
-- **During the deploy:** a container that does not turn healthy, a secret in a container's environment, or a failed smoke test fails the deploy and rolls back to the previous release.
+- **During the deploy:** a container that does not turn healthy, a secret in a container's environment, or a failed smoke test fails the deploy and rolls back to the previous release. After a smoke test that passed, the deploy removes the images that no container uses and that are not part of the two latest releases of the release log (`nfhotel-deploy prune`, MIL-062); a failure of that step is a warning, never a rollback.
 - **After the deploy:** the alerts `ApplicationErrors`, `ApplicationSlow` and `ApplicationExceptions` ([Monitoring](Monitoring#service-level-objectives)) catch a release that starts but serves guests badly; then roll back as described under [Roll back](#roll-back).
 
 The decision is taken again when the hotel takes real bookings, when a migration cannot be rolled back, or when the Proxmox node turns out to have room for a staging VM.

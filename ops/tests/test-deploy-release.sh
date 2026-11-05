@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Tests of scripts/deploy-release.sh (MIL-021 task 6, ADR-0010, ADR-0012 of NFHotel): the
 # argument checks, a deploy, a failed smoke test with an automatic rollback, a manual
-# rollback, the lock, and the refusal of a VM whose /opt/nfhotel is not a checkout of
-# NF-Hotel/DevOps. Fakes stand in for deploy-services.sh and curl, so no container runs.
+# rollback, the lock, the refusal of a VM whose /opt/nfhotel is not a checkout of
+# NF-Hotel/DevOps, and the prune of the images of old releases (MIL-062). Fakes stand in for
+# deploy-services.sh, curl and docker, so no container runs.
 #
 # Run it in Debian 12 with the repository at /src:
 #   docker run --rm -v "$PWD:/src:ro" debian:12-slim bash /src/tests/test-deploy-release.sh
@@ -87,11 +88,21 @@ for a in "\$@"; do case "\$a" in http://*) echo 301; exit 0 ;; https://*) echo 2
 EOF
 chmod +x "$W/bin/curl"
 # docker for the migrate command: ps finds the PostgreSQL container, exec records the
-# call and the script it reads; the script "fail" makes psql fail.
+# call and the script it reads; the script "fail" makes psql fail. For the prune (MIL-062):
+# ps -aq lists the containers of $W/containers (name and image id per line), inspect gives
+# their image ids, image ls lists $W/images, image inspect resolves a release image to its id
+# from $W/image-refs, and image rm records the id in $W/removed and fails for an id listed in
+# $W/unremovable.
 cat >"$W/bin/docker" <<EOF
 #!/bin/bash
 case "\$1" in
-  ps) echo pg123 ;;
+  ps) if [[ "\$2" == -aq ]]; then cut -d' ' -f1 "$W/containers" 2>/dev/null; else echo pg123; fi ;;
+  inspect) shift 3; for c in "\$@"; do awk -v c="\$c" '\$1 == c { print \$2 }' "$W/containers" 2>/dev/null; done ;;
+  image) case "\$2" in
+    ls) cat "$W/images" 2>/dev/null ;;
+    inspect) awk -v r="\${!#}" '\$1 == r { print \$2 }' "$W/image-refs" 2>/dev/null ;;
+    rm) echo "\${!#}" >>"$W/removed"; ! grep -qx "\${!#}" "$W/unremovable" 2>/dev/null ;;
+    esac ;;
   exec) echo "exec \$*" >>"$W/order"; cat >"$W/applied"; ! grep -qx fail "$W/applied" ;;
 esac
 EOF
@@ -327,6 +338,57 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
     ok "a failed install fails update with its reason" || ko "failed install: $(tail -2 "$W/out")"
   [[ "$(find /tmp -maxdepth 1 -name 'tmp.*' | wc -l)" == "$before" ]] &&
     ok "update removes its temporary folder" || ko "temporary files left in /tmp"
+}
+
+# The prune of MIL-062, on a checkout of its own: after a deploy that passed, the images of the
+# containers and of the two latest releases stay and every other image goes; a rollback, a drill
+# and the dry run remove nothing; an image that cannot be removed is a warning, not a failed deploy.
+echo "== prune (MIL-062)"
+git clone -q "$W/origin.git" "$W/app3" && git -C "$W/app3" remote set-url origin https://github.com/NF-Hotel/DevOps.git
+rel() { echo "$APP $1 $R/nfhotel-web@$2 $R/nfhotel-api@$2 $R/market-analysis@$2 $R/benchmark@$2"; }
+D1="sha256:$(printf '1%.0s' $(seq 64))"
+D2="sha256:$(printf '2%.0s' $(seq 64))"
+D3="sha256:$(printf '3%.0s' $(seq 64))"
+: >"$W/image-refs"
+for i in 1 2 3; do
+  v="D$i"
+  d="${!v}"
+  for name in web api ana ben; do
+    case "$name" in web) repo=nfhotel-web ;; api) repo=nfhotel-api ;; ana) repo=market-analysis ;; ben) repo=benchmark ;; esac
+    echo "$R/$repo@$d id-$name$i" >>"$W/image-refs"
+  done
+done
+printf '%s\n' id-web1 id-api1 id-ana1 id-ben1 id-web2 id-api2 id-ana2 id-ben2 id-web3 id-api3 id-ana3 id-ben3 id-nginx-used id-old-nginx >"$W/images"
+# The containers run release 3 and the nginx in use; a stopped one-shot container (results-owner) counts too.
+printf '%s\n' 'c1 id-web3' 'c2 id-api3' 'c3 id-ana3' 'c4 id-ben3' 'c5 id-nginx-used' 'c6 id-ben3' >"$W/containers"
+# shellcheck disable=SC2046 # the release fields are split on purpose
+{
+  expect_code 0 "deploys release 1" deploy $(rel "$A" "$D1")
+  expect_code 0 "deploys release 2" deploy $(rel "$A" "$D2")
+  rm -f "$W/removed"
+  expect_code 0 "deploys release 3 and prunes" deploy $(rel "$B" "$D3")
+  [[ "$(sort "$W/removed" 2>/dev/null | tr '\n' ' ')" == "id-ana1 id-api1 id-ben1 id-old-nginx id-web1 " ]] &&
+    ok "the images of release 1 and the unused nginx go; releases 2 and 3 and the containers' images stay" ||
+    ko "pruned set: $(sort "$W/removed" 2>/dev/null | tr '\n' ' ')"
+  grep -q "prune: removed 5 image(s)" "$W/out" && ok "the deploy log counts the removed images" || ko "prune log: $(grep prune "$W/out")"
+  rm -f "$W/removed"
+  expect_code 0 "prune without --apply is a dry run" prune
+  [[ ! -f "$W/removed" ]] && grep -q "would remove id-old-nginx" "$W/out" && grep -q "5 image(s) would be removed" "$W/out" &&
+    ok "the dry run lists what would go and removes nothing" || ko "dry run: $(tail -3 "$W/out")"
+  expect_code 2 "prune refuses another argument" prune --now
+  expect_code 0 "prune --apply removes by hand" prune --apply
+  [[ "$(sort "$W/removed" | wc -l)" == 5 ]] && ok "prune --apply removes the same five" || ko "prune --apply: $(cat "$W/removed")"
+  rm -f "$W/removed"
+  expect_code 1 "a failed deploy rolls back" deploy $(bad "$B")
+  [[ ! -f "$W/removed" ]] && ok "a failed deploy and its rollback prune nothing" || ko "pruned after a rollback: $(cat "$W/removed")"
+  expect_code 1 "a drill fails the run" deploy $(rel "$B" "$D3") --drill
+  [[ ! -f "$W/removed" ]] && ok "a drill prunes nothing" || ko "pruned after a drill: $(cat "$W/removed")"
+  echo id-old-nginx >"$W/unremovable"
+  expect_code 0 "a deploy stays green when an image cannot be removed" deploy $(rel "$B" "$D3")
+  grep -q "warning: cannot remove the image id-old-nginx" "$W/out" && grep -q "the prune did not finish; the release is deployed" "$W/out" &&
+    ok "the failed removal is a warning in the log" || ko "warning: $(grep -i warning "$W/out")"
+  expect_code 1 "prune --apply fails when an image cannot be removed" prune --apply
+  rm -f "$W/unremovable"
 }
 
 echo "RESULT: $pass passed, $fail failed"

@@ -46,15 +46,21 @@
 #           The replaced copy is kept as <file>.previous, and each change is logged with
 #           the old and new SHA-256. The sudo rule does not change.
 # rollback: deploy the release before the latest one in the log again.
+# prune:    remove every image that no container uses and that is not part of the two latest
+#           releases of the log (MIL-062): the latest release runs, the one before it is what
+#           rollback goes to, and everything older only fills the disk. Without --apply it prints
+#           what would go and removes nothing. deploy runs it after a smoke test that passed, never
+#           after a rollback or a drill, and a failure inside it is a warning, not a failed deploy.
 # status:   print the release log.
-# update, deploy and rollback are the explicit commands that change the VM; status and a
-# refused argument change nothing. The die and usage helpers are kept in this file
+# update, deploy, rollback and prune --apply are the explicit commands that change the VM; status,
+# prune without --apply and a refused argument change nothing. The die and usage helpers are kept in this file
 # because it is installed alone (scripts/lib/common.sh is not beside it).
 #
 # Usage: deploy-release.sh update <sha>
 #        deploy-release.sh deploy <app-sha> <devops-sha> <web> <api> <analysis> <benchmark> [--drill]
 #        deploy-release.sh migrate <sha256 of the script> < migrations.sql
 #        deploy-release.sh rollback
+#        deploy-release.sh prune [--apply]
 #        deploy-release.sh status
 #   <app-sha>    the 40-character NF-Hotel/NFHotel commit of the release (recorded)
 #   <devops-sha> the 40-character commit to check out: the commit of the operations code,
@@ -69,8 +75,9 @@
 #        NFHOTEL_BACKUP_COMMAND (default /usr/local/sbin/nfhotel-backup; for the tests),
 #        NFHOTEL_COMMAND_DIR (default /usr/local/sbin), NFHOTEL_SYSTEMD_DIR (default
 #        /etc/systemd/system), NFHOTEL_SYSTEMCTL (default systemctl; for the tests)
-# Exit:  0 deployed (or rolled back on request); 1 the deploy failed (a rollback was
-#        tried); 2 usage error or an argument that does not match its pattern
+# Exit:  0 deployed (or rolled back on request; prune: done or printed); 1 the deploy failed (a
+#        rollback was tried), or prune could not remove an image; 2 usage error or an argument
+#        that does not match its pattern
 # Needs: bash 4+, git, curl, flock, sudo, docker with the compose plugin
 
 set -euo pipefail
@@ -292,6 +299,9 @@ deploy() {
     else
       record "$@"
       echo "==> deployed $1"
+      # The release is deployed and recorded: the images of the releases before the previous one
+      # go now (MIL-062). A failure here does not undo a deploy that passed.
+      prune_images --apply || echo "warning: the prune did not finish; the release is deployed" >&2
       return 0
     fi
   fi
@@ -421,6 +431,53 @@ rollback() {
   echo "==> rolled back to ${target%% *}"
 }
 
+# prune_images [--apply]: see the header. Kept are the images of every container (running or
+# stopped, so the one-shot services too) and the images of the two latest releases of the log,
+# resolved from their digests; every other image id of docker image ls goes.
+prune_images() {
+  local apply=0 n line ref id keep=" " removed=0 failed=0 before after web api analysis benchmark
+  if [[ $# -gt 0 ]]; then
+    [[ "$1" == "--apply" && $# -eq 1 ]] || refuse "prune takes --apply or nothing"
+    apply=1
+  fi
+  before="$(df -h / | awk 'NR == 2 { print $4 }')"
+  # shellcheck disable=SC2046 # one image id per word, split on purpose
+  for id in $(docker ps -aq | xargs -r docker inspect --format '{{.Image}}' 2>/dev/null || true); do
+    keep+="$id "
+  done
+  for n in 1 2; do
+    line="$(previous_release "$n" || true)"
+    [[ -n "$line" ]] || continue
+    read -r _ _ web api analysis benchmark <<<"$line"
+    for ref in "$web" "$api" "$analysis" "$benchmark"; do
+      id="$(docker image inspect --format '{{.Id}}' "$ref" 2>/dev/null || true)"
+      [[ -n "$id" ]] && keep+="$id "
+    done
+  done
+  # shellcheck disable=SC2046 # one image id per word, split on purpose
+  for id in $(docker image ls -q --no-trunc 2>/dev/null | sort -u); do
+    [[ "$keep" == *" $id "* ]] && continue
+    if ((apply)); then
+      if docker image rm -f "$id" >/dev/null 2>&1; then
+        removed=$((removed + 1))
+      else
+        failed=$((failed + 1))
+        echo "warning: cannot remove the image $id" >&2
+      fi
+    else
+      echo "would remove $id"
+      removed=$((removed + 1))
+    fi
+  done
+  after="$(df -h / | awk 'NR == 2 { print $4 }')"
+  if ((apply)); then
+    echo "==> prune: removed $removed image(s) that no container uses and no release of the last two needs; / had $before free, has $after"
+  else
+    echo "==> prune: $removed image(s) would be removed (run with --apply); / has $before free"
+  fi
+  ((failed == 0))
+}
+
 main() {
   [[ $# -ge 1 ]] || {
     usage >&2
@@ -444,6 +501,10 @@ main() {
       migrate "$@"
       ;;
     rollback) rollback ;;
+    prune)
+      shift
+      prune_images "$@"
+      ;;
     status) cat "$release_log" 2>/dev/null || echo "no release deployed yet" ;;
     -h | --help) usage ;;
     *)

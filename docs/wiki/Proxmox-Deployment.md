@@ -62,6 +62,8 @@ Docker network `nfhotel-proxy`.
 
 The production VM `nf-hotel` (Proxmox VMID 100) has 4 vCPU, 20 GiB memory, a 111 GB disk and Debian 13. These values were read on the VM on 2026-10-21 (ADR-0010 decision 6). A new VM made by these scripts gets the default below.
 
+What fills the disk: the images in use and those of the two latest releases (every deploy that passes its smoke test removes the older ones, MIL-062; `sudo nfhotel-deploy prune` shows what the next one would remove), the volumes (the database, the Ollama models, the benchmark results), the journal (1 GB at most) and the backups of `backup-database.sh`, which keeps 14 daily and 8 weekly copies. The alert `DiskAlmostFull` fires at 80 % ([Alerts](Alerts)).
+
 12 GiB memory (12288 MiB), 4 vCPU, 60 GiB disk, Debian 12 with Docker and the compose plugin,
 built from the official cloud image by cloud-init. Change the size in `ops/deploy.env`.
 
@@ -254,7 +256,7 @@ docker run --rm --network nfhotel-python curlimages/curl:8.10.1 -s http://market
 ## The benchmark service (MIL-019, MIL-020)
 
 The benchmark service is a separate repository, `notebook-benchmark`, with its own compose file and env files. It
-joins the internal network `nfhotel-api` and publishes no host port.
+joins the internal networks `nfhotel-python` and `nfhotel-llm` (ADR-0039) and publishes no host port.
 
 - The web application starts runs at `http://benchmark:8000` with the bearer token in
   `BenchmarkService__Token`, which the deploy takes from the `NFBENCH_API_TOKEN` of the benchmark service's
