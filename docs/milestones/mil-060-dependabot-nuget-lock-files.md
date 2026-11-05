@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-11-04, in autonomous mode, to fix the last two Dependabot pull requests (#486 and #489) after seven of the eight of the day were merged; S01 accepted the plan in chat on 2026-11-05 ("Accepter planen") after RC-282 Go | pending |
+| 2026-11-04 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-11-04, in autonomous mode, to fix the last two Dependabot pull requests (#486 and #489) after seven of the eight of the day were merged; S01 accepted the plan in chat on 2026-11-05 ("Accepter planen") after RC-282 Go | [07ec8fc] |
 
 ---
 
@@ -83,3 +83,4 @@ Not in this milestone: the Dependabot secret for `SONAR_TOKEN` (a setting of S01
 [ADR-0038]: ../adr/adr-0038-approval-before-a-deploy.md
 [MIL-022]: ./mil-022-supply-chain-security.md
 [MIL-044]: ./mil-044-security-overview.md
+[07ec8fc]: https://github.com/NF-Hotel/NFHotel/commit/07ec8fc7f9b8bceb4d81ba323d6203a0d00d984d

@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-04 | Proposed | Claude (AI) | S01 | Added ADR-0038 (Accepted after RC-281) and rows for ADR-0019 and ADR-0021, which it amends; the row of ADR-0007 names RC-281 | [7af26c6] |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-060 (Accepted after RC-282), its section "Dependency updates" on the wiki page CI-CD, and the project file and lock files of its task 1 | pending |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-060 (Accepted after RC-282), its section "Dependency updates" on the wiki page CI-CD, and the project file and lock files of its task 1 | [07ec8fc] |
 
 ---
 
@@ -238,3 +238,4 @@ updated whenever an artifact instance is created or reviewed.
 [7af26c6]: https://github.com/NF-Hotel/NFHotel/commit/7af26c62c64d653f912ba876b1d2fd4c7c170f40
 [MIL-060]: ../milestones/mil-060-dependabot-nuget-lock-files.md
 [RC-282]: ./reviews/rc-282-mil-060.md
+[07ec8fc]: https://github.com/NF-Hotel/NFHotel/commit/07ec8fc7f9b8bceb4d81ba323d6203a0d00d984d
