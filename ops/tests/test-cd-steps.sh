@@ -225,12 +225,18 @@ export FAKE_STATUS='{"Peer":{"k1":{"DNSName":"127.0.0.1."}}}'
 expect 0 "scope passes when only ssh answers" scope 18081
 grep -q "Ports 18081 of 127.0.0.1 do not answer" log && grep -q "No peer other than" log && ! grep -q "::warning::" log &&
   ok "the scope records the closed ports and no other peer" || ko "scope: $(tr '\n' '|' <log)"
+grep -qE "Port 18022 of 127.0.0.1 answers \(after [0-9]+ s\)" log && ok "the scope logs the seconds it waited" || ko "seconds: $(tr '\n' '|' <log)"
 expect 0 "an open port is a warning, not a failure" scope 18080
 grep -q "::warning::tag:ci reaches ports 18080" log && ok "an open port is reported" || ko "open port: $(tr '\n' '|' <log)"
 FAKE_STATUS='{"Peer":{"k1":{"DNSName":"127.0.0.1."},"k2":{"DNSName":"legion.example.ts.net."}}}' expect 0 "another peer seen does not fail the step" scope 18081
 grep -q "Peers seen .*legion.example.ts.net" log && ! grep -q "::warning::" log && ok "another peer is listed, without a warning" || ko "peer: $(tr '\n' '|' <log)"
-VM_HOST=127.0.0.1 SCOPE_SSH_PORT=18099 expect 1 "scope fails when ssh does not answer" step scope
-kill %1 %2 2>/dev/null
+VM_HOST=127.0.0.1 SCOPE_SSH_PORT=18099 SCOPE_WAIT_SECONDS=3 expect 1 "scope fails when ssh does not answer within the wait" step scope
+grep -q "did not answer within 3 s" log && ok "the failure names the wait" || ko "wait message: $(tr '\n' '|' <log)"
+# A listener that starts late (MIL-063): the step waits for it instead of failing at once.
+(sleep 3 && exec python3 -m http.server 18023 --bind 127.0.0.1 >/dev/null 2>&1) &
+VM_HOST=127.0.0.1 SCOPE_SSH_PORT=18023 SCOPE_OTHER_PORTS=18081 SCOPE_WAIT_SECONDS=20 expect 0 "scope waits for a port that answers late" step scope
+grep -qE "Port 18023 of 127.0.0.1 answers \(after [1-9][0-9]* s\)" log && ok "the late answer is logged with its seconds" || ko "late listener: $(tr '\n' '|' <log)"
+kill %1 %2 %3 2>/dev/null
 
 # The gate (ADR-0021): every check of the release commit must be green, this job left out.
 G="$W/checks"
