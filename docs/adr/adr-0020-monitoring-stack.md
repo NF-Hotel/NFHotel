@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-23 | Deprecated | mikemike | AI as stand-in for S01 | Consequences: how Alloy reaches Docker, as built and tested; accepted after RC-185 Go | [4ff81cc] |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Consequences, "What is collected": the container metric is the health series of `report-health.sh` through the text-file collector of the node exporter, not a cAdvisor exporter, as found at the MIL-023 gate and accepted by S01 in chat on 2026-11-05 ("OK"); accepted after RC-294 Go | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Consequences, "What is collected": the container metric is the health series of `report-health.sh` through the text-file collector of the node exporter, not a cAdvisor exporter, as found at the MIL-023 gate and accepted by S01 in chat on 2026-11-05 ("OK"); accepted after RC-294 Go | [803ceae] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -138,3 +138,4 @@ We follow option 1. Production is watched by Prometheus, Alertmanager, Grafana, 
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
 [4ff81cc]: https://github.com/NF-Hotel/NFHotel/commit/4ff81ccd0f1d43a160f2f45d72845e942cf5728e
+[803ceae]: https://github.com/NF-Hotel/NFHotel/commit/803ceae78c9552d30230894be4f86c724a730859

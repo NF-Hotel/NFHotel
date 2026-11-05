@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-28 | Deprecated | mikemike | AI as stand-in for S01 | Row 4.3.8: the forward chain also accepts the published 5432 of the database relay, from `tailscale0` only (ADR-0034, MIL-048) | [102cae2] |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Rows 5.3 and 5.28 Applied from the read of 2026-11-05 (all 11 containers with `cap_drop ALL` and a `pids_limit`); row 7.1.11, 7.1.12 records S01's decision of 2026-11-05 to keep `/opt/nfhotel-legacy`; the summary counts and the closing sentence of criterion 1; accepted after RC-294 Go | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Rows 5.3 and 5.28 Applied from the read of 2026-11-05 (all 11 containers with `cap_drop ALL` and a `pids_limit`); row 7.1.11, 7.1.12 records S01's decision of 2026-11-05 to keep `/opt/nfhotel-legacy`; the summary counts and the closing sentence of criterion 1; accepted after RC-294 Go | [803ceae] |
 
 ---
 
@@ -234,3 +234,4 @@ The counts are by row; a row that covers several items counts once. Applied coun
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
 [102cae2]: https://github.com/NF-Hotel/NFHotel/commit/102cae2e4dd44d67b4d8c71f0ad731456d1938e5
+[803ceae]: https://github.com/NF-Hotel/NFHotel/commit/803ceae78c9552d30230894be4f86c724a730859

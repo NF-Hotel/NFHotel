@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-062: gate passed (RC-293, Go) after the first deploy with the prune; the code row deployed | [5bdab74] |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-023: gate passed (RC-294, Go); CIS-001 and ADR-0020 amended at the gate | pending |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-023: gate passed (RC-294, Go); CIS-001 and ADR-0020 amended at the gate | [803ceae] |
 
 ---
 
@@ -290,3 +290,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [5bdab74]: https://github.com/NF-Hotel/NFHotel/commit/5bdab7435b5c0e20403dbc71a3cc782bb0913bba
+[803ceae]: https://github.com/NF-Hotel/NFHotel/commit/803ceae78c9552d30230894be4f86c724a730859

@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-023, held on 2026-11-05 by S01's decision in chat | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-023, held on 2026-11-05 by S01's decision in chat | [803ceae] |
 
 ---
 
@@ -79,3 +79,4 @@ Go: the eight criteria pass on the records of the tasks, the reads of 2026-11-05
 [RC-284]: ./rc-284-restore-drill-2026-11-05.md
 [RC-292]: ./rc-292-mil-048-gate-re-review.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[803ceae]: https://github.com/NF-Hotel/NFHotel/commit/803ceae78c9552d30230894be4f86c724a730859
