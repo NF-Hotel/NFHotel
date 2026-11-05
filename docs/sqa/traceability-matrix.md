@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-061 (plan review RC-287, Go) | [ee31f9e] |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The rows of ADR-0039 and of the code of MIL-061 (code review RC-288, Go); RC-288 on the row of MIL-061 | pending |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | The rows of ADR-0039 and of the code of MIL-061 (code review RC-288, Go); RC-288 on the row of MIL-061 | [2622186] |
 
 ---
 
@@ -281,3 +281,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [ee31f9e]: https://github.com/NF-Hotel/NFHotel/commit/ee31f9e0e0468453f3b2690a4571c2719b7cf3d0
+[2622186]: https://github.com/NF-Hotel/NFHotel/commit/2622186882fa901355733d4a584126df95dfa6f1

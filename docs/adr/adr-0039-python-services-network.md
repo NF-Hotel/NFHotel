@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; the design of the wiki page Network Isolation by a developer of S01, which S01 asked in chat on 2026-11-05 to build (MIL-061); accepted after RC-288 Go | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; the design of the wiki page Network Isolation by a developer of S01, which S01 asked in chat on 2026-11-05 to build (MIL-061); accepted after RC-288 Go | [cfc1eec] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -101,3 +101,4 @@ Quality attributes: security improves (a smaller reach for a compromise of nginx
 [ADR-0015]: ./adr-0015-mobile-app-staff-token-access.md
 [ADR-0028]: ./adr-0028-public-access-through-cloudflare-tunnel.md
 [ADR-0034]: ./adr-0034-team-database-access.md
+[cfc1eec]: https://github.com/NF-Hotel/NFHotel/commit/cfc1eeccada36dd1404eab566b161b4ee95c1ceb

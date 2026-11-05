@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Clarified: no endpoint for ValidateFields, the client runs the rule locally (reviewed in RC-065) | [b8170b7] |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Network bullet amended by ADR-0039 (MIL-061): the API joins `nfhotel-python` too, and nginx routes the two mobile routes of ADR-0015 to it; accepted after RC-288 Go | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Network bullet amended by ADR-0039 (MIL-061): the API joins `nfhotel-python` too, and nginx routes the two mobile routes of ADR-0015 to it; accepted after RC-288 Go | [cfc1eec] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -83,3 +83,4 @@ Quality attributes: security improves (smaller attack surface of the exposed pro
 [ADR-0015]: ./adr-0015-mobile-app-staff-token-access.md
 [ADR-0039]: ./adr-0039-python-services-network.md
 [b8170b7]: https://github.com/NF-Hotel/NFHotel/commit/b8170b7a84409f6e19f209090c310a9f42c53bc9
+[cfc1eec]: https://github.com/NF-Hotel/NFHotel/commit/cfc1eeccada36dd1404eab566b161b4ee95c1ceb

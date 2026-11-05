@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 6 of MIL-061 before its pull request | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 6 of MIL-061 before its pull request | [2622186] |
 
 ---
 
@@ -94,3 +94,4 @@ Go. Every Mandatory criterion of the four checklists passes on the files as they
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-ADR-001]: ../../../framework/qc/artifacts/qc-adr.md
+[2622186]: https://github.com/NF-Hotel/NFHotel/commit/2622186882fa901355733d4a584126df95dfa6f1

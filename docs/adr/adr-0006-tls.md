@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Paths under ops/ and the later certificate decision ADR-0009 (RC-161) | [12a64c3] |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Internal-listener bullet amended by ADR-0039 (MIL-061): the listener on 8081 is removed; accepted after RC-288 Go | pending |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Internal-listener bullet amended by ADR-0039 (MIL-061): the listener on 8081 is removed; accepted after RC-288 Go | [cfc1eec] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -79,3 +79,4 @@ Quality attributes: security improves (confidentiality of credentials and sessio
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
 [ADR-0039]: ./adr-0039-python-services-network.md
 [12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
+[cfc1eec]: https://github.com/NF-Hotel/NFHotel/commit/cfc1eeccada36dd1404eab566b161b4ee95c1ceb
