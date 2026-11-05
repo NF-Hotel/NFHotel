@@ -4,7 +4,9 @@ NF Hotel is a web-based hotel management system developed as part of a software 
 
 The project is based on the requirements gathered during the **NF Hotel 1.0 process** and focuses on creating a more efficient and user-friendly solution for hotel staff.
 
-The system is being developed with **Blazor**, **PostgreSQL**, and a web API architecture, with the goal of supporting both internal hotel management and future integrations with external booking platforms.
+The system is being developed with **Blazor**, **PostgreSQL**, and a web API architecture, with the goal of supporting both internal hotel management and future integrations with external booking platforms. Around the core there is a market analysis of the hotel's bookings with AI insights, price suggestions that a Manager approves, a mobile app for staff, and a deployment pipeline with security checks.
+
+The detailed documentation is in the [wiki](https://github.com/NF-Hotel/NFHotel/wiki); its pages are written in `docs/wiki/`.
 
 ---
 
@@ -30,6 +32,8 @@ The system is being developed with **Blazor**, **PostgreSQL**, and a web API arc
 * [🔐 Security & Privacy](#-security--privacy)
 * [📌 Project Status](#-project-status)
 * [📄 License](#-license)
+* [🏗️ Infrastructure and Operations](#️-infrastructure-and-operations)
+* [🔗 Repository](#-repository)
 
 ---
 
@@ -45,8 +49,12 @@ The system focuses on:
 * Supporting walk-in guests
 * Managing passport information for check-in
 * Managing room prices and discounts
+* Suggesting room price changes from the market analysis, which a Manager approves with one click
 * Providing a clear and usable booking calendar
 * Providing sales and pricing overviews
+* Analysing the bookings and the market, with an AI summary, for the owner
+* Giving hotel staff the rooms in a mobile app
+* Running and releasing the system safely, with roles, audit trail, scanned images and approved deploys
 * Providing an API for future integrations
 * Creating a foundation for integration with external booking platforms
 
@@ -130,6 +138,8 @@ Requirements:
 * Reflect pricing changes in the **Sales Overview**.
 * Ensure that the displayed prices are consistent throughout the system.
 
+Room rates and price suggestions are built (MIL-055): the back office suggests a surcharge in high season and a discount in low season from the market analysis, and a Manager approves or reverts each suggestion. A price change applies to new bookings only. See the wiki page [Price Suggestions](docs/wiki/Price-Suggestions.md).
+
 ---
 
 ### 🌐 Web-based Solution
@@ -160,30 +170,33 @@ NF Hotel uses the following technologies:
 | **.NET / C#**     | Application and backend development                  |
 | **Web API**       | Communication with external systems and integrations |
 | **Visual Studio** | Primary development IDE                              |
+| **Flutter**       | Mobile app for hotel staff (`NF-Hotel/MobileApp`)    |
+| **Python**        | Market analysis and LLM benchmark services (FastAPI) |
+| **Ollama**        | Local AI models for the analysis and the benchmark   |
+| **Docker**        | Every service runs as a container (Compose)          |
+| **nginx**         | Reverse proxy and TLS in front of the web application |
+| **GitHub Actions** | CI, security scans, release and approved deploys    |
 
 ### 🧩 Architecture
 
-The system is designed around a web application and API architecture:
+Only nginx is reached from outside. The Blazor web application and the mobile app talk to the .NET API, and only the API opens the database (ADR-0004). The two Python services run the market analysis and the AI model benchmark; they are called by the web application and the API, and use Ollama for the AI text.
 
 ```text
-                    ┌─────────────────────┐
-                    │   External Systems  │
-                    │ Website / Platforms │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │       Web API       │
-                    └──────────┬──────────┘
-                               │
-                ┌──────────────┴──────────────┐
-                │                             │
-                ▼                             ▼
-       ┌─────────────────┐          ┌─────────────────┐
-       │   Blazor WebApp │          │   PostgreSQL    │
-       │   Hotel UI      │          │    Database     │
-       └─────────────────┘          └─────────────────┘
+ Browser / Mobile app
+          │  https
+          ▼
+       nginx ───────────► nfhotel-web (Blazor)
+          │                     │
+          │ /mobile-api         ▼
+          └───────────────► nfhotel-api (.NET) ────► PostgreSQL
+                                │      ▲
+                                ▼      │ results
+              market-analysis (Python) │ benchmark (Python)
+                         │             │      │
+                         └──────► Ollama ◄────┘
 ```
+
+Each service is put only on the Docker networks it needs, so a service cannot reach one it has no reason to call (the Python services get a network of their own in the target design). The wiki page [Network Isolation](docs/wiki/Network-Isolation.md) shows who calls whom, with ports and paths, and why some networks are kept apart. [Containers and Images](docs/wiki/Containers-and-Images.md) lists every container.
 
 ---
 
@@ -213,12 +226,14 @@ For development, it is also recommended to have:
 
 ## 🚀 How To Get Started
 
+The quickest way to see the whole system is the development deployment: `bash scripts/dev-up.sh` (see [See your change: the development deployment](#-see-your-change-the-development-deployment)). The steps below run only the .NET projects from Visual Studio.
+
 ### 1️⃣ Clone the Repository
 
 Clone the project from GitHub:
 
 ```bash
-git clone https://github.com/ZanjiOfficial/NFHotel.git
+git clone https://github.com/NF-Hotel/NFHotel.git
 ```
 
 Navigate into the project:
@@ -370,12 +385,13 @@ Each service has its own folder under `ops/deploy/` with one `docker-compose.yml
 | --- | --- | --- |
 | nginx reverse proxy | `ops/deploy/nginx` | `nginx.env` |
 | NFHotel web application | `ops/deploy/nfhotel-web` | `nfhotel-web.env` |
+| NFHotel API (the only service that opens the database) | `ops/deploy/nfhotel-api` | `nfhotel-api.env` |
 | PostgreSQL 16 | `ops/deploy/postgres` | `postgres.env` |
 | Ollama (local models) | `ops/deploy/ollama` | `ollama.env` |
 | Market analysis service | `ops/deploy/market-analysis` | `market-analysis.env` |
 | LLM benchmark | `ops/deploy/benchmark` | `benchmark.env` |
 
-The services share one Docker network. Create it once, then start the web application and the proxy (in either order). Only the proxy publishes a port. The web service builds its database connection string from the PostgreSQL settings in `ops/deploy/postgres/postgres.env`, so the password is written in one file only; the database sits on the internal network `nfhotel-db`.
+The services share several Docker networks (`nfhotel-proxy`, `nfhotel-api`, `nfhotel-db` and `nfhotel-llm`); each service joins only the ones it needs (wiki: [Containers and Images](docs/wiki/Containers-and-Images.md) and [Network Isolation](docs/wiki/Network-Isolation.md)). Only the proxy publishes a port. The web service builds its database connection string from the PostgreSQL settings in `ops/deploy/postgres/postgres.env`, so the password is written in one file only; the database sits on the internal network `nfhotel-db`.
 
 To start everything on one Docker host with the right networks and order, use `bash ops/scripts/deploy-services.sh` (see the header of the script for the options).
 
@@ -411,7 +427,7 @@ bash ops/scripts/test-compose-proxy.sh
 
 ### 📊 Market analysis behind the proxy
 
-The market analysis service (`NF-Hotel/Notebook_Market_Analysis`) has its own folder, `ops/deploy/market-analysis`, with a compose file, `market-analysis.env` and a configuration file; see its README. The nginx proxy routes it by host name next to the web application, and `bash ops/scripts/test-compose-proxy.sh` checks all three services through the proxy.
+The market analysis service (`NF-Hotel/notebook-market-analysis`) has its own folder, `ops/deploy/market-analysis`, with a compose file, `market-analysis.env` and a configuration file; see its README. The nginx proxy routes it by host name next to the web application, and `bash ops/scripts/test-compose-proxy.sh` checks all three services through the proxy.
 
 ### 🖥️ Services VM on Proxmox VE
 
@@ -502,7 +518,15 @@ Potential integrations include:
 * Third-party services
 * Future mobile applications
 
-The API provides a foundation for extending NF Hotel without requiring external applications to access the PostgreSQL database directly.
+The API provides a foundation for extending NF Hotel without requiring external applications to access the PostgreSQL database directly. Only the API opens the database (ADR-0004); the web application and the mobile app call the API, and nothing else is published to the internet but the nginx proxy.
+
+What the API serves today:
+
+* The back office of the web application: bookings, guests, rooms, staff accounts and roles, the audit trail.
+* The mobile app for staff, through `/mobile-api` on the proxy, with a staff token and no shared secret in the app (ADR-0015).
+* The market analysis: a Manager starts a run, the API asks the market analysis service and stores the report.
+* The AI model benchmark: results are sent by the benchmark service and stored in the database.
+* Room rates and price suggestions that a Manager approves.
 
 ---
 
@@ -552,6 +576,15 @@ Particular attention should be given to:
 
 Sensitive information should never be committed to the Git repository.
 
+What is in place:
+
+* Staff sign in with a role per person (Manager, Receptionist, Housekeeping); every approval and change of rules is kept in an audit trail.
+* Guests sign in with the booking number and the e-mail of the booking, and reach only their own booking.
+* Traffic is served over TLS; the database is reachable only through the API; secrets are mounted as files, never put in the repository.
+* Every change passes required checks (build, tests, CodeQL, SonarQube Cloud, end-to-end and DAST tests, image scan); only attested images are deployed, and each deploy in production is approved by the owner (ADR-0038).
+
+The wiki pages [Security Controls](docs/wiki/Security-Controls.md), [Workflows](docs/wiki/Workflows.md) and [CI-CD](docs/wiki/CI-CD.md) explain each control and why it exists.
+
 ---
 
 ## 📌 Project Status
@@ -567,11 +600,13 @@ Current development areas include:
 * 👤 Guest management
 * 🛂 Passport information
 * 🚪 Check-in workflow
-* 💰 Room pricing and discounts
-* 📊 Sales overview
+* 💰 Room pricing, discounts and price suggestions
+* 📊 Sales overview and market analysis
 * 🌐 Web application
+* 📱 Mobile app for staff
 * 🔌 API integrations
-* 🤖 AI and data analysis
+* 🤖 AI and data analysis (market analysis and model benchmark)
+* 🚢 Deployment, monitoring, backups and security operations
 
 Features and architecture may change as development progresses.
 
@@ -589,10 +624,10 @@ For questions regarding the project or its use, please contact the development t
 
 ## 🏗️ Infrastructure and Operations
 
-Deployment, the CI/CD actions, PostgreSQL operations, backups, Tailscale, nginx, TLS and the DevSecOps evidence live in this repository under `ops/` and `.github/actions/` (ADR-0016). The former repository NF-Hotel/DevOps is archived; its history is part of this one (`git log -- ops/`). See `CONTRIBUTING.md` and the wiki page CI-CD.
+Deployment, the CI/CD actions, PostgreSQL operations, backups, Tailscale, nginx, TLS and the DevSecOps evidence live in this repository under `ops/` and `.github/actions/` (ADR-0016). The former repository NF-Hotel/DevOps is archived; its history is part of this one (`git log -- ops/`). See `CONTRIBUTING.md` and the wiki pages [CI-CD](docs/wiki/CI-CD.md), [Workflows](docs/wiki/Workflows.md), [Monitoring](docs/wiki/Monitoring.md), [Disaster Recovery](docs/wiki/Disaster-Recovery.md) and [Public Access](docs/wiki/Public-Access.md).
 
 ## 🔗 Repository
 
 The source code is available on GitHub:
 
-**https://github.com/ZanjiOfficial/NFHotel**
+**https://github.com/NF-Hotel/NFHotel**
