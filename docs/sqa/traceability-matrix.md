@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-04 | Proposed | Claude (AI) | S01 | Added ADR-0038 (Accepted after RC-281) and rows for ADR-0019 and ADR-0021, which it amends; the row of ADR-0007 names RC-281 | [7af26c6] |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-060 (Accepted after RC-282), its section "Dependency updates" on the wiki page CI-CD, and the project file and lock files of its task 1 | [07ec8fc] |
+| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-046 (gate passed, RC-283) and ADR-0031, MIL-056 and ADR-0035 with their review records, missing since 2026-10-26 and 2026-11-02 | pending |
 
 ---
 
@@ -79,6 +79,10 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0038] | ADR (Accepted) | - | - | [ADR-0021], [ADR-0019], [ADR-0007], [ADR-0018], [SAR-001], [MIL-021], [SA-001] | the header of `.github/workflows/cd.yaml`, the wiki pages CI-CD, Security-Controls, Workflows, DevOps-Lifecycle and Technology-Choices, the required reviewer of the environment `production` | [RC-281] |
 | [MIL-060] | Milestone (Accepted, Go) | en | it | [BC-001], [ADR-0038], [MIL-022], [MIL-044] | `docs/wiki/CI-CD.md` (the section "Dependency updates"), the code below | [RC-282] |
 | The code of MIL-060: `src/NFHotel.Web/NFHotel.Web.csproj` and `src/NFHotel.Web/packages.lock.json` (the commit of Dependabot from pull request #489) and `tests/NFHotel.Web.Tests/packages.lock.json` (three lines) | Project file and lock files (built, not yet merged) | - | - | [MIL-060] task 1 | - | [RC-282] (the evidence of criteria 1 and 2) |
+| [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
+| [ADR-0031] | ADR (Accepted; decisions 2 and 3 added 2026-10-26) | - | - | ADR-0005, ADR-0013, [ADR-0004], ADR-0024, MIL-020, MIL-043 | the sign-in keys and the benchmark run tracker of `src/NFHotel.Web`, [MIL-046] | [RC-227], [RC-239] |
+| [MIL-056] | Milestone (Accepted, Go; task 7 open: the test on a Mac by S02) | en | it | [BC-001], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | [ADR-0035], `scripts/dev-up.sh --lite`, `ops/scripts/lib/`, the Ops CI test and the macOS job, the wiki page Local Development Deploy | [RC-271], [RC-272] |
+| [ADR-0035] | ADR (Accepted) | - | - | [MIL-056], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | the light mode of `scripts/dev-up.sh` | [RC-273] |
 | [UC-007] | Use Case (Accepted) | en | it | [UCD-001], [US-001], [SA-001], [MIL-055] | [DM-004], [DICT-001], code and tests below | [RC-264] (Go with conditions) |
 | `docs/wiki/Price-Suggestions.md` | Wiki page (Proposed) | en | - | [MIL-055] task 10, [US-001], [UC-007] | - | - (not yet reviewed) |
 | Dictionary terms and domain concepts: Room rate, Price change, Price suggestion, Season, Pricing settings; Audit event actions `PriceChangeApproved`, `PriceChangeReverted`, `PricingSettingsChanged`, `RoomRateChanged` | Domain terms (Accepted) | en | it | [UC-007], [US-001] | [DICT-001], [DM-004], `src/NFHotel.Domain` (`RoomRate`, `PriceChange`, `PricingSetting`) | [RC-264] |
@@ -235,7 +239,17 @@ updated whenever an artifact instance is created or reviewed.
 [QC-WF-001]: ../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../framework/qc/code/qc-yaml.md
 [QC-SH-001]: ../../framework/qc/code/qc-programming-shell.md
-[7af26c6]: https://github.com/NF-Hotel/NFHotel/commit/7af26c62c64d653f912ba876b1d2fd4c7c170f40
 [MIL-060]: ../milestones/mil-060-dependabot-nuget-lock-files.md
 [RC-282]: ./reviews/rc-282-mil-060.md
 [07ec8fc]: https://github.com/NF-Hotel/NFHotel/commit/07ec8fc7f9b8bceb4d81ba323d6203a0d00d984d
+[MIL-046]: ../milestones/mil-046-finished-run-not-interrupted.md
+[ADR-0031]: ../adr/adr-0031-state-that-survives-a-deploy.md
+[MIL-056]: ../milestones/mil-056-dev-stack-without-kvm.md
+[ADR-0035]: ../adr/adr-0035-light-local-development-stack.md
+[RC-227]: ./reviews/rc-227-adr-0031.md
+[RC-238]: ./reviews/rc-238-mil-046.md
+[RC-239]: ./reviews/rc-239-mil-046-code.md
+[RC-271]: ./reviews/rc-271-mil-056-dev-stack-without-kvm.md
+[RC-272]: ./reviews/rc-272-mil-056-code.md
+[RC-273]: ./reviews/rc-273-adr-0035.md
+[RC-283]: ./reviews/rc-283-mil-046-gate.md
