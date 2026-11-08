@@ -15,7 +15,7 @@ using static NFHotel.Web.Tests.AdminSamples;
 
 namespace NFHotel.Web.Tests;
 
-/// <summary>The public booking flow of a guest: dates, room, guest, receipt (MIL-054 task 3).</summary>
+/// <summary>The public booking flow of a guest: dates, room type, guest, receipt (MIL-054 task 3).</summary>
 public sealed class BookingFlowViewModelTests
 {
     #region Setup
@@ -38,7 +38,7 @@ public sealed class BookingFlowViewModelTests
         RoomsAre(FreeRoom(1), FreeRoom(2));
         var viewModel = Create();
         await viewModel.FindRoomsAsync(Token);
-        viewModel.SelectRoom(1);
+        viewModel.SelectRoomType(RoomSize.Double);
         viewModel.FirstName = " Rita ";
         viewModel.LastName = "Hansen";
         viewModel.Email = "rita@example.com";
@@ -169,64 +169,67 @@ public sealed class BookingFlowViewModelTests
         Assert.Equal([Text(ErrorCodes.Booking.StartDateInPast)], viewModel.Errors);
     }
 
-    /// <summary>Edge: a room chosen for earlier dates is dropped when it is not free for the new ones.</summary>
+    /// <summary>Edge: a room type chosen for earlier dates is kept while a room of it is free, and dropped when none is.</summary>
     [Fact]
-    public async Task FindRoomsAsync_ChosenRoomNoLongerFree_DropsIt()
+    public async Task FindRoomsAsync_ChosenTypeNoLongerFree_DropsIt()
     {
-        var viewModel = await AtGuestStepAsync();
+        BookingFlowViewModel viewModel = await AtGuestStepAsync();
         RoomsAre(FreeRoom(2));
+        await viewModel.FindRoomsAsync(Token);
+        Assert.Equal(RoomSize.Double, viewModel.SelectedRoomType);
 
+        RoomsAre(new AvailableRoomDto(3, "301", 3, RoomSize.Suite, 4));
         await viewModel.FindRoomsAsync(Token);
 
-        Assert.Null(viewModel.SelectedRoom);
+        Assert.Null(viewModel.SelectedRoomType);
     }
 
     #endregion
 
-    #region SelectRoom
+    #region SelectRoomType
 
-    /// <summary>Positive: choosing a room moves on to the guest and sums up the choice.</summary>
+    /// <summary>Positive: choosing a room type moves on to the guest and sums up the choice without a room number.</summary>
     [Fact]
-    public async Task SelectRoom_FreeRoom_MovesToTheGuest()
+    public async Task SelectRoomType_FreeType_MovesToTheGuest()
     {
-        var viewModel = await AtGuestStepAsync();
+        BookingFlowViewModel viewModel = await AtGuestStepAsync();
 
         Assert.Equal(BookingFlowStep.Guest, viewModel.CurrentStep);
         Assert.True(viewModel.CanSubmit);
         Assert.Equal(
-            "Room 101 · Double room · Floor 1 · sleeps 2 · 11 March 2026 – 12 March 2026 · 1 night · Payment on arrival",
+            "Double room · 11 March 2026 – 12 March 2026 · 1 night · 1 guest · Payment on arrival",
             viewModel.SelectionSummary);
     }
 
-    /// <summary>Negative: a room that is not in the list is ignored, and invalid dates send the guest back.</summary>
+    /// <summary>Negative: a type with no free room is ignored, and invalid dates send the guest back.</summary>
     [Fact]
-    public async Task SelectRoom_UnknownRoomOrInvalidDates_IsIgnoredOrSentBack()
+    public async Task SelectRoomType_TypeNotFreeOrInvalidDates_IsIgnoredOrSentBack()
     {
         RoomsAre(FreeRoom(1));
-        var viewModel = Create();
+        BookingFlowViewModel viewModel = Create();
         await viewModel.FindRoomsAsync(Token);
 
-        viewModel.SelectRoom(9);
+        viewModel.SelectRoomType(RoomSize.Suite);
         Assert.Equal(BookingFlowStep.Room, viewModel.CurrentStep);
 
         viewModel.CheckInDate = null;
-        viewModel.SelectRoom(1);
+        viewModel.SelectRoomType(RoomSize.Double);
         Assert.Equal(BookingFlowStep.Dates, viewModel.CurrentStep);
-        Assert.Null(viewModel.SelectedRoom);
+        Assert.Null(viewModel.SelectedRoomType);
     }
 
     #endregion
 
-    #region DescribeRoom
+    #region Describe
 
-    /// <summary>Equivalence: the room is described with its size, floor and how many it sleeps.</summary>
+    /// <summary>Equivalence: a type is described by how many its biggest free room sleeps and how many rooms are free.</summary>
     [Fact]
-    public void DescribeRoom_Room_ListsItsFacts()
+    public void Describe_SleepsAndFree_ReadAsText()
     {
-        Assert.Equal("sleeps 1", BookingFlowViewModel.DescribeCapacity(1));
-        Assert.Equal("sleeps 3", BookingFlowViewModel.DescribeCapacity(3));
-        Assert.Equal("Floor 4", BookingFlowViewModel.DescribeFloor(4));
-        Assert.Throws<ArgumentNullException>(() => BookingFlowViewModel.DescribeRoom(null!));
+        Assert.Equal("sleeps 1", BookingFlowViewModel.DescribeSleeps(1));
+        Assert.Equal("sleeps up to 3", BookingFlowViewModel.DescribeSleeps(3));
+        Assert.Equal("Last room", BookingFlowViewModel.DescribeFree(1));
+        Assert.Equal("4 rooms free", BookingFlowViewModel.DescribeFree(4));
     }
 
     #endregion
@@ -266,7 +269,7 @@ public sealed class BookingFlowViewModelTests
         Assert.Equal(Text(ErrorCodes.Guest.FirstNameRequired), viewModel.GuestErrors.FirstName);
         Assert.Equal(Text(ErrorCodes.Guest.EmailInvalid), viewModel.GuestErrors.Email);
         Assert.Equal([Text(ErrorCodes.Booking.NotFound)], viewModel.Errors);
-        await _bookings.DidNotReceiveWithAnyArgs().CreatePublicAsync(Arg.Any<CreateBookingRequest>(), Arg.Any<CancellationToken>());
+        await _bookings.DidNotReceiveWithAnyArgs().CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>());
     }
 
     /// <summary>Positive: a valid booking is sent as a new guest with trimmed fields and shows the receipt.</summary>
@@ -274,7 +277,7 @@ public sealed class BookingFlowViewModelTests
     public async Task SubmitAsync_ValidBooking_ShowsTheReceipt()
     {
         _guests.ValidateFields(Arg.Any<GuestFields>()).Returns(Result.Success());
-        _bookings.CreatePublicAsync(Arg.Any<CreateBookingRequest>(), Arg.Any<CancellationToken>()).Returns(Ok(BookingDetails(9)));
+        _bookings.CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>()).Returns(Ok(BookingDetails(9)));
         var viewModel = await AtGuestStepAsync();
         viewModel.PassportNumber = " P1 ";
 
@@ -283,29 +286,31 @@ public sealed class BookingFlowViewModelTests
         Assert.Equal(BookingFlowStep.Receipt, viewModel.CurrentStep);
         Assert.Equal(9, viewModel.Confirmation!.BookingId);
         await _bookings.Received(1).CreatePublicAsync(
-            new CreateBookingRequest(
+            new CreatePublicBookingRequest(
                 Today.AddDays(1),
                 Today.AddDays(2),
+                RoomSize.Double,
                 1,
-                null,
                 new GuestFields("Rita", "Hansen", "rita@example.com", "+4512345678", "Denmark", "P1")),
             Arg.Any<CancellationToken>());
     }
 
-    /// <summary>Error handling: a room taken meanwhile drops the room, searches again and keeps the reason.</summary>
-    [Fact]
-    public async Task SubmitAsync_RoomTakenMeanwhile_SearchesAgainAndKeepsTheReason()
+    /// <summary>Error handling: a type taken meanwhile drops the choice, searches again and keeps the reason.</summary>
+    [Theory]
+    [InlineData(ErrorCodes.Booking.RoomNotAvailable)]
+    [InlineData(ErrorCodes.Booking.RoomTypeNotAvailable)]
+    public async Task SubmitAsync_TypeTakenMeanwhile_SearchesAgainAndKeepsTheReason(string code)
     {
         _guests.ValidateFields(Arg.Any<GuestFields>()).Returns(Result.Success());
-        _bookings.CreatePublicAsync(Arg.Any<CreateBookingRequest>(), Arg.Any<CancellationToken>())
-            .Returns(Fail<BookingDetailsDto>(ErrorCodes.Booking.RoomNotAvailable));
-        var viewModel = await AtGuestStepAsync();
+        _bookings.CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Fail<BookingDetailsDto>(code));
+        BookingFlowViewModel viewModel = await AtGuestStepAsync();
 
         await viewModel.SubmitAsync(Token);
 
-        Assert.Null(viewModel.SelectedRoom);
+        Assert.Null(viewModel.SelectedRoomType);
         Assert.Equal(BookingFlowStep.Room, viewModel.CurrentStep);
-        Assert.Equal([Text(ErrorCodes.Booking.RoomNotAvailable)], viewModel.Errors);
+        Assert.Equal([Text(code)], viewModel.Errors);
     }
 
     /// <summary>Error handling: a refusal that names no room keeps the choice and shows the reason; a failed new search keeps its own error.</summary>
@@ -313,12 +318,12 @@ public sealed class BookingFlowViewModelTests
     public async Task SubmitAsync_OtherRefusalOrFailedSearch_ShowsTheRightReason()
     {
         _guests.ValidateFields(Arg.Any<GuestFields>()).Returns(Result.Success());
-        _bookings.CreatePublicAsync(Arg.Any<CreateBookingRequest>(), Arg.Any<CancellationToken>())
+        _bookings.CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>())
             .Returns(Fail<BookingDetailsDto>(ErrorCodes.Booking.ConcurrencyConflict), Fail<BookingDetailsDto>(ErrorCodes.Booking.RoomNotBookable));
         var viewModel = await AtGuestStepAsync();
 
         await viewModel.SubmitAsync(Token);
-        Assert.NotNull(viewModel.SelectedRoom);
+        Assert.NotNull(viewModel.SelectedRoomType);
         Assert.Equal([Text(ErrorCodes.Booking.ConcurrencyConflict)], viewModel.Errors);
 
         _bookings.GetAvailableRoomsAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<int?>(), Arg.Any<CancellationToken>())
@@ -362,7 +367,7 @@ public sealed class BookingFlowViewModelTests
         var search = viewModel.FindRoomsAsync(Token);
         Assert.False(viewModel.CanFindRooms);
         await viewModel.FindRoomsAsync(Token);
-        viewModel.SelectRoom(1);
+        viewModel.SelectRoomType(RoomSize.Double);
         viewModel.BackToDates();
         viewModel.BackToRooms();
         await viewModel.SubmitAsync(Token);
@@ -383,7 +388,7 @@ public sealed class BookingFlowViewModelTests
     public async Task StartOver_AfterReceipt_ClearsTheFlow()
     {
         _guests.ValidateFields(Arg.Any<GuestFields>()).Returns(Result.Success());
-        _bookings.CreatePublicAsync(Arg.Any<CreateBookingRequest>(), Arg.Any<CancellationToken>()).Returns(Ok(BookingDetails(9)));
+        _bookings.CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>()).Returns(Ok(BookingDetails(9)));
         var viewModel = await AtGuestStepAsync();
         await viewModel.SubmitAsync(Token);
         _clock.Today = Today.AddDays(5);
@@ -392,7 +397,7 @@ public sealed class BookingFlowViewModelTests
 
         Assert.Equal(BookingFlowStep.Dates, viewModel.CurrentStep);
         Assert.Null(viewModel.Confirmation);
-        Assert.Null(viewModel.SelectedRoom);
+        Assert.Null(viewModel.SelectedRoomType);
         Assert.Empty(viewModel.AvailableRooms);
         Assert.Equal(string.Empty, viewModel.FirstName);
         Assert.Same(GuestFieldErrors.None, viewModel.GuestErrors);
@@ -485,27 +490,39 @@ public sealed class BookingFlowViewModelTests
         Assert.Equal(expected, viewModel.Guests);
     }
 
-    /// <summary>Equivalence: the party filters the fetched rooms by capacity; one guest, or "show all", lists every room.</summary>
+    /// <summary>
+    /// Equivalence: the free rooms are grouped into types, smallest type first, counting only the rooms that sleep the
+    /// party; one guest, or "show all", counts every room.
+    /// </summary>
     [Fact]
-    public async Task VisibleRooms_Party_FiltersRoomsByCapacity()
+    public async Task VisibleRoomTypes_Party_GroupsAndFiltersByCapacity()
     {
-        RoomsAre(FreeRoom(1), new AvailableRoomDto(3, "301", 3, RoomSize.Suite, 4));
-        var viewModel = Create();
+        RoomsAre(
+            new AvailableRoomDto(3, "301", 3, RoomSize.Suite, 4),
+            FreeRoom(1),
+            new AvailableRoomDto(2, "102", 1, RoomSize.Double, 3));
+        BookingFlowViewModel viewModel = Create();
         await viewModel.FindRoomsAsync(Token);
 
-        Assert.Equal(2, viewModel.VisibleRooms.Count);
+        Assert.Equal(
+            [new RoomTypeChoice(RoomSize.Double, 2, 3), new RoomTypeChoice(RoomSize.Suite, 1, 4)],
+            viewModel.VisibleRoomTypes);
 
         viewModel.Guests = 3;
-        Assert.Single(viewModel.VisibleRooms);
-        Assert.Equal(3, viewModel.VisibleRooms[0].RoomId);
-        Assert.Equal("No free room sleeps 3", viewModel.NoRoomForGuestsText);
+        Assert.Equal(
+            [new RoomTypeChoice(RoomSize.Double, 1, 3), new RoomTypeChoice(RoomSize.Suite, 1, 4)],
+            viewModel.VisibleRoomTypes);
+
+        viewModel.Guests = 4;
+        Assert.Equal([new RoomTypeChoice(RoomSize.Suite, 1, 4)], viewModel.VisibleRoomTypes);
+        Assert.Equal("No free room sleeps 4", viewModel.NoRoomForGuestsText);
 
         viewModel.Guests = 0;
         Assert.Equal(1, viewModel.Guests);
 
         viewModel.Guests = 4;
         viewModel.ShowAllRooms();
-        Assert.Equal(2, viewModel.VisibleRooms.Count);
+        Assert.Equal(2, viewModel.VisibleRoomTypes.Count);
 
         viewModel.StartOver();
         Assert.Equal(1, viewModel.Guests);

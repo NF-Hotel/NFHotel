@@ -185,7 +185,7 @@ public sealed class BookingPriceTests
     {
         // Arrange
         (ServiceWorld? world, Room? room) = await WorldWithChangeAsync(20m);
-        CreateBookingRequest request = new(Arrival, Arrival.AddDays(2), room.Id, null, ServiceWorld.ValidGuestFields());
+        CreatePublicBookingRequest request = new(Arrival, Arrival.AddDays(2), room.Size, 1, ServiceWorld.ValidGuestFields());
 
         // Act
         Result<BookingDetailsDto> result = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
@@ -203,8 +203,8 @@ public sealed class BookingPriceTests
         // Arrange
         ServiceWorld world = NewWorld();
         Room room = world.AddRoom("101", 1, RoomSize.Single);
-        CreateBookingRequest request = new(Arrival, Arrival.AddDays(2), room.Id, null, ServiceWorld.ValidGuestFields());
-        CreateBookingRequest later = request with { CheckInDate = Arrival.AddDays(10), CheckOutDate = Arrival.AddDays(12) };
+        CreatePublicBookingRequest request = new(Arrival, Arrival.AddDays(2), room.Size, 1, ServiceWorld.ValidGuestFields());
+        CreatePublicBookingRequest later = request with { CheckInDate = Arrival.AddDays(10), CheckOutDate = Arrival.AddDays(12) };
 
         // Act
         Result<BookingDetailsDto> withoutRate = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);

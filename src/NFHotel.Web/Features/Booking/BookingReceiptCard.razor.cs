@@ -16,8 +16,11 @@ public partial class BookingReceiptCard : ComponentBase
     [EditorRequired]
     public BookingDetailsDto? Details { get; set; }
 
-    /// <summary>The room as the customer reads it: number, type and floor.</summary>
+    /// <summary>
+    /// The room as the customer reads it: the type only. The room itself is given at check-in, so reception can move
+    /// the booking without the receipt telling the guest something that is no longer true.
+    /// </summary>
     private string RoomText => Details is null
         ? string.Empty
-        : $"Room {Details.Room.RoomNumber} · {DisplayText.Describe(Details.Room.Size)} · {BookingFlowViewModel.DescribeFloor(Details.Room.Floor)}";
+        : $"{DisplayText.Describe(Details.Room.Size)} · the room number is given at check-in";
 }

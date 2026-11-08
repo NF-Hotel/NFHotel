@@ -5,7 +5,8 @@
 @inject BookingFlowViewModel ViewModel
 
 @*
-    The customer's booking flow: dates → free rooms → details → receipt, on one page.
+    The customer's booking flow: dates → a free room type → details → receipt, on one page. The guest chooses a
+    type, never a room: the API picks a free room of the type when the booking is sent.
 
     The file is markup. All state, all validation and all service calls are in
     BookingFlowViewModel (UI-Spec section 4, B-10). Book.razor.cs contains only forwarding, the
@@ -28,7 +29,7 @@
         <div class="pub-prose">
             <h1 class="title">Book a room</h1>
             <p class="pub-intro">
-                Pick your dates, choose a room and leave your details. Reception confirms your booking once
+                Pick your dates, choose a room type and leave your details. Reception confirms your booking once
                 we've seen it, usually within a few hours. You pay when you arrive, and there is no booking fee.
             </p>
         </div>
@@ -38,7 +39,7 @@
                 <li class="@ViewModel.StepClass(BookingFlowStep.Dates)"
                     aria-current="@ViewModel.StepAria(BookingFlowStep.Dates)">Dates</li>
                 <li class="@ViewModel.StepClass(BookingFlowStep.Room)"
-                    aria-current="@ViewModel.StepAria(BookingFlowStep.Room)">Room</li>
+                    aria-current="@ViewModel.StepAria(BookingFlowStep.Room)">Room type</li>
                 <li class="@ViewModel.StepClass(BookingFlowStep.Guest)"
                     aria-current="@ViewModel.StepAria(BookingFlowStep.Guest)">Your details</li>
                 <li class="@ViewModel.StepClass(BookingFlowStep.Receipt)"
@@ -100,14 +101,15 @@
             {
                 <section class="card card-pad stack" aria-labelledby="step-room">
                     <div class="row-between">
-                        <h2 class="subtitle" id="step-room">Choose a room</h2>
+                        <h2 class="subtitle" id="step-room">Choose a room type</h2>
                         <p class="muted numeric">@ViewModel.PeriodText &middot; @ViewModel.NightsText &middot; @ViewModel.GuestsText</p>
                     </div>
+                    <p class="muted">You choose the type of room. Reception gives you the room itself when you check in.</p>
 
                     @if (ViewModel.IsBusy)
                     {
                         @* Placeholders in the shape of the rows, so the list does not push the page when it lands. *@
-                        <LoadingSkeleton Rows="6" />
+                        <LoadingSkeleton Rows="3" />
                     }
                     else if (ViewModel.AvailableRooms.Count == 0)
                     {
@@ -119,7 +121,7 @@
                             </button>
                         </EmptyState>
                     }
-                    else if (ViewModel.VisibleRooms.Count == 0)
+                    else if (ViewModel.VisibleRoomTypes.Count == 0)
                     {
                         @* Rooms are free, but none sleeps the party. The guest decides whether to see them anyway. *@
                         <EmptyState Title="@ViewModel.NoRoomForGuestsText"
@@ -132,21 +134,22 @@
                     else
                     {
                         <ul class="pub-roomlist">
-                            @foreach (var room in ViewModel.VisibleRooms)
+                            @foreach (var choice in ViewModel.VisibleRoomTypes)
                             {
                                 <li>
                                     <div>
-                                        <div class="pub-roomlist-name">Room @room.RoomNumber, @DisplayText.Describe(room.Size)</div>
+                                        <div class="pub-roomlist-name">@DisplayText.Describe(choice.Size)</div>
                                         <div class="pub-roomlist-desc">
-                                            @BookingFlowViewModel.DescribeFloor(room.Floor), @BookingFlowViewModel.DescribeCapacity(room.Capacity)
+                                            @BookingFlowViewModel.DescribeSleeps(choice.Sleeps)
+                                            &middot; @BookingFlowViewModel.DescribeFree(choice.Free)
                                             &middot; @BookingFlowViewModel.PaymentText
                                         </div>
                                     </div>
                                     <button type="button"
                                             class="btn btn-primary"
                                             disabled="@ViewModel.IsBusy"
-                                            @onclick="() => ViewModel.SelectRoom(room.RoomId)">
-                                        Choose room @room.RoomNumber
+                                            @onclick="() => ViewModel.SelectRoomType(choice.Size)">
+                                        Choose @DisplayText.Describe(choice.Size)
                                     </button>
                                 </li>
                             }

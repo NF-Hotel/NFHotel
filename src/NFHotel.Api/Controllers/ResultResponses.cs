@@ -14,6 +14,7 @@ internal static class ResultResponses
         ".concurrency_conflict",
         ".overlap",
         ".room_not_available",
+        ".room_type_not_available",
         ".room_number_already_exists",
         ".has_bookings",
         ".already_running",
