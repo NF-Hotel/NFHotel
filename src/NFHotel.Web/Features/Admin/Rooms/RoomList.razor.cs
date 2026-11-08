@@ -110,7 +110,7 @@ public partial class RoomList : CancellableComponentBase
     /// <summary>The classes of a tile on the board: the colour of its frame follows the housekeeping badge.</summary>
     private string TileClass(RoomListItemDto room)
     {
-        var state = room.Status != RoomStatus.Available
+        string state = room.Status != RoomStatus.Available
             ? "blocked"
             : room.HousekeepingStatus switch
             {

@@ -18,7 +18,7 @@ public partial class AdminTabs : ComponentBase
 
     private bool IsCurrent(AdminTab tab)
     {
-        var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+        string path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
         return AdminRoutes.IsUnder(path, tab.Href);
     }
 }

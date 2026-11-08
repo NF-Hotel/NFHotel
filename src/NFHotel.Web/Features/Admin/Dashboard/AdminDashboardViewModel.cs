@@ -228,7 +228,7 @@ public sealed class AdminDashboardViewModel
             return;
         }
 
-        var rooms = result.Value;
+        IReadOnlyList<RoomListItemDto> rooms = result.Value;
 
         RoomsAwaitingCleaning = rooms
             .Where(room => room.Actions.CanStartCleaning)

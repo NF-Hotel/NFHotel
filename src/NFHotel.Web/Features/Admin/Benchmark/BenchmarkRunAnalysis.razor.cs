@@ -49,13 +49,20 @@ public partial class BenchmarkRunAnalysis : CancellableComponentBase
     private static string CompareHint =>
         $"No model is ranked. \"Valid\" only says that the answer had the requested structure. Tick up to {BenchmarkAnalysisViewModel.MaxCompared} answers to read them side by side.";
 
-    private static string ValidClass(BenchmarkResultDto result) =>
-        result.HasError ? "outcome outcome-fail" : result.ResponseValid switch
+    private static string ValidClass(BenchmarkResultDto result)
+    {
+        if (result.HasError)
         {
-            true => "outcome outcome-pass",
-            false => "outcome outcome-warn",
-            null => string.Empty,
-        };
+            return "outcome outcome-fail";
+        }
+
+        if (result.ResponseValid is not bool valid)
+        {
+            return string.Empty;
+        }
+
+        return valid ? "outcome outcome-pass" : "outcome outcome-warn";
+    }
 
     private static string Number(double? value) =>
         value is { } number ? number.ToString("0.##", CultureInfo.InvariantCulture) : "—";

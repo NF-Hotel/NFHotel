@@ -32,7 +32,7 @@ public static class AdminRoutes
     {
         ArgumentNullException.ThrowIfNull(path);
 
-        var clean = path.Split('?', 2)[0].TrimEnd('/').ToLowerInvariant();
+        string clean = path.Split('?', 2)[0].TrimEnd('/').ToLowerInvariant();
         if (clean.Length == 0)
         {
             clean = "/admin";
@@ -61,7 +61,7 @@ public static class AdminRoutes
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(prefix);
 
-        var clean = path.Split('?', 2)[0].TrimEnd('/');
+        string clean = path.Split('?', 2)[0].TrimEnd('/');
         return clean.Equals(prefix, StringComparison.OrdinalIgnoreCase)
             || clean.StartsWith(prefix + "/", StringComparison.OrdinalIgnoreCase);
     }

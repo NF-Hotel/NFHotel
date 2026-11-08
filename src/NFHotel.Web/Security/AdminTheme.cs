@@ -31,7 +31,7 @@ public static class AdminTheme
 
     /// <summary>The theme the user chose, or <c>null</c> when the shell follows the system.</summary>
     public static string? Read(HttpContext? context) =>
-        context?.Request.Cookies.TryGetValue(CookieName, out var value) == true && value is Light or Dark
+        context?.Request.Cookies.TryGetValue(CookieName, out string? value) == true && value is Light or Dark
             ? value
             : null;
 
@@ -40,8 +40,6 @@ public static class AdminTheme
     {
         ArgumentNullException.ThrowIfNull(app);
 
-        var requireTls = HttpsRequirement.IsRequired(app.Configuration);
-
         app.MapPost(TogglePath, async (HttpContext context, IAntiforgery antiforgery) =>
         {
             if (!await antiforgery.IsRequestValidAsync(context).ConfigureAwait(false))
@@ -49,14 +47,15 @@ public static class AdminTheme
                 return Results.BadRequest();
             }
 
-            var form = await context.Request.ReadFormAsync(context.RequestAborted).ConfigureAwait(false);
-            var theme = form[Field].ToString();
-            var options = new CookieOptions
+            IFormCollection form = await context.Request.ReadFormAsync(context.RequestAborted).ConfigureAwait(false);
+            string theme = form[Field].ToString();
+            // Secure always: browsers also keep a Secure cookie on http://localhost, so development still works.
+            CookieOptions options = new()
             {
                 HttpOnly = true,
                 IsEssential = true,
                 SameSite = SameSiteMode.Lax,
-                Secure = requireTls || context.Request.IsHttps,
+                Secure = true,
                 Path = "/admin",
             };
 

@@ -33,11 +33,11 @@ public partial class BookingList : CancellableComponentBase
     /// <summary>The classes of a step: done when its choice is made, active when it is the next thing to do.</summary>
     private string StepClass(int step)
     {
-        var datesDone = Form.HasSearchedRooms;
-        var roomDone = Form.SelectedRoomId is not null;
-        var guestDone = Form.GuestMode == BookingGuestMode.Existing ? Form.SelectedGuestId is not null : Form.NewGuestIsValid;
-        var done = step switch { 1 => datesDone, 2 => roomDone, _ => guestDone };
-        var active = step switch { 1 => !datesDone, 2 => datesDone && !roomDone, _ => roomDone && !guestDone };
+        bool datesDone = Form.HasSearchedRooms;
+        bool roomDone = Form.SelectedRoomId is not null;
+        bool guestDone = Form.GuestMode == BookingGuestMode.Existing ? Form.SelectedGuestId is not null : Form.NewGuestIsValid;
+        bool done = step switch { 1 => datesDone, 2 => roomDone, _ => guestDone };
+        bool active = step switch { 1 => !datesDone, 2 => datesDone && !roomDone, _ => roomDone && !guestDone };
 
         return done ? "step-block is-done" : active ? "step-block is-active" : "step-block";
     }
