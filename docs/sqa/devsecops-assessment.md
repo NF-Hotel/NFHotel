@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Section 11: the personal database roles of the team and their log (ADR-0034, MIL-048) | [102cae2] |
-| 2026-11-08 | Proposed | mikemike | S01 | Section 15: decision D2 taken by S01 in chat, private packages (MIL-065 task 13) | pending |
+| 2026-11-08 | Proposed | mikemike | S01 | Section 15: decision D2 taken by S01 in chat, private packages (MIL-065 task 13) | [dd55a67] |
 
 This document is a working assessment. Its type is not in `framework/registry/artifact-catalog.md`; a catalog type for it is proposed upstream (rule 5) before it is accepted.
 
@@ -450,3 +450,4 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 [RC-164]: ./reviews/rc-164-mil-021-amendment.md
 [7853a62]: https://github.com/NF-Hotel/NFHotel/commit/7853a620ea10e270620236ac74fea5f77cd29ac2
 [102cae2]: https://github.com/NF-Hotel/NFHotel/commit/102cae2e4dd44d67b4d8c71f0ad731456d1938e5
+[dd55a67]: https://github.com/NF-Hotel/NFHotel/commit/dd55a67bb9d57a77fe738f52dde80f1eef61e785
