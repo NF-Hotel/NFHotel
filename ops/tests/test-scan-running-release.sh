@@ -7,8 +7,12 @@
 # and removed after its scan: a compose file with a known vulnerable image fails the run, one
 # without findings passes; a variable, an alias, a comment and the development-only stack
 # proxmox are left out; a folder without such images is refused before anything is pulled.
-# A summary too long for an issue is cut. Fakes stand in for docker and for scan-image.sh, so
-# nothing is pulled or scanned.
+# A summary too long for an issue is cut. The steps of the workflow (running-image-scan-steps.sh):
+# find writes the manifest of a test image, or downloads the one of the release in production and
+# names its operations commit, and refuses a release without one; scan passes --third-party only
+# with an operations commit and reports a failed gate in its output, not as a failed step. Fakes
+# stand in for docker, gh, scan-image.sh and, for the steps, scan-running-release.sh, so nothing is
+# pulled, downloaded or scanned.
 #
 # Run it in Debian 12 with the repository at /src:
 #   docker run --rm -v "$PWD:/src:ro" debian:12-slim bash /src/tests/test-scan-running-release.sh
@@ -211,6 +215,72 @@ size="$(wc -c <"$W/out/summary.md")"
 [[ $status == 1 && "$size" -le 60200 ]] && tail -n 1 "$W/out/summary.md" | grep -q "is cut at 60000 characters" &&
   ok "a summary over 60000 characters is cut, with a note ($size bytes)" || ko "cut: $size bytes, $(tail -n 2 "$W/out/summary.md")"
 (($(grep -c '^```' "$W/out/summary.md") % 2 == 0)) && ok "the cut summary closes its code block" || ko "open code block"
+
+echo "== the steps of the workflow (running-image-scan-steps.sh)"
+# The fake gh: the last CD run has the head FAKE_CD_HEAD, the release run of that commit is
+# FAKE_RELEASE_RUN, and its artifact holds FAKE_MANIFEST. The fake scan logs its arguments.
+cat >"$W/gh" <<'EOF'
+#!/bin/bash
+echo "gh $*" >>"$FAKE_LOG"
+case "$*" in
+  "run list"*"--workflow cd.yaml"*) echo "${FAKE_CD_HEAD:-}" ;;
+  "run list"*"--workflow release.yaml"*) echo "${FAKE_RELEASE_RUN:-}" ;;
+  "run download"*) mkdir -p "${!#}" && cp "$FAKE_MANIFEST" "${!#}/release.json" ;;
+  *) exit 1 ;;
+esac
+EOF
+cat >"$W/scan-release" <<'EOF'
+#!/bin/bash
+echo "scan-release $*" >>"$FAKE_LOG"
+mkdir -p results && echo "summary of the fake scan" >results/summary.md
+exit "${FAKE_SCAN_EXIT:-0}"
+EOF
+chmod +x "$W/gh" "$W/scan-release"
+head7="$(printf '%040d' 7)" ops8="$(printf '%040d' 8)" sha9="$(printf '%040d' 9)"
+# steps <subcommand>: run a step in an empty job folder, with the variables of the runner.
+steps() {
+  rm -rf "$W/job" && mkdir -p "$W/job" && : >"$FAKE_LOG"
+  (
+    cd "$W/job" || exit 1
+    export REPO=NF-Hotel/NFHotel GITHUB_SHA="$sha9" GITHUB_OUTPUT="$W/job/output"
+    export GITHUB_STEP_SUMMARY="$W/job/step-summary" NFHOTEL_GH="$W/gh" NFHOTEL_SCAN_RELEASE="$W/scan-release"
+    bash "$OPS/scripts/running-image-scan-steps.sh" "$@"
+  ) >"$W/stdout" 2>&1
+}
+
+TEST_IMAGE="example/vulnerable:1.0@$(d 11)" steps find &&
+  [[ "$(jq -r '.images.test' "$W/job/release/release.json")" == "example/vulnerable:1.0@$(d 11)" ]] &&
+  [[ ! -s "$W/job/output" ]] && ! grep -q '^gh ' "$W/log" &&
+  ok "find with a test image writes a manifest of that image, without an operations commit or a download" ||
+  ko "find test image: $(cat "$W/stdout")"
+FAKE_CD_HEAD="$head7" FAKE_RELEASE_RUN=4242 FAKE_MANIFEST="$W/release.json" steps find &&
+  [[ "$(cat "$W/job/output")" == "devops_sha=$ops8" ]] && cmp -s "$W/release.json" "$W/job/release/release.json" &&
+  grep -qF "Release in production: $head7 (NF Hotel Release run 4242), operations commit $ops8" "$W/job/step-summary" &&
+  grep -q "^gh run list --repo NF-Hotel/NFHotel --workflow release.yaml --commit $head7 " "$W/log" &&
+  grep -q "^gh run download 4242 --repo NF-Hotel/NFHotel --name release-manifest --dir release$" "$W/log" &&
+  ok "find downloads the manifest of the release in production and writes its operations commit" ||
+  ko "find release: $(cat "$W/stdout" "$W/log")"
+FAKE_CD_HEAD="" steps find && ko "find accepted no CD run" ||
+  { grep -q "::error::no successful CD run found" "$W/stdout" && [[ ! -s "$W/job/output" ]] &&
+    ok "find without a successful CD run fails with the reason"; } || ko "no CD run: $(cat "$W/stdout")"
+FAKE_CD_HEAD="$head7" FAKE_RELEASE_RUN="" steps find && ko "find accepted no release run" ||
+  { grep -q "::error::no release run for $head7" "$W/stdout" && ! grep -q '^gh run download' "$W/log" &&
+    ok "find without a release run of that commit fails before a download"; } || ko "no release: $(cat "$W/stdout")"
+FAKE_CD_HEAD="$head7" FAKE_RELEASE_RUN=4242 FAKE_MANIFEST="$W/no-ops.json" steps find && ko "find accepted no operations commit" ||
+  { grep -q "::error::the release.json of $head7 has no operations commit" "$W/stdout" && [[ ! -s "$W/job/output" ]] &&
+    ok "find refuses a release.json without an operations commit"; } || ko "find no ops: $(cat "$W/stdout")"
+DEVOPS_SHA="$ops8" FAKE_SCAN_EXIT=1 steps scan &&
+  grep -q "^scan-release --manifest release/release.json --results results --third-party running/ops/deploy$" "$W/log" &&
+  [[ "$(cat "$W/job/output")" == failed=true ]] && grep -q "summary of the fake scan" "$W/job/step-summary" &&
+  ok "scan with an operations commit scans the third-party images, and a failed gate is an output, not a failed step" ||
+  ko "scan third-party: $(cat "$W/stdout" "$W/log")"
+steps scan && grep -q "^scan-release --manifest release/release.json --results results$" "$W/log" &&
+  [[ "$(cat "$W/job/output")" == failed=false ]] &&
+  ok "scan without an operations commit (a test image) scans the manifest only" || ko "scan alone: $(cat "$W/stdout" "$W/log")"
+steps
+[[ $? == 2 ]] && ok "the steps without a subcommand are a usage error" || ko "no subcommand: $(cat "$W/stdout")"
+steps deploy
+[[ $? == 2 ]] && ok "an unknown step is a usage error" || ko "unknown step: $(cat "$W/stdout")"
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))
