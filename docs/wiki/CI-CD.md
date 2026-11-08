@@ -175,9 +175,10 @@ S03 and a repository administrator do this once, in this order.
    - `NFHOTEL_VM_HOST` (the tailnet name of the VM, for example `nf-hotel`).
 
    No secret is needed in the environment. The repository has one secret, `SONAR_TOKEN`: an analysis token from SonarQube Cloud (My Account, Security), used with Automatic Analysis turned off in the project (Administration, Analysis Method); renew it before it expires (ADR-0033).
-3. **After the first release, make the packages public (decision D2):**
-   - Packages, each of the four images, Package settings, Change visibility.
-   - Link each package to this repository if it is not linked.
+3. **The packages stay private.** Decision D2 recommended public packages; they are private, and the release and the deploy work with that:
+   - CD logs in to GHCR with the job token (`packages: read`) only to verify the attestations of each digest;
+   - the VM pulls the images with a read credential of its own, set up on the VM and never stored in the repository;
+   - link each package to this repository if it is not linked, and before the first CD run that deploys a new image of the release, make sure that the credential of the VM can read its package.
 4. **After PR #22 is merged (decision D5),** edit the ruleset `Approve merges`:
    - require the status checks `Build, tests og sikkerhed`, `Formatering` and `Docker-build`;
    - dismiss stale approvals;

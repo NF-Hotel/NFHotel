@@ -50,7 +50,7 @@ Every service publishes no host port unless the table says so; the others are re
 
 | Service (compose folder) | What it does | Image | Registry | Networks | Published port |
 | --- | --- | --- | --- | --- | --- |
-| `cloudflared` (`cloudflared`) | Outbound tunnel to Cloudflare; forwards the public host name to nginx (ADR-0028) | `cloudflare/cloudflared:2026.10.3` | Docker Hub | proxy | none |
+| `cloudflared` (`cloudflared`) | Outbound tunnel to Cloudflare; forwards the public host name to nginx (ADR-0028) | `cloudflare/cloudflared:2026.10.5` | Docker Hub | proxy | none |
 | `nginx` (`nginx`) | Reverse proxy and TLS end: HTTPS on the tailnet and the public listener for the tunnel; no route to the Python services (ADR-0039) | `ghcr.io/nf-hotel/nfhotel-nginx`: `nginx:1.29-alpine` with the fixes of its Alpine packages (ADR-0040) | GHCR, built by Release | proxy, api | 80 and 443 (tailnet and LAN, firewalled to 80 and 443 only) |
 | `nfhotel-web` (`nfhotel-web`) | The Blazor web application: guest pages and back office | `ghcr.io/nf-hotel/nfhotel-web` | GHCR (our build) | proxy, api, python | none |
 | `nfhotel-api` (`nfhotel-api`) | NFHotel.Api: the only container that reaches the database (ADR-0004) | `ghcr.io/nf-hotel/nfhotel-api` | GHCR (our build) | api, db, python | none |
@@ -59,9 +59,9 @@ Every service publishes no host port unless the table says so; the others are re
 | `market-analysis-api` (`market-analysis`) | The market analysis service of `NF-Hotel/notebook-market-analysis` | `ghcr.io/nf-hotel/market-analysis` | GHCR (our build) | python, llm | none |
 | `benchmark` (`benchmark`) | The benchmark service of `NF-Hotel/notebook-benchmark`: compares the local AI models | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | python, llm | none |
 | `results-owner` (`benchmark`) | One-shot job before `benchmark`: gives the results volume to the service's user (MIL-045), with no network | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | none | none |
-| `ollama` (`ollama`) | Local model server for the benchmark and the market analysis | `ollama/ollama:0.40.8` | Docker Hub | llm | none |
-| `alloy` (`alloy`) | Agent that sends the logs and metrics of the VM to the monitoring LXC | `grafana/alloy:v1.11.3` | Docker Hub | internal, egress, apps | none |
-| `socket-proxy` (`alloy`) | Gives Alloy read-only access to the Docker API (GET of containers and networks only) | `tecnativa/docker-socket-proxy:v0.4.1` | Docker Hub | internal | none |
+| `ollama` (`ollama`) | Local model server for the benchmark and the market analysis | `ollama/ollama:0.40.11` | Docker Hub | llm | none |
+| `alloy` (`alloy`) | Agent that sends the logs and metrics of the VM to the monitoring LXC | `grafana/alloy:v1.21.2` | Docker Hub | internal, egress, apps | none |
+| `socket-proxy` (`alloy`) | Gives Alloy read-only access to the Docker API (GET of containers and networks only) | `tecnativa/docker-socket-proxy:v0.5.0` | Docker Hub | internal | none |
 
 **The Docker networks:**
 
@@ -82,8 +82,8 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 | `prometheus` (`monitoring`) | Monitoring LXC | Metrics store and alert rules | `prom/prometheus:v3.7.2` | Docker Hub | 9090 on the LXC's tailnet address |
 | `alertmanager` (`monitoring`) | Monitoring LXC | Sends alerts to Discord and the watchdog ping to Healthchecks.io | `prom/alertmanager:v0.29.0` | Docker Hub | none |
 | `blackbox` (`monitoring`) | Monitoring LXC | Probes the site over HTTPS, the redirect and the public name | `prom/blackbox-exporter:v0.27.0` | Docker Hub | none |
-| `loki` (`monitoring`) | Monitoring LXC | Log store, kept 14 days; its ruler evaluates the log alert | `grafana/loki:3.5.7` | Docker Hub | 3100 on the LXC's tailnet address |
-| `grafana` (`monitoring`) | Monitoring LXC | Dashboards and log search | `grafana/grafana:12.2.1` | Docker Hub | 3000 on the LXC's tailnet address |
+| `loki` (`monitoring`) | Monitoring LXC | Log store, kept 14 days; its ruler evaluates the log alert | `grafana/loki:3.7.9` | Docker Hub | 3100 on the LXC's tailnet address |
+| `grafana` (`monitoring`) | Monitoring LXC | Dashboards and log search | `grafana/grafana:13.3.0` | Docker Hub | 3000 on the LXC's tailnet address |
 | `scan-exporter` (`monitoring`) | Monitoring LXC | Reads the results of the security scans (GitHub code scanning, the scan workflows, SonarQube Cloud) every 15 minutes for Prometheus (MIL-053); the code is mounted read-only, nothing is built | `python:3.13-slim` | Docker Hub | none |
 | `backup-target` (`backup-target`) | Backup host (legion laptop of S03) | Write-only SSH target of the nightly off-VM copy of the encrypted backup (ADR-0008) | `nfhotel-backup-target:local`, built there from `debian:12-slim` | built locally | SSH on the host's tailnet address |
 | `proxmox` (`proxmox`) | CI and a developer machine only | Throwaway Proxmox VE for the Proxmox integration tests (MIL-003) | `dockurr/proxmox:9.2.20` | Docker Hub | `127.0.0.1:18006` |
