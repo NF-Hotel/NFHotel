@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-070, which S01 accepted in chat on 2026-11-08 ("1 ja", RC-318 Go) with this choice and the ways it rejects; written by the AI; accepted after RC-320 Go | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-070, which S01 accepted in chat on 2026-11-08 ("1 ja", RC-318 Go) with this choice and the ways it rejects; written by the AI; accepted after RC-320 Go | [6411a2a] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -73,3 +73,4 @@ We follow option 4: the connection string of the API crosses `sudo` on standard 
 [ADR-0024]: ./adr-0024-secrets-as-files.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
 [CIS-001]: ../sqa/cis-checklist.md
+[6411a2a]: https://github.com/NF-Hotel/NFHotel/commit/6411a2a500971d387634758b345a7fda9d127722

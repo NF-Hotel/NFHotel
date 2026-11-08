@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-068 and of its code at the gate: the desktop removed on the VM on 2026-11-08 (task 5), rows 2.1.x and 2.2.x of CIS-001, gate passed (RC-319, Go) | [3a2683b] |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The rows of ADR-0041 and of the code of MIL-070: the fix of `as_app`, its test and the wiki pages, reviewed before the pull request (RC-320, Go) | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The rows of ADR-0041 and of the code of MIL-070: the fix of `as_app`, its test and the wiki pages, reviewed before the pull request (RC-320, Go) | [6411a2a] |
 
 ---
 
@@ -348,3 +348,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [3a2683b]: https://github.com/NF-Hotel/NFHotel/commit/3a2683b9abdd60ff583dc81c14a65e050e3183c4
+[6411a2a]: https://github.com/NF-Hotel/NFHotel/commit/6411a2a500971d387634758b345a7fda9d127722

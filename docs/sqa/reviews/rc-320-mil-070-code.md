@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-070 before their pull request: ADR-0041, `as_app` of `deploy-release.sh`, `test-sudo-log.sh`, Ops CI and three wiki pages; Go | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-070 before their pull request: ADR-0041, `as_app` of `deploy-release.sh`, `test-sudo-log.sh`, Ops CI and three wiki pages; Go | [6411a2a] |
 
 ---
 
@@ -140,3 +140,4 @@ Go. Every Mandatory criterion of QC-ADR-001, QC-SH-001, QC-YML-001 and QC-WF-001
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[6411a2a]: https://github.com/NF-Hotel/NFHotel/commit/6411a2a500971d387634758b345a7fda9d127722
