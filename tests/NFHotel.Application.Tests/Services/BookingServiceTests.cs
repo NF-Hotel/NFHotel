@@ -2,7 +2,9 @@ using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.Staff;
+using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.TestSupport;
 
@@ -365,46 +367,86 @@ public sealed class BookingServiceTests
         Assert.Equal(2, world.UnitOfWork.SaveCount);
     }
 
-    /// <summary>Positive: a guest books on the public page with new guest details, without staff permissions (MIL-054).</summary>
+    /// <summary>Positive: a guest books a room type on the public page with new guest details, without staff permissions (MIL-054).</summary>
     [Fact]
     public async Task CreatePublicAsync_NewGuest_SavesTheGuestAndTheBooking()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var room = world.AddRoom();
-        var request = new CreateBookingRequest(world.Clock.Today, world.Clock.Today.AddDays(2), room.Id, null, ServiceWorld.ValidGuestFields());
+        ServiceWorld world = new();
+        Room room = world.AddRoom();
+        CreatePublicBookingRequest request = new(world.Clock.Today, world.Clock.Today.AddDays(2), RoomSize.Double, 1, ServiceWorld.ValidGuestFields());
 
         // Act
-        var result = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> result = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.Equal(world.Guests.Items.Single().Id, world.Bookings.Items.Single().GuestId);
+        Booking booking = world.Bookings.Items.Single();
+        Assert.Equal((world.Guests.Items.Single().Id, room.Id), (booking.GuestId, booking.RoomId));
     }
 
-    /// <summary>Negative: the public page cannot book for an existing guest or without guest details (MIL-054).</summary>
-    [Theory]
-    [InlineData(true, true)]
-    [InlineData(false, false)]
-    public async Task CreatePublicAsync_ExistingOrNoGuest_ReturnsGuestSelectionInvalid(bool withGuestId, bool withNewGuest)
+    /// <summary>Negative: the public page cannot book without guest details (MIL-054).</summary>
+    [Fact]
+    public async Task CreatePublicAsync_NoGuestDetails_ReturnsGuestSelectionInvalid()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var room = world.AddRoom();
-        var guest = world.AddGuest();
-        var request = new CreateBookingRequest(
-            world.Clock.Today,
-            world.Clock.Today.AddDays(2),
-            room.Id,
-            withGuestId ? guest.Id : null,
-            withNewGuest ? ServiceWorld.ValidGuestFields() : null);
+        ServiceWorld world = new();
+        world.AddRoom();
+        CreatePublicBookingRequest request = new(world.Clock.Today, world.Clock.Today.AddDays(2), RoomSize.Double, 1, null);
 
         // Act
-        var result = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
+        Result<BookingDetailsDto> result = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.GuestSelectionInvalid, result.FirstError?.Code);
         Assert.Empty(world.Bookings.Items);
+    }
+
+    /// <summary>
+    /// Positive: of the free rooms of the chosen type, the service books the one that sleeps the party with the
+    /// fewest spare beds; a taken room, a room of another type and a room too small for the party are passed over.
+    /// </summary>
+    [Fact]
+    public async Task CreatePublicAsync_RoomType_BooksTheSmallestFreeRoomThatSleepsTheParty()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        world.AddRoom("101", 1, RoomSize.Double, 4);
+        Room taken = world.AddRoom("102", 1, RoomSize.Double, 3);
+        Room expected = world.AddRoom("103", 1, RoomSize.Double, 3);
+        world.AddRoom("104", 1, RoomSize.Double, 2);
+        world.AddRoom("105", 1, RoomSize.Suite, 3);
+        world.AddBooking(taken.Id, world.AddGuest().Id, startOffsetDays: 0, nights: 5);
+        CreatePublicBookingRequest request = new(world.Clock.Today.AddDays(1), world.Clock.Today.AddDays(3), RoomSize.Double, 3, ServiceWorld.ValidGuestFields());
+
+        // Act
+        Result<BookingDetailsDto> result = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(expected.Id, world.Bookings.Items.Single(booking => booking.RoomId != taken.Id).RoomId);
+    }
+
+    /// <summary>Negative: no free room of the type, or none that sleeps the party, books nothing and says so.</summary>
+    [Theory]
+    [InlineData(RoomSize.Suite, 1)]
+    [InlineData(RoomSize.Double, 3)]
+    public async Task CreatePublicAsync_NoFittingRoomOfTheType_ReturnsRoomTypeNotAvailable(RoomSize size, int guests)
+    {
+        // Arrange
+        ServiceWorld world = new();
+        world.AddRoom("101", 1, RoomSize.Double, 2);
+        Room suite = world.AddRoom("201", 2, RoomSize.Suite, 4);
+        world.AddBooking(suite.Id, world.AddGuest().Id, startOffsetDays: 0, nights: 5);
+        int bookingsBefore = world.Bookings.Items.Count;
+        CreatePublicBookingRequest request = new(world.Clock.Today.AddDays(1), world.Clock.Today.AddDays(3), size, guests, ServiceWorld.ValidGuestFields());
+
+        // Act
+        Result<BookingDetailsDto> result = await world.BookingService().CreatePublicAsync(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.RoomTypeNotAvailable, result.FirstError?.Code);
+        Assert.Equal(bookingsBefore, world.Bookings.Items.Count);
     }
 
     /// <summary>Equivalence: neither of the two guest paths, and both of them, are the same rule error (BR-47).</summary>

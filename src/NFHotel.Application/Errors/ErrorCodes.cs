@@ -89,6 +89,9 @@ public static class ErrorCodes
         /// <summary>The room cannot be let: it is out of service or blocked (BR-110).</summary>
         public const string RoomNotBookable = "booking.room_not_bookable";
 
+        /// <summary>No room of the chosen type sleeps the party and is free for the whole stay (public booking).</summary>
+        public const string RoomTypeNotAvailable = "booking.room_type_not_available";
+
         /// <summary>The end of the overview period is before its start (MIL-013). A period of one day is allowed.</summary>
         public const string OverviewPeriodInvalid = "booking.overview_period_invalid";
 

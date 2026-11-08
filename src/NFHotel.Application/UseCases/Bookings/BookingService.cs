@@ -252,25 +252,62 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>
-    /// Creates a booking through the public guest booking flow.
-    /// Only new guest details are accepted.
+    /// Creates a booking through the public guest booking flow. The guest chooses a room type; the service picks the
+    /// free room of that type that fits the party most closely. Only new guest details are accepted.
     /// </summary>
     public async Task<Result<BookingDetailsDto>> CreatePublicAsync(
-        CreateBookingRequest request,
+        CreatePublicBookingRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         // Public bookings must use new guest details.
-        if (request.GuestId is not null || request.NewGuest is null)
+        if (request.NewGuest is null)
         {
             return Result<BookingDetailsDto>.Failure(
                 ErrorCodes.Booking.GuestSelectionInvalid);
         }
 
-        // Uses the shared booking logic without requiring staff permissions.
-        return await CreateBookingInternalAsync(request, cancellationToken)
+        Result<IReadOnlyList<AvailableRoomDto>> available = await GetAvailableRoomsAsync(
+            request.CheckInDate,
+            request.CheckOutDate,
+            null,
+            cancellationToken).ConfigureAwait(false);
+
+        if (available.IsFailure)
+        {
+            return Result<BookingDetailsDto>.Failure(available.Errors);
+        }
+
+        AvailableRoomDto? room = ChooseRoom(available.Value, request.RoomSize, request.Guests);
+
+        if (room is null)
+        {
+            return Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.RoomTypeNotAvailable);
+        }
+
+        // The shared booking logic checks the room again, so two guests who get the same last room cannot both
+        // book it: the second one is told the room is taken (BR-19, B-03).
+        CreateBookingRequest booking = new(request.CheckInDate, request.CheckOutDate, room.RoomId, null, request.NewGuest);
+
+        return await CreateBookingInternalAsync(booking, cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The free room of the type that sleeps the party with the fewest spare beds, so the bigger rooms stay free for
+    /// bigger parties; the room number breaks a tie, so the choice is the same every time.
+    /// </summary>
+    private static AvailableRoomDto? ChooseRoom(IReadOnlyList<AvailableRoomDto> available, RoomSize size, int guests)
+    {
+        int party = Math.Max(1, guests);
+
+        return available
+            .Where(room => room.Size == size && room.Capacity >= party)
+            .OrderBy(room => room.Capacity)
+            .ThenBy(room => room.RoomNumber, StringComparer.Ordinal)
+            .ThenBy(room => room.RoomId)
+            .FirstOrDefault();
     }
 
     /// <summary>

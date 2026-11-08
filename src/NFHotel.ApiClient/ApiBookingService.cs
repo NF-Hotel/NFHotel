@@ -65,7 +65,7 @@ public sealed class ApiBookingService : IBookingService
 
     /// <inheritdoc />
     public async Task<Result<BookingDetailsDto>> CreatePublicAsync(
-        CreateBookingRequest request,
+        CreatePublicBookingRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);

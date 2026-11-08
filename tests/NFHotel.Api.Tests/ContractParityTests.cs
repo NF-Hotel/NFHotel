@@ -148,7 +148,9 @@ public sealed class ContractParityTests : IAsyncLifetime
         AddB("CreateAsync inverted period", b => b.CreateAsync(new CreateBookingRequest(today.AddDays(9), today.AddDays(3), 3, 1, null), ct));
         AddB("CreateAsync unknown room", b => b.CreateAsync(new CreateBookingRequest(today.AddDays(30), today.AddDays(31), 99, 1, null), ct));
         AddThrows("IBookingService.CreateAsync null", s => s.Bookings.CreateAsync(null!, ct));
-        AddB("CreatePublicAsync invalid guest selection", b => b.CreatePublicAsync(new CreateBookingRequest(today.AddDays(30), today.AddDays(31), 99, 1, null), ct));
+        AddB("CreatePublicAsync no guest details", b => b.CreatePublicAsync(new CreatePublicBookingRequest(today.AddDays(30), today.AddDays(31), RoomSize.Double, 1, null), ct));
+        AddB("CreatePublicAsync no room of the type sleeps the party", b => b.CreatePublicAsync(new CreatePublicBookingRequest(today.AddDays(30), today.AddDays(31), RoomSize.Single, 4, fields), ct));
+        AddB("CreatePublicAsync inverted period", b => b.CreatePublicAsync(new CreatePublicBookingRequest(today.AddDays(9), today.AddDays(3), RoomSize.Double, 1, fields), ct));
 
         // --- bookings: transitions and moving
         AddB("ConfirmAsync pending", b => b.ConfirmAsync(1, ct));

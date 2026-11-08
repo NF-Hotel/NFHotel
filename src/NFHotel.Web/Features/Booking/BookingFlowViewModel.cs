@@ -15,7 +15,7 @@ namespace NFHotel.Web.Features.Booking;
 
 /// <summary>
 /// All state and all service calls of the customer's booking flow on <c>/book</c>:
-/// dates, free rooms, guest details and receipt.
+/// dates, a free room type, guest details and receipt.
 /// </summary>
 /// <remarks>
 /// <c>Book.razor</c> is markup. It calls the methods below and reads properties — it
@@ -29,8 +29,12 @@ namespace NFHotel.Web.Features.Booking;
 /// <para>
 /// No method clears the user's input. Going back to step 1, correcting a date and
 /// getting forward again should cost a click, not a name and an email. The only thing that can
-/// disappear is a room choice that is no longer free — and that is a rule (BR-C-02),
+/// disappear is a room type that is no longer free — and that is a rule (BR-C-02),
 /// not a loss.
+/// </para>
+/// <para>
+/// The guest chooses a room type, never a room: the API picks a free room of the type when the booking is sent, so
+/// the room number stays reception's to give and to change.
 /// </para>
 /// <para>
 /// "Today" comes from <see cref="IClock"/> and never from <c>DateTime.Now</c> (A-05), so
@@ -119,16 +123,22 @@ public sealed class BookingFlowViewModel
     /// <summary>The choices of the guests field: 1 to <see cref="MaxGuests"/>.</summary>
     public static IReadOnlyList<int> GuestOptions { get; } = Enumerable.Range(1, MaxGuests).ToArray();
 
-    /// <summary>The free rooms that sleep <see cref="Guests"/>. Every free room when the party is one.</summary>
-    public IReadOnlyList<AvailableRoomDto> VisibleRooms => Guests <= 1
-        ? AvailableRooms
-        : AvailableRooms.Where(room => room.Capacity >= Guests).ToArray();
+    /// <summary>
+    /// The room types with a free room that sleeps <see cref="Guests"/>, smallest type first. Every type with a free
+    /// room when the party is one.
+    /// </summary>
+    public IReadOnlyList<RoomTypeChoice> VisibleRoomTypes => AvailableRooms
+        .Where(room => room.Capacity >= Guests)
+        .GroupBy(room => room.Size)
+        .OrderBy(group => group.Key)
+        .Select(group => new RoomTypeChoice(group.Key, group.Count(), group.Max(room => room.Capacity)))
+        .ToArray();
 
     /// <summary>True when availability has been fetched at least once for the current dates.</summary>
     public bool AreRoomsLoaded { get; private set; }
 
-    /// <summary>The chosen room, or <c>null</c>.</summary>
-    public AvailableRoomDto? SelectedRoom { get; private set; }
+    /// <summary>The chosen room type, or <c>null</c>.</summary>
+    public RoomSize? SelectedRoomType { get; private set; }
 
     /// <summary>The guest's first name.</summary>
     public string FirstName { get; set; } = string.Empty;
@@ -213,20 +223,21 @@ public sealed class BookingFlowViewModel
     /// Short summary of the choice for step 3 — without a price, like the rest of the flow
     /// (BR-C-05).
     /// </summary>
-    public string SelectionSummary => SelectedRoom is null
+    public string SelectionSummary => SelectedRoomType is not RoomSize size
         ? string.Empty
         : string.Join(
             " · ",
-            DescribeRoom(SelectedRoom),
+            DisplayText.Describe(size),
             PeriodText,
             PublicDateText.Nights(Nights),
+            GuestsText,
             PaymentText);
 
     /// <summary>True when "find free rooms" may be pressed.</summary>
     public bool CanFindRooms => !IsBusy && HasValidDates;
 
     /// <summary>True when the booking may be sent.</summary>
-    public bool CanSubmit => !IsBusy && HasValidDates && SelectedRoom is not null;
+    public bool CanSubmit => !IsBusy && HasValidDates && SelectedRoomType is not null;
 
     /// <summary>
     /// The text that stands where a price would otherwise stand. The price model does not exist in Phase 1
@@ -273,45 +284,22 @@ public sealed class BookingFlowViewModel
     public string? StepAria(BookingFlowStep step) => step == CurrentStep ? "step" : null;
 
     /// <summary>
-    /// Describes a room to the customer: type, floor and how many it has room for.
+    /// Describes how many people the rooms of a type sleep.
     /// </summary>
-    /// <param name="room">The room.</param>
-    /// <returns>For example <c>"Room 204 · Double room · Floor 2 · sleeps 2"</c>.</returns>
-    /// <remarks>
-    /// The room type comes from <see cref="DisplayText"/>, so the customer side and the admin side use
-    /// the same words about the same room type.
-    /// </remarks>
-    public static string DescribeRoom(AvailableRoomDto room)
-    {
-        ArgumentNullException.ThrowIfNull(room);
-
-        return string.Join(
-            " · ",
-            $"Room {room.RoomNumber}",
-            DisplayText.Describe(room.Size),
-            DescribeFloor(room.Floor),
-            DescribeCapacity(room.Capacity));
-    }
-
-    /// <summary>
-    /// Describes a floor.
-    /// </summary>
-    /// <param name="floor">The floor as it stands on the room.</param>
-    /// <returns>Fx <c>"Floor 2"</c>.</returns>
-    /// <remarks>
-    /// The number is written as it stands in the domain. Floor numbers are the building's own, and a conversion
-    /// to "ground floor" would be a guess about a numbering that no rule describes.
-    /// </remarks>
-    public static string DescribeFloor(int floor) => $"Floor {floor}";
-
-    /// <summary>
-    /// Describes the capacity of a room.
-    /// </summary>
-    /// <param name="capacity">The number of people the room can hold.</param>
-    /// <returns>Fx <c>"sleeps 2"</c>.</returns>
-    public static string DescribeCapacity(int capacity) => capacity == 1
+    /// <param name="sleeps">How many the biggest free room of the type sleeps.</param>
+    /// <returns>For example <c>"sleeps 1"</c> or <c>"sleeps up to 3"</c>.</returns>
+    public static string DescribeSleeps(int sleeps) => sleeps == 1
         ? "sleeps 1"
-        : $"sleeps {capacity}";
+        : $"sleeps up to {sleeps.ToString(CultureInfo.InvariantCulture)}";
+
+    /// <summary>
+    /// Describes how many rooms of a type are free.
+    /// </summary>
+    /// <param name="free">The number of free rooms of the type.</param>
+    /// <returns><c>"Last room"</c> for one, otherwise for example <c>"4 rooms free"</c>.</returns>
+    public static string DescribeFree(int free) => free == 1
+        ? "Last room"
+        : $"{free.ToString(CultureInfo.InvariantCulture)} rooms free";
 
     // ------------------------------------------------------------------
     // OVERGANGE
@@ -367,10 +355,10 @@ public sealed class BookingFlowViewModel
             AvailableRooms = result.Value;
             AreRoomsLoaded = true;
 
-            // A room chosen for an earlier period must not follow along into a new one.
-            if (SelectedRoom is not null && !Contains(AvailableRooms, SelectedRoom.RoomId))
+            // A room type chosen for an earlier period must not follow along into one where it is not free.
+            if (SelectedRoomType is RoomSize chosen && !IsVisible(chosen))
             {
-                SelectedRoom = null;
+                SelectedRoomType = null;
             }
 
             CurrentStep = BookingFlowStep.Room;
@@ -382,14 +370,11 @@ public sealed class BookingFlowViewModel
     }
 
     /// <summary>
-    /// Chooses a room and goes to step 3 (BR-C-04).
+    /// Chooses a room type and goes to step 3. A type that has no free room for the party is ignored, and invalid
+    /// dates send the guest back to step 1 (BR-C-04).
     /// </summary>
-    /// <param name="roomId">The room id.</param>
-    /// <remarks>
-    /// Only rooms from the fetched list can be chosen. Per BR-C-02 the list contains only rooms that
-    /// are free in the period, so the customer cannot choose a room she has not been shown.
-    /// </remarks>
-    public void SelectRoom(int roomId)
+    /// <param name="size">The room type.</param>
+    public void SelectRoomType(RoomSize size)
     {
         if (IsBusy)
         {
@@ -403,14 +388,12 @@ public sealed class BookingFlowViewModel
             return;
         }
 
-        var room = Find(AvailableRooms, roomId);
-
-        if (room is null)
+        if (!IsVisible(size))
         {
             return;
         }
 
-        SelectedRoom = room;
+        SelectedRoomType = size;
         Errors = NoMessages;
         CurrentStep = BookingFlowStep.Guest;
     }
@@ -519,7 +502,7 @@ public sealed class BookingFlowViewModel
             return;
         }
 
-        if (SelectedRoom is not { } room)
+        if (SelectedRoomType is not RoomSize size)
         {
             CurrentStep = HasValidDates && AreRoomsLoaded ? BookingFlowStep.Room : BookingFlowStep.Dates;
 
@@ -541,12 +524,12 @@ public sealed class BookingFlowViewModel
         GuestErrors = GuestFieldErrors.None;
         Errors = NoMessages;
 
-        var request = new CreateBookingRequest(
+        CreatePublicBookingRequest request = new(
             CheckInDate!.Value,
             CheckOutDate!.Value,
-            room.RoomId,
-            GuestId: null,
-            NewGuest: fields);
+            size,
+            Guests,
+            fields);
 
         Result<BookingDetailsDto> result;
 
@@ -581,7 +564,7 @@ public sealed class BookingFlowViewModel
 
         var messages = Errors;
 
-        SelectedRoom = null;
+        SelectedRoomType = null;
 
         await FindRoomsAsync(cancellationToken).ConfigureAwait(false);
 
@@ -607,7 +590,7 @@ public sealed class BookingFlowViewModel
         HasAttemptedDates = false;
         AvailableRooms = NoRooms;
         AreRoomsLoaded = false;
-        SelectedRoom = null;
+        SelectedRoomType = null;
         FirstName = string.Empty;
         LastName = string.Empty;
         Email = string.Empty;
@@ -689,7 +672,9 @@ public sealed class BookingFlowViewModel
     {
         foreach (var error in result.Errors)
         {
-            if (error.Code is ErrorCodes.Booking.RoomNotAvailable or ErrorCodes.Booking.RoomNotBookable)
+            if (error.Code is ErrorCodes.Booking.RoomNotAvailable
+                or ErrorCodes.Booking.RoomNotBookable
+                or ErrorCodes.Booking.RoomTypeNotAvailable)
             {
                 return true;
             }
@@ -698,11 +683,6 @@ public sealed class BookingFlowViewModel
         return false;
     }
 
-    /// <summary>Finds a room in the list, or <c>null</c>.</summary>
-    private static AvailableRoomDto? Find(IReadOnlyList<AvailableRoomDto> rooms, int roomId) =>
-        rooms.FirstOrDefault(room => room.RoomId == roomId);
-
-    /// <summary>True if the list contains the room.</summary>
-    private static bool Contains(IReadOnlyList<AvailableRoomDto> rooms, int roomId) =>
-        Find(rooms, roomId) is not null;
+    /// <summary>True when the room type has a free room that sleeps the party.</summary>
+    private bool IsVisible(RoomSize size) => VisibleRoomTypes.Any(choice => choice.Size == size);
 }

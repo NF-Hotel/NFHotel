@@ -66,14 +66,14 @@ public sealed class BookingsController : ControllerBase
         this.ToResponse(await _bookings.CreateAsync(request, cancellationToken).ConfigureAwait(false));
 
     /// <summary>
-    /// Creates a public booking for a new guest.
+    /// Creates a public booking for a new guest in a free room of the chosen type.
     /// </summary>
-    /// <param name="request">The booking details and new guest information.</param>
+    /// <param name="request">The stay, the room type, the party and the new guest.</param>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The created booking or validation errors.</returns>
     [HttpPost(ApiRoutes.PublicBooking)]
     public async Task<IActionResult> CreatePublicAsync(
-        [FromBody] CreateBookingRequest request,
+        [FromBody] CreatePublicBookingRequest request,
         CancellationToken cancellationToken) =>
         this.ToResponse(
             await _bookings.CreatePublicAsync(request, cancellationToken)

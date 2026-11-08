@@ -78,14 +78,15 @@ public interface IBookingService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Creates a booking through the public guest booking flow.
-    /// Only new guest details are accepted.
+    /// Creates a booking through the public guest booking flow: the guest chooses a room type and the service picks
+    /// a free room of that type. Only new guest details are accepted.
     /// </summary>
-    /// <param name="request">Booking details and new guest information.</param>
+    /// <param name="request">The stay, the room type, the party and the new guest.</param>
     /// <param name="cancellationToken">Token used to cancel the operation.</param>
-    /// <returns>The created booking or validation errors.</returns>
+    /// <returns>The created booking, <see cref="ErrorCodes.Booking.RoomTypeNotAvailable"/> when no room of the type is
+    /// free, or the validation errors.</returns>
     Task<Result<BookingDetailsDto>> CreatePublicAsync(
-        CreateBookingRequest request,
+        CreatePublicBookingRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>

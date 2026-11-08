@@ -7,6 +7,7 @@ using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
+using NFHotel.Domain.ValueObjects;
 using NFHotel.TestSupport;
 using NFHotel.Web.Features.Booking;
 
@@ -43,12 +44,12 @@ public sealed class BookingPageTests : IAsyncDisposable
 
     #region Book
 
-    /// <summary>Positive: a guest walks through dates, room and details, is sent to the receipt, and can book again.</summary>
+    /// <summary>Positive: a guest walks through dates, room type and details, is sent to the receipt, and can book again.</summary>
     [Fact]
     public void Book_WholeFlow_EndsOnTheReceipt()
     {
         RoomsAre(FreeRoom(1), FreeRoom(2));
-        _bookings.CreatePublicAsync(Arg.Any<CreateBookingRequest>(), Arg.Any<CancellationToken>()).Returns(Ok(BookingDetails(9)));
+        _bookings.CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>()).Returns(Ok(BookingDetails(9)));
         var page = _host.Render<Book>();
 
         page.Find("#check-in").Change("2026-03-12");
@@ -56,7 +57,7 @@ public sealed class BookingPageTests : IAsyncDisposable
         Assert.Contains("3 nights", page.Markup, StringComparison.Ordinal);
         page.Button("Find available rooms").Click();
         Assert.Contains("Choose a room", page.Markup, StringComparison.Ordinal);
-        page.Button("Choose room 102").Click();
+        page.Button("Choose Double room").Click();
         page.Find("#first-name").Change("Rita");
         page.Find("#last-name").Change("Hansen");
         page.Find("#email").Change("rita@example.com");
@@ -69,7 +70,7 @@ public sealed class BookingPageTests : IAsyncDisposable
         Assert.Contains("B-0009", page.Markup, StringComparison.Ordinal);
         Assert.EndsWith("/booking/B-0009", _host.Navigation.Uri, StringComparison.Ordinal);
         _bookings.Received(1).CreatePublicAsync(
-            Arg.Is<CreateBookingRequest>(request => request.RoomId == 2 && request.CheckInDate == new DateOnly(2026, 3, 12) && request.NewGuest!.PassportNumber == "P1"),
+            Arg.Is<CreatePublicBookingRequest>(request => request.RoomSize == RoomSize.Double && request.CheckInDate == new DateOnly(2026, 3, 12) && request.NewGuest!.PassportNumber == "P1"),
             Arg.Any<CancellationToken>());
 
         page.Button("Book another stay").Click();
@@ -111,7 +112,7 @@ public sealed class BookingPageTests : IAsyncDisposable
 
         RoomsAre(FreeRoom(1));
         page.Button("Find available rooms").Click();
-        page.Button("Choose room 101").Click();
+        page.Button("Choose Double room").Click();
         page.Button("Back to rooms").Click();
         Assert.Contains("Choose a room", page.Markup, StringComparison.Ordinal);
         page.FindAll("button").Last(button => button.TextContent.Contains("dates", StringComparison.OrdinalIgnoreCase)).Click();
@@ -130,7 +131,7 @@ public sealed class BookingPageTests : IAsyncDisposable
         _guests.ValidateFields(Arg.Any<GuestFields>()).Returns(Result.Failure(ErrorCodes.Guest.EmailInvalid));
         var page = _host.Render<Book>();
         page.Button("Find available rooms").Click();
-        page.Button("Choose room 101").Click();
+        page.Button("Choose Double room").Click();
 
         page.Button("Send booking request").Click();
 
@@ -152,7 +153,8 @@ public sealed class BookingPageTests : IAsyncDisposable
         var page = _host.Render<BookingReceipt>(parameters => parameters.Add(receipt => receipt.BookingNumber, "FLZ-42"));
 
         Assert.Contains("B-0042", page.Markup, StringComparison.Ordinal);
-        Assert.Contains("Room 101", page.Markup, StringComparison.Ordinal);
+        Assert.Contains("Double room · the room number is given at check-in", page.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("Room 101", page.Markup, StringComparison.Ordinal);
     }
 
     /// <summary>Negative: the receipt page of an unknown number says so and links back to booking.</summary>

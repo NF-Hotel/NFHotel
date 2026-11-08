@@ -1,7 +1,7 @@
 namespace NFHotel.E2E.Tests;
 
 /// <summary>
-/// The public booking flow in a browser (MIL-027 task 4): a guest picks dates, a room and fills in the form, and lands
+/// The public booking flow in a browser (MIL-027 task 4): a guest picks dates, a room type and fills in the form, and lands
 /// on the receipt page (MIL-027 criterion 1: a receipt page that fails breaks the first test). The dates
 /// are fixed far ahead, so the test reads no clock and the room of <see cref="BrowserFixture"/> is free on them.
 /// </summary>
@@ -20,7 +20,7 @@ public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixt
         // The flow ends on the receipt page of the new booking, whose number is the key to it.
         await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Your booking" })).ToBeVisibleAsync();
         Assert.StartsWith("/booking/", Pages.PathOf(Page), StringComparison.Ordinal);
-        await Assertions.Expect(Page.GetByText($"Room {BrowserFixture.TestRoomNumber}")).ToBeVisibleAsync();
+        await Assertions.Expect(Page.GetByText("Single room · the room number is given at check-in")).ToBeVisibleAsync();
         await Assertions.Expect(Page.GetByText("10 June 2030")).ToBeVisibleAsync();
     }
 
@@ -60,7 +60,8 @@ public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixt
         await Pages.FillAsync(Page.Locator("#check-in"), checkIn);
         await Pages.FillAsync(Page.Locator("#check-out"), checkOut);
         await Page.GetByRole(AriaRole.Button, new() { Name = "Find available rooms" }).ClickAsync();
-        await Page.GetByRole(AriaRole.Button, new() { Name = $"Choose room {BrowserFixture.TestRoomNumber}" }).ClickAsync();
+        // The room of BrowserFixture is a single room (the default of the room form); the guest chooses its type.
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Choose Single room" }).ClickAsync();
         await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Your details" })).ToBeVisibleAsync();
     }
 }
