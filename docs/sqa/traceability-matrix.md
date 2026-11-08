@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-065: Go (RC-307) | [27bce92] |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | A row for the code of MIL-066 (RC-308, Go-with-conditions) | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | A row for the code of MIL-066 (RC-308, Go-with-conditions) | [0918fb1] |
 
 ---
 
@@ -320,3 +320,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [27bce92]: https://github.com/NF-Hotel/NFHotel/commit/27bce927e73a306806d8e9ff9266bb42e6cdb09e
+[0918fb1]: https://github.com/NF-Hotel/NFHotel/commit/0918fb1d0b9ec7d3af7741c73114ae7e2bb9117f

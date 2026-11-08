@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 6, 8 and 9 of MIL-066 before their pull request (task 10); Go-with-conditions until every required check of the pull request is green | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 6, 8 and 9 of MIL-066 before their pull request (task 10); Go-with-conditions until every required check of the pull request is green | [0918fb1] |
 
 ---
 
@@ -136,3 +136,4 @@ Go-with-conditions. Every Mandatory criterion of QC-SH-001, QC-WF-001 and QC-YML
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[0918fb1]: https://github.com/NF-Hotel/NFHotel/commit/0918fb1d0b9ec7d3af7741c73114ae7e2bb9117f
