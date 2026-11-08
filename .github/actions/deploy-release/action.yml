@@ -92,7 +92,7 @@ runs:
         oauth-client-id: ${{ inputs.ts-oidc-client-id }}
         audience: ${{ inputs.ts-oidc-audience }}
         tags: tag:ci
-        version: 1.102.4
+        version: 1.104.5
 
     - name: Check the tailnet scope of this node
       if: ${{ inputs.apply == 'true' }}

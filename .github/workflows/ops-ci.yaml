@@ -89,6 +89,7 @@ jobs:
           - test-create-monitoring-lxc.sh
           - test-write-secret-files.sh
           - test-check-secret-env.sh
+          - test-make-migration-script.sh
         # The backup target runs Debian 13, whose rrsync has -no-overwrite (MIL-066 task 1).
         include:
           - test: test-backup-target.sh

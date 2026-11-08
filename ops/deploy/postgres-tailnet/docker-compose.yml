@@ -8,7 +8,6 @@ name: nfhotel-postgres-tailnet
 
 services:
   relay:
-    # HAProxy 3.2.26 (LTS); Dependabot does not see this line, so bump it by hand with the digest.
     image: haproxy:3.2-alpine@sha256:5893840576071e6217cd52ebdcc14f454c6f7a631056fa6f4e0f40d3cac4215b
     restart: unless-stopped
     volumes:

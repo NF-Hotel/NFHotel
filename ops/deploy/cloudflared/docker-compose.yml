@@ -8,7 +8,6 @@ name: nfhotel-cloudflared
 
 services:
   cloudflared:
-    # cloudflared 2026.10.7; Dependabot does not see this line, so bump it by hand with the digest.
     # Cloudflare marks a connector older than about a year as unsupported in the dashboard.
     image: >-
       cloudflare/cloudflared:2026.10.7@sha256:4955524aeaa379e154023d5a027c250f7b35041a2e7e950cf13f144bc9b9c5ba
