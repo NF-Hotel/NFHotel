@@ -15,19 +15,24 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=ops/scripts/lib/common.sh
 . "$ROOT/scripts/lib/common.sh"
-# The dotnet-ef tool of the EF Core version of NFHotel; bump them together.
-readonly EF_VERSION=10.0.13
+# dotnet-ef runs at the EF Core version of the checkout, which its project file gives on the
+# design package, so a bump of EF Core moves the tool with it (MIL-066 task 8).
+readonly EF_DESIGN='Include="Microsoft.EntityFrameworkCore.Design"[[:space:]]+Version="([0-9]+[.][0-9]+[.][0-9]+)"'
 
 [[ $# == 2 && -d "$1/src/NFHotel.Infrastructure" ]] || {
   usage >&2
   exit 2
 }
 app="$(cd "$1" && pwd)"
+project="$app/src/NFHotel.Infrastructure/NFHotel.Infrastructure.csproj"
+[[ -f "$project" && "$(<"$project")" =~ $EF_DESIGN ]] ||
+  die "$project gives no version of Microsoft.EntityFrameworkCore.Design"
+ef_version="${BASH_REMATCH[1]}"
 mkdir -p "$(dirname "$2")"
 out="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
 
-echo "==> dotnet-ef $EF_VERSION"
-dotnet tool update --global dotnet-ef --version "$EF_VERSION" >/dev/null || die "cannot install dotnet-ef"
+echo "==> dotnet-ef $ef_version"
+dotnet tool update --global dotnet-ef --version "$ef_version" >/dev/null || die "cannot install dotnet-ef"
 export PATH="$PATH:$HOME/.dotnet/tools"
 
 echo "==> the idempotent migration script"

@@ -33,7 +33,6 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
-      - --storage.tsdb.retention.time=30d
       # Alloy on nf-hotel pushes its metrics; Prometheus does not reach into the VM.
       - --web.enable-remote-write-receiver
     volumes:

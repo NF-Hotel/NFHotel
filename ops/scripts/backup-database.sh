@@ -127,18 +127,30 @@ mv "$partial" "$file"
 echo "    $(du -h "$file" | cut -f1)"
 
 # The settings and secrets, for a rebuild of the VM from nothing (MIL-037, ADR-0025). The paths
-# are relative to /, so a restore unpacks them in place with tar --directory /.
+# are relative to /, so a restore unpacks them in place with tar --directory /. Each part of
+# the list is added on its own, so a folder that does not exist, such as nginx/tls when the
+# certificate lives elsewhere, adds nothing and never drops the parts after it (MIL-066 task 3).
 settings_file="$backup_dir/nfhotel-settings-$kind-$stamp.tar.age"
 echo "==> archiving the settings to $settings_file"
 deploy_dir="$app_dir/ops/deploy"
 [[ -d "$deploy_dir" ]] || deploy_dir="$app_dir/deploy"
-mapfile -t paths < <(
-  find "$deploy_dir" -mindepth 2 -maxdepth 2 '(' -name '*.env' -o -name 'market-analysis.toml' ')' -type f 2>/dev/null
-  find "$deploy_dir/nginx/tls" -maxdepth 1 -name '*.pem' -type f 2>/dev/null
-  [[ -d "$etc_dir" ]] && echo "$etc_dir"
-  key="${BACKUP_SSH_KEY:-/root/.ssh/nfhotel-backup}"
-  [[ -f "$key" ]] && echo "$key"
-)
+copy_key="${BACKUP_SSH_KEY:-/root/.ssh/nfhotel-backup}"
+paths=()
+if [[ -d "$deploy_dir" ]]; then
+  mapfile -t paths < <(find "$deploy_dir" -mindepth 2 -maxdepth 2 '(' -name '*.env' -o -name 'market-analysis.toml' ')' -type f)
+fi
+if [[ -d "$deploy_dir/nginx/tls" ]]; then
+  mapfile -t -O "${#paths[@]}" paths < <(find "$deploy_dir/nginx/tls" -maxdepth 1 -name '*.pem' -type f)
+fi
+if [[ -d "$etc_dir" ]]; then paths+=("$etc_dir"); fi
+if [[ -f "$copy_key" ]]; then paths+=("$copy_key"); fi
+# A rebuild needs both, so a change to the list above that drops one fails the backup
+# instead of writing an archive that cannot restore the VM.
+for required in "$etc_dir" "$copy_key"; do
+  if [[ -e "$required" ]] && ! printf '%s\n' "${paths[@]}" | grep -qxF -- "$required"; then
+    die "the settings archive would lack $required"
+  fi
+done
 if ((${#paths[@]} == 0)); then
   # A host without the deployment, such as the CI test of the dump, has nothing to archive.
   echo "warning: no settings found in $deploy_dir or $etc_dir; only the database is backed up" >&2
@@ -151,19 +163,23 @@ else
     }
   chmod 0600 "$settings_file.partial"
   mv "$settings_file.partial" "$settings_file"
-  echo "    ${#paths[@]} paths"
+  # The names only, so the log shows what a rebuild would get back; never the content.
+  echo "    ${#paths[@]} paths:"
+  printf '      %s\n' "${paths[@]}"
 fi
 
 if [[ -n "${BACKUP_TARGET:-}" ]]; then
   echo "==> copying the backups to $BACKUP_TARGET"
-  key="${BACKUP_SSH_KEY:-/root/.ssh/nfhotel-backup}"
+  key="$copy_key"
   port="${BACKUP_SSH_PORT:-22}"
   [[ -r "$key" ]] || die "cannot read the backup ssh key $key"
   [[ "$port" =~ ^[0-9]{1,5}$ ]] || die "BACKUP_SSH_PORT '$port' is not a port number"
   # The target may be off, such as a laptop (D7). A failed copy is a warning: the backup
   # is safe on the VM, and the next run sends every file that the target lacks. The
-  # target is write-only, so files there are never replaced (--ignore-existing).
-  if rsync --archive --partial --ignore-existing --include='nfhotel-*.dump.age' --include='nfhotel-settings-*.tar.age' --exclude='*' \
+  # target is write-only, so files there are never replaced (--ignore-existing). Without
+  # --partial an interrupted copy leaves nothing under the final name, so the next run sends
+  # the whole file instead of keeping a part of it for good (MIL-066 task 2).
+  if rsync --archive --ignore-existing --include='nfhotel-*.dump.age' --include='nfhotel-settings-*.tar.age' --exclude='*' \
     --rsh "ssh -p $port -i $key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20" \
     "$backup_dir/" "$BACKUP_TARGET/"; then
     date -u +%Y-%m-%dT%H:%M:%SZ >"$backup_dir/.last-copy"
