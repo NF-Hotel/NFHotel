@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-069: tasks 1 to 3 reviewed before their pull request (RC-316, Go) | [49defd4] |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-068: tasks 1 to 3 reviewed before their pull request (RC-317, Go) | [8d107aa] |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The row of MIL-070: the plan reviewed and accepted by S01 in chat (RC-318, Go) | [9bf2650] |
 
 ---
 
@@ -98,6 +98,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-069] | Milestone (Accepted, Go; plan and retention reviewed and accepted by S01 in chat 2026-11-08, RC-315) | en | it | [BC-001], [DSA-001], [ADR-0008], [MIL-021], [MIL-066], [RC-313] | planned: `ops/deploy/backup-target/prune-backups.sh` with its tests, the service `prune` of the backup target, and the wiki page Disaster-Recovery | [RC-315] |
 | The code of MIL-069: the prune of the backup target in `ops/deploy/backup-target/prune-backups.sh`, the service `prune` in its `docker-compose.yml`, `Dockerfile` and `backup-target.env.example`, the section "How long the backup target keeps the copies" of the wiki page Disaster-Recovery, and their tests in `ops/tests/test-backup-target.sh` | Shell, Dockerfile, YAML (reviewed 2026-11-08, Go) | - | - | [MIL-069] tasks 1 to 3, [ADR-0008], [DSA-001] | - | [RC-316] |
 | The code of MIL-068: the removal of the desktop in `ops/scripts/remove-desktop.sh`, its test `ops/tests/test-remove-desktop.sh` and its entry in the matrix of `.github/workflows/ops-ci.yaml`, and the section "Without a desktop" of the wiki page Host-Hardening with its update command | Shell, YAML (reviewed 2026-11-08, Go) | - | - | [MIL-068] tasks 1 to 3, [CIS-001] | - | [RC-317] |
+| [MIL-070] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-08, RC-318) | en | it | [BC-001], [CIS-001], [DSA-001], [ADR-0011], [ADR-0024], [MIL-023], [MIL-068] | planned: `as_app` of `ops/scripts/deploy-release.sh` without the connection string in the log of `sudo`, ADR-0041, a regression test, a new password for `nfhotel_app`, and the wiki pages Database-Preparation and Host-Hardening | [RC-318] |
 | [ADR-0040] | ADR (Accepted) | - | - | [MIL-064], [ADR-0007], [ADR-0030], [MIL-022], [MIL-036], [MIL-059] | the patch layer of the proxy in `ops/deploy/nginx/Dockerfile` and its entry in `ops/scripts/build-release-images.sh`, the release references by name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, the `docker` entry of `.github/dependabot.yml` (MIL-064 tasks 2 to 7, RC-300) | [RC-299], [RC-300] (the code) |
 | [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
 | [ADR-0031] | ADR (Accepted; decisions 2 and 3 added 2026-10-26) | - | - | ADR-0005, ADR-0013, [ADR-0004], ADR-0024, MIL-020, MIL-043 | the sign-in keys and the benchmark run tracker of `src/NFHotel.Web`, [MIL-046] | [RC-227], [RC-239] |
@@ -250,6 +251,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-059]: ../milestones/mil-059-github-actions-security-audit.md
 [ADR-0019]: ../adr/adr-0019-approvals-by-the-owner.md
 [ADR-0021]: ../adr/adr-0021-automatic-deploy-when-green.md
+[ADR-0024]: ../adr/adr-0024-secrets-as-files.md
 [ADR-0037]: ../adr/adr-0037-github-actions-hardening-policy.md
 [SAR-001]: ./security-audit-2026-11.md
 [RC-279]: ./reviews/rc-279-mil-059.md
@@ -274,6 +276,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-067]: ../milestones/mil-067-bad-input-on-the-web-pages.md
 [MIL-068]: ../milestones/mil-068-the-vm-without-a-desktop.md
 [MIL-069]: ../milestones/mil-069-retention-on-the-backup-target.md
+[MIL-070]: ../milestones/mil-070-the-database-password-out-of-the-logs.md
 [ADR-0040]: ../adr/adr-0040-patched-nginx-image-from-the-release.md
 [RC-282]: ./reviews/rc-282-mil-060.md
 [MIL-046]: ../milestones/mil-046-finished-run-not-interrupted.md
@@ -308,6 +311,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-315]: ./reviews/rc-315-mil-069.md
 [RC-316]: ./reviews/rc-316-mil-069-code.md
 [RC-317]: ./reviews/rc-317-mil-068-code.md
+[RC-318]: ./reviews/rc-318-mil-070.md
 [RC-302]: ./reviews/rc-302-mil-064-gate.md
 [RC-303]: ./reviews/rc-303-mil-064-gate-re-review.md
 [RC-287]: ./reviews/rc-287-mil-061.md
@@ -338,5 +342,5 @@ updated whenever an artifact instance is created or reviewed.
 [RC-245]: ./reviews/rc-245-mil-048-plan.md
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
-[49defd4]: https://github.com/NF-Hotel/NFHotel/commit/49defd4fa3215cb4ef13e51aad4abd649658de38
 [8d107aa]: https://github.com/NF-Hotel/NFHotel/commit/8d107aa6ac24518c7cf4f25925263de152f56399
+[9bf2650]: https://github.com/NF-Hotel/NFHotel/commit/9bf2650c1d47233f83a2c7d436dbca02de5a033f
