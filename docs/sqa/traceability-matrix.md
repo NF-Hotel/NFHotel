@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | S01 | The row of MIL-064: plan accepted (RC-298, Go); nothing committed, the work in git is on hold | [401da1a] |
-| 2026-11-08 | Proposed | mikemike | S01 | The row of ADR-0040 (RC-299, Go); the MIL-064 row: task 1 done | pending |
+| 2026-11-08 | Proposed | mikemike | S01 | The row of ADR-0040 (RC-299, Go); the MIL-064 row: task 1 done | [3ed3361] |
 
 ---
 
@@ -304,3 +304,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [401da1a]: https://github.com/NF-Hotel/NFHotel/commit/401da1a2cc4c724997c1ad0e61ef770af5559245
+[3ed3361]: https://github.com/NF-Hotel/NFHotel/commit/3ed3361542de05c137c9978e95531f6dba98e8f2

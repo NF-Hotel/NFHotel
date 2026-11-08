@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | S01 | Initial version; task 1 of MIL-064, which S01 accepted in chat on 2026-11-08 (RC-298 Go) and asked to start the same day ("Ja, start nu"); S01 approved it in chat on 2026-11-08 ("Godkend ADR'en") after RC-299 Go | pending |
+| 2026-11-08 | Accepted | mikemike | S01 | Initial version; task 1 of MIL-064, which S01 accepted in chat on 2026-11-08 (RC-298 Go) and asked to start the same day ("Ja, start nu"); S01 approved it in chat on 2026-11-08 ("Godkend ADR'en") after RC-299 Go | [3ed3361] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -86,3 +86,4 @@ We follow option 5 with form b: the proxy runs `ghcr.io/nf-hotel/nfhotel-nginx`,
 [MIL-036]: ../milestones/mil-036-security-operations.md
 [MIL-059]: ../milestones/mil-059-github-actions-security-audit.md
 [MIL-064]: ../milestones/mil-064-patched-nginx-and-third-party-scan.md
+[3ed3361]: https://github.com/NF-Hotel/NFHotel/commit/3ed3361542de05c137c9978e95531f6dba98e8f2
