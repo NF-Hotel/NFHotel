@@ -5,8 +5,10 @@
 # task 1); backup-database.sh copies every backup the target lacks, warns and keeps the
 # backup when the target is off, and catches up when it is back; a copy cut off midway
 # leaves nothing under the final name, and the next run sends the whole file (MIL-066
-# task 2). sshd runs in this container in place of the target container; a stand-in
-# docker writes the dump.
+# task 2); prune-backups.sh deletes only what the retention allows, by the time in the
+# name, keeps the newest files of each kind, and names and fails on a file that it cannot
+# delete (MIL-069). sshd runs in this container in place of the target container; a
+# stand-in docker writes the dump.
 #
 # Run it in Debian 13, the release of the target image, with the repository at /src:
 #   docker run --rm -v "$PWD:/src:ro" debian:13-slim bash /src/tests/test-backup-target.sh
@@ -162,6 +164,163 @@ grep -q "the copy to .* failed" "$W/out" && [[ ! -e "$target/$new" ]] &&
   ok "a cut-off copy of the script leaves nothing on the target" || ko "cut-off copy: $(ls -la "$target") $(cat "$W/out")"
 backup && [[ -f "$target/$new" ]] && same "$W/vm/$new" "$target/$new" &&
   ok "the next run sends the whole file: its SHA-256 on the target equals the one on the VM" || ko "the next run: $(cat "$W/out")"
+
+echo "== the prune of the target (MIL-069)"
+# The prune runs with its clock at NOW, so a file can be named exactly at a limit.
+PRUNE="$REPO/deploy/backup-target/prune-backups.sh"
+P="$W/prune"
+NOW="$(date -u -d 2026-11-08T12:00:00Z +%s)"
+readonly DAY=86400
+backup_name() { # backup_name <prefix> <suffix> <seconds before NOW>: named as the VM names it
+  echo "$1-$(date -u -d "@$((NOW - $3))" +%Y%m%dT%H%M%SZ)$2"
+}
+make_backup() { # make_backup <prefix> <suffix> <seconds before NOW> [date of the file]
+  local name
+  name="$(backup_name "$1" "$2" "$3")"
+  : >"$P/$name"
+  [[ -z "${4:-}" ]] || touch -d "$4" "$P/$name"
+  echo "$name"
+}
+run_prune() { BACKUP_DIR="$P" PRUNE_NOW="$NOW" bash "$PRUNE" "$@" >"$W/prune.out" 2>&1; }
+present() { [[ -f "$P/$1" ]]; }
+count_named() { find "$P" -maxdepth 1 -type f -name "$1" | wc -l; }
+fresh_folder() { rm -rf "$P" && mkdir -p "$P"; }
+vm_keep() { sed -nE "s/^readonly $1_KEEP=([0-9]+)\$/\1/p" "$REPO/scripts/backup-database.sh"; }
+
+# The two halves of the retention agree: the prune reads every name that backup-database.sh
+# wrote to the target above, and by default keeps as many files as the VM keeps.
+written="$(find /srv/nfhotel-backups -maxdepth 1 -type f -name 'nfhotel-*-2*.age' | wc -l)"
+BACKUP_DIR=/srv/nfhotel-backups bash "$PRUNE" >"$W/prune.out" 2>&1
+counted="$(awk '/: [0-9]+ files, / { n += $2 } END { print n + 0 }' "$W/prune.out")"
+((written >= 4 && counted == written)) &&
+  grep -q "never fewer than the newest $(vm_keep DAILY) daily and $(vm_keep WEEKLY) weekly " "$W/prune.out" &&
+  ok "the prune reads every name that backup-database.sh wrote, and keeps what the VM keeps" ||
+  ko "names of the VM: $written written, $counted read; $(cat "$W/prune.out")"
+
+# The newest 14 daily and 8 weekly files are kept by the floors, so the files behind them
+# show the limits: 30 days for a daily file, 12 weeks (84 days) for a weekly file.
+fresh_folder
+for d in $(seq 14); do make_backup nfhotel-daily .dump.age $((d * DAY)) >/dev/null; done
+for w in $(seq 8); do make_backup nfhotel-weekly .dump.age $((w * 7 * DAY)) >/dev/null; done
+named_new="$(make_backup nfhotel-daily .dump.age $((20 * DAY)) 2000-01-01)"
+daily_limit="$(make_backup nfhotel-daily .dump.age $((30 * DAY)))"
+daily_past="$(make_backup nfhotel-daily .dump.age $((30 * DAY + 1)))"
+named_old="$(make_backup nfhotel-daily .dump.age $((40 * DAY)))"
+weekly_limit="$(make_backup nfhotel-weekly .dump.age $((84 * DAY)))"
+weekly_past="$(make_backup nfhotel-weekly .dump.age $((84 * DAY + 1)))"
+run_prune && [[ "$(count_named 'nfhotel-*')" == 28 ]] && grep -qx "would delete $daily_past" "$W/prune.out" &&
+  ok "the dry run names what it would delete, and deletes nothing" || ko "dry run: $(cat "$W/prune.out")"
+run_prune --apply || ko "the prune failed: $(cat "$W/prune.out")"
+present "$daily_limit" && ! present "$daily_past" &&
+  ok "a daily file 30 days old is kept, and one a second older is deleted" || ko "daily limit: $(cat "$W/prune.out")"
+present "$weekly_limit" && ! present "$weekly_past" &&
+  ok "a weekly file 12 weeks old is kept, and one a second older is deleted" || ko "weekly limit: $(cat "$W/prune.out")"
+present "$named_new" && ! present "$named_old" &&
+  ok "the time comes from the name, not from the date of the file" || ko "time of a file: $(cat "$W/prune.out")"
+grep -qx "deleted $daily_past" "$W/prune.out" && grep -qx "deleted $weekly_past" "$W/prune.out" &&
+  grep -qx "deleted $named_old" "$W/prune.out" && [[ "$(count_named 'nfhotel-*')" == 25 ]] &&
+  ok "the log names each file it deleted, and only those went" || ko "log: $(cat "$W/prune.out")"
+
+fresh_folder
+for i in $(seq 20); do
+  make_backup nfhotel-daily .dump.age $((100 * DAY + i)) >/dev/null
+  make_backup nfhotel-settings-daily .tar.age $((100 * DAY + i)) >/dev/null
+done
+for i in $(seq 10); do
+  make_backup nfhotel-weekly .dump.age $((200 * DAY + i)) >/dev/null
+  make_backup nfhotel-settings-weekly .tar.age $((200 * DAY + i)) >/dev/null
+done
+run_prune --apply || ko "the prune failed: $(cat "$W/prune.out")"
+[[ "$(count_named 'nfhotel-daily-*')" == 14 && "$(count_named 'nfhotel-settings-daily-*')" == 14 ]] &&
+  present "$(backup_name nfhotel-daily .dump.age $((100 * DAY + 1)))" &&
+  ! present "$(backup_name nfhotel-daily .dump.age $((100 * DAY + 15)))" &&
+  ok "the newest 14 daily files of each kind are kept, whatever their age" || ko "daily floor: $(cat "$W/prune.out")"
+[[ "$(count_named 'nfhotel-weekly-*')" == 8 && "$(count_named 'nfhotel-settings-weekly-*')" == 8 ]] &&
+  present "$(backup_name nfhotel-weekly .dump.age $((200 * DAY + 1)))" &&
+  ! present "$(backup_name nfhotel-weekly .dump.age $((200 * DAY + 9)))" &&
+  ok "the newest 8 weekly files of each kind are kept, whatever their age" || ko "weekly floor: $(cat "$W/prune.out")"
+
+# Floors of 1, and a newer file of each kind involved, so that only the name protects the rest.
+fresh_folder
+long_ago="$(date -u -d "@$((NOW - 400 * DAY))" +%Y%m%dT%H%M%SZ)"
+others=(".nfhotel-daily-$long_ago.dump.age.Xy12Ab" "nfhotel-daily-$long_ago-copy.dump.age"
+  "nfhotel-daily-$long_ago.dump.age.bak" "nfhotel-daily-20261341T000000Z.dump.age"
+  "nfhotel-monthly-$long_ago.dump.age" "nfhotel-daily-x.dump.age" .last-copy
+  $'nfhotel-daily-x\nnfhotel-daily-'"$long_ago.dump.age")
+for name in "${others[@]}"; do : >"$P/$name"; done
+ln -s /etc/hostname "$P/nfhotel-weekly-$long_ago.dump.age"
+mkdir "$P/nfhotel-settings-weekly-$long_ago.tar.age"
+for kind in nfhotel-daily nfhotel-weekly; do make_backup "$kind" .dump.age "$DAY" >/dev/null; done
+make_backup nfhotel-settings-weekly .tar.age "$DAY" >/dev/null
+expired="$(make_backup nfhotel-daily .dump.age $((400 * DAY + 1)))"
+BACKUP_DIR="$P" PRUNE_NOW="$NOW" PRUNE_DAILY_KEEP=1 PRUNE_WEEKLY_KEEP=1 bash "$PRUNE" --apply >"$W/prune.out" 2>&1
+status=$?
+untouched=0
+for name in "${others[@]}"; do [[ -f "$P/$name" ]] && untouched=$((untouched + 1)); done
+((status == 0 && untouched == ${#others[@]})) && ! present "$expired" &&
+  (($(grep -c '^deleted ' "$W/prune.out") == 1)) &&
+  [[ -L "$P/nfhotel-weekly-$long_ago.dump.age" && -d "$P/nfhotel-settings-weekly-$long_ago.tar.age" ]] &&
+  ok "no other name is touched: rsync temporary files, other times and kinds, a link, a folder, a line break" ||
+  ko "other names: status $status, $(ls -A "$P") $(cat "$W/prune.out")"
+
+refused=0
+for bad in 0 abc 1.5 -3; do
+  BACKUP_DIR="$P" PRUNE_NOW="$NOW" PRUNE_DAILY_KEEP=1 PRUNE_DAILY_DAYS="$bad" bash "$PRUNE" --apply >/dev/null 2>&1 ||
+    refused=$((refused + 1))
+done
+for args in "--apply --force" "--apply --every" "--apply --every 0"; do
+  # shellcheck disable=SC2086 # each entry is a list of arguments
+  BACKUP_DIR="$P" PRUNE_NOW="$NOW" PRUNE_DAILY_KEEP=1 bash "$PRUNE" $args >/dev/null 2>&1 || refused=$((refused + 1))
+done
+BACKUP_DIR="$W/none" bash "$PRUNE" --apply >/dev/null 2>&1 || refused=$((refused + 1))
+make_backup nfhotel-daily .dump.age $((400 * DAY + 2)) >/dev/null
+BACKUP_DIR="$P" PRUNE_NOW="$NOW" PRUNE_DAILY_KEEP=1 PRUNE_DAILY_DAYS=0 bash "$PRUNE" --apply >/dev/null 2>&1
+((refused == 8)) && present "$(backup_name nfhotel-daily .dump.age $((400 * DAY + 2)))" &&
+  ok "a bad limit, argument or folder is refused, and nothing is deleted" || ko "refused $refused of 8"
+
+fresh_folder
+make_backup nfhotel-daily .dump.age "$DAY" >/dev/null
+BACKUP_DIR="$P" PRUNE_NOW="$NOW" PRUNE_DAILY_KEEP=1 bash "$PRUNE" --apply --every 1 >"$W/every.out" 2>&1 &
+loop=$!
+for _ in $(seq 50); do grep -q '^nfhotel-settings-weekly-' "$W/every.out" && break || sleep 0.1; done
+late="$(make_backup nfhotel-daily .dump.age $((400 * DAY)))"
+for _ in $(seq 50); do present "$late" && sleep 0.1 || break; done
+kill -TERM "$loop"
+wait "$loop"
+status=$?
+! present "$late" && (($(grep -c '^prune of ' "$W/every.out") >= 2 && status == 0)) &&
+  ok "with --every it prunes at its start and again after the wait, and ends with 0 on TERM" ||
+  ko "every: status $status, $(cat "$W/every.out")"
+
+# A file that the prune cannot delete, because its user, as in the service, may not write the
+# folder: it names the file, still prunes the other kinds and fails; as the service it goes on.
+as_service_user=(setpriv --reuid=nfhotel-backup --regid=nfhotel-backup --init-groups)
+locked="$W/locked"
+mkdir -m 0755 "$locked"
+chmod 0711 "$W" # the user may pass through the work folder, not list it
+for kind in nfhotel-daily nfhotel-weekly; do
+  : >"$locked/$(backup_name "$kind" .dump.age "$DAY")"
+  : >"$locked/$(backup_name "$kind" .dump.age $((400 * DAY)))"
+done
+BACKUP_DIR="$locked" PRUNE_NOW="$NOW" PRUNE_DAILY_KEEP=1 PRUNE_WEEKLY_KEEP=1 \
+  "${as_service_user[@]}" bash "$PRUNE" --apply >"$W/prune.out" 2>&1
+status=$?
+((status == 1 && $(grep -c '^error: could not delete nfhotel-' "$W/prune.out") == 2)) &&
+  (($(grep -c ' files, ' "$W/prune.out") == 4 && $(find "$locked" -type f | wc -l) == 4)) &&
+  ok "a file that cannot be deleted is named, the other kinds are still pruned, and it fails" ||
+  ko "cannot delete: status $status, $(cat "$W/prune.out")"
+failed_passes() { grep -c '^error: a file could not be deleted' "$W/every.out"; }
+BACKUP_DIR="$locked" PRUNE_NOW="$NOW" PRUNE_DAILY_KEEP=1 PRUNE_WEEKLY_KEEP=1 \
+  "${as_service_user[@]}" bash "$PRUNE" --apply --every 1 >"$W/every.out" 2>&1 &
+loop=$!
+for _ in $(seq 50); do (($(failed_passes) >= 2)) && break || sleep 0.1; done
+kill -TERM "$loop"
+wait "$loop"
+status=$?
+chmod 0700 "$W"
+((status == 0 && $(failed_passes) >= 2)) &&
+  ok "with --every a pass that cannot delete a file is logged, and the next pass still runs" ||
+  ko "every failure: status $status, $(cat "$W/every.out")"
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))
