@@ -9,7 +9,7 @@ Docker container inside that VM (decision: ADR-0003).
 
 | Container | Source | Reachable from |
 | --- | --- | --- |
-| `nginx` | `nginx:1.27-alpine`, `ops/deploy/nginx` | Internet (port 443 over TLS; port 80 only redirects), serves only NFHotel |
+| `nginx` | `ghcr.io/nf-hotel/nfhotel-nginx` (`nginx:1.29-alpine` with the fixes of its Alpine packages, built by Release, ADR-0040), `ops/deploy/nginx` | Internet (port 443 over TLS; port 80 only redirects), serves only NFHotel |
 | `nfhotel-web` | this repository, `ops/deploy/nfhotel-web` | through nginx only; holds only an API address and a token |
 | `nfhotel-api` | this repository, `Dockerfile.api`, `ops/deploy/nfhotel-api` | `nfhotel-web` only, internal network |
 | `postgres` | `postgres:16-alpine`, `ops/deploy/postgres` | `nfhotel-api` only, internal network |

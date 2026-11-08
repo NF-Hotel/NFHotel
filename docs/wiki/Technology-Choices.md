@@ -181,7 +181,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 
 ### GitHub Container Registry (GHCR)
 
-- **Used for:** the four own images, `ghcr.io/nf-hotel/nfhotel-web`, `nfhotel-api`, `market-analysis` and `benchmark`, pushed by Release and pulled by digest on the VM.
+- **Used for:** the five own images, `ghcr.io/nf-hotel/nfhotel-web`, `nfhotel-api`, `market-analysis`, `benchmark` and `nfhotel-nginx`, pushed by Release and pulled by digest on the VM.
 - **Alternatives:** Docker Hub, Azure Container Registry, a self-hosted Harbor or a registry on the node.
 - **For it:** the same login and permissions as the repository (`GITHUB_TOKEN`, no extra secret); attestations are stored next to the images; private images within the plan.
 - **Against it:** the images and their availability depend on GitHub; private storage beyond the plan costs.
@@ -351,7 +351,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 
 ### nginx
 
-- **Used for:** the reverse proxy and TLS end (`nginx:1.29-alpine`): HTTPS on the tailnet, the public listener for the tunnel, the internal listener for the analysis ([ADR-0006](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0006-tls.md)).
+- **Used for:** the reverse proxy and TLS end (`ghcr.io/nf-hotel/nfhotel-nginx`, the pinned `nginx:1.29-alpine` with the fixes of its Alpine packages, [ADR-0040](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0040-patched-nginx-image-from-the-release.md)): HTTPS on the tailnet, the public listener for the tunnel, the internal listener for the analysis ([ADR-0006](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0006-tls.md)).
 - **Alternatives:** Caddy, Traefik, HAProxy, Apache httpd, YARP in .NET.
 - **For it:** the most used proxy, so every question has an answer; fast and light; plain configuration files tested in Ops CI (`test-compose-proxy.sh`).
 - **Against it:** no automatic certificates (until its recent ACME support); configuration has traps (`if`, inherited headers); the open-source edition shows few metrics; its core developer forked it to freenginx in 2024.

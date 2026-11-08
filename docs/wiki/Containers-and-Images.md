@@ -51,7 +51,7 @@ Every service publishes no host port unless the table says so; the others are re
 | Service (compose folder) | What it does | Image | Registry | Networks | Published port |
 | --- | --- | --- | --- | --- | --- |
 | `cloudflared` (`cloudflared`) | Outbound tunnel to Cloudflare; forwards the public host name to nginx (ADR-0028) | `cloudflare/cloudflared:2026.10.3` | Docker Hub | proxy | none |
-| `nginx` (`nginx`) | Reverse proxy and TLS end: HTTPS on the tailnet and the public listener for the tunnel; no route to the Python services (ADR-0039) | `nginx:1.29-alpine` | Docker Hub | proxy, api | 80 and 443 (tailnet and LAN, firewalled to 80 and 443 only) |
+| `nginx` (`nginx`) | Reverse proxy and TLS end: HTTPS on the tailnet and the public listener for the tunnel; no route to the Python services (ADR-0039) | `ghcr.io/nf-hotel/nfhotel-nginx`: `nginx:1.29-alpine` with the fixes of its Alpine packages (ADR-0040) | GHCR, built by Release | proxy, api | 80 and 443 (tailnet and LAN, firewalled to 80 and 443 only) |
 | `nfhotel-web` (`nfhotel-web`) | The Blazor web application: guest pages and back office | `ghcr.io/nf-hotel/nfhotel-web` | GHCR (our build) | proxy, api, python | none |
 | `nfhotel-api` (`nfhotel-api`) | NFHotel.Api: the only container that reaches the database (ADR-0004) | `ghcr.io/nf-hotel/nfhotel-api` | GHCR (our build) | api, db, python | none |
 | `postgres` (`postgres`) | PostgreSQL 16, the production database | `postgres:16-alpine` | Docker Hub | db | none |
@@ -92,11 +92,11 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 
 | Registry | Images | Why there |
 | --- | --- | --- |
-| **GHCR** (`ghcr.io/nf-hotel/`) | `nfhotel-web`, `nfhotel-api`, `market-analysis`, `benchmark` | Our own builds. The Release workflow pushes with the job token, so no registry password is stored; the packages belong to the organisation; the provenance and the SBOM are stored beside each digest |
+| **GHCR** (`ghcr.io/nf-hotel/`) | `nfhotel-web`, `nfhotel-api`, `market-analysis`, `benchmark`, `nfhotel-nginx` | Our own builds, and the proxy with its patch layer. The Release workflow pushes with the job token, so no registry password is stored; the packages belong to the organisation; the provenance and the SBOM are stored beside each digest |
 | **Microsoft Container Registry** (`mcr.microsoft.com`) | `dotnet/sdk:10.0.403` (build stage) and `dotnet/aspnet:10.0.14` (runtime) | Microsoft publishes the .NET images only there |
 | **Docker Hub** | the base images `python:3.14-slim`, `python:3.13-slim`, `debian:12-slim`, and every third-party service above | Where the projects publish their official images |
 
-**Why not build everything ourselves:** an image always starts `FROM` another. Building PostgreSQL, nginx or Grafana from source would make us responsible for every security fix in them. The official images are patched by their maintainers; we pin them, scan them and take the next version when Dependabot proposes it.
+**Why not build everything ourselves:** an image always starts `FROM` another. Building PostgreSQL, nginx or Grafana from source would make us responsible for every security fix in them. The official images are patched by their maintainers; we pin them, scan them and take the next version when Dependabot proposes it. The daily scan checks every third-party image pinned in a compose file again (MIL-064). When a maintainer has not rebuilt an image whose findings are all in its operating-system packages, as with nginx in November 2026, the release adds a patch layer on top of the pinned image (ADR-0040).
 
 **Why not mirror everything into GHCR:** it would remove the dependency on Docker Hub and its pull limits, at the cost of one more job to keep the mirror current. Not needed at today's pull rate; it would be the answer if a pull limit or an outage of Docker Hub stopped a deploy.
 
@@ -108,17 +108,18 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 | `nfhotel-api` | `Dockerfile.api` | the same, for `NFHotel.Api` | `app` (non-root) |
 | `market-analysis` | `ops/deploy/market-analysis/Dockerfile` | the source of `NF-Hotel/notebook-market-analysis` at the pinned commit `MARKET_ANALYSIS_REF`, on `python:3.13-slim`, with every dependency locked by hash (`requirements.lock`) | `app`, uid 10001 |
 | `benchmark` | `ops/deploy/benchmark/Dockerfile` | the source of `NF-Hotel/notebook-benchmark` at the pinned commit `BENCHMARK_REF`, on `python:3.14-slim`, locked by hash | `app`, uid 10001 |
+| `nfhotel-nginx` | `ops/deploy/nginx/Dockerfile` | the pinned `nginx:1.29-alpine` and one `apk upgrade --no-cache` layer with the fixes of its Alpine packages; nginx itself stays the build of nginx.org, and the build fails if the upgrade replaces it (ADR-0040) | the master process `root`, the workers `nginx`, as upstream |
 
-Each final stage runs `apt-get upgrade` for the Debian security updates published since its base image was built. The two .NET images throw the SDK stage away, so the compilers never reach production.
+Each final stage runs `apt-get upgrade` for the Debian security updates published since its base image was built, and the proxy runs `apk upgrade` for the Alpine ones. The two .NET images throw the SDK stage away, so the compilers never reach production.
 
 **From commit to running container:**
 
-1. Release builds the four images from the commit CI tested.
+1. Release builds the five images from the commit CI tested.
 2. Trivy scans each image; the gate (`ops/scripts/scan-gate.sh`) stops the release on a critical vulnerability, a high one with a fix, or a secret in a layer, before anything is pushed. An accepted finding is in `ops/security/trivyignore.yaml` with a reason and an expiry of at most 30 days.
 3. The image is pushed by digest, with a build provenance attestation and an SBOM attestation.
 4. CD verifies both attestations of each digest before the deploy.
 5. The VM pulls the images by digest; it never builds an image of its own.
-6. Every day the running image scan scans the images in production again with that day's database.
+6. Every day the running image scan scans the images in production again with that day's database, and the third-party images pinned in the compose files of that release (MIL-064).
 
 **The market-analysis history:** the original repository disappeared, so the image was frozen at its last good digest (ADR-0500) and then patched in a layer on top of it (ADR-0030). It is now built again from source, from the new repository `NF-Hotel/notebook-market-analysis` at a pinned commit, like the benchmark (commit 5f8e3a3). ADR-0500 and ADR-0030 are the record of the two steps before.
 
@@ -131,7 +132,7 @@ Each final stage runs `apt-get upgrade` for the Debian security updates publishe
 | `security_opt: [no-new-privileges:true]` | every service, and the daemon default | No privilege gain through setuid binaries | 5.25 |
 | `read_only: true`, with `tmpfs` for what it writes | every service except `backup-target` | An attacker cannot change the program files or leave a tool behind | 5.12 |
 | Memory, CPU and PID limits | every long-running service | A leak or a fork bomb in one container cannot starve the others | 5.10, 5.11, 5.28 |
-| Non-root user | our four images and Alloy (473); PostgreSQL drops to its own user, and the nginx workers run as `nginx` | A process escape starts without root | 4.1 |
+| Non-root user | the web, API, market-analysis and benchmark images and Alloy (473); PostgreSQL drops to its own user, and the nginx workers run as `nginx` | A process escape starts without root | 4.1 |
 | No host port, except the table above | every compose file | Nothing answers that does not need to | 5.7 |
 | Secrets as files under `/run/secrets`, never environment variables | web, API, PostgreSQL, cloudflared, Alertmanager | `docker inspect` and an environment dump show no secret (ADR-0024) | 4.10 |
 | A health check | every long-running service | The deploy waits for healthy containers and rolls back otherwise; an unhealthy container raises `ContainerUnhealthy` | 4.6 |
