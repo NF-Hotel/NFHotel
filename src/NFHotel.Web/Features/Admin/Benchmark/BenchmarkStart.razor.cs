@@ -12,14 +12,18 @@ public partial class BenchmarkStart : CancellableComponentBase
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
 
-    /// <summary>A recorded run whose choice is taken when the page opens (the list of runs links here with it).</summary>
+    /// <summary>
+    /// A recorded run whose choice is taken when the page opens (the list of runs links here with it), as the address
+    /// spells it. Text: a value that is not the id of a run is ignored, so it cannot make the page answer an error page
+    /// (MIL-067).
+    /// </summary>
     [SupplyParameterFromQuery(Name = "again")]
-    public Guid? Again { get; set; }
+    public string? AgainQuery { get; set; }
 
     /// <summary>Loads the installed models and the recorded runs, and then keeps them live.</summary>
     protected override async Task OnInitializedAsync()
     {
-        await ViewModel.OpenAsync(Again, ComponentToken);
+        await ViewModel.OpenAsync(Guid.TryParse(AgainQuery, out Guid again) ? again : null, ComponentToken);
         _ = PollAsync();
     }
 

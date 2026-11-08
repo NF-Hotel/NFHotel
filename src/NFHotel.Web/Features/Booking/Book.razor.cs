@@ -19,9 +19,13 @@ public partial class Book : CancellableComponentBase
     [SupplyParameterFromQuery(Name = "checkOut")]
     public string? CheckOutQuery { get; set; }
 
-    /// <summary>The number of guests from the front page's booking box or a room's "Check availability" link.</summary>
+    /// <summary>
+    /// The number of guests from the front page's booking box or a room's "Check availability" link, as the address
+    /// spells it. Text, like the dates: the viewmodel reads it, so a value that is not a number cannot make the page
+    /// answer an error page (MIL-067).
+    /// </summary>
     [SupplyParameterFromQuery(Name = "guests")]
-    public int? GuestsQuery { get; set; }
+    public string? GuestsQuery { get; set; }
 
     /// <summary>The browser's navigation, for the one step that leaves the page: on to the receipt.</summary>
     [Inject]

@@ -109,6 +109,29 @@ public sealed class StaffPasswordPageTests : IClassFixture<WebFactory>
         Assert.Contains("The two new passwords are not the same.", html, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Negative: a form that its validation refuses, for two different new passwords or a missing current password,
+    /// sends none of the typed passwords back, in their fields or elsewhere on the page (MIL-067 task 7).
+    /// </summary>
+    [Theory]
+    [InlineData(WebFactory.Password, WebFactory.NewPassword, "a repeat that is not the same", "The two new passwords are not the same.")]
+    [InlineData("", WebFactory.NewPassword, WebFactory.NewPassword, "Enter your current password.")]
+    public async Task Post_ChangeRefusedByTheForm_DoesNotSendThePasswordsBack(string current, string fresh, string repeat, string refusal)
+    {
+        // Arrange
+        using var browser = _factory.CreateBrowser();
+        using var signedIn = await WebFactory.SignInAsync(browser, "mona", WebFactory.Password);
+        string[] typed = [.. new[] { current, fresh, repeat }.Where(password => password.Length > 0)];
+
+        // Act
+        using var response = await PostChangeAsync(browser, current, fresh, repeat);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Contains(refusal, html, StringComparison.Ordinal);
+        Assert.All(typed, password => Assert.DoesNotContain(password, html, StringComparison.Ordinal));
+    }
+
     #endregion
 
     #region Who may open what
