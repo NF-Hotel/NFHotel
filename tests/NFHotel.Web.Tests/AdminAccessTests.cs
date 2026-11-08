@@ -288,6 +288,29 @@ public sealed class AdminAccessTests : IClassFixture<WebFactory>
         Assert.Contains("Start a benchmark run", html, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Negative: an address whose run is not the id of a run (a word, a number, nothing) still shows the page that starts
+    /// a run to a Manager, where it used to answer an error page (MIL-067 task 2).
+    /// </summary>
+    [Theory]
+    [InlineData("not-a-run")]
+    [InlineData("12345")]
+    [InlineData("")]
+    public async Task Get_BenchmarkStartAgainNotARun_ShowsThePage(string again)
+    {
+        // Arrange
+        using var browser = _factory.CreateBrowser();
+        await WebFactory.SignInAsync(browser, "mona", WebFactory.Password);
+
+        // Act
+        using var response = await browser.GetAsync($"/admin/benchmark/start?again={Uri.EscapeDataString(again)}", TestContext.Current.CancellationToken);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Start a benchmark run", html, StringComparison.Ordinal);
+    }
+
     /// <summary>Negative: a Receptionist is told the page that starts a run is not permitted.</summary>
     [Fact]
     public async Task Get_BenchmarkStartAsReceptionist_ShowsNotPermitted()
