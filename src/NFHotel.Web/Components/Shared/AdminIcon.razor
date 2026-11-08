@@ -1,0 +1,17 @@
+@*
+    One icon from the sprite in AdminLayout (AdminIconSprite). Decorative: the text next to it carries the meaning,
+    so it is hidden from screen readers.
+*@
+
+<svg class="icon @Class" aria-hidden="true" focusable="false"><use href="@($"#i-{Name}")"></use></svg>
+
+@code {
+    /// <summary>The name of the symbol without the <c>i-</c> prefix, for example <c>calendar</c>.</summary>
+    [Parameter]
+    [EditorRequired]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Extra classes, for example <c>icon-sm</c>.</summary>
+    [Parameter]
+    public string? Class { get; set; }
+}

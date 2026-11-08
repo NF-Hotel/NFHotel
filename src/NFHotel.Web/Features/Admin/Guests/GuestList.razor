@@ -27,6 +27,7 @@
                     class="btn btn-primary"
                     disabled="@ViewModel.IsBusy"
                     @onclick="BeginCreate">
+                <AdminIcon Name="plus" />
                 New guest
             </button>
         </Actions>
@@ -126,10 +127,10 @@
         </section>
     }
 
-    <section class="panel stack" aria-labelledby="guest-search-heading">
-        <h2 class="subtitle" id="guest-search-heading">Search</h2>
+    <section class="card" aria-labelledby="guest-search-heading">
+        <h2 class="sr-only" id="guest-search-heading">Search</h2>
 
-        <div class="field-row">
+        <div class="admin-toolbar">
             <FormField Label="Name, country or email" For="guest-search">
                 <input id="guest-search"
                        type="search"
@@ -137,22 +138,23 @@
                        disabled="@ViewModel.IsBusy"
                        @bind="ViewModel.SearchText" />
             </FormField>
-        </div>
 
-        <div class="row">
-            <button type="button"
-                    class="btn btn-primary"
-                    disabled="@ViewModel.IsBusy"
-                    @onclick="SearchAsync">
-                Search
-            </button>
+            <div class="admin-toolbar-actions">
+                <button type="button"
+                        class="btn btn-primary"
+                        disabled="@ViewModel.IsBusy"
+                        @onclick="SearchAsync">
+                    <AdminIcon Name="search" />
+                    Search
+                </button>
 
-            <button type="button"
-                    class="btn btn-ghost"
-                    disabled="@ViewModel.IsBusy"
-                    @onclick="ClearSearchAsync">
-                Clear search
-            </button>
+                <button type="button"
+                        class="btn btn-ghost"
+                        disabled="@ViewModel.IsBusy"
+                        @onclick="ClearSearchAsync">
+                    Clear search
+                </button>
+            </div>
         </div>
     </section>
 

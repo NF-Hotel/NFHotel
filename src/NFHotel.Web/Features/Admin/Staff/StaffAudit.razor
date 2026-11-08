@@ -16,11 +16,9 @@
 <PageTitle>Audit — administration</PageTitle>
 
 <div class="stack-lg">
-    <PageHeader Title="Audit trail" Subtitle="Sign-ins and changes to the staff accounts, newest first.">
-        <Actions>
-            <a class="btn btn-secondary" href="/admin/staff">Staff</a>
-        </Actions>
-    </PageHeader>
+    <PageHeader Title="Audit trail" Subtitle="Sign-ins and changes to the staff accounts, newest first." />
+
+    <AdminTabs Label="Staff" Tabs="StaffTabs" />
 
     <ErrorAlert Errors="ViewModel.Errors" />
 
@@ -71,6 +69,13 @@
 </div>
 
 @code {
+    /// <summary>The staff pages as tabs: one menu item, same routes.</summary>
+    private static readonly AdminTab[] StaffTabs =
+    [
+        new("/admin/staff", "Accounts"),
+        new("/admin/staff/audit", "Audit trail"),
+    ];
+
     private int Pages => Math.Max(1, (ViewModel.Total + StaffAuditViewModel.PageSize - 1) / StaffAuditViewModel.PageSize);
 
     protected override Task OnInitializedAsync() => ViewModel.LoadAsync(1, ComponentToken);

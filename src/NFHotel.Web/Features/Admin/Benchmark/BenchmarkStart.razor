@@ -23,6 +23,8 @@
     <PageHeader Title="Start a benchmark run"
                 Subtitle="Choose the installed models to compare. A run takes minutes and runs one model at a time." />
 
+    <AdminTabs Label="Benchmark" Tabs="BenchmarkTabs" />
+
     <ErrorAlert Errors="ViewModel.Errors" />
 
     @if (ViewModel.StoppedRun is { } stopped)
@@ -167,6 +169,13 @@
 </div>
 
 @code {
+    /// <summary>The benchmark pages as tabs: one menu item, same routes.</summary>
+    private static readonly AdminTab[] BenchmarkTabs =
+    [
+        new("/admin/benchmark", "Runs"),
+        new("/admin/benchmark/start", "Start a run"),
+    ];
+
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
 
     /// <summary>A recorded run whose choice is taken when the page opens (the list of runs links here with it).</summary>

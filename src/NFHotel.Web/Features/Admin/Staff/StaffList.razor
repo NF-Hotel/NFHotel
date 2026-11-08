@@ -18,10 +18,11 @@
 <div class="stack-lg">
     <PageHeader Title="Staff" Subtitle="Create, disable and recover the accounts of the back office.">
         <Actions>
-            <button type="button" class="btn btn-primary" disabled="@ViewModel.IsBusy" @onclick="ViewModel.BeginCreate">New account</button>
-            <a class="btn btn-secondary" href="/admin/staff/audit">Audit trail</a>
+            <button type="button" class="btn btn-primary" disabled="@ViewModel.IsBusy" @onclick="ViewModel.BeginCreate"><AdminIcon Name="plus" />New account</button>
         </Actions>
     </PageHeader>
+
+    <AdminTabs Label="Staff" Tabs="StaffTabs" />
 
     <ErrorAlert Errors="ViewModel.Errors" />
 
@@ -122,6 +123,13 @@
 </div>
 
 @code {
+    /// <summary>The staff pages as tabs: one menu item, same routes.</summary>
+    private static readonly AdminTab[] StaffTabs =
+    [
+        new("/admin/staff", "Accounts"),
+        new("/admin/staff/audit", "Audit trail"),
+    ];
+
     protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
 
     private static string StateOf(StaffAccountDto account) =>

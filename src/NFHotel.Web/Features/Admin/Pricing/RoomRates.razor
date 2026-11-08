@@ -17,7 +17,9 @@
 <PageTitle>Room rates — administration</PageTitle>
 
 <div class="stack-lg">
-    <PageHeader Title="Room rates" Subtitle="The nightly base rate of each room size." />
+    <PageHeader Title="Room rates" Subtitle="The nightly base rate of each room size. Seasonal changes come from the price suggestions, not from here." />
+
+    <AdminTabs Label="Pricing" Tabs="PricingTabs" />
 
     <ErrorAlert Errors="ViewModel.Errors" />
 
@@ -32,6 +34,7 @@
     }
     else
     {
+        <div class="table-wrap">
         <table class="table">
             <thead>
                 <tr>
@@ -48,27 +51,36 @@
                     var rate = ViewModel.RateOf(size);
                     var id = $"rate-{size.ToString().ToLowerInvariant()}";
                     <tr>
-                        <th scope="row">@size</th>
-                        <td>@(rate is null ? "not set" : rate.NightlyPrice.ToString("0.00", CultureInfo.InvariantCulture))</td>
+                        <th scope="row">@DisplayText.Describe(size)</th>
+                        <td class="numeric-start">@(rate is null ? "not set" : rate.NightlyPrice.ToString("0.00", CultureInfo.InvariantCulture))</td>
                         <td>@(rate?.SetBy ?? "-")</td>
-                        <td>@(rate is null ? "-" : rate.SetAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture))</td>
+                        <td class="numeric-start">@(rate is null ? "-" : rate.SetAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture))</td>
                         <td>
-                            <div class="row">
+                            <div class="rate-edit">
                                 <label class="sr-only" for="@id">New nightly rate for @size</label>
                                 <input id="@id" class="field-input" inputmode="decimal" autocomplete="off"
                                        value="@ViewModel.InputOf(size)" @oninput="e => ViewModel.SetInput(size, e.Value?.ToString())" />
-                                <button type="button" class="btn btn-primary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => SaveAsync(size)">Save</button>
+                                <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="() => SaveAsync(size)">Save</button>
                             </div>
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
+        </div>
         <p class="muted">Use a dot for the decimals, for example 89.50.</p>
     }
 </div>
 
 @code {
+    /// <summary>The three pricing pages as tabs: one menu item, same routes.</summary>
+    private static readonly AdminTab[] PricingTabs =
+    [
+        new("/admin/pricing/rates", "Room rates"),
+        new("/admin/pricing/suggestions", "Price suggestions"),
+        new("/admin/pricing/settings", "Settings"),
+    ];
+
     protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
 
     private Task SaveAsync(RoomSize size) => ViewModel.SaveAsync(size, ComponentToken);

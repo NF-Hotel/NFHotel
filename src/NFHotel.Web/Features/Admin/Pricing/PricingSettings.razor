@@ -18,6 +18,8 @@
 <div class="stack-lg">
     <PageHeader Title="Pricing settings" Subtitle="How much a price changes in a high or a low season." />
 
+    <AdminTabs Label="Pricing" Tabs="PricingTabs" />
+
     <ErrorAlert Errors="ViewModel.Errors" />
 
     @if (ViewModel.SuccessMessage is { } success)
@@ -100,6 +102,14 @@
 </div>
 
 @code {
+    /// <summary>The three pricing pages as tabs: one menu item, same routes.</summary>
+    private static readonly AdminTab[] PricingTabs =
+    [
+        new("/admin/pricing/rates", "Room rates"),
+        new("/admin/pricing/suggestions", "Price suggestions"),
+        new("/admin/pricing/settings", "Settings"),
+    ];
+
     protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
 
     private Task SaveAsync() => ViewModel.SaveAsync(ComponentToken);

@@ -25,10 +25,12 @@
                 Subtitle="Every finished run of the local models, with the machine it ran on.">
         <Actions>
             <AuthorizeView Policy="@StaffPolicies.BenchmarkRun">
-                <a class="btn btn-primary" href="/admin/benchmark/start">Start a run</a>
+                <a class="btn btn-primary" href="/admin/benchmark/start"><AdminIcon Name="cpu" />Start a run</a>
             </AuthorizeView>
         </Actions>
     </PageHeader>
+
+    <AdminTabs Label="Benchmark" Tabs="BenchmarkTabs" />
 
     <ErrorAlert Errors="ViewModel.Errors" />
 
@@ -315,6 +317,13 @@
 </div>
 
 @code {
+    /// <summary>The benchmark pages as tabs: one menu item, same routes.</summary>
+    private static readonly AdminTab[] BenchmarkTabs =
+    [
+        new("/admin/benchmark", "Runs"),
+        new("/admin/benchmark/start", "Start a run"),
+    ];
+
     /// <summary>Loads the list when the page opens.</summary>
     protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
 

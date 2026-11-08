@@ -1,0 +1,82 @@
+@using NFHotel.Application.UseCases.Staff
+@using NFHotel.Web.Security
+@inject NavigationManager Navigation
+
+@*
+    The bar over the content: where the user is (group and page), the theme, and the signed-in user with
+    the password page and sign-out (ADR-0005). Plain links, buttons and forms: no JavaScript (MIL-033), and no
+    open state that survives a navigation.
+
+    The theme button walks system → dark → light → system; the choice is a cookie (AdminTheme).
+*@
+
+<header class="admin-topbar">
+    <nav class="admin-crumbs" aria-label="Breadcrumb">
+        <span class="group">@Crumb.Group</span>
+        <span class="sep" aria-hidden="true">/</span>
+        <strong>@Crumb.Title</strong>
+    </nav>
+
+    <div class="admin-topbar-actions">
+        <form method="post" action="@AdminTheme.TogglePath">
+            <AntiforgeryToken />
+            <input type="hidden" name="@AdminTheme.ReturnField" value="@Path" />
+            <input type="hidden" name="@AdminTheme.Field" value="@NextTheme" />
+            <button type="submit" class="admin-icon-btn" aria-label="@ThemeLabel" title="@ThemeLabel">
+                <AdminIcon Name="@ThemeIcon" />
+            </button>
+        </form>
+
+        <AuthorizeView>
+            <a class="admin-user" href="/admin/account/password" title="Change password">
+                <span class="admin-avatar" aria-hidden="true">@Initials(context.User.Identity?.Name)</span>
+                <span class="admin-user-name">
+                    @context.User.Identity?.Name
+                    <span>@StaffClaims.RoleOf(context.User)</span>
+                </span>
+            </a>
+            <form method="post" action="@StaffSecurityRegistration.LogoutPath">
+                <AntiforgeryToken />
+                <button type="submit" class="btn btn-ghost btn-sm admin-signout" aria-label="Sign out" title="Sign out">
+                    <AdminIcon Name="logout" />
+                    <span>Sign out</span>
+                </button>
+            </form>
+        </AuthorizeView>
+    </div>
+</header>
+
+@code {
+    /// <summary>The theme the user chose, or <c>null</c> when the shell follows the system.</summary>
+    [Parameter]
+    public string? Theme { get; set; }
+
+    private string Path => "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+
+    private AdminRoutes.Crumb Crumb => AdminRoutes.For(Path);
+
+    private string NextTheme => Theme switch
+    {
+        AdminTheme.Dark => AdminTheme.Light,
+        AdminTheme.Light => AdminTheme.System,
+        _ => AdminTheme.Dark,
+    };
+
+    private string ThemeIcon => Theme switch
+    {
+        AdminTheme.Dark => "sun",
+        AdminTheme.Light => "monitor",
+        _ => "moon",
+    };
+
+    private string ThemeLabel => Theme switch
+    {
+        AdminTheme.Dark => "Switch to the light theme",
+        AdminTheme.Light => "Follow the system theme",
+        _ => "Switch to the dark theme",
+    };
+
+    /// <summary>The first two letters of the user name, for the avatar.</summary>
+    private static string Initials(string? name) =>
+        string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[..Math.Min(2, name.Trim().Length)].ToUpperInvariant();
+}

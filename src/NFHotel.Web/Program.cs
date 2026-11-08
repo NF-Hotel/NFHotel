@@ -79,6 +79,7 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapStaffSignOut();
+app.MapAdminTheme();   // the light or dark theme of the back office, a cookie (app.css section 12)
 // Blazor's own policy (frame-ancestors 'self') is turned off: UseSecurityHeaders sends the complete one.
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode(options => options.ContentSecurityFrameAncestorsPolicy = null);

@@ -19,6 +19,8 @@
     <PageHeader Title="Price suggestions"
                 Subtitle="The suggestions are calculated from the occupancy of the market analysis by a fixed rule. No price changes until you approve; the AI text only explains." />
 
+    <AdminTabs Label="Pricing" Tabs="PricingTabs" />
+
     <div class="row">
         <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="ReloadAsync">Reload</button>
     </div>
@@ -218,6 +220,14 @@
 </div>
 
 @code {
+    /// <summary>The three pricing pages as tabs: one menu item, same routes.</summary>
+    private static readonly AdminTab[] PricingTabs =
+    [
+        new("/admin/pricing/rates", "Room rates"),
+        new("/admin/pricing/suggestions", "Price suggestions"),
+        new("/admin/pricing/settings", "Settings"),
+    ];
+
     protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
 
     private Task ReloadAsync() => ViewModel.LoadAsync(ComponentToken);
