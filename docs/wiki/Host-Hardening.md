@@ -157,6 +157,16 @@ sudo ss -lntup
 
 `systemctl get-default` gives `multi-user.target`, the `dpkg-query` line prints nothing, and `ss` shows only `sshd`, `tailscaled` and the ports of Docker. Then the checks of step 5 apply, and `sudo -l -U deploy` still lists `nfhotel-deploy`. When a check fails, roll back to the snapshot from the Proxmox console.
 
+## No secret in the log of sudo
+
+`sudo` writes a line for every command to `/var/log/sudo.log` and to the journal (row 5.2.3 of the CIS checklist), and Alloy sends the journal to Loki. The line names the user, the folder and the command with its arguments, and its `ENV=` field holds every variable that `sudo` keeps: those of `--preserve-env`, those of `-E`, and `NAME=value` before the command. Whatever crosses `sudo` that way can be read by everyone who reads these logs.
+
+Until MIL-070, `deploy-release.sh` handed the connection string of the API to `deploy-services.sh` with `--preserve-env`, so every deploy from 2026-10-21 to 2026-11-08 wrote the password of `nfhotel_app` into the log. Now `as_app` hands it on standard input to the shell that `sudo` starts, which puts it in the environment of the command and runs the command with nothing on its standard input (ADR-0041). Only `NFHOTEL_API_MIGRATE_ON_START`, a flag, still crosses in the environment. `sudo` stays for the change of user, so the line of every command is still written.
+
+`ops/tests/test-sudo-log.sh` proves it in Debian 13 with the `sudo` settings of the VM, and refuses a `sudo` call in `ops/` that keeps a variable outside its short list of names that hold no secret. Never pass a secret to `sudo` in its environment or as an argument; pass it on standard input, as `as_app` does.
+
+The entries written before MIL-070 stay until their retention ends: the journal keeps at most 1 GB, `sudo.log` is rotated, and Loki keeps 14 days. Task 5 of MIL-070 gives `nfhotel_app` a new password, after which the password in those entries opens nothing.
+
 ## Firewall: SSH over Tailscale only
 
 **Decision (S01, 2026-10-24).** SSH (TCP 22) is allowed only on `tailscale0`. SSH from the LAN (`192.168.10.0/24`) and from the internet is dropped, and the input policy stays drop. The reason: the server stands in S01's home, so the Proxmox console is the way in when Tailscale is down, and SSH from the LAN adds an access path without a need. This is the least privilege that MIL-023 criterion 2 asks for.

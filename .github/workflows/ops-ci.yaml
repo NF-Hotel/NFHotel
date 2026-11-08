@@ -91,12 +91,16 @@ jobs:
           - test-check-secret-env.sh
           - test-make-migration-script.sh
           - test-remove-desktop.sh
-        # Debian 13: the rrsync of the backup target has -no-overwrite (MIL-066 task 1), and
-        # remove-desktop.sh is for the VM, which runs Debian 13 (MIL-068).
+          - test-sudo-log.sh
+        # Debian 13: the rrsync of the backup target has -no-overwrite (MIL-066 task 1),
+        # remove-desktop.sh is for the VM, which runs Debian 13 (MIL-068), and test-sudo-log.sh
+        # checks the log of the sudo of the VM (MIL-070).
         include:
           - test: test-backup-target.sh
             image: debian:13-slim
           - test: test-remove-desktop.sh
+            image: debian:13-slim
+          - test: test-sudo-log.sh
             image: debian:13-slim
     steps:
       - name: Check out
