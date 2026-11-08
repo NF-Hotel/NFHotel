@@ -74,7 +74,7 @@ sudo_call() {
       skip=0
       continue
     fi
-    if ((!in_sudo)); then
+    if ((! in_sudo)); then
       [[ "$word" == sudo || "$word" == */sudo ]] && in_sudo=1
       continue
     fi
@@ -123,6 +123,7 @@ install -m 0440 /src/deploy/host/sudo/nfhotel-logging /etc/sudoers.d/nfhotel-log
 visudo -cq && ok "visudo accepts /etc/sudoers and nfhotel-logging" || ko "visudo refuses the settings"
 useradd --create-home --shell /bin/bash nfhotel
 W="$(mktemp -d)"
+trap 'rm -rf "$W"' EXIT
 chmod 0755 "$W"
 app_user=nfhotel
 # shellcheck disable=SC2034 # used by as_app, which is read with eval
@@ -248,6 +249,5 @@ done < <(find /src -path /src/tests -prune -o -type f -name '*.sh' -print0)
 [[ ! -s "$W/found" ]] && ok "no sudo call in ops/, outside the tests, keeps a variable outside NOT_SECRET" ||
   ko "sudo calls in ops/ keep a variable: $(paste -sd ';' "$W/found")"
 
-rm -rf "$W"
 echo "$pass passed, $fail failed"
 ((fail == 0))

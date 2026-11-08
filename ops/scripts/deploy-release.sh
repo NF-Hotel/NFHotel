@@ -125,14 +125,31 @@ usage() {
   sed -n '2,/^set -euo/p' "${BASH_SOURCE[0]}" | sed '$d' | sed 's/^# \{0,1\}//'
 }
 
+# The shell that sudo starts for as_app (ADR-0041). sudo writes every variable that it keeps
+# into its log (ENV=), so the connection string of the API, with the password of nfhotel_app,
+# crosses sudo on standard input: this shell reads it into the environment of the command and
+# runs the command in the checkout with nothing on its standard input. It stays on one line,
+# because tests/test-sudo-log.sh reads it with sed.
+# shellcheck disable=SC2016 # expanded by the shell that sudo starts
+readonly APP_SHELL='if IFS= read -r value; then export NFHOTEL_API_CONNECTION_STRING="$value"; fi; cd "$1" && shift && exec "$@" </dev/null'
+
 # as_app <command...>: run a command as the application user in the checkout.
 as_app() {
   if [[ "$(id -un)" == "$app_user" ]]; then
     (cd "$app_dir" && "$@")
   else
-    # The database settings of the API pass in the environment, never as an argument.
-    sudo -u "$app_user" -H --preserve-env=NFHOTEL_API_CONNECTION_STRING,NFHOTEL_API_MIGRATE_ON_START \
-      bash -c 'cd "$1" && shift && "$@"' _ "$app_dir" "$@"
+    # The settings of the API never pass as an argument; only the flag, which holds no secret,
+    # passes in the environment that sudo keeps.
+    connection_string_line | sudo -u "$app_user" -H --preserve-env=NFHOTEL_API_MIGRATE_ON_START \
+      bash -c "$APP_SHELL" _ "$app_dir" "$@"
+  fi
+}
+
+# connection_string_line: the connection string of the API as one line for APP_SHELL, or nothing
+# when it is not set. printf is a builtin, so the value is in the arguments of no process.
+connection_string_line() {
+  if [[ -n "${NFHOTEL_API_CONNECTION_STRING+x}" ]]; then
+    printf '%s\n' "$NFHOTEL_API_CONNECTION_STRING"
   fi
 }
 

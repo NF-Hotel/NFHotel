@@ -125,6 +125,21 @@ Run them as root in a checkout of NF-Hotel/NFHotel, from its root, so the paths 
 - **Route.** The nginx route `/api/` is turned on by copying `ops/deploy/nginx/optional/api.conf` into `ops/deploy/nginx/snippets/locations.d/` in a reviewed change. It answers only tailnet addresses.
 - **The published port.** 5432 is removed in the reconciliation (ADR-0010): PostgreSQL then publishes `127.0.0.1:5432` at most, for administrators over Tailscale SSH.
 
+## A new password for `nfhotel_app`
+
+Make a new password for the role of the API when the old one may be known outside the VM, as after the finding of MIL-070. Do it only after a deploy whose `as_app` hands the connection string over standard input (ADR-0041): an older deploy writes the password into the log of `sudo`.
+
+1. On the VM, as root in the checkout, move the password file aside, because `--apply` makes a password only when its file is missing:
+
+   ```bash
+   mv /etc/nfhotel/secrets/postgres-app.password /etc/nfhotel/secrets/postgres-app.password.old
+   bash ops/scripts/prepare-database-roles.sh --container <pg> --apply
+   ```
+
+   It writes a new `postgres-app.password`, sets it on `nfhotel_app` (`ALTER ROLE` in `roles.sql`, with the passwords on standard input), and writes `nfhotel-api-database.env` with the new connection string. The passwords of the other roles stay, and nothing is printed.
+2. From then on the API cannot open a new connection, because its secret file still holds the old password. Run the continuous deployment (CD) of the deployed commit again at once; S01 approves the run (ADR-0038). The deploy writes the new secret file, and its hash recreates the API container (ADR-0024).
+3. Check that the API is healthy and answers a request that reads the database, and that a login as `nfhotel_app` with the old password is refused; the password goes to `psql` on standard input or in its environment, never on a command line. Then delete `postgres-app.password.old`.
+
 ## Roll back
 
 - **Roles.** They are only added. To remove them, `DROP ROLE` them after `REASSIGN OWNED BY nfhotel_owner TO <superuser>`. The data is untouched.
