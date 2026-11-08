@@ -26,9 +26,10 @@
 #   7. on success, append the release to the release log; on failure, deploy the
 #      previous release from the log again and exit 1
 #   The release log has one line per release: the time, the two commits and the references.
-#   A line from before ADR-0040 has four references, without nfhotel-nginx: its operations
-#   commit pins the upstream image of the proxy, so it still rolls back. The lines of update
-#   have the word update after the time.
+#   A line from before ADR-0040 has four references, without nfhotel-nginx, and a line from
+#   before MIL-065 has five, without nfhotel-socket-proxy: their operations commits pin the
+#   upstream images of the proxies, so they still roll back. The lines of update have the word
+#   update after the time.
 # migrate:  apply the idempotent migration script of a release to the database, before
 #           its deploy (MIL-022 task 6, ADR-0008, ADR-0011). The script comes on standard
 #           input and must have the SHA-256 given as the argument, the one recorded in
@@ -36,7 +37,10 @@
 #           in the PostgreSQL container as nfhotel_migrator, which sets the role
 #           nfhotel_owner, with the URL of /etc/nfhotel/secrets/nfhotel-migrator-database.env.
 #           Each migration of the script commits on its own and is skipped when its id is
-#           already in the history, so a rerun changes nothing.
+#           already in the history, so a rerun changes nothing. Then the migrator takes
+#           INSERT, UPDATE and DELETE on the history back from nfhotel_app, which the
+#           default privileges give it when the first migration creates the table: the
+#           API may read the history, never change it (MIL-066 task 4).
 # update:   install the operations commands of a release commit (ADR-0018, MIL-032), before
 #           migrate and deploy. It fetches main from origin and refuses a commit that is
 #           not reachable from origin/main, the branch the ruleset protects: GitHub serves
@@ -70,8 +74,9 @@
 #   <devops-sha> the 40-character commit to check out: the commit of the operations code,
 #                which since ADR-0016 is the NFHotel commit of the release
 #   <reference>  ghcr.io/nf-hotel/<name>@sha256:<64 hex>, one for each image of NAMES
-#                (nfhotel-web, nfhotel-api, market-analysis, benchmark, nfhotel-nginx), in
-#                any order: the name picks the image variable of deploy-services.sh (ADR-0040)
+#                (nfhotel-web, nfhotel-api, market-analysis, benchmark, nfhotel-nginx,
+#                nfhotel-socket-proxy), in any order: the name picks the image variable of
+#                deploy-services.sh (ADR-0040)
 #   --drill      a rollback drill: deploy, then roll back to the previous release as if
 #                the smoke test had failed, and exit 1; the release is not recorded
 # Env:   NFHOTEL_DIR (default /opt/nfhotel), NFHOTEL_USER (default nfhotel),
@@ -100,10 +105,11 @@ readonly SYSTEMD_DIR="${NFHOTEL_SYSTEMD_DIR:-/etc/systemd/system}"
 readonly SYSTEMCTL="${NFHOTEL_SYSTEMCTL:-systemctl}"
 # The images of a release (ADR-0040). A reference names its image, so a new image is a name here
 # and in cd-steps.sh, never a new argument position.
-readonly NAMES=(nfhotel-web nfhotel-api market-analysis benchmark nfhotel-nginx)
+readonly NAMES=(nfhotel-web nfhotel-api market-analysis benchmark nfhotel-nginx nfhotel-socket-proxy)
 # The images that the release lines from before them lack. Such a line still rolls back: its
-# operations commit names the upstream image in the compose file.
-readonly ADDED_NAMES=(nfhotel-nginx)
+# operations commit names the upstream image in the compose file. The socket proxy of Alloy came
+# with MIL-065 (ADR-0040 decision 5).
+readonly ADDED_NAMES=(nfhotel-nginx nfhotel-socket-proxy)
 
 die() {
   echo "error: $*" >&2
@@ -232,8 +238,9 @@ smoke_test() {
 }
 
 # apply <app-sha> <devops-sha> <reference...>: check out the DevOps commit and start one release,
-# each image in the variable of its name. A release line from before ADR-0040 sets no
-# NFHOTEL_NGINX_IMAGE, and the compose file of its operations commit names the upstream image.
+# each image in the variable of its name. A release line without an image of ADDED_NAMES sets no
+# variable for it (NFHOTEL_NGINX_IMAGE, NFHOTEL_SOCKET_PROXY_IMAGE), and the compose file of its
+# operations commit names the upstream image.
 apply() {
   local sha="$2" ref name images=()
   for ref in "${@:3}"; do
@@ -370,6 +377,14 @@ deploy() {
   exit 1
 }
 
+# psql_as_migrator <container>: psql in the PostgreSQL container as nfhotel_migrator, which
+# sets the role nfhotel_owner, with the SQL on standard input.
+psql_as_migrator() {
+  # shellcheck disable=SC2016 # expanded by the shell inside the container
+  docker exec -i --env-file "$secrets_dir/nfhotel-migrator-database.env" "$1" \
+    sh -c 'psql "$NFHOTEL_MIGRATOR_URL" --quiet --no-psqlrc -v ON_ERROR_STOP=1'
+}
+
 # migrate <sha256>: see the header. Nothing is applied unless the script on standard
 # input has exactly that hash and the backup has run.
 migrate() {
@@ -395,10 +410,14 @@ migrate() {
   fi
 
   echo "==> applying the migration script $want as nfhotel_migrator"
-  # shellcheck disable=SC2016 # expanded by the shell inside the container
-  docker exec -i --env-file "$secrets_dir/nfhotel-migrator-database.env" "$pg" \
-    sh -c 'psql "$NFHOTEL_MIGRATOR_URL" --quiet --no-psqlrc -v ON_ERROR_STOP=1' <"$script" ||
+  psql_as_migrator "$pg" <"$script" ||
     die "the migration script failed; the backup above holds the state before it"
+  # The first migration of a new database creates the history, and the default privileges
+  # give it to nfhotel_app like every table; roles.sql takes the rights back only from a
+  # history that exists when it runs. The API may read the history, never change it, so a
+  # takeover of the API cannot mark a migration as applied or remove one (MIL-066 task 4).
+  psql_as_migrator "$pg" <<<'REVOKE INSERT, UPDATE, DELETE ON TABLE public."__EFMigrationsHistory" FROM nfhotel_app;' ||
+    die "the migrations were applied, but INSERT, UPDATE and DELETE on the history were not taken back from nfhotel_app"
   echo "==> migrations applied"
 }
 

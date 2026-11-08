@@ -1,4 +1,4 @@
-# Build the five NF Hotel images from an NF-Hotel/NFHotel checkout and, with push, push
+# Build the six NF Hotel images from an NF-Hotel/NFHotel checkout and, with push, push
 # them to GHCR and write the release manifest (ADR-0007, ADR-0012 of NFHotel, MIL-025). With
 # push it also writes migrations.sql, the idempotent migration script of the release, which
 # the caller uploads with release.json (MIL-022 task 6).
@@ -114,6 +114,14 @@ runs:
       with:
         sarif_file: release-scan/nfhotel-nginx.sarif
         category: trivy-nfhotel-nginx
+    - name: Upload the scan of nfhotel-socket-proxy
+      if: >-
+        always() && inputs.upload-sarif == 'true' &&
+        hashFiles('release-scan/nfhotel-socket-proxy.sarif') != ''
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.39.1
+      with:
+        sarif_file: release-scan/nfhotel-socket-proxy.sarif
+        category: trivy-nfhotel-socket-proxy
 
     # Only images pushed here get attestations; without a push there is no digest output.
     - name: Attest the provenance of nfhotel-web
@@ -199,5 +207,22 @@ runs:
         subject-name: ${{ inputs.registry }}/nfhotel-nginx
         subject-digest: ${{ steps.build.outputs.nfhotel-nginx-digest }}
         sbom-path: release-scan/nfhotel-nginx.spdx.json
+        push-to-registry: true
+        create-storage-record: false
+    - name: Attest the provenance of nfhotel-socket-proxy
+      if: inputs.push == 'true' && steps.build.outputs.nfhotel-socket-proxy-digest != ''
+      uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8  # v4.2.2
+      with:
+        subject-name: ${{ inputs.registry }}/nfhotel-socket-proxy
+        subject-digest: ${{ steps.build.outputs.nfhotel-socket-proxy-digest }}
+        push-to-registry: true
+        create-storage-record: false
+    - name: Attest the SBOM of nfhotel-socket-proxy
+      if: inputs.push == 'true' && steps.build.outputs.nfhotel-socket-proxy-digest != ''
+      uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6  # v4.2.2
+      with:
+        subject-name: ${{ inputs.registry }}/nfhotel-socket-proxy
+        subject-digest: ${{ steps.build.outputs.nfhotel-socket-proxy-digest }}
+        sbom-path: release-scan/nfhotel-socket-proxy.spdx.json
         push-to-registry: true
         create-storage-record: false

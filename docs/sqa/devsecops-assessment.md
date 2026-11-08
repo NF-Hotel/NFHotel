@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-27 | Accepted | mikemike | AI as stand-in for S01 | Section 4: SonarQube Cloud analyses in CI with code coverage (ADR-0033, MIL-047) | [6f7749b] |
-| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Section 11: the personal database roles of the team and their log (ADR-0034, MIL-048) | [102cae2] |
+| 2026-10-28 | Deprecated | mikemike | AI as stand-in for S01 | Section 11: the personal database roles of the team and their log (ADR-0034, MIL-048) | [102cae2] |
+| 2026-11-08 | Accepted | mikemike | S01 | Section 15: decision D2 taken by S01 in chat, private packages (MIL-065 task 13) | [dd55a67] |
 
 This document is a working assessment. Its type is not in `framework/registry/artifact-catalog.md`; a catalog type for it is proposed upstream (rule 5) before it is accepted.
 
@@ -410,7 +410,7 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 | # | Decision | Recommendation | Who |
 | --- | --- | --- | --- |
 | D1 | Build images in CI and pull them on the VM from GHCR. This replaces the earlier choice "build in the VM", and moves GHCR into phase 1 so that CD never builds on the VM | Approve | S01 |
-| D2 | GHCR packages public (the repository is public) or private with a read-only pull token on the VM | Public | S01 |
+| D2 | GHCR packages public (the repository is public) or private with a read-only pull token on the VM | Public. **Decided 2026-11-08 by S01 (in chat, MIL-065 task 13):** private. The packages of the release stay private, `nfhotel-socket-proxy` included; CD logs in to GHCR with the job token (`packages: read`) only to verify the attestations of each digest, and the VM pulls the images with a read credential of its own, set up on the VM and never stored in the repository. An anonymous request for the manifest of a release image is refused | S01 |
 | D3 | Tailscale: tags `tag:ci` and `tag:nfhotel-vm`, workload identity federation instead of an OAuth secret, Tailscale SSH instead of a stored deploy key | Approve | S03 |
 | D4 | Confirm that `nf-hotel` is the services VM and confirm its host key fingerprint | **Decided 2026-10-18, corrected the same day (section 2.4.2, ADR-0010):** `nf-hotel` (VMID 100) is the production VM and already runs NF Hotel; its host key is verified over the tailnet. CD deploys to it only after the running deployment is reconciled with the repository (MIL-021 task 10) | S03 (reconciliation) |
 | D5 | Ruleset changes: required status checks, dismiss stale reviews, approve last push, block deletion | Approve | S01 |
@@ -449,5 +449,5 @@ Each link is stored where it is produced: the issue and the PR in GitHub; the CI
 [ADR-0012]: https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0012-devops-repository-ownership.md
 [RC-164]: ./reviews/rc-164-mil-021-amendment.md
 [7853a62]: https://github.com/NF-Hotel/NFHotel/commit/7853a620ea10e270620236ac74fea5f77cd29ac2
-[6f7749b]: https://github.com/NF-Hotel/NFHotel/commit/6f7749b4fe530edcf83694abb358090cd4da9050
 [102cae2]: https://github.com/NF-Hotel/NFHotel/commit/102cae2e4dd44d67b4d8c71f0ad731456d1938e5
+[dd55a67]: https://github.com/NF-Hotel/NFHotel/commit/dd55a67bb9d57a77fe738f52dde80f1eef61e785

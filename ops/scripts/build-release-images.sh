@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the five NFHotel images of a release with their own Docker Compose files and,
+# Build the six NFHotel images of a release with their own Docker Compose files and,
 # with --push, push them to the GitHub Container Registry and write the release
 # manifest (ADR-0007, MIL-021 task 4). The Release workflow runs it with --push on
 # main after green CI; the VM only pulls the images by digest and never builds them.
@@ -18,6 +18,8 @@
 #   benchmark         deploy/benchmark        (pinned external repository)
 #   nfhotel-nginx     deploy/nginx            (the pinned nginx image with the fixes of its Alpine
 #                                              packages, ADR-0040)
+#   nfhotel-socket-proxy deploy/alloy         (the pinned socket proxy of Alloy with the fixes of its
+#                                              Alpine packages, ADR-0040 decision 5, MIL-065)
 #
 # The compose files need their settings files to load. The build uses the tracked
 # *.example files in a temporary folder and throwaway values for the variables that
@@ -63,6 +65,7 @@ readonly IMAGES=(
   "market-analysis market-analysis MARKET_ANALYSIS_IMAGE MARKET_ANALYSIS_ENV_FILE market-analysis-api"
   "benchmark benchmark BENCHMARK_IMAGE BENCHMARK_ENV_FILE benchmark"
   "nfhotel-nginx nginx NFHOTEL_NGINX_IMAGE NGINX_ENV_FILE nginx"
+  "nfhotel-socket-proxy alloy NFHOTEL_SOCKET_PROXY_IMAGE ALLOY_ENV_FILE socket-proxy"
 )
 
 registry="ghcr.io/nf-hotel"
@@ -147,8 +150,9 @@ fi
 settings="$(mktemp -d)"
 trap 'rm -rf "$settings"' EXIT
 
-# Throwaway values for the variables that the compose files require (":?").
-export API_TOKEN="release-build"
+# Throwaway values for the variables that the compose files require (":?"). The group of the
+# journal is read by Alloy at run time only; the build of the socket proxy uses none of them.
+export API_TOKEN="release-build" NFHOTEL_JOURNAL_GID="0"
 
 # Build and scan every image first, and push only when all of them passed, so a failed
 # scan leaves nothing new in the registry. The manifest lists the images in IMAGES order.

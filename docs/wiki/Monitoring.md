@@ -63,7 +63,7 @@ All traffic runs on the tailnet; no part is on the internet.
 | The configuration in the LXC | `/opt/nfhotel-monitoring/ops/deploy/monitoring/` |
 | Alloy on the VM | `/opt/nfhotel/ops/deploy/alloy/`, started by CD once `alloy.env` exists |
 | Job reports on the VM | `/var/lib/nfhotel-metrics/*.prom` |
-| Retention | Metrics 30 days, logs 14 days |
+| Retention | Metrics 30 days (`storage.tsdb.retention.time` in `prometheus.yml`), logs 14 days (`retention_period` in the configuration of Loki) |
 
 ## Install the monitoring
 
