@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | RC-312 |
-| CrossReference | [MIL-067], [RC-309], [RC-310], [RC-311], [ADR-0038], [QC-MIL-001] |
+| CrossReference | [MIL-067], [RC-309], [RC-310], [RC-311], [ADR-0038], [QC-MIL-001], [RC-313] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-067 after the CD run of the merge and a full DAST scan; Go | [a6f0dec] |
+| 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-067 after the CD run of the merge and a full DAST scan; Go | [a6f0dec] |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Corrected: Proxy Disclosure (40025) is not an alert that the ZAP rules know; task 7 of MIL-066 removed its `IGNORE` line, so the full scan runs it again and it warns; the verdict is unchanged (RC-313) | pending |
 
 ---
 
@@ -25,11 +26,11 @@
 **Evidence of 2026-11-08:**
 
 - **The pull request.** #596: on its last commit 7b077b0, 51 checks passed and 1 was skipped by design (`DAST full scan`, which runs only by hand and on schedule); all 41 required checks of `main` passed. SonarQube Cloud passed its quality gate with 0 new issues, 0 security hotspots and 100.0% coverage on new code, after ed1836a had given the `var` of the first push their explicit types ([RC-311]). The pull request closed #589, #590, #591, #592 and #595 at the merge; #593 and #594 stay open for this gate.
-- **The full DAST scan of the branch, before the merge.** Run 42497092075 of `e2e-dast.yaml`, started by hand on `mil-067-bad-input` at 7b077b0: "PASS: Integer Overflow Error [30003]", FAIL-NEW 0, WARN-NEW 1 (Proxy Disclosure [40025] x 18, the alert on the name of nginx that the ZAP rules already know), PASS 142, and "PASS no High alert".
+- **The full DAST scan of the branch, before the merge.** Run 42497092075 of `e2e-dast.yaml`, started by hand on `mil-067-bad-input` at 7b077b0: "PASS: Integer Overflow Error [30003]", FAIL-NEW 0, WARN-NEW 1 (Proxy Disclosure [40025] x 18, a Medium alert on the name of nginx that the full scan runs again since task 7 of MIL-066 removed its `IGNORE` line; a warning does not fail the scan), PASS 142, and "PASS no High alert".
 - **The release.** Run 42498021074 of ebbf921 logged "PASS … no secret, no critical finding and no high finding with a fix" for each of the six release images between 16:06 and 16:07 UTC: `nfhotel-web`, `nfhotel-api`, `market-analysis`, `benchmark`, `nfhotel-nginx` and `nfhotel-socket-proxy`.
 - **The CD queue.** The CD run 42496528723 of bd97717, the merge of the plan, changed documents only and was cancelled under the standing request of S01 for such runs; GitHub had cancelled the pending run 42491590120 of b1abd8e (the ZAP rules of MIL-066) when 42496528723 entered the queue of `production`. At the request of S01 ("2 ja"), the AI cancelled the waiting run 42489880568 of 42de1fc (the code of MIL-066) once the run of ebbf921 was in the queue, so that one deploy brings the code of MIL-066, its ZAP rules and the code of MIL-067.
 - **The deploy.** CD run 42498483148, approved by S01 in GitHub at 16:12 UTC (the approval by the AI at the request of S01 was refused by the safety check of the AI tool, so S01 approved it), ended with success at 16:15 UTC. Its verify step logged "build provenance and SBOM verified" for each of the six digests of the release manifest, `nfhotel-web@sha256:e6efcf08afe3…` and `nfhotel-api@sha256:2fec2741c8a0…` among them. The deploy took a backup of the database before the migrations and copied it with the settings archive to the backup target, applied the migration script as `nfhotel_migrator`, and recreated the API, the web application, the market analysis, the benchmark, nginx and the socket proxy, each healthy by 16:15 UTC; the smoke test answered 301 on port 80 and 200 on port 443. The settings archive of the deploy lists 15 paths, `/etc/nfhotel` and the certificate and key of nginx among them, which the gate of MIL-066 can cite.
-- **The full DAST scan after the deploy.** Run 42498990627 of `e2e-dast.yaml`, started by hand on `main` at ebbf921 at 16:15 UTC, after the deploy: "PASS: Integer Overflow Error [30003]", FAIL-NEW 0, WARN-NEW 1 (Proxy Disclosure [40025] x 18, the alert on the name of nginx that the ZAP rules already know), PASS 142, and "PASS no High alert".
+- **The full DAST scan after the deploy.** Run 42498990627 of `e2e-dast.yaml`, started by hand on `main` at ebbf921 at 16:15 UTC, after the deploy: "PASS: Integer Overflow Error [30003]", FAIL-NEW 0, WARN-NEW 1 (Proxy Disclosure [40025] x 18, a Medium alert on the name of nginx that the full scan runs again since task 7 of MIL-066 removed its `IGNORE` line; a warning does not fail the scan), PASS 142, and "PASS no High alert".
 
 ## Checklist Results
 
@@ -67,6 +68,7 @@ Go: the seven criteria pass on the evidence of 2026-11-08, and the condition of 
 [RC-309]: ./rc-309-mil-067.md
 [RC-310]: ./rc-310-mil-067-task-7.md
 [RC-311]: ./rc-311-mil-067-code.md
+[RC-313]: ./rc-313-mil-066-gate.md
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [a6f0dec]: https://github.com/NF-Hotel/NFHotel/commit/a6f0dec4b0a066af5c4a5b3357834cd28fba6762
