@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-064 after the CD run of the merge and the first full daily scan; Go-with-conditions until `docker inspect` on the VM is read for criterion 2 | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-064 after the CD run of the merge and the first full daily scan; Go-with-conditions until `docker inspect` on the VM is read for criterion 2 | [c27ba7a] |
 
 ---
 
@@ -73,3 +73,4 @@ Go-with-conditions. Nine of the ten criteria pass on the green pull request, RC-
 [RC-300]: ./rc-300-mil-064-code.md
 [RC-301]: ./rc-301-mil-065.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[c27ba7a]: https://github.com/NF-Hotel/NFHotel/commit/c27ba7a193b1056bd13ed0d18cafb95f74c4ad18

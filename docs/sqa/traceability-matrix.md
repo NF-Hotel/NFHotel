@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The MIL-064 row: tasks 2 to 7 done and reviewed (RC-300, Go); the ADR-0040 row: what implements it; a row for the code of MIL-064 | [55cb8a6] |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The MIL-064 row: deployed by CD run 42442894208, the gate (RC-302, Go-with-conditions) and the follow-up MIL-065; the row of the code of MIL-064: deployed; a row for MIL-065 (Proposed, RC-301) | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The MIL-064 row: deployed by CD run 42442894208, the gate (RC-302, Go-with-conditions) and the follow-up MIL-065; the row of the code of MIL-064: deployed; a row for MIL-065 (Proposed, RC-301) | [c27ba7a] |
 
 ---
 
@@ -310,3 +310,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [55cb8a6]: https://github.com/NF-Hotel/NFHotel/commit/55cb8a6183ebf3697f801c51e49f7eace9e7bd98
+[c27ba7a]: https://github.com/NF-Hotel/NFHotel/commit/c27ba7a193b1056bd13ed0d18cafb95f74c4ad18

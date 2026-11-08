@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | Initial version: one task for each of the eleven third-party images that the first full daily scan fails (run 42443407440), each with its remedy under ADR-0040 decision 5, checked with candidate scans on 2026-11-08; written in autonomous mode at S01's request in chat ("fix resten") | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | Initial version: one task for each of the eleven third-party images that the first full daily scan fails (run 42443407440), each with its remedy under ADR-0040 decision 5, checked with candidate scans on 2026-11-08; written in autonomous mode at S01's request in chat ("fix resten") | [c27ba7a] |
 
 ---
 
@@ -124,3 +124,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-022]: ./mil-022-supply-chain-security.md
 [MIL-036]: ./mil-036-security-operations.md
 [MIL-064]: ./mil-064-patched-nginx-and-third-party-scan.md
+[c27ba7a]: https://github.com/NF-Hotel/NFHotel/commit/c27ba7a193b1056bd13ed0d18cafb95f74c4ad18
