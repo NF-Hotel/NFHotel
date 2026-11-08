@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | A row for the code of MIL-067 (RC-311, Go-with-conditions) | [3ed21af] |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-067 and of its code at the gate: deployed by CD run 42498483148, the condition of RC-311 met, gate passed (RC-312, Go) | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-067 and of its code at the gate: deployed by CD run 42498483148, the condition of RC-311 met, gate passed (RC-312, Go) | [a6f0dec] |
 
 ---
 
@@ -327,3 +327,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [3ed21af]: https://github.com/NF-Hotel/NFHotel/commit/3ed21af7d6e4ceaaae49ebfd4da2c8e40eec7071
+[a6f0dec]: https://github.com/NF-Hotel/NFHotel/commit/a6f0dec4b0a066af5c4a5b3357834cd28fba6762
