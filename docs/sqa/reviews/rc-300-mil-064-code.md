@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 2 to 7 of MIL-064 before its pull request (task 8), with the one fix it asked for: the steps of the daily scan in a script | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 2 to 7 of MIL-064 before its pull request (task 8), with the one fix it asked for: the steps of the daily scan in a script | [55cb8a6] |
 
 ---
 
@@ -108,3 +108,4 @@ Go. Every Mandatory criterion of QC-SH-001, QC-WF-001 and QC-YML-001 passes afte
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[55cb8a6]: https://github.com/NF-Hotel/NFHotel/commit/55cb8a6183ebf3697f801c51e49f7eace9e7bd98
