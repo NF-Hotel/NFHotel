@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Components;
+
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
@@ -20,8 +22,37 @@ public partial class BookingList : CancellableComponentBase
     private string CancelTitle =>
         $"Cancel booking {ViewModel.BookingPendingCancellation?.BookingNumber}?";
 
+    /// <summary>The value of <c>?view=</c> that opens the page on the calendar.</summary>
+    private const string CalendarView = "calendar";
+
+    /// <summary>True while the availability calendar is shown in place of the filter and the table.</summary>
+    private bool _showCalendar;
+
+    /// <summary>The night picked in the calendar that the panel is open for, marked in the grid.</summary>
+    private DateOnly? _pickedNight;
+
+    /// <summary>The calendar, injected here too, so it can be fetched again after a booking is saved.</summary>
+    [Inject]
+    private BookingCalendarViewModel Calendar { get; set; } = null!;
+
+    /// <summary><c>?view=calendar</c> opens the page on the calendar, so a link or a reload keeps the view. Text, so an odd value cannot make the page fail.</summary>
+    [SupplyParameterFromQuery(Name = "view")]
+    private string? ViewQuery { get; set; }
+
     /// <summary>Fetches the first list when the screen opens.</summary>
-    protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
+    protected override Task OnInitializedAsync()
+    {
+        _showCalendar = string.Equals(ViewQuery, CalendarView, StringComparison.OrdinalIgnoreCase);
+
+        return ViewModel.InitializeAsync(ComponentToken);
+    }
+
+    /// <summary>Writes aria-pressed of the view switch as text; a bool would become an empty attribute.</summary>
+    private string ViewPressed(bool calendar) => _showCalendar == calendar ? "true" : "false";
+
+    private void ShowList() => _showCalendar = false;
+
+    private void ShowCalendar() => _showCalendar = true;
 
     /// <summary>One line under the title of the panel: how far the flow has come.</summary>
     private string FlowHint => Form.Mode == BookingFormMode.Reschedule
@@ -71,6 +102,7 @@ public partial class BookingList : CancellableComponentBase
     private void BeginCreate()
     {
         Form.DismissSuccess();
+        _pickedNight = null;
         Form.BeginCreate();
     }
 
@@ -81,7 +113,20 @@ public partial class BookingList : CancellableComponentBase
         return Form.BeginRescheduleAsync(booking, ComponentToken);
     }
 
-    private void CloseForm() => Form.Close();
+    /// <summary>Opens the panel for a booking of the night picked in the calendar.</summary>
+    private Task BeginCreateForNightAsync(DateOnly night)
+    {
+        Form.DismissSuccess();
+        _pickedNight = night;
+
+        return Form.BeginCreateForNightAsync(night, ComponentToken);
+    }
+
+    private void CloseForm()
+    {
+        _pickedNight = null;
+        Form.Close();
+    }
 
     private Task SearchRoomsAsync() => Form.SearchRoomsAsync(ComponentToken);
 
@@ -98,7 +143,14 @@ public partial class BookingList : CancellableComponentBase
 
         if (Form.SavedSuccessfully)
         {
+            _pickedNight = null;
             await ViewModel.SearchAsync(ComponentToken);
+
+            // The new booking takes a room, so the free rooms of the calendar are out of date.
+            if (_showCalendar)
+            {
+                await Calendar.LoadAsync(ComponentToken);
+            }
         }
     }
 }

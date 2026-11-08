@@ -57,6 +57,19 @@ public sealed class ApiBookingService : IBookingService
     }
 
     /// <inheritdoc />
+    public async Task<Result<IReadOnlyList<NightAvailabilityDto>>> GetAvailabilityAsync(
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default)
+    {
+        string path = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{ApiRoutes.Bookings}/{ApiRoutes.Availability}?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
+
+        return await _api.GetAsync<IReadOnlyList<NightAvailabilityDto>>(path, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<Result<BookingDetailsDto>> CreateAsync(CreateBookingRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);

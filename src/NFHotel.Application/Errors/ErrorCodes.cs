@@ -95,6 +95,9 @@ public static class ErrorCodes
         /// <summary>The end of the overview period is before its start (MIL-013). A period of one day is allowed.</summary>
         public const string OverviewPeriodInvalid = "booking.overview_period_invalid";
 
+        /// <summary>The period of the availability calendar is longer than the service counts in one call.</summary>
+        public const string AvailabilityPeriodTooLong = "booking.availability_period_too_long";
+
         /// <summary>Neither an existing guest was chosen nor a new one given — or both (BR-47).</summary>
         public const string GuestSelectionInvalid = "booking.guest_selection_invalid";
 

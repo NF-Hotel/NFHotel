@@ -172,9 +172,10 @@ public sealed class StaffAuthorizationTests : IClassFixture<ApiFactory>
         Assert.DoesNotContain(guest.LastName, text, StringComparison.Ordinal);
     }
 
-    /// <summary>Negative: Housekeeping cannot list bookings or search guests.</summary>
+    /// <summary>Negative: Housekeeping cannot list bookings, see the availability calendar or search guests.</summary>
     [Theory]
     [InlineData("POST", "/api/bookings/overview")]
+    [InlineData("GET", "/api/bookings/availability?from=2030-03-01&to=2030-03-08")]
     [InlineData("GET", "/api/guests")]
     [InlineData("POST", "/api/bookings/1/confirm")]
     public async Task StaffEndpoint_Housekeeping_ReturnsForbidden(string method, string path)
@@ -212,6 +213,7 @@ public sealed class StaffAuthorizationTests : IClassFixture<ApiFactory>
     [InlineData("GET", "/api/rooms")]
     [InlineData("GET", "/api/guests")]
     [InlineData("POST", "/api/bookings/overview")]
+    [InlineData("GET", "/api/bookings/availability?from=2030-03-01&to=2030-03-08")]
     public async Task StaffEndpoint_Receptionist_IsLetThrough(string method, string path)
     {
         // Arrange

@@ -73,6 +73,20 @@ public sealed class ServiceRequestTests
         Assert.Equal("/api/bookings/available-rooms?checkInDate=2026-03-01&checkOutDate=2026-03-04&excludeBookingId=9", with);
     }
 
+    /// <summary>Positive: the availability calendar asks for its period with both dates in ISO form.</summary>
+    [Fact]
+    public async Task BookingGetAvailabilityAsync_Period_BuildsTheQuery()
+    {
+        // Arrange
+        (StubHandler handler, ApiBookingService bookings, _, _) = Services();
+
+        // Act
+        await bookings.GetAvailabilityAsync(new DateOnly(2026, 10, 26), new DateOnly(2026, 12, 7), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal((HttpMethod.Get, "/api/bookings/availability?from=2026-10-26&to=2026-12-07"), (handler.Method!, handler.PathAndQuery!));
+    }
+
     /// <summary>Positive: the overview posts its query as the body.</summary>
     [Fact]
     public async Task BookingGetOverviewAsync_Query_PostsTheQueryBody()

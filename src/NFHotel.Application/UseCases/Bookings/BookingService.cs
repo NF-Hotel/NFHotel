@@ -35,6 +35,12 @@ public sealed class BookingService : IBookingService
     private static readonly IReadOnlyCollection<BookingStatus> BlockingStatuses =
         Enum.GetValues<BookingStatus>().Where(BookingStatusExtensions.BlocksRoom).ToArray();
 
+    /// <summary>
+    /// The most nights the availability calendar counts in one call: two months, so a month view with the weeks
+    /// around it always fits, and a call can never count the whole future.
+    /// </summary>
+    public const int MaxAvailabilityNights = 62;
+
     /// <summary>All statuses. Used when the overview must also show cancelled ones (BR-13).</summary>
     private static readonly IReadOnlyCollection<BookingStatus> AllStatuses = Enum.GetValues<BookingStatus>();
 
@@ -220,6 +226,94 @@ public sealed class BookingService : IBookingService
             .ToArray();
 
         return Result<IReadOnlyList<AvailableRoomDto>>.Success(available);
+    }
+
+    /// <summary>
+    /// Counts the free rooms of each room size for every night of a period (BR-34, BR-39, BR-110).
+    /// </summary>
+    /// <param name="from">The first night, inclusive.</param>
+    /// <param name="to">The day after the last night, exclusive.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>One entry per night, in date order.</returns>
+    public async Task<Result<IReadOnlyList<NightAvailabilityDto>>> GetAvailabilityAsync(
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default)
+    {
+        // The calendar shows the occupancy of the whole hotel, so it is for staff who may see the bookings.
+        if (!await _authorization.HasPermissionAsync(Permissions.BookingsView, cancellationToken).ConfigureAwait(false))
+        {
+            return Result<IReadOnlyList<NightAvailabilityDto>>.Failure(ErrorCodes.Api.Forbidden);
+        }
+
+        if (!TryCreatePeriod(from, to, out DateRange period, out string periodError))
+        {
+            return Result<IReadOnlyList<NightAvailabilityDto>>.Failure(periodError);
+        }
+
+        if (period.Nights > MaxAvailabilityNights)
+        {
+            return Result<IReadOnlyList<NightAvailabilityDto>>.Failure(ErrorCodes.Booking.AvailabilityPeriodTooLong);
+        }
+
+        // BR-110: the same rooms as the lookup of free rooms, so the calendar never counts a room the flow refuses.
+        IReadOnlyList<AvailableRoomDto> sellableRooms = await _roomQueries
+            .GetByStatusAsync(RoomStatus.Available, cancellationToken)
+            .ConfigureAwait(false);
+
+        IReadOnlyList<RoomOccupancyDto> occupancies = await _bookingQueries
+            .GetOccupancyAsync(period.Start, period.End, BlockingStatuses, cancellationToken)
+            .ConfigureAwait(false);
+
+        IReadOnlyList<(int RoomId, DateRange Stay)> stays = BlockingStays(occupancies);
+        RoomSize[] sizes = Enum.GetValues<RoomSize>();
+        List<NightAvailabilityDto> nights = new(period.Nights);
+
+        for (DateOnly night = period.Start; night < period.End; night = night.AddDays(1))
+        {
+            // The domain decides whether a stay covers the night. The half-open period of BR-39 leaves the
+            // departure day free, so a guest who leaves in the morning does not block the night.
+            DateOnly current = night;
+            HashSet<int> takenRoomIds = stays
+                .Where(stay => stay.Stay.Contains(current))
+                .Select(stay => stay.RoomId)
+                .ToHashSet();
+
+            RoomTypeAvailabilityDto[] types = sizes
+                .Select(size => CountFreeRooms(size, sellableRooms, takenRoomIds))
+                .ToArray();
+
+            nights.Add(new NightAvailabilityDto(night, types));
+        }
+
+        return Result<IReadOnlyList<NightAvailabilityDto>>.Success(nights);
+    }
+
+    /// <summary>
+    /// The stays that block their room, as periods. A stay that ended on the day it began covers no night and is
+    /// left out, because a period needs at least one night.
+    /// </summary>
+    private static IReadOnlyList<(int RoomId, DateRange Stay)> BlockingStays(IReadOnlyList<RoomOccupancyDto> occupancies) =>
+        occupancies
+            .Where(occupancy => occupancy.Status.BlocksRoom() && occupancy.EffectiveEndDate > occupancy.StartDate)
+            .Select(occupancy => (occupancy.RoomId, new DateRange(occupancy.StartDate, occupancy.EffectiveEndDate)))
+            .ToArray();
+
+    /// <summary>The free rooms of one size on one night, with the numbers sorted as people read them: 101 before 1001.</summary>
+    private static RoomTypeAvailabilityDto CountFreeRooms(
+        RoomSize size,
+        IReadOnlyList<AvailableRoomDto> sellableRooms,
+        HashSet<int> takenRoomIds)
+    {
+        AvailableRoomDto[] ofSize = sellableRooms.Where(room => room.Size == size).ToArray();
+        string[] freeRooms = ofSize
+            .Where(room => !takenRoomIds.Contains(room.RoomId))
+            .Select(room => room.RoomNumber)
+            .OrderBy(number => number.Length)
+            .ThenBy(number => number, StringComparer.Ordinal)
+            .ToArray();
+
+        return new RoomTypeAvailabilityDto(size, freeRooms.Length, ofSize.Length, freeRooms);
     }
 
     // --------------------------------------------------------

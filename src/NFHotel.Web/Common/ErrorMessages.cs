@@ -55,6 +55,7 @@ public static class ErrorMessages
             [ErrorCodes.Booking.RoomNotBookable] = "That room can't be booked right now.",
             [ErrorCodes.Booking.RoomTypeNotAvailable] = "That room type is no longer free for your dates. Pick another type or other dates.",
             [ErrorCodes.Booking.OverviewPeriodInvalid] = "The end of the period can't be before its start.",
+            [ErrorCodes.Booking.AvailabilityPeriodTooLong] = "The calendar can show at most two months at a time.",
             [ErrorCodes.Booking.GuestSelectionInvalid] = "Pick an existing guest or create a new one — not both.",
             [ErrorCodes.Booking.ConcurrencyConflict] = "Someone else changed this booking. Reload the page and start over.",
 

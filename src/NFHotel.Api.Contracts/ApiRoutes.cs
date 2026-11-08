@@ -117,6 +117,9 @@ public static class ApiRoutes
     /// <summary>The free rooms of a period.</summary>
     public const string AvailableRooms = "available-rooms";
 
+    /// <summary>The free rooms of each room size, night by night: the availability calendar of the back office.</summary>
+    public const string Availability = "availability";
+
     /// <summary>Moving a booking to other dates or another room.</summary>
     public const string Reschedule = "reschedule";
 

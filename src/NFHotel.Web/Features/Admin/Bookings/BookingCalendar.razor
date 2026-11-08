@@ -1,0 +1,153 @@
+@using NFHotel.Domain.ValueObjects
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@inject BookingCalendarViewModel ViewModel
+
+@*
+    The availability calendar of the booking overview (app.css section 12, "Availability calendar"): a month of
+    nights, each with the free rooms of every size out of those that can be sold. A click on a night from today
+    on starts a booking for it in the panel of the page.
+
+    Only markup and binding: the figures come from the service, and CalendarDay works out every class and text.
+    The bar under a day is a <progress>, because the CSP allows no inline style.
+*@
+
+<section class="card cal-card" aria-labelledby="availability" aria-busy="@BusyText">
+    <CardHead Title="Availability"
+              Id="availability"
+              Icon="calendar"
+              Hint="Free rooms of each size, night by night. Click a night to start a booking from it.">
+        <Actions>
+            <div class="cal-toolbar">
+                <div class="admin-segmented" role="group" aria-label="Room size">
+                    <button type="button"
+                            class="btn"
+                            aria-pressed="@SizePressed(null)"
+                            @onclick="() => FilterBySize(null)">
+                        All sizes
+                    </button>
+
+                    @foreach (RoomSize size in Sizes)
+                    {
+                        <button type="button"
+                                class="btn"
+                                aria-pressed="@SizePressed(size)"
+                                @onclick="() => FilterBySize(size)">
+                            @size
+                        </button>
+                    }
+                </div>
+
+                <div class="cal-month">
+                    <button type="button"
+                            class="btn btn-secondary btn-sm cal-nav prev"
+                            aria-label="Previous month"
+                            disabled="@ViewModel.IsBusy"
+                            @onclick="PreviousMonthAsync">
+                        <AdminIcon Name="chevron" />
+                    </button>
+
+                    <span class="cal-month-label" aria-live="polite">@ViewModel.MonthText</span>
+
+                    <button type="button"
+                            class="btn btn-secondary btn-sm cal-nav next"
+                            aria-label="Next month"
+                            disabled="@ViewModel.IsBusy"
+                            @onclick="NextMonthAsync">
+                        <AdminIcon Name="chevron" />
+                    </button>
+                </div>
+
+                <button type="button"
+                        class="btn btn-ghost btn-sm"
+                        disabled="@(ViewModel.IsBusy || ViewModel.IsThisMonth)"
+                        @onclick="ThisMonthAsync">
+                    Today
+                </button>
+            </div>
+        </Actions>
+    </CardHead>
+
+    <div class="cal-sub">
+        <div class="cal-legend">
+            <span><i class="ok"></i>Free</span>
+            <span><i class="low"></i>1 left</span>
+            <span><i class="full"></i>Sold out</span>
+            <span class="muted">· free / rooms that can be sold</span>
+        </div>
+        <span>Rooms under maintenance or out of service are not counted.</span>
+    </div>
+
+    @if (ViewModel.Errors.Count > 0)
+    {
+        <div class="cal-error">
+            <ErrorAlert Errors="ViewModel.Errors" />
+        </div>
+    }
+    else if (!ViewModel.IsLoaded)
+    {
+        <div class="cal-error">
+            <LoadingSkeleton Rows="6" />
+        </div>
+    }
+    else
+    {
+        <div class="cal-grid">
+            @foreach (string weekday in Weekdays)
+            {
+                <div class="@WeekdayClass(weekday)" aria-hidden="true">@weekday</div>
+            }
+
+            @foreach (CalendarDay day in ViewModel.Days)
+            {
+                <button type="button"
+                        class="@DayClass(day)"
+                        title="@day.Tooltip"
+                        aria-label="@day.AccessibleLabel"
+                        aria-disabled="@DisabledText(day)"
+                        @onclick="() => PickAsync(day)">
+                    <span class="cal-top">
+                        <span class="cal-date">@day.DayText</span>
+                        @if (day.HasFigures)
+                        {
+                            <span class="cal-occ">@day.OccupancyPercent% full</span>
+                        }
+                    </span>
+
+                    @if (!day.HasFigures)
+                    {
+                        <span class="cal-none">No figures</span>
+                    }
+                    else if (ViewModel.SizeFilter is { } size)
+                    {
+                        <span class="cal-big @day.ToneClass">
+                            <strong>@day.Free</strong>
+                            <span>of @CalendarGrid.Rooms(size, day.Sellable) free</span>
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="cal-sizes">
+                            @foreach (CalendarSlot slot in day.Slots)
+                            {
+                                <span class="cal-size">
+                                    <span>@slot.Label</span>
+                                    <span class="cal-free @slot.ToneClass">@slot.Free<small>/@slot.Sellable</small></span>
+                                </span>
+                            }
+                        </span>
+                    }
+
+                    @if (day.HasFigures)
+                    {
+                        <progress class="@day.BarClass" max="100" value="@day.OccupancyPercent" aria-hidden="true"></progress>
+                    }
+                </button>
+            }
+        </div>
+
+        <div class="cal-foot">
+            <span>A night belongs to the day it starts on; the departure day is free again.</span>
+            <span>@ViewModel.SoldOutText</span>
+        </div>
+    }
+</section>

@@ -56,6 +56,19 @@ public sealed class BookingsController : ControllerBase
             .GetAvailableRoomsAsync(checkInDate, checkOutDate, excludeBookingId, cancellationToken)
             .ConfigureAwait(false));
 
+    /// <summary>Counts the free rooms of each room size, night by night.</summary>
+    /// <param name="from">The first night.</param>
+    /// <param name="to">The day after the last night.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>One entry per night.</returns>
+    [HttpGet(ApiRoutes.Availability)]
+    [RequiresPermission(Permissions.BookingsView)]
+    public async Task<IActionResult> GetAvailabilityAsync(
+        [FromQuery] DateOnly from,
+        [FromQuery] DateOnly to,
+        CancellationToken cancellationToken) =>
+        this.ToResponse(await _bookings.GetAvailabilityAsync(from, to, cancellationToken).ConfigureAwait(false));
+
     /// <summary>Creates a booking.</summary>
     /// <param name="request">The period, the room and the guest.</param>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
