@@ -2,7 +2,10 @@
 # End-to-end test of the PostgreSQL preparation (MIL-024, ADR-0011) against PostgreSQL 16
 # with the real migrations of NF-Hotel/NFHotel and its API image: roles and privileges,
 # the ownership transfer without data change, the internal network, the migrator, the
-# API through the alias postgres, backup as nfhotel_backup and the restore drill.
+# API through the alias postgres, backup as nfhotel_backup and the restore drill; and the
+# migration history, which nfhotel_app may read and not change, both on a database migrated
+# before its roles and on a new one whose first migration runs through the migrate step of
+# deploy-release.sh (MIL-066 task 4).
 #
 # Usage: test-database.sh <migrations.sql> <API image>
 #   migrations.sql  dotnet ef migrations script --idempotent from an NFHotel checkout
@@ -10,7 +13,7 @@
 # It starts the containers t-pg and t-api, the volume t-pgdata and the networks t-prodnet,
 # t-apinet and nfhotel-db on the local Docker, and removes them at the end.
 # Exit:  0 every check passed; 1 a check failed; 2 usage error
-# Needs: bash 4+, docker, openssl, age, sha256sum
+# Needs: bash 4+, docker, openssl, age, sha256sum, flock
 
 set -uo pipefail
 
@@ -71,16 +74,22 @@ prepare() { NFHOTEL_BACKUP_COMMAND="$W/bin/nfhotel-backup" bash "$REPO/scripts/p
 verify() { bash "$REPO/scripts/verify-database.sh" --container "$PG" "$@"; }
 same() { [[ "$1" == "$2" ]]; }
 apply_migrations() { docker exec -i "$PG" psql -X -q -v ON_ERROR_STOP=1 -U nfhotel -d nfhotel -f - <"$MIGRATIONS"; }
+# start_pg [docker run option...]: a PostgreSQL 16 on t-prodnet with the volume t-pgdata, up
+# when its real server answers: only that one listens on TCP, the temporary init server uses
+# the socket only.
+start_pg() {
+  docker run -d --name "$PG" --network t-prodnet "$@" -e POSTGRES_USER=nfhotel -e POSTGRES_PASSWORD=superpw \
+    -e POSTGRES_DB=nfhotel -v t-pgdata:/var/lib/postgresql/data "$IMG" >/dev/null || return 1
+  for _ in $(seq 60); do
+    docker exec "$PG" pg_isready -h 127.0.0.1 -U nfhotel -d nfhotel >/dev/null 2>&1 && return 0
+    sleep 1
+  done
+  return 1
+}
 
 echo "== 1. a production-like database: objects owned by the image superuser"
 docker network create t-prodnet >/dev/null
-docker run -d --name "$PG" --network t-prodnet -e POSTGRES_USER=nfhotel -e POSTGRES_PASSWORD=superpw \
-  -e POSTGRES_DB=nfhotel -v t-pgdata:/var/lib/postgresql/data "$IMG" >/dev/null
-# Only the real server listens on TCP; the temporary init server uses the socket only.
-for _ in $(seq 60); do
-  docker exec "$PG" pg_isready -h 127.0.0.1 -U nfhotel -d nfhotel >/dev/null 2>&1 && break
-  sleep 1
-done
+check "PostgreSQL 16 starts" start_pg
 check "real migrations applied as the superuser" apply_migrations
 su_sql "INSERT INTO room(room_number,floor,size,capacity,status,housekeeping_status) SELECT 'R'||i, 1, 20, 2, 0, 0 FROM generate_series(1,3) i; INSERT INTO guest(first_name,last_name,email,phone_number,country) SELECT 'g'||i,'x','g'||i||'@x.dk','1','DK' FROM generate_series(1,250) i;" >/dev/null
 su_sql "CREATE ROLE legacy_reader LOGIN PASSWORD 'legacypw'" >/dev/null
@@ -143,6 +152,16 @@ app_dml() {
     asapp 'SELECT count(*) FROM room'
 }
 check "app: SELECT, INSERT, UPDATE, DELETE on guest" app_dml
+# history_rights <database>: nfhotel_app reads the migration history and may not change it, so
+# a takeover of the API cannot mark a migration as applied or remove one (MIL-066 task 4).
+history_rights() {
+  check "app: reads the migration history ($1)" asapp 'SELECT count(*) FROM "__EFMigrationsHistory"'
+  refused "app: INSERT into the migration history ($1)" \
+    asapp 'INSERT INTO "__EFMigrationsHistory"(migration_id, product_version) VALUES (current_user, current_user)'
+  refused "app: UPDATE the migration history ($1)" asapp 'UPDATE "__EFMigrationsHistory" SET product_version = product_version'
+  refused "app: DELETE from the migration history ($1)" asapp 'DELETE FROM "__EFMigrationsHistory"'
+}
+history_rights "migrated before its roles"
 refused "app: CREATE TABLE" asapp 'CREATE TABLE x(i int)'
 refused "app: DROP TABLE room" asapp 'DROP TABLE room'
 refused "app: ALTER TABLE guest" asapp 'ALTER TABLE guest ADD COLUMN x int'
@@ -164,27 +183,36 @@ no_set_role() { docker run --rm --network nfhotel-db -e PGPASSWORD="$MIG" "$IMG"
 refused "migrator without SET ROLE cannot create (no INHERIT)" no_set_role
 asmig -c 'DROP TABLE future_feature' >/dev/null
 
-echo "== 7. the API image reads the database through the alias postgres as nfhotel_app"
-token="$(openssl rand -hex 24)"
-manager_password="$(openssl rand -hex 12)"
-cat "$W/secrets/nfhotel-api-database.env" >"$W/api.env"
-# This test checks the database access of the API, not the password flow of MIL-030, so the
-# first Manager need not choose a new password before the API answers its calls.
-printf 'ASPNETCORE_ENVIRONMENT=Production\nEncryption__PassportKey=%s\nHotelTime__TimeZoneId=Europe/Copenhagen\nApi__Token=%s\nStaff__Token__SigningKey=%s\nStaff__InitialManager__UserName=manager\nStaff__InitialManager__Password=%s\nStaff__InitialManager__MustChangePassword=false\nDatabase__MigrateOnStart=false\n' \
-  "$(openssl rand -base64 32)" "$token" "$(openssl rand -hex 32)" "$manager_password" >>"$W/api.env"
-docker network create t-apinet >/dev/null
-docker run -d --name "$API" --network nfhotel-db --env-file "$W/api.env" "$API_IMAGE" >/dev/null
-docker network connect t-apinet "$API"
 http() { docker run --rm --network t-apinet "$CURL" -s "$@"; }
-code=""
-for _ in $(seq 40); do
-  code="$(http -o /dev/null -w '%{http_code}' "http://$API:8080/health" 2>/dev/null)"
-  [[ "$code" == 200 ]] && break
-  sleep 2
-done
+# start_api: the API image on nfhotel-db with the database settings that the preparation wrote,
+# up when /health answers; sets token, manager_password and code.
+start_api() {
+  token="$(openssl rand -hex 24)"
+  manager_password="$(openssl rand -hex 12)"
+  cat "$W/secrets/nfhotel-api-database.env" >"$W/api.env"
+  # This test checks the database access of the API, not the password flow of MIL-030, so the
+  # first Manager need not choose a new password before the API answers its calls.
+  printf 'ASPNETCORE_ENVIRONMENT=Production\nEncryption__PassportKey=%s\nHotelTime__TimeZoneId=Europe/Copenhagen\nApi__Token=%s\nStaff__Token__SigningKey=%s\nStaff__InitialManager__UserName=manager\nStaff__InitialManager__Password=%s\nStaff__InitialManager__MustChangePassword=false\nDatabase__MigrateOnStart=false\n' \
+    "$(openssl rand -base64 32)" "$token" "$(openssl rand -hex 32)" "$manager_password" >>"$W/api.env"
+  docker network inspect t-apinet >/dev/null 2>&1 || docker network create t-apinet >/dev/null
+  docker run -d --name "$API" --network nfhotel-db --env-file "$W/api.env" "$API_IMAGE" >/dev/null
+  docker network connect t-apinet "$API"
+  code=""
+  for _ in $(seq 40); do
+    code="$(http -o /dev/null -w '%{http_code}' "http://$API:8080/health" 2>/dev/null)"
+    [[ "$code" == 200 ]] && break
+    sleep 2
+  done
+}
+# sign_in: the staff token of the first manager, through the API.
+sign_in() {
+  http -H "Authorization: Bearer $token" -H 'Content-Type: application/json' \
+    -d "{\"userName\":\"manager\",\"password\":\"$manager_password\"}" "http://$API:8080/api/auth/login" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p'
+}
+echo "== 7. the API image reads the database through the alias postgres as nfhotel_app"
+start_api
 if [[ "$code" == 200 ]]; then ok "API /health answers 200"; else ko "API health: ${code:-none} $(docker logs "$API" 2>&1 | tail -5)"; fi
-staff="$(http -H "Authorization: Bearer $token" -H 'Content-Type: application/json' \
-  -d "{\"userName\":\"manager\",\"password\":\"$manager_password\"}" "http://$API:8080/api/auth/login" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')"
+staff="$(sign_in)"
 check "API sign-in works (the first manager was written as nfhotel_app)" test -n "$staff"
 rooms="$(http -H "Authorization: Bearer $token" -H "X-Staff-Token: $staff" "http://$API:8080/api/rooms")"
 check "API /api/rooms returns the 3 rooms from PostgreSQL" same "$(grep -o '"roomNumber":"R[0-9]"' <<<"$rooms" | wc -l)" 3
@@ -203,6 +231,38 @@ else
   ko "restore drill: $(tail -3 "$W/drill")"
 fi
 grep -E "rows|latest migration" "$W/drill" | sed 's/^/      /'
+
+echo "== 9. a new database: the roles first, then the first migration through CD (MIL-066 task 4)"
+docker rm -f "$API" "$PG" >/dev/null 2>&1
+docker volume rm t-pgdata >/dev/null 2>&1
+# migrate_cd: the migrate step of CD, which finds the container by its compose labels.
+migrate_cd() {
+  local hash
+  hash="$(sha256sum <"$MIGRATIONS" | cut -d' ' -f1)"
+  NFHOTEL_STATE="$W/state" NFHOTEL_SECRETS="$W/secrets" NFHOTEL_BACKUP_COMMAND="$W/bin/nfhotel-backup" \
+    bash "$REPO/scripts/deploy-release.sh" migrate "$hash" <"$MIGRATIONS"
+}
+# deploy-release.sh would take the first container with those labels, so this part runs only
+# where no other container has them.
+if [[ -n "$(docker ps -q --filter label=com.docker.compose.project=nfhotel-postgres)" ]]; then
+  ko "another container of the compose project nfhotel-postgres runs here; the new database was not tested"
+else
+  check "an empty PostgreSQL 16 starts with the labels of the compose project" start_pg \
+    --label com.docker.compose.project=nfhotel-postgres --label com.docker.compose.service=postgres
+  check "prepare --apply --connect-network on the empty database" prepare --apply --connect-network
+  check "the migrate step of deploy-release.sh applies the first migration" migrate_cd
+  check "the first migration created the history as nfhotel_owner" same \
+    "$(su_sql "SELECT tableowner FROM pg_tables WHERE tablename = '__EFMigrationsHistory'")" nfhotel_owner
+  history_rights "roles before its first migration"
+  if verify --expect-transfer --expect-network >"$W/v" 2>&1; then
+    ok "verify-database on the new database: all checks pass ($(grep -c PASS "$W/v"))"
+  else
+    ko "verify on the new database: $(grep FAIL "$W/v" | head -3)"
+  fi
+  start_api
+  if [[ "$code" == 200 ]]; then ok "API /health answers 200 on the new database"; else ko "API health on the new database: ${code:-none}"; fi
+  check "API sign-in works on the new database (the first manager was written as nfhotel_app)" test -n "$(sign_in)"
+fi
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))
