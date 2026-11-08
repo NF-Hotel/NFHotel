@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 # Start the write-only backup target (D7): one ssh key, restricted by rrsync to writing
-# new files into the backup folder (ADR-0008). The host keys live in their own folder,
+# new files into the backup folder, never to replace or delete one (ADR-0008, MIL-066 task 1). The host keys live in their own folder,
 # a volume, so the host key that nf-hotel pins stays the same after an update.
 #
 #   1. refuse a BACKUP_PUBLIC_KEY that is not one ed25519 public key
 #   2. make the host key once in the key folder
-#   3. write authorized_keys: command="rrsync -wo <folder>",restrict <key>
+#   3. write authorized_keys: command="rrsync -wo -no-del -no-overwrite <folder>",restrict <key>
 #   4. run sshd in the foreground: keys only, no root, only the user nfhotel-backup
 #
 # Env:   BACKUP_PUBLIC_KEY (required; the content of /root/.ssh/nfhotel-backup.pub on
 #        nf-hotel), BACKUP_DIR (default /backups), BACKUP_KEY_DIR (default
 #        /etc/ssh/keys), BACKUP_SSHD (default /usr/sbin/sshd; for the tests)
 # Exit:  only when sshd stops; 1 a bad setting
-# Needs: bash 4+, root, openssh-server, rsync and python3 (rrsync)
+# Needs: bash 4+, root, openssh-server, rsync and python3 (an rrsync with -no-overwrite,
+#        as in Debian 13)
 
 set -euo pipefail
 
@@ -35,7 +36,9 @@ install -d -m 0700 "$key_dir"
 install -d -o "$USER_NAME" -m 0700 "$backup_dir"
 home="$(getent passwd "$USER_NAME" | cut -d: -f6)"
 install -d -o "$USER_NAME" -m 0700 "$home/.ssh"
-echo "command=\"rrsync -wo $backup_dir\",restrict $key" >"$home/.ssh/authorized_keys"
+# -wo: write only, so nothing is read back; -no-del: no --delete or --remove option;
+# -no-overwrite: the target adds --ignore-existing, so a file there is never replaced.
+echo "command=\"rrsync -wo -no-del -no-overwrite $backup_dir\",restrict $key" >"$home/.ssh/authorized_keys"
 chown "$USER_NAME" "$home/.ssh/authorized_keys"
 chmod 0600 "$home/.ssh/authorized_keys"
 mkdir -p /run/sshd

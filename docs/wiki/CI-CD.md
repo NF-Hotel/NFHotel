@@ -108,7 +108,7 @@ S03 and a repository administrator do this once, in this order.
 2. In `/opt/nfhotel`, run `sudo bash ops/scripts/install-deploy-user.sh --apply` (without `--apply` it only shows what it would do). It creates the user `deploy`, the deploy command and its single sudo rule, then prints the Tailscale steps.
 3. Run `sudo tailscale set --ssh`.
 4. On your own machine, create the backup key with `age-keygen -o nfhotel-backup.key`. Keep it offline, and never copy it to the VM.
-5. Prepare the off-VM copy on the backup host, the legion laptop of S03 (decision D7, revised 2026-10-21). The copy is write-only and limited to one folder. The target is the container `ops/deploy/backup-target`; it needs Docker and Tailscale on the laptop.
+5. Prepare the off-VM copy on the backup host, the legion laptop of S03 (decision D7, revised 2026-10-21). The copy is write-only and limited to one folder: the key can add a new file there, but never replace, delete or read back one. The target is the container `ops/deploy/backup-target`; it needs Docker and Tailscale on the laptop.
    - On the VM, create the key for the copy, and show its public half:
 
      ```bash

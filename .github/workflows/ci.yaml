@@ -96,7 +96,7 @@ jobs:
       # keeps them as errors. The settings of the analysis are in SonarQube.Analysis.xml.
       - name: Install the SonarScanner for .NET
         if: ${{ env.HAS_SONAR_TOKEN == 'true' }}
-        run: dotnet tool install --global dotnet-sonarscanner --version 11.3.0
+        run: dotnet tool install --global dotnet-sonarscanner --version 12.1.0
 
       - name: Start the SonarQube Cloud analysis
         if: ${{ env.HAS_SONAR_TOKEN == 'true' }}

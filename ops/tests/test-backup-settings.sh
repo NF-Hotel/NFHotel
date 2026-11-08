@@ -3,7 +3,9 @@
 # backup also writes nfhotel-settings-<kind>-<time>.tar.age, encrypted to the age key of S03;
 # it holds the settings files, the proxy certificate, /etc/nfhotel and the ssh key of the copy,
 # and leaves out the secret files that the deploy writes (ADR-0024); a restore unpacks it in
-# place, and the old archives are pruned like the dumps. A fake stands in for docker, and a
+# place, and the old archives are pruned like the dumps. A host without the folder nginx/tls
+# still archives /etc/nfhotel and the ssh key, and a failed archive fails the backup (MIL-066
+# task 3). A fake stands in for docker, and a
 # throwaway age key for the key of S03.
 #
 # Run it in Debian 12 with the repository at /src:
@@ -75,6 +77,27 @@ mkdir -p "$W/restore"
 age --decrypt --identity "$W/identity" "$archive" | tar --extract --file - --directory "$W/restore" &&
   [[ "$(cat "$W/restore${app}/ops/deploy/nfhotel-api/nfhotel-api.env")" == "Api__Token=tok" ]] &&
   ok "a restore unpacks the settings in place" || ko "the restore: $(find "$W/restore" -type f | head -3)"
+
+# MIL-066 task 3: before it, a missing nginx/tls ended the list of paths, and the archive
+# had neither /etc/nfhotel nor the key of the copy, while the backup still succeeded.
+rm -rf "$app/ops/deploy/nginx/tls"
+rm -f "$W"/backups/nfhotel-settings-*.tar.age
+backup && ok "the backup runs without ops/deploy/nginx/tls" || ko "the backup without nginx/tls: $(tail -3 "$W/out")"
+archive="$(find "$W/backups" -name 'nfhotel-settings-*.tar.age' | head -1)"
+age --decrypt --identity "$W/identity" "$archive" | tar --list --file - >"$W/list" 2>/dev/null
+grep -q 'etc/nfhotel/backup.env$' "$W/list" && grep -q 'root/.ssh/nfhotel-backup$' "$W/list" &&
+  ok "without nginx/tls the archive still holds /etc/nfhotel and the key of the copy" ||
+  ko "without nginx/tls the archive holds only: $(tr '\n' ' ' <"$W/list")"
+grep -qx "      $etc" "$W/out" && ok "the log names /etc/nfhotel among the archived paths" ||
+  ko "the log: $(grep -A8 'paths:' "$W/out" | tr '\n' ' ')"
+
+# A settings archive that cannot be written fails the backup and leaves no settings file.
+printf '#!/bin/bash\nexit 2\n' >"$W/bin/tar"
+chmod +x "$W/bin/tar"
+rm -f "$W"/backups/nfhotel-settings-*.tar.age
+! backup && [[ -z "$(find "$W/backups" -name 'nfhotel-settings-*')" ]] &&
+  ok "a failed archive fails the backup and leaves no settings file" || ko "a failed archive: $(tail -2 "$W/out")"
+rm -f "$W/bin/tar"
 
 for day in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16; do
   : >"$W/backups/nfhotel-settings-daily-202601${day}T010000Z.tar.age"

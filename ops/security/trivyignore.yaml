@@ -7,7 +7,7 @@
 #   vulnerabilities:
 #     - id: CVE-2026-12345
 #       paths: ["usr/lib/libexample.so"]   # optional, narrows the entry
-#       statement: Not reachable: the service never parses untrusted archives.
+#       statement: "Not reachable: the service never parses untrusted archives."
 #       expired_at: 2026-11-19
 #
 # An entry without paths or purls applies to every image that the file scans, the release images
@@ -19,7 +19,9 @@
 # container) or "Accepted" (it runs, and the statement says why the risk is taken until the expiry).
 # The daily scan reports a finding again once its entry has run out (MIL-036).
 # Each statement stays on one line, which scan-gate.sh --check-ignore reads, so the line length
-# of yamllint does not apply to this file.
+# of yamllint does not apply to this file. A statement with ": " in it is in double quotes, as
+# YAML requires: Trivy cannot parse the file otherwise, and --check-ignore refuses it with the
+# line number (MIL-066 task 5).
 # yamllint disable rule:line-length
 vulnerabilities:
   # golang.org/x/net before 0.62.0 (MIL-065 tasks 2, 3, 5 to 10): the HTML parser of the finding is not in these binaries

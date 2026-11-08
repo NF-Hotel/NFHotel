@@ -64,7 +64,7 @@ The production VM `nf-hotel` (Proxmox VMID 100) has 4 vCPU, 20 GiB memory, a 111
 
 What fills the disk: the images in use and those of the two latest releases (every deploy that passes its smoke test removes the older ones, MIL-062; `sudo nfhotel-deploy prune` shows what the next one would remove), the volumes (the database, the Ollama models, the benchmark results), the journal (1 GB at most) and the backups of `backup-database.sh`, which keeps 14 daily and 8 weekly copies. The alert `DiskAlmostFull` fires at 80 % ([Alerts](Alerts)).
 
-12 GiB memory (12288 MiB), 4 vCPU, 60 GiB disk, Debian 12 with Docker and the compose plugin,
+12 GiB memory (12288 MiB), 4 vCPU, 60 GiB disk, Debian 13 (the release of `nf-hotel`) with Docker and the compose plugin,
 built from the official cloud image by cloud-init. Change the size in `ops/deploy.env`.
 
 The same node also runs the VM `sports-club` (101) and, for the monitoring of NF Hotel (ADR-0020), the unprivileged LXC `nf-monitoring` (102): 2 cores, 4 GiB memory, a 32 GiB disk on `local-lvm`, on `vmbr0`, started at boot. Its setup is in [Monitoring](Monitoring).

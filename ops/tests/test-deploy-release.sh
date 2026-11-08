@@ -92,7 +92,8 @@ for a in "\$@"; do case "\$a" in http://*) echo 301; exit 0 ;; https://*) echo 2
 EOF
 chmod +x "$W/bin/curl"
 # docker for the migrate command: ps finds the PostgreSQL container, exec records the
-# call and the script it reads; the script "fail" makes psql fail. For the prune (MIL-062):
+# call and the SQL that its n-th call reads (applied.<n>); the SQL "fail" makes psql fail.
+# For the prune (MIL-062):
 # ps -aq lists the containers of $W/containers (name and image id per line), inspect gives
 # their image ids, image ls lists $W/images, image inspect resolves a release image to its id
 # from $W/image-refs, and image rm records the id in $W/removed and fails for an id listed in
@@ -107,7 +108,7 @@ case "\$1" in
     inspect) awk -v r="\${!#}" '\$1 == r { print \$2 }' "$W/image-refs" 2>/dev/null ;;
     rm) echo "\${!#}" >>"$W/removed"; ! grep -qx "\${!#}" "$W/unremovable" 2>/dev/null ;;
     esac ;;
-  exec) echo "exec \$*" >>"$W/order"; cat >"$W/applied"; ! grep -qx fail "$W/applied" ;;
+  exec) echo "exec \$*" >>"$W/order"; n="\$(grep -c '^exec' "$W/order")"; cat >"$W/applied.\$n"; ! grep -qx fail "$W/applied.\$n" ;;
 esac
 EOF
 printf '#!/bin/bash\necho backup >>"%s/order"\n' "$W" >"$W/bin/backup"
@@ -224,7 +225,11 @@ STDIN="$W/m.sql" expect_code 2 "migrate refuses a script with another hash" migr
 STDIN="$W/m.sql" expect_code 0 "migrate applies the script with the right hash" migrate "$H"
 [[ "$(head -1 "$W/order")" == backup ]] && grep -q "exec exec -i --env-file $W/secrets/nfhotel-migrator-database.env pg123" "$W/order" &&
   ok "migrate backs up first, then runs psql with the migrator settings" || ko "migrate order: $(tr '\n' '|' <"$W/order")"
-cmp -s "$W/m.sql" "$W/applied" && ok "migrate passes the script unchanged" || ko "applied script"
+cmp -s "$W/m.sql" "$W/applied.1" && ok "migrate passes the script unchanged" || ko "applied script"
+[[ "$(grep -c "^exec exec -i --env-file $W/secrets/nfhotel-migrator-database.env pg123" "$W/order")" == 2 ]] &&
+  grep -qxF 'REVOKE INSERT, UPDATE, DELETE ON TABLE public."__EFMigrationsHistory" FROM nfhotel_app;' "$W/applied.2" &&
+  ok "then the migrator takes INSERT, UPDATE and DELETE on the history back from nfhotel_app" ||
+  ko "the second call: $(cat "$W/applied.2" 2>/dev/null)"
 BACKUP="$W/none" STDIN="$W/m.sql" expect_code 1 "migrate refuses without the backup command" migrate "$H"
 SECRETS="$W/none" STDIN="$W/m.sql" expect_code 1 "migrate refuses without the migrator settings" migrate "$H"
 echo fail >"$W/f.sql"
