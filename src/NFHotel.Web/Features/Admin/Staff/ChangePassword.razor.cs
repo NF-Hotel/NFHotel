@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components;
 
+using NFHotel.Application.Dto.Staff;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Web.Common;
 using NFHotel.Web.Security;
@@ -39,15 +40,15 @@ public partial class ChangePassword : CancellableComponentBase
     /// </summary>
     private async Task ChangeAsync()
     {
-        var current = Input?.CurrentPassword ?? string.Empty;
-        var fresh = Input?.NewPassword ?? string.Empty;
+        string current = Input?.CurrentPassword ?? string.Empty;
+        string fresh = Input?.NewPassword ?? string.Empty;
         ForgetPasswords();
         if (HttpContext is null || Input is null)
         {
             return;
         }
 
-        var session = await ViewModel.ChangeAsync(current, fresh, ComponentToken);
+        StaffSessionDto? session = await ViewModel.ChangeAsync(current, fresh, ComponentToken);
         if (session is null)
         {
             return;

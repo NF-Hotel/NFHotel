@@ -469,7 +469,7 @@ public sealed class BookingFlowViewModel
     /// </returns>
     public bool Prefill(string? checkIn, string? checkOut, string? guests)
     {
-        if (TryParseQueryGuests(guests, out var party))
+        if (TryParseQueryGuests(guests, out int party))
         {
             Guests = party;
         }

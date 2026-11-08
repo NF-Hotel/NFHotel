@@ -23,7 +23,7 @@ public partial class BenchmarkStart : CancellableComponentBase
     /// <summary>Loads the installed models and the recorded runs, and then keeps them live.</summary>
     protected override async Task OnInitializedAsync()
     {
-        await ViewModel.OpenAsync(Guid.TryParse(AgainQuery, out var again) ? again : null, ComponentToken);
+        await ViewModel.OpenAsync(Guid.TryParse(AgainQuery, out Guid again) ? again : null, ComponentToken);
         _ = PollAsync();
     }
 
