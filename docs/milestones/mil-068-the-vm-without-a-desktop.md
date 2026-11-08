@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | S01 | Initial version: the desktop that came with the operating system of the VM, found again at the gate of MIL-066 (RC-313 finding 6), with the survey of the VM of 2026-11-08; planned at S01's request in chat ("ja til alle", to "Skal jeg lave en plan for at fjerne skrivebordsmiljøet fra VM'en?") | pending |
+| 2026-11-08 | Accepted | mikemike | S01 | Initial version: the desktop that came with the operating system of the VM, found again at the gate of MIL-066 (RC-313 finding 6), with the survey of the VM of 2026-11-08; planned at S01's request in chat ("ja til alle", to "Skal jeg lave en plan for at fjerne skrivebordsmiljøet fra VM'en?") | [7ce3ef7] |
 
 ---
 
@@ -100,3 +100,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-023]: ./mil-023-operational-quality.md
 [MIL-066]: ./mil-066-findings-of-7-november.md
 [RC-313]: ../sqa/reviews/rc-313-mil-066-gate.md
+[7ce3ef7]: https://github.com/NF-Hotel/NFHotel/commit/7ce3ef7252f8780770d87bd2fa5c19c3f5ba9b99

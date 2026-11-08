@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-066 and of its code at the gate: deployed by CD run 42498483148, on the monitoring container and on the backup host, the condition of RC-308 met and the check of the settings guard added, gate passed (RC-313, Go) | [4bc8c6d] |
-| 2026-11-08 | Proposed | mikemike | S01 | The rows of MIL-068 and MIL-069: the plans accepted by S01 in chat (RC-314 and RC-315, Go) | pending |
+| 2026-11-08 | Proposed | mikemike | S01 | The rows of MIL-068 and MIL-069: the plans accepted by S01 in chat (RC-314 and RC-315, Go) | [7ce3ef7] |
 
 ---
 
@@ -335,3 +335,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [4bc8c6d]: https://github.com/NF-Hotel/NFHotel/commit/4bc8c6d4d33a485ce4a6e1ee6d5f8a624a19d81e
+[7ce3ef7]: https://github.com/NF-Hotel/NFHotel/commit/7ce3ef7252f8780770d87bd2fa5c19c3f5ba9b99
