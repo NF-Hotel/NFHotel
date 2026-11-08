@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | RC-308 |
-| CrossReference | [MIL-066], [RC-306], [DSA-001], [ADR-0008], [ADR-0010], [ADR-0011], [ADR-0020], [ADR-0025], [ADR-0034], [ADR-0038], [QC-SH-001], [QC-WF-001], [QC-YML-001] |
+| CrossReference | [MIL-066], [RC-306], [DSA-001], [ADR-0008], [ADR-0010], [ADR-0011], [ADR-0020], [ADR-0025], [ADR-0034], [ADR-0038], [QC-SH-001], [QC-WF-001], [QC-YML-001], [RC-313] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 6, 8 and 9 of MIL-066 before their pull request (task 10); Go-with-conditions until every required check of the pull request is green | [0918fb1] |
+| 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 6, 8 and 9 of MIL-066 before their pull request (task 10); Go-with-conditions until every required check of the pull request is green | [0918fb1] |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | The conditions are met: all 41 required checks of #587 passed on a17775c, and its Ops CI run 42488571804 ran the matrix `include` with its own key and the default `debian:12-slim` (WF 22)<br>SH 11 and MIL-066 4 corrected: `test-backup-settings.sh` tested a failed archive, not a list of paths that lacks `/etc/nfhotel` or the key; the two checks of the guard that the gate adds are reviewed here (RC-313)<br>Go | [4bc8c6d] |
 
 ---
 
@@ -21,6 +22,7 @@
   - YAML: `ops/deploy/monitoring/docker-compose.yml` and `prometheus/prometheus.yml` (task 6), the compose files of `ops/deploy/cloudflared` and `ops/deploy/postgres-tailnet` (task 8, one comment each) and the header of `ops/security/trivyignore.yaml` (task 5); `ops/scripts/db/roles.sql` and `ops/deploy/backup-target/Dockerfile` have no checklist of their own and were read against [ADR-0011] and task 1;
   - the wiki pages CI-CD, Containers-and-Images, Database-Preparation, Disaster-Recovery, Monitoring, Proxmox-Deployment, Security-Controls, Technology-Choices and Workflows.
 - **Not in this record:** task 7, the ZAP rules, is in pull request #585 of its own, as the order of [MIL-066] says, and waits for S01's approval of each renewed rule; tasks 10 and 11 are the pull request, the deploys and the gate.
+- **Delta at the gate (2026-11-08):** `ops/tests/test-backup-settings.sh`, two checks of the guard after the list of paths (task 3), added in the gate pull request of [RC-313]: a copy of `backup-database.sh` without the line that adds `/etc/nfhotel`, and one without the line that adds the key of the copy, must each fail the backup with "the settings archive would lack …" and leave no settings file. SH 1 to 15 hold for the new lines: `snake_case` names (`pair`, `name`, `lacked`), every expansion quoted, the copy written inside the `mktemp -d` folder of the test, the one-line form of each check under the SC2015 directive of the file, and the header names the new case. shellcheck v0.11.0 and shfmt v3.14.1 are clean; in `debian:12-slim` the test passes 12 of 12, and against a script without the guard the two new checks fail (10 passed, 2 failed).
 - **Checklists used:** [QC-SH-001], [QC-WF-001] and [QC-YML-001].
 - **Scope:** delta review of the changed files against `main`.
 - **Language and domain:** n/a (technical type).
@@ -53,7 +55,7 @@
 | SH 8 | State outside its folder | Pass | The flags are unchanged: `backup-database.sh`, `prepare-database-roles.sh` and `manage-team-db-users.sh` need `--apply`; `deploy-release.sh migrate` applies nothing without the hash of the script; `create-docker-vm.sh` needs `--container` or `--ssh` to name the node, says in its header that it changes state there, refuses a VM id that exists, and has `--dry-run` (MIL-004) |
 | SH 9 | Header | Pass | The headers say what changed: the entry point of the target its rrsync options and its need of an rrsync with `-no-overwrite`; `deploy-release.sh` the revoke after the migrations; `verify-database.sh` the read-only history; `scan-gate.sh` the format check; `roles.sql` the rights of `nfhotel_app`. The new test states its purpose, how to run it, its exit codes and its needs |
 | SH 10 | Implements the task it cites | Pass | Tasks 1 to 6, 8 and 9 of MIL-066; each commit has its `Task:` trailer. Deviations, in the findings: the backup is installed before the database, not last (finding 1); a test of the version source that the task row does not name (finding 2); pins younger than the cooldown of Dependabot (finding 3) |
-| SH 11 | Tested for success, failure and the bypass path | Pass | `test-backup-target.sh` (Debian 13): a new file is written; a replace, a delete with `--delete` from an empty folder and a read are refused, and the files stay; a copy cut off midway with the old options leaves its part under the final name, which the next run keeps, and with the script leaves nothing, so the next run sends the whole file with the same SHA-256. `test-backup-settings.sh`: the archive holds `/etc/nfhotel` and the key without `nginx/tls`, and a backup whose list lacks one fails. `test-database.sh`: the history read-only in both orders while the API signs in; part 10 the order of the runbook, and the old order stops at its backup. `test-scan-gate.sh`: a file that Trivy cannot parse, a key that Trivy does not read and a key twice are refused, and `trivyignore.yaml` passes. `test-make-migration-script.sh`: two versions install, six inputs are refused. `test-deploy-release.sh`: the second call of the migrator. `test-monitoring-stack.sh`: the retention of 30d |
+| SH 11 | Tested for success, failure and the bypass path | Pass | `test-backup-target.sh` (Debian 13): a new file is written; a replace, a delete with `--delete` from an empty folder and a read are refused, and the files stay; a copy cut off midway with the old options leaves its part under the final name, which the next run keeps, and with the script leaves nothing, so the next run sends the whole file with the same SHA-256. `test-backup-settings.sh`: the archive holds `/etc/nfhotel` and the key without `nginx/tls`, and a failed archive fails the backup; a backup whose list lacks one fails only since the two checks that the gate adds ([RC-313]). `test-database.sh`: the history read-only in both orders while the API signs in; part 10 the order of the runbook, and the old order stops at its backup. `test-scan-gate.sh`: a file that Trivy cannot parse, a key that Trivy does not read and a key twice are refused, and `trivyignore.yaml` passes. `test-make-migration-script.sh`: two versions install, six inputs are refused. `test-deploy-release.sh`: the second call of the migrator. `test-monitoring-stack.sh`: the retention of 30d |
 | SH 13 | Safe to re-run | Pass | The revoke of `roles.sql` runs only on a history that exists, and a second revoke changes nothing; the copy without `--partial` sends only the files that the target lacks; part 10 starts its containers fresh |
 | SH 14 | Needs stated | Pass | The entry point of the target names an rrsync with `-no-overwrite`, as in Debian 13; the new test names bash 4+, coreutils and grep |
 | SH 15 | Knowledge once | Pass | `psql_as_migrator` replaces the inline call and serves both statements of the migrate step; `copy_key` is defined once for the archive and the copy; `DEBIAN_VERSION` and `DEBIAN_CODENAME` give both the cloud image and the Docker repository; the EF Core version is read from the project file in place of a second constant. The revoke is written twice, in `roles.sql` and in the migrate step, on purpose (finding 6) |
@@ -73,7 +75,7 @@
 | WF 19 | A failing step names the reason | Pass | The scripts name the file and the reason (SH 5) |
 | WF 20, YML 7 | At most five lines of embedded program text | Pass | The `run:` of the script tests stays one line |
 | WF 21 | Shared logic | Pass | Unchanged; CD keeps its steps in the composite action `deploy-release` |
-| WF 22 | Features verified on the host | Pending | A matrix `include` that adds a key of its own (`image`) and the default `matrix.image \|\| 'debian:12-slim'` are new in the workflows of this repository: `main` has no `include:`, and its only `\|\|` default is in `.github/actions/deploy-release/action.yml`. actionlint accepts both; the Ops CI run of the pull request on GitHub-hosted runners is the proof, and the gate record names that run |
+| WF 22 | Features verified on the host | Pass (at the gate) | A matrix `include` that adds a key of its own (`image`) and the default `matrix.image \|\| 'debian:12-slim'` are new in the workflows of this repository: `main` has no `include:`, and its only `\|\|` default is in `.github/actions/deploy-release/action.yml`. actionlint accepts both; the Ops CI run of the pull request on GitHub-hosted runners is the proof, and the gate record names that run: 42488571804, whose job 128755729706 ran `test-backup-target.sh` in `debian:13-slim` and whose job 128755729534 ran in `debian:12-slim` ([RC-313]) |
 | WF 23 | A reusable workflow states how a caller pins it | N-A | No reusable workflow changed |
 | WF 24 | A static test of the workflows | Pass | `test-workflow-policy.sh` and actionlint run in Ops CI and pass here |
 | YML 4, 5, 6 | Coerced scalars, tags, secrets | Pass | `30d` and `debian:13-slim` stay strings; no tag; no secret |
@@ -85,14 +87,14 @@
 | MIL-066 1 | `test-backup-target.sh` on Debian 13 | Pass (in test); Pending (Ops CI) | 24 checks in `debian:13-slim`; Ops CI runs it there through the `include` of WF 22 |
 | MIL-066 2 | The backup host runs the new image | Pending (host) | S01 redeploys the target on the backup host |
 | MIL-066 3 | An interrupted copy | Pass (in test) | Part of `test-backup-target.sh` (SH 11) |
-| MIL-066 4 | `test-backup-settings.sh` and the log on the VM | Pass (in test); Pending (VM) | 10 checks; the log of the first backup after the deploy goes into the gate record |
+| MIL-066 4 | `test-backup-settings.sh` and the log on the VM | Pass (in test, since the gate); Pending (VM) | 10 checks, none of which tested the guard after the list of paths; 12 with the two checks that the gate adds ([RC-313]); the log of the first backup after the deploy goes into the gate record |
 | MIL-066 5 | The history read-only, in both orders | Pass (in test); Pending (VM) | `test-database.sh`, both orders, and the API signs in; `verify-database.sh` on the VM after the deploy |
 | MIL-066 6 | `test-scan-gate.sh` | Pass | 38 checks, 7 of which fail against the script of `main`; Trivy 0.75.0 stops at the line that the check names |
 | MIL-066 7 | The ZAP rules | N-A | Task 7, in pull request #585 |
 | MIL-066 8 | The pins and their checks | Pass (in the files); Pending (the checks and the VM) | The versions above are the newest stable releases on 2026-11-08, `make-migration-script.sh` reads the version of the project file, and the two stale comments are gone; the release check and one run of the daily scan with Trivy 0.76.2, CD with the new Tailscale client, the SonarCloud check and Docker Engine on the VM remain |
 | MIL-066 9 | The retention in `prometheus.yml` | Pass (in the files); Pending (the monitoring container) | No flag in the compose file, 30d in the file, `promtool` passes, and the pinned Prometheus reports 30d; `/api/v1/status/runtimeinfo` after the monitoring deploy remains |
 | MIL-066 10 | The runbook and its test | Pass (in test) | The section "Rebuild the VM" in 12 steps; part 10 of `test-database.sh` runs its database part in that order (22 checks); CI runs it with the real age |
-| MIL-066 11 | Review Go, lint, wiki coverage, the checks | Pending | `lint.sh` clean; `test-wiki-coverage.sh` 111; this record is Go-with-conditions until every required check of the pull request is green |
+| MIL-066 11 | Review Go, lint, wiki coverage, the checks | Pass (at the gate) | `lint.sh` clean; `test-wiki-coverage.sh` 111; all 41 required checks of #587 passed on a17775c ([RC-313]) |
 
 ## Findings
 
@@ -108,6 +110,8 @@
 ## Overall Verdict
 
 Go-with-conditions. Every Mandatory criterion of QC-SH-001, QC-WF-001 and QC-YML-001 that the branch can show passes. Criterion 22 of QC-WF-001 and criterion 11 of MIL-066 are Pending until every required check of the pull request is green, because the matrix `include` with its own key and the `||` default are new in the workflows of this repository; a Pending criterion allows Go-with-conditions at most. The criteria of MIL-066 that need the hosts (2, 4, 5, 8 and 9: the VM, the monitoring container and the backup host) close with the deploys of task 10 and the gate of task 11. The reviewer is not independent.
+
+The conditions were met on 2026-11-08: all 41 required checks of #587 passed on its last commit a17775c, and its Ops CI run 42488571804 ran the matrix `include` and the default image on GitHub-hosted runners. SH 11 overstated `test-backup-settings.sh`, which did not test the guard after the list of paths; the gate adds the two checks that do, reviewed above, and the criteria of MIL-066 that need the hosts passed at the gate ([RC-313]).
 
 ## Action Items
 
@@ -125,6 +129,7 @@ Go-with-conditions. Every Mandatory criterion of QC-SH-001, QC-WF-001 and QC-YML
 
 [MIL-066]: ../../milestones/mil-066-findings-of-7-november.md
 [RC-306]: ./rc-306-mil-066.md
+[RC-313]: ./rc-313-mil-066-gate.md
 [DSA-001]: ../devsecops-assessment.md
 [ADR-0008]: ../../adr/adr-0008-database-migration-and-backup.md
 [ADR-0010]: ../../adr/adr-0010-production-vm-as-deployed.md
@@ -137,3 +142,4 @@ Go-with-conditions. Every Mandatory criterion of QC-SH-001, QC-WF-001 and QC-YML
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [0918fb1]: https://github.com/NF-Hotel/NFHotel/commit/0918fb1d0b9ec7d3af7741c73114ae7e2bb9117f
+[4bc8c6d]: https://github.com/NF-Hotel/NFHotel/commit/4bc8c6d4d33a485ce4a6e1ee6d5f8a624a19d81e
