@@ -341,7 +341,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 
 ### Debian
 
-- **Used for:** the VM `nf-hotel` (Debian 13), the monitoring LXC, the Proxmox host (Proxmox VE 9 is built on Debian 13), and `debian:12-slim` in the script tests and the backup target.
+- **Used for:** the VM `nf-hotel` (Debian 13), the monitoring LXC, the Proxmox host (Proxmox VE 9 is built on Debian 13), `debian:12-slim` in the script tests, and `debian:13-slim` in the backup target and its test (only the rrsync of Debian 13 has `-no-overwrite`).
 - **Alternatives:** Ubuntu Server, Rocky Linux or AlmaLinux, Windows Server.
 - **For it:** stable releases with long support, community-run with no company behind it, the base of Proxmox, no snaps, small default install; the CIS Benchmark exists for it.
 - **Against it:** older package versions within a release; no paid vendor support of its own.
@@ -439,7 +439,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 
 - **Used for:** copying each encrypted backup off the VM to the backup target (`ops/deploy/backup-target`), where the key may only write into one folder.
 - **Alternatives:** restic or Borg (deduplicating, encrypted repositories), rclone to object storage, scp.
-- **For it:** on every Linux system; `--ignore-existing` copies only what the target lacks; `rrsync` limits the key to one write-only folder, so a stolen VM cannot delete the copies.
+- **For it:** on every Linux system; `--ignore-existing` copies only what the target lacks; `rrsync -wo -no-del -no-overwrite` limits the key to adding new files in one folder, so a stolen VM can neither delete nor replace the copies.
 - **Against it:** no deduplication or snapshots of its own; the retention on the target is separate.
 - **What practitioners say:** restic and Borg are praised for deduplicated, encrypted, versioned backups that saved their users ([Restic](https://news.ycombinator.com/item?id=29209455), [BorgBackup](https://news.ycombinator.com/item?id=34152369)); a Server Fault question shows how to restrict an SSH key to rsync only ([Server Fault](https://serverfault.com/questions/965053)). Its top answer recommends exactly our setup: rrsync as a forced command on the key, with `-wo` so the client can only write, `restrict` and a `from=` address, while the other answer (a passphrase on the key) is voted down because it does not limit what the key can do.
 - **Our reason:** ADR-0008 and decision D7 of the DevSecOps assessment (DSA-001). The files are already compressed and encrypted, so deduplication would gain little.
@@ -618,7 +618,7 @@ From `backup-database.sh`, `install-backup.sh` and `restore-drill.sh` ([ADR-0008
 | 3 | Dump inside the PostgreSQL container | `pg_dump --format=custom` as the backup role | No database port is opened; the custom format restores selectively with `pg_restore` | pgBackRest, Barman, WAL-G |
 | 4 | Encrypt to the key of S03 | `age` | The VM holds only the public key, so a stolen disk does not reveal the backups | GPG |
 | 5 | Archive the settings and secrets needed to rebuild the VM | `tar` piped to `age` | The rebuild needs more than the data (MIL-037) | A Proxmox backup of the VM |
-| 6 | Copy off the VM | `rsync` over SSH, key restricted by `rrsync` on the target | Copies only what the target lacks; the key can only write | restic, rclone |
+| 6 | Copy off the VM | `rsync` over SSH, key restricted by `rrsync` on the target | Copies only what the target lacks; the key can only add new files | restic, rclone |
 | 7 | Keep 14 daily and 8 weekly files on the VM | Own prune function | A simple rule the restore drill can check | restic `forget` |
 | 8 | Report the time of the backup and of the copy | Prometheus text files read by Alloy | An alert when a backup or a copy is late ([Alerts](Alerts)) | Healthchecks.io pings per job |
 | 9 | Restore drill, monthly and before a major migration | `restore-drill.sh`: `age` decrypt, a throwaway PostgreSQL container, `pg_restore`, row counts | A backup counts only when a restore has been proven; the drill runs on any machine with Docker | Restoring into the production server |

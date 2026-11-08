@@ -85,7 +85,7 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 | `loki` (`monitoring`) | Monitoring LXC | Log store, kept 14 days; its ruler evaluates the log alert | `grafana/loki:3.7.9` | Docker Hub | 3100 on the LXC's tailnet address |
 | `grafana` (`monitoring`) | Monitoring LXC | Dashboards and log search | `grafana/grafana:13.3.0` | Docker Hub | 3000 on the LXC's tailnet address |
 | `scan-exporter` (`monitoring`) | Monitoring LXC | Reads the results of the security scans (GitHub code scanning, the scan workflows, SonarQube Cloud) every 15 minutes for Prometheus (MIL-053); the code is mounted read-only, nothing is built | `python:3.13-slim` | Docker Hub | none |
-| `backup-target` (`backup-target`) | Backup host (legion laptop of S03) | Write-only SSH target of the nightly off-VM copy of the encrypted backup (ADR-0008) | `nfhotel-backup-target:local`, built there from `debian:12-slim` | built locally | SSH on the host's tailnet address |
+| `backup-target` (`backup-target`) | Backup host (legion laptop of S03) | Write-only SSH target of the nightly off-VM copy of the encrypted backup; a file there can be neither replaced nor deleted (ADR-0008) | `nfhotel-backup-target:local`, built there from `debian:13-slim` | built locally | SSH on the host's tailnet address |
 | `proxmox` (`proxmox`) | CI and a developer machine only | Throwaway Proxmox VE for the Proxmox integration tests (MIL-003) | `dockurr/proxmox:9.2.20` | Docker Hub | `127.0.0.1:18006` |
 
 ## Where the images come from
@@ -94,7 +94,7 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 | --- | --- | --- |
 | **GHCR** (`ghcr.io/nf-hotel/`) | `nfhotel-web`, `nfhotel-api`, `market-analysis`, `benchmark`, `nfhotel-nginx`, `nfhotel-socket-proxy` | Our own builds, and the two proxies with their patch layers. The Release workflow pushes with the job token, so no registry password is stored; the packages belong to the organisation and stay private, so the VM pulls them with a read credential of its own ([CI-CD](CI-CD)); the provenance and the SBOM are stored beside each digest |
 | **Microsoft Container Registry** (`mcr.microsoft.com`) | `mcr.microsoft.com/dotnet/sdk:10.0.403` (build stage) and `mcr.microsoft.com/dotnet/aspnet:10.0.14` (runtime) | Microsoft publishes the .NET images only there |
-| **Docker Hub** | the base images `python:3.14-slim`, `python:3.13-slim`, `debian:12-slim`, and every third-party service above | Where the projects publish their official images |
+| **Docker Hub** | the base images `python:3.14-slim`, `python:3.13-slim`, `debian:12-slim`, `debian:13-slim`, and every third-party service above | Where the projects publish their official images |
 
 **Why not build everything ourselves:** an image always starts `FROM` another. Building PostgreSQL, nginx or Grafana from source would make us responsible for every security fix in them. The official images are patched by their maintainers; we pin them, scan them and take the next version when Dependabot proposes it. The daily scan checks every third-party image pinned in a compose file again (MIL-064). When a maintainer has not rebuilt an image whose findings are all in its operating-system packages, as with nginx and the socket proxy of Alloy in November 2026, the release adds a patch layer on top of the pinned image (ADR-0040). A finding that the newest build still has is accepted for a time, as the [accepted findings](#the-accepted-findings-of-the-third-party-images) below say.
 

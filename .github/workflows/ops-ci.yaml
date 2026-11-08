@@ -89,15 +89,20 @@ jobs:
           - test-create-monitoring-lxc.sh
           - test-write-secret-files.sh
           - test-check-secret-env.sh
+        # The backup target runs Debian 13, whose rrsync has -no-overwrite (MIL-066 task 1).
+        include:
+          - test: test-backup-target.sh
+            image: debian:13-slim
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - name: Run the test in Debian 12
+      - name: Run the test in Debian (12 unless the matrix names another image)
         env:
           TEST: ${{ matrix.test }}
-        run: docker run --rm -v "$PWD/ops:/src:ro" debian:12-slim bash "/src/tests/$TEST"
+          IMAGE: ${{ matrix.image || 'debian:12-slim' }}
+        run: docker run --rm -v "$PWD/ops:/src:ro" "$IMAGE" bash "/src/tests/$TEST"
 
   host-hardening:
     name: Ops host hardening (Debian 13, MIL-023)
