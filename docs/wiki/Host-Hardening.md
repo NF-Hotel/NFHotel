@@ -122,7 +122,7 @@ A unit that fails to start after step 5 most likely needs one capability more. T
 
 ## Without a desktop
 
-The VM was installed with the GNOME desktop of the Debian installer (`task-desktop` and `task-gnome-desktop`). MIL-068 removes it, so that the VM runs as a server: no display manager, no print, discovery, office or other desktop programs, and `multi-user.target` as the default target. Until the change of MIL-068 task 5, the desktop is still installed, and row 2.1.x of the CIS checklist stays Deferred.
+The VM was installed with the GNOME desktop of the Debian installer (`task-desktop` and `task-gnome-desktop`). MIL-068 removed it on 2026-11-08, so that the VM runs as a server: no display manager, no print, discovery, office or other desktop programs, and `multi-user.target` as the default target. The run purged the 1,092 packages of its dry run, no more and no fewer. After the restart only `sshd`, `tailscaled` and Docker listen, and the VM has 510 packages instead of 1,602 and uses about 1.1 GB of memory instead of 2.1 GB. Rows 2.1.x and 2.2.x of the CIS checklist are Applied. Row 2.1.x has one exception: the `nginx` package of the host, installed by hand, whose unit is disabled and does not run (nginx runs in its container).
 
 `ops/scripts/remove-desktop.sh` does it. Its two lists come from a read-only survey of the VM on 2026-11-08:
 

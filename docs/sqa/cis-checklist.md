@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-28 | Deprecated | mikemike | AI as stand-in for S01 | Row 4.3.8: the forward chain also accepts the published 5432 of the database relay, from `tailscale0` only (ADR-0034, MIL-048) | [102cae2] |
-| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Rows 5.3 and 5.28 Applied from the read of 2026-11-05 (all 11 containers with `cap_drop ALL` and a `pids_limit`); row 7.1.11, 7.1.12 records S01's decision of 2026-11-05 to keep `/opt/nfhotel-legacy`; the summary counts and the closing sentence of criterion 1; accepted after RC-294 Go | [803ceae] |
+| 2026-11-05 | Deprecated | Claude (AI) | AI as stand-in for S01 | Rows 5.3 and 5.28 Applied from the read of 2026-11-05 (all 11 containers with `cap_drop ALL` and a `pids_limit`); row 7.1.11, 7.1.12 records S01's decision of 2026-11-05 to keep `/opt/nfhotel-legacy`; the summary counts and the closing sentence of criterion 1; accepted after RC-294 Go | [803ceae] |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Rows 2.1.x (with one exception, the `nginx` package of the host) and 2.2.x Applied after MIL-068 removed the desktop; the summary counts; accepted after RC-319 Go | pending |
 
 ---
 
@@ -158,9 +158,9 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 
 | # | Item | Status | How, or why not | Evidence |
 | --- | --- | --- | --- | --- |
-| 2.1.x | Server services not in use: avahi, DHCP server, DNS server, FTP, LDAP, mail access (IMAP, POP3), NFS, NIS, print, rpcbind, rsync daemon, Samba, SNMP, telnet, TFTP, web proxy, web server on the host, xinetd, X | Deferred | **S01 decision, 2026-10-28:** the VM was installed with the GNOME desktop, and it stays as it is for now. It runs `gdm` (X), `cups` and `cups-browsed` (print, on the loopback), `avahi-daemon` (UDP 5353) and desktop services (colord, ModemManager, fwupd, upower and others). The firewall drops every input except 80, 443, Tailscale and SSH on `tailscale0`, so the network reaches none of them. Removing the desktop (`task-gnome-desktop`, then `apt autoremove`) is a new decision of S01 | ev:services, ev:firewall (`ss -tln`, `ss -uln`) |
+| 2.1.x | Server services not in use: avahi, DHCP server, DNS server, FTP, LDAP, mail access (IMAP, POP3), NFS, NIS, print, rpcbind, rsync daemon, Samba, SNMP, telnet, TFTP, web proxy, web server on the host, xinetd, X | Applied with one exception | MIL-068 removed the desktop of the installer on 2026-11-08 (`ops/scripts/remove-desktop.sh --apply`: 1,092 packages purged, `multi-user.target` as the default target, one restart). After it, `dpkg-query` finds none of `avahi-daemon`, `autofs`, `isc-dhcp-server`, `kea-dhcp4-server`, `bind9`, `dnsmasq`, `vsftpd`, `proftpd-basic`, `slapd`, `dovecot-imapd`, `dovecot-pop3d`, `nfs-kernel-server`, `ypserv`, `cups`, `cups-browsed`, `rpcbind`, `samba`, `snmpd`, `telnetd`, `inetutils-telnetd`, `tftpd-hpa`, `squid`, `apache2`, `xinetd`, `xserver-xorg-core`, `xwayland` and `gdm3`. `rsync` stays as the client of the backup; its daemon unit `rsync.service` is disabled and inactive. `ss -lntup` shows only `sshd`, `tailscaled` and the ports that Docker publishes. The exception: the web server `nginx` of the host, installed by hand on 2026-10-06, with its unit disabled and inactive; nginx runs in its container, and no package needs the one of the host. S01 decides whether it is purged. Verified on nf-hotel 2026-11-08 (RC-319). | `dpkg-query`, `systemctl` and `ss -lntup` on 2026-11-08 (RC-319) |
 | 2.1.21 | The mail transfer agent is local-only | Applied | No MTA listens: `ss -tln` shows no port 25. Verified on nf-hotel 2026-10-28 (RC-244, `/root/cis-evidence-after-host-settings.txt`). | ev:firewall (`ss -tln`) |
-| 2.2.x | Clients not installed: NIS, rsh, talk, telnet, LDAP, FTP | Deferred | None is installed except `inetutils-telnet`, which the desktop install brought; it goes with the desktop (2.1.x) | `dpkg-query` on 2026-10-28 |
+| 2.2.x | Clients not installed: NIS, rsh, talk, telnet, LDAP, FTP | Applied | None is installed: `inetutils-telnet`, which the desktop install brought, was purged with the desktop on 2026-11-08 (MIL-068), and `dpkg-query` finds none of `nis`, `rsh-client`, `rsh-redone-client`, `talk`, `inetutils-talk`, `telnet`, `inetutils-telnet`, `ldap-utils`, `ftp`, `tnftp` and `inetutils-ftp`. Verified on nf-hotel 2026-11-08 (RC-319). | `dpkg-query` on 2026-11-08 (RC-319) |
 | 2.3.x | Time synchronisation is in use and configured | Applied | `systemd-timesyncd`, `NTPSynchronized=yes`. Verified on nf-hotel 2026-10-28 (RC-244, `/root/cis-evidence-after-host-settings.txt`). | ev:services (`timedatectl`) |
 | 2.4.1.x | cron is enabled and its files have the right permissions | Deferred | Checked with the first evidence run; the backup uses a systemd timer, not cron | — |
 
@@ -223,9 +223,9 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | Benchmark | Applied | Pending VM | Not applicable | Deferred |
 | --- | --- | --- | --- | --- |
 | Docker | 46 | 0 | 6 | 6 |
-| Debian 12 | 24 | 0 | 6 | 14 |
+| Debian 12 | 26 | 0 | 6 | 12 |
 
-The counts are by row; a row that covers several items counts once. Applied counts the rows Applied with an exception too. Criterion 1 is met since 2026-11-05: the two rows that were Pending VM (5.3, 5.28) are Applied, read with `docker inspect` on `nf-hotel` (the fields `ops/scripts/cis-evidence.sh` reads) at the MIL-023 gate (RC-294); no row is Pending VM.
+The counts are by row; a row that covers several items counts once. Applied counts the rows Applied with an exception too. Criterion 1 is met since 2026-11-05: the two rows that were Pending VM (5.3, 5.28) are Applied, read with `docker inspect` on `nf-hotel` (the fields `ops/scripts/cis-evidence.sh` reads) at the MIL-023 gate (RC-294); no row is Pending VM. Rows 2.1.x and 2.2.x are Applied since 2026-11-08, after MIL-068 removed the desktop (RC-319).
 
 ---
 
@@ -233,5 +233,4 @@ The counts are by row; a row that covers several items counts once. Applied coun
 [DSA-001]: ./devsecops-assessment.md
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
-[102cae2]: https://github.com/NF-Hotel/NFHotel/commit/102cae2e4dd44d67b4d8c71f0ad731456d1938e5
 [803ceae]: https://github.com/NF-Hotel/NFHotel/commit/803ceae78c9552d30230894be4f86c724a730859
