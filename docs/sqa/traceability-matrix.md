@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The row of MIL-067: task 7, the change-password form, accepted by the AI as stand-in for S01 (RC-310, Go) | [6523bd3] |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | A row for the code of MIL-067 (RC-311, Go-with-conditions) | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | A row for the code of MIL-067 (RC-311, Go-with-conditions) | [3ed21af] |
 
 ---
 
@@ -326,3 +326,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [6523bd3]: https://github.com/NF-Hotel/NFHotel/commit/6523bd34d78cf3c019b6a60cac3adf1c42c1b0e4
+[3ed21af]: https://github.com/NF-Hotel/NFHotel/commit/3ed21af7d6e4ceaaae49ebfd4da2c8e40eec7071
