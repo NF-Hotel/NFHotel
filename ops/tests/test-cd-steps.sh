@@ -159,7 +159,7 @@ grep -qx "devops_sha=$OPS" out && ok "action-ref writes the SHA of the ref" || k
 ACTION_REF=main expect 1 "action-ref refuses a branch" ref
 ACTION_REF=v1 expect 1 "action-ref refuses a tag" ref
 
-# verify (MIL-022 task 3): both attestations for each of the four images; since ADR-0030
+# verify (MIL-022 task 3): both attestations for each of the five images; since ADR-0030
 # market-analysis is built by the release too, so no image is accepted by a pin alone.
 ANALYSIS_OK="ghcr.io/nf-hotel/market-analysis@sha256:$D"
 B="$(printf 'b%.0s' $(seq 64))"

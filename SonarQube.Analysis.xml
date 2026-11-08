@@ -15,4 +15,14 @@
   <!-- NeighbourhoodPlaces is content, not code: eleven records of the same shape, which the copy-paste
        detector reads as copies of one another -->
   <Property Name="sonar.cpd.exclusions">**/NeighbourhoodPlaces.cs</Property>
+  <!-- docker:S6471 (an image that runs as root) on the proxy only. Its Dockerfile (ADR-0040) keeps the user of
+       the pinned nginx image: the master process starts as root to bind 80 and 443 and to read privkey.pem,
+       which is 0600 and owned by the user of the checkout, and the workers run as nginx. The compose file
+       drops every capability but five, mounts the root file system read-only and sets no-new-privileges
+       (MIL-023 task 2, CIS-001). The upstream image ran the same way before it had a Dockerfile that the
+       analysis could read; a master without root is a change of the proxy and its certificate, not of
+       this file. -->
+  <Property Name="sonar.issue.ignore.multicriteria">nginxroot</Property>
+  <Property Name="sonar.issue.ignore.multicriteria.nginxroot.ruleKey">docker:S6471</Property>
+  <Property Name="sonar.issue.ignore.multicriteria.nginxroot.resourceKey">ops/deploy/nginx/Dockerfile</Property>
 </SonarQubeAnalysisProperties>

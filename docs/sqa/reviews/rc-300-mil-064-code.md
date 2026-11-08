@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 2 to 7 of MIL-064 before its pull request (task 8), with the one fix it asked for: the steps of the daily scan in a script | [55cb8a6] |
+| 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 2 to 7 of MIL-064 before its pull request (task 8), with the one fix it asked for: the steps of the daily scan in a script | [55cb8a6] |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | The SonarQube Cloud check of pull request #542: docker:S6471 on the Dockerfile of the proxy, ignored for that rule and file in `SonarQube.Analysis.xml` with the reason; a finding and an action item | pending |
 
 ---
 
@@ -35,6 +36,7 @@
 - The compose build of the release check: the image carries `org.opencontainers.image.source` and `org.opencontainers.image.revision`, and `nginx -v` says 1.29.8, the version of the pinned base.
 - Trivy 0.75.0 with the gate of `scan-gate.sh`, through `scan-running-release.sh --third-party` on three local images: the upstream nginx pin fails, `haproxy:3.2-alpine` passes, `tecnativa/docker-socket-proxy:v0.5.0` fails with 9 findings; the summary was 4666 bytes.
 - Compose with an image pinned by digest that cannot be pulled and a `build:` section: it builds, and the build stops with "build tag cannot contain a digest", so no image is made (finding 3).
+- The checks of pull request #542 at 67f0655: 48 passed, two skipped by design, and `SonarCloud Code Analysis` failed on Security Rating B on new code, one issue, docker:S6471 on `ops/deploy/nginx/Dockerfile` (finding 5); the next push carries the exclusion.
 
 ## Checklist Results
 
@@ -86,6 +88,7 @@
 - **The list of release images is on both sides of the tailnet.** It is `IMAGE_NAMES` in `cd-steps.sh` on the runner, `NAMES` in `deploy-release.sh` on the VM (installed alone, without the library beside it), `IMAGES` in `build-release-images.sh` and `NAMES` in `check-release-build.sh`: one fact in four files, as it was before MIL-064. The two deploy lists are an allowlist on each side of a trust boundary, where the VM does not take the runner's word. A mismatch fails before anything is deployed: a name that the build lacks fails `read-manifest` ("bad digest"); a name that only the runner has is refused by the VM ("not one of"); a name that only the VM has is refused there too ("no reference of").
 - **A pull of `nfhotel-nginx` that fails on the VM leads Compose to try a build, which cannot succeed.** The compose file of the proxy keeps `build:` beside `image:`, so the development and test stacks build it, as they do the application images; Compose builds an image whose pull fails. In a release the image is a reference by digest, which cannot be the tag of a build ("build tag cannot contain a digest", tried on 2026-11-08), so no image is made, the deploy fails and rolls back to the previous release. The VM never runs an image that the release did not scan. The precondition of the deploy is that the VM can pull the new package as it pulls the four others. Those are private (an anonymous token request to GHCR answers 401 on 2026-11-08, where a public package answers 200), and CD run 42106387565 pulled them on the VM, so the VM holds a pull credential of its own: the second option of decision D2 of DSA-001, which still records the first ("Public").
 - **The scan of the third-party images costs time and pulls from Docker Hub.** Twelve images, ollama 4.8 GB, pulled without a login: the limit on anonymous pulls per address can turn an image into "could not be pulled", which fails the run as a finding would, and the summary says which one.
+- **SonarQube Cloud rated the new code B for security: docker:S6471 on the Dockerfile of the proxy.** The rule says the nginx image runs as root. The Dockerfile keeps the user of the upstream image: the master process starts as root and the workers run as nginx, as the proxy has run since MIL-002. The compose file limits it to five capabilities, a read-only root file system and no-new-privileges (MIL-023 task 2, CIS-001), and the master needs root with DAC_READ_SEARCH to read `privkey.pem`, which is 0600 and owned by the user of the checkout (`renew-certificate.sh`). Nothing changed at run time; the Dockerfile only made the image visible to the analysis. A Dockerfile cannot carry NOSONAR on its `FROM` line, so `SonarQube.Analysis.xml` ignores this one rule for this one file, with the reason, as #330 and #331 marked the plain-HTTP hop with NOSONAR and the reason. A master process without root changes the proxy and its certificate, and needs a plan of its own (action items).
 - **The monitoring stack runs the pins of its own clone.** The scan reads the pins at the operations commit of the release; the monitoring LXC runs them once its clone is at that commit (`deploy-monitoring.sh`, by hand).
 
 ## Overall Verdict
@@ -100,6 +103,7 @@ Go. Every Mandatory criterion of QC-SH-001, QC-WF-001 and QC-YML-001 passes afte
 | Before approving the CD run of the merge, check that the new package `nfhotel-nginx` exists and has the access of the four other packages, so the VM can pull it | AI as stand-in for S01 | After the release run, before the approval |
 | Approve the CD run of the merge (ADR-0038) through the API, as S01 asked in chat; its deploy and smoke test are the proof of criteria 2 to 4 | AI as stand-in for S01 | After the release run |
 | Run the daily scan by hand after the deploy; it is the proof of criterion 7 and the input of task 9 | AI as stand-in for S01 | After the deploy |
+| Weigh a master process of the proxy without root (the owner of `privkey.pem`, the owners of the tmpfs folders, the pid file), and remove the exclusion of docker:S6471 when it runs | S01 | A later hardening milestone |
 
 ---
 
