@@ -409,7 +409,7 @@ public sealed class BookingFlowViewModelTests
     {
         var viewModel = Create();
 
-        var ready = viewModel.Prefill("2026-03-12", "2026-03-15", 3);
+        var ready = viewModel.Prefill("2026-03-12", "2026-03-15", "3");
 
         Assert.True(ready);
         Assert.Equal(new DateOnly(2026, 3, 12), viewModel.CheckInDate);
@@ -424,7 +424,7 @@ public sealed class BookingFlowViewModelTests
     {
         var viewModel = Create();
 
-        Assert.False(viewModel.Prefill("12/03/2026", "2026-03-15", 9));
+        Assert.False(viewModel.Prefill("12/03/2026", "2026-03-15", "9"));
         Assert.False(viewModel.Prefill(null, null, null));
 
         Assert.Equal(Today.AddDays(1), viewModel.CheckInDate);
@@ -438,9 +438,51 @@ public sealed class BookingFlowViewModelTests
     {
         var viewModel = Create();
 
-        Assert.False(viewModel.Prefill("2026-03-01", "2026-03-04", 2));
+        Assert.False(viewModel.Prefill("2026-03-01", "2026-03-04", "2"));
         Assert.Equal(new DateOnly(2026, 3, 1), viewModel.CheckInDate);
         Assert.False(viewModel.HasValidDates);
+    }
+
+    /// <summary>
+    /// Negative: a party that does not fit an integer (the 44 digits of the DAST scan, one above the largest, one below
+    /// the smallest), a word, a decimal, an empty value and white space are ignored; the dates are still taken (MIL-067).
+    /// </summary>
+    [Theory]
+    [InlineData("99999999999999999999999999999999999999999999")]
+    [InlineData("2147483648")]
+    [InlineData("-2147483649")]
+    [InlineData("two")]
+    [InlineData("2.5")]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void Prefill_PartyThatDoesNotParse_KeepsTheDefaultAndTakesTheDates(string guests)
+    {
+        var viewModel = Create();
+
+        var ready = viewModel.Prefill("2026-03-12", "2026-03-15", guests);
+
+        Assert.True(ready);
+        Assert.Equal(new DateOnly(2026, 3, 12), viewModel.CheckInDate);
+        Assert.Equal(1, viewModel.Guests);
+    }
+
+    /// <summary>Boundary: a whole number of the address is kept between one and the most the field offers, the largest and smallest integers too.</summary>
+    [Theory]
+    [InlineData("1", 1)]
+    [InlineData("0", 1)]
+    [InlineData("-1", 1)]
+    [InlineData("4", BookingFlowViewModel.MaxGuests)]
+    [InlineData("5", BookingFlowViewModel.MaxGuests)]
+    [InlineData("2147483647", BookingFlowViewModel.MaxGuests)]
+    [InlineData("-2147483648", 1)]
+    [InlineData(" 3 ", 3)]
+    public void Prefill_WholeNumberParty_IsKeptWithinItsBounds(string guests, int expected)
+    {
+        var viewModel = Create();
+
+        viewModel.Prefill(null, null, guests);
+
+        Assert.Equal(expected, viewModel.Guests);
     }
 
     /// <summary>Equivalence: the party filters the fetched rooms by capacity; one guest, or "show all", lists every room.</summary>

@@ -460,15 +460,16 @@ public sealed class BookingFlowViewModel
     /// </summary>
     /// <param name="checkIn">The arrival date as <c>yyyy-MM-dd</c>, or <c>null</c>.</param>
     /// <param name="checkOut">The departure date as <c>yyyy-MM-dd</c>, or <c>null</c>.</param>
-    /// <param name="guests">The number of guests, or <c>null</c>.</param>
+    /// <param name="guests">The number of guests as the address spells it, or <c>null</c>.</param>
     /// <returns>
     /// True when both dates were readable and make a valid stay, so the page can fetch the rooms at once.
-    /// A date that is missing or unreadable leaves the suggested dates alone and returns false; the party is
-    /// taken either way.
+    /// A date that is missing or unreadable leaves the suggested dates alone and returns false. A party that is not
+    /// a whole number, or that does not fit an <see cref="int"/>, is ignored; a whole number is taken within its
+    /// bounds. The party is read either way.
     /// </returns>
-    public bool Prefill(string? checkIn, string? checkOut, int? guests)
+    public bool Prefill(string? checkIn, string? checkOut, string? guests)
     {
-        if (guests is int party)
+        if (TryParseQueryGuests(guests, out var party))
         {
             Guests = party;
         }
@@ -626,6 +627,10 @@ public sealed class BookingFlowViewModel
     /// <summary>Reads a date of the address. Only the exact <c>yyyy-MM-dd</c> of the booking box counts.</summary>
     private static bool TryParseQueryDate(string? text, out DateOnly date) =>
         DateOnly.TryParseExact(text, QueryDateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
+
+    /// <summary>Reads the party of the address: a whole number that fits an <see cref="int"/>, in the invariant culture.</summary>
+    private static bool TryParseQueryGuests(string? text, out int guests) =>
+        int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out guests);
 
     /// <summary>The error code at the arrival field, or <c>null</c>.</summary>
     private string? CheckInErrorCode
