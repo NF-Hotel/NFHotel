@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions until every required check of the pull request is green | [3ed21af] |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Criterion 3 corrected: SonarQube Cloud found `var` in six changed lines of the first push, and ed1836a gave the seven `var` of the changed lines their explicit types; the verdict stays Go-with-conditions | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Criterion 3 corrected: SonarQube Cloud found `var` in six changed lines of the first push, and ed1836a gave the seven `var` of the changed lines their explicit types; the verdict stays Go-with-conditions | [f505586] |
 
 ---
 
@@ -114,3 +114,4 @@ Go-with-conditions. Every Mandatory criterion of QC-CS-001 passes except criteri
 [RC-310]: ./rc-310-mil-067-task-7.md
 [RC-278]: ./rc-278-mil-058-code.md
 [3ed21af]: https://github.com/NF-Hotel/NFHotel/commit/3ed21af7d6e4ceaaae49ebfd4da2c8e40eec7071
+[f505586]: https://github.com/NF-Hotel/NFHotel/commit/f5055868135c954ce93b6bf61f1d166c6b76337c
