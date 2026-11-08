@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-063: gate passed (RC-297, Go) with the CD run of the merge; the code row run | [cad9fba] |
-| 2026-11-08 | Proposed | mikemike | S01 | The row of MIL-064: plan accepted (RC-298, Go); nothing committed, the work in git is on hold | pending |
+| 2026-11-08 | Proposed | mikemike | S01 | The row of MIL-064: plan accepted (RC-298, Go); nothing committed, the work in git is on hold | [401da1a] |
 
 ---
 
@@ -301,3 +301,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [cad9fba]: https://github.com/NF-Hotel/NFHotel/commit/cad9fbabdd517896b4db30f18e28e0571000fefc
+[401da1a]: https://github.com/NF-Hotel/NFHotel/commit/401da1a2cc4c724997c1ad0e61ef770af5559245

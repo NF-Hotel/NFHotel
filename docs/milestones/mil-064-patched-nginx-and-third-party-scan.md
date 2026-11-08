@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | S01 | Initial version; the finding of 2026-11-06 checked again on 2026-11-08 (1 critical and 54 high findings with a fix in the pinned `nginx:1.29-alpine` digest, which is still the newest build of that tag), a census of the other twelve pinned third-party images on the same day (eleven fail the gate), and S01's request in chat to plan the fix ("Ja, lav en plan"); S01 approved the plan in chat on 2026-11-08 ("Godkend planen") after RC-298 Go | pending |
+| 2026-11-08 | Accepted | mikemike | S01 | Initial version; the finding of 2026-11-06 checked again on 2026-11-08 (1 critical and 54 high findings with a fix in the pinned `nginx:1.29-alpine` digest, which is still the newest build of that tag), a census of the other twelve pinned third-party images on the same day (eleven fail the gate), and S01's request in chat to plan the fix ("Ja, lav en plan"); S01 approved the plan in chat on 2026-11-08 ("Godkend planen") after RC-298 Go | [401da1a] |
 
 ---
 
@@ -107,3 +107,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-022]: ./mil-022-supply-chain-security.md
 [MIL-036]: ./mil-036-security-operations.md
 [MIL-059]: ./mil-059-github-actions-security-audit.md
+[401da1a]: https://github.com/NF-Hotel/NFHotel/commit/401da1a2cc4c724997c1ad0e61ef770af5559245
