@@ -26,7 +26,7 @@
         <AuthorizeView Policy="@StaffPolicies.BookingsView">
             <div class="admin-nav-group">
                 <div class="admin-nav-group-label">@AdminRoutes.FrontDesk</div>
-                <a class="@LinkClass("/admin", exact: true)" href="/admin" aria-current="@Current("/admin", exact: true)"><AdminIcon Name="home" />Today</a>
+                <a class="@LinkClass("/admin", exact: true)" href="/admin" aria-current="@Current("/admin", exact: true)"><AdminIcon Name="home" />Dashboard</a>
                 <a class="@LinkClass("/admin/bookings")" href="/admin/bookings" aria-current="@Current("/admin/bookings")"><AdminIcon Name="calendar" />Bookings</a>
                 <AuthorizeView Policy="@StaffPolicies.GuestsView" Context="guests">
                     <a class="@LinkClass("/admin/guests")" href="/admin/guests" aria-current="@Current("/admin/guests")"><AdminIcon Name="users" />Guests</a>

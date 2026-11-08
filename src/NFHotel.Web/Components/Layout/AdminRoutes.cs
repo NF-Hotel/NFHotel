@@ -40,7 +40,7 @@ public static class AdminRoutes
 
         return clean switch
         {
-            "/admin" => new(FrontDesk, "Today"),
+            "/admin" => new(FrontDesk, "Dashboard"),
             "/admin/bookings" => new(FrontDesk, "Bookings"),
             "/admin/guests" => new(FrontDesk, "Guests"),
             "/admin/rooms" => new(Housekeeping, "Rooms"),
