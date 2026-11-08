@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The row of MIL-070: the plan reviewed and accepted by S01 in chat (RC-318, Go) | [9bf2650] |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-068 and of its code at the gate: the desktop removed on the VM on 2026-11-08 (task 5), rows 2.1.x and 2.2.x of CIS-001, gate passed (RC-319, Go) | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-068 and of its code at the gate: the desktop removed on the VM on 2026-11-08 (task 5), rows 2.1.x and 2.2.x of CIS-001, gate passed (RC-319, Go) | [3a2683b] |
 
 ---
 
@@ -344,3 +344,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [9bf2650]: https://github.com/NF-Hotel/NFHotel/commit/9bf2650c1d47233f83a2c7d436dbca02de5a033f
+[3a2683b]: https://github.com/NF-Hotel/NFHotel/commit/3a2683b9abdd60ff583dc81c14a65e050e3183c4

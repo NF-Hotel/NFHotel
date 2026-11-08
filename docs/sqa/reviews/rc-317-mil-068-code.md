@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-068 before their pull request (task 4); Go | [8d107aa] |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | The criteria that waited for task 5 and the pull request are met: the gate record found criteria 3 to 6 of MIL-068 met on 2026-11-08 (RC-319); the verdict stays Go | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | The criteria that waited for task 5 and the pull request are met: the gate record found criteria 3 to 6 of MIL-068 met on 2026-11-08 (RC-319); the verdict stays Go | [3a2683b] |
 
 ---
 
@@ -140,3 +140,4 @@ Go. Every Mandatory criterion of QC-SH-001, QC-YML-001 and QC-WF-001 that the ch
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [8d107aa]: https://github.com/NF-Hotel/NFHotel/commit/8d107aa6ac24518c7cf4f25925263de152f56399
+[3a2683b]: https://github.com/NF-Hotel/NFHotel/commit/3a2683b9abdd60ff583dc81c14a65e050e3183c4

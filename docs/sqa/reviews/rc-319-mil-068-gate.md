@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-068 after the change on the VM (task 5) and a read-only check of the VM; Go | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-068 after the change on the VM (task 5) and a read-only check of the VM; Go | [3a2683b] |
 
 ---
 
@@ -261,3 +261,4 @@ Go: the six criteria pass on the evidence of 2026-11-08. The gate of MIL-068 is 
 [RC-317]: ./rc-317-mil-068-code.md
 [CIS-001]: ../cis-checklist.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[3a2683b]: https://github.com/NF-Hotel/NFHotel/commit/3a2683b9abdd60ff583dc81c14a65e050e3183c4

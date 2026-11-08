@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-05 | Deprecated | Claude (AI) | AI as stand-in for S01 | Rows 5.3 and 5.28 Applied from the read of 2026-11-05 (all 11 containers with `cap_drop ALL` and a `pids_limit`); row 7.1.11, 7.1.12 records S01's decision of 2026-11-05 to keep `/opt/nfhotel-legacy`; the summary counts and the closing sentence of criterion 1; accepted after RC-294 Go | [803ceae] |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Rows 2.1.x (with one exception, the `nginx` package of the host) and 2.2.x Applied after MIL-068 removed the desktop; the summary counts; accepted after RC-319 Go | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Rows 2.1.x (with one exception, the `nginx` package of the host) and 2.2.x Applied after MIL-068 removed the desktop; the summary counts; accepted after RC-319 Go | [3a2683b] |
 
 ---
 
@@ -234,3 +234,4 @@ The counts are by row; a row that covers several items counts once. Applied coun
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
 [803ceae]: https://github.com/NF-Hotel/NFHotel/commit/803ceae78c9552d30230894be4f86c724a730859
+[3a2683b]: https://github.com/NF-Hotel/NFHotel/commit/3a2683b9abdd60ff583dc81c14a65e050e3183c4
