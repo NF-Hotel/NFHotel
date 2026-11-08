@@ -62,7 +62,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly RELEASE_WORKFLOW="NF Hotel Release"
 # The images of a release, by name (ADR-0040): the deploy command finds each by its name, so a
 # new image is a name here and in deploy-release.sh, never a new argument position.
-readonly IMAGE_NAMES=(nfhotel-web nfhotel-api market-analysis benchmark nfhotel-nginx)
+readonly IMAGE_NAMES=(nfhotel-web nfhotel-api market-analysis benchmark nfhotel-nginx nfhotel-socket-proxy)
 readonly MANIFEST=release.json
 readonly MIGRATIONS_FILE=migrations.sql
 readonly FENCE='```'

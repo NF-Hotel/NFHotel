@@ -49,7 +49,10 @@ public sealed class BenchmarkStartPageTests : IAsyncDisposable
     private void RunsAre(params BenchmarkRunStateDto[] runs) =>
         _client.ListRunsAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<BenchmarkRunStateDto>>.Success(runs));
 
-    private IRenderedComponent<BenchmarkStart> Render(params string[] policies)
+    private IRenderedComponent<BenchmarkStart> Render(params string[] policies) => RenderAt(null, policies);
+
+    /// <summary>Renders the page at an address, as a browser opens it; the address is set after the services are registered.</summary>
+    private IRenderedComponent<BenchmarkStart> RenderAt(string? address, params string[] policies)
     {
         var client = new PassThroughRunner<IBenchmarkServiceClient>(_client);
         var tracker = new BenchmarkRunTracker(
@@ -59,6 +62,11 @@ public sealed class BenchmarkStartPageTests : IAsyncDisposable
         _host.With(new BenchmarkStartViewModel(client, tracker))
             .With(new BenchmarkModelsViewModel(client, new PassThroughRunner<IAiDefaultService>(_defaults)))
             .SignedInWith(policies);
+        if (address is not null)
+        {
+            _host.Navigation.NavigateTo(address);
+        }
+
         return _host.Render<BenchmarkStart>();
     }
 
@@ -112,6 +120,37 @@ public sealed class BenchmarkStartPageTests : IAsyncDisposable
 
         Assert.DoesNotContain("The last run did not finish", page.Markup, StringComparison.Ordinal);
         Assert.All(page.FindAll("fieldset input[type=checkbox]"), box => Assert.True(box.HasAttribute("checked")));
+    }
+
+    #endregion
+
+    #region Again
+
+    /// <summary>Positive: the run that the address names gives its choice to the page, as the list of runs links to it.</summary>
+    [Fact]
+    public void Again_RunOfTheAddress_TakesItsChoice()
+    {
+        var runId = Guid.NewGuid();
+        _recent = [BenchmarkRequestDoubles.Record(runId, BenchmarkRunStates.Failed, "the service restarted") with { Models = ["m2"] }];
+
+        var page = RenderAt($"/admin/benchmark/start?again={runId}");
+
+        var boxes = page.FindAll("fieldset input[type=checkbox]");
+        Assert.False(boxes[0].HasAttribute("checked"));
+        Assert.True(boxes[1].HasAttribute("checked"));
+        Assert.DoesNotContain("The last run did not finish", page.Markup, StringComparison.Ordinal);
+    }
+
+    /// <summary>Negative: a run of the address that is not the id of a run is ignored, and the page opens as it does without one (MIL-067 task 2).</summary>
+    [Fact]
+    public void Again_NotARun_OpensThePageAsWithout()
+    {
+        _recent = [BenchmarkRequestDoubles.Record(Guid.NewGuid(), BenchmarkRunStates.Failed, "the service restarted")];
+
+        var page = RenderAt("/admin/benchmark/start?again=not-a-run");
+
+        Assert.Contains("The last run did not finish", page.Markup, StringComparison.Ordinal);
+        Assert.All(page.FindAll("fieldset input[type=checkbox]"), box => Assert.False(box.HasAttribute("checked")));
     }
 
     #endregion

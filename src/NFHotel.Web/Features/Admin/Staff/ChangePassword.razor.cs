@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components;
 
+using NFHotel.Application.Dto.Staff;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Web.Common;
 using NFHotel.Web.Security;
@@ -33,17 +34,21 @@ public partial class ChangePassword : CancellableComponentBase
         _mustChange = HttpContext is not null && StaffClaims.MustChangePassword(HttpContext.User);
     }
 
+    /// <summary>
+    /// Takes the passwords out of the form before the change is asked, so the page never writes them back, whatever the
+    /// answer (MIL-067).
+    /// </summary>
     private async Task ChangeAsync()
     {
+        string current = Input?.CurrentPassword ?? string.Empty;
+        string fresh = Input?.NewPassword ?? string.Empty;
+        ForgetPasswords();
         if (HttpContext is null || Input is null)
         {
             return;
         }
 
-        var session = await ViewModel.ChangeAsync(Input.CurrentPassword, Input.NewPassword, ComponentToken);
-        Input.CurrentPassword = string.Empty;
-        Input.NewPassword = string.Empty;
-        Input.RepeatPassword = string.Empty;
+        StaffSessionDto? session = await ViewModel.ChangeAsync(current, fresh, ComponentToken);
         if (session is null)
         {
             return;
@@ -55,6 +60,20 @@ public partial class ChangePassword : CancellableComponentBase
             new AuthenticationProperties { ExpiresUtc = session.ExpiresAt, IsPersistent = false, AllowRefresh = false });
 
         Navigation.NavigateTo(RolePermissions.LandingPath(session.Role));
+    }
+
+    /// <summary>
+    /// Empties the three passwords of the form. Their fields write their values into the page, so a form that is refused,
+    /// such as one with two different new passwords, would otherwise send the typed passwords back (MIL-067).
+    /// </summary>
+    private void ForgetPasswords()
+    {
+        if (Input is not null)
+        {
+            Input.CurrentPassword = string.Empty;
+            Input.NewPassword = string.Empty;
+            Input.RepeatPassword = string.Empty;
+        }
     }
 
     private sealed class ChangeInput

@@ -10,7 +10,8 @@
 
     The form posts to this page. The page asks the sign-in use case, and on success puts the cookie with the user
     name, the role and the staff token, then goes on to the page that was asked for, or to the landing page of the
-    role. A refusal says the same thing for an unknown user and a wrong password.
+    role. A refusal says the same thing for an unknown user and a wrong password. The password is taken out of
+    the form whether the form is valid or not, so the page never writes a typed password back.
 *@
 
 <PageTitle>Sign in — NFHotel administration</PageTitle>
@@ -21,7 +22,7 @@
 
     <ErrorAlert Errors="ViewModel.Errors" />
 
-    <EditForm Model="Input" FormName="staff-login" OnValidSubmit="SignInAsync" method="post" class="card card-pad stack">
+    <EditForm Model="Input" FormName="staff-login" OnValidSubmit="SignInAsync" OnInvalidSubmit="ForgetPassword" method="post" class="card card-pad stack">
         <DataAnnotationsValidator />
 
         <FormField Label="User name" For="login-user" IsRequired="true">

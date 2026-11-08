@@ -23,7 +23,9 @@
 #   dbrelay    (only when deploy/postgres-tailnet/postgres-tailnet.env exists) the database relay of the team
 #              (MIL-048, ADR-0034): publishes 5432 on the tailnet address only, forwards to postgres
 #   alloy      (only when deploy/alloy/alloy.env exists) sends the logs and the host metrics
-#              to the monitoring (ADR-0020); left out with a note until the monitoring runs
+#              to the monitoring (ADR-0020); left out with a note until the monitoring runs; its
+#              socket proxy is the pinned upstream image with the fixes of its Alpine packages
+#              (ADR-0040 decision 5, MIL-065)
 # Each service reads its git-ignored settings file next to its docker-compose.yml
 # (postgres.env, ollama.env, nfhotel-api.env, nfhotel-web.env, market-analysis.env, benchmark.env, nginx.env);
 # copy the matching *.example file first. The Docker networks are created if missing:
@@ -336,9 +338,13 @@ for s in "${ordered[@]}"; do
   fi
   echo "==> deploying $s"
   args=(--env-file "$e" up -d --remove-orphans)
-  if ((build)) && [[ "$s" =~ ^(api|web|analysis|benchmark|nginx)$ ]]; then
+  if ((build)) && [[ "$s" =~ ^(api|web|analysis|benchmark|nginx|alloy)$ ]]; then
     args+=(--build)
   fi
+  # A release names the digest of every image that it built, and compose pulls them. Without
+  # --no-build, compose builds the image of a service with a build section when its pull fails, so
+  # an image that the release never scanned would run (ADR-0007): a failed pull fails the deploy.
+  ((build)) || args+=(--no-build)
   # --wait returns once every service with a healthcheck is healthy; the proxy has one since
   # MIL-023 task 2, so the smoke test that follows finds it listening.
   args+=(--wait --wait-timeout 300)

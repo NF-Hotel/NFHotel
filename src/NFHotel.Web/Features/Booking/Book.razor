@@ -17,7 +17,8 @@
     valid, and the viewmodel checks them again at every transition (BR-C-04).
 
     The booking box on the front page lands here with ?checkIn=…&checkOut=…&guests=… in the
-    address. Valid dates skip straight to the rooms; anything else starts at step 1 as before.
+    address. Valid dates skip straight to the rooms; anything else starts at step 1 as before. The
+    viewmodel reads the guests as well, and a value that is not a whole number leaves the field as it is.
 *@
 
 <PageTitle>Book a room — NFHotel</PageTitle>
