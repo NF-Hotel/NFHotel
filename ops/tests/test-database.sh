@@ -5,7 +5,10 @@
 # API through the alias postgres, backup as nfhotel_backup and the restore drill; and the
 # migration history, which nfhotel_app may read and not change, both on a database migrated
 # before its roles and on a new one whose first migration runs through the migrate step of
-# deploy-release.sh (MIL-066 task 4).
+# deploy-release.sh (MIL-066 task 4). Last, the rebuild of the VM in the order of the wiki page
+# Disaster-Recovery: CD before the restore stops at its backup, and the dump restored into an
+# empty server, the roles with the passwords of the restored settings, CD and the team roles,
+# in that order, bring back the rows, the first manager and the logins (MIL-066 task 9).
 #
 # Usage: test-database.sh <migrations.sql> <API image>
 #   migrations.sql  dotnet ef migrations script --idempotent from an NFHotel checkout
@@ -74,6 +77,8 @@ prepare() { NFHOTEL_BACKUP_COMMAND="$W/bin/nfhotel-backup" bash "$REPO/scripts/p
 verify() { bash "$REPO/scripts/verify-database.sh" --container "$PG" "$@"; }
 same() { [[ "$1" == "$2" ]]; }
 apply_migrations() { docker exec -i "$PG" psql -X -q -v ON_ERROR_STOP=1 -U nfhotel -d nfhotel -f - <"$MIGRATIONS"; }
+# add_rooms: the rooms R1 to R3, as the superuser.
+add_rooms() { su_sql "INSERT INTO room(room_number,floor,size,capacity,status,housekeeping_status) SELECT 'R'||i, 1, 20, 2, 0, 0 FROM generate_series(1,3) i"; }
 # start_pg [docker run option...]: a PostgreSQL 16 on t-prodnet with the volume t-pgdata, up
 # when its real server answers: only that one listens on TCP, the temporary init server uses
 # the socket only.
@@ -91,7 +96,8 @@ echo "== 1. a production-like database: objects owned by the image superuser"
 docker network create t-prodnet >/dev/null
 check "PostgreSQL 16 starts" start_pg
 check "real migrations applied as the superuser" apply_migrations
-su_sql "INSERT INTO room(room_number,floor,size,capacity,status,housekeeping_status) SELECT 'R'||i, 1, 20, 2, 0, 0 FROM generate_series(1,3) i; INSERT INTO guest(first_name,last_name,email,phone_number,country) SELECT 'g'||i,'x','g'||i||'@x.dk','1','DK' FROM generate_series(1,250) i;" >/dev/null
+add_rooms >/dev/null
+su_sql "INSERT INTO guest(first_name,last_name,email,phone_number,country) SELECT 'g'||i,'x','g'||i||'@x.dk','1','DK' FROM generate_series(1,250) i;" >/dev/null
 su_sql "CREATE ROLE legacy_reader LOGIN PASSWORD 'legacypw'" >/dev/null
 BEFORE="$(counts)"
 echo "      rows room/guest/booking/history: $BEFORE"
@@ -204,10 +210,11 @@ start_api() {
     sleep 2
   done
 }
-# sign_in: the staff token of the first manager, through the API.
+# sign_in [password]: the staff token of the first manager, through the API; the password is
+# the one that start_api gave it, unless another is given.
 sign_in() {
   http -H "Authorization: Bearer $token" -H 'Content-Type: application/json' \
-    -d "{\"userName\":\"manager\",\"password\":\"$manager_password\"}" "http://$API:8080/api/auth/login" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p'
+    -d "{\"userName\":\"manager\",\"password\":\"${1:-$manager_password}\"}" "http://$API:8080/api/auth/login" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p'
 }
 echo "== 7. the API image reads the database through the alias postgres as nfhotel_app"
 start_api
@@ -242,27 +249,94 @@ migrate_cd() {
   NFHOTEL_STATE="$W/state" NFHOTEL_SECRETS="$W/secrets" NFHOTEL_BACKUP_COMMAND="$W/bin/nfhotel-backup" \
     bash "$REPO/scripts/deploy-release.sh" migrate "$hash" <"$MIGRATIONS"
 }
-# deploy-release.sh would take the first container with those labels, so this part runs only
+# start_compose_pg: an empty PostgreSQL 16 with the labels that deploy-services.sh gives it.
+start_compose_pg() { start_pg --label com.docker.compose.project=nfhotel-postgres --label com.docker.compose.service=postgres; }
+# deploy-release.sh takes the first container with those labels, so parts 9 and 10 run only
 # where no other container has them.
 if [[ -n "$(docker ps -q --filter label=com.docker.compose.project=nfhotel-postgres)" ]]; then
-  ko "another container of the compose project nfhotel-postgres runs here; the new database was not tested"
-else
-  check "an empty PostgreSQL 16 starts with the labels of the compose project" start_pg \
-    --label com.docker.compose.project=nfhotel-postgres --label com.docker.compose.service=postgres
-  check "prepare --apply --connect-network on the empty database" prepare --apply --connect-network
-  check "the migrate step of deploy-release.sh applies the first migration" migrate_cd
-  check "the first migration created the history as nfhotel_owner" same \
-    "$(su_sql "SELECT tableowner FROM pg_tables WHERE tablename = '__EFMigrationsHistory'")" nfhotel_owner
-  history_rights "roles before its first migration"
-  if verify --expect-transfer --expect-network >"$W/v" 2>&1; then
-    ok "verify-database on the new database: all checks pass ($(grep -c PASS "$W/v"))"
-  else
-    ko "verify on the new database: $(grep FAIL "$W/v" | head -3)"
-  fi
-  start_api
-  if [[ "$code" == 200 ]]; then ok "API /health answers 200 on the new database"; else ko "API health on the new database: ${code:-none}"; fi
-  check "API sign-in works on the new database (the first manager was written as nfhotel_app)" test -n "$(sign_in)"
+  ko "another container of the compose project nfhotel-postgres runs here; parts 9 and 10 were not tested"
+  echo "RESULT: $pass passed, $fail failed"
+  exit 1
 fi
+check "an empty PostgreSQL 16 starts with the labels of the compose project" start_compose_pg
+check "prepare --apply --connect-network on the empty database" prepare --apply --connect-network
+check "the migrate step of deploy-release.sh applies the first migration" migrate_cd
+check "the first migration created the history as nfhotel_owner" same \
+  "$(su_sql "SELECT tableowner FROM pg_tables WHERE tablename = '__EFMigrationsHistory'")" nfhotel_owner
+history_rights "roles before its first migration"
+if verify --expect-transfer --expect-network >"$W/v" 2>&1; then
+  ok "verify-database on the new database: all checks pass ($(grep -c PASS "$W/v"))"
+else
+  ko "verify on the new database: $(grep FAIL "$W/v" | head -3)"
+fi
+start_api
+if [[ "$code" == 200 ]]; then ok "API /health answers 200 on the new database"; else ko "API health on the new database: ${code:-none}"; fi
+check "API sign-in works on the new database (the first manager was written as nfhotel_app)" test -n "$(sign_in)"
+
+echo "== 10. the rebuild of the VM in the order of Disaster-Recovery (MIL-066 task 9)"
+# The VM before the loss: the database of part 9 with three rooms, its first manager and the
+# team role dev_anna, and the nightly backup of it on the laptop.
+team() { bash "$REPO/scripts/manage-team-db-users.sh" --container "$PG" --secrets-dir "$W/secrets" "$@"; }
+# as_anna <sql>: SQL as dev_anna over the internal network, with the password of its file.
+as_anna() {
+  docker run --rm --network nfhotel-db -e PGPASSWORD="$(cat "$W/secrets/team/dev_anna.password")" "$IMG" \
+    psql -X -At -v ON_ERROR_STOP=1 -h postgres -U dev_anna -d nfhotel -c "$1"
+}
+add_rooms >/dev/null
+check "the team role dev_anna is added before the loss" team --apply --add anna
+old_anna="$(cat "$W/secrets/team/dev_anna.password")"
+old_manager_password="$manager_password"
+before_loss="$(counts)"
+rm -f "$W"/backups/*
+check "the nightly backup of the old database" "$W/bin/nfhotel-backup" --apply
+cp "$W"/backups/*.dump.age "$W/laptop.dump.age"
+# The loss: the containers and the volume go. The settings archive brings /etc/nfhotel back,
+# here $W/secrets, and install-backup.sh the backup command, here $W/bin/nfhotel-backup; the
+# runbook does both before the database, because the roles and CD each back up first.
+docker rm -f "$API" "$PG" >/dev/null 2>&1
+docker volume rm t-pgdata >/dev/null 2>&1
+role_secrets() { sha256sum "$W"/secrets/*.password "$W"/secrets/*.env | sha256sum; }
+secrets_before="$(role_secrets)"
+check "an empty PostgreSQL 16 starts on the new VM" start_compose_pg
+# The order of the runbook before MIL-066 ran CD before the restore. Its migrate step stops at
+# the backup, because the new server has no role nfhotel_backup yet, and changes nothing.
+if migrate_cd >"$W/cd-first" 2>&1; then
+  ko "CD before the restore ran its migrations on a server without roles"
+elif grep -q "the backup failed; no migration was applied" "$W/cd-first" &&
+  same "$(su_sql "SELECT count(*) FROM pg_tables WHERE schemaname = 'public'")" 0; then
+  ok "CD before the restore stops at its backup and creates no table (the old order fails)"
+else
+  ko "CD before the restore: $(tail -3 "$W/cd-first")"
+fi
+age --decrypt --identity "$W/key.txt" --output "$W/nfhotel.dump" "$W/laptop.dump.age"
+# restore_dump: the pg_restore of the runbook, as the superuser of the image.
+restore_dump() {
+  # shellcheck disable=SC2016 # expanded by the shell inside the container
+  docker exec -i "$PG" sh -c 'pg_restore --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --no-owner --no-privileges' \
+    <"$W/nfhotel.dump"
+}
+check "pg_restore --no-owner --no-privileges into the empty server" restore_dump
+check "the rows and the migration history of the dump are back" same "$(counts)" "$before_loss"
+check "pg_dump keeps no roles: dev_anna is gone" same "$(su_sql "SELECT count(*) FROM pg_roles WHERE rolname = 'dev_anna'")" 0
+check "prepare --apply --transfer-ownership on the restored database" prepare --apply --transfer-ownership --connect-network
+check "the roles get the passwords of the restored settings back" same "$(role_secrets)" "$secrets_before"
+if verify --expect-transfer --expect-network >"$W/v" 2>&1; then
+  ok "verify-database after the restore: all checks pass ($(grep -c PASS "$W/v"))"
+else
+  ko "verify after the restore: $(grep FAIL "$W/v" | head -3)"
+fi
+check "only then CD: its migrate step runs" migrate_cd
+check "the migrations skip: the rows and the history are unchanged" same "$(counts)" "$before_loss"
+history_rights "rebuilt from the dump"
+check "the team role dev_anna is added again" team --apply --add anna
+check "dev_anna has a new password" test "$(cat "$W/secrets/team/dev_anna.password")" != "$old_anna"
+check "dev_anna signs in and reads the three rooms of the dump" same "$(as_anna 'SELECT count(*) FROM room')" 3
+start_api
+if [[ "$code" == 200 ]]; then ok "API /health answers 200 after the rebuild"; else ko "API health after the rebuild: ${code:-none}"; fi
+staff="$(sign_in "$old_manager_password")"
+check "the first manager of the dump signs in through the API" test -n "$staff"
+rooms="$(http -H "Authorization: Bearer $token" -H "X-Staff-Token: $staff" "http://$API:8080/api/rooms")"
+check "API /api/rooms returns the three rooms of the dump" same "$(grep -o '"roomNumber":"R[0-9]"' <<<"$rooms" | wc -l)" 3
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))
