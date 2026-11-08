@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | S01 | Initial version: one task for each place where the web application answers bad input with an error page or sends back what it should not (the guests of the booking page, the run of the benchmark page, the password of the login form), from the full DAST scans of 2026-11-08; planned at S01's request in chat ("1.ja") and accepted by S01 in chat ("Gennemfør 067", RC-309) | pending |
+| 2026-11-08 | Accepted | mikemike | S01 | Initial version: one task for each place where the web application answers bad input with an error page or sends back what it should not (the guests of the booking page, the run of the benchmark page, the password of the login form), from the full DAST scans of 2026-11-08; planned at S01's request in chat ("1.ja") and accepted by S01 in chat ("Gennemfør 067", RC-309) | [d677364] |
 
 ---
 
@@ -100,3 +100,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-027]: ./mil-027-dast-and-end-to-end-tests.md
 [MIL-044]: ./mil-044-security-overview.md
 [MIL-066]: ./mil-066-findings-of-7-november.md
+[d677364]: https://github.com/NF-Hotel/NFHotel/commit/d67736407551851d5d6afa01c13f53eed1fa3bee

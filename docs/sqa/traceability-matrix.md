@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | A row for the code of MIL-066 (RC-308, Go-with-conditions) | [0918fb1] |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | A row for MIL-067: the plan accepted by S01 in chat (RC-309, Go) | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | A row for MIL-067: the plan accepted by S01 in chat (RC-309, Go) | [d677364] |
 
 ---
 
@@ -323,3 +323,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [0918fb1]: https://github.com/NF-Hotel/NFHotel/commit/0918fb1d0b9ec7d3af7741c73114ae7e2bb9117f
+[d677364]: https://github.com/NF-Hotel/NFHotel/commit/d67736407551851d5d6afa01c13f53eed1fa3bee
