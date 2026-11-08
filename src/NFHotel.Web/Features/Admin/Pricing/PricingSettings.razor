@@ -17,6 +17,8 @@
 <div class="stack-lg">
     <PageHeader Title="Pricing settings" Subtitle="How much a price changes in a high or a low season." />
 
+    <AdminTabs Label="Pricing" Tabs="PricingTabs" />
+
     <ErrorAlert Errors="ViewModel.Errors" />
 
     @if (ViewModel.SuccessMessage is { } success)
@@ -97,4 +99,3 @@
         </section>
     }
 </div>
-

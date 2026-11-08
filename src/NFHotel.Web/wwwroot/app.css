@@ -43,6 +43,7 @@
     --s2: 8px;
     --s3: 12px;
     --s4: 16px;
+    --s5: 20px;
     --s6: 24px;
     --s8: 32px;
     --s12: 48px;
@@ -1866,84 +1867,314 @@ h1:focus-visible {
 
 /* --------------------------------------------------------------------------
    12. ADMIN
+   --------------------------------------------------------------------------
+   The staff's work tool. AdminLayout wraps everything in .admin-shell, and every rule here is
+   scoped to it, like section 11 is to .public. The look follows the mockup
+   NFHotel-Admin-Mockup.html (2026-11-05): the palette of the public site (navy, teal, amber), a
+   grouped side menu, a top bar with the signed-in user, tinted icons that tell the sections apart,
+   and a light and a dark theme.
+
+   Theme: the tokens are written once with light-dark(). The shell follows the system until the user
+   picks a theme in the top bar; the choice is a cookie that AdminLayout writes to data-theme, so
+   there is no JavaScript (MIL-033) and no state that survives a navigation by accident.
+
+   Shared names (.btn, .card, .table, .badge, .alert, .field-input, .empty) are restyled under
+   .admin-shell rather than renamed, so the pages keep the contract of UI-Spec section 3 and the
+   tests keep their selectors. Headings are sans-serif in here: it is a tool, not a brochure; the
+   serif stays in the wordmark.
    -------------------------------------------------------------------------- */
 
 .admin-shell {
+    color-scheme: light dark;
+
+    /* Brand */
+    --adm-navy: light-dark(#0f1b2d, #0b1526);
+    --adm-navy-2: light-dark(#162540, #122037);
+    --adm-navy-3: light-dark(#1d2f4f, #182a47);
+    --adm-navy-fg: #eef2f8;
+    --adm-navy-fg-2: light-dark(#aab6c8, #a9b5c7);
+    --adm-navy-fg-3: light-dark(#6f7f99, #6b7a94);
+    --adm-teal: light-dark(#157f8c, #4fb8c6);
+    --adm-teal-deep: light-dark(#0f6570, #7bd0db);
+    --adm-teal-bright: #38c0cf;
+    --adm-teal-soft: light-dark(#e2f1f3, #15323a);
+    --adm-teal-ink: light-dark(#0b4a52, #bfe8ee);
+    --adm-amber: light-dark(#e5a62e, #e9b04a);
+    --adm-amber-soft: light-dark(#fbf1da, #3a2d12);
+    --adm-amber-ink: light-dark(#5c3d05, #f6d58e);
+
+    /* Surfaces and text */
+    --adm-bg: light-dark(#f2f3f5, #0f1318);
+    --adm-surface: light-dark(#ffffff, #171c23);
+    --adm-surface-2: light-dark(#f7f8fa, #1c222b);
+    --adm-surface-3: light-dark(#eceef2, #232a35);
+    --adm-line: light-dark(#e2e4e9, #2a313c);
+    --adm-line-strong: light-dark(#c9ccd4, #3d4653);
+    --adm-ink: light-dark(#141922, #e8e9ec);
+    --adm-ink-2: light-dark(#5b6574, #a4adba);
+    --adm-ink-3: light-dark(#8a93a1, #6f7987);
+
+    /* Status */
+    --adm-ok: light-dark(#2f7a56, #6cc295);
+    --adm-ok-soft: light-dark(#e6f4ec, #173126);
+    --adm-ok-ink: light-dark(#1d5a3d, #b9e6cb);
+    --adm-warn: light-dark(#b9811b, #e2b04f);
+    --adm-warn-soft: light-dark(#fdf3dd, #3a2d12);
+    --adm-warn-ink: light-dark(#6b4a08, #f3d79a);
+    --adm-danger: light-dark(#b3261e, #ef7d75);
+    --adm-danger-soft: light-dark(#fbe9e7, #3c1b19);
+    --adm-danger-ink: light-dark(#7d1a14, #f7bcb7);
+    --adm-muted-soft: light-dark(#eef0f3, #262d38);
+    --adm-muted-ink: light-dark(#4b5564, #b8c0cc);
+
+    /* Form */
+    --adm-radius: 10px;
+    --adm-radius-sm: 8px;
+    --adm-radius-lg: 16px;
+    --adm-shadow-sm: light-dark(0 1px 2px rgba(15, 27, 45, .06), 0 1px 2px rgba(0, 0, 0, .4));
+    --adm-shadow: light-dark(0 1px 2px rgba(15, 27, 45, .05), 0 1px 2px rgba(0, 0, 0, .35)),
+                  light-dark(0 6px 20px rgba(15, 27, 45, .07), 0 8px 24px rgba(0, 0, 0, .35));
+    --adm-shadow-lg: light-dark(0 12px 40px rgba(15, 27, 45, .18), 0 16px 48px rgba(0, 0, 0, .6));
+    --adm-focus: 0 0 0 2px var(--adm-surface), 0 0 0 4px var(--adm-teal);
+    --adm-focus-on-dark: 0 0 0 2px var(--adm-navy), 0 0 0 4px var(--adm-teal-bright);
+
+    /* The shared tokens of the site, pointed at the admin ones, so a component written for the site (a chart, a
+       caption, an observation) follows the admin theme, dark included. */
+    --ink: var(--adm-ink);
+    --ink-soft: var(--adm-ink-2);
+    --line: var(--adm-line);
+    --paper: var(--adm-surface);
+    --sand: var(--adm-surface-2);
+    --navy: var(--adm-teal);
+    --ok: var(--adm-ok);
+    --warn: var(--adm-warn);
+    --danger: var(--adm-danger);
+
+    /* Chart series: teal, amber, slate, green. One order everywhere, so the first series is always teal. */
+    --adm-series-0: light-dark(#157f8c, #4fb8c6);
+    --adm-series-1: light-dark(#d9962a, #e9b04a);
+    --adm-series-2: light-dark(#7a8496, #8d97a8);
+    --adm-series-3: light-dark(#3f8f68, #6cc295);
+
+    /* Shell */
+    --adm-nav-w: 268px;
+    --adm-topbar-h: 64px;
+    --adm-content-max: 1480px;
+
     display: grid;
-    grid-template-columns: var(--nav-w) minmax(0, 1fr);
+    grid-template-columns: var(--adm-nav-w) minmax(0, 1fr);
     min-height: 100vh;
-    background: var(--sand);
+    background: var(--adm-bg);
+    color: var(--adm-ink);
+    font-size: 15.5px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
 }
 
+.admin-shell[data-theme="light"] { color-scheme: light; }
+.admin-shell[data-theme="dark"] { color-scheme: dark; }
+
+/* The hidden attribute wins, also over display rules on .btn and friends. */
+.admin-shell [hidden] { display: none !important; }
+
+.admin-shell h1,
+.admin-shell h2,
+.admin-shell h3,
+.admin-shell h4,
+.admin-shell .title,
+.admin-shell .subtitle,
+.admin-shell .empty-title,
+.admin-shell .stat-value {
+    font-family: var(--font-sans);
+    color: var(--adm-ink);
+    letter-spacing: -.01em;
+}
+
+.admin-shell .title { font-size: 1.75rem; font-weight: 650; }
+.admin-shell .subtitle { font-size: 1.125rem; font-weight: 650; }
+.admin-shell .lede,
+.admin-shell .muted,
+.admin-shell .field-hint,
+.admin-shell .empty-text { color: var(--adm-ink-2); }
+.admin-shell .lede { font-size: 1rem; max-width: 72ch; }
+
+/* :where() keeps the specificity at one class, so a menu item or a list row can set its own colour. */
+.admin-shell :where(a) { color: var(--adm-teal); }
+.admin-shell :where(a:hover) { color: var(--adm-teal-deep); }
+
+.admin-shell :focus-visible { outline: none; box-shadow: var(--adm-focus); border-radius: var(--adm-radius-sm); }
+
+/* FocusOnNavigate moves focus to the h1 on every page; that is for screen readers and must not draw a ring. */
+.admin-shell h1:focus,
+.admin-shell h1:focus-visible { box-shadow: none; }
+
+.admin-shell code {
+    background: var(--adm-surface-3);
+    border-color: var(--adm-line);
+    color: var(--adm-ink);
+}
+
+/* Icons. The sprite sits at the top of AdminLayout; nothing external (MIL-033, offline). */
+.admin-shell .icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.admin-shell .icon-sm { width: 15px; height: 15px; }
+.admin-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* Tinted icon squares: one colour per kind of thing, so a glance tells the sections apart. */
+.admin-shell .tint {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 12px;
+    background: var(--adm-teal-soft);
+    color: var(--adm-teal);
+}
+
+.admin-shell .tint-amber { background: var(--adm-amber-soft); color: var(--adm-warn); }
+.admin-shell .tint-ok { background: var(--adm-ok-soft); color: var(--adm-ok); }
+.admin-shell .tint-danger { background: var(--adm-danger-soft); color: var(--adm-danger); }
+.admin-shell .tint-slate { background: var(--adm-muted-soft); color: var(--adm-muted-ink); }
+.admin-shell .tint-navy { background: var(--adm-navy); color: var(--adm-navy-fg); }
+
+/* ----- Side menu ----- */
+
 .admin-nav {
-    background: var(--navy);
-    color: #dde5df;
-    padding: var(--s6) var(--s3);
-    display: flex;
-    flex-direction: column;
-    gap: var(--s1);
     position: sticky;
     top: 0;
     align-self: start;
-    max-height: 100vh;
+    height: 100vh;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: var(--adm-navy);
+    color: var(--adm-navy-fg);
+    padding: 0 var(--s4) var(--s5);
+    scrollbar-width: thin;
+    scrollbar-color: var(--adm-navy-3) transparent;
+    border-right: 1px solid var(--adm-navy-3);
 }
 
 .admin-nav-brand {
-    display: block;
-    font-family: var(--font-serif);
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--paper);
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    flex: 0 0 auto;
+    height: var(--adm-topbar-h);
+    margin: 0 calc(-1 * var(--s4)) var(--s5);
+    padding: 0 var(--s5);
+    color: var(--adm-navy-fg);
     text-decoration: none;
-    padding: 0 var(--s3);
-    margin-bottom: var(--s6);
+    border-bottom: 1px solid var(--adm-navy-3);
 }
 
-.admin-nav-brand span {
+.admin-nav-brand:hover { color: #fff; text-decoration: none; }
+.admin-nav-brand:focus-visible { box-shadow: var(--adm-focus-on-dark); border-radius: var(--adm-radius-sm); }
+
+.admin-nav-mark {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--adm-teal) 0%, var(--adm-teal-bright) 100%);
+    color: #fff;
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: 1.2rem;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18);
+}
+
+.admin-nav-name {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: 1.25rem;
+    line-height: 1.1;
+}
+
+.admin-nav-name span {
     display: block;
     font-family: var(--font-sans);
-    font-size: .6875rem;
-    font-weight: 700;
+    font-weight: 600;
+    font-size: .65rem;
     letter-spacing: .14em;
     text-transform: uppercase;
-    color: #b9c8be;
+    color: var(--adm-navy-fg-3);
+    margin-top: 4px;
 }
 
-.admin-nav-brand:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-on-dark);
-    border-radius: var(--radius-sm);
+.admin-nav-groups { display: flex; flex-direction: column; gap: var(--s5); }
+.admin-nav-group { display: flex; flex-direction: column; gap: 3px; }
+
+.admin-nav-group-label {
+    padding: var(--s2) var(--s3);
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--adm-navy-fg-3);
 }
 
 .admin-nav-link {
-    display: block;
-    padding: var(--s2) var(--s3);
-    border-radius: var(--radius-sm);
-    color: #dde5df;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    padding: 10px var(--s3);
+    border-radius: var(--adm-radius-sm);
+    color: var(--adm-navy-fg-2);
     text-decoration: none;
-    font-size: .9375rem;
+    font-size: .95rem;
     font-weight: 500;
-    border-left: 3px solid transparent;
+    border-left: 0;
+    transition: background .12s ease, color .12s ease;
 }
 
-.admin-nav-link:hover {
-    background: var(--navy-deep);
-    color: var(--paper);
-}
-
-.admin-nav-link:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-on-dark);
-}
+.admin-nav-link .icon { width: 20px; height: 20px; opacity: .8; }
+.admin-nav-link:hover { background: var(--adm-navy-2); color: #fff; text-decoration: none; }
+.admin-nav-link:hover .icon { opacity: 1; }
+.admin-nav-link:focus-visible { box-shadow: var(--adm-focus-on-dark); }
 
 /* NavLink sets .active on the current item. */
 .admin-nav-link.active {
-    background: var(--navy-deep);
-    color: var(--paper);
-    font-weight: 700;
-    border-left-color: var(--brass);
+    background: var(--adm-navy-3);
+    color: #fff;
+    font-weight: 600;
 }
+
+.admin-nav-link.active::before {
+    content: "";
+    position: absolute;
+    left: calc(-1 * var(--s4));
+    top: 9px;
+    bottom: 9px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--adm-teal-bright);
+}
+
+.admin-nav-link.active .icon { opacity: 1; color: var(--adm-teal-bright); }
+
+.admin-nav-foot {
+    margin-top: auto;
+    padding: var(--s4) var(--s2) 0;
+    border-top: 1px solid var(--adm-navy-3);
+    font-size: .75rem;
+    color: var(--adm-navy-fg-3);
+    display: grid;
+    gap: var(--s1);
+}
+
+/* ----- Main column and top bar ----- */
 
 .admin-main {
     min-width: 0;
@@ -1951,31 +2182,113 @@ h1:focus-visible {
     flex-direction: column;
 }
 
-.admin-header {
-    background: var(--paper);
-    border-bottom: 1px solid var(--line);
-    padding: var(--s2) var(--s6);
+.admin-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    min-height: var(--adm-topbar-h);
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    padding: 0 var(--s8);
+    background: var(--adm-surface);
+    border-bottom: 1px solid var(--adm-line);
 }
 
-/* Discreet band: access control is missing. Must be readable, not overlooked. */
-.admin-notice {
+.admin-crumbs {
     display: flex;
     align-items: center;
     gap: var(--s2);
-    font-size: .8125rem;
-    color: #6b5019;
-    background: #f7f1e2;
-    border: 1px solid #e0cda6;
-    border-radius: var(--radius-sm);
-    padding: 6px var(--s3);
+    font-size: .9rem;
+    color: var(--adm-ink-2);
+    min-width: 0;
+    white-space: nowrap;
 }
+
+.admin-crumbs strong { color: var(--adm-ink); font-weight: 600; }
+.admin-crumbs .sep { color: var(--adm-ink-3); }
+
+.admin-topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+}
+
+.admin-topbar form { margin: 0; display: contents; }
+
+.admin-icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
+    border: 1px solid var(--adm-line);
+    background: var(--adm-surface);
+    color: var(--adm-ink-2);
+    cursor: pointer;
+    padding: 0;
+}
+
+.admin-icon-btn:hover { background: var(--adm-surface-3); color: var(--adm-ink); }
+
+/* The signed-in user: the avatar and the name lead to the password page; sign-out is its own button. */
+.admin-user {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    height: 42px;
+    padding: 0 var(--s3) 0 4px;
+    border-radius: 999px;
+    border: 1px solid var(--adm-line);
+    background: var(--adm-surface);
+    color: var(--adm-ink);
+    text-decoration: none;
+}
+
+.admin-user:hover { background: var(--adm-surface-2); color: var(--adm-ink); text-decoration: none; }
+
+.admin-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--adm-navy);
+    color: #fff;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+.admin-user-name {
+    text-align: left;
+    line-height: 1.1;
+    font-size: .85rem;
+    font-weight: 600;
+}
+
+.admin-user-name span {
+    display: block;
+    font-weight: 500;
+    color: var(--adm-ink-3);
+    font-size: .72rem;
+}
+
+.admin-signout { min-height: 40px; }
+
+/* ----- Page ----- */
 
 .admin-main > .page,
 .admin-main > .page-narrow {
-    padding: var(--s6);
     flex: 1 1 auto;
-    max-width: none;
+    max-width: var(--adm-content-max);
+    padding: var(--s8) var(--s8) var(--s12);
 }
+
+.admin-main > .page-narrow { max-width: 760px; margin: 0; }
+
+.admin-shell .stack-lg > * + * { margin-top: var(--s8); }
 
 /* Page header with title and actions. Used by PageHeader. */
 .page-header {
@@ -1989,38 +2302,1173 @@ h1:focus-visible {
 .page-header-actions {
     display: flex;
     align-items: center;
-    gap: var(--s2);
+    gap: var(--s3);
     flex-wrap: wrap;
 }
 
-/* Key figures on the dashboard. */
-.stat {
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
+/* Discreet band: access control is missing. Must be readable, not overlooked. */
+.admin-notice {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    font-size: .8125rem;
+    color: var(--adm-warn-ink);
+    background: var(--adm-warn-soft);
+    border: 1px solid var(--adm-warn);
+    border-radius: var(--adm-radius-sm);
+    padding: 6px var(--s3);
+}
+
+.admin-shell .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--s6);
+}
+
+.admin-shell .grid-main {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(380px, 2fr);
+    gap: var(--s6);
+    align-items: start;
+}
+
+/* ----- Surfaces ----- */
+
+.admin-shell .card,
+.admin-shell .panel {
+    background: var(--adm-surface);
+    border: 1px solid var(--adm-line);
+    border-radius: var(--adm-radius-lg);
+    box-shadow: var(--adm-shadow-sm);
+}
+
+.admin-shell .panel { padding: var(--s5) var(--s6); }
+.admin-shell .divider { background: var(--adm-line); }
+
+/* Card header: tinted icon, title, hint, and room for actions. Used by CardHead. */
+.card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s4);
+    padding: var(--s5) var(--s6);
+    border-bottom: 1px solid var(--adm-line);
+}
+
+.card-head-main { display: flex; align-items: center; gap: var(--s4); min-width: 0; }
+.card-head .subtitle { display: flex; align-items: center; gap: var(--s2); }
+.card-head .hint { font-size: .875rem; color: var(--adm-ink-2); margin: 3px 0 0; }
+.card-icon { width: 44px; height: 44px; }
+.card-icon .icon { width: 22px; height: 22px; }
+.card-body { padding: var(--s6); }
+
+.card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3);
     padding: var(--s4) var(--s6);
-    box-shadow: var(--shadow);
+    border-top: 1px solid var(--adm-line);
+    font-size: .875rem;
+    color: var(--adm-ink-2);
+}
+
+/* A table in a card: the card is the frame, so the table loses its own. */
+.admin-shell .card > .table-wrap,
+.admin-shell .card > .stack > .table-wrap:last-child {
+    border: 0;
+    border-radius: 0 0 var(--adm-radius-lg) var(--adm-radius-lg);
+}
+
+/* ----- Key figures ----- */
+
+.kpi {
+    display: flex;
+    gap: var(--s4);
+    align-items: flex-start;
+    padding: var(--s5) var(--s6);
+    background: var(--adm-surface);
+    border: 1px solid var(--adm-line);
+    border-radius: var(--adm-radius-lg);
+    box-shadow: var(--adm-shadow-sm);
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    overflow: hidden;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+a.kpi:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--adm-shadow);
+    border-color: var(--adm-line-strong);
+    text-decoration: none;
+    color: inherit;
+}
+
+/* The icon and the body sit in one span (KpiTile renders them once for the link and the plain tile). */
+.kpi-content { display: contents; }
+.kpi-icon { width: 48px; height: 48px; border-radius: 14px; }
+.kpi-icon .icon { width: 24px; height: 24px; }
+.kpi-body { display: grid; gap: 5px; min-width: 0; flex: 1 1 auto; }
+.kpi-label { font-size: .875rem; font-weight: 600; color: var(--adm-ink-2); }
+
+.kpi-value {
+    font-size: 2.125rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: var(--adm-ink);
+}
+
+.kpi-value small { font-size: 1rem; font-weight: 500; color: var(--adm-ink-3); margin-left: 4px; }
+.kpi-note { font-size: .875rem; color: var(--adm-ink-2); }
+
+.kpi.accent::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--adm-amber);
+}
+
+/* A share as a bar. <progress>, so no inline style is needed (style-src 'self', MIL-033). */
+.kpi-bar,
+.admin-shell progress.bar {
+    appearance: none;
+    width: 100%;
+    height: 7px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--adm-surface-3);
+    overflow: hidden;
+    display: block;
+    margin-top: var(--s1);
+}
+
+.kpi-bar::-webkit-progress-bar,
+.admin-shell progress.bar::-webkit-progress-bar { background: var(--adm-surface-3); border-radius: 999px; }
+.kpi-bar::-webkit-progress-value,
+.admin-shell progress.bar::-webkit-progress-value { background: var(--adm-teal); border-radius: 999px; }
+.kpi-bar::-moz-progress-bar,
+.admin-shell progress.bar::-moz-progress-bar { background: var(--adm-teal); border-radius: 999px; }
+
+/* The old key figure of the dashboard, kept for pages that still use it. */
+.stat {
+    background: var(--adm-surface);
+    border: 1px solid var(--adm-line);
+    border-radius: var(--adm-radius-lg);
+    padding: var(--s4) var(--s6);
+    box-shadow: var(--adm-shadow-sm);
 }
 
 .stat-value {
     display: block;
-    font-family: var(--font-serif);
     font-size: 2rem;
     line-height: 1.1;
-    font-weight: 600;
-    color: var(--ink);
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1;
 }
 
 .stat-label {
     display: block;
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--adm-ink-2);
+    margin-top: var(--s1);
+}
+
+/* ----- Buttons ----- */
+
+.admin-shell .btn {
+    font-size: .9rem;
+    border-radius: 9px;
+    min-height: 40px;
+    padding: 9px var(--s4);
+    color: var(--adm-ink);
+}
+
+.admin-shell .btn:focus-visible { box-shadow: var(--adm-focus); }
+.admin-shell .btn .icon { width: 16px; height: 16px; }
+
+.admin-shell .btn-primary {
+    background: var(--adm-teal);
+    border-color: var(--adm-teal);
+    color: light-dark(#ffffff, #06262b);
+}
+
+.admin-shell .btn-primary:hover {
+    background: var(--adm-teal-deep);
+    border-color: var(--adm-teal-deep);
+    color: light-dark(#ffffff, #06262b);
+}
+
+.admin-shell .btn-secondary {
+    background: var(--adm-surface);
+    border-color: var(--adm-line-strong);
+    color: var(--adm-ink);
+}
+
+.admin-shell .btn-secondary:hover {
+    background: var(--adm-surface-2);
+    border-color: var(--adm-ink-3);
+    color: var(--adm-ink);
+}
+
+.admin-shell .btn-ghost {
+    color: var(--adm-ink-2);
+    text-decoration: none;
+}
+
+.admin-shell .btn-ghost:hover { background: var(--adm-surface-3); color: var(--adm-ink); }
+
+.admin-shell .btn-danger {
+    background: var(--adm-danger-soft);
+    border-color: transparent;
+    color: var(--adm-danger-ink);
+}
+
+.admin-shell .btn-danger:hover { background: var(--adm-danger); border-color: var(--adm-danger); color: #fff; }
+
+.admin-shell .btn-sm { font-size: .85rem; min-height: 34px; padding: 5px var(--s3); border-radius: 8px; }
+
+/* A square button with only an icon; the label is in a .sr-only span, so the button keeps its name. */
+.admin-shell .btn-icon { width: 34px; min-width: 34px; padding: 0; justify-content: center; }
+.admin-shell .btn-icon .icon { width: 17px; height: 17px; }
+.admin-shell .table-actions .btn { vertical-align: middle; }
+
+.admin-shell .btn:disabled,
+.admin-shell .btn[aria-disabled="true"] {
+    background: var(--adm-surface-3);
+    border-color: var(--adm-line);
+    color: var(--adm-ink-3);
+}
+
+/* Sort buttons in a table header keep the look of the header. */
+.admin-shell .table th .btn-ghost {
+    min-height: 0;
+    padding: 0;
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: inherit;
+}
+
+.admin-shell .table th .btn-ghost:hover { background: transparent; color: var(--adm-ink); }
+
+/* ----- Form ----- */
+
+.admin-shell .field-label { color: var(--adm-ink); font-size: .85rem; }
+
+.admin-shell .field-input,
+.admin-shell .field-select {
+    background: var(--adm-surface);
+    color: var(--adm-ink);
+    border-color: var(--adm-line-strong);
+    border-radius: var(--adm-radius-sm);
+    font-size: .95rem;
+}
+
+.admin-shell .field-input:focus,
+.admin-shell .field-select:focus {
+    border-color: var(--adm-teal);
+    box-shadow: 0 0 0 3px var(--adm-teal-soft);
+}
+
+.admin-shell .field-input:disabled,
+.admin-shell .field-select:disabled { background: var(--adm-surface-2); color: var(--adm-ink-3); }
+
+.admin-shell .field-input::placeholder { color: var(--adm-ink-3); }
+.admin-shell input[type="checkbox"],
+.admin-shell input[type="radio"] { accent-color: var(--adm-teal); }
+
+/* A filter bar: the fields in one row, the buttons to the right, in a card of its own. */
+.admin-toolbar {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--s3);
+    flex-wrap: wrap;
+    padding: var(--s4) var(--s6);
+}
+
+.admin-toolbar .field { flex: 1 1 180px; min-width: 0; }
+.admin-toolbar .field + .field { margin-top: 0; }
+.admin-toolbar .admin-toolbar-actions { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; margin-left: auto; }
+.admin-toolbar .admin-toolbar-check { display: flex; align-items: center; gap: var(--s2); min-height: 40px; font-size: .9rem; }
+
+/* ----- Tabs: sibling pages of one area, so the side menu holds one item for them ----- */
+
+.admin-tabs {
+    display: flex;
+    gap: var(--s1);
+    border-bottom: 1px solid var(--adm-line);
+    overflow-x: auto;
+}
+
+.admin-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 48px;
+    padding: 0 var(--s4);
+    margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+    color: var(--adm-ink-2);
+    font-size: .9rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.admin-tab:hover { color: var(--adm-ink); text-decoration: none; }
+.admin-tab[aria-current="page"] { color: var(--adm-teal-ink); border-bottom-color: var(--adm-teal); }
+
+/* ----- Data ----- */
+
+.admin-shell .table-wrap {
+    border-color: var(--adm-line);
+    border-radius: var(--adm-radius-lg);
+    background: var(--adm-surface);
+}
+
+.admin-shell .table {
+    background: var(--adm-surface);
+    border-color: var(--adm-line);
+    font-size: .9rem;
+}
+
+.admin-shell .table caption { color: var(--adm-ink-2); padding: var(--s4) var(--s6); }
+
+.admin-shell .table th {
+    background: var(--adm-surface-2);
+    color: var(--adm-ink-2);
+    font-weight: 600;
+    letter-spacing: .04em;
+    border-bottom-color: var(--adm-line);
+    padding: 12px var(--s4);
+}
+
+.admin-shell .table td { padding: 14px var(--s4); border-bottom-color: var(--adm-line); }
+.admin-shell .table th:first-child,
+.admin-shell .table td:first-child { padding-left: var(--s6); }
+.admin-shell .table th:last-child,
+.admin-shell .table td:last-child { padding-right: var(--s6); }
+.admin-shell .table tbody tr:nth-child(even) { background: transparent; }
+.admin-shell .table tbody tr:hover { background: var(--adm-surface-2); }
+.admin-shell .table tbody tr:last-child td,
+.admin-shell .table tbody tr:last-child th { border-bottom: 0; }
+.admin-shell .table-compact th,
+.admin-shell .table-compact td { padding: 10px var(--s3); }
+.admin-shell .table .sub { display: block; font-size: .8rem; color: var(--adm-ink-3); margin-top: 2px; }
+.admin-shell .table td.numeric,
+.admin-shell .table td.numeric-start,
+.admin-shell .table .nowrap { white-space: nowrap; }
+.admin-shell .table td.numeric,
+.admin-shell .table td.numeric-start { font-variant-numeric: tabular-nums; }
+
+/* A row header is a label, not a column header: plain text, bold. */
+.admin-shell .table tbody th {
+    background: transparent;
+    color: var(--adm-ink);
+    font-size: inherit;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: normal;
+}
+
+/* An input with its button on one line, in a table cell. */
+.rate-edit { display: flex; align-items: center; gap: var(--s2); }
+.rate-edit .field-input { width: 140px; min-height: 36px; padding: 6px var(--s3); }
+
+/* ----- Status ----- */
+
+.admin-shell .badge {
+    font-size: .8rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-color: transparent;
+    background: var(--adm-muted-soft);
+    color: var(--adm-muted-ink);
+}
+
+.admin-shell .badge-pending,
+.admin-shell .badge-cleaning { background: var(--adm-warn-soft); color: var(--adm-warn-ink); }
+.admin-shell .badge-confirmed { background: var(--adm-teal-soft); color: var(--adm-teal-ink); }
+.admin-shell .badge-checkedin,
+.admin-shell .badge-clean { background: var(--adm-ok-soft); color: var(--adm-ok-ink); }
+.admin-shell .badge-checkedout,
+.admin-shell .badge-blocked { background: var(--adm-muted-soft); color: var(--adm-muted-ink); }
+.admin-shell .badge-cancelled,
+.admin-shell .badge-service { background: var(--adm-danger-soft); color: var(--adm-danger-ink); }
+.admin-shell .badge-plain::before { display: none; }
+
+/* ----- Feedback ----- */
+
+.admin-shell .alert { border-radius: var(--adm-radius); background: var(--adm-surface); color: var(--adm-ink); border-color: var(--adm-line); }
+.admin-shell .alert-error { background: var(--adm-danger-soft); border-color: var(--adm-danger-soft); border-left-color: var(--adm-danger); color: var(--adm-danger-ink); }
+.admin-shell .alert-ok { background: var(--adm-ok-soft); border-color: var(--adm-ok-soft); border-left-color: var(--adm-ok); color: var(--adm-ok-ink); }
+.admin-shell .alert-info { background: var(--adm-teal-soft); border-color: var(--adm-teal-soft); border-left-color: var(--adm-teal); color: var(--adm-teal-ink); }
+
+.admin-shell .empty {
+    background: var(--adm-surface);
+    border-color: var(--adm-line-strong);
+    border-radius: var(--adm-radius-lg);
+}
+
+.admin-shell .empty-icon { background: var(--adm-surface-2); border-color: var(--adm-line); color: var(--adm-ink-3); }
+
+.admin-shell .skeleton {
+    background: linear-gradient(90deg, var(--adm-surface-3) 0%, var(--adm-surface-2) 50%, var(--adm-surface-3) 100%);
+    background-size: 200% 100%;
+}
+
+/* ----- Lists: rows with an icon or a room number, used on the dashboard ----- */
+
+.admin-list { display: grid; }
+
+.admin-list-item {
+    display: flex;
+    align-items: center;
+    gap: var(--s4);
+    padding: var(--s4) var(--s6);
+    border-bottom: 1px solid var(--adm-line);
+    font-size: .9rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.admin-list-item:last-child { border-bottom: 0; }
+a.admin-list-item:hover { background: var(--adm-surface-2); color: inherit; text-decoration: none; }
+.admin-list-item .grow { flex: 1 1 auto; min-width: 0; }
+.admin-list-item .item-title { display: block; font-weight: 600; }
+.admin-list-item .item-meta { display: block; font-size: .8rem; color: var(--adm-ink-3); margin-top: 2px; }
+.admin-list-item .item-icon { width: 40px; height: 40px; border-radius: 11px; }
+.admin-list-item .item-icon .icon { width: 20px; height: 20px; }
+.admin-list-item .arrow { color: var(--adm-ink-3); }
+
+/* Housekeeping rows: the room number is the thing, so it gets a tile of its own. */
+.room-no {
+    width: 56px;
+    height: 44px;
+    border-radius: 10px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+    background: var(--adm-surface-2);
+    border: 1px solid var(--adm-line);
+    border-left: 4px solid var(--adm-ink-3);
+}
+
+.room-no.due { border-left-color: var(--adm-warn); }
+.room-no.in-progress { border-left-color: var(--adm-teal); }
+.room-no.service { border-left-color: var(--adm-danger); }
+.room-no.clean { border-left-color: var(--adm-ok); }
+
+/* ----- Housekeeping board: one row per floor, top floor first, like the building ----- */
+
+.board {
+    display: grid;
+    grid-template-columns: 64px repeat(auto-fill, minmax(132px, 1fr));
+    gap: var(--s3);
+    align-items: stretch;
+}
+
+/* The label sits in the first column, so every floor starts a row of its own however many rooms it has. */
+.board-floor {
+    grid-column: 1;
+    display: flex;
+    align-items: center;
+    font-size: .8125rem;
+    font-weight: 600;
+    color: var(--adm-ink-2);
+}
+
+.room-tile {
+    --tile: var(--adm-ok);
+    position: relative;
+    display: grid;
+    gap: 3px;
+    align-content: start;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 2px solid var(--tile);
+    background: color-mix(in srgb, var(--tile) 7%, var(--adm-surface-2));
+    font: inherit;
+    font-size: .85rem;
+    color: var(--adm-ink);
+    text-align: left;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease;
+}
+
+/* The frame carries the state all the way round; hover and selection add a soft ring in the same colour. */
+.room-tile:hover {
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--tile) 12%, var(--adm-surface));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tile) 22%, transparent);
+}
+
+.room-tile strong { font-size: 1.05rem; }
+.room-tile small { color: var(--adm-ink-2); }
+.room-tile.due { --tile: var(--adm-warn); }
+.room-tile.in-progress { --tile: var(--adm-teal); }
+.room-tile.service,
+.room-tile.blocked { --tile: var(--adm-danger); }
+.room-tile.is-selected {
+    background: color-mix(in srgb, var(--tile) 16%, var(--adm-surface));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tile) 35%, transparent);
+}
+
+.board-legend {
+    display: flex;
+    gap: var(--s4);
+    flex-wrap: wrap;
+    font-size: .78rem;
+    color: var(--adm-ink-2);
+}
+
+.board-legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+.board-legend i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.board-legend .dot-ok { background: var(--adm-ok); }
+.board-legend .dot-warn { background: var(--adm-warn); }
+.board-legend .dot-info { background: var(--adm-teal); }
+.board-legend .dot-danger { background: var(--adm-danger); }
+
+/* ----- Drawer: a guided flow in a side panel over the list (bookings) ----- */
+
+.drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(15, 27, 45, .45);
+}
+
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    width: min(620px, 100vw);
+    display: flex;
+    flex-direction: column;
+    background: var(--adm-surface);
+    border-left: 1px solid var(--adm-line);
+    box-shadow: var(--adm-shadow-lg);
+    animation: drawer-in .22s cubic-bezier(.2, .7, .2, 1);
+}
+
+@keyframes drawer-in {
+    from { transform: translateX(100%); }
+    to { transform: none; }
+}
+
+.drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3);
+    padding: var(--s4) var(--s6);
+    border-bottom: 1px solid var(--adm-line);
+}
+
+.drawer-head .hint { font-size: .875rem; color: var(--adm-ink-2); margin: 2px 0 0; }
+
+.drawer-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: var(--s6);
+}
+
+.drawer-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+    padding: var(--s4) var(--s6);
+    border-top: 1px solid var(--adm-line);
+    background: var(--adm-surface-2);
+}
+
+/* The steps of the flow: a number, a title, and the content. A done step gets a green number. */
+.step-block { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: var(--s3) var(--s4); }
+.step-block + .step-block { margin-top: var(--s6); }
+
+.step-no {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: .9rem;
+    background: var(--adm-surface-3);
+    color: var(--adm-ink-2);
+}
+
+.step-block.is-done .step-no { background: var(--adm-ok-soft); color: var(--adm-ok-ink); }
+.step-block.is-active .step-no { background: var(--adm-teal); color: light-dark(#ffffff, #06262b); }
+.step-title { align-self: center; font-weight: 650; font-size: 1rem; margin: 0; }
+.step-title .muted { font-weight: 500; font-size: .85rem; margin-left: var(--s2); }
+.step-content { grid-column: 2; display: grid; gap: var(--s4); }
+
+/* Option rows (a free room, a found guest): chosen one is tinted. */
+.option-row.is-selected td { background: var(--adm-teal-soft); }
+
+/* Mode toggle (existing or new guest). */
+.admin-segmented {
+    display: inline-flex;
+    padding: 3px;
+    gap: 2px;
+    background: var(--adm-surface-3);
+    border-radius: 9px;
+}
+
+.admin-segmented .btn {
+    min-height: 32px;
+    padding: 0 14px;
+    border: 0;
+    background: transparent;
+    color: var(--adm-ink-2);
+    font-size: .85rem;
+    border-radius: 7px;
+}
+
+.admin-segmented .btn:hover { color: var(--adm-ink); background: transparent; }
+.admin-segmented .btn[aria-pressed="true"] { background: var(--adm-surface); color: var(--adm-ink); box-shadow: var(--adm-shadow-sm); }
+
+/* ----- Misc ----- */
+
+.admin-shell .check { font-size: .9rem; }
+.admin-shell .admin-pill {
+    display: inline-flex;
+    align-items: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 700;
+    background: var(--adm-muted-soft);
+    color: var(--adm-muted-ink);
+    justify-content: center;
+}
+
+/* ----- Reports: market analysis and benchmark ----- */
+
+.admin-shell .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+    gap: var(--s4);
+}
+
+.admin-shell .report-kicker {
+    margin: 0 0 var(--s3);
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--adm-ink-3);
+}
+
+.admin-shell .report-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2) var(--s3);
+    font-size: .875rem;
+    color: var(--adm-ink-2);
+}
+
+.admin-shell .report-model {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--adm-muted-soft);
+    color: var(--adm-muted-ink);
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+/* The contents sit beside the report on a wide screen and stay in view while it scrolls. */
+.admin-shell .report-layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: var(--s8);
+    align-items: start;
+}
+
+.admin-shell .report-toc {
+    position: sticky;
+    top: calc(var(--adm-topbar-h) + var(--s6));
+}
+
+.admin-shell .report-toc .toc {
+    columns: auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-left: 2px solid var(--adm-line);
+}
+
+.admin-shell .report-toc .toc a {
+    display: block;
+    margin-left: -2px;
+    padding: 7px var(--s4);
+    border-left: 2px solid transparent;
+    color: var(--adm-ink-2);
+    font-size: .875rem;
+    font-weight: 500;
+    line-height: 1.35;
+    text-decoration: none;
+}
+
+.admin-shell .report-toc .toc a:hover { color: var(--adm-ink); border-left-color: var(--adm-line-strong); }
+
+.admin-shell .report-main { min-width: 0; }
+.admin-shell .report-main > section { scroll-margin-top: calc(var(--adm-topbar-h) + var(--s6)); }
+.admin-shell .report-main h2[id] { scroll-margin-top: calc(var(--adm-topbar-h) + var(--s6)); }
+
+/* A run form on one line: two dates, the quick choices and the button. */
+.admin-shell .analysis-run {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) auto auto;
+    gap: var(--s4);
+    align-items: end;
+}
+
+.admin-shell .analysis-run .field { margin: 0; }
+
+.admin-shell .segmented {
+    display: inline-flex;
+    padding: 3px;
+    gap: 2px;
+    border-radius: 10px;
+    background: var(--adm-surface-3);
+    min-height: 40px;
+}
+
+.admin-shell .segmented-item {
+    border: 0;
+    border-radius: 8px;
+    padding: 0 var(--s3);
+    background: transparent;
+    color: var(--adm-ink-2);
+    font: inherit;
+    font-size: .85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.admin-shell .segmented-item:hover:not(:disabled) { background: var(--adm-surface); color: var(--adm-ink); box-shadow: var(--adm-shadow-sm); }
+.admin-shell .segmented-item:disabled { cursor: not-allowed; opacity: .55; }
+
+.admin-shell .run-state { display: flex; align-items: center; gap: var(--s2); margin: 0; text-transform: capitalize; }
+
+.admin-shell .spinner {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--adm-teal-soft);
+    border-top-color: var(--adm-teal);
+    animation: adm-spin .8s linear infinite;
+}
+
+@keyframes adm-spin { to { transform: rotate(360deg); } }
+
+/* The card that leads the report gets an amber edge: it is the one to read first. */
+.admin-shell .card-feature { border-top: 3px solid var(--adm-amber); }
+.admin-shell .lead-text { font-size: 1.02rem; line-height: 1.6; }
+
+.admin-shell .chart-ai-label {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    padding: 2px 9px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--adm-amber-soft);
+    color: var(--adm-amber-ink);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+
+.admin-shell .chart-ai-label.is-calculated { background: var(--adm-muted-soft); color: var(--adm-muted-ink); }
+.admin-shell .chart-observation .chart-ai-label { background: var(--adm-surface); }
+
+/* The AI summary of an analysis: a tinted panel, so a written text is never mistaken for a figure. */
+.admin-shell .insight {
+    padding: var(--s5);
+    border-radius: var(--adm-radius);
+    background: var(--adm-surface-2);
+    border: 1px solid var(--adm-line);
+}
+
+.admin-shell .insight-head { display: flex; align-items: center; gap: var(--s3); }
+.admin-shell .insight-head .subtitle-small { margin: 0; font-size: 1rem; font-weight: 650; }
+.admin-shell .insight-icon { width: 32px; height: 32px; border-radius: 9px; }
+.admin-shell .insight-icon .icon { width: 17px; height: 17px; }
+
+.admin-shell .insight-subhead {
+    margin: var(--s4) 0 var(--s2);
     font-size: .75rem;
     font-weight: 700;
     letter-spacing: .08em;
     text-transform: uppercase;
-    color: var(--ink-soft);
-    margin-top: var(--s1);
+    color: var(--adm-ink-3);
+}
+
+.admin-shell .suggestions { display: grid; gap: var(--s3); margin: 0; padding: 0; list-style: none; }
+.admin-shell .suggestions li { display: flex; gap: var(--s3); align-items: flex-start; }
+.admin-shell .suggestions li > .icon { margin-top: 4px; color: var(--adm-teal); }
+.admin-shell .evidence { font-size: .8rem; color: var(--adm-ink-3); font-variant-numeric: tabular-nums; }
+
+.admin-shell .subtitle-small { font-size: 1rem; font-weight: 650; margin: 0; }
+
+/* Charts */
+.admin-shell .chart-grid { gap: var(--s5); }
+.admin-shell .chart-grid-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+
+.admin-shell .chart-grid > .chart,
+.admin-shell .chart-grid > .chart-block {
+    padding: var(--s5);
+    border: 1px solid var(--adm-line);
+    border-radius: var(--adm-radius);
+    background: var(--adm-surface);
+}
+
+.admin-shell .chart-grid > .chart-block > .chart { padding: 0; border: 0; }
+.admin-shell .chart-title { font-size: .95rem; font-weight: 650; color: var(--adm-ink); }
+.admin-shell .chart-svg { max-width: 720px; overflow: visible; }
+.admin-shell .chart-legend { color: var(--adm-ink-2); font-size: .8rem; }
+.admin-shell .chart-swatch { border-radius: 3px; }
+.admin-shell .chart-label,
+.admin-shell .chart-value { fill: var(--adm-ink-2); }
+.admin-shell .chart-axis-title,
+.admin-shell .chart-tick,
+.admin-shell .chart-missing,
+.admin-shell .chart-reference-label { fill: var(--adm-ink-3); }
+.admin-shell .chart-axis,
+.admin-shell .chart-gridline { stroke: var(--adm-line); }
+
+.admin-shell .chart-series-0 { fill: var(--adm-series-0); background: var(--adm-series-0); }
+.admin-shell .chart-series-1 { fill: var(--adm-series-1); background: var(--adm-series-1); }
+.admin-shell .chart-series-2 { fill: var(--adm-series-2); background: var(--adm-series-2); }
+.admin-shell .chart-series-3 { fill: var(--adm-series-3); background: var(--adm-series-3); }
+.admin-shell .chart-line { stroke: var(--adm-series-0); stroke-width: 2.25; }
+.admin-shell .chart-band { fill: var(--adm-series-0); fill-opacity: .14; }
+.admin-shell .chart-dot { fill: var(--adm-series-0); stroke: var(--adm-surface); stroke-width: 2; }
+.admin-shell .chart-slice,
+.admin-shell .chart-cell { stroke: var(--adm-surface); }
+
+.admin-shell .chart-caption { font-size: .875rem; color: var(--adm-ink-2); }
+.admin-shell .chart-caption strong { color: var(--adm-ink); }
+
+.admin-shell .chart-observation {
+    padding: var(--s3) var(--s4);
+    border-left: 3px solid var(--adm-amber);
+    border-radius: 0 var(--adm-radius-sm) var(--adm-radius-sm) 0;
+    background: var(--adm-amber-soft);
+    color: var(--adm-ink);
+}
+
+.admin-shell .chart-observation p { margin: 0 0 var(--s1); }
+
+/* The small print of a chart (why, limits, formula) is one click away instead of a wall under every chart. */
+.admin-shell .about {
+    border-top: 1px solid var(--adm-line);
+    padding-top: var(--s3);
+    font-size: .85rem;
+    color: var(--adm-ink-2);
+}
+
+.admin-shell .about > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--adm-teal);
+    list-style: none;
+}
+
+.admin-shell .about > summary::-webkit-details-marker { display: none; }
+.admin-shell .about > summary::before { content: "+ "; }
+.admin-shell .about[open] > summary::before { content: "\2212  "; }
+.admin-shell .about[open] > summary { margin-bottom: var(--s3); }
+.admin-shell .about > * + * { margin-top: var(--s2); }
+
+/* A single figure of a report as a tile, in the same type as the key figures. */
+.admin-shell .figure-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: var(--s4);
+}
+
+.admin-shell .figure-tile {
+    padding: var(--s4) var(--s5);
+    border: 1px solid var(--adm-line);
+    border-radius: var(--adm-radius);
+    background: var(--adm-surface-2);
+}
+
+.admin-shell .figure-tile .chart-title { margin-bottom: var(--s1); font-size: .85rem; color: var(--adm-ink-2); font-weight: 600; }
+
+.admin-shell .figure-tile-value {
+    font-family: var(--font-sans);
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--adm-ink);
+}
+
+.admin-shell .figure-tile .muted { margin: 2px 0 0; font-size: .8rem; }
+
+/* Benchmark */
+.admin-shell .inline-select { display: inline-flex; align-items: center; gap: var(--s2); margin: 0; font-size: .85rem; font-weight: 600; color: var(--adm-ink-2); }
+.admin-shell .inline-select .field-input { width: auto; min-height: 36px; padding-top: 6px; padding-bottom: 6px; }
+
+.admin-shell .default-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+    gap: var(--s3) var(--s4);
+    align-items: center;
+    padding: var(--s3) 0;
+    border-bottom: 1px solid var(--adm-line);
+}
+
+.admin-shell .default-row:last-of-type { border-bottom: 0; }
+.admin-shell .card-body > .default-row { margin-top: 0; }
+.admin-shell .card-body > .default-row:first-of-type { padding-top: 0; }
+.admin-shell .default-current { display: grid; gap: 2px; font-size: .9rem; }
+.admin-shell .default-row .btn { min-width: 72px; }
+
+.admin-shell .run-id {
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+    font-size: .75rem;
+    color: var(--adm-ink-3);
+}
+
+.admin-shell .facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+    gap: var(--s4) var(--s6);
+    margin: 0;
+}
+
+.admin-shell .facts dt { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--adm-ink-3); }
+.admin-shell .facts dd { margin: 3px 0 0; font-weight: 600; font-size: .9rem; }
+
+.admin-shell .requests > summary {
+    padding: var(--s4) var(--s6);
+    cursor: pointer;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--adm-teal);
+}
+
+.admin-shell .requests[open] > summary { border-bottom: 1px solid var(--adm-line); }
+.admin-shell .requests > .table-wrap { border: 0; border-radius: 0 0 var(--adm-radius-lg) var(--adm-radius-lg); }
+
+.admin-shell .table tbody tr.is-selected { background: var(--adm-teal-soft); }
+
+.admin-shell .outcome {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.admin-shell .outcome-pass { background: var(--adm-ok-soft); color: var(--adm-ok-ink); }
+.admin-shell .outcome-fail { background: var(--adm-danger-soft); color: var(--adm-danger-ink); }
+.admin-shell .outcome-warn { background: var(--adm-warn-soft); color: var(--adm-warn-ink); }
+
+.admin-shell .chart-empty {
+    display: grid;
+    place-items: center;
+    min-height: 160px;
+    padding: var(--s5);
+    border: 1px dashed var(--adm-line-strong);
+    border-radius: var(--adm-radius);
+    text-align: center;
+}
+
+.admin-shell .answer-text {
+    max-height: 420px;
+    overflow: auto;
+    margin: 0;
+    padding: var(--s4);
+    border-radius: var(--adm-radius-sm);
+    background: var(--adm-surface-2);
+    border: 1px solid var(--adm-line);
+    font-size: .8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.admin-shell .compare-cards { gap: var(--s4); }
+.admin-shell .answer-card { background: var(--adm-surface-2); box-shadow: none; }
+.admin-shell .answer-card .table { background: transparent; }
+
+/* ----- Placeholder screens: what is missing, said plainly ----- */
+
+.admin-shell .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+    gap: var(--s6);
+    align-items: start;
+}
+
+.admin-shell .placeholder-hero {
+    display: flex;
+    gap: var(--s5);
+    align-items: flex-start;
+    padding: var(--s6);
+    border-left: 4px solid var(--adm-amber);
+}
+
+.admin-shell .placeholder-hero .muted { max-width: 72ch; margin: 0; }
+.admin-shell .placeholder-icon { width: 48px; height: 48px; border-radius: 14px; }
+.admin-shell .placeholder-icon .icon { width: 24px; height: 24px; }
+
+.admin-shell .steps { display: grid; gap: var(--s4); margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.admin-shell .steps li { position: relative; padding-left: 44px; min-height: 28px; counter-increment: step; }
+.admin-shell .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: -2px;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--adm-teal-soft);
+    color: var(--adm-teal-ink);
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+/* ----- Sign-in: navy brand panel and the form, in the admin theme ----- */
+
+.admin-shell.admin-auth { grid-template-columns: minmax(340px, 5fr) minmax(0, 7fr); }
+
+.admin-auth-brand {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s12);
+    min-height: 100vh;
+    padding: var(--s8) var(--s12);
+    overflow: hidden;
+    background:
+        radial-gradient(120% 70% at 0% 100%, rgba(56, 192, 207, .16) 0%, transparent 60%),
+        radial-gradient(90% 60% at 100% 0%, rgba(229, 166, 46, .10) 0%, transparent 55%),
+        var(--adm-navy);
+    color: var(--adm-navy-fg);
+}
+
+.admin-auth-logo { display: inline-flex; align-items: center; gap: var(--s3); color: var(--adm-navy-fg); text-decoration: none; }
+.admin-auth-logo:hover { color: #fff; text-decoration: none; }
+.admin-auth-copy { margin-top: auto; display: grid; gap: var(--s6); max-width: 420px; }
+
+.admin-auth-title {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 2.1rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #fff;
+}
+
+.admin-auth-points { display: grid; gap: var(--s4); margin: 0; padding: 0; list-style: none; color: var(--adm-navy-fg-2); font-size: .95rem; }
+.admin-auth-points li { display: flex; align-items: center; gap: var(--s3); }
+.admin-auth-points .tint { width: 36px; height: 36px; border-radius: 10px; background: rgba(255, 255, 255, .07); color: var(--adm-teal-bright); }
+.admin-auth-points .tint-ok { color: #6cc295; }
+.admin-auth-points .tint-amber { color: var(--adm-amber); }
+.admin-auth-foot { margin: 0; font-size: .8rem; color: var(--adm-navy-fg-3); }
+
+.admin-auth-main {
+    display: grid;
+    place-items: center;
+    padding: var(--s8);
+}
+
+.admin-auth-card { width: 100%; max-width: 400px; }
+.admin-auth-card .page-header { display: block; }
+.admin-auth-card .title { font-size: 1.9rem; }
+.admin-auth-icon { width: 48px; height: 48px; border-radius: 14px; }
+.admin-auth-icon .icon { width: 24px; height: 24px; }
+.admin-shell .btn-block { width: 100%; min-height: 46px; font-size: .95rem; }
+.admin-auth-help { display: grid; gap: var(--s3); padding-top: var(--s5); border-top: 1px solid var(--adm-line); font-size: .875rem; }
+.admin-auth-help a { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.admin-shell .icon.flip { transform: scaleX(-1); }
+
+/* Not permitted: centred, with the reason and the way back. */
+.admin-shell .denied {
+    display: grid;
+    justify-items: center;
+    gap: var(--s3);
+    max-width: 520px;
+    margin: var(--s12) auto;
+    padding: var(--s12) var(--s8);
+    text-align: center;
+    background: var(--adm-surface);
+    border: 1px solid var(--adm-line);
+    border-radius: var(--adm-radius-lg);
+    box-shadow: var(--adm-shadow-sm);
+}
+
+.admin-shell .denied .row { justify-content: center; margin-top: var(--s3); }
+.admin-shell .denied-icon { width: 56px; height: 56px; border-radius: 16px; margin-bottom: var(--s2); }
+.admin-shell .denied-icon .icon { width: 28px; height: 28px; }
+
+@media (max-width: 1100px) {
+    .admin-shell .report-layout { grid-template-columns: minmax(0, 1fr); }
+    .admin-shell .report-toc { position: static; }
+    .admin-shell .report-toc .toc { display: flex; flex-wrap: wrap; border-left: 0; gap: var(--s2); }
+    .admin-shell .report-toc .toc a { margin: 0; padding: 5px 12px; border: 1px solid var(--adm-line); border-radius: 999px; }
+    .admin-shell .analysis-run { grid-template-columns: 1fr 1fr; }
+    .admin-shell .default-row { grid-template-columns: 1fr auto; }
+    .admin-shell .default-current { grid-column: 1 / -1; }
+}
+
+@media (max-width: 860px) {
+    .admin-shell.admin-auth { grid-template-columns: minmax(0, 1fr); }
+    .admin-auth-brand { min-height: 0; gap: var(--s6); padding: var(--s6); }
+    .admin-auth-copy, .admin-auth-foot { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-shell .spinner { animation: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .drawer { animation: none; }
+    .kpi { transition: none; }
+    .room-tile { transition: none; }
+    .room-tile:hover { transform: none; }
 }
 
 
@@ -2065,6 +3513,16 @@ h1:focus-visible {
    14. RESPONSIVE
    -------------------------------------------------------------------------- */
 
+@media (max-width: 1100px) {
+    .admin-shell .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .admin-shell .grid-main { grid-template-columns: minmax(0, 1fr); }
+    .admin-user-name,
+    .admin-signout span,
+    .admin-crumbs .group,
+    .admin-crumbs .sep { display: none; }
+    .admin-topbar { padding: 0 var(--s6); }
+}
+
 @media (max-width: 900px) {
     /* The side menu collapses to a horizontal band at the top. Deliberately without JavaScript
        and without hidden state: a drawer in Blazor Server would stay
@@ -2075,38 +3533,66 @@ h1:focus-visible {
 
     .admin-nav {
         position: static;
+        height: auto;
         max-height: none;
         flex-direction: row;
         align-items: center;
-        gap: var(--s2);
+        gap: var(--s3);
         overflow-x: auto;
         padding: var(--s3) var(--s4);
+        border-right: 0;
     }
 
     .admin-nav-brand {
-        margin-bottom: 0;
-        padding-left: 0;
+        margin: 0;
+        padding: 0 var(--s2) 0 0;
+        border: 0;
         white-space: nowrap;
     }
 
-    .admin-nav-brand span {
-        display: none;
-    }
+    .admin-nav-mark { width: 34px; height: 34px; }
+    .admin-nav-name span,
+    .admin-nav-group-label,
+    .admin-nav-foot { display: none; }
+
+    .admin-nav-groups,
+    .admin-nav-group { flex-direction: row; gap: var(--s1); }
 
     .admin-nav-link {
         white-space: nowrap;
-        border-left: 0;
+        padding: 8px var(--s3);
         border-bottom: 3px solid transparent;
+        border-radius: var(--adm-radius-sm) var(--adm-radius-sm) 0 0;
     }
 
-    .admin-nav-link.active {
-        border-left-color: transparent;
-        border-bottom-color: var(--brass);
-    }
+    .admin-nav-link.active { border-bottom-color: var(--adm-teal-bright); }
+    .admin-nav-link.active::before { display: none; }
 
-    .admin-main .table thead th {
-        position: static;
-    }
+    .admin-topbar { padding: 0 var(--s4); gap: var(--s2); }
+    .admin-main .table thead th { position: static; }
+    .admin-main > .page,
+    .admin-main > .page-narrow { padding: var(--s4) var(--s4) var(--s12); }
+    .admin-shell .stack-lg > * + * { margin-top: var(--s6); }
+    .admin-shell .grid-2,
+    .admin-shell .grid-3 { grid-template-columns: minmax(0, 1fr); }
+    .board { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .board-floor { grid-column: 1 / -1; padding-top: var(--s2); }
+    .card-head { flex-wrap: wrap; }
+    .step-block { grid-template-columns: 32px minmax(0, 1fr); }
+    .step-content { grid-column: 1 / -1; }
+}
+
+@media (max-width: 620px) {
+    .admin-shell .grid-4 { grid-template-columns: minmax(0, 1fr); }
+    .kpi-value { font-size: 1.6rem; }
+    .drawer-body,
+    .drawer-head,
+    .drawer-foot { padding-left: var(--s4); padding-right: var(--s4); }
+    .card-head,
+    .card-body,
+    .card-foot,
+    .admin-toolbar,
+    .admin-list-item { padding-left: var(--s4); padding-right: var(--s4); }
 }
 
 @media (max-width: 780px) {
@@ -2152,33 +3638,6 @@ h1:focus-visible {
     }
 }
 
-/* The signed-in user at the foot of the side menu (ADR-0005). */
-.admin-nav-user {
-    margin-top: auto;
-    padding: var(--s4) var(--s2) 0;
-    display: grid;
-    gap: var(--s2);
-}
-
-.admin-nav-user p {
-    margin: 0;
-    font-weight: 600;
-    color: #fff;
-}
-
-.admin-nav-user p span {
-    display: block;
-    font-weight: 400;
-    font-size: 0.85em;
-    opacity: 0.8;
-}
-
-.admin-nav-user .btn {
-    color: #dde5df;
-    border-color: #dde5df;
-    justify-self: start;
-}
-
 /* Benchmark runs (ADR-0013): the answer of a model is shown as it came, wrapped, never cut. */
 .answer-text {
   max-height: 24rem;
@@ -2194,6 +3653,7 @@ h1:focus-visible {
   gap: var(--s2);
 }
 
+.sr-only,
 .visually-hidden,
 .visually-hidden-legend {
   position: absolute;

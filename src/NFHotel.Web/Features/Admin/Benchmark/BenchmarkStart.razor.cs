@@ -4,12 +4,20 @@ using Microsoft.AspNetCore.Components;
 
 using NFHotel.Application.Dto.Benchmark;
 using NFHotel.Web.Common;
+using NFHotel.Web.Components.Shared;
 
 namespace NFHotel.Web.Features.Admin.Benchmark;
 
 /// <summary>The code behind the start of a benchmark run: the polling of the run and the texts of its state.</summary>
 public partial class BenchmarkStart : CancellableComponentBase
 {
+    /// <summary>The benchmark pages as tabs: one menu item, same routes.</summary>
+    private static readonly AdminTab[] BenchmarkTabs =
+    [
+        new("/admin/benchmark", "Runs"),
+        new("/admin/benchmark/start", "Start a run"),
+    ];
+
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
 
     /// <summary>

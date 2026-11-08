@@ -1,0 +1,33 @@
+@*
+    A key figure: a tinted icon on the left, the figure and a note on the right (app.css section 12). With a
+    Href the whole tile is a link to the screen where the work is done, so the dashboard is an entrance and
+    not a dead end. Percent draws a bar under the figure without an inline style (style-src 'self').
+*@
+
+@{
+    RenderFragment inner = @<span class="kpi-content">
+        <span class="@TintClass" aria-hidden="true"><AdminIcon Name="@Icon" /></span>
+        <span class="kpi-body">
+            <span class="kpi-label">@Label</span>
+            <span class="kpi-value">@Value@if (!string.IsNullOrWhiteSpace(Detail))
+                {<small>@Detail</small>}</span>
+            @if (Percent is { } percent)
+            {
+                <progress class="kpi-bar" max="100" value="@percent" aria-label="@($"{Label}: {percent} percent")"></progress>
+            }
+            @if (!string.IsNullOrWhiteSpace(Note))
+            {
+                <span class="kpi-note">@Note</span>
+            }
+        </span>
+    </span>;
+}
+
+@if (!string.IsNullOrWhiteSpace(Href))
+{
+    <a class="@TileClass" href="@Href">@inner</a>
+}
+else
+{
+    <div class="@TileClass">@inner</div>
+}

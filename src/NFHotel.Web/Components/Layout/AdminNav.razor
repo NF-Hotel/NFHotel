@@ -1,59 +1,75 @@
 @using NFHotel.Application.UseCases.Staff
 @using NFHotel.Web.Security
+@inject NavigationManager Navigation
 
 @*
-    The side menu of admin. One item per route in UI-Spec section 1, shown only when the role of the signed-in user
-    holds the permission of the page (ADR-0005). The menu is a convenience: the pages and the API check the
-    permission again.
+    The side menu of admin, grouped by the kind of work (UI-Spec section 1): the front desk's screens, housekeeping,
+    revenue and pricing, the AI tools, and the administration of the staff accounts. A group is shown only when the
+    role of the signed-in user holds the permission of its pages (ADR-0005). The menu is a convenience: the pages
+    and the API check the permission again.
 
-    NavLinkMatch.All on /admin, so the dashboard is not marked on every sub-route.
+    Sibling pages of one area (the three pricing pages, the benchmark pages, staff and audit) share one item here
+    and are tabs on the page (AdminTabs), so the menu stays short. The signed-in user is in the top bar
+    (AdminTopbar), not here.
+
+    The current item is marked from the address, by prefix, so /admin/pricing/settings lights up "Pricing".
+    Only /admin itself matches exactly, so the dashboard is not marked on every sub-route.
 *@
 
 <nav class="admin-nav" aria-label="Administration">
     <a class="admin-nav-brand" href="/">
-        NFHotel
-        <span>Administration</span>
+        <span class="admin-nav-mark" aria-hidden="true">N</span>
+        <span class="admin-nav-name">NFHotel<span>Administration</span></span>
     </a>
 
-    <AuthorizeView Policy="@StaffPolicies.BookingsView">
-        <NavLink class="admin-nav-link" href="/admin" Match="NavLinkMatch.All">Dashboard</NavLink>
-        <NavLink class="admin-nav-link" href="/admin/bookings">Bookings</NavLink>
-    </AuthorizeView>
-    <AuthorizeView Policy="@StaffPolicies.RoomsView">
-        <NavLink class="admin-nav-link" href="/admin/rooms">Rooms</NavLink>
-    </AuthorizeView>
-    <AuthorizeView Policy="@StaffPolicies.GuestsView">
-        <NavLink class="admin-nav-link" href="/admin/guests">Guests</NavLink>
-    </AuthorizeView>
-    <AuthorizeView Policy="@StaffPolicies.SalesView">
-        <NavLink class="admin-nav-link" href="/admin/revenue">Revenue</NavLink>
-    </AuthorizeView>
-    <AuthorizeView Policy="@StaffPolicies.BenchmarkView">
-        <NavLink class="admin-nav-link" href="/admin/benchmark">Benchmark</NavLink>
-    </AuthorizeView>
-    <AuthorizeView Policy="@StaffPolicies.MarketAnalysisView">
-        <NavLink class="admin-nav-link" href="/admin/market-analysis">Market analysis</NavLink>
-    </AuthorizeView>
+    <div class="admin-nav-groups">
+        <AuthorizeView Policy="@StaffPolicies.BookingsView">
+            <div class="admin-nav-group">
+                <div class="admin-nav-group-label">@AdminRoutes.FrontDesk</div>
+                <a class="@LinkClass("/admin", exact: true)" href="/admin" aria-current="@Current("/admin", exact: true)"><AdminIcon Name="home" />Dashboard</a>
+                <a class="@LinkClass("/admin/bookings")" href="/admin/bookings" aria-current="@Current("/admin/bookings")"><AdminIcon Name="calendar" />Bookings</a>
+                <AuthorizeView Policy="@StaffPolicies.GuestsView" Context="guests">
+                    <a class="@LinkClass("/admin/guests")" href="/admin/guests" aria-current="@Current("/admin/guests")"><AdminIcon Name="users" />Guests</a>
+                </AuthorizeView>
+            </div>
+        </AuthorizeView>
 
-    <AuthorizeView Policy="@StaffPolicies.ManagePrices">
-        <NavLink class="admin-nav-link" href="/admin/pricing/suggestions">Price suggestions</NavLink>
-        <NavLink class="admin-nav-link" href="/admin/pricing/rates">Room rates</NavLink>
-        <NavLink class="admin-nav-link" href="/admin/pricing/settings">Pricing settings</NavLink>
-    </AuthorizeView>
+        <AuthorizeView Policy="@StaffPolicies.RoomsView">
+            <div class="admin-nav-group">
+                <div class="admin-nav-group-label">@AdminRoutes.Housekeeping</div>
+                <a class="@LinkClass("/admin/rooms")" href="/admin/rooms" aria-current="@Current("/admin/rooms")"><AdminIcon Name="bed" />Rooms</a>
+            </div>
+        </AuthorizeView>
 
-    <AuthorizeView Policy="@StaffPolicies.StaffManage">
-        <NavLink class="admin-nav-link" href="/admin/staff" Match="NavLinkMatch.All">Staff</NavLink>
-        <NavLink class="admin-nav-link" href="/admin/staff/audit">Audit</NavLink>
-    </AuthorizeView>
+        <AuthorizeView Policy="@StaffPolicies.SalesView">
+            <div class="admin-nav-group">
+                <div class="admin-nav-group-label">@AdminRoutes.Revenue</div>
+                <a class="@LinkClass("/admin/revenue")" href="/admin/revenue" aria-current="@Current("/admin/revenue")"><AdminIcon Name="chart" />Revenue</a>
+                <AuthorizeView Policy="@StaffPolicies.ManagePrices" Context="prices">
+                    <a class="@LinkClass("/admin/pricing")" href="/admin/pricing/rates" aria-current="@Current("/admin/pricing")"><AdminIcon Name="tag" />Pricing</a>
+                </AuthorizeView>
+            </div>
+        </AuthorizeView>
 
-    <AuthorizeView>
-        <div class="admin-nav-user">
-            <p>@context.User.Identity?.Name <span>@StaffClaims.RoleOf(context.User)</span></p>
-            <a class="admin-nav-link" href="/admin/account/password">Change password</a>
-            <form method="post" action="@StaffSecurityRegistration.LogoutPath">
-                <AntiforgeryToken />
-                <button type="submit" class="btn btn-ghost btn-sm">Sign out</button>
-            </form>
-        </div>
-    </AuthorizeView>
+        <AuthorizeView Policy="@StaffPolicies.MarketAnalysisView">
+            <div class="admin-nav-group">
+                <div class="admin-nav-group-label">@AdminRoutes.Ai</div>
+                <a class="@LinkClass("/admin/market-analysis")" href="/admin/market-analysis" aria-current="@Current("/admin/market-analysis")"><AdminIcon Name="trend" />Market analysis</a>
+                <AuthorizeView Policy="@StaffPolicies.BenchmarkView" Context="benchmark">
+                    <a class="@LinkClass("/admin/benchmark")" href="/admin/benchmark" aria-current="@Current("/admin/benchmark")"><AdminIcon Name="cpu" />Benchmark</a>
+                </AuthorizeView>
+            </div>
+        </AuthorizeView>
+
+        <AuthorizeView Policy="@StaffPolicies.StaffManage">
+            <div class="admin-nav-group">
+                <div class="admin-nav-group-label">@AdminRoutes.Administration</div>
+                <a class="@LinkClass("/admin/staff")" href="/admin/staff" aria-current="@Current("/admin/staff")"><AdminIcon Name="shield" />Staff &amp; audit</a>
+            </div>
+        </AuthorizeView>
+    </div>
+
+    <div class="admin-nav-foot">
+        <span>NFHotel &middot; Street 172, Phnom Penh</span>
+    </div>
 </nav>

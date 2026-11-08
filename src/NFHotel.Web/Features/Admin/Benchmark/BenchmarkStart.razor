@@ -23,6 +23,8 @@
     <PageHeader Title="Start a benchmark run"
                 Subtitle="Choose the installed models to compare. A run takes minutes and runs one model at a time." />
 
+    <AdminTabs Label="Benchmark" Tabs="BenchmarkTabs" />
+
     <ErrorAlert Errors="ViewModel.Errors" />
 
     @if (ViewModel.StoppedRun is { } stopped)
@@ -165,4 +167,3 @@
         </section>
     }
 </div>
-

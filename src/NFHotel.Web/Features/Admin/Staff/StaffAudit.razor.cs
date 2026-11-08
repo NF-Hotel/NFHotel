@@ -1,4 +1,5 @@
 using NFHotel.Web.Common;
+using NFHotel.Web.Components.Shared;
 
 namespace NFHotel.Web.Features.Admin.Staff;
 
@@ -8,6 +9,13 @@ namespace NFHotel.Web.Features.Admin.Staff;
 /// </summary>
 public partial class StaffAudit : CancellableComponentBase
 {
+    /// <summary>The staff pages as tabs: one menu item, same routes.</summary>
+    private static readonly AdminTab[] StaffTabs =
+    [
+        new("/admin/staff", "Accounts"),
+        new("/admin/staff/audit", "Audit trail"),
+    ];
+
     private int Pages => Math.Max(1, (ViewModel.Total + StaffAuditViewModel.PageSize - 1) / StaffAuditViewModel.PageSize);
 
     /// <summary>Loads the first page of the trail when the page opens.</summary>

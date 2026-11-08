@@ -1,0 +1,34 @@
+@*
+    The header of a card: a tinted icon that says what kind of section this is, the title, an optional hint,
+    and room for actions on the right (app.css section 12). The tint is the same wherever the kind appears,
+    so arrivals are always teal and housekeeping always green.
+*@
+
+<div class="card-head">
+    <div class="card-head-main">
+        @if (!string.IsNullOrWhiteSpace(Icon))
+        {
+            <span class="tint card-icon @TintClass" aria-hidden="true"><AdminIcon Name="@Icon" /></span>
+        }
+        <div>
+            <h2 class="subtitle" id="@Id">
+                @Title
+                @if (Count is { } count)
+                {
+                    <span class="admin-pill">@count</span>
+                }
+            </h2>
+            @if (!string.IsNullOrWhiteSpace(Hint))
+            {
+                <p class="hint">@Hint</p>
+            }
+        </div>
+    </div>
+
+    @if (Actions is not null)
+    {
+        <div class="row">
+            @Actions
+        </div>
+    }
+</div>

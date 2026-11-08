@@ -23,13 +23,14 @@
 
 <div class="stack-lg">
     <PageHeader Title="Rooms"
-                Subtitle="Status, housekeeping and details for every room in the hotel.">
+                Subtitle="The board shows cleaning at a glance, floor by floor; the list has the details.">
         <Actions>
             <AuthorizeView Policy="@StaffPolicies.RoomsManage">
                 <button type="button"
                         class="btn btn-primary"
                         disabled="@Form.IsBusy"
                         @onclick="BeginCreate">
+                    <AdminIcon Name="plus" />
                     New room
                 </button>
             </AuthorizeView>
@@ -118,10 +119,55 @@
         </section>
     }
 
-    <section class="panel stack" aria-labelledby="room-filter">
-        <h2 class="subtitle" id="room-filter">Filter</h2>
+    @if (ViewModel.IsLoaded && ViewModel.Rooms.Count > 0)
+    {
+        @*
+            The housekeeping board: one row per floor, top floor first, like the building. A tile is the room's
+            number, size and cleaning state; clicking it opens the actions panel of that room, the same as the
+            Actions button in the list. The colour of the edge repeats the housekeeping badge, so colour is never
+            the only carrier (UI-Spec section 3).
+        *@
+        <section class="card" aria-labelledby="room-board">
+            <CardHead Id="room-board"
+                      Title="Housekeeping board"
+                      Hint="Click a room to start cleaning, mark it clean or report a fault."
+                      Icon="building"
+                      Tint="ok">
+                <Actions>
+                    <div class="board-legend" aria-hidden="true">
+                        <span><i class="dot-ok"></i>Clean</span>
+                        <span><i class="dot-warn"></i>Cleaning due</span>
+                        <span><i class="dot-info"></i>In progress</span>
+                        <span><i class="dot-danger"></i>Service or blocked</span>
+                    </div>
+                </Actions>
+            </CardHead>
+            <div class="card-body">
+                <div class="board">
+                    @foreach (var floor in ViewModel.Rooms.GroupBy(room => room.Floor).OrderByDescending(group => group.Key))
+                    {
+                        <div class="board-floor">Floor @floor.Key</div>
+                        @foreach (var room in floor.OrderBy(room => room.RoomNumber, StringComparer.Ordinal))
+                        {
+                            <button type="button"
+                                    class="@TileClass(room)"
+                                    aria-pressed="@(ViewModel.IsSelected(room) ? "true" : "false")"
+                                    disabled="@ViewModel.IsBusy"
+                                    @onclick="() => ToggleSelection(room)">
+                                <strong>@room.RoomNumber</strong>
+                                <small>@DisplayText.Describe(room.Size) · @TileState(room)</small>
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
+        </section>
+    }
 
-        <div class="field-row">
+    <section class="card" aria-labelledby="room-filter">
+        <h2 class="sr-only" id="room-filter">Filter</h2>
+
+        <div class="admin-toolbar">
             <FormField Label="Floor" For="filter-floor">
                 <select id="filter-floor"
                         class="field-select"
@@ -173,34 +219,39 @@
                     }
                 </select>
             </FormField>
-        </div>
 
-        <div class="row">
-            <button type="button"
-                    class="btn btn-primary"
-                    disabled="@ViewModel.IsBusy"
-                    @onclick="SearchAsync">
-                Search
-            </button>
+            <div class="admin-toolbar-actions">
+                <button type="button"
+                        class="btn btn-primary"
+                        disabled="@ViewModel.IsBusy"
+                        @onclick="SearchAsync">
+                    Search
+                </button>
 
-            <button type="button"
-                    class="btn btn-ghost"
-                    disabled="@(ViewModel.IsBusy || !ViewModel.HasFilter)"
-                    @onclick="ClearFilterAsync">
-                Clear filter
-            </button>
+                <button type="button"
+                        class="btn btn-ghost"
+                        disabled="@(ViewModel.IsBusy || !ViewModel.HasFilter)"
+                        @onclick="ClearFilterAsync">
+                    Clear filter
+                </button>
+            </div>
         </div>
     </section>
 
     @if (ViewModel.SelectedRoom is { } selectedRoom)
     {
-        <section class="card card-pad stack" aria-labelledby="room-actions">
-            <h2 class="subtitle" id="room-actions">Room @selectedRoom.RoomNumber</h2>
-
-            <div class="row">
-                <StatusBadge RoomStatus="selectedRoom.Status" />
-                <StatusBadge HousekeepingStatus="selectedRoom.HousekeepingStatus" />
-            </div>
+        <section class="card" aria-labelledby="room-actions">
+            <CardHead Id="room-actions"
+                      Title="@($"Room {selectedRoom.RoomNumber}")"
+                      Hint="@($"{DisplayText.Describe(selectedRoom.Size)} on floor {selectedRoom.Floor}. The buttons are the moves the room allows right now.")"
+                      Icon="bed"
+                      Tint="slate">
+                <Actions>
+                    <StatusBadge RoomStatus="selectedRoom.Status" />
+                    <StatusBadge HousekeepingStatus="selectedRoom.HousekeepingStatus" />
+                </Actions>
+            </CardHead>
+            <div class="card-body stack">
 
             @if (ViewModel.AvailableActions.Count == 0)
             {
@@ -224,6 +275,7 @@
                     }
                 </div>
             }
+            </div>
         </section>
     }
 
@@ -273,7 +325,7 @@
                         <th scope="col">Size</th>
                         @if (ViewModel.ShowsPrices)
                         {
-                            <th scope="col" class="numeric">Price per night today</th>
+                            <th scope="col" class="numeric">Rate today</th>
                         }
                         <th scope="col" class="numeric">Sleeps</th>
                         <th scope="col">Status</th>
@@ -284,10 +336,10 @@
                 <tbody>
                     @foreach (var room in ViewModel.Rooms)
                     {
-                        <tr>
-                            <td class="numeric-start">@room.RoomNumber</td>
+                        <tr class="@(ViewModel.IsSelected(room) ? "option-row is-selected" : null)">
+                            <td class="numeric-start"><strong>@room.RoomNumber</strong></td>
                             <td class="numeric">@room.Floor</td>
-                            <td>@DisplayText.Describe(room.Size)</td>
+                            <td class="nowrap">@DisplayText.Describe(room.Size)</td>
                             @if (ViewModel.ShowsPrices)
                             {
                                 <td class="numeric">@ViewModel.PriceTextOf(room.Size)</td>
@@ -305,17 +357,19 @@
 
                                 <AuthorizeView Policy="@StaffPolicies.RoomsManage">
                                     <button type="button"
-                                            class="btn btn-secondary btn-sm"
+                                            class="btn btn-secondary btn-sm btn-icon"
+                                            title="Edit room @room.RoomNumber"
                                             disabled="@Form.IsBusy"
                                             @onclick="() => BeginEditAsync(room)">
-                                        Edit
+                                        <AdminIcon Name="edit" /><span class="sr-only">Edit</span>
                                     </button>
 
                                     <button type="button"
-                                            class="btn btn-danger btn-sm"
+                                            class="btn btn-danger btn-sm btn-icon"
+                                            title="Delete room @room.RoomNumber"
                                             disabled="@ViewModel.IsBusy"
                                             @onclick="() => RequestDelete(room)">
-                                        Delete
+                                        <AdminIcon Name="trash" /><span class="sr-only">Delete</span>
                                     </button>
                                 </AuthorizeView>
                             </td>
@@ -326,4 +380,3 @@
         </div>
     }
 </div>
-

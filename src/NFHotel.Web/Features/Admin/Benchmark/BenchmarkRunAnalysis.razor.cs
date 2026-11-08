@@ -46,6 +46,24 @@ public partial class BenchmarkRunAnalysis : CancellableComponentBase
                 [new ChartBar("before", before(usage)), new ChartBar("after", after(usage)), new ChartBar("peak", peak(usage))])),
         ];
 
+    private static string CompareHint =>
+        $"No model is ranked. \"Valid\" only says that the answer had the requested structure. Tick up to {BenchmarkAnalysisViewModel.MaxCompared} answers to read them side by side.";
+
+    private static string ValidClass(BenchmarkResultDto result)
+    {
+        if (result.HasError)
+        {
+            return "outcome outcome-fail";
+        }
+
+        if (result.ResponseValid is not bool valid)
+        {
+            return string.Empty;
+        }
+
+        return valid ? "outcome outcome-pass" : "outcome outcome-warn";
+    }
+
     private static string Number(double? value) =>
         value is { } number ? number.ToString("0.##", CultureInfo.InvariantCulture) : "—";
 }

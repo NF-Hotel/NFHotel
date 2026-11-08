@@ -1,19 +1,22 @@
 @inherits LayoutComponentBase
+@using NFHotel.Web.Security
 
 @*
-    The staff's work tool: side menu on the left, content on the right, a tighter rhythm
-    than the public site.
+    The staff's work tool: grouped side menu on the left, a top bar with the signed-in user, and the content
+    (app.css section 12). Only a signed-in member of staff reaches these pages (ADR-0005).
 
-    Only a signed-in member of staff reaches these pages (ADR-0005); AdminNav shows who is signed in and the
-    menu items that the role may open.
+    data-theme is the theme the user chose in the top bar (a cookie, AdminTheme); without it the shell
+    follows the system. The layout is rendered on the server for every page, so the attribute is always current.
 *@
 
-<a class="skip-link" href="#content">Skip to content</a>
+<div class="admin-shell" data-theme="@Theme">
+    <AdminIconSprite />
+    <a class="skip-link" href="#content">Skip to content</a>
 
-<div class="admin-shell">
     <AdminNav />
 
     <div class="admin-main">
+        <AdminTopbar Theme="@Theme" />
         <div class="page" id="content">
             @Body
         </div>

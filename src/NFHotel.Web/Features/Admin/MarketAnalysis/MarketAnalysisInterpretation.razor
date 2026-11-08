@@ -7,36 +7,47 @@
     of each analysis says that it is calculated and not written by an AI. The recommendations of an AI text are listed under it.
 *@
 
-<section class="card card-pad stack" aria-labelledby="@SectionId">
-    <h2 class="subtitle" id="@SectionId">Overall interpretation</h2>
-    @if (Overall.IsAi)
-    {
-        <p><span class="chart-ai-label">@AiLabel</span> <span class="muted">@AiNote</span></p>
-    }
-    else
-    {
-        <p><span class="chart-ai-label">@FiguresLabel</span></p>
-    }
-
-    <MarkdownText Text="@Overall.Text" />
-
-    @if (!string.IsNullOrWhiteSpace(Overall.Evidence))
-    {
-        <MarkdownText Text="@($"Evidence: {Overall.Evidence}")" CssClass="markdown-text muted" />
-    }
-
-    @if (Overall.Recommendations.Count > 0)
-    {
-        <h3 class="subtitle-small">Recommendations</h3>
-        <ul class="stack-sm">
-            @foreach (MarketAnalysisSuggestionDto recommendation in Overall.Recommendations)
+<section class="card card-feature" aria-labelledby="@SectionId">
+    <CardHead Id="@SectionId" Title="Overall interpretation" Icon="sparkle" Tint="amber">
+        <Actions>
+            @if (Overall.IsAi)
             {
-                <li>
-                    <MarkdownText Text="@recommendation.Suggestion" />
-                    <MarkdownText Text="@($"Evidence: {recommendation.Evidence} ({recommendation.SampleSize} bookings)")" CssClass="markdown-text muted" />
-                </li>
+                <span class="chart-ai-label">@AiLabel</span>
             }
-        </ul>
-    }
+            else
+            {
+                <span class="chart-ai-label is-calculated">@FiguresLabel</span>
+            }
+        </Actions>
+    </CardHead>
+    <div class="card-body stack">
+        @if (Overall.IsAi)
+        {
+            <p class="field-hint">@AiNote</p>
+        }
+        <div class="lead-text">
+            <MarkdownText Text="@Overall.Text" />
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Overall.Evidence))
+        {
+            <MarkdownText Text="@($"Evidence: {Overall.Evidence}")" CssClass="markdown-text evidence" />
+        }
+        @if (Overall.Recommendations.Count > 0)
+        {
+            <h3 class="insight-subhead">Recommendations</h3>
+            <ul class="suggestions">
+                @foreach (MarketAnalysisSuggestionDto recommendation in Overall.Recommendations)
+                {
+                    <li>
+                        <AdminIcon Name="arrow" Class="icon-sm" />
+                        <div>
+                            <MarkdownText Text="@recommendation.Suggestion" />
+                            <MarkdownText Text="@($"Evidence: {recommendation.Evidence} ({recommendation.SampleSize} bookings)")" CssClass="markdown-text evidence" />
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
 </section>
 

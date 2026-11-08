@@ -1,0 +1,14 @@
+@inject NavigationManager Navigation
+
+@*
+    Sibling pages of one area (the three pricing pages, say) shown as tabs, so the side menu holds one item
+    for them and the routes stay as they are. The current page is marked from the address; each page still
+    checks its own permission.
+*@
+
+<nav class="admin-tabs" aria-label="@Label">
+    @foreach (var tab in Tabs)
+    {
+        <a class="admin-tab" href="@tab.Href" aria-current="@(IsCurrent(tab) ? "page" : null)">@tab.Label</a>
+    }
+</nav>

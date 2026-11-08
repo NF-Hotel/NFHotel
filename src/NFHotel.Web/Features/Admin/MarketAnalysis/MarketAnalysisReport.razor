@@ -25,51 +25,51 @@
     <ErrorAlert Errors="ViewModel.Errors" />
 
     <AuthorizeView Policy="@StaffPolicies.MarketAnalysisStart">
-        <section class="card card-pad stack" aria-labelledby="run-start">
-            <h2 class="subtitle" id="run-start">New analysis</h2>
-            <p class="muted">
-                Choose the period of the bookings by arrival date. Leave a date empty for no limit. A run takes minutes, and the
-                report below stays as it is until the new run has finished.
-            </p>
-            <div class="field-row">
-                <FormField Label="From arrival date" For="analysis-from">
-                    <input id="analysis-from" class="field-input" type="date" disabled="@(!ViewModel.CanStart)" @bind="ViewModel.From" />
-                </FormField>
-                <FormField Label="To arrival date" For="analysis-to">
-                    <input id="analysis-to" class="field-input" type="date" disabled="@(!ViewModel.CanStart)" @bind="ViewModel.To" />
-                </FormField>
-            </div>
-            <div class="field-row" role="group" aria-label="Quick choice of the period">
-                <button type="button" class="btn btn-secondary btn-sm" disabled="@(!ViewModel.CanStart)" @onclick="() => ViewModel.UseLastYears(3)">Last 3 years</button>
-                <button type="button" class="btn btn-secondary btn-sm" disabled="@(!ViewModel.CanStart)" @onclick="() => ViewModel.UseLastYears(1)">Last year</button>
-                <button type="button" class="btn btn-secondary btn-sm" disabled="@(!ViewModel.CanStart)" @onclick="ViewModel.UseAllBookings">All bookings</button>
-            </div>
-            <div>
-                <button type="button"
-                        class="btn btn-primary"
-                        disabled="@(!ViewModel.CanStart)"
-                        @onclick="StartAsync">
-                    Start a new analysis
-                </button>
-            </div>
-
-            @if (ViewModel.CurrentRun is { } run)
-            {
-                <div role="status" aria-live="polite">
-                    @if (ViewModel.LastRunFailed)
-                    {
-                        <AlertBox Kind="AlertKind.Error" Message="@($"The analysis failed. {ViewModel.FailureText}")" />
-                    }
-                    else if (run.State == MarketAnalysisRunStates.Completed)
-                    {
-                        <AlertBox Kind="AlertKind.Ok" Message="The analysis is done and the report below is the new one." />
-                    }
-                    else
-                    {
-                        <p><strong>@run.State</strong>@SinceText(run)</p>
-                    }
+        <section class="card" aria-labelledby="run-start">
+            <CardHead Id="run-start"
+                      Title="New analysis"
+                      Hint="Choose the period of the bookings by arrival date. Leave a date empty for no limit."
+                      Icon="sparkle" />
+            <div class="card-body stack">
+                <div class="analysis-run">
+                    <FormField Label="From arrival date" For="analysis-from">
+                        <input id="analysis-from" class="field-input" type="date" disabled="@(!ViewModel.CanStart)" @bind="ViewModel.From" />
+                    </FormField>
+                    <FormField Label="To arrival date" For="analysis-to">
+                        <input id="analysis-to" class="field-input" type="date" disabled="@(!ViewModel.CanStart)" @bind="ViewModel.To" />
+                    </FormField>
+                    <div class="segmented" role="group" aria-label="Quick choice of the period">
+                        <button type="button" class="segmented-item" disabled="@(!ViewModel.CanStart)" @onclick="() => ViewModel.UseLastYears(3)">Last 3 years</button>
+                        <button type="button" class="segmented-item" disabled="@(!ViewModel.CanStart)" @onclick="() => ViewModel.UseLastYears(1)">Last year</button>
+                        <button type="button" class="segmented-item" disabled="@(!ViewModel.CanStart)" @onclick="ViewModel.UseAllBookings">All bookings</button>
+                    </div>
+                    <button type="button"
+                            class="btn btn-primary"
+                            disabled="@(!ViewModel.CanStart)"
+                            @onclick="StartAsync">
+                        <AdminIcon Name="sparkle" />Start a new analysis
+                    </button>
                 </div>
-            }
+                <p class="field-hint">A run takes minutes, and the report below stays as it is until the new run has finished.</p>
+
+                @if (ViewModel.CurrentRun is { } run)
+                {
+                    <div role="status" aria-live="polite">
+                        @if (ViewModel.LastRunFailed)
+                        {
+                            <AlertBox Kind="AlertKind.Error" Message="@($"The analysis failed. {ViewModel.FailureText}")" />
+                        }
+                        else if (run.State == MarketAnalysisRunStates.Completed)
+                        {
+                            <AlertBox Kind="AlertKind.Ok" Message="The analysis is done and the report below is the new one." />
+                        }
+                        else
+                        {
+                            <p class="run-state"><span class="spinner" aria-hidden="true"></span><strong>@run.State</strong>@SinceText(run)</p>
+                        }
+                    </div>
+                }
+            </div>
         </section>
     </AuthorizeView>
 
@@ -84,116 +84,128 @@
     }
     else if (ViewModel.Report is { } report)
     {
-        <div class="stack-lg">
-            <p class="muted">
-                Run of @Time(report.StartedAt), finished @Time(report.FinishedAt).
-                @if (!string.IsNullOrWhiteSpace(report.Model))
-                {
-                    <text>Analysis by @report.Model.</text>
-                }
-            </p>
+        <div class="report-meta">
+            <AdminIcon Name="clock" />
+            <span>Run of @Time(report.StartedAt), finished @Time(report.FinishedAt).</span>
+            @if (!string.IsNullOrWhiteSpace(report.Model))
+            {
+                <span class="report-model"><AdminIcon Name="cpu" Class="icon-sm" />Analysis by @report.Model.</span>
+            }
+        </div>
 
+        <div class="report-layout">
             <MarketAnalysisContents HasFigures="report.Content.Figures.Count > 0"
                                     HasOverall="ViewModel.Overall is not null"
                                     HasForecast="ViewModel.Forecast is not null"
                                     Sections="ViewModel.Sections" />
 
-            @if (report.Content.Figures.Count > 0)
-            {
-                <section class="card card-pad" aria-labelledby="figures-title">
-                    <h2 class="subtitle" id="figures-title">Key figures</h2>
-                    <dl class="stack-sm">
-                        @foreach (var figure in report.Content.Figures)
-                        {
-                            <div>
-                                <dt>@figure.Label</dt>
-                                <dd><strong>@figure.Value.ToString("#,0.##", CultureInfo.InvariantCulture)</strong> @figure.Unit</dd>
-                            </div>
-                        }
-                    </dl>
-                </section>
-            }
+            <div class="report-main stack-lg">
+                @if (report.Content.Figures.Count > 0)
+                {
+                    <section aria-labelledby="figures-title">
+                        <h2 class="report-kicker" id="figures-title">Key figures</h2>
+                        <div class="kpi-grid">
+                            @foreach (var (figure, index) in report.Content.Figures.Select((figure, index) => (figure, index)))
+                            {
+                                <KpiTile Label="@figure.Label"
+                                         Value="@figure.Value.ToString("#,0.##", CultureInfo.InvariantCulture)"
+                                         Detail="@figure.Unit"
+                                         Icon="@(index == 0 ? "list" : "info")"
+                                         Tint="@(index == 0 ? "teal" : "slate")" />
+                            }
+                        </div>
+                    </section>
+                }
 
-            @if (ViewModel.Overall is { } overall)
-            {
-                <MarketAnalysisInterpretation Overall="overall" />
-            }
+                @if (ViewModel.Overall is { } overall)
+                {
+                    <MarketAnalysisInterpretation Overall="overall" />
+                }
 
-            @foreach (var view in ViewModel.Sections)
-            {
-                var section = view.Section;
-                var headingId = $"analysis-{section.Id}";
-                <section class="card card-pad stack" aria-labelledby="@headingId">
-                    <h2 class="subtitle" id="@headingId">@section.Title</h2>
-
-                    @if (section.Status != "available")
-                    {
-                        <p class="muted">This analysis could not be made@(string.IsNullOrWhiteSpace(section.Reason) ? "." : $": {section.Reason}")</p>
-                    }
-                    else
-                    {
-                        @if (section.Insight is { } insight)
-                        {
-                            <div class="stack-sm" role="region" aria-label="AI executive summary of @section.Title">
-                                <h3 class="subtitle-small">AI executive summary</h3>
-                                @if (insight.Status == "available" && !string.IsNullOrWhiteSpace(insight.ExecutiveSummary))
+                @foreach (var view in ViewModel.Sections)
+                {
+                    var section = view.Section;
+                    var headingId = $"analysis-{section.Id}";
+                    <section class="card" aria-labelledby="@headingId">
+                        <CardHead Id="@headingId" Title="@section.Title" Icon="chart" Tint="slate" />
+                        <div class="card-body stack-lg">
+                            @if (section.Status != "available")
+                            {
+                                <p class="muted">This analysis could not be made@(string.IsNullOrWhiteSpace(section.Reason) ? "." : $": {section.Reason}")</p>
+                            }
+                            else
+                            {
+                                @if (section.Insight is { } insight)
                                 {
-                                    <MarkdownText Text="@insight.ExecutiveSummary" />
-                                    <p class="muted">Written by an AI model. It is a hypothesis to check, not a forecast.</p>
-                                    @if (insight.Suggestions.Count > 0)
-                                    {
-                                        <h3 class="subtitle-small">Suggestions</h3>
-                                        <ul class="stack-sm">
-                                            @foreach (var suggestion in insight.Suggestions)
+                                    <div class="insight stack-sm" role="region" aria-label="AI executive summary of @section.Title">
+                                        <div class="insight-head">
+                                            <span class="tint tint-amber insight-icon" aria-hidden="true"><AdminIcon Name="sparkle" /></span>
+                                            <h3 class="subtitle-small">AI executive summary</h3>
+                                            <span class="chart-ai-label">AI-generated</span>
+                                        </div>
+                                        @if (insight.Status == "available" && !string.IsNullOrWhiteSpace(insight.ExecutiveSummary))
+                                        {
+                                            <MarkdownText Text="@insight.ExecutiveSummary" />
+                                            <p class="field-hint">Written by an AI model. It is a hypothesis to check, not a forecast.</p>
+                                            @if (insight.Suggestions.Count > 0)
                                             {
-                                                <li>
-                                                    <MarkdownText Text="@suggestion.Suggestion" />
-                                                    <MarkdownText Text="@($"Evidence: {suggestion.Evidence} ({suggestion.SampleSize} bookings)")" CssClass="markdown-text muted" />
-                                                </li>
+                                                <h4 class="insight-subhead">Suggestions</h4>
+                                                <ul class="suggestions">
+                                                    @foreach (var suggestion in insight.Suggestions)
+                                                    {
+                                                        <li>
+                                                            <AdminIcon Name="arrow" Class="icon-sm" />
+                                                            <div>
+                                                                <MarkdownText Text="@suggestion.Suggestion" />
+                                                                <MarkdownText Text="@($"Evidence: {suggestion.Evidence} ({suggestion.SampleSize} bookings)")" CssClass="markdown-text evidence" />
+                                                            </div>
+                                                        </li>
+                                                    }
+                                                </ul>
                                             }
-                                        </ul>
-                                    }
-                                }
-                                else
-                                {
-                                    <p class="muted">No AI summary for this analysis@(string.IsNullOrWhiteSpace(insight.Reason) ? "." : $": {insight.Reason}")</p>
-                                }
-                            </div>
-                        }
-
-                        @if (section.RoomRevenue is { } roomRevenue)
-                        {
-                            <RoomRevenuePanel Revenue="roomRevenue" Section="section" />
-                        }
-
-                        @if (!view.HasCharts)
-                        {
-                            <p class="muted">This analysis has no chart data.</p>
-                        }
-                        else
-                        {
-                            <div class="chart-grid">
-                                @foreach (var chart in view.Charts)
-                                {
-                                    <MarketChart Series="chart.Series" Section="section" />
-                                }
-                                @foreach (var matrix in view.Matrices)
-                                {
-                                    <div class="chart-block chart-wide">
-                                        <CorrelationHeatmap Matrix="matrix" />
-                                        <ChartCaption Model="ChartCaptionText.ForMatrix(matrix, section)" />
+                                        }
+                                        else
+                                        {
+                                            <p class="muted">No AI summary for this analysis@(string.IsNullOrWhiteSpace(insight.Reason) ? "." : $": {insight.Reason}")</p>
+                                        }
                                     </div>
                                 }
-                            </div>
-                        }
-                    }
-                </section>
-            }
 
-            @if (ViewModel.Forecast is { } forecast)
-            {
-                <MarketAnalysisForecast Forecast="forecast" Charts="ViewModel.ForecastCharts" />
-            }
+                                @if (section.RoomRevenue is { } roomRevenue)
+                                {
+                                    <RoomRevenuePanel Revenue="roomRevenue" Section="section" />
+                                }
+
+                                @if (!view.HasCharts && section.RoomRevenue is null)
+                                {
+                                    <p class="muted">This analysis has no chart data.</p>
+                                }
+                                else if (view.HasCharts)
+                                {
+                                    <div class="chart-grid">
+                                        @foreach (var chart in view.Charts)
+                                        {
+                                            <MarketChart Series="chart.Series" Section="section" />
+                                        }
+                                        @foreach (var matrix in view.Matrices)
+                                        {
+                                            <div class="chart-block chart-wide">
+                                                <CorrelationHeatmap Matrix="matrix" />
+                                                <ChartCaption Model="ChartCaptionText.ForMatrix(matrix, section)" />
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </section>
+                }
+
+                @if (ViewModel.Forecast is { } forecast)
+                {
+                    <MarketAnalysisForecast Forecast="forecast" Charts="ViewModel.ForecastCharts" />
+                }
+            </div>
         </div>
     }
 </div>

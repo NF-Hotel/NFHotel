@@ -14,11 +14,9 @@
 <PageTitle>Audit — administration</PageTitle>
 
 <div class="stack-lg">
-    <PageHeader Title="Audit trail" Subtitle="Sign-ins and changes to the staff accounts, newest first.">
-        <Actions>
-            <a class="btn btn-secondary" href="/admin/staff">Staff</a>
-        </Actions>
-    </PageHeader>
+    <PageHeader Title="Audit trail" Subtitle="Sign-ins and changes to the staff accounts, newest first." />
+
+    <AdminTabs Label="Staff" Tabs="StaffTabs" />
 
     <ErrorAlert Errors="ViewModel.Errors" />
 
@@ -67,4 +65,3 @@
         </div>
     }
 </div>
-

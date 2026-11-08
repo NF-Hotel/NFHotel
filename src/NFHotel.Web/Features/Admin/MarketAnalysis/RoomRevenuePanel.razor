@@ -8,7 +8,7 @@
 
 <div class="stack-sm" role="region" aria-label="Room revenue">
     <h3 class="subtitle-small">Room revenue</h3>
-    <div class="chart-grid">
+    <div class="figure-grid">
         <FigureTile Title="Total room revenue" Value="Revenue.Total" Label="@($"{Revenue.RecordsWithPrice:N0} bookings that are not cancelled, in {Revenue.Unit}")" />
         @if (Revenue.Mean is { } mean)
         {
@@ -16,17 +16,17 @@
         }
         <FigureTile Title="Bookings left out" Value="Revenue.RecordsWithoutPrice" Label="no price" />
     </div>
+    <p class="field-hint">@Caption</p>
+    @if (!string.IsNullOrWhiteSpace(Revenue.Limitation))
+    {
+        <p class="field-hint">@Revenue.Limitation</p>
+    }
     @if (Revenue.Monthly.Count > 0)
     {
         <div class="chart-block chart-wide">
             <ColumnChart Title="@MonthlyTitle" Unit="@Revenue.Unit" Points="Revenue.Monthly" />
             <ChartCaption Model="MonthlyCaption" />
         </div>
-    }
-    <p class="muted">@Caption</p>
-    @if (!string.IsNullOrWhiteSpace(Revenue.Limitation))
-    {
-        <p class="muted">@Revenue.Limitation</p>
     }
 </div>
 

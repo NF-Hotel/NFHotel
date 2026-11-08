@@ -6,11 +6,12 @@
 @inject AdminDashboardViewModel ViewModel
 
 @*
-    Today's overview: who is coming, who is leaving, and which rooms remain to be done.
+    Today's overview: who is coming, who is leaving, what waits on a decision, and which rooms remain to be done.
     Only markup and binding — everything is fetched and divided in AdminDashboardViewModel (B-10).
 
-    Each key figure leads on to the screen where the work is done, so the dashboard is an
-    entrance and not a dead end.
+    Each key figure and each row leads on to the screen where the work is done, so the dashboard is an
+    entrance and not a dead end. The sections carry their own tinted icon (CardHead), so arrivals, departures,
+    the attention list and housekeeping read apart at a glance.
 *@
 
 <PageTitle>Dashboard — administration</PageTitle>
@@ -23,8 +24,13 @@
                     class="btn btn-secondary"
                     disabled="@ViewModel.IsBusy"
                     @onclick="RefreshAsync">
+                <AdminIcon Name="refresh" />
                 Refresh
             </button>
+            <a class="btn btn-primary" href="/admin/bookings">
+                <AdminIcon Name="plus" />
+                New booking
+            </a>
         </Actions>
     </PageHeader>
 
@@ -36,152 +42,234 @@
     }
     else
     {
-        <div class="grid-3">
-            <div class="stat">
-                <span class="stat-value">@ViewModel.Arrivals.Count</span>
-                <span class="stat-label">Arrivals today</span>
-                <p class="muted">
-                    <a href="/admin/bookings">Go to bookings</a>
-                </p>
-            </div>
-
-            <div class="stat">
-                <span class="stat-value">@ViewModel.Departures.Count</span>
-                <span class="stat-label">Departures today</span>
-                <p class="muted">
-                    <a href="/admin/bookings">Go to bookings</a>
-                </p>
-            </div>
-
-            <div class="stat">
-                <span class="stat-value">@ViewModel.RoomsAwaitingCleaning.Count</span>
-                <span class="stat-label">Rooms needing cleaning</span>
-                <p class="muted">
-                    <a href="/admin/rooms">Go to rooms</a>
-                </p>
-            </div>
+        <div class="grid-4">
+            <KpiTile Label="Arrivals today"
+                     Value="@ViewModel.Arrivals.Count.ToString()"
+                     Detail="@Checked(ViewModel.ArrivalsCheckedIn, "checked in")"
+                     Note="@ArrivalsNote"
+                     Icon="login"
+                     Href="/admin/bookings" />
+            <KpiTile Label="Departures today"
+                     Value="@ViewModel.Departures.Count.ToString()"
+                     Detail="@Checked(ViewModel.DeparturesCheckedOut, "checked out")"
+                     Note="@DeparturesNote"
+                     Icon="depart"
+                     Tint="slate"
+                     Href="/admin/bookings" />
+            <KpiTile Label="Rooms to clean"
+                     Value="@ViewModel.RoomsAwaitingCleaning.Count.ToString()"
+                     Detail="@Checked(ViewModel.RoomsBeingCleaned, "in progress")"
+                     Note="@CleaningNote"
+                     Icon="broom"
+                     Tint="amber"
+                     Accent="ViewModel.RoomsAwaitingCleaning.Count > 0"
+                     Href="/admin/rooms" />
+            <KpiTile Label="Occupancy tonight"
+                     Value="@($"{ViewModel.OccupancyPercent}%")"
+                     Note="@OccupancyNote"
+                     Icon="percent"
+                     Tint="ok"
+                     Percent="ViewModel.OccupancyPercent"
+                     Href="/admin/rooms" />
         </div>
 
-        <section class="stack" aria-labelledby="arrivals">
-            <h2 class="subtitle" id="arrivals">Arrivals today</h2>
+        <div class="grid-main">
+            <div class="stack-lg">
+                <section class="card" aria-labelledby="arrivals">
+                    <CardHead Id="arrivals"
+                              Title="Arrivals"
+                              Count="ViewModel.Arrivals.Count"
+                              Hint="Bookings checking in today. Check in from the booking list when the guest is at the desk."
+                              Icon="login">
+                        <Actions>
+                            <a class="btn btn-ghost btn-sm" href="/admin/bookings">All bookings <AdminIcon Name="arrow" /></a>
+                        </Actions>
+                    </CardHead>
 
-            @if (ViewModel.Arrivals.Count == 0)
-            {
-                <EmptyState Title="No arrivals today"
-                            Description="No booking has today as its check-in date. Open the booking list to see what is coming up.">
-                    <a class="btn btn-secondary btn-sm" href="/admin/bookings">Open bookings</a>
-                </EmptyState>
-            }
-            else
-            {
-                <div class="table-wrap">
-                    <table class="table table-compact">
-                        <caption>Bookings checking in on @AdminFormat.Date(ViewModel.Today)</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col">Booking</th>
-                                <th scope="col">Guest</th>
-                                <th scope="col">Room</th>
-                                <th scope="col" class="numeric-start">Check-out</th>
-                                <th scope="col">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var booking in ViewModel.Arrivals)
+                    @if (ViewModel.Arrivals.Count == 0)
+                    {
+                        <div class="card-body">
+                            <EmptyState Title="No arrivals today"
+                                        Description="No booking has today as its check-in date. Open the booking list to see what is coming up.">
+                                <a class="btn btn-secondary btn-sm" href="/admin/bookings">Open bookings</a>
+                            </EmptyState>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-wrap">
+                            <table class="table table-compact">
+                                <caption class="sr-only">Bookings checking in on @AdminFormat.Date(ViewModel.Today)</caption>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Booking</th>
+                                        <th scope="col">Guest</th>
+                                        <th scope="col">Room</th>
+                                        <th scope="col" class="numeric">Nights</th>
+                                        <th scope="col">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var booking in ViewModel.Arrivals)
+                                    {
+                                        <tr>
+                                            <td class="numeric-start">@booking.BookingNumber</td>
+                                            <td>
+                                                <strong>@booking.GuestFullName</strong>
+                                                <span class="sub">@booking.GuestCountry</span>
+                                            </td>
+                                            <td class="numeric-start">@booking.RoomNumber</td>
+                                            <td class="numeric">@booking.Nights</td>
+                                            <td><StatusBadge BookingStatus="booking.Status" /></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </section>
+
+                <section class="card" aria-labelledby="departures">
+                    <CardHead Id="departures"
+                              Title="Departures"
+                              Count="ViewModel.Departures.Count"
+                              Hint="Rooms freeing up today."
+                              Icon="depart"
+                              Tint="slate" />
+
+                    @if (ViewModel.Departures.Count == 0)
+                    {
+                        <div class="card-body">
+                            <EmptyState Title="No departures today"
+                                        Description="No booking frees up its room today." />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-wrap">
+                            <table class="table table-compact">
+                                <caption class="sr-only">Bookings freeing up their room on @AdminFormat.Date(ViewModel.Today)</caption>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Booking</th>
+                                        <th scope="col">Guest</th>
+                                        <th scope="col">Room</th>
+                                        <th scope="col" class="numeric-start">Check-in</th>
+                                        <th scope="col">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var booking in ViewModel.Departures)
+                                    {
+                                        <tr>
+                                            <td class="numeric-start">@booking.BookingNumber</td>
+                                            <td><strong>@booking.GuestFullName</strong></td>
+                                            <td class="numeric-start">@booking.RoomNumber</td>
+                                            <td class="numeric-start">@AdminFormat.Date(booking.StartDate)</td>
+                                            <td><StatusBadge BookingStatus="booking.Status" /></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </section>
+            </div>
+
+            <div class="stack-lg">
+                <section class="card" aria-labelledby="attention">
+                    <CardHead Id="attention"
+                              Title="Needs attention"
+                              Hint="Things waiting on a decision. Each one opens where it is fixed."
+                              Icon="bell"
+                              Tint="amber" />
+
+                    @if (ViewModel.NothingNeedsAttention)
+                    {
+                        <div class="card-body">
+                            <EmptyState Title="Nothing is waiting"
+                                        Description="Every arrival is confirmed and every room can be sold." />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="admin-list">
+                            @if (ViewModel.PendingArrivals.Count > 0)
                             {
-                                <tr>
-                                    <td class="numeric-start">@booking.BookingNumber</td>
-                                    <td>@booking.GuestFullName</td>
-                                    <td class="numeric-start">@booking.RoomNumber</td>
-                                    <td class="numeric-start">@AdminFormat.Date(booking.EndDate)</td>
-                                    <td><StatusBadge BookingStatus="booking.Status" /></td>
-                                </tr>
+                                <a class="admin-list-item" href="/admin/bookings">
+                                    <span class="tint tint-amber item-icon" aria-hidden="true"><AdminIcon Name="clock" /></span>
+                                    <span class="grow">
+                                        <span class="item-title">@Plural(ViewModel.PendingArrivals.Count, "arrival") pending confirmation</span>
+                                        <span class="item-meta">@string.Join(" · ", ViewModel.PendingArrivals.Select(booking => $"{booking.BookingNumber} {booking.GuestFullName}"))</span>
+                                    </span>
+                                    <AdminIcon Name="arrow" Class="arrow" />
+                                </a>
                             }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </section>
-
-        <section class="stack" aria-labelledby="departures">
-            <h2 class="subtitle" id="departures">Departures today</h2>
-
-            @if (ViewModel.Departures.Count == 0)
-            {
-                <EmptyState Title="No departures today"
-                            Description="No booking frees up its room today." />
-            }
-            else
-            {
-                <div class="table-wrap">
-                    <table class="table table-compact">
-                        <caption>Bookings freeing up their room on @AdminFormat.Date(ViewModel.Today)</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col">Booking</th>
-                                <th scope="col">Guest</th>
-                                <th scope="col">Room</th>
-                                <th scope="col" class="numeric-start">Check-in</th>
-                                <th scope="col">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var booking in ViewModel.Departures)
+                            @foreach (var room in ViewModel.RoomsNeedingService)
                             {
-                                <tr>
-                                    <td class="numeric-start">@booking.BookingNumber</td>
-                                    <td>@booking.GuestFullName</td>
-                                    <td class="numeric-start">@booking.RoomNumber</td>
-                                    <td class="numeric-start">@AdminFormat.Date(booking.StartDate)</td>
-                                    <td><StatusBadge BookingStatus="booking.Status" /></td>
-                                </tr>
+                                <a class="admin-list-item" href="/admin/rooms">
+                                    <span class="tint tint-danger item-icon" aria-hidden="true"><AdminIcon Name="wrench" /></span>
+                                    <span class="grow">
+                                        <span class="item-title">Room @room.RoomNumber needs service</span>
+                                        <span class="item-meta">@DisplayText.Describe(room.Size) · @DisplayText.Describe(room.HousekeepingStatus)</span>
+                                    </span>
+                                    <AdminIcon Name="arrow" Class="arrow" />
+                                </a>
                             }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </section>
+                            @foreach (var room in ViewModel.RoomsOutOfService)
+                            {
+                                <a class="admin-list-item" href="/admin/rooms">
+                                    <span class="tint tint-slate item-icon" aria-hidden="true"><AdminIcon Name="warn" /></span>
+                                    <span class="grow">
+                                        <span class="item-title">Room @room.RoomNumber cannot be sold</span>
+                                        <span class="item-meta">@DisplayText.Describe(room.Size) · @DisplayText.Describe(room.Status)</span>
+                                    </span>
+                                    <AdminIcon Name="arrow" Class="arrow" />
+                                </a>
+                            }
+                        </div>
+                    }
+                </section>
 
-        <section class="stack" aria-labelledby="housekeeping">
-            <h2 class="subtitle" id="housekeeping">Rooms needing cleaning</h2>
+                <section class="card" aria-labelledby="housekeeping">
+                    <CardHead Id="housekeeping"
+                              Title="Housekeeping"
+                              Count="ViewModel.RoomsAwaitingCleaning.Count"
+                              Hint="Rooms where cleaning can be started."
+                              Icon="broom"
+                              Tint="ok">
+                        <Actions>
+                            <a class="btn btn-ghost btn-sm" href="/admin/rooms">Board <AdminIcon Name="arrow" /></a>
+                        </Actions>
+                    </CardHead>
 
-            @if (ViewModel.RoomsAwaitingCleaning.Count == 0)
-            {
-                <EmptyState Title="Every room is clean"
-                            Description="Nothing is waiting to be cleaned right now.">
-                    <a class="btn btn-secondary btn-sm" href="/admin/rooms">Open the room list</a>
-                </EmptyState>
-            }
-            else
-            {
-                <div class="table-wrap">
-                    <table class="table table-compact">
-                        <caption>Rooms where cleaning can be started</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col">Room</th>
-                                <th scope="col" class="numeric">Floor</th>
-                                <th scope="col">Size</th>
-                                <th scope="col">Housekeeping</th>
-                                <th scope="col">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    @if (ViewModel.RoomsAwaitingCleaning.Count == 0)
+                    {
+                        <div class="card-body">
+                            <EmptyState Title="Every room is clean"
+                                        Description="Nothing is waiting to be cleaned right now.">
+                                <a class="btn btn-secondary btn-sm" href="/admin/rooms">Open the room list</a>
+                            </EmptyState>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="admin-list">
                             @foreach (var room in ViewModel.RoomsAwaitingCleaning)
                             {
-                                <tr>
-                                    <td class="numeric-start">@room.RoomNumber</td>
-                                    <td class="numeric">@room.Floor</td>
-                                    <td>@DisplayText.Describe(room.Size)</td>
-                                    <td><StatusBadge HousekeepingStatus="room.HousekeepingStatus" /></td>
-                                    <td><StatusBadge RoomStatus="room.Status" /></td>
-                                </tr>
+                                <a class="admin-list-item" href="/admin/rooms">
+                                    <span class="room-no due" aria-hidden="true">@room.RoomNumber</span>
+                                    <span class="grow">
+                                        <span class="item-title"><span class="sr-only">Room @room.RoomNumber: </span>@DisplayText.Describe(room.HousekeepingStatus)</span>
+                                        <span class="item-meta">@DisplayText.Describe(room.Size) · floor @room.Floor · @DisplayText.Describe(room.Status)</span>
+                                    </span>
+                                    <AdminIcon Name="arrow" Class="arrow" />
+                                </a>
                             }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </section>
+                        </div>
+                    }
+                </section>
+            </div>
+        </div>
     }
 </div>
-

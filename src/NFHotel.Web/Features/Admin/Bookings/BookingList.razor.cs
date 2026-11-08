@@ -23,9 +23,27 @@ public partial class BookingList : CancellableComponentBase
     /// <summary>Fetches the first list when the screen opens.</summary>
     protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
 
-    /// <summary>Gives the button for the guest mode the right appearance class.</summary>
-    private string GuestModeClass(BookingGuestMode mode) =>
-        Form.GuestMode == mode ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm";
+    /// <summary>One line under the title of the panel: how far the flow has come.</summary>
+    private string FlowHint => Form.Mode == BookingFormMode.Reschedule
+        ? "Pick the new dates and a room that is free for them."
+        : Form.SelectedRoomId is null
+            ? "Pick the dates, then a free room, then the guest."
+            : Form.CanSave ? "Everything is chosen. Create the booking when it looks right." : "Now the guest: find one in the register or add a new one.";
+
+    /// <summary>The classes of a step: done when its choice is made, active when it is the next thing to do.</summary>
+    private string StepClass(int step)
+    {
+        bool datesDone = Form.HasSearchedRooms;
+        bool roomDone = Form.SelectedRoomId is not null;
+        bool guestDone = Form.GuestMode == BookingGuestMode.Existing ? Form.SelectedGuestId is not null : Form.NewGuestIsValid;
+        bool done = step switch { 1 => datesDone, 2 => roomDone, _ => guestDone };
+        bool active = step switch { 1 => !datesDone, 2 => datesDone && !roomDone, _ => roomDone && !guestDone };
+
+        return done ? "step-block is-done" : active ? "step-block is-active" : "step-block";
+    }
+
+    /// <summary>Marks the chosen row of the rooms and the guests.</summary>
+    private static string RowClass(bool selected) => selected ? "option-row is-selected" : "option-row";
 
     /// <summary>Writes aria-pressed as text; a bool would become an empty attribute.</summary>
     private string GuestModePressed(BookingGuestMode mode) =>

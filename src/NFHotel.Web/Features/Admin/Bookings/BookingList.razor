@@ -26,12 +26,13 @@
 
 <div class="stack-lg">
     <PageHeader Title="Bookings"
-                Subtitle="Search, sort and move bookings through check-in and check-out.">
+                Subtitle="Search, sort and move bookings through check-in and check-out. A new booking is made in a few steps in the panel.">
         <Actions>
             <button type="button"
                     class="btn btn-primary"
                     disabled="@Form.IsBusy"
                     @onclick="BeginCreate">
+                <AdminIcon Name="plus" />
                 New booking
             </button>
         </Actions>
@@ -46,271 +47,307 @@
 
     @if (Form.IsOpen)
     {
-        <section class="card card-pad stack" aria-labelledby="booking-form">
-            <h2 class="subtitle" id="booking-form">@Form.Title</h2>
-
-            <ErrorAlert Errors="Form.Errors" />
-
-            <div class="field-row">
-                <FormField Label="Check-in" For="form-check-in" IsRequired="true">
-                    <input id="form-check-in"
-                           type="date"
-                           class="field-input"
-                           disabled="@Form.IsBusy"
-                           @bind="Form.CheckInDate" />
-                </FormField>
-
-                <FormField Label="Check-out" For="form-check-out" IsRequired="true"
-                           Hint="The check-out day does not count as a night.">
-                    <input id="form-check-out"
-                           type="date"
-                           class="field-input"
-                           disabled="@Form.IsBusy"
-                           @bind="Form.CheckOutDate" />
-                </FormField>
-            </div>
-
-            <div class="row">
-                <button type="button"
-                        class="btn btn-secondary"
-                        disabled="@Form.IsBusy"
-                        @onclick="SearchRoomsAsync">
-                    Find available rooms
+        @*
+            The guided flow: dates → room → guest → confirm, in a panel over the list. The steps stay on the page
+            as the user works down them — nothing is hidden behind a "next" button — and a done step gets a green
+            number. All content sits inside <section>, as the keyboard and the tests find the buttons there.
+        *@
+        <div class="drawer-backdrop" @onclick="CloseForm"></div>
+        <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="booking-form">
+            <section class="drawer-head">
+                <div>
+                    <h2 class="subtitle" id="booking-form">@Form.Title</h2>
+                    <p class="hint">@FlowHint</p>
+                </div>
+                <button type="button" class="admin-icon-btn" aria-label="Close" disabled="@Form.IsBusy" @onclick="CloseForm">
+                    <AdminIcon Name="x" />
                 </button>
-            </div>
+            </section>
 
-            @if (Form.HasNoAvailableRooms)
-            {
-                <EmptyState Title="No rooms are free for those dates"
-                            Description="Every room is either taken or out of service for the dates you picked. Try another period." />
-            }
-            else if (Form.AvailableRooms.Count > 0)
-            {
-                <div class="table-wrap">
-                    <table class="table table-compact">
-                        <caption>Rooms free for the whole period</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col">Room</th>
-                                <th scope="col" class="numeric">Floor</th>
-                                <th scope="col">Size</th>
-                                <th scope="col" class="numeric">Sleeps</th>
-                                <th scope="col" class="table-actions">Choose</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var room in Form.AvailableRooms)
-                            {
-                                <tr>
-                                    <td class="numeric-start">@room.RoomNumber</td>
-                                    <td class="numeric">@room.Floor</td>
-                                    <td>@DisplayText.Describe(room.Size)</td>
-                                    <td class="numeric">@room.Capacity</td>
-                                    <td class="table-actions">
-                                        @if (Form.SelectedRoomId == room.RoomId)
-                                        {
-                                            <span class="badge badge-confirmed">Selected</span>
-                                        }
-                                        else
-                                        {
-                                            <button type="button"
-                                                    class="btn btn-secondary btn-sm"
-                                                    disabled="@Form.IsBusy"
-                                                    @onclick="() => Form.SelectRoom(room.RoomId)">
-                                                Choose room @room.RoomNumber
-                                            </button>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
+            <section class="drawer-body" aria-label="Booking form">
+                <ErrorAlert Errors="Form.Errors" />
 
-            @if (Form.Mode == BookingFormMode.Create)
-            {
-                <div class="divider"></div>
+                <div class="@StepClass(1)">
+                    <span class="step-no" aria-hidden="true">1</span>
+                    <h3 class="step-title">Dates <span class="muted">The check-out day does not count as a night.</span></h3>
+                    <div class="step-content">
+                        <div class="field-row">
+                            <FormField Label="Check-in" For="form-check-in" IsRequired="true">
+                                <input id="form-check-in"
+                                       type="date"
+                                       class="field-input"
+                                       disabled="@Form.IsBusy"
+                                       @bind="Form.CheckInDate" />
+                            </FormField>
 
-                <h3 class="subtitle">Guest</h3>
-
-                <div class="row" role="group" aria-label="Choose guest type">
-                    <button type="button"
-                            class="@GuestModeClass(BookingGuestMode.Existing)"
-                            aria-pressed="@GuestModePressed(BookingGuestMode.Existing)"
-                            disabled="@Form.IsBusy"
-                            @onclick="() => Form.SetGuestMode(BookingGuestMode.Existing)">
-                        Existing guest
-                    </button>
-
-                    <button type="button"
-                            class="@GuestModeClass(BookingGuestMode.New)"
-                            aria-pressed="@GuestModePressed(BookingGuestMode.New)"
-                            disabled="@Form.IsBusy"
-                            @onclick="() => Form.SetGuestMode(BookingGuestMode.New)">
-                        New guest
-                    </button>
-                </div>
-
-                @if (Form.GuestMode == BookingGuestMode.Existing)
-                {
-                    <div class="field-row">
-                        <FormField Label="Search guests" For="form-guest-search"
-                                   Hint="Name, country or email.">
-                            <input id="form-guest-search"
-                                   type="search"
-                                   class="field-input"
-                                   disabled="@Form.IsBusy"
-                                   @bind="Form.GuestSearchText" />
-                        </FormField>
-                    </div>
-
-                    <div class="row">
-                        <button type="button"
-                                class="btn btn-secondary"
-                                disabled="@Form.IsBusy"
-                                @onclick="SearchGuestsAsync">
-                            Search guests
-                        </button>
-                    </div>
-
-                    @if (Form.HasSearchedGuests && Form.Guests.Count == 0)
-                    {
-                        <EmptyState Title="No guests match that search"
-                                    Description="Try a different search, or create the guest as part of this booking." />
-                    }
-                    else if (Form.Guests.Count > 0)
-                    {
-                        <div class="table-wrap">
-                            <table class="table table-compact">
-                                <caption>Guests matching the search</caption>
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Name</th>
-                                        <th scope="col">Email</th>
-                                        <th scope="col">Country</th>
-                                        <th scope="col" class="table-actions">Choose</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var guest in Form.Guests)
-                                    {
-                                        <tr>
-                                            <td>@guest.FullName</td>
-                                            <td>@guest.Email</td>
-                                            <td>@guest.Country</td>
-                                            <td class="table-actions">
-                                                @if (Form.SelectedGuestId == guest.GuestId)
-                                                {
-                                                    <span class="badge badge-confirmed">Selected</span>
-                                                }
-                                                else
-                                                {
-                                                    <button type="button"
-                                                            class="btn btn-secondary btn-sm"
-                                                            disabled="@Form.IsBusy"
-                                                            @onclick="() => Form.SelectGuest(guest.GuestId)">
-                                                        Choose @guest.FullName
-                                                    </button>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
+                            <FormField Label="Check-out" For="form-check-out" IsRequired="true">
+                                <input id="form-check-out"
+                                       type="date"
+                                       class="field-input"
+                                       disabled="@Form.IsBusy"
+                                       @bind="Form.CheckOutDate" />
+                            </FormField>
                         </div>
-                    }
-                }
-                else
+
+                        <div class="row">
+                            <button type="button"
+                                    class="btn btn-secondary"
+                                    disabled="@Form.IsBusy"
+                                    @onclick="SearchRoomsAsync">
+                                <AdminIcon Name="search" />
+                                Find available rooms
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="@StepClass(2)">
+                    <span class="step-no" aria-hidden="true">2</span>
+                    <h3 class="step-title">Room <span class="muted">Only rooms free for every night are offered.</span></h3>
+                    <div class="step-content">
+                        @if (Form.HasNoAvailableRooms)
+                        {
+                            <EmptyState Title="No rooms are free for those dates"
+                                        Description="Every room is either taken or out of service for the dates you picked. Try another period." />
+                        }
+                        else if (Form.AvailableRooms.Count > 0)
+                        {
+                            <div class="table-wrap">
+                                <table class="table table-compact">
+                                    <caption>Rooms free for the whole period</caption>
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Room</th>
+                                            <th scope="col" class="numeric">Floor</th>
+                                            <th scope="col">Size</th>
+                                            <th scope="col" class="numeric">Sleeps</th>
+                                            <th scope="col" class="table-actions">Choose</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var room in Form.AvailableRooms)
+                                        {
+                                            <tr class="@RowClass(Form.SelectedRoomId == room.RoomId)">
+                                                <td class="numeric-start"><strong>@room.RoomNumber</strong></td>
+                                                <td class="numeric">@room.Floor</td>
+                                                <td>@DisplayText.Describe(room.Size)</td>
+                                                <td class="numeric">@room.Capacity</td>
+                                                <td class="table-actions">
+                                                    @if (Form.SelectedRoomId == room.RoomId)
+                                                    {
+                                                        <span class="badge badge-confirmed">Selected</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="button"
+                                                                class="btn btn-secondary btn-sm"
+                                                                disabled="@Form.IsBusy"
+                                                                @onclick="() => Form.SelectRoom(room.RoomId)">
+                                                            Choose room @room.RoomNumber
+                                                        </button>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="muted">Pick the dates and find the available rooms first.</p>
+                        }
+                    </div>
+                </div>
+
+                @if (Form.Mode == BookingFormMode.Create)
                 {
-                    <ErrorAlert Errors="Form.GuestErrors" />
+                    <div class="@StepClass(3)">
+                        <span class="step-no" aria-hidden="true">3</span>
+                        <h3 class="step-title">Guest</h3>
+                        <div class="step-content">
+                            <div class="admin-segmented" role="group" aria-label="Choose guest type">
+                                <button type="button"
+                                        class="btn"
+                                        aria-pressed="@GuestModePressed(BookingGuestMode.Existing)"
+                                        disabled="@Form.IsBusy"
+                                        @onclick="() => Form.SetGuestMode(BookingGuestMode.Existing)">
+                                    Existing guest
+                                </button>
 
-                    <div class="field-row">
-                        <FormField Label="First name" For="form-first-name" IsRequired="true">
-                            <input id="form-first-name"
-                                   class="field-input"
-                                   disabled="@Form.IsBusy"
-                                   @bind="Form.FirstName"
-                                   @bind:event="oninput"
-                                   @bind:after="ValidateGuest" />
-                        </FormField>
+                                <button type="button"
+                                        class="btn"
+                                        aria-pressed="@GuestModePressed(BookingGuestMode.New)"
+                                        disabled="@Form.IsBusy"
+                                        @onclick="() => Form.SetGuestMode(BookingGuestMode.New)">
+                                    New guest
+                                </button>
+                            </div>
 
-                        <FormField Label="Last name" For="form-last-name" IsRequired="true">
-                            <input id="form-last-name"
-                                   class="field-input"
-                                   disabled="@Form.IsBusy"
-                                   @bind="Form.LastName"
-                                   @bind:event="oninput"
-                                   @bind:after="ValidateGuest" />
-                        </FormField>
-                    </div>
+                            @if (Form.GuestMode == BookingGuestMode.Existing)
+                            {
+                                <div class="field-row">
+                                    <FormField Label="Search guests" For="form-guest-search"
+                                               Hint="Name, country or email.">
+                                        <input id="form-guest-search"
+                                               type="search"
+                                               class="field-input"
+                                               disabled="@Form.IsBusy"
+                                               @bind="Form.GuestSearchText" />
+                                    </FormField>
+                                </div>
 
-                    <div class="field-row">
-                        <FormField Label="Email" For="form-email" IsRequired="true">
-                            <input id="form-email"
-                                   type="email"
-                                   class="field-input"
-                                   disabled="@Form.IsBusy"
-                                   @bind="Form.Email"
-                                   @bind:event="oninput"
-                                   @bind:after="ValidateGuest" />
-                        </FormField>
+                                <div class="row">
+                                    <button type="button"
+                                            class="btn btn-secondary"
+                                            disabled="@Form.IsBusy"
+                                            @onclick="SearchGuestsAsync">
+                                        <AdminIcon Name="search" />
+                                        Search guests
+                                    </button>
+                                </div>
 
-                        <FormField Label="Phone" For="form-phone" IsRequired="true">
-                            <input id="form-phone"
-                                   type="tel"
-                                   class="field-input"
-                                   disabled="@Form.IsBusy"
-                                   @bind="Form.PhoneNumber"
-                                   @bind:event="oninput"
-                                   @bind:after="ValidateGuest" />
-                        </FormField>
-                    </div>
+                                @if (Form.HasSearchedGuests && Form.Guests.Count == 0)
+                                {
+                                    <EmptyState Title="No guests match that search"
+                                                Description="Try a different search, or create the guest as part of this booking." />
+                                }
+                                else if (Form.Guests.Count > 0)
+                                {
+                                    <div class="table-wrap">
+                                        <table class="table table-compact">
+                                            <caption>Guests matching the search</caption>
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col">Name</th>
+                                                    <th scope="col">Email</th>
+                                                    <th scope="col">Country</th>
+                                                    <th scope="col" class="table-actions">Choose</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var guest in Form.Guests)
+                                                {
+                                                    <tr class="@RowClass(Form.SelectedGuestId == guest.GuestId)">
+                                                        <td><strong>@guest.FullName</strong></td>
+                                                        <td>@guest.Email</td>
+                                                        <td>@guest.Country</td>
+                                                        <td class="table-actions">
+                                                            @if (Form.SelectedGuestId == guest.GuestId)
+                                                            {
+                                                                <span class="badge badge-confirmed">Selected</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <button type="button"
+                                                                        class="btn btn-secondary btn-sm"
+                                                                        disabled="@Form.IsBusy"
+                                                                        @onclick="() => Form.SelectGuest(guest.GuestId)">
+                                                                    Choose @guest.FullName
+                                                                </button>
+                                                            }
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <ErrorAlert Errors="Form.GuestErrors" />
 
-                    <div class="field-row">
-                        <FormField Label="Country" For="form-country" IsRequired="true">
-                            <input id="form-country"
-                                   class="field-input"
-                                   disabled="@Form.IsBusy"
-                                   @bind="Form.Country"
-                                   @bind:event="oninput"
-                                   @bind:after="ValidateGuest" />
-                        </FormField>
+                                <div class="field-row">
+                                    <FormField Label="First name" For="form-first-name" IsRequired="true">
+                                        <input id="form-first-name"
+                                               class="field-input"
+                                               disabled="@Form.IsBusy"
+                                               @bind="Form.FirstName"
+                                               @bind:event="oninput"
+                                               @bind:after="ValidateGuest" />
+                                    </FormField>
 
-                        <FormField Label="Passport number" For="form-passport" Hint="Optional.">
-                            <input id="form-passport"
-                                   class="field-input"
-                                   disabled="@Form.IsBusy"
-                                   @bind="Form.PassportNumber"
-                                   @bind:event="oninput"
-                                   @bind:after="ValidateGuest" />
-                        </FormField>
+                                    <FormField Label="Last name" For="form-last-name" IsRequired="true">
+                                        <input id="form-last-name"
+                                               class="field-input"
+                                               disabled="@Form.IsBusy"
+                                               @bind="Form.LastName"
+                                               @bind:event="oninput"
+                                               @bind:after="ValidateGuest" />
+                                    </FormField>
+                                </div>
+
+                                <div class="field-row">
+                                    <FormField Label="Email" For="form-email" IsRequired="true">
+                                        <input id="form-email"
+                                               type="email"
+                                               class="field-input"
+                                               disabled="@Form.IsBusy"
+                                               @bind="Form.Email"
+                                               @bind:event="oninput"
+                                               @bind:after="ValidateGuest" />
+                                    </FormField>
+
+                                    <FormField Label="Phone" For="form-phone" IsRequired="true">
+                                        <input id="form-phone"
+                                               type="tel"
+                                               class="field-input"
+                                               disabled="@Form.IsBusy"
+                                               @bind="Form.PhoneNumber"
+                                               @bind:event="oninput"
+                                               @bind:after="ValidateGuest" />
+                                    </FormField>
+                                </div>
+
+                                <div class="field-row">
+                                    <FormField Label="Country" For="form-country" IsRequired="true">
+                                        <input id="form-country"
+                                               class="field-input"
+                                               disabled="@Form.IsBusy"
+                                               @bind="Form.Country"
+                                               @bind:event="oninput"
+                                               @bind:after="ValidateGuest" />
+                                    </FormField>
+
+                                    <FormField Label="Passport number" For="form-passport" Hint="Optional. Stored encrypted; can be added at check-in.">
+                                        <input id="form-passport"
+                                               class="field-input"
+                                               disabled="@Form.IsBusy"
+                                               @bind="Form.PassportNumber"
+                                               @bind:event="oninput"
+                                               @bind:after="ValidateGuest" />
+                                    </FormField>
+                                </div>
+                            }
+                        </div>
                     </div>
                 }
-            }
+            </section>
 
-            <div class="row">
+            <section class="drawer-foot" aria-label="Save or cancel">
                 <button type="button"
-                        class="btn btn-primary"
-                        disabled="@(!Form.CanSave)"
-                        @onclick="SaveAsync">
-                    @SaveLabel
-                </button>
-
-                <button type="button"
-                        class="btn btn-secondary"
+                        class="btn btn-ghost"
                         disabled="@Form.IsBusy"
                         @onclick="CloseForm">
                     Cancel
                 </button>
-            </div>
-        </section>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        disabled="@(!Form.CanSave)"
+                        @onclick="SaveAsync">
+                    <AdminIcon Name="check" />
+                    @SaveLabel
+                </button>
+            </section>
+        </aside>
     }
 
-    <section class="panel stack" aria-labelledby="booking-filter">
-        <h2 class="subtitle" id="booking-filter">Filter</h2>
+    <section class="card" aria-labelledby="booking-filter">
+        <h2 class="sr-only" id="booking-filter">Filter</h2>
 
-        <div class="field-row">
+        <div class="admin-toolbar">
             <FormField Label="From" For="period-start">
                 <input id="period-start"
                        type="date"
@@ -319,7 +356,7 @@
                        @bind="ViewModel.PeriodStart" />
             </FormField>
 
-            <FormField Label="To" For="period-end" Hint="Exclusive — this day is not counted.">
+            <FormField Label="To (exclusive)" For="period-end">
                 <input id="period-end"
                        type="date"
                        class="field-input"
@@ -348,32 +385,30 @@
                     }
                 </select>
             </FormField>
-        </div>
 
-        <div class="row">
-            <label class="field-label" for="include-cancelled">
+            <label class="admin-toolbar-check" for="include-cancelled">
                 <input id="include-cancelled"
                        type="checkbox"
                        disabled="@ViewModel.IsBusy"
                        @bind="ViewModel.IncludeCancelled" />
-                Include cancelled bookings
+                Include cancelled
             </label>
-        </div>
 
-        <div class="row">
-            <button type="button"
-                    class="btn btn-primary"
-                    disabled="@ViewModel.IsBusy"
-                    @onclick="SearchAsync">
-                Search
-            </button>
+            <div class="admin-toolbar-actions">
+                <button type="button"
+                        class="btn btn-primary"
+                        disabled="@ViewModel.IsBusy"
+                        @onclick="SearchAsync">
+                    Search
+                </button>
 
-            <button type="button"
-                    class="btn btn-ghost"
-                    disabled="@ViewModel.IsBusy"
-                    @onclick="ClearFilterAsync">
-                Clear filter
-            </button>
+                <button type="button"
+                        class="btn btn-ghost"
+                        disabled="@ViewModel.IsBusy"
+                        @onclick="ClearFilterAsync">
+                    Clear filter
+                </button>
+            </div>
         </div>
     </section>
 
@@ -472,9 +507,9 @@
                     {
                         <tr>
                             <td class="numeric-start">@booking.BookingNumber</td>
-                            <td>
-                                @booking.GuestFullName
-                                <span class="muted">@booking.GuestCountry</span>
+                            <td class="nowrap">
+                                <strong>@booking.GuestFullName</strong>
+                                <span class="sub">@booking.GuestCountry</span>
                             </td>
                             <td class="numeric-start">@booking.RoomNumber</td>
                             <td class="numeric-start">@AdminFormat.Date(booking.StartDate)</td>
@@ -493,7 +528,7 @@
 
                                 @if (booking.Actions.CanCheckIn)
                                 {
-                                    <button type="button" class="btn btn-secondary btn-sm"
+                                    <button type="button" class="btn btn-primary btn-sm"
                                             disabled="@ViewModel.IsBusy"
                                             @onclick="() => ExecuteAsync(BookingAction.CheckIn, booking)">
                                         Check in
@@ -511,19 +546,21 @@
 
                                 @if (booking.Actions.CanReschedule)
                                 {
-                                    <button type="button" class="btn btn-secondary btn-sm"
+                                    <button type="button" class="btn btn-secondary btn-sm btn-icon"
+                                            title="Reschedule @booking.BookingNumber"
                                             disabled="@ViewModel.IsBusy"
                                             @onclick="() => BeginRescheduleAsync(booking)">
-                                        Reschedule
+                                        <AdminIcon Name="calendar" /><span class="sr-only">Reschedule</span>
                                     </button>
                                 }
 
                                 @if (booking.Actions.CanCancel)
                                 {
-                                    <button type="button" class="btn btn-danger btn-sm"
+                                    <button type="button" class="btn btn-danger btn-sm btn-icon"
+                                            title="Cancel @booking.BookingNumber"
                                             disabled="@ViewModel.IsBusy"
                                             @onclick="() => RequestCancel(booking)">
-                                        Cancel
+                                        <AdminIcon Name="x" /><span class="sr-only">Cancel</span>
                                     </button>
                                 }
                             </td>
@@ -534,4 +571,3 @@
         </div>
     }
 </div>
-

@@ -5,55 +5,57 @@
     history it rests on, and a note when the history is too short. The captions say that the service calculated it and not an AI model.
 *@
 
-<section class="card card-pad stack" aria-labelledby="@SectionId">
-    <h2 class="subtitle" id="@SectionId">Forecast</h2>
-    <p>
-        <span class="chart-ai-label">@CalculatedLabel</span>
-        <span class="muted">@HistoryText(Forecast)</span>
-    </p>
-
-    @if (Forecast.HistoryTooShort)
-    {
-        <div role="note" class="chart-observation">
-            <p><strong>Short history.</strong> @TooShortText(Forecast)</p>
-        </div>
-    }
-
-    @if (Charts.Count == 0)
-    {
-        <p class="muted">No month could be forecast.</p>
-    }
-    else
-    {
-        <div class="chart-grid">
-            @foreach (MarketAnalysisForecastChart chart in Charts)
-            {
-                <div class="chart-block chart-wide">
-                    <LineChart Title="@chart.Title" Unit="@chart.Unit" Points="chart.Points" BandLow="chart.Low" BandHigh="chart.High" />
-                    <p class="muted">@chart.Caption</p>
-                </div>
-            }
-        </div>
-    }
-
-    @if (Forecast.Limitations.Count > 0)
-    {
-        <div>
-            <strong>What it cannot say.</strong>
-            <ul class="chart-caption-limits">
-                @foreach (string limit in Forecast.Limitations)
+<section class="card" aria-labelledby="@SectionId">
+    <CardHead Id="@SectionId" Title="Forecast" Icon="trend" Hint="@HistoryText(Forecast)">
+        <Actions>
+            <span class="chart-ai-label is-calculated">@CalculatedLabel</span>
+        </Actions>
+    </CardHead>
+    <div class="card-body stack-lg">
+        @if (Forecast.HistoryTooShort)
+        {
+            <div role="note" class="chart-observation">
+                <p><strong>Short history.</strong> @TooShortText(Forecast)</p>
+            </div>
+        }
+        @if (Charts.Count == 0)
+        {
+            <p class="muted">No month could be forecast.</p>
+        }
+        else
+        {
+            <div class="chart-grid">
+                @foreach (MarketAnalysisForecastChart chart in Charts)
                 {
-                    <li>@limit</li>
+                    <div class="chart-block">
+                        <LineChart Title="@chart.Title" Unit="@chart.Unit" Points="chart.Points" BandLow="chart.Low" BandHigh="chart.High" />
+                        <p class="field-hint">@chart.Caption</p>
+                    </div>
                 }
-            </ul>
-        </div>
-    }
-    @if (!string.IsNullOrWhiteSpace(Forecast.Formula))
-    {
-        <details>
-            <summary>How the forecast is calculated</summary>
-            <p class="muted">@Forecast.Formula</p>
-        </details>
-    }
+            </div>
+        }
+        @if (Forecast.Limitations.Count > 0 || !string.IsNullOrWhiteSpace(Forecast.Formula))
+        {
+            <details class="about">
+                <summary>About the forecast</summary>
+                @if (Forecast.Limitations.Count > 0)
+                {
+                    <div>
+                        <strong>What it cannot say.</strong>
+                        <ul class="chart-caption-limits">
+                            @foreach (string limit in Forecast.Limitations)
+                            {
+                                <li>@limit</li>
+                            }
+                        </ul>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Forecast.Formula))
+                {
+                    <p><strong>How the forecast is calculated.</strong> @Forecast.Formula</p>
+                }
+            </details>
+        }
+    </div>
 </section>
 

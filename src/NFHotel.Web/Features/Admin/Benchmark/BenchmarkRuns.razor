@@ -25,10 +25,12 @@
                 Subtitle="Every finished run of the local models, with the machine it ran on.">
         <Actions>
             <AuthorizeView Policy="@StaffPolicies.BenchmarkRun">
-                <a class="btn btn-primary" href="/admin/benchmark/start">Start a run</a>
+                <a class="btn btn-primary" href="/admin/benchmark/start"><AdminIcon Name="cpu" />Start a run</a>
             </AuthorizeView>
         </Actions>
     </PageHeader>
+
+    <AdminTabs Label="Benchmark" Tabs="BenchmarkTabs" />
 
     <ErrorAlert Errors="ViewModel.Errors" />
 
@@ -44,12 +46,13 @@
 
     @if (ViewModel.IsLoaded)
     {
-        <section class="card card-pad stack-sm" aria-labelledby="ai-defaults">
-            <h2 class="subtitle" id="ai-defaults">Default AI model</h2>
-            <p class="muted">
-                The model that the website and the market analysis use unless they are told otherwise. Choose it from the
-                results below, or type the name of an installed model. The market analysis reads it the next time it is deployed.
-            </p>
+        <section class="card" aria-labelledby="ai-defaults">
+            <CardHead Id="ai-defaults"
+                      Title="Default AI model"
+                      Hint="The model that the website and the market analysis use unless they are told otherwise. Choose it from the results below, or type the name of an installed model. The market analysis reads it the next time it is deployed."
+                      Icon="key"
+                      Tint="navy" />
+            <div class="card-body stack">
             @if (ViewModel.DefaultPull is { } pull)
             {
                 <div role="status" aria-live="polite">
@@ -85,12 +88,12 @@
             {
                 var current = ViewModel.DefaultOf(purpose);
                 var fieldId = $"default-ai-{purpose}";
-                <div class="field-row">
-                    <div>
-                        <strong>@Title(purpose)</strong>:
+                <div class="default-row">
+                    <div class="default-current">
+                        <strong>@Title(purpose)</strong>
                         @if (current is null)
                         {
-                            <span>no default set</span>
+                            <span class="muted">no default set</span>
                         }
                         else
                         {
@@ -116,20 +119,23 @@
                 </div>
                 @if (ViewModel.IsUnknownModel(purpose))
                 {
-                    <p class="muted" role="note">
+                    <p class="field-hint" role="note">
                         No stored run used this name. A service uses a model only when the name is exactly the one that the
                         model server lists, tag included: take it from <code>ollama list</code>, for example <code>phi3.5:latest</code>.
                     </p>
                 }
             }
+            </div>
         </section>
     }
 
     @if (ViewModel.StartedRuns.Count > 0)
     {
+        <section class="card" aria-labelledby="started-runs">
+        <CardHead Id="started-runs" Title="Started runs" Count="ViewModel.StartedRuns.Count" Hint="Runs without a stored result, newest first." Icon="clock" Tint="amber" />
         <div class="table-wrap">
             <table class="table">
-                <caption>Started runs without a stored result, newest first</caption>
+                <caption class="sr-only">Started runs without a stored result, newest first</caption>
                 <thead>
                     <tr>
                         <th scope="col">Started</th>
@@ -143,7 +149,7 @@
                     @foreach (var started in ViewModel.StartedRuns)
                     {
                         <tr>
-                            <td>@started.RequestedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) UTC</td>
+                            <td class="nowrap">@started.RequestedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) UTC</td>
                             <td>@string.Join(", ", started.Models)</td>
                             <td>@started.RequestedBy</td>
                             <td><strong>@started.State</strong>@(started.Error is null ? string.Empty : $": {started.Error}")</td>
@@ -164,6 +170,7 @@
                 </tbody>
             </table>
         </div>
+        </section>
     }
 
     @if (!ViewModel.IsLoaded)
@@ -177,9 +184,11 @@
     }
     else if (ViewModel.Runs.Count > 0)
     {
+        <section class="card" aria-labelledby="stored-runs">
+        <CardHead Id="stored-runs" Title="Stored runs" Count="ViewModel.Runs.Count" Hint="Newest first. Open a run to see its analysis." Icon="cpu" />
         <div class="table-wrap">
             <table class="table">
-                <caption>@ViewModel.Runs.Count runs, newest first</caption>
+                <caption class="sr-only">@ViewModel.Runs.Count runs, newest first</caption>
                 <thead>
                     <tr>
                         <th scope="col">Started</th>
@@ -193,15 +202,15 @@
                 <tbody>
                     @foreach (var run in ViewModel.Runs)
                     {
-                        <tr>
-                            <td>@run.StartedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) UTC</td>
+                        <tr class="@(ViewModel.SelectedRun?.Header.RunId == run.RunId ? "is-selected" : null)">
+                            <td class="nowrap">@run.StartedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) UTC</td>
                             <td>@string.Join(", ", run.Models)</td>
                             <td class="numeric">@run.RequestCount</td>
                             <td>@Machine(run)</td>
                             <td>@run.DatasetName</td>
-                            <td>
+                            <td class="table-actions">
                                 <button type="button"
-                                        class="btn btn-secondary btn-sm"
+                                        class="btn @(ViewModel.SelectedRun?.Header.RunId == run.RunId ? "btn-secondary" : "btn-primary") btn-sm"
                                         disabled="@ViewModel.IsBusy"
                                         aria-expanded="@(ViewModel.SelectedRun?.Header.RunId == run.RunId)"
                                         @onclick="() => SelectAsync(run.RunId)">
@@ -209,10 +218,11 @@
                                 </button>
                                 <AuthorizeView Policy="@StaffPolicies.BenchmarkDelete">
                                     <button type="button"
-                                            class="btn btn-danger btn-sm"
+                                            class="btn btn-danger btn-sm btn-icon"
+                                            title="Delete this run"
                                             disabled="@ViewModel.IsBusy"
                                             @onclick="() => ViewModel.RequestDelete(run)">
-                                        Delete
+                                        <AdminIcon Name="trash" /><span class="sr-only">Delete</span>
                                     </button>
                                 </AuthorizeView>
                             </td>
@@ -221,96 +231,126 @@
                 </tbody>
             </table>
         </div>
+        </section>
     }
 
     @if (ViewModel.SelectedRun is { } selected)
     {
-        <section class="card card-pad stack" aria-labelledby="run-details">
-            <h2 class="subtitle" id="run-details">Run @selected.Header.RunId</h2>
-            <p>
-                @Machine(selected.Header), @selected.CpuCores cores, @selected.OperatingSystem.
-                Backend @selected.Header.BackendName @selected.Header.BackendVersion.
-                Dataset @selected.Header.DatasetName (@selected.DatasetRows rows), prompt @selected.PromptVersion.
-            </p>
-
-            <div class="table-wrap">
-                <table class="table">
-                    <caption>@selected.Results.Count requests</caption>
-                    <thead>
-                        <tr>
-                            <th scope="col">Model</th>
-                            <th scope="col">Task</th>
-                            <th scope="col" class="numeric">Run</th>
-                            <th scope="col">Start</th>
-                            <th scope="col" class="numeric">First token (s)</th>
-                            <th scope="col" class="numeric">Total (s)</th>
-                            <th scope="col" class="numeric">Tokens</th>
-                            <th scope="col" class="numeric">Tokens/s</th>
-                            <th scope="col" class="numeric">RAM peak (MB)</th>
-                            <th scope="col" class="numeric">GPU peak (MB)</th>
-                            <th scope="col">Outcome</th>
-                            <th scope="col" class="table-actions">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var result in selected.Results)
-                        {
-                            <tr>
-                                <td>@result.Model</td>
-                                <td>@TaskName(result)</td>
-                                <td class="numeric">@(result.RunNumber + 1)</td>
-                                <td>@(result.Cold ? "cold" : "warm")</td>
-                                <td class="numeric">@Number(result.TimeToFirstTokenSeconds)</td>
-                                <td class="numeric">@Number(result.TotalSeconds)</td>
-                                <td class="numeric">@result.CompletionTokens@(result.TokensEstimated ? " (est.)" : string.Empty)</td>
-                                <td class="numeric">@Number(result.TokensPerSecond)</td>
-                                <td class="numeric">@Number(result.RamPeakMb)</td>
-                                <td class="numeric">@Number(result.VramPeakMb)</td>
-                                <td>@Outcome(result)</td>
-                                <td>
-                                    <button type="button"
-                                            class="btn btn-ghost btn-sm"
-                                            disabled="@ViewModel.IsBusy"
-                                            @onclick="() => ShowOutputAsync(result.BenchmarkResultId)">
-                                        Show answer
-                                    </button>
-                                    <AuthorizeView Policy="@StaffPolicies.AiDefaultsManage">
-                                        @foreach (var purpose in Purposes)
-                                        {
-                                            <button type="button"
-                                                    class="btn btn-secondary btn-sm"
-                                                    disabled="@ViewModel.IsBusy"
-                                                    @onclick="() => SetDefaultAsync(purpose, result.Model, selected.Header.RunId)">
-                                                Use for @ViewModel.LabelOfPurpose(purpose)
-                                            </button>
-                                        }
-                                    </AuthorizeView>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+        <div class="stack-lg run-details">
+            <section class="card card-feature" aria-labelledby="run-details">
+                <CardHead Id="run-details"
+                          Title="@($"Run of {selected.Header.StartedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC")"
+                          Icon="cpu"
+                          Tint="navy">
+                    <Actions>
+                        <span class="run-id">Run @selected.Header.RunId</span>
+                    </Actions>
+                </CardHead>
+                <div class="card-body">
+                    <dl class="facts">
+                        <div><dt>Machine</dt><dd>@Machine(selected.Header), @selected.CpuCores cores</dd></div>
+                        <div><dt>System</dt><dd>@selected.OperatingSystem</dd></div>
+                        <div><dt>Backend</dt><dd>@selected.Header.BackendName @selected.Header.BackendVersion</dd></div>
+                        <div><dt>Dataset</dt><dd>@selected.Header.DatasetName (@selected.DatasetRows rows)</dd></div>
+                        <div><dt>Prompt</dt><dd>@selected.PromptVersion</dd></div>
+                        <div><dt>Requests</dt><dd>@selected.Results.Count</dd></div>
+                    </dl>
+                </div>
+            </section>
 
             <BenchmarkRunAnalysis Run="selected" />
 
+            <section class="card" aria-labelledby="run-requests">
+                <CardHead Id="run-requests"
+                          Title="Every request"
+                          Count="selected.Results.Count"
+                          Hint="The raw measurements of the run, one row per request. Open an answer to read what the model wrote."
+                          Icon="list"
+                          Tint="slate" />
+                <details class="requests" open="@(ViewModel.ShownOutput is not null)">
+                    <summary>Show the @selected.Results.Count requests</summary>
+                    <div class="table-wrap">
+                        <table class="table table-compact">
+                            <caption class="sr-only">@selected.Results.Count requests</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Model</th>
+                                    <th scope="col">Task</th>
+                                    <th scope="col" class="numeric">Run</th>
+                                    <th scope="col">Start</th>
+                                    <th scope="col" class="numeric">First token (s)</th>
+                                    <th scope="col" class="numeric">Total (s)</th>
+                                    <th scope="col" class="numeric">Tokens</th>
+                                    <th scope="col" class="numeric">Tokens/s</th>
+                                    <th scope="col" class="numeric">RAM peak (MB)</th>
+                                    <th scope="col" class="numeric">GPU peak (MB)</th>
+                                    <th scope="col">Outcome</th>
+                                    <th scope="col" class="table-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var result in selected.Results)
+                                {
+                                    <tr>
+                                        <td class="nowrap"><strong>@result.Model</strong></td>
+                                        <td class="nowrap">@TaskName(result)</td>
+                                        <td class="numeric">@(result.RunNumber + 1)</td>
+                                        <td>@(result.Cold ? "cold" : "warm")</td>
+                                        <td class="numeric">@Number(result.TimeToFirstTokenSeconds)</td>
+                                        <td class="numeric">@Number(result.TotalSeconds)</td>
+                                        <td class="numeric">@result.CompletionTokens@(result.TokensEstimated ? " (est.)" : string.Empty)</td>
+                                        <td class="numeric">@Number(result.TokensPerSecond)</td>
+                                        <td class="numeric">@Number(result.RamPeakMb)</td>
+                                        <td class="numeric">@Number(result.VramPeakMb)</td>
+                                        <td class="nowrap">@Outcome(result)</td>
+                                        <td class="table-actions">
+                                            <button type="button"
+                                                    class="btn btn-ghost btn-sm"
+                                                    disabled="@ViewModel.IsBusy"
+                                                    @onclick="() => ShowOutputAsync(result.BenchmarkResultId)">
+                                                Show answer
+                                            </button>
+                                            <AuthorizeView Policy="@StaffPolicies.AiDefaultsManage">
+                                                @foreach (var purpose in Purposes)
+                                                {
+                                                    <button type="button"
+                                                            class="btn btn-secondary btn-sm"
+                                                            disabled="@ViewModel.IsBusy"
+                                                            @onclick="() => SetDefaultAsync(purpose, result.Model, selected.Header.RunId)">
+                                                        Use for @ViewModel.LabelOfPurpose(purpose)
+                                                    </button>
+                                                }
+                                            </AuthorizeView>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            </section>
+
             @if (ViewModel.ShownOutput is { } output)
             {
-                <section class="stack-sm" aria-labelledby="run-answer">
-                    <h3 class="subtitle" id="run-answer">Answer of @output.Model</h3>
-                    @if (!string.IsNullOrWhiteSpace(output.Error))
-                    {
-                        <AlertBox Kind="AlertKind.Error" Message="@output.Error" />
-                    }
-                    @if (!string.IsNullOrWhiteSpace(output.ValidationError))
-                    {
-                        <AlertBox Kind="AlertKind.Info" Message="@output.ValidationError" />
-                    }
-                    <pre class="answer-text">@output.Output</pre>
-                    <button type="button" class="btn btn-ghost btn-sm" @onclick="ViewModel.HideOutput">Hide the answer</button>
+                <section class="card" aria-labelledby="run-answer">
+                    <CardHead Id="run-answer" Title="@($"Answer of {output.Model}")" Icon="sparkle" Tint="amber">
+                        <Actions>
+                            <button type="button" class="btn btn-ghost btn-sm" @onclick="ViewModel.HideOutput">Hide the answer</button>
+                        </Actions>
+                    </CardHead>
+                    <div class="card-body stack-sm">
+                        @if (!string.IsNullOrWhiteSpace(output.Error))
+                        {
+                            <AlertBox Kind="AlertKind.Error" Message="@output.Error" />
+                        }
+                        @if (!string.IsNullOrWhiteSpace(output.ValidationError))
+                        {
+                            <AlertBox Kind="AlertKind.Info" Message="@output.ValidationError" />
+                        }
+                        <pre class="answer-text">@output.Output</pre>
+                    </div>
                 </section>
             }
-        </section>
+        </div>
     }
 </div>
-

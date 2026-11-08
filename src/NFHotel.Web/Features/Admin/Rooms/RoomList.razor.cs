@@ -106,4 +106,26 @@ public partial class RoomList : CancellableComponentBase
             await ViewModel.SearchAsync(ComponentToken);
         }
     }
+
+    /// <summary>The classes of a tile on the board: the colour of its frame follows the housekeeping badge.</summary>
+    private string TileClass(RoomListItemDto room)
+    {
+        string state = room.Status != RoomStatus.Available
+            ? "blocked"
+            : room.HousekeepingStatus switch
+            {
+                HousekeepingStatus.Clean => "clean",
+                HousekeepingStatus.CleaningInProgress => "in-progress",
+                HousekeepingStatus.ServiceRequired or HousekeepingStatus.ServiceInProgress => "service",
+                _ => "due",
+            };
+
+        return ViewModel.IsSelected(room) ? $"room-tile {state} is-selected" : $"room-tile {state}";
+    }
+
+    /// <summary>The short state under the room number: the operating state when it blocks the room, else the cleaning.</summary>
+    private static string TileState(RoomListItemDto room) =>
+        room.Status != RoomStatus.Available
+            ? DisplayText.Describe(room.Status)
+            : DisplayText.Describe(room.HousekeepingStatus);
 }

@@ -1,0 +1,40 @@
+@inherits LayoutComponentBase
+@using NFHotel.Web.Security
+
+@*
+    The sign-in screen of the back office (app.css section 12): the brand on a navy panel on the left, the form on
+    the right. No menu and no top bar, because nobody is signed in yet. The theme follows the same cookie as the rest
+    of the back office (AdminTheme), so the screen does not flash light before a dark back office.
+*@
+
+<div class="admin-shell admin-auth" data-theme="@Theme">
+    <AdminIconSprite />
+
+    <aside class="admin-auth-brand">
+        <a class="admin-auth-logo" href="/">
+            <span class="admin-nav-mark" aria-hidden="true">N</span>
+            <span class="admin-nav-name">NFHotel<span>Administration</span></span>
+        </a>
+
+        <div class="admin-auth-copy">
+            <p class="admin-auth-title">The back office of the hotel</p>
+            <ul class="admin-auth-points">
+                <li><span class="tint" aria-hidden="true"><AdminIcon Name="calendar" /></span>Arrivals, bookings and guests at the front desk</li>
+                <li><span class="tint tint-ok" aria-hidden="true"><AdminIcon Name="broom" /></span>The housekeeping board, floor by floor</li>
+                <li><span class="tint tint-amber" aria-hidden="true"><AdminIcon Name="trend" /></span>Pricing and the market analysis</li>
+            </ul>
+        </div>
+
+        <p class="admin-auth-foot">NFHotel · Street 172, Phnom Penh</p>
+    </aside>
+
+    <main class="admin-auth-main" id="content">
+        @Body
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Something went wrong.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">&#128473;</span>
+</div>

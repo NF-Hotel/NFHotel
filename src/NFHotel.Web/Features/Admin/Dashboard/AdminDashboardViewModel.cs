@@ -3,6 +3,7 @@ using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Rooms;
+using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Admin.Dashboard;
@@ -58,6 +59,40 @@ public sealed class AdminDashboardViewModel
     /// <summary>Bookings with arrival today.</summary>
     public IReadOnlyList<BookingListItemDto> Arrivals { get; private set; } =
         Array.Empty<BookingListItemDto>();
+
+    /// <summary>The arrivals that are not confirmed yet, and so wait on the desk.</summary>
+    public IReadOnlyList<BookingListItemDto> PendingArrivals { get; private set; } =
+        Array.Empty<BookingListItemDto>();
+
+    /// <summary>How many of today's arrivals have been checked in.</summary>
+    public int ArrivalsCheckedIn { get; private set; }
+
+    /// <summary>How many of today's departures have been checked out.</summary>
+    public int DeparturesCheckedOut { get; private set; }
+
+    /// <summary>The rooms with a guest tonight: confirmed or checked-in bookings that run over the night.</summary>
+    public int OccupiedTonight { get; private set; }
+
+    /// <summary>The rooms of the hotel, whatever their state.</summary>
+    public int RoomCount { get; private set; }
+
+    /// <summary>The share of the rooms with a guest tonight, 0 to 100.</summary>
+    public int OccupancyPercent => RoomCount == 0 ? 0 : (int)Math.Round(100.0 * OccupiedTonight / RoomCount);
+
+    /// <summary>The rooms where cleaning is under way right now.</summary>
+    public int RoomsBeingCleaned { get; private set; }
+
+    /// <summary>Rooms that need a technician, or have one at work.</summary>
+    public IReadOnlyList<RoomListItemDto> RoomsNeedingService { get; private set; } =
+        Array.Empty<RoomListItemDto>();
+
+    /// <summary>Rooms that cannot be sold: out of service or in maintenance.</summary>
+    public IReadOnlyList<RoomListItemDto> RoomsOutOfService { get; private set; } =
+        Array.Empty<RoomListItemDto>();
+
+    /// <summary>True when nothing waits on a decision: no pending arrival, no room needing service, none blocked.</summary>
+    public bool NothingNeedsAttention =>
+        PendingArrivals.Count == 0 && RoomsNeedingService.Count == 0 && RoomsOutOfService.Count == 0;
 
     /// <summary>Bookings that release the room today (A-01).</summary>
     public IReadOnlyList<BookingListItemDto> Departures { get; private set; } =
@@ -128,8 +163,10 @@ public sealed class AdminDashboardViewModel
     /// </remarks>
     private async Task LoadTodaysBookingsAsync(List<string> messages, CancellationToken cancellationToken)
     {
+        // The window is half-open and tests the effective end against its start (BookingRepository.FilterByWindow),
+        // so it has to begin yesterday for a booking that hands its room back today to be in the result at all.
         var query = new BookingOverviewQuery(
-            Today,
+            Today.AddDays(-1),
             Today.AddDays(1),
             SearchText: null,
             BookingSortField.RoomNumber,
@@ -144,7 +181,11 @@ public sealed class AdminDashboardViewModel
         {
             messages.AddRange(ErrorMessages.Describe(result));
             Arrivals = Array.Empty<BookingListItemDto>();
+            PendingArrivals = Array.Empty<BookingListItemDto>();
             Departures = Array.Empty<BookingListItemDto>();
+            ArrivalsCheckedIn = 0;
+            DeparturesCheckedOut = 0;
+            OccupiedTonight = 0;
 
             return;
         }
@@ -155,6 +196,13 @@ public sealed class AdminDashboardViewModel
         // today, even though the booking runs on on paper (A-01).
         Arrivals = bookings.Where(booking => booking.StartDate == Today).ToArray();
         Departures = bookings.Where(booking => booking.EffectiveEndDate == Today).ToArray();
+        PendingArrivals = Arrivals.Where(booking => booking.Status == BookingStatus.Pending).ToArray();
+        ArrivalsCheckedIn = Arrivals.Count(booking => booking.Status == BookingStatus.CheckedIn);
+        DeparturesCheckedOut = Departures.Count(booking => booking.Status == BookingStatus.CheckedOut);
+        OccupiedTonight = bookings.Count(booking =>
+            booking.StartDate <= Today
+            && booking.EffectiveEndDate > Today
+            && booking.Status is BookingStatus.Confirmed or BookingStatus.CheckedIn);
     }
 
     /// <summary>
@@ -172,12 +220,26 @@ public sealed class AdminDashboardViewModel
         {
             messages.AddRange(ErrorMessages.Describe(result));
             RoomsAwaitingCleaning = Array.Empty<RoomListItemDto>();
+            RoomsNeedingService = Array.Empty<RoomListItemDto>();
+            RoomsOutOfService = Array.Empty<RoomListItemDto>();
+            RoomCount = 0;
+            RoomsBeingCleaned = 0;
 
             return;
         }
 
-        RoomsAwaitingCleaning = result.Value
+        IReadOnlyList<RoomListItemDto> rooms = result.Value;
+
+        RoomsAwaitingCleaning = rooms
             .Where(room => room.Actions.CanStartCleaning)
             .ToArray();
+        RoomsNeedingService = rooms
+            .Where(room => room.HousekeepingStatus is HousekeepingStatus.ServiceRequired or HousekeepingStatus.ServiceInProgress)
+            .ToArray();
+        RoomsOutOfService = rooms
+            .Where(room => room.Status != RoomStatus.Available)
+            .ToArray();
+        RoomCount = rooms.Count;
+        RoomsBeingCleaned = rooms.Count(room => room.HousekeepingStatus == HousekeepingStatus.CleaningInProgress);
     }
 }

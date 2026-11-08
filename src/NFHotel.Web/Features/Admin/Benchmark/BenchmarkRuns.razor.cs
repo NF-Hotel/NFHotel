@@ -3,6 +3,7 @@ using System.Globalization;
 using NFHotel.Application.Dto.Benchmark;
 using NFHotel.Domain.Entities;
 using NFHotel.Web.Common;
+using NFHotel.Web.Components.Shared;
 
 namespace NFHotel.Web.Features.Admin.Benchmark;
 
@@ -12,6 +13,13 @@ namespace NFHotel.Web.Features.Admin.Benchmark;
 /// </summary>
 public partial class BenchmarkRuns : CancellableComponentBase
 {
+    /// <summary>The benchmark pages as tabs: one menu item, same routes.</summary>
+    private static readonly AdminTab[] BenchmarkTabs =
+    [
+        new("/admin/benchmark", "Runs"),
+        new("/admin/benchmark/start", "Start a run"),
+    ];
+
     /// <summary>Loads the list when the page opens.</summary>
     protected override Task OnInitializedAsync() => ViewModel.InitializeAsync(ComponentToken);
 

@@ -18,6 +18,8 @@
     <PageHeader Title="Price suggestions"
                 Subtitle="The suggestions are calculated from the occupancy of the market analysis by a fixed rule. No price changes until you approve; the AI text only explains." />
 
+    <AdminTabs Label="Pricing" Tabs="PricingTabs" />
+
     <div class="row">
         <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="ReloadAsync">Reload</button>
     </div>
@@ -215,4 +217,3 @@
         </section>
     }
 </div>
-
