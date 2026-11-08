@@ -22,7 +22,15 @@
        (MIL-023 task 2, CIS-001). The upstream image ran the same way before it had a Dockerfile that the
        analysis could read; a master without root is a change of the proxy and its certificate, not of
        this file. -->
-  <Property Name="sonar.issue.ignore.multicriteria">nginxroot</Property>
+  <!-- docker:S6471 on the socket proxy of Alloy too (ADR-0040 decision 5, MIL-065). Its Dockerfile keeps the
+       user of the pinned tecnativa/docker-socket-proxy image: HAProxy runs as root because root owns the Docker
+       socket, which it reads without a capability. The compose file drops every capability, mounts the root file
+       system and the socket read-only, sets no-new-privileges, allows only read calls of the Docker API and puts
+       the proxy on an internal network with no route out (MIL-023). The upstream image ran the same way before
+       it had a Dockerfile that the analysis could read. -->
+  <Property Name="sonar.issue.ignore.multicriteria">nginxroot,socketproxyroot</Property>
   <Property Name="sonar.issue.ignore.multicriteria.nginxroot.ruleKey">docker:S6471</Property>
   <Property Name="sonar.issue.ignore.multicriteria.nginxroot.resourceKey">ops/deploy/nginx/Dockerfile</Property>
+  <Property Name="sonar.issue.ignore.multicriteria.socketproxyroot.ruleKey">docker:S6471</Property>
+  <Property Name="sonar.issue.ignore.multicriteria.socketproxyroot.resourceKey">ops/deploy/alloy/socket-proxy/Dockerfile</Property>
 </SonarQubeAnalysisProperties>

@@ -12,7 +12,15 @@ name: nfhotel-alloy
 
 services:
   socket-proxy:
-    image: tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    # The patched image of the release (ADR-0040 decision 5, MIL-065 task 4): CD sets
+    # NFHOTEL_SOCKET_PROXY_IMAGE to the digest that the release scanned. Without it, compose builds
+    # socket-proxy/Dockerfile, the pinned upstream image with the fixes of its Alpine packages.
+    image: ${NFHOTEL_SOCKET_PROXY_IMAGE:-nfhotel-socket-proxy:local}
+    build:
+      context: ./socket-proxy
+      labels:
+        org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
+        org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
     restart: unless-stopped
     environment:
       CONTAINERS: "1"
