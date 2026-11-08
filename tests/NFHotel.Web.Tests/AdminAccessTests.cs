@@ -137,6 +137,44 @@ public sealed class AdminAccessTests : IClassFixture<WebFactory>
         Assert.Equal(HttpStatusCode.Redirect, afterwards.StatusCode);
     }
 
+    /// <summary>
+    /// Negative: a form without a user name is refused before the sign-in is asked, and the password that was typed is
+    /// nowhere in the answer, in its field or elsewhere on the page (MIL-067 task 4).
+    /// </summary>
+    [Fact]
+    public async Task SignIn_EmptyUserName_DoesNotSendThePasswordBack()
+    {
+        // Arrange
+        using var browser = _factory.CreateBrowser();
+        const string typed = "a passphrase that stays in the browser";
+
+        // Act
+        using var response = await WebFactory.SignInAsync(browser, string.Empty, typed);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Enter your user name.", html, StringComparison.Ordinal);
+        Assert.DoesNotContain(typed, html, StringComparison.Ordinal);
+    }
+
+    /// <summary>Negative: a sign-in that is refused for a wrong password does not send the password back either.</summary>
+    [Fact]
+    public async Task SignIn_WrongPassword_DoesNotSendThePasswordBack()
+    {
+        // Arrange
+        using var browser = _factory.CreateBrowser();
+        const string typed = "a passphrase that stays in the browser";
+
+        // Act
+        using var response = await WebFactory.SignInAsync(browser, "mona", typed);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Contains("The user name or the password is wrong.", html, StringComparison.Ordinal);
+        Assert.DoesNotContain(typed, html, StringComparison.Ordinal);
+    }
+
     /// <summary>Equivalence: after the sign-in, the page that was asked for is where the user lands.</summary>
     [Fact]
     public async Task SignIn_WithAReturnAddress_GoesThere()

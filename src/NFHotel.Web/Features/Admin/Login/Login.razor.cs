@@ -29,15 +29,20 @@ public partial class Login : CancellableComponentBase
     /// <summary>Gives the form an empty input the first time the page is rendered.</summary>
     protected override void OnInitialized() => Input ??= new();
 
+    /// <summary>
+    /// Takes the password out of the form before the sign-in is asked, so the page never writes it back, whatever the
+    /// answer (MIL-067).
+    /// </summary>
     private async Task SignInAsync()
     {
+        var password = Input?.Password ?? string.Empty;
+        ForgetPassword();
         if (HttpContext is null || Input is null)
         {
             return;
         }
 
-        var session = await ViewModel.SignInAsync(Input.UserName, Input.Password, ComponentToken);
-        Input.Password = string.Empty;
+        var session = await ViewModel.SignInAsync(Input.UserName, password, ComponentToken);
         if (session is null)
         {
             return;
@@ -49,6 +54,18 @@ public partial class Login : CancellableComponentBase
             new AuthenticationProperties { ExpiresUtc = session.ExpiresAt, IsPersistent = false, AllowRefresh = false });
 
         Navigation.NavigateTo(ReturnUrl.Safe(ReturnTo, RolePermissions.LandingPath(session.Role)));
+    }
+
+    /// <summary>
+    /// Empties the password of the form. The field writes its value into the page, so a form that is refused, such as one
+    /// without a user name, would otherwise send the typed password back to the browser (MIL-067).
+    /// </summary>
+    private void ForgetPassword()
+    {
+        if (Input is not null)
+        {
+            Input.Password = string.Empty;
+        }
     }
 
     private sealed class LoginInput
