@@ -8,7 +8,15 @@ name: nfhotel-nginx
 
 services:
   nginx:
-    image: nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+    # The patched image of the release (ADR-0040): CD sets NFHOTEL_NGINX_IMAGE to the digest
+    # that the release scanned. Without it, compose builds the Dockerfile here, as the
+    # development, end-to-end and DAST stacks do.
+    image: ${NFHOTEL_NGINX_IMAGE:-nfhotel-nginx:local}
+    build:
+      context: .
+      labels:
+        org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
+        org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
     restart: unless-stopped
     env_file: ${NGINX_ENV_FILE:-nginx.env}
     environment:

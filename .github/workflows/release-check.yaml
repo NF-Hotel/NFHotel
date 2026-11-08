@@ -1,4 +1,4 @@
-# Release check: on every pull request to main, build the four images through the
+# Release check: on every pull request to main, build the five images through the
 # local release-images action (ADR-0016), without pushing. It shows that a change of the
 # application or of ops/ still releases: the images build, pass the Trivy gate and carry
 # the labels of this commit.

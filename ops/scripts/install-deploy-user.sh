@@ -14,7 +14,7 @@
 #   5. prints the Tailscale steps and the policy that S03 applies in the admin console
 #
 # The CD job reaches the VM with Tailscale SSH as deploy and runs
-#   sudo -n /usr/local/sbin/nfhotel-deploy deploy <app-sha> <devops-sha> <web> <api> <analysis> <benchmark>
+#   sudo -n /usr/local/sbin/nfhotel-deploy deploy <app-sha> <devops-sha> <reference>...
 # No ssh key is stored anywhere: Tailscale SSH authorizes the tagged CI node.
 #
 # Usage: install-deploy-user.sh [--apply]

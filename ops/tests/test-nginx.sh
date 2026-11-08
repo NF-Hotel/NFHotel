@@ -10,8 +10,9 @@
 # Usage: test-nginx.sh
 # Env:   REPO_HOST  the repository path as the Docker daemon sees it (default: this
 #                   checkout; on Windows give C:/... for Docker Desktop)
-# It starts the containers t-nginx, nfhotel-web and nfhotel-api, the compose project t-hardened, and the
-# networks t-ngnet, t-tsnet and t-apinet, and removes them at the end.
+# It builds the image nfhotel-nginx:local from deploy/nginx (the proxy of production, ADR-0040) and
+# starts the containers t-nginx, nfhotel-web and nfhotel-api, the compose project t-hardened, and the
+# networks t-ngnet, t-tsnet and t-apinet, and removes them, not the image, at the end.
 # Exit:  0 every check passed; 1 a check failed
 # Needs: bash 4+, docker
 
@@ -21,7 +22,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_HOST="${REPO_HOST:-$REPO}"
 W="$REPO/tests/output/nginx"
 W_HOST="$REPO_HOST/tests/output/nginx"
-readonly NGINX=nginx:1.27-alpine CURL=curlimages/curl:8.10.1 ECHO=hashicorp/http-echo:1.0
+readonly NGINX=nfhotel-nginx:local CURL=curlimages/curl:8.10.1 ECHO=hashicorp/http-echo:1.0
 pass=0
 fail=0
 check() {
@@ -47,6 +48,13 @@ docker run --rm -v "$W_HOST/tls:/t" alpine/openssl req -x509 -newkey rsa:2048 -n
   -keyout /t/privkey.pem -out /t/fullchain.pem >/dev/null 2>&1
 chmod 644 "$W"/tls/*
 docker network create t-ngnet >/dev/null
+# The proxy of production (ADR-0040): the pinned nginx image with the fixes of its Alpine
+# packages, built under the name that the compose file starts without a release digest, so the
+# hardened service below runs this image too.
+docker build -q -t "$NGINX" "$REPO/deploy/nginx" >/dev/null || {
+  echo "FAIL  the proxy image of deploy/nginx does not build"
+  exit 1
+}
 
 start_nginx() {
   rm -rf "$W/snippets"

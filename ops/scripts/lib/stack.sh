@@ -118,9 +118,9 @@ EOF
 }
 
 # stack_start <settings folder> <app dir> [<nginx compose arguments...>]: split the settings into secret
-# files, build the API and the web application from <app dir>, and start the four services, each waiting
-# for its health check. The arguments after <app dir> go to compose for nginx (extra --file overrides, as
-# native paths: stack_native).
+# files, build the API and the web application from <app dir> and the proxy from deploy/nginx
+# (ADR-0040), and start the four services, each waiting for its health check. The arguments after
+# <app dir> go to compose for nginx (extra --file overrides, as native paths: stack_native).
 stack_start() {
   local settings="$1" app_dir="$2" service native_settings
   shift 2
@@ -137,6 +137,7 @@ stack_start() {
   export NFHOTEL_API_ENV_FILE="$native_settings/api/settings.env" NFHOTEL_API_SECRETS="$native_settings/api"
   export NFHOTEL_WEB_ENV_FILE="$native_settings/web/settings.env" NFHOTEL_WEB_SECRETS="$native_settings/web"
   export NFHOTEL_APP_DIR NFHOTEL_APP_SHA NFHOTEL_WEB_IMAGE="$STACK_NAME-web:local" NFHOTEL_API_IMAGE="$STACK_NAME-api:local"
+  export NFHOTEL_NGINX_IMAGE="$STACK_NAME-nginx:local"
   NFHOTEL_APP_DIR="$(stack_native "$(cd "$app_dir" && pwd)")"
   NFHOTEL_APP_SHA="$(git -C "$app_dir" rev-parse HEAD 2>/dev/null || echo unknown)"
 
@@ -150,9 +151,9 @@ stack_start() {
   echo "==> building and starting the web application"
   stack_compose nfhotel-web up --detach --build --wait --wait-timeout 240 ||
     die "the web application did not become healthy"
-  echo "==> starting nginx (TLS with a development certificate)"
+  echo "==> building and starting nginx (TLS with a development certificate)"
   NGINX_ENV_FILE="$native_settings/nginx.env" NGINX_TLS_DIR="$native_settings/tls" \
-    stack_compose nginx "$@" up --detach --wait --wait-timeout 60 >/dev/null ||
+    stack_compose nginx "$@" up --detach --build --wait --wait-timeout 60 >/dev/null ||
     die "nginx did not start"
 }
 
