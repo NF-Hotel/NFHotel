@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Proposed | mikemike | S01 | Initial version: one task for each place where the web application answers bad input with an error page or sends back what it should not (the guests of the booking page, the run of the benchmark page, the password of the login form), from the full DAST scans of 2026-11-08; planned at S01's request in chat ("1.ja") | pending |
+| 2026-11-08 | Accepted | mikemike | S01 | Initial version: one task for each place where the web application answers bad input with an error page or sends back what it should not (the guests of the booking page, the run of the benchmark page, the password of the login form), from the full DAST scans of 2026-11-08; planned at S01's request in chat ("1.ja") and accepted by S01 in chat ("Gennemfør 067", RC-309) | pending |
 
 ---
 
@@ -23,9 +23,9 @@ The full dynamic application security testing (DAST) scan of 2026-11-08 on main 
 
 | # | Finding | Where | What it allows or breaks |
 | --- | --- | --- | --- |
-| 1 | `GET /book?guests=<a number of 44 digits>` answers `500 Internal Server Error`: ZAP rule Integer Overflow Error [30003], rated Medium, on `/book?guests=2` and on `/book?checkIn=2026-11-09&checkOut=2026-11-10&guests=2`. `Book.razor.cs` binds `guests` as `int?` with `[SupplyParameterFromQuery]`, and Blazor throws when the value does not parse as an `Int32`, so the exception handler answers with the error page. The dates are strings that `BookingFlowViewModel.Prefill` parses, so a bad date only leaves the box empty | `src/NFHotel.Web/Features/Booking` | Anyone, without signing in, can make the public site answer 500 at will: errors in the logs, server errors in the monitoring, and a guest who mistypes the address gets an error page in place of the booking box |
-| 2 | `BenchmarkStart.razor.cs` binds `again` as `Guid?` in the same way, so `/admin/benchmark/start?again=<not a GUID>` answers 500 to a signed-in staff member. Found in the code; the scans do not reach the page | `src/NFHotel.Web/Features/Admin/Benchmark` | The same error behind the sign-in |
-| 3 | The login form can send the typed password back: `OnValidSubmit` runs `SignInAsync`, which clears `Input.Password`, only when the form is valid, and `InputText` writes its value into the `value` attribute of the field. A post with an empty user name and a password would return the password in the page. Found in the code; not yet reproduced | `src/NFHotel.Web/Features/Admin/Login` | The password travels back to the browser in the HTML of the answer (over HTTPS and with `no-store`), where it does not belong ([UC-004]) |
+| 1 | `GET /book?guests=<a number of 44 digits>` answers `500 Internal Server Error`: ZAP rule Integer Overflow Error (30003), rated Medium, on `/book?guests=2` and on `/book?checkIn=2026-11-09&checkOut=2026-11-10&guests=2`. `Book.razor.cs` binds `guests` as `int?` with `[SupplyParameterFromQuery]`, and Blazor throws when the value does not parse as an `Int32`, so the exception handler answers with the error page. The dates are strings that `BookingFlowViewModel.Prefill` parses, so a bad date only leaves the box empty | `src/NFHotel.Web/Features/Booking` | Anyone, without signing in, can make the public site answer 500 at will: errors in the logs, server errors in the monitoring, and a guest who mistypes the address gets an error page in place of the booking box |
+| 2 | `BenchmarkStart.razor.cs` binds `again`, a globally unique identifier (GUID), as `Guid?` in the same way, so `/admin/benchmark/start?again=<not a GUID>` answers 500 to a signed-in staff member. Found in the code; the scans do not reach the page | `src/NFHotel.Web/Features/Admin/Benchmark` | The same error behind the sign-in |
+| 3 | The login form can send the typed password back: `OnValidSubmit` runs `SignInAsync`, which clears `Input.Password`, only when the form is valid, and `InputText` writes its value into the `value` attribute of the field. A post with an empty user name and a password would return the password in the page. Found in the code; not yet reproduced | `src/NFHotel.Web/Features/Admin/Login` | The password travels back to the browser in the page of the answer (encrypted, and with `no-store`), where it does not belong ([UC-004]) |
 
 No ZAP rule is added: the alert is fixed, not accepted.
 
@@ -48,7 +48,7 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 | 3 | A test fails when a property with `[SupplyParameterFromQuery]` in `NFHotel.Web` has a type other than `string`, and passes on the code after the change | Yes | No |
 | 4 | A test posts the login form with an empty user name and a password and finds the password nowhere in the answer; the review record says whether it failed against the code before the change (finding 3 reproduced) or not | Yes | No |
 | 5 | The code review against `QC-CS-001` is Go, the tests and the analyzers pass, and every required check of the pull request is green | Yes | No |
-| 6 | The CD run of the merge, approved by S01 ([ADR-0038]), deploys and its smoke test passes; a full DAST scan after it, started by hand, has no Integer Overflow Error [30003] and no High alert | Yes | No |
+| 6 | The continuous deployment (CD) run of the merge, approved by S01 ([ADR-0038]), deploys and its smoke test passes; a full DAST scan after it, started by hand, has no Integer Overflow Error (30003) and no High alert | Yes | No |
 
 ## Dependencies
 
@@ -87,7 +87,7 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 | 2 | The run of the benchmark page | First a test with a signed-in staff member whom `StaffPolicies.BenchmarkRun` allows, which reproduces finding 2 on `/admin/benchmark/start?again=<not a GUID>`. Then `BenchmarkStart.razor.cs` reads `again` as `string?` and parses it with `Guid.TryParse`; a value that is not a GUID is ignored. | No | criterion 2 |
 | 3 | A rule for every query parameter | A test in `NFHotel.Web.Tests` finds every property with `[SupplyParameterFromQuery]` in the assembly of `NFHotel.Web` by reflection and fails on a type other than `string`, so a new page cannot bring the error back; its message names the page and the property. | No | criterion 3 |
 | 4 | The password of the login form | First a test that posts the login form with an empty user name and a password and looks for the password in the answer. When it finds it (finding 3), the login page clears `Input.Password` before each render after a post, whether the form is valid or not, and the test passes; when it does not, the test stays as a regression test and the review record says so. | No | US-001.09, criterion 4 |
-| 5 | Code review, pull request and deploy | The review record of the C# changes and their tests against `QC-CS-001` before the pull request; the pull request closes one issue per task it completes and carries the milestone. The CD run of the merge, approved by S01 ([ADR-0038]), deploys the VM; then one full DAST scan, started by hand. | No | criteria 5, 6 |
+| 5 | Code review, pull request and deploy | The review record of the C# changes and their tests against `QC-CS-001` before the pull request; the pull request closes one issue per task it completes and carries the milestone. The CD run of the merge, approved by S01 ([ADR-0038]), deploys the virtual machine; then one full DAST scan, started by hand. | No | criteria 5, 6 |
 | 6 | Gate and review record | The gate review record against criteria 1 to 6 with the logs of the tests, the deploy and the DAST scan, the row of MIL-067 in the traceability matrix, the Accepted row of this document, and the closing of the GitHub milestone. | No | criteria 1 to 6 |
 
 ---

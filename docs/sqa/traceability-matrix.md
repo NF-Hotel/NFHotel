@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-065: Go (RC-307) | [27bce92] |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | A row for the code of MIL-066 (RC-308, Go-with-conditions) | [0918fb1] |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | A row for MIL-067: the plan accepted by S01 in chat (RC-309, Go) | pending |
 
 ---
 
@@ -92,6 +92,7 @@ updated whenever an artifact instance is created or reviewed.
 | The code of MIL-065: the pins of the compose files of `ops/deploy`, the ignore entries of `ops/security/trivyignore.yaml`, `ops/deploy/alloy/socket-proxy/Dockerfile`, the sixth image in `ops/scripts/build-release-images.sh` and `.github/actions/release-images/action.yml`, the sixth name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, `--no-build` in `ops/scripts/deploy-services.sh`, the tag check of `ops/tests/test-wiki-coverage.sh`, and their tests | Shell, GitHub Actions, Dockerfile, YAML (reviewed 2026-11-08, Go after S01 approved the risk exceptions in chat) | - | - | [MIL-065] tasks 1 to 13, [ADR-0040], [DSA-001] | - | [RC-305] |
 | [MIL-066] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-08, RC-306) | en | it | [BC-001], [DSA-001], [ADR-0008], [ADR-0011], ADR-0025, [ADR-0034], [ADR-0038], [MIL-021], [MIL-022], MIL-027, MIL-037, [MIL-044], [MIL-065] | planned: the backup target on Debian 13 with `rrsync -wo -no-del -no-overwrite`, the copy off the VM without `--partial`, a settings archive that is complete or fails, the migration history read-only for `nfhotel_app`, the ignore check of `scan-gate.sh`, the ZAP rules renewed before 2026-11-25, the versions, the retention of Prometheus in its configuration file, and the rebuild runbook in the tested order | [RC-306] |
 | The code of MIL-066: the backup target in `ops/deploy/backup-target`, the copy and the settings archive of `ops/scripts/backup-database.sh`, the rights on the migration history in `ops/scripts/db/roles.sql`, `ops/scripts/deploy-release.sh` and `ops/scripts/verify-database.sh`, the format check of `ops/scripts/scan-gate.sh`, the retention in `ops/deploy/monitoring/prometheus/prometheus.yml`, the versions of the CD, scan and build tools, the Debian release of `ops/scripts/create-docker-vm.sh`, the section "Rebuild the VM" of the wiki page Disaster-Recovery, and their tests | Shell, SQL, GitHub Actions, Dockerfile, YAML (reviewed 2026-11-08, Go-with-conditions until every required check of the pull request is green) | - | - | [MIL-066] tasks 1 to 6, 8 and 9, [ADR-0008], [ADR-0011], [DSA-001] | - | [RC-308] |
+| [MIL-067] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-08, RC-309) | en | it | [BC-001], [US-001], UC-004, [DSA-001], [ADR-0038], MIL-027, [MIL-044], [MIL-066] | planned: the guests of the booking page and the run of the benchmark page read as text, a test that refuses a typed query parameter in `NFHotel.Web`, and a login form that never writes a posted password back | [RC-309] |
 | [ADR-0040] | ADR (Accepted) | - | - | [MIL-064], [ADR-0007], [ADR-0030], [MIL-022], [MIL-036], [MIL-059] | the patch layer of the proxy in `ops/deploy/nginx/Dockerfile` and its entry in `ops/scripts/build-release-images.sh`, the release references by name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, the `docker` entry of `.github/dependabot.yml` (MIL-064 tasks 2 to 7, RC-300) | [RC-299], [RC-300] (the code) |
 | [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
 | [ADR-0031] | ADR (Accepted; decisions 2 and 3 added 2026-10-26) | - | - | ADR-0005, ADR-0013, [ADR-0004], ADR-0024, MIL-020, MIL-043 | the sign-in keys and the benchmark run tracker of `src/NFHotel.Web`, [MIL-046] | [RC-227], [RC-239] |
@@ -264,6 +265,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-064]: ../milestones/mil-064-patched-nginx-and-third-party-scan.md
 [MIL-065]: ../milestones/mil-065-third-party-image-remedies.md
 [MIL-066]: ../milestones/mil-066-findings-of-7-november.md
+[MIL-067]: ../milestones/mil-067-bad-input-on-the-web-pages.md
 [ADR-0040]: ../adr/adr-0040-patched-nginx-image-from-the-release.md
 [RC-282]: ./reviews/rc-282-mil-060.md
 [MIL-046]: ../milestones/mil-046-finished-run-not-interrupted.md
@@ -289,6 +291,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-306]: ./reviews/rc-306-mil-066.md
 [RC-307]: ./reviews/rc-307-mil-065-gate.md
 [RC-308]: ./reviews/rc-308-mil-066-code.md
+[RC-309]: ./reviews/rc-309-mil-067.md
 [RC-302]: ./reviews/rc-302-mil-064-gate.md
 [RC-303]: ./reviews/rc-303-mil-064-gate-re-review.md
 [RC-287]: ./reviews/rc-287-mil-061.md
@@ -319,5 +322,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-245]: ./reviews/rc-245-mil-048-plan.md
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
-[27bce92]: https://github.com/NF-Hotel/NFHotel/commit/27bce927e73a306806d8e9ff9266bb42e6cdb09e
 [0918fb1]: https://github.com/NF-Hotel/NFHotel/commit/0918fb1d0b9ec7d3af7741c73114ae7e2bb9117f
