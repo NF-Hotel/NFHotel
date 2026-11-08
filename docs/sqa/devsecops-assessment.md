@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-28 | Accepted | mikemike | AI as stand-in for S01 | Section 11: the personal database roles of the team and their log (ADR-0034, MIL-048) | [102cae2] |
-| 2026-11-08 | Proposed | mikemike | S01 | Section 15: decision D2 taken by S01 in chat, private packages (MIL-065 task 13) | [dd55a67] |
+| 2026-10-28 | Deprecated | mikemike | AI as stand-in for S01 | Section 11: the personal database roles of the team and their log (ADR-0034, MIL-048) | [102cae2] |
+| 2026-11-08 | Accepted | mikemike | S01 | Section 15: decision D2 taken by S01 in chat, private packages (MIL-065 task 13) | [dd55a67] |
 
 This document is a working assessment. Its type is not in `framework/registry/artifact-catalog.md`; a catalog type for it is proposed upstream (rule 5) before it is accepted.
 
