@@ -4,13 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | RC-311 |
-| CrossReference | [MIL-067], [QC-CS-001], [RC-310], [RC-278] |
+| CrossReference | [MIL-067], [QC-CS-001], [RC-310], [RC-278], [RC-312] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions until every required check of the pull request is green | [3ed21af] |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Criterion 3 corrected: SonarQube Cloud found `var` in six changed lines of the first push, and ed1836a gave the seven `var` of the changed lines their explicit types; the verdict stays Go-with-conditions | [f505586] |
+| 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Criterion 3 corrected: SonarQube Cloud found `var` in six changed lines of the first push, and ed1836a gave the seven `var` of the changed lines their explicit types; the verdict stays Go-with-conditions | [f505586] |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | The condition is met: all 41 required checks of #596 passed on 7b077b0, and SonarQube Cloud reported 0 new issues (RC-312); Go | [a6f0dec] |
 
 ---
 
@@ -96,7 +96,7 @@
 
 ## Overall Verdict
 
-Go-with-conditions. Every Mandatory criterion of QC-CS-001 passes except criterion 21, which the risk exception covers, and criteria 1 to 4 and 7 of MIL-067 pass with tests that failed against the code before the change. The condition is criterion 5 of MIL-067: every required check of the pull request is green. The gate record of MIL-067 names the run and states that the condition is met.
+Go-with-conditions. Every Mandatory criterion of QC-CS-001 passes except criterion 21, which the risk exception covers, and criteria 1 to 4 and 7 of MIL-067 pass with tests that failed against the code before the change. The condition is criterion 5 of MIL-067: every required check of the pull request is green. The gate record of MIL-067 names the run and states that the condition is met. The condition was met on 2026-11-08: all 41 required checks of #596 passed on its last commit 7b077b0, and SonarQube Cloud reported 0 new issues ([RC-312]).
 
 ## Action Items
 
@@ -113,5 +113,6 @@ Go-with-conditions. Every Mandatory criterion of QC-CS-001 passes except criteri
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [RC-310]: ./rc-310-mil-067-task-7.md
 [RC-278]: ./rc-278-mil-058-code.md
-[3ed21af]: https://github.com/NF-Hotel/NFHotel/commit/3ed21af7d6e4ceaaae49ebfd4da2c8e40eec7071
+[RC-312]: ./rc-312-mil-067-gate.md
 [f505586]: https://github.com/NF-Hotel/NFHotel/commit/f5055868135c954ce93b6bf61f1d166c6b76337c
+[a6f0dec]: https://github.com/NF-Hotel/NFHotel/commit/a6f0dec4b0a066af5c4a5b3357834cd28fba6762
