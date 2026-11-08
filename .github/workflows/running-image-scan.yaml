@@ -5,7 +5,9 @@
 #
 # The release in production is the one that the last successful run of NF Hotel CD deployed:
 # its commit is the head of that run, and its release.json is the artifact of NF Hotel Release
-# on that commit.
+# on that commit. The third-party images that no build scans are scanned too (MIL-064 task 6,
+# ADR-0040): the pins of the compose files in ops/deploy at the operations commit of that
+# release.json (devops_sha), which is checked out next to this one.
 #
 # Triggers: daily, and by hand. By hand, test_image scans one image instead (pinned by
 #   digest), to prove the issue path with an image that has known vulnerabilities.
@@ -35,7 +37,8 @@ jobs:
   scan:
     name: Scan the release in production
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # Seventeen images with the third-party ones; ollama alone is 4.8 GB to pull and scan.
+    timeout-minutes: 60
     permissions:
       contents: read
       actions: read
@@ -51,6 +54,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Find the release in production
+        id: release
         env:
           TEST_IMAGE: ${{ inputs.test_image }}
         run: |
@@ -67,14 +71,31 @@ jobs:
             --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
           [[ -n "$run" ]] || { echo "::error::no release run for $sha"; exit 1; }
           gh run download "$run" --repo "$REPO" --name release-manifest --dir release
-          echo "Release in production: $sha (NF Hotel Release run $run)" >>"$GITHUB_STEP_SUMMARY"
+          ops="$(jq -r '.devops_sha // empty' release/release.json)"
+          [[ "$ops" =~ ^[0-9a-f]{40}$ ]] ||
+            { echo "::error::the release.json of $sha has no operations commit"; exit 1; }
+          echo "devops_sha=$ops" >>"$GITHUB_OUTPUT"
+          echo "Release in production: $sha (NF Hotel Release run $run), operations commit $ops" \
+            >>"$GITHUB_STEP_SUMMARY"
+      # The test image is scanned alone, so the compose files are read only for a release.
+      - name: Check out the compose files of the release
+        if: steps.release.outputs.devops_sha != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ steps.release.outputs.devops_sha }}
+          path: running
+          sparse-checkout: ops/deploy
+          persist-credentials: false
       - name: Sign in to GHCR to pull the private images
         run: printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
       - name: Scan every image
         id: scan
+        env:
+          DEVOPS_SHA: ${{ steps.release.outputs.devops_sha }}
         run: |
-          if bash ops/scripts/scan-running-release.sh --manifest release/release.json \
-            --results results; then
+          args=(--manifest release/release.json --results results)
+          [[ -z "$DEVOPS_SHA" ]] || args+=(--third-party running/ops/deploy)
+          if bash ops/scripts/scan-running-release.sh "${args[@]}"; then
             echo "failed=false" >>"$GITHUB_OUTPUT"
           else
             echo "failed=true" >>"$GITHUB_OUTPUT"
