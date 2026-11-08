@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The MIL-065 row: accepted by S01 in chat (RC-304, Go), with the tag check of `test-wiki-coverage.sh` and decision D2 | [b5b7fb8] |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | A row for the code of MIL-065, tasks 1 to 13 (RC-305, Go-with-conditions) | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | A row for the code of MIL-065, tasks 1 to 13 (RC-305, Go-with-conditions) | [339f707] |
 
 ---
 
@@ -314,3 +314,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [b5b7fb8]: https://github.com/NF-Hotel/NFHotel/commit/b5b7fb8f416414f1c37718fb641a2e4ff86ca657
+[339f707]: https://github.com/NF-Hotel/NFHotel/commit/339f707308fedd9629139338c5859192d049dd52

@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 13 of MIL-065 before its pull request (task 14); Go-with-conditions until S01 approves the risk exceptions of `ops/security/trivyignore.yaml` | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 13 of MIL-065 before its pull request (task 14); Go-with-conditions until S01 approves the risk exceptions of `ops/security/trivyignore.yaml` | [339f707] |
 
 ---
 
@@ -132,3 +132,4 @@ Go-with-conditions. Every Mandatory criterion of QC-SH-001, QC-WF-001 and QC-YML
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[339f707]: https://github.com/NF-Hotel/NFHotel/commit/339f707308fedd9629139338c5859192d049dd52
