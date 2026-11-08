@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | RC-317 |
-| CrossReference | [MIL-068], [RC-314], [CIS-001], [MIL-023], [MIL-066], [RC-313], [QC-SH-001], [QC-YML-001], [QC-WF-001] |
+| CrossReference | [MIL-068], [RC-314], [CIS-001], [MIL-023], [MIL-066], [RC-313], [QC-SH-001], [QC-YML-001], [QC-WF-001], [RC-319] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-068 before their pull request (task 4); Go | [8d107aa] |
+| 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-068 before their pull request (task 4); Go | [8d107aa] |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | The criteria that waited for task 5 and the pull request are met: the gate record found criteria 3 to 6 of MIL-068 met on 2026-11-08 (RC-319); the verdict stays Go | [3a2683b] |
 
 ---
 
@@ -114,7 +115,7 @@
 
 ## Overall Verdict
 
-Go. Every Mandatory criterion of QC-SH-001, QC-YML-001 and QC-WF-001 that the change touches passes, criterion 2 of MIL-068 passes in the tests, and criterion 1 has its evidence before the change. Criteria 3 and 4 need task 5; criterion 5 needs the CIS rows of task 5, and criterion 6 the checks of the pull request; the gate record of task 6 closes them. The reviewer is not independent.
+Go. Every Mandatory criterion of QC-SH-001, QC-YML-001 and QC-WF-001 that the change touches passes, criterion 2 of MIL-068 passes in the tests, and criterion 1 has its evidence before the change. Criteria 3 and 4 need task 5; criterion 5 needs the CIS rows of task 5, and criterion 6 the checks of the pull request; the gate record of task 6 closes them. The gate record closed them on 2026-11-08: criteria 3 and 4 pass after the change on the VM and its restart, criterion 5 with rows 2.1.x and 2.2.x of CIS-001, and criterion 6 with all 41 required checks of #604 green on a90e40e ([RC-319]). The reviewer is not independent.
 
 ## Action Items
 
@@ -134,7 +135,9 @@ Go. Every Mandatory criterion of QC-SH-001, QC-YML-001 and QC-WF-001 that the ch
 [MIL-023]: ../../milestones/mil-023-operational-quality.md
 [MIL-066]: ../../milestones/mil-066-findings-of-7-november.md
 [RC-313]: ./rc-313-mil-066-gate.md
+[RC-319]: ./rc-319-mil-068-gate.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [8d107aa]: https://github.com/NF-Hotel/NFHotel/commit/8d107aa6ac24518c7cf4f25925263de152f56399
+[3a2683b]: https://github.com/NF-Hotel/NFHotel/commit/3a2683b9abdd60ff583dc81c14a65e050e3183c4

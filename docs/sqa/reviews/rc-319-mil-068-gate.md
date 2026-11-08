@@ -1,0 +1,264 @@
+# RC-319 Gate review of MIL-068 The production VM without a desktop
+
+## Metadata
+| Key | Value |
+| --- | --- |
+| ID | RC-319 |
+| CrossReference | [MIL-068], [RC-314], [RC-317], [CIS-001], [QC-MIL-001] |
+
+## Version History
+| Date | Status | Author | Reviewer | Change | Commit |
+| --- | --- | --- | --- | --- | --- |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-068 after the change on the VM (task 5) and a read-only check of the VM; Go | [3a2683b] |
+
+---
+
+## Artifact Under Review
+
+- Instance reviewed: [MIL-068] at its gate: the six Go/No-Go criteria, with the evidence of pull request #604 (merged as b33d654 on 2026-11-08 at 19:42 UTC), of the change on the VM (task 5, from 21:18 to 21:24 UTC) and of a read-only check of the VM at 21:46 UTC. Before the gate: [RC-314] (the plan, accepted by S01) and [RC-317] (the code of tasks 1 to 3, Go).
+- Checklist used: the Go/No-Go criteria of [MIL-068]; [QC-MIL-001] criterion 2 is what makes them the checklist of the gate.
+- Scope: the gate; criteria 2 and 6 cite RC-317 and the checks of #604; criterion 5 is met by the pull request of this record, which changes rows 2.1.x and 2.2.x of [CIS-001] and the wiki page Host-Hardening.
+- Language and domain: en / it (the Metadata rows of MIL-068); this record is a technical type.
+- Language reviewer: none.
+- Mode: autonomous, not independent. S01 accepted the plan in chat ([RC-314]) and handed the rest of the run to the AI ("Ta selv stilling til alt"). For task 5, S01 took Proxmox snapshots of the VM, the last one (`before-mil-068-new`) before the dry run of 20:51 UTC, and answered "ja begge" in chat: yes to removing the desktop at once, and yes to a plan for the fix of the deploy (MIL-070).
+
+**Evidence of 2026-11-08:**
+
+- **The pull request.** #604, on its last commit a90e40e: 51 checks passed, 1 was skipped by design (`DAST full scan`, which runs only by hand and on schedule), and 1 was neutral (`OWASP ZAP`: code scanning could not compare the alerts of the branch, because the configuration `zap-full` of `e2e-dast.yaml` on `main` comes from the full scan, which did not run on the branch). All 41 required checks of `main` passed, `Ops script tests (test-remove-desktop.sh)` and `Ops linters` (which runs `ops/tests/lint.sh`) among them. Its description said that no issue was closed, because the milestone had no issues on GitHub yet; after the sync, the issues of tasks 1, 2 and 4 (#605, #606 and #608) were closed by hand at 20:00 UTC.
+- **The script on the VM.** The checkout of the VM held `ops/scripts/remove-desktop.sh` of b33d654 (sha256 `6d845042b2b1…`). It was copied to `/root/remove-desktop.sh`, and the run checked the hash again before `--apply`.
+- **The dry run of task 5.** At 20:51 UTC, after the last snapshot: "1092 to remove", "0 newly installed", "would purge 1092 packages (3098 MB)" and "no package to keep would go". The checksums of the package marks and of the package states, and the default target (`graphical.target`), were the same after it. Of the commands that the deployed scripts of `ops/`, `/usr/local` and the units of NF Hotel name, 17 come from a package of the list; outside the lists of `remove-desktop.sh` itself, two are words in other text (`qm resize`, which runs on the Proxmox node, and "trust" in a comment), so no deployed script needs a package of the list. The boot packages (`grub-efi-amd64`, `shim-signed`, `linux-image-amd64`, `initramfs-tools`), `systemd`, `udev`, `dbus`, `polkitd`, `openssh-server`, `sudo` and `network-manager` are not on the list. The list of the dry run is kept below: 1,092 names, one per line in the file `/root/mil068-list.txt` of the VM, sha256 `fefba2bd0f79…`.
+- **The run.** At 21:18:55 UTC no deploy process ran, and the hash of `/root/remove-desktop.sh` was that of b33d654. `--apply` ran in the transient unit `nfhotel-remove-desktop` until 21:21:56 UTC and ended with success. It marked the 28 packages to keep as installed by hand, simulated again on the real state, purged, found "no package of the list is installed, and the 28 packages to keep are", and set `multi-user.target` as the default target. The history of apt records one purge, from 21:19:14 to 21:21:56 UTC, of 1,092 packages: the same 1,092 names as the list of the dry run, none more and none fewer.
+- **The restart.** A transient timer restarted the VM at 21:23 UTC; it was up again at 21:23:35 UTC, with kernel 6.12.115+deb13.1, which `unattended-upgrades` had installed and the VM had not booted yet (it ran 6.12.107 before).
+- **The checks after the restart,** from 21:23:48 to 21:23:58 UTC. Criterion 3: the default target is `multi-user.target`, the system is `running` with no failed unit, none of the 11 packages of the criterion is installed, and `ss -lntup` lists `sshd` on port 22, `tailscaled`, and `dockerd` on ports 80, 443 and 5432 of the tailnet address, nothing else. Criterion 4: `ens18` is connected through its NetworkManager connection with an address leased by DHCP (`ipv4.method auto`); Tailscale is `Running` and online with `tag:nfhotel-vm`; 11 of 11 containers run with the same names as before, none starting or unhealthy (the socket proxy of Alloy has no health check, row 4.6 of CIS-001); `nfhotel-firewall.service` is active with the table `inet nfhotel`; the smoke test gives 301 on port 80 and 200 on port 443; `sudo -l -U deploy` lists `/usr/local/sbin/nfhotel-deploy`; and `nfhotel-backup.service`, started by hand at 21:23:55 UTC, ended with success and copied `nfhotel-weekly-20261108T212355Z.dump.age` and `nfhotel-settings-weekly-20261108T212355Z.tar.age` to the backup target.
+- **What changed.** Installed packages: 1,602 before the run, 510 after it. Memory in use: 2,104 MB before the change, 1,071 MB after the restart. The root file system: 42 GB used before, 39 GB after.
+- **The read of the gate,** from 21:46 to 21:47 UTC, read-only: the list file unchanged (1,092 lines, the same sha256); the purge of apt equal to the list; 2 packages left with their configuration files only, the kernels 6.12.94 and 6.12.113 of earlier kernel updates, neither on the list; of the server packages of row 2.1.x of CIS-001, only `nginx` installed (finding 2); `rsync.service` disabled and inactive; none of the client packages of row 2.2.x installed; the default target `multi-user.target`, and only `dockerd`, `sshd` and `tailscaled` listening.
+
+<details>
+<summary>The list of the dry run of 2026-11-08, 20:51 UTC: the 1,092 packages that the run purged</summary>
+
+```text
+7zip accountsservice acl adwaita-icon-theme alsa-topology-conf alsa-ucm-conf alsa-utils apache2-bin
+appstream apt-config-icons at-spi2-common at-spi2-core avahi-daemon baobab bc bluez bluez-obexd
+bogofilter bogofilter-bdb bogofilter-common bolt bubblewrap coinor-libcbc3.1 coinor-libcgl1
+coinor-libclp1 coinor-libcoinmp0 coinor-libcoinutils3v5 coinor-libosi1v5 colord colord-data cpp
+cpp-14 cpp-14-x86-64-linux-gnu cpp-x86-64-linux-gnu cups cups-browsed cups-client cups-common
+cups-core-drivers cups-daemon cups-filters cups-filters-core-drivers cups-ipp-utils cups-pk-helper
+cups-ppdc cups-server-common dconf-cli dconf-gsettings-backend dconf-service desktop-base
+desktop-file-utils docbook-xml enchant-2 espeak-ng-data evince evince-common evolution
+evolution-common evolution-data-server evolution-data-server-common evolution-ews evolution-ews-core
+evolution-plugin-bogofilter evolution-plugin-pstimport evolution-plugins exfatprogs file-roller
+firefox-esr folks-common fontconfig fonts-cantarell fonts-dejavu fonts-dejavu-extra
+fonts-noto-color-emoji fonts-opensymbol fonts-quicksand fonts-symbola fwupd fwupd-amd64-signed gcr
+gcr4 gdm3 geoclue-2.0 geocode-glib-common gir1.2-accountsservice-1.0 gir1.2-adw-1 gir1.2-atk-1.0
+gir1.2-atspi-2.0 gir1.2-evince-3.0 gir1.2-freedesktop gir1.2-gck-2 gir1.2-gcr-4
+gir1.2-gdesktopenums-3.0 gir1.2-gdkpixbuf-2.0 gir1.2-gdm-1.0 gir1.2-geoclue-2.0
+gir1.2-geocodeglib-2.0 gir1.2-gnomebg-4.0 gir1.2-gnomebluetooth-3.0 gir1.2-gnomedesktop-4.0
+gir1.2-goa-1.0 gir1.2-graphene-1.0 gir1.2-grilo-0.3 gir1.2-gst-plugins-bad-1.0
+gir1.2-gst-plugins-base-1.0 gir1.2-gstreamer-1.0 gir1.2-gtk-3.0 gir1.2-gtk-4.0 gir1.2-gtksource-4
+gir1.2-gudev-1.0 gir1.2-gweather-4.0 gir1.2-harfbuzz-0.0 gir1.2-ibus-1.0
+gir1.2-javascriptcoregtk-4.1 gir1.2-json-1.0 gir1.2-malcontent-0 gir1.2-mediaart-2.0
+gir1.2-mutter-16 gir1.2-nm-1.0 gir1.2-nma4-1.0 gir1.2-notify-0.7 gir1.2-pango-1.0 gir1.2-peas-1.0
+gir1.2-polkit-1.0 gir1.2-rest-1.0 gir1.2-rsvg-2.0 gir1.2-secret-1 gir1.2-shumate-1.0 gir1.2-soup-3.0
+gir1.2-totem-1.0 gir1.2-totemplparser-1.0 gir1.2-tracker-3.0 gir1.2-upowerglib-1.0
+gir1.2-webkit2-4.1 gir1.2-wnck-3.0 gir1.2-xdp-1.0 gjs glib-networking glib-networking-common
+glib-networking-services glycin-loaders gnome gnome-backgrounds gnome-bluetooth-3-common
+gnome-bluetooth-sendto gnome-browser-connector gnome-calculator gnome-calendar gnome-characters
+gnome-clocks gnome-connections gnome-contacts gnome-control-center gnome-control-center-data
+gnome-core gnome-desktop3-data gnome-disk-utility gnome-font-viewer gnome-keyring
+gnome-keyring-pkcs11 gnome-logs gnome-maps gnome-menus gnome-music gnome-online-accounts
+gnome-remote-desktop gnome-session gnome-session-bin gnome-session-common gnome-session-xsession
+gnome-settings-daemon gnome-settings-daemon-common gnome-shell gnome-shell-common gnome-snapshot
+gnome-software gnome-software-common gnome-software-plugin-deb gnome-software-plugin-fwupd
+gnome-sound-recorder gnome-sushi gnome-system-monitor gnome-terminal gnome-terminal-data
+gnome-text-editor gnome-tour gnome-tweaks gnome-user-docs gnome-user-share gnome-weather
+grilo-plugins-0.3 gsettings-desktop-schemas gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-gtk4
+gstreamer1.0-libav gstreamer1.0-libcamera gstreamer1.0-packagekit gstreamer1.0-pipewire
+gstreamer1.0-plugins-bad gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+gstreamer1.0-plugins-ugly gstreamer1.0-x gtk-update-icon-cache gvfs gvfs-backends gvfs-common
+gvfs-daemons gvfs-fuse gvfs-libs heif-gdk-pixbuf heif-thumbnailer hicolor-icon-theme hunspell-en-us
+hyphen-en-us i965-va-driver ibus ibus-data ibus-gtk ibus-gtk3 ibus-gtk4 iio-sensor-proxy im-config
+imagemagick-7-common inetutils-telnet intel-media-va-driver ipp-usb iw javascript-common
+liba52-0.7.4 libaa1 libaacs0 libabsl20240722 libabw-0.1-1 libaccountsservice0 libadwaita-1-0
+libao-common libao4 libaom3 libapache2-mod-dnssd libappstream5 libapr1t64 libaprutil1-dbd-sqlite3
+libaprutil1-ldap libaprutil1t64 libargon2-1 libasound2-data libasound2t64 libass9 libasyncns0
+libatasmart4 libatk-adaptor libatk-bridge2.0-0t64 libatk1.0-0t64 libatopology2t64 libatspi2.0-0t64
+libaudio2 libavahi-core7 libavahi-glib1 libavc1394-0 libavcodec61 libavfilter10 libavformat61
+libavif-gdk-pixbuf libavif16 libavtp0 libavutil59 libbdplus0 libblas3 libblockdev-crypto3
+libblockdev-fs3 libblockdev-loop3 libblockdev-mdraid3 libblockdev-nvme3 libblockdev-part3
+libblockdev-swap3 libblockdev-utils3 libblockdev3 libbluray2 libboost-iostreams1.83.0
+libboost-locale1.83.0 libboost-thread1.83.0 libbox2d2 libbrlapi0.8 libbs2b0 libbytesize-common
+libbytesize1 libcaca0 libcairo-gobject-perl libcairo-gobject2 libcairo-perl
+libcairo-script-interpreter2 libcairo2 libcairomm-1.16-1 libcamel-1.2-64t64 libcamera-ipa
+libcamera0.4 libcanberra-gtk3-0 libcanberra-gtk3-module libcanberra-pulse libcanberra0
+libcdio-cdda2t64 libcdio-paranoia2t64 libcdio19t64 libcdparanoia0 libcdr-0.1-1 libchamplain-0.12-0
+libchamplain-gtk-0.12-0 libchromaprint1 libcjson1 libcloudproviders0 libclucene-contribs1t64
+libclucene-core1t64 libclutter-1.0-0 libclutter-1.0-common libclutter-gtk-1.0-0 libcmark0.30.2
+libcmis-0.6-6t64 libcodec2-1.2 libcogl-common libcogl-pango20 libcogl-path20 libcogl20 libcolamd3
+libcolord-gtk4-1t64 libcolord2 libcolorhug2 libconfig++11 libcpuinfo0 libcue2 libcupsfilters1t64
+libdaemon0 libdatrie1 libdav1d7 libdbusmenu-glib4 libdbusmenu-gtk3-4 libdc1394-25 libdca0 libdconf1
+libde265-0 libdecor-0-0 libdecor-0-plugin-1-gtk libdee-1.0-4 libdisplay-info2 libdjvulibre-text
+libdjvulibre21 libdmapsharing-4.0-3t64 libdnnl3.6 libdotconf0 libdrm-amdgpu1 libdrm-common
+libdrm-intel1 libdrm-nouveau2 libdrm-radeon1 libdrm2 libdv4t64 libdvdnav4 libdvdread8t64
+libe-book-0.1-1 libebackend-1.2-11t64 libebook-1.2-21t64 libebook-contacts-1.2-4t64 libebur128-1
+libecal-2.0-3 libedata-book-1.2-27t64 libedata-cal-2.0-2t64 libedataserver-1.2-27t64
+libedataserverui-1.2-4t64 libedataserverui4-1.0-0t64 libeditorconfig0 libegl-mesa0 libegl1 libei1
+libeis1 libenchant-2-2 libeot0 libepoxy0 libepubgen-0.1-1 libespeak-ng1 libetonyek-0.1-1 libevdev2
+libevdocument3-4t64 libevent-2.1-7t64 libevolution libevview3-3t64 libexempi8 libexif12 libexiv2-28
+libexiv2-data libexttextcat-2.0-0 libexttextcat-data libextutils-depends-perl libfaad2 libffado2
+libfftw3-double3 libfftw3-single3 libflac14 libflashrom1 libflatpak0 libflite1 libfluidsynth3
+libfolks-eds26 libfolks26 libfontembed1t64 libfreeaptx0 libfreehand-0.1-1 libfreerdp-client3-3
+libfreerdp-server3-3 libfreerdp3-3 libftdi1-2 libfwupd3 libgail-3-0t64 libgav1-1 libgbm1 libgck-1-0
+libgck-2-2 libgcr-4-4 libgcr-base-3-1 libgcr-ui-3-1 libgd3 libgdata-common libgdata22
+libgdk-pixbuf-2.0-0 libgdk-pixbuf2.0-bin libgdk-pixbuf2.0-common libgdm1 libgee-0.8-2 libgeoclue-2-0
+libgeocode-glib-2-0 libges-1.0-0 libgexiv2-2 libgfortran5 libgif7 libgjs0g libgl1 libgl1-mesa-dri
+libgles2 libglib-object-introspection-perl libglib-perl libglib2.0-bin libglibmm-2.4-1t64
+libglibmm-2.68-1t64 libglu1-mesa libglvnd0 libglx-mesa0 libglx0 libgme0 libgnome-autoar-0-0
+libgnome-autoar-gtk-0-0 libgnome-bg-4-2t64 libgnome-bluetooth-3.0-13 libgnome-bluetooth-ui-3.0-13
+libgnome-desktop-3-20t64 libgnome-desktop-4-2t64 libgnome-rr-4-2t64 libgoa-1.0-0b libgoa-1.0-common
+libgoa-backend-1.0-2 libgom-1.0-0t64 libgomp1 libgpgme11t64 libgpgmepp6t64 libgphoto2-6t64
+libgphoto2-l10n libgphoto2-port12t64 libgraphene-1.0-0 libgraphite2-3 libgrilo-0.3-0 libgsf-1-114
+libgsf-1-common libgsf-bin libgsl28 libgslcblas0 libgsm1 libgsound0t64 libgspell-1-3
+libgspell-1-common libgssdp-1.6-0 libgstreamer-gl1.0-0 libgstreamer-plugins-bad1.0-0
+libgstreamer-plugins-base1.0-0 libgstreamer1.0-0 libgtk-3-0t64 libgtk-3-bin libgtk-3-common
+libgtk-4-1 libgtk-4-bin libgtk-4-common libgtk-4-media-gstreamer libgtk-vnc-2.0-0 libgtk3-perl
+libgtkmm-4.0-0 libgtksourceview-4-0 libgtksourceview-4-common libgtksourceview-5-0
+libgtksourceview-5-common libgtop-2.0-11 libgtop2-common libgudev-1.0-0 libgupnp-1.6-0
+libgupnp-av-1.0-3 libgupnp-dlna-2.0-4 libgupnp-igd-1.6-0 libgusb2 libgvnc-1.0-0 libgweather-4-0t64
+libgweather-4-common libgxps2t64 libhandy-1-0 libharfbuzz-gobject0 libharfbuzz-icu0
+libharfbuzz-subset0 libharfbuzz0b libheif-plugin-aomenc libheif-plugin-dav1d libheif-plugin-libde265
+libheif-plugin-x265 libheif1 libhidapi-hidraw0 libhunspell-1.7-0 libhwy1t64 libhyphen0 libibus-1.0-5
+libical3t64 libicu76 libiec61883-0 libieee1284-3t64 libigdgmm12 libimagequant0 libimath-3-1-29t64
+libimobiledevice-1.0-6 libimobiledevice-glue-1.0-0 libinih1 libinireader0 libinput-bin libinput10
+libinstpatch-1.0-2 libiptcdata0 libisl23 libjack-jackd2-0 libjavascriptcoregtk-4.1-0
+libjavascriptcoregtk-6.0-1 libjaylink0 libjcat1 libjim0.83 libjson-glib-1.0-0
+libjson-glib-1.0-common libjxl-gdk-pixbuf libjxl0.11 libjxr-tools libjxr0t64 libkpathsea6
+liblangtag-common liblangtag1 liblapack3 liblc3-1 libldacbt-abr2 libldacbt-enc2 libldb2 liblilv-0-0
+libllvm19 liblouis-data liblouis20 liblouisutdml-bin liblouisutdml-data liblouisutdml9t64 liblqr-1-0
+liblrdf0 libltc11 libltdl7 liblttng-ust-common1t64 liblttng-ust-ctl5t64 liblttng-ust1t64 liblua5.4-0
+liblzo2-2 libmagickcore-7.q16-10 libmagickcore-7.q16-10-extra libmagickwand-7.q16-10
+libmalcontent-0-0 libmalcontent-ui-1-1 libmanette-0.2-0 libmbedcrypto16 libmbim-glib4 libmbim-proxy
+libmbim-utils libmediaart-2.0-0 libmhash2 libmjpegutils-2.1-0t64 libmodplug1 libmozjs-128-0
+libmp3lame0 libmpc3 libmpcdec6 libmpeg2-4 libmpeg2encpp-2.1-0t64 libmpfr6 libmpg123-0t64
+libmplex2-2.1-0t64 libmsgraph-1-1 libmspack0t64 libmspub-0.1-1 libmtdev1t64 libmtp-common
+libmtp-runtime libmtp9t64 libmutter-16-0 libmwaw-0.3-3 libmysofa1 libmythes-1.2-0
+libnautilus-extension4 libncurses6 libneon27t64 libnfs14 libnice10 libnl-3-200 libnl-genl-3-200
+libnl-route-3-200 libnma-common libnma-gtk4-0 libnma0 libnorm1t64 libnotify4 libnspr4 libnss-mdns
+libnss-myhostname libnss3 libntfs-3g89t64 libnumbertext-1.0-0 libnumbertext-data libnvme1t64
+liboauth0 libodfgen-0.1-1 libogg0 libonnx1t64 libonnxruntime1.21 libopenal-data libopenal1
+libopencore-amrnb0 libopencore-amrwb0 libopenexr-3-1-30 libopenfec1 libopengl0 libopenh264-8
+libopenmpt0t64 libopenni2-0 libopus0 liborc-0.4-0t64 liborcus-0.18-0 liborcus-parser-0.18-0
+libosinfo-1.0-0 libosinfo-l10n libostree-1-1 libpackagekit-glib2-18 libpagemaker-0.0-0
+libpam-gnome-keyring libpango-1.0-0 libpangocairo-1.0-0 libpangoft2-1.0-0 libpangomm-2.48-1t64
+libpangoxft-1.0-0 libpcaudio0 libpciaccess0 libpcsclite1 libpeas-1.0-0 libpeas-common
+libpgm-5.3-0t64 libphonenumber8 libpipewire-0.3-0t64 libpipewire-0.3-common libpipewire-0.3-modules
+libpixman-1-0 libplacebo349 libplist-2.0-4 libplymouth5 libpocketsphinx3 libpoppler-cpp2
+libpoppler-glib8t64 libpoppler147 libportal-gtk3-1 libportal-gtk4-1 libportal1 libpostproc58
+libprotobuf32t64 libproxy1v5 libpst4t64 libpthreadpool0 libpulse-mainloop-glib0 libpulse0
+libpython3.13 libqmi-glib5 libqmi-proxy libqmi-utils libqpdf30 libqrtr-glib0 libqxp-0.0-0
+librabbitmq4 libraptor2-0 librasqal3t64 librav1e0.7 libraw1394-11 libraw23t64 librdf0t64 libre2-11
+libreoffice-base-core libreoffice-calc libreoffice-common libreoffice-core libreoffice-draw
+libreoffice-gnome libreoffice-gtk3 libreoffice-help-common libreoffice-help-en-us
+libreoffice-impress libreoffice-math libreoffice-style-colibre libreoffice-style-elementary
+libreoffice-uiconfig-calc libreoffice-uiconfig-common libreoffice-uiconfig-draw
+libreoffice-uiconfig-impress libreoffice-uiconfig-math libreoffice-uiconfig-writer
+libreoffice-writer librest-1.0-0 librevenge-0.0-0 librist4 libroc0.4 librsvg2-2 librsvg2-common
+librubberband2 librygel-core-2.8-0 librygel-db-2.8-0 librygel-renderer-2.8-0
+librygel-renderer-gst-2.8-0 librygel-server-2.8-0 libsamplerate0 libsane-common libsane1 libsbc1
+libsdl2-2.0-0 libsecret-1-0 libsecret-common libsensors-config libsensors5 libserd-0-0 libshine3
+libshout3 libshumate-1.0-1 libshumate-common libsidplay1v5 libsigc++-2.0-0v5 libsigc++-3.0-0
+libsmbclient0 libsnappy1v5 libsndfile1 libsnmp-base libsnmp40t64 libsodium23 libsonic0 libsord-0-0
+libsoundtouch1 libsoup-2.4-1 libsoup-3.0-0 libsoup-3.0-common libsoup2.4-common libsoxr0
+libspa-0.2-bluetooth libspa-0.2-libcamera libspa-0.2-modules libspandsp2t64 libspectre1
+libspeechd-module0 libspeechd2 libspeex1 libspeexdsp1 libspelling-1-2 libspelling-common
+libsphinxbase3t64 libsratom-0-0 libsrt1.5-gnutls libsrtp2-1 libssh-4 libstaroffice-0.0-0
+libstartup-notification0 libstemmer0d libsuitesparseconfig7 libsvtav1enc2 libswresample5 libswscale8
+libsynctex2 libtag2 libtalloc2 libtdb1 libtevent0t64 libthai-data libthai0 libtheora0 libtheoradec1
+libtheoraenc1 libtinysparql-3.0-0 libtotem-plparser-common libtotem-plparser18 libtotem0
+libtss2-esys-3.0.2-0t64 libtss2-sys1t64 libtss2-tcti-cmd0t64 libtss2-tcti-libtpms0t64
+libtss2-tcti-mssim0t64 libtss2-tcti-spi-helper0t64 libtss2-tcti-swtpm0t64 libtss2-tctildr0t64
+libtwolame0 libudfread0 libudisks2-0 libunibreak6 libunity-protocol-private0
+libunity-scopes-json-def-desktop libunity9 libuno-cppu3t64 libuno-cppuhelpergcc3-3t64
+libuno-purpenvhelpergcc3-3t64 libuno-sal3t64 libuno-salhelpergcc3-3t64 libunwind8 libupower-glib3
+liburiparser1 libusbmuxd-2.0-7 libutempter0 libv4l-0t64 libv4lconvert0t64 libva-drm2 libva-x11-2
+libva2 libvdpau-va-gl1 libvdpau1 libvidstab1.1 libvisio-0.1-1 libvisual-0.4-0 libvo-aacenc0
+libvo-amrwbenc0 libvolume-key1 libvorbis0a libvorbisenc2 libvorbisfile3 libvpl2 libvpx9
+libvte-2.91-0 libvte-2.91-common libvulkan1 libwacom-common libwacom9 libwavpack1 libwayland-client0
+libwayland-cursor0 libwayland-egl1 libwayland-server0 libwbclient0 libwebkit2gtk-4.1-0
+libwebkitgtk-6.0-4 libwebpdemux2 libwebpmux3 libwebrtc-audio-processing-1-3 libwildmidi2 libwinpr3-3
+libwireplumber-0.5-0 libwmflite-0.2-7 libwnck-3-0 libwnck-3-common libwpd-0.10-10 libwpg-0.3-3
+libwps-0.4-4 libx11-xcb1 libx264-164 libx265-215 libxatracker2 libxaw7 libxcb-damage0 libxcb-dri2-0
+libxcb-dri3-0 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-present0 libxcb-randr0
+libxcb-render-util0 libxcb-render0 libxcb-res0 libxcb-shape0 libxcb-shm0 libxcb-sync1 libxcb-util1
+libxcb-xfixes0 libxcb-xkb1 libxcb-xv0 libxcomposite1 libxcursor1 libxcvt0 libxdamage1 libxfixes3
+libxfont2 libxft2 libxi6 libxinerama1 libxkbcommon-x11-0 libxkbcommon0 libxkbfile1 libxkbregistry0
+libxml++2.6-2v5 libxmlb2 libxmlsec1t64 libxmlsec1t64-nss libxmu6 libxnnpack0.20241108 libxpm4
+libxrandr2 libxrender1 libxres1 libxshmfence1 libxslt1.1 libxss1 libxtst6 libxv1 libxvidcore4
+libxvmc1 libxxf86dga1 libxxf86vm1 libyajl2 libyaml-0-2 libyelp0 libytnef0 libyuv0 libz3-4
+libzbar0t64 libzimg2 libzix-0-0 libzmf-0.0-0 libzmq5 libzvbi-common libzvbi0t64 libzxcvbn0 libzxing3
+loupe low-memory-monitor luit malcontent malcontent-gui mesa-libgallium mesa-va-drivers
+mesa-vdpau-drivers mesa-vulkan-drivers mobile-broadband-provider-info modemmanager mutter-common
+mutter-common-bin mythes-en-us nautilus nautilus-data nautilus-extension-gnome-terminal
+nm-connection-editor node-clipboard node-normalize.css node-prismjs ntfs-3g ocl-icd-libopencl1 orca
+osinfo-db p11-kit p11-kit-modules packagekit packagekit-tools perl-tk pinentry-gnome3 pipewire
+pipewire-alsa pipewire-audio pipewire-bin pipewire-pulse pkexec plymouth plymouth-label
+pocketsphinx-en-us poppler-utils power-profiles-daemon ppp python3-brlapi python3-cairo python3-cups
+python3-cupshelpers python3-distro python3-gi-cairo python3-ibus-1.0 python3-louis python3-psutil
+python3-setproctitle python3-smbc python3-speechd python3-uno python3-xdg realmd rtkit rygel
+rygel-playbin rygel-tracker samba-libs sane-airscan sane-utils seahorse sgml-data shotwell
+shotwell-common simple-scan sound-icons sound-theme-freedesktop speech-dispatcher
+speech-dispatcher-audio-plugins speech-dispatcher-espeak-ng spice-vdagent switcheroo-control
+system-config-printer-common system-config-printer-udev task-desktop task-gnome-desktop tecla
+timgm6mb-soundfont tinysparql totem totem-common totem-plugins tracker-extract udisks2
+uno-libs-private unzip update-inetd upower ure usb-modeswitch usb-modeswitch-data usb.ids usbmuxd
+user-session-migration va-driver-all vdpau-driver-all webp-pixbuf-loader wireplumber wpasupplicant
+x11-apps x11-session-utils x11-utils x11-xkb-utils x11-xserver-utils xbitmaps xbrlapi xcvt
+xdg-dbus-proxy xdg-desktop-portal xdg-desktop-portal-gnome xdg-desktop-portal-gtk xdg-user-dirs-gtk
+xfonts-100dpi xfonts-75dpi xfonts-base xfonts-scalable xinit xkbset xorg xorg-docs-core
+xserver-common xserver-xephyr xserver-xorg xserver-xorg-core xserver-xorg-input-all
+xserver-xorg-input-libinput xserver-xorg-input-wacom xserver-xorg-legacy xserver-xorg-video-all
+xserver-xorg-video-amdgpu xserver-xorg-video-ati xserver-xorg-video-fbdev xserver-xorg-video-intel
+xserver-xorg-video-nouveau xserver-xorg-video-qxl xserver-xorg-video-radeon xserver-xorg-video-vesa
+xserver-xorg-video-vmware xterm xwayland yelp yelp-xsl zenity zenity-common
+```
+
+</details>
+
+## Checklist Results
+
+| # | Criterion (MIL-068) | Status | Evidence/Notes |
+| --- | --- | --- | --- |
+| 1 | The dry run of `remove-desktop.sh` on the VM lists the packages it would purge and none of the packages to keep; the review record keeps the list | Pass | The dry run of 20:51 UTC: 1,092 packages (3,098 MB), "no package to keep would go", nothing changed; the list is above, and the purge of 21:19 UTC took the same 1,092 names |
+| 2 | `ops/tests/test-remove-desktop.sh` proves in `debian:13-slim`, with a few of the listed packages installed, that the dry run changes nothing, that `--apply` purges them and keeps the packages to keep, and that the script refuses when a package to keep would be purged | Pass | 21 checks with stand-in packages, the refusal written first ([RC-317]); green in Ops CI on #604 (`Ops script tests (test-remove-desktop.sh)`) |
+| 3 | After the run and one restart of the VM: `systemctl get-default` is `multi-user.target`; none of `task-desktop`, `task-gnome-desktop`, `gdm3`, `gnome-shell`, `libreoffice-core`, `cups`, `avahi-daemon`, `modemmanager`, `bluez`, `packagekit` and `inetutils-telnet` is installed; `ss -lntup` shows only `sshd`, `tailscaled` and the ports of Docker | Pass | `multi-user.target`; none of the 11 installed; `ss -lntup`: `sshd`, `tailscaled` and `dockerd` only, at 21:23:48 UTC and again at 21:46 UTC |
+| 4 | After the restart: `ens18` has its address from NetworkManager, Tailscale is online with `tag:nfhotel-vm`, the 11 containers are healthy, `nfhotel-firewall.service` is active with the table `inet nfhotel`, the smoke test gives 301 and 200, `sudo -l -U deploy` lists `nfhotel-deploy`, and one run of `nfhotel-backup.service` copies to the backup target | Pass | `ens18` connected with a DHCP address from NetworkManager; Tailscale online with `tag:nfhotel-vm`; 11 of 11 containers, none starting or unhealthy; the firewall unit active with `inet nfhotel`; 301 and 200; `nfhotel-deploy` listed; the backup of 21:23:55 UTC copied to the backup target |
+| 5 | The wiki page Host-Hardening and rows 2.1.x and 2.2.x of [CIS-001] say what criterion 3 shows, the update command names Docker's five packages and Tailscale, and `test-wiki-coverage.sh` passes | Pass | The pull request of this record: the section "Without a desktop" says that the desktop was removed on 2026-11-08 and what the checks show; row 2.1.x is Applied with one exception (finding 2) and row 2.2.x Applied, with the evidence of this record; the update command names `docker-ce`, `docker-ce-cli`, `containerd.io`, `docker-compose-plugin`, `docker-buildx-plugin` and `tailscale` (#604); `test-wiki-coverage.sh` passes |
+| 6 | The code review against `QC-SH-001` (and `QC-WF-001` when a workflow changes) is Go, `lint.sh` is clean, and every required check of the pull request is green | Pass | [RC-317] Go; `Ops linters` passed, and all 41 required checks of #604 passed on a90e40e |
+
+## Findings
+
+1. **The dry run is the purge.** The 1,092 names of the dry run of 20:51 UTC are the 1,092 names that apt purged at 21:19 UTC. The marks of the 28 packages to keep did on the VM what the test showed with stand-in packages ([RC-317], finding 1): `sudo`, NetworkManager and `jq` stayed, and the deploy account, the network and the backup work after the restart.
+2. **A web server on the host, outside the list.** The read of the gate found `nginx` and `nginx-common` 1.26.3 installed on the host: installed by hand on 2026-10-06 (`apt install nginx`, by the administrator account), marked as installed by hand, and patched by `unattended-upgrades` (deb13u10 since 2026-10-25). Its unit is disabled and inactive, no `nginx` process runs outside the containers, its only site is the default one, and no installed package needs it. No document of the project names it, and the survey of MIL-068 looked for the desktop, so it is not on the list. It changes no criterion: it is none of the 11 packages of criterion 3, and it does not listen. Row 2.1.x of CIS-001 covers the web server on the host, so the row is Applied with one exception. Purging it would change the VM outside the plan of MIL-068, so S01 decides (action item).
+3. **The restart also booted the newest kernel.** The VM ran 6.12.107 while 6.12.115 was installed; the restart of task 5 brought the update into use.
+4. **No configuration file of the list is left.** The two packages with configuration files only are older kernels; the purge removed the configuration files of all 1,092, as the script requires.
+5. **What the change gives.** LibreOffice and its runtime, which held 29 of the 32 waiting security updates (finding 3 of MIL-068), are gone, and so are 1,092 packages to patch; the VM uses half the memory it used before.
+
+## Overall Verdict
+
+Go: the six criteria pass on the evidence of 2026-11-08. The gate of MIL-068 is passed: issues #607 and #610 close through the pull request of this record, and the GitHub milestone #50 is closed after the merge. The `nginx` package of the host (finding 2) is outside the criteria; row 2.1.x of CIS-001 records it as its exception until S01 decides. The reviewer is not independent.
+
+## Action Items
+
+| Action | Owner | Due |
+| --- | --- | --- |
+| Close the GitHub milestone #50 after the merge of this record, and check that #607 and #610 are closed | AI as stand-in for S01 | At the merge |
+| Decide whether the `nginx` package of the host is purged (finding 2); after a purge, row 2.1.x of CIS-001 loses its exception | S01 | 2026-11-15 |
+| Delete the Proxmox snapshots `before-mil-068` and `before-mil-068-new` of the VM | S01 | 2026-11-10 |
+
+---
+
+[MIL-068]: ../../milestones/mil-068-the-vm-without-a-desktop.md
+[RC-314]: ./rc-314-mil-068.md
+[RC-317]: ./rc-317-mil-068-code.md
+[CIS-001]: ../cis-checklist.md
+[QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[3a2683b]: https://github.com/NF-Hotel/NFHotel/commit/3a2683b9abdd60ff583dc81c14a65e050e3183c4
