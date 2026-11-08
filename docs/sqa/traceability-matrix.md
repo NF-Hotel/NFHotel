@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The MIL-064 row: gate passed (RC-303, Go) with `docker inspect` on the VM, after RC-302 Go-with-conditions | [77f8a2b] |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The MIL-065 row: accepted by S01 in chat (RC-304, Go), with the tag check of `test-wiki-coverage.sh` and decision D2 | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The MIL-065 row: accepted by S01 in chat (RC-304, Go), with the tag check of `test-wiki-coverage.sh` and decision D2 | [b5b7fb8] |
 
 ---
 
@@ -312,3 +312,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [77f8a2b]: https://github.com/NF-Hotel/NFHotel/commit/77f8a2be1bf561ad0b42574fd3c980c75018995d
+[b5b7fb8]: https://github.com/NF-Hotel/NFHotel/commit/b5b7fb8f416414f1c37718fb641a2e4ff86ca657

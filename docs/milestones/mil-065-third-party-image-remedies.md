@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: one task for each of the eleven third-party images that the first full daily scan fails (run 42443407440), each with its remedy under ADR-0040 decision 5, checked with candidate scans on 2026-11-08; written in autonomous mode at S01's request in chat ("fix resten") | [c27ba7a] |
-| 2026-11-08 | Accepted | mikemike | S01 | Accepted by S01 in chat ("godkendt", to the choice "Godkend alt: MIL-065 med wiki-tjekket, D2 som private"), which also confirms the language and the terms (RC-304)<br>Task 12: `test-wiki-coverage.sh` also checks the tags of the pinned images<br>New task 13 and criterion 9: decision D2 of DSA-001 taken as private packages; tasks 13 and 14 become 14 and 15 | pending |
+| 2026-11-08 | Accepted | mikemike | S01 | Accepted by S01 in chat ("godkendt", to the choice "Godkend alt: MIL-065 med wiki-tjekket, D2 som private"), which also confirms the language and the terms (RC-304)<br>Task 12: `test-wiki-coverage.sh` also checks the tags of the pinned images<br>New task 13 and criterion 9: decision D2 of DSA-001 taken as private packages; tasks 13 and 14 become 14 and 15 | [b5b7fb8] |
 
 ---
 
@@ -129,3 +129,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-036]: ./mil-036-security-operations.md
 [MIL-064]: ./mil-064-patched-nginx-and-third-party-scan.md
 [c27ba7a]: https://github.com/NF-Hotel/NFHotel/commit/c27ba7a193b1056bd13ed0d18cafb95f74c4ad18
+[b5b7fb8]: https://github.com/NF-Hotel/NFHotel/commit/b5b7fb8f416414f1c37718fb641a2e4ff86ca657

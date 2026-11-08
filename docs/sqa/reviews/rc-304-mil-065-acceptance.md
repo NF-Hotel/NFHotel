@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the re-review that RC-301 asked for: S01 accepted MIL-065 in chat with its language and terms, and the plan holds the two additions S01 chose with it (the tag check in task 12, decision D2 as task 13 with criterion 9) | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the re-review that RC-301 asked for: S01 accepted MIL-065 in chat with its language and terms, and the plan holds the two additions S01 chose with it (the tag check in task 12, decision D2 as task 13 with criterion 9) | [b5b7fb8] |
 
 ---
 
@@ -75,3 +75,4 @@ Go. Every Mandatory criterion of QC-MIL-001 passes, and criteria 3, 5 and 9 of Q
 [DSA-001]: ../devsecops-assessment.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[b5b7fb8]: https://github.com/NF-Hotel/NFHotel/commit/b5b7fb8f416414f1c37718fb641a2e4ff86ca657
