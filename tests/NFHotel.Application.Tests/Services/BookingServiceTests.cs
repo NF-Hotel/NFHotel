@@ -296,6 +296,179 @@ public sealed class BookingServiceTests
 
     #endregion
 
+    #region Availability calendar
+
+    /// <summary>Negative: without the permission to view bookings the calendar is refused before any lookup.</summary>
+    [Fact]
+    public async Task GetAvailabilityAsync_WithoutPermission_ReturnsForbiddenWithoutQuerying()
+    {
+        // Arrange
+        ServiceWorld world = new();
+
+        // Act
+        Result<IReadOnlyList<NightAvailabilityDto>> result = await world.BookingService().GetAvailabilityAsync(
+            world.Clock.Today, world.Clock.Today.AddDays(7), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        await world.BookingQueries.DidNotReceiveWithAnyArgs().GetOccupancyAsync(
+            default, default, default!, TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>Negative: a period that ends on or before its start is rejected, like a stay.</summary>
+    [Fact]
+    public async Task GetAvailabilityAsync_EndNotAfterStart_ReturnsEndNotAfterStart()
+    {
+        // Arrange
+        ServiceWorld world = new();
+
+        // Act
+        Result<IReadOnlyList<NightAvailabilityDto>> result = await world.BookingService(CreateBookingOverviewAuthorization())
+            .GetAvailabilityAsync(world.Clock.Today, world.Clock.Today, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.EndNotAfterStart, result.FirstError?.Code);
+    }
+
+    /// <summary>Boundary: two months of nights are counted, one night more is refused.</summary>
+    [Theory]
+    [InlineData(NFHotel.Application.UseCases.Bookings.BookingService.MaxAvailabilityNights, true)]
+    [InlineData(NFHotel.Application.UseCases.Bookings.BookingService.MaxAvailabilityNights + 1, false)]
+    public async Task GetAvailabilityAsync_PeriodLength_IsCountedUpToTheMaximum(int nights, bool counted)
+    {
+        // Arrange
+        ServiceWorld world = new();
+        ArrangeRoomsAndOccupancy(world, [world.AddRoom()], []);
+
+        // Act
+        Result<IReadOnlyList<NightAvailabilityDto>> result = await world.BookingService(CreateBookingOverviewAuthorization())
+            .GetAvailabilityAsync(world.Clock.Today, world.Clock.Today.AddDays(nights), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(counted, result.IsSuccess);
+        Assert.Equal(counted ? null : ErrorCodes.Booking.AvailabilityPeriodTooLong, result.FirstError?.Code);
+    }
+
+    /// <summary>
+    /// Positive: every night gets the free rooms of every size, and the departure day of a stay is free again (BR-39).
+    /// </summary>
+    [Fact]
+    public async Task GetAvailabilityAsync_StayInOneRoom_CountsFreeRoomsPerSizeAndNight()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        Room single = world.AddRoom("101", size: RoomSize.Single, capacity: 1);
+        Room taken = world.AddRoom("102", size: RoomSize.Double);
+        Room free = world.AddRoom("103", size: RoomSize.Double);
+        Room suite = world.AddRoom("105", size: RoomSize.Suite, capacity: 4);
+        RoomOccupancyDto stay = new(1, taken.Id, world.Clock.Today, world.Clock.Today.AddDays(2), BookingStatus.Confirmed);
+        ArrangeRoomsAndOccupancy(world, [single, taken, free, suite], [stay]);
+
+        // Act
+        Result<IReadOnlyList<NightAvailabilityDto>> result = await world.BookingService(CreateBookingOverviewAuthorization())
+            .GetAvailabilityAsync(world.Clock.Today, world.Clock.Today.AddDays(3), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(
+            [world.Clock.Today, world.Clock.Today.AddDays(1), world.Clock.Today.AddDays(2)],
+            result.Value.Select(night => night.Night).ToArray());
+        Assert.All(result.Value, night => Assert.Equal(
+            [RoomSize.Single, RoomSize.Double, RoomSize.Suite],
+            night.Types.Select(type => type.Size).ToArray()));
+
+        RoomTypeAvailabilityDto firstNight = result.Value[0].Types[1];
+        Assert.Equal((1, 2), (firstNight.Free, firstNight.Sellable));
+        Assert.Equal(["103"], firstNight.FreeRooms);
+
+        RoomTypeAvailabilityDto departureNight = result.Value[2].Types[1];
+        Assert.Equal((2, 2), (departureNight.Free, departureNight.Sellable));
+        Assert.Equal(["102", "103"], departureNight.FreeRooms);
+
+        Assert.Equal((1, 1), (result.Value[0].Types[0].Free, result.Value[0].Types[0].Sellable));
+        Assert.Equal((1, 1), (result.Value[0].Types[2].Free, result.Value[0].Types[2].Sellable));
+    }
+
+    /// <summary>Negative: a cancelled stay does not take its room, even if the lookup returns it.</summary>
+    [Fact]
+    public async Task GetAvailabilityAsync_CancelledStay_DoesNotBlockTheRoom()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        Room room = world.AddRoom();
+        RoomOccupancyDto cancelled = new(1, room.Id, world.Clock.Today, world.Clock.Today.AddDays(2), BookingStatus.Cancelled);
+        ArrangeRoomsAndOccupancy(world, [room], [cancelled]);
+
+        // Act
+        Result<IReadOnlyList<NightAvailabilityDto>> result = await world.BookingService(CreateBookingOverviewAuthorization())
+            .GetAvailabilityAsync(world.Clock.Today, world.Clock.Today.AddDays(1), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(1, result.Value[0].Types.Single(type => type.Size == RoomSize.Double).Free);
+    }
+
+    /// <summary>
+    /// Edge: a room that cannot be let is neither free nor counted (BR-110), and a stay in it changes nothing.
+    /// </summary>
+    [Fact]
+    public async Task GetAvailabilityAsync_RoomThatCannotBeLet_IsNotCounted()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        Room sellable = world.AddRoom("102");
+        Room closed = world.AddRoom("103");
+        RoomOccupancyDto stayInClosedRoom = new(1, closed.Id, world.Clock.Today, world.Clock.Today.AddDays(2), BookingStatus.Confirmed);
+        ArrangeRoomsAndOccupancy(world, [sellable], [stayInClosedRoom]);
+
+        // Act
+        Result<IReadOnlyList<NightAvailabilityDto>> result = await world.BookingService(CreateBookingOverviewAuthorization())
+            .GetAvailabilityAsync(world.Clock.Today, world.Clock.Today.AddDays(1), TestContext.Current.CancellationToken);
+
+        // Assert
+        RoomTypeAvailabilityDto doubles = result.Value[0].Types.Single(type => type.Size == RoomSize.Double);
+        Assert.Equal((1, 1), (doubles.Free, doubles.Sellable));
+        Assert.Equal(["102"], doubles.FreeRooms);
+    }
+
+    /// <summary>Positive: the free rooms are sorted as people read numbers, so 201 comes before 1001.</summary>
+    [Fact]
+    public async Task GetAvailabilityAsync_FreeRooms_AreSortedByNumber()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        ArrangeRoomsAndOccupancy(world, [world.AddRoom("1001"), world.AddRoom("201"), world.AddRoom("101")], []);
+
+        // Act
+        Result<IReadOnlyList<NightAvailabilityDto>> result = await world.BookingService(CreateBookingOverviewAuthorization())
+            .GetAvailabilityAsync(world.Clock.Today, world.Clock.Today.AddDays(1), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(["101", "201", "1001"], result.Value[0].Types.Single(type => type.Size == RoomSize.Double).FreeRooms);
+    }
+
+    /// <summary>Positive: the lookup asks for the whole period and only for the statuses that block a room.</summary>
+    [Fact]
+    public async Task GetAvailabilityAsync_Lookup_AsksForThePeriodAndTheBlockingStatuses()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        ArrangeRoomsAndOccupancy(world, [world.AddRoom()], []);
+        DateOnly from = world.Clock.Today.AddDays(-3);
+        DateOnly to = world.Clock.Today.AddDays(4);
+
+        // Act
+        await world.BookingService(CreateBookingOverviewAuthorization())
+            .GetAvailabilityAsync(from, to, TestContext.Current.CancellationToken);
+
+        // Assert
+        await world.BookingQueries.Received(1).GetOccupancyAsync(
+            from,
+            to,
+            Arg.Is<IReadOnlyCollection<BookingStatus>>(statuses => !statuses.Contains(BookingStatus.Cancelled) && statuses.Count > 0),
+            Arg.Any<CancellationToken>());
+    }
+
+    #endregion
+
     #region Creating a booking
     /// <summary>Security: creating a booking without permission is forbidden.</summary>
     [Fact]

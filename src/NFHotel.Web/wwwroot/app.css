@@ -2951,6 +2951,189 @@ a.admin-list-item:hover { background: var(--adm-surface-2); color: inherit; text
 .admin-segmented .btn:hover { color: var(--adm-ink); background: transparent; }
 .admin-segmented .btn[aria-pressed="true"] { background: var(--adm-surface); color: var(--adm-ink); box-shadow: var(--adm-shadow-sm); }
 
+/* ----- Availability calendar: free rooms of each size, night by night (bookings) ----- */
+
+.view-switch .btn { gap: 6px; }
+.view-switch .btn .icon { width: 15px; height: 15px; }
+
+.cal-card { overflow: hidden; }
+.cal-card .card-head { flex-wrap: wrap; }
+
+.cal-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); }
+.cal-month { display: inline-flex; align-items: center; gap: 2px; }
+.cal-month-label { min-width: 150px; text-align: center; font-weight: 650; font-size: 1rem; }
+.admin-shell .cal-nav { width: 36px; min-width: 36px; min-height: 36px; padding: 0; justify-content: center; }
+.cal-nav .icon { width: 16px; height: 16px; }
+.cal-nav.prev .icon { transform: rotate(90deg); }
+.cal-nav.next .icon { transform: rotate(-90deg); }
+
+.cal-sub {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3) var(--s6);
+    padding: var(--s3) var(--s6);
+    border-bottom: 1px solid var(--adm-line);
+    background: var(--adm-surface-2);
+    font-size: .8rem;
+    color: var(--adm-ink-2);
+}
+
+.cal-legend { display: flex; flex-wrap: wrap; gap: var(--s4); align-items: center; }
+.cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.cal-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.cal-legend .ok { background: var(--adm-ok); }
+.cal-legend .low { background: var(--adm-warn); }
+.cal-legend .full { background: var(--adm-danger); }
+
+.cal-error { padding: var(--s6); }
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+
+.cal-dow {
+    padding: 10px var(--s3);
+    border-bottom: 1px solid var(--adm-line);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--adm-ink-3);
+}
+
+.cal-dow.weekend { color: var(--adm-ink-2); }
+
+.cal-day {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 132px;
+    padding: 10px 12px 14px;
+    border: 0;
+    border-right: 1px solid var(--adm-line);
+    border-bottom: 1px solid var(--adm-line);
+    background: var(--adm-surface);
+    color: var(--adm-ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color .12s ease, box-shadow .12s ease;
+}
+
+.cal-grid > .cal-day:nth-child(7n) { border-right: 0; }
+.cal-day:hover { background: var(--adm-surface-2); box-shadow: inset 0 0 0 2px var(--adm-teal); z-index: 1; }
+.cal-day:focus-visible { box-shadow: inset 0 0 0 2px var(--adm-teal); outline: none; }
+.cal-day.weekend { background: color-mix(in srgb, var(--adm-surface-2) 55%, var(--adm-surface)); }
+.cal-day.is-out { opacity: .4; }
+.cal-day.is-past { cursor: default; background: var(--adm-surface-2); }
+.cal-day.is-past .cal-sizes,
+.cal-day.is-past .cal-big { opacity: .45; }
+.cal-day.is-past:hover { box-shadow: none; }
+.cal-day.is-selected { box-shadow: inset 0 0 0 2px var(--adm-teal); background: var(--adm-teal-soft); }
+
+.cal-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
+
+.cal-date {
+    display: inline-grid;
+    place-items: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: .9rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.cal-day.is-today .cal-date { background: var(--adm-teal); color: light-dark(#fff, #06262b); }
+.cal-occ { font-size: .72rem; font-weight: 600; color: var(--adm-ink-3); font-variant-numeric: tabular-nums; }
+.cal-none { font-size: .75rem; color: var(--adm-ink-3); }
+
+.cal-sizes { display: grid; gap: 4px; margin-top: 2px; }
+
+.cal-size {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+    font-size: .78rem;
+    color: var(--adm-ink-2);
+}
+
+.cal-free {
+    display: inline-block;
+    min-width: 48px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    background: var(--adm-surface-3);
+    color: var(--adm-ink-3);
+}
+
+.cal-free.ok { background: var(--adm-ok-soft); color: var(--adm-ok-ink); }
+.cal-free.low { background: var(--adm-warn-soft); color: var(--adm-warn-ink); }
+.cal-free.full { background: var(--adm-danger-soft); color: var(--adm-danger-ink); }
+.cal-free small { font-size: inherit; font-weight: 500; opacity: .65; }
+
+/* One size chosen: the number of free rooms is the thing, so it is large. */
+.cal-big { display: grid; gap: 2px; margin-top: auto; }
+.cal-big strong { font-size: 1.6rem; line-height: 1; font-variant-numeric: tabular-nums; color: var(--adm-ink-3); }
+.cal-big span { font-size: .75rem; color: var(--adm-ink-2); }
+.cal-big.ok strong { color: var(--adm-ok); }
+.cal-big.low strong { color: var(--adm-warn); }
+.cal-big.full strong { color: var(--adm-danger); }
+
+/* The share of rooms taken. <progress>, so no inline style is needed (style-src 'self', MIL-033). */
+.cal-bar {
+    appearance: none;
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 6px;
+    width: calc(100% - 24px);
+    height: 3px;
+    border: 0;
+    border-radius: 3px;
+    background: var(--adm-surface-3);
+    color: var(--adm-teal);
+    overflow: hidden;
+}
+
+.cal-bar::-webkit-progress-bar { background: var(--adm-surface-3); border-radius: 3px; }
+.cal-bar::-webkit-progress-value { background: var(--adm-teal); border-radius: 3px; }
+.cal-bar::-moz-progress-bar { background: var(--adm-teal); border-radius: 3px; }
+.cal-bar.high::-webkit-progress-value { background: var(--adm-warn); }
+.cal-bar.high::-moz-progress-bar { background: var(--adm-warn); }
+.cal-bar.full::-webkit-progress-value { background: var(--adm-danger); }
+.cal-bar.full::-moz-progress-bar { background: var(--adm-danger); }
+
+.cal-foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--s3);
+    padding: var(--s4) var(--s6);
+    border-top: 1px solid var(--adm-line);
+    font-size: .8rem;
+    color: var(--adm-ink-2);
+}
+
+@media (max-width: 900px) {
+    .cal-day { min-height: 96px; padding: 8px; }
+    .cal-size > span:first-child { display: none; }
+    .cal-free { min-width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cal-day { transition: none; }
+}
+
 /* ----- Misc ----- */
 
 .admin-shell .check { font-size: .9rem; }

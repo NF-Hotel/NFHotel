@@ -20,6 +20,9 @@
 
     Cancellation goes through ConfirmPanel (BR-04): it is pure UI and belongs here, not in
     Application.
+
+    The view switch in the header swaps the filter and the table for the availability calendar
+    (BookingCalendar). A night picked there opens the same panel, with the dates filled in.
 *@
 
 <PageTitle>Bookings — administration</PageTitle>
@@ -28,6 +31,24 @@
     <PageHeader Title="Bookings"
                 Subtitle="Search, sort and move bookings through check-in and check-out. A new booking is made in a few steps in the panel.">
         <Actions>
+            <div class="admin-segmented view-switch" role="group" aria-label="View">
+                <button type="button"
+                        class="btn"
+                        aria-pressed="@ViewPressed(calendar: false)"
+                        @onclick="ShowList">
+                    <AdminIcon Name="list" />
+                    List
+                </button>
+
+                <button type="button"
+                        class="btn"
+                        aria-pressed="@ViewPressed(calendar: true)"
+                        @onclick="ShowCalendar">
+                    <AdminIcon Name="calendar" />
+                    Calendar
+                </button>
+            </div>
+
             <button type="button"
                     class="btn btn-primary"
                     disabled="@Form.IsBusy"
@@ -344,230 +365,237 @@
         </aside>
     }
 
-    <section class="card" aria-labelledby="booking-filter">
-        <h2 class="sr-only" id="booking-filter">Filter</h2>
-
-        <div class="admin-toolbar">
-            <FormField Label="From" For="period-start">
-                <input id="period-start"
-                       type="date"
-                       class="field-input"
-                       disabled="@ViewModel.IsBusy"
-                       @bind="ViewModel.PeriodStart" />
-            </FormField>
-
-            <FormField Label="To (exclusive)" For="period-end">
-                <input id="period-end"
-                       type="date"
-                       class="field-input"
-                       disabled="@ViewModel.IsBusy"
-                       @bind="ViewModel.PeriodEnd" />
-            </FormField>
-
-            <FormField Label="Guest or room number" For="search-text">
-                <input id="search-text"
-                       type="search"
-                       class="field-input"
-                       disabled="@ViewModel.IsBusy"
-                       @bind="ViewModel.SearchText" />
-            </FormField>
-
-            <FormField Label="Status" For="filter-status">
-                <select id="filter-status"
-                        class="field-select"
-                        disabled="@ViewModel.IsBusy"
-                        @bind="ViewModel.StatusFilter"
-                        @bind:after="ApplyStatusFilter">
-                    <option value="">All statuses</option>
-                    @foreach (var status in Statuses)
-                    {
-                        <option value="@status">@DisplayText.Describe(status)</option>
-                    }
-                </select>
-            </FormField>
-
-            <label class="admin-toolbar-check" for="include-cancelled">
-                <input id="include-cancelled"
-                       type="checkbox"
-                       disabled="@ViewModel.IsBusy"
-                       @bind="ViewModel.IncludeCancelled" />
-                Include cancelled
-            </label>
-
-            <div class="admin-toolbar-actions">
-                <button type="button"
-                        class="btn btn-primary"
-                        disabled="@ViewModel.IsBusy"
-                        @onclick="SearchAsync">
-                    Search
-                </button>
-
-                <button type="button"
-                        class="btn btn-ghost"
-                        disabled="@ViewModel.IsBusy"
-                        @onclick="ClearFilterAsync">
-                    Clear filter
-                </button>
-            </div>
-        </div>
-    </section>
-
-    @if (ViewModel.BookingPendingCancellation is not null)
+    @if (_showCalendar)
     {
-        <ConfirmPanel Title="@CancelTitle"
-                      Message="The booking is set to Cancelled and the room is freed up for those dates. The row stays in the list, but this can't be undone."
-                      ConfirmLabel="Cancel booking"
-                      IsBusy="ViewModel.IsBusy"
-                      OnConfirm="ConfirmCancelAsync"
-                      OnCancel="AbortCancel" />
-    }
-
-    @if (!ViewModel.IsLoaded)
-    {
-        <LoadingSkeleton Rows="8" />
-    }
-    else if (ViewModel.IsHiddenByStatusFilter)
-    {
-        <EmptyState Title="No bookings with that status"
-                    Description="There are bookings in this period, but none with the status you picked.">
-            <button type="button" class="btn btn-secondary btn-sm" @onclick="ShowAllStatuses">
-                Show all statuses
-            </button>
-        </EmptyState>
-    }
-    else if (ViewModel.IsEmpty)
-    {
-        <EmptyState Title="No bookings in this period"
-                    Description="Widen the dates, clear the search field, or create the first booking.">
-            <button type="button" class="btn btn-primary btn-sm" @onclick="BeginCreate">
-                New booking
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm" @onclick="ClearFilterAsync">
-                Clear filter
-            </button>
-        </EmptyState>
+        <BookingCalendar Selected="_pickedNight" OnPickNight="BeginCreateForNightAsync" />
     }
     else
     {
-        <div class="table-wrap">
-            <table class="table">
-                <caption>@ViewModel.Bookings.Count bookings in this period</caption>
-                <thead>
-                    <tr>
-                        <th scope="col" aria-sort="@ViewModel.AriaSortFor(BookingSortField.BookingNumber)">
-                            <button type="button" class="btn btn-ghost btn-sm"
-                                    @onclick="() => SortAsync(BookingSortField.BookingNumber)">
-                                Booking
-                            </button>
-                        </th>
-                        <th scope="col" aria-sort="@ViewModel.AriaSortFor(BookingSortField.GuestName)">
-                            <button type="button" class="btn btn-ghost btn-sm"
-                                    @onclick="() => SortAsync(BookingSortField.GuestName)">
-                                Guest
-                            </button>
-                        </th>
-                        <th scope="col" aria-sort="@ViewModel.AriaSortFor(BookingSortField.RoomNumber)">
-                            <button type="button" class="btn btn-ghost btn-sm"
-                                    @onclick="() => SortAsync(BookingSortField.RoomNumber)">
-                                Room
-                            </button>
-                        </th>
-                        <th scope="col" class="numeric-start"
-                            aria-sort="@ViewModel.AriaSortFor(BookingSortField.StartDate)">
-                            <button type="button" class="btn btn-ghost btn-sm"
-                                    @onclick="() => SortAsync(BookingSortField.StartDate)">
-                                Check-in
-                            </button>
-                        </th>
-                        <th scope="col" class="numeric-start"
-                            aria-sort="@ViewModel.AriaSortFor(BookingSortField.EndDate)">
-                            <button type="button" class="btn btn-ghost btn-sm"
-                                    @onclick="() => SortAsync(BookingSortField.EndDate)">
-                                Check-out
-                            </button>
-                        </th>
-                        <th scope="col" class="numeric"
-                            aria-sort="@ViewModel.AriaSortFor(BookingSortField.Nights)">
-                            <button type="button" class="btn btn-ghost btn-sm"
-                                    @onclick="() => SortAsync(BookingSortField.Nights)">
-                                Nights
-                            </button>
-                        </th>
-                        <th scope="col" aria-sort="@ViewModel.AriaSortFor(BookingSortField.Status)">
-                            <button type="button" class="btn btn-ghost btn-sm"
-                                    @onclick="() => SortAsync(BookingSortField.Status)">
-                                Status
-                            </button>
-                        </th>
-                        <th scope="col" class="table-actions">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var booking in ViewModel.Bookings)
-                    {
+        <section class="card" aria-labelledby="booking-filter">
+            <h2 class="sr-only" id="booking-filter">Filter</h2>
+
+            <div class="admin-toolbar">
+                <FormField Label="From" For="period-start">
+                    <input id="period-start"
+                           type="date"
+                           class="field-input"
+                           disabled="@ViewModel.IsBusy"
+                           @bind="ViewModel.PeriodStart" />
+                </FormField>
+
+                <FormField Label="To (exclusive)" For="period-end">
+                    <input id="period-end"
+                           type="date"
+                           class="field-input"
+                           disabled="@ViewModel.IsBusy"
+                           @bind="ViewModel.PeriodEnd" />
+                </FormField>
+
+                <FormField Label="Guest or room number" For="search-text">
+                    <input id="search-text"
+                           type="search"
+                           class="field-input"
+                           disabled="@ViewModel.IsBusy"
+                           @bind="ViewModel.SearchText" />
+                </FormField>
+
+                <FormField Label="Status" For="filter-status">
+                    <select id="filter-status"
+                            class="field-select"
+                            disabled="@ViewModel.IsBusy"
+                            @bind="ViewModel.StatusFilter"
+                            @bind:after="ApplyStatusFilter">
+                        <option value="">All statuses</option>
+                        @foreach (var status in Statuses)
+                        {
+                            <option value="@status">@DisplayText.Describe(status)</option>
+                        }
+                    </select>
+                </FormField>
+
+                <label class="admin-toolbar-check" for="include-cancelled">
+                    <input id="include-cancelled"
+                           type="checkbox"
+                           disabled="@ViewModel.IsBusy"
+                           @bind="ViewModel.IncludeCancelled" />
+                    Include cancelled
+                </label>
+
+                <div class="admin-toolbar-actions">
+                    <button type="button"
+                            class="btn btn-primary"
+                            disabled="@ViewModel.IsBusy"
+                            @onclick="SearchAsync">
+                        Search
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-ghost"
+                            disabled="@ViewModel.IsBusy"
+                            @onclick="ClearFilterAsync">
+                        Clear filter
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        @if (ViewModel.BookingPendingCancellation is not null)
+        {
+            <ConfirmPanel Title="@CancelTitle"
+                          Message="The booking is set to Cancelled and the room is freed up for those dates. The row stays in the list, but this can't be undone."
+                          ConfirmLabel="Cancel booking"
+                          IsBusy="ViewModel.IsBusy"
+                          OnConfirm="ConfirmCancelAsync"
+                          OnCancel="AbortCancel" />
+        }
+
+        @if (!ViewModel.IsLoaded)
+        {
+            <LoadingSkeleton Rows="8" />
+        }
+        else if (ViewModel.IsHiddenByStatusFilter)
+        {
+            <EmptyState Title="No bookings with that status"
+                        Description="There are bookings in this period, but none with the status you picked.">
+                <button type="button" class="btn btn-secondary btn-sm" @onclick="ShowAllStatuses">
+                    Show all statuses
+                </button>
+            </EmptyState>
+        }
+        else if (ViewModel.IsEmpty)
+        {
+            <EmptyState Title="No bookings in this period"
+                        Description="Widen the dates, clear the search field, or create the first booking.">
+                <button type="button" class="btn btn-primary btn-sm" @onclick="BeginCreate">
+                    New booking
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" @onclick="ClearFilterAsync">
+                    Clear filter
+                </button>
+            </EmptyState>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table">
+                    <caption>@ViewModel.Bookings.Count bookings in this period</caption>
+                    <thead>
                         <tr>
-                            <td class="numeric-start">@booking.BookingNumber</td>
-                            <td class="nowrap">
-                                <strong>@booking.GuestFullName</strong>
-                                <span class="sub">@booking.GuestCountry</span>
-                            </td>
-                            <td class="numeric-start">@booking.RoomNumber</td>
-                            <td class="numeric-start">@AdminFormat.Date(booking.StartDate)</td>
-                            <td class="numeric-start">@AdminFormat.Date(booking.EndDate)</td>
-                            <td class="numeric">@booking.Nights</td>
-                            <td><StatusBadge BookingStatus="booking.Status" /></td>
-                            <td class="table-actions">
-                                @if (booking.Actions.CanConfirm)
-                                {
-                                    <button type="button" class="btn btn-secondary btn-sm"
-                                            disabled="@ViewModel.IsBusy"
-                                            @onclick="() => ExecuteAsync(BookingAction.Confirm, booking)">
-                                        Confirm
-                                    </button>
-                                }
-
-                                @if (booking.Actions.CanCheckIn)
-                                {
-                                    <button type="button" class="btn btn-primary btn-sm"
-                                            disabled="@ViewModel.IsBusy"
-                                            @onclick="() => ExecuteAsync(BookingAction.CheckIn, booking)">
-                                        Check in
-                                    </button>
-                                }
-
-                                @if (booking.Actions.CanCheckOut)
-                                {
-                                    <button type="button" class="btn btn-secondary btn-sm"
-                                            disabled="@ViewModel.IsBusy"
-                                            @onclick="() => ExecuteAsync(BookingAction.CheckOut, booking)">
-                                        Check out
-                                    </button>
-                                }
-
-                                @if (booking.Actions.CanReschedule)
-                                {
-                                    <button type="button" class="btn btn-secondary btn-sm btn-icon"
-                                            title="Reschedule @booking.BookingNumber"
-                                            disabled="@ViewModel.IsBusy"
-                                            @onclick="() => BeginRescheduleAsync(booking)">
-                                        <AdminIcon Name="calendar" /><span class="sr-only">Reschedule</span>
-                                    </button>
-                                }
-
-                                @if (booking.Actions.CanCancel)
-                                {
-                                    <button type="button" class="btn btn-danger btn-sm btn-icon"
-                                            title="Cancel @booking.BookingNumber"
-                                            disabled="@ViewModel.IsBusy"
-                                            @onclick="() => RequestCancel(booking)">
-                                        <AdminIcon Name="x" /><span class="sr-only">Cancel</span>
-                                    </button>
-                                }
-                            </td>
+                            <th scope="col" aria-sort="@ViewModel.AriaSortFor(BookingSortField.BookingNumber)">
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        @onclick="() => SortAsync(BookingSortField.BookingNumber)">
+                                    Booking
+                                </button>
+                            </th>
+                            <th scope="col" aria-sort="@ViewModel.AriaSortFor(BookingSortField.GuestName)">
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        @onclick="() => SortAsync(BookingSortField.GuestName)">
+                                    Guest
+                                </button>
+                            </th>
+                            <th scope="col" aria-sort="@ViewModel.AriaSortFor(BookingSortField.RoomNumber)">
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        @onclick="() => SortAsync(BookingSortField.RoomNumber)">
+                                    Room
+                                </button>
+                            </th>
+                            <th scope="col" class="numeric-start"
+                                aria-sort="@ViewModel.AriaSortFor(BookingSortField.StartDate)">
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        @onclick="() => SortAsync(BookingSortField.StartDate)">
+                                    Check-in
+                                </button>
+                            </th>
+                            <th scope="col" class="numeric-start"
+                                aria-sort="@ViewModel.AriaSortFor(BookingSortField.EndDate)">
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        @onclick="() => SortAsync(BookingSortField.EndDate)">
+                                    Check-out
+                                </button>
+                            </th>
+                            <th scope="col" class="numeric"
+                                aria-sort="@ViewModel.AriaSortFor(BookingSortField.Nights)">
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        @onclick="() => SortAsync(BookingSortField.Nights)">
+                                    Nights
+                                </button>
+                            </th>
+                            <th scope="col" aria-sort="@ViewModel.AriaSortFor(BookingSortField.Status)">
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        @onclick="() => SortAsync(BookingSortField.Status)">
+                                    Status
+                                </button>
+                            </th>
+                            <th scope="col" class="table-actions">Actions</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        @foreach (var booking in ViewModel.Bookings)
+                        {
+                            <tr>
+                                <td class="numeric-start">@booking.BookingNumber</td>
+                                <td class="nowrap">
+                                    <strong>@booking.GuestFullName</strong>
+                                    <span class="sub">@booking.GuestCountry</span>
+                                </td>
+                                <td class="numeric-start">@booking.RoomNumber</td>
+                                <td class="numeric-start">@AdminFormat.Date(booking.StartDate)</td>
+                                <td class="numeric-start">@AdminFormat.Date(booking.EndDate)</td>
+                                <td class="numeric">@booking.Nights</td>
+                                <td><StatusBadge BookingStatus="booking.Status" /></td>
+                                <td class="table-actions">
+                                    @if (booking.Actions.CanConfirm)
+                                    {
+                                        <button type="button" class="btn btn-secondary btn-sm"
+                                                disabled="@ViewModel.IsBusy"
+                                                @onclick="() => ExecuteAsync(BookingAction.Confirm, booking)">
+                                            Confirm
+                                        </button>
+                                    }
+
+                                    @if (booking.Actions.CanCheckIn)
+                                    {
+                                        <button type="button" class="btn btn-primary btn-sm"
+                                                disabled="@ViewModel.IsBusy"
+                                                @onclick="() => ExecuteAsync(BookingAction.CheckIn, booking)">
+                                            Check in
+                                        </button>
+                                    }
+
+                                    @if (booking.Actions.CanCheckOut)
+                                    {
+                                        <button type="button" class="btn btn-secondary btn-sm"
+                                                disabled="@ViewModel.IsBusy"
+                                                @onclick="() => ExecuteAsync(BookingAction.CheckOut, booking)">
+                                            Check out
+                                        </button>
+                                    }
+
+                                    @if (booking.Actions.CanReschedule)
+                                    {
+                                        <button type="button" class="btn btn-secondary btn-sm btn-icon"
+                                                title="Reschedule @booking.BookingNumber"
+                                                disabled="@ViewModel.IsBusy"
+                                                @onclick="() => BeginRescheduleAsync(booking)">
+                                            <AdminIcon Name="calendar" /><span class="sr-only">Reschedule</span>
+                                        </button>
+                                    }
+
+                                    @if (booking.Actions.CanCancel)
+                                    {
+                                        <button type="button" class="btn btn-danger btn-sm btn-icon"
+                                                title="Cancel @booking.BookingNumber"
+                                                disabled="@ViewModel.IsBusy"
+                                                @onclick="() => RequestCancel(booking)">
+                                            <AdminIcon Name="x" /><span class="sr-only">Cancel</span>
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     }
 </div>

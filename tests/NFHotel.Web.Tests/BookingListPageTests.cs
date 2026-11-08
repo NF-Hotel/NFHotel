@@ -31,7 +31,10 @@ public sealed class BookingListPageTests : IAsyncDisposable
         var clock = new FakeClock { Today = Today };
         var bookings = new PassThroughRunner<IBookingService>(_bookings);
         _host.With(new BookingListViewModel(bookings, clock))
-            .With(new BookingFormViewModel(bookings, new PassThroughRunner<IGuestService>(_guests), clock));
+            .With(new BookingFormViewModel(bookings, new PassThroughRunner<IGuestService>(_guests), clock))
+            .With(new BookingCalendarViewModel(bookings, clock));
+        _bookings.GetAvailabilityAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
+            .Returns(List(Night(Today.AddDays(-1)), Night(Today), Night(Today.AddDays(1))));
         _bookings.GetAvailableRoomsAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<int?>(), Arg.Any<CancellationToken>())
             .Returns(List(FreeRoom(1), FreeRoom(2)));
         _guests.SearchAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>()).Returns(List(Guest(4)));
@@ -42,6 +45,12 @@ public sealed class BookingListPageTests : IAsyncDisposable
 
     private void OverviewIs(params BookingListItemDto[] bookings) =>
         _bookings.GetOverviewAsync(Arg.Any<BookingOverviewQuery>(), Arg.Any<CancellationToken>()).Returns(List(bookings));
+
+    private static NightAvailabilityDto Night(DateOnly date) =>
+        new(date, [new RoomTypeAvailabilityDto(RoomSize.Double, 2, 3, ["101", "102"])]);
+
+    private static string Iso(DateOnly date) =>
+        date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
     #endregion
 
@@ -238,6 +247,111 @@ public sealed class BookingListPageTests : IAsyncDisposable
         page.Button("Save new dates").Click();
 
         Assert.Contains("Booking B-0001 was moved to the new dates.", page.Markup, StringComparison.Ordinal);
+    }
+
+    #endregion
+
+    #region Calendar
+
+    /// <summary>Positive: the view switch swaps the filter and the table for the calendar, and back.</summary>
+    [Fact]
+    public void Calendar_ViewSwitch_SwapsTheListForTheCalendar()
+    {
+        OverviewIs(BookingItem(1));
+        IRenderedComponent<BookingList> page = _host.Render<BookingList>();
+
+        page.Button("Calendar").Click();
+
+        Assert.Equal("true", page.Button("Calendar").GetAttribute("aria-pressed"));
+        Assert.Empty(page.FindAll("#booking-filter"));
+        Assert.Equal(42, page.FindAll(".cal-grid button.cal-day").Count);
+        Assert.Contains("March 2026", page.Find(".cal-month-label").TextContent, StringComparison.Ordinal);
+        Assert.Contains("2<small>/3</small>", page.Find(".is-today .cal-free").InnerHtml, StringComparison.Ordinal);
+        _bookings.Received(1).GetAvailabilityAsync(new DateOnly(2026, 2, 23), new DateOnly(2026, 4, 6), Arg.Any<CancellationToken>());
+
+        page.Button("List").Click();
+
+        Assert.Single(page.FindAll("#booking-filter"));
+        Assert.Empty(page.FindAll(".cal-grid"));
+    }
+
+    /// <summary>Positive: <c>?view=calendar</c> opens the page on the calendar, so a link or a reload keeps the view.</summary>
+    [Fact]
+    public void Calendar_ViewInTheAddress_OpensOnTheCalendar()
+    {
+        OverviewIs();
+        _host.Navigation.NavigateTo("/admin/bookings?view=calendar");
+
+        IRenderedComponent<BookingList> page = _host.Render<BookingList>();
+
+        Assert.Single(page.FindAll(".cal-grid"));
+        Assert.Equal("false", page.Button("List").GetAttribute("aria-pressed"));
+    }
+
+    /// <summary>
+    /// Positive: a night from today on opens the panel for one night with the free rooms fetched, and a saved booking
+    /// fetches the calendar again.
+    /// </summary>
+    [Fact]
+    public void Calendar_PickANight_OpensThePanelForThatNight()
+    {
+        OverviewIs();
+        _bookings.CreateAsync(Arg.Any<CreateBookingRequest>(), Arg.Any<CancellationToken>()).Returns(Ok(BookingDetails(9)));
+        IRenderedComponent<BookingList> page = _host.Render<BookingList>();
+        page.Button("Calendar").Click();
+
+        page.Find("button.cal-day[aria-label^='Wednesday 11 March']").Click();
+
+        Assert.Equal(Iso(Today.AddDays(1)), page.Find("#form-check-in").GetAttribute("value"));
+        Assert.Equal(Iso(Today.AddDays(2)), page.Find("#form-check-out").GetAttribute("value"));
+        Assert.Contains("is-selected", page.Find("button.cal-day[aria-label^='Wednesday 11 March']").ClassName, StringComparison.Ordinal);
+        _bookings.Received(1).GetAvailableRoomsAsync(Today.AddDays(1), Today.AddDays(2), null, Arg.Any<CancellationToken>());
+
+        page.Button("Choose room 101").Click();
+        page.Find("#form-guest-search").Change("rita");
+        page.Button("Search guests").Click();
+        page.Button("Choose Rita Hansen").Click();
+        page.Button("Create booking").Click();
+
+        _bookings.Received(1).CreateAsync(new CreateBookingRequest(Today.AddDays(1), Today.AddDays(2), 1, 4, null), Arg.Any<CancellationToken>());
+        _bookings.Received(2).GetAvailabilityAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<CancellationToken>());
+        Assert.Empty(page.FindAll(".cal-day.is-selected"));
+    }
+
+    /// <summary>Negative: a past night is shown but cannot be picked (BR-44).</summary>
+    [Fact]
+    public void Calendar_PickAPastNight_DoesNothing()
+    {
+        OverviewIs();
+        IRenderedComponent<BookingList> page = _host.Render<BookingList>();
+        page.Button("Calendar").Click();
+
+        AngleSharp.Dom.IElement yesterday = page.Find("button.cal-day[aria-label^='Monday 9 March']");
+        yesterday.Click();
+
+        Assert.Equal("true", yesterday.GetAttribute("aria-disabled"));
+        Assert.Empty(page.FindAll("#booking-form"));
+        _bookings.DidNotReceive().GetAvailableRoomsAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<int?>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>Positive: the size filter shows one size large, and the arrows move the month.</summary>
+    [Fact]
+    public void Calendar_FilterAndArrows_ChangeWhatIsShown()
+    {
+        OverviewIs();
+        IRenderedComponent<BookingList> page = _host.Render<BookingList>();
+        page.Button("Calendar").Click();
+
+        page.Button("Double").Click();
+
+        Assert.Equal("true", page.Button("Double").GetAttribute("aria-pressed"));
+        Assert.Contains("of 3 double rooms free", page.Find(".is-today .cal-big").TextContent, StringComparison.Ordinal);
+
+        page.Find("button[aria-label='Next month']").Click();
+
+        Assert.Contains("April 2026", page.Find(".cal-month-label").TextContent, StringComparison.Ordinal);
+        page.Button("Today").Click();
+        Assert.Contains("March 2026", page.Find(".cal-month-label").TextContent, StringComparison.Ordinal);
     }
 
     #endregion

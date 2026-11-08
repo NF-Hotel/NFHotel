@@ -190,6 +190,22 @@ public sealed class BookingFormViewModel
     }
 
     /// <summary>
+    /// Opens the form for a new booking of one night, picked in the availability calendar, and fetches the rooms
+    /// that are free that night.
+    /// </summary>
+    /// <param name="night">The night the stay starts on. The guest leaves the day after; the dates can be changed.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public Task BeginCreateForNightAsync(DateOnly night, CancellationToken cancellationToken = default)
+    {
+        BeginCreate();
+
+        CheckInDate = night;
+        CheckOutDate = night.AddDays(1);
+
+        return SearchRoomsAsync(cancellationToken);
+    }
+
+    /// <summary>
     /// Opens the form to reschedule a booking (BR-14).
     /// </summary>
     /// <param name="booking">The booking to be moved.</param>

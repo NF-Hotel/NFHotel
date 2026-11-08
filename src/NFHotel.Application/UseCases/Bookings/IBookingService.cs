@@ -64,6 +64,27 @@ public interface IBookingService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Counts the free rooms of each room size for every night of a period: the availability calendar of the
+    /// booking overview (BR-34, BR-39, BR-110).
+    /// </summary>
+    /// <param name="from">The first night, inclusive.</param>
+    /// <param name="to">The day after the last night, exclusive.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>
+    /// One entry per night, in date order. Fails with <see cref="ErrorCodes.Api.Forbidden"/> without the permission
+    /// to view bookings, and with <see cref="ErrorCodes.Booking.AvailabilityPeriodTooLong"/> for more than
+    /// <see cref="BookingService.MaxAvailabilityNights"/> nights.
+    /// </returns>
+    /// <remarks>
+    /// The counts use the same rules as <see cref="GetAvailableRoomsAsync"/>, so a night the calendar shows as free
+    /// can be booked for one night in the booking flow.
+    /// </remarks>
+    Task<Result<IReadOnlyList<NightAvailabilityDto>>> GetAvailabilityAsync(
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Creates a booking (BR-01, BR-19, BR-41 to BR-49, BR-51, BR-101 to BR-106, B-03).
     /// </summary>
     /// <param name="request">Period, room and either an existing or a new guest (BR-47).</param>

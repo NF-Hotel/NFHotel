@@ -138,6 +138,9 @@ public sealed class ContractParityTests : IAsyncLifetime
         AddB("GetAvailableRoomsAsync free", b => b.GetAvailableRoomsAsync(today.AddDays(40), today.AddDays(42), null, ct));
         AddB("GetAvailableRoomsAsync busy and excluded", b => b.GetAvailableRoomsAsync(today, today.AddDays(2), 1, ct));
         AddB("GetAvailableRoomsAsync inverted", b => b.GetAvailableRoomsAsync(today.AddDays(3), today, null, ct));
+        AddB("GetAvailabilityAsync month", b => b.GetAvailabilityAsync(today.AddDays(-3), today.AddDays(39), ct));
+        AddB("GetAvailabilityAsync inverted", b => b.GetAvailabilityAsync(today.AddDays(3), today, ct));
+        AddB("GetAvailabilityAsync too long", b => b.GetAvailabilityAsync(today, today.AddDays(63), ct));
 
         // --- bookings: creating
         AddB("CreateAsync existing guest", b => b.CreateAsync(new CreateBookingRequest(today.AddDays(20), today.AddDays(22), 3, 1, null), ct));

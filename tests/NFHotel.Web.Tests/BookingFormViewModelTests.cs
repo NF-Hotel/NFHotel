@@ -87,6 +87,24 @@ public sealed class BookingFormViewModelTests
         Assert.Equal(Today.AddDays(4), viewModel.CheckOutDate);
     }
 
+    /// <summary>Positive: a night picked in the calendar opens the form for that one night and fetches the free rooms.</summary>
+    [Fact]
+    public async Task BeginCreateForNightAsync_Night_OpensForOneNightAndSearches()
+    {
+        RoomsAre(FreeRoom(1));
+        BookingFormViewModel viewModel = Create();
+        DateOnly night = Today.AddDays(5);
+
+        await viewModel.BeginCreateForNightAsync(night, Token);
+
+        Assert.True(viewModel.IsOpen);
+        Assert.Equal(BookingFormMode.Create, viewModel.Mode);
+        Assert.Equal((night, night.AddDays(1)), (viewModel.CheckInDate, viewModel.CheckOutDate));
+        Assert.True(viewModel.HasSearchedRooms);
+        Assert.Single(viewModel.AvailableRooms);
+        await _bookings.Received(1).GetAvailableRoomsAsync(night, night.AddDays(1), null, Arg.Any<CancellationToken>());
+    }
+
     #endregion
 
     #region BeginRescheduleAsync
