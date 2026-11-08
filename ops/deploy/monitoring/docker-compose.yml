@@ -27,7 +27,7 @@ x-hardening: &hardening
 services:
   prometheus:
     <<: *hardening
-    image: prom/prometheus:v3.7.2@sha256:23031bfe0e74a13004252caaa74eccd0d62b6c6e7a04711d5b8bf5b7e113adc7
+    image: prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
     environment:
       CONFIG_HASH: ${PROMETHEUS_CONFIG_HASH:-}
     command:
@@ -46,7 +46,7 @@ services:
 
   alertmanager:
     <<: *hardening
-    image: prom/alertmanager:v0.29.0@sha256:88743b63b3e09ea6e31e140ced5bf45f4a8e82c617c2a963f78841f4995ad1d7
+    image: prom/alertmanager:v0.34.2@sha256:39d8bb3966c694a124428a3a88fbcffd40bd069129ecd47c059f8a3f17c55f3b
     environment:
       CONFIG_HASH: ${ALERTMANAGER_CONFIG_HASH:-}
     command:
@@ -62,7 +62,7 @@ services:
 
   blackbox:
     <<: *hardening
-    image: prom/blackbox-exporter:v0.27.0@sha256:a50c4c0eda297baa1678cd4dc4712a67fdea713b832d43ce7fcc5f9bea05094d
+    image: prom/blackbox-exporter:v0.29.1@sha256:ea1c7aa3ef3f307cd03e85f34abb604478ccb90b567fc690da0cd9776da76b13
     environment:
       CONFIG_HASH: ${BLACKBOX_CONFIG_HASH:-}
     command: [--config.file=/etc/blackbox/blackbox.yml]
@@ -122,7 +122,7 @@ services:
   # user of its own, which owns the optional token file; no port is published.
   scan-exporter:
     <<: *hardening
-    image: python:3.13-slim@sha256:2d44738ebf4ce5f63b9d9ea871e9c7cfdc0426f7b0c97cac915fd88ded1d86bb
+    image: python:3.13-slim@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90
     user: "10001:10001"
     environment:
       CONFIG_HASH: ${SCAN_EXPORTER_CONFIG_HASH:-}
