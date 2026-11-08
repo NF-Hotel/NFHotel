@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | S01 | Initial version: one task for each finding of 2026-11-07 that the repository can fix (the backup target, the copy off the VM, the settings archive, the migration history, the ignore check, the ZAP rules, the versions, the retention of Prometheus and the rebuild runbook); planned in autonomous mode at S01's request in chat ("godkendt") and accepted by S01 in chat ("3ja", RC-306) | pending |
+| 2026-11-08 | Accepted | mikemike | S01 | Initial version: one task for each finding of 2026-11-07 that the repository can fix (the backup target, the copy off the VM, the settings archive, the migration history, the ignore check, the ZAP rules, the versions, the retention of Prometheus and the rebuild runbook); planned in autonomous mode at S01's request in chat ("godkendt") and accepted by S01 in chat ("3ja", RC-306) | [be88a83] |
 
 ---
 
@@ -132,3 +132,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-037]: ./mil-037-disaster-recovery.md
 [MIL-044]: ./mil-044-security-overview.md
 [MIL-065]: ./mil-065-third-party-image-remedies.md
+[be88a83]: https://github.com/NF-Hotel/NFHotel/commit/be88a833a65947c26ee8c4d2cf53401ec0ffb22a
