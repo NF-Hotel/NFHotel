@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 6, 8 and 9 of MIL-066 before their pull request (task 10); Go-with-conditions until every required check of the pull request is green | [0918fb1] |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | The conditions are met: all 41 required checks of #587 passed on a17775c, and its Ops CI run 42488571804 ran the matrix `include` with its own key and the default `debian:12-slim` (WF 22)<br>SH 11 and MIL-066 4 corrected: `test-backup-settings.sh` tested a failed archive, not a list of paths that lacks `/etc/nfhotel` or the key; the two checks of the guard that the gate adds are reviewed here (RC-313)<br>Go | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | The conditions are met: all 41 required checks of #587 passed on a17775c, and its Ops CI run 42488571804 ran the matrix `include` with its own key and the default `debian:12-slim` (WF 22)<br>SH 11 and MIL-066 4 corrected: `test-backup-settings.sh` tested a failed archive, not a list of paths that lacks `/etc/nfhotel` or the key; the two checks of the guard that the gate adds are reviewed here (RC-313)<br>Go | [4bc8c6d] |
 
 ---
 
@@ -142,3 +142,4 @@ The conditions were met on 2026-11-08: all 41 required checks of #587 passed on 
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [0918fb1]: https://github.com/NF-Hotel/NFHotel/commit/0918fb1d0b9ec7d3af7741c73114ae7e2bb9117f
+[4bc8c6d]: https://github.com/NF-Hotel/NFHotel/commit/4bc8c6d4d33a485ce4a6e1ee6d5f8a624a19d81e

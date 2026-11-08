@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-067 after the CD run of the merge and a full DAST scan; Go | [a6f0dec] |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Corrected: Proxy Disclosure (40025) is not an alert that the ZAP rules know; task 7 of MIL-066 removed its `IGNORE` line, so the full scan runs it again and it warns; the verdict is unchanged (RC-313) | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Corrected: Proxy Disclosure (40025) is not an alert that the ZAP rules know; task 7 of MIL-066 removed its `IGNORE` line, so the full scan runs it again and it warns; the verdict is unchanged (RC-313) | [4bc8c6d] |
 
 ---
 
@@ -72,3 +72,4 @@ Go: the seven criteria pass on the evidence of 2026-11-08, and the condition of 
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [a6f0dec]: https://github.com/NF-Hotel/NFHotel/commit/a6f0dec4b0a066af5c4a5b3357834cd28fba6762
+[4bc8c6d]: https://github.com/NF-Hotel/NFHotel/commit/4bc8c6d4d33a485ce4a6e1ee6d5f8a624a19d81e

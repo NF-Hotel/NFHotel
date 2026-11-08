@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-066 after the CD run 42498483148, the monitoring deploy, the redeploy of the backup target, the update of Docker Engine on the VM and the daily scan, with the two checks of the guard of the settings list that the gate adds to `test-backup-settings.sh`; Go | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-066 after the CD run 42498483148, the monitoring deploy, the redeploy of the backup target, the update of Docker Engine on the VM and the daily scan, with the two checks of the guard of the settings list that the gate adds to `test-backup-settings.sh`; Go | [4bc8c6d] |
 
 ---
 
@@ -83,3 +83,4 @@ Go: the eleven criteria pass on the evidence of 2026-11-08, criterion 4 with the
 [ADR-0010]: ../../adr/adr-0010-production-vm-as-deployed.md
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[4bc8c6d]: https://github.com/NF-Hotel/NFHotel/commit/4bc8c6d4d33a485ce4a6e1ee6d5f8a624a19d81e
