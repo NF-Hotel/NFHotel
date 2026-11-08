@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The MIL-064 row: deployed by CD run 42442894208, the gate (RC-302, Go-with-conditions) and the follow-up MIL-065; the row of the code of MIL-064: deployed; a row for MIL-065 (Proposed, RC-301) | [c27ba7a] |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The MIL-064 row: gate passed (RC-303, Go) with `docker inspect` on the VM, after RC-302 Go-with-conditions | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The MIL-064 row: gate passed (RC-303, Go) with `docker inspect` on the VM, after RC-302 Go-with-conditions | [77f8a2b] |
 
 ---
 
@@ -311,3 +311,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [c27ba7a]: https://github.com/NF-Hotel/NFHotel/commit/c27ba7a193b1056bd13ed0d18cafb95f74c4ad18
+[77f8a2b]: https://github.com/NF-Hotel/NFHotel/commit/77f8a2be1bf561ad0b42574fd3c980c75018995d

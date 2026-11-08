@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the re-review that RC-302 asked for: criterion 2 read with `docker inspect` on the VM at 07:38 UTC under the Tailscale check that S01 approved, and criteria 3 and 4 read again for the digest that runs since the release of 48fbeda | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the re-review that RC-302 asked for: criterion 2 read with `docker inspect` on the VM at 07:38 UTC under the Tailscale check that S01 approved, and criteria 3 and 4 read again for the digest that runs since the release of 48fbeda | [77f8a2b] |
 
 ---
 
@@ -63,3 +63,4 @@ Go: criteria 2, 3 and 4 pass on the evidence of 2026-11-08 for the digest that r
 [RC-292]: ./rc-292-mil-048-gate-re-review.md
 [DSA-001]: ../devsecops-assessment.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[77f8a2b]: https://github.com/NF-Hotel/NFHotel/commit/77f8a2be1bf561ad0b42574fd3c980c75018995d
