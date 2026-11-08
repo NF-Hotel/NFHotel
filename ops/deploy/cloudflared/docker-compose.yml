@@ -8,10 +8,10 @@ name: nfhotel-cloudflared
 
 services:
   cloudflared:
-    # cloudflared 2026.10.3; Dependabot does not see this line, so bump it by hand with the digest.
+    # cloudflared 2026.10.7; Dependabot does not see this line, so bump it by hand with the digest.
     # Cloudflare marks a connector older than about a year as unsupported in the dashboard.
     image: >-
-      cloudflare/cloudflared:2026.10.5@sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53
+      cloudflare/cloudflared:2026.10.7@sha256:4955524aeaa379e154023d5a027c250f7b35041a2e7e950cf13f144bc9b9c5ba
     restart: unless-stopped
     # The token is a secret file (ADR-0024): scripts/write-secret-files.sh writes it from
     # cloudflared.env, and it never becomes an environment variable. The metrics stay on the

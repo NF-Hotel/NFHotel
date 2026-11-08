@@ -3,9 +3,9 @@
 # argument checks, a deploy, a failed smoke test with an automatic rollback, a manual
 # rollback, the lock, the refusal of a VM whose /opt/nfhotel is not a checkout of
 # NF-Hotel/DevOps, the prune of the images of old releases (MIL-062), and the references by
-# name with the patched proxy image, including the rollback to a release line from before it
-# (ADR-0040, MIL-064 task 4). Fakes stand in for deploy-services.sh, curl and docker, so no
-# container runs.
+# name with the patched proxy images, including the rollback to a release line from before each
+# of them (ADR-0040, MIL-064 task 4, MIL-065 task 4). Fakes stand in for deploy-services.sh, curl
+# and docker, so no container runs.
 #
 # Run it in Debian 12 with the repository at /src:
 #   docker run --rm -v "$PWD:/src:ro" debian:12-slim bash /src/tests/test-deploy-release.sh
@@ -43,6 +43,7 @@ mkdir -p "$W/src/scripts" "$W/src/deploy/nginx" "$W/bin"
 cat >"$W/src/scripts/deploy-services.sh" <<EOF
 echo "web=\$NFHOTEL_WEB_IMAGE" >>"$W/calls"
 echo "nginx=\${NFHOTEL_NGINX_IMAGE:-the compose file}" >>"$W/calls"
+echo "socket-proxy=\${NFHOTEL_SOCKET_PROXY_IMAGE:-the compose file}" >>"$W/calls"
 echo "api-db=\${NFHOTEL_API_CONNECTION_STRING:-superuser} migrate=\${NFHOTEL_API_MIGRATE_ON_START:-true}" >>"$W/calls"
 if [[ "\$NFHOTEL_WEB_IMAGE" == *bbbbbbbb* ]]; then echo bad >"$W/health"; else echo good >"$W/health"; fi
 EOF
@@ -118,10 +119,10 @@ APP="$(printf 'c%.0s' $(seq 40))"
 D="sha256:$(printf 'a%.0s' $(seq 64))"
 BAD="sha256:$(printf 'b%.0s' $(seq 64))"
 R=ghcr.io/nf-hotel
-# The four references that every release has, and the full release of today with the proxy.
+# The four references that every release has, and the full release of today with both proxies.
 four() { echo "$R/nfhotel-web@$1 $R/nfhotel-api@$D $R/market-analysis@$D $R/benchmark@$D"; }
-good() { echo "$APP $1 $(four "$D") $R/nfhotel-nginx@$D"; }
-bad() { echo "$APP $1 $(four "$BAD") $R/nfhotel-nginx@$D"; }
+good() { echo "$APP $1 $(four "$D") $R/nfhotel-nginx@$D $R/nfhotel-socket-proxy@$D"; }
+bad() { echo "$APP $1 $(four "$BAD") $R/nfhotel-nginx@$D $R/nfhotel-socket-proxy@$D"; }
 run() {
   local dir="$1"
   shift
@@ -141,18 +142,23 @@ expect_code() {
 # shellcheck disable=SC2046 # the release fields are split on purpose
 {
   NGINX="$R/nfhotel-nginx@$D"
-  expect_code 2 "refuses a short NFHotel commit" deploy abc "$A" $(four "$D") "$NGINX"
-  expect_code 2 "refuses a short DevOps commit" deploy "$APP" main $(four "$D") "$NGINX"
-  expect_code 2 "refuses shell text in a digest" deploy "$APP" "$A" "$R/nfhotel-web@$D;id" "$R/nfhotel-api@$D" "$R/market-analysis@$D" "$R/benchmark@$D" "$NGINX"
-  expect_code 2 "refuses another registry" deploy "$APP" "$A" "evil.io/nf-hotel/nfhotel-web@$D" "$R/nfhotel-api@$D" "$R/market-analysis@$D" "$R/benchmark@$D" "$NGINX"
-  expect_code 2 "refuses a dot used as a wildcard" deploy "$APP" "$A" "ghcrXio/nf-hotel/nfhotel-web@$D" "$R/nfhotel-api@$D" "$R/market-analysis@$D" "$R/benchmark@$D" "$NGINX"
+  PROXY="$R/nfhotel-socket-proxy@$D"
+  expect_code 2 "refuses a short NFHotel commit" deploy abc "$A" $(four "$D") "$NGINX" "$PROXY"
+  expect_code 2 "refuses a short DevOps commit" deploy "$APP" main $(four "$D") "$NGINX" "$PROXY"
+  expect_code 2 "refuses shell text in a digest" deploy "$APP" "$A" "$R/nfhotel-web@$D;id" "$R/nfhotel-api@$D" "$R/market-analysis@$D" "$R/benchmark@$D" "$NGINX" "$PROXY"
+  expect_code 2 "refuses another registry" deploy "$APP" "$A" "evil.io/nf-hotel/nfhotel-web@$D" "$R/nfhotel-api@$D" "$R/market-analysis@$D" "$R/benchmark@$D" "$NGINX" "$PROXY"
+  expect_code 2 "refuses a dot used as a wildcard" deploy "$APP" "$A" "ghcrXio/nf-hotel/nfhotel-web@$D" "$R/nfhotel-api@$D" "$R/market-analysis@$D" "$R/benchmark@$D" "$NGINX" "$PROXY"
   expect_code 2 "refuses three digests" deploy "$APP" "$A" "$R/nfhotel-web@$D" "$R/nfhotel-api@$D" "$R/market-analysis@$D"
-  # The patched proxy (ADR-0040): a release names it, once, with a digest of its pattern.
-  expect_code 2 "refuses a release without the nginx digest" deploy "$APP" "$A" $(four "$D")
+  # The patched proxies (ADR-0040, MIL-065): a release names each, once, with a digest of its pattern.
+  expect_code 2 "refuses a release without the nginx digest" deploy "$APP" "$A" $(four "$D") "$PROXY"
   grep -q "no reference of nfhotel-nginx" "$W/out" && ok "the refusal names the missing nginx digest" || ko "missing nginx: $(head -1 "$W/out")"
-  expect_code 2 "refuses a malformed nginx digest" deploy "$APP" "$A" $(four "$D") "$R/nfhotel-nginx@sha256:abc"
-  expect_code 2 "refuses an image that is not of the release" deploy "$APP" "$A" $(four "$D") "$R/nfhotel-proxy@$D"
-  expect_code 2 "refuses an image named twice" deploy "$APP" "$A" $(four "$D") "$NGINX" "$R/nfhotel-web@$D"
+  expect_code 2 "refuses a release without the socket proxy digest" deploy "$APP" "$A" $(four "$D") "$NGINX"
+  grep -q "no reference of nfhotel-socket-proxy" "$W/out" && ok "the refusal names the missing socket proxy digest" ||
+    ko "missing socket proxy: $(head -1 "$W/out")"
+  expect_code 2 "refuses a malformed nginx digest" deploy "$APP" "$A" $(four "$D") "$R/nfhotel-nginx@sha256:abc" "$PROXY"
+  expect_code 2 "refuses a malformed socket proxy digest" deploy "$APP" "$A" $(four "$D") "$NGINX" "$R/nfhotel-socket-proxy@sha256:abc"
+  expect_code 2 "refuses an image that is not of the release" deploy "$APP" "$A" $(four "$D") "$R/nfhotel-proxy@$D" "$PROXY"
+  expect_code 2 "refuses an image named twice" deploy "$APP" "$A" $(four "$D") "$NGINX" "$PROXY" "$R/nfhotel-web@$D"
   grep -q "names nfhotel-web a second time" "$W/out" && ok "the refusal names the image given twice" || ko "twice: $(head -1 "$W/out")"
   expect_code 2 "refuses an unknown command" install
 
@@ -167,8 +173,8 @@ expect_code() {
   grep -q '^http://100.64.0.7:80/$' "$W/urls" && grep -q '^https://100.64.0.7:443/$' "$W/urls" && # NOSONAR: the URL that the smoke test checks for its redirect
     ok "the smoke test uses the published address of the proxy" || ko "smoke test published address"
   [[ "$(wc -l <"$W/state-app/releases.log")" == 2 ]] && ok "the release log holds two releases" || ko "release log"
-  tail -n 1 "$W/state-app/releases.log" | grep -q " $APP $B $R/nfhotel-web@$D .* $R/nfhotel-nginx@$D$" &&
-    ok "the log records both commits and the nginx digest" || ko "log fields: $(tail -n 1 "$W/state-app/releases.log")"
+  tail -n 1 "$W/state-app/releases.log" | grep -q " $APP $B $R/nfhotel-web@$D .* $R/nfhotel-nginx@$D $R/nfhotel-socket-proxy@$D$" &&
+    ok "the log records both commits and the digests of both proxies" || ko "log fields: $(tail -n 1 "$W/state-app/releases.log")"
   expect_code 0 "rolls back by hand" rollback
   [[ "$(git -C "$W/app" rev-parse HEAD)" == "$A" ]] && ok "the manual rollback restored A" || ko "manual rollback"
   # The rollback drill (MIL-021 criterion 6): B deploys and passes, is treated as failed,
@@ -353,10 +359,11 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
     ok "update removes its temporary folder" || ko "temporary files left in /tmp"
 }
 
-# The references by name (ADR-0040, MIL-064 task 4), on a checkout of its own: the proxy gets the
-# nginx digest of the release, the references may come in any order, and a release line from before
-# the proxy image (four references) still rolls back, by hand and after a failed deploy: no
-# NFHOTEL_NGINX_IMAGE is set, so the compose file of that operations commit names the upstream image.
+# The references by name (ADR-0040, MIL-064 task 4, MIL-065 task 4), on a checkout of its own: each
+# proxy gets its digest of the release, the references may come in any order, and a release line
+# from before a proxy image (four references, or five without the socket proxy) still rolls back, by
+# hand and after a failed deploy: no image variable is set for it, so the compose file of that
+# operations commit names the upstream image.
 echo "== references by name (ADR-0040)"
 git clone -q "$W/origin.git" "$W/app4" && git -C "$W/app4" remote set-url origin https://github.com/NF-Hotel/DevOps.git
 mkdir -p "$W/state-app4"
@@ -366,10 +373,12 @@ echo "2026-11-01T00:00:00Z $APP $A $(four "$D")" >"$W/state-app4/releases.log"
   : >"$W/calls"
   run "$W/app4" deploy $(good "$B") && grep -qx "nginx=$R/nfhotel-nginx@$D" "$W/calls" &&
     ok "a deploy passes the nginx digest to the proxy" || ko "nginx variable: $(tr '\n' '|' <"$W/calls")"
+  grep -qx "socket-proxy=$R/nfhotel-socket-proxy@$D" "$W/calls" &&
+    ok "a deploy passes the socket proxy digest to Alloy" || ko "socket proxy variable: $(tr '\n' '|' <"$W/calls")"
   : >"$W/calls"
   run "$W/app4" rollback && [[ "$(git -C "$W/app4" rev-parse HEAD)" == "$A" ]] &&
-    grep -qx "nginx=the compose file" "$W/calls" &&
-    ok "a rollback to a line with four references starts the proxy from the compose file of that release" ||
+    grep -qx "nginx=the compose file" "$W/calls" && grep -qx "socket-proxy=the compose file" "$W/calls" &&
+    ok "a rollback to a line with four references starts both proxies from the compose files of that release" ||
     ko "rollback to four references: $(tail -2 "$W/out") $(tr '\n' '|' <"$W/calls")"
   [[ "$(tail -n 1 "$W/state-app4/releases.log" | wc -w)" == 7 ]] &&
     ok "the rollback records the line with its four references" || ko "rollback line: $(tail -n 1 "$W/state-app4/releases.log")"
@@ -378,11 +387,28 @@ echo "2026-11-01T00:00:00Z $APP $A $(four "$D")" >"$W/state-app4/releases.log"
   [[ $? == 1 ]] && grep -q "rolled back to $APP" "$W/out" && [[ "$(git -C "$W/app4" rev-parse HEAD)" == "$A" ]] &&
     [[ "$(grep "^nginx=" "$W/calls" | tail -n 1)" == "nginx=the compose file" ]] && [[ "$(cat "$W/health")" == good ]] &&
     ok "a failed deploy rolls back to a line with four references" || ko "failed deploy to four references: $(tail -3 "$W/out")"
-  run "$W/app4" deploy "$APP" "$B" "$R/nfhotel-nginx@$D" "$R/benchmark@$D" "$R/market-analysis@$D" "$R/nfhotel-api@$D" "$R/nfhotel-web@$D" &&
+  run "$W/app4" deploy "$APP" "$B" "$R/nfhotel-nginx@$D" "$R/benchmark@$D" "$R/nfhotel-socket-proxy@$D" "$R/market-analysis@$D" "$R/nfhotel-api@$D" "$R/nfhotel-web@$D" &&
     [[ "$(git -C "$W/app4" rev-parse HEAD)" == "$B" ]] && ok "a deploy takes the references in any order" || ko "any order: $(head -1 "$W/out")"
   run "$W/app4" deploy $(good "$A") --drill
   [[ $? == 1 ]] && grep -q "rollback drill: the deploy of $APP passed" "$W/out" && [[ "$(git -C "$W/app4" rev-parse HEAD)" == "$B" ]] &&
-    ok "a drill with five references rolls back to the release before it" || ko "drill: $(tail -3 "$W/out")"
+    ok "a drill with six references rolls back to the release before it" || ko "drill: $(tail -3 "$W/out")"
+
+  # A release line of MIL-064 has five references, without the socket proxy (MIL-065): its rollback
+  # passes the nginx digest and starts the socket proxy from the compose file of that release.
+  echo "2026-11-08T00:00:00Z $APP $A $(four "$D") $R/nfhotel-nginx@$D" >"$W/state-app4/releases.log"
+  run "$W/app4" deploy $(good "$B") || ko "deploy before the rollback to five references: $(tail -2 "$W/out")"
+  : >"$W/calls"
+  run "$W/app4" rollback && [[ "$(git -C "$W/app4" rev-parse HEAD)" == "$A" ]] &&
+    grep -qx "nginx=$R/nfhotel-nginx@$D" "$W/calls" && grep -qx "socket-proxy=the compose file" "$W/calls" &&
+    ok "a rollback to a line with five references passes the nginx digest and leaves the socket proxy to the compose file" ||
+    ko "rollback to five references: $(tail -2 "$W/out") $(tr '\n' '|' <"$W/calls")"
+  [[ "$(tail -n 1 "$W/state-app4/releases.log" | wc -w)" == 8 ]] &&
+    ok "the rollback records the line with its five references" || ko "rollback line: $(tail -n 1 "$W/state-app4/releases.log")"
+  : >"$W/calls"
+  run "$W/app4" deploy $(bad "$B")
+  [[ $? == 1 ]] && grep -q "rolled back to $APP" "$W/out" && [[ "$(git -C "$W/app4" rev-parse HEAD)" == "$A" ]] &&
+    [[ "$(grep "^socket-proxy=" "$W/calls" | tail -n 1)" == "socket-proxy=the compose file" ]] && [[ "$(cat "$W/health")" == good ]] &&
+    ok "a failed deploy rolls back to a line with five references" || ko "failed deploy to five references: $(tail -3 "$W/out")"
 }
 
 # The prune of MIL-062, on a checkout of its own: after a deploy that passed, the images of the
@@ -390,7 +416,7 @@ echo "2026-11-01T00:00:00Z $APP $A $(four "$D")" >"$W/state-app4/releases.log"
 # and the dry run remove nothing; an image that cannot be removed is a warning, not a failed deploy.
 echo "== prune (MIL-062)"
 git clone -q "$W/origin.git" "$W/app3" && git -C "$W/app3" remote set-url origin https://github.com/NF-Hotel/DevOps.git
-rel() { echo "$APP $1 $R/nfhotel-web@$2 $R/nfhotel-api@$2 $R/market-analysis@$2 $R/benchmark@$2 $R/nfhotel-nginx@$2"; }
+rel() { echo "$APP $1 $R/nfhotel-web@$2 $R/nfhotel-api@$2 $R/market-analysis@$2 $R/benchmark@$2 $R/nfhotel-nginx@$2 $R/nfhotel-socket-proxy@$2"; }
 D1="sha256:$(printf '1%.0s' $(seq 64))"
 D2="sha256:$(printf '2%.0s' $(seq 64))"
 D3="sha256:$(printf '3%.0s' $(seq 64))"
@@ -398,33 +424,37 @@ D3="sha256:$(printf '3%.0s' $(seq 64))"
 for i in 1 2 3; do
   v="D$i"
   d="${!v}"
-  for name in web api ana ben ngx; do
-    case "$name" in web) repo=nfhotel-web ;; api) repo=nfhotel-api ;; ana) repo=market-analysis ;; ben) repo=benchmark ;; ngx) repo=nfhotel-nginx ;; esac
+  for name in web api ana ben ngx spx; do
+    case "$name" in
+      web) repo=nfhotel-web ;; api) repo=nfhotel-api ;; ana) repo=market-analysis ;; ben) repo=benchmark ;;
+      ngx) repo=nfhotel-nginx ;; spx) repo=nfhotel-socket-proxy ;;
+    esac
     echo "$R/$repo@$d id-$name$i" >>"$W/image-refs"
   done
 done
-printf '%s\n' id-web1 id-api1 id-ana1 id-ben1 id-ngx1 id-web2 id-api2 id-ana2 id-ben2 id-ngx2 id-web3 id-api3 id-ana3 id-ben3 \
-  id-ngx3 id-postgres-used id-old-nginx >"$W/images"
+printf '%s\n' id-web1 id-api1 id-ana1 id-ben1 id-ngx1 id-spx1 id-web2 id-api2 id-ana2 id-ben2 id-ngx2 id-spx2 id-web3 id-api3 \
+  id-ana3 id-ben3 id-ngx3 id-spx3 id-postgres-used id-old-nginx id-old-socket-proxy >"$W/images"
 # The containers run release 3 and a third-party image in use; a stopped one-shot container (results-owner) counts
-# too. id-old-nginx is the upstream image of the proxy from before ADR-0040, which no container uses any more.
-printf '%s\n' 'c1 id-web3' 'c2 id-api3' 'c3 id-ana3' 'c4 id-ben3' 'c5 id-postgres-used' 'c6 id-ben3' 'c7 id-ngx3' >"$W/containers"
+# too. id-old-nginx and id-old-socket-proxy are the upstream images of the proxies from before ADR-0040 and MIL-065,
+# which no container uses any more.
+printf '%s\n' 'c1 id-web3' 'c2 id-api3' 'c3 id-ana3' 'c4 id-ben3' 'c5 id-postgres-used' 'c6 id-ben3' 'c7 id-ngx3' 'c8 id-spx3' >"$W/containers"
 # shellcheck disable=SC2046 # the release fields are split on purpose
 {
   expect_code 0 "deploys release 1" deploy $(rel "$A" "$D1")
   expect_code 0 "deploys release 2" deploy $(rel "$A" "$D2")
   rm -f "$W/removed"
   expect_code 0 "deploys release 3 and prunes" deploy $(rel "$B" "$D3")
-  [[ "$(sort "$W/removed" 2>/dev/null | tr '\n' ' ')" == "id-ana1 id-api1 id-ben1 id-ngx1 id-old-nginx id-web1 " ]] &&
-    ok "the images of release 1 and the unused upstream nginx go; releases 2 and 3, their nginx and the containers' images stay" ||
+  [[ "$(sort "$W/removed" 2>/dev/null | tr '\n' ' ')" == "id-ana1 id-api1 id-ben1 id-ngx1 id-old-nginx id-old-socket-proxy id-spx1 id-web1 " ]] &&
+    ok "the images of release 1 and the unused upstream proxies go; releases 2 and 3, their proxies and the containers' images stay" ||
     ko "pruned set: $(sort "$W/removed" 2>/dev/null | tr '\n' ' ')"
-  grep -q "prune: removed 6 image(s)" "$W/out" && ok "the deploy log counts the removed images" || ko "prune log: $(grep prune "$W/out")"
+  grep -q "prune: removed 8 image(s)" "$W/out" && ok "the deploy log counts the removed images" || ko "prune log: $(grep prune "$W/out")"
   rm -f "$W/removed"
   expect_code 0 "prune without --apply is a dry run" prune
-  [[ ! -f "$W/removed" ]] && grep -q "would remove id-old-nginx" "$W/out" && grep -q "6 image(s) would be removed" "$W/out" &&
+  [[ ! -f "$W/removed" ]] && grep -q "would remove id-old-socket-proxy" "$W/out" && grep -q "8 image(s) would be removed" "$W/out" &&
     ok "the dry run lists what would go and removes nothing" || ko "dry run: $(tail -3 "$W/out")"
   expect_code 2 "prune refuses another argument" prune --now
   expect_code 0 "prune --apply removes by hand" prune --apply
-  [[ "$(sort "$W/removed" | wc -l)" == 6 ]] && ok "prune --apply removes the same six" || ko "prune --apply: $(cat "$W/removed")"
+  [[ "$(sort "$W/removed" | wc -l)" == 8 ]] && ok "prune --apply removes the same eight" || ko "prune --apply: $(cat "$W/removed")"
   rm -f "$W/removed"
   expect_code 1 "a failed deploy rolls back" deploy $(bad "$B")
   [[ ! -f "$W/removed" ]] && ok "a failed deploy and its rollback prune nothing" || ko "pruned after a rollback: $(cat "$W/removed")"
