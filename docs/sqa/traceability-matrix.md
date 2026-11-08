@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-069: tasks 1 to 3 reviewed before their pull request (RC-316, Go) | [49defd4] |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-068: tasks 1 to 3 reviewed before their pull request (RC-317, Go) | pending |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-068: tasks 1 to 3 reviewed before their pull request (RC-317, Go) | [8d107aa] |
 
 ---
 
@@ -339,3 +339,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [49defd4]: https://github.com/NF-Hotel/NFHotel/commit/49defd4fa3215cb4ef13e51aad4abd649658de38
+[8d107aa]: https://github.com/NF-Hotel/NFHotel/commit/8d107aa6ac24518c7cf4f25925263de152f56399

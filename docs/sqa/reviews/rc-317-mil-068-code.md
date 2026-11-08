@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-068 before their pull request (task 4); Go | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-068 before their pull request (task 4); Go | [8d107aa] |
 
 ---
 
@@ -137,3 +137,4 @@ Go. Every Mandatory criterion of QC-SH-001, QC-YML-001 and QC-WF-001 that the ch
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[8d107aa]: https://github.com/NF-Hotel/NFHotel/commit/8d107aa6ac24518c7cf4f25925263de152f56399
