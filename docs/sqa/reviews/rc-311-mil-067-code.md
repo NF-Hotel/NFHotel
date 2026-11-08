@@ -9,13 +9,14 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions until every required check of the pull request is green | [3ed21af] |
+| 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions until every required check of the pull request is green | [3ed21af] |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Criterion 3 corrected: SonarQube Cloud found `var` in six changed lines of the first push, and ed1836a gave the seven `var` of the changed lines their explicit types; the verdict stays Go-with-conditions | pending |
 
 ---
 
 ## Artifact Under Review
 
-- Instance reviewed: the code of [MIL-067] tasks 1 to 4 and 7 on the branch `mil-067-bad-input` (b206e5a, 88d8b82, 5b9fba9, 5d8fcf1, edf9d8e): `Book.razor`, `Book.razor.cs` and `BookingFlowViewModel.cs` of the booking page; `BenchmarkStart.razor.cs`; `Login.razor` and `Login.razor.cs`; `ChangePassword.razor` and `ChangePassword.razor.cs`; and the tests in `tests/NFHotel.Web.Tests`: `BookingAddressTests` and `QueryParameterTests` (new), `BookingFlowViewModelTests`, `AdminAccessTests`, `BenchmarkStartPageTests` and `StaffPasswordPageTests`
+- Instance reviewed: the code of [MIL-067] tasks 1 to 4 and 7 on the branch `mil-067-bad-input` (b206e5a, 88d8b82, 5b9fba9, 5d8fcf1, edf9d8e, and ed1836a with the explicit types of criterion 3): `Book.razor`, `Book.razor.cs` and `BookingFlowViewModel.cs` of the booking page; `BenchmarkStart.razor.cs`; `Login.razor` and `Login.razor.cs`; `ChangePassword.razor` and `ChangePassword.razor.cs`; and the tests in `tests/NFHotel.Web.Tests`: `BookingAddressTests` and `QueryParameterTests` (new), `BookingFlowViewModelTests`, `AdminAccessTests`, `BenchmarkStartPageTests` and `StaffPasswordPageTests`
 - Checklist used: [QC-CS-001] (C# and Razor), and the criteria of [MIL-067]
 - Scope: full review of the changed code
 - Language and domain: n/a (code)
@@ -36,7 +37,9 @@
 - `dotnet format whitespace NFHotel.sln --verify-no-changes --no-restore`: no change.
 - The plan gate: the commit hooks do not run in this worktree, whose `framework` folder is empty, so `check-plan.sh` of the framework was run by hand on each commit message after its files were staged. It passed the five messages, each with its `Task: MIL-067#N` trailer, and refused a message without one.
 - The local SDK (10.0.403) rewrites `src/NFHotel.Web/packages.lock.json` on a restore (`Microsoft.AspNetCore.App.Internal.Assets` 10.0.11 to 10.0.14), the trap that [RC-278] records; the file was restored and is in no commit.
-- The checks of the pull request (NF Hotel CI, CodeQL, SonarQube Cloud) are read after the push; they are criterion 5 of MIL-067, which this record cannot hold.
+- SonarQube Cloud on the first push (71dacb0): the quality gate passed, with 0 security hotspots, 100.0% coverage on new code and 6 new issues, all IDE0008 (Info: an explicit type in place of `var`) on changed lines of `ChangePassword.razor.cs` (2), `Login.razor.cs` (2), `BenchmarkStart.razor.cs` (1) and `BookingFlowViewModel.cs` (1). The rule comes from `csharp_style_var_* = false:suggestion` in `.editorconfig`, a suggestion that the build does not stop; the main branch has 704 such issues open.
+- After ed1836a: the Release build has 0 warnings, the 731 tests of `NFHotel.Web.Tests` pass, and the format check finds no change.
+- The other checks of the pull request (NF Hotel CI, CodeQL, the end-to-end tests and the DAST baseline) are read on the last push; they are criterion 5 of MIL-067, which this record cannot hold.
 
 ## Checklist Results
 
@@ -44,7 +47,7 @@
 | --- | --- | --- | --- |
 | 1 | `PascalCase` types, methods, properties and constants; `camelCase` parameters and locals; `_camelCase` private fields; `I` interfaces | Pass | New members `GuestsQuery`, `AgainQuery`, `TryParseQueryGuests`, `ForgetPassword` and `ForgetPasswords`; locals `party`, `again`, `password`, `current` and `fresh`; test constants `ScanValue` and `DeclaredProperties` |
 | 2 | `Async` and `Exception` suffixes; one top-level type per file, named after the file | Pass | The async methods keep their names (`SignInAsync`, `ChangeAsync`, `OnInitializedAsync`); the two new test classes are in `BookingAddressTests.cs` and `QueryParameterTests.cs` |
-| 3 | Formatted per `.editorconfig`, no unexplained analyzer suppressions, explicit types | Pass | The format check passes; the Release build has 0 warnings with warnings as errors; no suppression added. The changed lines keep `var` where their files already use it, as rule 1 of the coding conventions says; the project-wide use of `var` predates this milestone (RC-266, [RC-278]) |
+| 3 | Formatted per `.editorconfig`, no unexplained analyzer suppressions, explicit types | Pass | The format check passes; the Release build has 0 warnings with warnings as errors; no suppression added. The new and changed lines under `src/` have explicit types: the first push left `var` in seven of them, SonarQube Cloud reported six (IDE0008), and ed1836a gave all seven their types (`string`, `StaffSessionDto?`, `Guid`, `int`), so `Login.razor.cs`, `ChangePassword.razor.cs` and `BenchmarkStart.razor.cs` have no `var` left. The other lines of `BookingFlowViewModel.cs` keep their `var`: this milestone does not change them (rule 1 of the coding conventions). The tests keep `using var` as the whole test project does; that use of `var`, like the one under `src/`, predates this milestone and waits for the decision of S01 (F3 of RC-265 and RC-266; [RC-278]) |
 | 4 | Nullable reference types enabled; `!` justified in a comment | Pass | No `!` added; `Input?.Password ?? string.Empty` reads the form without one |
 | 5 | `IDisposable` disposed with `using`; no leaks on exception paths | Pass | The tests dispose every `HttpClient`, `HttpResponseMessage` and `FormUrlEncodedContent` with `using`; the source adds no disposable |
 | 6 | `await` throughout; no `.Result`, `.Wait()` or `async void` | Pass | None added |
@@ -78,6 +81,7 @@
 
 ## Findings
 
+- **The first version of this record was wrong on criterion 3.** It said that the changed lines keep `var` where their files already use it. `BenchmarkStart.razor.cs` had no `var` before this milestone, and criterion 3 asks for an explicit type for every local and `out` argument of new code. SonarQube Cloud found six of the seven on the first push; ed1836a gives them their types, with no change of behaviour.
 - **Findings 3 and 4 were real.** Both forms wrote a typed password back into its field when their validation refused the post: `InputText` writes its value into the page, and the passwords were cleared only in the handler of a valid form. Both forms now empty their passwords on an invalid submit too, and take them out of the form before the use case is asked, so the passwords are gone whatever the answer.
 - **The guests are read as Blazor read them.** `int.TryParse` with `NumberStyles.Integer` and the invariant culture reads white space around the number and a leading sign (" 3 " is 3, and "-1" is kept at 1), as a test records; what did not parse before now leaves the default instead of an error page.
 - **An empty value was never the fault.** Blazor reads an empty value of a nullable parameter as no value, so the empty `guests` and `again` passed before the change; they stay as edge cases.
