@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-063: gate passed (RC-297, Go) with the CD run of the merge; the code row run | [cad9fba] |
 | 2026-11-08 | Proposed | mikemike | S01 | The row of MIL-064: plan accepted (RC-298, Go); nothing committed, the work in git is on hold | [401da1a] |
+| 2026-11-08 | Proposed | mikemike | S01 | The row of ADR-0040 (RC-299, Go); the MIL-064 row: task 1 done | pending |
 
 ---
 
@@ -86,7 +86,8 @@ updated whenever an artifact instance is created or reviewed.
 | The code of MIL-062: the command `prune` of `ops/scripts/deploy-release.sh` and its nine checks in `ops/tests/test-deploy-release.sh` | Shell (deployed on `nf-hotel` by CD run 42078898723 on 2026-11-05, which removed 352 images) | - | - | [MIL-062] tasks 1 and 2 | - | [RC-291], [RC-293] |
 | [MIL-063] | Milestone (Accepted, Go; gate passed 2026-11-05, RC-297) | en | it | [BC-001], [ADR-0007], [ADR-0021], [ADR-0038], [MIL-021] | the wait for port 22 in `scope` of `ops/scripts/cd-steps.sh`, its tests in `ops/tests/test-cd-steps.sh`, the "Does" row of the CD workflow on the wiki page Workflows | [RC-295], [RC-296] (the code), [RC-297] (the gate) |
 | The code of MIL-063: `wait_reach` and the wait in `scope` of `ops/scripts/cd-steps.sh`, and its checks in `ops/tests/test-cd-steps.sh` | Shell (run by CD run 42103015481 on 2026-11-05: "answers (after 0 s)") | - | - | [MIL-063] tasks 1 and 2 | - | [RC-296], [RC-297] |
-| [MIL-064] | Milestone (Accepted, Go; plan reviewed 2026-11-08, RC-298; not started) | en | it | [BC-001], [ADR-0007], [ADR-0030], [ADR-0038], [MIL-022], [MIL-036], [MIL-059] | planned: ADR-0040; the patched image `nfhotel-nginx` in the release and its deploy by digest (`ops/deploy/nginx/Dockerfile`, `ops/scripts/build-release-images.sh`, `ops/scripts/cd-steps.sh`, `ops/scripts/deploy-release.sh`); the daily scan of the pinned third-party images in `ops/scripts/scan-running-release.sh`; the wiki rows; a follow-up milestone for the other third-party images | [RC-298] |
+| [MIL-064] | Milestone (Accepted, Go; plan reviewed 2026-11-08, RC-298; task 1 done 2026-11-08: ADR-0040, RC-299) | en | it | [BC-001], [ADR-0007], [ADR-0030], [ADR-0038], [MIL-022], [MIL-036], [MIL-059] | [ADR-0040]; planned: the patched image `nfhotel-nginx` in the release and its deploy by digest (`ops/deploy/nginx/Dockerfile`, `ops/scripts/build-release-images.sh`, `ops/scripts/cd-steps.sh`, `ops/scripts/deploy-release.sh`); the daily scan of the pinned third-party images in `ops/scripts/scan-running-release.sh`; the wiki rows; a follow-up milestone for the other third-party images | [RC-298] |
+| [ADR-0040] | ADR (Accepted) | - | - | [MIL-064], [ADR-0007], [ADR-0030], [MIL-022], [MIL-036], [MIL-059] | planned: the patch layer of the proxy in `ops/deploy/nginx/Dockerfile` and its entry in `ops/scripts/build-release-images.sh`, the release digests by name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, the `docker` entry of `.github/dependabot.yml` (MIL-064 tasks 2 to 7) | [RC-299] |
 | [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
 | [ADR-0031] | ADR (Accepted; decisions 2 and 3 added 2026-10-26) | - | - | ADR-0005, ADR-0013, [ADR-0004], ADR-0024, MIL-020, MIL-043 | the sign-in keys and the benchmark run tracker of `src/NFHotel.Web`, [MIL-046] | [RC-227], [RC-239] |
 | [MIL-056] | Milestone (Accepted, Go; gate passed 2026-11-05 after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding) | en | it | [BC-001], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | [ADR-0035], `scripts/dev-up.sh --lite`, `ops/scripts/lib/`, the Ops CI test and the macOS job, the wiki page Local Development Deploy | [RC-271], [RC-272], [RC-286] |
@@ -256,6 +257,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-062]: ../milestones/mil-062-prune-old-release-images.md
 [MIL-063]: ../milestones/mil-063-cd-scope-waits-for-the-tailnet.md
 [MIL-064]: ../milestones/mil-064-patched-nginx-and-third-party-scan.md
+[ADR-0040]: ../adr/adr-0040-patched-nginx-image-from-the-release.md
 [RC-282]: ./reviews/rc-282-mil-060.md
 [MIL-046]: ../milestones/mil-046-finished-run-not-interrupted.md
 [ADR-0031]: ../adr/adr-0031-state-that-survives-a-deploy.md
@@ -272,6 +274,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-296]: ./reviews/rc-296-mil-063-code.md
 [RC-297]: ./reviews/rc-297-mil-063-gate.md
 [RC-298]: ./reviews/rc-298-mil-064.md
+[RC-299]: ./reviews/rc-299-adr-0040.md
 [RC-287]: ./reviews/rc-287-mil-061.md
 [RC-288]: ./reviews/rc-288-mil-061-code.md
 [RC-289]: ./reviews/rc-289-mil-061-gate.md
@@ -300,5 +303,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-245]: ./reviews/rc-245-mil-048-plan.md
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
-[cad9fba]: https://github.com/NF-Hotel/NFHotel/commit/cad9fbabdd517896b4db30f18e28e0571000fefc
 [401da1a]: https://github.com/NF-Hotel/NFHotel/commit/401da1a2cc4c724997c1ad0e61ef770af5559245
