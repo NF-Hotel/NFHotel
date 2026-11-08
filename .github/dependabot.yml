@@ -23,12 +23,15 @@ updates:
       prefix: "Packages:"
 
   - package-ecosystem: docker
-    # The application images, the benchmark and market analysis images, and the backup target.
+    # The application images, the benchmark and market analysis images, the backup target, and the
+    # base of the patched proxy: a new build of nginx:1.29-alpine comes as a change of the FROM line
+    # of ops/deploy/nginx/Dockerfile (ADR-0040).
     directories:
       - /
       - /ops/deploy/backup-target
       - /ops/deploy/benchmark
       - /ops/deploy/market-analysis
+      - /ops/deploy/nginx
     schedule:
       interval: weekly
     cooldown:
@@ -37,12 +40,13 @@ updates:
       prefix: "Images:"
 
   - package-ecosystem: docker-compose
-    # Every compose folder whose images are pinned by digest, so no pin stays behind (MIL-059).
+    # Every compose folder whose images are pinned by digest, so no pin stays behind (MIL-059). The
+    # proxy is not here: its compose file names the image of the release, and its pin is the FROM
+    # line of its Dockerfile (the docker entry above, ADR-0040).
     directories:
       - /ops/deploy/alloy
       - /ops/deploy/cloudflared
       - /ops/deploy/monitoring
-      - /ops/deploy/nginx
       - /ops/deploy/ollama
       - /ops/deploy/postgres
       - /ops/deploy/postgres-tailnet
@@ -51,6 +55,10 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    # These folders pin 13 images (2026-11-08). With the default limit of five open pull requests,
+    # the update of 2026-11-04 left Prometheus, Alertmanager and the Blackbox exporter versions
+    # behind (MIL-064); the limit is at least the number of images, with room for two more.
+    open-pull-requests-limit: 15
     ignore:
       # A new major of PostgreSQL needs a dump and restore (ADR-0008), not a pull.
       - dependency-name: postgres
