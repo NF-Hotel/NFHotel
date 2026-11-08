@@ -27,6 +27,17 @@ This page rebuilds NF Hotel after its VM `nf-hotel` or its monitoring LXC is los
 
 Check once a month that the newest `nfhotel-daily-*.dump.age` and `nfhotel-settings-daily-*.tar.age` on the laptop are less than two days old.
 
+## How long the backup target keeps the copies
+
+The key of the VM may only add files to the backup target (`rrsync -wo -no-del -no-overwrite`), so the VM cannot delete there, not even its own old copies. The service `prune` beside the target deletes them instead (MIL-069), at its start and then once a day:
+
+- A daily file (`nfhotel-daily-*.dump.age`, `nfhotel-settings-daily-*.tar.age`) is kept for 30 days, and a weekly file (`nfhotel-weekly-*.dump.age`, `nfhotel-settings-weekly-*.tar.age`) for 12 weeks, counted from the time in its name, not from the date of the file.
+- The newest 14 daily and 8 weekly files of each kind are kept whatever their age. The VM keeps as many, and the copy sends every file that the target lacks, so a file deleted while the VM still has it would come back.
+- A copy is kept for its full time even when the VM is taken over: the prune goes by the time in the name of each copy, and the key of the VM can neither rename nor replace a file on the target. The floors keep the last copies when the backups stop, for example after the VM is lost; they guard against that accident, not against an attacker on the VM, who could fill them with files of newer names.
+- No other name is touched: not the temporary files of `rsync`, not `.last-copy`.
+- To change the limits, set `PRUNE_DAILY_DAYS` and `PRUNE_WEEKLY_WEEKS` in `backup-target.env` and run `docker compose --env-file backup-target.env up -d` in `ops/deploy/backup-target` on the backup host.
+- To see what it did: `docker compose logs prune` names each file it deleted and counts each kind. `docker compose --env-file backup-target.env run --rm prune --dry-run` names what it would delete now, and deletes nothing.
+
 ## Rebuild the VM
 
 Write down the time at each step; the drill compares them with the RTO. This order was tested in containers on 2026-11-07, and part 10 of `ops/tests/test-database.sh` runs its database part in CI (MIL-066 task 9).

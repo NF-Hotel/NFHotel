@@ -1,15 +1,19 @@
 # The write-only target of the off-VM backup copy (D7, ADR-0008), for the backup host
-# (the legion laptop of S03). Start it there with:
+# (the legion laptop of S03), and the prune that keeps its folder from growing without end
+# (MIL-069). Start both there with:
 #   docker compose --env-file backup-target.env up -d --build
 # It publishes ssh only on the tailnet address of the host, so only the tailnet reaches
 # it, and the tailnet policy lets only nf-hotel in. Settings in backup-target.env
 # (git-ignored); copy backup-target.env.example first.
 name: nfhotel-backup-target
 
+x-target-image: &target-image nfhotel-backup-target:local
+x-backups: &backups ${BACKUP_TARGET_DIR:-./backups}:/backups
+
 services:
   backup-target:
     build: .
-    image: nfhotel-backup-target:local
+    image: *target-image
     restart: unless-stopped
     environment:
       BACKUP_PUBLIC_KEY: ${BACKUP_PUBLIC_KEY:?set it to the .pub key of root on nf-hotel}
@@ -17,10 +21,38 @@ services:
       # BACKUP_TARGET_BIND: the tailnet address of this host (required)
       - "${BACKUP_TARGET_BIND:?set it}:${BACKUP_TARGET_PORT:-2222}:22"
     volumes:
-      - ${BACKUP_TARGET_DIR:-./backups}:/backups
+      - *backups
       - host-keys:/etc/ssh/keys
     security_opt:
       - no-new-privileges:true
+
+  # The key of nf-hotel can only add files (rrsync -wo -no-del -no-overwrite), so this
+  # service deletes the copies that the retention no longer keeps: at its start and then
+  # once a day, as the owner of the files, without a network or a writable root file
+  # system. Its log names each file it deleted: docker compose logs prune. A dry run,
+  # which deletes nothing:
+  #   docker compose --env-file backup-target.env run --rm prune --dry-run
+  prune:
+    image: *target-image
+    pull_policy: never  # built by the service backup-target
+    restart: unless-stopped
+    entrypoint: ["/usr/local/sbin/prune-backups"]
+    command: ["--apply", "--every", "86400"]
+    user: nfhotel-backup
+    environment:
+      PRUNE_DAILY_DAYS: ${PRUNE_DAILY_DAYS:-30}
+      PRUNE_WEEKLY_WEEKS: ${PRUNE_WEEKLY_WEEKS:-12}
+    volumes:
+      - *backups
+    network_mode: none
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 64m
+    cpus: 0.25
+    pids_limit: 32
 
 volumes:
   host-keys:

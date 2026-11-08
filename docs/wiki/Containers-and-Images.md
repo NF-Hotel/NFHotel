@@ -33,6 +33,7 @@ flowchart TB
   end
   subgraph Laptop["Backup host (legion laptop of S03)"]
     backup[backup-target]
+    prune[prune] -->|deletes expired copies| backup
   end
   CF --> cloudflared
   alloy -->|metrics, logs over the tailnet| prometheus
@@ -85,7 +86,8 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 | `loki` (`monitoring`) | Monitoring LXC | Log store, kept 14 days; its ruler evaluates the log alert | `grafana/loki:3.7.9` | Docker Hub | 3100 on the LXC's tailnet address |
 | `grafana` (`monitoring`) | Monitoring LXC | Dashboards and log search | `grafana/grafana:13.3.0` | Docker Hub | 3000 on the LXC's tailnet address |
 | `scan-exporter` (`monitoring`) | Monitoring LXC | Reads the results of the security scans (GitHub code scanning, the scan workflows, SonarQube Cloud) every 15 minutes for Prometheus (MIL-053); the code is mounted read-only, nothing is built | `python:3.13-slim` | Docker Hub | none |
-| `backup-target` (`backup-target`) | Backup host (legion laptop of S03) | Write-only SSH target of the nightly off-VM copy of the encrypted backup; a file there can be neither replaced nor deleted (ADR-0008) | `nfhotel-backup-target:local`, built there from `debian:13-slim` | built locally | SSH on the host's tailnet address |
+| `backup-target` (`backup-target`) | Backup host (legion laptop of S03) | Write-only SSH target of the nightly off-VM copy of the encrypted backup; the key of the VM can neither replace nor delete a file there (ADR-0008) | `nfhotel-backup-target:local`, built there from `debian:13-slim` | built locally | SSH on the host's tailnet address |
+| `prune` (`backup-target`) | Backup host (legion laptop of S03) | Deletes the copies that the retention no longer keeps, at its start and then once a day: daily files after 30 days and weekly files after 12 weeks, by the time in the name, never the newest 14 daily and 8 weekly of each kind (MIL-069); no network, read-only, as `nfhotel-backup` | `nfhotel-backup-target:local`, the same image | built locally | none |
 | `proxmox` (`proxmox`) | CI and a developer machine only | Throwaway Proxmox VE for the Proxmox integration tests (MIL-003) | `dockurr/proxmox:9.2.20` | Docker Hub | `127.0.0.1:18006` |
 
 ## Where the images come from
@@ -146,7 +148,7 @@ A pinned third-party image can keep a finding that its newest build has not fixe
 | `security_opt: [no-new-privileges:true]` | every service, and the daemon default | No privilege gain through setuid binaries | 5.25 |
 | `read_only: true`, with `tmpfs` for what it writes | every service except `backup-target` | An attacker cannot change the program files or leave a tool behind | 5.12 |
 | Memory, CPU and PID limits | every long-running service | A leak or a fork bomb in one container cannot starve the others | 5.10, 5.11, 5.28 |
-| Non-root user | the web, API, market-analysis and benchmark images and Alloy (473); PostgreSQL drops to its own user, and the nginx workers run as `nginx` | A process escape starts without root | 4.1 |
+| Non-root user | the web, API, market-analysis and benchmark images and Alloy (473); PostgreSQL drops to its own user, and the nginx workers run as `nginx`; `prune` on the backup host runs as `nfhotel-backup` | A process escape starts without root | 4.1 |
 | No host port, except the table above | every compose file | Nothing answers that does not need to | 5.7 |
 | Secrets as files under `/run/secrets`, never environment variables | web, API, PostgreSQL, cloudflared, Alertmanager | `docker inspect` and an environment dump show no secret (ADR-0024) | 4.10 |
 | A health check | every long-running service | The deploy waits for healthy containers and rolls back otherwise; an unhealthy container raises `ContainerUnhealthy` | 4.6 |
