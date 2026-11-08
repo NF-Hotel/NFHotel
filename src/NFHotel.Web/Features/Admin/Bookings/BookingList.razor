@@ -507,7 +507,7 @@
                     {
                         <tr>
                             <td class="numeric-start">@booking.BookingNumber</td>
-                            <td>
+                            <td class="nowrap">
                                 <strong>@booking.GuestFullName</strong>
                                 <span class="sub">@booking.GuestCountry</span>
                             </td>
@@ -546,19 +546,21 @@
 
                                 @if (booking.Actions.CanReschedule)
                                 {
-                                    <button type="button" class="btn btn-secondary btn-sm"
+                                    <button type="button" class="btn btn-secondary btn-sm btn-icon"
+                                            title="Reschedule @booking.BookingNumber"
                                             disabled="@ViewModel.IsBusy"
                                             @onclick="() => BeginRescheduleAsync(booking)">
-                                        Reschedule
+                                        <AdminIcon Name="calendar" /><span class="sr-only">Reschedule</span>
                                     </button>
                                 }
 
                                 @if (booking.Actions.CanCancel)
                                 {
-                                    <button type="button" class="btn btn-danger btn-sm"
+                                    <button type="button" class="btn btn-danger btn-sm btn-icon"
+                                            title="Cancel @booking.BookingNumber"
                                             disabled="@ViewModel.IsBusy"
                                             @onclick="() => RequestCancel(booking)">
-                                        Cancel
+                                        <AdminIcon Name="x" /><span class="sr-only">Cancel</span>
                                     </button>
                                 }
                             </td>

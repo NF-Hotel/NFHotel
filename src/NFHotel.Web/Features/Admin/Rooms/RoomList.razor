@@ -329,7 +329,7 @@
                         <th scope="col">Size</th>
                         @if (ViewModel.ShowsPrices)
                         {
-                            <th scope="col" class="numeric">Price per night today</th>
+                            <th scope="col" class="numeric">Rate today</th>
                         }
                         <th scope="col" class="numeric">Sleeps</th>
                         <th scope="col">Status</th>
@@ -343,7 +343,7 @@
                         <tr class="@(ViewModel.IsSelected(room) ? "option-row is-selected" : null)">
                             <td class="numeric-start"><strong>@room.RoomNumber</strong></td>
                             <td class="numeric">@room.Floor</td>
-                            <td>@DisplayText.Describe(room.Size)</td>
+                            <td class="nowrap">@DisplayText.Describe(room.Size)</td>
                             @if (ViewModel.ShowsPrices)
                             {
                                 <td class="numeric">@ViewModel.PriceTextOf(room.Size)</td>
@@ -361,17 +361,19 @@
 
                                 <AuthorizeView Policy="@StaffPolicies.RoomsManage">
                                     <button type="button"
-                                            class="btn btn-secondary btn-sm"
+                                            class="btn btn-secondary btn-sm btn-icon"
+                                            title="Edit room @room.RoomNumber"
                                             disabled="@Form.IsBusy"
                                             @onclick="() => BeginEditAsync(room)">
-                                        Edit
+                                        <AdminIcon Name="edit" /><span class="sr-only">Edit</span>
                                     </button>
 
                                     <button type="button"
-                                            class="btn btn-danger btn-sm"
+                                            class="btn btn-danger btn-sm btn-icon"
+                                            title="Delete room @room.RoomNumber"
                                             disabled="@ViewModel.IsBusy"
                                             @onclick="() => RequestDelete(room)">
-                                        Delete
+                                        <AdminIcon Name="trash" /><span class="sr-only">Delete</span>
                                     </button>
                                 </AuthorizeView>
                             </td>

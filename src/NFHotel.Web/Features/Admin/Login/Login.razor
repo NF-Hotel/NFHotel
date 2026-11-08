@@ -1,4 +1,5 @@
 @page "/admin/login"
+@layout NFHotel.Web.Components.Layout.AdminAuthLayout
 @inherits CancellableComponentBase
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
@@ -18,13 +19,15 @@
 
 <PageTitle>Sign in — NFHotel administration</PageTitle>
 
-<div class="page-narrow stack-lg">
+<div class="admin-auth-card stack-lg">
+    <span class="tint admin-auth-icon" aria-hidden="true"><AdminIcon Name="login" /></span>
+
     <PageHeader Title="Staff sign-in"
                 Subtitle="The back office is for the hotel's staff. Sign in with your own account." />
 
     <ErrorAlert Errors="ViewModel.Errors" />
 
-    <EditForm Model="Input" FormName="staff-login" OnValidSubmit="SignInAsync" method="post" class="card card-pad stack">
+    <EditForm Model="Input" FormName="staff-login" OnValidSubmit="SignInAsync" method="post" class="stack">
         <DataAnnotationsValidator />
 
         <FormField Label="User name" For="login-user" IsRequired="true">
@@ -37,10 +40,13 @@
 
         <ValidationSummary />
 
-        <div class="row">
-            <button type="submit" class="btn btn-primary">Sign in</button>
-        </div>
+        <button type="submit" class="btn btn-primary btn-block">Sign in</button>
     </EditForm>
+
+    <div class="admin-auth-help">
+        <p class="field-hint">Forgot your password? A manager can reset it under Staff &amp; audit.</p>
+        <a href="/"><AdminIcon Name="arrow" Class="icon-sm flip" />Back to the hotel website</a>
+    </div>
 </div>
 
 @code {

@@ -216,17 +216,19 @@
                             <td>@PassportText(guest)</td>
                             <td class="table-actions">
                                 <button type="button"
-                                        class="btn btn-secondary btn-sm"
+                                        class="btn btn-secondary btn-sm btn-icon"
+                                        title="Edit @guest.FullName"
                                         disabled="@ViewModel.IsBusy"
                                         @onclick="() => BeginEditAsync(guest)">
-                                    Edit
+                                    <AdminIcon Name="edit" /><span class="sr-only">Edit</span>
                                 </button>
 
                                 <button type="button"
-                                        class="btn btn-danger btn-sm"
+                                        class="btn btn-danger btn-sm btn-icon"
+                                        title="Delete @guest.FullName"
                                         disabled="@ViewModel.IsBusy"
                                         @onclick="() => RequestDelete(guest)">
-                                    Delete
+                                    <AdminIcon Name="trash" /><span class="sr-only">Delete</span>
                                 </button>
                             </td>
                         </tr>

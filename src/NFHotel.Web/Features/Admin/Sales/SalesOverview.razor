@@ -19,54 +19,74 @@
     <PageHeader Title="Revenue"
                 Subtitle="The screen is here, but the numbers can't be worked out yet." />
 
-    <AlertBox Kind="AlertKind.Info">
-        <p>
-            <strong>The system has no pricing model.</strong>
-        </p>
-        <p>
-            Rooms, bookings and services carry no price, and nothing records payments. Any
-            total would come out as 0 — and a zero that looks like a real number is worse
-            than no screen at all.
-        </p>
-    </AlertBox>
-
-    <section class="card card-pad stack" aria-labelledby="why-not-roomsize">
-        <h2 class="subtitle" id="why-not-roomsize">Why <code>RoomSize</code> isn't enough</h2>
-
-        <p>
-            A room has a size — single, double or suite — but that is a <em>category</em>,
-            not a price. It says how many people can sleep in the room, not what the night
-            costs. Multiplying a category by a number of nights would be a guess dressed up
-            as accounting.
-        </p>
-
-        <p>
-            A price also depends on more than size: season, day of the week, corporate
-            agreements and whatever was sold on top. None of that exists in the domain today.
-        </p>
+    <section class="card placeholder-hero" aria-labelledby="no-pricing-model">
+        <span class="tint tint-amber placeholder-icon" aria-hidden="true"><AdminIcon Name="chart" /></span>
+        <div class="stack-sm">
+            <h2 class="subtitle" id="no-pricing-model">The system has no pricing model.</h2>
+            <p class="muted">
+                Rooms, bookings and services carry no price, and nothing records payments. Any
+                total would come out as 0 — and a zero that looks like a real number is worse
+                than no screen at all.
+            </p>
+        </div>
     </section>
 
-    <section class="card card-pad stack" aria-labelledby="what-is-needed">
-        <h2 class="subtitle" id="what-is-needed">What has to come first</h2>
+    <div class="grid-2">
+        <section class="card" aria-labelledby="why-not-roomsize">
+            <CardHead Id="why-not-roomsize" Title="Why RoomSize isn't enough" Icon="bed" Tint="slate" />
+            <div class="card-body stack">
+                <p>
+                    A room has a size — single, double or suite — but that is a <em>category</em>,
+                    not a price. It says how many people can sleep in the room, not what the night
+                    costs. Multiplying a category by a number of nights would be a guess dressed up
+                    as accounting.
+                </p>
 
-        <ol class="stack-sm">
-            <li>
-                A pricing model in the domain. Price per room size, per night or per season
-                is a business decision, not a technical one.
-            </li>
-            <li>
-                A notion of payment, so "confirmed" (payment guaranteed) and "paid" can be
-                told apart.
-            </li>
-            <li>
-                Only then an <code>ISalesService</code> with real use cases — and a screen
-                that shows them.
-            </li>
-        </ol>
+                <p>
+                    A price also depends on more than size: season, day of the week, corporate
+                    agreements and whatever was sold on top. None of that exists in the domain today.
+                </p>
+            </div>
+        </section>
+
+        <section class="card" aria-labelledby="what-is-needed">
+            <CardHead Id="what-is-needed" Title="What has to come first" Icon="list" Tint="slate" />
+            <div class="card-body">
+                <ol class="steps">
+                    <li>
+                        A pricing model in the domain. Price per room size, per night or per season
+                        is a business decision, not a technical one.
+                    </li>
+                    <li>
+                        A notion of payment, so "confirmed" (payment guaranteed) and "paid" can be
+                        told apart.
+                    </li>
+                    <li>
+                        Only then an <code>ISalesService</code> with real use cases — and a screen
+                        that shows them.
+                    </li>
+                </ol>
+            </div>
+        </section>
+    </div>
+
+    <section aria-labelledby="meanwhile">
+        <h2 class="report-kicker" id="meanwhile">Until then</h2>
+        <div class="kpi-grid">
+            <a class="kpi" href="/admin/bookings">
+                <span class="tint kpi-icon" aria-hidden="true"><AdminIcon Name="calendar" /></span>
+                <span class="kpi-body">
+                    <span class="kpi-label">Booking list</span>
+                    <span class="kpi-note">Shows how full the hotel is.</span>
+                </span>
+            </a>
+            <a class="kpi" href="/admin">
+                <span class="tint kpi-icon" aria-hidden="true"><AdminIcon Name="home" /></span>
+                <span class="kpi-body">
+                    <span class="kpi-label">Dashboard</span>
+                    <span class="kpi-note">Shows today's movements.</span>
+                </span>
+            </a>
+        </div>
     </section>
-
-    <p class="muted">
-        Until then, the <a href="/admin/bookings">booking list</a> shows how full the hotel
-        is, and the <a href="/admin">dashboard</a> shows today's movements.
-    </p>
 </div>

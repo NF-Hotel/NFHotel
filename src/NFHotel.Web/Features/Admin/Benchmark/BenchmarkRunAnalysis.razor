@@ -21,24 +21,39 @@
     var hotel = BenchmarkResultAnalysis.Select(Run.Results, BenchmarkWorkload.Hotel);
 }
 
-<section class="stack" aria-labelledby="analysis-performance">
-    <h3 class="subtitle" id="analysis-performance">Performance</h3>
-    <div class="field-row">
-        <label class="field-label" for="analysis-workload">Workload</label>
-        <select id="analysis-workload" class="field-input" @bind="ViewModel.Workload" @bind:after="StateHasChanged">
-            <option value="@BenchmarkWorkload.Hotel">Hotel analysis</option>
-            <option value="@BenchmarkWorkload.Deterministic">Deterministic tasks</option>
-            <option value="@BenchmarkWorkload.Both">Both</option>
-        </select>
-    </div>
+<section class="card" aria-labelledby="analysis-performance">
+    <CardHead Id="analysis-performance"
+              Title="Performance"
+              Hint="Cold is the first request of a model in its run (it may include loading the model); warm is every later request."
+              Icon="trend">
+        <Actions>
+            <label class="inline-select">
+                <span>Workload</span>
+                <select id="analysis-workload" class="field-input" @bind="ViewModel.Workload" @bind:after="StateHasChanged">
+                    <option value="@BenchmarkWorkload.Hotel">Hotel analysis</option>
+                    <option value="@BenchmarkWorkload.Deterministic">Deterministic tasks</option>
+                    <option value="@BenchmarkWorkload.Both">Both</option>
+                </select>
+            </label>
+        </Actions>
+    </CardHead>
 
+    <div class="card-body stack-lg">
     @if (phases.Count == 0)
     {
         <p class="muted">No request of this workload finished without an error.</p>
     }
     else
     {
-        <p class="muted">Cold is the first request of a model in its run (it may include loading the model); warm is every later request.</p>
+        <div class="chart-grid">
+            <GroupedBarChart Title="First token (s)" AxisTitle="seconds, lower is faster" SeriesNames="PhaseNames"
+                             Groups="PhaseGroups(phases, stats => stats.FirstTokenSeconds)" />
+            <GroupedBarChart Title="Total time (s)" AxisTitle="seconds, lower is faster" SeriesNames="PhaseNames"
+                             Groups="PhaseGroups(phases, stats => stats.TotalSeconds)" />
+            <GroupedBarChart Title="Tokens per second" AxisTitle="tokens/s, higher is faster" SeriesNames="PhaseNames"
+                             Groups="PhaseGroups(phases, stats => stats.TokensPerSecond)" />
+        </div>
+
         <div class="table-wrap">
             <table class="table">
                 <caption>Mean per model and phase</caption>
@@ -69,24 +84,16 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="chart-grid">
-            <GroupedBarChart Title="First token (s)" AxisTitle="seconds, lower is faster" SeriesNames="PhaseNames"
-                             Groups="PhaseGroups(phases, stats => stats.FirstTokenSeconds)" />
-            <GroupedBarChart Title="Total time (s)" AxisTitle="seconds, lower is faster" SeriesNames="PhaseNames"
-                             Groups="PhaseGroups(phases, stats => stats.TotalSeconds)" />
-            <GroupedBarChart Title="Tokens per second" AxisTitle="tokens/s, higher is faster" SeriesNames="PhaseNames"
-                             Groups="PhaseGroups(phases, stats => stats.TokensPerSecond)" />
-        </div>
     }
+    </div>
 </section>
 
 @if (outcomes.Count > 0)
 {
     var tasks = outcomes.Select(outcome => outcome.TaskId).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
     var models = outcomes.Select(outcome => outcome.Model).Distinct(StringComparer.Ordinal).ToArray();
-    <section class="stack-sm" aria-labelledby="analysis-outcomes">
-        <h3 class="subtitle" id="analysis-outcomes">Deterministic task outcomes</h3>
+    <section class="card" aria-labelledby="analysis-outcomes">
+        <CardHead Id="analysis-outcomes" Title="Deterministic task outcomes" Hint="Passed runs out of graded runs, per model and task." Icon="check" Tint="ok" />
         <div class="table-wrap">
             <table class="table">
                 <caption>Passed runs out of graded runs, per model and task</caption>
@@ -113,8 +120,8 @@
                                 }
                                 else
                                 {
-                                    <td class="@(outcome.AllPassed ? "outcome-pass" : "outcome-fail")">
-                                        @(outcome.AllPassed ? "pass" : "fail") (@outcome.Passed/@outcome.Total)
+                                    <td>
+                                        <span class="outcome @(outcome.AllPassed ? "outcome-pass" : "outcome-fail")">@(outcome.AllPassed ? "pass" : "fail") (@outcome.Passed/@outcome.Total)</span>
                                     </td>
                                 }
                             }
@@ -128,9 +135,13 @@
 
 @if (hotel.Count > 0)
 {
-    <section class="stack" aria-labelledby="analysis-answers">
-        <h3 class="subtitle" id="analysis-answers">LLM analysis comparison</h3>
-        <p class="muted">No model is ranked. "Valid" only says that the answer had the requested structure.</p>
+    <section class="card" aria-labelledby="analysis-answers">
+        <CardHead Id="analysis-answers"
+                  Title="LLM analysis comparison"
+                  Hint="@CompareHint"
+                  Icon="sparkle"
+                  Tint="amber" />
+        <div class="card-body stack">
         <ErrorAlert Errors="ViewModel.Errors" />
         <div class="table-wrap">
             <table class="table">
@@ -168,7 +179,7 @@
                             <td class="numeric">@Number(result.TotalSeconds)</td>
                             <td class="numeric">@result.CompletionTokens</td>
                             <td class="numeric">@Number(result.TokensPerSecond)</td>
-                            <td>@(result.HasError ? "error" : result.ResponseValid is { } valid ? (valid ? "yes" : "no") : "—")</td>
+                            <td><span class="@ValidClass(result)">@(result.HasError ? "error" : result.ResponseValid is { } valid ? (valid ? "yes" : "no") : "—")</span></td>
                             <td>@(result.FinishReason ?? "—")</td>
                         </tr>
                     }
@@ -190,17 +201,19 @@
                 }
             </div>
         }
+        </div>
     </section>
 }
 
 @if (resources.Any(usage => usage.RamPeakMb is not null || usage.VramPeakMb is not null))
 {
-    <section class="stack" aria-labelledby="analysis-resources">
-        <h3 class="subtitle" id="analysis-resources">Resource usage</h3>
-        <p class="muted">
-            Memory is what the whole machine had in use, sampled about four times a second, not what the model alone used.
-            The mean over the requests of a model.
-        </p>
+    <section class="card" aria-labelledby="analysis-resources">
+        <CardHead Id="analysis-resources"
+                  Title="Resource usage"
+                  Hint="Memory is what the whole machine had in use, sampled about four times a second, not what the model alone used. The mean over the requests of a model."
+                  Icon="cpu"
+                  Tint="slate" />
+        <div class="card-body">
         <div class="chart-grid">
             <GroupedBarChart Title="System memory (MB)" AxisTitle="MB, mean over the requests" SeriesNames="MomentNames" ValueFormat="#,0"
                              Groups="MomentGroups(resources, usage => usage.RamBeforeMb, usage => usage.RamAfterMb, usage => usage.RamPeakMb)" />
@@ -211,21 +224,22 @@
             }
             else
             {
-                <p class="muted">GPU memory was not measured (no NVIDIA GPU, or nvidia-smi was not found).</p>
+                <p class="muted chart-empty">GPU memory was not measured (no NVIDIA GPU, or nvidia-smi was not found).</p>
             }
+        </div>
         </div>
     </section>
 }
 
-<section class="stack-sm" aria-labelledby="analysis-export">
-    <h3 class="subtitle" id="analysis-export">Export</h3>
-    <p class="muted">The rows of this run without the answer texts, which are read one at a time.</p>
-    <div class="row">
-        <a class="btn btn-secondary btn-sm" download="benchmark-results-@(Run.Header.RunId).csv"
-           href="data:text/csv;charset=utf-8,@Uri.EscapeDataString(BenchmarkExport.ToCsv(Run.Results))">Download CSV</a>
-        <a class="btn btn-secondary btn-sm" download="benchmark-results-@(Run.Header.RunId).json"
-           href="data:application/json;charset=utf-8,@Uri.EscapeDataString(BenchmarkExport.ToJson(Run.Results))">Download JSON</a>
-    </div>
+<section class="card" aria-labelledby="analysis-export">
+    <CardHead Id="analysis-export" Title="Export" Hint="The rows of this run without the answer texts, which are read one at a time." Icon="list" Tint="slate">
+        <Actions>
+            <a class="btn btn-secondary btn-sm" download="benchmark-results-@(Run.Header.RunId).csv"
+               href="data:text/csv;charset=utf-8,@Uri.EscapeDataString(BenchmarkExport.ToCsv(Run.Results))">Download CSV</a>
+            <a class="btn btn-secondary btn-sm" download="benchmark-results-@(Run.Header.RunId).json"
+               href="data:application/json;charset=utf-8,@Uri.EscapeDataString(BenchmarkExport.ToJson(Run.Results))">Download JSON</a>
+        </Actions>
+    </CardHead>
 </section>
 
 @code {
@@ -260,6 +274,17 @@
                 usage.Model,
                 [new ChartBar("before", before(usage)), new ChartBar("after", after(usage)), new ChartBar("peak", peak(usage))])),
         ];
+
+    private static string CompareHint =>
+        $"No model is ranked. \"Valid\" only says that the answer had the requested structure. Tick up to {BenchmarkAnalysisViewModel.MaxCompared} answers to read them side by side.";
+
+    private static string ValidClass(BenchmarkResultDto result) =>
+        result.HasError ? "outcome outcome-fail" : result.ResponseValid switch
+        {
+            true => "outcome outcome-pass",
+            false => "outcome outcome-warn",
+            null => string.Empty,
+        };
 
     private static string Number(double? value) =>
         value is { } number ? number.ToString("0.##", CultureInfo.InvariantCulture) : "—";
