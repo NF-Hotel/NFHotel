@@ -47,7 +47,7 @@ How NF Hotel covers the eight phases of the DevOps lifecycle (Plan, Code, Build,
 
 ## 5. Release
 
-- The workflow `NF Hotel Release` builds the five images after a green CI on `main`. **Trivy** stops the release on a critical finding, or a high one with a fix.
+- The workflow `NF Hotel Release` builds the six images after a green CI on `main`. **Trivy** stops the release on a critical finding, or a high one with a fix.
 - Each image gets an **SBOM** and a signed **build provenance attestation**, and is pushed to the **GitHub Container Registry** by digest (MIL-022).
 - Each release has a manifest (`release.json`) with the commit, the digests and the hash of the idempotent migration script. Documents keep their own Version History.
 
