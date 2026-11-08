@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 2 to 7 of MIL-064 before its pull request (task 8), with the one fix it asked for: the steps of the daily scan in a script | [55cb8a6] |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | The SonarQube Cloud check of pull request #542: docker:S6471 on the Dockerfile of the proxy, ignored for that rule and file in `SonarQube.Analysis.xml` with the reason; a finding and an action item | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | The SonarQube Cloud check of pull request #542: docker:S6471 on the Dockerfile of the proxy, ignored for that rule and file in `SonarQube.Analysis.xml` with the reason; a finding and an action item | [e2697db] |
 
 ---
 
@@ -113,3 +113,4 @@ Go. Every Mandatory criterion of QC-SH-001, QC-WF-001 and QC-YML-001 passes afte
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [55cb8a6]: https://github.com/NF-Hotel/NFHotel/commit/55cb8a6183ebf3697f801c51e49f7eace9e7bd98
+[e2697db]: https://github.com/NF-Hotel/NFHotel/commit/e2697db319b42dd66a555402a20dc29343e55a33
