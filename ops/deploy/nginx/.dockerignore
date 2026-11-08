@@ -1,0 +1,3 @@
+# The image takes nothing from this folder (see the Dockerfile), and the folder holds the
+# git-ignored settings and the TLS key of the proxy, so nothing of it is sent to the builder.
+*

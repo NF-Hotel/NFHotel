@@ -9,10 +9,10 @@
 # Secrets: none besides the job token: packages: write for GHCR; id-token and
 #   attestations: write for the build provenance and the SBOM of each digest;
 #   security-events: write for the Trivy results (MIL-022).
-# Changes outside the repository: the four packages ghcr.io/nf-hotel/{nfhotel-web,
-#   nfhotel-api, market-analysis, benchmark}, tagged sha-<commit>.
+# Changes outside the repository: the five packages ghcr.io/nf-hotel/{nfhotel-web,
+#   nfhotel-api, market-analysis, benchmark, nfhotel-nginx}, tagged sha-<commit>.
 # Output: the artifact release-manifest: release.json (this commit, the operations commit,
-#   which is the same since ADR-0016, four digests and the hash of the migration script)
+#   which is the same since ADR-0016, five digests and the hash of the migration script)
 #   and migrations.sql, which NF Hotel CD deploys.
 # Verified with actionlint 1.7.7.
 name: NF Hotel Release

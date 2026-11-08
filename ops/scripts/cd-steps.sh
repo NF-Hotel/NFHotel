@@ -8,9 +8,11 @@
 #   check-run      the run in RUN_ID must be a successful "NF Hotel Release" run of main
 #                  in this repository; writes id=<run> to GITHUB_OUTPUT
 #   read-manifest  read release.json, check every field against a strict pattern and
-#                  write sha and one digest per image to GITHUB_OUTPUT; when the manifest
-#                  names a migration script, migrations.sql must be beside it with that
-#                  SHA-256, which is written as migrations
+#                  write sha, devops_sha and images to GITHUB_OUTPUT: images holds the
+#                  reference ghcr.io/nf-hotel/<name>@sha256:<digest> of every image of
+#                  IMAGE_NAMES, in that order, separated by spaces (ADR-0040); when the
+#                  manifest names a migration script, migrations.sql must be beside it with
+#                  that SHA-256, which is written as migrations
 #   verify         check the build provenance and the SBOM attestation of every image
 #                  digest with gh attestation verify, signed by the release workflow of
 #                  this repository (MIL-022 task 3). A digest without both
@@ -43,8 +45,8 @@
 #   GATE_TRIES GATE_INTERVAL   the polls of gate (default 90 x 30 seconds)
 #   RUN_ID       the release run, for check-run and summary
 #   VM_HOST      the tailnet name of the VM, for deploy
-#   SHA DEVOPS_SHA WEB API ANALYSIS BENCHMARK   the checked manifest fields, for verify,
-#                deploy and summary
+#   SHA DEVOPS_SHA RELEASE_IMAGES   the checked manifest fields (RELEASE_IMAGES is the
+#                output images of read-manifest), for verify, deploy and summary
 #   MIGRATIONS   the checked SHA-256 of migrations.sql, for deploy (empty: none)
 #   OUTCOME      the job status, for summary
 #
@@ -58,7 +60,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=ops/scripts/lib/common.sh
 . "$ROOT/scripts/lib/common.sh"
 readonly RELEASE_WORKFLOW="NF Hotel Release"
-readonly IMAGE_NAMES=(nfhotel-web nfhotel-api market-analysis benchmark)
+# The images of a release, by name (ADR-0040): the deploy command finds each by its name, so a
+# new image is a name here and in deploy-release.sh, never a new argument position.
+readonly IMAGE_NAMES=(nfhotel-web nfhotel-api market-analysis benchmark nfhotel-nginx)
 readonly MANIFEST=release.json
 readonly MIGRATIONS_FILE=migrations.sql
 readonly FENCE='```'
@@ -83,8 +87,31 @@ check_run() {
   echo "id=$RUN_ID" >>"$GITHUB_OUTPUT"
 }
 
+# image_pattern <name>: the only form a reference of the image <name> may have.
+image_pattern() {
+  echo "^ghcr\.io/nf-hotel/${1}@sha256:[0-9a-f]{64}\$"
+}
+
+# release_refs: set REFS to the references in RELEASE_IMAGES, one for each image of IMAGE_NAMES in
+# that order, each checked against its pattern again; fail when one is missing, malformed or extra.
+release_refs() {
+  local name ref found words=()
+  read -r -a words <<<"${RELEASE_IMAGES:-}"
+  REFS=()
+  for name in "${IMAGE_NAMES[@]}"; do
+    found=""
+    for ref in "${words[@]}"; do
+      [[ "$ref" == "ghcr.io/nf-hotel/$name@"* ]] && found="$ref"
+    done
+    [[ "$found" =~ $(image_pattern "$name") ]] || fail "no checked digest for $name"
+    REFS+=("$found")
+  done
+  ((${#words[@]} == ${#IMAGE_NAMES[@]})) ||
+    fail "expected ${#IMAGE_NAMES[@]} image references (${IMAGE_NAMES[*]}), got ${#words[@]}"
+}
+
 read_manifest() {
-  local sha ops_sha name ref
+  local sha ops_sha name ref refs=()
   [[ -f "$MANIFEST" ]] || fail "$MANIFEST is missing"
   sha="$(jq -r '.sha' "$MANIFEST")"
   [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || fail "bad commit in $MANIFEST"
@@ -103,24 +130,20 @@ read_manifest() {
   echo "migrations=$migrations" >>"$GITHUB_OUTPUT"
   for name in "${IMAGE_NAMES[@]}"; do
     ref="$(jq -r --arg n "$name" '.images[$n]' "$MANIFEST")"
-    [[ "$ref" =~ ^ghcr\.io/nf-hotel/${name}@sha256:[0-9a-f]{64}$ ]] || fail "bad digest for $name in $MANIFEST"
-    echo "${name//-/_}=$ref" >>"$GITHUB_OUTPUT"
+    [[ "$ref" =~ $(image_pattern "$name") ]] || fail "bad digest for $name in $MANIFEST"
+    refs+=("$ref")
   done
+  echo "images=${refs[*]}" >>"$GITHUB_OUTPUT"
 }
 
 verify() {
-  local name var ref logged_in=""
+  local i name ref logged_in=""
   [[ -n "${GITHUB_REPOSITORY:-}" ]] || fail "GITHUB_REPOSITORY is not set"
   local signer="$GITHUB_REPOSITORY/.github/workflows/release.yaml"
-  for name in "${IMAGE_NAMES[@]}"; do
-    case "$name" in
-      nfhotel-web) var=WEB ;;
-      nfhotel-api) var=API ;;
-      market-analysis) var=ANALYSIS ;;
-      benchmark) var=BENCHMARK ;;
-    esac
-    ref="${!var:-}"
-    [[ "$ref" =~ ^ghcr\.io/nf-hotel/${name}@sha256:[0-9a-f]{64}$ ]] || fail "no checked digest for $name"
+  release_refs
+  for i in "${!IMAGE_NAMES[@]}"; do
+    name="${IMAGE_NAMES[$i]}"
+    ref="${REFS[$i]}"
     if [[ -z "${logged_in:-}" ]]; then
       # The packages are private: gh reads the digest through the Docker credentials.
       docker login ghcr.io --username "${GITHUB_ACTOR:-x}" --password-stdin <<<"${GH_TOKEN:?GH_TOKEN is not set}" >/dev/null ||
@@ -140,7 +163,11 @@ verify() {
 deploy() {
   [[ "${VM_HOST:-}" =~ ^[a-z0-9.-]+$ ]] || fail "set the environment variable NFHOTEL_VM_HOST of production"
   local status=0
+  [[ "${SHA:-}" =~ ^[0-9a-f]{40}$ ]] || fail "bad release commit"
   [[ "${DEVOPS_SHA:-}" =~ ^[0-9a-f]{40}$ ]] || fail "bad operations commit"
+  # Every argument reaches the shell of the VM through ssh, so each reference is checked here too,
+  # before anything runs there.
+  release_refs
   tailscale ssh "deploy@$VM_HOST" sudo -n /usr/local/sbin/nfhotel-deploy update "$DEVOPS_SHA" \
     2>&1 | tee update.log || status=$?
   ((status == 0)) || fail "the update of the commands on $VM_HOST failed (exit $status); nothing was migrated or deployed"
@@ -160,7 +187,7 @@ deploy() {
   local drill=()
   [[ "${ROLLBACK_DRILL:-false}" == "true" ]] && drill=(--drill)
   tailscale ssh "deploy@$VM_HOST" \
-    sudo -n /usr/local/sbin/nfhotel-deploy deploy "$SHA" "$DEVOPS_SHA" "$WEB" "$API" "$ANALYSIS" "$BENCHMARK" "${drill[@]}" \
+    sudo -n /usr/local/sbin/nfhotel-deploy deploy "$SHA" "$DEVOPS_SHA" "${REFS[@]}" "${drill[@]}" \
     2>&1 | tee deploy.log || status=$?
   ((status == 0)) || fail "the deploy on $VM_HOST failed (exit $status); see the deploy log"
 }

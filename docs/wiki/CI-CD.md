@@ -7,11 +7,12 @@ How a change reaches the NF Hotel server, how a deploy is approved and undone, a
 One repository holds it all (ADR-0016): the application, and its operations under `ops/`. The workflows (`ci.yaml`, `ops-ci.yaml`, `release.yaml`, `cd.yaml`) keep the triggers, the permissions, the `production` environment and the OIDC claims. Their steps are the local composite actions in `.github/actions/` (`release-images`, `deploy-release`, `e2e-tests`, `dast-scan`), read from the same commit, which run the scripts of `ops/scripts/`. Everything that runs on the VM is in `ops/` too.
 
 1. **Pull request.** `NF Hotel CI` builds, tests and checks the formatting on every pull request, with a read-only token. Its only secret is `SONAR_TOKEN`, the analysis token of SonarQube Cloud (ADR-0033); a run without it (a fork, Dependabot) skips the analysis. A pull request merges when the required checks are green; no approving review is required (ADR-0019).
-2. **Merge to `main`.** CI runs again on `main`. When it is green, `NF Hotel Release` in NFHotel calls the `release-images` action. The action builds four images from that exact commit, with the compose files and scripts of `ops/` in it, and pushes them to the GitHub Container Registry:
+2. **Merge to `main`.** CI runs again on `main`. When it is green, `NF Hotel Release` in NFHotel calls the `release-images` action. The action builds five images from that exact commit, with the compose files and scripts of `ops/` in it, and pushes them to the GitHub Container Registry:
    - `ghcr.io/nf-hotel/nfhotel-web`
    - `ghcr.io/nf-hotel/nfhotel-api`
    - `ghcr.io/nf-hotel/market-analysis`, built from a pinned commit of `NF-Hotel/notebook-market-analysis` (see "The market-analysis image" below)
    - `ghcr.io/nf-hotel/benchmark`
+   - `ghcr.io/nf-hotel/nfhotel-nginx`, the pinned `nginx:1.29-alpine` with the fixes of its Alpine packages (ADR-0040)
 
    Each image is tagged `sha-<NFHotel commit>` and labelled with that commit (`org.opencontainers.image.revision`). The run summary and the artifact `release-manifest` (`release.json`) hold the commit, the operations commit (`devops_sha`, the same commit since ADR-0016), one digest per image and the hash of the migration script.
 3. **Approval and gate (ADR-0038, ADR-0021).** `NF Hotel CD` starts by itself after a green Release, in the environment `production` (`main` only), and waits there until S01 approves the run: GitHub notifies the reviewer, and the run's page has "Review deployments" (approve or reject, with a comment). Nothing runs and no credential is issued before the approval; a run nobody approves expires after 30 days. After the approval, before any credential for the VM, it waits until every check of the release commit has finished, and it deploys only when all of them are green (success, skipped or neutral). One red check stops it, and the run summary names that check.
@@ -19,7 +20,7 @@ One repository holds it all (ADR-0016): the application, and its operations unde
    - the job joins the tailnet as a temporary node tagged `tag:ci`;
    - it logs in to the VM with Tailscale SSH as the user `deploy`;
    - it runs `sudo -n /usr/local/sbin/nfhotel-deploy update <operations commit>` first. That installs the deploy command, the backup command and the backup timer of the release, and only when the commit is on `main` (ADR-0018);
-   - then it runs `migrate` with the migration script, and `deploy <commit> <operations commit> <four digests>` (the `deploy-release` action).
+   - then it runs `migrate` with the migration script, and `deploy <commit> <operations commit> <five references>` (the `deploy-release` action): each reference is `ghcr.io/nf-hotel/<name>@sha256:<digest>`, and the name picks the image, so their order does not matter (ADR-0040).
 5. **On the VM**, the deploy command (`ops/scripts/deploy-release.sh`):
    - backs up the database;
    - checks out the release commit in `/opt/nfhotel`, a checkout of `NF-Hotel/NFHotel`, and uses its `ops/` (a checkout of the archived `NF-Hotel/DevOps` is still accepted until the switch of MIL-031 task 6). The application runs from the images, not from this checkout;

@@ -16,7 +16,8 @@
 #   benchmark  the benchmark service (API of notebook-benchmark): the web application starts runs there, it runs
 #              the models in ollama and delivers the result to the api; nfhotel-python and nfhotel-llm, no published port
 #   nginx      (starts only when web is running) the reverse proxy: TLS on 443 and a redirect on 80 for web;
-#              a development certificate is made when deploy/nginx/tls has none (MIL-017)
+#              a development certificate is made when deploy/nginx/tls has none (MIL-017); its image is
+#              the pinned nginx image with the fixes of its Alpine packages (ADR-0040)
 #   tunnel     (only when deploy/cloudflared/cloudflared.env exists) Cloudflare Tunnel, the public entrance
 #              (MIL-040, ADR-0028): an outbound connection to Cloudflare, no published port
 #   dbrelay    (only when deploy/postgres-tailnet/postgres-tailnet.env exists) the database relay of the team
@@ -335,7 +336,7 @@ for s in "${ordered[@]}"; do
   fi
   echo "==> deploying $s"
   args=(--env-file "$e" up -d --remove-orphans)
-  if ((build)) && [[ "$s" =~ ^(api|web|analysis|benchmark)$ ]]; then
+  if ((build)) && [[ "$s" =~ ^(api|web|analysis|benchmark|nginx)$ ]]; then
     args+=(--build)
   fi
   # --wait returns once every service with a healthcheck is healthy; the proxy has one since

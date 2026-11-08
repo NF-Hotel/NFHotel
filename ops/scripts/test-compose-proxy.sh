@@ -196,8 +196,8 @@ main() {
   echo "Building and starting the web service..."
   compose_web up --detach --build --wait --wait-timeout 180 >/dev/null ||
     die "the web service did not become healthy"
-  echo "Starting the proxy..."
-  compose_nginx up --detach --wait --wait-timeout 60 >/dev/null ||
+  echo "Building and starting the proxy..."
+  compose_nginx up --detach --build --wait --wait-timeout 60 >/dev/null ||
     die "the proxy did not start"
 
   wait_for_status GET / 301 || true

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the four NFHotel images of a release with their own Docker Compose files and,
+# Build the five NFHotel images of a release with their own Docker Compose files and,
 # with --push, push them to the GitHub Container Registry and write the release
 # manifest (ADR-0007, MIL-021 task 4). The Release workflow runs it with --push on
 # main after green CI; the VM only pulls the images by digest and never builds them.
@@ -16,6 +16,8 @@
 #   nfhotel-api       deploy/nfhotel-api      (Dockerfile.api)
 #   market-analysis   deploy/market-analysis  (built from a pinned commit of NF-Hotel/notebook-market-analysis)
 #   benchmark         deploy/benchmark        (pinned external repository)
+#   nfhotel-nginx     deploy/nginx            (the pinned nginx image with the fixes of its Alpine
+#                                              packages, ADR-0040)
 #
 # The compose files need their settings files to load. The build uses the tracked
 # *.example files in a temporary folder and throwaway values for the variables that
@@ -60,6 +62,7 @@ readonly IMAGES=(
   "nfhotel-api nfhotel-api NFHOTEL_API_IMAGE NFHOTEL_API_ENV_FILE nfhotel-api"
   "market-analysis market-analysis MARKET_ANALYSIS_IMAGE MARKET_ANALYSIS_ENV_FILE market-analysis-api"
   "benchmark benchmark BENCHMARK_IMAGE BENCHMARK_ENV_FILE benchmark"
+  "nfhotel-nginx nginx NFHOTEL_NGINX_IMAGE NGINX_ENV_FILE nginx"
 )
 
 registry="ghcr.io/nf-hotel"
