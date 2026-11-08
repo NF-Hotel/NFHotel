@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 13 of MIL-065 before its pull request (task 14); Go-with-conditions until S01 approves the risk exceptions of `ops/security/trivyignore.yaml` | [339f707] |
+| 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 13 of MIL-065 before its pull request (task 14); Go-with-conditions until S01 approves the risk exceptions of `ops/security/trivyignore.yaml` | [339f707] |
+| 2026-11-08 | Accepted | mikemike | S01 | S01 approved the seven risk exceptions in chat ("1ja", to "Godkender du de 7 grupper af undtagelser i `trivyignore.yaml`?"); the verdict is Go | pending |
 
 ---
 
@@ -86,7 +87,7 @@
 
 ## Risk Exceptions
 
-The findings that the newest builds of the pinned third-party images still have, accepted in `ops/security/trivyignore.yaml` until 2026-12-08 (MIL-065 tasks 1 to 3 and 5 to 11). The ratings are those of the daily scan of 2026-11-08 (#553) and of the scans of the candidate pins. S01 is the approver that section 8 of [DSA-001] names for a container scan exception; S01 has not approved them yet (action item 1).
+The findings that the newest builds of the pinned third-party images still have, accepted in `ops/security/trivyignore.yaml` until 2026-12-08 (MIL-065 tasks 1 to 3 and 5 to 11). The ratings are those of the daily scan of 2026-11-08 (#553) and of the scans of the candidate pins. S01 is the approver that section 8 of [DSA-001] names for a container scan exception; S01 approved them in chat on 2026-11-08 ("1ja").
 
 | Finding | Owner | Approver | Expiry | Compensating controls |
 | --- | --- | --- | --- | --- |
@@ -101,7 +102,7 @@ The findings that the newest builds of the pinned third-party images still have,
 ## Findings
 
 - **Every pinned third-party image and the patched socket proxy pass the gate with these entries.** The re-scan of 2026-11-08 covered the eleven third-party images of the compose files of the branch and the socket proxy built from its Dockerfile. The one error, Loki, was in reading the image from the local store of Docker Desktop, not in the image: read from the registry it passes. On the runner the daily scan pulls each image itself.
-- **The risk exceptions need S01, so the verdict is Go-with-conditions.** The 41 entries accept 37 vulnerability IDs in third-party images for 30 days, one critical and 36 high. The stand-in checked every statement against the image (function names, linked libraries, what runs), but section 8 of [DSA-001] names S01 as the approver, and RC-304 recorded that a stand-in may not approve a risk exception. S01 is also the owner here; in this team S01 holds both roles, and DSA-001 names no other approver for a container scan exception.
+- **The risk exceptions needed S01, who approved them in chat on 2026-11-08.** The 41 entries accept 37 vulnerability IDs in third-party images for 30 days, one critical and 36 high. The stand-in checked every statement against the image (function names, linked libraries, what runs), but section 8 of [DSA-001] names S01 as the approver, and RC-304 recorded that a stand-in may not approve a risk exception. S01 is also the owner here; in this team S01 holds both roles, and DSA-001 names no other approver for a container scan exception.
 - **The first deploy pulls a new private package.** As with `nfhotel-nginx` ([RC-300] finding 3), `nfhotel-socket-proxy` is created by the push of the release of the merge, linked to the repository by its source label (checked in the compose build above), and the VM must be able to pull it as it pulls the five others. With `--no-build`, a failed pull fails the deploy at once, and the deploy rolls back to the release before it.
 - **The wiki test would have dropped the base image of the socket proxy without the change of its search.** Before MIL-065, `tecnativa/docker-socket-proxy` was named in the compose file of Alloy; it is now only in `ops/deploy/alloy/socket-proxy/Dockerfile`, two levels down, where the old glob `ops/deploy/*/Dockerfile` did not look. The image index check of Technology-Choices would have stopped checking it without a failure. The test now uses `find` at any depth, and still finds 17 images to check.
 - **SonarQube Cloud: docker:S6471 is excluded for the new Dockerfile before the pull request.** The socket proxy runs as root, as the upstream image always did, because root owns the Docker socket; the compose file drops every capability and keeps the root file system and the socket read-only (MIL-023). The exclusion follows the one for the proxy ([RC-300] finding 5), with the reason in `SonarQube.Analysis.xml`.
@@ -109,16 +110,16 @@ The findings that the newest builds of the pinned third-party images still have,
 
 ## Overall Verdict
 
-Go-with-conditions. Every Mandatory criterion of QC-SH-001, QC-WF-001 and QC-YML-001 passes; criterion 22 of QC-WF-001 and criteria 2, 8 and 9 of MIL-065 close with the checks of the pull request and the release of the merge. The condition is the approval of the seven risk exceptions above by S01 before the merge; with it this record is Go. The reviewer is not independent.
+Go. Every Mandatory criterion of QC-SH-001, QC-WF-001 and QC-YML-001 passes; criterion 22 of QC-WF-001 and criteria 2, 8 and 9 of MIL-065 close with the checks of the pull request and the release of the merge. The condition of the first row, the approval of the seven risk exceptions above by S01 before the merge, was met in chat on 2026-11-08 ("1ja"). The reviewer is not independent.
 
 ## Action Items
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| Approve the risk exceptions of `ops/security/trivyignore.yaml` (DSA-001 section 8), or name the entries to change | S01 | Before the merge |
+| Approve the risk exceptions of `ops/security/trivyignore.yaml` (DSA-001 section 8), or name the entries to change | S01 | Done in chat, 2026-11-08 ("1ja") |
 | Merge the pull request only when every required check is green and the exceptions are approved | AI as stand-in for S01 | At the merge |
 | Before the approval of the CD run, check that the package `nfhotel-socket-proxy` exists with the access of the five others, and that an anonymous request for each of the six manifests is refused (criterion 9) | AI as stand-in for S01 | After the release run |
-| Approve the CD run of the merge (ADR-0038); its verify step, deploy and smoke test are the proof of criterion 3 | S01 | After the release run |
+| Approve the CD run of the merge (ADR-0038); its verify step, deploy and smoke test are the proof of criterion 3 | AI, at the request of S01 in chat ("2ja", 2026-11-08) | After the release run |
 | Start `deploy-monitoring.sh --apply` on the monitoring container through the Tailscale SSH check (criterion 6) | S01 | After the CD run |
 | Run the daily scan by hand after both deploys; it is the proof of criterion 1 and closes #553 | AI as stand-in for S01 | After the deploys |
 | Scan the newest upstream builds again before the entries run out, and remove or renew each entry in a reviewed pull request | S01 | 2026-12-08 |
