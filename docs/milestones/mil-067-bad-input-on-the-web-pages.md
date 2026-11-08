@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Deprecated | mikemike | S01 | Initial version: one task for each place where the web application answers bad input with an error page or sends back what it should not (the guests of the booking page, the run of the benchmark page, the password of the login form), from the full DAST scans of 2026-11-08; planned at S01's request in chat ("1.ja") and accepted by S01 in chat ("Gennemfør 067", RC-309) | [d677364] |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Finding 4 and task 7: the change-password form sends the typed passwords back as the login form did, found while task 4 was done; criterion 7, the row of US-001.10, and the gate against criteria 1 to 7; accepted by the AI as stand-in for S01 at S01's request in chat ("Ta selv stilling til alt", RC-310) | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Finding 4 and task 7: the change-password form sends the typed passwords back as the login form did, found while task 4 was done; criterion 7, the row of US-001.10, and the gate against criteria 1 to 7; accepted by the AI as stand-in for S01 at S01's request in chat ("Ta selv stilling til alt", RC-310) | [6523bd3] |
 
 ---
 
@@ -108,3 +108,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-044]: ./mil-044-security-overview.md
 [MIL-066]: ./mil-066-findings-of-7-november.md
 [d677364]: https://github.com/NF-Hotel/NFHotel/commit/d67736407551851d5d6afa01c13f53eed1fa3bee
+[6523bd3]: https://github.com/NF-Hotel/NFHotel/commit/6523bd34d78cf3c019b6a60cac3adf1c42c1b0e4

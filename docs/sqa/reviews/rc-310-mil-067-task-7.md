@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the change of the plan (finding 4, criterion 7, task 7) accepted by the AI as stand-in for S01 at S01's request in chat ("Ta selv stilling til alt"); Go | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the change of the plan (finding 4, criterion 7, task 7) accepted by the AI as stand-in for S01 at S01's request in chat ("Ta selv stilling til alt"); Go | [6523bd3] |
 
 ---
 
@@ -75,3 +75,4 @@ Go. Every Mandatory criterion of QC-MIL-001 passes for the change, and criteria 
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
 [RC-309]: ./rc-309-mil-067.md
 [UC-005]: ../../use-cases/uc-005/uc.md
+[6523bd3]: https://github.com/NF-Hotel/NFHotel/commit/6523bd34d78cf3c019b6a60cac3adf1c42c1b0e4
