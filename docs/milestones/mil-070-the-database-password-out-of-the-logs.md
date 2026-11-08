@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | S01 | Initial version: the password of `nfhotel_app` found in the log of `sudo` on 2026-11-08, with the counts of that evening; planned at S01's request in chat ("ja begge", to "Må jeg lave en plan (en ny milestone) for at rette deployet?") | pending |
+| 2026-11-08 | Accepted | mikemike | S01 | Initial version: the password of `nfhotel_app` found in the log of `sudo` on 2026-11-08, with the counts of that evening; planned at S01's request in chat ("ja begge", to "Må jeg lave en plan (en ny milestone) for at rette deployet?") | [9bf2650] |
 
 ---
 
@@ -103,3 +103,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [ADR-0024]: ../adr/adr-0024-secrets-as-files.md
 [MIL-023]: ./mil-023-operational-quality.md
 [MIL-068]: ./mil-068-the-vm-without-a-desktop.md
+[9bf2650]: https://github.com/NF-Hotel/NFHotel/commit/9bf2650c1d47233f83a2c7d436dbca02de5a033f
