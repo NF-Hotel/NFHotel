@@ -14,6 +14,7 @@ Applying any step on the VM is the decision of S01, with S03 for the firewall an
 | Patching | `unattended-upgrades`: Debian security updates every day, no automatic reboot | `ops/scripts/install-patching.sh` | None |
 | Logs | A persistent journal of at most 1 GB; container logs limited by the daemon | `ops/scripts/install-patching.sh`, `ops/scripts/install-docker-daemon.sh` | None |
 | sshd, sudo, kernel | sshd takes keys only, no root login and no forwarding, with strong algorithms; sudo logs to `/var/log/sudo.log`; no ICMP redirects or source routing, martians logged, ptrace restricted | `ops/scripts/install-host-settings.sh` | None |
+| Desktop | The GNOME desktop of the installer is purged with its print, discovery and other services; the packages that the VM needs are marked as installed by hand; the VM starts `multi-user.target` (MIL-068, [Without a desktop](#without-a-desktop)) | `ops/scripts/remove-desktop.sh` | One restart |
 
 What each container needs, measured with the throwaway stack:
 
@@ -119,6 +120,43 @@ Run them as root in `/opt/nfhotel`, at the DevOps commit that holds this change,
 
 A unit that fails to start after step 5 most likely needs one capability more. The log names it (`Operation not permitted`). Add it to `cap_add` of that service by pull request, never `privileged`. If nginx cannot read the private key, check its owner: the master process reads it as root without `DAC_OVERRIDE`, so the key must belong to root.
 
+## Without a desktop
+
+The VM was installed with the GNOME desktop of the Debian installer (`task-desktop` and `task-gnome-desktop`). MIL-068 removes it, so that the VM runs as a server: no display manager, no print, discovery, office or other desktop programs, and `multi-user.target` as the default target. Until the change of MIL-068 task 5, the desktop is still installed, and row 2.1.x of the CIS checklist stays Deferred.
+
+`ops/scripts/remove-desktop.sh` does it. Its two lists come from a read-only survey of the VM on 2026-11-08:
+
+- **Purged:** the two tasks, GNOME and `gdm3`, LibreOffice, CUPS, Avahi, ModemManager, Bluetooth, PackageKit, `colord`, `fwupd`, `ibus`, `inetutils-telnet`, the other desktop services (`accounts-daemon`, `udisks2`, `upower`, `power-profiles-daemon`, `switcheroo-control`, `low-memory-monitor`, `wpa_supplicant`) and programs (Firefox, GNOME Terminal, `xterm`, PipeWire, Plymouth), and what nothing else needs any more. The dry run of 2026-11-08 would purge 1,092 packages, about 3.1 GB.
+- **Kept**, and marked as installed by hand, so that no later `apt autoremove` takes them: `sudo`, `openssh-server`, `openssh-client`, `network-manager`, `tailscale`, Docker's five packages, `nftables`, `qemu-guest-agent`, `unattended-upgrades`, `age`, `rsync`, `jq`, `curl`, `ca-certificates`, `git`, `logrotate`, `iproute2`, `util-linux`, `diffutils`, `procps`, `openssl`, `apparmor`, `systemd-timesyncd` and `locales-all`: what MIL-068 names, and what a script of `ops/` or a unit on the VM uses.
+
+The mark is what makes the purge safe. `sudo`, NetworkManager and `jq` came in as dependencies of the desktop tasks, so `apt-get purge --auto-remove` of the tasks alone would take the `sudo` of the deploy account and the network of `ens18` along. NetworkManager stays and keeps `ens18`. `locales-all` stays because it holds the locale of the VM, `en_US.UTF-8`, which is not generated in the locale archive.
+
+Run it as root, first as a dry run. It marks the packages to keep in a copy of the apt state only, lists what the purge would take, changes nothing, and refuses when a package to keep would go:
+
+```bash
+sudo bash /opt/nfhotel/ops/scripts/remove-desktop.sh
+```
+
+Take a Proxmox snapshot of the VM first. Then purge in a transient unit, which goes on when the SSH session drops (the output is in `journalctl -u nfhotel-remove-desktop`), and restart:
+
+```bash
+sudo systemd-run --unit=nfhotel-remove-desktop --collect --wait bash /opt/nfhotel/ops/scripts/remove-desktop.sh --apply
+```
+
+```bash
+sudo systemctl reboot
+```
+
+Check after the restart:
+
+```bash
+systemctl get-default
+dpkg-query -W -f='${db:Status-Abbrev} ${Package}\n' task-desktop task-gnome-desktop gdm3 gnome-shell libreoffice-core cups avahi-daemon modemmanager bluez packagekit inetutils-telnet 2>/dev/null | grep '^ii'
+sudo ss -lntup
+```
+
+`systemctl get-default` gives `multi-user.target`, the `dpkg-query` line prints nothing, and `ss` shows only `sshd`, `tailscaled` and the ports of Docker. Then the checks of step 5 apply, and `sudo -l -U deploy` still lists `nfhotel-deploy`. When a check fails, roll back to the snapshot from the Proxmox console.
+
 ## Firewall: SSH over Tailscale only
 
 **Decision (S01, 2026-10-24).** SSH (TCP 22) is allowed only on `tailscale0`. SSH from the LAN (`192.168.10.0/24`) and from the internet is dropped, and the input policy stays drop. The reason: the server stands in S01's home, so the Proxmox console is the way in when Tailscale is down, and SSH from the LAN adds an access path without a need. This is the least privilege that MIL-023 criterion 2 asks for.
@@ -190,4 +228,4 @@ cat /var/run/reboot-required.pkgs
 systemctl reboot
 ```
 
-After the reboot, `nfhotel-firewall.service` loads the firewall before the network, Docker starts the containers, and the checks of step 5 apply. If Docker comes from Docker's own repository (`apt-cache policy` in the evidence shows the origin), the security origin does not cover it: update it in the same window with `apt-get install --only-upgrade docker-ce docker-ce-cli containerd.io docker-compose-plugin`.
+After the reboot, `nfhotel-firewall.service` loads the firewall before the network, Docker starts the containers, and the checks of step 5 apply. Docker and Tailscale come from their own repositories (`apt-cache policy` in the evidence shows the origin), which the security origin does not cover: update them in the same window with `apt-get install --only-upgrade docker-ce docker-ce-cli containerd.io docker-compose-plugin docker-buildx-plugin tailscale`, then check that `tailscale status` shows the VM online.

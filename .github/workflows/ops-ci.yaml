@@ -90,9 +90,13 @@ jobs:
           - test-write-secret-files.sh
           - test-check-secret-env.sh
           - test-make-migration-script.sh
-        # The backup target runs Debian 13, whose rrsync has -no-overwrite (MIL-066 task 1).
+          - test-remove-desktop.sh
+        # Debian 13: the rrsync of the backup target has -no-overwrite (MIL-066 task 1), and
+        # remove-desktop.sh is for the VM, which runs Debian 13 (MIL-068).
         include:
           - test: test-backup-target.sh
+            image: debian:13-slim
+          - test: test-remove-desktop.sh
             image: debian:13-slim
     steps:
       - name: Check out
