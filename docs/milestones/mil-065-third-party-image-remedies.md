@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | Initial version: one task for each of the eleven third-party images that the first full daily scan fails (run 42443407440), each with its remedy under ADR-0040 decision 5, checked with candidate scans on 2026-11-08; written in autonomous mode at S01's request in chat ("fix resten") | [c27ba7a] |
+| 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: one task for each of the eleven third-party images that the first full daily scan fails (run 42443407440), each with its remedy under ADR-0040 decision 5, checked with candidate scans on 2026-11-08; written in autonomous mode at S01's request in chat ("fix resten") | [c27ba7a] |
+| 2026-11-08 | Accepted | mikemike | S01 | Accepted by S01 in chat ("godkendt", to the choice "Godkend alt: MIL-065 med wiki-tjekket, D2 som private"), which also confirms the language and the terms (RC-304)<br>Task 12: `test-wiki-coverage.sh` also checks the tags of the pinned images<br>New task 13 and criterion 9: decision D2 of DSA-001 taken as private packages; tasks 13 and 14 become 14 and 15 | [b5b7fb8] |
 
 ---
 
@@ -49,10 +50,11 @@ An ignore entry in `ops/security/trivyignore.yaml` applies to every image that T
 - **The patched socket proxy**: `ghcr.io/nf-hotel/nfhotel-socket-proxy`, a patch layer on the pinned `tecnativa/docker-socket-proxy:v0.5.0` digest that the release builds, scans and attests as its sixth image, and that continuous deployment (CD) verifies and deploys by name, as ADR-0040 decided for the proxy; with a Dependabot entry for its `FROM` line.
 - **The accepted findings**: one ignore entry for each finding that no release and no patch layer clears, each with a statement, an `expired_at` at most 30 days ahead and `paths` or `purls` that narrow it to the third-party image.
 - **The deploys**: the CD run of the merge for the VM stacks, approved for S01 ([ADR-0038]), and `deploy-monitoring.sh --apply` on the monitoring container for the monitoring stack.
-- **The wiki**: the pages Containers-and-Images, CI-CD, Workflows and Security-Controls.
+- **The wiki**: the pages Containers-and-Images, CI-CD, Workflows and Security-Controls, and a check in `test-wiki-coverage.sh` that Containers-and-Images names the tag that each compose file and Dockerfile pins.
+- **Decision D2**: section 15 of [DSA-001] records D2 as taken: the packages of the release on GitHub Container Registry (GHCR) stay private, and the VM pulls them with a read credential of its own.
 - **The proof**: one run of the daily scan after both deploys, in which every release image and every third-party image passes.
 
-Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then tasks 1 to 12 on one branch, task 13 with the pull request and the deploys, then task 14.
+Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then tasks 1 to 13 on one branch, task 14 with the pull request and the deploys, then task 15.
 
 ## Go / No-Go Criteria
 
@@ -64,8 +66,9 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 | 4 | `test-cd-steps.sh` and `test-deploy-release.sh` prove that a manifest or a deploy without a valid `nfhotel-socket-proxy` reference is refused, that a release line from before this change, without it, still rolls back, and that `prune` keeps its image | Yes | No |
 | 5 | Every new entry in `ops/security/trivyignore.yaml` has a statement, an `expired_at` at most 30 days ahead and `paths` or `purls` that name a file or a package of a third-party image; `scan-gate.sh --check-ignore` passes, and the release of the merge passes its gate | Yes | No |
 | 6 | The monitoring container runs the pins of tasks 6, 7, 8 and 11 (`docker ps`), every target of Prometheus is up, its alert rules are loaded, and the health endpoint of Grafana answers `ok` | Yes | No |
-| 7 | The wiki pages Containers-and-Images, CI-CD, Workflows and Security-Controls name the new versions, the sixth release image and the accepted findings with their expiry, and `test-wiki-coverage.sh` passes | Yes | No |
+| 7 | The wiki pages Containers-and-Images, CI-CD, Workflows and Security-Controls name the new versions, the sixth release image and the accepted findings with their expiry; `test-wiki-coverage.sh` passes, and fails on a copy of Containers-and-Images that names another tag than a compose file or a Dockerfile pins | Yes | No |
 | 8 | The code review against `QC-SH-001`, `QC-WF-001` and `QC-YML-001` is Go, `lint.sh` is clean, and every required check of the pull request is green | Yes | No |
+| 9 | Section 15 of DSA-001 records decision D2 as taken (private packages that the VM pulls with a read credential of its own), and an anonymous request for the manifest of each of the six release images is refused | Yes | No |
 
 ## Dependencies
 
@@ -74,7 +77,7 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 | MIL-064 | The daily scan of the third-party images, and the deploy that takes the release images by name |
 | ADR-0040 | Decision 5, the three remedies, and the form of a patch layer from the release |
 | MIL-022 | The gate of the release and the ignore file with its 30-day limit |
-| DSA-001 | Section 8: an accepted finding is added by a reviewed pull request and approved by S01 |
+| DSA-001 | Section 8: an accepted finding is added by a reviewed pull request and approved by S01; section 15: decision D2 |
 | ADR-0007 | The VM never builds; the patched socket proxy comes from the release |
 | ADR-0038 | The CD run of the merge waits for the approval of S01 |
 
@@ -110,9 +113,10 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 | 9 | Loki: the finding of 3.7.9 | 3.7.9 is the newest Loki 3.7 release, so the pin stays. CVE-2026-78661 in `usr/bin/loki` joins the entry of task 6, with a statement on `golang.org/x/net/html` in the binary. | No | criteria 1, 5 |
 | 10 | Grafana: the findings of 13.3.0 | 13.3.0 is the newest Grafana release, so the pin stays. Ignore entries for its eight findings (seven vulnerabilities), narrowed to `usr/share/grafana/bin/grafana` and the bundled data source plugins under `usr/share/grafana/data/plugins-bundled`; the statements say which plugins the provisioned data sources use (Prometheus and Loki), which affected packages are in those binaries, and who can reach Grafana. | No | criteria 1, 5, 6 |
 | 11 | The Python image of the scan exporter: the build of 2026-11-08 | Move the scan exporter to the build of `python:3.13-slim` of 2026-11-08 (`e48f59cdba69`), which clears Debian's `apt` findings. Ignore entries for the copies of `setuptools`, `msgpack` and `urllib3` vendored inside pip and for Debian's `zlib1g` (by `purls`); the statements say that the exporter runs its own module and never pip, and whether the Python modules that link `libz` call the `gz*` functions of the two zlib findings. The exporter's tests run with the new image in Ops CI. | No | criteria 1, 2, 5, 6 |
-| 12 | The wiki | Containers-and-Images: the new versions, the patched socket proxy and the accepted findings with their expiry. CI-CD and Workflows: six release images. Security-Controls: the ignore entries narrowed to third-party images. `test-wiki-coverage.sh` passes. | No | criterion 7 |
-| 13 | Code review, pull request and deploys | The review record of the shell scripts, the workflows and the configuration files against `QC-SH-001`, `QC-WF-001` and `QC-YML-001` before the pull request; the pull request closes one issue per task and carries the milestone. The CD run of the merge, approved for S01 (ADR-0038), deploys the VM stacks; `deploy-monitoring.sh --apply` on the monitoring container deploys the monitoring stack; then one run of the daily scan. | No | criteria 1, 3, 6, 8 |
-| 14 | Gate and review record | The gate review record against criteria 1 to 8 with the logs of the CD run, the monitoring deploy and the daily scan, the row of MIL-065 in the traceability matrix, the Accepted row of this document, and the closing of the GitHub milestone. | No | criteria 1 to 8 |
+| 12 | The wiki | Containers-and-Images: the new versions, the patched socket proxy and the accepted findings with their expiry. CI-CD and Workflows: six release images. Security-Controls: the ignore entries narrowed to third-party images. `test-wiki-coverage.sh` also checks that Containers-and-Images names the tag that each compose file and Dockerfile pins, so a pin that moves without the page fails the test, as the six stale tags that RC-302 found would have; its test covers a stale tag. `test-wiki-coverage.sh` passes. | No | criterion 7 |
+| 13 | Decision D2: private packages | As S01 chose in chat: section 15 of DSA-001 records D2 as taken, in the Recommendation cell with the date, as D4, D7 and D10 do. The packages of the release on GHCR stay private, the sixth (`nfhotel-socket-proxy`) included; CD logs in with the job token only to verify the attestations, and the VM pulls the images with a read credential of its own, as step 3 of the wiki page CI-CD already says. An anonymous request for the manifest of each release image is refused. | No | criterion 9 |
+| 14 | Code review, pull request and deploys | The review record of the shell scripts, the workflows and the configuration files against `QC-SH-001`, `QC-WF-001` and `QC-YML-001` before the pull request; the pull request closes one issue per task and carries the milestone. The CD run of the merge, approved for S01 (ADR-0038), deploys the VM stacks; `deploy-monitoring.sh --apply` on the monitoring container deploys the monitoring stack; then one run of the daily scan. | No | criteria 1, 3, 6, 8 |
+| 15 | Gate and review record | The gate review record against criteria 1 to 9 with the logs of the CD run, the monitoring deploy and the daily scan, the row of MIL-065 in the traceability matrix, the Accepted row of this document, and the closing of the GitHub milestone. | No | criteria 1 to 9 |
 
 ---
 
@@ -125,3 +129,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-036]: ./mil-036-security-operations.md
 [MIL-064]: ./mil-064-patched-nginx-and-third-party-scan.md
 [c27ba7a]: https://github.com/NF-Hotel/NFHotel/commit/c27ba7a193b1056bd13ed0d18cafb95f74c4ad18
+[b5b7fb8]: https://github.com/NF-Hotel/NFHotel/commit/b5b7fb8f416414f1c37718fb641a2e4ff86ca657
