@@ -1,6 +1,7 @@
 # CI of the operations code in ops/ (ADR-0016, formerly the CI of NF-Hotel/DevOps): the
 # linters of ops/ and of the workflows and actions, the coverage of the wiki reference pages
-# (MIL-049), the script tests, the monitoring configuration (ADR-0020), the nginx routes,
+# (MIL-049), the script tests, the monitoring configuration (ADR-0020), the nginx routes, the
+# networks of the services (ADR-0039),
 # the Proxmox tests (the live ones skip), the PostgreSQL preparation with the real
 # migrations of this commit, the two local development modes (ADR-0035, ADR-0036), and the
 # rotation drill of the secrets (ADR-0024). The release build and the throwaway end-to-end
@@ -88,15 +89,21 @@ jobs:
           - test-create-monitoring-lxc.sh
           - test-write-secret-files.sh
           - test-check-secret-env.sh
+          - test-make-migration-script.sh
+        # The backup target runs Debian 13, whose rrsync has -no-overwrite (MIL-066 task 1).
+        include:
+          - test: test-backup-target.sh
+            image: debian:13-slim
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - name: Run the test in Debian 12
+      - name: Run the test in Debian (12 unless the matrix names another image)
         env:
           TEST: ${{ matrix.test }}
-        run: docker run --rm -v "$PWD/ops:/src:ro" debian:12-slim bash "/src/tests/$TEST"
+          IMAGE: ${{ matrix.image || 'debian:12-slim' }}
+        run: docker run --rm -v "$PWD/ops:/src:ro" "$IMAGE" bash "/src/tests/$TEST"
 
   host-hardening:
     name: Ops host hardening (Debian 13, MIL-023)
@@ -149,6 +156,18 @@ jobs:
           persist-credentials: false
       - name: Test the routes with and without the optional API route
         run: bash ops/tests/test-nginx.sh
+
+  service-networks:
+    name: Ops service networks (MIL-061)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Compare the service networks with the wiki table; prove the isolation with stand-ins
+        run: bash ops/tests/test-service-networks.sh
 
   benchmark-volume:
     name: Ops benchmark results volume (MIL-045)

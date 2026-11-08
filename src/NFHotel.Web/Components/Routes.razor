@@ -40,9 +40,3 @@
     </NotFound>
 </Router>
 
-@code {
-    private static string LandingPath(System.Security.Claims.ClaimsPrincipal user) =>
-        NFHotel.Web.Security.StaffClaims.RoleOf(user) is { } role
-            ? NFHotel.Application.UseCases.Staff.RolePermissions.LandingPath(role)
-            : "/";
-}

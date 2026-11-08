@@ -3,7 +3,6 @@
 @attribute [Authorize(Policy = StaffPolicies.ManagePrices)]
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
-@using NFHotel.Domain.ValueObjects
 @using NFHotel.Web.Common
 @using NFHotel.Web.Features.Admin.Pricing
 @inject PricingSettingsViewModel ViewModel
@@ -100,17 +99,3 @@
         </section>
     }
 </div>
-
-@code {
-    /// <summary>The three pricing pages as tabs: one menu item, same routes.</summary>
-    private static readonly AdminTab[] PricingTabs =
-    [
-        new("/admin/pricing/rates", "Room rates"),
-        new("/admin/pricing/suggestions", "Price suggestions"),
-        new("/admin/pricing/settings", "Settings"),
-    ];
-
-    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
-
-    private Task SaveAsync() => ViewModel.SaveAsync(ComponentToken);
-}

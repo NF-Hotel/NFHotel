@@ -2,22 +2,22 @@
 
 **English**
 
-How the NF Hotel services talk to each other, which Docker network each one is on, and why some networks are kept apart from the rest. The diagram and the tables show the **target design**: the Python services (market analysis and benchmark) on a network of their own that nginx cannot see. The VM does not run this yet; [What changes from today](#what-changes-from-today) lists the difference.
+How the NF Hotel services talk to each other, which Docker network each one is on, and why some networks are kept apart from the rest. The diagram and the tables show the design that runs on the VM since MIL-061 ([ADR-0039](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0039-python-services-network.md)): the Python services (market analysis and benchmark) on a network of their own that nginx cannot see. [What changed in MIL-061](#what-changed-in-mil-061) lists the difference from the layout before it.
 
 **Contents**
 1. [The picture](#the-picture)
 2. [Who calls whom](#who-calls-whom)
 3. [The networks](#the-networks)
 4. [Why we isolate networks](#why-we-isolate-networks)
-5. [What changes from today](#what-changes-from-today)
+5. [What changed in MIL-061](#what-changed-in-mil-061)
 6. [Rules for a new service](#rules-for-a-new-service)
-7. [Open points](#open-points)
+7. [Decisions on the open points](#decisions-on-the-open-points)
 
 ## The picture
 
 ![How the NF Hotel services communicate](images/network-communication.png)
 
-Every arrow has a number, and the number has the colour of its arrow; the next section says what each arrow is. The diagram is PlantUML. Its source is `docs/wiki/images/network-communication.puml`; change the source and render the PNG again.
+Every arrow has a number, and the number has the colour of its arrow; the next section says what each arrow is. The diagram is PlantUML. Its source is `docs/wiki/images/network-communication.puml`; change the source and render the PNG again. The notebook container in the picture (`market-analysis-notebook`) is part of the market analysis repository and is not deployed by NF Hotel; nothing routes to it.
 
 ## Who calls whom
 
@@ -42,15 +42,15 @@ A call goes from the service that starts it to the service that answers it. The 
 
 ## The networks
 
-| Network | Who is on it (target) | What it is for |
+| Network | Who is on it | What it is for |
 | --- | --- | --- |
 | `nfhotel-proxy` | Cloudflare tunnel, nginx, `nfhotel-web` | What nginx may route to |
-| `nfhotel-api` | nginx, `nfhotel-web`, `nfhotel-api` | Calls between the .NET applications |
-| `nfhotel-python` (new) | `nfhotel-web`, `nfhotel-api`, market analysis, benchmark | Calls to and from the Python services; **nginx is not on it** |
+| `nfhotel-api` | nginx, `nfhotel-web`, `nfhotel-api` | Calls between the .NET applications; nginx only for the two mobile routes |
+| `nfhotel-python` | `nfhotel-web`, `nfhotel-api`, market analysis, benchmark | Calls to and from the Python services; **nginx is not on it** |
 | `nfhotel-db` | `nfhotel-api`, PostgreSQL, the DBeaver relay | Only the API and the relay reach the database |
 | `nfhotel-llm` | Ollama, market analysis, benchmark | Only the AI services reach the model server |
 
-Two networks already follow this rule today (`nfhotel-db` and `nfhotel-llm`, see [Containers and Images](Containers-and-Images)). `nfhotel-python` applies it to the Python services.
+`nfhotel-db` and `nfhotel-llm` followed this rule from the start (see [Containers and Images](Containers-and-Images)); `nfhotel-python` applies it to the Python services since MIL-061. The networks `nfhotel-api`, `nfhotel-db` and `nfhotel-python` are internal (`docker network create --internal`): no route out and no host port. `ops/tests/test-service-networks.sh` compares this table with the compose files on every pull request and proves the isolation with stand-ins.
 
 ## Why we isolate networks
 
@@ -66,9 +66,9 @@ A Docker network is the cheapest wall we have: a container can open a connection
 
 Network isolation does not replace the other layers: the tokens between services (`X-API-Key`, the benchmark token), the roles in the back office, read-only containers, dropped capabilities and image scanning still apply. It limits how far a mistake in one of them can travel.
 
-## What changes from today
+## What changed in MIL-061
 
-| Service | Networks today | Networks in the target |
+| Service | Networks before | Networks since MIL-061 |
 | --- | --- | --- |
 | nginx | `proxy`, `api` | `proxy`, `api` (unchanged) |
 | `nfhotel-web` | `proxy`, `api` | `proxy`, `api`, `python` |
@@ -76,12 +76,14 @@ Network isolation does not replace the other layers: the tokens between services
 | market analysis | `proxy`, `llm`, `api` | `python`, `llm` |
 | benchmark | `llm`, `api` | `python`, `llm` |
 
-To get there:
+How it was done ([ADR-0039](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0039-python-services-network.md)):
 
-- Create the network `nfhotel-python` and add `NFHOTEL_PYTHON_NETWORK` to the environment files beside the existing network names ([Environment Files](Environment-Files)).
-- Move the compose files of the market analysis and the benchmark from `proxy` and `api` to `python`, and join `nfhotel-web` and `nfhotel-api` to `python`.
-- Remove the nginx listener on `127.0.0.1:8081` that proxies to `market-analysis-api` and `market-analysis-notebook`, because nginx can no longer resolve them.
-- The benchmark keeps `NFBENCH_WEB_URL=http://nfhotel-api:8080`: the name still resolves, because `nfhotel-api` is on `python` too.
+- The network `nfhotel-python` is created internal by `ops/scripts/deploy-services.sh` on the VM and by `ops/scripts/lib/stack.sh` for the end-to-end stack and the light development mode; its name is `NFHOTEL_PYTHON_NETWORK` beside the existing network names ([Environment Files](Environment-Files)). Every compose file carries the default `nfhotel-python`, so the environment files on the VM needed no change.
+- The compose files of the market analysis and the benchmark moved from `proxy` and `api` to `python`, and `nfhotel-web` and `nfhotel-api` joined `python`.
+- The nginx listener on `127.0.0.1:8081` that proxied to `market-analysis-api` and `market-analysis-notebook` was removed, with its template, the port in the compose file and the variables `ANALYSIS_*` and `NGINX_INTERNAL_PORT`: nginx can no longer resolve the Python services, and nothing needed the route.
+- The benchmark keeps `NFBENCH_WEB_URL=http://nfhotel-api:8080`: the name still resolves, because `nfhotel-api` is on `python` too. The web application keeps `HolidayApi__BaseUrl=http://market-analysis-api:8000` and `BenchmarkService__BaseUrl=http://benchmark:8000`, and the API keeps `MarketAnalysisService__BaseUrl=http://market-analysis-api:8000`, for the same reason.
+- `ops/tests/test-service-networks.sh` runs in Ops CI (the job `Ops service networks`) and fails a pull request whose compose files leave this table.
+- The services and the nginx change moved in one deploy, the CD run of the merge.
 
 ## Rules for a new service
 
@@ -89,12 +91,14 @@ To get there:
 2. Do not put a service on `nfhotel-proxy` unless nginx must route to it.
 3. A service that only answers calls from the .NET applications belongs on `nfhotel-python` (or a network of its own), not on `nfhotel-api` or `nfhotel-proxy`.
 4. Do not publish a host port. If a person needs access, use the tailnet ([Database Access](Database-Access) is the example).
-5. Update the diagram, the call table and [Containers and Images](Containers-and-Images) in the same pull request.
+5. Update the diagram, the call table, [Containers and Images](Containers-and-Images) and the table in `ops/tests/test-service-networks.sh` in the same pull request; the test fails in Ops CI until they agree.
 
-## Open points
+## Decisions on the open points
 
-- **The marimo notebook page** of the market analysis (`market-analysis-notebook:2718`) is reached today only through the nginx listener on `127.0.0.1:8081`. In the target design it has no route. Decide whether to drop it, or to reach it through an SSH tunnel to the VM when someone needs it.
-- **Ollama for the market analysis.** The example environment file points at `host.docker.internal:11434`; the diagram assumes the container `ollama:11434` on `nfhotel-llm`. Confirm what the running service uses.
-- **Order of the move.** The services and the nginx change have to move in one deploy, or the analysis page breaks in between.
+The three open points of the first version of this page (2026-11-05) were settled the same day, in chat, by the designer and S01:
+
+- **The marimo notebook page** (`market-analysis-notebook:2718`) was reached only through the nginx listener on `127.0.0.1:8081`. It is a leftover: the notebook container is not deployed here, and the route went with the listener. Nobody reaches a notebook through nginx; a notebook is run on a developer's machine.
+- **Ollama for the market analysis.** The running service uses the container `ollama:11434` on `nfhotel-llm`, as `ops/deploy/market-analysis/market-analysis.env.example` sets `OLLAMA_BASE_URL`. The `host.docker.internal` address is the example of the market analysis repository, not of this deploy.
+- **Order of the move.** The services and the nginx change moved in one deploy: the CD run that followed the merge of MIL-061 recreated the market analysis, the benchmark, the web application, the API and nginx.
 
 Related: [Home](Home), [Containers and Images](Containers-and-Images), [Public Access](Public-Access), [Security Controls](Security-Controls).

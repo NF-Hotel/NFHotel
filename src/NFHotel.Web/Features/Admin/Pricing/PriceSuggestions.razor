@@ -4,7 +4,6 @@
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
 @using NFHotel.Web.Common
-@using NFHotel.Web.Features.Admin.Pricing
 @inject PriceSuggestionsViewModel ViewModel
 
 @*
@@ -218,21 +217,3 @@
         </section>
     }
 </div>
-
-@code {
-    /// <summary>The three pricing pages as tabs: one menu item, same routes.</summary>
-    private static readonly AdminTab[] PricingTabs =
-    [
-        new("/admin/pricing/rates", "Room rates"),
-        new("/admin/pricing/suggestions", "Price suggestions"),
-        new("/admin/pricing/settings", "Settings"),
-    ];
-
-    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
-
-    private Task ReloadAsync() => ViewModel.LoadAsync(ComponentToken);
-
-    private Task ApproveAsync(string key) => ViewModel.ApproveAsync(key, ComponentToken);
-
-    private Task RevertAsync(int id) => ViewModel.RevertAsync(id, ComponentToken);
-}

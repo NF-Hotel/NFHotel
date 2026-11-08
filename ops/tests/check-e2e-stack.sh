@@ -3,7 +3,8 @@
 # client on its Docker network: the public pages answer through nginx over TLS, the back
 # office sends a visitor to the login, port 80 redirects to HTTPS, no container of the
 # stack publishes a host port, every container has the hardening of MIL-023 task 2, the API
-# and PostgreSQL are not on the proxy network, and the three test accounts exist.
+# and PostgreSQL are not on the proxy network, nginx is not on the python network while the
+# web application and the API are (ADR-0039), and the three test accounts exist.
 #
 # Usage: check-e2e-stack.sh <stack.env> [<name>]
 # Exit:  0 every check passed; 1 a check failed; 2 usage error
@@ -54,6 +55,10 @@ done
 check "no container of the stack publishes a host port" "" "$ports"
 on_proxy="$(docker network inspect "$network" --format '{{range .Containers}}{{.Name}} {{end}}')"
 check "the API is not on the proxy network" "" "$(tr ' ' '\n' <<<"$on_proxy" | grep -E 'nfhotel-api|postgres' || true)"
+on_python="$(docker network inspect "$name-python" --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null)"
+check "nginx is not on the python network" "" "$(tr ' ' '\n' <<<"$on_python" | grep nginx || true)"
+check "the web application and the API are on the python network" "nfhotel-api nfhotel-web" \
+  "$(tr ' ' '\n' <<<"$on_python" | grep -oE 'nfhotel-(api|web)' | sort -u | tr '\n' ' ' | sed 's/ $//')"
 for role in MANAGER RECEPTIONIST HOUSEKEEPING; do
   check "stack.env holds the $role account" yes \
     "$(grep -qE "^E2E_${role}_USER=.+" "$stack_env" && grep -qE "^E2E_${role}_PASSWORD=.{32}$" "$stack_env" && echo yes)"

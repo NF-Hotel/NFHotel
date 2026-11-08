@@ -3,8 +3,8 @@
 Runs `NF-Hotel/notebook-market-analysis` as one container behind the NFHotel web application. It serves the holiday
 calendar (`/api/v1/holidays`) and the market analysis runs (`/api/v1/market-analysis/runs`); every path except `/health`
 needs the header `X-API-Key`. It publishes no host port: the web application and the API reach it as
-`http://market-analysis-api:8000` on the internal network `nfhotel-api`, and nginx publishes it on the internal listener
-(`ANALYSIS_API_SERVER_NAME`).
+`http://market-analysis-api:8000` on the internal network `nfhotel-python`; nginx is not on that network and has no
+route to it (ADR-0039).
 
 ## The image
 

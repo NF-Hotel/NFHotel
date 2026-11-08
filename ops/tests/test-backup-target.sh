@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # Tests of the off-VM backup copy (DSA-001 D7, ADR-0008, MIL-021 task 7): the entrypoint
 # of deploy/backup-target refuses a bad key, keeps its host key across restarts, and
-# accepts only write-only rsync; backup-database.sh copies every backup the target
-# lacks, warns and keeps the backup when the target is off, and catches up when it is
-# back. sshd runs in this container in place of the target container; a stand-in docker
-# writes the dump.
+# accepts only new files: replacing, deleting and reading back are refused (MIL-066
+# task 1); backup-database.sh copies every backup the target lacks, warns and keeps the
+# backup when the target is off, and catches up when it is back; a copy cut off midway
+# leaves nothing under the final name, and the next run sends the whole file (MIL-066
+# task 2). sshd runs in this container in place of the target container; a stand-in
+# docker writes the dump.
 #
-# Run it in Debian 12 with the repository at /src:
-#   docker run --rm -v "$PWD:/src:ro" debian:12-slim bash /src/tests/test-backup-target.sh
+# Run it in Debian 13, the release of the target image, with the repository at /src:
+#   docker run --rm -v "$PWD:/src:ro" debian:13-slim bash /src/tests/test-backup-target.sh
 # Exit:  0 every check passed; 1 a check failed
-# Needs: Debian 12 (apt-get)
+# Needs: Debian 13 (apt-get; an rrsync with -no-overwrite)
 
 # shellcheck disable=SC2015 # ok and ko always return 0, so `test && ok || ko` runs
 # exactly one of them; the short form keeps each check on one line.
@@ -55,8 +57,9 @@ BACKUP_PUBLIC_KEY="$(cat /root/.ssh/nfhotel-backup.pub)
 ssh-ed25519 AAAA second" bash "$ENTRY" >/dev/null 2>&1 && ko "accepted two keys" || ok "refuses more than one key"
 start && ok "the target starts" || ko "start: $(cat "$W/target.log")"
 first="$(ssh-keygen -l -f "$W/keys/ssh_host_ed25519_key.pub")"
-grep -q 'command="rrsync -wo ' /home/nfhotel-backup/.ssh/authorized_keys && grep -q ',restrict ssh-ed25519 ' /home/nfhotel-backup/.ssh/authorized_keys &&
-  ok "the key may only run rrsync -wo, with restrict" || ko "authorized_keys"
+grep -q 'command="rrsync -wo -no-del -no-overwrite ' /home/nfhotel-backup/.ssh/authorized_keys &&
+  grep -q ',restrict ssh-ed25519 ' /home/nfhotel-backup/.ssh/authorized_keys &&
+  ok "the key may only run rrsync -wo -no-del -no-overwrite, with restrict" || ko "authorized_keys"
 stop && start
 [[ "$(ssh-keygen -l -f "$W/keys/ssh_host_ed25519_key.pub")" == "$first" ]] && ok "the host key stays the same after a restart" || ko "host key changed"
 ssh-keyscan -t ed25519 127.0.0.1 2>/dev/null >/root/.ssh/known_hosts
@@ -64,6 +67,15 @@ RSH="ssh -i /root/.ssh/nfhotel-backup -o IdentitiesOnly=yes -o BatchMode=yes -o 
 echo x >"$W/nfhotel-daily-x.dump.age"
 rsync -a --rsh "$RSH" "$W/nfhotel-daily-x.dump.age" nfhotel-backup@127.0.0.1:/ && [[ -f /srv/nfhotel-backups/nfhotel-daily-x.dump.age ]] &&
   ok "a file can be written" || ko "write"
+echo y >"$W/nfhotel-daily-x.dump.age"
+rsync -a --rsh "$RSH" "$W/nfhotel-daily-x.dump.age" nfhotel-backup@127.0.0.1:/ >/dev/null 2>&1
+[[ "$(cat /srv/nfhotel-backups/nfhotel-daily-x.dump.age)" == x ]] &&
+  ok "a file on the target cannot be replaced" || ko "replaced: $(cat /srv/nfhotel-backups/nfhotel-daily-x.dump.age)"
+mkdir -p "$W/empty"
+rsync -r --delete --rsh "$RSH" "$W/empty/" nfhotel-backup@127.0.0.1:/ >/dev/null 2>&1 &&
+  ko "--delete was accepted" || ok "--delete is refused"
+[[ -f /srv/nfhotel-backups/nfhotel-daily-x.dump.age ]] &&
+  ok "files on the target cannot be deleted (--delete from an empty folder)" || ko "deleted"
 rsync --rsh "$RSH" nfhotel-backup@127.0.0.1:/nfhotel-daily-x.dump.age "$W/back" >/dev/null 2>&1 && ko "read back" || ok "reading back is refused"
 [[ "$($RSH nfhotel-backup@127.0.0.1 id 2>&1)" == *"does not run rsync"* ]] && ok "a shell is refused" || ko "shell"
 ssh -i /root/.ssh/nfhotel-backup -o BatchMode=yes -o StrictHostKeyChecking=yes root@127.0.0.1 true 2>/dev/null && ko "root logged in" || ok "root cannot log in"
@@ -97,6 +109,59 @@ backup && [[ "$(on_target)" == 4 ]] && ok "when the target is back, every missin
 [[ ! -e /srv/nfhotel-backups/.last-copy ]] && ok "only backup files are copied" || ko "other files copied"
 echo "BACKUP_SSH_PORT=port22" >>"$W/backup.env"
 backup && ko "accepted a bad port" || ok "a port that is not a number is refused"
+
+echo "== an interrupted copy leaves nothing under the final name (MIL-066 task 2)"
+# A copy is cut off midway: rsync sends at 100 KiB/s, and the test stops the sending side
+# once the target has written part of the file, as a dropped connection would.
+target=/srv/nfhotel-backups
+started() { # started <file name>: the target has written more than 100 KiB of it
+  for _ in $(seq 100); do
+    find "$target" -maxdepth 1 -name ".$1.*" -size +100k | grep -q . && return 0
+    sleep 0.1
+  done
+  return 1
+}
+receiver_gone() { # the rsync of the target has ended
+  for _ in $(seq 100); do
+    pgrep -u nfhotel-backup rsync >/dev/null || return 0
+    sleep 0.1
+  done
+  return 1
+}
+same() { [[ "$(sha256sum <"$1")" == "$(sha256sum <"$2")" ]]; }
+# Finding 2 first, with the options of the copy before MIL-066: --partial keeps the part
+# under the final name, and --ignore-existing never replaces it.
+old=nfhotel-daily-20000101T000000Z.dump.age
+head -c 4000000 /dev/urandom >"$W/$old"
+rsync --archive --partial --ignore-existing --bwlimit=100 --rsh "$RSH" "$W/$old" nfhotel-backup@127.0.0.1:/ >/dev/null 2>&1 &
+copy=$!
+started "$old" && kill "$copy"
+wait "$copy" 2>/dev/null
+receiver_gone
+[[ -f "$target/$old" ]] && ! same "$W/$old" "$target/$old" &&
+  ok "with --partial a cut-off copy leaves a part under the final name" || ko "old options: $(ls -la "$target")"
+rsync --archive --partial --ignore-existing --rsh "$RSH" "$W/$old" nfhotel-backup@127.0.0.1:/ >/dev/null 2>&1
+! same "$W/$old" "$target/$old" && ok "and the next copy with --ignore-existing keeps that part" ||
+  ko "the next copy replaced the part"
+# Then backup-database.sh: a stand-in rsync sends slowly and writes its process id, so the
+# test can stop the sending side of the copy of the script.
+new=nfhotel-daily-20000102T000000Z.dump.age
+head -c 4000000 /dev/urandom >"$W/vm/$new"
+printf '#!/bin/sh\necho $$ >"%s/rsync.pid"\nexec /usr/bin/rsync --bwlimit=100 "$@"\n' "$W" >"$W/bin/rsync"
+chmod +x "$W/bin/rsync"
+rm -f "$W/rsync.pid"
+settings 22 # the check of the port above left a bad port in the settings
+backup &
+run=$!
+started "$new" && kill "$(cat "$W/rsync.pid")"
+wait "$run"
+receiver_gone
+rm -f "$W/bin/rsync"
+grep -q "the copy to .* failed" "$W/out" && [[ ! -e "$target/$new" ]] &&
+  [[ -z "$(find "$target" -maxdepth 1 -name ".$new.*")" ]] &&
+  ok "a cut-off copy of the script leaves nothing on the target" || ko "cut-off copy: $(ls -la "$target") $(cat "$W/out")"
+backup && [[ -f "$target/$new" ]] && same "$W/vm/$new" "$target/$new" &&
+  ok "the next run sends the whole file: its SHA-256 on the target equals the one on the VM" || ko "the next run: $(cat "$W/out")"
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))

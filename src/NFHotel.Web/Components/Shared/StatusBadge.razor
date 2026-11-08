@@ -18,16 +18,3 @@ else if (this.HousekeepingStatus is not null)
     <span class="@BadgeClass.For(this.HousekeepingStatus.Value)">@DisplayText.Describe(this.HousekeepingStatus.Value)</span>
 }
 
-@code {
-    /// <summary>The life cycle state of the booking. Set only this if the badge shows a booking.</summary>
-    [Parameter]
-    public BookingStatus? BookingStatus { get; set; }
-
-    /// <summary>The bookability of the room. Set only this if the badge shows the operating state of a room.</summary>
-    [Parameter]
-    public RoomStatus? RoomStatus { get; set; }
-
-    /// <summary>The cleaning and service state of the room. Set only this if the badge shows cleaning.</summary>
-    [Parameter]
-    public HousekeepingStatus? HousekeepingStatus { get; set; }
-}

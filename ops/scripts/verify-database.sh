@@ -5,7 +5,8 @@
 #
 # Checks (each prints PASS or FAIL):
 #   - the four roles exist with the expected attributes (no superuser, login as planned)
-#   - nfhotel_app may read and write every table, and may not create, truncate or own
+#   - nfhotel_app may read and write every table but the migration history, which it may
+#     only read (MIL-066 task 4), and may not create, truncate or own
 #   - PUBLIC may not create in the database or the schema public
 #   - with --expect-transfer: every table in public is owned by nfhotel_owner
 #   - the migration history exists; its rows and the row count of every table are listed
@@ -80,8 +81,9 @@ check "nfhotel_migrator may SET ROLE nfhotel_owner without inheriting it" "t|f" 
   "SELECT m.set_option, m.inherit_option FROM pg_auth_members m JOIN pg_roles r ON r.oid = m.roleid JOIN pg_roles u ON u.oid = m.member WHERE r.rolname = 'nfhotel_owner' AND u.rolname = 'nfhotel_migrator'"
 check "nfhotel_backup is a member of pg_read_all_data" "t" \
   "SELECT pg_has_role('nfhotel_backup', 'pg_read_all_data', 'USAGE')"
-check "nfhotel_app may read and write every table in public" "0" \
-  "SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND NOT (has_table_privilege('nfhotel_app', format('%I.%I', schemaname, tablename), 'SELECT,INSERT,UPDATE,DELETE'))"
+# One call per right: has_table_privilege with a list of rights is true when any one is held.
+check "nfhotel_app may read and write every table in public but the migration history" "0" \
+  "SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tablename <> '__EFMigrationsHistory' AND NOT (SELECT bool_and(has_table_privilege('nfhotel_app', format('%I.%I', schemaname, tablename), p)) FROM unnest(ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE']) p)"
 check "nfhotel_app may not truncate any table" "0" \
   "SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND has_table_privilege('nfhotel_app', format('%I.%I', schemaname, tablename), 'TRUNCATE')"
 check "nfhotel_app may not create in the schema public or the database" "f|f|f" \
@@ -96,6 +98,8 @@ if ((expect_transfer)); then
 fi
 check "the migration history table exists" "t" \
   "SELECT to_regclass('public.\"__EFMigrationsHistory\"') IS NOT NULL"
+check "nfhotel_app may read the migration history and not change it" "t|f|f|f" \
+  "SELECT has_table_privilege('nfhotel_app', c.oid, 'SELECT'), has_table_privilege('nfhotel_app', c.oid, 'INSERT'), has_table_privilege('nfhotel_app', c.oid, 'UPDATE'), has_table_privilege('nfhotel_app', c.oid, 'DELETE') FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = '__EFMigrationsHistory'"
 
 echo "INFO  migrations: $(query "SELECT string_agg(migration_id, ', ' ORDER BY migration_id) FROM \"__EFMigrationsHistory\"" 2>/dev/null || echo none)"
 echo "INFO  rows: $(query "SELECT string_agg(format('%s=%s', relname, n_live_tup), ', ' ORDER BY relname) FROM pg_stat_user_tables" 2>/dev/null || echo none) (estimates)"

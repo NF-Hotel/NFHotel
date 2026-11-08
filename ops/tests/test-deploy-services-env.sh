@@ -83,6 +83,10 @@ first="$(nginx_hash)"
 [[ "$first" =~ ^[0-9a-f]{16}$ ]] && ok "the proxy gets a configuration hash" || ko "the proxy gets a configuration hash"
 [[ "$(nginx_hash)" == "$first" ]] && ok "the same configuration gives the same hash" || ko "the same configuration gives the same hash"
 ! grep -q -- --force-recreate "$work/nginx-calls" && ok "the proxy is not forced to recreate" || ko "the proxy is not forced to recreate"
+# A release (--no-build) only pulls the digests it names: compose gets --no-build, so a failed pull is never a build
+# on the VM (ADR-0007, MIL-065 task 4).
+grep -q -- " --no-build" "$work/nginx-calls" && ! grep -q -- " --build" "$work/nginx-calls" &&
+  ok "a release passes --no-build to compose and never --build" || ko "the build flags of a release: $(tail -1 "$work/nginx-calls")"
 echo "server { listen 81; }" >"$n/templates/default.conf.template"
 [[ "$(nginx_hash)" != "$first" ]] && ok "a changed template changes the hash" || ko "a changed template changes the hash"
 echo "# other" >"$n/snippets/a.conf"

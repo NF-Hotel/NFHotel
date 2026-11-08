@@ -47,7 +47,7 @@ How NF Hotel covers the eight phases of the DevOps lifecycle (Plan, Code, Build,
 
 ## 5. Release
 
-- The workflow `NF Hotel Release` builds the four images after a green CI on `main`. **Trivy** stops the release on a critical finding, or a high one with a fix.
+- The workflow `NF Hotel Release` builds the six images after a green CI on `main`. **Trivy** stops the release on a critical finding, or a high one with a fix.
 - Each image gets an **SBOM** and a signed **build provenance attestation**, and is pushed to the **GitHub Container Registry** by digest (MIL-022).
 - Each release has a manifest (`release.json`) with the commit, the digests and the hash of the idempotent migration script. Documents keep their own Version History.
 
@@ -63,7 +63,7 @@ How NF Hotel covers the eight phases of the DevOps lifecycle (Plan, Code, Build,
 - A **Proxmox** VM with Debian, hardened by the **CIS Benchmark** selection in `docs/sqa/cis-checklist.md`: an nftables firewall that drops by default, a hardened Docker daemon, containers with `no-new-privileges` and dropped capabilities.
 - **Unattended security updates**, nightly **encrypted backups** (age) with a copy off the VM, and **restore drills** (MIL-021, MIL-023).
 - An incident procedure with postmortems on [Incidents](Incidents), and a monthly **DORA** report (`docs/sqa/dora/`).
-- A daily scan of the images that run in production, which opens an issue when a fixable finding appears (MIL-036).
+- A daily scan of the images that run in production, the release images and the pinned third-party images, which opens an issue when a fixable finding appears (MIL-036, MIL-064).
 
 ## 8. Monitor
 

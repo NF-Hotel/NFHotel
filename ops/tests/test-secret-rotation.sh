@@ -53,6 +53,8 @@ password="$(sed -n 's/^E2E_MANAGER_PASSWORD=//p' "$W/stack/stack.env")"
 # The compose call of e2e-stack.sh, with the images it built.
 export NFHOTEL_API_IMAGE="$NAME-api:local" NFHOTEL_WEB_IMAGE="$NAME-web:local" NFHOTEL_APP_DIR="$app"
 export NFHOTEL_PROXY_NETWORK="$NAME-proxy" NFHOTEL_API_NETWORK="$NAME-api" NFHOTEL_DB_NETWORK="$NAME-db"
+# The python network of the stack (ADR-0039): the compose files of the web application and the API name it.
+export NFHOTEL_PYTHON_NETWORK="$NAME-python"
 export POSTGRES_ENV_FILE="$settings/postgres/settings.env" POSTGRES_SECRETS="$settings/postgres"
 export NFHOTEL_API_ENV_FILE="$settings/api/settings.env" NFHOTEL_API_SECRETS="$settings/api"
 export NFHOTEL_WEB_ENV_FILE="$settings/web/settings.env" NFHOTEL_WEB_SECRETS="$settings/web"

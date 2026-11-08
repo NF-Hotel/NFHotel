@@ -2406,6 +2406,8 @@ a.kpi:hover {
     color: inherit;
 }
 
+/* The icon and the body sit in one span (KpiTile renders them once for the link and the plain tile). */
+.kpi-content { display: contents; }
 .kpi-icon { width: 48px; height: 48px; border-radius: 14px; }
 .kpi-icon .icon { width: 24px; height: 24px; }
 .kpi-body { display: grid; gap: 5px; min-width: 0; flex: 1 1 auto; }

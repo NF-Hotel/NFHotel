@@ -9,7 +9,7 @@ Docker container inside that VM (decision: ADR-0003).
 
 | Container | Source | Reachable from |
 | --- | --- | --- |
-| `nginx` | `nginx:1.27-alpine`, `ops/deploy/nginx` | Internet (port 443 over TLS; port 80 only redirects), serves only NFHotel |
+| `nginx` | `ghcr.io/nf-hotel/nfhotel-nginx` (`nginx:1.29-alpine` with the fixes of its Alpine packages, built by Release, ADR-0040), `ops/deploy/nginx` | Internet (port 443 over TLS; port 80 only redirects), serves only NFHotel |
 | `nfhotel-web` | this repository, `ops/deploy/nfhotel-web` | through nginx only; holds only an API address and a token |
 | `nfhotel-api` | this repository, `Dockerfile.api`, `ops/deploy/nfhotel-api` | `nfhotel-web` only, internal network |
 | `postgres` | `postgres:16-alpine`, `ops/deploy/postgres` | `nfhotel-api` only, internal network |
@@ -22,19 +22,21 @@ Docker container inside that VM (decision: ADR-0003).
 - Only nginx publishes ports to the outside: port 443 serves only the NFHotel web application over
   TLS 1.2 and 1.3, and port 80 answers only a redirect to HTTPS (ADR-0006). Any host name sent to
   these ports reaches NFHotel.
-- The analysis notebook and API are served by a second nginx listener on `127.0.0.1:8081`
-  inside the VM. Reach them with an SSH tunnel (below).
+- The Python services, the market analysis and the benchmark, sit on the internal network
+  `nfhotel-python` with the web application and the API, which nginx is not on (ADR-0039). Nothing
+  outside the VM reaches them; a person reads them on the VM (below).
 - PostgreSQL sits on the Docker network `nfhotel-db`, created with `--internal`: it has no route
   out and no published port. Only the database API `nfhotel-api` joins it (ADR-0004).
 - The database API is the only process with the database login and the passport key. It sits on
-  `nfhotel-db` and on a second internal network, `nfhotel-api`, that it shares with the web
-  application. It publishes no port and nginx has no route to it. The web application proves
-  itself with a bearer token; a call without it gets 401.
+  `nfhotel-db`, on a second internal network, `nfhotel-api`, that it shares with the web
+  application and nginx (the two mobile routes only), and on `nfhotel-python` with the Python
+  services. It publishes no port. The web application proves itself with a bearer token; a call
+  without it gets 401.
 - Ollama sits on the network `nfhotel-llm`, joined only by the benchmark and the analysis service.
   It publishes no port and nginx does not route to it. The network has outbound access so Ollama
   can download models.
-- The proxy network `nfhotel-proxy` joins nginx, the web application, the analysis service and
-  the benchmark.
+- The proxy network `nfhotel-proxy` joins cloudflared, nginx and the web application; the analysis
+  service and the benchmark are not on it (ADR-0039).
 
 ## TLS
 
@@ -60,7 +62,9 @@ Docker network `nfhotel-proxy`.
 
 The production VM `nf-hotel` (Proxmox VMID 100) has 4 vCPU, 20 GiB memory, a 111 GB disk and Debian 13. These values were read on the VM on 2026-10-21 (ADR-0010 decision 6). A new VM made by these scripts gets the default below.
 
-12 GiB memory (12288 MiB), 4 vCPU, 60 GiB disk, Debian 12 with Docker and the compose plugin,
+What fills the disk: the images in use and those of the two latest releases (every deploy that passes its smoke test removes the older ones, MIL-062; `sudo nfhotel-deploy prune` shows what the next one would remove), the volumes (the database, the Ollama models, the benchmark results), the journal (1 GB at most) and the backups of `backup-database.sh`, which keeps 14 daily and 8 weekly copies. The alert `DiskAlmostFull` fires at 80 % ([Alerts](Alerts)).
+
+12 GiB memory (12288 MiB), 4 vCPU, 60 GiB disk, Debian 13 (the release of `nf-hotel`) with Docker and the compose plugin,
 built from the official cloud image by cloud-init. Change the size in `ops/deploy.env`.
 
 The same node also runs the VM `sports-club` (101) and, for the monitoring of NF Hotel (ADR-0020), the unprivileged LXC `nf-monitoring` (102): 2 cores, 4 GiB memory, a 32 GiB disk on `local-lvm`, on `vmbr0`, started at boot. Its setup is in [Monitoring](Monitoring).
@@ -232,12 +236,13 @@ passed through to the VM is described in the comments of `ops/deploy/ollama/dock
 
 ## Reach the internal services
 
-```bash
-ssh -L 8081:127.0.0.1:8081 nfhotel@<vm address>
-```
+The Python services have no route through nginx and no published port (ADR-0039, [Network Isolation](Network-Isolation)).
+On the VM, `docker logs market-analysis-market-analysis-api-1` and `docker logs benchmark-benchmark-1` show their
+requests, and a one-off client on their network answers a health check:
 
-Then open `http://analysis.localhost:8081` (market analysis notebook)
-or `http://analysis-api.localhost:8081` (analysis API).
+```bash
+docker run --rm --network nfhotel-python curlimages/curl:8.10.1 -s http://market-analysis-api:8000/health
+```
 
 ## Known limits
 
@@ -251,7 +256,7 @@ or `http://analysis-api.localhost:8081` (analysis API).
 ## The benchmark service (MIL-019, MIL-020)
 
 The benchmark service is a separate repository, `notebook-benchmark`, with its own compose file and env files. It
-joins the internal network `nfhotel-api` and publishes no host port.
+joins the internal networks `nfhotel-python` and `nfhotel-llm` (ADR-0039) and publishes no host port.
 
 - The web application starts runs at `http://benchmark:8000` with the bearer token in
   `BenchmarkService__Token`, which the deploy takes from the `NFBENCH_API_TOKEN` of the benchmark service's

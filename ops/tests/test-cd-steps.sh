@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tests of scripts/cd-steps.sh and scripts/action-ref.sh (MIL-021 task 6, ADR-0012 of
 # NFHotel): the release run check, the manifest check, the check of the attestations
-# (MIL-022 task 3), the deploy call, the summary, and
+# (MIL-022 task 3), the deploy call with the six references by name (ADR-0040, MIL-065), the summary, and
 # the refusal of an action that is not pinned by a full commit SHA. Fakes stand in for gh
 # and tailscale.
 #
@@ -93,13 +93,34 @@ RUN_ID=x9 expect 1 "check-run refuses a run ID that is not a number" step check-
 D="$(printf 'a%.0s' $(seq 64))"
 APP="$(printf 'c%.0s' $(seq 40))"
 OPS="$(printf 'd%.0s' $(seq 40))"
+# The six references of a release in the order of IMAGE_NAMES, as read-manifest writes them.
+NGINX_REF="ghcr.io/nf-hotel/nfhotel-nginx@sha256:$D"
+PROXY_REF="ghcr.io/nf-hotel/nfhotel-socket-proxy@sha256:$D"
+IMGS="ghcr.io/nf-hotel/nfhotel-web@sha256:$D ghcr.io/nf-hotel/nfhotel-api@sha256:$D ghcr.io/nf-hotel/market-analysis@sha256:$D"
+IMGS+=" ghcr.io/nf-hotel/benchmark@sha256:$D $NGINX_REF $PROXY_REF"
+# manifest <sha> <devops sha> <web reference> [<nginx reference> [<socket proxy reference>]]
 manifest() {
-  printf '{"sha":"%s","devops_sha":"%s","images":{"nfhotel-web":"%s","nfhotel-api":"ghcr.io/nf-hotel/nfhotel-api@sha256:%s","market-analysis":"ghcr.io/nf-hotel/market-analysis@sha256:%s","benchmark":"ghcr.io/nf-hotel/benchmark@sha256:%s"}}' \
-    "$1" "$2" "$3" "$D" "$D" "$D" >release.json
+  printf '{"sha":"%s","devops_sha":"%s","images":{"nfhotel-web":"%s","nfhotel-api":"ghcr.io/nf-hotel/nfhotel-api@sha256:%s","market-analysis":"ghcr.io/nf-hotel/market-analysis@sha256:%s","benchmark":"ghcr.io/nf-hotel/benchmark@sha256:%s","nfhotel-nginx":"%s","nfhotel-socket-proxy":"%s"}}' \
+    "$1" "$2" "$3" "$D" "$D" "$D" "${4-$NGINX_REF}" "${5-$PROXY_REF}" >release.json
 }
 manifest "$APP" "$OPS" "ghcr.io/nf-hotel/nfhotel-web@sha256:$D"
 expect 0 "read-manifest accepts a valid manifest" step read-manifest
 grep -qx "devops_sha=$OPS" out && grep -qx "sha=$APP" out && ok "read-manifest writes both commits" || ko "manifest outputs"
+grep -qx "images=$IMGS" out && ok "read-manifest writes the six references in the order of their names" ||
+  ko "images output: $(grep images= out)"
+# The patched socket proxy of Alloy (MIL-065): a manifest without a valid nfhotel-socket-proxy digest is refused.
+jq 'del(.images["nfhotel-socket-proxy"])' release.json >r.json && mv r.json release.json
+expect 1 "read-manifest refuses a manifest without the socket proxy digest" step read-manifest
+manifest "$APP" "$OPS" "ghcr.io/nf-hotel/nfhotel-web@sha256:$D" "$NGINX_REF" "docker.io/tecnativa/docker-socket-proxy@sha256:$D"
+expect 1 "read-manifest refuses a socket proxy image of another registry" step read-manifest
+manifest "$APP" "$OPS" "ghcr.io/nf-hotel/nfhotel-web@sha256:$D"
+# The patched proxy (ADR-0040): a manifest without a valid nfhotel-nginx digest is refused.
+jq 'del(.images["nfhotel-nginx"])' release.json >r.json && mv r.json release.json
+expect 1 "read-manifest refuses a manifest without the nginx digest" step read-manifest
+manifest "$APP" "$OPS" "ghcr.io/nf-hotel/nfhotel-web@sha256:$D" "ghcr.io/nf-hotel/nfhotel-nginx@sha256:abc"
+expect 1 "read-manifest refuses a malformed nginx digest" step read-manifest
+manifest "$APP" "$OPS" "ghcr.io/nf-hotel/nfhotel-web@sha256:$D" "docker.io/library/nginx@sha256:$D"
+expect 1 "read-manifest refuses an nginx image of another registry" step read-manifest
 manifest "$APP" "$OPS" "ghcr.io/nf-hotel/nfhotel-web@sha256:$D\$(id)"
 expect 1 "read-manifest refuses shell text in a digest" step read-manifest
 manifest "$APP" main "ghcr.io/nf-hotel/nfhotel-web@sha256:$D"
@@ -109,10 +130,19 @@ expect 1 "read-manifest refuses an NFHotel ref that is not a full SHA" step read
 
 VM_HOST="" expect 1 "deploy refuses an empty host" step deploy
 VM_HOST="x;id" expect 1 "deploy refuses a host with shell text" step deploy
-VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" WEB=w API=a ANALYSIS=n BENCHMARK=b expect 0 "deploy calls the deploy command" step deploy
-grep -q "tailscale ssh deploy@nf-hotel sudo -n /usr/local/sbin/nfhotel-deploy deploy $APP $OPS w a n b" log &&
-  ok "deploy passes both commits and the four digests in order" || ko "deploy command line: $(head -1 log)"
-FAKE_EXIT=1 VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" WEB=w API=a ANALYSIS=n BENCHMARK=b expect 1 "a failed remote deploy fails the step" step deploy
+VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" RELEASE_IMAGES="$IMGS" expect 0 "deploy calls the deploy command" step deploy
+grep -q "tailscale ssh deploy@nf-hotel sudo -n /usr/local/sbin/nfhotel-deploy deploy $APP $OPS $IMGS" log &&
+  ok "deploy passes both commits and the six references in order" || ko "deploy command line: $(grep ' deploy ' log)"
+FAKE_EXIT=1 VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" RELEASE_IMAGES="$IMGS" expect 1 "a failed remote deploy fails the step" step deploy
+# Every reference reaches the shell of the VM, so deploy checks them again before anything runs there.
+VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" RELEASE_IMAGES="${IMGS/ $NGINX_REF/}" expect 1 "deploy refuses the references without the nginx digest" step deploy
+grep -q '^tailscale ssh' log && ko "something ran on the VM without the nginx digest" || ok "nothing runs on the VM without every reference"
+VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" RELEASE_IMAGES="${IMGS% *}" expect 1 "deploy refuses the references without the socket proxy digest" step deploy
+grep -q '^tailscale ssh' log && ko "something ran on the VM without the socket proxy digest" || ok "nothing runs on the VM without the socket proxy digest"
+VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" RELEASE_IMAGES="$IMGS;id" expect 1 "deploy refuses shell text in a reference" step deploy
+VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" RELEASE_IMAGES="$IMGS ghcr.io/nf-hotel/nfhotel-web@sha256:$D" \
+  expect 1 "deploy refuses an extra reference" step deploy
+VM_HOST=nf-hotel SHA="x;id" DEVOPS_SHA="$OPS" RELEASE_IMAGES="$IMGS" expect 1 "deploy refuses a bad release commit" step deploy
 
 GITHUB_STEP_SUMMARY="$W/sum" RUN_ID=1 SHA="$APP" DEVOPS_SHA="$OPS" OUTCOME=success bash /src/scripts/cd-steps.sh summary
 grep -q "NFHotel commit: \`$APP\`" sum && grep -q "DevOps commit: \`$OPS\`" sum && ok "the summary records both commits" || ko "summary"
@@ -139,35 +169,44 @@ grep -qx "devops_sha=$OPS" out && ok "action-ref writes the SHA of the ref" || k
 ACTION_REF=main expect 1 "action-ref refuses a branch" ref
 ACTION_REF=v1 expect 1 "action-ref refuses a tag" ref
 
-# verify (MIL-022 task 3): both attestations for each of the four images; since ADR-0030
+# verify (MIL-022 task 3): both attestations for each of the six images; since ADR-0030
 # market-analysis is built by the release too, so no image is accepted by a pin alone.
 ANALYSIS_OK="ghcr.io/nf-hotel/market-analysis@sha256:$D"
 B="$(printf 'b%.0s' $(seq 64))"
 E="$(printf 'e%.0s' $(seq 64))"
+# verify_with <web digest> <market-analysis reference> [<nginx reference> [<socket proxy reference>]]
 verify_with() {
-  WEB="ghcr.io/nf-hotel/nfhotel-web@sha256:$1" API="ghcr.io/nf-hotel/nfhotel-api@sha256:$D" \
-    ANALYSIS="$2" BENCHMARK="ghcr.io/nf-hotel/benchmark@sha256:$D" GH_TOKEN=t FAKE_GH_LOG="$W/gh.log" step verify
+  RELEASE_IMAGES="ghcr.io/nf-hotel/nfhotel-web@sha256:$1 ghcr.io/nf-hotel/nfhotel-api@sha256:$D $2 ghcr.io/nf-hotel/benchmark@sha256:$D ${3-$NGINX_REF} ${4-$PROXY_REF}" \
+    GH_TOKEN=t FAKE_GH_LOG="$W/gh.log" step verify
 }
 : >gh.log
 expect 0 "verify accepts attested digests" verify_with "$D" "$ANALYSIS_OK"
-[[ "$(grep -c -- '--signer-workflow NF-Hotel/NFHotel/.github/workflows/release.yaml' gh.log)" == 8 ]] &&
-  ok "verify checks provenance and SBOM of the four images, signed by the release workflow" ||
+[[ "$(grep -c -- '--signer-workflow NF-Hotel/NFHotel/.github/workflows/release.yaml' gh.log)" == 12 ]] &&
+  ok "verify checks provenance and SBOM of the six images, signed by the release workflow" ||
   ko "verify calls ($(wc -l <gh.log))"
+grep -q "oci://ghcr.io/nf-hotel/nfhotel-socket-proxy@" gh.log && ok "verify checks the attestations of nfhotel-socket-proxy" ||
+  ko "verify does not query nfhotel-socket-proxy"
 grep -q "market-analysis" gh.log && ok "verify checks the attestations of market-analysis" ||
   ko "verify does not query market-analysis"
+grep -q "oci://ghcr.io/nf-hotel/nfhotel-nginx@" gh.log && ok "verify checks the attestations of nfhotel-nginx" ||
+  ko "verify does not query nfhotel-nginx"
 expect 1 "verify refuses a digest without any attestation" verify_with "$B" "$ANALYSIS_OK"
 expect 1 "verify refuses a digest with provenance but no SBOM" verify_with "$E" "$ANALYSIS_OK"
 expect 1 "verify refuses an unattested market-analysis digest" \
   verify_with "$D" "ghcr.io/nf-hotel/market-analysis@sha256:$B"
 expect 1 "verify refuses a missing digest" verify_with "" "$ANALYSIS_OK"
+expect 1 "verify refuses an unattested nfhotel-nginx digest" verify_with "$D" "$ANALYSIS_OK" "ghcr.io/nf-hotel/nfhotel-nginx@sha256:$B"
+expect 1 "verify refuses the references without the nginx digest" verify_with "$D" "$ANALYSIS_OK" ""
+expect 1 "verify refuses an unattested nfhotel-socket-proxy digest" verify_with "$D" "$ANALYSIS_OK" "$NGINX_REF" "ghcr.io/nf-hotel/nfhotel-socket-proxy@sha256:$B"
+expect 1 "verify refuses the references without the socket proxy digest" verify_with "$D" "$ANALYSIS_OK" "$NGINX_REF" ""
 
 # Migrations by CD (MIL-022 task 6): the manifest names the script by its SHA-256, the
 # file must match it, and deploy runs migrate first and deploys only when it succeeded.
 printf 'SELECT 1;\n' >migrations.sql
 M="$(sha256sum migrations.sql | cut -d' ' -f1)"
 manifest_m() {
-  printf '{"sha":"%s","devops_sha":"%s","migrations":"%s","images":{"nfhotel-web":"ghcr.io/nf-hotel/nfhotel-web@sha256:%s","nfhotel-api":"ghcr.io/nf-hotel/nfhotel-api@sha256:%s","market-analysis":"ghcr.io/nf-hotel/market-analysis@sha256:%s","benchmark":"ghcr.io/nf-hotel/benchmark@sha256:%s"}}' \
-    "$APP" "$OPS" "$1" "$D" "$D" "$D" "$D" >release.json
+  printf '{"sha":"%s","devops_sha":"%s","migrations":"%s","images":{"nfhotel-web":"ghcr.io/nf-hotel/nfhotel-web@sha256:%s","nfhotel-api":"ghcr.io/nf-hotel/nfhotel-api@sha256:%s","market-analysis":"ghcr.io/nf-hotel/market-analysis@sha256:%s","benchmark":"ghcr.io/nf-hotel/benchmark@sha256:%s","nfhotel-nginx":"ghcr.io/nf-hotel/nfhotel-nginx@sha256:%s","nfhotel-socket-proxy":"ghcr.io/nf-hotel/nfhotel-socket-proxy@sha256:%s"}}' \
+    "$APP" "$OPS" "$1" "$D" "$D" "$D" "$D" "$D" "$D" >release.json
 }
 manifest_m "$M"
 expect 0 "read-manifest accepts a migration script with its hash" step read-manifest
@@ -184,7 +223,7 @@ manifest "$APP" "$OPS" "ghcr.io/nf-hotel/nfhotel-web@sha256:$D"
 expect 0 "read-manifest accepts a manifest without migrations" step read-manifest
 grep -qx "migrations=" out && ok "no migrations gives an empty hash" || ko "empty migrations output"
 deploy_m() {
-  VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" WEB=w API=a ANALYSIS=n BENCHMARK=b MIGRATIONS="$M" \
+  VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" RELEASE_IMAGES="$IMGS" MIGRATIONS="$M" \
     FAKE_STDIN="$W/sent.sql" step deploy
 }
 expect 0 "deploy with migrations runs migrate, then deploy" deploy_m
@@ -197,7 +236,7 @@ grep -q "nfhotel-deploy deploy" log && ko "nothing is deployed after a failed mi
 # The update of the commands (ADR-0018) comes first; when it fails, nothing else runs.
 FAKE_UPDATE_EXIT=2 expect 1 "a failed update fails the step" deploy_m
 grep -qE "nfhotel-deploy (migrate|deploy)" log && ko "nothing runs after a failed update" || ok "nothing runs after a failed update"
-VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="x;id" WEB=w API=a ANALYSIS=n BENCHMARK=b expect 1 "deploy refuses a bad operations commit" step deploy
+VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="x;id" RELEASE_IMAGES="$IMGS" expect 1 "deploy refuses a bad operations commit" step deploy
 # When update installed a new deploy command, that command runs update once more, so the
 # files it knows and the old one did not are installed in the same deploy.
 FAKE_UPDATE_OUT="    installed /usr/local/sbin/nfhotel-deploy from ops/scripts/deploy-release.sh" expect 0 "a new deploy command runs update again" deploy_m
@@ -207,9 +246,9 @@ expect 0 "an unchanged deploy command runs update once" deploy_m
 
 # The rollback drill (MIL-021 criterion 6) passes --drill to the deploy command, only
 # when ROLLBACK_DRILL is true.
-VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" WEB=w API=a ANALYSIS=n BENCHMARK=b ROLLBACK_DRILL=true expect 0 "a drill run calls deploy" step deploy
-grep -q "nfhotel-deploy deploy $APP $OPS w a n b --drill" log && ok "a drill passes --drill" || ko "drill: $(tr '\n' '|' <log)"
-VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" WEB=w API=a ANALYSIS=n BENCHMARK=b ROLLBACK_DRILL=false expect 0 "a normal run calls deploy" step deploy
+VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" RELEASE_IMAGES="$IMGS" ROLLBACK_DRILL=true expect 0 "a drill run calls deploy" step deploy
+grep -q "nfhotel-deploy deploy $APP $OPS $IMGS --drill" log && ok "a drill passes --drill" || ko "drill: $(tr '\n' '|' <log)"
+VM_HOST=nf-hotel SHA="$APP" DEVOPS_SHA="$OPS" RELEASE_IMAGES="$IMGS" ROLLBACK_DRILL=false expect 0 "a normal run calls deploy" step deploy
 grep -q -- "--drill" log && ko "a normal run passed --drill" || ok "a normal run passes no --drill"
 
 # The tailnet scope (MIL-021 criterion 7): a listener on 127.0.0.1 stands in for ssh of
@@ -225,12 +264,18 @@ export FAKE_STATUS='{"Peer":{"k1":{"DNSName":"127.0.0.1."}}}'
 expect 0 "scope passes when only ssh answers" scope 18081
 grep -q "Ports 18081 of 127.0.0.1 do not answer" log && grep -q "No peer other than" log && ! grep -q "::warning::" log &&
   ok "the scope records the closed ports and no other peer" || ko "scope: $(tr '\n' '|' <log)"
+grep -qE "Port 18022 of 127.0.0.1 answers \(after [0-9]+ s\)" log && ok "the scope logs the seconds it waited" || ko "seconds: $(tr '\n' '|' <log)"
 expect 0 "an open port is a warning, not a failure" scope 18080
 grep -q "::warning::tag:ci reaches ports 18080" log && ok "an open port is reported" || ko "open port: $(tr '\n' '|' <log)"
 FAKE_STATUS='{"Peer":{"k1":{"DNSName":"127.0.0.1."},"k2":{"DNSName":"legion.example.ts.net."}}}' expect 0 "another peer seen does not fail the step" scope 18081
 grep -q "Peers seen .*legion.example.ts.net" log && ! grep -q "::warning::" log && ok "another peer is listed, without a warning" || ko "peer: $(tr '\n' '|' <log)"
-VM_HOST=127.0.0.1 SCOPE_SSH_PORT=18099 expect 1 "scope fails when ssh does not answer" step scope
-kill %1 %2 2>/dev/null
+VM_HOST=127.0.0.1 SCOPE_SSH_PORT=18099 SCOPE_WAIT_SECONDS=3 expect 1 "scope fails when ssh does not answer within the wait" step scope
+grep -q "did not answer within 3 s" log && ok "the failure names the wait" || ko "wait message: $(tr '\n' '|' <log)"
+# A listener that starts late (MIL-063): the step waits for it instead of failing at once.
+(sleep 3 && exec python3 -m http.server 18023 --bind 127.0.0.1 >/dev/null 2>&1) &
+VM_HOST=127.0.0.1 SCOPE_SSH_PORT=18023 SCOPE_OTHER_PORTS=18081 SCOPE_WAIT_SECONDS=20 expect 0 "scope waits for a port that answers late" step scope
+grep -qE "Port 18023 of 127.0.0.1 answers \(after [1-9][0-9]* s\)" log && ok "the late answer is logged with its seconds" || ko "late listener: $(tr '\n' '|' <log)"
+kill %1 %2 %3 2>/dev/null
 
 # The gate (ADR-0021): every check of the release commit must be green, this job left out.
 G="$W/checks"

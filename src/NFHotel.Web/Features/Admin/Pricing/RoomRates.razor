@@ -4,7 +4,6 @@
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
 @using System.Globalization
-@using NFHotel.Domain.ValueObjects
 @using NFHotel.Web.Common
 @using NFHotel.Web.Features.Admin.Pricing
 @inject RoomRatesViewModel ViewModel
@@ -71,17 +70,3 @@
         <p class="muted">Use a dot for the decimals, for example 89.50.</p>
     }
 </div>
-
-@code {
-    /// <summary>The three pricing pages as tabs: one menu item, same routes.</summary>
-    private static readonly AdminTab[] PricingTabs =
-    [
-        new("/admin/pricing/rates", "Room rates"),
-        new("/admin/pricing/suggestions", "Price suggestions"),
-        new("/admin/pricing/settings", "Settings"),
-    ];
-
-    protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
-
-    private Task SaveAsync(RoomSize size) => ViewModel.SaveAsync(size, ComponentToken);
-}

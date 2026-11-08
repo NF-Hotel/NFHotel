@@ -94,11 +94,14 @@ public sealed partial class AsyncRulesTests
     }
 
     /// <summary>A page passes the token of the component to every call of its view model, so the call stops when the page goes away.</summary>
+    /// <remarks>The markup and its code-behind are both read: a call can stand in the .razor or in the .razor.cs beside it.</remarks>
     [Fact]
     public void ViewModelCalls_InEveryComponent_PassTheComponentToken()
     {
         // Arrange
-        var components = SourceFiles("NFHotel.Web").Where(file => file.EndsWith(".razor", StringComparison.Ordinal)).ToArray();
+        var components = SourceFiles("NFHotel.Web")
+            .Where(file => file.EndsWith(".razor", StringComparison.Ordinal) || file.EndsWith(".razor.cs", StringComparison.Ordinal))
+            .ToArray();
         var calls = components.SelectMany(file => ViewModelCall().Matches(Code(file)).Select(match => (file, call: match.Value))).ToArray();
         Assert.True(calls.Length > 20, "The scan found too few view-model calls to mean anything.");
         var offenders = calls

@@ -3,7 +3,8 @@
 # settings and secret files made by root with mode 0600, then deploy-monitoring.sh --apply.
 # Then check that every service runs, that each container can read its own secret files and
 # no other, that Grafana takes the admin password from its file, that Prometheus loaded the
-# rules, that the Watchdog reaches Alertmanager, and that Prometheus scrapes the scan exporter
+# rules and keeps the metrics 30 days from its configuration file (MIL-066 task 6), that the
+# Watchdog reaches Alertmanager, and that Prometheus scrapes the scan exporter
 # (MIL-053), which runs without a token here. The stand-in secrets reach no real channel.
 #
 # Run it as root on a Linux host with Docker, in a checkout without monitoring settings:
@@ -86,6 +87,10 @@ user="$(curl -fsS -u "admin:$password" http://127.0.0.1:3000/api/user 2>/dev/nul
 rules="$(curl -fsS http://127.0.0.1:9090/api/v1/rules 2>/dev/null)"
 [[ "$rules" == *'"name":"TaskReportMissing"'* && "$rules" == *'"name":"Watchdog"'* ]] &&
   ok "Prometheus loaded the alert rules" || ko "rules: ${rules:0:200}"
+# The retention comes from prometheus.yml, not from the deprecated flag (MIL-066 task 6).
+runtime="$(curl -fsS http://127.0.0.1:9090/api/v1/status/runtimeinfo 2>/dev/null)"
+[[ "$runtime" == *'"storageRetention":"30d"'* ]] && ok "Prometheus keeps the metrics 30 days, as prometheus.yml says" ||
+  ko "runtimeinfo: ${runtime:0:300}"
 
 # Each container reads its own secret as the user it runs as.
 compose exec -T alertmanager cat /etc/alertmanager-secrets/discord-webhook-url \

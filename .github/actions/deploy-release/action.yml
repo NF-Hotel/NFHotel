@@ -73,10 +73,7 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
-        WEB: ${{ steps.release.outputs.nfhotel_web }}
-        API: ${{ steps.release.outputs.nfhotel_api }}
-        ANALYSIS: ${{ steps.release.outputs.market_analysis }}
-        BENCHMARK: ${{ steps.release.outputs.benchmark }}
+        RELEASE_IMAGES: ${{ steps.release.outputs.images }}
       run: bash "$GITHUB_ACTION_PATH/../../../ops/scripts/cd-steps.sh" verify
 
     # Before any credential for the VM: every check of the release commit must have
@@ -95,7 +92,7 @@ runs:
         oauth-client-id: ${{ inputs.ts-oidc-client-id }}
         audience: ${{ inputs.ts-oidc-audience }}
         tags: tag:ci
-        version: 1.102.4
+        version: 1.104.5
 
     - name: Check the tailnet scope of this node
       if: ${{ inputs.apply == 'true' }}
@@ -112,10 +109,7 @@ runs:
         VM_HOST: ${{ inputs.vm-host }}
         SHA: ${{ steps.release.outputs.sha }}
         DEVOPS_SHA: ${{ steps.release.outputs.devops_sha }}
-        WEB: ${{ steps.release.outputs.nfhotel_web }}
-        API: ${{ steps.release.outputs.nfhotel_api }}
-        ANALYSIS: ${{ steps.release.outputs.market_analysis }}
-        BENCHMARK: ${{ steps.release.outputs.benchmark }}
+        RELEASE_IMAGES: ${{ steps.release.outputs.images }}
         MIGRATIONS: ${{ steps.release.outputs.migrations }}
         ROLLBACK_DRILL: ${{ inputs.rollback-drill }}
       run: bash "$GITHUB_ACTION_PATH/../../../ops/scripts/cd-steps.sh" deploy

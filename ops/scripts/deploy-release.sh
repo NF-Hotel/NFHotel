@@ -25,6 +25,11 @@
 #   6. smoke test: port 80 answers 301 and HTTPS answers 200 on the VM
 #   7. on success, append the release to the release log; on failure, deploy the
 #      previous release from the log again and exit 1
+#   The release log has one line per release: the time, the two commits and the references.
+#   A line from before ADR-0040 has four references, without nfhotel-nginx, and a line from
+#   before MIL-065 has five, without nfhotel-socket-proxy: their operations commits pin the
+#   upstream images of the proxies, so they still roll back. The lines of update have the word
+#   update after the time.
 # migrate:  apply the idempotent migration script of a release to the database, before
 #           its deploy (MIL-022 task 6, ADR-0008, ADR-0011). The script comes on standard
 #           input and must have the SHA-256 given as the argument, the one recorded in
@@ -32,7 +37,10 @@
 #           in the PostgreSQL container as nfhotel_migrator, which sets the role
 #           nfhotel_owner, with the URL of /etc/nfhotel/secrets/nfhotel-migrator-database.env.
 #           Each migration of the script commits on its own and is skipped when its id is
-#           already in the history, so a rerun changes nothing.
+#           already in the history, so a rerun changes nothing. Then the migrator takes
+#           INSERT, UPDATE and DELETE on the history back from nfhotel_app, which the
+#           default privileges give it when the first migration creates the table: the
+#           API may read the history, never change it (MIL-066 task 4).
 # update:   install the operations commands of a release commit (ADR-0018, MIL-032), before
 #           migrate and deploy. It fetches main from origin and refuses a commit that is
 #           not reachable from origin/main, the branch the ruleset protects: GitHub serves
@@ -46,21 +54,29 @@
 #           The replaced copy is kept as <file>.previous, and each change is logged with
 #           the old and new SHA-256. The sudo rule does not change.
 # rollback: deploy the release before the latest one in the log again.
+# prune:    remove every image that no container uses and that is not part of the two latest
+#           releases of the log (MIL-062): the latest release runs, the one before it is what
+#           rollback goes to, and everything older only fills the disk. Without --apply it prints
+#           what would go and removes nothing. deploy runs it after a smoke test that passed, never
+#           after a rollback or a drill, and a failure inside it is a warning, not a failed deploy.
 # status:   print the release log.
-# update, deploy and rollback are the explicit commands that change the VM; status and a
-# refused argument change nothing. The die and usage helpers are kept in this file
+# update, deploy, rollback and prune --apply are the explicit commands that change the VM; status,
+# prune without --apply and a refused argument change nothing. The die and usage helpers are kept in this file
 # because it is installed alone (scripts/lib/common.sh is not beside it).
 #
 # Usage: deploy-release.sh update <sha>
-#        deploy-release.sh deploy <app-sha> <devops-sha> <web> <api> <analysis> <benchmark> [--drill]
+#        deploy-release.sh deploy <app-sha> <devops-sha> <reference>... [--drill]
 #        deploy-release.sh migrate <sha256 of the script> < migrations.sql
 #        deploy-release.sh rollback
+#        deploy-release.sh prune [--apply]
 #        deploy-release.sh status
 #   <app-sha>    the 40-character NF-Hotel/NFHotel commit of the release (recorded)
 #   <devops-sha> the 40-character commit to check out: the commit of the operations code,
 #                which since ADR-0016 is the NFHotel commit of the release
-#   <web> ...    ghcr.io/nf-hotel/<image>@sha256:<64 hex>, in this order:
-#                nfhotel-web, nfhotel-api, market-analysis, benchmark
+#   <reference>  ghcr.io/nf-hotel/<name>@sha256:<64 hex>, one for each image of NAMES
+#                (nfhotel-web, nfhotel-api, market-analysis, benchmark, nfhotel-nginx,
+#                nfhotel-socket-proxy), in any order: the name picks the image variable of
+#                deploy-services.sh (ADR-0040)
 #   --drill      a rollback drill: deploy, then roll back to the previous release as if
 #                the smoke test had failed, and exit 1; the release is not recorded
 # Env:   NFHOTEL_DIR (default /opt/nfhotel), NFHOTEL_USER (default nfhotel),
@@ -69,8 +85,9 @@
 #        NFHOTEL_BACKUP_COMMAND (default /usr/local/sbin/nfhotel-backup; for the tests),
 #        NFHOTEL_COMMAND_DIR (default /usr/local/sbin), NFHOTEL_SYSTEMD_DIR (default
 #        /etc/systemd/system), NFHOTEL_SYSTEMCTL (default systemctl; for the tests)
-# Exit:  0 deployed (or rolled back on request); 1 the deploy failed (a rollback was
-#        tried); 2 usage error or an argument that does not match its pattern
+# Exit:  0 deployed (or rolled back on request; prune: done or printed); 1 the deploy failed (a
+#        rollback was tried), or prune could not remove an image; 2 usage error or an argument
+#        that does not match its pattern
 # Needs: bash 4+, git, curl, flock, sudo, docker with the compose plugin
 
 set -euo pipefail
@@ -86,7 +103,13 @@ readonly BACKUP_COMMAND="${NFHOTEL_BACKUP_COMMAND:-/usr/local/sbin/nfhotel-backu
 readonly COMMAND_DIR="${NFHOTEL_COMMAND_DIR:-/usr/local/sbin}"
 readonly SYSTEMD_DIR="${NFHOTEL_SYSTEMD_DIR:-/etc/systemd/system}"
 readonly SYSTEMCTL="${NFHOTEL_SYSTEMCTL:-systemctl}"
-readonly NAMES=(nfhotel-web nfhotel-api market-analysis benchmark)
+# The images of a release (ADR-0040). A reference names its image, so a new image is a name here
+# and in cd-steps.sh, never a new argument position.
+readonly NAMES=(nfhotel-web nfhotel-api market-analysis benchmark nfhotel-nginx nfhotel-socket-proxy)
+# The images that the release lines from before them lack. Such a line still rolls back: its
+# operations commit names the upstream image in the compose file. The socket proxy of Alloy came
+# with MIL-065 (ADR-0040 decision 5).
+readonly ADDED_NAMES=(nfhotel-nginx nfhotel-socket-proxy)
 
 die() {
   echo "error: $*" >&2
@@ -113,18 +136,50 @@ as_app() {
   fi
 }
 
-# check_release <app-sha> <devops-sha> <digest...>: refuse anything that is not two full
-# commits and four digests of the expected images in the expected order.
+# in_list <word> <word...>: whether the first word is one of the others.
+in_list() {
+  local word="$1" item
+  shift
+  for item in "$@"; do
+    [[ "$item" == "$word" ]] && return 0
+  done
+  return 1
+}
+
+# image_var <name>: the variable of deploy-services.sh that takes the image <name>: the name in
+# upper case with _ for -, and _IMAGE (NFHOTEL_WEB_IMAGE for nfhotel-web), as the compose files say.
+image_var() {
+  local var="${1//-/_}"
+  echo "${var^^}_IMAGE"
+}
+
+# check_release [--from-log] <app-sha> <devops-sha> <reference...>: refuse anything that is not two
+# full commits and one reference $registry/<name>@sha256:<64 hex> for each image of NAMES, each
+# name once, in any order. With --from-log, a release line of the log may lack the images of
+# ADDED_NAMES, as the lines from before them do.
 check_release() {
-  local i
+  local from_log=0 n=3 ref name
+  local -A seen=()
+  if [[ "${1:-}" == --from-log ]]; then
+    from_log=1
+    shift
+  fi
   [[ "${1:-}" =~ ^[0-9a-f]{40}$ ]] || refuse "the NFHotel commit must be 40 lower-case hex characters"
   [[ "${2:-}" =~ ^[0-9a-f]{40}$ ]] || refuse "the DevOps commit must be 40 lower-case hex characters"
   shift 2
-  (($# == ${#NAMES[@]})) || refuse "expected ${#NAMES[@]} image digests, got $#"
-  for i in "${!NAMES[@]}"; do
-    local ref="${*:i+1:1}"
-    [[ "$ref" =~ ^${registry//./\\.}/${NAMES[$i]}@sha256:[0-9a-f]{64}$ ]] ||
-      refuse "argument $((i + 3)) is not $registry/${NAMES[$i]}@sha256:<64 hex>"
+  for ref in "$@"; do
+    [[ "$ref" =~ ^${registry//./\\.}/([a-z0-9-]+)@sha256:[0-9a-f]{64}$ ]] ||
+      refuse "argument $n is not $registry/<name>@sha256:<64 hex>"
+    name="${BASH_REMATCH[1]}"
+    in_list "$name" "${NAMES[@]}" || refuse "argument $n names $name, which is not one of ${NAMES[*]}"
+    [[ -z "${seen[$name]:-}" ]] || refuse "argument $n names $name a second time"
+    seen[$name]=1
+    n=$((n + 1))
+  done
+  for name in "${NAMES[@]}"; do
+    [[ -n "${seen[$name]:-}" ]] && continue
+    ((from_log)) && in_list "$name" "${ADDED_NAMES[@]}" && continue
+    refuse "no reference of $name; a release needs one for each of ${NAMES[*]}"
   done
 }
 
@@ -182,10 +237,16 @@ smoke_test() {
   echo "smoke test: $host:$http_port answers 301, $host:$https_port answers 200"
 }
 
-# apply <app-sha> <devops-sha> <web> <api> <analysis> <benchmark>: check out the DevOps
-# commit and start one release.
+# apply <app-sha> <devops-sha> <reference...>: check out the DevOps commit and start one release,
+# each image in the variable of its name. A release line without an image of ADDED_NAMES sets no
+# variable for it (NFHOTEL_NGINX_IMAGE, NFHOTEL_SOCKET_PROXY_IMAGE), and the compose file of its
+# operations commit names the upstream image.
 apply() {
-  local sha="$2"
+  local sha="$2" ref name images=()
+  for ref in "${@:3}"; do
+    name="${ref#"$registry"/}"
+    images+=("$(image_var "${name%%@*}")=$ref")
+  done
   as_app git fetch --quiet --depth 1 origin "$sha" || return 1
   if [[ "$(ops_rel)" == ops ]] && ! as_app git cat-file -e "$sha:ops/scripts/deploy-services.sh" 2>/dev/null; then
     # A release from before the switch of ADR-0016 names an operations commit of
@@ -203,8 +264,8 @@ apply() {
   echo "==> starting the services from the release images (no build)"
   # A release always runs as Production, whatever the settings files say (MIL-040): no error page shows a
   # stack trace to a guest of the public site.
-  as_app env NFHOTEL_WEB_IMAGE="$3" NFHOTEL_API_IMAGE="$4" MARKET_ANALYSIS_IMAGE="$5" BENCHMARK_IMAGE="$6" \
-    NFHOTEL_ENVIRONMENT=Production bash "$(ops_rel)/scripts/deploy-services.sh" --no-build || return 1
+  as_app env "${images[@]}" NFHOTEL_ENVIRONMENT=Production bash "$(ops_rel)/scripts/deploy-services.sh" --no-build ||
+    return 1
   # No secret may be in the environment of a container (MIL-035, ADR-0024). A release from
   # before then has no check, and puts its secrets in the environment as it always did.
   if [[ -f "$app_dir/$(ops_rel)/scripts/check-secret-env.sh" ]]; then
@@ -230,11 +291,13 @@ api_database_settings() {
   echo "==> the API connects as nfhotel_app and does not migrate at start (ADR-0011)"
 }
 
-# previous_release <n>: the n-th latest successful release line (1 = latest). The log also
-# holds the lines of update, which have six fields, so only release lines are counted.
+# previous_release <n>: the n-th latest successful release line (1 = latest), without its time:
+# the two commits and the references (see the header). The lines of update have the word update
+# where a release line has its commit, so only lines with a full commit there are counted.
 previous_release() {
   [[ -f "$release_log" ]] || return 1
-  awk 'NF == 7' "$release_log" | tail -n "$1" | head -n 1 | awk '{ print $2, $3, $4, $5, $6, $7 }'
+  awk '$2 ~ /^[0-9a-f]+$/ && length($2) == 40 && NF >= 7 { $1 = ""; sub(/^ /, ""); print }' "$release_log" |
+    tail -n "$1" | head -n 1
 }
 
 record() {
@@ -270,9 +333,9 @@ deploy() {
   # --drill (MIL-021 criterion 6): deploy the release, then treat it as failed, so the
   # rollback to the previous release runs for real and the run is red. Only a manual CD
   # run with rollback_drill passes it.
-  if [[ "${7:-}" == "--drill" ]]; then
+  if [[ "${*: -1}" == "--drill" ]]; then
     drill=1
-    set -- "${@:1:6}"
+    set -- "${@:1:$#-1}"
   fi
   check_release "$@"
   check_checkout
@@ -292,6 +355,9 @@ deploy() {
     else
       record "$@"
       echo "==> deployed $1"
+      # The release is deployed and recorded: the images of the releases before the previous one
+      # go now (MIL-062). A failure here does not undo a deploy that passed.
+      prune_images --apply || echo "warning: the prune did not finish; the release is deployed" >&2
       return 0
     fi
   fi
@@ -299,7 +365,7 @@ deploy() {
   echo "==> the deploy of $1 failed" >&2
   if [[ -n "$last" ]]; then
     echo "==> rolling back to the previous release" >&2
-    # shellcheck disable=SC2086 # the line holds the six checked fields
+    # shellcheck disable=SC2086 # the line holds the checked fields of a release
     if apply $last; then
       echo "==> rolled back to ${last%% *}" >&2
     else
@@ -309,6 +375,14 @@ deploy() {
     echo "error: no previous release in $release_log to roll back to" >&2
   fi
   exit 1
+}
+
+# psql_as_migrator <container>: psql in the PostgreSQL container as nfhotel_migrator, which
+# sets the role nfhotel_owner, with the SQL on standard input.
+psql_as_migrator() {
+  # shellcheck disable=SC2016 # expanded by the shell inside the container
+  docker exec -i --env-file "$secrets_dir/nfhotel-migrator-database.env" "$1" \
+    sh -c 'psql "$NFHOTEL_MIGRATOR_URL" --quiet --no-psqlrc -v ON_ERROR_STOP=1'
 }
 
 # migrate <sha256>: see the header. Nothing is applied unless the script on standard
@@ -336,10 +410,14 @@ migrate() {
   fi
 
   echo "==> applying the migration script $want as nfhotel_migrator"
-  # shellcheck disable=SC2016 # expanded by the shell inside the container
-  docker exec -i --env-file "$secrets_dir/nfhotel-migrator-database.env" "$pg" \
-    sh -c 'psql "$NFHOTEL_MIGRATOR_URL" --quiet --no-psqlrc -v ON_ERROR_STOP=1' <"$script" ||
+  psql_as_migrator "$pg" <"$script" ||
     die "the migration script failed; the backup above holds the state before it"
+  # The first migration of a new database creates the history, and the default privileges
+  # give it to nfhotel_app like every table; roles.sql takes the rights back only from a
+  # history that exists when it runs. The API may read the history, never change it, so a
+  # takeover of the API cannot mark a migration as applied or remove one (MIL-066 task 4).
+  psql_as_migrator "$pg" <<<'REVOKE INSERT, UPDATE, DELETE ON TABLE public."__EFMigrationsHistory" FROM nfhotel_app;' ||
+    die "the migrations were applied, but INSERT, UPDATE and DELETE on the history were not taken back from nfhotel_app"
   echo "==> migrations applied"
 }
 
@@ -412,13 +490,60 @@ rollback() {
   target="$(previous_release 2 || true)"
   [[ -n "$target" ]] || die "the release log has no release before the latest one"
   check_checkout
-  # shellcheck disable=SC2086 # the line holds the six checked fields
-  check_release $target
+  # shellcheck disable=SC2086 # the line holds the fields of a release, checked here
+  check_release --from-log $target
   # shellcheck disable=SC2086
   apply $target || die "the rollback to ${target%% *} failed"
   # shellcheck disable=SC2086
   record $target
   echo "==> rolled back to ${target%% *}"
+}
+
+# prune_images [--apply]: see the header. Kept are the images of every container (running or
+# stopped, so the one-shot services too) and the images of the two latest releases of the log,
+# resolved from their digests; every other image id of docker image ls goes.
+prune_images() {
+  local apply=0 n line ref id keep=" " removed=0 failed=0 before after fields=()
+  if [[ $# -gt 0 ]]; then
+    [[ "$1" == "--apply" && $# -eq 1 ]] || refuse "prune takes --apply or nothing"
+    apply=1
+  fi
+  before="$(df -h / | awk 'NR == 2 { print $4 }')"
+  # shellcheck disable=SC2046 # one image id per word, split on purpose
+  for id in $(docker ps -aq | xargs -r docker inspect --format '{{.Image}}' 2>/dev/null || true); do
+    keep+="$id "
+  done
+  for n in 1 2; do
+    line="$(previous_release "$n" || true)"
+    [[ -n "$line" ]] || continue
+    read -r -a fields <<<"$line"
+    for ref in "${fields[@]:2}"; do
+      id="$(docker image inspect --format '{{.Id}}' "$ref" 2>/dev/null || true)"
+      [[ -n "$id" ]] && keep+="$id "
+    done
+  done
+  # shellcheck disable=SC2046 # one image id per word, split on purpose
+  for id in $(docker image ls -q --no-trunc 2>/dev/null | sort -u); do
+    [[ "$keep" == *" $id "* ]] && continue
+    if ((apply)); then
+      if docker image rm -f "$id" >/dev/null 2>&1; then
+        removed=$((removed + 1))
+      else
+        failed=$((failed + 1))
+        echo "warning: cannot remove the image $id" >&2
+      fi
+    else
+      echo "would remove $id"
+      removed=$((removed + 1))
+    fi
+  done
+  after="$(df -h / | awk 'NR == 2 { print $4 }')"
+  if ((apply)); then
+    echo "==> prune: removed $removed image(s) that no container uses and no release of the last two needs; / had $before free, has $after"
+  else
+    echo "==> prune: $removed image(s) would be removed (run with --apply); / has $before free"
+  fi
+  ((failed == 0))
 }
 
 main() {
@@ -444,6 +569,10 @@ main() {
       migrate "$@"
       ;;
     rollback) rollback ;;
+    prune)
+      shift
+      prune_images "$@"
+      ;;
     status) cat "$release_log" 2>/dev/null || echo "no release deployed yet" ;;
     -h | --help) usage ;;
     *)

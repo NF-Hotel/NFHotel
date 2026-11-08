@@ -17,8 +17,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=ops/scripts/lib/common.sh
 . "$ROOT/scripts/lib/common.sh"
 
-# Trivy 0.75.0; Dependabot does not see this line, so bump it by hand with the digest.
-readonly TRIVY="aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa"
+# Trivy 0.76.2; Dependabot does not see this line, so bump it by hand with the digest.
+readonly TRIVY="aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb"
 readonly IGNORE="$ROOT/security/trivyignore.yaml"
 
 [[ $# -eq 3 ]] || {

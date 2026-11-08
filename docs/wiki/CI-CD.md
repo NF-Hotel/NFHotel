@@ -7,11 +7,13 @@ How a change reaches the NF Hotel server, how a deploy is approved and undone, a
 One repository holds it all (ADR-0016): the application, and its operations under `ops/`. The workflows (`ci.yaml`, `ops-ci.yaml`, `release.yaml`, `cd.yaml`) keep the triggers, the permissions, the `production` environment and the OIDC claims. Their steps are the local composite actions in `.github/actions/` (`release-images`, `deploy-release`, `e2e-tests`, `dast-scan`), read from the same commit, which run the scripts of `ops/scripts/`. Everything that runs on the VM is in `ops/` too.
 
 1. **Pull request.** `NF Hotel CI` builds, tests and checks the formatting on every pull request, with a read-only token. Its only secret is `SONAR_TOKEN`, the analysis token of SonarQube Cloud (ADR-0033); a run without it (a fork, Dependabot) skips the analysis. A pull request merges when the required checks are green; no approving review is required (ADR-0019).
-2. **Merge to `main`.** CI runs again on `main`. When it is green, `NF Hotel Release` in NFHotel calls the `release-images` action. The action builds four images from that exact commit, with the compose files and scripts of `ops/` in it, and pushes them to the GitHub Container Registry:
+2. **Merge to `main`.** CI runs again on `main`. When it is green, `NF Hotel Release` in NFHotel calls the `release-images` action. The action builds six images from that exact commit, with the compose files and scripts of `ops/` in it, and pushes them to the GitHub Container Registry:
    - `ghcr.io/nf-hotel/nfhotel-web`
    - `ghcr.io/nf-hotel/nfhotel-api`
    - `ghcr.io/nf-hotel/market-analysis`, built from a pinned commit of `NF-Hotel/notebook-market-analysis` (see "The market-analysis image" below)
    - `ghcr.io/nf-hotel/benchmark`
+   - `ghcr.io/nf-hotel/nfhotel-nginx`, the pinned `nginx:1.29-alpine` with the fixes of its Alpine packages (ADR-0040)
+   - `ghcr.io/nf-hotel/nfhotel-socket-proxy`, the pinned `tecnativa/docker-socket-proxy:v0.5.0` with the fixes of its Alpine packages, for the Alloy stack (ADR-0040, MIL-065)
 
    Each image is tagged `sha-<NFHotel commit>` and labelled with that commit (`org.opencontainers.image.revision`). The run summary and the artifact `release-manifest` (`release.json`) hold the commit, the operations commit (`devops_sha`, the same commit since ADR-0016), one digest per image and the hash of the migration script.
 3. **Approval and gate (ADR-0038, ADR-0021).** `NF Hotel CD` starts by itself after a green Release, in the environment `production` (`main` only), and waits there until S01 approves the run: GitHub notifies the reviewer, and the run's page has "Review deployments" (approve or reject, with a comment). Nothing runs and no credential is issued before the approval; a run nobody approves expires after 30 days. After the approval, before any credential for the VM, it waits until every check of the release commit has finished, and it deploys only when all of them are green (success, skipped or neutral). One red check stops it, and the run summary names that check.
@@ -19,7 +21,7 @@ One repository holds it all (ADR-0016): the application, and its operations unde
    - the job joins the tailnet as a temporary node tagged `tag:ci`;
    - it logs in to the VM with Tailscale SSH as the user `deploy`;
    - it runs `sudo -n /usr/local/sbin/nfhotel-deploy update <operations commit>` first. That installs the deploy command, the backup command and the backup timer of the release, and only when the commit is on `main` (ADR-0018);
-   - then it runs `migrate` with the migration script, and `deploy <commit> <operations commit> <four digests>` (the `deploy-release` action).
+   - then it runs `migrate` with the migration script, and `deploy <commit> <operations commit> <six references>` (the `deploy-release` action): each reference is `ghcr.io/nf-hotel/<name>@sha256:<digest>`, and the name picks the image, so their order does not matter (ADR-0040). A release from before MIL-065 has five references and no socket proxy: its operations commit pins the upstream image of the proxy, so a rollback to it runs that image.
 5. **On the VM**, the deploy command (`ops/scripts/deploy-release.sh`):
    - backs up the database;
    - checks out the release commit in `/opt/nfhotel`, a checkout of `NF-Hotel/NFHotel`, and uses its `ops/` (a checkout of the archived `NF-Hotel/DevOps` is still accepted until the switch of MIL-031 task 6). The application runs from the images, not from this checkout;
@@ -42,7 +44,7 @@ A deploy waits first for S01's approval (ADR-0038): open the run (Actions, NF Ho
 
 ## Roll back
 
-- **To the release before the latest one:** on the VM, run `sudo /usr/local/sbin/nfhotel-deploy rollback`. Running it again switches back to where you came from.
+- **To the release before the latest one:** on the VM, run `sudo /usr/local/sbin/nfhotel-deploy rollback`. Running it again switches back to where you came from. The images of that release are still on the VM: the deploy keeps the images of the two latest releases and removes the older ones (MIL-062), so this rollback pulls nothing.
 - **To any earlier release:** start `NF Hotel CD` by hand (Actions, NF Hotel CD, Run workflow) with the run ID of the `NF Hotel Release` run you want to deploy. It is approved like any other deploy.
 - **To see what is deployed:** `sudo /usr/local/sbin/nfhotel-deploy status` prints the release log (`/var/lib/nfhotel-deploy/releases.log`).
 - **Rollback drill (MIL-021 criterion 6):** start `NF Hotel CD` by hand with `apply` and `rollback_drill` ticked. The run deploys the release, then rolls back to the previous release on purpose, and ends red. The drilled release is not recorded in the release log. Run a normal deploy of the release afterwards.
@@ -106,7 +108,7 @@ S03 and a repository administrator do this once, in this order.
 2. In `/opt/nfhotel`, run `sudo bash ops/scripts/install-deploy-user.sh --apply` (without `--apply` it only shows what it would do). It creates the user `deploy`, the deploy command and its single sudo rule, then prints the Tailscale steps.
 3. Run `sudo tailscale set --ssh`.
 4. On your own machine, create the backup key with `age-keygen -o nfhotel-backup.key`. Keep it offline, and never copy it to the VM.
-5. Prepare the off-VM copy on the backup host, the legion laptop of S03 (decision D7, revised 2026-10-21). The copy is write-only and limited to one folder. The target is the container `ops/deploy/backup-target`; it needs Docker and Tailscale on the laptop.
+5. Prepare the off-VM copy on the backup host, the legion laptop of S03 (decision D7, revised 2026-10-21). The copy is write-only and limited to one folder: the key can add a new file there, but never replace, delete or read back one. The target is the container `ops/deploy/backup-target`; it needs Docker and Tailscale on the laptop.
    - On the VM, create the key for the copy, and show its public half:
 
      ```bash
@@ -174,9 +176,10 @@ S03 and a repository administrator do this once, in this order.
    - `NFHOTEL_VM_HOST` (the tailnet name of the VM, for example `nf-hotel`).
 
    No secret is needed in the environment. The repository has one secret, `SONAR_TOKEN`: an analysis token from SonarQube Cloud (My Account, Security), used with Automatic Analysis turned off in the project (Administration, Analysis Method); renew it before it expires (ADR-0033).
-3. **After the first release, make the packages public (decision D2):**
-   - Packages, each of the four images, Package settings, Change visibility.
-   - Link each package to this repository if it is not linked.
+3. **The packages stay private.** Decision D2 of DSA-001 recommended public packages; S01 chose private ones on 2026-11-08, and the release and the deploy work with that:
+   - CD logs in to GHCR with the job token (`packages: read`) only to verify the attestations of each digest;
+   - the VM pulls the images with a read credential of its own, set up on the VM and never stored in the repository;
+   - link each package to this repository if it is not linked, and before the first CD run that deploys a new image of the release, make sure that the credential of the VM can read its package.
 4. **After PR #22 is merged (decision D5),** edit the ruleset `Approve merges`:
    - require the status checks `Build, tests og sikkerhed`, `Formatering` and `Docker-build`;
    - dismiss stale approvals;
@@ -200,7 +203,7 @@ Phase 2 (MIL-022) adds Trivy, SBOMs, build provenance and its verification befor
 A release goes from the checks of CI straight to production, without a staging environment ([ADR-0026](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0026-no-staging-environment.md), MIL-039). Each production incident of October 2026 came from the state of production itself (file modes, settings, the history of the VM), which a separate staging environment would not have had. Instead:
 
 - **Before the deploy:** every release runs on a throwaway stack in CI with the same images and compose files: the end-to-end tests, the DAST baseline, the log privacy check and the secret check.
-- **During the deploy:** a container that does not turn healthy, a secret in a container's environment, or a failed smoke test fails the deploy and rolls back to the previous release.
+- **During the deploy:** a container that does not turn healthy, a secret in a container's environment, or a failed smoke test fails the deploy and rolls back to the previous release. After a smoke test that passed, the deploy removes the images that no container uses and that are not part of the two latest releases of the release log (`nfhotel-deploy prune`, MIL-062); a failure of that step is a warning, never a rollback.
 - **After the deploy:** the alerts `ApplicationErrors`, `ApplicationSlow` and `ApplicationExceptions` ([Monitoring](Monitoring#service-level-objectives)) catch a release that starts but serves guests badly; then roll back as described under [Roll back](#roll-back).
 
 The decision is taken again when the hotel takes real bookings, when a migration cannot be rolled back, or when the Proxmox node turns out to have room for a staging VM.

@@ -1,8 +1,9 @@
 # The write-only target of the off-VM backup copy (DSA-001 decision D7, ADR-0008,
 # MIL-021 task 7). It runs on the backup host, for example the legion laptop of S03, and
 # accepts one key: the one of root on nf-hotel, restricted by rrsync to writing new
-# files into /backups. It can neither read back nor delete, nor open a shell.
-FROM debian:12-slim@sha256:99c0b25c46d0214d5a2091092e7908907dcaecd6a962cde0ac700acee222b6f3
+# files into /backups. It can neither replace, delete nor read back a file, nor open a shell.
+# Debian 13, because only its rrsync has -no-overwrite (MIL-066 task 1).
+FROM debian:13-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends openssh-server rsync python3 \

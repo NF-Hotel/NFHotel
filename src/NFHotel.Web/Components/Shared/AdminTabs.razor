@@ -12,20 +12,3 @@
         <a class="admin-tab" href="@tab.Href" aria-current="@(IsCurrent(tab) ? "page" : null)">@tab.Label</a>
     }
 </nav>
-
-@code {
-    /// <summary>The tabs, in order.</summary>
-    [Parameter]
-    [EditorRequired]
-    public IReadOnlyList<AdminTab> Tabs { get; set; } = Array.Empty<AdminTab>();
-
-    /// <summary>The name of the area, read out as the label of the tab list.</summary>
-    [Parameter]
-    public string Label { get; set; } = "Pages";
-
-    private bool IsCurrent(AdminTab tab)
-    {
-        var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
-        return Layout.AdminRoutes.IsUnder(path, tab.Href);
-    }
-}

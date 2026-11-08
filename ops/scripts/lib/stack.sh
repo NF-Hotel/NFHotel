@@ -20,6 +20,7 @@ stack_init() {
   STACK_PROXY_NET="$1-proxy"
   STACK_API_NET="$1-api"
   STACK_DB_NET="$1-db"
+  STACK_PYTHON_NET="$1-python"
 }
 
 # stack_native <path>: a native path for the Docker daemon (Git Bash on Windows has cygpath).
@@ -35,6 +36,7 @@ stack_compose() {
   local folder="$1"
   shift
   NFHOTEL_PROXY_NETWORK="$STACK_PROXY_NET" NFHOTEL_API_NETWORK="$STACK_API_NET" NFHOTEL_DB_NETWORK="$STACK_DB_NET" \
+    NFHOTEL_PYTHON_NETWORK="$STACK_PYTHON_NET" \
     docker compose --project-name "$STACK_NAME-$folder" --file "$(stack_native "$STACK_OPS/deploy/$folder/docker-compose.yml")" "$@"
 }
 
@@ -54,13 +56,15 @@ stack_down() {
       ((${#ids[@]} == 0)) || docker volume rm -f "${ids[@]}" >/dev/null
     fi
   done
-  docker network rm "$STACK_PROXY_NET" "$STACK_API_NET" "$STACK_DB_NET" >/dev/null 2>&1 || true
+  docker network rm "$STACK_PROXY_NET" "$STACK_API_NET" "$STACK_DB_NET" "$STACK_PYTHON_NET" >/dev/null 2>&1 || true
 }
 
-# stack_networks: create the networks that are missing; the API and database networks are internal.
+# stack_networks: create the networks that are missing; the API, database and python networks are internal.
+# The python network carries the calls to the Python services (ADR-0039), which the stacks do not run; the
+# compose files of the web application and the API name it, so it must exist.
 stack_networks() {
   local net
-  for net in "$STACK_PROXY_NET" "$STACK_API_NET" "$STACK_DB_NET"; do
+  for net in "$STACK_PROXY_NET" "$STACK_API_NET" "$STACK_DB_NET" "$STACK_PYTHON_NET"; do
     docker network inspect "$net" >/dev/null 2>&1 && continue
     if [[ "$net" == "$STACK_PROXY_NET" ]]; then
       docker network create "$net" >/dev/null
@@ -107,12 +111,6 @@ NGINX_REDIRECT_PORT=
 NGINX_HSTS=
 UPSTREAM_HOST=nfhotel-web
 UPSTREAM_PORT=8080
-ANALYSIS_SERVER_NAME=analysis.localhost
-ANALYSIS_UPSTREAM_HOST=market-analysis-notebook
-ANALYSIS_UPSTREAM_PORT=2718
-ANALYSIS_API_SERVER_NAME=analysis-api.localhost
-ANALYSIS_API_UPSTREAM_HOST=market-analysis-api
-ANALYSIS_API_UPSTREAM_PORT=8000
 EOF
   )
   bash "$STACK_OPS/scripts/make-dev-certificate.sh" "$settings/tls" nginx >/dev/null ||
@@ -120,9 +118,9 @@ EOF
 }
 
 # stack_start <settings folder> <app dir> [<nginx compose arguments...>]: split the settings into secret
-# files, build the API and the web application from <app dir>, and start the four services, each waiting
-# for its health check. The arguments after <app dir> go to compose for nginx (extra --file overrides, as
-# native paths: stack_native).
+# files, build the API and the web application from <app dir> and the proxy from deploy/nginx
+# (ADR-0040), and start the four services, each waiting for its health check. The arguments after
+# <app dir> go to compose for nginx (extra --file overrides, as native paths: stack_native).
 stack_start() {
   local settings="$1" app_dir="$2" service native_settings
   shift 2
@@ -139,6 +137,7 @@ stack_start() {
   export NFHOTEL_API_ENV_FILE="$native_settings/api/settings.env" NFHOTEL_API_SECRETS="$native_settings/api"
   export NFHOTEL_WEB_ENV_FILE="$native_settings/web/settings.env" NFHOTEL_WEB_SECRETS="$native_settings/web"
   export NFHOTEL_APP_DIR NFHOTEL_APP_SHA NFHOTEL_WEB_IMAGE="$STACK_NAME-web:local" NFHOTEL_API_IMAGE="$STACK_NAME-api:local"
+  export NFHOTEL_NGINX_IMAGE="$STACK_NAME-nginx:local"
   NFHOTEL_APP_DIR="$(stack_native "$(cd "$app_dir" && pwd)")"
   NFHOTEL_APP_SHA="$(git -C "$app_dir" rev-parse HEAD 2>/dev/null || echo unknown)"
 
@@ -152,9 +151,9 @@ stack_start() {
   echo "==> building and starting the web application"
   stack_compose nfhotel-web up --detach --build --wait --wait-timeout 240 ||
     die "the web application did not become healthy"
-  echo "==> starting nginx (TLS with a development certificate)"
+  echo "==> building and starting nginx (TLS with a development certificate)"
   NGINX_ENV_FILE="$native_settings/nginx.env" NGINX_TLS_DIR="$native_settings/tls" \
-    stack_compose nginx "$@" up --detach --wait --wait-timeout 60 >/dev/null ||
+    stack_compose nginx "$@" up --detach --build --wait --wait-timeout 60 >/dev/null ||
     die "nginx did not start"
 }
 

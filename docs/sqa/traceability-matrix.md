@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | Added MIL-048 (gate review RC-285, Go-with-conditions) and ADR-0034 with their review records, missing since 2026-10-28 | [e58a634] |
-| 2026-11-05 | Proposed | Claude (AI) | S01 | The row of MIL-056: gate passed (RC-286, Go) after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding | [bb59aa4] |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-067 and of its code at the gate: deployed by CD run 42498483148, the condition of RC-311 met, gate passed (RC-312, Go) | [a6f0dec] |
+| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-066 and of its code at the gate: deployed by CD run 42498483148, on the monitoring container and on the backup host, the condition of RC-308 met and the check of the settings guard added, gate passed (RC-313, Go) | [4bc8c6d] |
 
 ---
 
@@ -44,7 +44,7 @@ updated whenever an artifact instance is created or reviewed.
 | [DSA-001] | CI/CD and DevSecOps Assessment (no catalog type) | en | it | [BC-001], [ADR-0003], [ADR-0006] | [ADR-0007], [ADR-0008], [ADR-0009], [MIL-021], [MIL-022], [MIL-023] | - (no checklist; decisions approved in chat) |
 | [MIL-021] | Milestone | en | it | [BC-001], [DSA-001], [ADR-0007], [ADR-0008], [ADR-0010] | [MIL-022] | [RC-089], [RC-094], [RC-095], [RC-097] |
 | [MIL-022] | Milestone | en | it | [BC-001], [MIL-021] | [MIL-023] | [RC-090] |
-| [MIL-023] | Milestone (Accepted; tasks 6 and 11 open at the gate) | en | it | [BC-001], [MIL-022], [ADR-0020] | CIS-001, SAMM-001, DORA-001, the host hardening and the firewall of `ops/deploy/host`, the monitoring stack and Alloy of `ops/deploy/monitoring` and `ops/deploy/alloy`, the wiki pages Host-Hardening, Monitoring and Alerts | [RC-091], [RC-169], [RC-172], [RC-176], [RC-177], [RC-179], [RC-189], [RC-191], [RC-192], [RC-193], [RC-244], [RC-505] (drill 1), [RC-284] (drill 2) |
+| [MIL-023] | Milestone (Accepted, Go; gate passed 2026-11-05, RC-294) | en | it | [BC-001], [MIL-022], [ADR-0020] | CIS-001, SAMM-001, DORA-001, the host hardening and the firewall of `ops/deploy/host`, the monitoring stack and Alloy of `ops/deploy/monitoring` and `ops/deploy/alloy`, the wiki pages Host-Hardening, Monitoring and Alerts | [RC-091], [RC-169], [RC-172], [RC-176], [RC-177], [RC-179], [RC-189], [RC-191], [RC-192], [RC-193], [RC-244], [RC-505] (drill 1), [RC-284] (drill 2), [RC-294] (gate) |
 | [ADR-0007] | ADR (Accepted, amended by ADR-0019, ADR-0021 and ADR-0038) | en | it | [BC-001], [DSA-001], [ADR-0003] | [MIL-021], [MIL-022], [ADR-0038] | [RC-092], [RC-281] |
 | [ADR-0008] | ADR | en | it | [BC-001], [DSA-001], [ADR-0004] | [MIL-021], [MIL-022] | [RC-093] |
 | [ADR-0009] | ADR | en | it | [ADR-0006], [DSA-001] | [MIL-021], [MIL-023] | [RC-096] |
@@ -79,11 +79,27 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0038] | ADR (Accepted) | - | - | [ADR-0021], [ADR-0019], [ADR-0007], [ADR-0018], [SAR-001], [MIL-021], [SA-001] | the header of `.github/workflows/cd.yaml`, the wiki pages CI-CD, Security-Controls, Workflows, DevOps-Lifecycle and Technology-Choices, the required reviewer of the environment `production` | [RC-281] |
 | [MIL-060] | Milestone (Accepted, Go) | en | it | [BC-001], [ADR-0038], [MIL-022], [MIL-044] | `docs/wiki/CI-CD.md` (the section "Dependency updates"), the code below | [RC-282] |
 | The code of MIL-060: `src/NFHotel.Web/NFHotel.Web.csproj` and `src/NFHotel.Web/packages.lock.json` (the commit of Dependabot from pull request #489) and `tests/NFHotel.Web.Tests/packages.lock.json` (three lines) | Project file and lock files (built, not yet merged) | - | - | [MIL-060] task 1 | - | [RC-282] (the evidence of criteria 1 and 2) |
+| [MIL-061] | Milestone (Accepted, Go; gate passed 2026-11-05, RC-289) | en | it | [BC-001], [ADR-0004], [ADR-0006], ADR-0015, ADR-0028, [ADR-0038], MIL-015, MIL-020, [MIL-026] | ADR-0039, the network `nfhotel-python` in `ops/scripts/deploy-services.sh` and `ops/scripts/lib/stack.sh`, the compose files of the web application, the API, the market analysis and the benchmark, nginx without the listener on 8081, `ops/tests/test-service-networks.sh` and its Ops CI job, the wiki pages Network Isolation, Containers and Images, Environment Files and Proxmox Deployment | [RC-287], [RC-288] (the code), [RC-289] (the gate) |
+| [ADR-0039] | ADR (Accepted) | - | - | [MIL-061], [ADR-0003], [ADR-0004], [ADR-0006], ADR-0015, ADR-0028 | the network `nfhotel-python` in `ops/scripts` and `ops/deploy`, nginx without the listener on 8081, `ops/tests/test-service-networks.sh` | [RC-288] |
+| The code of MIL-061: `ops/scripts/deploy-services.sh`, `ops/scripts/lib/stack.sh`, the compose files and settings examples of `ops/deploy/nfhotel-web`, `nfhotel-api`, `market-analysis`, `benchmark` and `nginx`, `ops/tests/test-service-networks.sh` with its job in `.github/workflows/ops-ci.yaml`, and the tests that follow the move | Shell, compose and workflow files (deployed on `nf-hotel` by CD run 42066748612 on 2026-11-05) | - | - | [MIL-061] tasks 2 to 5 | - | [RC-288], [RC-289] |
+| [MIL-062] | Milestone (Accepted, Go; gate passed 2026-11-05, RC-293) | en | it | [BC-001], [ADR-0018], [ADR-0021], [ADR-0038], [MIL-021], [MIL-023] | the command `prune` of `ops/scripts/deploy-release.sh`, its tests in `ops/tests/test-deploy-release.sh`, the wiki pages Alerts, CI-CD and Proxmox Deployment | [RC-290], [RC-291] (the code), [RC-293] (the gate) |
+| The code of MIL-062: the command `prune` of `ops/scripts/deploy-release.sh` and its nine checks in `ops/tests/test-deploy-release.sh` | Shell (deployed on `nf-hotel` by CD run 42078898723 on 2026-11-05, which removed 352 images) | - | - | [MIL-062] tasks 1 and 2 | - | [RC-291], [RC-293] |
+| [MIL-063] | Milestone (Accepted, Go; gate passed 2026-11-05, RC-297) | en | it | [BC-001], [ADR-0007], [ADR-0021], [ADR-0038], [MIL-021] | the wait for port 22 in `scope` of `ops/scripts/cd-steps.sh`, its tests in `ops/tests/test-cd-steps.sh`, the "Does" row of the CD workflow on the wiki page Workflows | [RC-295], [RC-296] (the code), [RC-297] (the gate) |
+| The code of MIL-063: `wait_reach` and the wait in `scope` of `ops/scripts/cd-steps.sh`, and its checks in `ops/tests/test-cd-steps.sh` | Shell (run by CD run 42103015481 on 2026-11-05: "answers (after 0 s)") | - | - | [MIL-063] tasks 1 and 2 | - | [RC-296], [RC-297] |
+| [MIL-064] | Milestone (Accepted, Go; plan reviewed 2026-11-08, RC-298; task 1 done 2026-11-08: ADR-0040, RC-299; tasks 2 to 7 done and reviewed 2026-11-08, RC-300; deployed 2026-11-08 by CD run 42442894208; gate passed 2026-11-08, RC-303, after RC-302 Go-with-conditions) | en | it | [BC-001], [ADR-0007], [ADR-0030], [ADR-0038], [MIL-022], [MIL-036], [MIL-059] | [ADR-0040]; the patched image `nfhotel-nginx` in the release and its deploy by name (`ops/deploy/nginx/Dockerfile`, `ops/scripts/build-release-images.sh`, `ops/scripts/cd-steps.sh`, `ops/scripts/deploy-release.sh`); the daily scan of the pinned third-party images (`ops/scripts/scan-running-release.sh`, `ops/scripts/running-image-scan-steps.sh`); seven wiki pages; the follow-up [MIL-065] for the other third-party images | [RC-298], [RC-300] (the code), [RC-302] (the gate, Go-with-conditions), [RC-303] (the re-review, Go) |
+| The code of MIL-064: `ops/deploy/nginx/Dockerfile`, the fifth image in `ops/scripts/build-release-images.sh` and `.github/actions/release-images/action.yml`, the references by name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, the scan of the third-party images in `ops/scripts/scan-running-release.sh`, `ops/scripts/running-image-scan-steps.sh` and `.github/workflows/running-image-scan.yaml`, and their tests | Shell, GitHub Actions, Dockerfile (deployed 2026-11-08 by CD run 42442894208; the daily scan run 42443407440 covers the third-party images) | - | - | [MIL-064] tasks 2 to 6, [ADR-0040] | - | [RC-300], [RC-302] |
+| [MIL-065] | Milestone (Accepted, Go; plan reviewed 2026-11-08, RC-301 Go-with-conditions; accepted by S01 in chat the same day with the tag check and decision D2, RC-304; deployed 2026-11-08 by CD run 42478558104 and on the monitoring container; gate passed 2026-11-08, RC-307) | en | it | [BC-001], [DSA-001], [ADR-0007], [ADR-0038], [ADR-0040], [MIL-022], [MIL-036], [MIL-064] | planned: the pins of tasks 1 to 11 in the compose files of `ops/deploy`, the patched socket proxy `nfhotel-socket-proxy` from the release, ignore entries in `ops/security/trivyignore.yaml` narrowed to the third-party images, four wiki pages and the tag check of `test-wiki-coverage.sh`, decision D2 in section 15 of DSA-001 | [RC-301], [RC-304], [RC-307] |
+| The code of MIL-065: the pins of the compose files of `ops/deploy`, the ignore entries of `ops/security/trivyignore.yaml`, `ops/deploy/alloy/socket-proxy/Dockerfile`, the sixth image in `ops/scripts/build-release-images.sh` and `.github/actions/release-images/action.yml`, the sixth name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, `--no-build` in `ops/scripts/deploy-services.sh`, the tag check of `ops/tests/test-wiki-coverage.sh`, and their tests | Shell, GitHub Actions, Dockerfile, YAML (reviewed 2026-11-08, Go after S01 approved the risk exceptions in chat) | - | - | [MIL-065] tasks 1 to 13, [ADR-0040], [DSA-001] | - | [RC-305] |
+| [MIL-066] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-08, RC-306; deployed 2026-11-08 by CD run 42498483148, on the monitoring container and on the backup host; gate passed 2026-11-08, RC-313) | en | it | [BC-001], [DSA-001], [ADR-0008], [ADR-0011], ADR-0025, [ADR-0034], [ADR-0038], [MIL-021], [MIL-022], MIL-027, MIL-037, [MIL-044], [MIL-065] | planned: the backup target on Debian 13 with `rrsync -wo -no-del -no-overwrite`, the copy off the VM without `--partial`, a settings archive that is complete or fails, the migration history read-only for `nfhotel_app`, the ignore check of `scan-gate.sh`, the ZAP rules renewed before 2026-11-25, the versions, the retention of Prometheus in its configuration file, and the rebuild runbook in the tested order | [RC-306], [RC-313] |
+| The code of MIL-066: the backup target in `ops/deploy/backup-target`, the copy and the settings archive of `ops/scripts/backup-database.sh`, the rights on the migration history in `ops/scripts/db/roles.sql`, `ops/scripts/deploy-release.sh` and `ops/scripts/verify-database.sh`, the format check of `ops/scripts/scan-gate.sh`, the retention in `ops/deploy/monitoring/prometheus/prometheus.yml`, the versions of the CD, scan and build tools, the Debian release of `ops/scripts/create-docker-vm.sh`, the section "Rebuild the VM" of the wiki page Disaster-Recovery, and their tests | Shell, SQL, GitHub Actions, Dockerfile, YAML (reviewed 2026-11-08, Go-with-conditions; the condition met on #587, and the check of the settings guard added at the gate, RC-313) | - | - | [MIL-066] tasks 1 to 6, 8 and 9, [ADR-0008], [ADR-0011], [DSA-001] | - | [RC-308], [RC-313] |
+| [MIL-067] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-08, RC-309; task 7 accepted by the AI as stand-in for S01 at S01's request, RC-310; deployed 2026-11-08 by CD run 42498483148; gate passed 2026-11-08, RC-312) | en | it | [BC-001], [US-001], UC-004, UC-005, [DSA-001], [ADR-0038], MIL-027, [MIL-044], [MIL-066] | planned: the guests of the booking page and the run of the benchmark page read as text, a test that refuses a typed query parameter in `NFHotel.Web`, and a login form and a change-password form that never write a posted password back | [RC-309], [RC-310], [RC-312] |
+| The code of MIL-067: the guests of `Book.razor.cs` and `BookingFlowViewModel.Prefill`, the run of `BenchmarkStart.razor.cs`, the passwords of `Login.razor` and `ChangePassword.razor` with their code-behind files, and their tests | C#, Razor (reviewed 2026-11-08, Go-with-conditions; the condition met on #596, RC-312) | - | - | [MIL-067] tasks 1 to 4 and 7, UC-004, UC-005 | - | [RC-311], [RC-312] |
+| [ADR-0040] | ADR (Accepted) | - | - | [MIL-064], [ADR-0007], [ADR-0030], [MIL-022], [MIL-036], [MIL-059] | the patch layer of the proxy in `ops/deploy/nginx/Dockerfile` and its entry in `ops/scripts/build-release-images.sh`, the release references by name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, the `docker` entry of `.github/dependabot.yml` (MIL-064 tasks 2 to 7, RC-300) | [RC-299], [RC-300] (the code) |
 | [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
 | [ADR-0031] | ADR (Accepted; decisions 2 and 3 added 2026-10-26) | - | - | ADR-0005, ADR-0013, [ADR-0004], ADR-0024, MIL-020, MIL-043 | the sign-in keys and the benchmark run tracker of `src/NFHotel.Web`, [MIL-046] | [RC-227], [RC-239] |
 | [MIL-056] | Milestone (Accepted, Go; gate passed 2026-11-05 after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding) | en | it | [BC-001], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | [ADR-0035], `scripts/dev-up.sh --lite`, `ops/scripts/lib/`, the Ops CI test and the macOS job, the wiki page Local Development Deploy | [RC-271], [RC-272], [RC-286] |
 | [ADR-0035] | ADR (Accepted) | - | - | [MIL-056], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | the light mode of `scripts/dev-up.sh` | [RC-273] |
-| [MIL-048] | Milestone (Accepted, Go; tasks 4 and 6 open: the Tailscale grant and the people of the team) | en | it | [BC-001], [ADR-0011], [ADR-0034], [MIL-023], CIS-001, [DSA-001] | [ADR-0034], `ops/scripts/db/team-roles.sql`, `ops/scripts/manage-team-db-users.sh`, `ops/deploy/postgres-tailnet/`, the rule for 5432 in `nfhotel.nft`, the wiki page Database-Access | [RC-245], [RC-247], [RC-285] (Go-with-conditions) |
+| [MIL-048] | Milestone (Accepted, Go; gate passed 2026-11-05, RC-292, after RC-285 Go-with-conditions) | en | it | [BC-001], [ADR-0011], [ADR-0034], [MIL-023], CIS-001, [DSA-001] | [ADR-0034], `ops/scripts/db/team-roles.sql`, `ops/scripts/manage-team-db-users.sh`, `ops/deploy/postgres-tailnet/`, the rule for 5432 in `nfhotel.nft`, the wiki page Database-Access | [RC-245], [RC-247], [RC-285] (Go-with-conditions), [RC-292] (the re-review, Go) |
 | [ADR-0034] | ADR (Accepted) | - | - | [MIL-048], [ADR-0011], ADR-0024, CIS-001, [DSA-001] | the team roles, the relay on the tailnet and the firewall rule of MIL-048 | [RC-247] |
 | [UC-007] | Use Case (Accepted) | en | it | [UCD-001], [US-001], [SA-001], [MIL-055] | [DM-004], [DICT-001], code and tests below | [RC-264] (Go with conditions) |
 | `docs/wiki/Price-Suggestions.md` | Wiki page (Proposed) | en | - | [MIL-055] task 10, [US-001], [UC-007] | - | - (not yet reviewed) |
@@ -178,6 +194,7 @@ updated whenever an artifact instance is created or reviewed.
 [DSA-001]: ./devsecops-assessment.md
 [MIL-021]: ../milestones/mil-021-secure-cicd-foundation.md
 [MIL-022]: ../milestones/mil-022-supply-chain-security.md
+[MIL-036]: ../milestones/mil-036-security-operations.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
 [ADR-0004]: ../adr/adr-0004-database-api.md
 [ADR-0006]: ../adr/adr-0006-tls.md
@@ -237,11 +254,20 @@ updated whenever an artifact instance is created or reviewed.
 [RC-167]: ./reviews/rc-167-adr-0019.md
 [ADR-0018]: ../adr/adr-0018-deploy-command-updates-itself.md
 [ADR-0038]: ../adr/adr-0038-approval-before-a-deploy.md
+[ADR-0039]: ../adr/adr-0039-python-services-network.md
 [QC-ADR-001]: ../../framework/qc/artifacts/qc-adr.md
 [QC-WF-001]: ../../framework/qc/code/qc-workflow.md
 [QC-YML-001]: ../../framework/qc/code/qc-yaml.md
 [QC-SH-001]: ../../framework/qc/code/qc-programming-shell.md
 [MIL-060]: ../milestones/mil-060-dependabot-nuget-lock-files.md
+[MIL-061]: ../milestones/mil-061-python-services-network.md
+[MIL-062]: ../milestones/mil-062-prune-old-release-images.md
+[MIL-063]: ../milestones/mil-063-cd-scope-waits-for-the-tailnet.md
+[MIL-064]: ../milestones/mil-064-patched-nginx-and-third-party-scan.md
+[MIL-065]: ../milestones/mil-065-third-party-image-remedies.md
+[MIL-066]: ../milestones/mil-066-findings-of-7-november.md
+[MIL-067]: ../milestones/mil-067-bad-input-on-the-web-pages.md
+[ADR-0040]: ../adr/adr-0040-patched-nginx-image-from-the-release.md
 [RC-282]: ./reviews/rc-282-mil-060.md
 [MIL-046]: ../milestones/mil-046-finished-run-not-interrupted.md
 [ADR-0031]: ../adr/adr-0031-state-that-survives-a-deploy.md
@@ -253,6 +279,33 @@ updated whenever an artifact instance is created or reviewed.
 [RC-271]: ./reviews/rc-271-mil-056-dev-stack-without-kvm.md
 [RC-272]: ./reviews/rc-272-mil-056-code.md
 [RC-286]: ./reviews/rc-286-mil-056-gate.md
+[RC-294]: ./reviews/rc-294-mil-023-gate.md
+[RC-295]: ./reviews/rc-295-mil-063.md
+[RC-296]: ./reviews/rc-296-mil-063-code.md
+[RC-297]: ./reviews/rc-297-mil-063-gate.md
+[RC-298]: ./reviews/rc-298-mil-064.md
+[RC-299]: ./reviews/rc-299-adr-0040.md
+[RC-300]: ./reviews/rc-300-mil-064-code.md
+[RC-301]: ./reviews/rc-301-mil-065.md
+[RC-304]: ./reviews/rc-304-mil-065-acceptance.md
+[RC-305]: ./reviews/rc-305-mil-065-code.md
+[RC-306]: ./reviews/rc-306-mil-066.md
+[RC-307]: ./reviews/rc-307-mil-065-gate.md
+[RC-308]: ./reviews/rc-308-mil-066-code.md
+[RC-309]: ./reviews/rc-309-mil-067.md
+[RC-310]: ./reviews/rc-310-mil-067-task-7.md
+[RC-311]: ./reviews/rc-311-mil-067-code.md
+[RC-312]: ./reviews/rc-312-mil-067-gate.md
+[RC-313]: ./reviews/rc-313-mil-066-gate.md
+[RC-302]: ./reviews/rc-302-mil-064-gate.md
+[RC-303]: ./reviews/rc-303-mil-064-gate-re-review.md
+[RC-287]: ./reviews/rc-287-mil-061.md
+[RC-288]: ./reviews/rc-288-mil-061-code.md
+[RC-289]: ./reviews/rc-289-mil-061-gate.md
+[RC-290]: ./reviews/rc-290-mil-062.md
+[RC-291]: ./reviews/rc-291-mil-062-code.md
+[RC-292]: ./reviews/rc-292-mil-048-gate-re-review.md
+[RC-293]: ./reviews/rc-293-mil-062-gate.md
 [RC-273]: ./reviews/rc-273-adr-0035.md
 [RC-283]: ./reviews/rc-283-mil-046-gate.md
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
@@ -270,8 +323,9 @@ updated whenever an artifact instance is created or reviewed.
 [RC-284]: ./reviews/rc-284-restore-drill-2026-11-05.md
 [MIL-048]: ../milestones/mil-048-team-database-access.md
 [ADR-0034]: ../adr/adr-0034-team-database-access.md
+[ADR-0030]: ../adr/adr-0030-patch-layer-on-frozen-market-analysis-image.md
 [RC-245]: ./reviews/rc-245-mil-048-plan.md
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
-[e58a634]: https://github.com/NF-Hotel/NFHotel/commit/e58a6341cf1d489e7256b297eb9764d1ecb56332
-[bb59aa4]: https://github.com/NF-Hotel/NFHotel/commit/bb59aa4cca8d7d5974d76174bfc69283d3559aac
+[a6f0dec]: https://github.com/NF-Hotel/NFHotel/commit/a6f0dec4b0a066af5c4a5b3357834cd28fba6762
+[4bc8c6d]: https://github.com/NF-Hotel/NFHotel/commit/4bc8c6d4d33a485ce4a6e1ee6d5f8a624a19d81e

@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-22 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; the stack was chosen by S01 in chat on 2026-10-22, accepted after RC-168 Go | [2b09b0b] |
-| 2026-10-23 | Accepted | mikemike | AI as stand-in for S01 | Consequences: how Alloy reaches Docker, as built and tested; accepted after RC-185 Go | [4ff81cc] |
+| 2026-10-23 | Deprecated | mikemike | AI as stand-in for S01 | Consequences: how Alloy reaches Docker, as built and tested; accepted after RC-185 Go | [4ff81cc] |
+| 2026-11-05 | Accepted | Claude (AI) | AI as stand-in for S01 | Consequences, "What is collected": the container metric is the health series of `report-health.sh` through the text-file collector of the node exporter, not a cAdvisor exporter, as found at the MIL-023 gate and accepted by S01 in chat on 2026-11-05 ("OK"); accepted after RC-294 Go | [803ceae] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -79,7 +79,7 @@ We follow option 1. Production is watched by Prometheus, Alertmanager, Grafana, 
 
    Its address and size are recorded in the wiki page Proxmox Deployment.
 2. **What is collected.**
-   - **Alloy** runs on `nf-hotel` (`ops/deploy/alloy/`). It sends the logs of every container and of the systemd units to Loki. It also sends the host metrics and the container metrics (its built-in node and cAdvisor exporters) to Prometheus.
+   - **Alloy** runs on `nf-hotel` (`ops/deploy/alloy/`). It sends the logs of every container and of the systemd units to Loki. It also sends the host metrics (its built-in node exporter) to Prometheus, and with them the container metric `nfhotel_container_healthy`, one series per container, which `ops/scripts/report-health.sh` writes every minute into the text-file directory the node exporter reads. There is no cAdvisor exporter: the per-container CPU and memory series were never built, and the health series is what the alert rules use (corrected at the MIL-023 gate, RC-294).
    - **blackbox_exporter** checks over the tailnet:
      - the HTTPS pages, the redirect on port 80 and the API health;
      - the days left on the certificate.
@@ -137,5 +137,5 @@ We follow option 1. Production is watched by Prometheus, Alertmanager, Grafana, 
 [ADR-0010]: ./adr-0010-production-vm-as-deployed.md
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
-[2b09b0b]: https://github.com/NF-Hotel/NFHotel/commit/2b09b0bffdff14a310d4a5dcac10d719d11dd7b5
 [4ff81cc]: https://github.com/NF-Hotel/NFHotel/commit/4ff81ccd0f1d43a160f2f45d72845e942cf5728e
+[803ceae]: https://github.com/NF-Hotel/NFHotel/commit/803ceae78c9552d30230894be4f86c724a730859

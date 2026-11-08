@@ -8,7 +8,15 @@ name: nfhotel-nginx
 
 services:
   nginx:
-    image: nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+    # The patched image of the release (ADR-0040): CD sets NFHOTEL_NGINX_IMAGE to the digest
+    # that the release scanned. Without it, compose builds the Dockerfile here, as the
+    # development, end-to-end and DAST stacks do.
+    image: ${NFHOTEL_NGINX_IMAGE:-nfhotel-nginx:local}
+    build:
+      context: .
+      labels:
+        org.opencontainers.image.source: https://github.com/NF-Hotel/NFHotel
+        org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
     restart: unless-stopped
     env_file: ${NGINX_ENV_FILE:-nginx.env}
     environment:
@@ -39,12 +47,11 @@ services:
       retries: 6
       start_period: 5s
     ports:
-      # Public: only the NFHotel web application is served here: port 80 only redirects
-      # to HTTPS, port 443 serves it over TLS (MIL-017). Internal: the market analysis
-      # notebook and API, on the loopback of the host only; reach them with an SSH tunnel.
+      # Only the NFHotel web application is served here: port 80 only redirects to HTTPS,
+      # port 443 serves it over TLS (MIL-017). The Python services have no route through the
+      # proxy (ADR-0039).
       - "${NGINX_BIND:-0.0.0.0}:${NGINX_HTTP_PORT:-8080}:80"
       - "${NGINX_BIND:-0.0.0.0}:${NGINX_HTTPS_PORT:-8443}:443"
-      - "127.0.0.1:${NGINX_INTERNAL_PORT:-8081}:8081"
     volumes:
       - ./templates:/etc/nginx/templates:ro
       - ./snippets:/etc/nginx/snippets:ro

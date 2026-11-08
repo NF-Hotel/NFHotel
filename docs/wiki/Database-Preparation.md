@@ -32,7 +32,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | `nfhotel_owner` | no | own the schema objects | nobody directly (reached with `SET ROLE`) |
 | `nfhotel_migrator` | yes | `SET ROLE nfhotel_owner`, then change the schema | the migration step of CD |
-| `nfhotel_app` | yes | read and write rows | the API at run time |
+| `nfhotel_app` | yes | read and write rows; only read the migration history (`__EFMigrationsHistory`) | the API at run time |
 | `nfhotel_backup` | yes | read everything (`pg_read_all_data`) | `nfhotel-backup` |
 | superuser of the image | yes | everything | S03 only, break-glass |
 
