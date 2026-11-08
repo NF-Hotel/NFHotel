@@ -15,7 +15,7 @@ set -uo pipefail
 }
 sha="$1"
 registry="${2:-ghcr.io/nf-hotel}"
-readonly NAMES=(nfhotel-web nfhotel-api market-analysis benchmark nfhotel-nginx)
+readonly NAMES=(nfhotel-web nfhotel-api market-analysis benchmark nfhotel-nginx nfhotel-socket-proxy)
 failures=0
 
 for name in "${NAMES[@]}"; do

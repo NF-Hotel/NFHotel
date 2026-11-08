@@ -7,6 +7,282 @@
 #   vulnerabilities:
 #     - id: CVE-2026-12345
 #       paths: ["usr/lib/libexample.so"]   # optional, narrows the entry
-#       statement: Not reachable: the service never parses untrusted archives.
+#       statement: "Not reachable: the service never parses untrusted archives."
 #       expired_at: 2026-11-19
-vulnerabilities: []
+#
+# An entry without paths or purls applies to every image that the file scans, the release images
+# of NF Hotel included. An entry for a third-party image therefore names its files (paths: the
+# Target of a Go binary in the report, exact or with *) or its packages (purls: the package URL of
+# an OS or a Python package, with or without its version), which Trivy 0.75.0 honours (MIL-065,
+# checked on 2026-11-08). The statement begins with what the check found: "Not in the binary" (the
+# affected package is not compiled into it), "Not used" (the file or the library never runs in the
+# container) or "Accepted" (it runs, and the statement says why the risk is taken until the expiry).
+# The daily scan reports a finding again once its entry has run out (MIL-036).
+# Each statement stays on one line, which scan-gate.sh --check-ignore reads, so the line length
+# of yamllint does not apply to this file. A statement with ": " in it is in double quotes, as
+# YAML requires: Trivy cannot parse the file otherwise, and --check-ignore refuses it with the
+# line number (MIL-066 task 5).
+# yamllint disable rule:line-length
+vulnerabilities:
+  # golang.org/x/net before 0.62.0 (MIL-065 tasks 2, 3, 5 to 10): the HTML parser of the finding is not in these binaries
+  - id: CVE-2026-78661
+    paths:
+      - usr/bin/ollama
+      - usr/local/bin/cloudflared
+      - usr/bin/alloy
+      - bin/prometheus
+      - bin/promtool
+      - bin/alertmanager
+      - bin/amtool
+      - bin/blackbox_exporter
+      - usr/bin/loki
+      - usr/share/grafana/data/plugins-bundled/cloudwatch/gpx_grafana_cloudwatch_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/elasticsearch/gpx_grafana_elasticsearch_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/grafana-postgresql-datasource/gpx_grafana_postgresql_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/grafana-pyroscope-datasource/gpx_grafana-pyroscope-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/influxdb/gpx_grafana_influxdb_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/jaeger/gpx_grafana-jaeger-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/loki/gpx_grafana-loki-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/mssql/gpx_grafana-mssql-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/mysql/gpx_grafana-mysql-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/opentsdb/gpx_grafana-opentsdb-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/prometheus/gpx_grafana-prometheus-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/stackdriver/gpx_grafana_cloudmonitoring_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/tempo/gpx_grafana-tempo-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/zipkin/gpx_grafana-zipkin-datasource_linux_amd64
+    statement: "Not in the binary: the finding is in the HTML parser golang.org/x/net/html (addText, fosterParent), which has no function in these binaries; they use other packages of golang.org/x/net, and Alloy has only the init function of html for html/charset (function names, 2026-11-08). No release of these images has x/net 0.62.0 yet."
+    expired_at: 2026-12-08
+  # The Grafana server parses HTML with golang.org/x/net/html (MIL-065 task 10)
+  - id: CVE-2026-78661
+    paths:
+      - usr/share/grafana/bin/grafana
+    statement: "Accepted: the Grafana 13.3.0 server has the HTML parser of golang.org/x/net/html. Grafana is the monitoring user interface, reached only on the tailnet address of the monitoring container after a login, with sign-up off; a denial of service stops the dashboards, not the hotel. 13.3.0 is the newest release (2026-11-08)."
+    expired_at: 2026-12-08
+  - id: CVE-2025-61726
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (net/url): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2025-61729
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (crypto/x509): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2025-68121
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (crypto/tls): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-111943
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (crypto/x509): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-25679
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (net/url): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-27145
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (crypto/x509): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-32280
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (crypto/x509): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-32281
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (crypto/x509): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-32283
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (crypto/tls): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-33811
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (net): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-33814
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (net/http/internal/http2): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-33818
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (encoding/asn1): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-39820
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (net/mail): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-39821
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (golang.org/x/net/idna): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-39822
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (os.Root): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-39836
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (net): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-42499
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (net/mail): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-42504
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (mime): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-56853
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (net/http): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-56858
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (html/template): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-56859
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (encoding/xml): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-56860
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (net/url): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-56862
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (crypto/tls): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  # net/http before Go 1.26.9 (MIL-065 tasks 1 and 10): the Range parsing of the finding is in none of these binaries
+  - id: CVE-2026-78667
+    paths:
+      - usr/local/bin/gosu
+      - usr/share/grafana/data/plugins-bundled/cloudwatch/gpx_grafana_cloudwatch_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/grafana-postgresql-datasource/gpx_grafana_postgresql_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/influxdb/gpx_grafana_influxdb_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/jaeger/gpx_grafana-jaeger-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/loki/gpx_grafana-loki-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/mssql/gpx_grafana-mssql-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/mysql/gpx_grafana-mysql-datasource_linux_amd64
+    statement: "Not in the binary: the finding is in the Range parsing of net/http (ServeContent, ServeFile, FileServer). gosu 1.19 in postgres:16-alpine has no function of net/http, and the bundled data source plugins of Grafana 13.3.0 have no ServeContent or parseRange (function names, 2026-11-08). No release of the images has a newer Go yet."
+    expired_at: 2026-12-08
+  - id: CVE-2026-78669
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (net/http): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  - id: CVE-2026-97031
+    paths:
+      - usr/local/bin/gosu
+    statement: "Not in the binary (crypto/tls): gosu 1.19 in postgres:16-alpine is built with Go 1.24.6 and has functions of os, syscall and github.com/moby/sys/user only: no function of net, net/http, net/url, net/mail, mime, crypto/tls, crypto/x509, encoding/asn1, encoding/xml, html/template or os.Root (its function names, 2026-11-08). The entry point execs it once to start the server as postgres. No build of the tag has a newer gosu."
+    expired_at: 2026-12-08
+  # The bundled data source plugins of Grafana 13.3.0 (MIL-065 task 10)
+  - id: CVE-2026-111943
+    paths:
+      - usr/share/grafana/data/plugins-bundled/cloudwatch/gpx_grafana_cloudwatch_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/grafana-postgresql-datasource/gpx_grafana_postgresql_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/influxdb/gpx_grafana_influxdb_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/jaeger/gpx_grafana-jaeger-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/loki/gpx_grafana-loki-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/mssql/gpx_grafana-mssql-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/mysql/gpx_grafana-mysql-datasource_linux_amd64
+    statement: "Accepted: a denylist of certificates in crypto/x509 for TLS clients. Grafana provisions only the Prometheus and Loki data sources, over plain HTTP inside the monitoring network, and is reached only on the tailnet address of the monitoring container after a login; 13.3.0 is the newest release (2026-11-08). No provisioned data source uses TLS, so these plugins verify no certificate."
+    expired_at: 2026-12-08
+  - id: CVE-2026-78669
+    paths:
+      - usr/share/grafana/data/plugins-bundled/cloudwatch/gpx_grafana_cloudwatch_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/grafana-postgresql-datasource/gpx_grafana_postgresql_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/grafana-pyroscope-datasource/gpx_grafana-pyroscope-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/influxdb/gpx_grafana_influxdb_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/jaeger/gpx_grafana-jaeger-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/loki/gpx_grafana-loki-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/mssql/gpx_grafana-mssql-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/mysql/gpx_grafana-mysql-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/opentsdb/gpx_grafana-opentsdb-datasource_linux_amd64
+    statement: "Accepted: a malicious HTTP/2 peer can use CPU. Grafana provisions only the Prometheus and Loki data sources, over plain HTTP inside the monitoring network, and is reached only on the tailnet address of the monitoring container after a login; 13.3.0 is the newest release (2026-11-08). The plugins speak HTTP/1.1 to Prometheus and Loki, and HTTP/2 only to the Grafana process in the same container."
+    expired_at: 2026-12-08
+  - id: CVE-2026-97031
+    paths:
+      - usr/share/grafana/data/plugins-bundled/cloudwatch/gpx_grafana_cloudwatch_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/grafana-postgresql-datasource/gpx_grafana_postgresql_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/influxdb/gpx_grafana_influxdb_datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/jaeger/gpx_grafana-jaeger-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/loki/gpx_grafana-loki-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/mssql/gpx_grafana-mssql-datasource_linux_amd64
+      - usr/share/grafana/data/plugins-bundled/mysql/gpx_grafana-mysql-datasource_linux_amd64
+    statement: "Accepted: a crafted TLS ClientHello can exhaust the memory of a TLS server. Grafana provisions only the Prometheus and Loki data sources, over plain HTTP inside the monitoring network, and is reached only on the tailnet address of the monitoring container after a login; 13.3.0 is the newest release (2026-11-08). The plugins run no TLS server for the network; their only server is the plugin connection of the Grafana process in the same container."
+    expired_at: 2026-12-08
+  - id: CVE-2026-21728
+    paths:
+      - usr/share/grafana/data/plugins-bundled/tempo/gpx_grafana-tempo-datasource_linux_amd64
+    statement: "Accepted: the finding is about large queries to a Tempo server; here the Tempo module is compiled into the Tempo data source plugin, a client, and Grafana provisions no Tempo data source. Grafana provisions only the Prometheus and Loki data sources, over plain HTTP inside the monitoring network, and is reached only on the tailnet address of the monitoring container after a login; 13.3.0 is the newest release (2026-11-08)."
+    expired_at: 2026-12-08
+  - id: CVE-2026-28377
+    paths:
+      - usr/share/grafana/data/plugins-bundled/tempo/gpx_grafana-tempo-datasource_linux_amd64
+    statement: "Accepted: the finding is about the status endpoint of a Tempo server; here the Tempo module is compiled into the Tempo data source plugin, a client, and Grafana provisions no Tempo data source. Grafana provisions only the Prometheus and Loki data sources, over plain HTTP inside the monitoring network, and is reached only on the tailnet address of the monitoring container after a login; 13.3.0 is the newest release (2026-11-08)."
+    expired_at: 2026-12-08
+  # Ubuntu 24.04 apt 2.8.3 in grafana/alloy and ollama/ollama (MIL-065 tasks 2 and 5)
+  - id: CVE-2026-109518
+    purls:
+      - "pkg:deb/ubuntu/apt@2.8.3?arch=amd64&distro=ubuntu-24.04"
+      - "pkg:deb/ubuntu/libapt-pkg6.0t64@2.8.3?arch=amd64&distro=ubuntu-24.04"
+    statement: "Accepted: the finding needs apt to download packages, and apt runs only when an image is built; the Alloy and Ollama containers run alloy and ollama and never apt. Ubuntu has 2.8.4ubuntu0.1; no build of these images has it yet (2026-11-08)."
+    expired_at: 2026-12-08
+  # Debian 13.7 zlib1g in cloudflare/cloudflared and python:3.13-slim (MIL-065 tasks 3 and 11)
+  - id: CVE-2026-76844
+    purls:
+      - "pkg:deb/debian/zlib1g@1.3.dfsg%2Breally1.3.1-1%2Bb1?arch=amd64&distro=debian-13.7&epoch=1"
+    statement: "Not used: the finding is in gz_write and the gz* write functions of zlib. cloudflared is a static Go binary that never loads libz, and the Python of the scan exporter links libz only in its zlib and binascii modules, which call no gz* function (2026-11-08). Debian has 1:1.3.dfsg+really1.3.1-1+deb13u1; the upstream builds do not have it yet."
+    expired_at: 2026-12-08
+  - id: CVE-2026-85091
+    purls:
+      - "pkg:deb/debian/zlib1g@1.3.dfsg%2Breally1.3.1-1%2Bb1?arch=amd64&distro=debian-13.7&epoch=1"
+    statement: "Not used: the finding is in gz_vacate, after gzprintf or gzvprintf. cloudflared is a static Go binary that never loads libz, and the Python of the scan exporter links libz only in its zlib and binascii modules, which call no gz* function (2026-11-08). Debian has 1:1.3.dfsg+really1.3.1-1+deb13u1; the upstream builds do not have it yet."
+    expired_at: 2026-12-08
+  # The packages that pip vendors in python:3.13-slim (MIL-065 task 11)
+  - id: CVE-2025-47273
+    purls:
+      - "pkg:pypi/setuptools@70.3.0"
+    statement: "Not used: the setuptools vendored inside pip 26.2.2 in python:3.13-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
+    expired_at: 2026-12-08
+  - id: CVE-2026-114613
+    purls:
+      - "pkg:pypi/msgpack@1.1.2"
+    statement: "Not used: the msgpack vendored inside pip 26.2.2 in python:3.13-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
+    expired_at: 2026-12-08
+  - id: GHSA-6v7p-g79w-8964
+    purls:
+      - "pkg:pypi/msgpack@1.1.2"
+    statement: "Not used: the msgpack vendored inside pip 26.2.2 in python:3.13-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
+    expired_at: 2026-12-08
+  - id: CVE-2026-97687
+    purls:
+      - "pkg:pypi/urllib3@2.7.0"
+    statement: "Not used: the urllib3 vendored inside pip 26.2.2 in python:3.13-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
+    expired_at: 2026-12-08
+  - id: CVE-2026-97689
+    purls:
+      - "pkg:pypi/urllib3@2.7.0"
+    statement: "Not used: the urllib3 vendored inside pip 26.2.2 in python:3.13-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
+    expired_at: 2026-12-08

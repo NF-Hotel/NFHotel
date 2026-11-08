@@ -5,6 +5,13 @@ global:
   scrape_interval: 30s
   evaluation_interval: 30s
 
+# The metrics are kept 30 days (ADR-0020). Prometheus v3 marks the flag
+# --storage.tsdb.retention.time as deprecated and reads the retention from here (MIL-066 task 6).
+storage:
+  tsdb:
+    retention:
+      time: 30d
+
 rule_files:
   - /etc/prometheus/rules/*.yml
 

@@ -9,7 +9,8 @@
 -- Roles:
 --   nfhotel_owner     NOLOGIN; owns the schema objects of the application
 --   nfhotel_migrator  LOGIN; may SET ROLE nfhotel_owner (no INHERIT); runs the migrations
---   nfhotel_app       LOGIN; reads and writes rows only (the API at run time)
+--   nfhotel_app       LOGIN; reads and writes rows only, and only reads the migration
+--                     history (the API at run time)
 --   nfhotel_backup    LOGIN; pg_read_all_data, for pg_dump only
 
 \set ON_ERROR_STOP on
@@ -72,3 +73,11 @@ ALTER DEFAULT PRIVILEGES FOR ROLE nfhotel_owner IN SCHEMA public
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO nfhotel_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE nfhotel_owner IN SCHEMA public
   GRANT USAGE, SELECT ON SEQUENCES TO nfhotel_app;
+
+-- The migration history belongs to the migrations: the API may read it, never change it, so
+-- a takeover of the API cannot mark a migration as applied or remove its row (MIL-066
+-- task 4). This comes after the grants above, which give it to nfhotel_app like every
+-- table. On a new database the first migration creates the table after this script, so the
+-- migrate step of deploy-release.sh takes the rights back after each migration script.
+SELECT 'REVOKE INSERT, UPDATE, DELETE ON TABLE public."__EFMigrationsHistory" FROM nfhotel_app'
+WHERE to_regclass('public."__EFMigrationsHistory"') IS NOT NULL \gexec
