@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-065 after the CD run of the merge, the monitoring deploy and the daily scan; Go | pending |
+| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-065 after the CD run of the merge, the monitoring deploy and the daily scan; Go | [27bce92] |
 
 ---
 
@@ -68,3 +68,4 @@ Go: the nine criteria pass on the evidence of 2026-11-08. The gate of MIL-065 is
 [DSA-001]: ../devsecops-assessment.md
 [MIL-051]: ../../milestones/mil-051-monitoring-continuous-deployment.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[27bce92]: https://github.com/NF-Hotel/NFHotel/commit/27bce927e73a306806d8e9ff9266bb42e6cdb09e
