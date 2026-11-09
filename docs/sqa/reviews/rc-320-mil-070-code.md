@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | RC-320 |
-| CrossReference | [MIL-070], [RC-318], [ADR-0041], [ADR-0011], [ADR-0024], [MIL-023], [CIS-001], [QC-ADR-001], [QC-SH-001], [QC-YML-001], [QC-WF-001] |
+| CrossReference | [MIL-070], [RC-318], [ADR-0041], [ADR-0011], [ADR-0024], [MIL-023], [CIS-001], [QC-ADR-001], [QC-SH-001], [QC-YML-001], [QC-WF-001], [RC-321] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-070 before their pull request: ADR-0041, `as_app` of `deploy-release.sh`, `test-sudo-log.sh`, Ops CI and three wiki pages; Go | [6411a2a] |
+| 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-070 before their pull request: ADR-0041, `as_app` of `deploy-release.sh`, `test-sudo-log.sh`, Ops CI and three wiki pages; Go | [6411a2a] |
+| 2026-11-09 | Accepted | mikemike | AI as stand-in for S01 | The criteria that waited for tasks 4 and 5 and the pull request are met: every required check of #620 passed on 6c9b5dc, the deploy of the fix wrote no new entry, and the old password is refused (RC-321); the verdict stays Go | [876210f] |
 
 ---
 
@@ -115,7 +116,7 @@
 
 ## Overall Verdict
 
-Go. Every Mandatory criterion of QC-ADR-001, QC-SH-001, QC-YML-001 and QC-WF-001 that the change touches passes, and so do criteria 1, 2 and 5 of MIL-070. Criteria 3 and 4 need the deploy and the new password (tasks 4 and 5), and criterion 6 the required checks of the pull request; the gate record of task 6 closes them. The reviewer is not independent.
+Go. Every Mandatory criterion of QC-ADR-001, QC-SH-001, QC-YML-001 and QC-WF-001 that the change touches passes, and so do criteria 1, 2 and 5 of MIL-070. Criteria 3 and 4 need the deploy and the new password (tasks 4 and 5), and criterion 6 the required checks of the pull request; the gate record of task 6 closes them, and [RC-321] closed them on 2026-11-09. The reviewer is not independent.
 
 ## Action Items
 
@@ -140,4 +141,6 @@ Go. Every Mandatory criterion of QC-ADR-001, QC-SH-001, QC-YML-001 and QC-WF-001
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[RC-321]: ./rc-321-mil-070-gate.md
 [6411a2a]: https://github.com/NF-Hotel/NFHotel/commit/6411a2a500971d387634758b345a7fda9d127722
+[876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
