@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-09 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-069 after the redeploy on the backup host (task 5), with the log of the first prune and the copies of the VM since; Go | [53e3a9e] |
-| 2026-11-09 | Accepted | mikemike | AI as stand-in for S01 | Finding 2: the command for the log of the prune needs `--env-file backup-target.env`; the page Disaster-Recovery corrected in the same pull request; the verdict stays Go | pending |
+| 2026-11-09 | Accepted | mikemike | AI as stand-in for S01 | Finding 2: the command for the log of the prune needs `--env-file backup-target.env`; the page Disaster-Recovery corrected in the same pull request; the verdict stays Go | [03278d1] |
 
 ---
 
@@ -87,3 +87,4 @@ Go: the five criteria pass on the evidence of 2026-11-08 and 2026-11-09. The gat
 [MIL-066]: ../../milestones/mil-066-findings-of-7-november.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
+[03278d1]: https://github.com/NF-Hotel/NFHotel/commit/03278d1b258fc3af928643b8115e30c9883b9040
