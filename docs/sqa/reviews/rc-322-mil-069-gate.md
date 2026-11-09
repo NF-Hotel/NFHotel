@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-09 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-069 after the redeploy on the backup host (task 5), with the log of the first prune and the copies of the VM since; Go | [53e3a9e] |
+| 2026-11-09 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-069 after the redeploy on the backup host (task 5), with the log of the first prune and the copies of the VM since; Go | [53e3a9e] |
+| 2026-11-09 | Accepted | mikemike | AI as stand-in for S01 | Finding 2: the command for the log of the prune needs `--env-file backup-target.env`; the page Disaster-Recovery corrected in the same pull request; the verdict stays Go | pending |
 
 ---
 
@@ -17,7 +18,7 @@
 
 - Instance reviewed: [MIL-069] at its gate: the five Go/No-Go criteria, with the evidence of pull request #602 (merged as 53e0341 on 2026-11-08 at 19:16 UTC), of the redeploy on the backup host (task 5, issue #615), of the checks of 2026-11-09, and of a read-only read of the backup host and the VM on 2026-11-09 at 08:38 UTC. Before the gate: [RC-315] (the plan and the retention, accepted by S01) and [RC-316] (the code of tasks 1 to 3, Go).
 - Checklist used: the Go/No-Go criteria of [MIL-069]; [QC-MIL-001] criterion 2 is what makes them the checklist of the gate.
-- Scope: the gate; criteria 1, 2 and 5 cite [RC-316] and the checks of #602 and of 2026-11-09, and criteria 3 and 4 the reads below. The pull request of this record changes no code and no wiki page.
+- Scope: the gate; criteria 1, 2 and 5 cite [RC-316] and the checks of #602 and of 2026-11-09, and criteria 3 and 4 the reads below. The pull request of this record changes no code; it corrects the command for the log of the prune on the wiki page Disaster-Recovery (finding 2).
 - Language and domain: en / it (the Metadata rows of MIL-069); this record is a technical type.
 - Language reviewer: none.
 - Mode: autonomous, not independent. S01 accepted the plan and the retention in chat ([RC-315]), asked for the last milestones in autonomous mode, and approved the redeploy of task 5 in chat on 2026-11-08. On 2026-11-09 S01 asked in chat to finish MIL-070 and MIL-069 ("færdiggør disse"). Asked then whether the AI should schedule this gate for 2026-11-21, after the first prune that deletes a file, S01 answered no and asked to finish the milestones that exist now ("Nej vi skal ik ha flere milestones, du skal færdiggøre dem der er på nuværende tidspunkt"). So this record reads the first prune, as criterion 4 and task 5 say, and not a pass after 2026-11-20, as the last action item of [RC-316] planned (finding 1).
@@ -64,7 +65,9 @@
    - the same image and compose settings, on the compose check of [RC-316], where `up -d prune` deleted and named 13 of 56 test files and kept 43;
    - the right to delete in the folder of the backup host, on the check file of task 5.
 
-   [RC-316] planned this gate with the log of a pass after 2026-11-20; S01 asked on 2026-11-09 to finish the milestone now, without a gate scheduled for that date. `docker compose logs prune` on the backup host shows the first deletion when it comes, as the page Disaster-Recovery says. If it fails, the log names the file (`error: could not delete <name>`), but nothing alerts until the disk of the backup host is full and the copy of the VM fails (finding 5 of [RC-316]).
+   [RC-316] planned this gate with the log of a pass after 2026-11-20; S01 asked on 2026-11-09 to finish the milestone now, without a gate scheduled for that date. `docker compose --env-file backup-target.env logs prune` on the backup host shows the first deletion when it comes (finding 2). If it fails, the log names the file (`error: could not delete <name>`), but nothing alerts until the disk of the backup host is full and the copy of the VM fails (finding 5 of [RC-316]).
+
+2. **The command for the log of the prune needs the env file.** The page Disaster-Recovery and the comment of the service `prune` in the compose file gave `docker compose logs prune`. Run on the backup host on 2026-11-09, it stops before it shows anything: Compose first fills in the settings of the whole file, and `BACKUP_PUBLIC_KEY` and `BACKUP_TARGET_BIND` are required and are set only in `backup-target.env`. With `--env-file backup-target.env` it shows the log, as the other commands of the page and of the compose file already pass it. The pull request of this record corrects the page. The comment of the compose file keeps the short form until that file changes next: it changes no behaviour, and this pull request stays documents only.
 
 ## Overall Verdict
 
