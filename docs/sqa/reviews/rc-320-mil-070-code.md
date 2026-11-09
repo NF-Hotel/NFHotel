@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-070 before their pull request: ADR-0041, `as_app` of `deploy-release.sh`, `test-sudo-log.sh`, Ops CI and three wiki pages; Go | [6411a2a] |
-| 2026-11-09 | Accepted | mikemike | AI as stand-in for S01 | The criteria that waited for tasks 4 and 5 and the pull request are met: every required check of #620 passed on 6c9b5dc, the deploy of the fix wrote no new entry, and the old password is refused (RC-321); the verdict stays Go | pending |
+| 2026-11-09 | Accepted | mikemike | AI as stand-in for S01 | The criteria that waited for tasks 4 and 5 and the pull request are met: every required check of #620 passed on 6c9b5dc, the deploy of the fix wrote no new entry, and the old password is refused (RC-321); the verdict stays Go | [876210f] |
 
 ---
 
@@ -143,3 +143,4 @@ Go. Every Mandatory criterion of QC-ADR-001, QC-SH-001, QC-YML-001 and QC-WF-001
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [RC-321]: ./rc-321-mil-070-gate.md
 [6411a2a]: https://github.com/NF-Hotel/NFHotel/commit/6411a2a500971d387634758b345a7fda9d127722
+[876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a

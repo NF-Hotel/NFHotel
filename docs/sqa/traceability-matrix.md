@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The rows of ADR-0041 and of the code of MIL-070: the fix of `as_app`, its test and the wiki pages, reviewed before the pull request (RC-320, Go) | [6411a2a] |
-| 2026-11-09 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-070 and of its code at the gate: the fix deployed and a new password for `nfhotel_app` on the VM on 2026-11-08 (tasks 4 and 5), gate passed (RC-321, Go) | pending |
+| 2026-11-09 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-070 and of its code at the gate: the fix deployed and a new password for `nfhotel_app` on the VM on 2026-11-08 (tasks 4 and 5), gate passed (RC-321, Go) | [876210f] |
 
 ---
 
@@ -349,3 +349,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [6411a2a]: https://github.com/NF-Hotel/NFHotel/commit/6411a2a500971d387634758b345a7fda9d127722
+[876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a

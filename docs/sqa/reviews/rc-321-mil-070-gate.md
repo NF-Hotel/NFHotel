@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-09 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-070 after the deploy of the fix (task 4), the new password of `nfhotel_app` (task 5) and a read-only check of the VM; Go | pending |
+| 2026-11-09 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-070 after the deploy of the fix (task 4), the new password of `nfhotel_app` (task 5) and a read-only check of the VM; Go | [876210f] |
 
 ---
 
@@ -69,3 +69,4 @@ Go: the six criteria pass on the evidence of 2026-11-08 and 2026-11-09. The gate
 [ADR-0041]: ../../adr/adr-0041-connection-string-over-standard-input.md
 [CIS-001]: ../cis-checklist.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
