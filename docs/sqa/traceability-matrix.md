@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Proposed | mikemike | AI as stand-in for S01 | The rows of ADR-0041 and of the code of MIL-070: the fix of `as_app`, its test and the wiki pages, reviewed before the pull request (RC-320, Go) | [6411a2a] |
 | 2026-11-09 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-070 and of its code at the gate: the fix deployed and a new password for `nfhotel_app` on the VM on 2026-11-08 (tasks 4 and 5), gate passed (RC-321, Go) | [876210f] |
+| 2026-11-09 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-069 and of its code at the gate: the prune redeployed on the backup host on 2026-11-08 (task 5), its first pass with nothing to delete, gate passed (RC-322, Go) | pending |
 
 ---
 
@@ -95,8 +95,8 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-067] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-08, RC-309; task 7 accepted by the AI as stand-in for S01 at S01's request, RC-310; deployed 2026-11-08 by CD run 42498483148; gate passed 2026-11-08, RC-312) | en | it | [BC-001], [US-001], UC-004, UC-005, [DSA-001], [ADR-0038], MIL-027, [MIL-044], [MIL-066] | planned: the guests of the booking page and the run of the benchmark page read as text, a test that refuses a typed query parameter in `NFHotel.Web`, and a login form and a change-password form that never write a posted password back | [RC-309], [RC-310], [RC-312] |
 | The code of MIL-067: the guests of `Book.razor.cs` and `BookingFlowViewModel.Prefill`, the run of `BenchmarkStart.razor.cs`, the passwords of `Login.razor` and `ChangePassword.razor` with their code-behind files, and their tests | C#, Razor (reviewed 2026-11-08, Go-with-conditions; the condition met on #596, RC-312) | - | - | [MIL-067] tasks 1 to 4 and 7, UC-004, UC-005 | - | [RC-311], [RC-312] |
 | [MIL-068] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-08, RC-314; the desktop removed on the VM 2026-11-08; gate passed 2026-11-08, RC-319) | en | it | [BC-001], [CIS-001], [DSA-001], [ADR-0010], [MIL-023], [MIL-066], [RC-313] | planned: the removal list and `ops/scripts/remove-desktop.sh` with its test, the VM started as `multi-user.target` without the desktop, the wiki page Host-Hardening and rows 2.1.x and 2.2.x of CIS-001 | [RC-314], [RC-319] |
-| [MIL-069] | Milestone (Accepted, Go; plan and retention reviewed and accepted by S01 in chat 2026-11-08, RC-315) | en | it | [BC-001], [DSA-001], [ADR-0008], [MIL-021], [MIL-066], [RC-313] | planned: `ops/deploy/backup-target/prune-backups.sh` with its tests, the service `prune` of the backup target, and the wiki page Disaster-Recovery | [RC-315] |
-| The code of MIL-069: the prune of the backup target in `ops/deploy/backup-target/prune-backups.sh`, the service `prune` in its `docker-compose.yml`, `Dockerfile` and `backup-target.env.example`, the section "How long the backup target keeps the copies" of the wiki page Disaster-Recovery, and their tests in `ops/tests/test-backup-target.sh` | Shell, Dockerfile, YAML (reviewed 2026-11-08, Go) | - | - | [MIL-069] tasks 1 to 3, [ADR-0008], [DSA-001] | - | [RC-316] |
+| [MIL-069] | Milestone (Accepted, Go; plan and retention reviewed and accepted by S01 in chat 2026-11-08, RC-315; the prune redeployed on the backup host 2026-11-08; gate passed 2026-11-09, RC-322) | en | it | [BC-001], [DSA-001], [ADR-0008], [MIL-021], [MIL-066], [RC-313] | planned: `ops/deploy/backup-target/prune-backups.sh` with its tests, the service `prune` of the backup target, and the wiki page Disaster-Recovery | [RC-315], [RC-322] |
+| The code of MIL-069: the prune of the backup target in `ops/deploy/backup-target/prune-backups.sh`, the service `prune` in its `docker-compose.yml`, `Dockerfile` and `backup-target.env.example`, the section "How long the backup target keeps the copies" of the wiki page Disaster-Recovery, and their tests in `ops/tests/test-backup-target.sh` | Shell, Dockerfile, YAML (reviewed 2026-11-08, Go; deployed to the backup host 2026-11-08, RC-322) | - | - | [MIL-069] tasks 1 to 3, [ADR-0008], [DSA-001] | - | [RC-316], [RC-322] |
 | The code of MIL-068: the removal of the desktop in `ops/scripts/remove-desktop.sh`, its test `ops/tests/test-remove-desktop.sh` and its entry in the matrix of `.github/workflows/ops-ci.yaml`, and the section "Without a desktop" of the wiki page Host-Hardening with its update command | Shell, YAML (reviewed 2026-11-08, Go; run on the VM 2026-11-08, RC-319) | - | - | [MIL-068] tasks 1 to 3, [CIS-001] | - | [RC-317], [RC-319] |
 | [MIL-070] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-08, RC-318; the fix deployed and the new password on the VM 2026-11-08; gate passed 2026-11-09, RC-321) | en | it | [BC-001], [CIS-001], [DSA-001], [ADR-0011], [ADR-0024], [MIL-023], [MIL-068] | planned: `as_app` of `ops/scripts/deploy-release.sh` without the connection string in the log of `sudo`, ADR-0041, a regression test, a new password for `nfhotel_app`, and the wiki pages Database-Preparation and Host-Hardening | [RC-318], [RC-321] |
 | The code of MIL-070: `as_app` of `ops/scripts/deploy-release.sh`, its test `ops/tests/test-sudo-log.sh` and its entry in the matrix of `.github/workflows/ops-ci.yaml`, the section "No secret in the log of sudo" of the wiki page Host-Hardening, the section "A new password for `nfhotel_app`" of the wiki page Database-Preparation, and the script tests of the wiki page Workflows | Shell, YAML (reviewed 2026-11-08, Go; deployed to the VM 2026-11-08, RC-321) | - | - | [MIL-070] tasks 1 to 3, [ADR-0041], [CIS-001] | - | [RC-320], [RC-321] |
@@ -318,6 +318,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-319]: ./reviews/rc-319-mil-068-gate.md
 [RC-320]: ./reviews/rc-320-mil-070-code.md
 [RC-321]: ./reviews/rc-321-mil-070-gate.md
+[RC-322]: ./reviews/rc-322-mil-069-gate.md
 [RC-302]: ./reviews/rc-302-mil-064-gate.md
 [RC-303]: ./reviews/rc-303-mil-064-gate-re-review.md
 [RC-287]: ./reviews/rc-287-mil-061.md
@@ -348,5 +349,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-245]: ./reviews/rc-245-mil-048-plan.md
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
-[6411a2a]: https://github.com/NF-Hotel/NFHotel/commit/6411a2a500971d387634758b345a7fda9d127722
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a

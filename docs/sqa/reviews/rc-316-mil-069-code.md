@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | RC-316 |
-| CrossReference | [MIL-069], [RC-315], [MIL-066], [RC-308], [RC-313], [DSA-001], [ADR-0008], [QC-SH-001], [QC-YML-001] |
+| CrossReference | [MIL-069], [RC-315], [MIL-066], [RC-308], [RC-313], [DSA-001], [ADR-0008], [QC-SH-001], [QC-YML-001], [RC-322] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-069 before their pull request (task 4); Go | [49defd4] |
+| 2026-11-08 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the review of tasks 1 to 3 of MIL-069 before their pull request (task 4); Go | [49defd4] |
+| 2026-11-09 | Accepted | mikemike | AI as stand-in for S01 | The criteria that waited for task 5 and the pull request are met: every check that the ruleset required passed on #602, and the service `prune` runs on the backup host as the compose file says; its first pass had nothing to delete, and the gate read that pass at S01's request of 2026-11-09, not a pass after 2026-11-20 (RC-322, finding 1); the verdict stays Go | pending |
 
 ---
 
@@ -98,7 +99,7 @@
 
 ## Overall Verdict
 
-Go. Every Mandatory criterion of QC-SH-001 and QC-YML-001 passes, and criteria 1 and 2 of MIL-069 pass in the tests. Criteria 3 and 4 need the backup host (task 5), and criterion 5 needs the checks of the pull request; the gate record of task 6 closes them. The reviewer is not independent.
+Go. Every Mandatory criterion of QC-SH-001 and QC-YML-001 passes, and criteria 1 and 2 of MIL-069 pass in the tests. Criteria 3 and 4 need the backup host (task 5), and criterion 5 needs the checks of the pull request; the gate record of task 6 closes them, and [RC-322] closed them on 2026-11-09. The reviewer is not independent.
 
 ## Action Items
 
@@ -121,4 +122,5 @@ Go. Every Mandatory criterion of QC-SH-001 and QC-YML-001 passes, and criteria 1
 [ADR-0008]: ../../adr/adr-0008-database-migration-and-backup.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[RC-322]: ./rc-322-mil-069-gate.md
 [49defd4]: https://github.com/NF-Hotel/NFHotel/commit/49defd4fa3215cb4ef13e51aad4abd649658de38
