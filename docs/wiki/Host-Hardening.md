@@ -165,7 +165,9 @@ Until MIL-070, `deploy-release.sh` handed the connection string of the API to `d
 
 `ops/tests/test-sudo-log.sh` proves it in Debian 13 with the `sudo` settings of the VM, and refuses a `sudo` call in `ops/` that keeps a variable outside its short list of names that hold no secret. Never pass a secret to `sudo` in its environment or as an argument; pass it on standard input, as `as_app` does.
 
-The entries written before MIL-070 stay until their retention ends: the journal keeps at most 1 GB, `sudo.log` is rotated, and Loki keeps 14 days. Task 5 of MIL-070 gives `nfhotel_app` a new password, after which the password in those entries opens nothing.
+The entries written before MIL-070 stay until their retention ends: the journal keeps at most 1 GB, `sudo.log` is rotated weekly and keeps 13 old files, and Loki keeps 14 days. On 2026-11-08 `nfhotel_app` got a new password (task 5 of MIL-070), so the passwords in those entries open nothing.
+
+To check the log for a secret, count by its value, never by its name, and print no line. The text of the shell that `as_app` starts names `NFHOTEL_API_CONNECTION_STRING`, so every call adds a line with the name and without the value. Count the form `NFHOTEL_API_CONNECTION_STRING=Host=`, the field `Password=`, or the password itself with `grep -c -F -f` and the password file.
 
 ## Firewall: SSH over Tailscale only
 
