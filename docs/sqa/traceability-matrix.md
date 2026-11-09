@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-09 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-070 and of its code at the gate: the fix deployed and a new password for `nfhotel_app` on the VM on 2026-11-08 (tasks 4 and 5), gate passed (RC-321, Go) | [876210f] |
-| 2026-11-09 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-069 and of its code at the gate: the prune redeployed on the backup host on 2026-11-08 (task 5), its first pass with nothing to delete, gate passed (RC-322, Go) | pending |
+| 2026-11-09 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-069 and of its code at the gate: the prune redeployed on the backup host on 2026-11-08 (task 5), its first pass with nothing to delete, gate passed (RC-322, Go) | [53e3a9e] |
 
 ---
 
@@ -350,3 +350,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-247]: ./reviews/rc-247-mil-048-code.md
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
+[53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
