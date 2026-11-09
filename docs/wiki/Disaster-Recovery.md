@@ -36,7 +36,7 @@ The key of the VM may only add files to the backup target (`rrsync -wo -no-del -
 - A copy is kept for its full time even when the VM is taken over: the prune goes by the time in the name of each copy, and the key of the VM can neither rename nor replace a file on the target. The floors keep the last copies when the backups stop, for example after the VM is lost; they guard against that accident, not against an attacker on the VM, who could fill them with files of newer names.
 - No other name is touched: not the temporary files of `rsync`, not `.last-copy`.
 - To change the limits, set `PRUNE_DAILY_DAYS` and `PRUNE_WEEKLY_WEEKS` in `backup-target.env` and run `docker compose --env-file backup-target.env up -d` in `ops/deploy/backup-target` on the backup host.
-- To see what it did: `docker compose logs prune` names each file it deleted and counts each kind. `docker compose --env-file backup-target.env run --rm prune --dry-run` names what it would delete now, and deletes nothing.
+- To see what it did: `docker compose --env-file backup-target.env logs prune` names each file it deleted and counts each kind. Without `--env-file`, Compose stops at the settings that the target requires and shows no log. `docker compose --env-file backup-target.env run --rm prune --dry-run` names what it would delete now, and deletes nothing.
 
 ## Rebuild the VM
 
