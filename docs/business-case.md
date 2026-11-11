@@ -25,7 +25,8 @@
 | 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Amended: objective 26, hotel staff sign in and work with rooms from the mobile app through the API on the staff token alone (MIL-029, ADR-0015); accepted after RC-133 Go | [1c3efb9] |
 | 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Amended: objective 27, staff accounts and passwords (MIL-030), and success criterion 30 (accepted after RC-150 Go) | [0891cf1] |
 | 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Amended: objective 28 and success criterion 31, NF Hotel on the public internet through Cloudflare Tunnel; the public address of the mobile app leaves the out-of-scope list (MIL-040, ADR-0028); S01 accepted MIL-040 in chat | [21ba03e] |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Amended: objective 29, success criterion 32 and one in-scope line, room price suggestions from the market analysis that a Manager approves with one click (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
+| 2026-11-01 | Deprecated | Claude (AI) | S01 | Amended: objective 29, success criterion 32 and one in-scope line, room price suggestions from the market analysis that a Manager approves with one click (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
+| 2026-11-11 | Accepted | Claude (AI) | S01 | Amended: objective 29 says that the market analysis service makes the price suggestions from holidays and the occupancy history of the next two months, and the back office presents them (MIL-071); the website no longer works them out; accepted by S01 in chat on 2026-11-11 | [f674e8a] |
 
 ---
 
@@ -100,7 +101,7 @@ basis for the hosting decision (Q-31).
 26. Let hotel staff sign in and work with the rooms from the mobile app (Flutter) through the API, with the staff token alone and no shared secret in the app, so that a role sees and does in the app no more than in the back office (MIL-029, ADR-0015).
 27. Let the owner and the Managers manage staff accounts and passwords in the back office: a staff member changes their own password with the current one, a Manager creates, disables, enables and resets accounts, a change or a disable ends the old sessions at once, and account events are kept in an audit trail (MIL-030).
 28. Let guests book and the mobile app work from the public internet at `nfhotel.devmatiker.com`, without a port opened in the home network and with the back office kept on the tailnet, so that the hotel is reachable by anyone while its home stays closed (MIL-040, ADR-0028).
-29. Let a Manager approve room price changes with one click: the back office suggests a surcharge in high season and a discount on single rooms in low season, calculated by a fixed rule from the occupancy and seasonality of the market analysis, and no price changes, and no AI text sets a price, until a Manager approves; every approval, undo and change of a rule is kept in the audit trail (MIL-055).
+29. Let a Manager approve room price changes with one click: the market analysis service works out the suggestions with a fixed rule over its history, a surcharge where earlier years show an occupancy of 80 percent or more on the holidays and weeks of the next two months, and a discount where they show a low occupancy, and the back office presents them; no price changes, and no AI text sets a price, until a Manager approves; every approval, undo and change of a setting is kept in the audit trail (MIL-055, MIL-071).
 
 ## Scope
 
@@ -296,3 +297,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
 [21ba03e]: https://github.com/NF-Hotel/NFHotel/commit/21ba03eedb3836936f623ea3bd93871f097cab3c
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
+[f674e8a]: https://github.com/NF-Hotel/NFHotel/commit/f674e8a3fe47dfe3c36bbc59f4eeae6180985b0d

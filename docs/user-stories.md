@@ -13,7 +13,9 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.10 and US-001.11, the password and account stories (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
 | 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | US-001.04 gains a criterion: a run that a restart stops is shown as interrupted and can be started again (MIL-043, ADR-0031) | [43bcf70] |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Added US-001.12, approve a price suggestion (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
+| 2026-11-01 | Deprecated | Claude (AI) | S01 | Added US-001.12, approve a price suggestion (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
+
+| 2026-11-11 | Accepted | Claude (AI) | S01 | US-001.12 reworded: the suggestions come from the market analysis service, for the holidays and weeks of the next two months (MIL-071); accepted by S01 in chat on 2026-11-11 | [f674e8a] |
 
 ---
 
@@ -204,16 +206,18 @@ analysis without anyone starting it by hand.
 
 ### US-001.12 — Approve a price suggestion
 
-**As** a Manager (S05), **I want** the back office to suggest a price change for the high and the low season that I approve with one click, **so that** the owner's pricing rule is applied on time without working out the prices by hand.
+**As** a Manager (S05), **I want** the back office to show the price changes that the market analysis suggests for the holidays and weeks of the next two months, which I approve with one click, **so that** the owner's pricing rule is applied on time without working out the prices by hand.
 
 **Acceptance Criteria**
 
-- Given a month of the market analysis with occupancy at or above the high threshold, when I open the suggestions, then I see a surcharge of 20 percent for every room size with the old and the new nightly price, the occupancy and the threshold it rests on.
-- Given a month with occupancy at or below the low threshold, when I open the suggestions, then I see a discount for single rooms only.
+- Given a holiday or a week of the next two months whose occupancy in earlier years was 80 percent or more, when I open the suggestions, then I see a surcharge of 20 percent for every room size with the old and the new nightly price, the name of the holiday, the occupancy of each earlier year and the threshold it rests on.
+- Given a week whose occupancy in earlier years was at or below the low threshold, when I open the suggestions, then I see a discount for single rooms only.
+- Given a period with too few earlier years, when I open the suggestions, then I see that there is not enough history and no price is suggested.
 - Given a suggestion, when I approve it, then a price change is created from the start date to the end date shown (the first and the last day of the season unless I change them) and the price on those days is the new one.
 - Given a price change I approved, when I revert it, then it ends the same day and the next day is at the base rate; the record stays in the list as reverted.
 - Given I am a Receptionist or Housekeeping, when I open the suggestions or call the approval, then I am told that the role has no access.
-- Given the report has an AI text, when the page shows a suggestion, then the text is labelled as an explanation and no price comes from it.
+- Given the report has an AI text or an idea without a price, when the page shows a suggestion, then the text is marked as written by an AI and no price comes from it.
+- Given the market analysis service has made no suggestions, when I open the page, then I am told why and I can approve nothing.
 - Given I approve, revert or change a rate or a setting, when I open the audit page, then I see who did what and when, with the old and the new value.
 
 | Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
@@ -248,3 +252,4 @@ for US-001.02.
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
 [43bcf70]: https://github.com/NF-Hotel/NFHotel/commit/43bcf70046d2f2537672030b83f39f8b3fda4551
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
+[f674e8a]: https://github.com/NF-Hotel/NFHotel/commit/f674e8a3fe47dfe3c36bbc59f4eeae6180985b0d
