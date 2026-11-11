@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-11 | Proposed | Claude (AI) | S01 | The gate review RC-329 of MIL-071 in its row | [95d7856] |
-| 2026-11-11 | Proposed | mikemike | S01 | The row of MIL-072 (the Access check on every path to the back office) with its plan review RC-330, task 1 and the code review RC-331; the row of the code of MIL-072 | pending |
+| 2026-11-11 | Proposed | mikemike | S01 | The row of MIL-072 (the Access check on every path to the back office) with its plan review RC-330, task 1 and the code review RC-331; the row of the code of MIL-072 | [0e58535] |
 
 ---
 
@@ -368,3 +368,4 @@ updated whenever an artifact instance is created or reviewed.
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
 [95d7856]: https://github.com/NF-Hotel/NFHotel/commit/95d78565e09da482a609091883a4f4700c61b533
+[0e58535]: https://github.com/NF-Hotel/NFHotel/commit/0e5853507a4d6ebea270a1048857a1c02fac8e73

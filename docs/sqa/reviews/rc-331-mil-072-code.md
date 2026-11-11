@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Accepted | mikemike | S01 | Initial version; mode supervised; the review of tasks 2 to 4 of MIL-072 before their pull request: `ops/tests/test-nginx.sh`, `public.conf.template`, ADR-0029 and the wiki page Public-Access; Go, accepted by S01 in chat ("2 ja", to "Accepterer du RC-331?") | pending |
+| 2026-11-11 | Accepted | mikemike | S01 | Initial version; mode supervised; the review of tasks 2 to 4 of MIL-072 before their pull request: `ops/tests/test-nginx.sh`, `public.conf.template`, ADR-0029 and the wiki page Public-Access; Go, accepted by S01 in chat ("2 ja", to "Accepterer du RC-331?") | [0e58535] |
 
 ---
 
@@ -95,3 +95,4 @@ Go. Every Mandatory criterion of QC-ADR-001 and QC-SH-001 that the change touche
 [ADR-0029]: ../../adr/adr-0029-back-office-behind-cloudflare-access.md
 [QC-ADR-001]: ../../../framework/qc/artifacts/qc-adr.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[0e58535]: https://github.com/NF-Hotel/NFHotel/commit/0e5853507a4d6ebea270a1048857a1c02fac8e73

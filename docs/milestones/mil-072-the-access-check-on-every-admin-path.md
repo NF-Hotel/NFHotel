@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Accepted | mikemike | S01 | Initial version: the routes of the tunnel and the guard of nginx found on 2026-11-11 to let spellings of `/admin` with capital letters past the check of the Access token; planned at S01's request in chat ("5 a": the finding is fixed first) | pending |
+| 2026-11-11 | Accepted | mikemike | S01 | Initial version: the routes of the tunnel and the guard of nginx found on 2026-11-11 to let spellings of `/admin` with capital letters past the check of the Access token; planned at S01's request in chat ("5 a": the finding is fixed first) | [2ba9886] |
 
 ---
 
@@ -99,3 +99,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-040]: ./mil-040-public-access.md
 [MIL-041]: ./mil-041-admin-behind-cloudflare-access.md
 [MIL-051]: ./mil-051-monitoring-continuous-deployment.md
+[2ba9886]: https://github.com/NF-Hotel/NFHotel/commit/2ba9886103ada296769c870e89fcd7b08ce29a9b
