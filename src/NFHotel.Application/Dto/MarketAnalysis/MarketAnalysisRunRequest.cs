@@ -9,8 +9,10 @@ namespace NFHotel.Application.Dto.MarketAnalysis;
 /// <param name="Bookings">The bookings; at least one.</param>
 /// <param name="From">The first arrival date the Manager chose, or <c>null</c>.</param>
 /// <param name="To">The last arrival date the Manager chose, or <c>null</c>.</param>
+/// <param name="Pricing">Asks for price suggestions (MIL-071), or <c>null</c> for none.</param>
 public sealed record MarketAnalysisRunRequest(
     int RoomCount,
     IReadOnlyList<MarketBookingDto> Bookings,
     DateOnly? From = null,
-    DateOnly? To = null);
+    DateOnly? To = null,
+    MarketAnalysisPricingRequest? Pricing = null);

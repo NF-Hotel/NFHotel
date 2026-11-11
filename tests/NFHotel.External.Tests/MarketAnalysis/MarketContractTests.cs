@@ -39,7 +39,7 @@ public sealed class MarketContractTests
 
         // Assert
         Assert.Equal(["room_count", "bookings"], contract.Required("RunRequest"));
-        Assert.Equal(["room_count", "period", "bookings"], contract.Properties("RunRequest"));
+        Assert.Equal(["room_count", "period", "bookings", "pricing"], contract.Properties("RunRequest"));
     }
 
     /// <summary>Positive: the booking of the contract needs these seven fields.</summary>

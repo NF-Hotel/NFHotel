@@ -71,7 +71,8 @@ public static class MarketAnalysisResultMapper
                 Figures(document),
                 sections,
                 Overall(document),
-                document.TryGetProperty("forecast", out JsonElement forecast) ? Forecast(forecast) : null));
+                document.TryGetProperty("forecast", out JsonElement forecast) ? Forecast(forecast) : null,
+                document.TryGetProperty("price_suggestions", out JsonElement prices) ? PriceSuggestions(prices) : null));
     }
 
     private static IReadOnlyList<MarketAnalysisFigureDto> Figures(JsonElement document)
@@ -198,6 +199,69 @@ public static class MarketAnalysisResultMapper
             Integer(forecast, "horizon_months"),
             list);
     }
+
+    // The price suggestions (result schema 1.3); an entry without its dates, change or percentage cannot be shown and is left out.
+    private static MarketAnalysisPriceSuggestionsDto? PriceSuggestions(JsonElement prices)
+    {
+        if (prices.ValueKind != JsonValueKind.Object || Date(prices, "as_of") is not { } asOf || Date(prices, "horizon_end") is not { } end)
+        {
+            return null;
+        }
+
+        return new MarketAnalysisPriceSuggestionsDto(
+            asOf,
+            end,
+            Text(prices, "formula") ?? string.Empty,
+            Strings(prices, "limitations") ?? [],
+            [.. Items(prices, "suggestions").Select(PriceSuggestion).OfType<MarketAnalysisPriceSuggestionDto>()],
+            [.. Items(prices, "not_enough_history").Select(PriceGap).OfType<MarketAnalysisPriceGapDto>()],
+            [.. Items(prices, "ideas").Select(PriceText).OfType<MarketAnalysisPriceTextDto>()]);
+    }
+
+    private static MarketAnalysisPriceSuggestionDto? PriceSuggestion(JsonElement item) =>
+        Text(item, "room_size") is { Length: > 0 } size
+        && Date(item, "first_date") is { } first
+        && Date(item, "last_date") is { } last
+        && Text(item, "change") is { Length: > 0 } change
+        && Decimal(item, "percent") is { } percent
+        && PriceText(item.TryGetProperty("explanation", out JsonElement explanation) ? explanation : default) is { } text
+            ? new MarketAnalysisPriceSuggestionDto(
+                size,
+                first,
+                last,
+                change,
+                (decimal)percent,
+                Text(item, "reason") ?? string.Empty,
+                Text(item, "holiday"),
+                Decimal(item, "threshold") ?? 0d,
+                [.. Items(item, "history").Select(PriceHistory).OfType<MarketAnalysisPriceHistoryDto>()],
+                text)
+            : null;
+
+    private static MarketAnalysisPriceHistoryDto? PriceHistory(JsonElement item) =>
+        Integer(item, "year") is > 0 and var year && Decimal(item, "occupancy") is { } occupancy
+            ? new MarketAnalysisPriceHistoryDto(year, occupancy)
+            : null;
+
+    private static MarketAnalysisPriceGapDto? PriceGap(JsonElement item) =>
+        Date(item, "first_date") is { } first && Date(item, "last_date") is { } last
+            ? new MarketAnalysisPriceGapDto(first, last, Text(item, "holiday"), Integer(item, "years_found"))
+            : null;
+
+    private static MarketAnalysisPriceTextDto? PriceText(JsonElement item) =>
+        Text(item, "text") is { Length: > 0 } text
+            ? new MarketAnalysisPriceTextDto(text, item.TryGetProperty("ai_written", out JsonElement written) && written.ValueKind == JsonValueKind.True)
+            : null;
+
+    private static IEnumerable<JsonElement> Items(JsonElement source, string name) =>
+        source.ValueKind == JsonValueKind.Object && source.TryGetProperty(name, out JsonElement list) && list.ValueKind == JsonValueKind.Array
+            ? list.EnumerateArray()
+            : [];
+
+    private static DateOnly? Date(JsonElement source, string name) =>
+        Text(source, name) is { } text && DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly day)
+            ? day
+            : null;
 
     private static int Integer(JsonElement source, string name) =>
         source.ValueKind == JsonValueKind.Object && source.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int number)

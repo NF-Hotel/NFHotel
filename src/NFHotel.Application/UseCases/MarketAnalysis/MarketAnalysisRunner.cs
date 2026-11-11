@@ -1,8 +1,10 @@
 using System.Text.Json;
 
 using NFHotel.Application.Dto.MarketAnalysis;
+using NFHotel.Application.Dto.Pricing;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.Repositories;
@@ -27,6 +29,7 @@ public sealed class MarketAnalysisRunner
     private readonly IUnitOfWork _unitOfWork;
     private readonly MarketAnalysisRunTracker _tracker;
     private readonly IClock _clock;
+    private readonly IPricingSettingsService? _pricingSettings;
 
     /// <summary>Creates the runner.</summary>
     /// <param name="bookings">The read of the hotel bookings.</param>
@@ -35,13 +38,15 @@ public sealed class MarketAnalysisRunner
     /// <param name="unitOfWork">Saves the changes.</param>
     /// <param name="tracker">The state of the run.</param>
     /// <param name="clock">The clock.</param>
+    /// <param name="pricingSettings">The pricing settings of the Manager, sent to the service so that it makes price suggestions (MIL-071); without it no suggestions are asked for.</param>
     public MarketAnalysisRunner(
         IMarketAnalysisBookingQueries bookings,
         IMarketAnalysisServiceClient client,
         IMarketAnalysisRunRepository runs,
         IUnitOfWork unitOfWork,
         MarketAnalysisRunTracker tracker,
-        IClock clock)
+        IClock clock,
+        IPricingSettingsService? pricingSettings = null)
     {
         ArgumentNullException.ThrowIfNull(bookings);
         ArgumentNullException.ThrowIfNull(client);
@@ -56,6 +61,7 @@ public sealed class MarketAnalysisRunner
         _unitOfWork = unitOfWork;
         _tracker = tracker;
         _clock = clock;
+        _pricingSettings = pricingSettings;
     }
 
     /// <summary>Runs the analysis and ends the run in the tracker as completed or failed.</summary>
@@ -82,7 +88,8 @@ public sealed class MarketAnalysisRunner
             return;
         }
 
-        var result = await _client.AnalyzeAsync(new MarketAnalysisRunRequest(rooms, bookings, period.From, period.To), cancellationToken).ConfigureAwait(false);
+        MarketAnalysisPricingRequest? pricing = await PricingRequestAsync(cancellationToken).ConfigureAwait(false);
+        Result<MarketAnalysisResultDto> result = await _client.AnalyzeAsync(new MarketAnalysisRunRequest(rooms, bookings, period.From, period.To, pricing), cancellationToken).ConfigureAwait(false);
         if (result.IsFailure)
         {
             _tracker.MarkFailed(runId, result.Errors[0].Code);
@@ -131,5 +138,27 @@ public sealed class MarketAnalysisRunner
         }
 
         _tracker.MarkCompleted(runId);
+    }
+
+    // The settings of the Manager decide the thresholds and the percentages; the service makes the suggestions from them. When the
+    // settings cannot be read the run asks for the defaults, so a failure there does not stop the analysis.
+    private async Task<MarketAnalysisPricingRequest?> PricingRequestAsync(CancellationToken cancellationToken)
+    {
+        if (_pricingSettings is null)
+        {
+            return null;
+        }
+
+        Result<PricingSettingsDto> saved = await _pricingSettings.GetAsync(cancellationToken).ConfigureAwait(false);
+        PricingSettingsDto? settings = saved.IsSuccess ? saved.Value : null;
+        PricingSettings defaults = PricingSettings.Defaults;
+        IReadOnlyList<string> sizes = settings?.DiscountSizes ?? [.. defaults.DiscountSizes.Select(size => size.ToString())];
+
+        return new MarketAnalysisPricingRequest(
+            (settings?.HighThresholdPercent ?? defaults.HighThreshold) / 100m,
+            (settings?.LowThresholdPercent ?? defaults.LowThreshold) / 100m,
+            settings?.SurchargePercent ?? defaults.SurchargePercent,
+            settings?.DiscountPercent ?? defaults.DiscountPercent,
+            [.. sizes.Select(size => size.ToLowerInvariant())]);
     }
 }

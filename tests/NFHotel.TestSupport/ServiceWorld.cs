@@ -381,7 +381,7 @@ public sealed class ServiceWorld
     public MarketAnalysisService MarketAnalysisService() => new(MarketAnalysisTracker, MarketAnalysisLauncher, MarketAnalysisRuns);
 
     public MarketAnalysisRunner MarketAnalysisRunner() =>
-        new(MarketAnalysisBookings, MarketAnalysisClient, MarketAnalysisRuns, UnitOfWork, MarketAnalysisTracker, Clock);
+        new(MarketAnalysisBookings, MarketAnalysisClient, MarketAnalysisRuns, UnitOfWork, MarketAnalysisTracker, Clock, PricingSettingsService());
 
     public Room AddRoom(string number = "101", int floor = 1, RoomSize size = RoomSize.Double, int capacity = 2)
     {

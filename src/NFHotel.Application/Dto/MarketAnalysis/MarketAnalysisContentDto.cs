@@ -8,8 +8,10 @@ namespace NFHotel.Application.Dto.MarketAnalysis;
 /// <param name="Sections">The analyses in the order of the markets API.</param>
 /// <param name="Overall">The overall interpretation (result schema 1.2); <c>null</c> when the result has none, also in a report stored before it existed.</param>
 /// <param name="Forecast">The forecast (result schema 1.2); <c>null</c> when the result has none.</param>
+/// <param name="PriceSuggestions">The price suggestions (result schema 1.3); <c>null</c> when the result has none, also in a report stored before it existed.</param>
 public sealed record MarketAnalysisContentDto(
     IReadOnlyList<MarketAnalysisFigureDto> Figures,
     IReadOnlyList<MarketAnalysisSectionDto> Sections,
     MarketAnalysisOverallDto? Overall = null,
-    MarketAnalysisForecastDto? Forecast = null);
+    MarketAnalysisForecastDto? Forecast = null,
+    MarketAnalysisPriceSuggestionsDto? PriceSuggestions = null);

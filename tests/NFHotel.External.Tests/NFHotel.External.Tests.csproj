@@ -31,6 +31,8 @@
     <Content Include="..\..\docs\test-data\market-analysis-result.json" Link="TestData\market-analysis-result.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- A trimmed result of schema 1.2 (room revenue, forecast, overall interpretation) taken from a real run. -->
     <Content Include="..\..\docs\test-data\market-analysis-result-1.2.json" Link="TestData\market-analysis-result-1.2.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The price suggestions of result schema 1.3, a byte-identical copy of the sample of the market analysis service. -->
+    <Content Include="..\..\docs\test-data\price-suggestions-sample.json" Link="TestData\price-suggestions-sample.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- A byte-identical copy of openapi/market-contract.yaml of the market analysis service: the fake of the service and the contract test read it. -->
     <Content Include="..\..\docs\test-data\market-contract.yaml" Link="TestData\market-contract.yaml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

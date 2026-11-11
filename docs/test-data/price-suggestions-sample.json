@@ -1,0 +1,47 @@
+{
+  "as_of": "2026-11-11",
+  "horizon_end": "2027-01-10",
+  "suggestions": [
+    {
+      "room_size": "all",
+      "first_date": "2026-12-24",
+      "last_date": "2026-12-26",
+      "change": "surcharge",
+      "percent": 20,
+      "reason": "holiday",
+      "holiday": "Christmas",
+      "threshold": 0.8,
+      "history": [
+        {"year": 2024, "occupancy": 0.85},
+        {"year": 2025, "occupancy": 0.88}
+      ],
+      "explanation": {
+        "text": "The Christmas days were above 80 percent in both earlier years.",
+        "ai_written": true
+      }
+    },
+    {
+      "room_size": "single",
+      "first_date": "2027-01-04",
+      "last_date": "2027-01-10",
+      "change": "discount",
+      "percent": 15,
+      "reason": "low_history",
+      "threshold": 0.4,
+      "history": [
+        {"year": 2025, "occupancy": 0.31},
+        {"year": 2026, "occupancy": 0.35}
+      ],
+      "explanation": {
+        "text": "Occupancy of this week was 31 and 35 percent in the two earlier years.",
+        "ai_written": false
+      }
+    }
+  ],
+  "not_enough_history": [
+    {"first_date": "2026-11-23", "last_date": "2026-11-29", "years_found": 1}
+  ],
+  "ideas": [
+    {"text": "Offer a package with breakfast for the quiet week in January.", "ai_written": true}
+  ]
+}

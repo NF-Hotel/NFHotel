@@ -122,7 +122,7 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
     {
         // The period is sent only when both dates are chosen; without it the service takes the span of the bookings.
         var period = request.From is { } first && request.To is { } last ? new PeriodBody(first, last) : null;
-        var body = new RunBody(request.RoomCount, period, request.Bookings);
+        var body = new RunBody(request.RoomCount, period, request.Bookings, request.Pricing);
 
         using var message = NewRequest(HttpMethod.Post, $"{RunsPath}?insights=true");
         message.Content = JsonContent.Create(body, options: RequestOptions);
@@ -338,7 +338,11 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
 
     private sealed record PeriodBody(DateOnly FirstDate, DateOnly LastDate);
 
-    private sealed record RunBody(int RoomCount, PeriodBody? Period, IReadOnlyList<MarketBookingDto> Bookings);
+    private sealed record RunBody(
+        int RoomCount,
+        PeriodBody? Period,
+        IReadOnlyList<MarketBookingDto> Bookings,
+        MarketAnalysisPricingRequest? Pricing);
 
     private sealed record RunState(Guid? RunId, string State, string? ErrorCode);
 }
