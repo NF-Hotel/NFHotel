@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Proposed | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | pending |
+| 2026-11-11 | Proposed | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | [e68bde9] |
 
 ---
 
@@ -62,3 +62,4 @@ Go: every Mandatory criterion passes, criterion 21 on condition. Not yet done: t
 
 [MIL-071]: ../milestones/mil-071-price-suggestions-from-the-service.md
 [QC-CS-001]: ../../framework/qc/code/qc-programming-csharp.md
+[e68bde9]: https://github.com/NF-Hotel/NFHotel/commit/e68bde92fb7c7286fb911e6ab4b711a7577debe4
