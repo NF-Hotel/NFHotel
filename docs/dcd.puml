@@ -190,7 +190,7 @@ CleaningTask .> CleaningStatus : uses >
 MaintenanceTask .> MaintenanceStatus : uses >
 RoomPrice .> PriceType : uses >
 
-' PriceSuggestion is computed (PriceSuggestionRule), never stored: it becomes a PriceChange when a Manager approves it.
+' A price suggestion is made by the market analysis service (MIL-071), never stored: it becomes a PriceChange when a Manager approves it.
 ' Effective price of a size on a day = RoomRate x the one PriceChange that counts on that day (no overlap per size).
 PriceChange "0..*" --> "1" RoomRate : changes the price of its size >
 PriceChange .> PriceChangeState : uses >

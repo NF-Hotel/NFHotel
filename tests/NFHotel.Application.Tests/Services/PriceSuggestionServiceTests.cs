@@ -43,6 +43,10 @@ public sealed class PriceSuggestionServiceTests
         return result.Value;
     }
 
+    // The figures of a suggestion without the texts and the history, which have their own tests.
+    private static (string Key, string Size, string Season, DateOnly First, DateOnly Last, decimal Percentage, decimal Old, decimal New, decimal Occupancy, decimal Threshold, bool Limited) Figures(PriceSuggestionItemDto item) =>
+        (item.Key, item.Size, item.Season, item.FirstDay, item.LastDay, item.Percentage, item.OldPrice, item.NewPrice, item.OccupancyPercent, item.ThresholdPercent, item.WasLimited);
+
     #region Open suggestions
 
     /// <summary>Positive: a high summer gives +20 % on all three sizes with the old and the new price, and a low winter gives -15 % on the single room only.</summary>
@@ -60,12 +64,17 @@ public sealed class PriceSuggestionServiceTests
         Assert.Equal(new DateOnly(2027, 5, 1), list.GeneratedForDay);
         Assert.Equal(
             [
-                new PriceSuggestionItemDto(HighSingleKey, "Single", "High", SummerFirst, SummerLast, 20m, 100m, 120m, 90m, 80m, false),
-                new PriceSuggestionItemDto("double|2027-06-01|2027-08-31|20.00", "Double", "High", SummerFirst, SummerLast, 20m, 150m, 180m, 90m, 80m, false),
-                new PriceSuggestionItemDto("suite|2027-06-01|2027-08-31|20.00", "Suite", "High", SummerFirst, SummerLast, 20m, 200m, 240m, 90m, 80m, false),
-                new PriceSuggestionItemDto(LowSingleKey, "Single", "Low", new DateOnly(2028, 1, 1), new DateOnly(2028, 2, 29), -15m, 100m, 85m, 30m, 40m, false),
+                (HighSingleKey, "Single", "High", SummerFirst, SummerLast, 20m, 100m, 120m, 90m, 80m, false),
+                ("double|2027-06-01|2027-08-31|20.00", "Double", "High", SummerFirst, SummerLast, 20m, 150m, 180m, 90m, 80m, false),
+                ("suite|2027-06-01|2027-08-31|20.00", "Suite", "High", SummerFirst, SummerLast, 20m, 200m, 240m, 90m, 80m, false),
+                (LowSingleKey, "Single", "Low", new DateOnly(2028, 1, 1), new DateOnly(2028, 2, 29), -15m, 100m, 85m, 30m, 40m, false),
             ],
-            list.Items);
+            list.Items.Select(Figures));
+        PriceSuggestionItemDto single = list.Items[0];
+        Assert.Equal(("high_history", null), (single.Reason, single.Holiday));
+        Assert.Equal([(2025, 88m), (2026, 92m)], single.History!.Select(year => (year.Year, year.OccupancyPercent)));
+        Assert.Equal(new PriceSuggestionTextDto("The same days were busy in both earlier years.", true), single.Explanation);
+        Assert.Equal([new PriceSuggestionTextDto("Offer a package for the quiet weeks.", true)], list.Ideas);
         Assert.Null(list.AiExplanation);
     }
 
@@ -83,9 +92,25 @@ public sealed class PriceSuggestionServiceTests
         Assert.Equal([HighSingleKey, LowSingleKey], list.Items.Select(item => item.Key));
     }
 
-    /// <summary>Positive: saved settings are used instead of the defaults (a surcharge of 25 % gives 125).</summary>
+    /// <summary>Positive: the percentage comes from the service; a saved largest change below it cuts it and the suggestion says so.</summary>
     [Fact]
-    public async Task GetOpenAsync_SettingsSaved_UsesThem()
+    public async Task GetOpenAsync_SurchargeAboveTheLargestChange_IsLimited()
+    {
+        // Arrange
+        ServiceWorld world = WorldWithReport();
+        world.PricingSettings.Add(PricingSetting.Create(25m, 15m, 80m, 40m, 15m, 0m, [RoomSize.Single], "manager", world.Clock.UtcNow));
+
+        // Act
+        PriceSuggestionListDto list = await OpenAsync(world);
+
+        // Assert
+        PriceSuggestionItemDto single = list.Items.First(item => item.Size == "Single" && item.Season == "High");
+        Assert.Equal(("single|2027-06-01|2027-08-31|15.00", 15m, 115m, true), (single.Key, single.Percentage, single.NewPrice, single.WasLimited));
+    }
+
+    /// <summary>Positive: a saved largest change that the service percentage stays under changes nothing, and the settings never raise a percentage.</summary>
+    [Fact]
+    public async Task GetOpenAsync_SettingsAllowTheChange_KeepsThePercentageOfTheService()
     {
         // Arrange
         ServiceWorld world = WorldWithReport();
@@ -96,23 +121,7 @@ public sealed class PriceSuggestionServiceTests
 
         // Assert
         PriceSuggestionItemDto single = list.Items.First(item => item.Size == "Single" && item.Season == "High");
-        Assert.Equal(("single|2027-06-01|2027-08-31|25.00", 25m, 125m), (single.Key, single.Percentage, single.NewPrice));
-    }
-
-    /// <summary>Positive: a surcharge above the largest change is cut and flagged as limited.</summary>
-    [Fact]
-    public async Task GetOpenAsync_SurchargeAboveTheLargestChange_IsLimited()
-    {
-        // Arrange
-        ServiceWorld world = WorldWithReport();
-        world.PricingSettings.Add(PricingSetting.Create(40m, 15m, 80m, 40m, 30m, 0m, [RoomSize.Single], "manager", world.Clock.UtcNow));
-
-        // Act
-        PriceSuggestionListDto list = await OpenAsync(world);
-
-        // Assert
-        PriceSuggestionItemDto single = list.Items.First(item => item.Size == "Single" && item.Season == "High");
-        Assert.Equal((30m, 130m, true), (single.Percentage, single.NewPrice, single.WasLimited));
+        Assert.Equal(("single|2027-06-01|2027-08-31|20.00", 20m, 120m, false), (single.Key, single.Percentage, single.NewPrice, single.WasLimited));
     }
 
     /// <summary>Negative: without any stored report the basis is no_basis and the list is empty (extension 2a).</summary>
@@ -162,7 +171,7 @@ public sealed class PriceSuggestionServiceTests
     public async Task GetOpenAsync_OnlyNormalMonths_ReturnsAnOkListWithoutItems()
     {
         // Arrange
-        ServiceWorld world = WorldWithReport(PriceSuggestionTestData.Content(Enumerable.Repeat(60d, 12).ToArray()));
+        ServiceWorld world = WorldWithReport(PriceSuggestionTestData.Content(withSuggestions: false));
 
         // Act
         PriceSuggestionListDto list = await OpenAsync(world);
@@ -190,8 +199,8 @@ public sealed class PriceSuggestionServiceTests
         Assert.Equal("Raise every price by 99 percent in July.", withFirst.AiExplanation);
         Assert.Equal("Lower everything to 1 krone.", withSecond.AiExplanation);
         Assert.Null(withNone.AiExplanation);
-        Assert.Equal(withNone.Items, withFirst.Items);
-        Assert.Equal(withNone.Items, withSecond.Items);
+        Assert.Equal(withNone.Items.Select(Figures), withFirst.Items.Select(Figures));
+        Assert.Equal(withNone.Items.Select(Figures), withSecond.Items.Select(Figures));
     }
 
     #endregion
