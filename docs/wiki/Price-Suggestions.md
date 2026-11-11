@@ -62,13 +62,13 @@ The values of the rule. They are sent to the market analysis service when an ana
 
 | Field | Meaning | Default |
 | --- | --- | --- |
-| Surcharge when busy (%) | Added to the base rate for busy days | 20 |
-| Discount when quiet (%) | Taken from the base rate for quiet days | 15 |
-| Busy from occupancy (%) | At or above this the same days in earlier years count as busy | 80 |
-| Quiet up to occupancy (%) | At or below this the same days in earlier years count as quiet | 40 |
+| Surcharge in a high season (%) | Added to the base rate for busy days | 20 |
+| Discount in a low season (%) | Taken from the base rate for quiet days | 15 |
+| High season from occupancy (%) | At or above this the same days in earlier years count as busy | 80 |
+| Low season up to occupancy (%) | At or below this the same days in earlier years count as quiet | 40 |
 | Largest change of a price (%) | Cap of any change | 30 |
 | Minimum nightly price | A price never goes below this | 0 |
-| Room sizes that get a discount | Checked sizes get the discount | Single |
+| Room sizes that get a low season discount | Checked sizes get the discount | Single |
 
 The low threshold must be below the high threshold, and the percentages must be from 0 to 100 (the largest change above 0). Saved settings apply to the next suggestions. They do not change a price change that is already approved.
 
@@ -82,7 +82,7 @@ The low threshold must be below the high threshold, and the percentages must be 
 | Approve | The two date fields default to the first and last day of the suggestion; change them if you want a shorter period, then press Approve |
 | Further ideas | Ideas without a price from the service, such as a package; they cannot be approved and change no price |
 | Explanation | The AI text of the market analysis, labelled; it is not used for any price |
-| Price changes | Every approved change, newest first: room size, change, first and last day, State (approved or reverted), who approved and when, who reverted and when, and a Revert button |
+| Price changes | Every approved change, newest first: room size, change, first and last day, State (In force, Coming, Finished, Reverted or Withdrawn), who approved and when, who reverted and when, and a Revert button |
 | Prices today | For each room size the base rate, the change in force today and the price today |
 
 A suggestion is not listed for days that a price change of the same room size already covers.
