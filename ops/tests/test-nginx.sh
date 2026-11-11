@@ -2,8 +2,9 @@
 # Test of the nginx configuration (MIL-017, ADR-0011 decision 7): the HTTPS server with no
 # optional route, with the optional API route and no API, and with an API reached from a
 # tailnet address and refused from another address. Then the public listener of MIL-040 (port 8082,
-# Cloudflare Tunnel): the site with the client's scheme and address, no back office, and only the two
-# mobile routes of the API. Last, the hardened service of
+# Cloudflare Tunnel): the site with the client's scheme and address, the back office only with the
+# Access token header in any spelling of /admin (MIL-041, MIL-072), and only the two mobile routes
+# of the API. Last, the hardened service of
 # deploy/nginx/docker-compose.yml (MIL-023 task 2) starts and turns healthy with a key as
 # production has it: 0600 and owned by another user than root.
 #
@@ -113,6 +114,11 @@ readonly PUBLIC=http://t-nginx:8082 # NOSONAR: an internal Docker hop, as in pro
 public() {
   docker run --rm --network t-ngnet "$CURL" -s -o /dev/null -w '%{http_code}' "$PUBLIC$1" # NOSONAR: see PUBLIC
 }
+# A request with the Access token header, as the validating route of the tunnel forwards it after Access.
+with_token() {
+  docker run --rm --network t-ngnet "$CURL" -s -H 'Cf-Access-Jwt-Assertion: eyJ.test.token' \
+    -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC$1"
+}
 check "the public site reaches the web application as HTTPS, with the client's address" "https 203.0.113.7" \
   "$(docker run --rm --network t-ngnet "$CURL" -s -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC/book")"
 check "the tailnet server still reports its own scheme" "https" \
@@ -120,8 +126,14 @@ check "the tailnet server still reports its own scheme" "https" \
 check "the back office without the Access token is refused" 404 "$(public /admin/login)"
 check "the back office root without the Access token is refused" 404 "$(public /admin)"
 check "the back office with the Access token reaches the web application" "https 203.0.113.7" \
-  "$(docker run --rm --network t-ngnet "$CURL" -s -H 'Cf-Access-Jwt-Assertion: eyJ.test.token' \
-    -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC/admin/login")"
+  "$(with_token /admin/login)"
+# Every spelling of /admin (MIL-072): the web application matches its routes without regard to letter case, so the
+# guard must too, a percent-encoded letter included.
+for spelling in /ADMIN/login /Admin/login /aDmin/login /%41DMIN/login; do
+  check "the back office spelt $spelling without the Access token is refused" 404 "$(public "$spelling")"
+done
+check "the back office spelt /ADMIN/login with the Access token reaches the web application" "https 203.0.113.7" \
+  "$(with_token /ADMIN/login)"
 check "the mobile sign-in route reaches the API" api-reached \
   "$(docker run --rm --network t-ngnet "$CURL" -s -X POST "$PUBLIC/mobile-api/api/auth/login")"
 check "the mobile rooms route reaches the API" 200 "$(public /mobile-api/api/rooms/3)"
