@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Proposed | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent | pending |
+| 2026-11-11 | Proposed | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent | [6e858fa] |
 
 ---
 
@@ -63,3 +63,4 @@ Go: every Mandatory criterion that applies passes, except criterion 14, which ca
 [BC-001]: ../business-case.md
 [MIL-055]: ../milestones/mil-055-room-price-suggestions.md
 [QC-WIKI-001]: ../../framework/qc/artifacts/qc-wiki.md
+[6e858fa]: https://github.com/NF-Hotel/NFHotel/commit/6e858fa32225ca7fee8351e1c76d5153ae906888

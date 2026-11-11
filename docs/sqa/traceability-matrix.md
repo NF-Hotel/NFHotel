@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-09 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-069 and of its code at the gate: the prune redeployed on the backup host on 2026-11-08 (task 5), its first pass with nothing to delete, gate passed (RC-322, Go) | [53e3a9e] |
-| 2026-11-11 | Proposed | Claude (AI) | S01 | The rows of MIL-071 (price suggestions from the service): the milestone, the reviews RC-323 to RC-327, the wiki page and the code that replaces the rule of MIL-055 | pending |
+| 2026-11-11 | Proposed | Claude (AI) | S01 | The rows of MIL-071 (price suggestions from the service): the milestone, the reviews RC-323 to RC-327, the wiki page and the code that replaces the rule of MIL-055 | [6e858fa] |
 
 ---
 
@@ -361,3 +361,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
+[6e858fa]: https://github.com/NF-Hotel/NFHotel/commit/6e858fa32225ca7fee8351e1c76d5153ae906888
