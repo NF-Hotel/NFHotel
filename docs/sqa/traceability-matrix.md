@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-09 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-070 and of its code at the gate: the fix deployed and a new password for `nfhotel_app` on the VM on 2026-11-08 (tasks 4 and 5), gate passed (RC-321, Go) | [876210f] |
 | 2026-11-09 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-069 and of its code at the gate: the prune redeployed on the backup host on 2026-11-08 (task 5), its first pass with nothing to delete, gate passed (RC-322, Go) | [53e3a9e] |
+| 2026-11-11 | Proposed | Claude (AI) | S01 | The rows of MIL-071 (price suggestions from the service): the milestone, the reviews RC-323 to RC-327, the wiki page and the code that replaces the rule of MIL-055 | pending |
 
 ---
 
@@ -24,7 +24,7 @@ updated whenever an artifact instance is created or reviewed.
 
 | Artifact Instance | Type | Language | Domain | Upstream (Backward Link) | Downstream (Forward Link) | Last Reviewed (RC-ID) |
 | --- | --- | --- | --- | --- | --- | --- |
-| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-021], [MIL-022], [MIL-023], [UCD-001], [US-001], [MIL-055] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044], [RC-088] |
+| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-021], [MIL-022], [MIL-023], [UCD-001], [US-001], [MIL-055], [MIL-071] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044], [RC-088] |
 | [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009], [RC-026] |
 | [MIL-001] | Milestone | en | it | [BC-001] | - | [RC-003] |
 | [MIL-002] | Milestone | en | it | [BC-001] | - | [RC-006] |
@@ -67,7 +67,7 @@ updated whenever an artifact instance is created or reviewed.
 | `deploy/`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-002] | - | [RC-007] |
 | `deploy/proxmox`, `scripts/pve-token.sh`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-003] | - | [RC-011] |
 | `deploy/market-analysis`, `deploy/nginx`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-004] | - | [RC-016] |
-| [MIL-055] | Milestone (Accepted, Go) | en | it | [BC-001], [US-001], [MIL-026], [MIL-028], [MIL-030] | [UC-007], `docs/wiki/Price-Suggestions.md`, code and tests below | [RC-262] |
+| [MIL-055] | Milestone (Accepted, Go; its rule for the suggestions is replaced by [MIL-071]) | en | it | [BC-001], [US-001], [MIL-026], [MIL-028], [MIL-030] | [UC-007], [MIL-071], `docs/wiki/Price-Suggestions.md`, code and tests below | [RC-262] |
 | [MIL-058] | Milestone (Accepted, Go) | en | it | [BC-001], [DSA-001], [ADR-0032], [MIL-022], [MIL-044], [MIL-053] | `docs/wiki/Security-Controls.md` (the code quality row), the code and tests of the findings below | [RC-277] |
 | The code of MIL-058: the back-office view models of `src/NFHotel.Web/Features/Admin` (bookings, guests, rooms) and `Booking/BookingFlowViewModel`, `BenchmarkExport` and the Razor loops of `Benchmark` and `Pricing`, `src/NFHotel.External/MarketAnalysis` (`FindingsSeries`, `MarketAnalysisResultMapper`), the test paths and the disposables of `tests/`, `StubHandler`, and `JsonClient.get_json` of the scan exporter | Source and test code (built, not yet merged) | - | - | [MIL-058] tasks 2 to 5 | - | [RC-278] (the findings report of the 57 findings) |
 | [MIL-059] | Milestone (Accepted, Go) | en | it | [BC-001], [DSA-001], [ADR-0007], [ADR-0019], [ADR-0021], [ADR-0032], [MIL-022], [MIL-044] | [ADR-0037], [SAR-001], `docs/wiki/Security-Controls.md` and `docs/wiki/Workflows.md` (the policy rows), the code below | [RC-279] |
@@ -99,6 +99,7 @@ updated whenever an artifact instance is created or reviewed.
 | The code of MIL-069: the prune of the backup target in `ops/deploy/backup-target/prune-backups.sh`, the service `prune` in its `docker-compose.yml`, `Dockerfile` and `backup-target.env.example`, the section "How long the backup target keeps the copies" of the wiki page Disaster-Recovery, and their tests in `ops/tests/test-backup-target.sh` | Shell, Dockerfile, YAML (reviewed 2026-11-08, Go; deployed to the backup host 2026-11-08, RC-322) | - | - | [MIL-069] tasks 1 to 3, [ADR-0008], [DSA-001] | - | [RC-316], [RC-322] |
 | The code of MIL-068: the removal of the desktop in `ops/scripts/remove-desktop.sh`, its test `ops/tests/test-remove-desktop.sh` and its entry in the matrix of `.github/workflows/ops-ci.yaml`, and the section "Without a desktop" of the wiki page Host-Hardening with its update command | Shell, YAML (reviewed 2026-11-08, Go; run on the VM 2026-11-08, RC-319) | - | - | [MIL-068] tasks 1 to 3, [CIS-001] | - | [RC-317], [RC-319] |
 | [MIL-070] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-08, RC-318; the fix deployed and the new password on the VM 2026-11-08; gate passed 2026-11-09, RC-321) | en | it | [BC-001], [CIS-001], [DSA-001], [ADR-0011], [ADR-0024], [MIL-023], [MIL-068] | planned: `as_app` of `ops/scripts/deploy-release.sh` without the connection string in the log of `sudo`, ADR-0041, a regression test, a new password for `nfhotel_app`, and the wiki pages Database-Preparation and Host-Hardening | [RC-318], [RC-321] |
+| [MIL-071] | Milestone (Accepted, Go; plan reviewed in RC-323; the gate is task 6) | en | it | [BC-001], [US-001], [MIL-055], [MIL-028], notebook-market-analysis MIL-002 | the contract and client (`src/NFHotel.External/MarketAnalysis`, `docs/test-data/market-contract.yaml`), the presentation of the suggestions (`PriceSuggestionService`, the page `/admin/pricing/suggestions`), `NoPriceRuleTests`, the wiki page Price Suggestions | [RC-323], [RC-324], [RC-325], [RC-326], [RC-327] |
 | The code of MIL-070: `as_app` of `ops/scripts/deploy-release.sh`, its test `ops/tests/test-sudo-log.sh` and its entry in the matrix of `.github/workflows/ops-ci.yaml`, the section "No secret in the log of sudo" of the wiki page Host-Hardening, the section "A new password for `nfhotel_app`" of the wiki page Database-Preparation, and the script tests of the wiki page Workflows | Shell, YAML (reviewed 2026-11-08, Go; deployed to the VM 2026-11-08, RC-321) | - | - | [MIL-070] tasks 1 to 3, [ADR-0041], [CIS-001] | - | [RC-320], [RC-321] |
 | [ADR-0040] | ADR (Accepted) | - | - | [MIL-064], [ADR-0007], [ADR-0030], [MIL-022], [MIL-036], [MIL-059] | the patch layer of the proxy in `ops/deploy/nginx/Dockerfile` and its entry in `ops/scripts/build-release-images.sh`, the release references by name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, the `docker` entry of `.github/dependabot.yml` (MIL-064 tasks 2 to 7, RC-300) | [RC-299], [RC-300] (the code) |
 | [ADR-0041] | ADR (Accepted) | - | - | [MIL-070], [ADR-0011], [ADR-0024], [MIL-023], [CIS-001] | `as_app` of `ops/scripts/deploy-release.sh`, the second check of `ops/tests/test-sudo-log.sh`, and the sections of the wiki pages Host-Hardening and Database-Preparation (MIL-070 tasks 1 to 3, RC-320) | [RC-320] |
@@ -109,18 +110,20 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-048] | Milestone (Accepted, Go; gate passed 2026-11-05, RC-292, after RC-285 Go-with-conditions) | en | it | [BC-001], [ADR-0011], [ADR-0034], [MIL-023], CIS-001, [DSA-001] | [ADR-0034], `ops/scripts/db/team-roles.sql`, `ops/scripts/manage-team-db-users.sh`, `ops/deploy/postgres-tailnet/`, the rule for 5432 in `nfhotel.nft`, the wiki page Database-Access | [RC-245], [RC-247], [RC-285] (Go-with-conditions), [RC-292] (the re-review, Go) |
 | [ADR-0034] | ADR (Accepted) | - | - | [MIL-048], [ADR-0011], ADR-0024, CIS-001, [DSA-001] | the team roles, the relay on the tailnet and the firewall rule of MIL-048 | [RC-247] |
 | [UC-007] | Use Case (Accepted) | en | it | [UCD-001], [US-001], [SA-001], [MIL-055] | [DM-004], [DICT-001], code and tests below | [RC-264] (Go with conditions) |
-| `docs/wiki/Price-Suggestions.md` | Wiki page (Proposed) | en | - | [MIL-055] task 10, [US-001], [UC-007] | - | - (not yet reviewed) |
+| `docs/wiki/Price-Suggestions.md` | Wiki page (Proposed; reworded by [MIL-071] task 5) | en | - | [MIL-055] task 10, [MIL-071] task 5, [US-001], [UC-007] | - | [RC-328] |
 | Dictionary terms and domain concepts: Room rate, Price change, Price suggestion, Season, Pricing settings; Audit event actions `PriceChangeApproved`, `PriceChangeReverted`, `PricingSettingsChanged`, `RoomRateChanged` | Domain terms (Accepted) | en | it | [UC-007], [US-001] | [DICT-001], [DM-004], `src/NFHotel.Domain` (`RoomRate`, `PriceChange`, `PricingSetting`) | [RC-264] |
-| `src/NFHotel.Domain` (`RoomRate`, `PriceChange`, `PricingSetting`, `PriceChangeState`), `src/NFHotel.Application/UseCases/Pricing` (`SeasonRule`, `PriceSuggestionRule`, `PriceSuggestionService`, `PriceChangeService`, `PricingSettingsService`, `OccupancyObservationReader`), `src/NFHotel.Application/UseCases/RoomRates` (`RoomRateService`), the price lookup in `BookingService` | Source code (built, not yet merged) | - | - | [MIL-055] tasks 3 to 9, [UC-007] | - | [RC-265] (No-Go), [RC-266] (Go-with-conditions, Proposed; criteria 3, 13 and 21 open) |
+| `src/NFHotel.Domain` (`RoomRate`, `PriceChange`, `PricingSetting`, `PriceChangeState`), `src/NFHotel.Application/UseCases/Pricing` (`PriceSuggestionService`, `PriceChangeService`, `PricingSettingsService`, `OccupancyObservationReader`; `SeasonRule` and `PriceSuggestionRule` of MIL-055 are removed by MIL-071 task 3, RC-326), `src/NFHotel.Application/UseCases/RoomRates` (`RoomRateService`), the price lookup in `BookingService` | Source code (built, not yet merged) | - | - | [MIL-055] tasks 3 to 9, [UC-007] | - | [RC-265] (No-Go), [RC-266] (Go-with-conditions, Proposed; criteria 3, 13 and 21 open) |
 | `src/NFHotel.Api/Controllers` (`RoomRatesController`, `PricingSettingsController`, `PriceSuggestionsController`, `PriceChangesController`), `src/NFHotel.ApiClient` (`ApiRoomRateService`, `ApiPricingSettingsService`, `ApiPriceSuggestionService`), permission `Prices.Manage` | Source code (built, not yet merged) | - | - | [MIL-055] tasks 3, 5 and 7, [US-001], [UC-007] | - | [RC-265] (No-Go), [RC-266] (Go-with-conditions, Proposed; criteria 3, 13 and 21 open) |
 | `src/NFHotel.Infrastructure` (configurations, repositories and migrations `AddRoomRateAndAuditDetail`, `AddPricingSettings`, `AddPriceChange`) | Source code (built, not yet merged) | - | - | [MIL-055] tasks 3, 5, 6 and 9 | - | [RC-265] (No-Go), [RC-266] (Go-with-conditions, Proposed; criteria 3, 13 and 21 open) |
-| `src/NFHotel.Web/Features/Admin/Pricing` (`RoomRates`, `PricingSettings`, `PriceSuggestions` pages and view models), `AdminNav` | Source code (built, not yet merged) | - | - | [MIL-055] tasks 3, 5 and 8, [UC-007] | - | [RC-265] (No-Go), [RC-266] (Go-with-conditions, Proposed; criteria 3, 13 and 21 open) |
-| Tests of the rule: `SeasonRuleTests`, `PriceSuggestionRuleTests`, `OccupancyObservationReaderTests`, `PriceSuggestionServiceTests` | Test code (built, not yet merged) | - | - | [MIL-055] tasks 4 and 7, [US-001] | - | - |
+| `src/NFHotel.Web/Features/Admin/Pricing` (`RoomRates`, `PricingSettings`, `PriceSuggestions` pages and view models), `AdminNav` | Source code | - | - | [MIL-055] tasks 3, 5 and 8, [MIL-071] task 4, [UC-007] | - | [RC-265] (No-Go), [RC-266] (Go-with-conditions, Proposed; criteria 3, 13 and 21 open), [RC-327] |
+| Tests of the suggestions: `OccupancyObservationReaderTests`, `PriceSuggestionServiceTests`, `NoPriceRuleTests` (the tests `SeasonRuleTests` and `PriceSuggestionRuleTests` of MIL-055 are removed with the rule) | Test code | - | - | [MIL-055] tasks 4 and 7, [MIL-071] task 3, [US-001] | - | [RC-326] |
 | Tests of the services: `RoomRateServiceTests`, `PricingSettingsServiceTests`, `PriceChangeServiceTests`, `PriceChangeAuditTests`, `BookingPriceTests` (Application.Tests); `ManagePricesPermissionTests`, `StaffRolePermissionsTests` | Test code (built, not yet merged) | - | - | [MIL-055] tasks 3, 5, 7 and 9, [UC-007] | - | - |
 | Tests of the domain: `RoomRateTests`, `PricingSettingTests`, `PriceChangeTests`, `StaffAuditEventDetailTests` | Test code (built, not yet merged) | - | - | [MIL-055] tasks 3, 5 and 6 | - | - |
 | Tests of the persistence: `RoomRateRepositoryTests`, `PricingSettingRepositoryTests`, `PriceChangeRepositoryTests`, `BookingPriceTests` (Infrastructure.Tests) | Test code (built, not yet merged) | - | - | [MIL-055] tasks 3, 5, 6 and 9 | - | - |
 | Tests of the API and the client: `RoomRatesEndpointTests`, `PricingSettingsEndpointTests`, `PriceSuggestionsEndpointTests`, `EndpointProtectionTests`, `RoomRateRequestTests`, `PricingSettingsRequestTests`, `PriceSuggestionRequestTests` | Test code (built, not yet merged) | - | - | [MIL-055] tasks 3, 5 and 7, [UC-007] | - | - |
-| Tests of the pages: `RoomRatesViewModelTests`, `PricingSettingsViewModelTests`, `PriceSuggestionsViewModelTests`, `RoomListViewModelTests`, `AdminAccessTests`, `BackOfficeAccessTests` | Test code (built, not yet merged) | - | - | [MIL-055] tasks 3, 5 and 8, [UC-007] | - | - |
+| Tests of the pages: `RoomRatesViewModelTests`, `PricingSettingsViewModelTests`, `PriceSuggestionsViewModelTests`, `PriceSuggestionsPageTests`, `RoomListViewModelTests`, `AdminAccessTests`, `BackOfficeAccessTests` | Test code (built, not yet merged) | - | - | [MIL-055] tasks 3, 5 and 8, [UC-007] | - | - |
+| `src/NFHotel.External/MarketAnalysis` (`MarketAnalysisServiceClient`, `MarketAnalysisResultMapper`), `src/NFHotel.Application/Dto/MarketAnalysis` (the `pricing` request and the `price_suggestions` DTOs), `MarketAnalysisRunner` (sends the settings), the copies `docs/test-data/market-contract.yaml` and `docs/test-data/price-suggestions-sample.json` | Source code | - | - | [MIL-071] task 2, objective 29 of [BC-001] | - | [RC-325] |
+| Tests of the contract and the client: `MarketContractTests`, `MarketAnalysisResultMapper13Tests`, `MarketAnalysisServiceClientTests`, `MarketAnalysisRunnerTests` | Test code | - | - | [MIL-071] task 2 | - | [RC-325] |
 
 ---
 
@@ -319,6 +322,13 @@ updated whenever an artifact instance is created or reviewed.
 [RC-320]: ./reviews/rc-320-mil-070-code.md
 [RC-321]: ./reviews/rc-321-mil-070-gate.md
 [RC-322]: ./reviews/rc-322-mil-069-gate.md
+[MIL-071]: ../milestones/mil-071-price-suggestions-from-the-service.md
+[RC-323]: ./reviews/rc-323-mil-071-price-suggestions-from-the-service.md
+[RC-324]: ./reviews/rc-324-mil-071-task-1-objective-29-and-us-001-12.md
+[RC-325]: ./reviews/rc-325-mil-071-task-2-code.md
+[RC-326]: ./reviews/rc-326-mil-071-task-3-code.md
+[RC-327]: ./reviews/rc-327-mil-071-task-4-code.md
+[RC-328]: ./reviews/rc-328-mil-071-task-5-wiki-and-traceability.md
 [RC-302]: ./reviews/rc-302-mil-064-gate.md
 [RC-303]: ./reviews/rc-303-mil-064-gate-re-review.md
 [RC-287]: ./reviews/rc-287-mil-061.md

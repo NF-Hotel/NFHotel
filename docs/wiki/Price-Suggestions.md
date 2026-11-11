@@ -2,9 +2,9 @@
 
 **English**
 
-The back office can suggest a change of the room prices for the busy and the quiet months, from the market analysis. A Manager reads the suggestion, approves it with one click and can undo it. No price changes until a Manager approves it.
+The back office shows price suggestions for the holidays and the weeks of the next two months. The market analysis service makes them from the history of the same days in earlier years; a Manager reads a suggestion, approves it with one click and can undo it. No price changes until a Manager approves it.
 
-**For:** the Manager of the hotel (permission `Prices.Manage`). **Work:** MIL-055, user story US-001.12, use case UC-007.
+**For:** the Manager of the hotel (permission `Prices.Manage`). **Work:** MIL-055 (the approval, the undo and the settings), MIL-071 (the suggestions come from the service), user story US-001.12, use case UC-007.
 
 **Contents**
 1. [What the suggestions are](#what-the-suggestions-are)
@@ -20,24 +20,26 @@ The back office can suggest a change of the room prices for the busy and the qui
 
 ## What the suggestions are
 
-A room size (single, double, suite) has a base rate: the price a night before any change. A **price suggestion** says: "from this first day to this last day, change the price of this room size by this percentage", and shows the old and the new nightly price and the figures it rests on. A **price change** is a suggestion that a Manager has approved. A price change is never deleted, only reverted, so the list shows what was in force.
+A room size (single, double, suite) has a base rate: the price a night before any change. A **price suggestion**, made by the market analysis service, says: "from this first day to this last day, change the price of this room size by this percentage", and shows the old and the new nightly price and the figures it rests on. A **price change** is a suggestion that a Manager has approved. A price change is never deleted, only reverted, so the list shows what was in force.
 
 ## The rule in plain words
 
-The rule is fixed and has no AI in it: the same figures always give the same suggestions.
+The rule is fixed and lives in the market analysis service, not in the back office: the same bookings and settings always give the same suggestions. An AI never sets a day, a percentage or a price.
 
-1. **Season of a month.** The rule reads the occupancy of each calendar month from the latest completed market analysis report (the average over the years of the report).
-   - **High season:** the occupancy is at or above the high threshold (default 80 %).
-   - **Low season:** the occupancy is at or below the low threshold (default 40 %).
-   - **Normal:** anything in between, and a month without a figure. Normal months get no suggestion.
-2. **High season:** a surcharge of 20 % for every room size.
-3. **Low season:** a discount of 15 % for the room sizes that qualify, which are single rooms by default. Double rooms and suites get no suggestion in low season unless you check them in the settings.
-4. **Cap:** a change is never larger than 30 % (the largest change). A suggestion that would be larger is cut to the cap and says so in the Basis column.
-5. **Minimum price:** a new price never goes below the minimum nightly price. A suggestion that would is cut to it and says so.
-6. **Horizon:** the suggestions cover the next twelve months, starting with the month after today. A run of neighbouring months with the same season becomes one suggestion, from the first to the last day of the run.
-7. **Why twelve calendar months:** the season of, say, July is read from July. If the report has no occupancy for one of the twelve calendar months, the rule cannot tell the seasons apart, so it makes no suggestions and the page says there is no basis. Run a market analysis over a period that covers all twelve calendar months first (at least twelve months).
+1. **The horizon** is the next two months, from the day of the analysis.
+2. **The history.** For the same days in each earlier year the service works out the occupancy: the room nights taken divided by the room nights the hotel has, over all earlier years together. It needs at least two earlier years; with fewer it makes no suggestion for those days and the report says so.
+3. **Holidays.** A holiday in the next two months is a period of its own. The service looks at the same holiday in the earlier years (by its name, so a holiday that moves is still found).
+4. **Weeks.** The other days are taken a week at a time. Days that belong to a holiday are not counted in a week.
+5. **Busy:** the occupancy of the same days in the earlier years is at or above the high threshold (default 80 %). The suggestion is a surcharge (default 20 %) for every room size. The reason is `holiday` for a holiday and `high_history` for a week.
+6. **Quiet:** the occupancy is at or below the low threshold (default 40 %). The suggestion is a discount (default 15 %) for the room sizes that qualify, which are single rooms by default. The reason is `low_history`; for a holiday with a low history the reason is also `low_history`.
+7. **In between** gets no suggestion.
 
-Suggestions also need a base rate for the room size. A room size without a rate gets no suggestion.
+The website then applies two limits that the service never sees, because the service does not know the room rates:
+
+- **Cap:** a change is never larger than the largest change of the settings (default 30 %). A suggestion that would be larger is cut to the cap and says so.
+- **Minimum price:** a discounted price never goes below the minimum nightly price. A suggestion that would is cut to it and says so.
+
+The new price is worked out from the base rate of the room size, so a room size without a rate gets no suggestion. The occupancy is that of the whole hotel; it is not split by room size.
 
 ## The three pages
 
@@ -56,17 +58,17 @@ The nightly base rate of each room size.
 
 ### Pricing settings (`/admin/pricing/settings`)
 
-The values of the rule. Percentages use a dot for decimals, for example 12.5.
+The values of the rule. They are sent to the market analysis service when an analysis is run, so they apply to the next analysis; the cap and the minimum price are applied again when the page is shown. Percentages use a dot for decimals, for example 12.5.
 
 | Field | Meaning | Default |
 | --- | --- | --- |
-| Surcharge in a high season (%) | Added to the base rate in a high season | 20 |
-| Discount in a low season (%) | Taken from the base rate in a low season | 15 |
-| High season from occupancy (%) | At or above this a month is high season | 80 |
-| Low season up to occupancy (%) | At or below this a month is low season | 40 |
+| Surcharge when busy (%) | Added to the base rate for busy days | 20 |
+| Discount when quiet (%) | Taken from the base rate for quiet days | 15 |
+| Busy from occupancy (%) | At or above this the same days in earlier years count as busy | 80 |
+| Quiet up to occupancy (%) | At or below this the same days in earlier years count as quiet | 40 |
 | Largest change of a price (%) | Cap of any change | 30 |
 | Minimum nightly price | A price never goes below this | 0 |
-| Room sizes that get a low season discount | Checked sizes get the discount | Single |
+| Room sizes that get a discount | Checked sizes get the discount | Single |
 
 The low threshold must be below the high threshold, and the percentages must be from 0 to 100 (the largest change above 0). Saved settings apply to the next suggestions. They do not change a price change that is already approved.
 
@@ -74,17 +76,22 @@ The low threshold must be below the high threshold, and the percentages must be 
 
 | Part | Meaning |
 | --- | --- |
-| Open suggestions | One row per room size and season run: Room size, Season, First day, Last day, Change (the percentage), Price a night (old to new), Basis (the occupancy of the month and the threshold it crossed, and a note when the cap or the minimum price cut it) |
-| Approve | The two date fields default to the first and last day of the run; change them if you want a shorter period, then press Approve |
+| Open suggestions | One row per room size and period: Room size, Season (high for a surcharge, low for a discount), Reason, First day, Last day, Change (the percentage), Price a night (old to new), Basis |
+| Reason | The name of the holiday, or "Busy on the same days in earlier years", or "Quiet on the same days in earlier years" |
+| Basis | The average occupancy and the threshold it crossed, the occupancy of each earlier year, the explanation of the suggestion and a note when the cap or the minimum price cut it |
+| Approve | The two date fields default to the first and last day of the suggestion; change them if you want a shorter period, then press Approve |
+| Further ideas | Ideas without a price from the service, such as a package; they cannot be approved and change no price |
 | Explanation | The AI text of the market analysis, labelled; it is not used for any price |
 | Price changes | Every approved change, newest first: room size, change, first and last day, State (approved or reverted), who approved and when, who reverted and when, and a Revert button |
 | Prices today | For each room size the base rate, the change in force today and the price today |
 
 A suggestion is not listed for days that a price change of the same room size already covers.
 
+**When there is nothing to approve.** The page says why. Without a completed report from the service (it may be stopped, or the last report is from before it made suggestions) it says that nothing can be approved and asks you to run a new analysis. With a report but no suggestion it says that no holiday or week in the next two months needs a change. The website never makes a suggestion of its own.
+
 ## Approve a suggestion
 
-1. Open Price suggestions and read the row, especially the Basis column.
+1. Open Price suggestions and read the row, especially the Reason and the Basis columns.
 2. Change the first or last day if you do not want the whole run.
 3. Press **Approve**. The page shows the new price change. The percentage is calculated again by the server, not taken from the browser.
 
@@ -113,14 +120,17 @@ Only a **Manager**, through the permission `Prices.Manage`. A Receptionist and H
 
 ## The AI text
 
-When the market analysis report has an AI insight, the Price suggestions page shows it beside the list, labelled as an explanation. It only explains. It never sets a season, a percentage or a price, and a test fixes that a changed AI text gives the same suggestions.
+The market analysis service asks an AI to explain each suggestion in a sentence or two, and to give up to three ideas without a price. The AI only explains: it is given the figures of the suggestion and may not use any other number, a currency, a cause or a promise. An answer that breaks this is asked for again once, and if it breaks it again the text is built from the figures instead.
+
+Every text on the page is labelled: **Written by an AI**, or **Built from the figures**. A text never sets a day, a percentage or a price, and a test fixes that a text with a price in it changes no figure of the row.
 
 ## Known limits
 
-- In low season there is no suggestion for double rooms and suites unless you check them in the settings; a later story may add rules for them.
+- The occupancy is that of the whole hotel, not of each room size.
+- A holiday or a week with fewer than two earlier years of history gets no suggestion; the service lists it, but the page shows only what can be approved.
+- A new analysis is needed to get new suggestions or to apply changed settings; the page shows the latest completed report.
 - Approvals are serialised by a lock inside one API instance. Run one API instance; with more, two approvals at the same moment could both pass the overlap check.
 - A booking made in the hotel holds only its date and its price. In the market analysis such a row reads as "unknown" for guests, meal and the like, so it does not count as zero guests.
-- The suggestions need a completed market analysis report that covers all twelve calendar months, and a base rate for each room size.
 - That a price change does not touch bookings already made is the proposal in UC-007, for S01 to confirm.
 
 Related: [Home](Home) and the use case UC-007 in `docs/use-cases/uc-007/uc.md`.
