@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Proposed | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | [3ebb51e] |
+| 2026-11-11 | Accepted | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent; accepted by S02 in chat on 2026-11-11 | [3ebb51e] |
 
 ---
 
