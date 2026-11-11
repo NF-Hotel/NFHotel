@@ -8,8 +8,10 @@ namespace NFHotel.Application.Dto.Pricing;
 /// The executive summary of the AI insight on the occupancy in the same report, or <c>null</c>. It is text for the Manager
 /// to read; it never influences a figure.
 /// </param>
+/// <param name="Ideas">Further ideas without a price from the service (MIL-071); <c>null</c> or empty when there are none.</param>
 public sealed record PriceSuggestionListDto(
     string Basis,
     DateOnly GeneratedForDay,
     IReadOnlyList<PriceSuggestionItemDto> Items,
-    string? AiExplanation);
+    string? AiExplanation,
+    IReadOnlyList<PriceSuggestionTextDto>? Ideas = null);

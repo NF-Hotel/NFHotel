@@ -7,12 +7,14 @@ using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.Repositories;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.UseCases.Pricing;
 
 /// <summary>
-/// Makes the open price suggestions from the latest market analysis and approves one (MIL-055). The figures come from
-/// <see cref="PriceSuggestionRule"/> alone; the AI text of the report is passed on as an explanation and never read as a number.
+/// Presents the price suggestions that the market analysis service made in the latest report and approves one (MIL-055, MIL-071).
+/// The service decides the dates, the change and the percentage; this class applies the limits of the settings and works out the
+/// new price from the room rate. The AI texts are passed on as texts and never read as a number.
 /// </summary>
 public sealed class PriceSuggestionService : IPriceSuggestionService
 {
@@ -69,7 +71,7 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
         IReadOnlyList<PriceChange> existing = await _changes.ListAsync(cancellationToken).ConfigureAwait(false);
         PriceSuggestionItemDto[] open = computed.Items.Where(item => !IsCovered(item, existing)).ToArray();
 
-        return Result<PriceSuggestionListDto>.Success(new PriceSuggestionListDto(computed.Basis, computed.Today, open, computed.Explanation));
+        return Result<PriceSuggestionListDto>.Success(new PriceSuggestionListDto(computed.Basis, computed.Today, open, computed.Explanation, computed.Ideas));
     }
 
     /// <inheritdoc />
@@ -166,46 +168,99 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
         return next > item.LastDay;
     }
 
+    // The service decides the dates, the change and the percentage; the website applies its own limits (the largest change and the
+    // minimum price of MIL-055) and works out the new price from the room rate, which the service never sees (MIL-071).
     private async Task<Computed> ComputeAsync(CancellationToken cancellationToken)
     {
         DateOnly today = _clock.Today;
         Result<MarketAnalysisReportDto> report = await _reports.GetLatestReportAsync(cancellationToken).ConfigureAwait(false);
 
-        // No stored report (or one that cannot be read) is the case 2a of the use case: nothing to suggest from.
-        IReadOnlyList<OccupancyObservation> observations = report.IsSuccess ? OccupancyObservationReader.Read(report.Value.Content) : [];
+        // No stored report, or one without price suggestions (result schema 1.2), is the case 2a of the use case: nothing to show.
+        MarketAnalysisPriceSuggestionsDto? prices = report.IsSuccess ? report.Value.Content?.PriceSuggestions : null;
+        if (prices is null)
+        {
+            return new Computed(PriceSuggestionBasis.NoBasis, today, [], null, []);
+        }
 
         PricingSetting? stored = await _settings.GetAsync(cancellationToken).ConfigureAwait(false);
         PricingSettings settings = stored is null ? PricingSettings.Defaults : stored.ToRule();
-        if (!SeasonRule.ByCalendarMonth(observations, settings).HasBasis)
-        {
-            return new Computed(PriceSuggestionBasis.NoBasis, today, [], null);
-        }
-
         IReadOnlyList<RoomRate> rates = await _rates.ListAsync(cancellationToken).ConfigureAwait(false);
-        RoomRateValue[] values = rates.Select(rate => new RoomRateValue(rate.Size, rate.NightlyPrice)).ToArray();
-        PriceSuggestionItemDto[] items = PriceSuggestionRule.Suggest(observations, values, settings, today).Select(ToItem).ToArray();
+        PriceSuggestionItemDto[] items =
+        [
+            .. prices.Suggestions
+                .SelectMany(suggestion => ToItems(suggestion, rates, settings))
+                .OrderBy(item => item.FirstDay)
+                .ThenBy(item => Enum.Parse<RoomSize>(item.Size)),
+        ];
+        PriceSuggestionTextDto[] ideas = [.. prices.Ideas.Select(idea => new PriceSuggestionTextDto(idea.Text, idea.AiWritten))];
 
-        return new Computed(PriceSuggestionBasis.Ok, today, items, OccupancyObservationReader.ReadExplanation(report.Value.Content));
+        return new Computed(PriceSuggestionBasis.Ok, today, items, OccupancyObservationReader.ReadExplanation(report.Value.Content), ideas);
     }
 
-    private static PriceSuggestionItemDto ToItem(PriceSuggestion suggestion)
+    private static IEnumerable<PriceSuggestionItemDto> ToItems(
+        MarketAnalysisPriceSuggestionDto suggestion,
+        IReadOnlyList<RoomRate> rates,
+        PricingSettings settings)
     {
-        decimal signed = suggestion.Season == Season.High ? suggestion.Percentage : -suggestion.Percentage;
-        string size = suggestion.Size.ToString();
+        bool isHigh = string.Equals(suggestion.Change, "surcharge", StringComparison.Ordinal);
+        bool forAll = string.Equals(suggestion.RoomSize, "all", StringComparison.OrdinalIgnoreCase);
+        IEnumerable<RoomRate> matching = rates
+            .Where(rate => forAll || string.Equals(rate.Size.ToString(), suggestion.RoomSize, StringComparison.OrdinalIgnoreCase))
+            .GroupBy(rate => rate.Size)
+            .Select(group => group.First());
 
-        return new PriceSuggestionItemDto(
-            KeyOf(size, suggestion.FirstDay, suggestion.LastDay, signed),
-            size,
-            suggestion.Season.ToString(),
-            suggestion.FirstDay,
-            suggestion.LastDay,
-            signed,
-            suggestion.OldPrice,
-            suggestion.NewPrice,
-            suggestion.OccupancyPercent,
-            suggestion.ThresholdPercent,
-            suggestion.WasLimited);
+        foreach (RoomRate rate in matching)
+        {
+            decimal percentage = Math.Min(suggestion.Percent, settings.MaxChangePercent);
+            bool limited = percentage < suggestion.Percent;
+            decimal newPrice = PriceMath.ApplyPercentage(rate.NightlyPrice, isHigh ? percentage : -percentage);
+            if (!isHigh && newPrice < settings.MinimumNightlyPrice)
+            {
+                // The percentage is what is approved and stored, so it must give the cut price: it is the largest discount that
+                // keeps the minimum, and the price is the one that percentage gives (never below the minimum).
+                percentage = PriceMath.LargestDiscountKeeping(rate.NightlyPrice, settings.MinimumNightlyPrice);
+                limited = true;
+                if (percentage <= 0m)
+                {
+                    continue;
+                }
+
+                newPrice = PriceMath.ApplyPercentage(rate.NightlyPrice, -percentage);
+            }
+
+            decimal signed = isHigh ? percentage : -percentage;
+            string size = rate.Size.ToString();
+            PriceSuggestionHistoryDto[] history =
+            [
+                .. suggestion.History.Select(year => new PriceSuggestionHistoryDto(year.Year, Percent(year.Occupancy))),
+            ];
+
+            yield return new PriceSuggestionItemDto(
+                KeyOf(size, suggestion.FirstDate, suggestion.LastDate, signed),
+                size,
+                isHigh ? "High" : "Low",
+                suggestion.FirstDate,
+                suggestion.LastDate,
+                signed,
+                rate.NightlyPrice,
+                newPrice,
+                history.Length == 0 ? 0m : Math.Round(history.Average(year => year.OccupancyPercent), 1, MidpointRounding.AwayFromZero),
+                Percent(suggestion.Threshold),
+                limited,
+                suggestion.Reason,
+                suggestion.Holiday,
+                history,
+                new PriceSuggestionTextDto(suggestion.Explanation.Text, suggestion.Explanation.AiWritten));
+        }
     }
 
-    private sealed record Computed(string Basis, DateOnly Today, IReadOnlyList<PriceSuggestionItemDto> Items, string? Explanation);
+    // A share between 0 and 1 as percent with one decimal.
+    private static decimal Percent(double share) => Math.Round((decimal)share * 100m, 1, MidpointRounding.AwayFromZero);
+
+    private sealed record Computed(
+        string Basis,
+        DateOnly Today,
+        IReadOnlyList<PriceSuggestionItemDto> Items,
+        string? Explanation,
+        IReadOnlyList<PriceSuggestionTextDto> Ideas);
 }
