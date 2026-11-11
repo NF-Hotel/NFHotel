@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Accepted | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent; accepted by S01 in chat on 2026-11-11 | pending |
+| 2026-11-11 | Accepted | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent; accepted by S01 in chat on 2026-11-11 | [4ddf975] |
 
 ---
 
@@ -65,3 +65,4 @@ Go: every Mandatory criterion passes; two pass on condition (criterion 4 of QC-M
 [MIL-071]: ../../milestones/mil-071-price-suggestions-from-the-service.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[4ddf975]: https://github.com/NF-Hotel/NFHotel/commit/4ddf9755c4a6b473d2981de48d15e5c75805caad

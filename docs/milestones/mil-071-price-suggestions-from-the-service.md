@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Accepted | Jens Tirsvad Nielsen | S01 | Initial version; S01 chose in chat on 2026-11-11 that a fixed rule in the service makes the suggestions, the AI only explains, and the rule of MIL-055 is replaced; accepted by S01 in chat on 2026-11-11 after RC-323 Go | pending |
+| 2026-11-11 | Accepted | Jens Tirsvad Nielsen | S01 | Initial version; S01 chose in chat on 2026-11-11 that a fixed rule in the service makes the suggestions, the AI only explains, and the rule of MIL-055 is replaced; accepted by S01 in chat on 2026-11-11 after RC-323 Go | [4ddf975] |
 
 ---
 
@@ -86,3 +86,4 @@ Decide whether the back office can present the price suggestions that the market
 [US-001]: ../user-stories.md
 [MIL-028]: ./mil-028-market-analysis-run-api.md
 [MIL-055]: ./mil-055-room-price-suggestions.md
+[4ddf975]: https://github.com/NF-Hotel/NFHotel/commit/4ddf9755c4a6b473d2981de48d15e5c75805caad
