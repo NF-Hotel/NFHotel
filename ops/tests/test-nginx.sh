@@ -116,8 +116,8 @@ public() {
 }
 # A request with the Access token header, as the validating route of the tunnel forwards it after Access.
 with_token() {
-  docker run --rm --network t-ngnet "$CURL" -s -H 'Cf-Access-Jwt-Assertion: eyJ.test.token' \
-    -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC$1"
+  local -r access_header='Cf-Access-Jwt-Assertion: eyJ.test.token' client_header='CF-Connecting-IP: 203.0.113.7'
+  docker run --rm --network t-ngnet "$CURL" -s -H "$access_header" -H "$client_header" "$PUBLIC$1" # NOSONAR: see PUBLIC
 }
 check "the public site reaches the web application as HTTPS, with the client's address" "https 203.0.113.7" \
   "$(docker run --rm --network t-ngnet "$CURL" -s -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC/book")"
