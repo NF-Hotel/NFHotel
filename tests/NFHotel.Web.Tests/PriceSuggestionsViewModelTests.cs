@@ -470,6 +470,90 @@ public sealed class PriceSuggestionsViewModelTests
         Assert.True(lowRow.WasLimited);
     }
 
+    /// <summary>Positive: a holiday suggestion shows the name of the holiday, the occupancy of each earlier year and the text with its label (MIL-071).</summary>
+    [Fact]
+    public async Task LoadAsync_HolidaySuggestion_ShowsHolidayHistoryAndLabelledText()
+    {
+        // Arrange
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
+        PriceSuggestionItemDto holiday = HighItem() with
+        {
+            Reason = "holiday",
+            Holiday = "Christmas",
+            History = [new PriceSuggestionHistoryDto(2024, 85m), new PriceSuggestionHistoryDto(2025, 88.5m)],
+            Explanation = new PriceSuggestionTextDto("Busy in both earlier years.", true),
+        };
+        service.GetOpenAsync(Arg.Any<CancellationToken>()).Returns(Result<PriceSuggestionListDto>.Success(OpenList(null, [holiday])));
+
+        // Act
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        PriceSuggestionsViewModel.SuggestionRow row = Assert.Single(viewModel.Suggestions);
+        Assert.Equal("Holiday: Christmas", row.Reason);
+        Assert.Equal(["2024: 85 %", "2025: 88.5 %"], row.History);
+        Assert.Equal(("Busy in both earlier years.", PriceSuggestionsViewModel.AiLabel), (row.Explanation, row.ExplanationLabel));
+    }
+
+    /// <summary>Positive: a text built from the figures is labelled so, and a week suggestion names its reason in words.</summary>
+    [Theory]
+    [InlineData("high_history", "Busy on the same days in earlier years")]
+    [InlineData("low_history", "Quiet on the same days in earlier years")]
+    [InlineData("", "")]
+    public async Task LoadAsync_FigureText_IsLabelledAndReasonIsInWords(string reason, string expected)
+    {
+        // Arrange
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
+        PriceSuggestionItemDto item = HighItem() with { Reason = reason, Explanation = new PriceSuggestionTextDto("From the figures.", false) };
+        service.GetOpenAsync(Arg.Any<CancellationToken>()).Returns(Result<PriceSuggestionListDto>.Success(OpenList(null, [item])));
+
+        // Act
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        PriceSuggestionsViewModel.SuggestionRow row = Assert.Single(viewModel.Suggestions);
+        Assert.Equal((expected, PriceSuggestionsViewModel.FiguresLabel), (row.Reason, row.ExplanationLabel));
+    }
+
+    /// <summary>Positive: the ideas are listed with their label, an empty idea is dropped, and no idea is a suggestion that can be approved.</summary>
+    [Fact]
+    public async Task LoadAsync_Ideas_AreLabelledAndNeverApprovable()
+    {
+        // Arrange
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
+        PriceSuggestionListDto list = OpenList(null) with
+        {
+            Ideas = [new PriceSuggestionTextDto("Offer a package for the quiet weeks.", true), new PriceSuggestionTextDto("  ", true)],
+        };
+        service.GetOpenAsync(Arg.Any<CancellationToken>()).Returns(Result<PriceSuggestionListDto>.Success(list));
+
+        // Act
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(new PriceSuggestionsViewModel.IdeaRow("Offer a package for the quiet weeks.", PriceSuggestionsViewModel.AiLabel), Assert.Single(viewModel.Ideas));
+        Assert.Single(viewModel.Suggestions);
+    }
+
+    /// <summary>Negative: an AI text that names a price or a percentage changes no figure of the row (criterion 4 of MIL-071).</summary>
+    [Fact]
+    public async Task LoadAsync_AiTextWithNumbers_ChangesNoFigure()
+    {
+        // Arrange
+        (PriceSuggestionsViewModel? viewModel, IPriceSuggestionService? service) = Build();
+        PriceSuggestionItemDto plain = HighItem();
+        PriceSuggestionItemDto worded = plain with { Explanation = new PriceSuggestionTextDto("Raise the price to 999 kroner, plus 90 percent.", true) };
+        service.GetOpenAsync(Arg.Any<CancellationToken>()).Returns(Result<PriceSuggestionListDto>.Success(OpenList("Lower everything to 1 krone.", [worded])));
+
+        // Act
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        PriceSuggestionsViewModel.SuggestionRow row = Assert.Single(viewModel.Suggestions);
+
+        // Assert
+        Assert.Equal(("+20 %", "100.00 → 120.00", "Occupancy 85.0 % at or above 80 %"), (row.Change, row.Move, row.Basis));
+        Assert.DoesNotContain("999", row.Move + row.Change + row.Basis, StringComparison.Ordinal);
+    }
+
     #endregion
 
     #region Helpers

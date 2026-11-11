@@ -7,16 +7,17 @@
 @inject PriceSuggestionsViewModel ViewModel
 
 @*
-    The price suggestions of the Manager (MIL-055). Only markup and binding. The percentages come from a fixed rule on the
-    occupancy of the market analysis and are recomputed by the API when a suggestion is approved; the AI text only explains
-    and never reaches a price. No price changes until the Manager approves.
+    The price suggestions of the Manager (MIL-055, MIL-071). Only markup and binding. The market analysis service decides the
+    days and the percentages by a fixed rule on the history of the holidays and weeks; the API recomputes the price when a
+    suggestion is approved. A text written by an AI only explains and never reaches a price, and is labelled as such.
+    No price changes until the Manager approves.
 *@
 
 <PageTitle>Price suggestions — administration</PageTitle>
 
 <div class="stack-lg">
     <PageHeader Title="Price suggestions"
-                Subtitle="The suggestions are calculated from the occupancy of the market analysis by a fixed rule. No price changes until you approve; the AI text only explains." />
+                Subtitle="The market analysis suggests price changes for the holidays and weeks of the next two months from the history of the same days. No price changes until you approve; a text written by an AI only explains." />
 
     <AdminTabs Label="Pricing" Tabs="PricingTabs" />
 
@@ -46,8 +47,9 @@
             {
                 <AlertBox Kind="AlertKind.Info">
                     <p>
-                        There is no basis for suggestions yet: the market analysis needs a completed report with occupancy for all
-                        twelve calendar months (and a room rate per room size).
+                        There are no price suggestions to show: the market analysis service has not made a completed report with
+                        suggestions (it may be stopped, or the last report is from before it made suggestions). Run a new analysis
+                        when the service is up. Nothing can be approved until then.
                     </p>
                     <p>
                         <a href="/admin/market-analysis">Market analysis</a> ·
@@ -57,7 +59,7 @@
             }
             else if (ViewModel.HasNoSuggestions)
             {
-                <p>No price change is suggested for the next twelve months.</p>
+                <p>The market analysis found no holiday or week in the next two months that needs a price change.</p>
             }
             else if (ViewModel.Suggestions.Count > 0)
             {
@@ -68,6 +70,7 @@
                             <tr>
                                 <th scope="col">Room size</th>
                                 <th scope="col">Season</th>
+                                <th scope="col">Reason</th>
                                 <th scope="col">First day</th>
                                 <th scope="col">Last day</th>
                                 <th scope="col">Change</th>
@@ -86,12 +89,24 @@
                                 <tr>
                                     <th scope="row">@row.Size</th>
                                     <td>@row.Season</td>
+                                    <td>@row.Reason</td>
                                     <td>@row.FirstDay</td>
                                     <td>@row.LastDay</td>
                                     <td>@row.Change</td>
                                     <td>@row.Move</td>
                                     <td>
                                         @row.Basis
+                                        @if (row.History.Count > 0)
+                                        {
+                                            <br />
+                                            <span class="muted">Earlier years: @string.Join(", ", row.History)</span>
+                                        }
+                                        @if (row.Explanation is { } explanationText)
+                                        {
+                                            <br />
+                                            <span>@explanationText</span>
+                                            <span class="muted">(@row.ExplanationLabel)</span>
+                                        }
                                         @if (row.WasLimited)
                                         {
                                             <br />
@@ -117,6 +132,19 @@
                 </div>
             }
         </section>
+
+        @if (ViewModel.Ideas.Count > 0)
+        {
+            <section class="card card-pad stack" aria-labelledby="ideas">
+                <h2 class="subtitle" id="ideas">Further ideas (no price, not applied)</h2>
+                <ul>
+                    @foreach (var idea in ViewModel.Ideas)
+                    {
+                        <li>@idea.Text <span class="muted">(@idea.Label)</span></li>
+                    }
+                </ul>
+            </section>
+        }
 
         @if (ViewModel.AiExplanation is { } explanation)
         {

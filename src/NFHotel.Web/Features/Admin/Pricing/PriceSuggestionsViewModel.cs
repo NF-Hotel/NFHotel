@@ -17,6 +17,12 @@ namespace NFHotel.Web.Features.Admin.Pricing;
 /// </summary>
 public sealed class PriceSuggestionsViewModel
 {
+    /// <summary>The label of a text that an AI wrote.</summary>
+    public const string AiLabel = "Written by an AI";
+
+    /// <summary>The label of a text that was built from the figures.</summary>
+    public const string FiguresLabel = "Built from the figures";
+
     private const string DateFormat = "yyyy-MM-dd";
     private const string StampFormat = "yyyy-MM-dd HH:mm";
     private const string RevertedState = "Reverted";
@@ -79,6 +85,9 @@ public sealed class PriceSuggestionsViewModel
 
     /// <summary>The AI text that explains the suggestions, or <c>null</c>. It is never used for a price.</summary>
     public string? AiExplanation { get; private set; }
+
+    /// <summary>The further ideas of the service without a price (MIL-071), each with its label; never used for a price.</summary>
+    public IReadOnlyList<IdeaRow> Ideas { get; private set; } = Array.Empty<IdeaRow>();
 
     /// <summary>The open suggestions.</summary>
     public IReadOnlyList<SuggestionRow> Suggestions { get; private set; } = Array.Empty<SuggestionRow>();
@@ -282,8 +291,23 @@ public sealed class PriceSuggestionsViewModel
             FormatChange(item.Percentage),
             FormatMove(item.OldPrice, item.NewPrice),
             $"Occupancy {occupancy} % {(high ? "at or above" : "at or below")} {threshold} %",
-            item.WasLimited);
+            item.WasLimited,
+            ReasonText(item),
+            [.. (item.History ?? []).Select(year => string.Create(CultureInfo.InvariantCulture, $"{year.Year}: {year.OccupancyPercent:0.#} %"))],
+            item.Explanation?.Text,
+            item.Explanation is null ? null : LabelOf(item.Explanation.AiWritten));
     }
+
+    private static string LabelOf(bool aiWritten) => aiWritten ? AiLabel : FiguresLabel;
+
+    // Why the service made the suggestion, in words; a suggestion without a reason (a list from before MIL-071) has none.
+    private static string ReasonText(PriceSuggestionItemDto item) => item.Reason switch
+    {
+        "holiday" => string.IsNullOrWhiteSpace(item.Holiday) ? "Holiday" : $"Holiday: {item.Holiday}",
+        "high_history" => "Busy on the same days in earlier years",
+        "low_history" => "Quiet on the same days in earlier years",
+        _ => string.Empty,
+    };
 
     private static ChangeRow ToRow(PriceChangeDto change, DateOnly today)
     {
@@ -354,6 +378,7 @@ public sealed class PriceSuggestionsViewModel
         OpenLoaded = true;
         HasNoBasis = string.Equals(list.Basis, PriceSuggestionBasis.NoBasis, StringComparison.Ordinal);
         AiExplanation = string.IsNullOrWhiteSpace(list.AiExplanation) ? null : list.AiExplanation;
+        Ideas = [.. (list.Ideas ?? []).Where(idea => !string.IsNullOrWhiteSpace(idea.Text)).Select(idea => new IdeaRow(idea.Text, LabelOf(idea.AiWritten)))];
         _items = [.. list.Items];
         Suggestions = [.. _items.Select(ToRow)];
         _firstDays.Clear();
@@ -375,6 +400,10 @@ public sealed class PriceSuggestionsViewModel
     /// <param name="Move">The old and the new price a night.</param>
     /// <param name="Basis">The occupancy and the threshold it rests on.</param>
     /// <param name="WasLimited">True when the cap or the minimum price limited the price.</param>
+    /// <param name="Reason">Why the service made the suggestion, for example the name of the holiday; empty when not known.</param>
+    /// <param name="History">The occupancy of the same days in each earlier year, one text per year.</param>
+    /// <param name="Explanation">The text on the suggestion, or <c>null</c>. It never sets a price.</param>
+    /// <param name="ExplanationLabel">Says whether an AI wrote the explanation or it was built from the figures; <c>null</c> without a text.</param>
     public sealed record SuggestionRow(
         string Key,
         string Size,
@@ -384,7 +413,16 @@ public sealed class PriceSuggestionsViewModel
         string Change,
         string Move,
         string Basis,
-        bool WasLimited);
+        bool WasLimited,
+        string Reason,
+        IReadOnlyList<string> History,
+        string? Explanation,
+        string? ExplanationLabel);
+
+    /// <summary>One idea of the service without a price.</summary>
+    /// <param name="Text">The idea.</param>
+    /// <param name="Label">Says whether an AI wrote the idea.</param>
+    public sealed record IdeaRow(string Text, string Label);
 
     /// <summary>One price change, with its texts ready to show.</summary>
     /// <param name="Id">The key of the change.</param>
