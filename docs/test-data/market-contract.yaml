@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: NFHotel market analysis contract
-  version: 1.1.0
+  version: 1.2.0
   description: >-
     The contract between the NFHotel web application and the market analysis service.
     The service implements all paths. Every path except `/health` needs the header `X-API-Key`.
@@ -112,7 +112,7 @@ paths:
   /api/v1/market-analysis/runs/{run_id}/result:
     get:
       operationId: getRunResult
-      summary: The result of a completed run (schema version 1.1)
+      summary: The result of a completed run (schema version 1.2)
       description: >-
         404 `run_not_found` for an id that is not known, 409 `result_not_ready` while the run is
         queued or running, 409 `run_failed` when the run failed.
@@ -194,6 +194,27 @@ components:
           type: array
           minItems: 1
           items: {$ref: "#/components/schemas/Booking"}
+        pricing:
+          $ref: "#/components/schemas/PricingRequest"
+    PricingRequest:
+      type: object
+      additionalProperties: false
+      description: >-
+        Asks for price suggestions (schema 1.3). Without this block the result has no
+        `price_suggestions`. Every value has a default, so `{}` asks for the defaults.
+      properties:
+        as_of: {type: string, format: date, description: "The first day a suggestion may start; default the day of the run."}
+        horizon_days: {type: integer, minimum: 7, maximum: 120, default: 61, description: "How far ahead the suggestions reach."}
+        high_occupancy_threshold: {type: number, minimum: 0, maximum: 1, default: 0.80, description: "At or above this occupancy in earlier years a surcharge is suggested."}
+        low_occupancy_threshold: {type: number, minimum: 0, maximum: 1, default: 0.40, description: "At or below this occupancy in earlier years a discount is suggested."}
+        surcharge_percent: {type: number, exclusiveMinimum: 0, maximum: 100, default: 20}
+        discount_percent: {type: number, exclusiveMinimum: 0, exclusiveMaximum: 100, default: 15}
+        discount_room_sizes:
+          type: array
+          items: {type: string}
+          default: [single]
+          description: The room sizes that qualify for a discount; a surcharge applies to every size.
+        min_history_years: {type: integer, minimum: 1, maximum: 10, default: 2, description: "Fewer earlier years than this give `not_enough_history`."}
     Booking:
       type: object
       description: >-
@@ -261,11 +282,13 @@ components:
         last_date: {type: string, format: date}
     RunResult:
       type: object
-      required: [schema_version, result_id, generated_at, status, input, data_quality, analyses, notices, insights]
+      required: [schema_version, result_id, generated_at, status, input, data_quality, analyses, forecast, notices, insights]
       properties:
-        schema_version: {type: string, const: "1.1"}
+        schema_version: {type: string, enum: ["1.2", "1.3"], description: "1.3 adds price_suggestions and changes nothing else."}
         result_id: {type: string}
         generated_at: {type: string, format: date-time}
+        price_suggestions:
+          $ref: "#/components/schemas/PriceSuggestions"
         status: {type: string, enum: [completed, completed_with_warnings]}
         input:
           type: object
@@ -302,11 +325,12 @@ components:
             holidays: {$ref: "#/components/schemas/Analysis"}
             seasonality: {$ref: "#/components/schemas/Analysis"}
             cancellations: {$ref: "#/components/schemas/Analysis"}
-            room_value: {$ref: "#/components/schemas/Analysis"}
+            room_value: {$ref: "#/components/schemas/RoomValueAnalysis"}
             guest_mix: {$ref: "#/components/schemas/Analysis"}
             occupancy: {$ref: "#/components/schemas/OccupancyAnalysis"}
             occupancy_on_holidays: {$ref: "#/components/schemas/OccupancyOnHolidaysAnalysis"}
             correlations: {$ref: "#/components/schemas/CorrelationsAnalysis"}
+        forecast: {$ref: "#/components/schemas/Forecast"}
         notices:
           type: array
           items:
@@ -323,6 +347,34 @@ components:
             provider: {type: string}
             model: {type: string}
             prompt_version: {type: string}
+            overall: {$ref: "#/components/schemas/OverallInsight"}
+    OverallInsight:
+      type: object
+      description: >-
+        The overall interpretation of all analyses and the forecast, in Markdown: key points, what
+        they mean together, recommendations and caveats. With `source: ai` it is one extra request
+        to the model, checked by the same guardrail as the charts (no cause, promise or prediction;
+        numbers only from its input). With `source: figures` it is a short text the service builds
+        from the largest finding of each available analysis (AI off, nothing to read, or the
+        answer was rejected). A rejected answer leaves the analyses as they are.
+      required: [status, source, label, text]
+      properties:
+        status: {type: string, enum: [available]}
+        source: {type: string, enum: [ai, figures]}
+        label: {type: string, description: "`AI-generated` for `ai`; for `figures` it says the text is calculated."}
+        generated_at: {type: string, description: "Only with `source: ai`."}
+        text: {type: string, description: "Markdown."}
+        evidence: {type: string, description: "Only with `source: ai`: the numbers the text rests on."}
+        recommendations:
+          type: array
+          description: "Only with `source: ai`; 2 to 4 items, the text of each is Markdown."
+          items:
+            type: object
+            required: [suggestion, evidence, sample_size]
+            properties:
+              suggestion: {type: string}
+              evidence: {type: string}
+              sample_size: {type: integer}
     Analysis:
       type: object
       required: [status, findings, formula, limitations]
@@ -340,6 +392,152 @@ components:
           type: object
           description: The numbers. The six analyses of the first version keep the shape of the sample result of the web application.
         insight: {$ref: "#/components/schemas/Insight"}
+    RoomValueAnalysis:
+      allOf:
+        - {$ref: "#/components/schemas/Analysis"}
+        - type: object
+          properties:
+            findings:
+              type: object
+              required: [room_revenue]
+              properties:
+                room_revenue: {$ref: "#/components/schemas/RoomRevenue"}
+    RoomRevenue:
+      type: object
+      description: >-
+        Room revenue: price per night times nights of the bookings that are not cancelled, before
+        taxes, fees, discounts and extras. The old estimate in `estimated_value` is unchanged.
+      required: [status, unit, limitation, records_used, records_with_price, records_without_price, total, mean, monthly]
+      properties:
+        status: {type: string, enum: [available, unavailable]}
+        unit: {type: string, description: "The price units of the input; the currency is not known."}
+        limitation: {type: string}
+        records_used: {type: integer, description: "The bookings that are not cancelled and have at least one night."}
+        records_with_price: {type: integer}
+        records_without_price:
+          type: integer
+          description: Counted and left out of the figures.
+        total: {type: string, description: "A decimal number as text."}
+        mean: {type: [string, "null"], description: "The mean for each booking with a price."}
+        small_sample: {type: boolean}
+        monthly:
+          type: array
+          description: One value for each month of arrival that has a booking with a price.
+          items:
+            type: object
+            required: [group, value, bookings]
+            properties:
+              group: {type: string, description: "The month, `YYYY-MM`."}
+              value: {type: string, description: "A decimal number as text."}
+              bookings: {type: integer}
+        summary: {type: string}
+    PriceSuggestions:
+      type: object
+      required: [as_of, horizon_end, suggestions, not_enough_history, ideas]
+      description: >-
+        Present only when the run asked for it with `pricing` (schema 1.3). The suggestions follow
+        from the bookings, the holiday calendar and the request by a fixed rule; the AI changes none
+        of them. A percentage is a change of the base rate; the service never sees a room rate.
+      properties:
+        as_of: {type: string, format: date}
+        horizon_end: {type: string, format: date}
+        formula: {type: string, description: How the suggestions are worked out.}
+        limitations:
+          type: array
+          items: {type: string}
+        suggestions:
+          type: array
+          items: {$ref: "#/components/schemas/PriceSuggestion"}
+        not_enough_history:
+          type: array
+          description: Periods with too few earlier years; no price is suggested for them.
+          items:
+            type: object
+            required: [first_date, last_date, years_found]
+            properties:
+              first_date: {type: string, format: date}
+              last_date: {type: string, format: date}
+              holiday: {type: string}
+              years_found: {type: integer, minimum: 0}
+        ideas:
+          type: array
+          maxItems: 3
+          description: Further ideas without a price, written by the AI; empty when the AI is off.
+          items:
+            type: object
+            required: [text, ai_written]
+            properties:
+              text: {type: string, description: Markdown.}
+              ai_written: {type: boolean, const: true}
+    PriceSuggestion:
+      type: object
+      required: [room_size, first_date, last_date, change, percent, reason, history, explanation]
+      properties:
+        room_size: {type: string, description: "A room size, or `all` for a surcharge."}
+        first_date: {type: string, format: date}
+        last_date: {type: string, format: date}
+        change: {type: string, enum: [surcharge, discount]}
+        percent: {type: number, exclusiveMinimum: 0, maximum: 100}
+        reason: {type: string, enum: [holiday, high_history, low_history]}
+        holiday: {type: string, description: The name of the holiday when the reason is `holiday`.}
+        threshold: {type: number, minimum: 0, maximum: 1, description: The occupancy threshold that was crossed.}
+        history:
+          type: array
+          description: The occupancy of the same holiday or week in each earlier year.
+          items:
+            type: object
+            required: [year, occupancy]
+            properties:
+              year: {type: integer}
+              occupancy: {type: number, minimum: 0, maximum: 1}
+        explanation:
+          type: object
+          required: [text, ai_written]
+          properties:
+            text: {type: string, description: Markdown.}
+            ai_written: {type: boolean, description: "False for the text built from the figures when the AI is off or its answer is rejected."}
+    Forecast:
+      type: object
+      description: >-
+        The next months of arrivals, occupancy and room revenue, calculated by the service from
+        the seasonal pattern of the history (not by the model). A value is a decimal number as text.
+      required: [formula, limitations, history_months, minimum_history_months, history_too_short, horizon_months, measures]
+      properties:
+        formula: {type: string}
+        limitations:
+          type: array
+          items: {type: string}
+        history_months: {type: integer, minimum: 0, description: "The complete months the forecast rests on."}
+        minimum_history_months: {type: integer}
+        history_too_short: {type: boolean, description: "True when the history has fewer months than the minimum."}
+        horizon_months:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: 3 to 6 months; 0 when the history has no complete month.
+        measures:
+          type: object
+          required: [arrivals, occupancy, room_revenue]
+          additionalProperties: false
+          properties:
+            arrivals: {$ref: "#/components/schemas/MeasureForecast"}
+            occupancy: {$ref: "#/components/schemas/MeasureForecast"}
+            room_revenue: {$ref: "#/components/schemas/MeasureForecast"}
+    MeasureForecast:
+      type: object
+      required: [unit, months]
+      properties:
+        unit: {type: string, examples: [bookings, "%", price units]}
+        months:
+          type: array
+          items:
+            type: object
+            required: [group, value, low, high]
+            properties:
+              group: {type: string, description: "The month, `YYYY-MM`."}
+              value: {type: string, description: "The expected value."}
+              low: {type: [string, "null"], description: "The low end of the band; null when it cannot be known."}
+              high: {type: [string, "null"], description: "The high end of the band."}
     OccupancyAnalysis:
       allOf:
         - {$ref: "#/components/schemas/Analysis"}
@@ -398,19 +596,22 @@ components:
         provider: {type: [string, "null"]}
         model: {type: [string, "null"]}
         generated_at: {type: [string, "null"]}
-        executive_summary: {type: [string, "null"]}
+        executive_summary: {type: [string, "null"], description: "Markdown: a list with one item for each chart, naming the chart in bold, in the order of the charts. Raw HTML is removed before storage."}
         improvement_suggestions:
           type: array
           items:
             type: object
             required: [suggestion, evidence, sample_size]
             properties:
-              suggestion: {type: string}
+              suggestion: {type: string, description: Markdown.}
               evidence: {type: string}
               sample_size: {type: integer}
+              series:
+                type: string
+                description: The chart the recommendation is about (one recommendation list for each chart).
         observations:
           type: array
-          description: One per chart, written in the same request as the insight.
+          description: One per chart that has text; `text` is the summary of that chart in Markdown (a short lead paragraph, a list when there are several points), written in its own request to the model.
           items:
             type: object
             required: [series, text, evidence]

@@ -54,6 +54,39 @@ public sealed class MarketAnalysisServiceClientTests
         Assert.Equal(("market-analysis-api", 8000), (service.LastAuthority.Split(':')[0], int.Parse(service.LastAuthority.Split(':')[1], System.Globalization.CultureInfo.InvariantCulture)));
     }
 
+    /// <summary>Positive: the pricing settings are sent as <c>pricing</c> in snake_case; without them the field is left out.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_Pricing_IsSentWhenGiven()
+    {
+        // Arrange
+        var service = new FakeMarketAnalysisService();
+        var request = Request with { Pricing = new MarketAnalysisPricingRequest(0.8m, 0.4m, 20, 15, ["single", "double"]) };
+
+        // Act
+        await CreateClient(service).AnalyzeAsync(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        using var body = JsonDocument.Parse(service.StartedBody!);
+        var pricing = body.RootElement.GetProperty("pricing");
+        Assert.Equal((0.8m, 0.4m, 20, 15), (pricing.GetProperty("high_occupancy_threshold").GetDecimal(), pricing.GetProperty("low_occupancy_threshold").GetDecimal(), pricing.GetProperty("surcharge_percent").GetInt32(), pricing.GetProperty("discount_percent").GetInt32()));
+        Assert.Equal(["single", "double"], pricing.GetProperty("discount_room_sizes").EnumerateArray().Select(size => size.GetString()));
+    }
+
+    /// <summary>Negative: a request without pricing settings sends no <c>pricing</c>.</summary>
+    [Fact]
+    public async Task AnalyzeAsync_NoPricing_LeavesTheFieldOut()
+    {
+        // Arrange
+        var service = new FakeMarketAnalysisService();
+
+        // Act
+        await CreateClient(service).AnalyzeAsync(Request, TestContext.Current.CancellationToken);
+
+        // Assert
+        using var body = JsonDocument.Parse(service.StartedBody!);
+        Assert.False(body.RootElement.TryGetProperty("pricing", out _));
+    }
+
     /// <summary>Positive: a period with both dates is sent as <c>period</c>; with one date or none it is left out.</summary>
     [Theory]
     [InlineData("2019-03-01", "2019-03-31", true)]

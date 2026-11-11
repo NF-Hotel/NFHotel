@@ -47,6 +47,46 @@ public sealed class MarketAnalysisRunnerTests
         Assert.Equal(world.MarketAnalysisBookings.Bookings, sent.Bookings);
     }
 
+    /// <summary>Positive: the default pricing settings go to the service as shares and lower-case room sizes, so it makes the suggestions (MIL-071).</summary>
+    [Fact]
+    public async Task ExecuteAsync_DefaultSettings_SendsThePricingOfTheDefaults()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var runId = Begin(world);
+
+        // Act
+        await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
+
+        // Assert
+        var pricing = world.MarketAnalysisClient.LastRequest!.Pricing!;
+        Assert.Equal((0.8m, 0.4m), (pricing.HighOccupancyThreshold, pricing.LowOccupancyThreshold));
+        Assert.All(pricing.DiscountRoomSizes, size => Assert.Equal(size.ToLowerInvariant(), size));
+        Assert.NotEmpty(pricing.DiscountRoomSizes);
+    }
+
+    /// <summary>Positive: the thresholds and percentages the Manager saved are the ones sent.</summary>
+    [Fact]
+    public async Task ExecuteAsync_SavedSettings_AreSentToTheService()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        world.CallContext.StaffId = 7;
+        world.CallContext.StaffName = "manager";
+        world.CallContext.RemoteAddress = "10.0.0.5";
+        var saved = (await world.PricingSettingsService().GetAsync(TestContext.Current.CancellationToken)).Value!;
+        var set = await world.PricingSettingsService().SetAsync(new(25, 10, 85, 35, 50, saved.MinimumNightlyPrice, saved.DiscountSizes), TestContext.Current.CancellationToken);
+        Assert.True(set.IsSuccess);
+        var runId = Begin(world);
+
+        // Act
+        await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
+
+        // Assert
+        var pricing = world.MarketAnalysisClient.LastRequest!.Pricing!;
+        Assert.Equal((0.85m, 0.35m, 25m, 10m), (pricing.HighOccupancyThreshold, pricing.LowOccupancyThreshold, pricing.SurchargePercent, pricing.DiscountPercent));
+    }
+
     #endregion
 
     #region Refusals
