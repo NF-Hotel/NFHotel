@@ -89,7 +89,7 @@ public sealed class MarketAnalysisRunner
         }
 
         MarketAnalysisPricingRequest? pricing = await PricingRequestAsync(cancellationToken).ConfigureAwait(false);
-        var result = await _client.AnalyzeAsync(new MarketAnalysisRunRequest(rooms, bookings, period.From, period.To, pricing), cancellationToken).ConfigureAwait(false);
+        Result<MarketAnalysisResultDto> result = await _client.AnalyzeAsync(new MarketAnalysisRunRequest(rooms, bookings, period.From, period.To, pricing), cancellationToken).ConfigureAwait(false);
         if (result.IsFailure)
         {
             _tracker.MarkFailed(runId, result.Errors[0].Code);
