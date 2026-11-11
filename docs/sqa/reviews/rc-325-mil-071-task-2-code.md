@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Proposed | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | pending |
+| 2026-11-11 | Proposed | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | [3ebb51e] |
 
 ---
 
@@ -62,3 +62,4 @@ Go: every Mandatory criterion passes, criteria 13 and 21 on condition. The clien
 
 [MIL-071]: ../milestones/mil-071-price-suggestions-from-the-service.md
 [QC-CS-001]: ../../framework/qc/code/qc-programming-csharp.md
+[3ebb51e]: https://github.com/NF-Hotel/NFHotel/commit/3ebb51ef70966765a9acf6c81c893318fe657ade
