@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Accepted | Claude (AI) | S01 | Text aligned with the code: permission `Prices.Manage` and page `/admin/pricing/suggestions` (no change of scope) | [ac36d7f] |
+| 2026-11-02 | Deprecated | Claude (AI) | S01 | Text aligned with the code: permission `Prices.Manage` and page `/admin/pricing/suggestions` (no change of scope) | [ac36d7f] |
 | 2026-11-11 | Accepted | Claude (AI) | S01 | Note only: the pricing rule of tasks 4 and 7 is replaced by the suggestions of the market analysis service ([MIL-071]); the page, the approval, the undo, the settings and the audit trail stay; accepted by S01 in chat on 2026-11-11 | [f674e8a] |
 
 ---

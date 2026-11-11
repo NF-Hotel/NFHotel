@@ -25,7 +25,7 @@
 | 2026-10-20 | Accepted | Claude (AI) | AI at the request of S01, not independent | Amended: objective 26, hotel staff sign in and work with rooms from the mobile app through the API on the staff token alone (MIL-029, ADR-0015); accepted after RC-133 Go | [1c3efb9] |
 | 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Amended: objective 27, staff accounts and passwords (MIL-030), and success criterion 30 (accepted after RC-150 Go) | [0891cf1] |
 | 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Amended: objective 28 and success criterion 31, NF Hotel on the public internet through Cloudflare Tunnel; the public address of the mobile app leaves the out-of-scope list (MIL-040, ADR-0028); S01 accepted MIL-040 in chat | [21ba03e] |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Amended: objective 29, success criterion 32 and one in-scope line, room price suggestions from the market analysis that a Manager approves with one click (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
+| 2026-11-01 | Deprecated | Claude (AI) | S01 | Amended: objective 29, success criterion 32 and one in-scope line, room price suggestions from the market analysis that a Manager approves with one click (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
 | 2026-11-11 | Accepted | Claude (AI) | S01 | Amended: objective 29 says that the market analysis service makes the price suggestions from holidays and the occupancy history of the next two months, and the back office presents them (MIL-071); the website no longer works them out; accepted by S01 in chat on 2026-11-11 | [f674e8a] |
 
 ---

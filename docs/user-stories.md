@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.10 and US-001.11, the password and account stories (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
 | 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | US-001.04 gains a criterion: a run that a restart stops is shown as interrupted and can be started again (MIL-043, ADR-0031) | [43bcf70] |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Added US-001.12, approve a price suggestion (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
+| 2026-11-01 | Deprecated | Claude (AI) | S01 | Added US-001.12, approve a price suggestion (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
 
 | 2026-11-11 | Accepted | Claude (AI) | S01 | US-001.12 reworded: the suggestions come from the market analysis service, for the holidays and weeks of the next two months (MIL-071); accepted by S01 in chat on 2026-11-11 | [f674e8a] |
 
