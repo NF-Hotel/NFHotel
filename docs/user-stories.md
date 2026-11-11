@@ -15,7 +15,7 @@
 | 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | US-001.04 gains a criterion: a run that a restart stops is shown as interrupted and can be started again (MIL-043, ADR-0031) | [43bcf70] |
 | 2026-11-01 | Accepted | Claude (AI) | S01 | Added US-001.12, approve a price suggestion (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
 
-| 2026-11-11 | Accepted | Claude (AI) | S01 | US-001.12 reworded: the suggestions come from the market analysis service, for the holidays and weeks of the next two months (MIL-071); accepted by S01 in chat on 2026-11-11 | pending |
+| 2026-11-11 | Accepted | Claude (AI) | S01 | US-001.12 reworded: the suggestions come from the market analysis service, for the holidays and weeks of the next two months (MIL-071); accepted by S01 in chat on 2026-11-11 | [f674e8a] |
 
 ---
 
@@ -252,3 +252,4 @@ for US-001.02.
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
 [43bcf70]: https://github.com/NF-Hotel/NFHotel/commit/43bcf70046d2f2537672030b83f39f8b3fda4551
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
+[f674e8a]: https://github.com/NF-Hotel/NFHotel/commit/f674e8a3fe47dfe3c36bbc59f4eeae6180985b0d

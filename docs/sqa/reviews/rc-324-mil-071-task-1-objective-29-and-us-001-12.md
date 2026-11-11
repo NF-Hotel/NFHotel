@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Accepted | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent; accepted by S01 in chat on 2026-11-11 | pending |
+| 2026-11-11 | Accepted | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent; accepted by S01 in chat on 2026-11-11 | [f674e8a] |
 
 ---
 
@@ -53,3 +53,4 @@ Go: every criterion that the change touches passes. The change replaces the word
 [MIL-071]: ../milestones/mil-071-price-suggestions-from-the-service.md
 [QC-BC-001]: ../../framework/qc/artifacts/qc-business-case.md
 [QC-US-001]: ../../framework/qc/artifacts/qc-user-story.md
+[f674e8a]: https://github.com/NF-Hotel/NFHotel/commit/f674e8a3fe47dfe3c36bbc59f4eeae6180985b0d

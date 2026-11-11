@@ -26,7 +26,7 @@
 | 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Amended: objective 27, staff accounts and passwords (MIL-030), and success criterion 30 (accepted after RC-150 Go) | [0891cf1] |
 | 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Amended: objective 28 and success criterion 31, NF Hotel on the public internet through Cloudflare Tunnel; the public address of the mobile app leaves the out-of-scope list (MIL-040, ADR-0028); S01 accepted MIL-040 in chat | [21ba03e] |
 | 2026-11-01 | Accepted | Claude (AI) | S01 | Amended: objective 29, success criterion 32 and one in-scope line, room price suggestions from the market analysis that a Manager approves with one click (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
-| 2026-11-11 | Accepted | Claude (AI) | S01 | Amended: objective 29 says that the market analysis service makes the price suggestions from holidays and the occupancy history of the next two months, and the back office presents them (MIL-071); the website no longer works them out; accepted by S01 in chat on 2026-11-11 | pending |
+| 2026-11-11 | Accepted | Claude (AI) | S01 | Amended: objective 29 says that the market analysis service makes the price suggestions from holidays and the occupancy history of the next two months, and the back office presents them (MIL-071); the website no longer works them out; accepted by S01 in chat on 2026-11-11 | [f674e8a] |
 
 ---
 
@@ -297,3 +297,4 @@ Proceed — the cost is one working session and it removes a manual, error-prone
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
 [21ba03e]: https://github.com/NF-Hotel/NFHotel/commit/21ba03eedb3836936f623ea3bd93871f097cab3c
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
+[f674e8a]: https://github.com/NF-Hotel/NFHotel/commit/f674e8a3fe47dfe3c36bbc59f4eeae6180985b0d
