@@ -19,7 +19,7 @@ The pages are written in [`docs/wiki/`](https://github.com/NF-Hotel/NFHotel/tree
 - Infrastructure and operations (ADR-0016, in `ops/`): [CI-CD](CI-CD), [Database Preparation](Database-Preparation), [Proxmox Deployment](Proxmox-Deployment), [Host Hardening](Host-Hardening), [Monitoring](Monitoring), [Disaster Recovery](Disaster-Recovery) and [Public Access](Public-Access), and the incident procedure in [Incidents](Incidents).
 - Reference pages (MIL-049): every DevOps and security choice with why and its alternatives, in [Workflows](Workflows), [Containers and Images](Containers-and-Images), [Security Controls](Security-Controls) and [Alerts](Alerts).
 - Networks: how the services call each other and why the Python services are kept on a network that nginx cannot see (target design), in [Network Isolation](Network-Isolation).
-- Back office (MIL-055): how a Manager sets room rates and settings and approves or reverts price suggestions from the market analysis, in [Price Suggestions](Price-Suggestions).
+- Back office (MIL-055, MIL-071): how a Manager sets room rates and settings and approves or reverts the price suggestions that the market analysis service makes for the holidays and weeks of the next two months, in [Price Suggestions](Price-Suggestions).
 - Technology choices (MIL-050): why each product was chosen over its alternatives, with what practitioners say, for every DevOps step, the CI/CD pipeline and the backup, in [Technology Choices](Technology-Choices).
 
 ## Where things live
