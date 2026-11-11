@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-11 | Proposed | Claude (AI) | S01 | The rows of MIL-071 (price suggestions from the service): the milestone, the reviews RC-323 to RC-327, the wiki page and the code that replaces the rule of MIL-055 | [6e858fa] |
-| 2026-11-11 | Proposed | Claude (AI) | S01 | The gate review RC-329 of MIL-071 in its row | pending |
+| 2026-11-11 | Proposed | Claude (AI) | S01 | The gate review RC-329 of MIL-071 in its row | [95d7856] |
 
 ---
 
@@ -363,3 +363,4 @@ updated whenever an artifact instance is created or reviewed.
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
 [6e858fa]: https://github.com/NF-Hotel/NFHotel/commit/6e858fa32225ca7fee8351e1c76d5153ae906888
+[95d7856]: https://github.com/NF-Hotel/NFHotel/commit/95d78565e09da482a609091883a4f4700c61b533

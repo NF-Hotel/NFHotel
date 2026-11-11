@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Proposed | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | pending |
+| 2026-11-11 | Proposed | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | [95d7856] |
 
 ---
 
@@ -86,3 +86,4 @@ Go: all nine criteria of [MIL-071] are met and every Mandatory criterion of [QC-
 [RC-326]: ./rc-326-mil-071-task-3-code.md
 [RC-327]: ./rc-327-mil-071-task-4-code.md
 [RC-328]: ./rc-328-mil-071-task-5-wiki-and-traceability.md
+[95d7856]: https://github.com/NF-Hotel/NFHotel/commit/95d78565e09da482a609091883a4f4700c61b533
