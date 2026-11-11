@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-09 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-069 and of its code at the gate: the prune redeployed on the backup host on 2026-11-08 (task 5), its first pass with nothing to delete, gate passed (RC-322, Go) | [53e3a9e] |
 | 2026-11-11 | Proposed | Claude (AI) | S01 | The rows of MIL-071 (price suggestions from the service): the milestone, the reviews RC-323 to RC-327, the wiki page and the code that replaces the rule of MIL-055 | [6e858fa] |
+| 2026-11-11 | Proposed | Claude (AI) | S01 | The gate review RC-329 of MIL-071 in its row | pending |
 
 ---
 
@@ -99,7 +99,7 @@ updated whenever an artifact instance is created or reviewed.
 | The code of MIL-069: the prune of the backup target in `ops/deploy/backup-target/prune-backups.sh`, the service `prune` in its `docker-compose.yml`, `Dockerfile` and `backup-target.env.example`, the section "How long the backup target keeps the copies" of the wiki page Disaster-Recovery, and their tests in `ops/tests/test-backup-target.sh` | Shell, Dockerfile, YAML (reviewed 2026-11-08, Go; deployed to the backup host 2026-11-08, RC-322) | - | - | [MIL-069] tasks 1 to 3, [ADR-0008], [DSA-001] | - | [RC-316], [RC-322] |
 | The code of MIL-068: the removal of the desktop in `ops/scripts/remove-desktop.sh`, its test `ops/tests/test-remove-desktop.sh` and its entry in the matrix of `.github/workflows/ops-ci.yaml`, and the section "Without a desktop" of the wiki page Host-Hardening with its update command | Shell, YAML (reviewed 2026-11-08, Go; run on the VM 2026-11-08, RC-319) | - | - | [MIL-068] tasks 1 to 3, [CIS-001] | - | [RC-317], [RC-319] |
 | [MIL-070] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-08, RC-318; the fix deployed and the new password on the VM 2026-11-08; gate passed 2026-11-09, RC-321) | en | it | [BC-001], [CIS-001], [DSA-001], [ADR-0011], [ADR-0024], [MIL-023], [MIL-068] | planned: `as_app` of `ops/scripts/deploy-release.sh` without the connection string in the log of `sudo`, ADR-0041, a regression test, a new password for `nfhotel_app`, and the wiki pages Database-Preparation and Host-Hardening | [RC-318], [RC-321] |
-| [MIL-071] | Milestone (Accepted, Go; plan reviewed in RC-323; the gate is task 6) | en | it | [BC-001], [US-001], [MIL-055], [MIL-028], notebook-market-analysis MIL-002 | the contract and client (`src/NFHotel.External/MarketAnalysis`, `docs/test-data/market-contract.yaml`), the presentation of the suggestions (`PriceSuggestionService`, the page `/admin/pricing/suggestions`), `NoPriceRuleTests`, the wiki page Price Suggestions | [RC-323], [RC-324], [RC-325], [RC-326], [RC-327] |
+| [MIL-071] | Milestone (Accepted, Go; plan reviewed in RC-323; gate in RC-329) | en | it | [BC-001], [US-001], [MIL-055], [MIL-028], notebook-market-analysis MIL-002 | the contract and client (`src/NFHotel.External/MarketAnalysis`, `docs/test-data/market-contract.yaml`), the presentation of the suggestions (`PriceSuggestionService`, the page `/admin/pricing/suggestions`), `NoPriceRuleTests`, the wiki page Price Suggestions | [RC-323], [RC-324], [RC-325], [RC-326], [RC-327], [RC-328], [RC-329] |
 | The code of MIL-070: `as_app` of `ops/scripts/deploy-release.sh`, its test `ops/tests/test-sudo-log.sh` and its entry in the matrix of `.github/workflows/ops-ci.yaml`, the section "No secret in the log of sudo" of the wiki page Host-Hardening, the section "A new password for `nfhotel_app`" of the wiki page Database-Preparation, and the script tests of the wiki page Workflows | Shell, YAML (reviewed 2026-11-08, Go; deployed to the VM 2026-11-08, RC-321) | - | - | [MIL-070] tasks 1 to 3, [ADR-0041], [CIS-001] | - | [RC-320], [RC-321] |
 | [ADR-0040] | ADR (Accepted) | - | - | [MIL-064], [ADR-0007], [ADR-0030], [MIL-022], [MIL-036], [MIL-059] | the patch layer of the proxy in `ops/deploy/nginx/Dockerfile` and its entry in `ops/scripts/build-release-images.sh`, the release references by name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, the `docker` entry of `.github/dependabot.yml` (MIL-064 tasks 2 to 7, RC-300) | [RC-299], [RC-300] (the code) |
 | [ADR-0041] | ADR (Accepted) | - | - | [MIL-070], [ADR-0011], [ADR-0024], [MIL-023], [CIS-001] | `as_app` of `ops/scripts/deploy-release.sh`, the second check of `ops/tests/test-sudo-log.sh`, and the sections of the wiki pages Host-Hardening and Database-Preparation (MIL-070 tasks 1 to 3, RC-320) | [RC-320] |
@@ -329,6 +329,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-326]: ./reviews/rc-326-mil-071-task-3-code.md
 [RC-327]: ./reviews/rc-327-mil-071-task-4-code.md
 [RC-328]: ./reviews/rc-328-mil-071-task-5-wiki-and-traceability.md
+[RC-329]: ./reviews/rc-329-mil-071-gate.md
 [RC-302]: ./reviews/rc-302-mil-064-gate.md
 [RC-303]: ./reviews/rc-303-mil-064-gate-re-review.md
 [RC-287]: ./reviews/rc-287-mil-061.md
