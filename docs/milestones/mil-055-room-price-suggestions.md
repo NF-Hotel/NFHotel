@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Initial version; accepted by S01 in chat on 2026-11-01 after RC-262 Go | [3a17eee] |
 | 2026-11-02 | Accepted | Claude (AI) | S01 | Text aligned with the code: permission `Prices.Manage` and page `/admin/pricing/suggestions` (no change of scope) | [ac36d7f] |
+| 2026-11-11 | Accepted | Claude (AI) | S01 | Note only: the pricing rule of tasks 4 and 7 is replaced by the suggestions of the market analysis service ([MIL-071]); the page, the approval, the undo, the settings and the audit trail stay; accepted by S01 in chat on 2026-11-11 | pending |
 
 ---
 
@@ -100,3 +100,4 @@ Decide whether the back office can suggest room price changes that a Manager app
 [MIL-030]: ./mil-030-staff-accounts-and-password.md
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
 [ac36d7f]: https://github.com/NF-Hotel/NFHotel/commit/ac36d7f05105669320014cc4a0cc9150dc7dc51f
+[MIL-071]: ./mil-071-price-suggestions-from-the-service.md
