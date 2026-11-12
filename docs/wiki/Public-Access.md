@@ -20,7 +20,7 @@ NF Hotel is public at `https://nfhotel.devmatiker.com` through Cloudflare Tunnel
 
 | Path on `nfhotel.devmatiker.com` | Public | Why |
 | --- | --- | --- |
-| `/`, `/book`, `/booking/...` | Yes | Guests look, book and sign in to their booking |
+| `/`, `/book`, `/booking/...` | Yes | Guests look, book and open their booking with its number and email (MIL-079) |
 | `/mobile-api/api/auth/login`, `/mobile-api/api/rooms...` | Yes | The two routes of the mobile app (ADR-0015) |
 | `/admin...`, in any letter case | Behind Cloudflare Access | Only listed staff get past the e-mail code to the hotel's sign-in (MIL-041, MIL-072); without it, 404 |
 | Any other path of `/mobile-api/` | No, 404 | The API has no other public path |

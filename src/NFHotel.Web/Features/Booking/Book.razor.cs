@@ -5,8 +5,8 @@ using NFHotel.Web.Common;
 namespace NFHotel.Web.Features.Booking;
 
 /// <summary>
-/// The code behind the booking flow. It contains only forwarding to <see cref="BookingFlowViewModel"/>,
-/// the hand-over of the address to the viewmodel, and the one navigation that belongs to the browser.
+/// The code behind the booking flow. It contains only forwarding to <see cref="BookingFlowViewModel"/> and
+/// the hand-over of the address to the viewmodel.
 /// All state, all validation and all service calls are in the viewmodel (UI-Spec section 4, B-10).
 /// </summary>
 public partial class Book : CancellableComponentBase
@@ -27,11 +27,10 @@ public partial class Book : CancellableComponentBase
     [SupplyParameterFromQuery(Name = "guests")]
     public string? GuestsQuery { get; set; }
 
-    /// <summary>The browser's navigation, for the one step that leaves the page: on to the receipt.</summary>
-    [Inject]
-    private NavigationManager Navigation { get; set; } = null!;
-
-    /// <summary>The address of the bookmarkable receipt for the booking just created.</summary>
+    /// <summary>
+    /// The lookup page with the number of the booking just created filled in. The guest adds the email there, so the
+    /// link is only a way back later; the receipt itself is shown on this page (MIL-079).
+    /// </summary>
     private string ReceiptUrl =>
         ViewModel.Confirmation is null ? "/book" : $"/booking/{ViewModel.Confirmation.BookingNumber}";
 
@@ -56,20 +55,8 @@ public partial class Book : CancellableComponentBase
     private void StartOver() => ViewModel.StartOver();
 
     /// <summary>
-    /// Sends the order and takes the customer on to the bookmarkable receipt.
+    /// Sends the order. The receipt is step 4 on this page: the guest who has just booked sees it at once, without
+    /// the email that the lookup page asks for since MIL-079.
     /// </summary>
-    /// <remarks>
-    /// The navigation is here and not in the viewmodel: a URL is a concept of the browser, not
-    /// of the booking. Step 4 is nevertheless drawn first, so the receipt is on the screen even
-    /// if the navigation should happen to fail.
-    /// </remarks>
-    private async Task SubmitAsync()
-    {
-        await ViewModel.SubmitAsync(ComponentToken);
-
-        if (ViewModel.Confirmation is not null)
-        {
-            Navigation.NavigateTo(ReceiptUrl);
-        }
-    }
+    private Task SubmitAsync() => ViewModel.SubmitAsync(ComponentToken);
 }

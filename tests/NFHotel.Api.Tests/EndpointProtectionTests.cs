@@ -13,10 +13,14 @@ namespace NFHotel.Api.Tests;
 /// </summary>
 public sealed class EndpointProtectionTests
 {
-    /// <summary>The actions that need only the token of the web application: the public booking flow, the sign-in itself, and the read of the default AI models that the market analysis service makes.</summary>
+    /// <summary>
+    /// The actions that need only the token of the web application: the public booking flow, the sign-in itself, and the
+    /// read of the default AI models that the market analysis service makes. The read of a booking by id is not among them
+    /// since MIL-079; a guest looks a booking up with its number and email instead.
+    /// </summary>
     private static readonly string[] PublicActions =
     [
-        "BookingsController.GetByIdAsync",
+        "BookingsController.LookUpReceiptAsync",
         "BookingsController.GetAvailableRoomsAsync",
         "BookingsController.CreatePublicAsync",
         "AuthController.LoginAsync",

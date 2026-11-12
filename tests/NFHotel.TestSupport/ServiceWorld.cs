@@ -344,9 +344,15 @@ public sealed class ServiceWorld
 
     public RecordingWarningLog Warnings { get; } = new();
 
-    /// <summary>Builds the service; <paramref name="prices"/> replaces the real price lookup, for example to make it fail.</summary>
-    public BookingService BookingService(IStaffAuthorizationService? authorization = null, IPriceChangeService? prices = null) =>
-        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings);
+    /// <summary>
+    /// Builds the service; <paramref name="prices"/> replaces the real price lookup, for example to make it fail, and
+    /// <paramref name="receiptThrottle"/> the throttle of the guest's lookup, which otherwise never blocks.
+    /// </summary>
+    public BookingService BookingService(
+        IStaffAuthorizationService? authorization = null,
+        IPriceChangeService? prices = null,
+        ILoginThrottle? receiptThrottle = null) =>
+        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings, receiptThrottle ?? Substitute.For<ILoginThrottle>());
 
     public GuestService GuestService(IStaffAuthorizationService? authorization = null) =>
       new(Guests, GuestQueries, UnitOfWork, authorization ?? Substitute.For<IStaffAuthorizationService>());

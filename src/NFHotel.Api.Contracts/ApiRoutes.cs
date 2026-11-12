@@ -12,6 +12,9 @@ public static class ApiRoutes
     /// <summary>The route for public guest booking creation.</summary>
     public const string PublicBooking = "public";
 
+    /// <summary>The route of a guest's lookup of a booking by its number and email (MIL-079).</summary>
+    public const string PublicReceipt = "public/receipt";
+
     /// <summary>The route prefix of the guest endpoints.</summary>
     public const string Guests = "api/guests";
 

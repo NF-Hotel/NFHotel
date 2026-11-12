@@ -30,7 +30,20 @@ public interface IBookingService
     /// <param name="bookingId">The booking id.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the booking, or <see cref="ErrorCodes.Booking.NotFound"/>.</returns>
+    /// <remarks>For staff who may see the bookings (<c>Bookings.View</c>, MIL-079); a guest uses <see cref="LookUpReceiptAsync"/>.</remarks>
     Task<Result<BookingDetailsDto>> GetByIdAsync(int bookingId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Looks a booking up for its guest, by the number and the email of the booking (MIL-079).
+    /// </summary>
+    /// <param name="request">The booking key and the email.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>
+    /// Only the receipt of the booking; <see cref="ErrorCodes.Booking.NotFound"/> for a wrong email and an unknown number
+    /// alike; <see cref="ErrorCodes.Booking.ReceiptEmailRequired"/> without an email; and
+    /// <see cref="ErrorCodes.Booking.TooManyLookups"/> after too many failed lookups of the number.
+    /// </returns>
+    Task<Result<BookingReceiptDto>> LookUpReceiptAsync(BookingReceiptRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Fetches the booking overview (BR-23, BR-24, BR-25, BR-32, BR-111).
