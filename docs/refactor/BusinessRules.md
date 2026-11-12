@@ -219,12 +219,15 @@ stateDiagram-v2
 | BR-C-03 | A customer booking is created with status `Pending`. Confirmation is the staff's action | Follows from BR-01; the customer side has no confirm action | |
 | BR-C-04 | The customer cannot choose a room without first having chosen valid dates | `BookingFlowViewModel` — checked on room search, room selection and submission, not only on step change | |
 | BR-C-05 | The receipt shows booking number, period, number of nights and room — no price, since the price model does not exist | `BookingReceiptCard` shows "Betaling ved ankomst" (payment on arrival) | |
-| BR-C-06 | The customer cannot see other guests' personal data. The receipt page shows only booking and room details | `BookingReceiptCard` has no markup for guest fields | |
+| BR-C-06 | The customer cannot see other guests' bookings or personal data. A booking opens only with its booking number together with the email it was made with, and the receipt shows only booking and room details | `BookingService.LookUpReceiptAsync` answers only `BookingReceiptDto`, which has no guest fields, and the same not-found for a wrong email and an unknown number; the read by id needs `Bookings.View` (MIL-079) | |
 
-**On BR-C-06.** Without auth the booking number is the only key, and `FLZ-000123` is trivially guessable.
-The receipt page therefore deliberately shows neither name, e-mail, phone nor passport number — only what the
-customer has just entered themselves, plus room and dates. The restriction can be lifted when Identity arrives,
-and should be reassessed there rather than forgotten.
+**On BR-C-06.** Until MIL-079 the booking number was the only key to the receipt page, and `FLZ-000123` is one
+digit from the next booking: anyone could count through every booking and read its dates, room type and status.
+Since MIL-079 the page asks for the email the booking was made with as well. A wrong email, an unknown number and
+an unreadable number get the same answer, five failed lookups of one number within 15 minutes block that number
+for the rest of the window, and the read of a whole booking by its id is for staff with `Bookings.View` only.
+Even with the right email the page shows neither name, e-mail, phone nor passport number: the API answers the
+lookup with the receipt fields only. A guest sign-in with changes to the booking stays with MIL-018.
 
 **On access control.** `/admin/**` needs a signed-in member of staff since MIL-016 (ADR-0005, UC-004):
 the roles Receptionist, Manager and Housekeeping hold the permissions of the Access Control Matrix,

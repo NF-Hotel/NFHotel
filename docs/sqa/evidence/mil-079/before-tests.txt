@@ -1,0 +1,37 @@
+$ dotnet test --project tests/NFHotel.Api.Tests/NFHotel.Api.Tests.csproj --filter-class NFHotel.Api.Tests.BookingReadProtectionTests --filter-class NFHotel.Api.Tests.EndpointProtectionTests
+# on the code of main 1c2726b with only the new and changed tests of MIL-079 task 1, 2026-11-12T11:11Z
+failed EndpointProtectionTests.PublicActions_EveryEntry_NamesAnExistingAction
+    Public entries without an action: BookingsController.LookUpReceiptAsync
+failed EndpointProtectionTests.Controllers_EveryAction_RequiresAPermissionOrIsPublic
+    Actions without a permission and not on the public list: BookingsController.GetByIdAsync
+failed BookingReadProtectionTests.GetBooking_ApiTokenWithoutStaffToken_ReturnsUnauthorized
+    Assert.Equal() Failure: Values differ
+    Expected: Unauthorized
+    Actual:   OK
+failed BookingReadProtectionTests.LookUpReceipt_EmailInOtherCaseOrWithSpaces_ReturnsTheReceipt(email: "ANNA@EXAMPLE.COM")
+    Assert.Equal() Failure: Values differ
+    Expected: OK
+    Actual:   NotFound
+failed BookingReadProtectionTests.LookUpReceipt_EmailInOtherCaseOrWithSpaces_ReturnsTheReceipt(email: "  Anna@Example.com  ")
+    Assert.Equal() Failure: Values differ
+    Expected: OK
+    Actual:   NotFound
+failed BookingReadProtectionTests.LookUpReceipt_WithoutEmail_ReturnsUnprocessableEntity
+    Assert.Equal() Failure: Values differ
+    Expected: UnprocessableEntity
+    Actual:   NotFound
+failed BookingReadProtectionTests.GetBooking_HousekeepingWithoutBookingsView_ReturnsForbidden
+    Assert.Equal() Failure: Values differ
+    Expected: Forbidden
+    Actual:   OK
+failed BookingReadProtectionTests.LookUpReceipt_WrongEmailAndUnknownNumber_GiveTheSameAnswer
+    Assert.Contains() Failure: Sub-string not found
+failed BookingReadProtectionTests.LookUpReceipt_SixthAttemptAfterFiveFailures_ReturnsTooManyRequests
+    Assert.Equal() Failure: Values differ
+    Expected: TooManyRequests
+    Actual:   NotFound
+failed BookingReadProtectionTests.LookUpReceipt_RightNumberAndEmail_ReturnsOnlyTheReceipt
+    Assert.Equal() Failure: Values differ
+    Expected: OK
+    Actual:   NotFound
+Test run summary: Failed!  total: 17  failed: 10  succeeded: 7  skipped: 0

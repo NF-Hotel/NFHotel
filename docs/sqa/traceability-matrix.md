@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Proposed | Claude (AI) | S01 | The rows of MIL-071 (price suggestions from the service): the milestone, the reviews RC-323 to RC-327, the wiki page and the code that replaces the rule of MIL-055 | [6e858fa] |
 | 2026-11-11 | Proposed | Claude (AI) | S01 | The gate review RC-329 of MIL-071 in its row | [95d7856] |
+| 2026-11-12 | Proposed | mikemike | S01 | The rows of MIL-079 (a booking opened only with its number and email): the milestone with its plan review RC-340, and its code with the code review RC-341 | pending |
 
 ---
 
@@ -101,6 +101,8 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-070] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-08, RC-318; the fix deployed and the new password on the VM 2026-11-08; gate passed 2026-11-09, RC-321) | en | it | [BC-001], [CIS-001], [DSA-001], [ADR-0011], [ADR-0024], [MIL-023], [MIL-068] | planned: `as_app` of `ops/scripts/deploy-release.sh` without the connection string in the log of `sudo`, ADR-0041, a regression test, a new password for `nfhotel_app`, and the wiki pages Database-Preparation and Host-Hardening | [RC-318], [RC-321] |
 | [MIL-071] | Milestone (Accepted, Go; plan reviewed in RC-323; gate in RC-329) | en | it | [BC-001], [US-001], [MIL-055], [MIL-028], notebook-market-analysis MIL-002 | the contract and client (`src/NFHotel.External/MarketAnalysis`, `docs/test-data/market-contract.yaml`), the presentation of the suggestions (`PriceSuggestionService`, the page `/admin/pricing/suggestions`), `NoPriceRuleTests`, the wiki page Price Suggestions | [RC-323], [RC-324], [RC-325], [RC-326], [RC-327], [RC-328], [RC-329] |
 | The code of MIL-070: `as_app` of `ops/scripts/deploy-release.sh`, its test `ops/tests/test-sudo-log.sh` and its entry in the matrix of `.github/workflows/ops-ci.yaml`, the section "No secret in the log of sudo" of the wiki page Host-Hardening, the section "A new password for `nfhotel_app`" of the wiki page Database-Preparation, and the script tests of the wiki page Workflows | Shell, YAML (reviewed 2026-11-08, Go; deployed to the VM 2026-11-08, RC-321) | - | - | [MIL-070] tasks 1 to 3, [ADR-0041], [CIS-001] | - | [RC-320], [RC-321] |
+| [MIL-079] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-340; the gate follows the deploy) | en | it | [BC-001], [ADR-0004], ADR-0005, MIL-016, MIL-018, UC-004, BR-C-06 | planned: `Bookings.View` on the read of a booking by id, the lookup `POST api/bookings/public/receipt` by the number and the email of the booking with the throttle per booking, the page "Find your booking", the receipt on the booking page, BR-C-06 and the test plan, the wiki pages Security-Controls and Public-Access, and the evidence folder `docs/sqa/evidence/mil-079` | [RC-340], [RC-341] |
+| The code of MIL-079: the read by id in `BookingsController` and `BookingService`, the lookup `LookUpReceiptAsync` in `IBookingService`, `BookingService`, `BookingsController` and `ApiBookingService` with `BookingReceiptDto` and `BookingReceiptRequest`, the sweep of `InMemoryLoginThrottle`, the pages `BookingReceipt.razor`, `BookingReceiptCard.razor` and `Book.razor` with their view models, the footer link of `PublicLayout.razor`, and their tests | C#, Razor (reviewed 2026-11-12, Go; criterion 21 on the risk exception of [RC-278]) | - | - | [MIL-079] tasks 1 to 4, UC-004, BR-C-06 | - | [RC-341] |
 | [ADR-0040] | ADR (Accepted) | - | - | [MIL-064], [ADR-0007], [ADR-0030], [MIL-022], [MIL-036], [MIL-059] | the patch layer of the proxy in `ops/deploy/nginx/Dockerfile` and its entry in `ops/scripts/build-release-images.sh`, the release references by name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, the `docker` entry of `.github/dependabot.yml` (MIL-064 tasks 2 to 7, RC-300) | [RC-299], [RC-300] (the code) |
 | [ADR-0041] | ADR (Accepted) | - | - | [MIL-070], [ADR-0011], [ADR-0024], [MIL-023], [CIS-001] | `as_app` of `ops/scripts/deploy-release.sh`, the second check of `ops/tests/test-sudo-log.sh`, and the sections of the wiki pages Host-Hardening and Database-Preparation (MIL-070 tasks 1 to 3, RC-320) | [RC-320] |
 | [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
@@ -330,6 +332,9 @@ updated whenever an artifact instance is created or reviewed.
 [RC-327]: ./reviews/rc-327-mil-071-task-4-code.md
 [RC-328]: ./reviews/rc-328-mil-071-task-5-wiki-and-traceability.md
 [RC-329]: ./reviews/rc-329-mil-071-gate.md
+[MIL-079]: ../milestones/mil-079-a-booking-opened-only-with-its-email.md
+[RC-340]: ./reviews/rc-340-mil-079.md
+[RC-341]: ./reviews/rc-341-mil-079-code.md
 [RC-302]: ./reviews/rc-302-mil-064-gate.md
 [RC-303]: ./reviews/rc-303-mil-064-gate-re-review.md
 [RC-287]: ./reviews/rc-287-mil-061.md
@@ -362,5 +367,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
-[6e858fa]: https://github.com/NF-Hotel/NFHotel/commit/6e858fa32225ca7fee8351e1c76d5153ae906888
 [95d7856]: https://github.com/NF-Hotel/NFHotel/commit/95d78565e09da482a609091883a4f4700c61b533
