@@ -30,6 +30,15 @@ public static class ErrorCodes
         /// <summary>The booking does not exist (BR-115).</summary>
         public const string NotFound = "booking.not_found";
 
+        /// <summary>A guest's lookup of a booking came without an email (MIL-079).</summary>
+        public const string ReceiptEmailRequired = "booking.receipt_email_required";
+
+        /// <summary>
+        /// Too many failed lookups of one booking number in the window of the staff sign-in throttle (MIL-079); the API
+        /// answers 429 until the window has passed.
+        /// </summary>
+        public const string TooManyLookups = "booking.too_many_lookups";
+
         /// <summary>The arrival date is not filled in (BR-101).</summary>
         public const string StartDateRequired = DateRange.StartRequired;
 

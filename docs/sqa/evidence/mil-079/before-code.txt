@@ -1,0 +1,6 @@
+$ git show origin/main:src/NFHotel.Api/Controllers/BookingsController.cs | grep -n -A1 -E 'HttpGet\(ApiRoutes\.ById\)|HttpPost\(ApiRoutes\.Overview\)'
+30:    [HttpGet(ApiRoutes.ById)]
+31-    public async Task<IActionResult> GetByIdAsync(int id, CancellationToken cancellationToken) =>
+--
+38:    [HttpPost(ApiRoutes.Overview)]
+39-    [RequiresPermission(Permissions.BookingsView)]

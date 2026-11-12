@@ -32,6 +32,19 @@ public sealed class ApiBookingService : IBookingService
     }
 
     /// <inheritdoc />
+    public async Task<Result<BookingReceiptDto>> LookUpReceiptAsync(
+        BookingReceiptRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return await _api.PostAsync<BookingReceiptDto>(
+                $"{ApiRoutes.Bookings}/{ApiRoutes.PublicReceipt}",
+                request,
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<Result<IReadOnlyList<BookingListItemDto>>> GetOverviewAsync(BookingOverviewQuery query, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(query);

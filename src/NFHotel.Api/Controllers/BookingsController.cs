@@ -23,13 +23,25 @@ public sealed class BookingsController : ControllerBase
         _bookings = bookings;
     }
 
-    /// <summary>Gets one booking.</summary>
+    /// <summary>Gets one booking, for staff who may see the bookings (MIL-079).</summary>
     /// <param name="id">The booking key.</param>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
-    /// <returns>The details, or 404.</returns>
+    /// <returns>The details, 404, or 401 and 403 for a caller without the permission.</returns>
     [HttpGet(ApiRoutes.ById)]
+    [RequiresPermission(Permissions.BookingsView)]
     public async Task<IActionResult> GetByIdAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings.GetByIdAsync(id, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>
+    /// Looks a booking up for its guest, by the number and the email of the booking (MIL-079). Public in the sense of the
+    /// booking flow: it needs the token of the web application, no staff token.
+    /// </summary>
+    /// <param name="request">The booking key and the email, in the body so the email stays out of access logs.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>Only the receipt; the same 404 for a wrong email and an unknown number; 422 without an email; 429 after too many failed lookups of the number.</returns>
+    [HttpPost(ApiRoutes.PublicReceipt)]
+    public async Task<IActionResult> LookUpReceiptAsync([FromBody] BookingReceiptRequest request, CancellationToken cancellationToken) =>
+        this.ToResponse(await _bookings.LookUpReceiptAsync(request, cancellationToken).ConfigureAwait(false));
 
     /// <summary>Lists the bookings of a period.</summary>
     /// <param name="query">The period, the search text, the sorting and whether to include cancelled bookings.</param>

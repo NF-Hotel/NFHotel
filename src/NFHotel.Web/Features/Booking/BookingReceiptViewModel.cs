@@ -7,25 +7,19 @@ using NFHotel.Web.Common;
 namespace NFHotel.Web.Features.Booking;
 
 /// <summary>
-/// Looks up one booking by its booking number for the public receipt page
-/// <c>/booking/{bookingNumber}</c> (BR-C-06).
+/// The guest's way back to a booking on the public page <c>/booking</c> (BR-C-06, MIL-079): the booking number and the
+/// email of the booking open the receipt.
 /// </summary>
 /// <remarks>
-/// <b>Why the page shows so little.</b> There is no access control in Phase 1 (Phase1-Scope.md),
-/// and the booking number is all it takes to open the page. The format is
-/// <c>FLZ-</c> plus the id of the booking (BR-109), so <c>FLZ-000123</c> is one digit away from
-/// <c>FLZ-000124</c>: whoever guesses hits another guest's booking on the first try.
+/// <b>Why the number alone is not enough.</b> The number is <c>FLZ-</c> plus the id of the booking (BR-109), so
+/// <c>FLZ-000123</c> is one digit from <c>FLZ-000124</c>. Until MIL-079 the number alone opened the receipt, and anyone
+/// could count through every booking and read its dates, room type and status. The email the booking was made with is
+/// now the other half of the key: the guest has it, a guesser does not. The API answers a wrong email and an unknown
+/// number alike and refuses a number after a few wrong emails, so the email cannot be found by trying either.
 /// <para>
-/// Therefore the page carries only what a guesser cannot use for anything — booking number,
-/// dates, number of nights, room and status (BR-C-05). Name, email, phone and passport number
-/// are <b>not</b> shown, even though <see cref="BookingDetailsDto.Guest"/> has them: the customer has
-/// just entered them and already has them, whereas a stranger could otherwise harvest
-/// personal data by counting upwards. It is a deliberate limitation until Identity arrives, and
-/// it must be lifted only together with the access control — not before.
-/// </para>
-/// <para>
-/// The limitation is enforced by <c>BookingReceiptCard.razor</c>, which has markup only for the
-/// allowed fields. The viewmodel carries the whole DTO, because it comes that way from the service.
+/// <b>Why the page still shows so little.</b> The service answers with <see cref="BookingReceiptDto"/>, which has only
+/// the number, the dates, the nights, the room type and the status (BR-C-05). Even the right email brings no name,
+/// phone or passport number to a public page.
 /// </para>
 /// </remarks>
 public sealed class BookingReceiptViewModel
@@ -45,76 +39,85 @@ public sealed class BookingReceiptViewModel
         _bookings = bookings;
     }
 
-    /// <summary>The booking, or <c>null</c> if it was not found.</summary>
-    public BookingDetailsDto? Details { get; private set; }
+    /// <summary>The booking number as the guest types it, or as the address gives it, for example <c>FLZ-000123</c>.</summary>
+    public string BookingNumber { get; set; } = string.Empty;
+
+    /// <summary>The email the guest booked with, in any letter case.</summary>
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>The receipt, or <c>null</c> until a lookup has found the booking.</summary>
+    public BookingReceiptDto? Receipt { get; private set; }
 
     /// <summary>True while the lookup is in progress.</summary>
     public bool IsBusy { get; private set; }
 
-    /// <summary>True when the lookup has been tried at least once.</summary>
-    public bool IsLoaded { get; private set; }
-
-    /// <summary>The Danish explanation of why there is no booking.</summary>
+    /// <summary>The errors to show. Empty before the first lookup and after one that found the booking.</summary>
     /// <remarks>
-    /// The same text whether the number was nonsense or pointed to a booking that does not
-    /// exist. The difference would only inform whoever is trying their way forward.
+    /// An unreadable number, an unknown number and a wrong email give the same text: the difference would only inform
+    /// whoever is trying their way forward.
     /// </remarks>
-    public string NotFoundText { get; private set; } = string.Empty;
+    public IReadOnlyList<string> Errors { get; private set; } = NoMessages;
 
     /// <summary>
-    /// Looks up the booking.
+    /// Fills in the number from the address and forgets the last answer, so the link on the confirmation and a bookmark
+    /// from before MIL-079 still take the guest to a form with the number filled in. The email is never in the address.
     /// </summary>
-    /// <param name="bookingNumber">The booking number from the URL, for example <c>FLZ-000123</c>.</param>
+    /// <param name="bookingNumber">The number from the address, or <c>null</c> on <c>/booking</c>.</param>
+    public void Prefill(string? bookingNumber)
+    {
+        BookingNumber = bookingNumber?.Trim() ?? string.Empty;
+        Receipt = null;
+        Errors = NoMessages;
+    }
+
+    /// <summary>
+    /// Looks the booking up by <see cref="BookingNumber"/> and <see cref="Email"/>.
+    /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task LoadAsync(string? bookingNumber, CancellationToken cancellationToken = default)
+    public async Task LookUpAsync(CancellationToken cancellationToken = default)
     {
         if (IsBusy)
         {
             return;
         }
 
-        if (!BookingNumberText.TryParseId(bookingNumber, out var bookingId))
+        Receipt = null;
+
+        if (!BookingNumberText.TryParseId(BookingNumber, out int bookingId))
         {
-            // An unreadable number does not cost a database lookup.
-            Details = null;
-            NotFoundText = Describe(ErrorCodes.Booking.NotFound);
-            IsLoaded = true;
+            // An unreadable number does not cost a lookup, and it gets the answer of a number that does not exist.
+            Errors = [Describe(ErrorCodes.Booking.NotFound)];
 
             return;
         }
+
+        BookingReceiptRequest request = new(bookingId, Email);
 
         IsBusy = true;
 
         try
         {
-            var result = await _bookings
-                .RunAsync((service, token) => service.GetByIdAsync(bookingId, token), cancellationToken)
+            Result<BookingReceiptDto> result = await _bookings
+                .RunAsync((service, token) => service.LookUpReceiptAsync(request, token), cancellationToken)
                 .ConfigureAwait(false);
 
             if (result.IsFailure)
             {
-                Details = null;
-                NotFoundText = ErrorMessages.Describe(result) is [var first, ..]
-                    ? first
-                    : ErrorMessages.Unexpected;
+                IReadOnlyList<string> texts = ErrorMessages.Describe(result);
+                Errors = texts.Count > 0 ? [texts[0]] : [ErrorMessages.Unexpected];
 
                 return;
             }
 
-            Details = result.Value;
-            NotFoundText = string.Empty;
+            Receipt = result.Value;
+            Errors = NoMessages;
         }
         finally
         {
             IsBusy = false;
-            IsLoaded = true;
         }
     }
 
-    /// <summary>The errors to show. Empty when the booking was found.</summary>
-    public IReadOnlyList<string> Errors =>
-        IsLoaded && Details is null && NotFoundText.Length > 0 ? [NotFoundText] : NoMessages;
-
-    /// <summary>Translates one error code to Danish.</summary>
+    /// <summary>Translates one error code to the text the guest reads.</summary>
     private static string Describe(string code) => ErrorMessages.Describe(new Error(code));
 }

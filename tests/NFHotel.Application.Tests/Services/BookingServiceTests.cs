@@ -20,7 +20,7 @@ public sealed class BookingServiceTests
 {
     #region Reading a booking
 
-    /// <summary>Positive: an existing booking is described from its read model.</summary>
+    /// <summary>Positive: an existing booking is described from its read model, to staff who may see the bookings.</summary>
     [Fact]
     public async Task GetByIdAsync_ExistingBooking_ReturnsItsDetails()
     {
@@ -31,7 +31,7 @@ public sealed class BookingServiceTests
         var booking = world.AddBooking(room.Id, guest.Id);
 
         // Act
-        var result = await world.BookingService().GetByIdAsync(booking.Id, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingOverviewAuthorization()).GetByIdAsync(booking.Id, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -46,7 +46,7 @@ public sealed class BookingServiceTests
         var world = new ServiceWorld();
 
         // Act
-        var result = await world.BookingService().GetByIdAsync(99, TestContext.Current.CancellationToken);
+        var result = await world.BookingService(CreateBookingOverviewAuthorization()).GetByIdAsync(99, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.Booking.NotFound, result.FirstError?.Code);
@@ -64,6 +64,180 @@ public sealed class BookingServiceTests
         // Act and assert
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
             () => service.GetByIdAsync(bookingId, TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>Security: without the permission to see the bookings, a booking is not even read (MIL-079).</summary>
+    [Fact]
+    public async Task GetByIdAsync_WithoutBookingsView_ReturnsForbiddenWithoutReading()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
+
+        // Act
+        var result = await world.BookingService().GetByIdAsync(booking.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
+        await world.BookingQueries.DidNotReceiveWithAnyArgs().GetReadModelAsync(default, TestContext.Current.CancellationToken);
+    }
+
+    #endregion
+
+    #region Receipt lookup by the guest (MIL-079)
+
+    /// <summary>
+    /// Positive: the right number and email give the receipt and nothing more, to a caller with no staff permission at
+    /// all, and the lookup clears the count of failed lookups of the number.
+    /// </summary>
+    [Fact]
+    public async Task LookUpReceiptAsync_RightEmail_ReturnsOnlyTheReceiptAndClearsTheCount()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var room = world.AddRoom();
+        var booking = world.AddBooking(room.Id, world.AddGuest().Id, startOffsetDays: 5, nights: 2);
+        var throttle = Substitute.For<ILoginThrottle>();
+
+        // Act
+        var result = await world.BookingService(receiptThrottle: throttle).LookUpReceiptAsync(
+            new BookingReceiptRequest(booking.Id, "anna@example.com"),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(
+            new BookingReceiptDto($"FLZ-{booking.Id:D6}", world.Clock.Today.AddDays(5), world.Clock.Today.AddDays(7), 2, room.Size, BookingStatus.Pending),
+            result.Value);
+        throttle.Received(1).Reset($"booking-receipt:{booking.Id}");
+        throttle.DidNotReceiveWithAnyArgs().RecordFailure(default!);
+    }
+
+    /// <summary>Equivalence: the email matches in any letter case and with spaces around it.</summary>
+    /// <param name="email">The email as the guest types it.</param>
+    [Theory]
+    [InlineData("ANNA@EXAMPLE.COM")]
+    [InlineData("  Anna@Example.com  ")]
+    public async Task LookUpReceiptAsync_EmailInAnotherCaseOrWithSpaces_ReturnsTheReceipt(string email)
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
+
+        // Act
+        var result = await world.BookingService().LookUpReceiptAsync(
+            new BookingReceiptRequest(booking.Id, email),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+    }
+
+    /// <summary>
+    /// Security: a wrong email and an unknown number give the same not-found, both read the booking and both count a
+    /// failure against the number, so neither the answer nor the work behind it tells a guesser which case it was.
+    /// </summary>
+    /// <param name="isUnknownNumber">True for an unknown number with a real email, false for a real number with a wrong email.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LookUpReceiptAsync_WrongEmailOrUnknownNumber_ReturnsNotFoundAndCountsAFailure(bool isUnknownNumber)
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
+        var bookingId = isUnknownNumber ? booking.Id + 100 : booking.Id;
+        var email = isUnknownNumber ? "anna@example.com" : "bo@example.com";
+        var throttle = Substitute.For<ILoginThrottle>();
+
+        // Act
+        var result = await world.BookingService(receiptThrottle: throttle).LookUpReceiptAsync(
+            new BookingReceiptRequest(bookingId, email),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.NotFound, result.FirstError?.Code);
+        await world.BookingQueries.Received(1).GetReadModelAsync(bookingId, Arg.Any<CancellationToken>());
+        throttle.Received(1).RecordFailure($"booking-receipt:{bookingId}");
+        throttle.DidNotReceiveWithAnyArgs().Reset(default!);
+    }
+
+    /// <summary>Security: a number with too many failed lookups is refused even with the right email, without reading the booking.</summary>
+    [Fact]
+    public async Task LookUpReceiptAsync_BlockedNumber_RefusesEvenTheRightEmailWithoutReading()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
+        var throttle = Substitute.For<ILoginThrottle>();
+        throttle.IsBlocked($"booking-receipt:{booking.Id}").Returns(true);
+
+        // Act
+        var result = await world.BookingService(receiptThrottle: throttle).LookUpReceiptAsync(
+            new BookingReceiptRequest(booking.Id, "anna@example.com"),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.TooManyLookups, result.FirstError?.Code);
+        await world.BookingQueries.DidNotReceiveWithAnyArgs().GetReadModelAsync(default, TestContext.Current.CancellationToken);
+        throttle.DidNotReceiveWithAnyArgs().Reset(default!);
+    }
+
+    /// <summary>Negative: a missing or blank email is refused before anything is read or counted.</summary>
+    /// <param name="email">The missing or blank email.</param>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task LookUpReceiptAsync_MissingOrBlankEmail_ReturnsEmailRequiredWithoutCounting(string? email)
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
+        var throttle = Substitute.For<ILoginThrottle>();
+
+        // Act
+        var result = await world.BookingService(receiptThrottle: throttle).LookUpReceiptAsync(
+            new BookingReceiptRequest(booking.Id, email),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.ReceiptEmailRequired, result.FirstError?.Code);
+        await world.BookingQueries.DidNotReceiveWithAnyArgs().GetReadModelAsync(default, TestContext.Current.CancellationToken);
+        throttle.DidNotReceiveWithAnyArgs().RecordFailure(default!);
+    }
+
+    /// <summary>Boundary: a key below one is a number that cannot exist; it is not found, without a count.</summary>
+    /// <param name="bookingId">The key below one.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task LookUpReceiptAsync_KeyBelowOne_ReturnsNotFoundWithoutCounting(int bookingId)
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var throttle = Substitute.For<ILoginThrottle>();
+
+        // Act
+        var result = await world.BookingService(receiptThrottle: throttle).LookUpReceiptAsync(
+            new BookingReceiptRequest(bookingId, "anna@example.com"),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.NotFound, result.FirstError?.Code);
+        throttle.DidNotReceiveWithAnyArgs().RecordFailure(default!);
+    }
+
+    /// <summary>Negative: a missing request is a programming error, not a failed lookup.</summary>
+    [Fact]
+    public async Task LookUpReceiptAsync_NullRequest_ThrowsArgumentNull()
+    {
+        // Arrange
+        var service = new ServiceWorld().BookingService();
+
+        // Act and assert
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => service.LookUpReceiptAsync(null!, TestContext.Current.CancellationToken));
     }
 
     #endregion

@@ -1,0 +1,14 @@
+# Every suite that runs without a database or a browser, on branch mil-079-booking-read-only-with-its-email, 2026-11-12T11:34Z
+# The PostgreSQL integration tests and the browser tests (tests/NFHotel.E2E.Tests) run in the CI of the pull request.
+$ dotnet test --project tests/NFHotel.Domain.Tests/NFHotel.Domain.Tests.csproj
+   total: 485  failed: 0  succeeded: 485  skipped: 0
+$ dotnet test --project tests/NFHotel.Application.Tests/NFHotel.Application.Tests.csproj
+   total: 585  failed: 0  succeeded: 585  skipped: 0
+$ dotnet test --project tests/NFHotel.ApiClient.Tests/NFHotel.ApiClient.Tests.csproj
+   total: 105  failed: 0  succeeded: 105  skipped: 0
+$ dotnet test --project tests/NFHotel.Api.Tests/NFHotel.Api.Tests.csproj
+   total: 230  failed: 0  succeeded: 230  skipped: 0
+$ dotnet test --project tests/NFHotel.Web.Tests/NFHotel.Web.Tests.csproj
+   total: 783  failed: 0  succeeded: 783  skipped: 0
+$ dotnet test --project tests/NFHotel.Infrastructure.Tests/NFHotel.Infrastructure.Tests.csproj --filter-class NFHotel.Infrastructure.Tests.Security.InMemoryLoginThrottleTests
+   total: 8  failed: 0  succeeded: 8  skipped: 0

@@ -64,7 +64,9 @@ internal static class ResultResponses
     private static int StatusFor(Result result)
     {
         var codes = Codes(result);
-        if (codes.Contains(ErrorCodes.Staff.TooManyAttempts) || codes.Contains(ErrorCodes.Staff.TooManyRequests))
+        if (codes.Contains(ErrorCodes.Staff.TooManyAttempts)
+            || codes.Contains(ErrorCodes.Staff.TooManyRequests)
+            || codes.Contains(ErrorCodes.Booking.TooManyLookups))
         {
             return StatusCodes.Status429TooManyRequests;
         }

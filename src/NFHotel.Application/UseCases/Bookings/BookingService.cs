@@ -1,3 +1,7 @@
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Pricing;
 using NFHotel.Application.Dto.Rooms;
@@ -55,6 +59,7 @@ public sealed class BookingService : IBookingService
     private readonly IPriceChangeService _prices;
     private readonly IBookingMarketDetailRepository _marketDetails;
     private readonly IWarningLog _warnings;
+    private readonly ILoginThrottle _receiptThrottle;
 
     /// <summary>
     /// Creates the service.
@@ -70,6 +75,10 @@ public sealed class BookingService : IBookingService
     /// <param name="prices">Gives the effective price of a room size on the arrival date (MIL-055).</param>
     /// <param name="marketDetails">Stores the price per night of a new booking (MIL-055).</param>
     /// <param name="warnings">Where a lost price of a saved booking is reported (MIL-055).</param>
+    /// <param name="receiptThrottle">
+    /// Counts the failed lookups of a booking number by a guest (MIL-079): the throttle of the staff sign-in, with a key of
+    /// its own per booking.
+    /// </param>
     public BookingService(
         IBookingRepository bookingRepository,
         IRoomRepository roomRepository,
@@ -81,7 +90,8 @@ public sealed class BookingService : IBookingService
         IStaffAuthorizationService authorization,
         IPriceChangeService prices,
         IBookingMarketDetailRepository marketDetails,
-        IWarningLog warnings)
+        IWarningLog warnings,
+        ILoginThrottle receiptThrottle)
     {
         ArgumentNullException.ThrowIfNull(bookingRepository);
         ArgumentNullException.ThrowIfNull(roomRepository);
@@ -94,6 +104,7 @@ public sealed class BookingService : IBookingService
         ArgumentNullException.ThrowIfNull(prices);
         ArgumentNullException.ThrowIfNull(marketDetails);
         ArgumentNullException.ThrowIfNull(warnings);
+        ArgumentNullException.ThrowIfNull(receiptThrottle);
 
         _bookingRepository = bookingRepository;
         _roomRepository = roomRepository;
@@ -106,6 +117,7 @@ public sealed class BookingService : IBookingService
         _prices = prices;
         _marketDetails = marketDetails;
         _warnings = warnings;
+        _receiptThrottle = receiptThrottle;
     }
 
     // --------------------------------------------------------
@@ -122,6 +134,13 @@ public sealed class BookingService : IBookingService
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bookingId);
 
+        // The details hold the guest, so only staff who may see the bookings read them (MIL-079). The check is here as
+        // well as on the endpoint, as for the other reads: the endpoint is the door, the use case the rule.
+        if (!await _authorization.HasPermissionAsync(Permissions.BookingsView, cancellationToken).ConfigureAwait(false))
+        {
+            return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
+        }
+
         var readModel = await _bookingQueries
             .GetReadModelAsync(bookingId, cancellationToken)
             .ConfigureAwait(false);
@@ -130,6 +149,68 @@ public sealed class BookingService : IBookingService
             ? Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.NotFound)
             : Result<BookingDetailsDto>.Success(readModel.ToDetails(_clock.Today));
     }
+
+    /// <summary>
+    /// Looks a booking up for its guest, by the number and the email of the booking (MIL-079, BR-C-06).
+    /// </summary>
+    /// <param name="request">The booking key and the email.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Only the receipt of the booking, or the failure that <see cref="IBookingService.LookUpReceiptAsync"/> names.</returns>
+    /// <remarks>
+    /// A wrong email and an unknown number give the same <see cref="ErrorCodes.Booking.NotFound"/>, and the booking is read
+    /// in both cases, so neither the answer nor its cost tells a guesser whether a number exists. Each failure counts
+    /// against the number; after the most failures that the staff sign-in allows in its window, the number is refused
+    /// with <see cref="ErrorCodes.Booking.TooManyLookups"/> for the rest of the window, so the email of a known number
+    /// cannot be found by trying. A lookup that succeeds clears the count.
+    /// </remarks>
+    public async Task<Result<BookingReceiptDto>> LookUpReceiptAsync(
+        BookingReceiptRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return Result<BookingReceiptDto>.Failure(ErrorCodes.Booking.ReceiptEmailRequired);
+        }
+
+        if (request.BookingId <= 0)
+        {
+            return Result<BookingReceiptDto>.Failure(ErrorCodes.Booking.NotFound);
+        }
+
+        string throttleKey = ReceiptThrottleKey(request.BookingId);
+        if (_receiptThrottle.IsBlocked(throttleKey))
+        {
+            return Result<BookingReceiptDto>.Failure(ErrorCodes.Booking.TooManyLookups);
+        }
+
+        BookingReadModel? readModel = await _bookingQueries
+            .GetReadModelAsync(request.BookingId, cancellationToken)
+            .ConfigureAwait(false);
+        BookingDetailsDto? details = readModel?.ToDetails(_clock.Today);
+        if (details is null || !IsSameEmail(details.Guest.Email, request.Email))
+        {
+            _receiptThrottle.RecordFailure(throttleKey);
+            return Result<BookingReceiptDto>.Failure(ErrorCodes.Booking.NotFound);
+        }
+
+        _receiptThrottle.Reset(throttleKey);
+        return Result<BookingReceiptDto>.Success(BookingReceiptDto.From(details));
+    }
+
+    /// <summary>The key of a booking in the shared throttle; the prefix keeps it apart from the user names of staff.</summary>
+    private static string ReceiptThrottleKey(int bookingId) =>
+        string.Create(CultureInfo.InvariantCulture, $"booking-receipt:{bookingId}");
+
+    /// <summary>
+    /// Compares two emails without letter case and surrounding spaces, in a time that does not depend on where they
+    /// first differ.
+    /// </summary>
+    private static bool IsSameEmail(string stored, string given) =>
+        CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(stored.Trim().ToUpperInvariant()),
+            Encoding.UTF8.GetBytes(given.Trim().ToUpperInvariant()));
 
     /// <summary>Fetches the booking overview (BR-23, BR-24, BR-25, BR-32, BR-111).</summary>
     /// <param name="query">Date window, free text, sorting and whether cancelled bookings are included.</param>

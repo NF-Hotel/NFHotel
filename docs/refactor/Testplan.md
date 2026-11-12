@@ -65,10 +65,12 @@ The front page must still respond normally.
 1. Arrival today, departure in three days → the number of nights must count
 2. Next → available rooms are shown. **Rooms 203 and 204 must not be included** — they are under maintenance and out of service (BR-C-02)
 3. Choose a room → fill in details → submit
-4. Receipt with booking number `FLZ-0000xx`
-5. Copy the address, open it in a new tab → **the same receipt** (it is bookmarkable)
+4. Receipt with booking number `FLZ-0000xx`, on the booking page itself
+5. Follow the link "Find your booking" → the form has the number filled in; enter **another** email → "We couldn't find that booking."
+6. Enter the email you booked with, in capitals → **the same receipt**
+7. Open `/booking/FLZ-000001` in a new tab → a form, **no booking** (MIL-079)
 
-**What to look for on the receipt:** it shows room, dates, nights and status — but **neither name, e-mail, phone nor passport number**. That is BR-C-06, and it is deliberate: without login `FLZ-000123` is trivially guessable, so the page must not leak personal data to whoever guesses.
+**What to look for on the receipt:** it shows room, dates, nights and status — but **neither name, e-mail, phone nor passport number**. That is BR-C-06: `FLZ-000123` is one digit from the next booking, so a booking opens only with its email as well, and even then the page holds only the receipt.
 
 **Negative tests — these must be rejected:**
 
@@ -168,5 +170,5 @@ Not everything is equally interesting. These point to something real:
 - A raw exception or an English error code in the browser → error handling has a hole
 - `constraint_check.sql` test 1 succeeds → the constraint is not active, the migration has not been run
 - `constraint_check.sql` test 4 fails → `effective_end_date` is wrong
-- Personal data on the receipt page → BR-C-06 is broken
+- Personal data on the receipt page, or a receipt without the email of its booking → BR-C-06 is broken
 - A passport number in plain text in the database → B-09 is broken

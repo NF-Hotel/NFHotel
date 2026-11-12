@@ -9,8 +9,11 @@
     type, never a room: the API picks a free room of the type when the booking is sent.
 
     The file is markup. All state, all validation and all service calls are in
-    BookingFlowViewModel (UI-Spec section 4, B-10). Book.razor.cs contains only forwarding, the
-    hand-over of the address to the viewmodel, and the one navigation that belongs to the browser.
+    BookingFlowViewModel (UI-Spec section 4, B-10). Book.razor.cs contains only forwarding and the
+    hand-over of the address to the viewmodel.
+
+    The receipt stays on this page as step 4. The flow does not move on to /booking/{number}: since MIL-079 that
+    page asks for the email as well, and the guest who has just booked should not have to type it again.
 
     PublicLayout is the default layout (Routes.razor), so there is no @@layout line.
 
@@ -263,10 +266,14 @@
 
                     <h2 class="subtitle" id="step-confirmation">Your confirmation</h2>
 
-                    <BookingReceiptCard Details="ViewModel.Confirmation" />
+                    <BookingReceiptCard Receipt="ViewModel.Confirmation" />
+
+                    <p class="muted">
+                        To see the booking again later, open <a href="@ReceiptUrl">Find your booking</a> and enter
+                        the booking number with the email you booked with.
+                    </p>
 
                     <div class="row">
-                        <a class="btn btn-secondary" href="@ReceiptUrl">Open the confirmation on its own page</a>
                         <button type="button" class="btn btn-ghost" @onclick="StartOver">Book another stay</button>
                     </div>
                 </section>

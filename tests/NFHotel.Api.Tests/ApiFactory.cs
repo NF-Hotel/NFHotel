@@ -144,7 +144,9 @@ public class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IMarketAnalysisRunLauncher>(World.MarketAnalysisLauncher);
             services.AddSingleton(World.MarketAnalysisTracker);
             services.AddSingleton<IMarketAnalysisService>(_ => World.MarketAnalysisService());
-            services.AddScoped<IBookingService>(provider => World.BookingService(provider.GetRequiredService<IStaffAuthorizationService>()));
+            services.AddScoped<IBookingService>(provider => World.BookingService(
+                provider.GetRequiredService<IStaffAuthorizationService>(),
+                receiptThrottle: provider.GetRequiredService<ILoginThrottle>()));
             services.AddScoped<IGuestService>(provider => World.GuestService(provider.GetRequiredService<IStaffAuthorizationService>()));
             services.AddSingleton<IRoomService>(_ => World.RoomService());
             services.AddSingleton(_ => World.BenchmarkService());

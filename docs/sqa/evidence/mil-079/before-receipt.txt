@@ -1,0 +1,9 @@
+$ curl -s "$HOTEL/booking/FLZ-000001" | grep -o 'Keep this number[^<]*'
+Keep this number. It is the key to this page.
+$ curl -s "$HOTEL/booking/FLZ-000001" | grep -oE '<dt>[^<]+|<dd[^>]*>[^<]+|badge-[a-z]+">[^<]+' | sed -E 's/^.*>//; s/&#xB7;/·/' | paste - -
+Check-in	1 July 2018
+Check-out	2 July 2018
+Length of stay	1 night
+Room type	Single room · the room number is given at check-in
+Status	Checked out
+Price	Payment on arrival
