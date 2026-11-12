@@ -116,6 +116,62 @@ public sealed class InMemoryLoginThrottleTests
 
     #endregion
 
+    #region Memory
+
+    /// <summary>
+    /// Boundary: keys that failed once and are never tried again are swept after their window, so a guesser who tries
+    /// many booking numbers does not grow the memory without end (MIL-079).
+    /// </summary>
+    [Fact]
+    public void RecordFailure_ManyKeysAfterTheirWindow_SweepsTheRunOutWindows()
+    {
+        // Arrange
+        var clock = new FakeClock { TimeOfDay = TimeSpan.FromHours(8) };
+        var throttle = Build(clock);
+        for (var number = 1; number <= 1000; number++)
+        {
+            throttle.RecordFailure(ReceiptKey(number));
+        }
+
+        var withinTheWindow = throttle.TrackedKeyCount;
+
+        // Act
+        clock.TimeOfDay = TimeSpan.FromHours(9);
+        for (var number = 1001; number <= 1300; number++)
+        {
+            throttle.RecordFailure(ReceiptKey(number));
+        }
+
+        // Assert
+        Assert.Equal(1000, withinTheWindow);
+        Assert.Equal(300, throttle.TrackedKeyCount);
+    }
+
+    /// <summary>Equivalence: a sweep keeps a window that has not run out, so a blocked key stays blocked.</summary>
+    [Fact]
+    public void RecordFailure_SweepWithinTheWindow_KeepsTheBlock()
+    {
+        // Arrange
+        var clock = new FakeClock { TimeOfDay = TimeSpan.FromHours(8) };
+        var throttle = Build(clock);
+        for (var failure = 0; failure < 5; failure++)
+        {
+            throttle.RecordFailure("rita");
+        }
+
+        // Act
+        clock.TimeOfDay = TimeSpan.FromHours(8) + TimeSpan.FromMinutes(10);
+        for (var number = 1; number <= 300; number++)
+        {
+            throttle.RecordFailure(ReceiptKey(number));
+        }
+
+        // Assert
+        Assert.True(throttle.IsBlocked("rita"));
+    }
+
+    #endregion
+
     #region Bad input
 
     /// <summary>Negative: a missing key is a programming error.</summary>
@@ -135,6 +191,9 @@ public sealed class InMemoryLoginThrottleTests
 
     private static InMemoryLoginThrottle Build(FakeClock clock) =>
         new(new StaffSecurityOptions { SigningKey = "unused", MaxFailures = 5, ThrottleWindowMinutes = 15 }, clock);
+
+    private static string ReceiptKey(int bookingId) =>
+        string.Create(System.Globalization.CultureInfo.InvariantCulture, $"booking-receipt:{bookingId}");
 
     #endregion
 }

@@ -1,3 +1,4 @@
+@page "/booking"
 @page "/booking/{BookingNumber}"
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
@@ -5,43 +6,67 @@
 @inject BookingReceiptViewModel ViewModel
 
 @*
-    The bookmarkable receipt. The page looks up only the booking number (BR-C-06) and shows
-    only what BookingReceiptCard has markup for: number, dates, nights, room and status.
+    The guest's way back to a booking (BR-C-06, MIL-079): the booking number and the email the booking was made with
+    open the receipt. Until MIL-079 the number alone did, and since the number is FLZ- plus the id of the booking
+    (BR-109), anyone could count through every booking. Why the email, and why the page shows so little even with the
+    right one, is explained in BookingReceiptViewModel.
 
-    Why the page shows no name, email, phone or passport number is explained in
-    BookingReceiptCard.razor and in BookingReceiptViewModel — in short: without access control
-    FLZ-000123 is guessable, and a stranger must not be able to harvest personal data by counting upwards.
+    The address may carry the number (/booking/FLZ-000123), so the link on the confirmation and bookmarks from before
+    MIL-079 still fill in the form. The email never goes in the address: the form sends it in the body of a request, so
+    it stays out of access logs and the browser history.
 
     PublicLayout is the default layout (Routes.razor), so there is no @@layout line.
 *@
 
-<PageTitle>Your booking — NFHotel</PageTitle>
+<PageTitle>Find your booking — NFHotel</PageTitle>
 
 <div class="pub-section">
     <div class="pub-wrap">
         <div class="pub-booking stack-lg">
-            <PageHeader Title="Your booking"
-                        Subtitle="Save or bookmark this page. The booking number is the key to it." />
+            <PageHeader Title="Find your booking"
+                        Subtitle="Enter your booking number and the email you booked with." />
 
-            @if (!ViewModel.IsLoaded)
+            @if (ViewModel.Receipt is null)
             {
-                <LoadingSkeleton Rows="6" />
-            }
-            else if (ViewModel.Details is null)
-            {
-                <EmptyState Title="We couldn't find that booking" Description="@ViewModel.NotFoundText">
-                    <a class="btn btn-primary" href="/book">Book your stay</a>
-                    <a class="btn btn-secondary" href="/">Go to the front page</a>
-                </EmptyState>
+                <ErrorAlert Errors="ViewModel.Errors" />
+
+                <form class="card card-pad stack" aria-label="Find your booking" @onsubmit="LookUpAsync" @onsubmit:preventDefault>
+                    <div class="field-row">
+                        <FormField Label="Booking number" For="booking-number" IsRequired="true"
+                                   Hint="It is on your confirmation and looks like this: FLZ-000123.">
+                            <input id="booking-number"
+                                   class="field-input numeric"
+                                   type="text"
+                                   autocomplete="off"
+                                   disabled="@ViewModel.IsBusy"
+                                   @bind="ViewModel.BookingNumber" />
+                        </FormField>
+
+                        <FormField Label="Email" For="booking-email" IsRequired="true"
+                                   Hint="The email you booked with.">
+                            <input id="booking-email"
+                                   class="field-input"
+                                   type="email"
+                                   autocomplete="email"
+                                   disabled="@ViewModel.IsBusy"
+                                   @bind="ViewModel.Email" />
+                        </FormField>
+                    </div>
+
+                    <div class="row">
+                        <button type="submit" class="btn btn-primary" disabled="@ViewModel.IsBusy">
+                            Show my booking
+                        </button>
+                    </div>
+                </form>
 
                 <p class="muted">
-                    Check the number on your confirmation — it looks like this: FLZ-000123.
-                    If it still doesn't work, email help@nfhotel.com and reception will find it for you.
+                    If it still doesn't work, email help@nfhotel.com and reception will find the booking for you.
                 </p>
             }
             else
             {
-                <BookingReceiptCard Details="ViewModel.Details" />
+                <BookingReceiptCard Receipt="ViewModel.Receipt" />
 
                 <div class="row">
                     <a class="btn btn-secondary" href="/">Go to the front page</a>

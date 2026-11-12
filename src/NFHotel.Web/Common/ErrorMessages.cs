@@ -58,6 +58,8 @@ public static class ErrorMessages
             [ErrorCodes.Booking.AvailabilityPeriodTooLong] = "The calendar can show at most two months at a time.",
             [ErrorCodes.Booking.GuestSelectionInvalid] = "Pick an existing guest or create a new one — not both.",
             [ErrorCodes.Booking.ConcurrencyConflict] = "Someone else changed this booking. Reload the page and start over.",
+            [ErrorCodes.Booking.ReceiptEmailRequired] = "Enter the email you booked with.",
+            [ErrorCodes.Booking.TooManyLookups] = "Too many attempts for this booking number. Wait fifteen minutes and try again.",
 
             // ----------------------------------------------------------
             // ROOM

@@ -8,8 +8,10 @@ using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
+using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Persistence;
 using NFHotel.Infrastructure.Repositories;
+using NFHotel.Infrastructure.Security;
 using NFHotel.TestSupport;
 
 namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
@@ -139,7 +141,8 @@ public sealed class BookingPriceTests : IAsyncLifetime
             new AllowAll(),
             prices,
             new BookingMarketDetailRepository(context),
-            new RecordingWarningLog());
+            new RecordingWarningLog(),
+            new InMemoryLoginThrottle(new StaffSecurityOptions { SigningKey = "unused" }, clock));
 
         Result<BookingDetailsDto> result = await service.CreateAsync(new CreateBookingRequest(Arrival, Arrival.AddDays(3), roomId, guestId, null), TestContext.Current.CancellationToken);
 

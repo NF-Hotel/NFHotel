@@ -272,7 +272,7 @@ public sealed class BookingFlowViewModelTests
         await _bookings.DidNotReceiveWithAnyArgs().CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>());
     }
 
-    /// <summary>Positive: a valid booking is sent as a new guest with trimmed fields and shows the receipt.</summary>
+    /// <summary>Positive: a valid booking is sent as a new guest with trimmed fields and keeps only its receipt (MIL-079).</summary>
     [Fact]
     public async Task SubmitAsync_ValidBooking_ShowsTheReceipt()
     {
@@ -284,7 +284,7 @@ public sealed class BookingFlowViewModelTests
         await viewModel.SubmitAsync(Token);
 
         Assert.Equal(BookingFlowStep.Receipt, viewModel.CurrentStep);
-        Assert.Equal(9, viewModel.Confirmation!.BookingId);
+        Assert.Equal(BookingReceiptDto.From(BookingDetails(9)), viewModel.Confirmation);
         await _bookings.Received(1).CreatePublicAsync(
             new CreatePublicBookingRequest(
                 Today.AddDays(1),
@@ -531,7 +531,7 @@ public sealed class BookingFlowViewModelTests
     #endregion
 }
 
-/// <summary>The receipt page, the guest field errors, the booking number and the public dates (MIL-054 task 3).</summary>
+/// <summary>The receipt lookup (MIL-054 task 3, MIL-079), the guest field errors, the booking number and the public dates.</summary>
 public sealed class BookingReceiptTests
 {
     private readonly IBookingService _bookings = Substitute.For<IBookingService>();
@@ -547,60 +547,93 @@ public sealed class BookingReceiptTests
         Assert.Throws<ArgumentNullException>(() => new BookingReceiptViewModel(null!));
     }
 
-    /// <summary>Positive: a readable number loads the booking.</summary>
+    /// <summary>Positive: the number and the email find the receipt; the number is sent as the key and the email as typed.</summary>
     [Fact]
-    public async Task LoadAsync_KnownNumber_ShowsTheBooking()
+    public async Task LookUpAsync_NumberAndEmail_ShowsTheReceipt()
     {
-        _bookings.GetByIdAsync(42, Arg.Any<CancellationToken>()).Returns(Ok(BookingDetails(42)));
+        var receipt = BookingReceiptDto.From(BookingDetails(42));
+        _bookings.LookUpReceiptAsync(new BookingReceiptRequest(42, " Rita@Example.com"), Arg.Any<CancellationToken>()).Returns(Ok(receipt));
         var viewModel = Create();
+        viewModel.Prefill("FLZ-42");
+        viewModel.Email = " Rita@Example.com";
 
-        await viewModel.LoadAsync("FLZ-42", Token);
+        await viewModel.LookUpAsync(Token);
 
-        Assert.True(viewModel.IsLoaded);
-        Assert.Equal(42, viewModel.Details!.BookingId);
+        Assert.Equal(receipt, viewModel.Receipt);
         Assert.Empty(viewModel.Errors);
+        Assert.False(viewModel.IsBusy);
     }
 
-    /// <summary>Negative: an unreadable number is not looked up and says not found.</summary>
+    /// <summary>Negative: an unreadable number is not looked up and gets the answer of a number that does not exist.</summary>
     [Fact]
-    public async Task LoadAsync_UnreadableNumber_SaysNotFoundWithoutALookup()
+    public async Task LookUpAsync_UnreadableNumber_SaysNotFoundWithoutALookup()
     {
         var viewModel = Create();
+        viewModel.BookingNumber = "abc";
+        viewModel.Email = "rita@example.com";
 
-        await viewModel.LoadAsync("abc", Token);
+        await viewModel.LookUpAsync(Token);
 
+        Assert.Null(viewModel.Receipt);
         Assert.Equal([Text(ErrorCodes.Booking.NotFound)], viewModel.Errors);
         Assert.Empty(_bookings.ReceivedCalls());
     }
 
-    /// <summary>Error handling: a refused lookup shows its text.</summary>
-    [Fact]
-    public async Task LoadAsync_Refused_ShowsTheText()
+    /// <summary>Error handling: each refusal of the lookup shows its own text and no receipt.</summary>
+    /// <param name="code">The code of the refusal.</param>
+    [Theory]
+    [InlineData(ErrorCodes.Booking.NotFound)]
+    [InlineData(ErrorCodes.Booking.ReceiptEmailRequired)]
+    [InlineData(ErrorCodes.Booking.TooManyLookups)]
+    public async Task LookUpAsync_Refused_ShowsTheTextOfTheRefusal(string code)
     {
-        _bookings.GetByIdAsync(42, Arg.Any<CancellationToken>()).Returns(Fail<BookingDetailsDto>(ErrorCodes.Booking.NotFound));
+        _bookings.LookUpReceiptAsync(Arg.Any<BookingReceiptRequest>(), Arg.Any<CancellationToken>()).Returns(Fail<BookingReceiptDto>(code));
         var viewModel = Create();
+        viewModel.Prefill("42");
 
-        await viewModel.LoadAsync("42", Token);
+        await viewModel.LookUpAsync(Token);
 
-        Assert.Null(viewModel.Details);
-        Assert.Equal([Text(ErrorCodes.Booking.NotFound)], viewModel.Errors);
+        Assert.Null(viewModel.Receipt);
+        Assert.Equal([Text(code)], viewModel.Errors);
     }
 
-    /// <summary>Concurrency: a second load while one runs is ignored.</summary>
+    /// <summary>State transition: a new number from the address fills in the form and forgets the last answer.</summary>
     [Fact]
-    public async Task LoadAsync_WhileLoading_IsIgnored()
+    public async Task Prefill_AfterAnAnswer_FillsInTheNumberAndForgetsTheAnswer()
     {
-        var pending = new TaskCompletionSource<Result<BookingDetailsDto>>();
-        _bookings.GetByIdAsync(42, Arg.Any<CancellationToken>()).Returns(pending.Task);
+        _bookings.LookUpReceiptAsync(Arg.Any<BookingReceiptRequest>(), Arg.Any<CancellationToken>()).Returns(Fail<BookingReceiptDto>(ErrorCodes.Booking.NotFound));
         var viewModel = Create();
+        viewModel.Prefill("42");
+        await viewModel.LookUpAsync(Token);
 
-        var load = viewModel.LoadAsync("42", Token);
+        viewModel.Prefill(" FLZ-7 ");
+        var withNumber = viewModel.BookingNumber;
+        viewModel.Prefill(null);
+
+        Assert.Equal("FLZ-7", withNumber);
+        Assert.Equal(string.Empty, viewModel.BookingNumber);
         Assert.Empty(viewModel.Errors);
-        await viewModel.LoadAsync("42", Token);
-        pending.SetResult(Result<BookingDetailsDto>.Success(BookingDetails(42)));
-        await load;
+        Assert.Null(viewModel.Receipt);
+    }
 
-        await _bookings.Received(1).GetByIdAsync(42, Arg.Any<CancellationToken>());
+    /// <summary>Concurrency: a second lookup while one runs is ignored.</summary>
+    [Fact]
+    public async Task LookUpAsync_WhileLookingUp_IsIgnored()
+    {
+        var pending = new TaskCompletionSource<Result<BookingReceiptDto>>();
+        _bookings.LookUpReceiptAsync(Arg.Any<BookingReceiptRequest>(), Arg.Any<CancellationToken>()).Returns(pending.Task);
+        var viewModel = Create();
+        viewModel.Prefill("42");
+        viewModel.Email = "rita@example.com";
+
+        var lookUp = viewModel.LookUpAsync(Token);
+        Assert.True(viewModel.IsBusy);
+        await viewModel.LookUpAsync(Token);
+        pending.SetResult(Result<BookingReceiptDto>.Success(BookingReceiptDto.From(BookingDetails(42))));
+        await lookUp;
+
+        await _bookings.Received(1).LookUpReceiptAsync(Arg.Any<BookingReceiptRequest>(), Arg.Any<CancellationToken>());
+        Assert.False(viewModel.IsBusy);
     }
 
     /// <summary>Boundary and equivalence: the booking number with or without its prefix, and every way it can be unreadable.</summary>

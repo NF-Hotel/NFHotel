@@ -11,51 +11,46 @@
 @using NFHotel.Domain.Repositories
 
 @*
-    The receipt for one booking. Used both as step 4 in the flow and as the whole content
-    of the bookmarkable page /booking/{bookingNumber}.
+    The receipt for one booking. Used both as step 4 in the flow and on the lookup page /booking once the number and
+    the email have found the booking.
 
     BR-C-06 — WHY THERE IS NO NAME HERE
-    There is no access control in Phase 1, so the booking number is the only key to
-    the page. The format is "FLZ-" plus the id of the booking (BR-109), and FLZ-000123 is therefore
-    one digit from the next guest's booking: whoever counts upwards hits on the first try.
-
-    Therefore this component has markup only for booking number, period, number of nights, room
-    and status (BR-C-05). Details.Guest carries name, email and phone — they are
-    deliberately left unused, so a stranger cannot harvest personal data by guessing numbers.
-    The customer loses nothing: she has just entered the details herself.
-
-    The limitation is lifted at the earliest when Identity is in place — and only together with it.
+    The card takes BookingReceiptDto, which has only booking number, period, number of nights, room type and status
+    (BR-C-05). There is no guest in it, so the card cannot show a name, an email or a phone number, not even by mistake.
+    Before MIL-079 the card took the whole booking and left the guest fields unused, while the number alone opened the
+    page: FLZ-000123 is one digit from the next guest's booking. Now the API answers the public lookup with the receipt
+    only, and only for the number together with the email of the booking (MIL-079).
 
     There is no price either. The price model does not exist in Phase 1 (BR-C-05, BR-31), and
     "Payment on arrival" is the honest answer rather than an empty field that looks like a fault.
 *@
 
-@if (Details is not null)
+@if (Receipt is not null)
 {
     <article class="card card-pad stack pub-receipt">
         <div class="stack-sm">
             <span class="eyebrow">Booking number</span>
-            <p class="pub-receipt-number numeric">@Details.BookingNumber</p>
-            <p class="muted">Keep this number. It is the key to this page.</p>
+            <p class="pub-receipt-number numeric">@Receipt.BookingNumber</p>
+            <p class="muted">Keep this number. With the email you booked with, it opens this booking again.</p>
         </div>
 
         <div class="divider"></div>
 
         <dl>
             <dt>Check-in</dt>
-            <dd class="numeric">@PublicDateText.Long(Details.StartDate)</dd>
+            <dd class="numeric">@PublicDateText.Long(Receipt.StartDate)</dd>
 
             <dt>Check-out</dt>
-            <dd class="numeric">@PublicDateText.Long(Details.EndDate)</dd>
+            <dd class="numeric">@PublicDateText.Long(Receipt.EndDate)</dd>
 
             <dt>Length of stay</dt>
-            <dd class="numeric">@PublicDateText.Nights(Details.Nights)</dd>
+            <dd class="numeric">@PublicDateText.Nights(Receipt.Nights)</dd>
 
             <dt>Room type</dt>
             <dd>@RoomText</dd>
 
             <dt>Status</dt>
-            <dd><StatusBadge BookingStatus="Details.Status" /></dd>
+            <dd><StatusBadge BookingStatus="Receipt.Status" /></dd>
 
             <dt>Price</dt>
             <dd>@BookingFlowViewModel.PaymentText</dd>

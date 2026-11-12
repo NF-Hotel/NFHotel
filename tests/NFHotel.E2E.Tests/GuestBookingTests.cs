@@ -1,9 +1,10 @@
 namespace NFHotel.E2E.Tests;
 
 /// <summary>
-/// The public booking flow in a browser (MIL-027 task 4): a guest picks dates, a room type and fills in the form, and lands
-/// on the receipt page (MIL-027 criterion 1: a receipt page that fails breaks the first test). The dates
-/// are fixed far ahead, so the test reads no clock and the room of <see cref="BrowserFixture"/> is free on them.
+/// The public booking flow in a browser (MIL-027 task 4): a guest picks dates, a room type and fills in the form, and sees
+/// the receipt (MIL-027 criterion 1: a receipt that fails breaks the first test). Since MIL-079 the receipt is step 4 of
+/// the booking page, and the lookup page opens a booking only with its number and its email. The dates are fixed far
+/// ahead, so the test reads no clock and the room of <see cref="BrowserFixture"/> is free on them.
 /// </summary>
 public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixture)
 {
@@ -17,9 +18,9 @@ public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixt
         await FillGuestAsync("ada@example.com");
         await Page.GetByRole(AriaRole.Button, new() { Name = "Send booking request" }).ClickAsync();
 
-        // The flow ends on the receipt page of the new booking, whose number is the key to it.
-        await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Your booking" })).ToBeVisibleAsync();
-        Assert.StartsWith("/booking/", Pages.PathOf(Page), StringComparison.Ordinal);
+        // The flow ends on its own receipt step: the guest who has just booked does not type the email again (MIL-079).
+        await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Your confirmation" })).ToBeVisibleAsync();
+        Assert.Equal("/book", Pages.PathOf(Page));
         await Assertions.Expect(Page.GetByText("Single room · the room number is given at check-in")).ToBeVisibleAsync();
         await Assertions.Expect(Page.GetByText("10 June 2030")).ToBeVisibleAsync();
     }
@@ -34,6 +35,32 @@ public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixt
         await Assertions.Expect(Page.Locator("#email")).ToHaveAttributeAsync("aria-invalid", "true");
         await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Your details" })).ToBeVisibleAsync();
         Assert.Equal("/book", Pages.PathOf(Page));
+    }
+
+    [E2EFact]
+    public async Task FindBooking_NumberWithAnotherEmailThenItsOwn_ShowsTheReceiptOnlyForItsOwn()
+    {
+        await ChooseTestRoomAsync("2030-08-04", "2030-08-06");
+        await FillGuestAsync("grace@example.com");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Send booking request" }).ClickAsync();
+        await Assertions.Expect(Page.Locator(".pub-receipt-number")).ToBeVisibleAsync();
+        var number = (await Page.Locator(".pub-receipt-number").InnerTextAsync()).Trim();
+
+        // The receipt links to the lookup page with the number filled in; the email is never in the address (MIL-079).
+        await Assertions.Expect(Page.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Find your booking" }))
+            .ToHaveAttributeAsync("href", $"/booking/{number}");
+        await Pages.OpenAsync(Page, $"booking/{number}");
+        await Assertions.Expect(Page.Locator("#booking-number")).ToHaveValueAsync(number);
+
+        // Another email gets the answer of a number that does not exist.
+        await Pages.FillAsync(Page.Locator("#booking-email"), "someone.else@example.com");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Show my booking" }).ClickAsync();
+        await Assertions.Expect(Page.GetByText("We couldn't find that booking.")).ToBeVisibleAsync();
+
+        // Its own email, in another letter case, opens the receipt.
+        await Pages.FillAsync(Page.Locator("#booking-email"), "GRACE@example.com");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Show my booking" }).ClickAsync();
+        await Assertions.Expect(Page.GetByText("4 August 2030")).ToBeVisibleAsync();
     }
 
     [E2EFact]

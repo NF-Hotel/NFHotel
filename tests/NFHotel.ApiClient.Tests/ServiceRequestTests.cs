@@ -104,6 +104,22 @@ public sealed class ServiceRequestTests
         Assert.Contains("\"searchText\":\"anna\"", handler.Body, StringComparison.Ordinal);
     }
 
+    /// <summary>Positive: the receipt lookup posts the number and the email as the body, so the email is never part of the address.</summary>
+    [Fact]
+    public async Task BookingLookUpReceiptAsync_Request_PostsTheEmailInTheBodyOnly()
+    {
+        // Arrange
+        var (handler, bookings, _, _) = Services();
+
+        // Act
+        await bookings.LookUpReceiptAsync(new BookingReceiptRequest(42, "anna@example.com"), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal((HttpMethod.Post, "/api/bookings/public/receipt"), (handler.Method!, handler.PathAndQuery!));
+        Assert.Contains("\"bookingId\":42", handler.Body, StringComparison.Ordinal);
+        Assert.Contains("\"email\":\"anna@example.com\"", handler.Body, StringComparison.Ordinal);
+    }
+
     #endregion
 
     #region Guests and rooms
@@ -260,6 +276,7 @@ public sealed class ServiceRequestTests
             () => bookings.GetOverviewAsync(null!, token),
             () => bookings.CreateAsync(null!, token),
             () => bookings.RescheduleAsync(null!, token),
+            () => bookings.LookUpReceiptAsync(null!, token),
             () => guests.CreateAsync(null!, token),
             () => guests.UpdateAsync(null!, token),
             () => rooms.SearchAsync(null!, token),

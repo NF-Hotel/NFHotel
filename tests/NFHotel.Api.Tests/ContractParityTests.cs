@@ -130,6 +130,14 @@ public sealed class ContractParityTests : IAsyncLifetime
         AddB("GetByIdAsync existing", b => b.GetByIdAsync(1, ct));
         AddB("GetByIdAsync unknown", b => b.GetByIdAsync(99, ct));
         AddThrows("IBookingService.GetByIdAsync key zero", s => s.Bookings.GetByIdAsync(0, ct));
+        AddB("LookUpReceiptAsync right email", b => b.LookUpReceiptAsync(new BookingReceiptRequest(1, "anna@example.com"), ct));
+        AddB("LookUpReceiptAsync email in another case with spaces", b => b.LookUpReceiptAsync(new BookingReceiptRequest(1, "  ANNA@Example.com "), ct));
+        AddB("LookUpReceiptAsync wrong email", b => b.LookUpReceiptAsync(new BookingReceiptRequest(1, "bo@example.com"), ct));
+        AddB("LookUpReceiptAsync unknown number", b => b.LookUpReceiptAsync(new BookingReceiptRequest(99, "anna@example.com"), ct));
+        AddB("LookUpReceiptAsync key zero", b => b.LookUpReceiptAsync(new BookingReceiptRequest(0, "anna@example.com"), ct));
+        AddB("LookUpReceiptAsync blank email", b => b.LookUpReceiptAsync(new BookingReceiptRequest(1, " "), ct));
+        AddB("LookUpReceiptAsync no email", b => b.LookUpReceiptAsync(new BookingReceiptRequest(1, null), ct));
+        AddThrows("IBookingService.LookUpReceiptAsync null", s => s.Bookings.LookUpReceiptAsync(null!, ct));
         AddB("GetOverviewAsync month", b => b.GetOverviewAsync(new BookingOverviewQuery(today, today.AddDays(30)), ct));
         AddB("GetOverviewAsync search and sort", b => b.GetOverviewAsync(new BookingOverviewQuery(today, today.AddDays(60), "anna", BookingSortField.GuestName, SortDirection.Descending, IncludeCancelled: true), ct));
         AddB("GetOverviewAsync inverted period", b => b.GetOverviewAsync(new BookingOverviewQuery(today.AddDays(5), today), ct));

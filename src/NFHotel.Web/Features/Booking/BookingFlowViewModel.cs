@@ -161,8 +161,11 @@ public sealed class BookingFlowViewModel
     /// <summary>Validation errors distributed over the fields of the guest form.</summary>
     public GuestFieldErrors GuestErrors { get; private set; } = GuestFieldErrors.None;
 
-    /// <summary>The created booking, or <c>null</c> until step 4.</summary>
-    public BookingDetailsDto? Confirmation { get; private set; }
+    /// <summary>
+    /// The receipt of the booking just created, or <c>null</c> until step 4. Only the receipt is kept, not the whole
+    /// booking that the service answers with: the guest has just typed the rest, and the page shows no more (MIL-079).
+    /// </summary>
+    public BookingReceiptDto? Confirmation { get; private set; }
 
     /// <summary>True when the user has tried to move on from the date step at least once.</summary>
     /// <remarks>
@@ -548,7 +551,7 @@ public sealed class BookingFlowViewModel
 
         if (result.IsSuccess)
         {
-            Confirmation = result.Value;
+            Confirmation = BookingReceiptDto.From(result.Value);
             CurrentStep = BookingFlowStep.Receipt;
 
             return;
