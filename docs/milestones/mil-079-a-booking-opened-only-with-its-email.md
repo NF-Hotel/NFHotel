@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-12 | Accepted | mikemike | S01 | Initial version: the public receipt page opens any booking by its number alone, checked on the live site; planned at S01's request in chat ("teste om det er rigtigt i virkeligheden (i projektet) om det kan lade sig gøre og dokumentere det samt fixe så det ikke kan lade sig gøre"), with screenshots and other evidence ("husk at inkludere screenshots og andet bevis") | pending |
+| 2026-11-12 | Accepted | mikemike | S01 | Initial version: the public receipt page opens any booking by its number alone, checked on the live site; planned at S01's request in chat ("teste om det er rigtigt i virkeligheden (i projektet) om det kan lade sig gøre og dokumentere det samt fixe så det ikke kan lade sig gøre"), with screenshots and other evidence ("husk at inkludere screenshots og andet bevis") | [ffca5c3] |
 
 ---
 
@@ -113,3 +113,4 @@ and the change pages stay with MIL-018.
 [ADR-0005]: ../adr/adr-0005-backoffice-login.md
 [MIL-016]: ./mil-016-backoffice-login.md
 [MIL-018]: ./mil-018-guest-login.md
+[ffca5c3]: https://github.com/NF-Hotel/NFHotel/commit/ffca5c33f0da3bd5bb0e93267da3c3a0ab7a1b5f

@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-12 | Proposed | mikemike | S01 | Initial version; pre-review by the AI, not independent; S01 reviews the pull request | pending |
+| 2026-11-12 | Proposed | mikemike | S01 | Initial version; pre-review by the AI, not independent; S01 reviews the pull request | [127a7df] |
 
 ---
 
@@ -103,3 +103,4 @@ there. Left for task 5: the check on the live site after S01's merge and approva
 [before-tests.txt]: ../evidence/mil-079/before-tests.txt
 [after-tests.txt]: ../evidence/mil-079/after-tests.txt
 [after-tests-all.txt]: ../evidence/mil-079/after-tests-all.txt
+[127a7df]: https://github.com/NF-Hotel/NFHotel/commit/127a7df34b573e8f8efca3b39e010b236516334f
