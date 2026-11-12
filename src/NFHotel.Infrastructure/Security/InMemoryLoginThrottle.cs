@@ -90,13 +90,10 @@ public sealed class InMemoryLoginThrottle : ILoginThrottle
     /// <param name="now">The time of the failure that started the sweep.</param>
     private void SweepRunOutWindows(DateTimeOffset now)
     {
-        foreach (KeyValuePair<string, Window> entry in _windows)
+        foreach (KeyValuePair<string, Window> runOut in _windows.Where(entry => now - entry.Value.Start >= _window))
         {
-            if (now - entry.Value.Start >= _window)
-            {
-                // Removes the pair only while it is unchanged, so a failure recorded meanwhile is kept.
-                _windows.TryRemove(entry);
-            }
+            // Removes the pair only while it is unchanged, so a failure recorded meanwhile is kept.
+            _windows.TryRemove(runOut);
         }
     }
 
