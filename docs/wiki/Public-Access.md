@@ -22,7 +22,7 @@ NF Hotel is public at `https://nfhotel.devmatiker.com` through Cloudflare Tunnel
 | --- | --- | --- |
 | `/`, `/book`, `/booking/...` | Yes | Guests look, book and open their booking with its number and email (MIL-079) |
 | `/mobile-api/api/auth/login`, `/mobile-api/api/rooms...` | Yes | The two routes of the mobile app (ADR-0015) |
-| `/admin...` | Behind Cloudflare Access | Only listed staff get past the e-mail code to the hotel's sign-in (MIL-041); without it, 404 |
+| `/admin...`, in any letter case | Behind Cloudflare Access | Only listed staff get past the e-mail code to the hotel's sign-in (MIL-041, MIL-072); without it, 404 |
 | Any other path of `/mobile-api/` | No, 404 | The API has no other public path |
 | SSH, the monitoring, PostgreSQL | No | Not on the tunnel at all |
 
@@ -76,7 +76,7 @@ If the token has been anywhere but step 8 (a chat, a screenshot, a file), rotate
 
 ## The back office from the internet
 
-**Decision:** [ADR-0029](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0029-back-office-behind-cloudflare-access.md). **Work:** MIL-041.
+**Decision:** [ADR-0029](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0029-back-office-behind-cloudflare-access.md). **Work:** MIL-041, and MIL-072 for the order of the routes and every spelling of `/admin`.
 
 ### Sign in as staff
 
@@ -92,8 +92,8 @@ Cloudflare remembers the browser for 24 hours. An address that is not on the lis
 1. **The Access application.** In **Zero Trust → Access controls → Applications → Add an application → Self-hosted**: name `NF Hotel back office`, session duration **24 hours**, public hostname `nfhotel` · `devmatiker.com`, path `admin`. Login method: **One-time PIN** only.
 2. **The policy.** Add a policy `Team`, action **Allow**, include **Emails**: the listed addresses. Save the application.
 3. **Note two values.** In **Zero Trust → Settings**, the *team domain* (`<team>.cloudflareaccess.com`); on the application's page, the **Application Audience (AUD) Tag**. Neither is a secret.
-4. **The validating route.** In **Networking → Tunnels → nf-hotel → Edit → Routes → Add route → Published application**: subdomain `nfhotel`, domain `devmatiker.com`, path `^/admin`, service URL `http://nginx:8082`. Under **Additional application settings → Access**, turn on **Validate the Access JWT at the tunnel** (or "Protect with Access") with the team name and the AUD tag of step 3. *Why:* a request for `/admin` that did not pass Access stops at the tunnel and never reaches the VM.
-5. **Check before the deploy:** `https://nfhotel.devmatiker.com/admin/login` in a private window shows Cloudflare's e-mail page. Only then is the nginx change of MIL-041 deployed, which lets a request with the Access token through to the back office.
+4. **The validating route.** In **Networking → Tunnels → nf-hotel → Routes → Add route → Published application**: subdomain `nfhotel`, domain `devmatiker.com`, path `(?i)^/admin`, service URL `http://nginx:8082`. Under **Additional application settings → Access**, turn on **Validate the Access JWT at the tunnel** (or "Protect with Access") with the team name and the AUD tag of step 3. Save, then in the list of routes open the new route's **⋯** menu and choose **Move up** until it shows **Order 1**. *Why:* a request for `/admin` that did not pass Access stops at the tunnel and never reaches the VM. The routes are matched from top to bottom and the first match wins, so below the route without a path this route is never used; `(?i)` makes the path ignore letter case, as the web application does, so `/ADMIN` is checked too.
+5. **Check before the deploy:** `https://nfhotel.devmatiker.com/admin/login` and `/ADMIN/login` in a private window show Cloudflare's e-mail page, and the route with the path `(?i)^/admin` has **Order 1**. Only then is the nginx change of MIL-041 deployed, which lets a request with the Access token through to the back office.
 
 ### Add or remove a member of staff
 
@@ -104,8 +104,8 @@ In **Zero Trust → Access controls → Applications → NF Hotel back office �
 From a phone with Tailscale turned off, or any machine outside the tailnet:
 
 - `https://nfhotel.devmatiker.com/` and `/book` open, with a valid certificate.
-- `https://nfhotel.devmatiker.com/admin/login` shows Cloudflare's e-mail page, not the hotel's sign-in.
-- In the Cloudflare dashboard the tunnel `nf-hotel` shows **Healthy**.
+- `https://nfhotel.devmatiker.com/admin/login` shows Cloudflare's e-mail page, not the hotel's sign-in, and so does a spelling with capital letters, such as `/ADMIN/login`.
+- In the Cloudflare dashboard the tunnel `nf-hotel` shows **Healthy**, and under **Routes** the route with the path `(?i)^/admin` has **Order 1**. After any change of the routes, the newest line `Updated to new configuration` of `cloudflared` in Grafana (Loki) lists that route first.
 - In Grafana, the public probe (`job="public_site"`) shows success.
 
 ## Turn it off
