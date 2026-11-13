@@ -1,7 +1,8 @@
 # CI of the operations code in ops/ (ADR-0016, formerly the CI of NF-Hotel/DevOps): the
 # linters of ops/ and of the workflows and actions, the coverage of the wiki reference pages
-# (MIL-049), the script tests, the monitoring configuration (ADR-0020), the nginx routes, the
-# networks of the services (ADR-0039),
+# (MIL-049), the script tests, the monitoring configuration (ADR-0020), the runtime check of
+# the containers against their profiles (MIL-080), the nginx routes, the networks of the services
+# (ADR-0039),
 # the Proxmox tests (the live ones skip), the PostgreSQL preparation with the real
 # migrations of this commit, the two local development modes (ADR-0035, ADR-0036), and the
 # rotation drill of the secrets (ADR-0024). The release build and the throwaway end-to-end
@@ -92,15 +93,19 @@ jobs:
           - test-make-migration-script.sh
           - test-remove-desktop.sh
           - test-sudo-log.sh
+          - test-check-container-runtime.sh
         # Debian 13: the rrsync of the backup target has -no-overwrite (MIL-066 task 1),
-        # remove-desktop.sh is for the VM, which runs Debian 13 (MIL-068), and test-sudo-log.sh
-        # checks the log of the sudo of the VM (MIL-070).
+        # remove-desktop.sh is for the VM, which runs Debian 13 (MIL-068), test-sudo-log.sh
+        # checks the log of the sudo of the VM (MIL-070), and the runtime check runs on the VM
+        # (MIL-080).
         include:
           - test: test-backup-target.sh
             image: debian:13-slim
           - test: test-remove-desktop.sh
             image: debian:13-slim
           - test: test-sudo-log.sh
+            image: debian:13-slim
+          - test: test-check-container-runtime.sh
             image: debian:13-slim
     steps:
       - name: Check out
@@ -152,6 +157,10 @@ jobs:
       # systemd-journal group, the host mounts read-only.
       - name: Start Alloy as nf-hotel runs it, and check it
         run: sudo bash ops/tests/test-alloy-start.sh
+      # Root reads the kernel's view of each container; the containers of the test have no network
+      # but one, which is on the runner's own network.
+      - name: Check real containers and every compose file against the profiles (MIL-080)
+        run: sudo bash ops/tests/test-container-runtime-live.sh
 
   nginx:
     name: Ops nginx routes

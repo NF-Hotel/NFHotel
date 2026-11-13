@@ -33,6 +33,11 @@ services:
       - DAC_READ_SEARCH
     security_opt:
       - no-new-privileges:true
+    # Limits (MIL-080): one chown over the results volume needs little, and the runtime check holds
+    # a one-shot service to the limits of every other service.
+    mem_limit: 64m
+    cpus: 0.25
+    pids_limit: 32
 
   benchmark:
     image: *benchmark-image
