@@ -41,6 +41,7 @@ declare -A EXPECTED=(
   ["benchmark/benchmark"]="llm python"
   ["benchmark/results-owner"]=""
   ["ollama/ollama"]="llm"
+  ["ollama/models-owner"]=""
   ["postgres/postgres"]="db"
   ["postgres-tailnet/relay"]="db published"
   ["cloudflared/cloudflared"]="proxy"

@@ -9,6 +9,8 @@
 # Models are kept in the volume models. Pull them with OLLAMA_PULL_MODELS in
 # ollama.env (scripts/deploy-services.sh does it) or by hand:
 #   docker compose --env-file ollama.env exec ollama ollama pull <model>
+# Ollama runs as the user 10001, not as root (MIL-082): the one-shot service models-owner gives
+# the volume to that user before Ollama starts, and ops/tests/test-ollama-user.sh checks both.
 # It runs on the CPU. For an NVIDIA GPU passed through to the VM (ADR-0003; the steps are in
 # docs/wiki/GPU-Passthrough.md), install
 # the NVIDIA Container Toolkit in the VM and add under the ollama service:
@@ -21,14 +23,48 @@
 #             capabilities: [gpu]
 name: ollama
 
+# The user of Ollama and the owner of its volume. The image has no user and ran as root until
+# MIL-082; no file of the image needs root.
+x-ollama-user: &ollama-user "10001:10001"
+
 services:
+  # Docker sets the owner of a named volume only when it creates it, and root wrote the volume of
+  # nf-hotel until MIL-082. This one-shot service gives the volume to the user of Ollama at every
+  # start, before Ollama starts, as results-owner does for the benchmark (MIL-045). It runs as root
+  # with only the capabilities that change an owner, and no network. It uses the image of Ollama, so
+  # no other image is pulled; Dependabot changes both image lines, and test-ollama-user.sh fails
+  # when they differ.
+  models-owner:
+    image: ollama/ollama:0.40.13@sha256:b2f0122c476bc9fe7ce679d8bb4bd555351e25e2554eefb156f61cb0a89cf429
+    user: "0"
+    entrypoint: ["chown", "-R", *ollama-user, "/models"]
+    restart: "no"
+    network_mode: none
+    volumes:
+      - models:/models
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_READ_SEARCH]
+    security_opt: [no-new-privileges:true]
+    # Limits (MIL-080): one chown over the volume needs little.
+    mem_limit: 64m
+    cpus: 0.25
+    pids_limit: 32
+
   ollama:
     image: ollama/ollama:0.40.13@sha256:b2f0122c476bc9fe7ce679d8bb4bd555351e25e2554eefb156f61cb0a89cf429
     restart: unless-stopped
     env_file: ${OLLAMA_ENV_FILE:-ollama.env}
-    # Hardening (MIL-023 task 2, CIS-001). The image runs as root, which owns the models
-    # volume, so it needs no capability. Models load into memory: the limit leaves room
-    # for the other services on the VM.
+    # Hardening (MIL-023 task 2, CIS-001). Ollama runs as 10001 (MIL-082), which owns the volume of
+    # the models, so it needs no capability. Its home is /home/ollama, and the folder .ollama there
+    # is the volume: the same files that were /root/.ollama while it ran as root. Models load into
+    # memory: the limit leaves room for the other services on the VM.
+    user: *ollama-user
+    environment:
+      HOME: /home/ollama
+    depends_on:
+      models-owner:
+        condition: service_completed_successfully
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     read_only: true
@@ -39,7 +75,7 @@ services:
     expose:
       - "11434"
     volumes:
-      - models:/root/.ollama
+      - models:/home/ollama/.ollama
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 10s

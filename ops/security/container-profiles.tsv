@@ -29,8 +29,10 @@ nfhotel-api	nfhotel-api	nonroot	-	ro	-	-	-
 nfhotel-web	nfhotel-web	nonroot	-	ro	-	-	-
 # The nginx master runs as root to bind ports 80 and 443 (CIS-001 row 4.1); its workers run as nginx.
 nginx	nginx	root	CHOWN,SETGID,SETUID,NET_BIND_SERVICE,DAC_READ_SEARCH	ro	-	-	-
-# Ollama runs as root because its image does.
-ollama	ollama	root	-	ro	-	-	-
+# Ollama runs as 10001 (MIL-082); its image has no user and ran as root before. A one-shot service
+# as root gives the volume of the models to that user at every start and exits.
+ollama	ollama	10001	-	ro	-	-	-
+ollama	models-owner	root	CHOWN,DAC_READ_SEARCH	ro	-	-	-
 market-analysis	market-analysis-api	nonroot	-	ro	-	-	-
 benchmark	benchmark	nonroot	-	ro	-	-	-
 # A one-shot service as root: it gives the results volume to the user of the image and exits (MIL-045).

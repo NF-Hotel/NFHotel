@@ -50,6 +50,8 @@ A call goes from the service that starts it to the service that answers it. The 
 | `nfhotel-db` | `nfhotel-api`, PostgreSQL, the DBeaver relay | Only the API and the relay reach the database |
 | `nfhotel-llm` | Ollama, market analysis, benchmark | Only the AI services reach the model server |
 
+The one-shot services `results-owner` of the benchmark (MIL-045) and `models-owner` of Ollama (MIL-082) are on no network (`network_mode: none`): each gives a volume to the user of its service and exits.
+
 `nfhotel-db` and `nfhotel-llm` followed this rule from the start (see [Containers and Images](Containers-and-Images)); `nfhotel-python` applies it to the Python services since MIL-061. The networks `nfhotel-api`, `nfhotel-db` and `nfhotel-python` are internal (`docker network create --internal`): no route out and no host port. `ops/tests/test-service-networks.sh` compares this table with the compose files on every pull request and proves the isolation with stand-ins.
 
 ## Why we isolate networks
