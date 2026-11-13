@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-080 (the runtime check of every container) with its code review RC-346 | [6be61ac] |
-| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-081 (the allowlist of the socket proxy) with its code review RC-348, and the row of ADR-0042 | pending |
+| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-081 (the allowlist of the socket proxy) with its code review RC-348, and the row of ADR-0042 | [f320dbf] |
 
 ---
 
@@ -388,3 +388,4 @@ updated whenever an artifact instance is created or reviewed.
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
 [6be61ac]: https://github.com/NF-Hotel/NFHotel/commit/6be61acbb1abe0539e309cf0745a4c50a0955d98
+[f320dbf]: https://github.com/NF-Hotel/NFHotel/commit/f320dbf3e2a8ba0f46944357dbf40c43423ae263

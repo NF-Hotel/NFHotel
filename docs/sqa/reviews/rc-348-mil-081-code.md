@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go | pending |
+| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go | [f320dbf] |
 
 ---
 
@@ -169,3 +169,4 @@ is not independent.
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-ADR-001]: ../../../framework/qc/artifacts/qc-adr.md
 [RC-346]: ./rc-346-mil-080-code.md
+[f320dbf]: https://github.com/NF-Hotel/NFHotel/commit/f320dbf3e2a8ba0f46944357dbf40c43423ae263

@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 2 of MIL-081, planned in autonomous mode at S01's request in chat on 2026-11-12 (RC-344 Go); written by the AI; accepted after RC-348 Go | pending |
+| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 2 of MIL-081, planned in autonomous mode at S01's request in chat on 2026-11-12 (RC-344 Go); written by the AI; accepted after RC-348 Go | [f320dbf] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -91,3 +91,4 @@ We follow option 5: the socket proxy lets through only the calls of Alloy, and r
 [ADR-0040]: ./adr-0040-patched-nginx-image-from-the-release.md
 [MIL-080]: ../milestones/mil-080-every-container-runs-with-the-rights-of-its-profile.md
 [CIS-001]: ../sqa/cis-checklist.md
+[f320dbf]: https://github.com/NF-Hotel/NFHotel/commit/f320dbf3e2a8ba0f46944357dbf40c43423ae263

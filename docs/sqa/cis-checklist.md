@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The evidence `compose` names the runtime check of MIL-080 (the profiles, the deploy, the timer, the end-to-end job and the live test); row 5.5 Applied with one exception, Alloy's read-only host mounts, which the row left out; rows 4.1 and 5.31 name the check | [6be61ac] |
-| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | Row 5.31 names the allowlist of the socket proxy (ADR-0042, MIL-081): the calls of Alloy only, every other call 403, the archive, export and attach calls among them; the test of CI and the probe of the runtime check | pending |
+| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | Row 5.31 names the allowlist of the socket proxy (ADR-0042, MIL-081): the calls of Alloy only, every other call 403, the archive, export and attach calls among them; the test of CI and the probe of the runtime check | [f320dbf] |
 
 ---
 
@@ -234,3 +234,4 @@ The counts are by row; a row that covers several items counts once. Applied coun
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
 [6be61ac]: https://github.com/NF-Hotel/NFHotel/commit/6be61acbb1abe0539e309cf0745a4c50a0955d98
+[f320dbf]: https://github.com/NF-Hotel/NFHotel/commit/f320dbf3e2a8ba0f46944357dbf40c43423ae263
