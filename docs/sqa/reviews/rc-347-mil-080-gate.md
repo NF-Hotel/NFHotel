@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-080 after the CD run of the merge of #674; Go-with-conditions: the second half of criterion 5 waits for the deploy of the monitoring | [f0b2e32] |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | The evidence of the deploy corrected: the copy of the backup to the backup target failed, as its CD log shows (found at the gate of MIL-082, RC-351); the verdict and its condition stand | pending |
+| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | The evidence of the deploy corrected: the copy of the backup to the backup target failed, as its CD log shows (found at the gate of MIL-082, RC-351); the verdict and its condition stand | [29bb301] |
 
 ---
 
@@ -73,3 +73,4 @@ Go-with-conditions: criteria 1 to 4, 6 and 7 pass on the evidence of 2026-11-13,
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [f0b2e32]: https://github.com/NF-Hotel/NFHotel/commit/f0b2e329f891aa4062869e27ec2c55ffd3e492e2
+[29bb301]: https://github.com/NF-Hotel/NFHotel/commit/29bb3014e44bdf741083c5037a6bd97f59b03b53

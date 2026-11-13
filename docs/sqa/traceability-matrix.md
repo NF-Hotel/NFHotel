@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-082 (Ollama as 10001, the rule of the masked paths, the runtime versions and the page Container-Escape) with its code review RC-350 | [f7dbdae] |
-| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-082 and of its code at the gate: deployed by CD run 43513939028, Ollama runs as 10001 on the VM; gate Go-with-conditions until the deploy of the monitoring (RC-351) | pending |
+| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-082 and of its code at the gate: deployed by CD run 43513939028, Ollama runs as 10001 on the VM; gate Go-with-conditions until the deploy of the monitoring (RC-351) | [29bb301] |
 
 ---
 
@@ -393,3 +393,4 @@ updated whenever an artifact instance is created or reviewed.
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
 [f7dbdae]: https://github.com/NF-Hotel/NFHotel/commit/f7dbdae7b158150f030dd523c8236250ed2689a7
+[29bb301]: https://github.com/NF-Hotel/NFHotel/commit/29bb3014e44bdf741083c5037a6bd97f59b03b53
