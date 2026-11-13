@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-12 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-080, MIL-081 and MIL-082 (the runtime check of every container, the calls of Alloy through the socket proxy, a compromised container kept away from the host) with their plan reviews RC-343 to RC-345 | [5cff893] |
-| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-080 (the runtime check of every container) with its code review RC-346 | pending |
+| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-080 (the runtime check of every container) with its code review RC-346 | [6be61ac] |
 
 ---
 
@@ -384,3 +384,4 @@ updated whenever an artifact instance is created or reviewed.
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
 [5cff893]: https://github.com/NF-Hotel/NFHotel/commit/5cff893776688ab2c6b40c32b47ef12cbd7cda9e
+[6be61ac]: https://github.com/NF-Hotel/NFHotel/commit/6be61acbb1abe0539e309cf0745a4c50a0955d98
