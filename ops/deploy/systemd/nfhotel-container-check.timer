@@ -1,0 +1,13 @@
+# Runs nfhotel-container-check.service every 15 minutes, so a container that loses the rights of
+# its profile raises an alert within the quarter hour (MIL-080 task 4). The deploy command also
+# runs the service once after each release.
+[Unit]
+Description=Check the NF Hotel containers against their profiles every 15 minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

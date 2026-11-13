@@ -4,8 +4,9 @@
 # rollback, the lock, the refusal of a VM whose /opt/nfhotel is not a checkout of
 # NF-Hotel/DevOps, the prune of the images of old releases (MIL-062), and the references by
 # name with the patched proxy images, including the rollback to a release line from before each
-# of them (ADR-0040, MIL-064 task 4, MIL-065 task 4). Fakes stand in for deploy-services.sh, curl
-# and docker, so no container runs.
+# of them (ADR-0040, MIL-064 task 4, MIL-065 task 4), and the runtime check of a release with the
+# rollback of a release whose containers break their profiles (MIL-080). Fakes stand in for
+# deploy-services.sh, the runtime check, curl and docker, so no container runs.
 #
 # Run it in Debian 12 with the repository at /src:
 #   docker run --rm -v "$PWD:/src:ro" debian:12-slim bash /src/tests/test-deploy-release.sh
@@ -294,6 +295,9 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
   echo 'echo health v1' >"$W/nfh-src/ops/scripts/report-health.sh"
   echo '[Service] health' >"$W/nfh-src/ops/deploy/systemd/nfhotel-report-health.service"
   echo '[Timer] health' >"$W/nfh-src/ops/deploy/systemd/nfhotel-report-health.timer"
+  echo 'echo check v1' >"$W/nfh-src/ops/scripts/check-container-runtime.sh"
+  echo '[Service] check' >"$W/nfh-src/ops/deploy/systemd/nfhotel-container-check.service"
+  echo '[Timer] check' >"$W/nfh-src/ops/deploy/systemd/nfhotel-container-check.timer"
   git -C "$W/nfh-src" add -A && git -C "$W/nfh-src" commit -qm commands
   U1="$(git -C "$W/nfh-src" rev-parse HEAD)"
   git -C "$W/nfh-src" push -q origin main
@@ -315,7 +319,10 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
   [[ "$(cat "$W/sbin/nfhotel-report-health")" == "echo health v1" ]] && [[ -f "$W/systemd/nfhotel-report-health.timer" ]] &&
     grep -q "enable --now nfhotel-report-health.timer" "$W/systemctl.log" &&
     ok "update installs the health report and enables its timer" || ko "health report: $(cat "$W/systemctl.log")"
-  [[ "$(grep -c " update $U1 " "$W/state-nfh/releases.log")" == 10 ]] && ok "each installed file is logged with its hashes" || ko "update log"
+  [[ "$(cat "$W/sbin/nfhotel-container-check")" == "echo check v1" ]] && [[ -f "$W/systemd/nfhotel-container-check.timer" ]] &&
+    grep -q "enable --now nfhotel-container-check.timer" "$W/systemctl.log" &&
+    ok "update installs the runtime check and enables its timer" || ko "runtime check: $(cat "$W/systemctl.log")"
+  [[ "$(grep -c " update $U1 " "$W/state-nfh/releases.log")" == 13 ]] && ok "each installed file is logged with its hashes" || ko "update log"
   : >"$W/systemctl.log"
   lines="$(wc -l <"$W/state-nfh/releases.log")"
   run "$W/nfh" update "$U1" && [[ "$(wc -l <"$W/state-nfh/releases.log")" == "$lines" ]] && [[ ! -s "$W/systemctl.log" ]] &&
@@ -471,6 +478,44 @@ printf '%s\n' 'c1 id-web3' 'c2 id-api3' 'c3 id-ana3' 'c4 id-ben3' 'c5 id-postgre
     ok "the failed removal is a warning in the log" || ko "warning: $(grep -i warning "$W/out")"
   expect_code 1 "prune --apply fails when an image cannot be removed" prune --apply
   rm -f "$W/unremovable"
+}
+
+# The runtime check (MIL-080): the deploy runs the check of the release with --deploy once the
+# containers are up, and a release whose containers break their profiles is rolled back. Releases A
+# and B are from before the check and deploy without it.
+echo "== the runtime check (MIL-080)"
+cat >"$W/src/scripts/check-container-runtime.sh" <<EOF
+echo "check \$*" >>"$W/calls"
+if [[ -e "$W/violation" ]]; then echo "FAIL  t-web  nfhotel-web/nfhotel-web  privileged"; exit 1; fi
+EOF
+git -C "$W/src" add -A && git -C "$W/src" commit -qm c && git -C "$W/src" push -q origin main
+C="$(git -C "$W/src" rev-parse HEAD)"
+# shellcheck disable=SC2046 # the release fields are split on purpose
+{
+  expect_code 0 "deploys release B, which has no runtime check" deploy $(good "$B")
+  : >"$W/calls"
+  touch "$W/violation"
+  expect_code 1 "a container that breaks its profile fails the deploy of C" deploy $(good "$C")
+  grep -q "FAIL  t-web" "$W/out" && grep -q "rolled back to $APP" "$W/out" && [[ "$(git -C "$W/app" rev-parse HEAD)" == "$B" ]] &&
+    ok "the deploy log names the container, and B comes back" || ko "violation: $(tail -3 "$W/out")"
+  [[ "$(grep -c '^check' "$W/calls")" == 1 ]] && ok "the rollback to B, which has no check, runs none" ||
+    ko "checks: $(grep '^check' "$W/calls" | tr '\n' '|')"
+  rm -f "$W/violation"
+  : >"$W/calls"
+  : >"$W/systemctl.log"
+  expect_code 0 "deploys release C once its containers keep their profiles" deploy $(good "$C")
+  grep -qx "check --deploy" "$W/calls" && ok "the deploy runs the check of the release with --deploy" ||
+    ko "check call: $(tr '\n' '|' <"$W/calls")"
+  [[ "$(grep -cx "systemctl start nfhotel-container-check.service" "$W/systemctl.log")" == 1 ]] &&
+    grep -q "^==> the container check service passed" "$W/out" &&
+    ok "after the release is recorded, the deploy runs the service of the timer once" ||
+    ko "service run: $(cat "$W/systemctl.log") $(tail -2 "$W/out")"
+  # shellcheck disable=SC2016 # the fake systemctl fails a start: $1 is its own first argument
+  printf '#!/bin/bash\necho "systemctl $*" >>"%s/systemctl.log"\n[[ "$1" != start ]]\n' "$W" >"$W/bin/systemctl"
+  expect_code 0 "a failed run of the service leaves the deploy green" deploy $(good "$C")
+  grep -q "warning: the container check service failed" "$W/out" && ok "the failed run is a warning in the log" ||
+    ko "service warning: $(tail -2 "$W/out")"
+  printf '#!/bin/bash\necho "systemctl $*" >>"%s/systemctl.log"\n' "$W" >"$W/bin/systemctl"
 }
 
 echo "RESULT: $pass passed, $fail failed"

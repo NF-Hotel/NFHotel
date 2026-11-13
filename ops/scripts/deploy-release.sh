@@ -21,10 +21,15 @@
 #      the root of a DevOps one) --no-build with the digests: images are pulled,
 #      never built, and compose recreates only the containers whose image or
 #      configuration changed; named volumes are never removed; then check that no
-#      secret is in the environment of a container (scripts/check-secret-env.sh, ADR-0024)
+#      secret is in the environment of a container (scripts/check-secret-env.sh, ADR-0024),
+#      and that every container keeps the rights of its profile
+#      (scripts/check-container-runtime.sh --deploy, MIL-080)
 #   6. smoke test: port 80 answers 301 and HTTPS answers 200 on the VM
 #   7. on success, append the release to the release log; on failure, deploy the
 #      previous release from the log again and exit 1
+#   8. after a release is recorded and pruned, give the lock back and run the service of the
+#      container check once, as its timer runs it (MIL-080): the CD log shows that it passed,
+#      and the report of the monitoring holds the new release at once; a failure is a warning
 #   The release log has one line per release: the time, the two commits and the references.
 #   A line from before ADR-0040 has four references, without nfhotel-nginx, and a line from
 #   before MIL-065 has five, without nfhotel-socket-proxy: their operations commits pin the
@@ -48,9 +53,10 @@
 #           as root. From that commit (git show, never the working tree) it installs
 #           ops/scripts/deploy-release.sh as nfhotel-deploy, ops/scripts/backup-database.sh
 #           as nfhotel-backup, ops/scripts/renew-certificate.sh as nfhotel-cert-renew,
-#           ops/scripts/report-health.sh as nfhotel-report-health, and the services and
-#           timers of the backup, the certificate renewal and the health report (the last
-#           two enabled), each only when it differs.
+#           ops/scripts/report-health.sh as nfhotel-report-health,
+#           ops/scripts/check-container-runtime.sh as nfhotel-container-check, and the services
+#           and timers of the backup, the certificate renewal, the health report and the
+#           container check (the last three enabled), each only when it differs.
 #           The replaced copy is kept as <file>.previous, and each change is logged with
 #           the old and new SHA-256. The sudo rule does not change.
 # rollback: deploy the release before the latest one in the log again.
@@ -288,6 +294,11 @@ apply() {
   if [[ -f "$app_dir/$(ops_rel)/scripts/check-secret-env.sh" ]]; then
     bash "$app_dir/$(ops_rel)/scripts/check-secret-env.sh" || return 1
   fi
+  # Every container keeps the rights of its profile (MIL-080): a release that breaks one is rolled
+  # back. A container outside the release is a warning; a release from before then has no check.
+  if [[ -f "$app_dir/$(ops_rel)/scripts/check-container-runtime.sh" ]]; then
+    bash "$app_dir/$(ops_rel)/scripts/check-container-runtime.sh" --deploy || return 1
+  fi
   smoke_test
 }
 
@@ -375,6 +386,7 @@ deploy() {
       # The release is deployed and recorded: the images of the releases before the previous one
       # go now (MIL-062). A failure here does not undo a deploy that passed.
       prune_images --apply || echo "warning: the prune did not finish; the release is deployed" >&2
+      container_check_service
       return 0
     fi
   fi
@@ -392,6 +404,19 @@ deploy() {
     echo "error: no previous release in $release_log to roll back to" >&2
   fi
   exit 1
+}
+
+# container_check_service: once the update has installed it (MIL-080), run the service of the
+# timer of the container check. It reads the lock of the deploy, so the lock is given back first:
+# the release is deployed and recorded, and nothing of this command follows.
+container_check_service() {
+  [[ -f "$SYSTEMD_DIR/nfhotel-container-check.service" ]] || return 0
+  flock --unlock 9
+  if "$SYSTEMCTL" start nfhotel-container-check.service; then
+    echo "==> the container check service passed (nfhotel-container-check.timer runs it every 15 minutes)"
+  else
+    echo "warning: the container check service failed; read: journalctl -u nfhotel-container-check" >&2
+  fi
 }
 
 # psql_as_migrator <container>: psql in the PostgreSQL container as nfhotel_migrator, which
@@ -459,7 +484,7 @@ install_from() {
 }
 
 update() {
-  local sha="${1:-}" units=0 cert_units=0 health_units=0
+  local sha="${1:-}" units=0 cert_units=0 health_units=0 check_units=0
   [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || refuse "the commit must be 40 lower-case hex characters"
   update_dir="$(mktemp -d)"
   trap 'rm -rf "$update_dir"' EXIT
@@ -479,13 +504,16 @@ update() {
   install_from "$sha" ops/scripts/backup-database.sh "$COMMAND_DIR/nfhotel-backup" 0755 || true
   install_from "$sha" ops/scripts/renew-certificate.sh "$COMMAND_DIR/nfhotel-cert-renew" 0755 || true
   install_from "$sha" ops/scripts/report-health.sh "$COMMAND_DIR/nfhotel-report-health" 0755 || true
+  install_from "$sha" ops/scripts/check-container-runtime.sh "$COMMAND_DIR/nfhotel-container-check" 0755 || true
   install_from "$sha" ops/deploy/systemd/nfhotel-backup.service "$SYSTEMD_DIR/nfhotel-backup.service" 0644 && units=1
   install_from "$sha" ops/deploy/systemd/nfhotel-backup.timer "$SYSTEMD_DIR/nfhotel-backup.timer" 0644 && units=1
   install_from "$sha" ops/deploy/systemd/nfhotel-cert-renew.service "$SYSTEMD_DIR/nfhotel-cert-renew.service" 0644 && cert_units=1
   install_from "$sha" ops/deploy/systemd/nfhotel-cert-renew.timer "$SYSTEMD_DIR/nfhotel-cert-renew.timer" 0644 && cert_units=1
   install_from "$sha" ops/deploy/systemd/nfhotel-report-health.service "$SYSTEMD_DIR/nfhotel-report-health.service" 0644 && health_units=1
   install_from "$sha" ops/deploy/systemd/nfhotel-report-health.timer "$SYSTEMD_DIR/nfhotel-report-health.timer" 0644 && health_units=1
-  if ((units || cert_units || health_units)); then
+  install_from "$sha" ops/deploy/systemd/nfhotel-container-check.service "$SYSTEMD_DIR/nfhotel-container-check.service" 0644 && check_units=1
+  install_from "$sha" ops/deploy/systemd/nfhotel-container-check.timer "$SYSTEMD_DIR/nfhotel-container-check.timer" 0644 && check_units=1
+  if ((units || cert_units || health_units || check_units)); then
     "$SYSTEMCTL" daemon-reload || die "systemctl daemon-reload failed"
   fi
   if ((units)); then
@@ -498,6 +526,10 @@ update() {
   # The health report runs whether or not the monitoring exists yet; Alloy reads it once it runs.
   if ((health_units)); then
     "$SYSTEMCTL" enable --now nfhotel-report-health.timer || die "the health report timer did not start"
+  fi
+  # The container check reads the profiles of the checkout; a run during a deploy is skipped.
+  if ((check_units)); then
+    "$SYSTEMCTL" enable --now nfhotel-container-check.timer || die "the container check timer did not start"
   fi
   echo "==> update: the commands match $sha"
 }
