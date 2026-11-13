@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Accepted | mikemike | S01 | Initial version; mode supervised; the review of tasks 2 to 4 of MIL-072 before their pull request: `ops/tests/test-nginx.sh`, `public.conf.template`, ADR-0029 and the wiki page Public-Access; Go, accepted by S01 in chat ("2 ja", to "Accepterer du RC-331?") | [0e58535] |
+| 2026-11-11 | Deprecated | mikemike | S01 | Initial version; mode supervised; the review of tasks 2 to 4 of MIL-072 before their pull request: `ops/tests/test-nginx.sh`, `public.conf.template`, ADR-0029 and the wiki page Public-Access; Go, accepted by S01 in chat ("2 ja", to "Accepterer du RC-331?") | [0e58535] |
+| 2026-11-11 | Accepted | mikemike | AI as stand-in for S01 | Finding 7 and its action item: S01 decided in chat that the records follow the setting of 1 week; ADR-0029 decision 1 and the wiki say 1 week. Finding 3: the Sonar fix of `with_token` (ffce18c); accepted at the gate of MIL-072 (RC-339) | pending |
 
 ---
 
@@ -70,11 +71,11 @@
 
 1. **The test fails first, for the reason that was found.** With the template of 1c2726b, `/ADMIN/login`, `/Admin/login`, `/aDmin/login` and `/%41DMIN/login` without the token got 200 from the stand-in web application: `^~ /admin` is a prefix that compares letter case, so they took `location /`. The percent-encoded letter went the same way, because nginx decodes the path before it matches. With `location ~* ^/admin` all four get 404.
 2. **The regular expression and the other locations.** nginx checks the regular expressions after the prefixes, in the order of the file. `~* ^/admin` comes before the regular expression of `mobile-api.conf` (`^/mobile-api…`), and neither can match the paths of the other; `location /` stays the fallback. The checks of the two mobile routes, of another API route and of `/mobile-api/` keep their results. Like `^~ /admin` before it, the location also takes paths such as `/administrator`; the validating route `(?i)^/admin` covers the same paths.
-3. **One command for the request with the token.** The first version of task 2 repeated, for `/ADMIN/login`, the `docker run` of curl with the two headers that the check in lower case already had (SH 15). This review made it the function `with_token`, used by both checks. The runs after it gave the same results, and `lint.sh` is clean.
+3. **One command for the request with the token.** The first version of task 2 repeated, for `/ADMIN/login`, the `docker run` of curl with the two headers that the check in lower case already had (SH 15). This review made it the function `with_token`, used by both checks. The runs after it gave the same results, and `lint.sh` is clean. On the pull request, SonarCloud then flagged the plain-HTTP hop of `with_token` (shell:S5332); ffce18c moved its two headers into local constants, so the command fits on one line with the same `NOSONAR` reason as `PUBLIC`. The requests are the same, and the quality gate passed.
 4. **Two abbreviations in decision 2.** VM and AUD, both from the accepted text, were not spelled out. Decision 2 now says "the virtual machine (VM)" and "the Application Audience (AUD) tag", the name of the field in the dashboard. In the same pass the table of Public-Access got "in any letter case" on its row of `/admin...`.
 5. **`lint.sh` runs from Git Bash for this worktree.** The worktree lies in the temporary folder of Windows, and its `.git` file names a Windows path, which git in WSL cannot read. In WSL every linter therefore got an empty list of files, and yamllint stopped on its usage line. From Git Bash, with `MSYS_NO_PATHCONV=1` and `REPO_HOST` set to the Windows path, every linter read its files and is clean. Ops CI runs `lint.sh` again on the pull request.
 6. **The edge was not the gap.** At 20:54 UTC, before the change of the routes, `/admin/login` and `/ADMIN/login` both answered with a redirect to the sign-in of Cloudflare Access: the Access application does not compare letter case, which settles the third finding of MIL-072. What was not in effect was the check of the tunnel, which the place and the path of the route now put in effect. No test of the repository sees the routes, so ADR-0029 records this as a negative consequence, and decision 5 names the check in the log of `cloudflared`.
-7. **The session of Access lasts one week.** The dashboard shows a session duration of 1 week for the application "NF Hotel back office" (seen during task 1), while decision 1 of ADR-0029 and three places of the wiki page say 24 hours. S01 left the choice to the AI in chat ("det må du vide"). The AI keeps decision 1: 24 hours bounds how long a browser that is left signed in, or an address that is taken off the list, still gets past the first lock, and it costs a member of staff one code a day; the hotel's own sign-in stays the second lock either way. So the texts stand, and the setting goes to 24 hours (action item).
+7. **The session of Access lasts one week.** The dashboard shows a session duration of 1 week for the application "NF Hotel back office" (seen during task 1), while decision 1 of ADR-0029 and three places of the wiki page said 24 hours. S01 first left the choice to the AI ("det må du vide"), which kept 24 hours; S01 then decided in chat that the records follow the setting ("Ret det med access-session så det passer med det aktuelle"). Decision 1 and the wiki now say 1 week. The cost: a browser left signed in, or an address taken off the list, can pass the first lock for up to a week, while taking an address off the list stops new codes at once; the hotel's own sign-in stays the second lock either way.
 
 ## Overall Verdict
 
@@ -84,7 +85,6 @@ Go. Every Mandatory criterion of QC-ADR-001 and QC-SH-001 that the change touche
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| Set the session duration of the Access application "NF Hotel back office" to 24 hours, as decision 1 of ADR-0029 says (finding 7) | S01 | 2026-11-15 |
 | Merge the pull request once every required check is green | S01 | 2026-11-15 |
 | Approve the CD run of the merge (ADR-0038); then the checks of task 5 | S01 | At the merge |
 
