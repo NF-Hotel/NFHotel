@@ -228,6 +228,7 @@ The compose files ask for the hardening of the table above; the runtime check pr
 | `no_new_privileges`, `seccomp`, `apparmor` | `no-new-privileges` is not set or not in force, seccomp is not in filter mode, or AppArmor is unconfined or not in enforce mode, where the daemon has them |
 | `read_only`, `limits` | Its root filesystem is writable where its row says `ro`, or it has no memory, CPU or PID limit |
 | `host_namespace`, `device` | It shares a namespace of the host, or has a device, a device rule or a device request |
+| `system_paths` | The paths of `/proc` and `/sys` that Docker masks or makes read-only are not in force (`systempaths=unconfined`, MIL-082) |
 | `writable_mount`, `host_path` | It mounts a host folder writable outside its row, or a sensitive host path (`/proc`, `/sys`, `/dev`, `/etc`, `/var/lib/docker`, `/run` and the like) that its row does not name |
 | `docker_socket` | It mounts the Docker socket without its row naming it, or sees the socket through a mount of a folder above it and could open it: as root, in the group of the socket, or with `DAC_OVERRIDE` |
 | `user` | Its main process runs as root where its row says `nonroot`, or as another user than the one its row names |
@@ -247,7 +248,7 @@ sudo journalctl -u nfhotel-container-check -n 30 --no-pager
 sudo nfhotel-container-check --profiles /opt/nfhotel/ops/security/container-profiles.tsv
 ```
 
-Each container gets a line `PASS`, `FAIL` or `WARN` with its user, capabilities, seccomp mode, AppArmor label, root filesystem, host paths and writable mounts, whether it can reach the Docker socket, its networks and published ports; a `FAIL` names each rule it breaks on the lines below. The last lines give the counts and the versions of Docker Engine, containerd and runc.
+Each container gets a line `PASS`, `FAIL` or `WARN` with its user, capabilities, seccomp mode, AppArmor label, root filesystem, host paths and writable mounts, whether it can reach the Docker socket, its networks and published ports; a `FAIL` names each rule it breaks on the lines below. The last lines give the counts and the versions of Docker Engine, containerd and runc, which `--metrics` also writes as the labels of `nfhotel_container_runtime_info` (MIL-082). What these rules close, what is left, and what to do when a fix for an escape is published is on [Container Escape](Container-Escape).
 
 **When it fails.** Treat an unexpected `FAIL` as an incident ([Incidents](Incidents)): a container that gained rights after the deploy was changed by someone with access to Docker. Stop it if it holds the socket or runs privileged (`sudo docker stop <container>`), keep its `docker inspect` for the record, and deploy the release again from CD.
 

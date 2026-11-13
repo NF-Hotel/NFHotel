@@ -60,7 +60,8 @@ Every service publishes no host port unless the table says so; the others are re
 | `market-analysis-api` (`market-analysis`) | The market analysis service of `NF-Hotel/notebook-market-analysis` | `ghcr.io/nf-hotel/market-analysis` | GHCR (our build) | python, llm | none |
 | `benchmark` (`benchmark`) | The benchmark service of `NF-Hotel/notebook-benchmark`: compares the local AI models | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | python, llm | none |
 | `results-owner` (`benchmark`) | One-shot job before `benchmark`: gives the results volume to the service's user (MIL-045), with no network | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | none | none |
-| `ollama` (`ollama`) | Local model server for the benchmark and the market analysis | `ollama/ollama:0.40.13` | Docker Hub | llm | none |
+| `ollama` (`ollama`) | Local model server for the benchmark and the market analysis, as the user 10001 (MIL-082) | `ollama/ollama:0.40.13` | Docker Hub | llm | none |
+| `models-owner` (`ollama`) | One-shot job before `ollama`: gives the volume of the models to the user of Ollama (MIL-082), with no network | `ollama/ollama:0.40.13` | Docker Hub | none | none |
 | `alloy` (`alloy`) | Agent that sends the logs and metrics of the VM to the monitoring LXC | `grafana/alloy:v1.21.3` | Docker Hub | internal, egress, apps | none |
 | `socket-proxy` (`alloy`) | Lets Alloy make only the calls of its allowlist to the Docker API: the list of the containers and of the networks, and the inspect and the logs of a container; every other call answers 403 (ADR-0042) | `ghcr.io/nf-hotel/nfhotel-socket-proxy`: `tecnativa/docker-socket-proxy:v0.5.0` with the fixes of its Alpine packages (ADR-0040) and the allowlist (ADR-0042) | GHCR, built by Release | internal | none |
 
@@ -148,7 +149,8 @@ A pinned third-party image can keep a finding that its newest build has not fixe
 | `security_opt: [no-new-privileges:true]` | every service, and the daemon default | No privilege gain through setuid binaries | 5.25 |
 | `read_only: true`, with `tmpfs` for what it writes | every service except `backup-target` | An attacker cannot change the program files or leave a tool behind | 5.12 |
 | Memory, CPU and PID limits | every long-running service | A leak or a fork bomb in one container cannot starve the others | 5.10, 5.11, 5.28 |
-| Non-root user | the web, API, market-analysis and benchmark images and Alloy (473); PostgreSQL drops to its own user, and the nginx workers run as `nginx`; `prune` on the backup host runs as `nfhotel-backup` | A process escape starts without root | 4.1 |
+| Non-root user | the web, API, market-analysis and benchmark images, Ollama (10001, MIL-082) and Alloy (473); PostgreSQL drops to its own user, and the nginx workers run as `nginx`; `prune` on the backup host runs as `nfhotel-backup`. [Container Escape](Container-Escape) names the containers that still start as root, and why | A process escape starts without root | 4.1 |
+| Docker's masked and read-only paths of `/proc` and `/sys` | every service: none sets `systempaths=unconfined`, which the runtime check fails (MIL-082) | A process cannot read the memory or the keys of the kernel, or reboot the host through `/proc/sysrq-trigger` | - |
 | No host port, except the table above | every compose file | Nothing answers that does not need to | 5.7 |
 | The Docker socket in one container, `socket-proxy`, which lets through only the calls of Alloy | `ops/deploy/alloy` | A process that takes over Alloy cannot read the files of a container, export it or write to it through the proxy; the runtime check asks the proxy from inside Alloy at every run (ADR-0042, MIL-080, MIL-081) | 5.31 |
 | Secrets as files under `/run/secrets`, never environment variables | web, API, PostgreSQL, cloudflared, Alertmanager | `docker inspect` and an environment dump show no secret (ADR-0024) | 4.10 |
