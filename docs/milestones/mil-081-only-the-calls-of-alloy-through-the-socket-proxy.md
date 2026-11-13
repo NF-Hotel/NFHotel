@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-12 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the second of the three controls that S01 asked for in chat on 2026-11-12 (the Docker socket), planned in autonomous mode | pending |
+| 2026-11-12 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the second of the three controls that S01 asked for in chat on 2026-11-12 (the Docker socket), planned in autonomous mode | [5cff893] |
 
 ---
 
@@ -97,3 +97,4 @@ Order: the review of this document, then tasks 1 to 5 on one branch with their p
 [ADR-0040]: ../adr/adr-0040-patched-nginx-image-from-the-release.md
 [MIL-065]: ./mil-065-third-party-image-remedies.md
 [MIL-080]: ./mil-080-every-container-runs-with-the-rights-of-its-profile.md
+[5cff893]: https://github.com/NF-Hotel/NFHotel/commit/5cff893776688ab2c6b40c32b47ef12cbd7cda9e

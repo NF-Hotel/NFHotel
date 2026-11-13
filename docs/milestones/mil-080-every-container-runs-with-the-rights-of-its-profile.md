@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-12 | Accepted | mikemike | AI as stand-in for S01 | Initial version: S01 asked in chat for three controls (runtime security, the Docker socket, container escape) and, where one is missing, for a plan carried out in autonomous mode ("Du behøver ik spørg mig om noget"); this is the first of the three | pending |
+| 2026-11-12 | Accepted | mikemike | AI as stand-in for S01 | Initial version: S01 asked in chat for three controls (runtime security, the Docker socket, container escape) and, where one is missing, for a plan carried out in autonomous mode ("Du behøver ik spørg mig om noget"); this is the first of the three | [5cff893] |
 
 ---
 
@@ -103,3 +103,4 @@ Order: the review of this document (QC-MIL-001, QC-LANG-001), then tasks 1 to 6 
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [MIL-023]: ./mil-023-operational-quality.md
 [MIL-031]: ./mil-031-consolidate-devops-into-nfhotel.md
+[5cff893]: https://github.com/NF-Hotel/NFHotel/commit/5cff893776688ab2c6b40c32b47ef12cbd7cda9e

@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-12 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the third of the three controls that S01 asked for in chat on 2026-11-12 (container escape), planned in autonomous mode | pending |
+| 2026-11-12 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the third of the three controls that S01 asked for in chat on 2026-11-12 (container escape), planned in autonomous mode | [5cff893] |
 
 ---
 
@@ -95,3 +95,4 @@ Order: the review of this document, then tasks 1 to 5 on one branch with their p
 [MIL-045]: ./mil-045-benchmark-results-volume.md
 [MIL-080]: ./mil-080-every-container-runs-with-the-rights-of-its-profile.md
 [MIL-081]: ./mil-081-only-the-calls-of-alloy-through-the-socket-proxy.md
+[5cff893]: https://github.com/NF-Hotel/NFHotel/commit/5cff893776688ab2c6b40c32b47ef12cbd7cda9e
