@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go | [f320dbf] |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Added F10: SonarCloud found the plain address of the proxy in the matrix (S5332); it stands on one line with NOSONAR and its reason | pending |
+| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Added F10: SonarCloud found the plain address of the proxy in the matrix (S5332); it stands on one line with NOSONAR and its reason | [359719e] |
 
 ---
 
@@ -176,3 +176,4 @@ is not independent.
 [QC-ADR-001]: ../../../framework/qc/artifacts/qc-adr.md
 [RC-346]: ./rc-346-mil-080-code.md
 [f320dbf]: https://github.com/NF-Hotel/NFHotel/commit/f320dbf3e2a8ba0f46944357dbf40c43423ae263
+[359719e]: https://github.com/NF-Hotel/NFHotel/commit/359719e0f7d887498133c3bd8e5d4cee072dc23a
