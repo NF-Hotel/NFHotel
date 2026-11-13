@@ -4,8 +4,9 @@
 # Then check that every service runs, that each container can read its own secret files and
 # no other, that Grafana takes the admin password from its file, that Prometheus loaded the
 # rules and keeps the metrics 30 days from its configuration file (MIL-066 task 6), that the
-# Watchdog reaches Alertmanager, and that Prometheus scrapes the scan exporter
-# (MIL-053), which runs without a token here. The stand-in secrets reach no real channel.
+# Watchdog reaches Alertmanager, that Prometheus scrapes the scan exporter
+# (MIL-053), which runs without a token here, and that the runtime check of the deploy passes
+# over the six containers (MIL-080). The stand-in secrets reach no real channel.
 #
 # Run it as root on a Linux host with Docker, in a checkout without monitoring settings:
 #   sudo bash ops/tests/test-monitoring-stack.sh
@@ -67,6 +68,9 @@ bash "$OPS/scripts/deploy-monitoring.sh" --apply >/tmp/monitoring-deploy.out 2>&
   compose ps
   compose logs --tail 20
 }
+grep -q '^==> 6 container(s): 6 passed, 0 failed, 0 warned$' /tmp/monitoring-deploy.out &&
+  ok "the deploy checks the six containers against their profiles (MIL-080)" ||
+  ko "runtime check: $(grep -A2 -E '^(FAIL|WARN)  ' /tmp/monitoring-deploy.out | head -9)"
 running="$(compose ps --status running --format '{{.Service}}' | sort | tr '\n' ' ')"
 [[ "$running" == "alertmanager blackbox grafana loki prometheus scan-exporter " ]] && ok "the six services run" ||
   ko "running: $running"

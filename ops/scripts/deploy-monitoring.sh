@@ -11,6 +11,8 @@
 #   4. give each secret file to the user its container runs as (0400), the folder 0711
 #   5. docker compose up -d --wait, so it returns once every service is running; each service
 #      whose configuration folder changed is recreated, so it reads the new files
+#   6. check that every container of the monitoring keeps the rights of its profile in
+#      ops/security/container-profiles.tsv (scripts/check-container-runtime.sh, MIL-080)
 #
 # Usage: deploy-monitoring.sh [--apply]
 #   --apply  start or update the services; without it the script only checks (a dry run)
@@ -117,4 +119,7 @@ SCAN_EXPORTER_CONFIG_HASH="$(hash_of scan-exporter)" || die "cannot hash scan-ex
 echo "==> starting the monitoring on $bind"
 (cd "$dir" && docker compose --env-file monitoring.env up -d --remove-orphans --wait --wait-timeout 180) ||
   die "the monitoring did not start; see: docker compose --env-file monitoring.env logs"
+echo "==> checking the containers of the monitoring against their profiles (MIL-080)"
+bash "$ROOT/scripts/check-container-runtime.sh" --filter label=com.docker.compose.project=nfhotel-monitoring ||
+  die "a container of the monitoring breaks its profile in ops/security/container-profiles.tsv"
 echo "==> done: Grafana answers on port 3000 of $bind, over the tailnet (user admin)"

@@ -17,3 +17,29 @@ groups:
           description: >-
             Someone may be guessing passwords. The audit log of the back office names the user
             names (ADR-0017); follow the incident procedure (wiki page Incidents).
+
+      # The runtime check of MIL-080 (nfhotel-container-check.timer, every 15 minutes) reports one
+      # series for each rule that a running container on nf-hotel breaks.
+      - alert: ContainerRuntimeViolation
+        expr: nfhotel_container_runtime_violation{host="nf-hotel"} == 1
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.container }} on nf-hotel breaks its profile: {{ $labels.rule }}"
+          description: >-
+            The container runs with more rights than its row in
+            ops/security/container-profiles.tsv allows. Read the check on nf-hotel (sudo
+            journalctl -u nfhotel-container-check) and follow the wiki page Host-Hardening.
+
+      - alert: ContainerCheckStale
+        expr: >-
+          time() - nfhotel_task_last_success_timestamp_seconds{host="nf-hotel",
+          task="container_check"} > 45 * 60
+        labels:
+          severity: warning
+        annotations:
+          summary: "The runtime check of the containers on nf-hotel has not run for 45 minutes"
+          description: >-
+            nfhotel-container-check.timer did not run, Docker did not answer, or a deploy held
+            the lock at each run. Check the timer and its journal on nf-hotel (wiki page
+            Host-Hardening).

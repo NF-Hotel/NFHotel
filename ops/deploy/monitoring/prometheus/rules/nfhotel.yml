@@ -132,7 +132,8 @@ groups:
         expr: >-
           (label_replace(vector(1), "task", "backup", "", "")
           or label_replace(vector(1), "task", "offvm_copy", "", "")
-          or label_replace(vector(1), "task", "cert_renew", "", ""))
+          or label_replace(vector(1), "task", "cert_renew", "", "")
+          or label_replace(vector(1), "task", "container_check", "", ""))
           unless on(task) nfhotel_task_last_success_timestamp_seconds{host="nf-hotel"}
           and on() node_uname_info{host="nf-hotel"}
         for: 30m

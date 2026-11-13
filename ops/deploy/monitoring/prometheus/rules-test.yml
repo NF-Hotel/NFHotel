@@ -134,6 +134,15 @@ tests:
               description: >-
                 The job has not succeeded since /var/lib/nfhotel-metrics was made, or its report was
                 removed. Check its timer and journal on nf-hotel (wiki page Monitoring).
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+              task: container_check
+            exp_annotations:
+              summary: "nf-hotel has no container_check report"
+              description: >-
+                The job has not succeeded since /var/lib/nfhotel-metrics was made, or its report was
+                removed. Check its timer and journal on nf-hotel (wiki page Monitoring).
       - eval_time: 40m
         alertname: HealthReportMissing
         exp_alerts:
@@ -526,3 +535,54 @@ tests:
                 The panels of the dashboard Security scans are stale. Run `docker compose logs
                 scan-exporter` in the monitoring LXC; a missing or expired token in
                 secrets/github-scan-token stops github_code_scanning (wiki page Monitoring).
+
+  # The runtime check of MIL-080.
+  - name: a container that breaks its profile fires ContainerRuntimeViolation at once
+    interval: 1m
+    input_series:
+      - series: >-
+          nfhotel_container_runtime_violation{host="nf-hotel",
+          container="nfhotel-web-nfhotel-web-1", rule="privileged"}
+        values: "1x5"
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: ContainerRuntimeViolation
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              host: nf-hotel
+              container: nfhotel-web-nfhotel-web-1
+              rule: privileged
+            exp_annotations:
+              summary: "nfhotel-web-nfhotel-web-1 on nf-hotel breaks its profile: privileged"
+              description: >-
+                The container runs with more rights than its row in
+                ops/security/container-profiles.tsv allows. Read the check on nf-hotel (sudo
+                journalctl -u nfhotel-container-check) and follow the wiki page Host-Hardening.
+
+  - name: a check older than 45 minutes fires ContainerCheckStale, one each 15 minutes does not
+    interval: 15m
+    input_series:
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="container_check"}
+        values: "0x8"
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="other", task="container_check"}
+        values: "0+900x8"
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: ContainerCheckStale
+        exp_alerts: []
+      - eval_time: 60m
+        alertname: ContainerCheckStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+              task: container_check
+            exp_annotations:
+              summary: "The runtime check of the containers on nf-hotel has not run for 45 minutes"
+              description: >-
+                nfhotel-container-check.timer did not run, Docker did not answer, or a deploy held
+                the lock at each run. Check the timer and its journal on nf-hotel (wiki page
+                Host-Hardening).
