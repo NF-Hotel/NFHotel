@@ -300,6 +300,15 @@ check
 [[ $? == 1 ]] && grep -q 'docker ps failed' "$W/out" && ok "a failed docker ps exits 1" || ko "docker ps failure: $(cat "$W/out")"
 rm -f "$W/docker/ps-fails"
 
+# A container that docker ps lists and that is gone before docker inspect is a warning.
+reset
+container ok
+echo 0123456789abcdef >>"$W/docker/ps"
+check
+code=$?
+grep -qx 'WARN  0123456789ab  -  -  removed while it was checked' "$W/out" && [[ "$code" == 0 ]] &&
+  ok "a container removed during the check is a warning, not a failure" || ko "removed container: exit $code, $(cat "$W/out")"
+
 # Profiles that are not valid stop the check with exit 2.
 bad_profiles() {
   printf '%s\n' "$1" >"$W/bad.tsv"
