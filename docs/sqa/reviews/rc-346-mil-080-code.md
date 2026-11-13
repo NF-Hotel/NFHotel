@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions | [6be61ac] |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Added F9: the CI of the pull request found the blackbox exporter as root; it runs as nobody | pending |
+| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Added F9: the CI of the pull request found the blackbox exporter as root; it runs as nobody | [db5b332] |
 
 ---
 
@@ -178,3 +178,4 @@ the pull request is green before the merge; the gate review records it with the 
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [6be61ac]: https://github.com/NF-Hotel/NFHotel/commit/6be61acbb1abe0539e309cf0745a4c50a0955d98
+[db5b332]: https://github.com/NF-Hotel/NFHotel/commit/db5b3329df6d5a90c2bbc057abc80f7ccffa503c
