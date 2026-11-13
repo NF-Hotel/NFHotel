@@ -53,8 +53,8 @@
 #        (default /var/run/docker.sock); for the tests
 # Exit:  0 no violation; 1 a violation, or docker could not be read; 2 usage error or a profile
 #        that is not valid
-# Needs: bash 4+, docker, stat, flock (for --lock), root (to read the main process of every
-#        container)
+# Needs: bash 4+, docker, GNU stat (-c), flock (for --lock), root (to read the main process of
+#        every container)
 
 # No -e: every container is checked and counted, and the exit code says whether one broke its
 # profile; each call that can fail is handled where it is made.
