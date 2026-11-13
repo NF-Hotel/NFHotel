@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-081 after the CD run of the merge of #675; Go | pending |
+| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-081 after the CD run of the merge of #675; Go | [3bbcc3c] |
 
 ---
 
@@ -70,3 +70,4 @@ Go: criteria 1 to 6 pass on the evidence of 2026-11-13. #665 and #666 close at t
 [MIL-080]: ../../milestones/mil-080-every-container-runs-with-the-rights-of-its-profile.md
 [RC-347]: ./rc-347-mil-080-gate.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[3bbcc3c]: https://github.com/NF-Hotel/NFHotel/commit/3bbcc3c68bdfedcaf5866da8b3935e64596401da
