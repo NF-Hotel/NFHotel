@@ -4,8 +4,9 @@
 # scripts/deploy-services.sh deploys it last, and only when alloy.env exists (copy
 # alloy.env.example): until the monitoring runs, nf-hotel deploys without it.
 #
-# Alloy reads the containers through a socket proxy that allows only read calls: containers
-# (list, inspect, logs) and networks (list). Alloy itself never sees the Docker socket, whose
+# Alloy reads the containers through a socket proxy that lets through only the calls of its
+# allowlist (socket-proxy/haproxy.cfg, ADR-0042): the list of the containers and of the networks,
+# and the inspect and the logs of a container. Alloy itself never sees the Docker socket, whose
 # access would equal root on the host. The host's /, /proc and /sys and the journal are
 # read-only.
 name: nfhotel-alloy
@@ -14,7 +15,10 @@ services:
   socket-proxy:
     # The patched image of the release (ADR-0040 decision 5, MIL-065 task 4): CD sets
     # NFHOTEL_SOCKET_PROXY_IMAGE to the digest that the release scanned. Without it, compose builds
-    # socket-proxy/Dockerfile, the pinned upstream image with the fixes of its Alpine packages.
+    # socket-proxy/Dockerfile, the pinned upstream image with the fixes of its Alpine packages and
+    # the allowlist of ADR-0042, which replaces the switches of the upstream image (CONTAINERS,
+    # NETWORKS, POST and the others): each of them opened a whole section of the API, and they
+    # are read no more.
     image: ${NFHOTEL_SOCKET_PROXY_IMAGE:-nfhotel-socket-proxy:local}
     build:
       context: ./socket-proxy
@@ -23,19 +27,10 @@ services:
         org.opencontainers.image.revision: ${NFHOTEL_APP_SHA:-unknown}
     restart: unless-stopped
     environment:
-      CONTAINERS: "1"
-      # discovery.docker lists the networks on every refresh to label each target; with "0" the
-      # proxy answered 403 and no container log reached Loki (2026-10-23). POST "0" still
-      # refuses every write, so this adds GET /networks only.
-      NETWORKS: "1"
-      POST: "0"
-      # At the default "info", HAProxy logs every request: Alloy's polling gave about 6,800
-      # lines an hour in Loki (2026-10-24). A refused call still shows in Alloy's own log.
-      LOG_LEVEL: warning
-      INFO: "0"
-      IMAGES: "0"
-      VOLUMES: "0"
-      EXEC: "0"
+      # At "info", HAProxy logs every request: Alloy's polling gave about 6,800 lines an hour in
+      # Loki (2026-10-24). A refused call still shows in Alloy's own log; test-alloy-start.sh sets
+      # info to read Alloy's calls.
+      LOG_LEVEL: ${NFHOTEL_PROXY_LOG_LEVEL:-warning}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     # HAProxy runs as root, which owns the socket, so it reads it without a capability. With
