@@ -217,6 +217,42 @@ The firewall then lets no SSH in from anywhere. Use the console:
    sudo nft delete table inet nfhotel
    ```
 
+## Runtime check of the containers
+
+The compose files ask for the hardening of the table above; the runtime check proves that every running container has it (MIL-080). `ops/scripts/check-container-runtime.sh` reads `docker inspect` of each container and the kernel's view of its main process (`/proc/<pid>/status`: the effective user, the bounding set of capabilities, `NoNewPrivs`, the seccomp mode; the AppArmor label), and compares both with the container's row in `ops/security/container-profiles.tsv`. A container is matched by the folder of its compose file under `ops/deploy` and its compose service, so the VM, the monitoring LXC and the throwaway stack of CI use the same rows.
+
+| Rule | A container breaks it when |
+| --- | --- |
+| `profile` | It has no row |
+| `privileged`, `cap_drop`, `cap_add`, `cap_bounding` | It is privileged, does not drop all capabilities, adds one its row does not name, or its main process may hold one |
+| `no_new_privileges`, `seccomp`, `apparmor` | `no-new-privileges` is not set or not in force, seccomp is not in filter mode, or AppArmor is unconfined or not in enforce mode, where the daemon has them |
+| `read_only`, `limits` | Its root filesystem is writable where its row says `ro`, or it has no memory, CPU or PID limit |
+| `host_namespace`, `device` | It shares a namespace of the host, or has a device, a device rule or a device request |
+| `writable_mount`, `host_path` | It mounts a host folder writable outside its row, or a sensitive host path (`/proc`, `/sys`, `/dev`, `/etc`, `/var/lib/docker`, `/run` and the like) that its row does not name |
+| `docker_socket` | It mounts the Docker socket without its row naming it, or sees the socket through a mount of a folder above it and could open it: as root, in the group of the socket, or with `DAC_OVERRIDE` |
+| `user` | Its main process runs as root where its row says `nonroot`, or as another user than the one its row names |
+| `kernel_view` | Its main process cannot be read |
+
+It runs in four places:
+
+- **The deploy.** `nfhotel-deploy deploy` runs it with `--deploy` after the secret check: a container of the release that breaks its row fails the deploy, and the previous release comes back. A container outside the release is a warning. Once the release is recorded, the deploy gives its lock back and starts `nfhotel-container-check.service` once, so the CD log shows the check of the new release and the report of the monitoring holds it at once; a failure there is a warning, because the release has already passed the check.
+- **Every 15 minutes.** `nfhotel-container-check.timer` on `nf-hotel` runs `/usr/local/sbin/nfhotel-container-check`, which the update command of CD installs, with the rows of the checkout. It writes `/var/lib/nfhotel-metrics/container-runtime.prom`; a violation raises `ContainerRuntimeViolation` and a check that stops raises `ContainerCheckStale` ([Alerts](Alerts)). The check only tests the lock of the deploy, before and after it reads the containers, and gives it back at once: a run during a deploy is skipped and writes nothing, and a deploy never waits for a check.
+- **The monitoring.** `deploy-monitoring.sh --apply` runs it over the six containers of the LXC.
+- **CI.** The end-to-end job runs it over the throwaway stack; `test-check-container-runtime.sh` tests every rule both ways, and `test-container-runtime-live.sh` starts real containers that keep or break a row and compares every row with its compose file.
+
+Read the last run on the VM:
+
+```bash
+sudo journalctl -u nfhotel-container-check -n 30 --no-pager
+sudo nfhotel-container-check --profiles /opt/nfhotel/ops/security/container-profiles.tsv
+```
+
+Each container gets a line `PASS`, `FAIL` or `WARN` with its user, capabilities, seccomp mode, AppArmor label, root filesystem, host paths and writable mounts, whether it can reach the Docker socket, its networks and published ports; a `FAIL` names each rule it breaks on the lines below. The last lines give the counts and the versions of Docker Engine, containerd and runc.
+
+**When it fails.** Treat an unexpected `FAIL` as an incident ([Incidents](Incidents)): a container that gained rights after the deploy was changed by someone with access to Docker. Stop it if it holds the socket or runs privileged (`sudo docker stop <container>`), keep its `docker inspect` for the record, and deploy the release again from CD.
+
+**To change a row.** A service that needs another right gets it in its compose file and its row in the same pull request, with the reason in a comment above the row. CI compares the row with the compose file and runs the check over the throwaway stack, and the deploy checks the release on the VM.
+
 ## Monthly image rebuild
 
 DSA-001 risk R11 asks for images that are rebuilt with the latest security fixes, even when no code changes. Plan, from the first working day of December 2026, each month:

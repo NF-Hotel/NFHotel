@@ -382,6 +382,8 @@ Each alert in Discord names what failed. Start with the first step below. Once t
 | `CertificateRenewalStale` | warning | The renewal has not succeeded for 26 hours | `journalctl -u nfhotel-cert-renew` |
 | `TaskReportMissing` | warning | A job has never reported success, or its file is gone | Run the job's service once (`sudo systemctl start nfhotel-backup.service`) and read its journal |
 | `HealthReportMissing` | warning | The container health report is missing | `systemctl status nfhotel-report-health.timer` |
+| `ContainerRuntimeViolation` | critical | A container on the VM has more rights than its profile | `sudo journalctl -u nfhotel-container-check`, then [Host Hardening](Host-Hardening#runtime-check-of-the-containers) |
+| `ContainerCheckStale` | warning | The runtime check of the containers has not run for 45 minutes | `systemctl status nfhotel-container-check.timer` and its journal |
 | `ApplicationSlow` | warning | 95 % of the requests of an application take more than 1 second | The panel "95 % of the requests within", then the routes: `topk(5, histogram_quantile(0.95, sum by (http_route, le) (rate(http_server_request_duration_seconds_bucket{job="nfhotel-web"}[5m]))))` |
 | `ApplicationErrors` | critical | More than 5 % of the answers are server errors | The log of the application in Grafana; the error usually names the API or the database |
 | `ApplicationExceptions` | warning | More than 5 unhandled exceptions in 10 minutes | `sum by (error_type) (increase(aspnetcore_diagnostics_exceptions_total[1h]))`, then the stack trace in the log |
@@ -430,6 +432,7 @@ The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no s
 | [`alertmanager/alertmanager.yml`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/monitoring/alertmanager/alertmanager.yml) | The routes to Discord and Healthchecks.io |
 | [`ops/deploy/alloy/config.alloy`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/alloy/config.alloy) | What Alloy collects on `nf-hotel` |
 | [`ops/scripts/report-health.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/report-health.sh) | The container health report, every minute |
+| [`ops/scripts/check-container-runtime.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/check-container-runtime.sh) | The runtime check of the containers against their profiles, every 15 minutes on the VM and after each start of this stack (MIL-080) |
 | [`ops/scripts/deploy-monitoring.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/deploy-monitoring.sh) | Checks and starts the stack in the LXC |
 | [`ops/scripts/create-monitoring-lxc.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/create-monitoring-lxc.sh) | Creates the LXC on the Proxmox node |
 
@@ -441,6 +444,7 @@ The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no s
 | `offvm_copy.prom` | The copy to the legion laptop | Older than 72 h, or missing |
 | `cert_renew.prom` | The certificate renewal (daily) | Older than 26 h, or missing |
 | `containers.prom` | `nfhotel-report-health.timer` (every minute) | A value of 0 for 30 s, or missing |
+| `container-runtime.prom` | `nfhotel-container-check.timer` (every 15 minutes) | A container breaks its profile; or the last run is older than 45 minutes, or missing |
 
 **Checks in CI** (job *Ops monitoring configuration*, on every pull request):
 - `promtool check config` and `promtool test rules`;
@@ -448,7 +452,7 @@ The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no s
 - `loki -verify-config` and `blackbox_exporter --config.check`;
 - `alloy fmt`;
 - a check that the dashboard is valid JSON;
-- a start of the whole stack as this guide does it.
+- a start of the whole stack as this guide does it, with the runtime check over its six containers.
 
 ## Why it is built this way
 
