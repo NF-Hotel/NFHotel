@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go | [f320dbf] |
+| 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go | [f320dbf] |
+| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Added F10: SonarCloud found the plain address of the proxy in the matrix (S5332); it stands on one line with NOSONAR and its reason | pending |
 
 ---
 
@@ -144,6 +145,11 @@
 - **F9, note: the linters ran in WSL.** As F7 of [RC-346]: Docker Desktop is off on S01's PC, so the same images at the
   same versions (actionlint 1.7.7, shellcheck v0.11.0, shfmt v3.14.1, yamllint 1.35.1) ran over the file lists of
   `lint.sh` in WSL. The job Ops linters runs `lint.sh` itself.
+- **F10, fixed: SonarCloud rated the security of the new code B.** Its rule `shell:S5332` found the plain address
+  `http://socket-proxy:2375` in the matrix of `test-alloy-start.sh`, the one check of the pull request that failed. The
+  proxy speaks plain HTTP on its internal network, which has no route out, as on nf-hotel. The address now stands on
+  one line with `# NOSONAR` and that reason, as in `test-nginx.sh`, and reaches the container of curl as an environment
+  variable. The test passed 18 of 18 again in WSL, and shellcheck and shfmt are clean.
 
 ## Overall Verdict
 

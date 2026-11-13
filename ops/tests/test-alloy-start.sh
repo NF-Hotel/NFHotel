@@ -215,16 +215,18 @@ otlp="$(curl_on t-alloy-api -o /dev/null -w '%{http_code}' -H 'Content-Type: app
 # The matrix of ADR-0042, sent from a container on the internal network of the proxy. A request is
 # "METHOD PATH [HEADER|HEADER...]"; the answers are the status codes, one line per request, in
 # order. The refused calls name a container that does not exist, so a proxy that lets one through
-# gets 404 from Docker, and no data; the calls of the list name the logger.
+# gets 404 from Docker, and no data; the calls of the list name the logger. The proxy speaks plain
+# HTTP on its internal network, which has no route out, as on nf-hotel.
+readonly PROXY_URL=http://socket-proxy:2375 # NOSONAR: internal network, no route out (ADR-0042)
 probe_proxy() {
-  docker run --rm -i --network t-alloy_internal --entrypoint sh "$CURL" -c '
+  docker run --rm -i --network t-alloy_internal -e PROXY_URL="$PROXY_URL" --entrypoint sh "$CURL" -c '
     while read -r method path headers; do
       set -- -s -o /dev/null -w "%{http_code}" --path-as-is --max-time 10
       if [ "$method" = HEAD ]; then set -- "$@" -I; else set -- "$@" -X "$method"; fi
       old_ifs="$IFS"; IFS="|"
       for header in $headers; do set -- "$@" -H "$header"; done
       IFS="$old_ifs"
-      echo "$(curl "$@" "http://socket-proxy:2375$path")"
+      echo "$(curl "$@" "$PROXY_URL$path")"
     done'
 }
 logger="$(docker inspect -f '{{.Id}}' t-alloy-logger)"
