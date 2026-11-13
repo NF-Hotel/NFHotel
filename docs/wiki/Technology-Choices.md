@@ -640,12 +640,12 @@ The controls themselves are on [Security Controls](Security-Controls). Most secu
 
 ### Docker socket proxy
 
-- **Used for:** Alloy reads container names and health through `tecnativa/docker-socket-proxy`, which allows only GET of containers and networks. Since MIL-065 the VM runs it as `ghcr.io/nf-hotel/nfhotel-socket-proxy`, the pinned image with the fixes of its Alpine packages, built by Release (ADR-0040).
+- **Used for:** Alloy reads container names and health through `tecnativa/docker-socket-proxy`, which lets through only the calls of Alloy: the list of the containers and of the networks, and the inspect and the logs of a container (ADR-0042, MIL-081). Since MIL-065 the VM runs it as `ghcr.io/nf-hotel/nfhotel-socket-proxy`, the pinned image with the fixes of its Alpine packages, built by Release (ADR-0040).
 - **Alternatives:** mounting `/var/run/docker.sock` into Alloy, cAdvisor with the socket, no container discovery.
-- **For it:** the Docker socket is root on the host; the proxy gives read-only access to two endpoints.
+- **For it:** the Docker socket is root on the host; the proxy gives access to five read calls, and refuses the archive, export and attach calls that a section switch of the upstream image let through.
 - **Against it:** one more container.
 - **What practitioners say:** "Don't expose the docker socket, even to a container" is the classic warning ([thread](https://news.ycombinator.com/item?id=10269200)); the Information Security Stack Exchange question "Is adding docker group not a good idea?" makes the same point for users ([Security Stack Exchange](https://security.stackexchange.com/questions/178542)). Its accepted answer points to Docker's own documentation: the group grants rights equal to root, so the risk is whoever, or whatever, is given access to the socket.
-- **Our reason:** MIL-023 hardening; not decided in an ADR.
+- **Our reason:** MIL-023 hardening; ADR-0042 decides which calls pass (MIL-081).
 - **Choose the alternative when:** none for production.
 
 ## Index of third-party images

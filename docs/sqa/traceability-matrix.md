@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-12 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-080, MIL-081 and MIL-082 (the runtime check of every container, the calls of Alloy through the socket proxy, a compromised container kept away from the host) with their plan reviews RC-343 to RC-345 | [5cff893] |
 | 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-080 (the runtime check of every container) with its code review RC-346 | [6be61ac] |
+| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-081 (the allowlist of the socket proxy) with its code review RC-348, and the row of ADR-0042 | pending |
 
 ---
 
@@ -108,9 +108,11 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-080] | Milestone (Accepted, Go; plan reviewed in autonomous mode by the AI as stand-in for S01 2026-11-12, RC-343; the gate follows the deploy) | en | it | [BC-001], [CIS-001], [DSA-001], ADR-0018, ADR-0020, MIL-023, MIL-031 | planned: the profiles `ops/security/container-profiles.tsv`, the check `ops/scripts/check-container-runtime.sh` (configuration and kernel view of each main process), the deploy gate and the timer every 15 minutes, the alerts, the check in the monitoring LXC, the unit, live and end-to-end tests, [CIS-001] and the wiki pages Host-Hardening and Monitoring | [RC-343] |
 | The code of MIL-080: the profiles `ops/security/container-profiles.tsv`, the check `ops/scripts/check-container-runtime.sh` with its unit and live tests and its step in the end-to-end action, the deploy gate, the service and the timer (`ops/scripts/deploy-release.sh`, `ops/deploy/systemd/`), the alerts `ContainerRuntimeViolation` and `ContainerCheckStale` with their tests, the check in `ops/scripts/deploy-monitoring.sh`, and the limits of `results-owner` of the benchmark | Shell, YAML (reviewed 2026-11-13, Go-with-conditions: every check of the pull request green) | - | - | [MIL-080] tasks 1 to 6, [CIS-001] | - | [RC-346] |
 | [MIL-081] | Milestone (Accepted, Go; plan reviewed in autonomous mode by the AI as stand-in for S01 2026-11-12, RC-344; the gate follows the deploy) | en | it | [BC-001], [CIS-001], ADR-0020, ADR-0024, ADR-0040, MIL-065, MIL-080 | planned: Alloy's calls measured, the allowlist of the socket proxy in its own HAProxy configuration, the test matrix of `ops/tests/test-alloy-start.sh`, the probe of the proxy in the runtime check, ADR-0042, [CIS-001] row 5.31 and the wiki page Containers-and-Images | [RC-344] |
+| The code of MIL-081: the allowlist `ops/deploy/alloy/socket-proxy/haproxy.cfg` in the image of the proxy (its `Dockerfile`), the environment of the proxy in `ops/deploy/alloy/docker-compose.yml`, the measurement and the matrix of `ops/tests/test-alloy-start.sh`, and the rule `proxy_allowlist` of `ops/scripts/check-container-runtime.sh` with its unit test | Shell, YAML, HAProxy (reviewed 2026-11-13, Go) | - | - | [MIL-081] tasks 1 to 5, [ADR-0042], [CIS-001] | - | [RC-348] |
 | [MIL-082] | Milestone (Accepted, Go; plan reviewed in autonomous mode by the AI as stand-in for S01 2026-11-12, RC-345; the gate follows the deploy) | en | it | [BC-001], [CIS-001], [DSA-001], MIL-045, MIL-080, MIL-081 | planned: the host-access map from the runtime check, the wiki page Container-Escape, Ollama as a non-root user with its CI test, the runtime versions in the check, [CIS-001] rows 2.1 and 4.1 | [RC-345] |
 | [ADR-0040] | ADR (Accepted) | - | - | [MIL-064], [ADR-0007], [ADR-0030], [MIL-022], [MIL-036], [MIL-059] | the patch layer of the proxy in `ops/deploy/nginx/Dockerfile` and its entry in `ops/scripts/build-release-images.sh`, the release references by name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, the `docker` entry of `.github/dependabot.yml` (MIL-064 tasks 2 to 7, RC-300) | [RC-299], [RC-300] (the code) |
 | [ADR-0041] | ADR (Accepted) | - | - | [MIL-070], [ADR-0011], [ADR-0024], [MIL-023], [CIS-001] | `as_app` of `ops/scripts/deploy-release.sh`, the second check of `ops/tests/test-sudo-log.sh`, and the sections of the wiki pages Host-Hardening and Database-Preparation (MIL-070 tasks 1 to 3, RC-320) | [RC-320] |
+| [ADR-0042] | ADR (Accepted) | - | - | [MIL-081], [ADR-0020], [ADR-0024], [ADR-0040], [MIL-080], [CIS-001] | `ops/deploy/alloy/socket-proxy/haproxy.cfg` and its `Dockerfile`, the environment of the proxy in `ops/deploy/alloy/docker-compose.yml`, the matrix of `ops/tests/test-alloy-start.sh` and the rule `proxy_allowlist` of `ops/scripts/check-container-runtime.sh` (MIL-081 tasks 1 to 4, RC-348) | [RC-348] |
 | [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
 | [ADR-0031] | ADR (Accepted; decisions 2 and 3 added 2026-10-26) | - | - | ADR-0005, ADR-0013, [ADR-0004], ADR-0024, MIL-020, MIL-043 | the sign-in keys and the benchmark run tracker of `src/NFHotel.Web`, [MIL-046] | [RC-227], [RC-239] |
 | [MIL-056] | Milestone (Accepted, Go; gate passed 2026-11-05 after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding) | en | it | [BC-001], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | [ADR-0035], `scripts/dev-up.sh --lite`, `ops/scripts/lib/`, the Ops CI test and the macOS job, the wiki page Local Development Deploy | [RC-271], [RC-272], [RC-286] |
@@ -292,6 +294,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-070]: ../milestones/mil-070-the-database-password-out-of-the-logs.md
 [ADR-0040]: ../adr/adr-0040-patched-nginx-image-from-the-release.md
 [ADR-0041]: ../adr/adr-0041-connection-string-over-standard-input.md
+[ADR-0042]: ../adr/adr-0042-only-the-calls-of-alloy-through-the-socket-proxy.md
 [RC-282]: ./reviews/rc-282-mil-060.md
 [MIL-046]: ../milestones/mil-046-finished-run-not-interrupted.md
 [ADR-0031]: ../adr/adr-0031-state-that-survives-a-deploy.md
@@ -351,6 +354,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-346]: ./reviews/rc-346-mil-080-code.md
 [RC-344]: ./reviews/rc-344-mil-081.md
 [RC-345]: ./reviews/rc-345-mil-082.md
+[RC-348]: ./reviews/rc-348-mil-081-code.md
 [RC-302]: ./reviews/rc-302-mil-064-gate.md
 [RC-303]: ./reviews/rc-303-mil-064-gate-re-review.md
 [RC-287]: ./reviews/rc-287-mil-061.md
@@ -383,5 +387,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
-[5cff893]: https://github.com/NF-Hotel/NFHotel/commit/5cff893776688ab2c6b40c32b47ef12cbd7cda9e
 [6be61ac]: https://github.com/NF-Hotel/NFHotel/commit/6be61acbb1abe0539e309cf0745a4c50a0955d98

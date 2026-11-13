@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Rows 2.1.x (with one exception, the `nginx` package of the host) and 2.2.x Applied after MIL-068 removed the desktop; the summary counts; accepted after RC-319 Go | [3a2683b] |
 | 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The evidence `compose` names the runtime check of MIL-080 (the profiles, the deploy, the timer, the end-to-end job and the live test); row 5.5 Applied with one exception, Alloy's read-only host mounts, which the row left out; rows 4.1 and 5.31 name the check | [6be61ac] |
+| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | Row 5.31 names the allowlist of the socket proxy (ADR-0042, MIL-081): the calls of Alloy only, every other call 403, the archive, export and attach calls among them; the test of CI and the probe of the runtime check | pending |
 
 ---
 
@@ -128,7 +128,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | 5.26 | Container health is checked at runtime | Applied with one exception | As 4.6: 10 of 11 are `healthy`, and the deploy checks the site after each release. Verified on nf-hotel 2026-10-28 (RC-244, `/root/cis-evidence-after-host-settings.txt`). | compose; ev:containers (`health`) |
 | 5.27 | Docker commands always use the latest version of their image | Applied | CD deploys the image digests of the release, never a moving tag | `ops/scripts/deploy-release.sh` |
 | 5.28 | The PIDs cgroup limit is used | Applied | `pids_limit` per service. On 2026-10-28, 9 of 11 containers had it; Alloy (256) and its socket proxy (128) got it in the change of RC-244. On 2026-11-05, `docker inspect` on `nf-hotel` showed a `pids_limit` on all 11 containers, Alloy 256 and the socket proxy 128 among them (MIL-023 gate, RC-294) | compose; ev:containers (`pids_limit`) |
-| 5.31 | The Docker socket is not mounted inside any container | Applied with one exception | One container mounts it: `socket-proxy` of `ops/deploy/alloy` (ADR-0020). The `:ro` flag does not limit the API, so the limit is the proxy's own rules: GET of containers (list, inspect, logs) and networks (list) only, every POST refused, and no image, volume, exec or info call. The proxy is on an internal network with no route out, and only Alloy reaches it. Alloy has no socket. `ops/tests/test-alloy-start.sh` checks the allowed and the refused calls in CI. The runtime check fails any other container that mounts the socket, or that could open it through a mount of a folder above it: as root, in the group of the socket, or with `DAC_OVERRIDE` (MIL-080) | compose; ev:containers (`mounts`); CI |
+| 5.31 | The Docker socket is not mounted inside any container | Applied with one exception | One container mounts it: `socket-proxy` of `ops/deploy/alloy` (ADR-0020). The `:ro` flag does not limit the API, so the limit is the proxy's own allowlist (ADR-0042, MIL-081): `GET` or `HEAD` of `/_ping`, the list of the containers and of the networks, and the inspect and the logs of one container, with or without an API version; any other method, path or upgrade of the connection answers 403, the archive, export and attach calls among them. The proxy is on an internal network with no route out, and only Alloy reaches it. Alloy has no socket. `ops/tests/test-alloy-start.sh` reads Alloy's calls from the log of the proxy in CI and sends the refused calls of ADR-0042. The runtime check fails any other container that mounts the socket, or that could open it through a mount of a folder above it: as root, in the group of the socket, or with `DAC_OVERRIDE` (MIL-080), and asks the proxy from inside Alloy at every run (MIL-081) | compose; ev:containers (`mounts`); CI |
 
 ### 6 and 7 Operations and Swarm
 
@@ -233,5 +233,4 @@ The counts are by row; a row that covers several items counts once. Applied coun
 [DSA-001]: ./devsecops-assessment.md
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
-[3a2683b]: https://github.com/NF-Hotel/NFHotel/commit/3a2683b9abdd60ff583dc81c14a65e050e3183c4
 [6be61ac]: https://github.com/NF-Hotel/NFHotel/commit/6be61acbb1abe0539e309cf0745a4c50a0955d98

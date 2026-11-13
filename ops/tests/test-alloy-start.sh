@@ -257,11 +257,14 @@ refused+=("GET /containers%2Fjson" "GET /containers/$logger%2Farchive?path=/"
 requests=("${allowed[@]}" "${refused[@]}")
 mapfile -t codes < <(printf '%s\n' "${requests[@]}" | probe_proxy)
 # wrong_answers <first> <count> <code>: the requests from index first on that did not get code.
+# The headers of an upgrade are left out of the line, which names the upgrade instead.
 wrong_answers() {
-  local i request
+  local i request label
   for ((i = $1; i < $1 + $2; i++)); do
     request="${requests[i]}"
-    [[ "${codes[i]:-}" == "$3" ]] || printf '%s answered %s; ' "${request%% Upgrade*}" "${codes[i]:-nothing}"
+    label="${request%% Upgrade*}"
+    [[ "$label" == "$request" ]] || label+=" (an upgrade to a WebSocket)"
+    [[ "${codes[i]:-}" == "$3" ]] || printf '%s answered %s; ' "$label" "${codes[i]:-nothing}"
   done
 }
 wrong="$(wrong_answers 0 "${#allowed[@]}" 200)"

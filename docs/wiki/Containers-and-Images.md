@@ -1,6 +1,6 @@
 # Containers and Images
 
-**Decisions:** [ADR-0003](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0003-proxmox-vm-for-services.md), [ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md), [ADR-0024](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0024-secrets-as-files.md), [ADR-0039](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0039-python-services-network.md). **Work:** MIL-002, MIL-022, MIL-023, MIL-049, MIL-061. **Why each product:** [Technology Choices](Technology-Choices).
+**Decisions:** [ADR-0003](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0003-proxmox-vm-for-services.md), [ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md), [ADR-0024](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0024-secrets-as-files.md), [ADR-0039](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0039-python-services-network.md), [ADR-0042](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0042-only-the-calls-of-alloy-through-the-socket-proxy.md). **Work:** MIL-002, MIL-022, MIL-023, MIL-049, MIL-061, MIL-081. **Why each product:** [Technology Choices](Technology-Choices).
 
 Every container of NF Hotel: where it runs, what it does, which image it runs and where that image comes from, and how it is locked down. For how to deploy them, see [Proxmox Deployment](Proxmox-Deployment); for their settings files, see [Environment Files](Environment-Files).
 
@@ -62,7 +62,7 @@ Every service publishes no host port unless the table says so; the others are re
 | `results-owner` (`benchmark`) | One-shot job before `benchmark`: gives the results volume to the service's user (MIL-045), with no network | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | none | none |
 | `ollama` (`ollama`) | Local model server for the benchmark and the market analysis | `ollama/ollama:0.40.13` | Docker Hub | llm | none |
 | `alloy` (`alloy`) | Agent that sends the logs and metrics of the VM to the monitoring LXC | `grafana/alloy:v1.21.3` | Docker Hub | internal, egress, apps | none |
-| `socket-proxy` (`alloy`) | Gives Alloy read-only access to the Docker API (GET of containers and networks only) | `ghcr.io/nf-hotel/nfhotel-socket-proxy`: `tecnativa/docker-socket-proxy:v0.5.0` with the fixes of its Alpine packages (ADR-0040) | GHCR, built by Release | internal | none |
+| `socket-proxy` (`alloy`) | Lets Alloy make only the calls of its allowlist to the Docker API: the list of the containers and of the networks, and the inspect and the logs of a container; every other call answers 403 (ADR-0042) | `ghcr.io/nf-hotel/nfhotel-socket-proxy`: `tecnativa/docker-socket-proxy:v0.5.0` with the fixes of its Alpine packages (ADR-0040) and the allowlist (ADR-0042) | GHCR, built by Release | internal | none |
 
 **The Docker networks:**
 
@@ -111,7 +111,7 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 | `market-analysis` | `ops/deploy/market-analysis/Dockerfile` | the source of `NF-Hotel/notebook-market-analysis` at the pinned commit `MARKET_ANALYSIS_REF`, on `python:3.13-slim`, with every dependency locked by hash (`requirements.lock`) | `app`, uid 10001 |
 | `benchmark` | `ops/deploy/benchmark/Dockerfile` | the source of `NF-Hotel/notebook-benchmark` at the pinned commit `BENCHMARK_REF`, on `python:3.14-slim`, locked by hash | `app`, uid 10001 |
 | `nfhotel-nginx` | `ops/deploy/nginx/Dockerfile` | the pinned `nginx:1.29-alpine` and one `apk upgrade --no-cache` layer with the fixes of its Alpine packages; nginx itself stays the build of nginx.org, and the build fails if the upgrade replaces it (ADR-0040) | the master process `root`, the workers `nginx`, as upstream |
-| `nfhotel-socket-proxy` | `ops/deploy/alloy/socket-proxy/Dockerfile` | the pinned `tecnativa/docker-socket-proxy:v0.5.0` and one `apk upgrade --no-cache` layer with the fixes of its Alpine packages; HAProxy stays the build of the upstream image, and the build fails if the upgrade replaces it (ADR-0040, MIL-065) | `root`, as upstream: HAProxy reads the Docker socket, which root owns |
+| `nfhotel-socket-proxy` | `ops/deploy/alloy/socket-proxy/Dockerfile` | the pinned `tecnativa/docker-socket-proxy:v0.5.0` and one `apk upgrade --no-cache` layer with the fixes of its Alpine packages; HAProxy stays the build of the upstream image, and the build fails if the upgrade replaces it (ADR-0040, MIL-065). `haproxy.cfg` of the same folder replaces the template of the upstream image with the allowlist of ADR-0042, and the build checks it with `haproxy -c` (MIL-081) | `root`, as upstream: HAProxy reads the Docker socket, which root owns |
 
 Each final stage runs `apt-get upgrade` for the Debian security updates published since its base image was built, and the two proxies run `apk upgrade` for the Alpine ones. The two .NET images throw the SDK stage away, so the compilers never reach production.
 
@@ -150,6 +150,7 @@ A pinned third-party image can keep a finding that its newest build has not fixe
 | Memory, CPU and PID limits | every long-running service | A leak or a fork bomb in one container cannot starve the others | 5.10, 5.11, 5.28 |
 | Non-root user | the web, API, market-analysis and benchmark images and Alloy (473); PostgreSQL drops to its own user, and the nginx workers run as `nginx`; `prune` on the backup host runs as `nfhotel-backup` | A process escape starts without root | 4.1 |
 | No host port, except the table above | every compose file | Nothing answers that does not need to | 5.7 |
+| The Docker socket in one container, `socket-proxy`, which lets through only the calls of Alloy | `ops/deploy/alloy` | A process that takes over Alloy cannot read the files of a container, export it or write to it through the proxy; the runtime check asks the proxy from inside Alloy at every run (ADR-0042, MIL-080, MIL-081) | 5.31 |
 | Secrets as files under `/run/secrets`, never environment variables | web, API, PostgreSQL, cloudflared, Alertmanager | `docker inspect` and an environment dump show no secret (ADR-0024) | 4.10 |
 | A health check | every long-running service | The deploy waits for healthy containers and rolls back otherwise; an unhealthy container raises `ContainerUnhealthy` | 4.6 |
 | Docker daemon: `live-restore`, `icc: false`, `userland-proxy: false`, bounded logs | `/etc/docker/daemon.json` on the VM | Containers survive a daemon restart; no traffic between containers outside their networks | 2.x |
