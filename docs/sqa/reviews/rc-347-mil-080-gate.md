@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-080 after the CD run of the merge of #674; Go-with-conditions: the second half of criterion 5 waits for the deploy of the monitoring | pending |
+| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-080 after the CD run of the merge of #674; Go-with-conditions: the second half of criterion 5 waits for the deploy of the monitoring | [f0b2e32] |
 
 ---
 
@@ -71,3 +71,4 @@ Go-with-conditions: criteria 1 to 4, 6 and 7 pass on the evidence of 2026-11-13,
 [ADR-0018]: ../../adr/adr-0018-deploy-command-updates-itself.md
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[f0b2e32]: https://github.com/NF-Hotel/NFHotel/commit/f0b2e329f891aa4062869e27ec2c55ffd3e492e2
