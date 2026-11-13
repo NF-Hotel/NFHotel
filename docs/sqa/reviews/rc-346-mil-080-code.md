@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions | [6be61ac] |
+| 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions | [6be61ac] |
+| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Added F9: the CI of the pull request found the blackbox exporter as root; it runs as nobody | pending |
 
 ---
 
@@ -24,7 +25,8 @@
   - task 4: `ops/scripts/deploy-release.sh`, `ops/deploy/systemd/nfhotel-container-check.service` and
     `nfhotel-container-check.timer`, and `ops/tests/test-deploy-release.sh`;
   - task 5: `ops/deploy/monitoring/prometheus/rules/security.yml`, `rules/nfhotel.yml` and `rules-test.yml`,
-    `ops/scripts/deploy-monitoring.sh` and `ops/tests/test-monitoring-stack.sh`;
+    `ops/scripts/deploy-monitoring.sh`, `ops/tests/test-monitoring-stack.sh` and the user of the blackbox exporter
+    in `ops/deploy/monitoring/docker-compose.yml` (F9);
   - task 6: [CIS-001] and the wiki pages Host-Hardening, Alerts, Monitoring and Workflows.
 - Checklist used: [QC-SH-001] (`qc-programming-shell`), [QC-YML-001] (`qc-yaml`), [QC-WF-001] (`qc-workflow`)
 - Scope: full review of the new and changed files
@@ -143,6 +145,14 @@
 - **F8, note: a new check that is not required.** "Ops script tests (test-check-container-runtime.sh)" is not in the
   ruleset, which changes only on S01's word. The live test and the end-to-end step run inside the jobs Ops monitoring
   configuration (MIL-023) and End-to-end tests, which are required.
+- **F9, fixed: the blackbox exporter ran as root.** The job Ops monitoring configuration (MIL-023) of the pull request
+  failed on it: the runtime check of `deploy-monitoring.sh` read uid 0 against the profile `nonroot`. The image
+  `prom/blackbox-exporter:v0.29.1` has no `USER`, and its compose service set none; the comparison of the compose files
+  cannot see the user of an image and passed. On nf-monitoring the exporter has run as root since MIL-023. It now runs
+  as `nobody` (`user: "65534:65534"`): every module of `blackbox.yml` probes over HTTP and needs no capability (an ICMP
+  module would need `NET_RAW`). In WSL, with the hardening of the compose file, it ran as uid 65534 with no capability,
+  read its configuration, answered `/-/healthy` and ran an `https_2xx` probe. The runtime check is the control that
+  found it, as it is meant to; the deploy of the monitoring in task 7 brings the fix to nf-monitoring.
 
 ## Overall Verdict
 
