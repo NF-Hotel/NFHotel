@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-082 and of its code at the gate: deployed by CD run 43513939028, Ollama runs as 10001 on the VM; gate Go-with-conditions until the deploy of the monitoring (RC-351) | [29bb301] |
-| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-072 and of its code at the gate: deployed by CD run 43262765251; ADR-0029 decision 1 (1 week); gate Go-with-conditions until the check inside the VM (RC-339) | pending |
+| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-072 and of its code at the gate: deployed by CD run 43262765251; ADR-0029 decision 1 (1 week); gate Go-with-conditions until the check inside the VM (RC-339) | [3afb6a3] |
 
 ---
 
@@ -394,3 +394,4 @@ updated whenever an artifact instance is created or reviewed.
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
 [29bb301]: https://github.com/NF-Hotel/NFHotel/commit/29bb3014e44bdf741083c5037a6bd97f59b03b53
+[3afb6a3]: https://github.com/NF-Hotel/NFHotel/commit/3afb6a38797598a205e2c4c82dd19c352967ae89

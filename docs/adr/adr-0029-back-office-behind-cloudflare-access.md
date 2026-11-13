@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-11 | Deprecated | mikemike | S01 | Decisions 2, 3 and 5 made precise by MIL-072, after the validating route was found second in the list and its path and the guard of nginx were found to compare letter case: the validating route first, with the path `(?i)^/admin`; the guard of nginx for every spelling of `/admin`; the order of the routes checked in the log of `cloudflared` | [a1a7092] |
-| 2026-11-11 | Accepted | mikemike | AI as stand-in for S01 | Decision 1: the session lasts 1 week, as the Access application is set; S01 decided in chat that this record follows the setting; accepted at the gate of MIL-072 (RC-339) | pending |
+| 2026-11-11 | Accepted | mikemike | AI as stand-in for S01 | Decision 1: the session lasts 1 week, as the Access application is set; S01 decided in chat that this record follows the setting; accepted at the gate of MIL-072 (RC-339) | [3afb6a3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -68,3 +68,4 @@ We follow option 3. It changes ADR-0028 decision 3 for `/admin` only.
 [MIL-041]: ../milestones/mil-041-admin-behind-cloudflare-access.md
 [MIL-072]: ../milestones/mil-072-the-access-check-on-every-admin-path.md
 [a1a7092]: https://github.com/NF-Hotel/NFHotel/commit/a1a709262eda420d46bb2be56f639718b97ba48c
+[3afb6a3]: https://github.com/NF-Hotel/NFHotel/commit/3afb6a38797598a205e2c4c82dd19c352967ae89

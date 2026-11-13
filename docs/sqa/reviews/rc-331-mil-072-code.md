@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-11 | Deprecated | mikemike | S01 | Initial version; mode supervised; the review of tasks 2 to 4 of MIL-072 before their pull request: `ops/tests/test-nginx.sh`, `public.conf.template`, ADR-0029 and the wiki page Public-Access; Go, accepted by S01 in chat ("2 ja", to "Accepterer du RC-331?") | [0e58535] |
-| 2026-11-11 | Accepted | mikemike | AI as stand-in for S01 | Finding 7 and its action item: S01 decided in chat that the records follow the setting of 1 week; ADR-0029 decision 1 and the wiki say 1 week. Finding 3: the Sonar fix of `with_token` (ffce18c); accepted at the gate of MIL-072 (RC-339) | pending |
+| 2026-11-11 | Accepted | mikemike | AI as stand-in for S01 | Finding 7 and its action item: S01 decided in chat that the records follow the setting of 1 week; ADR-0029 decision 1 and the wiki say 1 week. Finding 3: the Sonar fix of `with_token` (ffce18c); accepted at the gate of MIL-072 (RC-339) | [3afb6a3] |
 
 ---
 
@@ -96,3 +96,4 @@ Go. Every Mandatory criterion of QC-ADR-001 and QC-SH-001 that the change touche
 [QC-ADR-001]: ../../../framework/qc/artifacts/qc-adr.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [0e58535]: https://github.com/NF-Hotel/NFHotel/commit/0e5853507a4d6ebea270a1048857a1c02fac8e73
+[3afb6a3]: https://github.com/NF-Hotel/NFHotel/commit/3afb6a38797598a205e2c4c82dd19c352967ae89

@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-072 after the CD run of f83859e and the checks from outside of 2026-11-13; Go-with-conditions: the request inside the VM (criterion 4) waits for S01 | pending |
+| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-072 after the CD run of f83859e and the checks from outside of 2026-11-13; Go-with-conditions: the request inside the VM (criterion 4) waits for S01 | [3afb6a3] |
 
 ---
 
@@ -70,3 +70,4 @@ Go-with-conditions: criteria 1, 2, 3, 5 and 6 pass, and criterion 4 is Pending u
 [ADR-0029]: ../../adr/adr-0029-back-office-behind-cloudflare-access.md
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[3afb6a3]: https://github.com/NF-Hotel/NFHotel/commit/3afb6a38797598a205e2c4c82dd19c352967ae89
