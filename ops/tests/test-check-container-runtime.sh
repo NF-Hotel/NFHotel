@@ -59,7 +59,8 @@ EOF
 chmod +x "$W/bin/docker"
 apparmor_and_seccomp='["name=apparmor","name=seccomp,profile=builtin","name=cgroupns"]'
 echo "$apparmor_and_seccomp" >"$W/docker/info"
-echo '29.0.1|Engine=29.0.1 containerd=v2.1.5 runc=1.3.4 docker-init=0.19.0 ' >"$W/docker/version"
+readonly VERSIONS='29.0.1|Engine=29.0.1 containerd=v2.1.5 runc=1.3.4 docker-init=0.19.0 '
+echo "$VERSIONS" >"$W/docker/version"
 # The socket belongs to root and the group 998, as the docker group of a host.
 touch "$W/docker.sock" && chown 0:998 "$W/docker.sock"
 
@@ -276,6 +277,14 @@ grep -q '# HELP nfhotel_task_last_success_timestamp_seconds When the task last s
   ok "the time of the run has the HELP line of the other task reports" || ko "HELP line of the task report"
 [[ "$(stat -c %a "$m")" == 644 ]] && [[ -z "$(find "$W/metrics" -name '.container-runtime.*')" ]] &&
   ok "the report is 0644 and leaves no temporary file" || ko "report mode $(stat -c %a "$m"); $(ls -A "$W/metrics")"
+grep -qx 'nfhotel_container_runtime_info{engine="29.0.1",containerd="v2.1.5",runc="1.3.4"} 1' "$m" &&
+  ok "the report names the versions of Docker Engine, containerd and runc (MIL-082)" || ko "versions: $(grep runtime_info "$m")"
+# A quote or a backslash in a version cannot break the line of the report.
+printf '%s\n' '29.0.1|containerd=v2"1 runc=1.3\4 ' >"$W/docker/version"
+check --metrics "$m"
+grep -qx 'nfhotel_container_runtime_info{engine="29.0.1",containerd="v2_1",runc="1.3_4"} 1' "$m" &&
+  ok "a quote or a backslash in a version becomes _ in the report" || ko "versions: $(grep runtime_info "$m")"
+echo "$VERSIONS" >"$W/docker/version"
 
 # The lock of the deploy: a run while a deploy holds it is skipped and writes nothing.
 rm -f "$m"

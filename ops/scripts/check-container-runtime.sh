@@ -46,7 +46,8 @@
 #   --profiles  the profiles (default: ../security/container-profiles.tsv from this script)
 #   --deploy    a container without a profile is a warning, not a violation: the deploy checks
 #               its release and must not fail, or block a rollback, on a container outside it
-#   --metrics   also write the result for Prometheus to <file>, a text file that Alloy reads
+#   --metrics   also write the result and the versions for Prometheus to <file>, a text file that
+#               Alloy reads
 #   --lock      skip the run, and exit 0, when another process holds <file> (the lock of the
 #               deploy command) before or after the containers are read, so a check never compares
 #               a release with the containers of the one before it in the middle of a deploy. The
@@ -590,6 +591,13 @@ check_container() {
   fi
 }
 
+# label_value <text>: the text as a label value for Prometheus. A character that no version has (a
+# quote, a backslash, a new line) becomes _, so the line of the report stays valid.
+label_value() {
+  local text="$1"
+  printf '%s' "${text//[^A-Za-z0-9._+~?-]/_}"
+}
+
 # --- main -------------------------------------------------------------------------------------
 
 read_profiles
@@ -649,6 +657,11 @@ if [[ -n "$metrics" ]]; then
     echo '# HELP nfhotel_container_runtime_failed The containers that break their profile.'
     echo '# TYPE nfhotel_container_runtime_failed gauge'
     echo "nfhotel_container_runtime_failed $failed"
+    # The versions that run the containers (MIL-082), so a fix of an escape in runc or containerd can
+    # be checked on every host from Prometheus.
+    echo '# HELP nfhotel_container_runtime_info 1, with the versions of Docker Engine, containerd and runc as labels.'
+    echo '# TYPE nfhotel_container_runtime_info gauge'
+    echo "nfhotel_container_runtime_info{engine=\"$(label_value "$engine")\",containerd=\"$(label_value "$containerd")\",runc=\"$(label_value "$runc")\"} 1"
     echo '# HELP nfhotel_task_last_success_timestamp_seconds When the task last succeeded.'
     echo '# TYPE nfhotel_task_last_success_timestamp_seconds gauge'
     echo "nfhotel_task_last_success_timestamp_seconds{task=\"container_check\"} $(date +%s)"
