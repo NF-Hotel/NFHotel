@@ -2,7 +2,7 @@
 # linters of ops/ and of the workflows and actions, the coverage of the wiki reference pages
 # (MIL-049), the script tests, the monitoring configuration (ADR-0020), the runtime check of
 # the containers against their profiles (MIL-080), the nginx routes, the networks of the services
-# (ADR-0039),
+# (ADR-0039), the volume of the benchmark (MIL-045), Ollama as a user that is not root (MIL-082),
 # the Proxmox tests (the live ones skip), the PostgreSQL preparation with the real
 # migrations of this commit, the two local development modes (ADR-0035, ADR-0036), and the
 # rotation drill of the secrets (ADR-0024). The release build and the throwaway end-to-end
@@ -197,6 +197,20 @@ jobs:
           persist-credentials: false
       - name: Give a volume of another uid to the service; fail the healthcheck without write
         run: bash ops/tests/test-benchmark-volume.sh
+
+  ollama-user:
+    name: Ops Ollama as a non-root user (MIL-082)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      # The pinned image of Ollama on a volume that root wrote, as on nf-hotel; root reads the
+      # kernel's view of the container for the runtime check (MIL-080). No model is downloaded.
+      - name: Start Ollama as 10001 on a volume that root wrote, and roll back
+        run: sudo bash ops/tests/test-ollama-user.sh
 
   proxmox-tests:
     name: Ops Proxmox tests (live tests skip)
