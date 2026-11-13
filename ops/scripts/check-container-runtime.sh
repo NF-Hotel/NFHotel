@@ -29,6 +29,10 @@
 #                      its group, no DAC_OVERRIDE
 #   user               the effective user of the main process is the one of the profile
 #   kernel_view        the kernel's view of the main process can be read
+#   proxy_allowlist    the socket proxy of Alloy (alloy/socket-proxy), asked from inside the Alloy
+#                      of its compose project, its only client, lets the list of the containers and
+#                      the networks through and refuses archive, export and attach (MIL-081,
+#                      ADR-0042); only the status codes come back
 # The exempt column of a profile names rules that do not apply to its service.
 #
 # It prints one line per container: PASS, FAIL or WARN, its name, its profile, the rules it breaks
@@ -85,7 +89,7 @@ readonly SENSITIVE=(/proc /sys /dev /etc /boot /root /run /var/run /var/lib/dock
   /var/log /usr /bin /sbin /lib /lib64)
 readonly SOCKETS=(/var/run/docker.sock /run/docker.sock)
 readonly RULES=(profile privileged cap_drop cap_add cap_bounding no_new_privileges seccomp apparmor read_only
-  limits host_namespace device writable_mount host_path docker_socket user kernel_view)
+  limits host_namespace device writable_mount host_path docker_socket user kernel_view proxy_allowlist)
 # The patterns of the columns of a profile.
 readonly RE_KEY='^[a-z0-9-]+/[a-z0-9_-]+$' RE_USER='^(root|nonroot|[0-9]+)$' RE_CAPS='^(-|default|[A-Z_]+(,[A-Z_]+)*)$'
 readonly RE_ROOTFS='^(ro|rw)$' RE_PATHS='^(-|/[^,[:space:]]*(,/[^,[:space:]]*)*)$' RE_EXEMPT='^(-|[a-z_]+(,[a-z_]+)*)$'
@@ -109,6 +113,38 @@ readonly FORMAT='{{.Name}}
 {{range .Mounts}}{{.Type}}|{{.Source}}|{{.Destination}}|{{.RW}};{{end}}
 {{range $name, $net := .NetworkSettings.Networks}}{{$name}},{{end}}
 {{range $port, $bindings := .NetworkSettings.Ports}}{{if $bindings}}{{$port}},{{end}}{{end}}'
+# The probe of the socket proxy (MIL-081, ADR-0042), run by bash inside Alloy: two calls of the
+# allowlist and three that the proxy must refuse. The three name a container that does not exist,
+# so a proxy that lets one through gets 404 from Docker and no data. The upgrade to a WebSocket
+# carries a valid key of 16 bytes (the sample of RFC 6455): HAProxy answers a shorter one 400 as a
+# bad request before any rule, so it would not test the rule. Only the status line of each answer
+# is read; a connection that fails is tried again, so a proxy that is starting has time.
+PROXY_PROBE="$(
+  cat <<'PROBE'
+zero=0000000000000000000000000000000000000000000000000000000000000000
+ask() {
+  local code="" try
+  for try in 1 2 3; do
+    if exec 3<>/dev/tcp/socket-proxy/2375; then
+      printf '%s HTTP/1.1\r\nHost: socket-proxy\r\n%b\r\n' "$2" "${3:-}" >&3
+      read -r -t 5 _ code _ <&3
+      exec 3<&- 3>&-
+      break
+    fi
+    sleep 2
+  done 2>/dev/null
+  echo "$1 ${code:-none}"
+}
+ask list "GET /containers/json"
+ask networks "GET /networks"
+ask archive "GET /containers/$zero/archive?path=/"
+ask export "GET /containers/$zero/export"
+ask attach "GET /containers/$zero/attach/ws?stream=1&stdin=1" \
+  'Upgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n'
+PROBE
+)"
+readonly PROXY_PROBE
+readonly PROXY_ANSWERS=("list 200" "networks 200" "archive 403" "export 403" "attach 403")
 
 usage() {
   sed -n '2,/^set -uo/p' "${BASH_SOURCE[0]}" | sed '$d' | sed 's/^# \{0,1\}//'
@@ -348,6 +384,28 @@ positive() {
   [[ "$1" =~ ^[0-9]+$ ]] && (($1 > 0))
 }
 
+# ask_proxy <compose files>: ask the socket proxy from inside the Alloy of the same compose files
+# with PROXY_PROBE; sets proxy_text and records each wrong answer as proxy_allowlist.
+ask_proxy() {
+  local alloy answers want name code got=()
+  alloy="$("$docker" ps --quiet --no-trunc --filter "label=com.docker.compose.project.config_files=$1" \
+    --filter label=com.docker.compose.service=alloy 2>/dev/null | head -n 1)"
+  if [[ -z "$alloy" ]]; then
+    proxy_text="proxy not asked (no Alloy)"
+    return 0
+  fi
+  answers="$("$docker" exec "$alloy" bash -c "$PROXY_PROBE" 2>/dev/null)"
+  for want in "${PROXY_ANSWERS[@]}"; do
+    name="${want% *}"
+    code="$(awk -v n="$name" '$1 == n { print $2; exit }' <<<"$answers")"
+    got+=("$name ${code:-none}")
+    [[ "${code:-none}" == "${want#* }" ]] ||
+      violate proxy_allowlist "the proxy answered $name from inside Alloy with ${code:-none}, not ${want#* }"
+  done
+  proxy_text="proxy $(printf '%s, ' "${got[@]}")"
+  proxy_text="${proxy_text%, }"
+}
+
 # check_container <id>: print the line of the container and its broken rules; sets status.
 check_container() {
   local id="$1" out lines=() name pid privileged cap_drop cap_add security_opt readonly_rootfs limits namespaces
@@ -493,6 +551,10 @@ check_container() {
     violate kernel_view "the kernel's view of the main process ($proc/$pid) cannot be read; run the check as root on the Docker host"
   fi
 
+  # The socket proxy of Alloy lets through only the calls of its allowlist (MIL-081).
+  local proxy_text=""
+  [[ "$key" == alloy/socket-proxy ]] && ask_proxy "$config_files"
+
   # The line of the container, then one line per broken rule.
   local rules="" v seccomp_text
   for v in "${violations[@]}"; do
@@ -510,6 +572,7 @@ check_container() {
   info="uid ${euid:-?}, caps $(names_of "$bounding"), seccomp $seccomp_text, apparmor ${label:-none}"
   info+=", root $([[ "$readonly_rootfs" == true ]] && echo ro || echo rw), host paths ${sensitive_seen:-none}"
   info+=", writable mounts ${writable_seen:-none}, socket $socket_state, networks ${networks:-none}, ports ${ports:-none}"
+  info+="${proxy_text:+, $proxy_text}"
   if ((${#violations[@]} == 0)); then
     status=pass
     echo "PASS  $name  $key  -  $info"

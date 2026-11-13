@@ -31,14 +31,20 @@ ko() {
 }
 
 mkdir -p "$W/bin" "$W/docker" "$W/proc"
-# The stand-in for docker answers from the files in $FAKE_DOCKER and records the arguments of ps.
+# The stand-in for docker answers from the files in $FAKE_DOCKER and records the arguments of ps;
+# the Alloy of a socket proxy comes from ps-alloy, and exec in it answers with exec-answers.
 cat >"$W/bin/docker" <<'EOF'
 #!/bin/bash
 d="$FAKE_DOCKER"
 case "$1" in
   info) cat "$d/info" ;;
   version) cat "$d/version" ;;
-  ps) echo "$*" >"$d/ps-args"; [[ ! -e "$d/ps-fails" ]] || exit 1; cat "$d/ps" 2>/dev/null; exit 0 ;;
+  ps)
+    if [[ "$*" == *label=com.docker.compose.service=alloy* ]]; then
+      echo "$*" >"$d/ps-alloy-args"; cat "$d/ps-alloy" 2>/dev/null; exit 0
+    fi
+    echo "$*" >"$d/ps-args"; [[ ! -e "$d/ps-fails" ]] || exit 1; cat "$d/ps" 2>/dev/null; exit 0 ;;
+  exec) echo "$2" >"$d/exec-target"; [[ ! -e "$d/exec-fails" ]] || exit 1; cat "$d/exec-answers" ;;
   inspect)
     # FAKE_TAKE_LOCK: a deploy takes that lock while the containers are read (held for 3 seconds).
     if [[ -n "${FAKE_TAKE_LOCK:-}" && ! -e "$d/lock-taken" ]]; then
@@ -64,7 +70,9 @@ printf '%s\n' '# test profiles' \
   "$(printf '%s\t' t agent 473 - ro /,/proc - | sed 's/\t$//')	-" \
   "$(printf '%s\t' t proxy root - ro /var/run/docker.sock - | sed 's/\t$//')	-" \
   "$(printf '%s\t' t store nonroot - rw - /data | sed 's/\t$//')	-" \
-  "$(printf '%s\t' t legacy root default rw - - | sed 's/\t$//')	cap_drop,limits" >"$W/profiles.tsv"
+  "$(printf '%s\t' t legacy root default rw - - | sed 's/\t$//')	cap_drop,limits" \
+  "$(printf '%s\t' alloy socket-proxy root - ro /var/run/docker.sock - | sed 's/\t$//')	-" \
+  "$(printf '%s\t' alloy alloy 473 - ro /,/proc - | sed 's/\t$//')	-" >"$W/profiles.tsv"
 
 n=0
 # container <id> [<field>=<value>...]: a container that keeps the profile t/app, changed by the
@@ -100,7 +108,7 @@ container() {
   fi
 }
 reset() {
-  rm -f "$W/docker/ps" "$W/docker/inspect-"* "$W/docker/ps-fails"
+  rm -f "$W/docker/ps" "$W/docker/inspect-"* "$W/docker/ps-fails" "$W/docker/ps-alloy"* "$W/docker/exec-"*
   rm -rf "${W:?}/proc/"*
   echo "$apparmor_and_seccomp" >"$W/docker/info"
 }
@@ -308,6 +316,38 @@ check
 code=$?
 grep -qx 'WARN  0123456789ab  -  -  removed while it was checked' "$W/out" && [[ "$code" == 0 ]] &&
   ok "a container removed during the check is a warning, not a failure" || ko "removed container: exit $code, $(cat "$W/out")"
+
+# The socket proxy of Alloy, asked from inside the Alloy of the same compose files (MIL-081).
+reset
+alloy_files=/srv/nfhotel/ops/deploy/alloy/docker-compose.yml
+container socket-proxy service=socket-proxy config_files="$alloy_files" uid=0 gid=0 \
+  mounts='bind|/var/run/docker.sock|/var/run/docker.sock|false;'
+echo 0a11a0 >"$W/docker/ps-alloy"
+answers() { printf '%s\n' "$@" >"$W/docker/exec-answers"; }
+answers "list 200" "networks 200" "archive 403" "export 403" "attach 403"
+check
+expect socket-proxy "PASS -" "proxy_allowlist: a proxy that refuses archive, export and attach passes"
+grep -q 'proxy list 200, networks 200, archive 403, export 403, attach 403$' "$W/out" &&
+  [[ "$(cat "$W/docker/exec-target")" == 0a11a0 ]] &&
+  grep -q -- "--filter label=com.docker.compose.project.config_files=$alloy_files" "$W/docker/ps-alloy-args" &&
+  ok "the proxy is asked from inside the Alloy of its compose files; the line shows the status codes" ||
+  ko "probe: $(cat "$W/out") $(cat "$W/docker/ps-alloy-args" "$W/docker/exec-target" 2>&1)"
+answers "list 200" "networks 200" "archive 404" "export 403" "attach 403"
+check
+expect socket-proxy "FAIL proxy_allowlist" "proxy_allowlist: a proxy that lets archive through fails"
+grep -q 'the proxy answered archive from inside Alloy with 404, not 403' "$W/out" &&
+  ok "the broken rule names the call and its answer" || ko "probe detail: $(cat "$W/out")"
+answers "list 403" "networks 200" "archive 403" "export 403" "attach 403"
+check
+expect socket-proxy "FAIL proxy_allowlist" "proxy_allowlist: a proxy that refuses the list of Alloy fails"
+touch "$W/docker/exec-fails"
+check
+expect socket-proxy "FAIL proxy_allowlist" "proxy_allowlist: a probe that gets no answer fails"
+rm -f "$W/docker/exec-fails" "$W/docker/ps-alloy"
+check
+expect socket-proxy "PASS -" "proxy_allowlist: a proxy with no Alloy beside it is not asked"
+grep -q 'proxy not asked (no Alloy)$' "$W/out" && ok "the line says that the proxy was not asked" ||
+  ko "no Alloy: $(cat "$W/out")"
 
 # Profiles that are not valid stop the check with exit 2.
 bad_profiles() {
