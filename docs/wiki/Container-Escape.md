@@ -33,7 +33,7 @@ The decisions of MIL-082 were made by the AI as stand-in for S01 in autonomous m
 
 What each container can reach, as the runtime check read it. No container has a device or shares a namespace of the host (the rules `device` and `host_namespace`), and each one has a read-only root, `no-new-privileges` in force, seccomp in filter mode, and memory, CPU and PID limits.
 
-**`nf-hotel`**, from the check in the CD run 43498058217, the deploy of ffb274a on 2026-11-13: AppArmor `docker-default` in enforce mode for every container; Docker Engine 29.9.3, containerd v2.4.2, runc 1.5.2.
+**`nf-hotel`**, from the check in the CD run 43506763115, the deploy of 77d755f on 2026-11-13: AppArmor `docker-default` in enforce mode for every container; Docker Engine 29.9.3, containerd v2.4.2, runc 1.5.2.
 
 | Container | Service (folder) | User | Capabilities | Host paths (read-only) | Docker socket | Networks | Published ports |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -47,7 +47,7 @@ What each container can reach, as the runtime check read it. No container has a 
 | `ollama-ollama-1` | `ollama` (`ollama`) | 0 until the deploy of MIL-082, then 10001 | none | none | none | `nfhotel-llm` | none |
 | `nfhotel-cloudflared-cloudflared-1` | `cloudflared` (`cloudflared`) | 65532 | none | none | none | `nfhotel-proxy` | none |
 | `nfhotel-alloy-alloy-1` | `alloy` (`alloy`) | 473 | none | `/`, `/proc`, `/sys`, `/var/log/journal`, `/etc/machine-id` | seen through `/`, cannot open it | `nfhotel-alloy_egress`, `nfhotel-alloy_internal`, `nfhotel-api` | none |
-| `nfhotel-alloy-socket-proxy-1` | `socket-proxy` (`alloy`) | 0 | none | none | mounted, behind the allowlist of ADR-0042 | `nfhotel-alloy_internal` | none |
+| `nfhotel-alloy-socket-proxy-1` | `socket-proxy` (`alloy`) | 0 | none | none | mounted, behind the allowlist of ADR-0042: from inside Alloy the list and the networks answer 200, archive, export and attach 403 | `nfhotel-alloy_internal` | none |
 
 The one-shot services `results-owner` and `models-owner` exit before their service starts, so the check does not find them running; their profiles hold them when they run (`CHOWN` and `DAC_READ_SEARCH`, no network).
 
@@ -100,3 +100,5 @@ The cheaper step comes first: the nginx master as a user (`nginxinc/nginx-unpriv
    ```
 
 In the monitoring LXC the same packages are updated inside the LXC; its kernel is the kernel of the Proxmox node, which the updates of the node cover.
+
+**The first case, runc 1.5.3.** It was published on 2026-11-12, and the VM ran runc 1.5.2 on 2026-11-13. It fixes CVE-2026-119101, which lets a crafted image make `runc restore` mount a directory of the host into the container; only a host that checkpoints and restores containers is affected, and NF Hotel does neither. It also keeps the flags `nosuid`, `nodev`, `noexec` and `nosymfollow` of the root mount when it makes the root read-only without a user namespace, as every container here runs; `no-new-privileges` stops a setuid program and Docker's device cgroup a device node either way. So it is not critical for NF Hotel and is installed in the next monthly window (S01, with S03 for the reboot). Docker's repository has had `containerd.io` 2.4.2-4 since 2026-11-12; the line of the check after the update shows which `runc` it carries.
