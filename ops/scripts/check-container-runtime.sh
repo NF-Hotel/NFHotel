@@ -22,6 +22,8 @@
 #   limits             a memory, a CPU and a PID limit
 #   host_namespace     not in the network, PID, IPC, UTS or user namespace of the host
 #   device             no device, device rule or device request
+#   system_paths       the paths of /proc and /sys that Docker masks or makes read-only are in
+#                      force, not emptied by systempaths=unconfined (MIL-082)
 #   writable_mount     no host folder mounted writable, except at a folder the profile names
 #   host_path          no sensitive host path (SENSITIVE) outside the profile
 #   docker_socket      the Docker socket is mounted only where the profile says so, and a container
@@ -90,7 +92,8 @@ readonly SENSITIVE=(/proc /sys /dev /etc /boot /root /run /var/run /var/lib/dock
   /var/log /usr /bin /sbin /lib /lib64)
 readonly SOCKETS=(/var/run/docker.sock /run/docker.sock)
 readonly RULES=(profile privileged cap_drop cap_add cap_bounding no_new_privileges seccomp apparmor read_only
-  limits host_namespace device writable_mount host_path docker_socket user kernel_view proxy_allowlist)
+  limits host_namespace device system_paths writable_mount host_path docker_socket user kernel_view
+  proxy_allowlist)
 # The patterns of the columns of a profile.
 readonly RE_KEY='^[a-z0-9-]+/[a-z0-9_-]+$' RE_USER='^(root|nonroot|[0-9]+)$' RE_CAPS='^(-|default|[A-Z_]+(,[A-Z_]+)*)$'
 readonly RE_ROOTFS='^(ro|rw)$' RE_PATHS='^(-|/[^,[:space:]]*(,/[^,[:space:]]*)*)$' RE_EXEMPT='^(-|[a-z_]+(,[a-z_]+)*)$'
@@ -113,7 +116,8 @@ readonly FORMAT='{{.Name}}
 {{with .Config.Labels}}{{with index . "com.docker.compose.project.config_files"}}{{.}}{{end}}{{end}}
 {{range .Mounts}}{{.Type}}|{{.Source}}|{{.Destination}}|{{.RW}};{{end}}
 {{range $name, $net := .NetworkSettings.Networks}}{{$name}},{{end}}
-{{range $port, $bindings := .NetworkSettings.Ports}}{{if $bindings}}{{$port}},{{end}}{{end}}'
+{{range $port, $bindings := .NetworkSettings.Ports}}{{if $bindings}}{{$port}},{{end}}{{end}}
+{{with .HostConfig.MaskedPaths}}{{len .}}{{else}}0{{end}}|{{with .HostConfig.ReadonlyPaths}}{{len .}}{{else}}0{{end}}'
 # The probe of the socket proxy (MIL-081, ADR-0042), run by bash inside Alloy: two calls of the
 # allowlist and three that the proxy must refuse. The three name a container that does not exist,
 # so a proxy that lets one through gets 404 from Docker and no data. The upgrade to a WebSocket
@@ -410,7 +414,7 @@ ask_proxy() {
 # check_container <id>: print the line of the container and its broken rules; sets status.
 check_container() {
   local id="$1" out lines=() name pid privileged cap_drop cap_add security_opt readonly_rootfs limits namespaces
-  local devices apparmor_profile service config_files mounts networks ports folder key known=1
+  local devices apparmor_profile service config_files mounts networks ports system_paths folder key known=1
   local user caps rootfs paths writable allowed_mask
   out="$("$docker" inspect --format "$FORMAT" "$id" 2>/dev/null)" || {
     echo "WARN  ${id:0:12}  -  -  removed while it was checked"
@@ -421,7 +425,7 @@ check_container() {
   name="${lines[0]#/}" pid="${lines[1]}" privileged="${lines[2]}" cap_drop="${lines[3]}" cap_add="${lines[4]}"
   security_opt="${lines[5]}" readonly_rootfs="${lines[6]}" limits="${lines[7]}" namespaces="${lines[8]}"
   devices="${lines[9]}" apparmor_profile="${lines[10]}" service="${lines[11]}" config_files="${lines[12]}"
-  mounts="${lines[13]:-}" networks="${lines[14]:-}" ports="${lines[15]:-}"
+  mounts="${lines[13]:-}" networks="${lines[14]:-}" ports="${lines[15]:-}" system_paths="${lines[16]:-}"
 
   folder="$(folder_of "$config_files")"
   key="${folder:--}/${service:--}"
@@ -472,6 +476,13 @@ check_container() {
   IFS='|' read -r n_devices n_rules n_requests <<<"$devices"
   ((${n_devices:-0} + ${n_rules:-0} + ${n_requests:-0} > 0)) &&
     violate device "$n_devices device(s), $n_rules device rule(s), $n_requests device request(s)"
+  # Docker masks /proc/kcore, /proc/keys and other paths, and makes /proc/sys and /proc/sysrq-trigger
+  # read-only; systempaths=unconfined empties both lists (and so does privileged).
+  local n_masked n_readonly
+  IFS='|' read -r n_masked n_readonly <<<"$system_paths"
+  if ! positive "$n_masked" || ! positive "$n_readonly"; then
+    violate system_paths "the masked or read-only paths of /proc and /sys are not in force"
+  fi
 
   # The mounts.
   local mount type source destination rw items=() sensitive_seen="" writable_seen="" socket_state=none

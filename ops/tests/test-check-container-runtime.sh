@@ -89,6 +89,7 @@ container() {
     [security_opt]='["no-new-privileges:true"]' [readonly]=true [limits]='67108864|250000000|0|32'
     [namespaces]='bridge||||' [devices]='0|0|0' [apparmor_profile]=docker-default [service]=app
     [config_files]=/srv/nfhotel/ops/deploy/t/docker-compose.yml [mounts]='' [networks]='t-net,' [ports]=''
+    [system_paths]='12|5'
     [uid]=10001 [gid]=10001 [groups]='' [capbnd]=0000000000000000 [capeff]=0000000000000000
     [nnp]=1 [seccomp]=2 [label]='docker-default (enforce)' [proc]=yes
   )
@@ -98,7 +99,7 @@ container() {
   printf '%s\n' "${f[name]}" "${f[pid]}" "${f[privileged]}" "${f[cap_drop]}" "${f[cap_add]}" \
     "${f[security_opt]}" "${f[readonly]}" "${f[limits]}" "${f[namespaces]}" "${f[devices]}" \
     "${f[apparmor_profile]}" "${f[service]}" "${f[config_files]}" "${f[mounts]}" "${f[networks]}" \
-    "${f[ports]}" >"$W/docker/inspect-$id"
+    "${f[ports]}" "${f[system_paths]}" >"$W/docker/inspect-$id"
   echo "$id" >>"$W/docker/ps"
   if [[ "${f[proc]}" == yes ]]; then
     mkdir -p "$W/proc/${f[pid]}/attr"
@@ -160,6 +161,9 @@ container own-net namespaces='none||||'
 container shared-net namespaces='container:abc||||'
 container device devices='1|0|0'
 container device-rule devices='0|1|0'
+container system-paths system_paths='0|0'
+container system-paths-masked system_paths='0|5'
+container system-paths-read-only system_paths='12|0'
 container writable mounts='bind|/srv/nfhotel/data|/data|true;'
 container volume mounts='volume|/var/lib/docker/volumes/x/_data|/data|true;'
 container sensitive mounts='bind|/etc/passwd|/etc/passwd|false;'
@@ -212,6 +216,9 @@ expect own-net "PASS -" "host_namespace: no network passes"
 expect shared-net "PASS -" "host_namespace: the network of another container passes"
 expect device "FAIL device" "device: a device fails"
 expect device-rule "FAIL device" "device: a device rule fails"
+expect system-paths "FAIL system_paths" "system_paths: systempaths=unconfined (no masked, no read-only path) fails"
+expect system-paths-masked "FAIL system_paths" "system_paths: no masked path fails"
+expect system-paths-read-only "FAIL system_paths" "system_paths: no read-only path fails"
 expect writable "FAIL writable_mount" "writable_mount: a host folder mounted writable fails"
 expect volume "PASS -" "writable_mount: a writable volume passes"
 expect sensitive "FAIL host_path" "host_path: /etc outside the profile fails"

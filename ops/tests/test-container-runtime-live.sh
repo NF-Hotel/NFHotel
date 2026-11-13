@@ -3,10 +3,11 @@
 # kernel's view of real containers. Containers that keep their test profile pass, and one container
 # per broken rule fails with that rule: privileged, an added capability, root where the profile says
 # nonroot, a writable host folder, the Docker socket, the host's network, seccomp=unconfined, no
-# no-new-privileges, no profile, and the group of the socket next to a mount of /. Then the profiles
-# of the repository are compared with the compose files that docker compose config renders, for
-# every service, also the ones that CI does not start: the capabilities, the root filesystem, the
-# user, no-new-privileges, the limits, the sensitive host paths and the writable host folders.
+# no-new-privileges, no profile, the group of the socket next to a mount of /, and the paths of /proc
+# and /sys unmasked (systempaths=unconfined, MIL-082). Then the profiles of the repository are
+# compared with the compose files that docker compose config renders, for every service, also the
+# ones that CI does not start: the capabilities, the root filesystem, the user, no-new-privileges,
+# the limits, the sensitive host paths and the writable host folders.
 #
 # Run it as root on a Linux host with Docker:
 #   sudo bash ops/tests/test-container-runtime-live.sh
@@ -92,6 +93,7 @@ start writable ok -v "$W/data:/data"
 start socket ok -v /var/run/docker.sock:/var/run/docker.sock:ro
 start host-network ok --network host
 start seccomp ok --security-opt seccomp=unconfined
+start system-paths ok --security-opt systempaths=unconfined
 start no-nnp ok --no-hardening
 start no-profile -
 start socket-group agent -v /:/host/root:ro --group-add "$socket_gid"
@@ -123,11 +125,12 @@ expect writable FAIL writable_mount
 expect socket FAIL docker_socket
 expect host-network FAIL host_namespace
 expect seccomp FAIL seccomp
+expect system-paths FAIL system_paths
 expect no-nnp FAIL no_new_privileges
 expect no-profile FAIL profile
 expect socket-group FAIL docker_socket
 [[ "$code" == 1 ]] && ok "the check exits 1" || ko "the check exited $code"
-[[ "$(grep -cE '^(PASS|FAIL|WARN)  t-live-' "$W/out")" == 13 ]] && ok "the check read the 13 containers of the test" ||
+[[ "$(grep -cE '^(PASS|FAIL|WARN)  t-live-' "$W/out")" == 14 ]] && ok "the check read the 14 containers of the test" ||
   ko "the check read $(grep -cE '^(PASS|FAIL|WARN)  t-live-' "$W/out") containers"
 grep -qE '^PASS  t-live-ok .*uid 10001, caps none, seccomp filter' "$W/out" &&
   ok "the kernel's view: uid 10001, no capability, seccomp in filter mode" || ko "kernel view: $(grep 't-live-ok ' "$W/out")"
