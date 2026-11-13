@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-05 | Deprecated | Claude (AI) | AI as stand-in for S01 | Rows 5.3 and 5.28 Applied from the read of 2026-11-05 (all 11 containers with `cap_drop ALL` and a `pids_limit`); row 7.1.11, 7.1.12 records S01's decision of 2026-11-05 to keep `/opt/nfhotel-legacy`; the summary counts and the closing sentence of criterion 1; accepted after RC-294 Go | [803ceae] |
 | 2026-11-08 | Accepted | mikemike | AI as stand-in for S01 | Rows 2.1.x (with one exception, the `nginx` package of the host) and 2.2.x Applied after MIL-068 removed the desktop; the summary counts; accepted after RC-319 Go | [3a2683b] |
+| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The evidence `compose` names the runtime check of MIL-080 (the profiles, the deploy, the timer, the end-to-end job and the live test); row 5.5 Applied with one exception, Alloy's read-only host mounts, which the row left out; rows 4.1 and 5.31 name the check | [6be61ac] |
 
 ---
 
@@ -40,7 +40,7 @@ Repository evidence used below:
 | Short name | Evidence |
 | --- | --- |
 | daemon | `ops/deploy/host/docker/daemon.json`, installed by `ops/scripts/install-docker-daemon.sh`; tested by `ops/tests/test-host-setup.sh` (CI job "Host hardening") |
-| compose | `deploy/*/docker-compose.yml`; every container of the throwaway stack checked by `ops/tests/check-e2e-stack.sh` (CI job "End-to-end stack"); ollama, market analysis and benchmark by `ops/tests/test-optional-services.sh` (local run in RC-176) |
+| compose | `deploy/*/docker-compose.yml`, each service held to its row in `ops/security/container-profiles.tsv` by `ops/scripts/check-container-runtime.sh` (MIL-080): the user of the main process, the capabilities, `privileged`, `no-new-privileges`, seccomp, AppArmor, a read-only root, the limits, the namespaces, devices, host paths and the Docker socket, read from `docker inspect` and from `/proc/<pid>/status`. It runs at each deploy, where a violation rolls the release back, every 15 minutes and once after each release on `nf-hotel` (`nfhotel-container-check.timer` and its service, alert `ContainerRuntimeViolation`), at each `deploy-monitoring.sh --apply` on `nf-monitoring`, and in the CI job "End-to-end tests" over the throwaway stack after `ops/tests/check-e2e-stack.sh`; `ops/tests/test-container-runtime-live.sh` compares every row with its compose file (CI job "Ops monitoring configuration"). Ollama, market analysis and benchmark also by `ops/tests/test-optional-services.sh` (local run in RC-176) |
 | firewall | `ops/deploy/host/nftables/nfhotel.nft` and `ops/deploy/systemd/nfhotel-firewall.service`, applied by `ops/scripts/apply-firewall.sh`; tested by `ops/tests/test-nftables.sh` (CI job "Host hardening") |
 | patching | `ops/deploy/host/apt/*` and `ops/deploy/host/journald/nfhotel.conf`, installed by `ops/scripts/install-patching.sh`; tested by `ops/tests/test-host-setup.sh` |
 | images | The Dockerfiles of NF-Hotel/NFHotel and `deploy/*/Dockerfile`, images pinned by digest and scanned in the release (MIL-022, RC-503) |
@@ -92,7 +92,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 
 | # | Item | Status | How, or why not | Evidence |
 | --- | --- | --- | --- | --- |
-| 4.1 | A user for the container has been created | Applied | web and API run as `app`, benchmark and market analysis as `app`, PostgreSQL drops to `postgres`, nginx runs its workers as `nginx` | images; ev:containers (`user`) |
+| 4.1 | A user for the container has been created | Applied | web and API run as `app`, benchmark and market analysis as `app`, PostgreSQL drops to `postgres`, nginx runs its workers as `nginx`. The runtime check reads the effective user of each main process and fails one that runs as root where its profile says otherwise (MIL-080) | images; compose; ev:containers (`user`) |
 | 4.1 | (same) for the nginx master process and Ollama | Deferred | The nginx master starts as root to bind 80 and 443; `nginxinc/nginx-unprivileged` listens on 8080 and 8443, which changes the templates, the published ports and the tests, and is left for a change of its own. Ollama runs as root upstream; it is on an internal network, has no capability and a read-only root | compose |
 | 4.2 | Containers use only trusted base images | Applied | Official images (nginx, postgres, python, .NET from MCR, ollama), pinned by digest, built in CI with provenance (MIL-022) | images |
 | 4.3 | Unnecessary packages are not installed | Applied | `slim` and `alpine` bases with `--no-install-recommends`; the benchmark adds only `git`, `ca-certificates` and `socat` | images |
@@ -109,7 +109,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | 5.1 | An AppArmor profile is enabled, if applicable | Applied | `docker-default` on all 11 containers; AppArmor is loaded with 22 profiles in enforce mode. Verified on nf-hotel 2026-10-28 (RC-244, `/root/cis-evidence-after-host-settings.txt`). | ev:containers (`apparmor`), ev:mac-fs |
 | 5.3 | Linux kernel capabilities are restricted within containers | Applied | `cap_drop: [ALL]` for every service; only nginx and PostgreSQL add the ones they need, measured one by one (wiki page Host-Hardening). On 2026-10-28, 10 of 11 containers had it; the socket proxy of `ops/deploy/alloy` got it in the change of RC-244 (tested: the read calls answer 200, a POST 403). On 2026-11-05, `docker inspect` on `nf-hotel` showed `cap_drop ALL` on all 11 containers (MIL-023 gate, RC-294) | compose; ev:containers |
 | 5.4 | Privileged containers are not used | Applied | No service is privileged (`privileged=false` on all 11). `ops/deploy/proxmox` is privileged but is a test container for a developer's machine only and never runs on the VM. Verified on nf-hotel 2026-10-28 (RC-244, `/root/cis-evidence-after-host-settings.txt`). | compose; ev:containers |
-| 5.5 | Sensitive host system directories are not mounted | Applied | Only named volumes and the configuration folders of `deploy/`, read-only | compose; ev:containers (`mounts`) |
+| 5.5 | Sensitive host system directories are not mounted | Applied with one exception | Named volumes and the configuration folders of `deploy/`, read-only. The exception is Alloy, which reads the host's metrics and journal through read-only mounts of `/`, `/proc`, `/sys`, `/var/log/journal` and `/etc/machine-id` (ADR-0020) as user 473; the runtime check fails any other sensitive host path, any writable host folder outside a profile, and Alloy as soon as it could open the Docker socket that it sees through `/` (MIL-080) | compose; ev:containers (`mounts`) |
 | 5.6 | sshd is not run within containers | Applied | No image runs sshd | images |
 | 5.7 | Privileged ports are not mapped within containers | Not applicable | nginx publishes 80 and 443 on purpose: they are the public service. No other service publishes a port | compose |
 | 5.8 | Only needed ports are open on the container | Applied | Only nginx publishes ports; the others only `expose` on their networks. Checked by `ops/tests/check-e2e-stack.sh` | compose; ev:containers (`ports`) |
@@ -128,7 +128,7 @@ The evidence sections of `ops/scripts/cis-evidence.sh` are written `ev:<section>
 | 5.26 | Container health is checked at runtime | Applied with one exception | As 4.6: 10 of 11 are `healthy`, and the deploy checks the site after each release. Verified on nf-hotel 2026-10-28 (RC-244, `/root/cis-evidence-after-host-settings.txt`). | compose; ev:containers (`health`) |
 | 5.27 | Docker commands always use the latest version of their image | Applied | CD deploys the image digests of the release, never a moving tag | `ops/scripts/deploy-release.sh` |
 | 5.28 | The PIDs cgroup limit is used | Applied | `pids_limit` per service. On 2026-10-28, 9 of 11 containers had it; Alloy (256) and its socket proxy (128) got it in the change of RC-244. On 2026-11-05, `docker inspect` on `nf-hotel` showed a `pids_limit` on all 11 containers, Alloy 256 and the socket proxy 128 among them (MIL-023 gate, RC-294) | compose; ev:containers (`pids_limit`) |
-| 5.31 | The Docker socket is not mounted inside any container | Applied with one exception | One container mounts it: `socket-proxy` of `ops/deploy/alloy` (ADR-0020). The `:ro` flag does not limit the API, so the limit is the proxy's own rules: GET of containers (list, inspect, logs) and networks (list) only, every POST refused, and no image, volume, exec or info call. The proxy is on an internal network with no route out, and only Alloy reaches it. Alloy has no socket. `ops/tests/test-alloy-start.sh` checks the allowed and the refused calls in CI | compose; ev:containers (`mounts`); CI |
+| 5.31 | The Docker socket is not mounted inside any container | Applied with one exception | One container mounts it: `socket-proxy` of `ops/deploy/alloy` (ADR-0020). The `:ro` flag does not limit the API, so the limit is the proxy's own rules: GET of containers (list, inspect, logs) and networks (list) only, every POST refused, and no image, volume, exec or info call. The proxy is on an internal network with no route out, and only Alloy reaches it. Alloy has no socket. `ops/tests/test-alloy-start.sh` checks the allowed and the refused calls in CI. The runtime check fails any other container that mounts the socket, or that could open it through a mount of a folder above it: as root, in the group of the socket, or with `DAC_OVERRIDE` (MIL-080) | compose; ev:containers (`mounts`); CI |
 
 ### 6 and 7 Operations and Swarm
 
@@ -233,5 +233,5 @@ The counts are by row; a row that covers several items counts once. Applied coun
 [DSA-001]: ./devsecops-assessment.md
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
-[803ceae]: https://github.com/NF-Hotel/NFHotel/commit/803ceae78c9552d30230894be4f86c724a730859
 [3a2683b]: https://github.com/NF-Hotel/NFHotel/commit/3a2683b9abdd60ff583dc81c14a65e050e3183c4
+[6be61ac]: https://github.com/NF-Hotel/NFHotel/commit/6be61acbb1abe0539e309cf0745a4c50a0955d98

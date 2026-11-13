@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Proposed | mikemike | S01 | The row of MIL-072 (the Access check on every path to the back office) with its plan review RC-330, task 1 and the code review RC-331; the row of the code of MIL-072 | [0e58535] |
-| 2026-11-12 | Proposed | mikemike | S01 | The rows of MIL-079 (a booking opened only with its number and email): the milestone with its plan review RC-340, and its code with the code review RC-341 | [127a7df] |
+| 2026-11-12 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-080, MIL-081 and MIL-082 (the runtime check of every container, the calls of Alloy through the socket proxy, a compromised container kept away from the host) with their plan reviews RC-343 to RC-345 | [5cff893] |
+| 2026-11-13 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of MIL-080 (the runtime check of every container) with its code review RC-346 | [6be61ac] |
 
 ---
 
@@ -105,6 +105,10 @@ updated whenever an artifact instance is created or reviewed.
 | The code of MIL-072: `location ~* ^/admin` in `ops/deploy/nginx/templates/public.conf.template`, its regression test in `ops/tests/test-nginx.sh`, which Ops CI runs, the row of 2026-11-11 of ADR-0029, and the table, the setup of the back office and "Check it" of the wiki page Public-Access | Shell, nginx (reviewed 2026-11-11, Go, accepted by S01) | - | - | [MIL-072] tasks 2 to 4, ADR-0029 | - | [RC-331] |
 | [MIL-079] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-340; the gate follows the deploy) | en | it | [BC-001], [ADR-0004], ADR-0005, MIL-016, MIL-018, UC-004, BR-C-06 | planned: `Bookings.View` on the read of a booking by id, the lookup `POST api/bookings/public/receipt` by the number and the email of the booking with the throttle per booking, the page "Find your booking", the receipt on the booking page, BR-C-06 and the test plan, the wiki pages Security-Controls and Public-Access, and the evidence folder `docs/sqa/evidence/mil-079` | [RC-340], [RC-341] |
 | The code of MIL-079: the read by id in `BookingsController` and `BookingService`, the lookup `LookUpReceiptAsync` in `IBookingService`, `BookingService`, `BookingsController` and `ApiBookingService` with `BookingReceiptDto` and `BookingReceiptRequest`, the sweep of `InMemoryLoginThrottle`, the pages `BookingReceipt.razor`, `BookingReceiptCard.razor` and `Book.razor` with their view models, the footer link of `PublicLayout.razor`, and their tests | C#, Razor (reviewed 2026-11-12, Go; criterion 21 on the risk exception of [RC-278]) | - | - | [MIL-079] tasks 1 to 4, UC-004, BR-C-06 | - | [RC-341] |
+| [MIL-080] | Milestone (Accepted, Go; plan reviewed in autonomous mode by the AI as stand-in for S01 2026-11-12, RC-343; the gate follows the deploy) | en | it | [BC-001], [CIS-001], [DSA-001], ADR-0018, ADR-0020, MIL-023, MIL-031 | planned: the profiles `ops/security/container-profiles.tsv`, the check `ops/scripts/check-container-runtime.sh` (configuration and kernel view of each main process), the deploy gate and the timer every 15 minutes, the alerts, the check in the monitoring LXC, the unit, live and end-to-end tests, [CIS-001] and the wiki pages Host-Hardening and Monitoring | [RC-343] |
+| The code of MIL-080: the profiles `ops/security/container-profiles.tsv`, the check `ops/scripts/check-container-runtime.sh` with its unit and live tests and its step in the end-to-end action, the deploy gate, the service and the timer (`ops/scripts/deploy-release.sh`, `ops/deploy/systemd/`), the alerts `ContainerRuntimeViolation` and `ContainerCheckStale` with their tests, the check in `ops/scripts/deploy-monitoring.sh`, and the limits of `results-owner` of the benchmark | Shell, YAML (reviewed 2026-11-13, Go-with-conditions: every check of the pull request green) | - | - | [MIL-080] tasks 1 to 6, [CIS-001] | - | [RC-346] |
+| [MIL-081] | Milestone (Accepted, Go; plan reviewed in autonomous mode by the AI as stand-in for S01 2026-11-12, RC-344; the gate follows the deploy) | en | it | [BC-001], [CIS-001], ADR-0020, ADR-0024, ADR-0040, MIL-065, MIL-080 | planned: Alloy's calls measured, the allowlist of the socket proxy in its own HAProxy configuration, the test matrix of `ops/tests/test-alloy-start.sh`, the probe of the proxy in the runtime check, ADR-0042, [CIS-001] row 5.31 and the wiki page Containers-and-Images | [RC-344] |
+| [MIL-082] | Milestone (Accepted, Go; plan reviewed in autonomous mode by the AI as stand-in for S01 2026-11-12, RC-345; the gate follows the deploy) | en | it | [BC-001], [CIS-001], [DSA-001], MIL-045, MIL-080, MIL-081 | planned: the host-access map from the runtime check, the wiki page Container-Escape, Ollama as a non-root user with its CI test, the runtime versions in the check, [CIS-001] rows 2.1 and 4.1 | [RC-345] |
 | [ADR-0040] | ADR (Accepted) | - | - | [MIL-064], [ADR-0007], [ADR-0030], [MIL-022], [MIL-036], [MIL-059] | the patch layer of the proxy in `ops/deploy/nginx/Dockerfile` and its entry in `ops/scripts/build-release-images.sh`, the release references by name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, the `docker` entry of `.github/dependabot.yml` (MIL-064 tasks 2 to 7, RC-300) | [RC-299], [RC-300] (the code) |
 | [ADR-0041] | ADR (Accepted) | - | - | [MIL-070], [ADR-0011], [ADR-0024], [MIL-023], [CIS-001] | `as_app` of `ops/scripts/deploy-release.sh`, the second check of `ops/tests/test-sudo-log.sh`, and the sections of the wiki pages Host-Hardening and Database-Preparation (MIL-070 tasks 1 to 3, RC-320) | [RC-320] |
 | [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
@@ -340,6 +344,13 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-079]: ../milestones/mil-079-a-booking-opened-only-with-its-email.md
 [RC-340]: ./reviews/rc-340-mil-079.md
 [RC-341]: ./reviews/rc-341-mil-079-code.md
+[MIL-080]: ../milestones/mil-080-every-container-runs-with-the-rights-of-its-profile.md
+[MIL-081]: ../milestones/mil-081-only-the-calls-of-alloy-through-the-socket-proxy.md
+[MIL-082]: ../milestones/mil-082-a-compromised-container-kept-away-from-the-host.md
+[RC-343]: ./reviews/rc-343-mil-080.md
+[RC-346]: ./reviews/rc-346-mil-080-code.md
+[RC-344]: ./reviews/rc-344-mil-081.md
+[RC-345]: ./reviews/rc-345-mil-082.md
 [RC-302]: ./reviews/rc-302-mil-064-gate.md
 [RC-303]: ./reviews/rc-303-mil-064-gate-re-review.md
 [RC-287]: ./reviews/rc-287-mil-061.md
@@ -372,5 +383,5 @@ updated whenever an artifact instance is created or reviewed.
 [RC-285]: ./reviews/rc-285-mil-048-gate.md
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
-[0e58535]: https://github.com/NF-Hotel/NFHotel/commit/0e5853507a4d6ebea270a1048857a1c02fac8e73
-[127a7df]: https://github.com/NF-Hotel/NFHotel/commit/127a7df34b573e8f8efca3b39e010b236516334f
+[5cff893]: https://github.com/NF-Hotel/NFHotel/commit/5cff893776688ab2c6b40c32b47ef12cbd7cda9e
+[6be61ac]: https://github.com/NF-Hotel/NFHotel/commit/6be61acbb1abe0539e309cf0745a4c50a0955d98

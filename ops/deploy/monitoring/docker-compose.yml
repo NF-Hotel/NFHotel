@@ -59,9 +59,12 @@ services:
     mem_limit: 256m
     cpus: 0.5
 
+  # The image has no USER and ran as root, which the runtime check of MIL-080 found; nobody is
+  # enough, as every module of blackbox.yml probes over HTTP (an ICMP module would need NET_RAW).
   blackbox:
     <<: *hardening
     image: prom/blackbox-exporter:v0.29.1@sha256:ea1c7aa3ef3f307cd03e85f34abb604478ccb90b567fc690da0cd9776da76b13
+    user: "65534:65534"
     environment:
       CONFIG_HASH: ${BLACKBOX_CONFIG_HASH:-}
     command: [--config.file=/etc/blackbox/blackbox.yml]

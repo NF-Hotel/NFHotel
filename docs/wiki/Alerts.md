@@ -27,7 +27,7 @@ flowchart LR
   HC -->|when the pings stop| D
 ```
 
-- **Where the facts come from.** Prometheus scrapes and evaluates every 30 seconds. Blackbox probes the site from the LXC (jobs `site`, `public_site` and `redirect`). Alloy on the VM pushes the host metrics, the container health (`nfhotel_container_healthy`, from `report-health.sh` every minute), the time of the last success of the backup, the copy off the VM and the certificate renewal (`nfhotel_task_last_success_timestamp_seconds`), the request metrics of the applications over OTLP, and the logs.
+- **Where the facts come from.** Prometheus scrapes and evaluates every 30 seconds. Blackbox probes the site from the LXC (jobs `site`, `public_site` and `redirect`). Alloy on the VM pushes the host metrics, the container health (`nfhotel_container_healthy`, from `report-health.sh` every minute), the time of the last success of the backup, the copy off the VM, the certificate renewal and the runtime check of the containers (`nfhotel_task_last_success_timestamp_seconds`), the rules that a container breaks (`nfhotel_container_runtime_violation`, from `nfhotel-container-check.timer` every 15 minutes), the request metrics of the applications over OTLP, and the logs.
 - **Why the monitoring is not on the VM.** A monitor on the machine it watches goes down with it. The LXC on the same Proxmox node sees a VM that stops; Healthchecks.io sees a node that stops.
 - **Retention.** Metrics 30 days, logs 14 days.
 
@@ -61,7 +61,7 @@ flowchart LR
 | `BackupStale` | Age of the last good database backup | Older than 26 hours | critical | The backup runs nightly; 2 hours of slack before the recovery point of 24 hours is broken (ADR-0025) | `systemctl status nfhotel-backup.timer`, `journalctl -u nfhotel-backup` |
 | `OffVmCopyStale` | Age of the last copy to the backup host | Older than 72 hours | warning | The laptop of S03 is often off; a weekend is normal, longer is not | Bring the laptop back on the tailnet; the backups wait on the VM |
 | `CertificateRenewalStale` | Age of the last successful renewal run | Older than 26 hours | warning | It runs daily; one missed day is a warning long before `CertificateExpiresSoon` | `journalctl -u nfhotel-cert-renew` |
-| `TaskReportMissing` | One of the reports `backup`, `offvm_copy`, `cert_renew` does not exist, while the VM sends metrics | For 30 minutes | warning | A report that does not exist cannot grow old, so the three rules above would never fire (ADR-0020 decision 4) | Start the job's service once and read its journal |
+| `TaskReportMissing` | One of the reports `backup`, `offvm_copy`, `cert_renew`, `container_check` does not exist, while the VM sends metrics | For 30 minutes | warning | A report that does not exist cannot grow old, so the rules of age would never fire (ADR-0020 decision 4) | Start the job's service once and read its journal |
 | `HealthReportMissing` | `nfhotel_container_healthy` is absent while the VM sends metrics | For 10 minutes | warning | Without it `ContainerUnhealthy` is blind | `systemctl status nfhotel-report-health.timer` |
 | `Watchdog` | `vector(1)`: always firing | Always | none | Proves that Prometheus, the rules and Alertmanager work end to end | Nothing; Healthchecks.io alerts when it stops |
 
@@ -84,6 +84,8 @@ The applications push their request metrics over OTLP (ADR-0023), so these rules
 | Alert | Source | Fires when | Severity | Why | What to do |
 | --- | --- | --- | --- | --- | --- |
 | `StaffSignInFailures` | Prometheus: answers 401 and 429 of `api/auth/login` in the API's request metrics | More than 20 in 10 minutes | warning | Someone may be guessing staff passwords; the throttle answers 429, so refused attempts count too | The audit log of the back office names the user names (ADR-0017); follow [Incidents](Incidents) |
+| `ContainerRuntimeViolation` | Prometheus: `nfhotel_container_runtime_violation`, one series for each rule that a running container on `nf-hotel` breaks, written by the runtime check of MIL-080 | At once | critical | A container with more rights than its profile is a way out to the host (wiki page [Host Hardening](Host-Hardening#runtime-check-of-the-containers)); the deploy rolls back such a release, so this sees what changed after it | `sudo journalctl -u nfhotel-container-check` on `nf-hotel` names the container and the rule; follow [Host Hardening](Host-Hardening#runtime-check-of-the-containers) |
+| `ContainerCheckStale` | Prometheus: age of the last run of the runtime check (`task="container_check"`) | Older than 45 minutes | warning | It runs every 15 minutes; three missed runs mean the timer, Docker or a stuck deploy | `systemctl status nfhotel-container-check.timer` and its journal |
 | `SshLoginFailures` | Loki ruler: `Failed password`, `Invalid user` or `authentication failure` in the journal of `ssh.service` | More than 10 in 10 minutes | warning | sshd answers on the tailnet only, so a failed login comes from a device of the tailnet | `tailscale status` to find the device; follow [Incidents](Incidents) |
 
 ### Security scans: `prometheus/rules/scans.yml`

@@ -1,0 +1,18 @@
+# Checks the runtime of the NF Hotel containers against their profiles for the monitoring
+# (MIL-080). Installed by the update command of CD (ADR-0018) from ops/deploy/systemd/; it runs
+# ops/scripts/check-container-runtime.sh, installed as /usr/local/sbin/nfhotel-container-check,
+# with the profiles of the checkout, which belong to the release that runs. The deploy command
+# starts it once after each release. The check only tests the lock of the deploy and gives it back
+# at once: a run while a deploy holds it, or that a deploy starts during, is skipped and writes
+# nothing. A container that breaks its profile fails the unit and sets the metric that raises
+# ContainerRuntimeViolation.
+[Unit]
+Description=Check the NF Hotel containers against their profiles
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# The deploy command starts it after each release and waits for it; a check takes seconds.
+TimeoutStartSec=2min
+ExecStart=/usr/local/sbin/nfhotel-container-check --lock /var/lib/nfhotel-deploy/lock --profiles /opt/nfhotel/ops/security/container-profiles.tsv --metrics /var/lib/nfhotel-metrics/container-runtime.prom

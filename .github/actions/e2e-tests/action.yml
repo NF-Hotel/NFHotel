@@ -1,9 +1,11 @@
 # Run the end-to-end tests of NFHotel in a browser against a throwaway stack (MIL-027
 # tasks 1 to 5 of NFHotel, ADR-0012). Called by an NFHotel workflow, pinned by full commit
 # SHA. The stack (nginx with a self-signed certificate, web, API, PostgreSQL) is built
-# from the NFHotel checkout and runs on its own Docker networks with no host port; the
-# tests run in the Playwright image on that network. Nothing outside the runner changes;
-# the stack is removed even when a step fails. Needs no secret and no permission beyond
+# from the NFHotel checkout and runs on its own Docker networks with no host port. Before the
+# tests, check-e2e-stack.sh checks the stack and the hardening of each container, and the
+# runtime check reads each container against its profile in ops/security/container-profiles.tsv
+# (MIL-080); the tests run in the Playwright image on that network. Nothing outside the runner
+# changes; the stack is removed even when a step fails. Needs no secret and no permission beyond
 # contents: read. The results (TRX, a trace per test, a screenshot per failure) are
 # uploaded as the artifact e2e-results. The logic is in scripts/ of this repository.
 name: NF Hotel end-to-end tests
@@ -30,6 +32,15 @@ runs:
       run: >-
         bash "$GITHUB_ACTION_PATH/../../../ops/scripts/e2e-stack.sh" up
         --app-dir "$APP_PATH" --out "$STACK_DIR"
+
+    # Root reads the kernel's view of the main process of each container (MIL-080).
+    - name: Check the stack and the rights of its containers
+      shell: bash
+      env:
+        STACK_DIR: ${{ runner.temp }}/e2e-stack
+      run: |
+        bash "$GITHUB_ACTION_PATH/../../../ops/tests/check-e2e-stack.sh" "$STACK_DIR/stack.env"
+        sudo bash "$GITHUB_ACTION_PATH/../../../ops/scripts/check-container-runtime.sh"
 
     - name: Run the end-to-end tests
       shell: bash

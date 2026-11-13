@@ -1,0 +1,59 @@
+# The container profiles of NF Hotel (MIL-080), read by ops/scripts/check-container-runtime.sh: one
+# row per compose service under ops/deploy that runs on the VM nf-hotel, in the monitoring LXC
+# nf-monitoring or on the backup host. A container is matched by the folder of its compose file
+# under ops/deploy and its compose service, so the throwaway stack of CI uses the same rows. A
+# running container without a row breaks the rule "profile".
+#
+# Tab separated, eight columns, "-" for none:
+#   folder      the folder of the compose file under ops/deploy
+#   service     the compose service
+#   user        the effective user of the main process: nonroot (any user but 0), root (any user,
+#               root included) or a user ID
+#   caps        the capabilities it may hold, its cap_add, comma separated without CAP_; "default"
+#               is the default set of Docker, for a service that does not drop it
+#   rootfs      ro, or rw for a writable root filesystem
+#   host_paths  the sensitive host paths it may mount read-only (SENSITIVE in the check), the
+#               Docker socket included
+#   writable    the folders in the container where it may mount a host folder writable
+#   exempt      the rules that do not apply to it, with the reason in the comment above the row
+#
+# To change a row: change the compose file and the row in the same pull request, with the reason in
+# a comment; CI compares the rows with the compose files and runs the check over the throwaway stack,
+# and the deploy checks the release on the VM (wiki page Host-Hardening).
+
+# The virtual machine nf-hotel (ops/scripts/deploy-services.sh).
+# PostgreSQL starts as root and drops to its user (70); its entrypoint needs the five capabilities to
+# give the data folder to that user.
+postgres	postgres	nonroot	CHOWN,DAC_OVERRIDE,FOWNER,SETGID,SETUID	ro	-	-	-
+nfhotel-api	nfhotel-api	nonroot	-	ro	-	-	-
+nfhotel-web	nfhotel-web	nonroot	-	ro	-	-	-
+# The nginx master runs as root to bind ports 80 and 443 (CIS-001 row 4.1); its workers run as nginx.
+nginx	nginx	root	CHOWN,SETGID,SETUID,NET_BIND_SERVICE,DAC_READ_SEARCH	ro	-	-	-
+# Ollama runs as root because its image does.
+ollama	ollama	root	-	ro	-	-	-
+market-analysis	market-analysis-api	nonroot	-	ro	-	-	-
+benchmark	benchmark	nonroot	-	ro	-	-	-
+# A one-shot service as root: it gives the results volume to the user of the image and exits (MIL-045).
+benchmark	results-owner	root	CHOWN,DAC_READ_SEARCH	ro	-	-	-
+cloudflared	cloudflared	nonroot	-	ro	-	-	-
+postgres-tailnet	relay	nonroot	-	ro	-	-	-
+# The one container with the Docker socket (ADR-0020); HAProxy runs as root, the owner of the socket.
+alloy	socket-proxy	root	-	ro	/var/run/docker.sock	-	-
+# Alloy reads the host's metrics and journal through read-only mounts, as 473 without the group of
+# the socket, so it sees the socket file and cannot open it.
+alloy	alloy	473	-	ro	/,/proc,/sys,/var/log/journal,/etc/machine-id	-	-
+
+# The monitoring in the LXC nf-monitoring (ops/scripts/deploy-monitoring.sh).
+monitoring	prometheus	nonroot	-	ro	-	-	-
+monitoring	alertmanager	nonroot	-	ro	-	-	-
+monitoring	blackbox	nonroot	-	ro	-	-	-
+monitoring	loki	nonroot	-	ro	-	-	-
+monitoring	grafana	nonroot	-	ro	-	-	-
+monitoring	scan-exporter	10001	-	ro	-	-	-
+
+# The backup host (MIL-066), checked by hand there. The SSH server keeps root and the default
+# capabilities of Docker to switch to the backup user at each login, and a writable root, where its
+# entrypoint writes the authorized key at each start; its compose file sets no limits, and both
+# services write the backups into a host folder.
+backup-target	backup-target	root	default	rw	-	/backups	cap_drop,limits
+backup-target	prune	nonroot	-	ro	-	/backups	-
