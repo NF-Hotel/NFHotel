@@ -18,7 +18,13 @@ namespace NFHotel.Api.Controllers;
 [Route(ApiRoutes.PricingSettings)]
 public sealed class PricingSettingsController : ControllerBase
 {
+    #region Fields
+
     private readonly IPricingSettingsService _settings;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the controller.</summary>
     /// <param name="settings">Reads and saves the settings.</param>
@@ -27,6 +33,10 @@ public sealed class PricingSettingsController : ControllerBase
         ArgumentNullException.ThrowIfNull(settings);
         _settings = settings;
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <summary>Gets the settings.</summary>
     /// <param name="cancellationToken">Cancels the call.</param>
@@ -47,4 +57,6 @@ public sealed class PricingSettingsController : ControllerBase
         [FromBody] SetPricingSettingsRequest request,
         CancellationToken cancellationToken) =>
         this.ToResponse(await _settings.SetAsync(request, cancellationToken).ConfigureAwait(false));
+
+    #endregion Public methods
 }

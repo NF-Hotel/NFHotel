@@ -10,10 +10,20 @@ namespace NFHotel.Infrastructure.Persistence.Configurations;
 /// <summary>Maps <see cref="PricingSetting"/> to the table <c>pricing_settings</c> (MIL-055).</summary>
 public sealed class PricingSettingConfiguration : EntityConfiguration<PricingSetting, int>
 {
+    #region Fields
+
     private const char SizeSeparator = ',';
+
+    #endregion Fields
+
+    #region Properties
 
     /// <inheritdoc />
     protected override string TableName => "pricing_settings";
+
+    #endregion Properties
+
+    #region Protected methods
 
     /// <inheritdoc />
     protected override void ConfigureEntity(EntityTypeBuilder<PricingSetting> builder)
@@ -51,6 +61,12 @@ public sealed class PricingSettingConfiguration : EntityConfiguration<PricingSet
     protected override void ConfigureTable(TableBuilder<PricingSetting> table) =>
         table.HasCheckConstraint("ck_pricing_settings_slot", $"slot = {PricingSetting.SingletonSlot}");
 
+    #endregion Protected methods
+
+    #region Private methods
+
     private static IReadOnlyList<RoomSize> ParseSizes(string text) =>
         [.. text.Split(SizeSeparator, StringSplitOptions.RemoveEmptyEntries).Select(Enum.Parse<RoomSize>)];
+
+    #endregion Private methods
 }

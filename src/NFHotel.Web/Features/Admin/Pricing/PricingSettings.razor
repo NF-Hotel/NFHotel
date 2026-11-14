@@ -17,7 +17,7 @@
 <div class="stack-lg">
     <PageHeader Title="Pricing settings" Subtitle="How much a price changes in a high or a low season." />
 
-    <AdminTabs Label="Pricing" Tabs="PricingTabs" />
+    <AdminTabs Label="Pricing" Tabs="PricingTabs.All" />
 
     <ErrorAlert Errors="ViewModel.Errors" />
 
@@ -81,7 +81,7 @@
 
             <fieldset class="stack-sm">
                 <legend>Room sizes that get a low season discount</legend>
-                @foreach (var size in PricingSettingsViewModel.Sizes)
+                @foreach (RoomSize size in PricingSettingsViewModel.Sizes)
                 {
                     <label class="check">
                         <input type="checkbox"

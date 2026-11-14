@@ -18,7 +18,13 @@ namespace NFHotel.Api.Controllers;
 [Route(ApiRoutes.RoomRates)]
 public sealed class RoomRatesController : ControllerBase
 {
+    #region Fields
+
     private readonly IRoomRateService _rates;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the controller.</summary>
     /// <param name="rates">Reads and sets the rates.</param>
@@ -27,6 +33,10 @@ public sealed class RoomRatesController : ControllerBase
         ArgumentNullException.ThrowIfNull(rates);
         _rates = rates;
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <summary>Lists the rates that are set.</summary>
     /// <param name="cancellationToken">Cancels the call.</param>
@@ -49,4 +59,6 @@ public sealed class RoomRatesController : ControllerBase
         [FromBody] SetRoomRateRequest request,
         CancellationToken cancellationToken) =>
         this.ToResponse(await _rates.SetAsync(size, request, cancellationToken).ConfigureAwait(false));
+
+    #endregion Public methods
 }

@@ -11,6 +11,8 @@ namespace NFHotel.Domain.Entities;
 /// </summary>
 public sealed class PricingSetting : Entity<int>
 {
+    #region Fields
+
     /// <summary>The value of <see cref="Slot"/> of the one row.</summary>
     public const int SingletonSlot = 1;
 
@@ -26,9 +28,17 @@ public sealed class PricingSetting : Entity<int>
     /// <summary>The number of decimals the numbers are kept with.</summary>
     public const int Decimals = 2;
 
+    #endregion Fields
+
+    #region Constructors
+
     private PricingSetting()
     {
     }
+
+    #endregion Constructors
+
+    #region Properties
 
     /// <summary>The fixed key value that makes a second row impossible.</summary>
     public int Slot { get; private set; } = SingletonSlot;
@@ -67,6 +77,10 @@ public sealed class PricingSetting : Entity<int>
 
     /// <summary>When the settings were saved.</summary>
     public DateTimeOffset SetAt { get; private set; }
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <summary>Creates the settings. The numbers are rounded to two decimals.</summary>
     /// <param name="surchargePercent">The surcharge of a high season in percent.</param>
@@ -123,6 +137,10 @@ public sealed class PricingSetting : Entity<int>
         Apply(
             surchargePercent, discountPercent, highThresholdPercent, lowThresholdPercent, maxChangePercent, minimumNightlyPrice,
             discountSizes, setBy, setAt);
+
+    #endregion Public methods
+
+    #region Private methods
 
     // Plain loops: a lambda here would add a compiler-generated type to the entities, which the structure test refuses.
     private static RoomSize[] Canonical(IEnumerable<RoomSize>? sizes)
@@ -210,4 +228,6 @@ public sealed class PricingSetting : Entity<int>
         SetBy = candidate.SetBy;
         SetAt = candidate.SetAt;
     }
+
+    #endregion Private methods
 }

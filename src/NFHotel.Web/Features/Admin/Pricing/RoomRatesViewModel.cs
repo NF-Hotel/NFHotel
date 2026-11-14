@@ -13,9 +13,15 @@ namespace NFHotel.Web.Features.Admin.Pricing;
 /// </summary>
 public sealed class RoomRatesViewModel
 {
+    #region Fields
+
     private readonly IUseCaseRunner<IRoomRateService> _rates;
     private readonly Dictionary<RoomSize, RoomRateDto> _current = [];
     private readonly Dictionary<RoomSize, string> _inputs = [];
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the view model.</summary>
     /// <param name="rates">Runs the room rate use cases.</param>
@@ -25,6 +31,10 @@ public sealed class RoomRatesViewModel
 
         _rates = rates;
     }
+
+    #endregion Constructors
+
+    #region Properties
 
     /// <summary>The room sizes that have a rate, in the order they are shown.</summary>
     public static IReadOnlyList<RoomSize> Sizes { get; } = Enum.GetValues<RoomSize>();
@@ -40,6 +50,10 @@ public sealed class RoomRatesViewModel
 
     /// <summary>True once the rates have been asked for.</summary>
     public bool IsLoaded { get; private set; }
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <summary>Gets the rate that is set for a size.</summary>
     /// <param name="size">The room size.</param>
@@ -129,5 +143,11 @@ public sealed class RoomRatesViewModel
         }
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static string Format(decimal price) => NumberInput.Format(price);
+
+    #endregion Private methods
 }

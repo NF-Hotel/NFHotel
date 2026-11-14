@@ -17,6 +17,8 @@ namespace NFHotel.Web.Features.Admin.Pricing;
 /// </summary>
 public sealed class PriceSuggestionsViewModel
 {
+    #region Fields
+
     /// <summary>The label of a text that an AI wrote.</summary>
     public const string AiLabel = "Written by an AI";
 
@@ -32,7 +34,10 @@ public sealed class PriceSuggestionsViewModel
     private readonly Dictionary<string, string> _firstDays = [];
     private readonly Dictionary<string, string> _lastDays = [];
     private List<PriceSuggestionItemDto> _items = [];
-    private bool OpenLoaded { get; set; }
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the view model.</summary>
     /// <param name="service">Runs the price suggestion use cases.</param>
@@ -46,24 +51,11 @@ public sealed class PriceSuggestionsViewModel
         _clock = clock;
     }
 
-    /// <summary>The state of a price change, as the Manager sees it.</summary>
-    public enum ChangeStatus
-    {
-        /// <summary>Approved, and today is within the period.</summary>
-        InForce = 0,
+    #endregion Constructors
 
-        /// <summary>Approved, and the period has not begun.</summary>
-        Coming = 1,
+    #region Properties
 
-        /// <summary>Approved, and the period is over.</summary>
-        Finished = 2,
-
-        /// <summary>Reverted while it was in force.</summary>
-        Reverted = 3,
-
-        /// <summary>Reverted before it began, so it never counted for a day.</summary>
-        Withdrawn = 4
-    }
+    private bool OpenLoaded { get; set; }
 
     /// <summary>The texts of the last refusal, empty when the last call succeeded.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = Array.Empty<string>();
@@ -97,6 +89,10 @@ public sealed class PriceSuggestionsViewModel
 
     /// <summary>The effective price of each room size today.</summary>
     public IReadOnlyList<EffectiveRow> EffectivePrices { get; private set; } = Array.Empty<EffectiveRow>();
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <summary>Derives the state of a price change.</summary>
     /// <param name="change">The change.</param>
@@ -272,6 +268,10 @@ public sealed class PriceSuggestionsViewModel
         }
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static string Date(DateOnly day) => day.ToString(DateFormat, CultureInfo.InvariantCulture);
 
     private static bool TryReadDate(string text, out DateOnly day) =>
@@ -390,6 +390,29 @@ public sealed class PriceSuggestionsViewModel
         }
     }
 
+    #endregion Private methods
+
+    #region Nested types
+
+    /// <summary>The state of a price change, as the Manager sees it.</summary>
+    public enum ChangeStatus
+    {
+        /// <summary>Approved, and today is within the period.</summary>
+        InForce = 0,
+
+        /// <summary>Approved, and the period has not begun.</summary>
+        Coming = 1,
+
+        /// <summary>Approved, and the period is over.</summary>
+        Finished = 2,
+
+        /// <summary>Reverted while it was in force.</summary>
+        Reverted = 3,
+
+        /// <summary>Reverted before it began, so it never counted for a day.</summary>
+        Withdrawn = 4
+    }
+
     /// <summary>One open suggestion, with its texts ready to show.</summary>
     /// <param name="Key">The key to send when it is approved.</param>
     /// <param name="Size">The room size.</param>
@@ -455,4 +478,6 @@ public sealed class PriceSuggestionsViewModel
     /// <param name="Change">The change that counts today, or a dash.</param>
     /// <param name="Price">The price today, or <c>null</c> when no base rate is set.</param>
     public sealed record EffectiveRow(string Size, string? BaseRate, string Change, string? Price);
+
+    #endregion Nested types
 }

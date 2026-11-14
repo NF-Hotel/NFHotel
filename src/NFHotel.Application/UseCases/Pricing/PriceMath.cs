@@ -8,9 +8,15 @@ namespace NFHotel.Application.UseCases.Pricing;
 /// </summary>
 internal static class PriceMath
 {
+    #region Fields
+
     private const decimal Hundred = 100m;
     private const decimal TenThousand = 10_000m;
     private const int MoneyDecimals = 2;
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Applies a signed percentage to a price, rounded to two decimals away from zero.</summary>
     /// <param name="price">The base rate.</param>
@@ -39,4 +45,6 @@ internal static class PriceMath
 
         return hundredths / Hundred;
     }
+
+    #endregion Public methods
 }
