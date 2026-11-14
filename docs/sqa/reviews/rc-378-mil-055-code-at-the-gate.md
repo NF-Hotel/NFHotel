@@ -9,14 +9,14 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: delta review of the six commits of the gate branch of MIL-055 (RC-266 N1, N2, N4 and N6, F3 on the pricing pages) and the decisions on the conditions of RC-266; Go with a risk exception for criterion 21; mode autonomous, not independent | [852803e] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Re-scored after 17d67cc and 96b93dc: criterion 21 passes on the regions of the types MIL-055 created (F4 fixed), criterion 14 on the pricing tabs defined once (G3); the risk exception of the first version is withdrawn, because the stand-in may not approve one (G2); the reading of criterion 21 recorded (G1); Go; mode autonomous, not independent | [46998b0] |
+| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Re-scored after 17d67cc and 96b93dc: criterion 21 passes on the regions of the types MIL-055 created (F4 fixed), criterion 14 on the pricing tabs defined once (G3); the risk exception of the first version is withdrawn, because the stand-in may not approve one (G2); the reading of criterion 21 recorded (G1); Go; mode autonomous, not independent | [46998b0] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | b0ee6ac added: the two locals of the region of the gate in `ConflictPathTests` typed; the search for `var` and F3 now cover the test files of the milestone; Go; mode autonomous, not independent | pending |
 
 ---
 
 ## Artifact Under Review
 
-- Instance reviewed: the eight code commits of the branch `mil-055-gate` on top of `main` at e4681a9, 45 files under `src/` and `tests/`:
+- Instance reviewed: the nine code commits of the branch `mil-055-gate` on top of `main` at e4681a9, 45 files under `src/` and `tests/`:
   - 68502d4: explicit types in place of `var` on the three pricing pages (`PriceSuggestions.razor`, `PricingSettings.razor`, `RoomRates.razor`);
   - 07c2daf: the warning of a lost price names the type of the exception, not its message (`BookingService.cs`, `BookingPriceTests.cs`);
   - c779f4d: the three migration tests of the pricing tables named by what they check;
@@ -24,12 +24,13 @@
   - 51d59a7: the conflict of the two unique indexes of the pricing tables proven at the database and at the API (`ConflictPathTests.cs`, `RoomRatesEndpointTests.cs`, `PricingSettingsEndpointTests.cs`);
   - bd96853: tests of the adapter `LoggerWarningLog`;
   - 17d67cc: `#region` blocks in the 31 files of the types MIL-055 created that hold more than one kind of member (F4);
-  - 96b93dc: the three pricing tabs defined once, in `PricingTabs.cs`, for the three pricing pages (G3).
+  - 96b93dc: the three pricing tabs defined once, in `PricingTabs.cs`, for the three pricing pages (G3);
+  - b0ee6ac: explicit types for the two locals of the region that 51d59a7 added to `ConflictPathTests` (F3).
 - Checklist used: [QC-CS-001] (`framework/qc/code/qc-programming-csharp.md`), the criteria the commits touch (3, 4, 7, 11, 12, 14, 15, 21) and the three left open by [RC-266] (3, 13, 21).
 - Scope: delta review. The earlier records are [RC-265] (the full review of tasks 3 to 9) and [RC-266] (the delta re-review, Go-with-conditions). This record settles the three conditions of RC-266. The suggestions themselves were replaced by [MIL-071] and reviewed there; the code of MIL-055 that stays is the page, the approval, the undo, the settings, the room rates and the audit trail. The second version re-scores criteria 14 and 21 after 17d67cc and 96b93dc.
 - Language and domain: n/a for a technical type.
 - Language reviewer: none.
-- Mode: autonomous, not independent. S01 gave the acceptance of the plan of 2026-11-14, which has the gate of MIL-055 in its third wave, to the AI in chat ("Du godkender for mig"). The AI wrote the eight commits and this record.
+- Mode: autonomous, not independent. S01 gave the acceptance of the plan of 2026-11-14, which has the gate of MIL-055 in its third wave, to the AI in chat ("Du godkender for mig"). The AI wrote the nine commits and this record.
 
 ### Checks that were run
 
@@ -45,7 +46,7 @@
 | `dotnet test`, NFHotel.Infrastructure.Tests, class `LoggerWarningLogTests` | 3 passed, 0 failed (on the regions of 17d67cc) |
 | The regions of the 31 files of 17d67cc | Every region named, in the standard order, closed by a named `#endregion`, none nested and none inside a method body (a script that follows the depth of the braces). Apart from the region lines, the lines that are not blank are the same and in the same order, except three members moved into their region: `OpenLoaded` and the enum `ChangeStatus` of `PriceSuggestionsViewModel`, and the class `Fields` of `PricingSettingsViewModel`; none of them has an initializer |
 | `src/**/packages.lock.json` | unchanged |
-| Search for `var` in the 67 files under `src/` whose names hold `Pric`, `RoomRate` or `PriceChange` (without the migrations) | 2 lines, both in `MarketSeedPricing.cs`, which [MIL-026] added on 2026-10-20 |
+| Search for `var` in the 67 files under `src/` whose names hold `Pric`, `RoomRate` or `PriceChange` (without the migrations) | 2 lines, both in `MarketSeedPricing.cs`, which [MIL-026] added on 2026-10-20. The test files MIL-055 created have none, and the region that the gate added to `ConflictPathTests` has none since b0ee6ac; the rest of that shared file keeps its `var` |
 | The five texts of the imported bookings (`src/NFHotel.DataAnalysis/data/nf_hotel_bookings.csv`) | 40,060 rows; meal, market segment, room type, deposit type and customer type are never empty, so no row is all empty (F10) |
 | Not run here | the integration tests against PostgreSQL (Testcontainers; Docker does not run on this machine): the two new tests of `ConflictPathTests` and the three renamed tests. NF Hotel CI runs them on the pull request |
 
@@ -55,7 +56,7 @@
 
 | # | Finding | Decision | Evidence |
 | --- | --- | --- | --- |
-| F3 | Criterion 3: the new code used `var` | **Closed for MIL-055** | The code of the milestone has no `var` left: 68502d4 took out the last 13 uses, on the three pricing pages, and the search above finds none in the other pricing files. The rest of the repository follows rule 1 of the coding conventions (the convention of the file wins): `RoomListViewModel.cs`, which MIL-055 changed by one column, keeps its `var`. A conversion of the whole repository would be a task of its own; none is ordered here |
+| F3 | Criterion 3: the new code used `var` | **Closed for MIL-055** | The code of the milestone has no `var` left: 68502d4 took out 13 uses on the three pricing pages, b0ee6ac the two of the test region that 51d59a7 added to `ConflictPathTests`, and the search above finds none in the other pricing files or in the test files of MIL-055. The rest of the repository follows rule 1 of the coding conventions (the convention of the file wins): `RoomListViewModel.cs`, which MIL-055 changed by one column, keeps its `var`. A conversion of the whole repository would be a task of its own; none is ordered here |
 | F4 | Criterion 21: no `#region` blocks under `src/` | **Fixed for MIL-055** in 17d67cc | The types MIL-055 created are in 64 files: the 61 it added and the three code-behind files that 2399ffc split from its pages on 2026-11-05. The 31 that hold more than one kind of member now group them in the standard order and names. The 30 other C# files hold one kind only (positional records without a body, interfaces with methods only, classes of constants or of methods only, an enum), and the three `.razor` files have no `@code` block; the C# reference of the coding conventions says that a type small enough to hold one kind of member "still follows the rule when it has more than one kind". The internal method `KeyOf` of `PriceSuggestionService` is in the region Public methods, where the order of StyleCop SA1202 puts internal members (after the public ones). The shared types that MIL-055 only changed, for example `BookingService.cs` and `RoomListViewModel.cs`, keep the layout of their file (G1) |
 
 ### Condition 2: the findings skipped by decision
@@ -128,5 +129,4 @@ Go. The three conditions of [RC-266] are settled: F3 is closed and F4 fixed for 
 [RC-363]: ./rc-363-mil-077-code.md
 [RC-377]: ./rc-377-uc-007-revision.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
-[852803e]: https://github.com/NF-Hotel/NFHotel/commit/852803eae5904913edb95063c33eb964bcd73205
 [46998b0]: https://github.com/NF-Hotel/NFHotel/commit/46998b088196b21f2d0bee4e82c69449c6572886

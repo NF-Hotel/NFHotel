@@ -9,15 +9,15 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-055 on criteria 1 to 11, after MIL-071 replaced its pricing rule; Go; mode autonomous, not independent | [852803e] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Criterion 10 on the second version of RC-378 (Go without a risk exception, after the regions of 17d67cc and the pricing tabs of 96b93dc); the evidence of the gate branch and F3 updated for the two commits; the note of MIL-055 of 2026-11-11 cited where its Version History now repeats it; Go; mode autonomous, not independent | [46998b0] |
+| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Criterion 10 on the second version of RC-378 (Go without a risk exception, after the regions of 17d67cc and the pricing tabs of 96b93dc); the evidence of the gate branch and F3 updated for the two commits; the note of MIL-055 of 2026-11-11 cited where its Version History now repeats it; Go; mode autonomous, not independent | [46998b0] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The ninth code commit of the gate branch (b0ee6ac, two typed locals in a test) counted; Go; mode autonomous, not independent | pending |
 
 ---
 
 ## Artifact Under Review
 
 - Instance reviewed: [MIL-055] at its gate. It covers the eleven Go/No-Go criteria, with this evidence:
-  - the code on `main` at e4681a9 with the eight code commits of the gate branch, reviewed in [RC-378];
+  - the code on `main` at e4681a9 with the nine code commits of the gate branch, reviewed in [RC-378];
   - the reviews of the code before the gate: [RC-265] (No-Go) and [RC-266] (Go-with-conditions), whose conditions [RC-378] settles;
   - the revision of [UC-007] after [MIL-071], reviewed in [RC-377];
   - the gate of [MIL-071], [RC-329], with its run on the dev VM against the real market analysis service (2026-11-11);
@@ -54,7 +54,7 @@
 
 - **F1, note: three criteria describe a rule that is gone.** Criteria 1 to 3 held when [RC-265] and [RC-266] reviewed them, and [MIL-071] then replaced the rule with the suggestions of the service, as the note of MIL-055 of 2026-11-11 records (its latest Version History row repeats it). The gate does not test the removed code again; it relies on `NoPriceRuleTests` and the gate of MIL-071 for what took its place. The milestone text is left as it was planned, with the note in its Version History, so the history stays readable.
 - **F2, note: another browser.** Criterion 11 names the browser pane; the run of [RC-329] used Claude in Chrome (`https://localhost:8443`, signed in as the Manager). The criterion is about what is seen (approve, revert, both on the audit page), and that was seen; the tool is a detail.
-- **F3, note: the run is older than the gate commits.** The run on the dev VM was made on 2026-11-11, before the eight code commits of the gate branch. None of them changes the approval or the revert of a surcharge: 1f0819d acts only on a discount above 99.99 percent; five of the others change a log text, test code and the types of locals; 17d67cc adds regions, and 96b93dc moves the pricing tabs into one class, both without a change of behaviour. The run therefore still shows the behaviour of criterion 11.
+- **F3, note: the run is older than the gate commits.** The run on the dev VM was made on 2026-11-11, before the nine code commits of the gate branch. None of them changes the approval or the revert of a surcharge: 1f0819d acts only on a discount above 99.99 percent; six of the others change a log text, test code and the types of locals; 17d67cc adds regions, and 96b93dc moves the pricing tabs into one class, both without a change of behaviour. The run therefore still shows the behaviour of criterion 11.
 
 ## Overall Verdict
 
@@ -83,5 +83,4 @@ Go. Criteria 4 to 11 pass on the code of the gate branch, the tests that ran on 
 [RC-377]: ./rc-377-uc-007-revision.md
 [RC-378]: ./rc-378-mil-055-code-at-the-gate.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
-[852803e]: https://github.com/NF-Hotel/NFHotel/commit/852803eae5904913edb95063c33eb964bcd73205
 [46998b0]: https://github.com/NF-Hotel/NFHotel/commit/46998b088196b21f2d0bee4e82c69449c6572886
