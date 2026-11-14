@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-079 after the CD run of the merge and the check on the live site; Go; drafted by the AI, not independent<br>Accepted on 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig"); autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-079 after the CD run of the merge and the check on the live site; Go; drafted by the AI, not independent<br>Accepted on 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig"); autonomous, not independent | [fc88265] |
 
 ---
 
@@ -120,3 +120,4 @@ plan, the code and this record.
 [RC-341]: ./rc-341-mil-079-code.md
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[fc88265]: https://github.com/NF-Hotel/NFHotel/commit/fc88265603804b527f97224c87d91dca53e09e69
