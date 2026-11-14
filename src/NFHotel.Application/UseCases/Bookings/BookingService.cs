@@ -626,8 +626,9 @@ public sealed class BookingService : IBookingService
         {
             _marketDetails.Discard(detail);
 
-            // Only the id and the exception are named: no guest data and no token.
-            _warnings.Warn($"The price per night of booking {bookingId} could not be stored; the booking is kept without a price. {exception.GetType().Name}: {exception.Message}");
+            // Only the id and the type of the exception are named, as IWarningLog asks: the message of an exception from the
+            // database can quote the values of the row, so it is left out.
+            _warnings.Warn($"The price per night of booking {bookingId} could not be stored; the booking is kept without a price. {exception.GetType().Name}");
         }
     }
 
