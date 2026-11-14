@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-11 | Deprecated | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | [95d7856] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S02 | Criterion 14 of QC-WIKI-001 passed on the published wiki (2026-11-13 and 2026-11-14); issue 31 of the service closed on 2026-11-11; accepted by the AI as stand-in for S02 at S01's word in chat ("Ja, godkend dem", to "Skal jeg godkende de fire reviews af MIL-071 i S02's sted og lukke milestonen?"), with RC-326 to RC-328; mode autonomous, not independent; the milestone closes | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S02 | Criterion 14 of QC-WIKI-001 passed on the published wiki (2026-11-13 and 2026-11-14); issue 31 of the service closed on 2026-11-11; accepted by the AI as stand-in for S02 at S01's word in chat ("Ja, godkend dem", to "Skal jeg godkende de fire reviews af MIL-071 i S02's sted og lukke milestonen?"), with RC-326 to RC-328; mode autonomous, not independent; the milestone closes | [e26fdf9] |
 
 ---
 
@@ -90,3 +90,4 @@ Go: all nine criteria of [MIL-071] are met, every Mandatory criterion of [QC-CS-
 [RC-327]: ./rc-327-mil-071-task-4-code.md
 [RC-328]: ./rc-328-mil-071-task-5-wiki-and-traceability.md
 [95d7856]: https://github.com/NF-Hotel/NFHotel/commit/95d78565e09da482a609091883a4f4700c61b533
+[e26fdf9]: https://github.com/NF-Hotel/NFHotel/commit/e26fdf91732c20beb97bceea4b9bfdda9606da52

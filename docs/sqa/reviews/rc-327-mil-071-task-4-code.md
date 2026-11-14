@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-11 | Deprecated | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | [e68bde9] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S02 | Accepted by the AI as stand-in for S02 at S01's word in chat ("Ja, godkend dem", to "Skal jeg godkende de fire reviews af MIL-071 i S02's sted og lukke milestonen?"); mode autonomous, not independent; the action item of task 6 marked done | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S02 | Accepted by the AI as stand-in for S02 at S01's word in chat ("Ja, godkend dem", to "Skal jeg godkende de fire reviews af MIL-071 i S02's sted og lukke milestonen?"); mode autonomous, not independent; the action item of task 6 marked done | [e26fdf9] |
 
 ---
 
@@ -64,3 +64,4 @@ Go: every Mandatory criterion passes, criterion 21 on condition. Not yet done: t
 [MIL-071]: ../milestones/mil-071-price-suggestions-from-the-service.md
 [QC-CS-001]: ../../framework/qc/code/qc-programming-csharp.md
 [e68bde9]: https://github.com/NF-Hotel/NFHotel/commit/e68bde92fb7c7286fb911e6ab4b711a7577debe4
+[e26fdf9]: https://github.com/NF-Hotel/NFHotel/commit/e26fdf91732c20beb97bceea4b9bfdda9606da52

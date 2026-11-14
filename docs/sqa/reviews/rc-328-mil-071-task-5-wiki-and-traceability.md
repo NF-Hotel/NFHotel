@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-11 | Deprecated | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent | [6e858fa] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Criterion 14 passes: the published wiki checked on 2026-11-13 and again on 2026-11-14 after the merge of 1a1796b; accepted by the AI as stand-in for S01 at S01's word in chat ("Ja, godkend dem", to "Skal jeg godkende de fire reviews af MIL-071 i S02's sted og lukke milestonen?"); mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Criterion 14 passes: the published wiki checked on 2026-11-13 and again on 2026-11-14 after the merge of 1a1796b; accepted by the AI as stand-in for S01 at S01's word in chat ("Ja, godkend dem", to "Skal jeg godkende de fire reviews af MIL-071 i S02's sted og lukke milestonen?"); mode autonomous, not independent | [e26fdf9] |
 
 ---
 
@@ -65,3 +65,4 @@ Go: every Mandatory criterion that applies passes; criterion 14 passed on the pu
 [MIL-055]: ../milestones/mil-055-room-price-suggestions.md
 [QC-WIKI-001]: ../../framework/qc/artifacts/qc-wiki.md
 [6e858fa]: https://github.com/NF-Hotel/NFHotel/commit/6e858fa32225ca7fee8351e1c76d5153ae906888
+[e26fdf9]: https://github.com/NF-Hotel/NFHotel/commit/e26fdf91732c20beb97bceea4b9bfdda9606da52
