@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-054 in a new row: RC-367 Go on the measurement of `main` at 9de9be4 and the diff of #435, accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [5f17ee9] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-055 in its rows: RC-379 Go, the code at the gate RC-378 (Go, risk exception for the regions) and UC-007 revised in RC-377; RC-265 and RC-266 accepted; the code and test rows of MIL-055 no longer say "not yet merged"; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-055 in its rows: RC-379 Go, the code at the gate RC-378 (Go, risk exception for the regions) and UC-007 revised in RC-377; RC-265 and RC-266 accepted; the code and test rows of MIL-055 no longer say "not yet merged"; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [852803e] |
 
 ---
 
@@ -461,3 +461,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-378]: ./reviews/rc-378-mil-055-code-at-the-gate.md
 [RC-379]: ./reviews/rc-379-mil-055-gate.md
 [5f17ee9]: https://github.com/NF-Hotel/NFHotel/commit/5f17ee9ed16c21c3831c135ce805d8218424827a
+[852803e]: https://github.com/NF-Hotel/NFHotel/commit/852803eae5904913edb95063c33eb964bcd73205

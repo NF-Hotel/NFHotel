@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the revision of UC-007 (the suggestions of [MIL-071], RC-266 N1, N3 and N5); Go; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the revision of UC-007 (the suggestions of [MIL-071], RC-266 N1, N3 and N5); Go; mode autonomous, not independent | [852803e] |
 
 ---
 
@@ -85,3 +85,4 @@ Go. The revision states what the system does after [MIL-071], and the three find
 [RC-266]: ./rc-266-mil-055-re-review-of-rc-265.md
 [RC-329]: ./rc-329-mil-071-gate.md
 [QC-UC-001]: ../../../framework/qc/artifacts/qc-use-case.md
+[852803e]: https://github.com/NF-Hotel/NFHotel/commit/852803eae5904913edb95063c33eb964bcd73205

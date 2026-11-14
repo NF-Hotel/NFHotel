@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the six commits of the gate branch of MIL-055 (RC-266 N1, N2, N4 and N6, F3 on the pricing pages) and the decisions on the conditions of RC-266; Go with a risk exception for criterion 21; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the six commits of the gate branch of MIL-055 (RC-266 N1, N2, N4 and N6, F3 on the pricing pages) and the decisions on the conditions of RC-266; Go with a risk exception for criterion 21; mode autonomous, not independent | [852803e] |
 
 ---
 
@@ -120,3 +120,4 @@ Go. The three conditions of [RC-266] are settled: F3 is closed for the code of t
 [RC-327]: ./rc-327-mil-071-task-4-code.md
 [RC-377]: ./rc-377-uc-007-revision.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[852803e]: https://github.com/NF-Hotel/NFHotel/commit/852803eae5904913edb95063c33eb964bcd73205

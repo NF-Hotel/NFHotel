@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-11 | Deprecated | Claude (AI) | S01 | Note only: the pricing rule of tasks 4 and 7 is replaced by the suggestions of the market analysis service ([MIL-071]); the page, the approval, the undo, the settings and the audit trail stay; accepted by S01 in chat on 2026-11-11 | [f674e8a] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-379 Go on criteria 1 to 11 (1 to 3 passed in RC-265 and RC-266 and superseded by MIL-071; 11 on the run of RC-329); the code at the gate in RC-378 (Go, risk exception for the regions), UC-007 revised in RC-377; at S01's word in chat ("Du godkender for mig"); mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-379 Go on criteria 1 to 11 (1 to 3 passed in RC-265 and RC-266 and superseded by MIL-071; 11 on the run of RC-329); the code at the gate in RC-378 (Go, risk exception for the regions), UC-007 revised in RC-377; at S01's word in chat ("Du godkender for mig"); mode autonomous, not independent | [852803e] |
 
 ---
 
@@ -101,3 +101,4 @@ Decide whether the back office can suggest room price changes that a Manager app
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
 [MIL-071]: ./mil-071-price-suggestions-from-the-service.md
 [f674e8a]: https://github.com/NF-Hotel/NFHotel/commit/f674e8a3fe47dfe3c36bbc59f4eeae6180985b0d
+[852803e]: https://github.com/NF-Hotel/NFHotel/commit/852803eae5904913edb95063c33eb964bcd73205

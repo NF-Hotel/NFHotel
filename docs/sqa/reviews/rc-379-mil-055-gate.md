@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-055 on criteria 1 to 11, after MIL-071 replaced its pricing rule; Go; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-055 on criteria 1 to 11, after MIL-071 replaced its pricing rule; Go; mode autonomous, not independent | [852803e] |
 
 ---
 
@@ -83,3 +83,4 @@ Go. Criteria 4 to 11 pass on the code of the gate branch, the tests that ran on 
 [RC-377]: ./rc-377-uc-007-revision.md
 [RC-378]: ./rc-378-mil-055-code-at-the-gate.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[852803e]: https://github.com/NF-Hotel/NFHotel/commit/852803eae5904913edb95063c33eb964bcd73205

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-01 | Deprecated | Claude (AI) | S01 | Initial version (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-264 Go-with-conditions | [3a17eee] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The suggestions come from the market analysis service ([MIL-071]): stakeholder, precondition, step 2, extension 2a and the rules of step 2 rewritten<br>3b names a last day before today (RC-266 N3); 3c and the rules name the largest discount (N1) and when the lowest price is checked (N5)<br>Accepted by the AI as stand-in for S01 at S01's word in chat ("Du godkender for mig"), RC-377; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The suggestions come from the market analysis service ([MIL-071]): stakeholder, precondition, step 2, extension 2a and the rules of step 2 rewritten<br>3b names a last day before today (RC-266 N3); 3c and the rules name the largest discount (N1) and when the lowest price is checked (N5)<br>Accepted by the AI as stand-in for S01 at S01's word in chat ("Du godkender for mig"), RC-377; mode autonomous, not independent | [852803e] |
 
 ---
 
@@ -86,3 +86,4 @@
 [MIL-055]: ../../milestones/mil-055-room-price-suggestions.md
 [MIL-071]: ../../milestones/mil-071-price-suggestions-from-the-service.md
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
+[852803e]: https://github.com/NF-Hotel/NFHotel/commit/852803eae5904913edb95063c33eb964bcd73205
