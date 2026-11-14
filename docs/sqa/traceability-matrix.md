@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | RC-380 on the row of `deploy/market-analysis`: the pin of the market analysis service moved to 97ca890f, so the released service takes the pricing settings of MIL-071; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [48bd88c] |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code rows of MIL-055: RC-378 is Go without a risk exception (its second version, after the regions of 17d67cc and the pricing tabs of 96b93dc); `PricingTabs` in the row of the pricing pages; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [46998b0] |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-026, which the matrix did not have: the milestone with its plan reviews; its code and its tests with the code reviews, RC-373 to RC-375 (No-Go) and RC-376 (Go, after the fixes); the pin check of the service; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | pending |
 
 ---
 
@@ -67,6 +67,10 @@ updated whenever an artifact instance is created or reviewed.
 | `deploy/`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-002] | - | [RC-007] |
 | `deploy/proxmox`, `scripts/pve-token.sh`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-003] | - | [RC-011] |
 | `deploy/market-analysis`, `deploy/nginx`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-004], [MIL-026] (the pin of the service) | - | [RC-016], [RC-380] |
+| [MIL-026] | Milestone (Accepted; its code reviewed again after the fixes, RC-376 Go; the gate is open) | en | it | [BC-001], [US-001], [MIL-004], MIL-019, MIL-020, [MIL-028] | [MIL-055], code and tests below | [RC-114], [RC-117], [RC-120], [RC-125], [RC-126], [RC-128], [RC-130], [RC-253], [RC-267], [RC-268], [RC-269] |
+| `src/` code of [MIL-026]: the Domain types `MarketAnalysisRun`, `BookingMarketDetail`, `BookingMarketValues` and `MarketAnalysisErrors`; the ports, DTOs and use cases of the market analysis in `NFHotel.Application`; `NFHotel.External/MarketAnalysis` (client, options, mapper, series); the configurations, the repositories, `MarketAnalysisBookingQueries` and `Seeding/MarketSeed*` in `NFHotel.Infrastructure`; `MarketAnalysisController` and the run launcher and worker in `NFHotel.Api`; `ApiMarketAnalysisService`; `Features/Admin/MarketAnalysis` and the charts of `Features/Admin/Shared` in `NFHotel.Web` | Source code | - | - | [MIL-026] tasks 1 to 27 | - | [RC-115], [RC-118], [RC-121], [RC-270], [RC-373] (No-Go), [RC-374] (No-Go), [RC-375] (No-Go), [RC-376] (Go) |
+| Tests of [MIL-026]: `tests/NFHotel.External.Tests/MarketAnalysis`, the market analysis tests of `NFHotel.Application.Tests`, `NFHotel.Api.Tests`, `NFHotel.Infrastructure.Tests` and `NFHotel.Web.Tests`, and its test doubles in `NFHotel.TestSupport` | Test code | - | - | [MIL-026] tasks 1 to 27 | - | [RC-270], [RC-373] (No-Go), [RC-374] (No-Go), [RC-375] (No-Go), [RC-376] (Go) |
+| `ops/tests/test-market-analysis-pin.sh` and the job `Ops market analysis pin (MIL-026)` of `.github/workflows/ops-ci.yaml` | Source code | - | - | [MIL-026] task 16 and criterion 16, [RC-380] (F3) | - | [RC-376] (Go) |
 | [MIL-055] | Milestone (Accepted, Go; its rule for the suggestions is replaced by [MIL-071]; gate passed 2026-11-14, RC-379, accepted by the AI as stand-in for S01 at S01's word in chat) | en | it | [BC-001], [US-001], [MIL-026], [MIL-028], [MIL-030] | [UC-007], [MIL-071], `docs/wiki/Price-Suggestions.md`, code and tests below | [RC-262], [RC-265], [RC-266], [RC-377], [RC-378], [RC-379] |
 | [MIL-058] | Milestone (Accepted, Go) | en | it | [BC-001], [DSA-001], [ADR-0032], [MIL-022], [MIL-044], [MIL-053] | `docs/wiki/Security-Controls.md` (the code quality row), the code and tests of the findings below | [RC-277] |
 | The code of MIL-058: the back-office view models of `src/NFHotel.Web/Features/Admin` (bookings, guests, rooms) and `Booking/BookingFlowViewModel`, `BenchmarkExport` and the Razor loops of `Benchmark` and `Pricing`, `src/NFHotel.External/MarketAnalysis` (`FindingsSeries`, `MarketAnalysisResultMapper`), the test paths and the disposables of `tests/`, `StubHandler`, and `JsonClient.get_json` of the scan exporter | Source and test code (built, not yet merged) | - | - | [MIL-058] tasks 2 to 5 | - | [RC-278] (the findings report of the 57 findings) |
@@ -461,5 +465,23 @@ updated whenever an artifact instance is created or reviewed.
 [RC-378]: ./reviews/rc-378-mil-055-code-at-the-gate.md
 [RC-379]: ./reviews/rc-379-mil-055-gate.md
 [RC-380]: ./reviews/rc-380-mil-026-service-pin.md
-[48bd88c]: https://github.com/NF-Hotel/NFHotel/commit/48bd88c4cea912fb342d83964bb71d1c3ee27d57
+[RC-114]: ./reviews/rc-114-mil-026.md
+[RC-115]: ./reviews/rc-115-market-analysis-code.md
+[RC-117]: ./reviews/rc-117-mil-026-amendment.md
+[RC-118]: ./reviews/rc-118-market-analysis-bookings-code.md
+[RC-120]: ./reviews/rc-120-mil-026-period-amendment.md
+[RC-121]: ./reviews/rc-121-period-and-seed-code.md
+[RC-125]: ./reviews/rc-125-mil-026-run-api-amendment.md
+[RC-126]: ./reviews/rc-126-mil-026-chart-amendment.md
+[RC-128]: ./reviews/rc-128-mil-026-occupancy-and-captions.md
+[RC-130]: ./reviews/rc-130-mil-026-short-timeouts.md
+[RC-253]: ./reviews/rc-253-mil-026-model-download.md
+[RC-267]: ./reviews/rc-267-mil-026-markdown-interpretation-and-forecast.md
+[RC-268]: ./reviews/rc-268-mil-026-follow-the-run.md
+[RC-269]: ./reviews/rc-269-mil-026-markdown-evidence.md
+[RC-270]: ./reviews/rc-270-mil-026-code-of-tasks-22-to-27.md
+[RC-373]: ./reviews/rc-373-mil-026-code-of-tasks-13-to-16.md
+[RC-374]: ./reviews/rc-374-mil-026-code-of-tasks-17-to-19.md
+[RC-375]: ./reviews/rc-375-mil-026-code-of-tasks-20-and-21.md
+[RC-376]: ./reviews/rc-376-mil-026-re-review-after-the-fixes.md
 [46998b0]: https://github.com/NF-Hotel/NFHotel/commit/46998b088196b21f2d0bee4e82c69449c6572886
