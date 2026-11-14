@@ -53,7 +53,7 @@ pin="${in_compose[0]:-}"
 [[ -n "$pin" && "$pin" == "${in_template[0]:-}" ]] && ok "the compose file and the settings template pin the same commit" || ko "the compose file and the settings template pin different commits; change both together"
 
 # The contract of the service at that commit against the copy of the tests.
-if [[ -n "$pin" ]] && curl -fsSL --retry 3 --max-time 60 -o "$work/contract.yaml" "$SERVICE/$pin/openapi/market-contract.yaml"; then
+if [[ -n "$pin" ]] && curl -fsSL --proto '=https' --retry 3 --max-time 60 -o "$work/contract.yaml" "$SERVICE/$pin/openapi/market-contract.yaml"; then
   ok "fetched openapi/market-contract.yaml of the service at $pin"
   cmp -s "$work/contract.yaml" "$COPY" && ok "docs/test-data/market-contract.yaml is byte-identical to the contract at the pin" || ko "docs/test-data/market-contract.yaml differs from the contract at the pin; copy the file of the service, or move the pin"
 else

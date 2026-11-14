@@ -27,7 +27,7 @@ public static class MarketSeedExpander
         int months = ((latest.Year - first.Year) * 12) + (latest.Month - first.Month) + 1;
         int numberStep = rows.Max(row => row.Number);
 
-        List<MarketSeedRow> expanded = new List<MarketSeedRow>(rows.Where(row => row.Arrival <= last));
+        List<MarketSeedRow> expanded = [.. rows.Where(row => row.Arrival <= last)];
         for (int copy = 1; first.AddMonths(copy * months) <= last; copy++)
         {
             int shift = copy * months;

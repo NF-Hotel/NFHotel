@@ -37,8 +37,8 @@ public static class MarketSeedCsv
             throw new FormatException($"The header lacks the columns: {string.Join(", ", missing)}.");
         }
 
-        Dictionary<string, int> index = RequiredColumns.ToDictionary(name => name, name => columns.IndexOf(name));
-        List<MarketSeedRow> rows = new List<MarketSeedRow>();
+        Dictionary<string, int> index = RequiredColumns.ToDictionary(name => name, columns.IndexOf);
+        List<MarketSeedRow> rows = [];
         int line = 1;
         while (reader.ReadLine() is { } text)
         {

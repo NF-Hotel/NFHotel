@@ -86,7 +86,7 @@ public sealed class MarketAnalysisRun : Entity<int>
             ContentJson = contentJson ?? string.Empty,
         };
 
-        List<string> codes = new List<string>();
+        List<string> codes = [];
         if (runId == Guid.Empty)
         {
             codes.Add(MarketAnalysisErrors.RunIdRequired);

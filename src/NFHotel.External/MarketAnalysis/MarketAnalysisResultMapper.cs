@@ -62,7 +62,7 @@ public static class MarketAnalysisResultMapper
             model = Text(insights, "model");
         }
 
-        List<MarketAnalysisSectionDto> sections = new List<MarketAnalysisSectionDto>();
+        List<MarketAnalysisSectionDto> sections = [];
         if (document.TryGetProperty("analyses", out JsonElement analyses) && analyses.ValueKind == JsonValueKind.Object)
         {
             sections.AddRange(analyses.EnumerateObject().Select(analysis => Section(analysis.Name, analysis.Value)));
@@ -89,7 +89,7 @@ public static class MarketAnalysisResultMapper
 
     private static IReadOnlyList<MarketAnalysisFigureDto> Figures(JsonElement document)
     {
-        List<MarketAnalysisFigureDto> figures = new List<MarketAnalysisFigureDto>();
+        List<MarketAnalysisFigureDto> figures = [];
         if (document.TryGetProperty("data_quality", out JsonElement quality) && quality.ValueKind == JsonValueKind.Object)
         {
             Add(figures, quality, "record_count", "Bookings analysed");

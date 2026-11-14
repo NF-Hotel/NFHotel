@@ -117,7 +117,7 @@ public static class MarketSeedPlanner
     private static Dictionary<int, int> AssignGuests(IReadOnlyList<MarketSeedRow> rows, out IReadOnlyList<string> guestCountries)
     {
         Dictionary<int, int> guestOf = new Dictionary<int, int>(rows.Count);
-        List<string> countries = new List<string>();
+        List<string> countries = [];
 
         foreach (IGrouping<string, MarketSeedRow> group in rows.GroupBy(row => row.Country, StringComparer.Ordinal).OrderBy(group => group.Key, StringComparer.Ordinal))
         {

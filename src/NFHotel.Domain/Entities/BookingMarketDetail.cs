@@ -130,7 +130,7 @@ public sealed class BookingMarketDetail : Entity<int>
             ParkingSpaces = values.ParkingSpaces,
         };
 
-        List<string> codes = new List<string>();
+        List<string> codes = [];
         if (bookingId <= 0)
         {
             codes.Add(BookingMarketDetailErrors.BookingRequired);
