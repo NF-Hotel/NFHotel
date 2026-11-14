@@ -173,7 +173,7 @@ public sealed class ConflictPathTests : IAsyncLifetime
         await SaveRoomRateAsync(RoomSize.Single);
 
         // Act
-        var exception = await Assert.ThrowsAsync<UniqueConstraintViolationException>(() => SaveRoomRateAsync(RoomSize.Single));
+        UniqueConstraintViolationException exception = await Assert.ThrowsAsync<UniqueConstraintViolationException>(() => SaveRoomRateAsync(RoomSize.Single));
 
         // Assert
         Assert.Equal("ux_room_rate_size", exception.ConstraintName);
@@ -187,7 +187,7 @@ public sealed class ConflictPathTests : IAsyncLifetime
         await SavePricingSettingAsync();
 
         // Act
-        var exception = await Assert.ThrowsAsync<UniqueConstraintViolationException>(SavePricingSettingAsync);
+        UniqueConstraintViolationException exception = await Assert.ThrowsAsync<UniqueConstraintViolationException>(SavePricingSettingAsync);
 
         // Assert
         Assert.Equal("ux_pricing_settings_slot", exception.ConstraintName);
