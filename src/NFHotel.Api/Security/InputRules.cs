@@ -41,9 +41,9 @@ public static class InputRules
     public static bool IsAcceptedText(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
-        for (var index = 0; index < text.Length; index++)
+        for (int index = 0; index < text.Length; index++)
         {
-            var character = text[index];
+            char character = text[index];
             if (char.IsHighSurrogate(character) && index + 1 < text.Length && char.IsLowSurrogate(text[index + 1]))
             {
                 index++;

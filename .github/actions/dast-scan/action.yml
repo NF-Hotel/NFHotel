@@ -70,9 +70,7 @@ runs:
         STACK_DIR: ${{ runner.temp }}/e2e-stack
       run: |
         api=()
-        if [[ "$MODE" == full ]]; then
-          api=(--api-document "$APP_PATH/g/openapi/nfhotel-api.json")
-        fi
+        [[ "$MODE" != full ]] || api=(--api-document "$APP_PATH/g/openapi/nfhotel-api.json")
         bash "$GITHUB_ACTION_PATH/../../../ops/scripts/dast-scan.sh" "$MODE" \
           --stack-env "$STACK_DIR/stack.env" --rules "$RULES" --results dast-results "${api[@]}"
 

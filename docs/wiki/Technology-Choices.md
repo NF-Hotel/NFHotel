@@ -263,7 +263,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 
 ### OWASP ZAP
 
-- **Used for:** the dynamic scan (DAST) of a throwaway stack: a baseline signed out and signed in on every pull request, a weekly full scan (composite action `dast-scan`, `ghcr.io/zaproxy/zaproxy`).
+- **Used for:** the dynamic scan (DAST) of a throwaway stack: a baseline signed out and signed in on every pull request, a weekly full scan, and the API scan of the API itself with its OpenAPI document (MIL-077) (composite action `dast-scan`, `ghcr.io/zaproxy/zaproxy`).
 - **Alternatives:** Burp Suite (Community or Professional), Nuclei, Nikto.
 - **For it:** free and open source; a baseline mode made for CI; rules can be tuned per finding; results go to code scanning.
 - **Against it:** more false positives and a slower full scan than Burp Professional; a scanner cannot find logic flaws.
@@ -600,7 +600,7 @@ The order a change takes from a pull request to production. The details of each 
 | 21 | Deploy on the VM (`deploy-release`) | Tailscale SSH as `deploy`, which may only run `nfhotel-deploy` | ADR-0007 and ADR-0018: a forced command, updated only from `main` | Ansible, a pull agent on the VM |
 | 22 | On the VM: lock, backup, migrate, pull by digest, recreate, secret check, smoke test, rollback (`deploy-release.sh`) | Bash, `pg_dump`, `psql`, Docker Compose, `curl` | Every step testable in Ops CI; the rollback deploys the previous release from the log | Blue-green with two stacks (needs twice the memory) |
 | 23 | Scan of the running release, daily (`running-image-scan.yaml`) | Trivy | A new CVE in a running image opens an issue | Docker Scout |
-| 24 | DAST full scan, weekly (`dast-full`) | OWASP ZAP | Deeper than the baseline, too slow for each pull request | none |
+| 24 | DAST full scan and API scan, weekly (`dast-full`) | OWASP ZAP | Deeper than the baseline, too slow for each pull request; the API scan reaches every endpoint of the API, which the web pages do not | none |
 | 25 | Load test, weekly (`load-test.yaml`) | k6 | Thresholds as pass or fail | JMeter |
 | 26 | Scorecard (`scorecard.yaml`) | OpenSSF Scorecard | An outside score of the repository's practices | none |
 | 27 | Publish the wiki (`publish-wiki.yaml`) | Own script | ADR-0022: the wiki is reviewed in `docs/wiki` like code | Editing the wiki by hand |

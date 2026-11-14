@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 using NFHotel.Api.Contracts;
@@ -17,10 +18,10 @@ public sealed class InputGuardFilter : IActionFilter
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        foreach (var parameter in context.ActionDescriptor.Parameters)
+        foreach (ParameterDescriptor parameter in context.ActionDescriptor.Parameters)
         {
             if (parameter.BindingInfo?.BindingSource is { IsFromRequest: true }
-                && context.ActionArguments.TryGetValue(parameter.Name, out var value)
+                && context.ActionArguments.TryGetValue(parameter.Name, out object? value)
                 && !InputRules.IsAccepted(value))
             {
                 context.Result = new BadRequestObjectResult(new ApiResponse([ApiErrorCodes.InvalidRequest]));

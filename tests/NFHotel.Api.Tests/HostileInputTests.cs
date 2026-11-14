@@ -218,7 +218,7 @@ public sealed class HostileInputTests : IClassFixture<ApiFactory>
     private static string Name(RouteEndpoint endpoint) => endpoint.RoutePattern.RawText ?? endpoint.DisplayName ?? "?";
 
     private static string Key(RouteEndpoint endpoint) =>
-        $"{endpoint.Metadata.GetMetadata<IHttpMethodMetadata>()!.HttpMethods.Single()} {Name(endpoint)}";
+        $"{endpoint.Metadata.GetRequiredMetadata<IHttpMethodMetadata>().HttpMethods.Single()} {Name(endpoint)}";
 
     private static bool HasInput(RouteEndpoint endpoint)
     {
@@ -243,7 +243,7 @@ public sealed class HostileInputTests : IClassFixture<ApiFactory>
 
     private IEnumerable<Attempt> Attempts(RouteEndpoint endpoint)
     {
-        var method = endpoint.Metadata.GetMetadata<IHttpMethodMetadata>()!.HttpMethods.Single();
+        var method = endpoint.Metadata.GetRequiredMetadata<IHttpMethodMetadata>().HttpMethods.Single();
         var action = endpoint.Metadata.GetMetadata<ControllerActionDescriptor>();
         var routeValues = endpoint.RoutePattern.Parameters.ToDictionary(part => part.Name, PlausibleRouteValue, StringComparer.OrdinalIgnoreCase);
         var queries = QueryParameters(action, routeValues.Keys).ToList();
@@ -325,14 +325,17 @@ public sealed class HostileInputTests : IClassFixture<ApiFactory>
             var label = "$" + string.Concat(fieldPath.Select(segment => segment is int index ? $"[{index}]" : $".{segment}"));
             if (!isNullable)
             {
-                yield return new(method, path, query, Json(With(newBody()!, fieldPath, null)), $"body {label}: null");
+                yield return new(method, path, query, Json(With(NextBody(), fieldPath, null)), $"body {label}: null");
             }
 
             foreach (var (kind, value) in HostileJsonValues(type))
             {
-                yield return new(method, path, query, Json(With(newBody()!, fieldPath, value)), $"body {label}: {kind}");
+                yield return new(method, path, query, Json(With(NextBody(), fieldPath, value)), $"body {label}: {kind}");
             }
         }
+
+        // Each call builds a body of the same shape as the sample, so it is there whenever the sample was.
+        JsonNode NextBody() => newBody() ?? throw new InvalidOperationException("The body parameter gave no plausible body.");
     }
 
     private static IEnumerable<ParameterDescriptor> QueryParameters(ControllerActionDescriptor? action, IEnumerable<string> routeNames)
@@ -614,7 +617,9 @@ public sealed class HostileInputTests : IClassFixture<ApiFactory>
         var parent = body;
         foreach (var segment in path[..^1])
         {
-            parent = segment is int index ? parent[index]! : parent[(string)segment]!;
+            // Fields walks the type that the plausible body was built from, so a node is missing only if the two disagree.
+            parent = (segment is int index ? parent[index] : parent[(string)segment])
+                ?? throw new InvalidOperationException($"The plausible body has no value at {segment}.");
         }
 
         switch (path[^1])

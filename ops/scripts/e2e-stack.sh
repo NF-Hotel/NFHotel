@@ -98,7 +98,7 @@ for role in "${ROLES[@]:1}"; do
 done
 
 # The API scan of the DAST run signs in at the API with a Manager account of its own, so the
-# attacks of the web scan on the login form cannot lock out its account (MIL-077).
+# attacks of the web scan on the login form cannot throttle its sign-in (MIL-077).
 api_user="e2e-api-scan"
 api_password="$(stack_secret 16)"
 echo "==> creating the Manager account $api_user for the API scan"
