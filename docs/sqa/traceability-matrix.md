@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-073: the pin of the database image and the wiki page, with its code review RC-359 (Go-with-conditions) | [26634dc] |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-075: the passport key out of the web container, with its code review RC-360 (Go-with-conditions) | [8ca858a] |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-074: the copy off the VM every hour, the alert BackupTargetDown and the scheduled task of the backup target, with its code review RC-361 (Go-with-conditions) | [d8275fa] |
 
 ---
 
@@ -104,6 +104,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-073] | Milestone (Accepted, Go; plan reviewed in RC-333 and accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat) | en | it | [BC-001], [DSA-001], [ADR-0031], [ADR-0040], MIL-024, MIL-064, MIL-065 | planned: the pin of the upstream build of `postgres:16-alpine` with the fixed `krb5-libs` and the documents (task 1), the code review and the pull request (task 2), the deploy with the row counts (task 3) and the gate (task 4) | [RC-333] |
 | The code of MIL-073: the pin of `postgres:16-alpine` in `ops/deploy/postgres/docker-compose.yml` and the wiki page Containers-and-Images | YAML (reviewed 2026-11-14, Go-with-conditions: the checks of the pull request) | - | - | [MIL-073] tasks 1 and 2, [ADR-0040], [DSA-001] | - | [RC-359] |
 | [MIL-074] | Milestone (Accepted, Go; plan reviewed in RC-334 and accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat) | en | it | [BC-001], [DSA-001], [ADR-0008], [ADR-0020], MIL-021, MIL-023, MIL-069 | planned: `backup-database.sh --copy-only` with a lock and the units `nfhotel-offvm-copy.service` and `.timer` (task 1), the report `backup_host_seen` and the rule `BackupTargetDown` (task 2), the documents (task 3), the scheduled task on the backup host (task 4), the deploy and the gate (tasks 5 and 6) | [RC-334] |
+| The code of MIL-074: `--copy-only`, the lock and the report `backup_host_seen` of `ops/scripts/backup-database.sh`, the units `nfhotel-offvm-copy.service` and `.timer`, `install-backup.sh` and the update command of `deploy-release.sh`, their tests, the rule `BackupTargetDown` and its rule tests, `start-target.js` and `register-start-task.ps1` of the backup target, the wiki pages Disaster-Recovery, Alerts, Monitoring and CI-CD, and the row of 2026-11-14 of ADR-0008 | Shell, YAML, systemd, JScript, PowerShell, ADR (reviewed 2026-11-14, Go-with-conditions: the checks of the pull request) | - | - | [MIL-074] tasks 1 to 3, [ADR-0008], [ADR-0020] | - | [RC-361] |
 | [MIL-075] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-335) | en | it | [BC-001], [ADR-0004], [ADR-0024], MIL-015, MIL-035 | planned: the passport key off the web's list, loop and compose file, the secrets of every service left out of every settings file with a warning, and the deletion of a secret file that a service no longer lists (task 1), the web started without the key (task 2), the documents (task 3), the deploy with the checks in the VM (task 4) and the gate (task 5) | [RC-335] |
 | The code of MIL-075: the lists and the filter of `ops/scripts/write-secret-files.sh` and its test, `ops/deploy/nfhotel-web/docker-compose.yml` and `nfhotel-web.env.example`, the comment in `src/NFHotel.Web/Program.cs`, `tests/NFHotel.Web.Tests/PassportKeyTests.cs`, `scripts/dev-up.sh`, the wiki pages Environment-Files and Proxmox-Deployment, and the row of 2026-11-14 of ADR-0024 | Shell, C#, YAML, ADR (reviewed 2026-11-14, Go-with-conditions: the checks of the pull request) | - | - | [MIL-075] tasks 1 to 3, [ADR-0004], [ADR-0024] | - | [RC-360] |
 | [MIL-076] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-336) | en | it | [BC-001], [ADR-0008], [ADR-0020], ADR-0025, MIL-021, MIL-023, MIL-074 | planned: the read-back of every dump with two `pg_restore` readers and the reports `backup_check`, `nfhotel_backup_tables` and `nfhotel_backup_bytes` (task 1), the rules `BackupUnreadable` and `BackupShrunk` (task 2), the documents (task 3), the deploy and the checks (task 4), seven nights and the gate (task 5) | [RC-336] |
@@ -426,6 +427,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-078]: ../milestones/mil-078-the-tunnel-routes-and-access-as-code.md
 [RC-335]: ./reviews/rc-335-mil-075.md
 [RC-360]: ./reviews/rc-360-mil-075-code.md
+[RC-361]: ./reviews/rc-361-mil-074-code.md
 [RC-336]: ./reviews/rc-336-mil-076.md
 [RC-337]: ./reviews/rc-337-mil-077.md
 [RC-338]: ./reviews/rc-338-mil-078.md
@@ -439,5 +441,5 @@ updated whenever an artifact instance is created or reviewed.
 [RC-356]: ./reviews/rc-356-mil-051-revision.md
 [RC-357]: ./reviews/rc-357-mil-052-revision.md
 [RC-358]: ./reviews/rc-358-mil-018-revision.md
-[26634dc]: https://github.com/NF-Hotel/NFHotel/commit/26634dc25a842119c706a2011812d891e8d4f3bb
 [8ca858a]: https://github.com/NF-Hotel/NFHotel/commit/8ca858a67009163c8e76e707abf63986fa51e220
+[d8275fa]: https://github.com/NF-Hotel/NFHotel/commit/d8275fa8644f686d0bd751a5bc0ac2623fd0c916

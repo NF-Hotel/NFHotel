@@ -112,6 +112,43 @@ tests:
         alertname: OffVmCopyStale
         exp_alerts: []
 
+  - name: a backup host that answers more than 2 hours after the last copy fires BackupTargetDown
+    interval: 1h
+    input_series:
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="offvm_copy"}'
+        values: "0x10"
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup_host_seen"}
+        values: "0+3600x10"
+    alert_rule_test:
+      - eval_time: 2h
+        alertname: BackupTargetDown
+        exp_alerts: []
+      - eval_time: 3h
+        alertname: BackupTargetDown
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "The backup host is on, but no copy has reached its target for over 2 hours"
+              description: >-
+                Docker Desktop or the backup target on the backup host is down. Start them (wiki
+                page Disaster-Recovery); the next hourly copy sends what the target lacks.
+
+  - name: a backup host that has not answered since the last copy keeps BackupTargetDown silent
+    interval: 1h
+    input_series:
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="offvm_copy"}'
+        values: "0x30"
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup_host_seen"}
+        values: "0x30"
+    alert_rule_test:
+      - eval_time: 27h
+        alertname: BackupTargetDown
+        exp_alerts: []
+
   - name: a missing report fires TaskReportMissing and HealthReportMissing, while nf-hotel sends
     interval: 1m
     input_series:
