@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | MIL-018 |
-| CrossReference | [BC-001], [MIL-016], [MIL-017], [ADR-0005], [ADR-0006] |
+| CrossReference | [BC-001], [MIL-016], [MIL-017], [ADR-0005], [ADR-0006], [MIL-079] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-18 | Proposed | Claude (AI) | S01 | Initial version | [6b606da] |
-| 2026-10-18 | Accepted | Claude (AI) | AI at the request of S01 | Accepted after RC-084 Go | [6b606da] |
+| 2026-10-18 | Deprecated | Claude (AI) | AI at the request of S01 | Accepted after RC-084 Go | [6b606da] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The read that MIL-079 closed on 2026-11-12 noted in the Purpose; the ADR of task 2 takes the next free number (ADR-0007 went to CI/CD); the target moved from 2027-03-19 to 2026-12-11; accepted after RC-358 Go, at S01's word in chat ("Du godkender for mig") | [62301c4] |
 
 ---
 
@@ -20,7 +20,9 @@
 
 Decide whether a guest may see and change a booking without the staff sign-in. Since MIL-016 a booking is read by its number alone: anyone who guesses or is given a number sees the booking, and its guest details, and may cancel or reschedule it. ADR-0005 left the own-resource check to a later milestone. This milestone lets a guest prove ownership with data they already hold, the booking number and the email of the booking, and makes the API refuse every guest call that is not about that guest's own booking.
 
-## Decisions to record in ADR-0007
+Since 2026-11-12 the read is closed by [MIL-079]: the receipt page opens a booking only with its number and the email of the booking, with a throttle per booking number, and the API reads a booking by its key only with `Bookings.View`. Cancel and reschedule need `EditOtherBookings`, so a guest cannot change a booking at all. This milestone builds the guest sign-in and the change pages on top of that lookup; the ADR of task 2 records the decisions that MIL-079 already took as taken.
+
+## Decisions to record in the ADR
 
 | # | Decision | Why |
 | --- | --- | --- |
@@ -34,7 +36,7 @@ Decide whether a guest may see and change a booking without the staff sign-in. S
 
 ## Deliverable
 
-- ADR-0007 recording the decisions above, reviewed.
+- An ADR, with the next free number, recording the decisions above, reviewed.
 - Application and domain: the guest sign-in use case, the ownership rule, the permission table checks for the Guest role; tests that state allowed or refused for every guest operation.
 - API: `POST /api/auth/guest-login`, the guest token in the booking creation answer, the ownership check on the booking and guest endpoints, the throttle per booking number.
 - Web: a booking lookup page (number and email), the receipt and change pages for a signed-in guest, the guest cookie, sign-out; the receipt page no longer opens by number alone.
@@ -52,7 +54,7 @@ Decide whether a guest may see and change a booking without the staff sign-in. S
 | 5 | In the deployed VM a guest can book, sign out, look the booking up with number and email, and cancel it; the guest cookie has `Secure` and `HttpOnly` | Yes | No |
 | 6 | The permission table test states allowed or refused for every role (including Guest) and every permission, and equals the Access Control Matrix | Yes | No |
 | 7 | The staff sign-in tests of MIL-016 and the TLS tests of MIL-017 still pass unchanged | Yes | No |
-| 8 | `dotnet build` has 0 warnings, format is clean, all tests pass; `qc-programming-csharp`, `qc-programming-shell` and `qc-yaml` reviews have the verdict `Go`; ADR-0007 has a `Go` review | Yes | No |
+| 8 | `dotnet build` has 0 warnings, format is clean, all tests pass; `qc-programming-csharp`, `qc-programming-shell` and `qc-yaml` reviews have the verdict `Go`; the ADR of task 2 has a `Go` review | Yes | No |
 
 ## Dependencies
 
@@ -79,14 +81,14 @@ Decide whether a guest may see and change a booking without the staff sign-in. S
 
 ## Target Date
 
-2027-03-19 — two weeks after MIL-017 (2027-03-05): one sign-in use case, one ownership rule in the API, a small set of guest pages and a deploy check.
+2026-12-11, the last wave of the plan of 2026-11-14, after [MIL-079], whose lookup it builds on: one sign-in use case, one ownership rule in the API, a small set of guest pages and a deploy check.
 
 ## Tasks
 
 | # | Task | Summary | Needs its own Use Case/User Story? | Reference |
 | --- | --- | --- | --- | --- |
 | 1 | Amend Business Case and Project Plan | Add objective 21, the scope item, success criterion 24 and the MIL-018 schedule row; review again. | No | |
-| 2 | Record the decisions in ADR-0007 | The seven decisions above, with the options for the guest identity (booking number and email, guest accounts, an emailed link). | No | |
+| 2 | Record the decisions in an ADR | The seven decisions above, with the options for the guest identity (booking number and email, guest accounts, an emailed link). | No | |
 | 3 | Guest sign-in and ownership rule | The use case, the guest token, the throttle per booking number, the ownership check; unit tests for every allowed and refused case. | Yes | UC: guest views and changes own booking |
 | 4 | API endpoints | `guest-login`, the guest token in the booking creation answer, 401 and 403 on the booking and guest endpoints; API tests. | No | |
 | 5 | Guest pages | Lookup page, receipt and change pages, guest cookie and sign-out; page tests. | No | |
@@ -101,4 +103,6 @@ Decide whether a guest may see and change a booking without the staff sign-in. S
 [MIL-017]: ./mil-017-tls.md
 [ADR-0005]: ../adr/adr-0005-backoffice-login.md
 [ADR-0006]: ../adr/adr-0006-tls.md
+[MIL-079]: ./mil-079-a-booking-opened-only-with-its-email.md
 [6b606da]: https://github.com/NF-Hotel/NFHotel/commit/6b606da4c8584d71b7c2f754d71e14ceb6aca871
+[62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59

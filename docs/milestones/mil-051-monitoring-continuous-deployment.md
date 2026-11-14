@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-11-01 that a change to Grafana, Prometheus, Alloy or Loki asked for in chat reaches the monitoring host without a manual step, the same way code reaches production ("planlæg begge veje"); accepted after RC-254 Go | [e8af9ea] |
+| 2026-11-01 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-11-01 that a change to Grafana, Prometheus, Alloy or Loki asked for in chat reaches the monitoring host without a manual step, the same way code reaches production ("planlæg begge veje"); accepted after RC-254 Go | [e8af9ea] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The ADR of task 1 takes the next free number (ADR-0035 went to MIL-056); the target moved from 2026-11-13 to 2026-11-27; accepted after RC-356 Go, at S01's word in chat ("Du godkender for mig") | [62301c4] |
 
 ---
 
@@ -23,7 +24,7 @@ Today `ops-ci.yaml` checks the configuration of `ops/deploy/monitoring/` (the `m
 
 ## Deliverable
 
-- **ADR-0035, how the change reaches the LXC.** It compares at least:
+- **A new ADR, how the change reaches the LXC.** It compares at least:
   - *push*: a job in GitHub Actions joins the tailnet as `tag:ci` (OIDC, as `cd.yaml` does) and runs the deploy over SSH, which needs a new grant from `tag:ci` to `tag:monitoring` on port 22 and a deploy user that is not `root`;
   - *pull*: a systemd timer on the LXC fetches `main`, verifies that the commit is on `main`, and runs `deploy-monitoring.sh --apply` when `ops/deploy/monitoring/` changed, which needs no new inbound access at all.
 
@@ -44,13 +45,13 @@ Today `ops-ci.yaml` checks the configuration of `ops/deploy/monitoring/` (the `m
 
 | # | Criterion (objectively checkable) | Go | No-Go |
 | --- | --- | --- | --- |
-| 1 | ADR-0035 is `Accepted` with a `Go` review, and compares push and pull with the access each one needs | Yes | No |
+| 1 | The ADR of task 1 is `Accepted` with a `Go` review, and compares push and pull with the access each one needs | Yes | No |
 | 2 | A merged pull request that changes only a file in `ops/deploy/monitoring/` is running on `nf-monitoring` within 15 minutes of the merge, shown by the deployed commit on the LXC and by the rule or dashboard in Prometheus or Grafana | Yes | No |
 | 3 | A pull request that changes no file in the monitoring paths starts no monitoring deploy | Yes | No |
 | 4 | A deliberately broken rule file in the test is refused before the start, and the running stack keeps its previous configuration | Yes | No |
 | 5 | A failed start in the test returns to the last deployed commit, and the alert for a failed deploy reaches the test receiver | Yes | No |
 | 6 | No secret file content, token or password appears in a workflow log, a commit or a test output | Yes | No |
-| 7 | The tailnet policy grants no more than ADR-0035 records; in the push form `tag:ci` reaches `tag:monitoring` only on port 22 | Yes | No |
+| 7 | The tailnet policy grants no more than the ADR of task 1 records; in the push form `tag:ci` reaches `tag:monitoring` only on port 22 | Yes | No |
 | 8 | The tests of the deliverable pass in Ops CI, `docs/wiki/Monitoring.md` describes the new flow, and the review of the code is Go | Yes | No |
 
 ## Dependencies
@@ -77,17 +78,17 @@ Today `ops-ci.yaml` checks the configuration of `ops/deploy/monitoring/` (the `m
 
 ## Target Date
 
-2026-11-13. It changes no application code and no hosted service, so it does not move a date of the Business Case.
+2026-11-27. It changes no application code and no hosted service, so it does not move a date of the Business Case.
 
 ## Tasks
 
 | # | Task | Summary | Needs its own Use Case/User Story? | Reference |
 | --- | --- | --- | --- | --- |
-| 1 | ADR-0035: push or pull deploy of the monitoring | Compare a CD job over tailnet SSH with a timer on the LXC that pulls `main`: the access each needs, how each proves the commit is reviewed, and how each rolls back. Record the choice and the tailnet policy. | No | criteria 1, 7 |
+| 1 | ADR: push or pull deploy of the monitoring | Compare a CD job over tailnet SSH with a timer on the LXC that pulls `main`: the access each needs, how each proves the commit is reviewed, and how each rolls back. Record the choice and the tailnet policy. | No | criteria 1, 7 |
 | 2 | Automatic deploy of `ops/deploy/monitoring/` | Implement the chosen form: run only on changes to the monitoring paths, only for a green commit on `main`, with the existing checks before the start and the deployed commit recorded on the LXC. | No | criteria 2, 3, 6 |
 | 3 | Health check and rollback | After the start, check the ready endpoints of Prometheus, Alertmanager, Loki, Grafana and the blackbox exporter and that the rules loaded; on failure, start the last deployed commit again. | No | criteria 4, 5 |
 | 4 | Alert on a failed or lagging deploy | A rule and a runbook line for a monitoring deploy that failed or that is behind `main`, routed to Discord through the existing Alertmanager receiver. | No | criterion 5 |
-| 5 | Tailnet policy | Add only the grant ADR-0035 needs (none for pull; `tag:ci` to `tag:monitoring` on port 22 for push), and update the policy in `docs/wiki/Monitoring.md`. | No | criterion 7 |
+| 5 | Tailnet policy | Add only the grant the ADR of task 1 needs (none for pull; `tag:ci` to `tag:monitoring` on port 22 for push), and update the policy in `docs/wiki/Monitoring.md`. | No | criterion 7 |
 | 6 | Tests in Ops CI | Tests in `ops/tests` for the path filter, the refused broken rule and the rollback, run by `ops-ci.yaml` in a throwaway container. | No | criteria 3 to 5, 8 |
 | 7 | Wiki and release | `docs/wiki/Monitoring.md` describes the new flow and keeps the manual deploy as a fallback; review record; first real deploy through the new flow; gate review. | No | criteria 2, 8 |
 
@@ -98,3 +99,4 @@ Today `ops-ci.yaml` checks the configuration of `ops/deploy/monitoring/` (the `m
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [MIL-052]: mil-052-read-only-grafana-for-the-ai-assistant.md
 [e8af9ea]: https://github.com/NF-Hotel/NFHotel/commit/e8af9eaddb849b4dcf173376f581a0d690a2b24e
+[62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59
