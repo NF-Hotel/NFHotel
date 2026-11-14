@@ -139,7 +139,9 @@ compose up -d --remove-orphans --wait --wait-timeout 180 ||
 # file, so `up --wait` proves neither (MIL-051 task 3). Each service must answer its ready
 # endpoint (Alertmanager and blackbox publish no port, so they are asked from inside their
 # containers), and every rule of the rule files must be loaded. A failure fails the deploy, so
-# the pull deploy goes back to the commit that ran before (ADR-0044).
+# the pull deploy goes back to the commit that ran before (ADR-0044). Every address asked is
+# this host's own ($bind is checked above to be one of them) or localhost inside a container,
+# so the plain HTTP of these checks never leaves the host.
 echo "==> checking that the services answer and that Prometheus loaded every rule"
 rule_names="$(sed -n 's/^ *- \(alert\|record\): *\([^ ]*\) *$/\2/p' "$dir"/prometheus/rules/*.yml | sort -u)"
 [[ -n "$rule_names" ]] || die "no rule in $dir/prometheus/rules"
@@ -159,7 +161,7 @@ healthy() {
     unhealthy="the blackbox exporter does not answer /-/healthy"
     return 1
   }
-  loaded="$(curl -fsS --max-time 10 "http://$bind:9090/api/v1/rules" 2>/dev/null)" || {
+  loaded="$(curl -fsS --max-time 10 "http://$bind:9090/api/v1/rules" 2>/dev/null)" || { # NOSONAR: this host's own address, see above
     unhealthy="Prometheus does not answer /api/v1/rules"
     return 1
   }

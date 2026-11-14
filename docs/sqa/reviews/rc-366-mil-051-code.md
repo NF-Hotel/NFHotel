@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green, among them the start of the stack in the job of the monitoring configuration | [2e57a94] |
+| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green, among them the start of the stack in the job of the monitoring configuration | [2e57a94] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | F9 from the first checks of the pull request: the clear-text address of the health check marked; still Go-with-conditions | pending |
 
 ---
 
@@ -195,6 +196,11 @@ The change is one entry of the matrix, one entry of `include` and the comment ab
   report, and a report cannot use a name of the exporter, so it cannot change the results of the scans.
 - **F8, open for S01: the new required check.** "Ops script tests (test-pull-monitoring.sh)" is new, and only S01
   changes the ruleset.
+- **F9, fixed: a clear-text address in the health check (SonarQube Cloud, rule S5332).** The first checks of the pull
+  request failed the quality gate: `deploy-monitoring.sh` asks Prometheus for its rules at
+  `http://$bind:9090/api/v1/rules`, which made the security rating of the new code B. `$bind` must be an address of
+  the host itself (the script checks it before the start), so the plain HTTP of the health check never leaves the
+  host; the line is marked `# NOSONAR`, with the reason in the comment above it, as in the other scripts of `ops/`.
 
 ## Overall Verdict
 
