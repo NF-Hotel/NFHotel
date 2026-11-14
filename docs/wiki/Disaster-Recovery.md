@@ -9,10 +9,13 @@ This page rebuilds NF Hotel after its VM `nf-hotel` or its monitoring LXC is los
 
 **Contents**
 1. [Before a disaster: keep these ready](#before-a-disaster-keep-these-ready)
-2. [Rebuild the VM](#rebuild-the-vm)
-3. [Rebuild the monitoring LXC](#rebuild-the-monitoring-lxc)
-4. [The drill](#the-drill)
-5. [Why it is done this way](#why-it-is-done-this-way)
+2. [How long the backup target keeps the copies](#how-long-the-backup-target-keeps-the-copies)
+3. [The copy every hour and the backup target](#the-copy-every-hour-and-the-backup-target)
+4. [Every backup is read back](#every-backup-is-read-back)
+5. [Rebuild the VM](#rebuild-the-vm)
+6. [Rebuild the monitoring LXC](#rebuild-the-monitoring-lxc)
+7. [The drill](#the-drill)
+8. [Why it is done this way](#why-it-is-done-this-way)
 
 ---
 
@@ -47,6 +50,17 @@ The copy off the VM is tried every hour, not only in the nightly backup (MIL-074
 - **On the backup host.** The scheduled task `\NFHotel\Backup target up` runs `start-target.js` from the folder of the target at sign-in and every hour: `docker compose up -d` with `backup-target.env`, which changes nothing while both services run and starts a service that has stopped. It runs as the user who signed in, so no password is stored, and through Windows Script Host, so no window opens and the last result of the task is the result of `docker compose`. To set it up, copy `start-target.js` and `register-start-task.ps1` from `ops/deploy/backup-target` into the folder of the target and run `powershell -NoProfile -ExecutionPolicy Bypass -File .\register-start-task.ps1` there; running it again replaces the task. To check it: `Get-ScheduledTaskInfo -TaskPath '\NFHotel\' -TaskName 'Backup target up'` shows `LastTaskResult` 0 after a run that worked, and `docker compose --env-file backup-target.env ps` shows both services running.
 - **Docker Desktop.** The target runs only while Docker Desktop runs. Whether Docker Desktop starts at sign-in is a setting of Docker Desktop that S01 decides. A start of Docker Desktop 4.89 can stop on the 0-byte `.stale` files that an earlier start left in `%LOCALAPPDATA%\Docker\run` and `%LOCALAPPDATA%\docker-secrets-engine`; delete those files, then start it again.
 - **Why.** On 2026-11-10 the engine of Docker Desktop stopped at 11:25:59 UTC and was running again at 11:31 UTC, but the two services of the target stayed stopped until they were started by hand the next day, so two nightly copies failed. The log of Docker Desktop from that day keeps only the user interface; the logs of the engine had rotated away by 2026-11-14, so why the services stayed stopped is not known. The task starts them within the hour, whatever the cause.
+
+## Every backup is read back
+
+Each dump is read back to its end while it is made (MIL-076), so a dump that cannot be read is found the next morning, not at the monthly drill.
+
+- **How.** `pg_dump` runs in the postgres container as before. `tee` sends its stream to `age` and, through two named pipes in a private temporary folder, to two readers in the same container: `pg_restore --list` lists the archive and counts its tables, and `pg_restore --file=/dev/null` reads every block to the end. Neither reader connects to the database. No file holds the clear dump, and `age` encrypts the same bytes as before. A reader that hangs is stopped after 30 minutes, and the backup goes on.
+- **What it proves.** The archive is whole, the `pg_restore` of the same PostgreSQL can read it, and it holds tables. The journal says `read back to its end: <n> tables` (`journalctl -u nfhotel-backup -n 20`).
+- **What only the drill proves.** That the dump restores into a database, that the private key decrypts the copy, and the row counts. The monthly drill ([The drill](#the-drill), and the restore drill on [CI-CD](CI-CD#back-up-and-restore)) keeps proving those on another machine.
+- **The reports.** `backup_check` gets the time of the backup when both readers ended well, and 0 until a dump has been read back; `nfhotel_backup_tables` gets the tables of that dump, and `nfhotel_backup_bytes` the size of every encrypted dump ([Monitoring](Monitoring)).
+- **When a read-back fails.** The backup keeps its dump and succeeds, so a deploy goes on, and `BackupUnreadable` fires ([Alerts](Alerts)). The journal of `nfhotel-backup` names the exit code and the last lines of each reader. Run the backup again with `sudo systemctl start nfhotel-backup.service`; if that read-back fails too, S03 runs the restore drill on the newest copy on the laptop. After seven nights S01 decides whether a failed read-back from then on fails the backup, and so stops a deploy (MIL-076 task 5).
+- **A smaller dump.** `BackupShrunk` fires when the newest dump has fewer tables than the most of the last 8 days, or is under half the size of the largest of them. A migration that removed a table explains the first, and the alert then stays for 8 days; otherwise compare the tables of the live database with the dumps before it.
 
 ## Rebuild the VM
 
@@ -135,5 +149,6 @@ The drill proves the RTO and the RPO without touching production: S03 creates a 
 - **Rebuild instead of a VM image backup.** The VM is fully described by scripts and released images, so only its data and its secrets need a backup; an image backup would need storage the node does not have.
 - **Decrypt on your own machine.** The VM cannot read its own backups (ADR-0008); keeping it that way means a stolen VM disk reveals nothing, even during a restore.
 - **The database before CD.** A dump holds no roles, and the ownership transfer and the migrate step of CD each take a backup as `nfhotel_backup` first. So the backup is installed and the roles are made on the restored database before CD, whose migrations then skip. The order that the page had before MIL-066 ran CD first, and its migrate step stopped at the backup; part 10 of `ops/tests/test-database.sh` shows both.
+- **Read back every night, restored once a month.** A restore every night would need a second PostgreSQL on the VM and the time of a whole restore. Reading the stream while it is made finds a dump that is cut short or damaged the next morning, without a clear copy on the disk; the monthly drill keeps proving the restore, the key and the row counts.
 - **Settings in the same backup as the database.** One timer, one copy, one retention and one alert (`BackupStale`) cover both, and they are always from the same night.
 - **Not the monitoring.** Its secrets come back from their providers in minutes, and two weeks of logs are not worth a second backup path.
