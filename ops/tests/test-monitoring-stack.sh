@@ -6,13 +6,17 @@
 # rules and keeps the metrics 30 days from its configuration file (MIL-066 task 6), that the
 # Watchdog reaches Alertmanager, that Prometheus scrapes the scan exporter
 # (MIL-053), which runs without a token here, and that the runtime check of the deploy passes
-# over the six containers (MIL-080), whose lines it prints. The stand-in secrets reach no real
+# over the six containers (MIL-080), whose lines it prints. For the pull deploy (MIL-051): the
+# deploy checks the health of the services and the loaded rules, a broken rule file is refused
+# by the checks while the running Prometheus keeps its rules, and a failed deploy in the report
+# folder reaches Alertmanager through the scan exporter. The stand-in secrets reach no real
 # channel.
 #
 # Run it as root on a Linux host with Docker, in a checkout without monitoring settings:
 #   sudo bash ops/tests/test-monitoring-stack.sh
 # It starts the compose project of ops/deploy/monitoring on 127.0.0.1 and removes it, its
-# volumes, monitoring.env and secrets/ at the end, and puts back the rule file it changes.
+# volumes, monitoring.env and secrets/ at the end, and puts back the rule file it changes. The
+# report folder is a folder of the test.
 # Exit:  0 every check passed; 1 a check failed
 # Needs: bash 4+, root, docker with the compose plugin, curl
 
@@ -42,6 +46,8 @@ ko() {
   echo "error: $mon has settings already; run it in a clean checkout" >&2
   exit 1
 }
+# The report folder of the scan exporter (MIL-051), for the deploy and every compose command.
+export MONITORING_REPORT_DIR="$W/reports"
 compose() { (cd "$mon" && docker compose --env-file monitoring.env "$@"); }
 rule_file="$mon/prometheus/rules/nfhotel.yml"
 cp "$rule_file" "$W/rules.yml"
@@ -69,6 +75,9 @@ bash "$OPS/scripts/deploy-monitoring.sh" --apply >/tmp/monitoring-deploy.out 2>&
   compose ps
   compose logs --tail 20
 }
+grep -q '^    the five services answer, and Prometheus loaded all [0-9]* rules$' /tmp/monitoring-deploy.out &&
+  ok "the deploy checks the ready endpoints of the services and the loaded rules (MIL-051)" ||
+  ko "health check: $(grep -A1 'services answer' /tmp/monitoring-deploy.out | head -3)"
 grep -q '^==> 6 container(s): 6 passed, 0 failed, 0 warned$' /tmp/monitoring-deploy.out &&
   ok "the deploy checks the six containers against their profiles (MIL-080)" ||
   ko "runtime check: $(grep -A2 -E '^(FAIL|WARN)  ' /tmp/monitoring-deploy.out | head -9)"
@@ -162,6 +171,40 @@ else
     tail -8 "$W/redeploy"
   } 2>&1 | sed 's/^/      /'
 fi
+
+# A broken rule file is refused by the checks before anything starts, and the running
+# Prometheus keeps the rules it has (MIL-051 criterion 4). The pull deploy runs these checks
+# first and returns to the deployed commit when they fail.
+cp "$rule_file" "$W/rules-changed.yml"
+printf '      - alert: BrokenOnPurpose\n        expr: up ==\n' >>"$rule_file"
+if bash "$OPS/scripts/deploy-monitoring.sh" >"$W/broken" 2>&1; then
+  ko "the checks of deploy-monitoring.sh accepted a broken rule file"
+else
+  grep -q "promtool check config failed" "$W/broken" && ok "a broken rule file is refused by the checks" ||
+    ko "broken rule: $(tail -3 "$W/broken")"
+fi
+loaded="$(curl -fsS http://127.0.0.1:9090/api/v1/rules 2>/dev/null)"
+[[ "$loaded" != *BrokenOnPurpose* ]] && new_rule "$loaded" && ok "the running Prometheus keeps the rules it had" ||
+  ko "rules after the refused deploy: ${loaded:0:200}"
+cp "$W/rules-changed.yml" "$rule_file"
+
+# The report of the pull deploy reaches Prometheus through the scan exporter, and a failed
+# deploy in it reaches Alertmanager (MIL-051 criterion 5).
+(
+  umask 022
+  {
+    echo "nfhotel_task_last_success_timestamp_seconds{host=\"nf-monitoring\",task=\"monitoring_pull\"} $(date +%s)"
+    echo 'nfhotel_monitoring_deploy_failed{host="nf-monitoring",commit="0123456789ab",stage="start"} 1'
+  } >"$W/reports/monitoring_pull.prom"
+)
+for _ in $(seq 1 36); do
+  alerts="$(compose exec -T alertmanager wget -qO- http://localhost:9093/api/v2/alerts 2>/dev/null)"
+  [[ "$alerts" == *'"alertname":"MonitoringDeployFailed"'* ]] && break
+  sleep 5
+done
+[[ "$alerts" == *'"alertname":"MonitoringDeployFailed"'* && "$alerts" == *'"stage":"start"'* ]] &&
+  ok "a failed deploy in the report folder reaches Alertmanager through the scan exporter" ||
+  ko "no MonitoringDeployFailed in Alertmanager: $(compose logs --tail 5 scan-exporter 2>&1)"
 
 # The ruler of Loki (MIL-036 task 2): failed SSH logins in the journal of nf-hotel reach
 # Alertmanager. Twelve lines are pushed as Alloy would push them; the rule wants more than 10.
