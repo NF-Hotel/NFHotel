@@ -12,8 +12,8 @@
 #   bash ops/tests/test-market-analysis-pin.sh
 # Exit:  0 every check passed; 1 a check failed or the contract could not be fetched;
 #        2 an argument was given (the script takes none)
-# Needs: bash, cmp, curl, mktemp, sed, and HTTPS to raw.githubusercontent.com (the service is
-#        a public repository, so no token is used)
+# Needs: bash 4 or later (mapfile), cmp, curl, mktemp, sed, and HTTPS to
+#        raw.githubusercontent.com (the service is a public repository, so no token is used)
 
 # shellcheck disable=SC2015 # ok and ko always return 0, so `test && ok || ko` runs
 # exactly one of them; the short form keeps each check on one line.
