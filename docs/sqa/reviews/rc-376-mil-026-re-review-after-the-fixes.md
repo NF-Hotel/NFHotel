@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: the re-review of the code of MIL-026 after the fixes of the findings of RC-373 to RC-375, and the review of the pin check of the service; Go; mode autonomous, not independent | [b371b85] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | The checks of pull request #755: SonarQube Cloud failed the security rating of the new code on one vulnerability of the pin check (shell:S6506); `c789690` keeps the fetch on HTTPS and changes the eight lines of its code smells (IDE0028, IDE0200); N6 added; Go kept; mode autonomous, not independent | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | The checks of pull request #755: SonarQube Cloud failed the security rating of the new code on one vulnerability of the pin check (shell:S6506); `c789690` keeps the fetch on HTTPS and changes the eight lines of its code smells (IDE0028, IDE0200); N6 added; Go kept; mode autonomous, not independent | [5e77805] |
 
 ---
 
@@ -220,3 +220,4 @@ Go. Every Mandatory criterion of [QC-CS-001] passes for the code of MIL-026: the
 [ADR-0030]: ../../adr/adr-0030-patch-layer-on-frozen-market-analysis-image.md
 [ADR-0500]: ../../adr/adr-0500-freeze-market-analysis-image.md
 [b371b85]: https://github.com/NF-Hotel/NFHotel/commit/b371b851b7cf3d83d587639cf7533afdeaa3fc6b
+[5e77805]: https://github.com/NF-Hotel/NFHotel/commit/5e77805d4c34412b3c6c52217eb2958f11032c47
