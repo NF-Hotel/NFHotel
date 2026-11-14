@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the daily scan (issue #642) fails the database image `postgres:16-alpine` on seven high findings in `krb5-libs`; planned at S01's request in chat on 2026-11-11 ("Opfylder de det nu? Ellers fix det så de opfylder !") as a patch layer from the release, and changed before its acceptance to the upstream build of 2026-11-12, which has the fixed package (rule 1 of decision 5 of ADR-0040); accepted after RC-333 Go, at S01's word in chat ("Du godkender for mig") | [62301c4] |
+| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: the daily scan (issue #642) fails the database image `postgres:16-alpine` on seven high findings in `krb5-libs`; planned at S01's request in chat on 2026-11-11 ("Opfylder de det nu? Ellers fix det så de opfylder !") as a patch layer from the release, and changed before its acceptance to the upstream build of 2026-11-12, which has the fixed package (rule 1 of decision 5 of ADR-0040); accepted after RC-333 Go, at S01's word in chat ("Du godkender for mig") | [62301c4] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Gate: the five criteria pass after the deploy of CD run 43590287146, the row counts inside the VM and the daily scan run by hand (RC-362, Go); tasks 1 to 4 done; accepted at S01's word in chat ("Du godkender for mig") | pending |
 
 ---
 
