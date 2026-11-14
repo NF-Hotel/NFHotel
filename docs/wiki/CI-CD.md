@@ -82,6 +82,7 @@ Dependabot opens the update pull requests once a week (`.github/dependabot.yml`,
 
 - The timer `nfhotel-backup.timer` runs `/usr/local/sbin/nfhotel-backup` every day at 02:00 UTC, and every deploy runs it first. The timer `nfhotel-offvm-copy.timer` runs its copy off the VM alone every hour (`--copy-only`, MIL-074), so a backup target that comes back gets the copy within the hour; the update step of CD installs and starts it.
 - Each backup is a `pg_dump` encrypted with `age` to the public key of S03, in `/var/backups/nfhotel`. Every backup that the target lacks is copied to `BACKUP_TARGET` (the backup target on the legion laptop, set in `/etc/nfhotel/backup.env`). When the copy fails, the run warns and shows the time of the last copy that worked.
+- Each dump is read back to its end while it is made, by `pg_restore` in the same container (MIL-076). For now a dump that cannot be read keeps the backup successful, so a deploy goes on, and fires `BackupUnreadable` ([Disaster Recovery](Disaster-Recovery#every-backup-is-read-back)).
 - 14 daily and 8 weekly backups are kept on the VM.
 - **Restore drill (monthly):** copy a backup to a machine with Docker and the private key, then run:
 

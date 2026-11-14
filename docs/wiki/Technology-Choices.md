@@ -616,13 +616,14 @@ From `backup-database.sh`, `install-backup.sh` and `restore-drill.sh` ([ADR-0008
 | 1 | Install the script, the settings file and the timer | `install-backup.sh`, systemd | One installer, idempotent; the settings file is root-only (0600) | Ansible |
 | 2 | Start every day, and before every deploy and migration | `nfhotel-backup.timer`; called by `deploy-release.sh` | A missed run runs after boot; a fresh dump before each change | cron |
 | 3 | Dump inside the PostgreSQL container | `pg_dump --format=custom` as the backup role | No database port is opened; the custom format restores selectively with `pg_restore` | pgBackRest, Barman, WAL-G |
-| 4 | Encrypt to the key of S03 | `age` | The VM holds only the public key, so a stolen disk does not reveal the backups | GPG |
-| 5 | Archive the settings and secrets needed to rebuild the VM | `tar` piped to `age` | The rebuild needs more than the data (MIL-037) | A Proxmox backup of the VM |
-| 6 | Copy off the VM | `rsync` over SSH, key restricted by `rrsync` on the target | Copies only what the target lacks; the key can only add new files | restic, rclone |
-| 7 | Keep 14 daily and 8 weekly files on the VM | Own prune function | A simple rule the restore drill can check | restic `forget` |
-| 8 | Report the time of the backup and of the copy | Prometheus text files read by Alloy | An alert when a backup or a copy is late ([Alerts](Alerts)) | Healthchecks.io pings per job |
-| 9 | Restore drill, monthly and before a major migration | `restore-drill.sh`: `age` decrypt, a throwaway PostgreSQL container, `pg_restore`, row counts | A backup counts only when a restore has been proven; the drill runs on any machine with Docker | Restoring into the production server |
-| 10 | Test the whole chain in CI | Ops CI job "Ops PostgreSQL preparation": backup and restore against a real PostgreSQL 16 | Each change of the scripts is tested before it reaches the VM | none |
+| 4 | Read the dump back while it is made | `tee` to `pg_restore --list` and `pg_restore --file=/dev/null` in the same container | A dump that is cut short or damaged is found the next morning, and the clear stream stays in pipes, never on the disk (MIL-076) | A restore into a second PostgreSQL every night |
+| 5 | Encrypt to the key of S03 | `age` | The VM holds only the public key, so a stolen disk does not reveal the backups | GPG |
+| 6 | Archive the settings and secrets needed to rebuild the VM | `tar` piped to `age` | The rebuild needs more than the data (MIL-037) | A Proxmox backup of the VM |
+| 7 | Copy off the VM | `rsync` over SSH, key restricted by `rrsync` on the target | Copies only what the target lacks; the key can only add new files | restic, rclone |
+| 8 | Keep 14 daily and 8 weekly files on the VM | Own prune function | A simple rule the restore drill can check | restic `forget` |
+| 9 | Report the time of the backup, of its read-back and of the copy, and the tables and size of the dump | Prometheus text files read by Alloy | An alert when a backup or a copy is late, when a dump cannot be read back, or when it shrinks ([Alerts](Alerts)) | Healthchecks.io pings per job |
+| 10 | Restore drill, monthly and before a major migration | `restore-drill.sh`: `age` decrypt, a throwaway PostgreSQL container, `pg_restore`, row counts | A backup counts only when a restore has been proven; the drill runs on any machine with Docker | Restoring into the production server |
+| 11 | Test the whole chain in CI | Ops CI job "Ops PostgreSQL preparation": backup, read-back and restore against a real PostgreSQL 16 | Each change of the scripts is tested before it reaches the VM | none |
 
 ## Security products
 

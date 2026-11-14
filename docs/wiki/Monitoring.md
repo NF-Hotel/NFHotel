@@ -380,6 +380,8 @@ Each alert in Discord names what failed. Start with the first step below. Once t
 | `BackupStale` | critical | The last good backup is more than 26 hours old | `systemctl status nfhotel-backup.timer` and `journalctl -u nfhotel-backup` (ADR-0008) |
 | `OffVmCopyStale` | warning | No backup has been copied off the VM for 72 hours | Turn on the legion laptop or bring it back on the tailnet. The backups wait on the VM |
 | `BackupTargetDown` | warning | The backup host answers over Tailscale, but no copy has reached its target for over 2 hours (MIL-074) | Start Docker Desktop on the backup host; the scheduled task starts the target within the hour, or start it at once as [Disaster Recovery](Disaster-Recovery#the-copy-every-hour-and-the-backup-target) says |
+| `BackupUnreadable` | warning | The newest backup could not be read back to its end; its dump is kept (MIL-076) | `journalctl -u nfhotel-backup -n 30` names the error of each reader; run the backup again, then [Disaster Recovery](Disaster-Recovery#every-backup-is-read-back) |
+| `BackupShrunk` | warning | The newest dump has fewer tables than the most of the last 8 days, or under half the size of the largest | After a migration that removed a table, let it pass (it stays 8 days); otherwise compare the live database with the journal of `nfhotel-backup` |
 | `CertificateRenewalStale` | warning | The renewal has not succeeded for 26 hours | `journalctl -u nfhotel-cert-renew` |
 | `TaskReportMissing` | warning | A job has never reported success, or its file is gone | Run the job's service once (`sudo systemctl start nfhotel-backup.service`) and read its journal |
 | `HealthReportMissing` | warning | The container health report is missing | `systemctl status nfhotel-report-health.timer` |
@@ -459,6 +461,9 @@ The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no s
 | File | Written by | Alert when |
 | --- | --- | --- |
 | `backup.prom` | The backup (nightly, and before every deploy) | Older than 26 h, or missing |
+| `backup_check.prom` | The backup, when its dump was read back to its end, with the time of the backup; 0 until a dump has been read back (MIL-076) | Older than `backup.prom` (`BackupUnreadable`) |
+| `backup_tables.prom` | The backup, after a read-back that passed: the tables of the dump | Fewer than the most of the last 8 days (`BackupShrunk`) |
+| `backup_bytes.prom` | The backup: the size of the encrypted dump | Under half the largest of the last 8 days (`BackupShrunk`) |
 | `offvm_copy.prom` | The copy to the legion laptop: `nfhotel-offvm-copy.timer` (every hour) and the backup | Older than 72 h, or missing |
 | `backup_host_seen.prom` | The copy: after a copy, and after a failed copy when the backup host answers a Tailscale ping (MIL-074) | More than 2 h after `offvm_copy.prom`; a missing file raises nothing, as a backup host that is off answers nothing |
 | `cert_renew.prom` | The certificate renewal (daily) | Older than 26 h, or missing |
