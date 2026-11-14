@@ -9,14 +9,14 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Re-scored after 17d67cc and 96b93dc: criterion 21 passes on the regions of the types MIL-055 created (F4 fixed), criterion 14 on the pricing tabs defined once (G3); the risk exception of the first version is withdrawn, because the stand-in may not approve one (G2); the reading of criterion 21 recorded (G1); Go; mode autonomous, not independent | [46998b0] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | b0ee6ac added: the two locals of the region of the gate in `ConflictPathTests` typed; the search for `var` and F3 now cover the test files of the milestone; Go; mode autonomous, not independent | [8758ab7] |
+| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | b0ee6ac added: the two locals of the region of the gate in `ConflictPathTests` typed; the search for `var` and F3 now cover the test files of the milestone; Go; mode autonomous, not independent | [8758ab7] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | bdfa319 added: three page tests render the rows of the three pricing pages that 68502d4 typed, which the SonarCloud gate of the pull request found without coverage (G4); criterion 12 counts them; Go; mode autonomous, not independent | pending |
 
 ---
 
 ## Artifact Under Review
 
-- Instance reviewed: the nine code commits of the branch `mil-055-gate` on top of `main` at e4681a9, 45 files under `src/` and `tests/`:
+- Instance reviewed: the ten code commits of the branch `mil-055-gate` on top of `main` at e4681a9, 48 files under `src/` and `tests/`:
   - 68502d4: explicit types in place of `var` on the three pricing pages (`PriceSuggestions.razor`, `PricingSettings.razor`, `RoomRates.razor`);
   - 07c2daf: the warning of a lost price names the type of the exception, not its message (`BookingService.cs`, `BookingPriceTests.cs`);
   - c779f4d: the three migration tests of the pricing tables named by what they check;
@@ -25,29 +25,31 @@
   - bd96853: tests of the adapter `LoggerWarningLog`;
   - 17d67cc: `#region` blocks in the 31 files of the types MIL-055 created that hold more than one kind of member (F4);
   - 96b93dc: the three pricing tabs defined once, in `PricingTabs.cs`, for the three pricing pages (G3);
-  - b0ee6ac: explicit types for the two locals of the region that 51d59a7 added to `ConflictPathTests` (F3).
+  - b0ee6ac: explicit types for the two locals of the region that 51d59a7 added to `ConflictPathTests` (F3);
+  - bdfa319: three page tests that render the rows of the three pricing pages: a coming price change with its Revert button, the room rates and the discount check boxes (G4).
 - Checklist used: [QC-CS-001] (`framework/qc/code/qc-programming-csharp.md`), the criteria the commits touch (3, 4, 7, 11, 12, 14, 15, 21) and the three left open by [RC-266] (3, 13, 21).
 - Scope: delta review. The earlier records are [RC-265] (the full review of tasks 3 to 9) and [RC-266] (the delta re-review, Go-with-conditions). This record settles the three conditions of RC-266. The suggestions themselves were replaced by [MIL-071] and reviewed there; the code of MIL-055 that stays is the page, the approval, the undo, the settings, the room rates and the audit trail. The second version re-scores criteria 14 and 21 after 17d67cc and 96b93dc.
 - Language and domain: n/a for a technical type.
 - Language reviewer: none.
-- Mode: autonomous, not independent. S01 gave the acceptance of the plan of 2026-11-14, which has the gate of MIL-055 in its third wave, to the AI in chat ("Du godkender for mig"). The AI wrote the nine commits and this record.
+- Mode: autonomous, not independent. S01 gave the acceptance of the plan of 2026-11-14, which has the gate of MIL-055 in its third wave, to the AI in chat ("Du godkender for mig"). The AI wrote the ten commits and this record.
 
 ### Checks that were run
 
 | Check | Result |
 | --- | --- |
-| `dotnet build NFHotel.sln -warnaserror`, on 96b93dc | Build succeeded, 0 Warning(s), 0 Error(s) |
-| `dotnet format NFHotel.sln --verify-no-changes` | One `IDE0005` in `tests/NFHotel.Web.Tests/BookingCalendarViewModelTests.cs`, a file the gate does not touch; the same as [RC-325] to [RC-327] recorded. The changed files are clean: with `--include`, the 31 files of 17d67cc and the four C# files of 96b93dc give exit 0 |
+| `dotnet build NFHotel.sln -warnaserror`, on 96b93dc and on bdfa319 | Build succeeded, 0 Warning(s), 0 Error(s) |
+| `dotnet format NFHotel.sln --verify-no-changes` | One `IDE0005` in `tests/NFHotel.Web.Tests/BookingCalendarViewModelTests.cs`, a file the gate does not touch; the same as [RC-325] to [RC-327] recorded. The changed files are clean: with `--include`, the 31 files of 17d67cc, the four C# files of 96b93dc and the three test files of bdfa319 give exit 0 |
 | `dotnet test`, NFHotel.Domain.Tests | 485 passed, 0 failed (on the regions of 17d67cc) |
 | `dotnet test`, NFHotel.Application.Tests | 586 passed, 0 failed (on the regions of 17d67cc) |
 | `dotnet test`, NFHotel.Api.Tests | 318 passed, 0 failed (on the regions of 17d67cc) |
 | `dotnet test`, NFHotel.ApiClient.Tests | 105 passed, 0 failed (on the regions of 17d67cc) |
-| `dotnet test`, NFHotel.Web.Tests | 785 passed, 0 failed (on 96b93dc) |
+| `dotnet test`, NFHotel.Web.Tests | 785 passed, 0 failed (on 96b93dc); 788 passed, 0 failed (on bdfa319) |
 | `dotnet test`, NFHotel.Infrastructure.Tests, class `LoggerWarningLogTests` | 3 passed, 0 failed (on the regions of 17d67cc) |
 | The regions of the 31 files of 17d67cc | Every region named, in the standard order, closed by a named `#endregion`, none nested and none inside a method body (a script that follows the depth of the braces). Apart from the region lines, the lines that are not blank are the same and in the same order, except three members moved into their region: `OpenLoaded` and the enum `ChangeStatus` of `PriceSuggestionsViewModel`, and the class `Fields` of `PricingSettingsViewModel`; none of them has an initializer |
 | `src/**/packages.lock.json` | unchanged |
 | Search for `var` in the 67 files under `src/` whose names hold `Pric`, `RoomRate` or `PriceChange` (without the migrations) | 2 lines, both in `MarketSeedPricing.cs`, which [MIL-026] added on 2026-10-20. The test files MIL-055 created have none, and the region that the gate added to `ConflictPathTests` has none since b0ee6ac; the rest of that shared file keeps its `var` |
 | The five texts of the imported bookings (`src/NFHotel.DataAnalysis/data/nf_hotel_bookings.csv`) | 40,060 rows; meal, market segment, room type, deposit type and customer type are never empty, so no row is all empty (F10) |
+| The SonarCloud gate of the pull request, on 4e5bee5 | Failed on the coverage of new code: 66.7 percent against 80 (18 lines, 6 not covered, all in the loops of the three pricing pages that 68502d4 typed); the other five conditions OK. bdfa319 renders those rows (G4); the gate is read again on the pull request |
 | Not run here | the integration tests against PostgreSQL (Testcontainers; Docker does not run on this machine): the two new tests of `ConflictPathTests` and the three renamed tests. NF Hotel CI runs them on the pull request |
 
 ## The conditions of RC-266
@@ -84,6 +86,7 @@
 - **G1, note: criterion 21 and rule 1 of the coding conventions meet in the older files.** Criterion 21 asks for regions in every type under `src/`. Rule 1 of the coding conventions says that the convention of an existing file or project wins "even if the sub-skill says otherwise", and before this branch none of the 514 `.cs` files under `src/` had a region. This record applies criterion 21 to the types MIL-055 created and rule 1 to the shared types it only changed, so no file mixes the two layouts. Every gate with C# code meets the same question; a conversion of `src/` as a planned task, or a clarification of the framework proposed upstream, is S01's decision (action item).
 - **G2, note: the risk exception of the first version is withdrawn.** The first version of this record took a risk exception for criterion 21 and accepted it as stand-in, as [RC-278] did for [MIL-058]. `framework/process/review-checklist-process.md` says that the stand-in may not approve a risk exception, and that the approver is the escalation role of the governance document, never the author or the owner. This version fixes the finding instead. [RC-341] and [RC-363] score criterion 21 "Pass, on condition" of the exception of [RC-278], a status the process does not have; they are listed for S01 (action item).
 - **G3, fixed: the pricing tabs were written once per page.** The three pricing pages each held the same array of the three pricing tabs, which came with the admin overhaul (63f3f48, 2026-11-08) when it moved the pages under one menu item. Since 96b93dc `PricingTabs.All` defines them once. The Benchmark and Staff pages repeat their tab sets in the same way; they are outside MIL-055 and are left to the reviews of their own code.
+- **G4, fixed: the typed rows of the pages had no test.** The SonarCloud gate of the pull request failed on the coverage of new code (66.7 percent against 80). The six lines it found are the loops that 68502d4 typed: the table of price changes of `PriceSuggestions.razor`, the room rates of `RoomRates.razor` and the discount sizes of `PricingSettings.razor`. Their view models were tested, but no test rendered those rows. bdfa319 adds `PriceSuggestionsPageTests.Render_ComingChange_ListsItWithItsRevertButton`, `RoomRatesPageTests.Render_OneRateSet_ShowsItAndMarksTheOthersNotSet` and `PricingSettingsPageTests.Render_SavedSettings_ChecksOnlyTheDiscountedSizes`, which read each cell of the rows.
 
 ## Checklist Results
 
@@ -93,7 +96,7 @@
 | 4 | Nullable enabled; `!` justified in a comment | Pass | No `!` added under `src/`; the one `null!` in `LoggerWarningLogTests` has its comment |
 | 7 | Specific exceptions; arguments validated; no empty catch | Pass | No `catch` added or widened; the catch of RC-265 F2 keeps its filter and now logs less |
 | 11 | Public async APIs take a `CancellationToken` | Pass | No public async member added |
-| 12 | Tests cover new behaviour; three-part names; no order, time or network | Pass | 8 new tests (1 service, 2 database, 2 endpoint, 3 adapter) and 4 renamed; all named `Method_Condition_Expected`; the endpoint and service tests use the fake clock; `TestRulesTests` passes in the Application run. 17d67cc and 96b93dc change no behaviour, and the tests of the pages pass on them |
+| 12 | Tests cover new behaviour; three-part names; no order, time or network | Pass | 11 new tests (1 service, 2 database, 2 endpoint, 3 adapter, 3 page) and 4 renamed; all named `Method_Condition_Expected`; the endpoint and service tests use the fake clock; `TestRulesTests` passes in the Application run. 17d67cc and 96b93dc change no behaviour, and the tests of the pages pass on them; the rows that 68502d4 typed are rendered in tests since bdfa319 (G4) |
 | 13 | Classes trace to the DCD; deviations recorded | Pass | F11: the classes of the Domain layer are in the DCD; the DCD draws no other layer, so the classes of those layers implement no DCD |
 | 14 | Each piece of knowledge once | Pass | The largest discount is read from `PriceChange.MinPercentage`; the conflict codes and the constraint names are the existing ones; the pricing tabs are defined once (G3) |
 | 15 | References point inward, no cycles | Pass | No project reference added; the architecture tests pass in the Application run |
@@ -129,5 +132,4 @@ Go. The three conditions of [RC-266] are settled: F3 is closed and F4 fixed for 
 [RC-363]: ./rc-363-mil-077-code.md
 [RC-377]: ./rc-377-uc-007-revision.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
-[46998b0]: https://github.com/NF-Hotel/NFHotel/commit/46998b088196b21f2d0bee4e82c69449c6572886
 [8758ab7]: https://github.com/NF-Hotel/NFHotel/commit/8758ab71c8c3d135abb0c87b8e4ee1ac72fa6167
