@@ -2,7 +2,8 @@
 # End-to-end test of the PostgreSQL preparation (MIL-024, ADR-0011) against PostgreSQL 16
 # with the real migrations of NF-Hotel/NFHotel and its API image: roles and privileges,
 # the ownership transfer without data change, the internal network, the migrator, the
-# API through the alias postgres, backup as nfhotel_backup and the restore drill; and the
+# API through the alias postgres, backup as nfhotel_backup, read back to its end with the
+# tables of the database while it is made (MIL-076), and the restore drill; and the
 # migration history, which nfhotel_app may read and not change, both on a database migrated
 # before its roles and on a new one whose first migration runs through the migrate step of
 # deploy-release.sh (MIL-066 task 4). Last, the rebuild of the VM in the order of the wiki page
@@ -115,7 +116,8 @@ if verify >"$W/v" 2>&1; then ko "verify passed before the preparation"; else ok 
 echo "== 3. apply with backup, ownership transfer and network join"
 recipient="$(age-keygen -o "$W/key.txt" 2>&1 | sed 's/^Public key: //')"
 printf 'AGE_RECIPIENT=%s\nBACKUP_TARGET=\nBACKUP_DIR=%s\nBACKUP_CONTAINER=%s\n' "$recipient" "$W/backups" "$PG" >"$W/etc/backup.env"
-printf '#!/bin/bash\nNFHOTEL_BACKUP_SETTINGS=%s exec bash %s/scripts/backup-database.sh "$@"\n' "$W/etc/backup.env" "$REPO" >"$W/bin/nfhotel-backup"
+printf '#!/bin/bash\nNFHOTEL_BACKUP_SETTINGS=%s NFHOTEL_METRICS_DIR=%s exec bash %s/scripts/backup-database.sh "$@"\n' \
+  "$W/etc/backup.env" "$W/metrics" "$REPO" >"$W/bin/nfhotel-backup"
 chmod +x "$W/bin/nfhotel-backup"
 id_before="$(docker inspect -f '{{.Id}} {{.State.StartedAt}}' "$PG")"
 if prepare --apply --transfer-ownership --connect-network >"$W/apply" 2>&1; then
@@ -231,6 +233,17 @@ refused "backup role cannot write" backup_writes
 rm -f "$W"/backups/*
 echo "BACKUP_ROLE=nfhotel_backup" >>"$W/etc/backup.env"
 check "backup-database.sh dumps the running container as nfhotel_backup" "$W/bin/nfhotel-backup" --apply
+cp "$W/o" "$W/backup.log"
+# The read-back of MIL-076: pg_restore in the container reads the dump of the real server to its
+# end while it is made, and finds every table of the database.
+report() { awk '!/^#/ { print $2 }' "$W/metrics/$1.prom" 2>/dev/null; }
+live_tables="$(su_sql "SELECT count(*) FROM pg_tables WHERE schemaname NOT IN ('pg_catalog', 'information_schema')")"
+read_back_reported() {
+  [[ -n "$(report backup)" && "$(report backup_check)" == "$(report backup)" && "$(report backup_tables)" == "$live_tables" ]]
+}
+check "the dump is read back to its end with the $live_tables tables of the database" \
+  grep -qx "    read back to its end: $live_tables tables" "$W/backup.log"
+check "the read-back reports backup_check at the time of the backup, and the tables" read_back_reported
 backups=("$W"/backups/*.dump.age)
 if bash "$REPO/scripts/restore-drill.sh" --identity "$W/key.txt" "${backups[0]}" >"$W/drill" 2>&1; then
   ok "restore drill passes (btree_gist, EXCLUDE constraint, history)"

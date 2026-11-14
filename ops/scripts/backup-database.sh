@@ -5,6 +5,11 @@
 #
 # Steps:
 #   1. pg_dump --format=custom inside the postgres container (no port is opened)
+#   1b. read the dump back while it is made (MIL-076): tee passes the stream to two readers in
+#      the same container, pg_restore --list (the tables) and pg_restore --file=/dev/null (every
+#      block to the end), through named pipes in a private folder, so the clear dump is on no
+#      disk; a read-back that fails warns and reports no backup_check, and the backup goes on
+#      until S01 decides otherwise at the gate of MIL-076
 #   2. encrypt the dump with age to the public key of S03; the VM cannot read its own
 #      backups, so a stolen VM disk does not reveal them
 #   2b. archive the settings and secrets that the rebuild of the VM needs (MIL-037, ADR-0025):
@@ -17,7 +22,10 @@
 #      at most an hour later (nfhotel-offvm-copy.timer runs step 3 alone, MIL-074)
 #   4. keep 14 daily and 8 weekly (Sunday) files on the VM, delete older ones
 #   5. report the time of the backup, and of the copy when it succeeded, to the monitoring
-#      (backup.prom and offvm_copy.prom in NFHOTEL_METRICS_DIR, ADR-0020); and the time when
+#      (backup.prom and offvm_copy.prom in NFHOTEL_METRICS_DIR, ADR-0020); the same time as
+#      backup_check when the dump was read back (0 while none has been), the size of the
+#      encrypted dump as nfhotel_backup_bytes, and the tables that the read-back found as
+#      nfhotel_backup_tables (backup_bytes.prom and backup_tables.prom); and the time when
 #      the backup host last answered as backup_host_seen.prom: after a copy that succeeded, and
 #      after a failed copy when the host of BACKUP_TARGET answers a Tailscale ping, so the
 #      alert BackupTargetDown tells a target that is down while its host is on from a host
@@ -51,8 +59,9 @@
 # The die helper is kept in this file because it is installed alone.
 # Exit:  0 backed up, copied, skipped or checked (a failed copy is a warning); 1 a step failed;
 #        2 usage error
-# Needs: bash 4+, flock, docker with the compose plugin, age, rsync (for BACKUP_TARGET),
-#        tailscale (for backup_host_seen after a failed copy; without it nothing is reported)
+# Needs: bash 4+, flock, GNU coreutils (tee -p, timeout, mkfifo), docker with the compose
+#        plugin, age, rsync (for BACKUP_TARGET), tailscale (for backup_host_seen after a failed
+#        copy; without it nothing is reported)
 
 set -euo pipefail
 
@@ -64,6 +73,10 @@ readonly WEEKLY_KEEP=8
 # A backup waits this long for an hourly copy to give the lock back; nfhotel-offvm-copy.service
 # stops a copy after 30 minutes, so the lock comes back well within it.
 readonly LOCK_WAIT_SECONDS=2700
+# A reader of the read-back is stopped this long after it starts. The dump takes seconds, so
+# only a reader that hangs meets it, and the backup, and a deploy after it, go on (MIL-076).
+# NFHOTEL_READ_BACK_SECONDS shortens it for the tests.
+readonly READ_BACK_SECONDS="${NFHOTEL_READ_BACK_SECONDS:-1800}"
 readonly USAGE="usage: backup-database.sh [--apply | --copy-only]"
 apply=0
 copy_only=0
@@ -73,20 +86,24 @@ die() {
   exit 1
 }
 
-# report_success <task>: write the time of this success to <task>.prom in the folder that
-# Alloy reads (ADR-0020, MIL-023 task 9); Prometheus alerts when it grows old. The helper
-# is kept in this file because the file is installed alone. A failed write only warns.
-report_success() {
+# write_report <report> <metric> <help> <value> [<labels>]: write one gauge to <report>.prom in
+# the folder that Alloy reads (ADR-0020, MIL-023 task 9). The helpers are kept in this file
+# because the file is installed alone. A failed write only warns.
+write_report() {
   local dir="${NFHOTEL_METRICS_DIR:-/var/lib/nfhotel-metrics}" file
   file="$dir/$1.prom"
   {
     install -d -m 0755 "$dir" &&
-      printf '%s\n%s\n%s{task="%s"} %s\n' \
-        '# HELP nfhotel_task_last_success_timestamp_seconds When the task last succeeded.' \
-        '# TYPE nfhotel_task_last_success_timestamp_seconds gauge' \
-        nfhotel_task_last_success_timestamp_seconds "$1" "$(date +%s)" >"$file.tmp" &&
+      printf '# HELP %s %s\n# TYPE %s gauge\n%s%s %s\n' "$2" "$3" "$2" "$2" "${5:-}" "$4" >"$file.tmp" &&
       chmod 0644 "$file.tmp" && mv "$file.tmp" "$file"
   } 2>/dev/null || echo "warning: cannot write the report $file" >&2
+}
+
+# report_success <task> [<time>]: the time of this success, now unless given, as <task>.prom;
+# Prometheus alerts when it grows old.
+report_success() {
+  write_report "$1" nfhotel_task_last_success_timestamp_seconds 'When the task last succeeded.' \
+    "${2:-$(date +%s)}" "{task=\"$1\"}"
 }
 
 # host_answers: whether the host of BACKUP_TARGET (user@host:path) answers one Tailscale ping.
@@ -192,26 +209,78 @@ role="${BACKUP_ROLE:-}"
 [[ -z "$role" || "$role" =~ ^[a-z_][a-z0-9_]*$ ]] || die "BACKUP_ROLE '$role' is not a role name"
 # shellcheck disable=SC2016 # expanded by the shell inside the container, not here
 dump='pg_dump --username "${1:-$POSTGRES_USER}" --dbname "$POSTGRES_DB" --format=custom --no-owner'
+# The postgres container: the one that BACKUP_CONTAINER names, or the service postgres of the
+# compose project, run from its folder. Both pass the standard input on, which the readers of
+# the read-back take; the dump gets none.
 if [[ -n "${BACKUP_CONTAINER:-}" ]]; then
   [[ "$BACKUP_CONTAINER" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] || die "BACKUP_CONTAINER is not a container name"
-  docker exec "$BACKUP_CONTAINER" sh -c "$dump" _ "$role"
+  postgres_dir=.
+  in_postgres=(docker exec -i "$BACKUP_CONTAINER")
 else
-  compose_dir="$app_dir/ops/deploy/postgres"
-  [[ -d "$compose_dir" ]] || compose_dir="$app_dir/deploy/postgres"
-  (cd "$compose_dir" && docker compose --env-file postgres.env exec -T postgres sh -c "$dump" _ "$role")
-fi |
-  age --encrypt --recipient "$AGE_RECIPIENT" --output "$partial" ||
-  {
-    rm -f "$partial"
-    die "the dump or the encryption failed"
-  }
+  postgres_dir="$app_dir/ops/deploy/postgres"
+  [[ -d "$postgres_dir" ]] || postgres_dir="$app_dir/deploy/postgres"
+  in_postgres=(docker compose --env-file postgres.env exec -T postgres)
+fi
+
+# The read-back (MIL-076). Each reader waits on its named pipe in a private folder, and tee
+# writes the stream to both while age encrypts it, so no file holds the clear dump. With -p,
+# tee goes on when a reader ends early, as pg_restore --list does after the table of contents.
+# A read-back that cannot start leaves the pipes out, and the dump is made as before.
+pipes=()
+readers=()
+# start_reader <pipe> <script>: run the script in the postgres container in the background, with
+# the named pipe as its input and <pipe>.out and <pipe>.err as its output; add its process id to
+# readers.
+start_reader() {
+  (cd "$postgres_dir" && exec timeout --kill-after=10 "$READ_BACK_SECONDS" "${in_postgres[@]}" sh -c "$2") \
+    <"$read_back_dir/$1" >"$read_back_dir/$1.out" 2>"$read_back_dir/$1.err" &
+  readers+=("$!")
+}
+if read_back_dir="$(mktemp -d "${TMPDIR:-/tmp}/nfhotel-read-back.XXXXXX")"; then
+  trap 'rm -rf "$read_back_dir"' EXIT
+  if mkfifo -m 0600 "$read_back_dir/list" "$read_back_dir/read"; then
+    pipes=("$read_back_dir/list" "$read_back_dir/read")
+    start_reader list 'pg_restore --list'
+    start_reader read 'pg_restore --file=/dev/null'
+  fi
+fi
+((${#pipes[@]})) || echo "warning: the read-back cannot start; the dump is not read back" >&2
+if ! (cd "$postgres_dir" && "${in_postgres[@]}" sh -c "$dump" _ "$role" </dev/null) |
+  tee -p "${pipes[@]}" | age --encrypt --recipient "$AGE_RECIPIENT" --output "$partial"; then
+  # A reader whose pipe tee never opened would wait for ever.
+  ((${#readers[@]} == 0)) || kill "${readers[@]}" 2>/dev/null || true
+  rm -f "$partial"
+  die "the dump or the encryption failed"
+fi
 [[ -s "$partial" ]] || {
   rm -f "$partial"
   die "the backup is empty"
 }
 chmod 0600 "$partial"
 mv "$partial" "$file"
+bytes="$(stat -c %s "$file")"
 echo "    $(du -h "$file" | cut -f1)"
+
+# The result of the read-back: both readers ended well, and the table of contents names at least
+# one table. A table is a line such as "215; 1259 16386 TABLE public room nfhotel_owner"; TABLE
+# DATA and TABLE ATTACH are other entries.
+read_back=0
+tables=0
+if ((${#readers[@]})); then
+  list_status=0
+  read_status=0
+  wait "${readers[0]}" || list_status=$?
+  wait "${readers[1]}" || read_status=$?
+  tables="$(awk '$1 ~ /^[0-9]+;$/ && $4 == "TABLE" && $5 != "DATA" && $5 != "ATTACH" { n++ } END { print n + 0 }' \
+    "$read_back_dir/list.out" 2>/dev/null)" || tables=0
+  if ((list_status == 0 && read_status == 0 && tables > 0)); then
+    read_back=1
+    echo "    read back to its end: $tables tables"
+  else
+    echo "warning: the dump was not read back (pg_restore --list $list_status, pg_restore $read_status, $tables tables); the backup is kept" >&2
+    tail -n 2 "$read_back_dir/list.err" "$read_back_dir/read.err" >&2 || true
+  fi
+fi
 
 # The settings and secrets, for a rebuild of the VM from nothing (MIL-037, ADR-0025). The paths
 # are relative to /, so a restore unpacks them in place with tar --directory /. Each part of
@@ -268,5 +337,16 @@ prune 'nfhotel-daily-*.dump.age' "$DAILY_KEEP"
 prune 'nfhotel-weekly-*.dump.age' "$WEEKLY_KEEP"
 prune 'nfhotel-settings-daily-*.tar.age' "$DAILY_KEEP"
 prune 'nfhotel-settings-weekly-*.tar.age' "$WEEKLY_KEEP"
-report_success backup
+# backup_check gets the time of the backup, and is written first, so the alert BackupUnreadable
+# (backup newer than backup_check) never sees a backup whose read-back is not yet reported. Until
+# a dump has been read back, backup_check is 0, so that alert has a report to compare.
+now="$(date +%s)"
+write_report backup_bytes nfhotel_backup_bytes 'The size of the newest encrypted dump in bytes.' "$bytes"
+if ((read_back)); then
+  write_report backup_tables nfhotel_backup_tables 'The tables of the newest dump that was read back.' "$tables"
+  report_success backup_check "$now"
+elif [[ ! -f "${NFHOTEL_METRICS_DIR:-/var/lib/nfhotel-metrics}/backup_check.prom" ]]; then
+  report_success backup_check 0
+fi
+report_success backup "$now"
 echo "==> done"
