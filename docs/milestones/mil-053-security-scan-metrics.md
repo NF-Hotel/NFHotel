@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-11-01 to see the results of the SAST and DAST scans of the workflows in Grafana, and to have it planned and implemented ("Ja og implementere det også"); accepted after RC-256 Go | [de27b09] |
+| 2026-11-01 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-11-01 to see the results of the SAST and DAST scans of the workflows in Grafana, and to have it planned and implemented ("Ja og implementere det også"); accepted after RC-256 Go | [de27b09] |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Gate: the seven criteria pass on Ops CI of `main` at 5846e91, the deploys on `nf-monitoring` of 2026-11-14 and the numbers of Prometheus, GitHub code scanning and SonarQube Cloud (RC-372, Go); the mode of the token file and the exporter's log on `nf-monitoring` were not read (RC-372 F1, F2); accepted at S01's word in chat ("Du godkender for mig") | pending |
 
 ---
 
