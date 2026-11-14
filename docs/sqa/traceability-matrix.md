@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | ADR-0044 and the code of MIL-051: the deploy of the monitoring by a pull on its LXC, its health check, its report and its alerts, with the reviews RC-365 (Go) and RC-366 (Go-with-conditions) | [2e57a94] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-054 in a new row: RC-367 Go on the measurement of `main` at 9de9be4 and the diff of #435, accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-054 in a new row: RC-367 Go on the measurement of `main` at 9de9be4 and the diff of #435, accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [5f17ee9] |
 
 ---
 
@@ -458,3 +458,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-260]: ./reviews/rc-260-mil-054-code.md
 [RC-367]: ./reviews/rc-367-mil-054-gate.md
 [2e57a94]: https://github.com/NF-Hotel/NFHotel/commit/2e57a943a3adf65d71c0ae7c0551599c795048f1
+[5f17ee9]: https://github.com/NF-Hotel/NFHotel/commit/5f17ee9ed16c21c3831c135ce805d8218424827a

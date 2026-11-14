@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-054 on the measurement of `main` at 9de9be4 (SonarQube Cloud and the coverage floor of NF Hotel CI) and on pull request #435; Go; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-054 on the measurement of `main` at 9de9be4 (SonarQube Cloud and the coverage floor of NF Hotel CI) and on pull request #435; Go; mode autonomous, not independent | [5f17ee9] |
 
 ---
 
@@ -110,3 +110,4 @@ independent: the AI wrote the code of #435 and this record.
 [MIL-057]: ../../milestones/mil-057-start-from-visual-studio.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
+[5f17ee9]: https://github.com/NF-Hotel/NFHotel/commit/5f17ee9ed16c21c3831c135ce805d8218424827a
