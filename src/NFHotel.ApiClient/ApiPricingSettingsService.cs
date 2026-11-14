@@ -11,7 +11,13 @@ namespace NFHotel.ApiClient;
 /// </summary>
 public sealed class ApiPricingSettingsService : IPricingSettingsService
 {
+    #region Fields
+
     private readonly ApiGateway _api;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the client.</summary>
     /// <param name="api">The gateway that carries the tokens.</param>
@@ -20,6 +26,10 @@ public sealed class ApiPricingSettingsService : IPricingSettingsService
         ArgumentNullException.ThrowIfNull(api);
         _api = api;
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <inheritdoc />
     public Task<Result<PricingSettingsDto>> GetAsync(CancellationToken cancellationToken = default) =>
@@ -32,4 +42,6 @@ public sealed class ApiPricingSettingsService : IPricingSettingsService
 
         return _api.PutAsync<PricingSettingsDto>(ApiRoutes.PricingSettings, request, cancellationToken);
     }
+
+    #endregion Public methods
 }

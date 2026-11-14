@@ -8,8 +8,14 @@ namespace NFHotel.Infrastructure.Persistence.Configurations;
 /// <summary>Maps <see cref="RoomRate"/> to the table <c>room_rate</c> (MIL-055).</summary>
 public sealed class RoomRateConfiguration : EntityConfiguration<RoomRate, int>
 {
+    #region Properties
+
     /// <inheritdoc />
     protected override string TableName => "room_rate";
+
+    #endregion Properties
+
+    #region Protected methods
 
     /// <inheritdoc />
     protected override void ConfigureEntity(EntityTypeBuilder<RoomRate> builder)
@@ -24,4 +30,6 @@ public sealed class RoomRateConfiguration : EntityConfiguration<RoomRate, int>
             .IsUnique()
             .HasDatabaseName("ux_room_rate_size");
     }
+
+    #endregion Protected methods
 }

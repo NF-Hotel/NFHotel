@@ -9,6 +9,8 @@ namespace NFHotel.Web.Features.Admin.Pricing;
 /// </summary>
 public partial class PriceSuggestions : CancellableComponentBase
 {
+    #region Fields
+
     /// <summary>The three pricing pages as tabs: one menu item, same routes.</summary>
     private static readonly AdminTab[] PricingTabs =
     [
@@ -17,12 +19,22 @@ public partial class PriceSuggestions : CancellableComponentBase
         new("/admin/pricing/settings", "Settings"),
     ];
 
+    #endregion Fields
+
+    #region Protected methods
+
     /// <summary>Loads the suggestions when the page opens.</summary>
     protected override Task OnInitializedAsync() => ViewModel.LoadAsync(ComponentToken);
+
+    #endregion Protected methods
+
+    #region Private methods
 
     private Task ReloadAsync() => ViewModel.LoadAsync(ComponentToken);
 
     private Task ApproveAsync(string key) => ViewModel.ApproveAsync(key, ComponentToken);
 
     private Task RevertAsync(int id) => ViewModel.RevertAsync(id, ComponentToken);
+
+    #endregion Private methods
 }

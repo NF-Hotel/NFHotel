@@ -20,16 +20,26 @@ public sealed record PricingSettings(
     decimal MinimumNightlyPrice = 0m,
     IReadOnlyList<RoomSize>? DiscountSizesOrNull = null)
 {
+    #region Fields
+
     // The limits are the ones of the entity, so the rule and the stored settings cannot drift apart.
     private const decimal MaxPercent = (decimal)PricingSetting.MaxPercent;
 
     private static readonly RoomSize[] DefaultDiscountSizes = [RoomSize.Single];
+
+    #endregion Fields
+
+    #region Properties
 
     /// <summary>The settings that apply until the Manager changes them.</summary>
     public static PricingSettings Defaults { get; } = new();
 
     /// <summary>The room sizes that get a discount in a low season.</summary>
     public IReadOnlyList<RoomSize> DiscountSizes => DiscountSizesOrNull ?? DefaultDiscountSizes;
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <summary>Guards the rule against settings that make no sense.</summary>
     /// <exception cref="ArgumentException">The thresholds, a percentage or the minimum price is out of range.</exception>
@@ -56,6 +66,10 @@ public sealed record PricingSettings(
         }
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static void EnsurePercent(decimal value, string name)
     {
         if (value is < 0m or > MaxPercent)
@@ -63,4 +77,6 @@ public sealed record PricingSettings(
             throw new ArgumentException("A percentage must be from 0 to 100.", name);
         }
     }
+
+    #endregion Private methods
 }

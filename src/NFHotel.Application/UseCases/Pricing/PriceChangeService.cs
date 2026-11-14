@@ -16,12 +16,18 @@ namespace NFHotel.Application.UseCases.Pricing;
 /// </summary>
 public sealed class PriceChangeService : IPriceChangeService
 {
+    #region Fields
+
     private readonly IPriceChangeRepository _changes;
     private readonly IRoomRateRepository _rates;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IClock _clock;
     private readonly IStaffCallContext _context;
     private readonly StaffAuditRecorder _recorder;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the service.</summary>
     /// <param name="changes">The storage of the price changes.</param>
@@ -52,6 +58,10 @@ public sealed class PriceChangeService : IPriceChangeService
         _context = context;
         _recorder = new StaffAuditRecorder(audit, context, clock);
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <inheritdoc />
     public async Task<Result<ApprovedPriceChange>> ApproveAsync(
@@ -173,6 +183,10 @@ public sealed class PriceChangeService : IPriceChangeService
         return Result<IReadOnlyList<EffectivePriceDto>>.Success(prices);
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static string Describe(PriceChange change) =>
         string.Create(
             CultureInfo.InvariantCulture,
@@ -224,4 +238,6 @@ public sealed class PriceChangeService : IPriceChangeService
 
         return new EffectivePriceDto(size.ToString(), day, baseRate, price, counting?.Percentage);
     }
+
+    #endregion Private methods
 }

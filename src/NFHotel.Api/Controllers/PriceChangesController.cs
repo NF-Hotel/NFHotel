@@ -17,7 +17,13 @@ namespace NFHotel.Api.Controllers;
 [Route(ApiRoutes.PriceChanges)]
 public sealed class PriceChangesController : ControllerBase
 {
+    #region Fields
+
     private readonly IPriceSuggestionService _suggestions;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the controller.</summary>
     /// <param name="suggestions">Lists and reverts the changes.</param>
@@ -26,6 +32,10 @@ public sealed class PriceChangesController : ControllerBase
         ArgumentNullException.ThrowIfNull(suggestions);
         _suggestions = suggestions;
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <summary>Lists every price change.</summary>
     /// <param name="cancellationToken">Cancels the call.</param>
@@ -53,4 +63,6 @@ public sealed class PriceChangesController : ControllerBase
     [EnableRateLimiting(StaffController.WriteLimitPolicy)]
     public async Task<IActionResult> RevertAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _suggestions.RevertAsync(id, cancellationToken).ConfigureAwait(false));
+
+    #endregion Public methods
 }

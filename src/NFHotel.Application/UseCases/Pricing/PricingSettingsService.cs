@@ -12,11 +12,17 @@ namespace NFHotel.Application.UseCases.Pricing;
 /// <summary>Reads and saves the pricing settings of the Manager (MIL-055).</summary>
 public sealed class PricingSettingsService : IPricingSettingsService
 {
+    #region Fields
+
     private readonly IPricingSettingRepository _settings;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IClock _clock;
     private readonly IStaffCallContext _context;
     private readonly StaffAuditRecorder _recorder;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the service.</summary>
     /// <param name="settings">The storage of the settings.</param>
@@ -43,6 +49,10 @@ public sealed class PricingSettingsService : IPricingSettingsService
         _context = context;
         _recorder = new StaffAuditRecorder(audit, context, clock);
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <inheritdoc />
     public async Task<Result<PricingSettingsDto>> GetAsync(CancellationToken cancellationToken = default)
@@ -133,6 +143,10 @@ public sealed class PricingSettingsService : IPricingSettingsService
         return Result<PricingSettingsDto>.Success(ToDto(stored));
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static bool TryParseSizes(IReadOnlyList<string>? names, out List<RoomSize> sizes)
     {
         sizes = [];
@@ -207,4 +221,6 @@ public sealed class PricingSettingsService : IPricingSettingsService
             [.. value.DiscountSizes.Select(size => size.ToString())],
             value.SetBy,
             value.SetAt);
+
+    #endregion Private methods
 }

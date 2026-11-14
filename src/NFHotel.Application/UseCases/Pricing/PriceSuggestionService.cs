@@ -18,6 +18,8 @@ namespace NFHotel.Application.UseCases.Pricing;
 /// </summary>
 public sealed class PriceSuggestionService : IPriceSuggestionService
 {
+    #region Fields
+
     // Two approvals at the same moment could both pass the overlap check; one API instance is assumed, so a lock in the
     // process serialises the check and the save.
     private static readonly SemaphoreSlim ApprovalLock = new(1, 1);
@@ -31,6 +33,10 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
     private readonly IPriceChangeRepository _changes;
     private readonly IPriceChangeService _changeService;
     private readonly IClock _clock;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the service.</summary>
     /// <param name="reports">The market analysis, which gives the latest report.</param>
@@ -61,6 +67,10 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
         _changeService = changeService;
         _clock = clock;
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <inheritdoc />
     public async Task<Result<PriceSuggestionListDto>> GetOpenAsync(CancellationToken cancellationToken = default)
@@ -142,6 +152,10 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
         string.Create(
             CultureInfo.InvariantCulture,
             $"{size.ToLowerInvariant()}|{firstDay:yyyy-MM-dd}|{lastDay:yyyy-MM-dd}|{percentage:0.00}");
+
+    #endregion Public methods
+
+    #region Private methods
 
     // A suggestion is covered when the days that changes of its size count on leave no day of its period free.
     private static bool IsCovered(PriceSuggestionItemDto item, IReadOnlyList<PriceChange> existing)
@@ -266,10 +280,16 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
     // A share between 0 and 1 as percent with one decimal.
     private static decimal Percent(double share) => Math.Round((decimal)share * 100m, 1, MidpointRounding.AwayFromZero);
 
+    #endregion Private methods
+
+    #region Nested types
+
     private sealed record Computed(
         string Basis,
         DateOnly Today,
         IReadOnlyList<PriceSuggestionItemDto> Items,
         string? Explanation,
         IReadOnlyList<PriceSuggestionTextDto> Ideas);
+
+    #endregion Nested types
 }

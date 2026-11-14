@@ -13,6 +13,8 @@ namespace NFHotel.Application.UseCases.RoomRates;
 /// <summary>Reads and sets the nightly base rate per room size (MIL-055).</summary>
 public sealed class RoomRateService : IRoomRateService
 {
+    #region Fields
+
     private const string NoneText = "(none)";
 
     private readonly IRoomRateRepository _rates;
@@ -20,6 +22,10 @@ public sealed class RoomRateService : IRoomRateService
     private readonly IClock _clock;
     private readonly IStaffCallContext _context;
     private readonly StaffAuditRecorder _recorder;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the service.</summary>
     /// <param name="rates">The storage of the rates.</param>
@@ -46,6 +52,10 @@ public sealed class RoomRateService : IRoomRateService
         _context = context;
         _recorder = new StaffAuditRecorder(audit, context, clock);
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <inheritdoc />
     public async Task<Result<IReadOnlyList<RoomRateDto>>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -111,6 +121,12 @@ public sealed class RoomRateService : IRoomRateService
         return Result<RoomRateDto>.Success(ToDto(stored));
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static RoomRateDto ToDto(RoomRate value) =>
         new(value.Size.ToString(), value.NightlyPrice, value.SetBy, value.SetAt);
+
+    #endregion Private methods
 }
