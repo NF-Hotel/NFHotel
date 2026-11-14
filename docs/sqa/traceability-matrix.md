@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | ADR-0044 and the code of MIL-051: the deploy of the monitoring by a pull on its LXC, its health check, its report and its alerts, with the reviews RC-365 (Go) and RC-366 (Go-with-conditions) | [2e57a94] |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-054 in a new row: RC-367 Go on the measurement of `main` at 9de9be4 and the diff of #435, accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [5f17ee9] |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | RC-380 on the row of `deploy/market-analysis`: the pin of the market analysis service moved to 97ca890f, so the released service takes the pricing settings of MIL-071; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [48bd88c] |
 
 ---
 
@@ -66,7 +66,7 @@ updated whenever an artifact instance is created or reviewed.
 | `tests/NFHotel.Proxmox.Tests`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-001] | - | [RC-004] |
 | `deploy/`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-002] | - | [RC-007] |
 | `deploy/proxmox`, `scripts/pve-token.sh`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-003] | - | [RC-011] |
-| `deploy/market-analysis`, `deploy/nginx`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-004] | - | [RC-016] |
+| `deploy/market-analysis`, `deploy/nginx`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-004], [MIL-026] (the pin of the service) | - | [RC-016], [RC-380] |
 | [MIL-055] | Milestone (Accepted, Go; its rule for the suggestions is replaced by [MIL-071]) | en | it | [BC-001], [US-001], [MIL-026], [MIL-028], [MIL-030] | [UC-007], [MIL-071], `docs/wiki/Price-Suggestions.md`, code and tests below | [RC-262] |
 | [MIL-058] | Milestone (Accepted, Go) | en | it | [BC-001], [DSA-001], [ADR-0032], [MIL-022], [MIL-044], [MIL-053] | `docs/wiki/Security-Controls.md` (the code quality row), the code and tests of the findings below | [RC-277] |
 | The code of MIL-058: the back-office view models of `src/NFHotel.Web/Features/Admin` (bookings, guests, rooms) and `Booking/BookingFlowViewModel`, `BenchmarkExport` and the Razor loops of `Benchmark` and `Pricing`, `src/NFHotel.External/MarketAnalysis` (`FindingsSeries`, `MarketAnalysisResultMapper`), the test paths and the disposables of `tests/`, `StubHandler`, and `JsonClient.get_json` of the scan exporter | Source and test code (built, not yet merged) | - | - | [MIL-058] tasks 2 to 5 | - | [RC-278] (the findings report of the 57 findings) |
@@ -457,5 +457,6 @@ updated whenever an artifact instance is created or reviewed.
 [RC-258]: ./reviews/rc-258-mil-054-plan.md
 [RC-260]: ./reviews/rc-260-mil-054-code.md
 [RC-367]: ./reviews/rc-367-mil-054-gate.md
-[2e57a94]: https://github.com/NF-Hotel/NFHotel/commit/2e57a943a3adf65d71c0ae7c0551599c795048f1
+[RC-380]: ./reviews/rc-380-mil-026-service-pin.md
 [5f17ee9]: https://github.com/NF-Hotel/NFHotel/commit/5f17ee9ed16c21c3831c135ce805d8218424827a
+[48bd88c]: https://github.com/NF-Hotel/NFHotel/commit/48bd88c4cea912fb342d83964bb71d1c3ee27d57
