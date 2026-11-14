@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 using NFHotel.Application.Dto.Guests;
 
 namespace NFHotel.Application.Dto.Bookings;
@@ -19,5 +21,5 @@ public sealed record CreateBookingRequest(
     DateOnly CheckInDate,
     DateOnly CheckOutDate,
     int RoomId,
-    int? GuestId,
+    [Range(1, int.MaxValue)] int? GuestId,
     GuestFields? NewGuest);

@@ -150,7 +150,9 @@ public sealed partial class AsyncRulesTests
     [GeneratedRegex(@"(?:^|\s)(?:public|private|internal|protected)\s+(?:static\s+|override\s+|virtual\s+|sealed\s+)*(?:async\s+)?(?:Task|ValueTask)(?:<(?:[^<>]|<[^<>]*>)*>)?\s+(?<name>\w+)\s*\(", RegexOptions.Multiline)]
     private static partial Regex TaskMethod();
 
-    [GeneratedRegex(@"(?:^|\s)public\s+(?:static\s+|override\s+|virtual\s+)*(?:async\s+)?(?:Task|ValueTask)(?:<(?:[^<>]|<[^<>]*>)*>)?\s+(?<name>\w+)\s*\((?<parameters>[^)]*)\)", RegexOptions.Multiline)]
+    // A parameter may carry an attribute with arguments, such as [Range(1, 10)], so the list nests parentheses up to
+    // two deep.
+    [GeneratedRegex(@"(?:^|\s)public\s+(?:static\s+|override\s+|virtual\s+)*(?:async\s+)?(?:Task|ValueTask)(?:<(?:[^<>]|<[^<>]*>)*>)?\s+(?<name>\w+)\s*\((?<parameters>(?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)", RegexOptions.Multiline)]
     private static partial Regex PublicTaskMethod();
 
     [GeneratedRegex(@"\b(?:ViewModel|Form)\.\w+Async\([^()]*\)")]

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 using Microsoft.AspNetCore.Mvc;
 
 using NFHotel.Api.Contracts;
@@ -55,14 +57,14 @@ public sealed class BookingsController : ControllerBase
     /// <summary>Finds the rooms that are free in a period.</summary>
     /// <param name="checkInDate">Arrival date.</param>
     /// <param name="checkOutDate">Departure date.</param>
-    /// <param name="excludeBookingId">A booking to leave out, so it does not block its own room.</param>
+    /// <param name="excludeBookingId">A booking to leave out, so it does not block its own room; a key below one is refused.</param>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The free rooms.</returns>
     [HttpGet(ApiRoutes.AvailableRooms)]
     public async Task<IActionResult> GetAvailableRoomsAsync(
         [FromQuery] DateOnly checkInDate,
         [FromQuery] DateOnly checkOutDate,
-        [FromQuery] int? excludeBookingId,
+        [FromQuery, Range(1, int.MaxValue)] int? excludeBookingId,
         CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings
             .GetAvailableRoomsAsync(checkInDate, checkOutDate, excludeBookingId, cancellationToken)
