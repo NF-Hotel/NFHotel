@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green, among them the read-back against PostgreSQL 16 in the job of the real migrations | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green, among them the read-back against PostgreSQL 16 in the job of the real migrations | [c48b8db] |
 
 ---
 
@@ -205,3 +205,4 @@ read-back against PostgreSQL 16 (F6). The reviewer is not independent.
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-ADR-001]: ../../../framework/qc/artifacts/qc-adr.md
+[c48b8db]: https://github.com/NF-Hotel/NFHotel/commit/c48b8dbd50d448d02e879f37a241c1443ae35207
