@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Re-scored after 17d67cc and 96b93dc: criterion 21 passes on the regions of the types MIL-055 created (F4 fixed), criterion 14 on the pricing tabs defined once (G3); the risk exception of the first version is withdrawn, because the stand-in may not approve one (G2); the reading of criterion 21 recorded (G1); Go; mode autonomous, not independent | [46998b0] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | b0ee6ac added: the two locals of the region of the gate in `ConflictPathTests` typed; the search for `var` and F3 now cover the test files of the milestone; Go; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | b0ee6ac added: the two locals of the region of the gate in `ConflictPathTests` typed; the search for `var` and F3 now cover the test files of the milestone; Go; mode autonomous, not independent | [8758ab7] |
 
 ---
 
@@ -130,3 +130,4 @@ Go. The three conditions of [RC-266] are settled: F3 is closed and F4 fixed for 
 [RC-377]: ./rc-377-uc-007-revision.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [46998b0]: https://github.com/NF-Hotel/NFHotel/commit/46998b088196b21f2d0bee4e82c69449c6572886
+[8758ab7]: https://github.com/NF-Hotel/NFHotel/commit/8758ab71c8c3d135abb0c87b8e4ee1ac72fa6167
