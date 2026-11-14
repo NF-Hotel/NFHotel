@@ -11,7 +11,8 @@
 #   4. clone NF-Hotel/NFHotel to /opt/nfhotel-monitoring in it, and install Debian's security
 #      updates from there with scripts/install-patching.sh, as on the VM
 #   5. print the steps that need S03: tailscale up (an interactive sign-in), the tag
-#      tag:monitoring, the settings and secrets, and scripts/deploy-monitoring.sh
+#      tag:monitoring, the settings and secrets, scripts/deploy-monitoring.sh, and
+#      scripts/pull-monitoring.sh --install, which deploys every later change (ADR-0044, MIL-051)
 #
 # Usage: create-monitoring-lxc.sh <id> [--apply]
 #   <id>     a free ID that neither `pct list` nor `qm list` shows, for example 102
@@ -120,4 +121,5 @@ cat <<EOF
      mkdir -m 700 secrets   and write the three files of secrets.example/README.md (chmod 600)
   3. bash /opt/nfhotel-monitoring/ops/scripts/deploy-monitoring.sh           (checks only)
      bash /opt/nfhotel-monitoring/ops/scripts/deploy-monitoring.sh --apply   (starts it)
+  4. bash /opt/nfhotel-monitoring/ops/scripts/pull-monitoring.sh --install   (deploys each merged change)
 EOF

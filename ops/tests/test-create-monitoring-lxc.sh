@@ -96,7 +96,9 @@ awk '/^apt-get install -y -q docker-ce / { d = NR }
   ok "it clones the checkout and installs Debian's security updates with install-patching.sh, after Docker" ||
   ko "the checkout and the patching: $(grep -F 'pct exec' "$W/log")"
 sed -n '/^==> done/,$p' "$W/out" | grep -q "deploy-monitoring.sh --apply" && ! sed -n '/^==> done/,$p' "$W/out" | grep -q "git clone" &&
-  ok "the steps left to S03 end with the deploy, without the clone" || ko "S03's steps: $(sed -n '/^==> done/,$p' "$W/out")"
+  sed -n '/^==> done/,$p' "$W/out" | tail -n 1 | grep -q "pull-monitoring.sh --install" &&
+  ok "the steps left to S03 end with the deploy and the install of the pull, without the clone" ||
+  ko "S03's steps: $(sed -n '/^==> done/,$p' "$W/out")"
 run 102 && grep -qxF "would run: pct exec 102 -- bash /opt/nfhotel-monitoring/ops/scripts/install-patching.sh --apply" "$W/out" &&
   [[ ! -s "$W/log" ]] && ok "the dry run prints the patching and runs nothing" || ko "dry run of the patching: $(grep -F install-patching "$W/out")"
 run 12 && ko "accepted a two-digit ID" || ok "an ID below 100 is refused"
