@@ -37,7 +37,7 @@ are secrets. The files live in `ops/` and `ops/deploy/<service>/`.
 | `ops/deploy.env` | `deploy.sh` (the VM) | every deploy | no |
 | `ops/deploy/postgres/postgres.env` | PostgreSQL | always | yes: database password |
 | `ops/deploy/nfhotel-api/nfhotel-api.env` | database API | always | yes: four |
-| `ops/deploy/nfhotel-web/nfhotel-web.env` | web application | always | yes: passport key |
+| `ops/deploy/nfhotel-web/nfhotel-web.env` | web application | always | yes: two copies, of the analysis key and the benchmark token |
 | `ops/deploy/market-analysis/market-analysis.env` | market analysis | always | yes: API key |
 | `ops/deploy/ollama/ollama.env` | Ollama (AI models) | always | no |
 | `ops/deploy/benchmark/benchmark.env` | benchmark service | always | yes: API token |
@@ -86,7 +86,7 @@ The database API. It is the only service that holds the database login and the k
 | Key | Meaning |
 | --- | --- |
 | `ASPNETCORE_ENVIRONMENT` | `Development` shows the development passwords at the end of `dev-up.sh`. Never use it on a release |
-| `Encryption__PassportKey` | Key that encrypts passport numbers: 32 random bytes, base64 (`openssl rand -base64 32`). **Secret.** Losing it makes the stored numbers unreadable. It must be the same in the web file |
+| `Encryption__PassportKey` | Key that encrypts passport numbers: 32 random bytes, base64 (`openssl rand -base64 32`). **Secret.** Losing it makes the stored numbers unreadable. Only the API holds it: never write it in the web file (ADR-0004) |
 | `HotelTime__TimeZoneId` | Time zone of the hotel, `Europe/Copenhagen` |
 | `Api__Token` | Token the web application and the benchmark service present to the API, at least 32 characters. **Secret.** The deploy passes it to the other services, so it is written here only |
 | `Staff__Token__SigningKey` | Key that signs staff sign-in tokens, at least 32 characters. **Secret.** Only the API holds it |
@@ -97,14 +97,16 @@ The database API. It is the only service that holds the database login and the k
 
 ### `nfhotel-web/nfhotel-web.env`
 
-The web application. It has no database login: it calls the API.
+The web application. It has no database login and no passport key: it calls the API, and only the API decrypts a
+passport number (ADR-0004). An older file may still hold the line `Encryption__PassportKey`: delete it. Until then each
+deploy leaves the line out of the web's settings with a warning that names the key, never the value, and deletes the
+web's old secret file of the key (MIL-075).
 
 | Key | Meaning |
 | --- | --- |
 | `ASPNETCORE_ENVIRONMENT` | `Development` in the development VM |
 | `ASPNETCORE_FORWARDEDHEADERS_ENABLED` | Trust the `X-Forwarded-*` headers set by nginx |
 | `Tls__Require` | Redirect HTTP to HTTPS and mark the staff cookie Secure. True behind the proxy |
-| `Encryption__PassportKey` | Same value as in the API file. **Secret** |
 | `HotelTime__TimeZoneId` | Time zone of the hotel |
 | `HolidayApi__BaseUrl`, `__TimeoutSeconds`, `__ApiKey` | The holiday calendar of the analysis service. The key must equal `API_TOKEN` of `market-analysis.env` |
 | `BenchmarkService__BaseUrl`, `__TimeoutSeconds`, `__Token` | The benchmark service. The token is `NFBENCH_API_TOKEN` of `benchmark.env`. Empty means the Start page says the service is not set up |
@@ -186,7 +188,6 @@ See [Disaster Recovery](Disaster-Recovery).
 | Secret | Written in | Also used by |
 | --- | --- | --- |
 | `Api__Token` | `nfhotel-api.env` | web and benchmark, passed by the deploy |
-| `Encryption__PassportKey` | `nfhotel-api.env` | `nfhotel-web.env`, copy by hand: the two must be equal |
 | `API_TOKEN` | `market-analysis.env` | `HolidayApi__ApiKey` in `nfhotel-web.env`, copy by hand |
 | `NFBENCH_API_TOKEN` | `benchmark.env` | `BenchmarkService__Token` in `nfhotel-web.env`, copy by hand |
 | `POSTGRES_PASSWORD` | `postgres.env` | the API, built into its connection string by the deploy |

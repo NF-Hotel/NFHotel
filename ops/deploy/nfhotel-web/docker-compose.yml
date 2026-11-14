@@ -45,7 +45,6 @@ services:
     # deploy/nfhotel-api/nfhotel-api.env and the benchmark token from benchmark.env, so each is
     # written in the settings of one service only.
     secrets:
-      - Encryption__PassportKey
       - Api__Token
       - HolidayApi__ApiKey
       - BenchmarkService__Token
@@ -90,8 +89,6 @@ networks:
 
 # One file per secret, written by scripts/write-secret-files.sh into NFHOTEL_WEB_SECRETS.
 secrets:
-  Encryption__PassportKey:
-    file: ${NFHOTEL_WEB_SECRETS:-secrets}/Encryption__PassportKey
   Api__Token:
     file: ${NFHOTEL_WEB_SECRETS:-secrets}/Api__Token
   HolidayApi__ApiKey:

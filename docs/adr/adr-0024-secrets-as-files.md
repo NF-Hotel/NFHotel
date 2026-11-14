@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0024 |
-| CrossReference | [ADR-0004], [ADR-0011], [ADR-0020], [MIL-035], [RC-185] |
+| CrossReference | [ADR-0004], [ADR-0011], [ADR-0020], [MIL-035], [MIL-075], [RC-185] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-035, which S01 accepted in chat on 2026-10-24 | [9090645] |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 7: the limit is accepted; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | [199bc05] |
+| 2026-10-25 | Deprecated | mikemike | AI as stand-in for S01 | Decision 7: the limit is accepted; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | [199bc05] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Decision 2 made precise by MIL-075: each service gets only its own secrets, so the web application no longer gets the passport key (ADR-0004); the script leaves a secret of another service out of every settings file with a warning that names the key, and deletes a secret file that the service no longer gets; reviewed in RC-360 (Go), autonomous, not independent | [8ca858a] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -38,7 +38,7 @@ Options considered:
 We follow option 2.
 
 1. **The settings files stay the one place where a secret is written.** The operator keeps writing each secret once, in the settings file of its own service; nothing new to learn and nothing new to back up.
-2. **The deploy writes the files.** `scripts/write-secret-files.sh` splits the settings of PostgreSQL, the API and the web application into `secrets/settings.env` (every setting except the secrets) and one file per secret, in `ops/deploy/<service>/secrets/`. `scripts/deploy-services.sh` runs it at every deploy, and the throwaway stacks of CI run it too. The script holds the one list of the secrets.
+2. **The deploy writes the files.** `scripts/write-secret-files.sh` splits the settings of PostgreSQL, the API and the web application into `secrets/settings.env` (every setting except the secrets) and one file per secret, in `ops/deploy/<service>/secrets/`. `scripts/deploy-services.sh` runs it at every deploy, and the throwaway stacks of CI run it too. The script holds the one list of the secrets. Each service gets only its own secrets (MIL-075): only the API gets the passport key (ADR-0004); a line in the settings of a service whose key is a secret of another service is left out with a warning that names the key, never the value; and a secret file in the folder of a service that the service no longer gets is deleted.
 3. **Where the files live.** In a 0700 folder owned by `nfhotel`, next to the settings files, not in root's `/etc/nfhotel/secrets` as MIL-035 first proposed. The deploy runs as `nfhotel` and cannot write there, and the files would protect nothing more: the settings files they come from are already in the same place with the same owner. Root's folder keeps the logins that only root's deploy step reads (ADR-0011).
 4. **Modes.** Each file is 0444. The container users (`app`, `postgres`) are not `nfhotel`, and Compose without Swarm cannot change the owner of a mounted secret, so the file must be readable by others; the 0700 folder keeps everyone but `nfhotel` and root out on the host, and inside the container only the one file is mounted.
 5. **Rotation reaches the container.** Compose does not recreate a container when only a secret file changed, so the deploy puts a hash of the secret files of the API and the web application in their environment (`NFHOTEL_SETTINGS_HASH`), the same way the proxy has its configuration hash. A digest of high-entropy values reveals none of them.
@@ -51,6 +51,7 @@ We follow option 2.
 
 - No secret of PostgreSQL, the API or the web application is in the environment of its container, so `docker inspect`, the socket proxy and a dump of the environment show none.
 - Each secret can be rotated by editing one settings file and deploying, and CI does that for the database password, the API token, the signing key and the first Manager's password on every run of the drill.
+- Each service holds only its own secrets: the web application, the container that serves the public pages, holds no passport key, and a secret written in the wrong settings file never reaches a container (MIL-075).
 
 **Negative:**
 
@@ -64,6 +65,7 @@ We follow option 2.
 - [ADR-0004] and [ADR-0011]: the API token and the logins of the API are now files.
 - [ADR-0020]: the socket proxy of Alloy no longer sees a secret (RC-185).
 - [MIL-035]: tasks 2 to 4.
+- [MIL-075]: the web application without the passport key, and the secrets of other services left out of every settings file.
 
 ---
 
@@ -71,6 +73,7 @@ We follow option 2.
 [ADR-0011]: ./adr-0011-postgresql-access-for-the-api.md
 [ADR-0020]: ./adr-0020-monitoring-stack.md
 [MIL-035]: ../milestones/mil-035-secrets-as-files.md
+[MIL-075]: ../milestones/mil-075-the-passport-key-out-of-the-web-container.md
 [RC-185]: ../sqa/reviews/rc-185-alloy-docker-discovery.md
-[9090645]: https://github.com/NF-Hotel/NFHotel/commit/90906459f40317be0fe2ac6e25862924cdccfee9
 [199bc05]: https://github.com/NF-Hotel/NFHotel/commit/199bc05466d450b92157aa4daead871e7e6d76ce
+[8ca858a]: https://github.com/NF-Hotel/NFHotel/commit/8ca858a67009163c8e76e707abf63986fa51e220

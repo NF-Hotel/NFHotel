@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-079 in its rows: RC-342 Go after the deploy of CD run 43256465429 and the check on the live site, accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [fc88265] |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-073: the pin of the database image and the wiki page, with its code review RC-359 (Go-with-conditions) | [26634dc] |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-075: the passport key out of the web container, with its code review RC-360 (Go-with-conditions) | [8ca858a] |
 
 ---
 
@@ -105,6 +105,7 @@ updated whenever an artifact instance is created or reviewed.
 | The code of MIL-073: the pin of `postgres:16-alpine` in `ops/deploy/postgres/docker-compose.yml` and the wiki page Containers-and-Images | YAML (reviewed 2026-11-14, Go-with-conditions: the checks of the pull request) | - | - | [MIL-073] tasks 1 and 2, [ADR-0040], [DSA-001] | - | [RC-359] |
 | [MIL-074] | Milestone (Accepted, Go; plan reviewed in RC-334 and accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat) | en | it | [BC-001], [DSA-001], [ADR-0008], [ADR-0020], MIL-021, MIL-023, MIL-069 | planned: `backup-database.sh --copy-only` with a lock and the units `nfhotel-offvm-copy.service` and `.timer` (task 1), the report `backup_host_seen` and the rule `BackupTargetDown` (task 2), the documents (task 3), the scheduled task on the backup host (task 4), the deploy and the gate (tasks 5 and 6) | [RC-334] |
 | [MIL-075] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-335) | en | it | [BC-001], [ADR-0004], [ADR-0024], MIL-015, MIL-035 | planned: the passport key off the web's list, loop and compose file, the secrets of every service left out of every settings file with a warning, and the deletion of a secret file that a service no longer lists (task 1), the web started without the key (task 2), the documents (task 3), the deploy with the checks in the VM (task 4) and the gate (task 5) | [RC-335] |
+| The code of MIL-075: the lists and the filter of `ops/scripts/write-secret-files.sh` and its test, `ops/deploy/nfhotel-web/docker-compose.yml` and `nfhotel-web.env.example`, the comment in `src/NFHotel.Web/Program.cs`, `tests/NFHotel.Web.Tests/PassportKeyTests.cs`, `scripts/dev-up.sh`, the wiki pages Environment-Files and Proxmox-Deployment, and the row of 2026-11-14 of ADR-0024 | Shell, C#, YAML, ADR (reviewed 2026-11-14, Go-with-conditions: the checks of the pull request) | - | - | [MIL-075] tasks 1 to 3, [ADR-0004], [ADR-0024] | - | [RC-360] |
 | [MIL-076] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-336) | en | it | [BC-001], [ADR-0008], [ADR-0020], ADR-0025, MIL-021, MIL-023, MIL-074 | planned: the read-back of every dump with two `pg_restore` readers and the reports `backup_check`, `nfhotel_backup_tables` and `nfhotel_backup_bytes` (task 1), the rules `BackupUnreadable` and `BackupShrunk` (task 2), the documents (task 3), the deploy and the checks (task 4), seven nights and the gate (task 5) | [RC-336] |
 | [MIL-077] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-337) | en | it | [BC-001], [ADR-0002], [ADR-0004], MIL-015, MIL-027, MIL-044, MIL-067 | planned: the test of hostile input over every endpoint of the API and its fixes (task 1), the OpenAPI document made at build time and not served (task 2), the ZAP API scan in the weekly run (task 3), the documents (task 4) and the gate after the first weekly run (task 5) | [RC-337] |
 | [MIL-078] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-338) | en | it | [BC-001], [ADR-0037], ADR-0027, ADR-0028, ADR-0029, MIL-038, MIL-040, MIL-041, MIL-072 | planned: the ADR on OpenTofu (task 1), the routes and Access in `ops/infra/cloudflare/` with `import` blocks (task 2), the weekly comparison that opens and closes an issue (task 3), the documents (task 4), the two tokens, the first plan and the drill with S01 (task 5) and the gate (task 6) | [RC-338] |
@@ -424,6 +425,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-077]: ../milestones/mil-077-hostile-input-against-the-api.md
 [MIL-078]: ../milestones/mil-078-the-tunnel-routes-and-access-as-code.md
 [RC-335]: ./reviews/rc-335-mil-075.md
+[RC-360]: ./reviews/rc-360-mil-075-code.md
 [RC-336]: ./reviews/rc-336-mil-076.md
 [RC-337]: ./reviews/rc-337-mil-077.md
 [RC-338]: ./reviews/rc-338-mil-078.md
@@ -437,5 +439,5 @@ updated whenever an artifact instance is created or reviewed.
 [RC-356]: ./reviews/rc-356-mil-051-revision.md
 [RC-357]: ./reviews/rc-357-mil-052-revision.md
 [RC-358]: ./reviews/rc-358-mil-018-revision.md
-[fc88265]: https://github.com/NF-Hotel/NFHotel/commit/fc88265603804b527f97224c87d91dca53e09e69
 [26634dc]: https://github.com/NF-Hotel/NFHotel/commit/26634dc25a842119c706a2011812d891e8d4f3bb
+[8ca858a]: https://github.com/NF-Hotel/NFHotel/commit/8ca858a67009163c8e76e707abf63986fa51e220
