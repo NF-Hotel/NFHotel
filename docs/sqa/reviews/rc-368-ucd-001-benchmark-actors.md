@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the amendment of UCD-001 that puts Hotel staff (Manager) on the two benchmark use cases (MIL-019, MIL-020); Go; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the amendment of UCD-001 that puts Hotel staff (Manager) on the two benchmark use cases (MIL-019, MIL-020); Go; mode autonomous, not independent | [50f850d] |
 
 ---
 
@@ -95,3 +95,4 @@ Go. Every Mandatory criterion of QC-UCD-001 and QC-LANG-001 passes for the amend
 [RC-263]: ./rc-263-mil-055-task-1-objective-and-story.md
 [QC-UCD-001]: ../../../framework/qc/artifacts/qc-use-case-diagram.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[50f850d]: https://github.com/NF-Hotel/NFHotel/commit/50f850d890371ba0759cbba802c27c9b31cf5b69

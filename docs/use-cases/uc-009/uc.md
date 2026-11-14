@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version (MIL-020); accepted after RC-370 Go, at S01's word in chat ("Du godkender for mig"); mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version (MIL-020); accepted after RC-370 Go, at S01's word in chat ("Du godkender for mig"); mode autonomous, not independent | [50f850d] |
 
 ---
 
@@ -112,3 +112,4 @@
 [ADR-0013]: ../../adr/adr-0013-benchmark-results.md
 [ADR-0014]: ../../adr/adr-0014-default-ai-model.md
 [ADR-0031]: ../../adr/adr-0031-state-that-survives-a-deploy.md
+[50f850d]: https://github.com/NF-Hotel/NFHotel/commit/50f850d890371ba0759cbba802c27c9b31cf5b69

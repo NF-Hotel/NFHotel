@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | ADR-0044 and the code of MIL-051: the deploy of the monitoring by a pull on its LXC, its health check, its report and its alerts, with the reviews RC-365 (Go) and RC-366 (Go-with-conditions) | [2e57a94] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | UC-008 and UC-009 with their reviews RC-369 and RC-370 (Go), the delta review RC-368 of UCD-001, and rows for MIL-019 and MIL-020 with their use cases | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | UC-008 and UC-009 with their reviews RC-369 and RC-370 (Go), the delta review RC-368 of UCD-001, and rows for MIL-019 and MIL-020 with their use cases | [50f850d] |
 
 ---
 
@@ -476,3 +476,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-113]: ./reviews/rc-113-manage-models-code.md
 [RC-249]: ./reviews/rc-249-live-runs-code.md
 [2e57a94]: https://github.com/NF-Hotel/NFHotel/commit/2e57a943a3adf65d71c0ae7c0551599c795048f1
+[50f850d]: https://github.com/NF-Hotel/NFHotel/commit/50f850d890371ba0759cbba802c27c9b31cf5b69

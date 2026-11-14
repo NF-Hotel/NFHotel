@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version (MIL-019); accepted after RC-369 Go, at S01's word in chat ("Du godkender for mig"); mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version (MIL-019); accepted after RC-369 Go, at S01's word in chat ("Du godkender for mig"); mode autonomous, not independent | [50f850d] |
 
 ---
 
@@ -95,3 +95,4 @@
 [MIL-019]: ../../milestones/mil-019-benchmark-results-api.md
 [ADR-0005]: ../../adr/adr-0005-backoffice-login.md
 [ADR-0013]: ../../adr/adr-0013-benchmark-results.md
+[50f850d]: https://github.com/NF-Hotel/NFHotel/commit/50f850d890371ba0759cbba802c27c9b31cf5b69
