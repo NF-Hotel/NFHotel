@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | The evidence of the deploy corrected: the copy of the backup to the backup target failed, as its CD log shows (found at the gate of MIL-082, RC-351); the verdict and its condition stand | [29bb301] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The condition met: the deploy of the monitoring at S01's word in chat, with the check over its six containers and the two rules loaded in Prometheus; criterion 5 passes; mode autonomous, not independent; the verdict is Go | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The condition met: the deploy of the monitoring at S01's word in chat, with the check over its six containers and the two rules loaded in Prometheus; criterion 5 passes; mode autonomous, not independent; the verdict is Go | [60b8df3] |
 
 ---
 
@@ -78,3 +78,4 @@ Go: criteria 1 to 7 pass, criteria 1 to 4, 6 and 7 on the evidence of 2026-11-13
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [29bb301]: https://github.com/NF-Hotel/NFHotel/commit/29bb3014e44bdf741083c5037a6bd97f59b03b53
+[60b8df3]: https://github.com/NF-Hotel/NFHotel/commit/60b8df3278ad0b07a1ac873073ef5a14d43c4bc3
