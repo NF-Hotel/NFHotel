@@ -23,18 +23,18 @@ else
             <thead>
                 <tr>
                     <th scope="col">Field</th>
-                    @foreach (var field in Matrix.Fields)
+                    @foreach (string field in Matrix.Fields)
                     {
                         <th scope="col">@ChartFormat.Readable(field)</th>
                     }
                 </tr>
             </thead>
             <tbody>
-                @for (var row = 0; row < Matrix.Fields.Count; row++)
+                @for (int row = 0; row < Matrix.Fields.Count; row++)
                 {
                     <tr>
                         <th scope="row">@ChartFormat.Readable(Matrix.Fields[row])</th>
-                        @for (var column = 0; column < Matrix.Fields.Count; column++)
+                        @for (int column = 0; column < Matrix.Fields.Count; column++)
                         {
                             <td>@CellText(row, column, "n/a")</td>
                         }

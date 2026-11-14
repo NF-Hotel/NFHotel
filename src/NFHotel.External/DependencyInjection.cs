@@ -90,9 +90,9 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        var section = configuration.GetSection(MarketAnalysisServiceOptions.SectionName);
+        IConfigurationSection section = configuration.GetSection(MarketAnalysisServiceOptions.SectionName);
 
-        var options = new MarketAnalysisServiceOptions
+        MarketAnalysisServiceOptions options = new()
         {
             BaseUrl = section[MarketAnalysisServiceOptions.BaseUrlName]?.Trim() ?? string.Empty,
             ApiKey = section[MarketAnalysisServiceOptions.ApiKeyName]?.Trim() ?? string.Empty,
@@ -106,7 +106,7 @@ public static class DependencyInjection
 
         services.AddHttpClient<IMarketAnalysisServiceClient, MarketAnalysisServiceClient>(client =>
         {
-            if (options.TryGetBaseUri(out var baseUri))
+            if (options.TryGetBaseUri(out Uri baseUri))
             {
                 client.BaseAddress = baseUri;
             }
@@ -119,7 +119,7 @@ public static class DependencyInjection
     }
 
     private static int PositiveSeconds(string? text, int fallback) =>
-        int.TryParse(text, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var seconds) && seconds > 0
+        int.TryParse(text, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int seconds) && seconds > 0
             ? seconds
             : fallback;
 

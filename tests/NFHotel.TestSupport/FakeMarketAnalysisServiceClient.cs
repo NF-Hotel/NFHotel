@@ -1,43 +1,8 @@
 using NFHotel.Application.Dto.MarketAnalysis;
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
-using NFHotel.Domain.Entities;
-using NFHotel.Domain.Repositories;
 
 namespace NFHotel.TestSupport;
-
-/// <summary>An in-memory repository of the stored market analyses.</summary>
-public sealed class InMemoryMarketAnalysisRunRepository : InMemoryRepository<MarketAnalysisRun>, IMarketAnalysisRunRepository
-{
-    public Task<MarketAnalysisRun?> FindByRunIdAsync(Guid runId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(Items.SingleOrDefault(run => run.RunId == runId));
-
-    public Task<MarketAnalysisRun?> FindLatestAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult(Items.OrderByDescending(run => run.FinishedAt).ThenByDescending(run => run.Id).FirstOrDefault());
-}
-
-/// <summary>The bookings of the hotel as the market analysis reads them; a test fills the list.</summary>
-public sealed class FakeMarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
-{
-    public List<MarketBookingDto> Bookings { get; } = [Booking(1), Booking(2, canceled: true)];
-
-    public static MarketBookingDto Booking(int id, bool canceled = false) =>
-        new(id, "NF Hotel", canceled, 30, new DateOnly(2019, 1, 30), new DateOnly(2019, 3, 1), 1, 2, 2, 0, 0, "BB", "Portugal", "Direct", false, 0, "C", 0, "No Deposit", "Contract", 0, 1, 94.00m);
-
-    /// <summary>The number of rooms the hotel has.</summary>
-    public int RoomCount { get; set; } = 10;
-
-    public (DateOnly? From, DateOnly? To)? LastPeriod { get; private set; }
-
-    public Task<int> CountRoomsAsync(CancellationToken cancellationToken = default) => Task.FromResult(RoomCount);
-
-    public Task<IReadOnlyList<MarketBookingDto>> GetBookingsAsync(DateOnly? from, DateOnly? to, CancellationToken cancellationToken = default)
-    {
-        LastPeriod = (from, to);
-        return Task.FromResult<IReadOnlyList<MarketBookingDto>>(
-            [.. Bookings.Where(booking => (from is null || booking.ArrivalDate >= from) && (to is null || booking.ArrivalDate <= to))]);
-    }
-}
 
 /// <summary>
 /// A fake of the markets API. It records the bookings it was sent and answers a result or a code; a test can hold a call open
@@ -99,12 +64,4 @@ public sealed class FakeMarketAnalysisServiceClient : IMarketAnalysisServiceClie
             ? Result<MarketAnalysisResultDto>.Failure(code)
             : Result<MarketAnalysisResultDto>.Success(Result);
     }
-}
-
-/// <summary>A launcher that only records the run; the test decides when the work runs, so it can look at every state.</summary>
-public sealed class RecordingMarketAnalysisLauncher : IMarketAnalysisRunLauncher
-{
-    public List<Guid> Launched { get; } = [];
-
-    public void Launch(Guid runId) => Launched.Add(runId);
 }

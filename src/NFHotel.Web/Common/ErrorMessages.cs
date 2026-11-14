@@ -6,12 +6,12 @@ using NFHotel.Domain.Errors;
 namespace NFHotel.Web.Common;
 
 /// <summary>
-/// Translates the error codes of the Application layer to Danish user texts.
+/// Translates the error codes of the Application layer to the texts that the website shows the user.
 /// </summary>
 /// <remarks>
 /// A-09: the code is the contract, the text is the responsibility of the UI. Therefore the translation exists in exactly
 /// one place — here — and not spread out in the components. A later API maps the same codes
-/// to HTTP statuses without inheriting a single Danish string.
+/// to HTTP statuses without inheriting a single user text.
 /// <para>
 /// Unknown codes (and any unexpected exception) become <see cref="Unexpected"/>. We never
 /// show a raw error code or an exception text to the user, cf. Conventions.md's
@@ -201,29 +201,29 @@ public static class ErrorMessages
         };
 
     /// <summary>
-    /// Translates one error code to Danish.
+    /// Translates one error code to a user text.
     /// </summary>
     /// <param name="error">The error from the Application layer.</param>
-    /// <returns>The Danish text, or <see cref="Unexpected"/> if the code is unknown.</returns>
+    /// <returns>The user text, or <see cref="Unexpected"/> if the code is unknown.</returns>
     public static string Describe(Error error)
     {
         ArgumentNullException.ThrowIfNull(error);
 
-        if (Translations.TryGetValue(error.Code, out var text))
+        if (Translations.TryGetValue(error.Code, out string? text))
         {
             return text;
         }
 
         // A failed run carries the sanitised error_code of the service after a colon; it is shown, because it is a reason from
         // the service (for example NO_DATA) and not an exception text.
-        var failedPrefix = ErrorCodes.MarketAnalysisRunner.RunFailed + ":";
+        string failedPrefix = ErrorCodes.MarketAnalysisRunner.RunFailed + ":";
         return error.Code.StartsWith(failedPrefix, StringComparison.Ordinal) && error.Code.Length > failedPrefix.Length
             ? $"The market analysis run failed in the service ({error.Code[failedPrefix.Length..]})."
             : Unexpected;
     }
 
     /// <summary>
-    /// Translates all errors in a result to Danish texts.
+    /// Translates all errors in a result to user texts.
     /// </summary>
     /// <param name="result">A failed result from the Application layer.</param>
     /// <returns>One text per error. Empty if the result succeeded.</returns>

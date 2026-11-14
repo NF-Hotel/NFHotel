@@ -22,18 +22,18 @@ public static class MarketSeedExpander
             return rows;
         }
 
-        var first = rows.Min(row => row.Arrival);
-        var latest = rows.Max(row => row.Arrival);
-        var months = ((latest.Year - first.Year) * 12) + (latest.Month - first.Month) + 1;
-        var numberStep = rows.Max(row => row.Number);
+        DateOnly first = rows.Min(row => row.Arrival);
+        DateOnly latest = rows.Max(row => row.Arrival);
+        int months = ((latest.Year - first.Year) * 12) + (latest.Month - first.Month) + 1;
+        int numberStep = rows.Max(row => row.Number);
 
-        var expanded = new List<MarketSeedRow>(rows.Where(row => row.Arrival <= last));
-        for (var copy = 1; first.AddMonths(copy * months) <= last; copy++)
+        List<MarketSeedRow> expanded = [.. rows.Where(row => row.Arrival <= last)];
+        for (int copy = 1; first.AddMonths(copy * months) <= last; copy++)
         {
-            var shift = copy * months;
-            foreach (var row in rows)
+            int shift = copy * months;
+            foreach (MarketSeedRow row in rows)
             {
-                var arrival = row.Arrival.AddMonths(shift);
+                DateOnly arrival = row.Arrival.AddMonths(shift);
                 if (arrival <= last)
                 {
                     expanded.Add(row with

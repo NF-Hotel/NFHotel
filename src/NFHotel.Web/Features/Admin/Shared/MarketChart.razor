@@ -1,3 +1,4 @@
+@using NFHotel.Application.Dto.MarketAnalysis
 
 @*
     Draws one series of the market analysis report with the chart of its kind (ChartKindSelector) and puts its caption under it.
@@ -8,7 +9,7 @@
     @switch (Kind)
     {
         case ChartKind.Tile:
-            var only = Series.Points[0];
+            MarketAnalysisPointDto only = Series.Points[0];
             <FigureTile Title="@Series.Title" Label="@only.Label" Value="only.Value" Unit="@Series.Unit" SmallSample="only.SmallSample" />
             break;
         case ChartKind.Donut:

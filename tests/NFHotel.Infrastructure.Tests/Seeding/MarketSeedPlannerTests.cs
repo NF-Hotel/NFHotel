@@ -15,7 +15,7 @@ public sealed class MarketSeedPlannerTests
     public void Plan_TwoOverlappingBookings_MakesTwoRooms()
     {
         // Act
-        var plan = MarketSeedPlanner.Plan([Row(1, 0, 3), Row(2, 1, 3)]);
+        MarketSeedPlan plan = MarketSeedPlanner.Plan([Row(1, 0, 3), Row(2, 1, 3)]);
 
         // Assert
         Assert.Equal(2, plan.RoomCount);
@@ -27,7 +27,7 @@ public sealed class MarketSeedPlannerTests
     public void Plan_ArrivalOnTheDepartureDay_ReusesTheRoom()
     {
         // Act
-        var plan = MarketSeedPlanner.Plan([Row(1, 0, 3), Row(2, 3, 2)]);
+        MarketSeedPlan plan = MarketSeedPlanner.Plan([Row(1, 0, 3), Row(2, 3, 2)]);
 
         // Assert
         Assert.Equal(1, plan.RoomCount);
@@ -39,7 +39,7 @@ public sealed class MarketSeedPlannerTests
     public void Plan_ArrivalTheDayBeforeDeparture_NeedsAnotherRoom()
     {
         // Act
-        var plan = MarketSeedPlanner.Plan([Row(1, 0, 3), Row(2, 2, 2)]);
+        MarketSeedPlan plan = MarketSeedPlanner.Plan([Row(1, 0, 3), Row(2, 2, 2)]);
 
         // Assert
         Assert.Equal(2, plan.RoomCount);
@@ -50,7 +50,7 @@ public sealed class MarketSeedPlannerTests
     public void Plan_CancelledBookingOnly_NeedsOneRoomAndKeepsItsPlace()
     {
         // Act
-        var plan = MarketSeedPlanner.Plan([Row(1, 0, 3, canceled: true), Row(2, 0, 3, canceled: true)]);
+        MarketSeedPlan plan = MarketSeedPlanner.Plan([Row(1, 0, 3, canceled: true), Row(2, 0, 3, canceled: true)]);
 
         // Assert
         Assert.Equal(1, plan.RoomCount);
@@ -62,20 +62,20 @@ public sealed class MarketSeedPlannerTests
     public void Plan_ManyBookings_NeverOverlapsInARoomAndUsesThePeak()
     {
         // Arrange
-        var random = new Random(7);
-        var rows = Enumerable.Range(1, 600)
+        Random random = new Random(7);
+        MarketSeedRow[] rows = Enumerable.Range(1, 600)
             .Select(number => Row(number, random.Next(0, 120), random.Next(1, 8), canceled: number % 5 == 0))
             .ToArray();
 
         // Act
-        var plan = MarketSeedPlanner.Plan(rows);
+        MarketSeedPlan plan = MarketSeedPlanner.Plan(rows);
 
         // Assert
-        var kept = plan.Bookings.Where(placement => !placement.Row.IsCanceled).ToArray();
-        foreach (var room in kept.GroupBy(placement => placement.Room))
+        MarketSeedPlacement[] kept = plan.Bookings.Where(placement => !placement.Row.IsCanceled).ToArray();
+        foreach (IGrouping<int, MarketSeedPlacement> room in kept.GroupBy(placement => placement.Room))
         {
-            var ordered = room.OrderBy(placement => placement.Row.Arrival).ToArray();
-            for (var i = 1; i < ordered.Length; i++)
+            MarketSeedPlacement[] ordered = room.OrderBy(placement => placement.Row.Arrival).ToArray();
+            for (int i = 1; i < ordered.Length; i++)
             {
                 Assert.True(ordered[i - 1].Row.Departure <= ordered[i].Row.Arrival, $"room {room.Key} overlaps");
             }
@@ -93,11 +93,11 @@ public sealed class MarketSeedPlannerTests
     public void Plan_SameRowsTwice_GivesTheSamePlan()
     {
         // Arrange
-        var rows = Enumerable.Range(1, 50).Select(number => Row(number, number % 9, 1 + (number % 4))).ToArray();
+        MarketSeedRow[] rows = Enumerable.Range(1, 50).Select(number => Row(number, number % 9, 1 + (number % 4))).ToArray();
 
         // Act
-        var first = MarketSeedPlanner.Plan(rows);
-        var second = MarketSeedPlanner.Plan(rows);
+        MarketSeedPlan first = MarketSeedPlanner.Plan(rows);
+        MarketSeedPlan second = MarketSeedPlanner.Plan(rows);
 
         // Assert
         Assert.Equal(first.Bookings.Select(placement => (placement.Row.Number, placement.Room, placement.Guest)), second.Bookings.Select(placement => (placement.Row.Number, placement.Room, placement.Guest)));
@@ -109,10 +109,10 @@ public sealed class MarketSeedPlannerTests
     public void Plan_Countries_GetGuestsOfTheirOwnCountry()
     {
         // Arrange
-        var rows = Enumerable.Range(1, 170).Select(number => Row(number, number, 1, country: number <= 161 ? "Unknown" : "Portugal")).ToArray();
+        MarketSeedRow[] rows = Enumerable.Range(1, 170).Select(number => Row(number, number, 1, country: number <= 161 ? "Unknown" : "Portugal")).ToArray();
 
         // Act
-        var plan = MarketSeedPlanner.Plan(rows);
+        MarketSeedPlan plan = MarketSeedPlanner.Plan(rows);
 
         // Assert
         Assert.Equal(["Portugal", "Unknown", "Unknown", "Unknown"], plan.GuestCountries);
@@ -132,7 +132,7 @@ public sealed class MarketSeedPlannerTests
     public void Plan_NoRows_MakesOneRoomAndNoBooking()
     {
         // Act
-        var plan = MarketSeedPlanner.Plan([]);
+        MarketSeedPlan plan = MarketSeedPlanner.Plan([]);
 
         // Assert
         Assert.Equal(1, plan.RoomCount);
@@ -156,16 +156,16 @@ public sealed class MarketSeedPlannerTests
 
     private static int PeakOccupancy(IEnumerable<MarketSeedRow> rows)
     {
-        var events = new SortedDictionary<DateOnly, int>();
-        foreach (var row in rows)
+        SortedDictionary<DateOnly, int> events = new SortedDictionary<DateOnly, int>();
+        foreach (MarketSeedRow row in rows)
         {
             events[row.Arrival] = events.GetValueOrDefault(row.Arrival) + 1;
             events[row.Departure] = events.GetValueOrDefault(row.Departure) - 1;
         }
 
-        var current = 0;
-        var peak = 0;
-        foreach (var change in events.Values)
+        int current = 0;
+        int peak = 0;
+        foreach (int change in events.Values)
         {
             current += change;
             peak = Math.Max(peak, current);

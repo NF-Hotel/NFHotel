@@ -24,6 +24,8 @@ namespace NFHotel.External.MarketAnalysis;
 /// </summary>
 public static partial class FindingsSeries
 {
+    #region Fields
+
     /// <summary>The most points of one series that are drawn.</summary>
     public const int MaxPoints = 30;
 
@@ -48,6 +50,10 @@ public static partial class FindingsSeries
     private static readonly HashSet<string> GenericNames = new(StringComparer.Ordinal) { "groups", "splits", "periods", "distributions", "buckets" };
     private const double PercentFactor = 100d;
 
+    #endregion Fields
+
+    #region Public methods
+
     /// <summary>Reads the series out of the findings of one analysis.</summary>
     /// <param name="findings">The <c>findings</c> object.</param>
     /// <returns>The series in the order they are found; empty when the findings hold no group figures.</returns>
@@ -67,31 +73,6 @@ public static partial class FindingsSeries
             .Select(entry => Shorten(entry.Series))
             .Take(MaxSeries)];
     }
-
-    private static bool IsMonthly(MarketAnalysisSeriesDto series) =>
-        series.Points.Count > 0 && series.Points.All(point => MonthLabel().IsMatch(point.Label));
-
-    // A long time series keeps its latest points and says so in the title; any other long series keeps its first points.
-    private static MarketAnalysisSeriesDto Shorten(MarketAnalysisSeriesDto series)
-    {
-        int count = series.Points.Count;
-        if (count <= MaxPoints)
-        {
-            return series;
-        }
-
-        // A cut series no longer adds up to its whole, whichever end is kept.
-        return IsMonthly(series)
-            ? series with { Title = $"{series.Title} (latest {MaxPoints} of {count} months)", Points = [.. series.Points.TakeLast(MaxPoints)], IsPartsOfWhole = false }
-            : series with { Points = [.. series.Points.Take(MaxPoints)], IsPartsOfWhole = false };
-    }
-
-    [GeneratedRegex(@"^\d{4}-(0[1-9]|1[0-2])$", RegexOptions.CultureInvariant)]
-    private static partial Regex MonthLabel();
-
-    // A number, a range of numbers (the lead time bands 0-7 and 8-30), an open end (91+, 7+) or an ISO week (2018-W26) has a natural order.
-    [GeneratedRegex(@"^(\d+(-\d+|\+)?|\d{4}-W\d{2})$", RegexOptions.CultureInvariant)]
-    private static partial Regex OrderedLabel();
 
     /// <summary>
     /// Reads the matrix of an analysis that has one, such as the correlations: a <c>matrix</c> of rows of numbers (a number or
@@ -129,6 +110,35 @@ public static partial class FindingsSeries
 
         return [new MarketAnalysisMatrixDto(MatrixName, Humanize(MatrixName), method, names, rows)];
     }
+
+    #endregion Public methods
+
+    #region Private methods
+
+    private static bool IsMonthly(MarketAnalysisSeriesDto series) =>
+        series.Points.Count > 0 && series.Points.All(point => MonthLabel().IsMatch(point.Label));
+
+    // A long time series keeps its latest points and says so in the title; any other long series keeps its first points.
+    private static MarketAnalysisSeriesDto Shorten(MarketAnalysisSeriesDto series)
+    {
+        int count = series.Points.Count;
+        if (count <= MaxPoints)
+        {
+            return series;
+        }
+
+        // A cut series no longer adds up to its whole, whichever end is kept.
+        return IsMonthly(series)
+            ? series with { Title = $"{series.Title} (latest {MaxPoints} of {count} months)", Points = [.. series.Points.TakeLast(MaxPoints)], IsPartsOfWhole = false }
+            : series with { Points = [.. series.Points.Take(MaxPoints)], IsPartsOfWhole = false };
+    }
+
+    [GeneratedRegex(@"^\d{4}-(0[1-9]|1[0-2])$", RegexOptions.CultureInvariant)]
+    private static partial Regex MonthLabel();
+
+    // A number, a range of numbers (the lead time bands 0-7 and 8-30), an open end (91+, 7+) or an ISO week (2018-W26) has a natural order.
+    [GeneratedRegex(@"^(\d+(-\d+|\+)?|\d{4}-W\d{2})$", RegexOptions.CultureInvariant)]
+    private static partial Regex OrderedLabel();
 
     // Two or more group figures that sit directly in the findings (the occupancy on holidays and on other days) are compared
     // in one chart. A single one (the overall figure) is a tile for the page to draw, not a series. The rule applies to the
@@ -336,4 +346,6 @@ public static partial class FindingsSeries
 
         return text.Length == 0 ? "Groups" : char.ToUpperInvariant(text[0]) + text[1..];
     }
+
+    #endregion Private methods
 }

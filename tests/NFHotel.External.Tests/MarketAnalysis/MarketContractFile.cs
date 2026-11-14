@@ -20,8 +20,8 @@ internal sealed class MarketContractFile
     /// <summary>The paths of the contract, for example <c>/api/v1/market-analysis/runs</c>.</summary>
     public IReadOnlyList<string> Paths()
     {
-        var start = Array.FindIndex(_lines, line => line == "paths:");
-        var end = Array.FindIndex(_lines, start + 1, line => line.Length > 0 && line[0] != ' ');
+        int start = Array.FindIndex(_lines, line => line == "paths:");
+        int end = Array.FindIndex(_lines, start + 1, line => line.Length > 0 && line[0] != ' ');
 
         return [.. _lines[(start + 1)..end].Where(line => line.StartsWith("  /", StringComparison.Ordinal) && line.EndsWith(':')).Select(line => line.Trim().TrimEnd(':'))];
     }
@@ -29,14 +29,14 @@ internal sealed class MarketContractFile
     /// <summary>The names in the <c>required</c> list of a schema of <c>components/schemas</c>.</summary>
     public IReadOnlyList<string> Required(string schema)
     {
-        var block = Schema(schema);
-        var index = Array.FindIndex(block, line => line.StartsWith("      required:", StringComparison.Ordinal));
+        string[] block = Schema(schema);
+        int index = Array.FindIndex(block, line => line.StartsWith("      required:", StringComparison.Ordinal));
         if (index < 0)
         {
             return [];
         }
 
-        var inline = block[index]["      required:".Length..].Trim();
+        string inline = block[index]["      required:".Length..].Trim();
         if (inline.StartsWith('['))
         {
             return [.. inline.Trim('[', ']').Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
@@ -48,8 +48,8 @@ internal sealed class MarketContractFile
     /// <summary>The names of the <c>properties</c> of a schema of <c>components/schemas</c>.</summary>
     public IReadOnlyList<string> Properties(string schema)
     {
-        var block = Schema(schema);
-        var index = Array.FindIndex(block, line => line == "      properties:");
+        string[] block = Schema(schema);
+        int index = Array.FindIndex(block, line => line == "      properties:");
 
         return [.. block[(index + 1)..]
             .TakeWhile(line => line.StartsWith("        ", StringComparison.Ordinal))
@@ -60,19 +60,19 @@ internal sealed class MarketContractFile
     /// <summary>The names in the <c>required</c> list of an object property of a schema, for example <c>analyses</c> of <c>RunResult</c>.</summary>
     public IReadOnlyList<string> NestedRequired(string schema, string property)
     {
-        var block = Schema(schema);
-        var start = Array.FindIndex(block, line => line == $"        {property}:");
-        var index = Array.FindIndex(block, start + 1, line => line.StartsWith("          required:", StringComparison.Ordinal));
+        string[] block = Schema(schema);
+        int start = Array.FindIndex(block, line => line == $"        {property}:");
+        int index = Array.FindIndex(block, start + 1, line => line.StartsWith("          required:", StringComparison.Ordinal));
 
         return [.. block[(index + 1)..].TakeWhile(line => line.StartsWith("            - ", StringComparison.Ordinal)).Select(line => line.Trim()[2..].Trim())];
     }
 
     private string[] Schema(string name)
     {
-        var start = Array.FindIndex(_lines, line => line == SchemasHeader);
-        var header = Array.FindIndex(_lines, start + 1, line => line == $"    {name}:");
-        var rest = _lines[(header + 1)..];
-        var length = Array.FindIndex(rest, line => line.Length > 0 && !line.StartsWith("     ", StringComparison.Ordinal));
+        int start = Array.FindIndex(_lines, line => line == SchemasHeader);
+        int header = Array.FindIndex(_lines, start + 1, line => line == $"    {name}:");
+        string[] rest = _lines[(header + 1)..];
+        int length = Array.FindIndex(rest, line => line.Length > 0 && !line.StartsWith("     ", StringComparison.Ordinal));
 
         return length < 0 ? rest : rest[..length];
     }

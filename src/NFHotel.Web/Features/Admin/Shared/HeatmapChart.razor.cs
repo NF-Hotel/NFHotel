@@ -8,6 +8,8 @@ namespace NFHotel.Web.Features.Admin.Shared;
 /// <summary>The code behind the heat map of months: the grid, the scale and the SVG built from them.</summary>
 public partial class HeatmapChart : SeriesChartBase
 {
+    #region Fields
+
     private const int Width = 640;
     private const int Left = 56;
     private const int Top = 28;
@@ -16,29 +18,33 @@ public partial class HeatmapChart : SeriesChartBase
     private const int LegendWidth = 200;
     private const int LegendHeight = 10;
 
+    #endregion Fields
+
+    #region Private methods
+
     private MarkupString BuildSvg()
     {
-        var rows = MonthGrid.Rows(Points);
-        var known = rows.SelectMany(row => row.Values).OfType<double>().ToList();
-        var lowest = known.Count == 0 ? 0 : known.Min();
-        var highest = known.Count == 0 ? 0 : known.Max();
-        var legendTop = Top + (rows.Count * CellHeight) + 22;
-        var height = legendTop + 40;
-        var gradient = ElementId("scale");
-        var svg = OpenSvg(Width, height);
+        IReadOnlyList<MonthRow> rows = MonthGrid.Rows(Points);
+        List<double> known = rows.SelectMany(row => row.Values).OfType<double>().ToList();
+        double lowest = known.Count == 0 ? 0 : known.Min();
+        double highest = known.Count == 0 ? 0 : known.Max();
+        int legendTop = Top + (rows.Count * CellHeight) + 22;
+        int height = legendTop + 40;
+        string gradient = ElementId("scale");
+        StringBuilder svg = OpenSvg(Width, height);
 
         svg.Append(CultureInfo.InvariantCulture, $"<defs><linearGradient id=\"{gradient}\" x1=\"0\" x2=\"1\" y1=\"0\" y2=\"0\"><stop offset=\"0\" stop-color=\"{HeatColor.Sequential(0)}\"></stop><stop offset=\"1\" stop-color=\"{HeatColor.Sequential(1)}\"></stop></linearGradient></defs>");
-        for (var month = 0; month < MonthGrid.MonthsPerYear; month++)
+        for (int month = 0; month < MonthGrid.MonthsPerYear; month++)
         {
             svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-label\" x=\"{Left + (month * CellWidth) + (CellWidth / 2)}\" y=\"{Top - 8}\" text-anchor=\"middle\">{MonthGrid.MonthNames[month]}</text>");
         }
 
-        for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+        for (int rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {
-            var row = rows[rowIndex];
-            var top = Top + (rowIndex * CellHeight);
+            MonthRow row = rows[rowIndex];
+            int top = Top + (rowIndex * CellHeight);
             svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-label\" x=\"{Left - 8}\" y=\"{top + (CellHeight / 2) + 4}\" text-anchor=\"end\">{row.Year}</text>");
-            for (var month = 0; month < MonthGrid.MonthsPerYear; month++)
+            for (int month = 0; month < MonthGrid.MonthsPerYear; month++)
             {
                 AppendCell(svg, row, month, Left + (month * CellWidth), top, lowest, highest);
             }
@@ -61,9 +67,11 @@ public partial class HeatmapChart : SeriesChartBase
             return;
         }
 
-        var fill = HeatColor.Sequential(highest <= lowest ? 1 : (value - lowest) / (highest - lowest));
-        var text = ChartFormat.Value(value, string.Empty) + (row.SmallSamples[month] ? "*" : string.Empty);
+        string fill = HeatColor.Sequential(highest <= lowest ? 1 : (value - lowest) / (highest - lowest));
+        string text = ChartFormat.Value(value, string.Empty) + (row.SmallSamples[month] ? "*" : string.Empty);
         svg.Append(CultureInfo.InvariantCulture, $"<rect class=\"chart-cell\" x=\"{x}\" y=\"{y}\" width=\"{CellWidth}\" height=\"{CellHeight}\" fill=\"{fill}\"><title>{MonthGrid.MonthNames[month]} {row.Year}: {ChartFormat.Encode(text)}</title></rect>");
         svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-cell-text\" x=\"{x + (CellWidth / 2)}\" y=\"{y + (CellHeight / 2) + 4}\" text-anchor=\"middle\" fill=\"{HeatColor.TextOn(fill)}\">{ChartFormat.Encode(text)}</text>");
     }
+
+    #endregion Private methods
 }

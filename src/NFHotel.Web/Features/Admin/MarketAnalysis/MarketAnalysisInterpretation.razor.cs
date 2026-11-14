@@ -9,6 +9,8 @@ namespace NFHotel.Web.Features.Admin.MarketAnalysis;
 /// </summary>
 public partial class MarketAnalysisInterpretation : ComponentBase
 {
+    #region Fields
+
     /// <summary>The id of the heading, which the contents list links to.</summary>
     public const string SectionId = "overall-title";
 
@@ -21,7 +23,13 @@ public partial class MarketAnalysisInterpretation : ComponentBase
     /// <summary>The label of a text that the service calculated from the figures.</summary>
     public const string FiguresLabel = "Calculated from the figures, not by an AI";
 
+    #endregion Fields
+
+    #region Properties
+
     /// <summary>The overall interpretation to show.</summary>
     [Parameter, EditorRequired]
     public MarketAnalysisOverallDto Overall { get; set; } = new(string.Empty, string.Empty, null, string.Empty, null, []);
+
+    #endregion Properties
 }

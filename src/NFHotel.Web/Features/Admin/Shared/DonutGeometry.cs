@@ -2,22 +2,20 @@ using System.Globalization;
 
 namespace NFHotel.Web.Features.Admin.Shared;
 
-/// <summary>One slice of a donut.</summary>
-/// <param name="Index">The index of the value the slice draws.</param>
-/// <param name="Share">The share of the whole from 0 to 1.</param>
-/// <param name="Path">The SVG path of the slice, empty for a share of 0.</param>
-/// <param name="LabelX">The x of the middle of the slice, for its label.</param>
-/// <param name="LabelY">The y of the middle of the slice, for its label.</param>
-public sealed record DonutSlice(int Index, double Share, string Path, double LabelX, double LabelY);
-
 /// <summary>The arithmetic of a donut chart: the slices as SVG paths, starting at twelve o'clock and going clockwise.</summary>
 public static class DonutGeometry
 {
+    #region Fields
+
     // A slice that is the whole circle cannot be drawn as one arc, so it stops a hair short of it.
     private const double FullTurn = 360d;
     private const double MaxSweep = 359.99d;
     private const double StartAngle = -90d;
     private const double HalfTurn = 180d;
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Works out the slices.</summary>
     /// <param name="values">The values; negative values count as 0.</param>
@@ -49,6 +47,10 @@ public static class DonutGeometry
         return slices;
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static string Path(double centerX, double centerY, double outerRadius, double innerRadius, double start, double end)
     {
         (double X, double Y) outerStart = Point(centerX, centerY, outerRadius, start);
@@ -70,4 +72,6 @@ public static class DonutGeometry
     }
 
     private static string Num(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    #endregion Private methods
 }

@@ -18,9 +18,17 @@ public sealed record MarketAnalysisOverallDto(
     string? Evidence,
     IReadOnlyList<MarketAnalysisSuggestionDto> Recommendations)
 {
+    #region Fields
+
     /// <summary>The source of a text that a local AI model wrote.</summary>
     public const string AiSource = "ai";
 
+    #endregion Fields
+
+    #region Properties
+
     /// <summary>True when the text was written by an AI model, and false when the service calculated it from the figures.</summary>
     public bool IsAi => string.Equals(Source, AiSource, StringComparison.Ordinal);
+
+    #endregion Properties
 }

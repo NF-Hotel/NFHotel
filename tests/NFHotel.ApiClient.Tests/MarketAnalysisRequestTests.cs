@@ -2,6 +2,7 @@ using System.Net;
 
 using NFHotel.Application.Dto.MarketAnalysis;
 using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases;
 
 namespace NFHotel.ApiClient.Tests;
 
@@ -16,13 +17,13 @@ public sealed class MarketAnalysisRequestTests
     public async Task StartRunAsync_Call_PostsTheRunsPath()
     {
         // Arrange
-        var (handler, service) = Build($$$"""{"value":{"runId":"{{{RunId}}}","state":"queued","startedAt":null,"finishedAt":null,"error":null},"errors":[]}""");
+        (StubHandler handler, ApiMarketAnalysisService service) = Build($$$"""{"value":{"runId":"{{{RunId}}}","state":"queued","startedAt":null,"finishedAt":null,"error":null},"errors":[]}""");
 
         // Act
-        var result = await service.StartRunAsync(new StartMarketAnalysisRequest(new DateOnly(2019, 1, 1), null), TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> result = await service.StartRunAsync(new StartMarketAnalysisRequest(new DateOnly(2019, 1, 1), null), TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal((HttpMethod.Post, "/api/market-analysis/runs", MarketAnalysisRunStates.Queued), (handler.Method!, handler.PathAndQuery!, result.Value.State));
+        Assert.Equal((HttpMethod.Post, "/api/market-analysis/runs", MarketAnalysisRunStates.Queued), (handler.Method, handler.PathAndQuery, result.Value.State));
         Assert.Contains("\"from\":\"2019-01-01\"", handler.Body, StringComparison.Ordinal);
         Assert.Contains("\"to\":null", handler.Body, StringComparison.Ordinal);
     }
@@ -32,13 +33,13 @@ public sealed class MarketAnalysisRequestTests
     public async Task GetRunStateAsync_RunId_GetsThePathOfThatRun()
     {
         // Arrange
-        var (handler, service) = Build($$$"""{"value":{"runId":"{{{RunId}}}","state":"running","startedAt":null,"finishedAt":null,"error":null},"errors":[]}""");
+        (StubHandler handler, ApiMarketAnalysisService service) = Build($$$"""{"value":{"runId":"{{{RunId}}}","state":"running","startedAt":null,"finishedAt":null,"error":null},"errors":[]}""");
 
         // Act
-        var result = await service.GetRunStateAsync(RunId, TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> result = await service.GetRunStateAsync(RunId, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal((HttpMethod.Get, $"/api/market-analysis/runs/{RunId}", MarketAnalysisRunStates.Running), (handler.Method!, handler.PathAndQuery!, result.Value.State));
+        Assert.Equal((HttpMethod.Get, $"/api/market-analysis/runs/{RunId}", MarketAnalysisRunStates.Running), (handler.Method, handler.PathAndQuery, result.Value.State));
     }
 
     /// <summary>Negative: the empty run id is not sent and is answered as not found.</summary>
@@ -46,10 +47,10 @@ public sealed class MarketAnalysisRequestTests
     public async Task GetRunStateAsync_EmptyId_IsNotFoundWithoutACall()
     {
         // Arrange
-        var (handler, service) = Build("{}");
+        (StubHandler handler, ApiMarketAnalysisService service) = Build("{}");
 
         // Act
-        var result = await service.GetRunStateAsync(Guid.Empty, TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> result = await service.GetRunStateAsync(Guid.Empty, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.MarketAnalysisRunner.RunNotFound, Assert.Single(result.Errors).Code);
@@ -61,14 +62,15 @@ public sealed class MarketAnalysisRequestTests
     public async Task GetCurrentRunAsync_RunGoesOn_GetsTheCurrentPathAndReadsTheState()
     {
         // Arrange
-        var (handler, service) = Build($$$"""{"value":{"runId":"{{{RunId}}}","state":"running","startedAt":null,"finishedAt":null,"error":null},"errors":[]}""");
+        (StubHandler handler, ApiMarketAnalysisService service) = Build($$$"""{"value":{"runId":"{{{RunId}}}","state":"running","startedAt":null,"finishedAt":null,"error":null},"errors":[]}""");
 
         // Act
-        var result = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto?> result = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal((HttpMethod.Get, "/api/market-analysis/runs/current"), (handler.Method!, handler.PathAndQuery!));
-        Assert.Equal((RunId, MarketAnalysisRunStates.Running), (result.Value!.RunId, result.Value.State));
+        Assert.Equal((HttpMethod.Get, "/api/market-analysis/runs/current"), (handler.Method, handler.PathAndQuery));
+        Assert.NotNull(result.Value);
+        Assert.Equal((RunId, MarketAnalysisRunStates.Running), (result.Value.RunId, result.Value.State));
     }
 
     /// <summary>Boundary: a 204 is a successful result with no run.</summary>
@@ -76,10 +78,10 @@ public sealed class MarketAnalysisRequestTests
     public async Task GetCurrentRunAsync_NoContent_IsSuccessWithNoRun()
     {
         // Arrange
-        var (_, service) = Build(string.Empty, HttpStatusCode.NoContent);
+        (StubHandler _, ApiMarketAnalysisService service) = Build(string.Empty, HttpStatusCode.NoContent);
 
         // Act
-        var result = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto?> result = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -93,10 +95,10 @@ public sealed class MarketAnalysisRequestTests
     public async Task GetCurrentRunAsync_Refused_KeepsTheCode(HttpStatusCode status, string json, string code)
     {
         // Arrange
-        var (_, service) = Build(json, status);
+        (StubHandler _, ApiMarketAnalysisService service) = Build(json, status);
 
         // Act
-        var result = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto?> result = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(code, Assert.Single(result.Errors).Code);
@@ -107,16 +109,17 @@ public sealed class MarketAnalysisRequestTests
     public async Task GetLatestReportAsync_Call_GetsTheLatestPathAndReadsTheContent()
     {
         // Arrange
-        var (handler, service) = Build($$$"""{"value":{"runId":"{{{RunId}}}","startedAt":"2026-10-19T10:00:00+00:00","finishedAt":"2026-10-19T10:04:00+00:00","provider":"ollama","model":"m","content":{"figures":[],"sections":[{"id":"a","title":"A","status":"available","reason":null,"series":[{"id":"s","title":"S","unit":"u","points":[{"label":"x","value":1.5}]}],"insight":{"status":"available","reason":null,"executiveSummary":"es","suggestions":[]}}]}},"errors":[]}""");
+        (StubHandler handler, ApiMarketAnalysisService service) = Build($$$"""{"value":{"runId":"{{{RunId}}}","startedAt":"2026-10-19T10:00:00+00:00","finishedAt":"2026-10-19T10:04:00+00:00","provider":"ollama","model":"m","content":{"figures":[],"sections":[{"id":"a","title":"A","status":"available","reason":null,"series":[{"id":"s","title":"S","unit":"u","points":[{"label":"x","value":1.5}]}],"insight":{"status":"available","reason":null,"executiveSummary":"es","suggestions":[]}}]}},"errors":[]}""");
 
         // Act
-        var result = await service.GetLatestReportAsync(TestContext.Current.CancellationToken);
+        Result<MarketAnalysisReportDto> result = await service.GetLatestReportAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal((HttpMethod.Get, "/api/market-analysis/latest"), (handler.Method!, handler.PathAndQuery!));
-        var section = Assert.Single(result.Value.Content.Sections);
+        Assert.Equal((HttpMethod.Get, "/api/market-analysis/latest"), (handler.Method, handler.PathAndQuery));
+        MarketAnalysisSectionDto section = Assert.Single(result.Value.Content.Sections);
         Assert.Equal(1.5, Assert.Single(Assert.Single(section.Series).Points).Value);
-        Assert.Equal("es", section.Insight!.ExecutiveSummary);
+        Assert.NotNull(section.Insight);
+        Assert.Equal("es", section.Insight.ExecutiveSummary);
     }
 
     /// <summary>Negative: a 404 from the API keeps its code, so the page can show the empty message.</summary>
@@ -124,10 +127,10 @@ public sealed class MarketAnalysisRequestTests
     public async Task GetLatestReportAsync_NotFound_KeepsTheCode()
     {
         // Arrange
-        var (_, service) = Build("""{"value":null,"errors":["market_analysis.not_found"]}""", HttpStatusCode.NotFound);
+        (StubHandler _, ApiMarketAnalysisService service) = Build("""{"value":null,"errors":["market_analysis.not_found"]}""", HttpStatusCode.NotFound);
 
         // Act
-        var result = await service.GetLatestReportAsync(TestContext.Current.CancellationToken);
+        Result<MarketAnalysisReportDto> result = await service.GetLatestReportAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.MarketAnalysis.NotFound, Assert.Single(result.Errors).Code);
@@ -135,8 +138,8 @@ public sealed class MarketAnalysisRequestTests
 
     private static (StubHandler Handler, ApiMarketAnalysisService Service) Build(string json, HttpStatusCode status = HttpStatusCode.OK)
     {
-        var handler = StubHandler.Json(status, json);
-        var gateway = new ApiGateway(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base });
+        StubHandler handler = StubHandler.Json(status, json);
+        ApiGateway gateway = new ApiGateway(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base });
         return (handler, new ApiMarketAnalysisService(gateway));
     }
 }

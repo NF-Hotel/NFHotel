@@ -222,6 +222,7 @@ public sealed class MarketChartComponentTests
     public async Task CorrelationHeatmap_RealMatrix_DrawsEveryCellWithItsValue()
     {
         // Arrange
+        // The correlations analysis of the sample carries its matrix.
         MarketAnalysisMatrixDto matrix = Assert.Single(MarketSample.Section("correlations").Matrices!);
         List<double?> cells = matrix.Cells.SelectMany(row => row).ToList();
 
@@ -287,8 +288,9 @@ public sealed class MarketChartComponentTests
         // Assert
         Assert.Contains("dashed line", caption.What, StringComparison.Ordinal);
         Assert.Contains("line shows", caption.Why, StringComparison.Ordinal);
-        Assert.NotEmpty(section.Limitations!);
-        Assert.All(section.Limitations!, limit => Assert.Contains(limit, caption.Limits));
+        Assert.NotNull(section.Limitations);
+        Assert.NotEmpty(section.Limitations);
+        Assert.All(section.Limitations, limit => Assert.Contains(limit, caption.Limits));
         Assert.Equal(section.Formula, caption.Formula);
     }
 
@@ -306,7 +308,8 @@ public sealed class MarketChartComponentTests
         ChartCaptionModel none = ChartCaptionText.ForSeries(ChartKind.Columns, other, section);
 
         // Assert
-        Assert.Equal("Non refundable bookings cancel most.", found.Observation!.Text);
+        Assert.NotNull(found.Observation);
+        Assert.Equal("Non refundable bookings cancel most.", found.Observation.Text);
         Assert.Null(none.Observation);
         Assert.Equal("No AI observation for this chart.", none.NoObservation);
     }
@@ -370,7 +373,8 @@ public sealed class MarketChartComponentTests
     {
         // Arrange
         MarketAnalysisSectionDto section = MarketSample.Section("correlations");
-        MarketAnalysisMatrixDto matrix = Assert.Single(section.Matrices!);
+        Assert.NotNull(section.Matrices);
+        MarketAnalysisMatrixDto matrix = Assert.Single(section.Matrices);
 
         // Act
         ChartCaptionModel caption = ChartCaptionText.ForMatrix(matrix, section);

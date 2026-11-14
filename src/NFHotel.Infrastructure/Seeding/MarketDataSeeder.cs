@@ -3,6 +3,7 @@ using System.Text;
 
 using Microsoft.EntityFrameworkCore;
 
+using NFHotel.Domain.ValueObjects;
 using NFHotel.Infrastructure.Persistence;
 
 using Npgsql;
@@ -17,6 +18,8 @@ namespace NFHotel.Infrastructure.Seeding;
 /// </summary>
 public sealed class MarketDataSeeder
 {
+    #region Fields
+
     private const int CheckInHourUtc = 14;
     private const int CheckOutHourUtc = 10;
     private const int RoomAvailable = 0;
@@ -28,6 +31,10 @@ public sealed class MarketDataSeeder
 
     private readonly HotelDbContext _context;
 
+    #endregion Fields
+
+    #region Constructors
+
     /// <summary>Creates the seeder.</summary>
     /// <param name="context">The database context.</param>
     public MarketDataSeeder(HotelDbContext context)
@@ -35,6 +42,10 @@ public sealed class MarketDataSeeder
         ArgumentNullException.ThrowIfNull(context);
         _context = context;
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <summary>Writes the plan of a file to the database.</summary>
     /// <param name="plan">The rooms, guests and bookings.</param>
@@ -50,13 +61,13 @@ public sealed class MarketDataSeeder
     {
         ArgumentNullException.ThrowIfNull(plan);
 
-        var connection = (NpgsqlConnection)_context.Database.GetDbConnection();
+        NpgsqlConnection connection = (NpgsqlConnection)_context.Database.GetDbConnection();
         if (connection.State != System.Data.ConnectionState.Open)
         {
             await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using NpgsqlTransaction transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
         if (await HasDataAsync(connection, transaction, cancellationToken).ConfigureAwait(false))
         {
@@ -73,7 +84,7 @@ public sealed class MarketDataSeeder
         await CopyBookingsAsync(connection, plan, today, cancellationToken).ConfigureAwait(false);
         await CopyDetailsAsync(connection, plan, cancellationToken).ConfigureAwait(false);
 
-        foreach (var (table, column) in new[] { ("room", "room_id"), ("guest", "guest_id"), ("booking", "booking_id"), ("booking_market_detail", "booking_market_detail_id") })
+        foreach ((string table, string column) in new[] { ("room", "room_id"), ("guest", "guest_id"), ("booking", "booking_id"), ("booking_market_detail", "booking_market_detail_id") })
         {
             await ExecuteAsync(
                 connection,
@@ -85,31 +96,36 @@ public sealed class MarketDataSeeder
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static async Task<bool> HasDataAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken cancellationToken)
     {
-        await using var command = new NpgsqlCommand(
+        await using NpgsqlCommand command = new NpgsqlCommand(
             "SELECT EXISTS (SELECT 1 FROM booking) OR EXISTS (SELECT 1 FROM room) OR EXISTS (SELECT 1 FROM guest)",
             connection,
             transaction);
 
+        // The query is EXISTS ... OR EXISTS ...: it always gives one boolean and never NULL, so the ! cannot hide a null.
         return (bool)(await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false))!;
     }
 
     private static async Task ExecuteAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, string sql, CancellationToken cancellationToken)
     {
-        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        await using NpgsqlCommand command = new NpgsqlCommand(sql, connection, transaction);
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task CopyRoomsAsync(NpgsqlConnection connection, MarketSeedPlan plan, CancellationToken cancellationToken)
     {
-        await using var writer = await connection
+        await using NpgsqlCopyTextWriter writer = await connection
             .BeginTextImportAsync("COPY room (room_id, room_number, floor, size, capacity, status, housekeeping_status) FROM STDIN", cancellationToken)
             .ConfigureAwait(false);
 
-        for (var number = 1; number <= plan.RoomCount; number++)
+        for (int number = 1; number <= plan.RoomCount; number++)
         {
-            var size = MarketSeedPlanner.SizeOf(number);
+            RoomSize size = MarketSeedPlanner.SizeOf(number);
             await writer.WriteLineAsync(Row(
                 number,
                 MarketSeedPlanner.RoomNumberText(number),
@@ -123,11 +139,11 @@ public sealed class MarketDataSeeder
 
     private static async Task CopyGuestsAsync(NpgsqlConnection connection, MarketSeedPlan plan, CancellationToken cancellationToken)
     {
-        await using var writer = await connection
+        await using NpgsqlCopyTextWriter writer = await connection
             .BeginTextImportAsync("COPY guest (guest_id, first_name, last_name, email, phone_number, country, passport_number) FROM STDIN", cancellationToken)
             .ConfigureAwait(false);
 
-        for (var number = 1; number <= plan.GuestCountries.Count; number++)
+        for (int number = 1; number <= plan.GuestCountries.Count; number++)
         {
             await writer.WriteLineAsync(Row(
                 number,
@@ -142,20 +158,20 @@ public sealed class MarketDataSeeder
 
     private static async Task CopyBookingsAsync(NpgsqlConnection connection, MarketSeedPlan plan, DateOnly today, CancellationToken cancellationToken)
     {
-        await using var writer = await connection
+        await using NpgsqlCopyTextWriter writer = await connection
             .BeginTextImportAsync(
                 "COPY booking (booking_id, start_date, end_date, check_in_time, check_out_time, check_out_date, status, room_id, guest_id) FROM STDIN",
                 cancellationToken)
             .ConfigureAwait(false);
 
-        foreach (var (row, room, guest) in plan.Bookings.Select(placement => (placement.Row, placement.Room, placement.Guest)))
+        foreach ((MarketSeedRow row, int room, int guest) in plan.Bookings.Select(placement => (placement.Row, placement.Room, placement.Guest)))
         {
-            var status = row.IsCanceled ? StatusCancelled
+            int status = row.IsCanceled ? StatusCancelled
                 : row.Departure <= today ? StatusCheckedOut
                 : row.Arrival <= today ? StatusCheckedIn
                 : StatusConfirmed;
-            var checkedIn = status is StatusCheckedIn or StatusCheckedOut;
-            var checkedOut = status == StatusCheckedOut;
+            bool checkedIn = status is StatusCheckedIn or StatusCheckedOut;
+            bool checkedOut = status == StatusCheckedOut;
             await writer.WriteLineAsync(Row(
                 row.Number,
                 Date(row.Arrival),
@@ -171,14 +187,14 @@ public sealed class MarketDataSeeder
 
     private static async Task CopyDetailsAsync(NpgsqlConnection connection, MarketSeedPlan plan, CancellationToken cancellationToken)
     {
-        await using var writer = await connection
+        await using NpgsqlCopyTextWriter writer = await connection
             .BeginTextImportAsync(
                 "COPY booking_market_detail (booking_market_detail_id, booking_id, booked_at, price_per_night, adults, children, babies, meal, market_segment, "
                 + "customer_type, deposit_type, room_type, is_repeated_guest, previous_cancellations, booking_changes, special_requests, parking_spaces) FROM STDIN",
                 cancellationToken)
             .ConfigureAwait(false);
 
-        foreach (var row in plan.Bookings.Select(placement => placement.Row))
+        foreach (MarketSeedRow row in plan.Bookings.Select(placement => placement.Row))
         {
             await writer.WriteLineAsync(Row(
                 row.Number,
@@ -209,8 +225,8 @@ public sealed class MarketDataSeeder
     /// <summary>One line of PostgreSQL text COPY: tab-separated, <c>\N</c> for null, backslash escapes.</summary>
     private static string Row(params object?[] cells)
     {
-        var line = new StringBuilder();
-        for (var i = 0; i < cells.Length; i++)
+        StringBuilder line = new StringBuilder();
+        for (int i = 0; i < cells.Length; i++)
         {
             if (i > 0)
             {
@@ -228,4 +244,6 @@ public sealed class MarketDataSeeder
             .Replace("\t", "\\t", StringComparison.Ordinal)
             .Replace("\n", "\\n", StringComparison.Ordinal)
             .Replace("\r", "\\r", StringComparison.Ordinal);
+
+    #endregion Private methods
 }

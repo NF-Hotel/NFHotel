@@ -12,8 +12,14 @@ namespace NFHotel.Infrastructure.Seeding;
 /// </summary>
 public static class MarketSeedPlanner
 {
+    #region Fields
+
     private const int BookingsPerGuest = 80;
     private const int RoomsPerFloor = 20;
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Plans the rooms, the guests and the place of every booking.</summary>
     /// <param name="rows">The rows of the file.</param>
@@ -28,10 +34,10 @@ public static class MarketSeedPlanner
             throw new ArgumentException("Two rows have the same booking number.", nameof(rows));
         }
 
-        var roomOf = PlaceInRooms(rows, out var roomCount);
-        var guestOf = AssignGuests(rows, out var guestCountries);
+        Dictionary<int, int> roomOf = PlaceInRooms(rows, out int roomCount);
+        Dictionary<int, int> guestOf = AssignGuests(rows, out IReadOnlyList<string> guestCountries);
 
-        var placed = rows
+        MarketSeedPlacement[] placed = rows
             .Select(row => new MarketSeedPlacement(row, roomOf[row.Number], guestOf[row.Number]))
             .ToArray();
 
@@ -43,8 +49,8 @@ public static class MarketSeedPlanner
     /// <returns>The text of the room number.</returns>
     public static string RoomNumberText(int roomNumber)
     {
-        var floor = ((roomNumber - 1) / RoomsPerFloor) + 1;
-        var place = ((roomNumber - 1) % RoomsPerFloor) + 1;
+        int floor = ((roomNumber - 1) / RoomsPerFloor) + 1;
+        int place = ((roomNumber - 1) % RoomsPerFloor) + 1;
 
         return string.Create(CultureInfo.InvariantCulture, $"{floor}{place:00}");
     }
@@ -69,17 +75,21 @@ public static class MarketSeedPlanner
         _ => 4,
     };
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static Dictionary<int, int> PlaceInRooms(IReadOnlyList<MarketSeedRow> rows, out int roomCount)
     {
-        var roomOf = new Dictionary<int, int>(rows.Count);
-        var busy = new PriorityQueue<int, (DateOnly Free, int Room)>();
-        var rooms = 0;
+        Dictionary<int, int> roomOf = new Dictionary<int, int>(rows.Count);
+        PriorityQueue<int, (DateOnly Free, int Room)> busy = new PriorityQueue<int, (DateOnly Free, int Room)>();
+        int rooms = 0;
 
-        foreach (var row in rows.Where(row => !row.IsCanceled).OrderBy(row => row.Arrival).ThenBy(row => row.Number))
+        foreach (MarketSeedRow row in rows.Where(row => !row.IsCanceled).OrderBy(row => row.Arrival).ThenBy(row => row.Number))
         {
             // A room is free on the day the guest in it leaves: the period is half-open (BR-39).
             int room;
-            if (busy.TryPeek(out var freed, out var priority) && priority.Free <= row.Arrival)
+            if (busy.TryPeek(out int freed, out (DateOnly Free, int Room) priority) && priority.Free <= row.Arrival)
             {
                 busy.Dequeue();
                 room = freed;
@@ -96,7 +106,7 @@ public static class MarketSeedPlanner
         roomCount = Math.Max(1, rooms);
 
         // A cancelled booking blocks nothing, so any room will do; the booking number spreads them.
-        foreach (var row in rows.Where(row => row.IsCanceled))
+        foreach (MarketSeedRow row in rows.Where(row => row.IsCanceled))
         {
             roomOf[row.Number] = ((row.Number - 1) % roomCount) + 1;
         }
@@ -106,17 +116,17 @@ public static class MarketSeedPlanner
 
     private static Dictionary<int, int> AssignGuests(IReadOnlyList<MarketSeedRow> rows, out IReadOnlyList<string> guestCountries)
     {
-        var guestOf = new Dictionary<int, int>(rows.Count);
-        var countries = new List<string>();
+        Dictionary<int, int> guestOf = new Dictionary<int, int>(rows.Count);
+        List<string> countries = [];
 
-        foreach (var group in rows.GroupBy(row => row.Country, StringComparer.Ordinal).OrderBy(group => group.Key, StringComparer.Ordinal))
+        foreach (IGrouping<string, MarketSeedRow> group in rows.GroupBy(row => row.Country, StringComparer.Ordinal).OrderBy(group => group.Key, StringComparer.Ordinal))
         {
-            var members = group.OrderBy(row => row.Number).ToArray();
-            var guests = Math.Max(1, (members.Length + BookingsPerGuest - 1) / BookingsPerGuest);
-            var first = countries.Count + 1;
+            MarketSeedRow[] members = group.OrderBy(row => row.Number).ToArray();
+            int guests = Math.Max(1, (members.Length + BookingsPerGuest - 1) / BookingsPerGuest);
+            int first = countries.Count + 1;
             countries.AddRange(Enumerable.Repeat(group.Key, guests));
 
-            for (var i = 0; i < members.Length; i++)
+            for (int i = 0; i < members.Length; i++)
             {
                 guestOf[members[i].Number] = first + (i % guests);
             }
@@ -125,4 +135,6 @@ public static class MarketSeedPlanner
         guestCountries = countries;
         return guestOf;
     }
+
+    #endregion Private methods
 }

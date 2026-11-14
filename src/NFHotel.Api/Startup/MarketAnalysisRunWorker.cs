@@ -11,10 +11,16 @@ namespace NFHotel.Api.Startup;
 /// </summary>
 public sealed class MarketAnalysisRunWorker : BackgroundService
 {
+    #region Fields
+
     private readonly ChannelMarketAnalysisRunLauncher _launcher;
     private readonly IServiceScopeFactory _scopes;
     private readonly MarketAnalysisRunTracker _tracker;
     private readonly ILogger<MarketAnalysisRunWorker> _logger;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the worker.</summary>
     /// <param name="launcher">The queue of runs.</param>
@@ -38,12 +44,16 @@ public sealed class MarketAnalysisRunWorker : BackgroundService
         _logger = logger;
     }
 
+    #endregion Constructors
+
+    #region Protected methods
+
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         try
         {
-            await foreach (var runId in _launcher.Reader.ReadAllAsync(stoppingToken).ConfigureAwait(false))
+            await foreach (Guid runId in _launcher.Reader.ReadAllAsync(stoppingToken).ConfigureAwait(false))
             {
                 await RunAsync(runId, stoppingToken).ConfigureAwait(false);
             }
@@ -54,12 +64,16 @@ public sealed class MarketAnalysisRunWorker : BackgroundService
         }
     }
 
+    #endregion Protected methods
+
+    #region Private methods
+
     private async Task RunAsync(Guid runId, CancellationToken stoppingToken)
     {
         try
         {
-            await using var scope = _scopes.CreateAsyncScope();
-            var runner = scope.ServiceProvider.GetRequiredService<MarketAnalysisRunner>();
+            await using AsyncServiceScope scope = _scopes.CreateAsyncScope();
+            MarketAnalysisRunner runner = scope.ServiceProvider.GetRequiredService<MarketAnalysisRunner>();
             await runner.ExecuteAsync(runId, stoppingToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
@@ -75,4 +89,6 @@ public sealed class MarketAnalysisRunWorker : BackgroundService
             _tracker.MarkFailed(runId, ErrorCodes.MarketAnalysisRunner.UnexpectedResponse);
         }
     }
+
+    #endregion Private methods
 }

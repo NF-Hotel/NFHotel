@@ -11,12 +11,22 @@ namespace NFHotel.Domain.Entities;
 /// </summary>
 public sealed class MarketAnalysisRun : Entity<int>
 {
+    #region Fields
+
     /// <summary>The longest provider and model name.</summary>
     public const int MaxTextLength = 200;
+
+    #endregion Fields
+
+    #region Constructors
 
     private MarketAnalysisRun()
     {
     }
+
+    #endregion Constructors
+
+    #region Properties
 
     /// <summary>The id the data analysis service gave the run; the key of idempotency.</summary>
     public Guid RunId { get; private set; }
@@ -42,6 +52,10 @@ public sealed class MarketAnalysisRun : Entity<int>
     [Required(ErrorMessage = MarketAnalysisErrors.ContentRequired)]
     public string ContentJson { get; private set; } = string.Empty;
 
+    #endregion Properties
+
+    #region Public methods
+
     /// <summary>Creates a stored run and checks every field.</summary>
     /// <param name="runId">The id from the data analysis service.</param>
     /// <param name="schemaVersion">The version of the result schema.</param>
@@ -61,7 +75,7 @@ public sealed class MarketAnalysisRun : Entity<int>
         string? model,
         string contentJson)
     {
-        var run = new MarketAnalysisRun
+        MarketAnalysisRun run = new MarketAnalysisRun
         {
             RunId = runId,
             SchemaVersion = schemaVersion,
@@ -72,7 +86,7 @@ public sealed class MarketAnalysisRun : Entity<int>
             ContentJson = contentJson ?? string.Empty,
         };
 
-        var codes = new List<string>();
+        List<string> codes = [];
         if (runId == Guid.Empty)
         {
             codes.Add(MarketAnalysisErrors.RunIdRequired);
@@ -99,4 +113,6 @@ public sealed class MarketAnalysisRun : Entity<int>
 
         return run;
     }
+
+    #endregion Public methods
 }

@@ -14,7 +14,13 @@ namespace NFHotel.Web.Features.Admin.Shared;
 /// </summary>
 public abstract class SeriesChartBase : ComponentBase
 {
+    #region Fields
+
     private readonly string _id = Guid.NewGuid().ToString("N")[..8];
+
+    #endregion Fields
+
+    #region Properties
 
     /// <summary>The title of the chart.</summary>
     [Parameter, EditorRequired]
@@ -42,11 +48,15 @@ public abstract class SeriesChartBase : ComponentBase
     /// <summary>The id of the description element of the SVG.</summary>
     protected string DescriptionId => $"chart-desc-{_id}";
 
-    /// <summary>The id that an element of the SVG with a reference, such as a gradient, can use.</summary>
-    protected string ElementId(string name) => $"chart-{name}-{_id}";
-
     /// <summary>The values in words, for the description of the SVG.</summary>
     protected string Description => string.Join("; ", Points.Select(point => $"{point.Label}: {PointText(point)}"));
+
+    #endregion Properties
+
+    #region Protected methods
+
+    /// <summary>The id that an element of the SVG with a reference, such as a gradient, can use.</summary>
+    protected string ElementId(string name) => $"chart-{name}-{_id}";
 
     /// <summary>Writes the value of a point, with a star when it rests on few bookings.</summary>
     /// <param name="point">The point.</param>
@@ -75,4 +85,6 @@ public abstract class SeriesChartBase : ComponentBase
 
         return new MarkupString(svg.Append("</svg>").ToString());
     }
+
+    #endregion Protected methods
 }

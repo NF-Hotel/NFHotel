@@ -9,6 +9,8 @@ namespace NFHotel.Web.Features.Admin.Shared;
 /// </summary>
 public static class HeatColor
 {
+    #region Fields
+
     private const double LightLuminance = 0.45;
 
     private static readonly (int R, int G, int B) Negative = (0x21, 0x66, 0xac);
@@ -16,6 +18,10 @@ public static class HeatColor
     private static readonly (int R, int G, int B) Positive = (0xb2, 0x18, 0x2b);
     private static readonly (int R, int G, int B) Low = (0xef, 0xf3, 0xff);
     private static readonly (int R, int G, int B) High = (0x08, 0x51, 0x9c);
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>The colour of a value on the diverging scale from -1 to +1.</summary>
     /// <param name="value">The value; outside -1 to +1 it is cut to the nearest end.</param>
@@ -45,6 +51,10 @@ public static class HeatColor
         return luminance > LightLuminance ? "#14171f" : "#ffffff";
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static (int R, int G, int B) Mix((int R, int G, int B) from, (int R, int G, int B) to, double amount) =>
         (Lerp(from.R, to.R, amount), Lerp(from.G, to.G, amount), Lerp(from.B, to.B, amount));
 
@@ -57,4 +67,6 @@ public static class HeatColor
 
     private static double Linear(double channel) =>
         channel <= 0.03928 ? channel / 12.92 : Math.Pow((channel + 0.055) / 1.055, 2.4);
+
+    #endregion Private methods
 }

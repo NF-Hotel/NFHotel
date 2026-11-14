@@ -24,7 +24,7 @@ public sealed class MarketSeedExpanderTests
     public void Expand_ThroughALaterDate_RepeatsTheFileBackToBack()
     {
         // Act
-        var rows = MarketSeedExpander.Expand(TwoMonths, new DateOnly(2019, 6, 30));
+        IReadOnlyList<MarketSeedRow> rows = MarketSeedExpander.Expand(TwoMonths, new DateOnly(2019, 6, 30));
 
         // Assert
         Assert.Equal([new DateOnly(2019, 1, 10), new DateOnly(2019, 2, 20), new DateOnly(2019, 3, 10), new DateOnly(2019, 4, 20), new DateOnly(2019, 5, 10), new DateOnly(2019, 6, 20)], rows.Select(row => row.Arrival));
@@ -38,7 +38,7 @@ public sealed class MarketSeedExpanderTests
     public void Expand_DateInTheMiddleOfACopy_LeavesOutLaterArrivals()
     {
         // Act
-        var rows = MarketSeedExpander.Expand(TwoMonths, new DateOnly(2019, 4, 20));
+        IReadOnlyList<MarketSeedRow> rows = MarketSeedExpander.Expand(TwoMonths, new DateOnly(2019, 4, 20));
 
         // Assert
         Assert.Equal(new DateOnly(2019, 4, 20), rows.Max(row => row.Arrival));
@@ -50,7 +50,7 @@ public sealed class MarketSeedExpanderTests
     public void Expand_DateInsideTheFile_CutsTheFileAndMakesNoCopy()
     {
         // Act
-        var rows = MarketSeedExpander.Expand(TwoMonths, new DateOnly(2019, 1, 31));
+        IReadOnlyList<MarketSeedRow> rows = MarketSeedExpander.Expand(TwoMonths, new DateOnly(2019, 1, 31));
 
         // Assert
         Assert.Equal([1], rows.Select(row => row.Number));
@@ -62,8 +62,8 @@ public sealed class MarketSeedExpanderTests
     public void Expand_ManyCopies_KeepsNumbersUniqueAndPlansWithoutOverlap()
     {
         // Act
-        var rows = MarketSeedExpander.Expand(TwoMonths, new DateOnly(2020, 12, 31));
-        var plan = MarketSeedPlanner.Plan(rows);
+        IReadOnlyList<MarketSeedRow> rows = MarketSeedExpander.Expand(TwoMonths, new DateOnly(2020, 12, 31));
+        MarketSeedPlan plan = MarketSeedPlanner.Plan(rows);
 
         // Assert
         Assert.Equal(rows.Count, rows.Select(row => row.Number).Distinct().Count());

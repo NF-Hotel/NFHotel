@@ -12,7 +12,13 @@ namespace NFHotel.ApiClient;
 /// </summary>
 public sealed class ApiMarketAnalysisService : IMarketAnalysisService
 {
+    #region Fields
+
     private readonly ApiGateway _api;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the client.</summary>
     /// <param name="api">The gateway that carries the tokens.</param>
@@ -21,6 +27,10 @@ public sealed class ApiMarketAnalysisService : IMarketAnalysisService
         ArgumentNullException.ThrowIfNull(api);
         _api = api;
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <inheritdoc />
     public Task<Result<MarketAnalysisRunStateDto>> StartRunAsync(StartMarketAnalysisRequest request, CancellationToken cancellationToken = default)
@@ -53,4 +63,6 @@ public sealed class ApiMarketAnalysisService : IMarketAnalysisService
     /// <inheritdoc />
     public Task<Result<MarketAnalysisReportDto>> GetLatestReportAsync(CancellationToken cancellationToken = default) =>
         _api.GetAsync<MarketAnalysisReportDto>($"{ApiRoutes.MarketAnalysis}/{ApiRoutes.MarketAnalysisLatest}", cancellationToken);
+
+    #endregion Public methods
 }

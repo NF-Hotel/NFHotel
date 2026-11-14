@@ -1,5 +1,8 @@
 using NFHotel.Application.Dto.MarketAnalysis;
+using NFHotel.Application.Dto.Pricing;
 using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases;
+using NFHotel.Domain.Entities;
 using NFHotel.TestSupport;
 
 namespace NFHotel.Application.Tests.Services;
@@ -14,17 +17,18 @@ public sealed class MarketAnalysisRunnerTests
     public async Task ExecuteAsync_BookingsAndResult_SendsTheBookingsAndStoresTheResult()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var runId = Begin(world);
+        ServiceWorld world = new ServiceWorld();
+        Guid runId = Begin(world);
 
         // Act
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
 
         // Assert
-        var stored = Assert.Single(world.MarketAnalysisRuns.Items);
+        MarketAnalysisRun stored = Assert.Single(world.MarketAnalysisRuns.Items);
         Assert.Equal(world.MarketAnalysisBookings.Bookings, world.MarketAnalysisClient.LastBookings);
         Assert.Equal((runId, 1, "ollama", "phi3.5:latest"), (stored.RunId, stored.SchemaVersion, stored.Provider, stored.Model));
         Assert.Equal((world.Clock.UtcNow, world.Clock.UtcNow), (stored.StartedAt, stored.FinishedAt));
+        // The tracker keeps every run it began, so Get finds this one.
         Assert.Equal(MarketAnalysisRunStates.Completed, world.MarketAnalysisTracker.Get(runId)!.State);
         Assert.Equal(1, world.UnitOfWork.SaveCount);
     }
@@ -34,15 +38,16 @@ public sealed class MarketAnalysisRunnerTests
     public async Task ExecuteAsync_RoomsAndPeriod_AreSentWithTheBookings()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
         world.MarketAnalysisBookings.RoomCount = 187;
-        var runId = world.MarketAnalysisTracker.TryBegin(new DateOnly(2019, 1, 1), new DateOnly(2019, 12, 31)).Value.RunId;
+        Guid runId = world.MarketAnalysisTracker.TryBegin(new DateOnly(2019, 1, 1), new DateOnly(2019, 12, 31)).Value.RunId;
 
         // Act
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
 
         // Assert
-        var sent = world.MarketAnalysisClient.LastRequest!;
+        Assert.NotNull(world.MarketAnalysisClient.LastRequest);
+        MarketAnalysisRunRequest sent = world.MarketAnalysisClient.LastRequest;
         Assert.Equal((187, new DateOnly(2019, 1, 1), new DateOnly(2019, 12, 31)), (sent.RoomCount, sent.From, sent.To));
         Assert.Equal(world.MarketAnalysisBookings.Bookings, sent.Bookings);
     }
@@ -52,14 +57,15 @@ public sealed class MarketAnalysisRunnerTests
     public async Task ExecuteAsync_DefaultSettings_SendsThePricingOfTheDefaults()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var runId = Begin(world);
+        ServiceWorld world = new ServiceWorld();
+        Guid runId = Begin(world);
 
         // Act
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
 
         // Assert
-        var pricing = world.MarketAnalysisClient.LastRequest!.Pricing!;
+        Assert.NotNull(world.MarketAnalysisClient.LastRequest?.Pricing);
+        MarketAnalysisPricingRequest pricing = world.MarketAnalysisClient.LastRequest.Pricing;
         Assert.Equal((0.8m, 0.4m), (pricing.HighOccupancyThreshold, pricing.LowOccupancyThreshold));
         Assert.All(pricing.DiscountRoomSizes, size => Assert.Equal(size.ToLowerInvariant(), size));
         Assert.NotEmpty(pricing.DiscountRoomSizes);
@@ -70,20 +76,22 @@ public sealed class MarketAnalysisRunnerTests
     public async Task ExecuteAsync_SavedSettings_AreSentToTheService()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
         world.CallContext.StaffId = 7;
         world.CallContext.StaffName = "manager";
         world.CallContext.RemoteAddress = "10.0.0.5";
-        var saved = (await world.PricingSettingsService().GetAsync(TestContext.Current.CancellationToken)).Value!;
-        var set = await world.PricingSettingsService().SetAsync(new(25, 10, 85, 35, 50, saved.MinimumNightlyPrice, saved.DiscountSizes), TestContext.Current.CancellationToken);
+        // GetAsync always succeeds with a value: the saved settings, or the defaults when nothing is saved.
+        PricingSettingsDto saved = (await world.PricingSettingsService().GetAsync(TestContext.Current.CancellationToken)).Value!;
+        Result<PricingSettingsDto> set = await world.PricingSettingsService().SetAsync(new(25, 10, 85, 35, 50, saved.MinimumNightlyPrice, saved.DiscountSizes), TestContext.Current.CancellationToken);
         Assert.True(set.IsSuccess);
-        var runId = Begin(world);
+        Guid runId = Begin(world);
 
         // Act
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
 
         // Assert
-        var pricing = world.MarketAnalysisClient.LastRequest!.Pricing!;
+        Assert.NotNull(world.MarketAnalysisClient.LastRequest?.Pricing);
+        MarketAnalysisPricingRequest pricing = world.MarketAnalysisClient.LastRequest.Pricing;
         Assert.Equal((0.85m, 0.35m, 25m, 10m), (pricing.HighOccupancyThreshold, pricing.LowOccupancyThreshold, pricing.SurchargePercent, pricing.DiscountPercent));
     }
 
@@ -96,9 +104,9 @@ public sealed class MarketAnalysisRunnerTests
     public async Task ExecuteAsync_NoRooms_FailsAsInputRejectedWithoutCallingTheService()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
         world.MarketAnalysisBookings.RoomCount = 0;
-        var runId = Begin(world);
+        Guid runId = Begin(world);
 
         // Act
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
@@ -113,9 +121,9 @@ public sealed class MarketAnalysisRunnerTests
     public async Task ExecuteAsync_NoBookings_FailsWithoutCallingTheService()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
         world.MarketAnalysisBookings.Bookings.Clear();
-        var runId = Begin(world);
+        Guid runId = Begin(world);
 
         // Act
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
@@ -137,9 +145,9 @@ public sealed class MarketAnalysisRunnerTests
     public async Task ExecuteAsync_ServiceFails_FailsWithTheCodeAndStoresNothing(string code)
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
         world.MarketAnalysisClient.FailWith = code;
-        var runId = Begin(world);
+        Guid runId = Begin(world);
 
         // Act
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
@@ -155,9 +163,9 @@ public sealed class MarketAnalysisRunnerTests
     public async Task ExecuteAsync_UnknownSchemaVersion_FailsAndStoresNothing(int version)
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
         world.MarketAnalysisClient.Result = FakeMarketAnalysisServiceClient.SampleResult(version);
-        var runId = Begin(world);
+        Guid runId = Begin(world);
 
         // Act
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
@@ -171,9 +179,9 @@ public sealed class MarketAnalysisRunnerTests
     public async Task ExecuteAsync_NoContent_FailsAsInvalidBody()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
         world.MarketAnalysisClient.Result = FakeMarketAnalysisServiceClient.SampleResult() with { Content = null };
-        var runId = Begin(world);
+        Guid runId = Begin(world);
 
         // Act
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
@@ -187,16 +195,17 @@ public sealed class MarketAnalysisRunnerTests
     public async Task ExecuteAsync_FailureAfterASuccess_KeepsTheEarlierReport()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
         await world.MarketAnalysisRunner().ExecuteAsync(Begin(world), TestContext.Current.CancellationToken);
         world.MarketAnalysisClient.FailWith = ErrorCodes.MarketAnalysisRunner.Unavailable;
-        var second = Begin(world);
+        Guid second = Begin(world);
 
         // Act
         await world.MarketAnalysisRunner().ExecuteAsync(second, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Single(world.MarketAnalysisRuns.Items);
+        // The tracker keeps every run it began, so Get finds this one.
         Assert.Equal(MarketAnalysisRunStates.Failed, world.MarketAnalysisTracker.Get(second)!.State);
     }
 
@@ -208,7 +217,8 @@ public sealed class MarketAnalysisRunnerTests
 
     private static void AssertFailed(ServiceWorld world, Guid runId, string code)
     {
-        var state = world.MarketAnalysisTracker.Get(runId)!;
+        // The tracker keeps every run it began, so Get finds this one.
+        MarketAnalysisRunStateDto state = world.MarketAnalysisTracker.Get(runId)!;
         Assert.Equal((MarketAnalysisRunStates.Failed, code), (state.State, state.Error));
         Assert.Empty(world.MarketAnalysisRuns.Items);
         Assert.Equal(0, world.UnitOfWork.SaveCount);

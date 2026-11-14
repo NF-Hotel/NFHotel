@@ -6,15 +6,19 @@ using NFHotel.Application.Dto.MarketAnalysis;
 namespace NFHotel.External.MarketAnalysis;
 
 /// <summary>
-/// Reads the result document of the market analysis service (result schema 1.0, 1.1 and 1.2, <c>RunResult</c> of
+/// Reads the result document of the market analysis service (result schema 1.0 to 1.3, <c>RunResult</c> of
 /// <c>openapi/market-contract.yaml</c> of <c>notebook-market-analysis</c>) into <see cref="MarketAnalysisResultDto"/>. The
 /// document is read as JSON and not as a fixed type, because the <c>findings</c> of every analysis have their own shape and a
 /// new MINOR version adds fields. It reads the nine analyses of 1.1 (lead time, holidays, seasonality, cancellations, room
 /// value, guest mix, occupancy, occupancy on holidays and correlations), the <c>formula</c> and <c>limitations</c> of each, and
-/// the <c>observations</c> of each insight; a document without them (1.0) is read with those fields empty.
+/// the <c>observations</c> of each insight; a document without them (1.0) is read with those fields empty. Schema 1.2 adds the
+/// room revenue, the overall interpretation and the forecast, and 1.3 the price suggestions; an older document is read without
+/// them.
 /// </summary>
 public static class MarketAnalysisResultMapper
 {
+    #region Fields
+
     private static readonly Dictionary<string, string> Titles = new(StringComparer.Ordinal)
     {
         ["lead_time"] = "Lead time",
@@ -28,8 +32,12 @@ public static class MarketAnalysisResultMapper
         ["correlations"] = "Correlations between booking fields",
     };
 
+    #endregion Fields
+
+    #region Public methods
+
     /// <summary>Reads a result document.</summary>
-    /// <param name="document">The root of the answer to <c>POST /analyze</c>.</param>
+    /// <param name="document">The root of the answer to <c>GET /api/v1/market-analysis/runs/{run_id}/result</c>.</param>
     /// <returns>The result, or <c>null</c> when the document is not a result: no schema version, or a failed run.</returns>
     public static MarketAnalysisResultDto? Map(JsonElement document)
     {
@@ -41,27 +49,27 @@ public static class MarketAnalysisResultMapper
             return null;
         }
 
-        var generatedAt = Text(document, "generated_at") is { } text
-            && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsed)
+        DateTimeOffset generatedAt = Text(document, "generated_at") is { } text
+            && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out DateTimeOffset parsed)
                 ? parsed
                 : default;
 
-        var provider = default(string);
-        var model = default(string);
-        if (document.TryGetProperty("insights", out var insights) && insights.ValueKind == JsonValueKind.Object)
+        string? provider = null;
+        string? model = null;
+        if (document.TryGetProperty("insights", out JsonElement insights) && insights.ValueKind == JsonValueKind.Object)
         {
             provider = Text(insights, "provider");
             model = Text(insights, "model");
         }
 
-        var sections = new List<MarketAnalysisSectionDto>();
-        if (document.TryGetProperty("analyses", out var analyses) && analyses.ValueKind == JsonValueKind.Object)
+        List<MarketAnalysisSectionDto> sections = [];
+        if (document.TryGetProperty("analyses", out JsonElement analyses) && analyses.ValueKind == JsonValueKind.Object)
         {
             sections.AddRange(analyses.EnumerateObject().Select(analysis => Section(analysis.Name, analysis.Value)));
         }
 
         return new MarketAnalysisResultDto(
-            Guid.TryParse(Text(document, "result_id"), out var resultId) ? resultId : Guid.Empty,
+            Guid.TryParse(Text(document, "result_id"), out Guid resultId) ? resultId : Guid.Empty,
             major,
             generatedAt,
             generatedAt,
@@ -75,10 +83,14 @@ public static class MarketAnalysisResultMapper
                 document.TryGetProperty("price_suggestions", out JsonElement prices) ? PriceSuggestions(prices) : null));
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static IReadOnlyList<MarketAnalysisFigureDto> Figures(JsonElement document)
     {
-        var figures = new List<MarketAnalysisFigureDto>();
-        if (document.TryGetProperty("data_quality", out var quality) && quality.ValueKind == JsonValueKind.Object)
+        List<MarketAnalysisFigureDto> figures = [];
+        if (document.TryGetProperty("data_quality", out JsonElement quality) && quality.ValueKind == JsonValueKind.Object)
         {
             Add(figures, quality, "record_count", "Bookings analysed");
             Add(figures, quality, "zero_price_count", "Bookings with a price of 0");
@@ -90,7 +102,7 @@ public static class MarketAnalysisResultMapper
 
     private static void Add(List<MarketAnalysisFigureDto> figures, JsonElement source, string name, string label)
     {
-        if (source.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number)
+        if (source.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.Number)
         {
             figures.Add(new MarketAnalysisFigureDto(label, value.GetDouble(), string.Empty));
         }
@@ -98,15 +110,15 @@ public static class MarketAnalysisResultMapper
 
     private static MarketAnalysisSectionDto Section(string name, JsonElement analysis)
     {
-        var findings = analysis.TryGetProperty("findings", out var found) ? found : default;
+        JsonElement findings = analysis.TryGetProperty("findings", out JsonElement found) ? found : default;
 
         return new MarketAnalysisSectionDto(
             name,
-            Titles.TryGetValue(name, out var title) ? title : Humanize(name),
+            Titles.TryGetValue(name, out string? title) ? title : Humanize(name),
             Text(analysis, "status") ?? "unavailable",
             Text(analysis, "reason"),
             findings.ValueKind == JsonValueKind.Undefined ? [] : FindingsSeries.Extract(findings),
-            analysis.TryGetProperty("insight", out var insight) && insight.ValueKind == JsonValueKind.Object ? Insight(insight) : null,
+            analysis.TryGetProperty("insight", out JsonElement insight) && insight.ValueKind == JsonValueKind.Object ? Insight(insight) : null,
             Text(analysis, "formula"),
             Strings(analysis, "limitations"),
             findings.ValueKind == JsonValueKind.Undefined ? null : FindingsSeries.ExtractMatrices(findings),
@@ -239,7 +251,7 @@ public static class MarketAnalysisResultMapper
             : null;
 
     private static MarketAnalysisPriceHistoryDto? PriceHistory(JsonElement item) =>
-        Integer(item, "year") is > 0 and var year && Decimal(item, "occupancy") is { } occupancy
+        Integer(item, "year") is > 0 and int year && Decimal(item, "occupancy") is { } occupancy
             ? new MarketAnalysisPriceHistoryDto(year, occupancy)
             : null;
 
@@ -322,7 +334,7 @@ public static class MarketAnalysisResultMapper
     private static List<MarketAnalysisObservationDto> Observations(JsonElement insight)
     {
         List<MarketAnalysisObservationDto> observations = [];
-        if (insight.TryGetProperty("observations", out var list) && list.ValueKind == JsonValueKind.Array)
+        if (insight.TryGetProperty("observations", out JsonElement list) && list.ValueKind == JsonValueKind.Array)
         {
             observations.AddRange(list.EnumerateArray().Select(Observation).OfType<MarketAnalysisObservationDto>());
         }
@@ -336,21 +348,24 @@ public static class MarketAnalysisResultMapper
             : null;
 
     private static List<string>? Strings(JsonElement source, string name) =>
-        source.ValueKind == JsonValueKind.Object && source.TryGetProperty(name, out var list) && list.ValueKind == JsonValueKind.Array
+        source.ValueKind == JsonValueKind.Object && source.TryGetProperty(name, out JsonElement list) && list.ValueKind == JsonValueKind.Array
+            // GetString() is null only for a JSON null, and the filter keeps only strings, so the ! cannot hide a null.
             ? [.. list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
             : null;
 
     private static string? Text(JsonElement source, string name) =>
-        source.ValueKind == JsonValueKind.Object && source.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+        source.ValueKind == JsonValueKind.Object && source.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;
 
     private static int? MajorOf(string version) =>
-        int.TryParse(version.Split('.')[0], NumberStyles.None, CultureInfo.InvariantCulture, out var major) ? major : null;
+        int.TryParse(version.Split('.')[0], NumberStyles.None, CultureInfo.InvariantCulture, out int major) ? major : null;
 
     private static string Humanize(string name)
     {
-        var text = name.Replace('_', ' ');
+        string text = name.Replace('_', ' ');
         return text.Length == 0 ? name : char.ToUpperInvariant(text[0]) + text[1..];
     }
+
+    #endregion Private methods
 }

@@ -2,21 +2,6 @@ using NFHotel.Application.Dto.MarketAnalysis;
 
 namespace NFHotel.Web.Features.Admin.Shared;
 
-/// <summary>The caption under one chart of the report (MIL-026 task 21).</summary>
-/// <param name="What">What the chart shows.</param>
-/// <param name="Why">Why this kind of chart was chosen.</param>
-/// <param name="Limits">What the chart cannot say: the limits of its kind, then the limitations the analysis carries.</param>
-/// <param name="Formula">How the figures were calculated, or <c>null</c> when the result has none.</param>
-/// <param name="Observation">The observation the AI wrote about this chart, or <c>null</c> when there is none.</param>
-/// <param name="NoObservation">The short text shown when there is no observation, saying why when the insight says so.</param>
-public sealed record ChartCaptionModel(
-    string What,
-    string Why,
-    IReadOnlyList<string> Limits,
-    string? Formula,
-    MarketAnalysisObservationDto? Observation,
-    string NoObservation);
-
 /// <summary>
 /// Writes the captions. The text of what a chart shows, why its kind was chosen and what it cannot say is generic for each kind;
 /// the limitations and the formula come from the analysis of the result, and the observation is matched to the chart by the
@@ -24,8 +9,14 @@ public sealed record ChartCaptionModel(
 /// </summary>
 public static class ChartCaptionText
 {
+    #region Fields
+
     /// <summary>The first words of the text shown when a chart has no AI observation.</summary>
     public const string NoObservationText = "No AI observation for this chart";
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Writes the caption of a chart that draws a series.</summary>
     /// <param name="kind">The kind of chart, from <see cref="ChartKindSelector"/>.</param>
@@ -37,7 +28,7 @@ public static class ChartCaptionText
         ArgumentNullException.ThrowIfNull(series);
         ArgumentNullException.ThrowIfNull(section);
 
-        (string? what, string? why, string? limit) = Texts(kind, series);
+        (string what, string why, string limit) = Texts(kind, series);
         List<string> limits = new List<string> { limit };
         if (series.Points.Any(point => point.SmallSample))
         {
@@ -65,6 +56,10 @@ public static class ChartCaptionText
             matrix.Id,
             section);
     }
+
+    #endregion Public methods
+
+    #region Private methods
 
     private static ChartCaptionModel Build(string what, string why, List<string> limits, string seriesId, MarketAnalysisSectionDto section)
     {
@@ -125,4 +120,6 @@ public static class ChartCaptionText
             "No other kind of chart fits the shape of this series, so it keeps the plain bar chart.",
             "Bars show the groups side by side and say nothing about the order or the course between them."),
     };
+
+    #endregion Private methods
 }

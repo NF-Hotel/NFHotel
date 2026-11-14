@@ -8,8 +8,14 @@ namespace NFHotel.Infrastructure.Persistence.Configurations;
 /// <summary>Maps <see cref="BookingMarketDetail"/> to the table <c>booking_market_detail</c> (MIL-026).</summary>
 public sealed class BookingMarketDetailConfiguration : EntityConfiguration<BookingMarketDetail, int>
 {
+    #region Properties
+
     /// <inheritdoc />
     protected override string TableName => "booking_market_detail";
+
+    #endregion Properties
+
+    #region Protected methods
 
     /// <inheritdoc />
     protected override void ConfigureEntity(EntityTypeBuilder<BookingMarketDetail> builder)
@@ -44,4 +50,6 @@ public sealed class BookingMarketDetailConfiguration : EntityConfiguration<Booki
         builder.HasIndex(detail => detail.BookedAt)
             .HasDatabaseName("ix_booking_market_detail_booked_at");
     }
+
+    #endregion Protected methods
 }
