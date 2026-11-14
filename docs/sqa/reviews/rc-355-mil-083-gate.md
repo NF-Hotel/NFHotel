@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-083 on the evidence of 2026-11-14; mode autonomous, not independent; Go | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-083 on the evidence of 2026-11-14; mode autonomous, not independent; Go | [38e03ae] |
 
 ---
 
@@ -74,3 +74,4 @@ Go: criteria 1 to 6 pass on the evidence of 2026-11-14, and the conditions of [R
 [RC-351]: ./rc-351-mil-082-gate.md
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[38e03ae]: https://github.com/NF-Hotel/NFHotel/commit/38e03ae60dd0a00a28fff2551c5f14e6864e34cf

@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-083, planned in autonomous mode (RC-352), of ADR-0043 (RC-353) and of the code of MIL-083 (RC-354); the LXC switched to Docker's packages and Debian's security updates on 2026-11-14 | [5d447a4] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-083 and of its code at the gate: the merge deployed, the floor of runc read on the VM and in the LXC; gate passed (RC-355); the row of MIL-082 at its gate, with the map of the monitoring LXC (RC-351) | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-083 and of its code at the gate: the merge deployed, the floor of runc read on the VM and in the LXC; gate passed (RC-355); the row of MIL-082 at its gate, with the map of the monitoring LXC (RC-351) | [38e03ae] |
 
 ---
 
@@ -403,3 +403,4 @@ updated whenever an artifact instance is created or reviewed.
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
 [5d447a4]: https://github.com/NF-Hotel/NFHotel/commit/5d447a4df5d42d92ba91228dc0027e78e09fa317
+[38e03ae]: https://github.com/NF-Hotel/NFHotel/commit/38e03ae60dd0a00a28fff2551c5f14e6864e34cf

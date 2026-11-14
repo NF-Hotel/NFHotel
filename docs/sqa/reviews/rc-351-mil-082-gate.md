@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-082 after the CD run of the merge of #676; Go-with-conditions: the rows of `nf-monitoring` in the host-access map wait for the deploy of the monitoring | [29bb301] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The condition met: the deploy of the monitoring on the LXC, after its switch to Docker's packages (MIL-083), read its six containers, and the map has their rows; criterion 1 passes; mode autonomous, not independent; the verdict is Go | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The condition met: the deploy of the monitoring on the LXC, after its switch to Docker's packages (MIL-083), read its six containers, and the map has their rows; criterion 1 passes; mode autonomous, not independent; the verdict is Go | [38e03ae] |
 
 ---
 
@@ -85,3 +85,4 @@ Go: criteria 1 to 6 pass, criteria 2 to 6 on the evidence of 2026-11-13 and crit
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [29bb301]: https://github.com/NF-Hotel/NFHotel/commit/29bb3014e44bdf741083c5037a6bd97f59b03b53
+[38e03ae]: https://github.com/NF-Hotel/NFHotel/commit/38e03ae60dd0a00a28fff2551c5f14e6864e34cf
