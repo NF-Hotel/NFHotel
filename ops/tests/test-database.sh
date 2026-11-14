@@ -235,7 +235,8 @@ echo "BACKUP_ROLE=nfhotel_backup" >>"$W/etc/backup.env"
 check "backup-database.sh dumps the running container as nfhotel_backup" "$W/bin/nfhotel-backup" --apply
 cp "$W/o" "$W/backup.log"
 # The read-back of MIL-076: pg_restore in the container reads the dump of the real server to its
-# end while it is made, and finds every table of the database.
+# end while it is made, and finds every table of the database; the size in the report is the size
+# of the encrypted file.
 report() { awk '!/^#/ { print $2 }' "$W/metrics/$1.prom" 2>/dev/null; }
 live_tables="$(su_sql "SELECT count(*) FROM pg_tables WHERE schemaname NOT IN ('pg_catalog', 'information_schema')")"
 read_back_reported() {
@@ -245,6 +246,8 @@ check "the dump is read back to its end with the $live_tables tables of the data
   grep -qx "    read back to its end: $live_tables tables" "$W/backup.log"
 check "the read-back reports backup_check at the time of the backup, and the tables" read_back_reported
 backups=("$W"/backups/*.dump.age)
+size_reported() { [[ "$(report backup_bytes)" == "$(stat -c %s "${backups[0]}")" ]]; }
+check "the backup reports the size of its encrypted dump" size_reported
 if bash "$REPO/scripts/restore-drill.sh" --identity "$W/key.txt" "${backups[0]}" >"$W/drill" 2>&1; then
   ok "restore drill passes (btree_gist, EXCLUDE constraint, history)"
 else
