@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green, among them the start of the stack in the job of the monitoring configuration | [2e57a94] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | F9 from the first checks of the pull request: the clear-text address of the health check marked; still Go-with-conditions | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | F9 from the first checks of the pull request: the clear-text address of the health check marked; still Go-with-conditions | [2177c2a] |
 
 ---
 
@@ -231,3 +231,4 @@ is not independent.
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [2e57a94]: https://github.com/NF-Hotel/NFHotel/commit/2e57a943a3adf65d71c0ae7c0551599c795048f1
+[2177c2a]: https://github.com/NF-Hotel/NFHotel/commit/2177c2a64063447ca6e80f4683882f01385532f3
