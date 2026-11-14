@@ -19,7 +19,7 @@
     <PageHeader Title="Price suggestions"
                 Subtitle="The market analysis suggests price changes for the holidays and weeks of the next two months from the history of the same days. No price changes until you approve; a text written by an AI only explains." />
 
-    <AdminTabs Label="Pricing" Tabs="PricingTabs" />
+    <AdminTabs Label="Pricing" Tabs="PricingTabs.All" />
 
     <div class="row">
         <button type="button" class="btn btn-secondary btn-sm" disabled="@ViewModel.IsBusy" @onclick="ReloadAsync">Reload</button>
