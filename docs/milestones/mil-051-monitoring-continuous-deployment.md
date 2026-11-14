@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-01 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-11-01 that a change to Grafana, Prometheus, Alloy or Loki asked for in chat reaches the monitoring host without a manual step, the same way code reaches production ("planlæg begge veje"); accepted after RC-254 Go | [e8af9ea] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The ADR of task 1 takes the next free number (ADR-0035 went to MIL-056); the target moved from 2026-11-13 to 2026-11-27; accepted after RC-356 Go, at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The ADR of task 1 takes the next free number (ADR-0035 went to MIL-056); the target moved from 2026-11-13 to 2026-11-27; accepted after RC-356 Go, at S01's word in chat ("Du godkender for mig") | [62301c4] |
 
 ---
 
@@ -99,3 +99,4 @@ Today `ops-ci.yaml` checks the configuration of `ops/deploy/monitoring/` (the `m
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [MIL-052]: mil-052-read-only-grafana-for-the-ai-assistant.md
 [e8af9ea]: https://github.com/NF-Hotel/NFHotel/commit/e8af9eaddb849b4dcf173376f581a0d690a2b24e
+[62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59

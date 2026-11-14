@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-01 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-11-01 that the AI assistant can look into Grafana, Prometheus and Loki from the chat, beside MIL-051 for the changes ("planlæg begge veje"); accepted after RC-255 Go | [e8af9ea] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The ADR of task 3 takes the next free number (ADR-0036 went to MIL-057); the target moved from 2026-11-08 to 2026-12-02; accepted after RC-357 Go, at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The ADR of task 3 takes the next free number (ADR-0036 went to MIL-057); the target moved from 2026-11-08 to 2026-12-02; accepted after RC-357 Go, at S01's word in chat ("Du godkender for mig") | [62301c4] |
 
 ---
 
@@ -89,3 +89,4 @@ A check from S01's PC on 2026-11-01 found that `nf-monitoring` answers on port 3
 [ADR-0020]: ../adr/adr-0020-monitoring-stack.md
 [MIL-051]: mil-051-monitoring-continuous-deployment.md
 [e8af9ea]: https://github.com/NF-Hotel/NFHotel/commit/e8af9eaddb849b4dcf173376f581a0d690a2b24e
+[62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59

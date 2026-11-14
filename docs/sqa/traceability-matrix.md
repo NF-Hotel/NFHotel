@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-083 and of its code at the gate: the merge deployed, the floor of runc read on the VM and in the LXC; gate passed (RC-355); the row of MIL-082 at its gate, with the map of the monitoring LXC (RC-351) | [38e03ae] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-073 (the database image that passes the gate) and MIL-074 (the copy off the VM within its time) with their plan reviews RC-333 and RC-334; BC-001 with its review RC-332 and the two new milestones<br>The rows of MIL-075 to MIL-078 (the passport key out of the web container, every nightly backup read back, hostile input against the API, the tunnel routes and Access as code), accepted by S01 in chat on 2026-11-12 with their plan reviews RC-335 to RC-338 (Go), and the four in the row of BC-001<br>Accepted on 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig"): BC-001 (RC-332), MIL-073 (RC-333) and MIL-074 (RC-334); the rows of MIL-018, MIL-051 and MIL-052 with their revisions of 2026-11-14 (RC-356 to RC-358) | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-073 (the database image that passes the gate) and MIL-074 (the copy off the VM within its time) with their plan reviews RC-333 and RC-334; BC-001 with its review RC-332 and the two new milestones<br>The rows of MIL-075 to MIL-078 (the passport key out of the web container, every nightly backup read back, hostile input against the API, the tunnel routes and Access as code), accepted by S01 in chat on 2026-11-12 with their plan reviews RC-335 to RC-338 (Go), and the four in the row of BC-001<br>Accepted on 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig"): BC-001 (RC-332), MIL-073 (RC-333) and MIL-074 (RC-334); the rows of MIL-018, MIL-051 and MIL-052 with their revisions of 2026-11-14 (RC-356 to RC-358) | [62301c4] |
 
 ---
 
@@ -435,3 +435,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-356]: ./reviews/rc-356-mil-051-revision.md
 [RC-357]: ./reviews/rc-357-mil-052-revision.md
 [RC-358]: ./reviews/rc-358-mil-018-revision.md
+[62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59

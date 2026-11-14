@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the newest copy off the VM was 54 hours old on 2026-11-11, because the copy is tried once a night and the backup target had stayed stopped for a day; planned at S01's request in chat ("Lav så backuppen er inden for tiden også fremadrettet. Du sørger for det."); the target moved from 2026-11-15 to 2026-11-18 on 2026-11-14, before its acceptance; accepted after RC-334 Go, at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the newest copy off the VM was 54 hours old on 2026-11-11, because the copy is tried once a night and the backup target had stayed stopped for a day; planned at S01's request in chat ("Lav så backuppen er inden for tiden også fremadrettet. Du sørger for det."); the target moved from 2026-11-15 to 2026-11-18 on 2026-11-14, before its acceptance; accepted after RC-334 Go, at S01's word in chat ("Du godkender for mig") | [62301c4] |
 
 ---
 
@@ -98,3 +98,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-023]: ./mil-023-operational-quality.md
 [MIL-051]: ./mil-051-monitoring-continuous-deployment.md
 [MIL-069]: ./mil-069-retention-on-the-backup-target.md
+[62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59

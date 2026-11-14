@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-12 | Accepted | mikemike | S01 | Initial version: the web container gets the passport key as a secret file, though BC-001 objective 18 and the web's compose file say that it holds none, and no code of the web reads it; planned at S01's request in chat ("Skriv 1–4", to the plan of 2026-11-12) | pending |
+| 2026-11-12 | Accepted | mikemike | S01 | Initial version: the web container gets the passport key as a secret file, though BC-001 objective 18 and the web's compose file say that it holds none, and no code of the web reads it; planned at S01's request in chat ("Skriv 1–4", to the plan of 2026-11-12) | [62301c4] |
 
 ---
 
@@ -90,3 +90,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [ADR-0024]: ../adr/adr-0024-secrets-as-files.md
 [MIL-015]: ./mil-015-database-api.md
 [MIL-035]: ./mil-035-secrets-as-files.md
+[62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59

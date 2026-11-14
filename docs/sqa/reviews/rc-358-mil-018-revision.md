@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; accepted at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; accepted at S01's word in chat ("Du godkender for mig") | [62301c4] |
 
 ---
 
@@ -69,3 +69,4 @@ Go: every Mandatory criterion of QC-MIL-001 passes for the changed parts. The ro
 [MIL-079]: ../../milestones/mil-079-a-booking-opened-only-with-its-email.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
+[62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59

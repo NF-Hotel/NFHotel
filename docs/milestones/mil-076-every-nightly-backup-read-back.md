@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-12 | Accepted | mikemike | S01 | Initial version: a dump is proven readable only by the monthly restore drill with the key of S03, and nothing reads the dump of a night while it is made; planned at S01's request in chat ("Skriv 1–4", to the plan of 2026-11-12) | pending |
+| 2026-11-12 | Accepted | mikemike | S01 | Initial version: a dump is proven readable only by the monthly restore drill with the key of S03, and nothing reads the dump of a night while it is made; planned at S01's request in chat ("Skriv 1–4", to the plan of 2026-11-12) | [62301c4] |
 
 ---
 
@@ -98,3 +98,4 @@ Order: after [MIL-074], which changes the same script. The review of this docume
 [MIL-021]: ./mil-021-secure-cicd-foundation.md
 [MIL-023]: ./mil-023-operational-quality.md
 [MIL-074]: ./mil-074-the-off-vm-copy-within-its-time.md
+[62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59

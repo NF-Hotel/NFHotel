@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-12 | Accepted | mikemike | S01 | Initial version: the routes of the Cloudflare tunnel and the Access application of the back office are kept only in the Cloudflare dashboard, set by hand from the wiki page Public-Access; planned at S01's request in chat ("Skriv 1–4", to the plan of 2026-11-12) | pending |
+| 2026-11-12 | Accepted | mikemike | S01 | Initial version: the routes of the Cloudflare tunnel and the Access application of the back office are kept only in the Cloudflare dashboard, set by hand from the wiki page Public-Access; planned at S01's request in chat ("Skriv 1–4", to the plan of 2026-11-12) | [62301c4] |
 
 ---
 
@@ -102,3 +102,4 @@ Order: after the gate of [MIL-072], whose routes are the ones that the code desc
 [MIL-040]: ./mil-040-public-access.md
 [MIL-041]: ./mil-041-admin-behind-cloudflare-access.md
 [MIL-072]: ./mil-072-the-access-check-on-every-admin-path.md
+[62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59

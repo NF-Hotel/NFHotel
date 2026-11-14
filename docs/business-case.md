@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-11 | Deprecated | Claude (AI) | S01 | Amended: objective 29 says that the market analysis service makes the price suggestions from holidays and the occupancy history of the next two months, and the back office presents them (MIL-071); the website no longer works them out; accepted by S01 in chat on 2026-11-11 | [f674e8a] |
-| 2026-11-12 | Accepted | mikemike | AI as stand-in for S01 | Brought in line with the products as they run on 2026-11-11, at S01's request in chat ("Ret det så der er overensstemmelse med det aktuelle", "Indkluder dem alle"): the summary, problem, opportunity, scope, benefits, risks, assumptions, constraints (.NET 10), stakeholders and recommendation<br>Objectives 6, 7, 18 and 28 and success criteria 7, 9, 21, 27, 31 and 32 as they are now<br>Objectives 30 to 40 and success criteria 33 to 43 for the eleven products that had none<br>Objectives 18, 31, 32 and 34 and success criteria 34, 35 and 37 extended, objective 41 and success criterion 44 added (configuration as code), and two lines out of scope (Kubernetes in production, the Proxmox machines as declarative code), for MIL-075 to MIL-078, planned at S01's request in chat on 2026-11-12 ("Skriv 1–4") | pending |
+| 2026-11-12 | Accepted | mikemike | AI as stand-in for S01 | Brought in line with the products as they run on 2026-11-11, at S01's request in chat ("Ret det så der er overensstemmelse med det aktuelle", "Indkluder dem alle"): the summary, problem, opportunity, scope, benefits, risks, assumptions, constraints (.NET 10), stakeholders and recommendation<br>Objectives 6, 7, 18 and 28 and success criteria 7, 9, 21, 27, 31 and 32 as they are now<br>Objectives 30 to 40 and success criteria 33 to 43 for the eleven products that had none<br>Objectives 18, 31, 32 and 34 and success criteria 34, 35 and 37 extended, objective 41 and success criterion 44 added (configuration as code), and two lines out of scope (Kubernetes in production, the Proxmox machines as declarative code), for MIL-075 to MIL-078, planned at S01's request in chat on 2026-11-12 ("Skriv 1–4") | [62301c4] |
 
 ---
 
@@ -333,3 +333,4 @@ Proceed. The platform runs and meets most of its criteria. Continue with what is
 [UCD-001]: ./use-case-diagram.md
 [US-001]: ./user-stories.md
 [f674e8a]: https://github.com/NF-Hotel/NFHotel/commit/f674e8a3fe47dfe3c36bbc59f4eeae6180985b0d
+[62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59
