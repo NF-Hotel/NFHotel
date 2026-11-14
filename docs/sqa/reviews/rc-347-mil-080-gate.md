@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-080 after the CD run of the merge of #674; Go-with-conditions: the second half of criterion 5 waits for the deploy of the monitoring | [f0b2e32] |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | The evidence of the deploy corrected: the copy of the backup to the backup target failed, as its CD log shows (found at the gate of MIL-082, RC-351); the verdict and its condition stand | [29bb301] |
+| 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | The evidence of the deploy corrected: the copy of the backup to the backup target failed, as its CD log shows (found at the gate of MIL-082, RC-351); the verdict and its condition stand | [29bb301] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The condition met: the deploy of the monitoring at S01's word in chat, with the check over its six containers and the two rules loaded in Prometheus; criterion 5 passes; mode autonomous, not independent; the verdict is Go | pending |
 
 ---
 
@@ -21,7 +21,7 @@
 - Scope: the gate; criteria 1, 6 and 7 cite [RC-346] and the green checks of #674.
 - Language and domain: en / it (the Metadata rows of MIL-080); this record is a technical type.
 - Language reviewer: none.
-- Mode: autonomous, not independent. S01 asked in chat on 2026-11-12 for the three controls and, where one was missing, for a plan carried out in autonomous mode with the right to merge, to open pull requests and to deploy ("færdiggør milestones i automode med rettigheder til self merge og PR og Deploy"), without being asked ("Du behøver ik spørg mig om noget"), and on 2026-11-13 to finish the milestones and the gaps found ("færdiggør disse milestones og de huller du har fundet ovenfor som du snakker om. fix").
+- Mode: autonomous, not independent. S01 asked in chat on 2026-11-12 for the three controls and, where one was missing, for a plan carried out in autonomous mode with the right to merge, to open pull requests and to deploy ("færdiggør milestones i automode med rettigheder til self merge og PR og Deploy"), without being asked ("Du behøver ik spørg mig om noget"), and on 2026-11-13 to finish the milestones and the gaps found ("færdiggør disse milestones og de huller du har fundet ovenfor som du snakker om. fix"). On 2026-11-14 S01 asked in chat to fix and close MIL-080 in autonomous mode ("fix og luk disse milestones i automode") and chose to let the AI's tooling run the deploy of the monitoring over SSH ("Tilføj SSH-regler").
 
 **Evidence of 2026-11-13:**
 
@@ -33,6 +33,11 @@
 - **Prometheus.** At about 20:20 UTC Prometheus of `nf-monitoring` answered `nfhotel_container_runtime_containers{host="nf-hotel"}` 11 and `nfhotel_container_runtime_failed` 0, had no series of `nfhotel_container_runtime_violation`, and the last success of the task `container_check` was 110 seconds old: the report of the timer reaches Prometheus through Alloy.
 - **The monitoring.** At the same time Prometheus of `nf-monitoring` (v3.15.1) had 23 alert rules loaded, and `ContainerRuntimeViolation` and `ContainerCheckStale` were not among them: the monitoring is deployed by hand over Tailscale Secure Shell (SSH), not by CD, and its SSH session waits for S01 to approve its check (check mode). The first attempt ended unapproved at 20:24 UTC when the check expired; the second has waited since 20:25 UTC (finding 1).
 
+**Evidence of 2026-11-14:**
+
+- **The deploy of the monitoring.** Over Tailscale SSH, at about 05:57 UTC, `git pull --ff-only` moved the checkout on `nf-monitoring` to be0991a, the head of `main`, and `bash ops/scripts/deploy-monitoring.sh --apply` ended with exit code 0. Its output, read through a filter that keeps the steps and the lines of the check, checked the configuration with the pinned tools, gave each secret to the user of its container and started the monitoring. Then "==> the runtime of the containers against container-profiles.tsv (MIL-080)" printed one PASS line for each of the six containers and "==> 6 container(s): 6 passed, 0 failed, 0 warned". Each line reads no capability, seccomp in filter mode, a read-only root, no host path, no writable mount and no socket, with the user of its profile: 65534 for Prometheus, Alertmanager and the blackbox exporter, 10001 for Loki and the scan exporter, and 472 for Grafana. The blackbox exporter no longer runs as root (finding 1).
+- **Prometheus.** At 05:58 UTC `/api/v1/rules` of Prometheus on `nf-monitoring` listed 25 alert rules, among them `ContainerRuntimeViolation` and `ContainerCheckStale` in the group `nfhotel-security`, both with health `ok`, inactive, last evaluated at 05:58:07 UTC. The last success of the task `container_check` of `nf-hotel` was 892 seconds old (the timer runs every 15 minutes), and there was no series of `nfhotel_container_runtime_violation`: no container of the VM breaks its profile, and neither alert fires.
+
 ## Checklist Results
 
 | # | Criterion (MIL-080) | Status | Evidence/Notes |
@@ -41,26 +46,26 @@
 | 2 | The live test on the CI runner passes: the compliant containers pass, and each breaking container fails with its rule (privileged, an added capability, root where the profile says `nonroot`, a writable host mount, the Docker socket, the host's network, `seccomp=unconfined`, no `no-new-privileges`, no profile) | Pass | 40 of 40 in Ops CI run 43494943566; each of the nine named cases failed with its rule, and a member of the socket's group was caught too |
 | 3 | The end-to-end job runs `check-e2e-stack.sh` and the check over the throwaway stack, and both pass | Pass | End-to-end run 43494943495: 16 of 16 checks, and 4 of 4 containers |
 | 4 | After the deploy, the CD log shows the check over every container of the release with no violation, the release recorded, and the timer enabled with one run of its service that passed | Pass | CD run 43498058217: 11 passed, 0 failed, 0 warned; "deployed ffb274a…"; the timer enabled and its service passed; Prometheus has the report 110 seconds after a run of the timer |
-| 5 | The alert rules pass `promtool test rules` in Ops CI, and Prometheus of `nf-monitoring` has them loaded after the deploy of the monitoring; there the check passes over its six containers | Pending | `promtool check config` and `promtool test rules` passed in Ops CI of #674, with the tests of `ContainerRuntimeViolation`, `ContainerCheckStale` and the task in `TaskReportMissing`. The deploy of the monitoring has not run yet, so the rules are not loaded in Prometheus of `nf-monitoring` and the check has not run there (finding 1) |
+| 5 | The alert rules pass `promtool test rules` in Ops CI, and Prometheus of `nf-monitoring` has them loaded after the deploy of the monitoring; there the check passes over its six containers | Pass | `promtool check config` and `promtool test rules` passed in Ops CI of #674, with the tests of `ContainerRuntimeViolation`, `ContainerCheckStale` and the task in `TaskReportMissing`. After the deploy of the monitoring on 2026-11-14, Prometheus of `nf-monitoring` has both rules loaded (health `ok`, inactive), and the check there passed its six containers: 6 passed, 0 failed, 0 warned |
 | 6 | [CIS-001], the wiki pages Host-Hardening and Monitoring say what the deliverable says, and `test-wiki-coverage.sh` passes | Pass | [CIS-001] rows 4.1, 5.5 and 5.31 and the evidence `compose`; the wiki pages Host-Hardening, Alerts, Monitoring and Workflows; `test-wiki-coverage.sh` 114 of 114 ([RC-346]), green again in Ops CI of #674 |
 | 7 | The code review against `QC-SH-001` and `QC-WF-001` is Go, `lint.sh` is clean, and every check of the pull request is green | Pass | [RC-346] Go-with-conditions, and its condition is met: every check of #674 passed on fc35da6 (53 passed, 2 skipped by design), the job Ops linters (`lint.sh`) among them |
 
 ## Findings
 
-1. **The deploy of the monitoring waits for S01.** `deploy-monitoring.sh --apply` runs on `nf-monitoring` over Tailscale SSH, and the policy of the tailnet asks the owner to approve each such session in a browser (check mode). The AI cannot approve it, and does not try to work around it. Until the deploy runs, three things stay as they were on `nf-monitoring`: the two new alert rules are not loaded, so a violation on the VM is in Prometheus but raises no alert; the check has not run over the six containers there; and the blackbox exporter still runs as root, as finding F9 of [RC-346] found in the CI of #674 (the compose file of the pull request makes it `nobody`). The report of the VM is in Prometheus already, so the alert works from the moment the rules load.
+1. **The deploy of the monitoring waits for S01.** `deploy-monitoring.sh --apply` runs on `nf-monitoring` over Tailscale SSH, and the policy of the tailnet asks the owner to approve each such session in a browser (check mode). The AI cannot approve it, and does not try to work around it. Until the deploy runs, three things stay as they were on `nf-monitoring`: the two new alert rules are not loaded, so a violation on the VM is in Prometheus but raises no alert; the check has not run over the six containers there; and the blackbox exporter still runs as root, as finding F9 of [RC-346] found in the CI of #674 (the compose file of the pull request makes it `nobody`). The report of the VM is in Prometheus already, so the alert works from the moment the rules load. Resolved on 2026-11-14: S01 chose in chat to let the AI's tooling run the deploy over SSH ("Tilføj SSH-regler"), the tailnet asked for no new check, and the deploy loaded the two rules, ran the check over the six containers and started the blackbox exporter as 65534 (Evidence of 2026-11-14).
 2. **The runner and the VM run different versions of Docker Engine.** The live test ran on Docker Engine 28.0.4, the VM runs 29.9.3; both have containerd v2.4.2 and runc 1.5.2, which create the containers and apply their settings. The check reads the versions at every run, so a difference shows in its output and, with task 4 of [MIL-082], in Prometheus.
 3. **Ollama runs as root on the VM, as its profile allows.** Its line reads "uid 0, caps none": the image has no user, and the profile says `root` until task 3 of [MIL-082] changes it. The check passes it because the profile says so; it is the gap that MIL-082 closes.
 
 ## Overall Verdict
 
-Go-with-conditions: criteria 1 to 4, 6 and 7 pass on the evidence of 2026-11-13, and the condition of [RC-346] is met. Criterion 5 passes in CI, and its second half waits for the deploy of the monitoring (finding 1). The condition: that deploy, with the check over the six containers of `nf-monitoring` in its output and the two rules in the answer of `/api/v1/rules` of Prometheus, recorded in a new row of this record. Then the gate is Go, #658 and #659 close, and the GitHub milestone #55 is closed. The reviewer is not independent.
+Go: criteria 1 to 7 pass, criteria 1 to 4, 6 and 7 on the evidence of 2026-11-13 and criterion 5 on the deploy of the monitoring of 2026-11-14, and the condition of [RC-346] is met. #658 and #659 close at the merge of the pull request that carries this row, and the GitHub milestone #55 is closed after it. The reviewer is not independent.
 
 ## Action Items
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| Approve the Tailscale SSH check of the deploy of the monitoring on `nf-monitoring` | S01 | When S01 is next at the PC |
-| Deploy the monitoring, read the check over its six containers and the loaded rules, record them in a new row of this record, close #658 and #659 and the GitHub milestone #55 | AI as stand-in for S01 | After S01's approval |
+| Approve the Tailscale SSH check of the deploy of the monitoring on `nf-monitoring` | S01 | done 2026-11-14: S01 let the AI's tooling run the deploy, and no new check was asked for |
+| Deploy the monitoring, read the check over its six containers and the loaded rules, record them in a new row of this record, close #658 and #659 and the GitHub milestone #55 | AI as stand-in for S01 | done 2026-11-14: this row; #658, #659 and #55 at the merge |
 
 ---
 
@@ -72,5 +77,4 @@ Go-with-conditions: criteria 1 to 4, 6 and 7 pass on the evidence of 2026-11-13,
 [ADR-0018]: ../../adr/adr-0018-deploy-command-updates-itself.md
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
-[f0b2e32]: https://github.com/NF-Hotel/NFHotel/commit/f0b2e329f891aa4062869e27ec2c55ffd3e492e2
 [29bb301]: https://github.com/NF-Hotel/NFHotel/commit/29bb3014e44bdf741083c5037a6bd97f59b03b53
