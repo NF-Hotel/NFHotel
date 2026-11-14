@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-073 (the database image that passes the gate) and MIL-074 (the copy off the VM within its time) with their plan reviews RC-333 and RC-334; BC-001 with its review RC-332 and the two new milestones<br>The rows of MIL-075 to MIL-078 (the passport key out of the web container, every nightly backup read back, hostile input against the API, the tunnel routes and Access as code), accepted by S01 in chat on 2026-11-12 with their plan reviews RC-335 to RC-338 (Go), and the four in the row of BC-001<br>Accepted on 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig"): BC-001 (RC-332), MIL-073 (RC-333) and MIL-074 (RC-334); the rows of MIL-018, MIL-051 and MIL-052 with their revisions of 2026-11-14 (RC-356 to RC-358) | [62301c4] |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-079 in its rows: RC-342 Go after the deploy of CD run 43256465429 and the check on the live site, accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [fc88265] |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-073: the pin of the database image and the wiki page, with its code review RC-359 (Go-with-conditions) | [26634dc] |
 
 ---
 
@@ -102,6 +102,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-071] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-11, RC-323; the reviews of tasks 3 and 4 and the gate accepted 2026-11-14 by the AI as stand-in for S02, and of task 5 as stand-in for S01, at S01's word in chat; the published wiki checked 2026-11-14; gate passed, RC-329) | en | it | [BC-001], [US-001], [MIL-055], [MIL-028], notebook-market-analysis MIL-002 | the contract and client (`src/NFHotel.External/MarketAnalysis`, `docs/test-data/market-contract.yaml`), the presentation of the suggestions (`PriceSuggestionService`, the page `/admin/pricing/suggestions`), `NoPriceRuleTests`, the wiki page Price Suggestions | [RC-323], [RC-324], [RC-325], [RC-326], [RC-327], [RC-328], [RC-329] |
 | [MIL-072] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-11, RC-330; the routes of the tunnel changed in the Cloudflare dashboard 2026-11-11; the code reviewed and accepted by S01 2026-11-11, RC-331; deployed 2026-11-12 by CD run 43262765251; the check inside the VM made 2026-11-14 at S01's word in chat; gate passed 2026-11-14, RC-339) | en | it | [BC-001], [DSA-001], ADR-0028, ADR-0029, MIL-040, MIL-041 | done 2026-11-11: the validating route of the tunnel first, with the path `(?i)^/admin` (task 1); reviewed: `location ~* ^/admin` in `ops/deploy/nginx/templates/public.conf.template` with its test in `ops/tests/test-nginx.sh`, a row of ADR-0029 and the wiki page Public-Access (tasks 2 to 4); ADR-0029 decision 1 and the wiki say the session lasts 1 week, as the Access application is set; deployed 2026-11-12 and checked inside the VM 2026-11-14 (task 5) | [RC-330], [RC-331], [RC-339] |
 | [MIL-073] | Milestone (Accepted, Go; plan reviewed in RC-333 and accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat) | en | it | [BC-001], [DSA-001], [ADR-0031], [ADR-0040], MIL-024, MIL-064, MIL-065 | planned: the pin of the upstream build of `postgres:16-alpine` with the fixed `krb5-libs` and the documents (task 1), the code review and the pull request (task 2), the deploy with the row counts (task 3) and the gate (task 4) | [RC-333] |
+| The code of MIL-073: the pin of `postgres:16-alpine` in `ops/deploy/postgres/docker-compose.yml` and the wiki page Containers-and-Images | YAML (reviewed 2026-11-14, Go-with-conditions: the checks of the pull request) | - | - | [MIL-073] tasks 1 and 2, [ADR-0040], [DSA-001] | - | [RC-359] |
 | [MIL-074] | Milestone (Accepted, Go; plan reviewed in RC-334 and accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat) | en | it | [BC-001], [DSA-001], [ADR-0008], [ADR-0020], MIL-021, MIL-023, MIL-069 | planned: `backup-database.sh --copy-only` with a lock and the units `nfhotel-offvm-copy.service` and `.timer` (task 1), the report `backup_host_seen` and the rule `BackupTargetDown` (task 2), the documents (task 3), the scheduled task on the backup host (task 4), the deploy and the gate (tasks 5 and 6) | [RC-334] |
 | [MIL-075] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-335) | en | it | [BC-001], [ADR-0004], [ADR-0024], MIL-015, MIL-035 | planned: the passport key off the web's list, loop and compose file, the secrets of every service left out of every settings file with a warning, and the deletion of a secret file that a service no longer lists (task 1), the web started without the key (task 2), the documents (task 3), the deploy with the checks in the VM (task 4) and the gate (task 5) | [RC-335] |
 | [MIL-076] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-336) | en | it | [BC-001], [ADR-0008], [ADR-0020], ADR-0025, MIL-021, MIL-023, MIL-074 | planned: the read-back of every dump with two `pg_restore` readers and the reports `backup_check`, `nfhotel_backup_tables` and `nfhotel_backup_bytes` (task 1), the rules `BackupUnreadable` and `BackupShrunk` (task 2), the documents (task 3), the deploy and the checks (task 4), seven nights and the gate (task 5) | [RC-336] |
@@ -416,6 +417,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-074]: ../milestones/mil-074-the-off-vm-copy-within-its-time.md
 [RC-332]: ./reviews/rc-332-bc-001-products-of-2026-11-11.md
 [RC-333]: ./reviews/rc-333-mil-073.md
+[RC-359]: ./reviews/rc-359-mil-073-code.md
 [RC-334]: ./reviews/rc-334-mil-074.md
 [MIL-075]: ../milestones/mil-075-the-passport-key-out-of-the-web-container.md
 [MIL-076]: ../milestones/mil-076-every-nightly-backup-read-back.md
@@ -435,5 +437,5 @@ updated whenever an artifact instance is created or reviewed.
 [RC-356]: ./reviews/rc-356-mil-051-revision.md
 [RC-357]: ./reviews/rc-357-mil-052-revision.md
 [RC-358]: ./reviews/rc-358-mil-018-revision.md
-[62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59
 [fc88265]: https://github.com/NF-Hotel/NFHotel/commit/fc88265603804b527f97224c87d91dca53e09e69
+[26634dc]: https://github.com/NF-Hotel/NFHotel/commit/26634dc25a842119c706a2011812d891e8d4f3bb

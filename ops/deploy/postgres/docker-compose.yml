@@ -10,7 +10,7 @@ name: nfhotel-postgres
 
 services:
   postgres:
-    image: postgres:16-alpine@sha256:aa6cb33cf4c19c765cefcf48d96176258800870a9a1e930ad126200f9d825139
+    image: postgres:16-alpine@sha256:f377d590e5474681d4d7838635031a2b50647923b7abfa803ce9b5ff35d5c663
     restart: unless-stopped
     env_file: ${POSTGRES_ENV_FILE:-secrets/settings.env}
     # The password is a file (MIL-035, ADR-0024), written by scripts/write-secret-files.sh. The

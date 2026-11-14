@@ -55,7 +55,7 @@ Every service publishes no host port unless the table says so; the others are re
 | `nginx` (`nginx`) | Reverse proxy and TLS end: HTTPS on the tailnet and the public listener for the tunnel; no route to the Python services (ADR-0039) | `ghcr.io/nf-hotel/nfhotel-nginx`: `nginx:1.29-alpine` with the fixes of its Alpine packages (ADR-0040) | GHCR, built by Release | proxy, api | 80 and 443 (tailnet and LAN, firewalled to 80 and 443 only) |
 | `nfhotel-web` (`nfhotel-web`) | The Blazor web application: guest pages and back office | `ghcr.io/nf-hotel/nfhotel-web` | GHCR (our build) | proxy, api, python | none |
 | `nfhotel-api` (`nfhotel-api`) | NFHotel.Api: the only container that reaches the database (ADR-0004) | `ghcr.io/nf-hotel/nfhotel-api` | GHCR (our build) | api, db, python | none |
-| `postgres` (`postgres`) | PostgreSQL 16, the production database | `postgres:16-alpine` | Docker Hub | db | none |
+| `postgres` (`postgres`) | PostgreSQL 16 (16.16, the build of the tag of 2026-11-12), the production database | `postgres:16-alpine` | Docker Hub | db | none |
 | `relay` (`postgres-tailnet`) | HAProxy in TCP mode: the team's DBeaver access to PostgreSQL (ADR-0034) | `haproxy:3.2-alpine` | Docker Hub | db, published | Port 5432 on the tailnet address of `nf-hotel` only |
 | `market-analysis-api` (`market-analysis`) | The market analysis service of `NF-Hotel/notebook-market-analysis` | `ghcr.io/nf-hotel/market-analysis` | GHCR (our build) | python, llm | none |
 | `benchmark` (`benchmark`) | The benchmark service of `NF-Hotel/notebook-benchmark`: compares the local AI models | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | python, llm | none |
@@ -133,7 +133,7 @@ A pinned third-party image can keep a finding that its newest build has not fixe
 
 | Image | What is accepted | What the check found |
 | --- | --- | --- |
-| `postgres:16-alpine` | 26 findings of the Go standard library in `gosu` 1.19, built with Go 1.24.6 | Not in the binary: `gosu` has functions of `os`, `syscall` and `github.com/moby/sys/user` only; the entry point runs it once, to start the server as `postgres`, and no build of the tag has a newer `gosu` |
+| `postgres:16-alpine` | 26 findings of the Go standard library in `gosu` 1.19, built with Go 1.24.6 | Not in the binary: `gosu` has functions of `os`, `syscall` and `github.com/moby/sys/user` only; the entry point runs it once, to start the server as `postgres`, and no build of the tag has a newer `gosu`: the build of 2026-11-12 has the same binary |
 | `ollama/ollama:0.40.13`, `grafana/alloy:v1.21.3` | The HTML parser of `golang.org/x/net` in `ollama` and `alloy`; `apt` 2.8.3 of Ubuntu 24.04 | Not in the binary for the parser; accepted for `apt`, which runs only when an image is built and never in these containers |
 | `cloudflare/cloudflared:2026.10.7` | The HTML parser of `golang.org/x/net` in `cloudflared`; two findings in Debian's `zlib1g` | Not in the binary; not used, because `cloudflared` is a static Go binary that never loads `libz` |
 | `prom/prometheus:v3.15.1`, `prom/alertmanager:v0.34.2`, `prom/blackbox-exporter:v0.29.1`, `grafana/loki:3.7.9` | The HTML parser of `golang.org/x/net` in their binaries | Not in the binary |
