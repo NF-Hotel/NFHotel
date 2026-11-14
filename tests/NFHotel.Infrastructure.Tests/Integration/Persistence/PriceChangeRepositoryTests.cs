@@ -30,7 +30,7 @@ public sealed class PriceChangeRepositoryTests : IAsyncLifetime
 
     /// <summary>Integration: the migration is part of the chain, its table is empty after the migrations ran, and the index on size and first day exists.</summary>
     [Fact]
-    public async Task Migrations_AppliedToAnEmptyDatabase_MatchTheModelAndHaveTheIndex()
+    public async Task Migrations_AppliedToAnEmptyDatabase_CreateTheEmptyTableAndTheIndex()
     {
         // Arrange
         await using HotelDbContext context = _fixture.CreateContext();

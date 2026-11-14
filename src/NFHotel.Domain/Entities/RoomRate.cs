@@ -11,6 +11,8 @@ namespace NFHotel.Domain.Entities;
 /// </summary>
 public sealed class RoomRate : Entity<int>
 {
+    #region Fields
+
     /// <summary>The longest user name that is stored.</summary>
     public const int MaxTextLength = 100;
 
@@ -20,9 +22,17 @@ public sealed class RoomRate : Entity<int>
     /// <summary>The number of decimals the price is kept with.</summary>
     public const int PriceDecimals = 2;
 
+    #endregion Fields
+
+    #region Constructors
+
     private RoomRate()
     {
     }
+
+    #endregion Constructors
+
+    #region Properties
 
     /// <summary>The room size the rate is for.</summary>
     [EnumDataType(typeof(RoomSize), ErrorMessage = RoomRateErrors.SizeInvalid)]
@@ -39,6 +49,10 @@ public sealed class RoomRate : Entity<int>
 
     /// <summary>When the rate was set.</summary>
     public DateTimeOffset SetAt { get; private set; }
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <summary>Creates the rate of a room size.</summary>
     /// <param name="size">The room size.</param>
@@ -63,6 +77,10 @@ public sealed class RoomRate : Entity<int>
     public void Change(decimal nightlyPrice, string setBy, DateTimeOffset setAt) =>
         Apply(Size, nightlyPrice, setBy, setAt);
 
+    #endregion Public methods
+
+    #region Private methods
+
     private void Apply(RoomSize size, decimal nightlyPrice, string setBy, DateTimeOffset setAt)
     {
         RoomRate candidate = new()
@@ -80,4 +98,6 @@ public sealed class RoomRate : Entity<int>
         SetBy = candidate.SetBy;
         SetAt = candidate.SetAt;
     }
+
+    #endregion Private methods
 }

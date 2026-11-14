@@ -10,12 +10,18 @@ namespace NFHotel.Infrastructure.Repositories;
 /// <summary>Stores the price changes of the room sizes (MIL-055).</summary>
 public sealed class PriceChangeRepository : Repository<PriceChange, int>, IPriceChangeRepository
 {
+    #region Constructors
+
     /// <summary>Creates the repository.</summary>
     /// <param name="context">The database context.</param>
     public PriceChangeRepository(HotelDbContext context)
         : base(context)
     {
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<PriceChange>> ListForSizeAsync(
@@ -40,4 +46,6 @@ public sealed class PriceChangeRepository : Repository<PriceChange, int>, IPrice
             .ThenBy(value => value.Id)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+    #endregion Public methods
 }

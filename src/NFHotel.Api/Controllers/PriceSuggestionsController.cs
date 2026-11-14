@@ -18,7 +18,13 @@ namespace NFHotel.Api.Controllers;
 [Route(ApiRoutes.PriceSuggestions)]
 public sealed class PriceSuggestionsController : ControllerBase
 {
+    #region Fields
+
     private readonly IPriceSuggestionService _suggestions;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the controller.</summary>
     /// <param name="suggestions">Makes and approves the suggestions.</param>
@@ -27,6 +33,10 @@ public sealed class PriceSuggestionsController : ControllerBase
         ArgumentNullException.ThrowIfNull(suggestions);
         _suggestions = suggestions;
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <summary>Lists the suggestions that are open today.</summary>
     /// <param name="cancellationToken">Cancels the call.</param>
@@ -47,4 +57,6 @@ public sealed class PriceSuggestionsController : ControllerBase
         [FromBody] PriceSuggestionApproveRequest request,
         CancellationToken cancellationToken) =>
         this.ToResponse(await _suggestions.ApproveAsync(request, cancellationToken).ConfigureAwait(false));
+
+    #endregion Public methods
 }

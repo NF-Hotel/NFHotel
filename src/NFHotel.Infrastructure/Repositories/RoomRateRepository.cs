@@ -10,12 +10,18 @@ namespace NFHotel.Infrastructure.Repositories;
 /// <summary>Stores the nightly base rate per room size (MIL-055).</summary>
 public sealed class RoomRateRepository : Repository<RoomRate, int>, IRoomRateRepository
 {
+    #region Constructors
+
     /// <summary>Creates the repository.</summary>
     /// <param name="context">The database context.</param>
     public RoomRateRepository(HotelDbContext context)
         : base(context)
     {
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <inheritdoc />
     public async Task<RoomRate?> FindBySizeAsync(RoomSize size, CancellationToken cancellationToken = default) =>
@@ -30,4 +36,6 @@ public sealed class RoomRateRepository : Repository<RoomRate, int>, IRoomRateRep
             .OrderBy(value => value.Size)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+    #endregion Public methods
 }

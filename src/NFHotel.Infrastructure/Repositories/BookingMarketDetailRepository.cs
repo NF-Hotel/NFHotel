@@ -9,12 +9,18 @@ namespace NFHotel.Infrastructure.Repositories;
 /// <summary>Stores the market details of the bookings (MIL-026, MIL-055).</summary>
 public sealed class BookingMarketDetailRepository : Repository<BookingMarketDetail, int>, IBookingMarketDetailRepository
 {
+    #region Constructors
+
     /// <summary>Creates the repository.</summary>
     /// <param name="context">The database context.</param>
     public BookingMarketDetailRepository(HotelDbContext context)
         : base(context)
     {
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <inheritdoc />
     public void Discard(BookingMarketDetail detail)
@@ -23,4 +29,6 @@ public sealed class BookingMarketDetailRepository : Repository<BookingMarketDeta
 
         Context.Entry(detail).State = EntityState.Detached;
     }
+
+    #endregion Public methods
 }

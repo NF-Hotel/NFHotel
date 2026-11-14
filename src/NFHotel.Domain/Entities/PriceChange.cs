@@ -12,6 +12,8 @@ namespace NFHotel.Domain.Entities;
 /// </summary>
 public sealed class PriceChange : Entity<int>
 {
+    #region Fields
+
     /// <summary>The longest user name that is stored.</summary>
     public const int MaxTextLength = 100;
 
@@ -27,9 +29,17 @@ public sealed class PriceChange : Entity<int>
     /// <summary>The longest period in days, both ends included.</summary>
     public const int MaxPeriodDays = 366;
 
+    #endregion Fields
+
+    #region Constructors
+
     private PriceChange()
     {
     }
+
+    #endregion Constructors
+
+    #region Properties
 
     /// <summary>The room size the change is for.</summary>
     [EnumDataType(typeof(RoomSize), ErrorMessage = PriceChangeErrors.SizeInvalid)]
@@ -72,6 +82,10 @@ public sealed class PriceChange : Entity<int>
     /// <summary>The last day the change counts, or <c>null</c> when it counts for no day (withdrawn).</summary>
     public DateOnly? CountedLastDay =>
         State == PriceChangeState.Approved ? LastDay : EndedOn;
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <summary>Creates an approved change.</summary>
     /// <param name="size">The room size.</param>
@@ -185,4 +199,6 @@ public sealed class PriceChange : Entity<int>
         // A change that has not begun counts for no day; one in force counted up to yesterday.
         EndedOn = today < FirstDay ? null : today.AddDays(-1);
     }
+
+    #endregion Public methods
 }
