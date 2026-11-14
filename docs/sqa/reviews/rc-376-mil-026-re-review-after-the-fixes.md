@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the re-review of the code of MIL-026 after the fixes of the findings of RC-373 to RC-375, and the review of the pin check of the service; Go; mode autonomous, not independent | [b371b85] |
+| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: the re-review of the code of MIL-026 after the fixes of the findings of RC-373 to RC-375, and the review of the pin check of the service; Go; mode autonomous, not independent | [b371b85] |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | The checks of pull request #755: SonarQube Cloud failed the security rating of the new code on one vulnerability of the pin check (shell:S6506); `c789690` keeps the fetch on HTTPS and changes the eight lines of its code smells (IDE0028, IDE0200); N6 added; Go kept; mode autonomous, not independent | pending |
 
 ---
 
@@ -23,6 +24,8 @@
   - `b653743`: the query of `MarketAnalysisBookingQueries` selects a named row instead of an anonymous type, which held the last `var` (N2).
   - `559fb60` and `4da4513`: `ops/tests/test-market-analysis-pin.sh`, the job `Ops market analysis pin (MIL-026)` of `.github/workflows/ops-ci.yaml`, and the job on the wiki page Workflows.
   - `3d197a8` merges `main` at `5846e91` (the gate of MIL-055, pull request #753) into the branch, without a conflict.
+  - `5797e58` merges `main` at `3ca75e5` (the use cases of MIL-019 and MIL-020, pull request #756); the one conflict, in the Version History of the traceability matrix, keeps its two latest rows.
+  - `c789690`: the findings of SonarQube Cloud on pull request #755 (N6).
 - Checklists used: [QC-CS-001] (`framework/qc/code/qc-programming-csharp.md`, 21 criteria) for the C# code; [QC-SH-001] (`framework/qc/code/qc-programming-shell.md`, 15 criteria) for the pin check; [QC-WF-001] (`framework/qc/code/qc-workflow.md`, 24 criteria) and [QC-YML-001] (`framework/qc/code/qc-yaml.md`, 15 criteria) for the new job.
 - Scope: a delta review. Criteria 2, 3, 4, 13 and 21 of [QC-CS-001] are checked over every file that the commits of MIL-026 created under `src/` and `tests/`: 130 files (115 C# and 15 Razor), plus the eight files that `3e67e04` and `5912442` split from them, less the test doubles file they replaced, 137 in all. The other criteria are checked on the lines that the fix commits changed; for the rest of the code the scores of [RC-373], [RC-374] and [RC-375] stand. The shared files that MIL-026 only changed are judged on the lines that MIL-026 wrote.
 - Language and domain: n/a for a technical type
@@ -184,6 +187,7 @@
 - **N3, note: shared files keep the `var` of other milestones.** `src/NFHotel.External/DependencyInjection.cs` (14 lines) and `src/NFHotel.Web/Common/ErrorMessages.cs` (2 lines) still declare locals with `var`, in lines that the merge of the benchmark work of MIL-019 and MIL-020 and the line-ending commit of 2026-10-18 wrote (by `git blame`). The fixes changed only the lines that MIL-026 wrote, as G1 of [RC-378] does for the regions; a conversion of the shared files belongs to that decision.
 - **N4, note for S01: the new job is not a required check.** `Ops market analysis pin (MIL-026)` runs on every pull request, but the ruleset of `main` decides which checks must pass, and a change of it is S01's.
 - **N5, note: tasks 16 and 19 have parts that this review cannot do.** Task 16 asks for a run on the dev VM with the real service, and task 19 for a look at the page with the sample result; both belong to the gate, after the release with the pin of #754 is deployed (F2 of [RC-380]).
+- **N6, fixed: the findings of SonarQube Cloud on pull request #755.** The quality gate failed the security rating of the new code (C, where the gate asks for A) on one vulnerability: shell:S6506 at line 56 of `ops/tests/test-market-analysis-pin.sh`, where `curl -L` would follow a redirect to plain HTTP. `c789690` adds `--proto '=https'`, so the fetch and any redirect stay on HTTPS; after it the check passed 5 of 5 and `lint.sh` is clean. The same analysis listed eight code smells in lines that the fixes wrote: seven lists made with `new List<T>()` where the settings of the solution prefer a collection expression (IDE0028, `dotnet_style_prefer_collection_expression`), and one lambda that can be a method group (IDE0200, `csharp_style_prefer_method_group_conversion`); `c789690` changes the eight lines. The build has 0 warnings, the format check exits 0, and Domain (485), External (217) and the 24 seeding tests of Infrastructure pass.
 
 ## Overall Verdict
 
