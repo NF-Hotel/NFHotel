@@ -1,15 +1,21 @@
-"""The composition root: wires the collector, the HTTP client and the endpoint (MIL-053)."""
+"""The composition root: wires the collector, the HTTP client, the reports and the endpoint.
+
+MIL-053 made the exporter; MIL-051 added the report folder (ADR-0044).
+"""
 
 import logging
 import os
 import threading
 import time
 from http.server import ThreadingHTTPServer
+from pathlib import Path
 
 from scan_exporter.application.collector import Collector
 from scan_exporter.infrastructure.http_json_client import UrllibJsonClient
+from scan_exporter.infrastructure.report_folder import ReportFolder
 from scan_exporter.infrastructure.settings import settings_from_environment
-from scan_exporter.presentation.metrics_endpoint import make_handler
+from scan_exporter.presentation.metrics_endpoint import make_handler, no_reports
+from scan_exporter.presentation.prometheus_text import METRIC_NAMES
 
 LOG = logging.getLogger(__name__)
 
@@ -33,7 +39,12 @@ def main() -> None:
     threading.Thread(target=refresh_forever, args=(collector, interval, stop), daemon=True).start()
     port = int(os.environ.get("SCAN_EXPORTER_PORT", "9120"))
     LOG.info("serving /metrics on port %d, reading every %d seconds", port, interval)
+    # The reports of other jobs of the host, such as the pull deploy of ADR-0044 (MIL-051).
+    report_dir = os.environ.get("REPORT_DIR", "")
+    reports = ReportFolder(Path(report_dir), METRIC_NAMES).text if report_dir else no_reports
+    if report_dir:
+        LOG.info("serving the reports of %s after the metrics", report_dir)
     # Plain HTTP on the compose network, as every exporter that Prometheus scrapes here: no
     # port is published, and the metrics hold no secret.
-    server = ThreadingHTTPServer(("0.0.0.0", port), make_handler(collector))  # noqa: S104  # NOSONAR
+    server = ThreadingHTTPServer(("0.0.0.0", port), make_handler(collector, reports))  # noqa: S104  # NOSONAR
     server.serve_forever()  # NOSONAR - plain HTTP on purpose, see above
