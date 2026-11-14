@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-054 in a new row: RC-367 Go on the measurement of `main` at 9de9be4 and the diff of #435, accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [5f17ee9] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | RC-380 on the row of `deploy/market-analysis`: the pin of the market analysis service moved to 97ca890f, so the released service takes the pricing settings of MIL-071; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | RC-380 on the row of `deploy/market-analysis`: the pin of the market analysis service moved to 97ca890f, so the released service takes the pricing settings of MIL-071; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [48bd88c] |
 
 ---
 
@@ -459,3 +459,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-367]: ./reviews/rc-367-mil-054-gate.md
 [RC-380]: ./reviews/rc-380-mil-026-service-pin.md
 [5f17ee9]: https://github.com/NF-Hotel/NFHotel/commit/5f17ee9ed16c21c3831c135ce805d8218424827a
+[48bd88c]: https://github.com/NF-Hotel/NFHotel/commit/48bd88c4cea912fb342d83964bb71d1c3ee27d57

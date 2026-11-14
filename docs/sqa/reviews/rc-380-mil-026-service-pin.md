@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the pin of the market analysis service moved from 2868898 to 97ca890f, so the released service takes the pricing settings that the API sends since MIL-071; Go; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the pin of the market analysis service moved from 2868898 to 97ca890f, so the released service takes the pricing settings that the API sends since MIL-071; Go; mode autonomous, not independent | [48bd88c] |
 
 ---
 
@@ -86,3 +86,4 @@ Go. The change moves the release to the version of the service that the API has 
 [MIL-071]: ../../milestones/mil-071-price-suggestions-from-the-service.md
 [RC-329]: ./rc-329-mil-071-gate.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[48bd88c]: https://github.com/NF-Hotel/NFHotel/commit/48bd88c4cea912fb342d83964bb71d1c3ee27d57
