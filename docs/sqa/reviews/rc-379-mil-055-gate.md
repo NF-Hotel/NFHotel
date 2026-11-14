@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-055 on criteria 1 to 11, after MIL-071 replaced its pricing rule; Go; mode autonomous, not independent | [852803e] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Criterion 10 on the second version of RC-378 (Go without a risk exception, after the regions of 17d67cc and the pricing tabs of 96b93dc); the evidence of the gate branch and F3 updated for the two commits; the note of MIL-055 of 2026-11-11 cited where its Version History now repeats it; Go; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Criterion 10 on the second version of RC-378 (Go without a risk exception, after the regions of 17d67cc and the pricing tabs of 96b93dc); the evidence of the gate branch and F3 updated for the two commits; the note of MIL-055 of 2026-11-11 cited where its Version History now repeats it; Go; mode autonomous, not independent | [46998b0] |
 
 ---
 
@@ -84,3 +84,4 @@ Go. Criteria 4 to 11 pass on the code of the gate branch, the tests that ran on 
 [RC-378]: ./rc-378-mil-055-code-at-the-gate.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [852803e]: https://github.com/NF-Hotel/NFHotel/commit/852803eae5904913edb95063c33eb964bcd73205
+[46998b0]: https://github.com/NF-Hotel/NFHotel/commit/46998b088196b21f2d0bee4e82c69449c6572886
