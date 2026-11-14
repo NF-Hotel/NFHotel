@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-073 after the CD run of the merge, the row counts inside the VM and the daily scan run by hand; Go; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-073 after the CD run of the merge, the row counts inside the VM and the daily scan run by hand; Go; mode autonomous, not independent | [cee9c20] |
 
 ---
 
@@ -113,3 +113,4 @@ is not independent: the AI wrote the plan, the change and this record.
 [MIL-074]: ../../milestones/mil-074-the-off-vm-copy-within-its-time.md
 [MIL-065]: ../../milestones/mil-065-third-party-image-remedies.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[cee9c20]: https://github.com/NF-Hotel/NFHotel/commit/cee9c202c9a01660c76140226b8db4cf67f1c61d

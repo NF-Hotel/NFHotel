@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: the daily scan (issue #642) fails the database image `postgres:16-alpine` on seven high findings in `krb5-libs`; planned at S01's request in chat on 2026-11-11 ("Opfylder de det nu? Ellers fix det så de opfylder !") as a patch layer from the release, and changed before its acceptance to the upstream build of 2026-11-12, which has the fixed package (rule 1 of decision 5 of ADR-0040); accepted after RC-333 Go, at S01's word in chat ("Du godkender for mig") | [62301c4] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Gate: the five criteria pass after the deploy of CD run 43590287146, the row counts inside the VM and the daily scan run by hand (RC-362, Go); tasks 1 to 4 done; accepted at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Gate: the five criteria pass after the deploy of CD run 43590287146, the row counts inside the VM and the daily scan run by hand (RC-362, Go); tasks 1 to 4 done; accepted at S01's word in chat ("Du godkender for mig") | [cee9c20] |
 
 ---
 
@@ -94,3 +94,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-064]: ./mil-064-patched-nginx-and-third-party-scan.md
 [MIL-065]: ./mil-065-third-party-image-remedies.md
 [62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59
+[cee9c20]: https://github.com/NF-Hotel/NFHotel/commit/cee9c202c9a01660c76140226b8db4cf67f1c61d
