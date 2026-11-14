@@ -6,12 +6,12 @@ using NFHotel.Domain.Errors;
 namespace NFHotel.Web.Common;
 
 /// <summary>
-/// Translates the error codes of the Application layer to Danish user texts.
+/// Translates the error codes of the Application layer to the texts that the website shows the user.
 /// </summary>
 /// <remarks>
 /// A-09: the code is the contract, the text is the responsibility of the UI. Therefore the translation exists in exactly
 /// one place — here — and not spread out in the components. A later API maps the same codes
-/// to HTTP statuses without inheriting a single Danish string.
+/// to HTTP statuses without inheriting a single user text.
 /// <para>
 /// Unknown codes (and any unexpected exception) become <see cref="Unexpected"/>. We never
 /// show a raw error code or an exception text to the user, cf. Conventions.md's
