@@ -31,6 +31,20 @@ groups:
             ops/security/container-profiles.tsv allows. Read the check on nf-hotel (sudo
             journalctl -u nfhotel-container-check) and follow the wiki page Host-Hardening.
 
+      # The floor of runc in the same check (MIL-083, ADR-0043): the runc of nf-hotel is older than
+      # the first version of its line without the known container escapes.
+      - alert: ContainerRuntimeKnownEscape
+        expr: nfhotel_container_runtime_runc_below_floor{host="nf-hotel"} == 1
+        labels:
+          severity: critical
+        annotations:
+          summary: "runc on nf-hotel is older than the fix of a known container escape"
+          description: >-
+            The runtime check found a runc below the floor in
+            ops/scripts/check-container-runtime.sh; nfhotel_container_runtime_info has its
+            version. Install the fixed runc from Docker's repository as the wiki page
+            Container-Escape says.
+
       - alert: ContainerCheckStale
         expr: >-
           time() - nfhotel_task_last_success_timestamp_seconds{host="nf-hotel",

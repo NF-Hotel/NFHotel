@@ -43,13 +43,19 @@
 # broken rule; then the versions of Docker Engine, containerd and runc. It never prints an
 # environment, a label value other than the compose service, or the content of a file.
 #
+# Then it holds runc to its floor (MIL-083, ADR-0043): the first version of its line without the
+# container escapes in RUNC_FLOOR. A runc below it fails the check; a version that cannot be read
+# is a warning.
+#
 # Usage: check-container-runtime.sh [--profiles <file>] [--deploy] [--metrics <file>]
 #                                   [--lock <file>] [--filter <docker ps filter>]...
 #   --profiles  the profiles (default: ../security/container-profiles.tsv from this script)
-#   --deploy    a container without a profile is a warning, not a violation: the deploy checks
-#               its release and must not fail, or block a rollback, on a container outside it
-#   --metrics   also write the result and the versions for Prometheus to <file>, a text file that
-#               Alloy reads
+#   --deploy    a container without a profile, and a runc below its floor, is a warning, not a
+#               violation: the deploy checks its release and must not fail, or block a rollback, on
+#               a container outside it or on the runtime, which neither the release nor its
+#               rollback changes; the check of the timer still fails on the runtime
+#   --metrics   also write the result, the versions and whether runc is below its floor for
+#               Prometheus to <file>, a text file that Alloy reads
 #   --lock      skip the run, and exit 0, when another process holds <file> (the lock of the
 #               deploy command) before or after the containers are read, so a check never compares
 #               a release with the containers of the one before it in the middle of a deploy. The
@@ -58,8 +64,8 @@
 #               its compose project; the tests pass their label)
 # Env:   NFHOTEL_DOCKER (default docker), NFHOTEL_PROC (default /proc) and NFHOTEL_DOCKER_SOCKET
 #        (default /var/run/docker.sock); for the tests
-# Exit:  0 no violation; 1 a violation, or docker could not be read; 2 usage error or a profile
-#        that is not valid
+# Exit:  0 no violation; 1 a violation, a runc below its floor (not with --deploy), or docker
+#        could not be read; 2 usage error or a profile that is not valid
 # Needs: bash 4+, docker, GNU stat (-c), flock (for --lock), root (to read the main process of
 #        every container)
 
@@ -94,6 +100,13 @@ readonly SOCKETS=(/var/run/docker.sock /run/docker.sock)
 readonly RULES=(profile privileged cap_drop cap_add cap_bounding no_new_privileges seccomp apparmor read_only
   limits host_namespace device system_paths writable_mount host_path docker_socket user kernel_view
   proxy_allowlist)
+# The floor of runc (MIL-083, ADR-0043): the first version of each line without the container
+# escapes that apply to NF Hotel, from the advisories of opencontainers/runc, oldest line first and
+# one row for each line from there on. A line older than the first row has no fix; a line newer
+# than the last row was released with the fixes. A new escape that applies adds its fixed versions
+# here, and to RUNC_ESCAPES, with the unit test, when its advisory is published.
+readonly RUNC_FLOOR=(1.2.8 1.3.3)
+readonly RUNC_ESCAPES="CVE-2025-31133, CVE-2025-52565 and CVE-2025-52881"
 # The patterns of the columns of a profile.
 readonly RE_KEY='^[a-z0-9-]+/[a-z0-9_-]+$' RE_USER='^(root|nonroot|[0-9]+)$' RE_CAPS='^(-|default|[A-Z_]+(,[A-Z_]+)*)$'
 readonly RE_ROOTFS='^(ro|rw)$' RE_PATHS='^(-|/[^,[:space:]]*(,/[^,[:space:]]*)*)$' RE_EXEMPT='^(-|[a-z_]+(,[a-z_]+)*)$'
@@ -602,6 +615,28 @@ check_container() {
   fi
 }
 
+# runc_floor <version>: print the floor of RUNC_FLOOR that applies to this version of runc; exit 0
+# at or above it, 1 below it, 2 when the version cannot be read. A leading v and a suffix after the
+# three numbers (+ds1 of a Debian package, -rc95 of a release candidate) are allowed.
+runc_floor() {
+  local row major minor patch row_major row_minor row_patch
+  [[ "$1" =~ ^v?([0-9]+)\.([0-9]+)\.([0-9]+) ]] || return 2
+  major=$((10#${BASH_REMATCH[1]})) minor=$((10#${BASH_REMATCH[2]})) patch=$((10#${BASH_REMATCH[3]}))
+  for row in "${RUNC_FLOOR[@]}"; do
+    IFS=. read -r row_major row_minor row_patch <<<"$row"
+    if ((major < row_major || (major == row_major && minor < row_minor))); then
+      echo "$row"
+      return 1
+    fi
+    if ((major == row_major && minor == row_minor)); then
+      echo "$row"
+      ((patch >= row_patch)) || return 1
+      return 0
+    fi
+  done
+  echo "${RUNC_FLOOR[-1]}"
+}
+
 # label_value <text>: the text as a label value for Prometheus. A character that no version has (a
 # quote, a backslash, a new line) becomes _, so the line of the report stays valid.
 label_value() {
@@ -653,6 +688,28 @@ done
 echo "==> $((passed + failed + warned)) container(s): $passed passed, $failed failed, $warned warned"
 echo "==> Docker Engine $engine, containerd $containerd, runc $runc; AppArmor $( ((has_apparmor)) && echo on || echo off), seccomp $( ((has_seccomp)) && echo on || echo off)"
 
+# The floor of runc (MIL-083, ADR-0043). runc_below is 1 below it, 0 at or above it, and empty when
+# the version cannot be read.
+runc_below="" runtime_failed=0 floor_state=0
+floor="$(runc_floor "$runc")" || floor_state=$?
+case "$floor_state" in
+  0)
+    runc_below=0
+    echo "==> runc $runc: at or above the floor of its line"
+    ;;
+  1)
+    runc_below=1
+    if ((deploy)); then
+      echo "WARN  runc $runc: below $floor, the first version without $RUNC_ESCAPES; the deploy goes on, the timer's check fails"
+    else
+      echo "FAIL  runc $runc: below $floor, the first version without $RUNC_ESCAPES"
+      runtime_failed=1
+    fi
+    printf '      %s\n' "install the fixed runc from Docker's repository: wiki page Container-Escape (ADR-0043)"
+    ;;
+  *) echo "WARN  runc $runc: the version cannot be read, so its floor is not checked" ;;
+esac
+
 if [[ -n "$metrics" ]]; then
   dir="$(dirname "$metrics")"
   install -d -m 0755 "$dir" || die "cannot make $dir"
@@ -673,6 +730,11 @@ if [[ -n "$metrics" ]]; then
     echo '# HELP nfhotel_container_runtime_info 1, with the versions of Docker Engine, containerd and runc as labels.'
     echo '# TYPE nfhotel_container_runtime_info gauge'
     echo "nfhotel_container_runtime_info{engine=\"$(label_value "$engine")\",containerd=\"$(label_value "$containerd")\",runc=\"$(label_value "$runc")\"} 1"
+    # Whether runc is below its floor (MIL-083), for the alert ContainerRuntimeKnownEscape; no value
+    # when its version cannot be read. The deploy mode does not change it: the runtime is the same.
+    echo '# HELP nfhotel_container_runtime_runc_below_floor 1 when runc is older than the first version of its line without the known container escapes.'
+    echo '# TYPE nfhotel_container_runtime_runc_below_floor gauge'
+    [[ -z "$runc_below" ]] || echo "nfhotel_container_runtime_runc_below_floor $runc_below"
     echo '# HELP nfhotel_task_last_success_timestamp_seconds When the task last succeeded.'
     echo '# TYPE nfhotel_task_last_success_timestamp_seconds gauge'
     echo "nfhotel_task_last_success_timestamp_seconds{task=\"container_check\"} $(date +%s)"
@@ -681,4 +743,4 @@ if [[ -n "$metrics" ]]; then
   mv "$tmp" "$metrics" || die "cannot write $metrics"
 fi
 
-((failed == 0))
+((failed == 0 && ! runtime_failed))

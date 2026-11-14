@@ -2,8 +2,9 @@
 # Unit test of scripts/check-container-runtime.sh (MIL-080 task 2): for every rule a container
 # that keeps it and one that breaks it, each failing with exactly its rule; the exceptions of a
 # profile; a daemon without AppArmor or seccomp; the deploy mode, where a container without a
-# profile is a warning; the report for Prometheus; the lock of the deploy; the profiles that are
-# not valid; and that the profiles of the repository name every compose service under deploy/.
+# profile is a warning; the report for Prometheus; the floor of runc (MIL-083 task 5); the lock of
+# the deploy; the profiles that are not valid; and that the profiles of the repository name every
+# compose service under deploy/.
 # A stand-in answers for docker and a folder stands in for /proc, so no container runs.
 #
 # Run it in Debian 12 with the operations folder at /src:
@@ -291,6 +292,70 @@ printf '%s\n' '29.0.1|containerd=v2"1 runc=1.3\4 ' >"$W/docker/version"
 check --metrics "$m"
 grep -qx 'nfhotel_container_runtime_info{engine="29.0.1",containerd="v2_1",runc="1.3_4"} 1' "$m" &&
   ok "a quote or a backslash in a version becomes _ in the report" || ko "versions: $(grep runtime_info "$m")"
+echo "$VERSIONS" >"$W/docker/version"
+
+# The floor of runc (MIL-083, ADR-0043): a runc below the first version of its line without the
+# known escapes fails the check, one at or above it passes, and one that cannot be read is a
+# warning; in the deploy mode a runc below the floor is a warning; the report says which.
+reset
+container ok
+readonly ESCAPES="CVE-2025-31133, CVE-2025-52565 and CVE-2025-52881"
+# with_runc <version> [<argument of the check>...]: run the check on a daemon with that runc.
+with_runc() {
+  local version="$1"
+  shift
+  printf '29.9.3|Engine=29.9.3 containerd=v2.4.2 runc=%s docker-init=0.19.0 \n' "$version" >"$W/docker/version"
+  check "$@"
+}
+# Below it (<version>=<its floor>): lines older than every fixed one, Debian 13's runc among them,
+# and the version just below the fix of each line.
+for pair in 1.1.15+ds1=1.2.8 1.0.0-rc95=1.2.8 0.9.9=1.2.8 1.2.7=1.2.8 1.3.2=1.3.3; do
+  with_runc "${pair%=*}"
+  code=$?
+  [[ "$code" == 1 ]] && grep -qxF "FAIL  runc ${pair%=*}: below ${pair#*=}, the first version without $ESCAPES" "$W/out" &&
+    ok "floor: runc ${pair%=*} is below ${pair#*=} and fails" ||
+    ko "floor: runc ${pair%=*}, exit $code: $(grep 'runc ' "$W/out" | tail -1)"
+done
+# At or above it: the fixed versions, later ones of their lines (10 is above 8, not below), later
+# lines (1.10 is above 1.3), a leading v, and the runc of the VM (1.5.2 on 2026-11-13).
+for version in 1.2.8 1.2.10 1.3.3 1.3.4 1.4.0 1.5.2 1.10.0 2.0.0 v1.3.3; do
+  with_runc "$version"
+  code=$?
+  [[ "$code" == 0 ]] && grep -qxF "==> runc $version: at or above the floor of its line" "$W/out" &&
+    ok "floor: runc $version passes" || ko "floor: runc $version, exit $code: $(grep 'runc ' "$W/out" | tail -1)"
+done
+# A version that cannot be read is a warning, not a failure.
+for version in '?' abc 1.3 ''; do
+  with_runc "$version"
+  code=$?
+  [[ "$code" == 0 ]] && grep -qxF "WARN  runc $version: the version cannot be read, so its floor is not checked" "$W/out" &&
+    ok "floor: a runc version '$version' that cannot be read is a warning" ||
+    ko "floor: runc '$version', exit $code: $(grep 'runc ' "$W/out" | tail -1)"
+done
+# The deploy cannot change the runtime, and neither can its rollback: there it is a warning.
+with_runc 1.1.15+ds1 --deploy
+code=$?
+[[ "$code" == 0 ]] &&
+  grep -qxF "WARN  runc 1.1.15+ds1: below 1.2.8, the first version without $ESCAPES; the deploy goes on, the timer's check fails" "$W/out" &&
+  ok "floor: --deploy warns on a runc below the floor and exits 0" || ko "floor --deploy, exit $code: $(grep 'runc ' "$W/out" | tail -1)"
+# A container that breaks its profile still fails, whatever runc is.
+container broken privileged=true
+with_runc 1.5.2
+[[ $? == 1 ]] && ok "floor: a runc at or above the floor does not hide a broken container" || ko "floor with a broken container"
+reset
+container ok
+with_runc 1.3.2 --metrics "$m"
+grep -qx 'nfhotel_container_runtime_runc_below_floor 1' "$m" && ok "floor: the report says 1 for a runc below the floor" ||
+  ko "report below: $(grep runc_below "$m")"
+with_runc 1.1.15+ds1 --deploy --metrics "$m"
+grep -qx 'nfhotel_container_runtime_runc_below_floor 1' "$m" && ok "floor: the report says 1 in the deploy mode too" ||
+  ko "report --deploy: $(grep runc_below "$m")"
+with_runc 1.5.2 --metrics "$m"
+grep -qx 'nfhotel_container_runtime_runc_below_floor 0' "$m" && ok "floor: the report says 0 for a runc at or above it" ||
+  ko "report at or above: $(grep runc_below "$m")"
+with_runc abc --metrics "$m"
+grep -q '^# HELP nfhotel_container_runtime_runc_below_floor ' "$m" && ! grep -q '^nfhotel_container_runtime_runc_below_floor' "$m" &&
+  ok "floor: the report has no value for a runc that cannot be read" || ko "report unknown: $(grep runc_below "$m")"
 echo "$VERSIONS" >"$W/docker/version"
 
 # The lock of the deploy: a run while a deploy holds it is skipped and writes nothing.
