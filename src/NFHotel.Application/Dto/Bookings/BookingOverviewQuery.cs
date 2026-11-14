@@ -1,3 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+
+using NFHotel.Application.Dto.Guests;
+
 namespace NFHotel.Application.Dto.Bookings;
 
 /// <summary>
@@ -16,7 +20,7 @@ namespace NFHotel.Application.Dto.Bookings;
 public sealed record BookingOverviewQuery(
     DateOnly PeriodStart,
     DateOnly PeriodEnd,
-    string? SearchText = null,
+    [StringLength(SearchLimits.MaxTextLength)] string? SearchText = null,
     BookingSortField SortBy = BookingSortField.StartDate,
     SortDirection Direction = SortDirection.Ascending,
     bool IncludeCancelled = false);

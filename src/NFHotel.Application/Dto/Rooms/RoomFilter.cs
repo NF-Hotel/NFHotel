@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.Dto.Rooms;
@@ -16,7 +18,7 @@ namespace NFHotel.Application.Dto.Rooms;
 /// <param name="Status">Bookability, or <c>null</c> for all.</param>
 /// <param name="HousekeepingStatus">Cleaning and service state, or <c>null</c> for all.</param>
 public sealed record RoomFilter(
-    int? Floor = null,
+    [Range(1, int.MaxValue)] int? Floor = null,
     RoomSize? Size = null,
     RoomStatus? Status = null,
     HousekeepingStatus? HousekeepingStatus = null);

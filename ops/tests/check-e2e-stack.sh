@@ -4,7 +4,9 @@
 # office sends a visitor to the login, port 80 redirects to HTTPS, no container of the
 # stack publishes a host port, every container has the hardening of MIL-023 task 2, the API
 # and PostgreSQL are not on the proxy network, nginx is not on the python network while the
-# web application and the API are (ADR-0039), and the three test accounts exist.
+# web application and the API are (ADR-0039), the three test accounts exist, and stack.env
+# holds what the API scan needs: the internal network of the API, the API token and the
+# account of the scan (MIL-077).
 #
 # Usage: check-e2e-stack.sh <stack.env> [<name>]
 # Exit:  0 every check passed; 1 a check failed; 2 usage error
@@ -63,6 +65,13 @@ for role in MANAGER RECEPTIONIST HOUSEKEEPING; do
   check "stack.env holds the $role account" yes \
     "$(grep -qE "^E2E_${role}_USER=.+" "$stack_env" && grep -qE "^E2E_${role}_PASSWORD=.{32}$" "$stack_env" && echo yes)"
 done
+# The API scan of the DAST run (MIL-077) joins the internal network of the API with the API
+# token and an account of its own.
+check "stack.env names the internal network of the API" true \
+  "$(docker network inspect "$(sed -n 's/^E2E_API_NETWORK=//p' "$stack_env")" --format '{{.Internal}}' 2>/dev/null || true)"
+check "stack.env holds the API token and the account of the API scan" yes \
+  "$(grep -qE '^E2E_API_TOKEN=[0-9a-f]{48}$' "$stack_env" && grep -qE '^E2E_API_USER=.+' "$stack_env" &&
+    grep -qE '^E2E_API_PASSWORD=.{32}$' "$stack_env" && echo yes)"
 
 ((failures == 0)) || exit 1
 echo "==> the end-to-end stack is as expected"

@@ -1,12 +1,17 @@
-# OWASP ZAP rules for the DAST scans of NF Hotel (MIL-027 tasks 6 and 7), read by
-# scripts/dast-scan.sh of NF-Hotel/DevOps. One rule per line, tab separated:
+# OWASP ZAP rules for the DAST scans of NF Hotel (MIL-027 tasks 6 and 7, and the API scan of
+# MIL-077), read by ops/scripts/dast-scan.sh. One rule per line, tab separated:
 #   <rule id>	IGNORE|WARN|FAIL	(<reason>; expires YYYY-MM-DD)
 # IGNORE and WARN need a reason and an expiry at most 30 days ahead; S01 approves each
 # line in a reviewed pull request. A rule not listed keeps the ZAP default, and any
 # High alert of a rule that is not IGNORE fails the scan.
+# The answer alert 100000 of the API scan is not listed: its answers in the 400 range stay out
+# of code scanning, and an answer 500 fails the scan, which IGNORE would turn off (MIL-077).
+2	WARN	(The audit trail of staff actions records the address that each call came from, as ADR-0017 decided; only a Manager reads it, and in the throwaway stack the address is that of a Docker container (MIL-077); expires 2026-12-08)
 10015	IGNORE	(Every page that ZAP flags answers Cache-Control: no-cache, no-store; ZAP only asks to re-examine (MIL-044, checked again in MIL-066); expires 2026-12-08)
 10031	IGNORE	(Blazor HTML-encodes every attribute value; the reflected values are the form names in the hidden _handler field and the user name posted to the login form (MIL-044, checked again in MIL-066); expires 2026-12-08)
 10049	IGNORE	(Informational: dynamic pages are not stored by caches on purpose (MIL-044, checked again in MIL-066); expires 2026-12-08)
+10104	IGNORE	(Informational: two answers to the same request differ whatever the User-Agent: the web pages carry Blazor state and an antiforgery token that are new in every answer, and the sign-in of the API answers another code once a user name has failed five times (MIL-030) (MIL-077); expires 2026-12-08)
 10109	IGNORE	(Informational: Blazor is a modern web application, so ZAP's AJAX spider applies (MIL-044, checked again in MIL-066); expires 2026-12-08)
-10111	IGNORE	(Informational: the staff login form is found, as intended (MIL-044, checked again in MIL-066); expires 2026-12-08)
+10111	IGNORE	(Informational: the staff login form, and in the API scan the sign-in of the API, are found, as intended (MIL-044, checked again in MIL-066 and MIL-077); expires 2026-12-08)
 10112	IGNORE	(Informational: the cookie that ZAP finds on the front page is the antiforgery cookie that Blazor sets for its forms, as intended (MIL-044, checked again in MIL-066); expires 2026-12-08)
+40014	WARN	(The API returns the text that it stored as JSON with nosniff, which a browser does not render as a page, and the web pages HTML-encode every value (Blazor, MIL-067); a persistent cross-site scripting alert of this rule is High and still fails the scan (MIL-077); expires 2026-12-08)

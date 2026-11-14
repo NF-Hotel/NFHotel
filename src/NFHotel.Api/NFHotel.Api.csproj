@@ -18,6 +18,13 @@
       string, the tokens and the keys stay outside the working folder, so they cannot be committed by mistake.
     -->
     <UserSecretsId>nfhotel-api-6b1e4c2a-3f57-4d8e-b0a9-71c5e2d48f16</UserSecretsId>
+    <!--
+      The OpenAPI document is written to g/openapi/nfhotel-api.json when the API is built, for the API scan of the
+      end-to-end and DAST workflow and for the test that it names every endpoint (MIL-077). Version 3.0, which the
+      API scan of OWASP ZAP reads. The build of the container has no artifacts folder; there it stays in obj.
+    -->
+    <OpenApiDocumentsDirectory Condition=" '$(ArtifactsPath)' != '' ">$(ArtifactsPath)/openapi</OpenApiDocumentsDirectory>
+    <OpenApiGenerateDocumentsOptions>--file-name nfhotel-api --openapi-version OpenApi3_0</OpenApiGenerateDocumentsOptions>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +36,24 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.14" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
+    <!-- Writes the OpenAPI document when the API is built; the running API does not serve it (MIL-077). -->
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.14">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
+
+  <!--
+    The source generator of Microsoft.AspNetCore.OpenApi would copy every XML comment into the API as code, more than
+    3,000 lines, only to add descriptions to the document. The API scan needs the routes, parameters and schemas, not
+    the descriptions, and the running API never serves the document, so the generator stays off and no code that no
+    test reaches is added (ADR-0033, MIL-077).
+  -->
+  <Target Name="LeaveOutTheOpenApiXmlCommentGenerator" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition=" '%(Filename)' == 'Microsoft.AspNetCore.OpenApi.SourceGenerators' " />
+    </ItemGroup>
+  </Target>
 
 </Project>

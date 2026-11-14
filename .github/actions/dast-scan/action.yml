@@ -1,13 +1,15 @@
-# Scan the throwaway NF Hotel stack with OWASP ZAP (MIL-027 tasks 6 and 7 of NFHotel,
-# ADR-0012). Called by an NFHotel workflow, pinned by full commit SHA. The stack is the
-# one of the e2e-tests action, built from the NFHotel checkout; ZAP attacks only
-# https://nginx on the stack's own Docker network, never the VM, the tailnet or a public
-# host. mode 'baseline' is the passive scan signed out and signed in (pull requests);
-# 'full' is the active scan signed in (the weekly run). Any High alert whose rule is not
-# IGNORE in the rules file fails the step. The HTML, JSON and SARIF reports are uploaded
-# as the artifact dast-<mode>; with upload-sarif: 'true' the SARIF also goes to code
-# scanning, which needs security-events: write in the calling job. The stack is removed
-# even when a step fails. The logic is in scripts/ of this repository.
+# Scan the throwaway NF Hotel stack with OWASP ZAP (MIL-027 tasks 6 and 7 and MIL-077 task 3
+# of NFHotel, ADR-0012). A local action of the E2E and DAST workflow (ADR-0016). The stack is
+# the one of the e2e-tests action, built from the NFHotel checkout; ZAP attacks only
+# https://nginx and the API on the stack's own Docker networks, never the VM, the tailnet or
+# a public host. mode 'baseline' is the passive scan signed out and signed in (pull
+# requests); 'full' is the active scan signed in, then the API scan with the OpenAPI
+# document that the build of the API writes (the weekly run and a run by hand). A High
+# alert whose rule is not IGNORE in the rules file, or an answer 500 of the API, fails the
+# step. The HTML, JSON and SARIF reports are uploaded as the artifact dast-<mode>; with
+# upload-sarif: 'true' the SARIF also goes to code scanning, which needs security-events:
+# write in the calling job. The stack is removed even when a step fails. The logic is in
+# ops/scripts/ of this repository.
 name: NF Hotel DAST scan
 description: Start the throwaway NF Hotel stack and scan it with OWASP ZAP
 
@@ -16,7 +18,9 @@ inputs:
     description: Path of the NF-Hotel/NFHotel checkout in the workspace
     required: true
   mode:
-    description: "'baseline' (passive, signed out and signed in) or 'full' (active, signed in)"
+    description: >-
+      'baseline' (passive, signed out and signed in) or 'full' (active, signed in, and the
+      API scan)
     required: false
     default: baseline
   rules:
@@ -30,6 +34,24 @@ inputs:
 runs:
   using: composite
   steps:
+    # The API scan of the full mode reads the OpenAPI document that the build of the API
+    # writes to g/openapi/ (MIL-077); the SDK is the one of global.json.
+    - name: Set up .NET for the OpenAPI document
+      if: inputs.mode == 'full'
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
+      with:
+        global-json-file: ${{ inputs.app-path }}/global.json
+
+    - name: Build the API for its OpenAPI document
+      if: inputs.mode == 'full'
+      shell: bash
+      env:
+        APP_PATH: ${{ inputs.app-path }}
+      run: |
+        dotnet restore "$APP_PATH/src/NFHotel.Api/NFHotel.Api.csproj" --locked-mode
+        dotnet build "$APP_PATH/src/NFHotel.Api/NFHotel.Api.csproj" \
+          --configuration Release --no-restore
+
     - name: Start the stack
       shell: bash
       env:
@@ -42,12 +64,15 @@ runs:
     - name: Scan with ZAP
       shell: bash
       env:
+        APP_PATH: ${{ inputs.app-path }}
         MODE: ${{ inputs.mode }}
         RULES: ${{ inputs.rules }}
         STACK_DIR: ${{ runner.temp }}/e2e-stack
-      run: >-
-        bash "$GITHUB_ACTION_PATH/../../../ops/scripts/dast-scan.sh" "$MODE"
-        --stack-env "$STACK_DIR/stack.env" --rules "$RULES" --results dast-results
+      run: |
+        api=()
+        [[ "$MODE" != full ]] || api=(--api-document "$APP_PATH/g/openapi/nfhotel-api.json")
+        bash "$GITHUB_ACTION_PATH/../../../ops/scripts/dast-scan.sh" "$MODE" \
+          --stack-env "$STACK_DIR/stack.env" --rules "$RULES" --results dast-results "${api[@]}"
 
     - name: Upload the reports
       if: always()
@@ -84,6 +109,14 @@ runs:
       with:
         sarif_file: dast-results/full.sarif
         category: zap-full
+    - name: Upload the API scan to code scanning
+      if: >-
+        always() && inputs.upload-sarif == 'true' &&
+        hashFiles('dast-results/api.sarif') != ''
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.39.1
+      with:
+        sarif_file: dast-results/api.sarif
+        category: zap-api
 
     - name: Remove the stack
       if: always()

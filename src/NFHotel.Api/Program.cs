@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
+using NFHotel.Api;
 using NFHotel.Api.Contracts;
 using NFHotel.Api.Security;
 using NFHotel.Api.Startup;
@@ -14,7 +16,21 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddKeyPerFile("/run/secrets", optional: true);
 
-builder.Services.AddControllers();
+// The build of the OpenAPI document starts the API without its settings; they get stand-ins that reach nothing (MIL-077).
+if (OpenApiDocumentBuild.IsRunning)
+{
+    builder.Configuration.AddInMemoryCollection(OpenApiDocumentBuild.StandInSettings());
+}
+
+// Every value bound from a request meets the input rules before an action runs, and a request that cannot be bound
+// is refused with the code of the API alone, without the names of .NET types (MIL-077).
+builder.Services.AddControllers(options => options.Filters.Add<InputGuardFilter>())
+    .ConfigureApiBehaviorOptions(options => options.InvalidModelStateResponseFactory =
+        _ => new BadRequestObjectResult(new ApiResponse([ApiErrorCodes.InvalidRequest])));
+
+// The OpenAPI document is written when the API is built (g/openapi/nfhotel-api.json, see the project file). The
+// running API does not serve it: there is no MapOpenApi (MIL-077).
+builder.Services.AddOpenApi();
 builder.Services.AddSingleton(ApiToken.Read(builder.Configuration));
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHotelClock(builder.Configuration);
@@ -41,6 +57,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 var app = builder.Build();
 
+// Every answer, a refusal and a fault included, tells a browser not to guess its type (MIL-077).
+app.UseApiSecurityHeaders();
 app.UseForwardedHeaders();
 
 // A key below one or a missing argument is a programming error of the caller: 400. Anything else is a
@@ -51,7 +69,7 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
     var invalid = error is ArgumentException;
     context.Response.StatusCode = invalid ? StatusCodes.Status400BadRequest : StatusCodes.Status500InternalServerError;
     await context.Response.WriteAsJsonAsync(
-        new ApiResponse([invalid ? "api.invalid_request" : "api.unexpected_error"]),
+        new ApiResponse([invalid ? ApiErrorCodes.InvalidRequest : ApiErrorCodes.UnexpectedError]),
         ApiJson.Options,
         context.RequestAborted).ConfigureAwait(false);
 }));

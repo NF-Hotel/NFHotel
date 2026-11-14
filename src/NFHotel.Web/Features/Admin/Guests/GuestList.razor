@@ -134,6 +134,7 @@
                 <input id="guest-search"
                        type="search"
                        class="field-input"
+                       maxlength="@SearchLimits.MaxTextLength"
                        disabled="@ViewModel.IsBusy"
                        @bind="ViewModel.SearchText" />
             </FormField>

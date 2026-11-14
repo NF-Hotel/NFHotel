@@ -1,4 +1,7 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+
+using NFHotel.Domain.Entities;
 
 namespace NFHotel.Application.Dto.Benchmark;
 
@@ -6,9 +9,9 @@ namespace NFHotel.Application.Dto.Benchmark;
 /// One request to one model, with exactly the field names of the result schema version 2 (the notebook and the
 /// contract file <c>openapi/benchmark-contract.yaml</c>). Memory figures are in megabytes.
 /// </summary>
-/// <param name="SchemaVersion">The version of the record; ignored here, the run carries the checked one.</param>
+/// <param name="SchemaVersion">The version of the record, from 1; ignored here, the run carries the checked one.</param>
 /// <param name="Timestamp">When the request was made.</param>
-/// <param name="SessionId">The session of the notebook or service; not stored.</param>
+/// <param name="SessionId">The session of the notebook or service, at most as long as a name of the run; not stored.</param>
 /// <param name="Backend">The model server.</param>
 /// <param name="Model">The model name.</param>
 /// <param name="TaskId">The task, or <c>null</c>.</param>
@@ -35,9 +38,9 @@ namespace NFHotel.Application.Dto.Benchmark;
 /// <param name="Output">The answer text, or <c>null</c>.</param>
 /// <param name="Error">The error of the request, or <c>null</c>.</param>
 public sealed record BenchmarkRequestResultDto(
-    [property: JsonPropertyName("schema_version")] int? SchemaVersion,
+    [Range(1, int.MaxValue)][property: JsonPropertyName("schema_version")] int? SchemaVersion,
     [property: JsonPropertyName("timestamp")] DateTimeOffset Timestamp,
-    [property: JsonPropertyName("session_id")] string? SessionId,
+    [StringLength(BenchmarkRun.MaxTextLength)][property: JsonPropertyName("session_id")] string? SessionId,
     [property: JsonPropertyName("backend")] string Backend,
     [property: JsonPropertyName("model")] string Model,
     [property: JsonPropertyName("task_id")] string? TaskId,

@@ -2,8 +2,9 @@
 # main, the local e2e-tests and dast-scan actions (ADR-0016, with the scripts of ops/)
 # start a throwaway stack from this commit. They run the browser tests of
 # tests/NFHotel.E2E.Tests, and the OWASP ZAP baseline signed out and signed in. Every
-# Monday, and by hand, the ZAP full (active) scan runs against the same throwaway stack;
-# a failed full scan opens an issue, unless one is already open.
+# Monday, and by hand, the ZAP full (active) scan runs against the same throwaway stack,
+# followed by the ZAP API scan of the API itself with the OpenAPI document of its build
+# (MIL-077); a failed full scan opens an issue, unless one is already open.
 #
 # The stack runs on the runner's Docker networks with no host port; nothing is scanned
 # outside it: never the VM, the tailnet or a public NF Hotel host.
@@ -96,10 +97,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.run_id }}
-          TITLE: "DAST full scan found High alerts"
+          TITLE: "DAST full scan failed"
         # One open issue at a time: a later failure while it is open adds nothing.
         run: >-
           open="$(gh issue list --state open --search "\"$TITLE\" in:title"
           --json number --jq length)";
           [[ "$open" != 0 ]] || gh issue create --title "$TITLE"
-          --body "The weekly ZAP full scan failed (MIL-027): run $RUN_ID of this workflow."
+          --body "The weekly ZAP full scan or API scan failed (MIL-027, MIL-077):
+          run $RUN_ID of this workflow."
