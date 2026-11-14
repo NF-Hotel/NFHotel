@@ -1,0 +1,19 @@
+The browser: headless Chromium of mcr.microsoft.com/playwright/dotnet:v1.62.0-noble in Docker (WSL), window
+1280x1100, so no browser opens on the host. The script reads the address of the site and the email of the test
+booking from the environment and prints neither, and it takes a screenshot only when the page holds no email of
+the booking.
+
+2026-11-12T16:22:45Z, after the deploy of CD run 43256465429 (ended 16:21:58Z), the lookup page without an email:
+$ docker run --rm -e HOTEL -e OUT=/out -v "$PWD/live-check:/work" -v "$PWD/after:/out" -w /work mcr.microsoft.com/playwright/dotnet:v1.62.0-noble dotnet run live-lookup.cs
+/booking/FLZ-000001: number field 'FLZ-000001', email field '', booking cards 0
+/booking/FLZ-999999: number field 'FLZ-999999', email field '', booking cards 0
+
+2026-11-12T16:28:10Z, the test booking that S01 asked for in chat ("Ja, lav den"), made with the email S01 gave;
+booking.env held HOTEL, BOOKING_EMAIL, BOOK=yes and OUT, and was deleted after the run:
+$ docker run --rm --env-file booking.env -v "$PWD/live-check:/work" -v "$PWD/after:/out" -w /work mcr.microsoft.com/playwright/dotnet:v1.62.0-noble dotnet run live-lookup.cs
+/book: booked FLZ-158424, single room, 10 to 11 June 2030; the booking page ends on its receipt step
+after-test-booking-receipt-step.png: taken
+/booking/FLZ-158424 with another email: "We couldn't find that booking.", booking cards 0
+after-test-booking-other-email.png: taken
+/booking/FLZ-158424 with its own email: the card of FLZ-158424
+after-test-booking-own-email.png: taken
