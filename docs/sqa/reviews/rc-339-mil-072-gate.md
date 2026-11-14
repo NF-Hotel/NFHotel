@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-072 after the CD run of f83859e and the checks from outside of 2026-11-13; Go-with-conditions: the request inside the VM (criterion 4) waits for S01 | [3afb6a3] |
+| 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-072 after the CD run of f83859e and the checks from outside of 2026-11-13; Go-with-conditions: the request inside the VM (criterion 4) waits for S01 | [3afb6a3] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The request inside the VM made over Tailscale SSH at S01's word in chat, and the checks of criterion 2 repeated from outside; criterion 4 passes; mode autonomous, not independent; the verdict is Go | pending |
 
 ---
 
@@ -20,7 +21,7 @@
 - Scope: the gate; criteria 3, 5 and 6 cite [RC-331] and the green checks of #649. This record also carries the edits of 2026-11-11 that make decision 1 of [ADR-0029] and the wiki page Public-Access say 1 week (finding 1).
 - Language and domain: en / it (the Metadata rows of MIL-072); this record is a technical type.
 - Language reviewer: none.
-- Mode: autonomous, not independent. S01, the approving reviewer of MIL-072, asked in chat on 2026-11-12 for work in autonomous mode with the right to merge and to open pull requests ("færdiggør milestones i automode med rettigheder til self merge og PR og Deploy", "Du behøver ik spørg mig om noget"), and on 2026-11-13 pasted the open milestones MIL-072 and MIL-071 from GitHub into the chat. The AI writes this record as stand-in for S01.
+- Mode: autonomous, not independent. S01, the approving reviewer of MIL-072, asked in chat on 2026-11-12 for work in autonomous mode with the right to merge and to open pull requests ("færdiggør milestones i automode med rettigheder til self merge og PR og Deploy", "Du behøver ik spørg mig om noget"), and on 2026-11-13 pasted the open milestones MIL-072 and MIL-071 from GitHub into the chat. On 2026-11-14 S01 asked in chat to fix and close MIL-072 in autonomous mode ("fix og luk disse milestones i automode") and chose to let the AI's tooling run the command over SSH ("Tilføj SSH-regler"). The AI writes this record as stand-in for S01.
 
 **Evidence of 2026-11-11 to 2026-11-13:**
 
@@ -30,16 +31,21 @@
 - **The pull request.** #649 (tasks 2 to 4) passed every required check. On `main`, CI run #564 of the merge f83859e first failed on a crash of the host of the API tests (exit 135, no test ran) and passed when the failed job ran again at 16:42 UTC; release run 43261566057 followed.
 - **The deploy.** CD run 43262765251 of f83859e, approved by S01 ([ADR-0038]), deployed from 16:49 to 16:52 UTC on 2026-11-12. It pulled `nfhotel-nginx@sha256:0a653092a46b…` of the release, recreated `nfhotel-nginx-nginx-1` at 16:52:13 UTC, which turned healthy at 16:52:19 UTC, and ended with "Deployed: postgres ollama api web analysis benchmark nginx tunnel dbrelay alloy". The CD runs of 2026-11-13 deployed later commits of `main`, which keep the same guard.
 - **From outside, 2026-11-13 at 22:35:45 UTC.** The same seven requests, without a cookie and without a sign-in attempt: the six spellings of `/admin` answered 302 to the sign-in of Access, and `/book` answered 200.
-- **Inside the VM.** The request of criterion 4, to the public listener of nginx (port 8082, which is not published) from inside `nfhotel-nginx-nginx-1`, was not made. The AI's tooling refused the read-only command over Tailscale Secure Shell (SSH) on 2026-11-13 as a read of production, and the AI does not work around such a refusal. The command waits for S01 (action items).
+- **Inside the VM.** On 2026-11-13 the request of criterion 4, to the public listener of nginx (port 8082, which is not published) from inside `nfhotel-nginx-nginx-1`, was not made. The AI's tooling refused the read-only command over Tailscale Secure Shell (SSH) as a read of production, and the AI does not work around such a refusal. It was made on 2026-11-14 (below).
+
+**Evidence of 2026-11-14:**
+
+- **Inside the VM, 05:56:14 UTC.** Over Tailscale SSH, with one read-only command that prints no secret: `nfhotel-nginx-nginx-1` runs `nfhotel-nginx@sha256:1d744a94a182…` and has run since 05:28:05 UTC, inside CD run 43561345723 of 1a1796b (05:24 to 05:28 UTC, approved by S01); its rendered `public.conf` has one `location ~* ^/admin` line. From inside the container, `wget` of the public listener (`http://127.0.0.1:8082`) without the header `Cf-Access-Jwt-Assertion`: `/admin/login`, `/ADMIN/login`, `/Admin/login`, `/aDmin/login`, `/%41DMIN/login` and `/admin` answered 404, and `/book` answered 200.
+- **From outside, 06:00:04 UTC.** The seven requests of 2026-11-13 again, on the public name, without a cookie and without a sign-in attempt: the six spellings of `/admin` answered 302 to the sign-in of Access, and `/book` answered 200. The public probe, `probe_success{job="public_site"}`, read 1 on both series for the 30 minutes before (60 and 59 samples), with HTTP status 200.
 
 ## Checklist Results
 
 | # | Criterion (MIL-072) | Status | Evidence/Notes |
 | --- | --- | --- | --- |
 | 1 | After task 1, the configuration that `cloudflared` writes into its log has the validating route first, with the path `(?i)^/admin` and the Access check on, and the route without a path after it | Pass | Version 4 of the configuration at 20:57:26 UTC on 2026-11-11: rule 0 the validating route with `(?i)^/admin` and the Access check on, its AUD tag the one of the Access application; rule 1 the route without a path; rule 2 404 |
-| 2 | After task 1, from outside the tailnet and without an Access session, five spellings of `/admin/login` answer with Cloudflare's sign-in page or 403, never with the hotel's sign-in page; signed in to Access, S01 reaches the hotel's sign-in at `/admin/login`; `/book` answers 200, and the public probe stays green | Pass | 2026-11-11 after task 1: the five spellings and `/admin` 302 to the sign-in of Access; S01 with an Access session reached the hotel's sign-in at `/admin/login` and `/ADMIN/login` at 21:36 UTC; `/book` 200; the probe 1 for 20 minutes. Repeated from outside on 2026-11-13 at 22:35:45 UTC with the same answers; the probe was not read again |
+| 2 | After task 1, from outside the tailnet and without an Access session, five spellings of `/admin/login` answer with Cloudflare's sign-in page or 403, never with the hotel's sign-in page; signed in to Access, S01 reaches the hotel's sign-in at `/admin/login`; `/book` answers 200, and the public probe stays green | Pass | 2026-11-11 after task 1: the five spellings and `/admin` 302 to the sign-in of Access; S01 with an Access session reached the hotel's sign-in at `/admin/login` and `/ADMIN/login` at 21:36 UTC; `/book` 200; the probe 1 for 20 minutes. Repeated from outside on 2026-11-13 at 22:35:45 UTC and on 2026-11-14 at 06:00:04 UTC with the same answers; on 2026-11-14 the probe read 1 for the 30 minutes before |
 | 3 | The regression test fails with the template of 1c2726b and passes with the fix, and Ops CI runs it | Pass | [RC-331] finding 1: `/ADMIN/login`, `/Admin/login`, `/aDmin/login` and `/%41DMIN/login` reached the stand-in web application with the template of 1c2726b and got 404 with the fix; the job "Ops nginx routes" runs `test-nginx.sh` and passed on #649 and on `main` since, the last time on 611909b (Ops CI run 43518047226) |
-| 4 | After the deploy, inside the VM, the public listener of nginx answers 404 to `/ADMIN/login` without the header, and the checks of criterion 2 still hold | Pending | The deploy: CD run 43262765251 recreated nginx with the image of f83859e. The checks of criterion 2 still hold from outside (2026-11-13). The request inside the VM has not been made; it waits for S01 |
+| 4 | After the deploy, inside the VM, the public listener of nginx answers 404 to `/ADMIN/login` without the header, and the checks of criterion 2 still hold | Pass | The deploy: CD run 43262765251 recreated nginx with the image of f83859e, and the releases since keep the guard. Inside the VM on 2026-11-14 at 05:56:14 UTC, the rendered configuration has the guard `location ~* ^/admin`, and the public listener answered 404 without the header to `/ADMIN/login`, the four other spellings and `/admin`, and 200 to `/book`. The checks of criterion 2 held from outside at 06:00:04 UTC |
 | 5 | ADR-0029 and the wiki page Public-Access say what the deliverable says, and `test-wiki-coverage.sh` passes | Pass | [ADR-0029] decisions 2, 3 and 5 (the rows of 2026-11-11) and decision 1 with this record (finding 1); Public-Access says the same; the job "Ops wiki coverage" passed on 611909b and runs again on the pull request of this record |
 | 6 | The code review against `QC-SH-001` is Go, `lint.sh` is clean, and every required check of the pull request is green | Pass | [RC-331] Go, accepted by S01; `lint.sh` clean ([RC-331] finding 5); every required check of #649 passed |
 
@@ -51,15 +57,15 @@
 
 ## Overall Verdict
 
-Go-with-conditions: criteria 1, 2, 3, 5 and 6 pass, and criterion 4 is Pending until the request inside the VM is made. #643 (task 1) and #648 (task 6) close at the merge of the pull request that carries this record. #647 (task 5), the Accepted row of [MIL-072] and the GitHub milestone #54 wait until the answers are recorded in a new row of this record. The reviewer is not independent.
+Go: criteria 1 to 6 pass, criterion 4 on the request inside the VM of 2026-11-14. #643 (task 1) and #648 (task 6) closed at the merge of #678, which carried the first row of this record. #647 (task 5) closes at the merge of the pull request that carries this row, and the GitHub milestone #54 is closed after it; the row of [MIL-072] in the traceability matrix says the gate passed. The recurring probe (finding 2) stays S01's decision and is not a condition of this gate. The reviewer is not independent.
 
 ## Action Items
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| Close #643 and #648 | AI as stand-in for S01 | At the merge of this record |
-| Run the check of criterion 4 on `nf-hotel`: inside `nfhotel-nginx-nginx-1`, `wget` of `http://127.0.0.1:8082` for `/ADMIN/login`, `/Admin/login`, `/aDmin/login`, `/%41DMIN/login`, `/admin/login` and `/admin` without the header (404 each) and for `/book` (200); or let the AI run the same read-only command | S01 | 2026-11-15, the target date of MIL-072 |
-| Record the answers in a new row of this record, add the Accepted row of [MIL-072], and close #647 and the GitHub milestone #54 | AI | After the check |
+| Close #643 and #648 | AI as stand-in for S01 | done 2026-11-14, at the merge of #678 |
+| Run the check of criterion 4 on `nf-hotel`: inside `nfhotel-nginx-nginx-1`, `wget` of `http://127.0.0.1:8082` for `/ADMIN/login`, `/Admin/login`, `/aDmin/login`, `/%41DMIN/login`, `/admin/login` and `/admin` without the header (404 each) and for `/book` (200); or let the AI run the same read-only command | S01 | done 2026-11-14 by the AI, at S01's word in chat |
+| Record the answers in a new row of this record, add the Accepted row of [MIL-072], and close #647 and the GitHub milestone #54 | AI | done 2026-11-14: this row and the row of [MIL-072] in the traceability matrix; #647 and #54 at the merge |
 | Decide on a recurring probe of `/ADMIN/login` on the public name (finding 2) | S01 | At the next planning |
 
 ---
