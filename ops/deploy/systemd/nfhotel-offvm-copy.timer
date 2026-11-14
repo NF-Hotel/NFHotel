@@ -1,0 +1,13 @@
+# Runs the copy off the VM every hour, at half past, away from the daily backup at 02:00 UTC
+# (MIL-074); the lock of the backup keeps the two apart when they meet. Persistent runs a
+# missed copy at once after a boot, so a target that comes back gets the copy within the hour.
+[Unit]
+Description=Hourly copy of the NF Hotel backups off the VM
+
+[Timer]
+OnCalendar=*-*-* *:30:00 UTC
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

@@ -9,7 +9,8 @@
 #   2. installs scripts/backup-database.sh as /usr/local/sbin/nfhotel-backup (root, 0755)
 #   3. writes /etc/nfhotel/backup.env (root, 0600) if it does not exist, with the
 #      public key given by --recipient and the target given by --target
-#   4. installs and starts the systemd timer nfhotel-backup.timer (daily, 02:00 UTC)
+#   4. installs and starts the systemd timers nfhotel-backup.timer (daily, 02:00 UTC) and
+#      nfhotel-offvm-copy.timer (the copy off the VM alone, every hour; MIL-074)
 #
 # The private age key never comes to the VM: S03 creates it on their own machine
 # (age-keygen -o nfhotel-backup.key) and gives only the public key here.
@@ -92,9 +93,10 @@ else
   fi
 fi
 
-echo "==> 4. systemd timer"
-run install -o root -g root -m 0644 "$ROOT/deploy/systemd/nfhotel-backup.service" /etc/systemd/system/nfhotel-backup.service
-run install -o root -g root -m 0644 "$ROOT/deploy/systemd/nfhotel-backup.timer" /etc/systemd/system/nfhotel-backup.timer
+echo "==> 4. systemd timers"
+for unit in nfhotel-backup.service nfhotel-backup.timer nfhotel-offvm-copy.service nfhotel-offvm-copy.timer; do
+  run install -o root -g root -m 0644 "$ROOT/deploy/systemd/$unit" "/etc/systemd/system/$unit"
+done
 run systemctl daemon-reload
-run systemctl enable --now nfhotel-backup.timer
+run systemctl enable --now nfhotel-backup.timer nfhotel-offvm-copy.timer
 echo "==> done; test it now with: systemctl start nfhotel-backup.service && journalctl -u nfhotel-backup -n 20"

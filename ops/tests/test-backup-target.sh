@@ -5,10 +5,13 @@
 # task 1); backup-database.sh copies every backup the target lacks, warns and keeps the
 # backup when the target is off, and catches up when it is back; a copy cut off midway
 # leaves nothing under the final name, and the next run sends the whole file (MIL-066
-# task 2); prune-backups.sh deletes only what the retention allows, by the time in the
+# task 2); --copy-only sends what the target lacks and makes, archives and deletes nothing,
+# skips its turn while a backup holds the lock, a backup waits for the lock, and a failed copy
+# reports backup_host_seen only when the host answers a Tailscale ping (MIL-074);
+# prune-backups.sh deletes only what the retention allows, by the time in the
 # name, keeps the newest files of each kind, and names and fails on a file that it cannot
 # delete (MIL-069). sshd runs in this container in place of the target container; a
-# stand-in docker writes the dump.
+# stand-in docker writes the dump, and a stand-in tailscale answers or not.
 #
 # Run it in Debian 13, the release of the target image, with the repository at /src:
 #   docker run --rm -v "$PWD:/src:ro" debian:13-slim bash /src/tests/test-backup-target.sh
@@ -164,6 +167,59 @@ grep -q "the copy to .* failed" "$W/out" && [[ ! -e "$target/$new" ]] &&
   ok "a cut-off copy of the script leaves nothing on the target" || ko "cut-off copy: $(ls -la "$target") $(cat "$W/out")"
 backup && [[ -f "$target/$new" ]] && same "$W/vm/$new" "$target/$new" &&
   ok "the next run sends the whole file: its SHA-256 on the target equals the one on the VM" || ko "the next run: $(cat "$W/out")"
+
+echo "== the copy every hour, its lock and the report of the backup host (MIL-074)"
+copy_only() {
+  rm -f "$W/metrics/"*.prom
+  PATH="$W/bin:$PATH" NFHOTEL_BACKUP_SETTINGS="$W/backup.env" NFHOTEL_METRICS_DIR="$W/metrics" \
+    bash "$REPO/scripts/backup-database.sh" --copy-only >"$W/out" 2>&1
+}
+vm_files() { find "$W/vm" -maxdepth 1 -type f -name 'nfhotel-*' | sort; }
+on_target_named() { [[ -f "/srv/nfhotel-backups/$1" ]]; }
+NFHOTEL_BACKUP_SETTINGS="$W/backup.env" bash "$REPO/scripts/backup-database.sh" --apply --copy-only >/dev/null 2>&1
+[[ $? == 2 ]] && ok "--apply and --copy-only together are refused" || ko "both modes were accepted"
+# More daily files than the VM keeps, so a prune would delete some; the target lacks them all.
+for day in $(seq -w 1 16); do echo "$day" >"$W/vm/nfhotel-daily-200101${day}T000000Z.dump.age"; done
+before="$(vm_files)"
+copy_only && [[ "$(vm_files)" == "$before" ]] && on_target_named nfhotel-daily-20010116T000000Z.dump.age &&
+  ! grep -q '==> dumping' "$W/out" &&
+  ok "--copy-only sends what the target lacks, and makes, archives and deletes nothing on the VM" ||
+  ko "copy only: $(cat "$W/out")"
+reported offvm_copy && reported backup_host_seen && ! reported backup &&
+  ok "--copy-only reports the copy and the backup host, not a backup" || ko "copy only reports: $(ls "$W/metrics" 2>&1)"
+
+# The test holds the lock as a backup would; the runs below get the descriptor closed, so only
+# their own lock counts.
+late=nfhotel-daily-20010117T000000Z.dump.age
+echo late >"$W/vm/$late"
+exec 8>>"$W/vm/.lock"
+flock 8
+copy_only 8>&- && grep -q '^skipped: a backup holds ' "$W/out" && ! on_target_named "$late" && ! reported offvm_copy &&
+  ok "a copy that finds the lock taken skips its turn and sends nothing" || ko "locked copy: $(cat "$W/out")"
+before="$(vm_files)"
+backup 8>&- &
+run=$!
+for _ in $(seq 100); do grep -q '^==> waiting for the hourly copy' "$W/out" 2>/dev/null && break || sleep 0.1; done
+waited=0
+grep -q '^==> waiting for the hourly copy' "$W/out" && [[ "$(vm_files)" == "$before" ]] && waited=1
+exec 8>&-
+wait "$run"
+status=$?
+((waited && status == 0)) && on_target_named "$late" &&
+  ok "a backup waits while the lock is taken, then backs up and copies" || ko "waiting backup: status $status, $(cat "$W/out")"
+
+# shellcheck disable=SC2016 # the stand-in tailscale writes its own arguments, $*
+printf '#!/bin/sh\necho "$*" >"%s/tailscale.args"\n' "$W" >"$W/bin/tailscale" && chmod +x "$W/bin/tailscale"
+settings 2299 # nothing answers on this port
+copy_only && grep -q "the copy to .* failed" "$W/out" && ! reported offvm_copy && reported backup_host_seen &&
+  [[ "$(cat "$W/tailscale.args")" == "ping -c 1 --until-direct=false --timeout 10s 127.0.0.1" ]] &&
+  ok "a failed copy whose host answers a Tailscale ping reports backup_host_seen, not the copy" ||
+  ko "host seen: $(cat "$W/out" "$W/tailscale.args" 2>&1)"
+printf '#!/bin/sh\nexit 1\n' >"$W/bin/tailscale"
+copy_only && grep -q "the copy to .* failed" "$W/out" && ! reported backup_host_seen && ! reported offvm_copy &&
+  ok "a failed copy whose host does not answer reports nothing" || ko "host not seen: $(ls "$W/metrics" 2>&1)"
+rm -f "$W/bin/tailscale"
+settings 22
 
 echo "== the prune of the target (MIL-069)"
 # The prune runs with its clock at NOW, so a file can be named exactly at a limit.

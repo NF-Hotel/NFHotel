@@ -1,0 +1,21 @@
+# Copies the backups that the backup target lacks off the VM (MIL-074, ADR-0008 decision D7).
+# Installed by scripts/install-backup.sh and by the update command of CD (ADR-0018) from
+# ops/deploy/systemd/; it runs ops/scripts/backup-database.sh --copy-only, installed as
+# /usr/local/sbin/nfhotel-backup. It dumps, archives and deletes nothing. A copy that finds the
+# lock of the daily backup taken skips its turn, because the backup copies at its end; a copy
+# that fails is a warning in the journal, and the next hour tries again.
+[Unit]
+Description=Copy the NF Hotel backups off the VM
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# A copy sends only the files that the target lacks and takes seconds. One that stalls is
+# stopped here, so it gives the lock back to the daily backup, which waits for it 45 minutes.
+TimeoutStartSec=30min
+ExecStart=/usr/local/sbin/nfhotel-backup --copy-only
+Nice=10
+IOSchedulingClass=idle
+PrivateTmp=true
+NoNewPrivileges=true

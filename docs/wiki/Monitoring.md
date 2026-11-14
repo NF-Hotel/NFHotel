@@ -345,6 +345,7 @@ In Grafana, open *Explore* and choose the data source *Loki*. Some useful querie
 | One container | `{container="nfhotel-web-nfhotel-web-1"}` |
 | Errors of the API | `{container="nfhotel-api-nfhotel-api-1"} \|~ "(?i)error\|exception"` |
 | The last backup runs | `{source="journal", unit="nfhotel-backup.service"}` |
+| The hourly copies off the VM | `{source="journal", unit="nfhotel-offvm-copy.service"}` |
 | The deploys | `{source="journal"} \|= "nfhotel-deploy"` |
 
 Set the time range at the top right. The logs go back 14 days.
@@ -378,6 +379,7 @@ Each alert in Discord names what failed. Start with the first step below. Once t
 | `ContainerUnhealthy` | critical | A container has been stopped or unhealthy for 30 s | `sudo docker logs --tail 50 <container>` |
 | `BackupStale` | critical | The last good backup is more than 26 hours old | `systemctl status nfhotel-backup.timer` and `journalctl -u nfhotel-backup` (ADR-0008) |
 | `OffVmCopyStale` | warning | No backup has been copied off the VM for 72 hours | Turn on the legion laptop or bring it back on the tailnet. The backups wait on the VM |
+| `BackupTargetDown` | warning | The backup host answers over Tailscale, but no copy has reached its target for over 2 hours (MIL-074) | Start Docker Desktop on the backup host; the scheduled task starts the target within the hour, or start it at once as [Disaster Recovery](Disaster-Recovery#the-copy-every-hour-and-the-backup-target) says |
 | `CertificateRenewalStale` | warning | The renewal has not succeeded for 26 hours | `journalctl -u nfhotel-cert-renew` |
 | `TaskReportMissing` | warning | A job has never reported success, or its file is gone | Run the job's service once (`sudo systemctl start nfhotel-backup.service`) and read its journal |
 | `HealthReportMissing` | warning | The container health report is missing | `systemctl status nfhotel-report-health.timer` |
@@ -457,7 +459,8 @@ The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no s
 | File | Written by | Alert when |
 | --- | --- | --- |
 | `backup.prom` | The backup (nightly, and before every deploy) | Older than 26 h, or missing |
-| `offvm_copy.prom` | The copy to the legion laptop | Older than 72 h, or missing |
+| `offvm_copy.prom` | The copy to the legion laptop: `nfhotel-offvm-copy.timer` (every hour) and the backup | Older than 72 h, or missing |
+| `backup_host_seen.prom` | The copy: after a copy, and after a failed copy when the backup host answers a Tailscale ping (MIL-074) | More than 2 h after `offvm_copy.prom`; a missing file raises nothing, as a backup host that is off answers nothing |
 | `cert_renew.prom` | The certificate renewal (daily) | Older than 26 h, or missing |
 | `containers.prom` | `nfhotel-report-health.timer` (every minute) | A value of 0 for 30 s, or missing |
 | `container-runtime.prom` | `nfhotel-container-check.timer` (every 15 minutes) | A container breaks its profile; `runc` is below its floor; or the last run is older than 45 minutes, or missing |

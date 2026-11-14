@@ -289,6 +289,8 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
   echo 'echo backup v1' >"$W/nfh-src/ops/scripts/backup-database.sh"
   echo '[Service]' >"$W/nfh-src/ops/deploy/systemd/nfhotel-backup.service"
   echo '[Timer]' >"$W/nfh-src/ops/deploy/systemd/nfhotel-backup.timer"
+  echo '[Service] copy' >"$W/nfh-src/ops/deploy/systemd/nfhotel-offvm-copy.service"
+  echo '[Timer] copy' >"$W/nfh-src/ops/deploy/systemd/nfhotel-offvm-copy.timer"
   echo 'echo renew v1' >"$W/nfh-src/ops/scripts/renew-certificate.sh"
   echo '[Service] cert' >"$W/nfh-src/ops/deploy/systemd/nfhotel-cert-renew.service"
   echo '[Timer] cert' >"$W/nfh-src/ops/deploy/systemd/nfhotel-cert-renew.timer"
@@ -313,6 +315,10 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
     [[ "$(stat -c %a "$W/sbin/nfhotel-deploy")" == 755 ]] && ok "update installs the commands and units of a main commit" ||
     ko "update from main: $(tail -2 "$W/out")"
   grep -q "try-restart nfhotel-backup.timer" "$W/systemctl.log" && ok "new units reload systemd and restart the timer" || ko "systemctl"
+  [[ "$(cat "$W/systemd/nfhotel-offvm-copy.service")" == "[Service] copy" ]] &&
+    [[ "$(cat "$W/systemd/nfhotel-offvm-copy.timer")" == "[Timer] copy" ]] &&
+    grep -qx "systemctl enable --now nfhotel-offvm-copy.timer" "$W/systemctl.log" &&
+    ok "update installs the hourly copy off the VM and starts its timer (MIL-074)" || ko "hourly copy: $(cat "$W/systemctl.log")"
   [[ "$(cat "$W/sbin/nfhotel-cert-renew")" == "echo renew v1" ]] && [[ -f "$W/systemd/nfhotel-cert-renew.timer" ]] &&
     grep -q "enable --now nfhotel-cert-renew.timer" "$W/systemctl.log" &&
     ok "update installs the certificate renewal and enables its timer" || ko "certificate renewal: $(cat "$W/systemctl.log")"
@@ -322,7 +328,7 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
   [[ "$(cat "$W/sbin/nfhotel-container-check")" == "echo check v1" ]] && [[ -f "$W/systemd/nfhotel-container-check.timer" ]] &&
     grep -q "enable --now nfhotel-container-check.timer" "$W/systemctl.log" &&
     ok "update installs the runtime check and enables its timer" || ko "runtime check: $(cat "$W/systemctl.log")"
-  [[ "$(grep -c " update $U1 " "$W/state-nfh/releases.log")" == 13 ]] && ok "each installed file is logged with its hashes" || ko "update log"
+  [[ "$(grep -c " update $U1 " "$W/state-nfh/releases.log")" == 15 ]] && ok "each installed file is logged with its hashes" || ko "update log"
   : >"$W/systemctl.log"
   lines="$(wc -l <"$W/state-nfh/releases.log")"
   run "$W/nfh" update "$U1" && [[ "$(wc -l <"$W/state-nfh/releases.log")" == "$lines" ]] && [[ ! -s "$W/systemctl.log" ]] &&
