@@ -109,6 +109,8 @@ Merge each list into the one that is already in the policy, and keep the existin
 
 **Result:** the policy saves without an error. Its tests still pass.
 
+> **The deploy needs no grant.** The monitoring deploys itself: a timer on the LXC pulls `main` from GitHub over HTTPS ([ADR-0044](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0044-monitoring-deployed-by-a-pull-on-its-host.md), MIL-051), out through the same internet connection as its image pulls and its Discord messages, which the tailnet policy does not govern. No workflow reaches the LXC, so the policy has no `tag:ci` and no grant to port 22 for a deploy; the `ssh` rule above is for admins only.
+
 > **Who can open Grafana.** The grant above lets admins reach port 3000. If the policy already has a broad grant, such as `autogroup:member` to every destination on every port, that grant still lets every member reach Grafana too: grants only add access. Grafana's own login (user `admin`, the password of C4) then protects it. Narrowing the broad grant is a separate decision for the whole tailnet, so this guide does not remove it.
 
 ### Part B: the container (Proxmox node, as root)
