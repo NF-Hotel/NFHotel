@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code rows of MIL-055: RC-378 is Go without a risk exception (its second version, after the regions of 17d67cc and the pricing tabs of 96b93dc); `PricingTabs` in the row of the pricing pages; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [46998b0] |
-| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-053, which the matrix did not have: the milestone with its gate, RC-372 Go, and the code of the scan exporter with its reviews, RC-257, RC-277 and RC-366; accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-053, which the matrix did not have: the milestone with its gate, RC-372 Go, and the code of the scan exporter with its reviews, RC-257, RC-277 and RC-366; accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [8321a92] |
 
 ---
 
@@ -467,3 +467,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-379]: ./reviews/rc-379-mil-055-gate.md
 [RC-380]: ./reviews/rc-380-mil-026-service-pin.md
 [46998b0]: https://github.com/NF-Hotel/NFHotel/commit/46998b088196b21f2d0bee4e82c69449c6572886
+[8321a92]: https://github.com/NF-Hotel/NFHotel/commit/8321a922c12cd49320870185a8b0e7b6d7e07a72
