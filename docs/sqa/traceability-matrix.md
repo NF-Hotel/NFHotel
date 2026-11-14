@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-073 in its rows: RC-362 Go after the deploy of CD run 43590287146, the row counts inside the VM and the daily scan run by hand, accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [cee9c20] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-077: the input guard and the header of the API, the OpenAPI document at build time and the ZAP API scan, with its code review RC-363 (Go-with-conditions) | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-077: the input guard and the header of the API, the OpenAPI document at build time and the ZAP API scan, with its code review RC-363 (Go-with-conditions) | [bd11790] |
 
 ---
 
@@ -445,3 +445,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-357]: ./reviews/rc-357-mil-052-revision.md
 [RC-358]: ./reviews/rc-358-mil-018-revision.md
 [cee9c20]: https://github.com/NF-Hotel/NFHotel/commit/cee9c202c9a01660c76140226b8db4cf67f1c61d
+[bd11790]: https://github.com/NF-Hotel/NFHotel/commit/bd11790faa51533044da78369b0789049ebd51e6

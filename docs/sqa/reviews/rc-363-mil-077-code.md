@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | [bd11790] |
 
 ---
 
@@ -239,3 +239,4 @@ not independent.
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [RC-278]: ./rc-278-mil-058-code.md
 [RC-341]: ./rc-341-mil-079-code.md
+[bd11790]: https://github.com/NF-Hotel/NFHotel/commit/bd11790faa51533044da78369b0789049ebd51e6
