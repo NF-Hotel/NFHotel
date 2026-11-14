@@ -85,9 +85,9 @@ vm_docker="$(sed -n 's/^ *- apt-get install -y \(docker-ce .*\)$/\1/p' "$OPS/scr
 grep -qxF 'curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc' "$W/log" &&
   grep -qF 'deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian trixie stable' "$W/log" &&
   ok "they come from Docker's signed repository for Debian 13" || ko "Docker's repository: $(grep -F docker "$W/log" | head -6)"
-! grep -qE '(^|[[:space:]])(docker\.io|docker-compose|docker-cli|containerd|runc)([[:space:]]|$)' "$W/log" &&
-  ok "no Docker package of Debian (docker.io, docker-cli, docker-compose, containerd, runc)" ||
-  ko "a Docker package of Debian: $(grep -E 'docker\.io|docker-compose |docker-cli |containerd |runc' "$W/log")"
+! grep -qE '(^|[[:space:]])(docker\.io|docker-compose|docker-cli|docker-buildx|containerd|runc)([[:space:]]|$)' "$W/log" &&
+  ok "no Docker package of Debian (docker.io, docker-cli, docker-compose, docker-buildx, containerd, runc)" ||
+  ko "a Docker package of Debian: $(grep -E 'docker\.io|docker-compose |docker-cli |docker-buildx |containerd |runc' "$W/log")"
 # Debian's security updates as on the VM: install-patching.sh from the checkout, after Docker.
 awk '/^apt-get install -y -q docker-ce / { d = NR }
   /^pct exec 102 -- git clone https:\/\/github.com\/NF-Hotel\/NFHotel.git \/opt\/nfhotel-monitoring$/ { c = NR }

@@ -317,8 +317,9 @@ for pair in 1.1.15+ds1=1.2.8 1.0.0-rc95=1.2.8 0.9.9=1.2.8 1.2.7=1.2.8 1.3.2=1.3.
     ko "floor: runc ${pair%=*}, exit $code: $(grep 'runc ' "$W/out" | tail -1)"
 done
 # At or above it: the fixed versions, later ones of their lines (10 is above 8, not below), later
-# lines (1.10 is above 1.3), a leading v, and the runc of the VM (1.5.2 on 2026-11-13).
-for version in 1.2.8 1.2.10 1.3.3 1.3.4 1.4.0 1.5.2 1.10.0 2.0.0 v1.3.3; do
+# lines (1.10 is above 1.3), a leading v, the runc of the VM (1.5.2 on 2026-11-13) and that of
+# the LXC (1.5.3 on 2026-11-14).
+for version in 1.2.8 1.2.10 1.3.3 1.3.4 1.4.0 1.5.2 1.5.3 1.10.0 2.0.0 v1.3.3; do
   with_runc "$version"
   code=$?
   [[ "$code" == 0 ]] && grep -qxF "==> runc $version: at or above the floor of its line" "$W/out" &&

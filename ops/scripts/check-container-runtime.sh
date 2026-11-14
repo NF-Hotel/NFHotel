@@ -634,7 +634,7 @@ runc_floor() {
       return 0
     fi
   done
-  echo "${RUNC_FLOOR[-1]}"
+  echo "${RUNC_FLOOR[${#RUNC_FLOOR[@]} - 1]}"
 }
 
 # label_value <text>: the text as a label value for Prometheus. A character that no version has (a
