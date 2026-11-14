@@ -57,6 +57,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 var app = builder.Build();
 
+// Every answer, a refusal and a fault included, tells a browser not to guess its type (MIL-077).
+app.UseApiSecurityHeaders();
 app.UseForwardedHeaders();
 
 // A key below one or a missing argument is a programming error of the caller: 400. Anything else is a
