@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-25 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-041, which S01 accepted in chat on 2026-10-25; the choice of Cloudflare Access and the list of addresses are S01's | [1cc0e5d] |
-| 2026-11-11 | Accepted | mikemike | S01 | Decisions 2, 3 and 5 made precise by MIL-072, after the validating route was found second in the list and its path and the guard of nginx were found to compare letter case: the validating route first, with the path `(?i)^/admin`; the guard of nginx for every spelling of `/admin`; the order of the routes checked in the log of `cloudflared` | [a1a7092] |
+| 2026-11-11 | Deprecated | mikemike | S01 | Decisions 2, 3 and 5 made precise by MIL-072, after the validating route was found second in the list and its path and the guard of nginx were found to compare letter case: the validating route first, with the path `(?i)^/admin`; the guard of nginx for every spelling of `/admin`; the order of the routes checked in the log of `cloudflared` | [a1a7092] |
+| 2026-11-11 | Accepted | mikemike | AI as stand-in for S01 | Decision 1: the session lasts 1 week, as the Access application is set; S01 decided in chat that this record follows the setting; accepted at the gate of MIL-072 (RC-339) | [3afb6a3] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -36,7 +36,7 @@ Options considered:
 
 We follow option 3. It changes ADR-0028 decision 3 for `/admin` only.
 
-1. **An Access application** for `nfhotel.devmatiker.com/admin`, with the login method One-time PIN and a policy that allows the listed addresses of the team. The session lasts 24 hours.
+1. **An Access application** for `nfhotel.devmatiker.com/admin`, with the login method One-time PIN and a policy that allows the listed addresses of the team. The session lasts 1 week, the setting of the application (S01, 2026-11-11): staff type a code once a week, an address taken off the list gets no new code at once, and a session already open ends within the week.
 2. **The tunnel validates the token.** A published route of the tunnel, path `(?i)^/admin`, has "Validate the Access JWT at the tunnel" on, with the team name and the Application Audience (AUD) tag of the Access application, and it stands first in the list of routes: `cloudflared` takes the first route that matches, so below the route without a path it would never be used. The path ignores letter case, as the routes of the web application do. So a request for `/admin`, in any spelling, that did not pass Access stops at `cloudflared` and never reaches the virtual machine (VM).
 3. **nginx adds a second line.** The public listener serves `/admin`, in any spelling, only to requests that carry `Cf-Access-Jwt-Assertion` (`location ~* ^/admin`); without it, `/admin` still answers 404. nginx does not validate the token; the tunnel does.
 4. **Two locks.** Access decides who may see the sign-in; the hotel's own sign-in, roles and per-address limit stay as they are. A leaked password alone is not enough from the internet.
@@ -67,5 +67,5 @@ We follow option 3. It changes ADR-0028 decision 3 for `/admin` only.
 [ADR-0028]: ./adr-0028-public-access-through-cloudflare-tunnel.md
 [MIL-041]: ../milestones/mil-041-admin-behind-cloudflare-access.md
 [MIL-072]: ../milestones/mil-072-the-access-check-on-every-admin-path.md
-[1cc0e5d]: https://github.com/NF-Hotel/NFHotel/commit/1cc0e5d9c925b30a189e5e8ae8e93957c923bbaf
 [a1a7092]: https://github.com/NF-Hotel/NFHotel/commit/a1a709262eda420d46bb2be56f639718b97ba48c
+[3afb6a3]: https://github.com/NF-Hotel/NFHotel/commit/3afb6a38797598a205e2c4c82dd19c352967ae89

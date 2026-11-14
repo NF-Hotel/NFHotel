@@ -85,11 +85,11 @@ If the token has been anywhere but step 8 (a chat, a screenshot, a file), rotate
 3. A 6-digit code arrives by e-mail (look in the spam folder the first time). Type it in.
 4. The hotel's own sign-in appears: your user name and password, as before.
 
-Cloudflare remembers the browser for 24 hours. An address that is not on the list gets no code and never sees the hotel's sign-in. On the tailnet, `https://nf-hotel.taildb84b5.ts.net/admin` works as before, without a code.
+Cloudflare remembers the browser for 1 week. An address that is not on the list gets no code and never sees the hotel's sign-in. On the tailnet, `https://nf-hotel.taildb84b5.ts.net/admin` works as before, without a code.
 
 ### Set it up (S01, in the browser, before the nginx change is deployed)
 
-1. **The Access application.** In **Zero Trust → Access controls → Applications → Add an application → Self-hosted**: name `NF Hotel back office`, session duration **24 hours**, public hostname `nfhotel` · `devmatiker.com`, path `admin`. Login method: **One-time PIN** only.
+1. **The Access application.** In **Zero Trust → Access controls → Applications → Add an application → Self-hosted**: name `NF Hotel back office`, session duration **1 week**, public hostname `nfhotel` · `devmatiker.com`, path `admin`. Login method: **One-time PIN** only.
 2. **The policy.** Add a policy `Team`, action **Allow**, include **Emails**: the listed addresses. Save the application.
 3. **Note two values.** In **Zero Trust → Settings**, the *team domain* (`<team>.cloudflareaccess.com`); on the application's page, the **Application Audience (AUD) Tag**. Neither is a secret.
 4. **The validating route.** In **Networking → Tunnels → nf-hotel → Routes → Add route → Published application**: subdomain `nfhotel`, domain `devmatiker.com`, path `(?i)^/admin`, service URL `http://nginx:8082`. Under **Additional application settings → Access**, turn on **Validate the Access JWT at the tunnel** (or "Protect with Access") with the team name and the AUD tag of step 3. Save, then in the list of routes open the new route's **⋯** menu and choose **Move up** until it shows **Order 1**. *Why:* a request for `/admin` that did not pass Access stops at the tunnel and never reaches the VM. The routes are matched from top to bottom and the first match wins, so below the route without a path this route is never used; `(?i)` makes the path ignore letter case, as the web application does, so `/ADMIN` is checked too.
@@ -97,7 +97,7 @@ Cloudflare remembers the browser for 24 hours. An address that is not on the lis
 
 ### Add or remove a member of staff
 
-In **Zero Trust → Access controls → Applications → NF Hotel back office → Policies → Team**, add or remove the address under **Emails** and save. Removing an address stops new codes at once; a session already open ends within 24 hours. Their hotel account is managed in the back office as before (Manager → staff accounts).
+In **Zero Trust → Access controls → Applications → NF Hotel back office → Policies → Team**, add or remove the address under **Emails** and save. Removing an address stops new codes at once; a session already open ends within the week. Their hotel account is managed in the back office as before (Manager → staff accounts).
 
 ## Check it
 
