@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | [5d447a4] |
 
 ---
 
@@ -160,3 +160,4 @@ the LXC, and the first run of the daily timer in the LXC. The reviewer is not in
 [RC-350]: ./rc-350-mil-082-code.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[5d447a4]: https://github.com/NF-Hotel/NFHotel/commit/5d447a4df5d42d92ba91228dc0027e78e09fa317

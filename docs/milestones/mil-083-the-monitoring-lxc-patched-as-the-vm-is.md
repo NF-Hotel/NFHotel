@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the finding of 2026-11-14 in the deploy of the monitoring (a `runc` with three known container escapes, no unattended security updates), planned at S01's word in chat; S01 accepted the plan in chat | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the finding of 2026-11-14 in the deploy of the monitoring (a `runc` with three known container escapes, no unattended security updates), planned at S01's word in chat; S01 accepted the plan in chat | [742af62] |
 
 ---
 
@@ -98,3 +98,4 @@ Order: S01 accepts this plan in chat; task 1; task 2 (S03); task 3, the change i
 [MIL-023]: ./mil-023-operational-quality.md
 [MIL-080]: ./mil-080-every-container-runs-with-the-rights-of-its-profile.md
 [MIL-082]: ./mil-082-a-compromised-container-kept-away-from-the-host.md
+[742af62]: https://github.com/NF-Hotel/NFHotel/commit/742af62489a1876a93666e37724573d01cc573c3

@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-083, planned in autonomous mode at S01's word in chat on 2026-11-14 (RC-352 Go); written by the AI; accepted after RC-353 Go | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-083, planned in autonomous mode at S01's word in chat on 2026-11-14 (RC-352 Go); written by the AI; accepted after RC-353 Go | [742af62] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -86,3 +86,4 @@ We follow option 3: the monitoring LXC takes Docker Engine, containerd and `runc
 [MIL-080]: ../milestones/mil-080-every-container-runs-with-the-rights-of-its-profile.md
 [MIL-082]: ../milestones/mil-082-a-compromised-container-kept-away-from-the-host.md
 [CIS-001]: ../sqa/cis-checklist.md
+[742af62]: https://github.com/NF-Hotel/NFHotel/commit/742af62489a1876a93666e37724573d01cc573c3

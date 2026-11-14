@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-080 and of its code at the gate: the monitoring deployed at S01's word in chat, the check over its six containers and the two rules loaded; gate passed (RC-347) | [60b8df3] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-083, planned in autonomous mode (RC-352), of ADR-0043 (RC-353) and of the code of MIL-083 (RC-354); the LXC switched to Docker's packages and Debian's security updates on 2026-11-14 | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-083, planned in autonomous mode (RC-352), of ADR-0043 (RC-353) and of the code of MIL-083 (RC-354); the LXC switched to Docker's packages and Debian's security updates on 2026-11-14 | [5d447a4] |
 
 ---
 
@@ -402,3 +402,4 @@ updated whenever an artifact instance is created or reviewed.
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
 [60b8df3]: https://github.com/NF-Hotel/NFHotel/commit/60b8df3278ad0b07a1ac873073ef5a14d43c4bc3
+[5d447a4]: https://github.com/NF-Hotel/NFHotel/commit/5d447a4df5d42d92ba91228dc0027e78e09fa317

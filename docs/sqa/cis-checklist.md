@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | MIL-082: row 4.1 Applied adds Ollama as 10001 and row 4.1 Deferred names the nginx master and the socket proxy; row 2.1 evaluated again on the wiki page Container-Escape; row 1.2.2 with the versions of 2026-11-13 and runc 1.5.3; the evidence `compose` with the rule of the masked paths and the test of Ollama | [f7dbdae] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | MIL-083: rows 1.2.2 and 1.2.2.1 cover the monitoring LXC, which takes Docker's packages from Docker's repository and Debian's security updates with `unattended-upgrades` since 2026-11-14, and the floor of runc in the runtime check (RC-354) | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | MIL-083: rows 1.2.2 and 1.2.2.1 cover the monitoring LXC, which takes Docker's packages from Docker's repository and Debian's security updates with `unattended-upgrades` since 2026-11-14, and the floor of runc in the runtime check (RC-354) | [5d447a4] |
 
 ---
 
@@ -234,3 +234,4 @@ The counts are by row; a row that covers several items counts once. Applied coun
 [ADR-0010]: ../adr/adr-0010-production-vm-as-deployed.md
 [RC-176]: ./reviews/rc-176-mil-023-host-hardening.md
 [f7dbdae]: https://github.com/NF-Hotel/NFHotel/commit/f7dbdae7b158150f030dd523c8236250ed2689a7
+[5d447a4]: https://github.com/NF-Hotel/NFHotel/commit/5d447a4df5d42d92ba91228dc0027e78e09fa317
