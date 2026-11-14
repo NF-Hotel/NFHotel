@@ -27,7 +27,7 @@ Infrastructure documents (DSA-001, ADR-0007 to ADR-0011, MIL-021 to MIL-024 and 
 | ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0045 |
 | US | User Story | docs/user-stories.md | 002 |
 | UCD | Use Case Diagram | docs/use-case-diagram.md | 002 |
-| UC | Use Case | docs/use-cases/uc-*/uc.md | 008 |
+| UC | Use Case | docs/use-cases/uc-*/uc.md | 010 |
 | DM | Domain Model | docs/domain-model.md, docs/use-cases/uc-*/dm.md | 006 |
 | DICT | Domain Dictionary | docs/dictionary.md | 002 |
 

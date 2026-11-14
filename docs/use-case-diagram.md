@@ -11,11 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Accepted after RC-013 Go | [469ff7a] |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the actor Hotel staff and the use cases Manage Bookings, Manage Rooms and Manage Guests (MIL-007) | [a29c54a] |
-| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added the use case Sign In To The Back Office (MIL-016) | [1593b34] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added Change Own Password and Manage Staff Accounts (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
-| 2026-11-01 | Accepted | Claude (AI) | S01 | Added the use case Approve a Price Suggestion (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
+| 2026-11-01 | Deprecated | Claude (AI) | S01 | Added the use case Approve a Price Suggestion (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The benchmark use cases aligned with MIL-019 and MIL-020 (UC-008, UC-009): Hotel staff (Manager) on Compare Models by Time and Quality, which includes Sign In To The Back Office, and, beside DevOps, on Run Time and Quality Benchmark; the Owner works through the role Manager; the service repository is notebook-market-analysis; the older rows of the Version History left to git; accepted after RC-368 Go, at S01's word in chat ("Du godkender for mig"); mode autonomous, not independent | [50f850d] |
 
 ---
 
@@ -27,7 +24,7 @@ compares local AI models on time and answer quality, and the hosting of both on
 Proxmox VE virtual machines as Docker containers behind one nginx reverse proxy.
 The back office of the hotel (staff managing bookings, rooms and guests, added for MIL-007) is inside it; the guest flows and the screens are outside this
 diagram. The two source services are the repositories
-`NF-Hotel/Notebook_Market_Analysis` and `NF-Hotel/notebook-benchmark`.
+`NF-Hotel/notebook-market-analysis` and `NF-Hotel/notebook-benchmark`.
 
 ## Diagram
 
@@ -57,6 +54,8 @@ Owner --> UC2
 DevOps --> UC3
 DevOps --> UC4
 DevOps --> UC5
+Staff --> UC4
+Staff --> UC6
 Staff --> UC7
 Staff --> UC8
 Staff --> UC9
@@ -69,6 +68,7 @@ UC8 ..> UC10 : <<include>>
 UC11 ..> UC10 : <<include>>
 UC12 ..> UC10 : <<include>>
 UC13 ..> UC10 : <<include>>
+UC6 ..> UC10 : <<include>>
 UC9 ..> UC10 : <<include>>
 UC2 ..> UC6 : <<include>>
 UC4 ..> UC3 : <<include>>
@@ -82,7 +82,7 @@ UC5 ..> UC3 : <<include>>
 | --- | --- | --- | --- |
 | Owner | `<<Actor>>` | S01 | View Market Analysis; Choose Local AI Model |
 | DevOps | `<<Actor>>` | S02 | Route Services Through Nginx; Run Time and Quality Benchmark; Run Market Analysis Service |
-| Hotel staff | `<<Actor>>` | S05 | Manage Bookings; Manage Rooms; Manage Guests; Sign In To The Back Office; Change Own Password; Manage Staff Accounts; Approve a Price Suggestion |
+| Hotel staff | `<<Actor>>` | S05 | Manage Bookings; Manage Rooms; Manage Guests; Sign In To The Back Office; Change Own Password; Manage Staff Accounts; Approve a Price Suggestion; Run Time and Quality Benchmark (a Manager starts a run); Compare Models by Time and Quality |
 
 ## Use Case Table
 
@@ -91,9 +91,9 @@ UC5 ..> UC3 : <<include>>
 | View Market Analysis | Owner | See the market analysis as diagrams with an AI analysis | [US-001].01 | Must | Direct value to the owner; the analysis application already exists |
 | Choose Local AI Model | Owner | Pick the local AI model with the best balance of response time and answer quality | [US-001].02 | Should | Depends on benchmark results (UC Run Time and Quality Benchmark) |
 | Route Services Through Nginx | DevOps | Reach every web and API service only through the nginx proxy | [US-001].03 | Must | Already started in MIL-002; the other services depend on it |
-| Run Time and Quality Benchmark | DevOps | Run the time and answer-quality test as a service on a Proxmox VM behind the proxy | [US-001].04 | Should | Hardware dependent (GPU access from a VM is the main risk) |
+| Run Time and Quality Benchmark | DevOps; Hotel staff (Manager) | DevOps runs the time and answer-quality test as a service on a Proxmox VM behind the proxy; a Manager starts a run of the chosen models from the back office and follows it until its result is stored ([UC-009]) | [US-001].04 | Should | Hardware dependent (GPU access from a VM is the main risk); MIL-020 lets a Manager start a run |
 | Run Market Analysis Service | DevOps | Run the market analysis service on a Proxmox VM through Docker Compose behind the proxy | [US-001].05 | Must | Needed before the owner can view the analysis |
-| Compare Models by Time and Quality | Owner | See models side by side by response time and answer quality | [US-001].02 | Should | Part of choosing a model; shown by the benchmark results |
+| Compare Models by Time and Quality | Hotel staff (Manager) | See models side by side by response time and answer quality ([UC-008]) | [US-001].02 | Should | Part of choosing a model; MIL-019 shows the stored runs only to the permission `Benchmark.View`, which only the Manager holds |
 | Manage Bookings | Hotel staff | Create, confirm, check in, check out, cancel and move bookings without double booking | [US-001].06 | Must | The core of the back office |
 | Manage Rooms | Hotel staff | Keep the rooms, their status and their cleaning state correct | [US-001].07 | Must | Bookings need rooms |
 | Manage Guests | Hotel staff | Find, register, change and delete guests | [US-001].08 | Must | Bookings need guests |
@@ -112,9 +112,9 @@ the DevOps role operates the services; the Hotel staff role runs the back office
 | --- | --- | --- | --- |
 | View Market Analysis | performs | - | - |
 | Choose Local AI Model | performs | - | - |
-| Compare Models by Time and Quality | performs | - | - |
+| Compare Models by Time and Quality | - | - | performs (Manager only) |
 | Route Services Through Nginx | - | performs | - |
-| Run Time and Quality Benchmark | - | performs | - |
+| Run Time and Quality Benchmark | - | performs (runs the service) | performs (Manager only: starts a run) |
 | Run Market Analysis Service | - | performs | - |
 | Manage Bookings | - | - | performs |
 | Manage Rooms | - | - | performs |
@@ -124,8 +124,11 @@ the DevOps role operates the services; the Hotel staff role runs the back office
 | Manage Staff Accounts | - | - | performs (Manager only) |
 | Approve a Price Suggestion | - | - | performs (Manager only) |
 
-No use case is shared by two roles. Whether DevOps may also view the analysis
-is a question for the Product Owner.
+One use case is shared by two roles: in Run Time and Quality Benchmark, DevOps
+runs the service and a Manager starts a run (MIL-020). The Owner compares the
+models and starts runs through an account with the role Manager, which alone
+holds `Benchmark.View` and `Benchmark.Run` (MIL-019, decision 4). Whether DevOps
+may also view the analysis is a question for the Product Owner.
 
 ## Relationships
 
@@ -136,15 +139,14 @@ is a question for the Product Owner.
 | Run Market Analysis Service | `<<include>>` | Route Services Through Nginx | The analysis service is only reachable behind the proxy |
 | Manage Bookings, Manage Rooms, Manage Guests | `<<include>>` | Sign In To The Back Office | Every back office function needs a signed-in member of staff |
 | Change Own Password, Manage Staff Accounts, Approve a Price Suggestion | `<<include>>` | Sign In To The Back Office | Both need a signed-in member of staff |
+| Compare Models by Time and Quality | `<<include>>` | Sign In To The Back Office | The stored runs are in the back office, for a signed-in Manager. Run Time and Quality Benchmark does not include it: DevOps runs the service outside the back office, and a Manager who starts a run has signed in first (a precondition of [UC-009]) |
 
 ---
 
 [SA-001]: ./stakeholder-analysis.md
 [BC-001]: ./business-case.md
 [US-001]: ./user-stories.md
-[fc8ec78]: https://github.com/NF-Hotel/NFHotel/commit/fc8ec78b24b805b10d5c056b19ed2785697ee8ff
-[469ff7a]: https://github.com/NF-Hotel/NFHotel/commit/469ff7a7871bb900155dcaf0639b5db1371681aa
-[a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d
-[1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4
-[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
+[UC-008]: ./use-cases/uc-008/uc.md
+[UC-009]: ./use-cases/uc-009/uc.md
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
+[50f850d]: https://github.com/NF-Hotel/NFHotel/commit/50f850d890371ba0759cbba802c27c9b31cf5b69
