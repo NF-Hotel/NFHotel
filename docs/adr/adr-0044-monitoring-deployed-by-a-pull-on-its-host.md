@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-051, planned at S01's word in chat on 2026-11-01 and accepted with the plan of 2026-11-14 ("Du godkender for mig", RC-356 Go); written by the AI; accepted after RC-365 Go | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-051, planned at S01's word in chat on 2026-11-01 and accepted with the plan of 2026-11-14 ("Du godkender for mig", RC-356 Go); written by the AI; accepted after RC-365 Go | [e2f6a0c] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -139,3 +139,4 @@ maintainability (ISO/IEC 25010:2023).
 [MIL-023]: ../milestones/mil-023-operational-quality.md
 [MIL-053]: ../milestones/mil-053-security-scan-metrics.md
 [RC-356]: ../sqa/reviews/rc-356-mil-051-revision.md
+[e2f6a0c]: https://github.com/NF-Hotel/NFHotel/commit/e2f6a0cd1a04fa10f886ee9a9dfa475354797f7c

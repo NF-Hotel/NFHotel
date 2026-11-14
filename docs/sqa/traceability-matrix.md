@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-076: the read-back of every dump, its reports and the alerts BackupUnreadable and BackupShrunk, with its code review RC-364 (Go-with-conditions) | [c48b8db] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | ADR-0044 and the code of MIL-051: the deploy of the monitoring by a pull on its LXC, its health check, its report and its alerts, with the reviews RC-365 (Go) and RC-366 (Go-with-conditions) | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | ADR-0044 and the code of MIL-051: the deploy of the monitoring by a pull on its LXC, its health check, its report and its alerts, with the reviews RC-365 (Go) and RC-366 (Go-with-conditions) | [2e57a94] |
 
 ---
 
@@ -452,3 +452,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-357]: ./reviews/rc-357-mil-052-revision.md
 [RC-358]: ./reviews/rc-358-mil-018-revision.md
 [c48b8db]: https://github.com/NF-Hotel/NFHotel/commit/c48b8dbd50d448d02e879f37a241c1443ae35207
+[2e57a94]: https://github.com/NF-Hotel/NFHotel/commit/2e57a943a3adf65d71c0ae7c0551599c795048f1
