@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | The ninth code commit of the gate branch (b0ee6ac, two typed locals in a test) counted; Go; mode autonomous, not independent | [8758ab7] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The tenth code commit of the gate branch (bdfa319, three page tests after the SonarCloud gate of the pull request) counted; Go; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The tenth code commit of the gate branch (bdfa319, three page tests after the SonarCloud gate of the pull request) counted; Go; mode autonomous, not independent | [91c23c6] |
 
 ---
 
@@ -84,3 +84,4 @@ Go. Criteria 4 to 11 pass on the code of the gate branch, the tests that ran on 
 [RC-378]: ./rc-378-mil-055-code-at-the-gate.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [8758ab7]: https://github.com/NF-Hotel/NFHotel/commit/8758ab71c8c3d135abb0c87b8e4ee1ac72fa6167
+[91c23c6]: https://github.com/NF-Hotel/NFHotel/commit/91c23c6a268389c8aedd4a4d77a307e8719074bb

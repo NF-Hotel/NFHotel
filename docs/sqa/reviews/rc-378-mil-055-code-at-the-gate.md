@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | b0ee6ac added: the two locals of the region of the gate in `ConflictPathTests` typed; the search for `var` and F3 now cover the test files of the milestone; Go; mode autonomous, not independent | [8758ab7] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | bdfa319 added: three page tests render the rows of the three pricing pages that 68502d4 typed, which the SonarCloud gate of the pull request found without coverage (G4); criterion 12 counts them; Go; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | bdfa319 added: three page tests render the rows of the three pricing pages that 68502d4 typed, which the SonarCloud gate of the pull request found without coverage (G4); criterion 12 counts them; Go; mode autonomous, not independent | [91c23c6] |
 
 ---
 
@@ -133,3 +133,4 @@ Go. The three conditions of [RC-266] are settled: F3 is closed and F4 fixed for 
 [RC-377]: ./rc-377-uc-007-revision.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [8758ab7]: https://github.com/NF-Hotel/NFHotel/commit/8758ab71c8c3d135abb0c87b8e4ee1ac72fa6167
+[91c23c6]: https://github.com/NF-Hotel/NFHotel/commit/91c23c6a268389c8aedd4a4d77a307e8719074bb
