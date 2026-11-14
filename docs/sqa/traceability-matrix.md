@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | RC-380 on the row of `deploy/market-analysis`: the pin of the market analysis service moved to 97ca890f, so the released service takes the pricing settings of MIL-071; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [48bd88c] |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code rows of MIL-055: RC-378 is Go without a risk exception (its second version, after the regions of 17d67cc and the pricing tabs of 96b93dc); `PricingTabs` in the row of the pricing pages; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [46998b0] |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | UC-008 and UC-009 with their reviews RC-369 and RC-370 (Go), the delta review RC-368 of UCD-001, and rows for MIL-019 and MIL-020 with their use cases | [50f850d] |
 
 ---
 
@@ -53,7 +53,7 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0012] | ADR | en | it | [BC-001], [ADR-0003], [ADR-0006] | [MIL-025] | [RC-102] |
 | [MIL-025] | Milestone | en | it | [BC-001], [ADR-0012] | - | [RC-103] |
 | [ADR-0011] | ADR | en | it | [ADR-0004], [ADR-0010], [DSA-001] | [MIL-024] | [RC-100] |
-| [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001], [UC-007] | [RC-013], [RC-028] |
+| [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001], [UC-007], [UC-008], [UC-009] | [RC-013], [RC-028], [RC-368] |
 | [US-001] | User Story | en | it | [UCD-001], [BC-001] | [MIL-055], [UC-007] (US-001.12) | [RC-012], [RC-027], [RC-263] |
 | [DICT-001] | Domain Dictionary | en | it | [BC-001], [SA-001], [UC-007] | [DM-004] | [RC-029], [RC-264] |
 | [UC-001] | Use Case | en | it | [UCD-001], [US-001], [SA-001] | [DM-001] | [RC-030] |
@@ -154,6 +154,10 @@ updated whenever an artifact instance is created or reviewed.
 | Tests of the pages: `RoomRatesViewModelTests`, `PricingSettingsViewModelTests`, `PriceSuggestionsViewModelTests`, `PriceSuggestionsPageTests`, `RoomListViewModelTests`, `AdminAccessTests`, `BackOfficeAccessTests` | Test code | - | - | [MIL-055] tasks 3, 5 and 8, [UC-007] | - | [RC-265], [RC-266] |
 | `src/NFHotel.External/MarketAnalysis` (`MarketAnalysisServiceClient`, `MarketAnalysisResultMapper`), `src/NFHotel.Application/Dto/MarketAnalysis` (the `pricing` request and the `price_suggestions` DTOs), `MarketAnalysisRunner` (sends the settings), the copies `docs/test-data/market-contract.yaml` and `docs/test-data/price-suggestions-sample.json` | Source code | - | - | [MIL-071] task 2, objective 29 of [BC-001] | - | [RC-325] |
 | Tests of the contract and the client: `MarketContractTests`, `MarketAnalysisResultMapper13Tests`, `MarketAnalysisServiceClientTests`, `MarketAnalysisRunnerTests` | Test code | - | - | [MIL-071] task 2 | - | [RC-325] |
+| [UC-008] | Use Case (Accepted) | en | it | [UCD-001], [US-001], [SA-001], [MIL-019] | the reads of `BenchmarkController`, the pages `BenchmarkRuns` and `BenchmarkRunAnalysis` of `src/NFHotel.Web/Features/Admin/Benchmark` | [RC-369] |
+| [UC-009] | Use Case (Accepted) | en | it | [UCD-001], [US-001], [SA-001], [MIL-020] | the pages `BenchmarkStart` and `ModelsPanel` and `BenchmarkRunTracker` of `src/NFHotel.Web/Features/Admin/Benchmark`, `BenchmarkServiceClient` of `src/NFHotel.External/Benchmark`, the record of a run in `BenchmarkController` and the default AI model in `AiDefaultsController` | [RC-370] |
+| [MIL-019] | Milestone (Accepted, Go; plan reviewed in RC-086; tasks 1 to 7 marked done after RC-104 and RC-105) | en | it | [BC-001], [MIL-018], [ADR-0004], ADR-0005 | ADR-0013, the code of its tasks 3 to 6 (`BenchmarkRun`, `BenchmarkService`, `BenchmarkController`, the page `/admin/benchmark`), [UC-008] | [RC-086], [RC-104], [RC-105] |
+| [MIL-020] | Milestone (Accepted, Go; plan reviewed in RC-087; tasks 1 to 11 marked done after RC-106 to RC-113 and RC-249) | en | it | [BC-001], [MIL-019], [ADR-0003] | ADR-0014, the code and the deploy files of its tasks 1 to 3 and 5 to 11 (`BenchmarkServiceClient`, the page `/admin/benchmark/start` with its panel of the installed models, `AiDefault`, `BenchmarkRunAnalysis`), [UC-009] | [RC-087], [RC-106], [RC-107], [RC-108], [RC-109], [RC-110], [RC-111], [RC-112], [RC-113], [RC-249] |
 | [MIL-054] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-01, RC-258; gate passed 2026-11-14, RC-367: Go, accepted by the AI as stand-in for S01 at S01's word in chat) | en | it | [BC-001], [ADR-0033], MIL-047 | the tests of pull request #435, the coverage floor `scripts/check-coverage-floor.sh` and its test in `ci.yaml`, the coverage scope in `dotnet-coverage.config.xml` and `SonarQube.Analysis.xml` | [RC-258], [RC-260], [RC-367] |
 
 ---
@@ -452,6 +456,27 @@ updated whenever an artifact instance is created or reviewed.
 [RC-356]: ./reviews/rc-356-mil-051-revision.md
 [RC-357]: ./reviews/rc-357-mil-052-revision.md
 [RC-358]: ./reviews/rc-358-mil-018-revision.md
+[UC-008]: ../use-cases/uc-008/uc.md
+[UC-009]: ../use-cases/uc-009/uc.md
+[MIL-019]: ../milestones/mil-019-benchmark-results-api.md
+[MIL-020]: ../milestones/mil-020-start-benchmark-run.md
+[RC-368]: ./reviews/rc-368-ucd-001-benchmark-actors.md
+[RC-369]: ./reviews/rc-369-uc-008.md
+[RC-370]: ./reviews/rc-370-uc-009.md
+[RC-086]: ./reviews/rc-086-milestone-019.md
+[RC-087]: ./reviews/rc-087-milestone-020.md
+[RC-104]: ./reviews/rc-104-adr-0013.md
+[RC-105]: ./reviews/rc-105-benchmark-results-code.md
+[RC-106]: ./reviews/rc-106-start-benchmark-run-code.md
+[RC-107]: ./reviews/rc-107-web-compose-yaml.md
+[RC-108]: ./reviews/rc-108-delete-benchmark-run-code.md
+[RC-109]: ./reviews/rc-109-adr-0014.md
+[RC-110]: ./reviews/rc-110-default-ai-model-code.md
+[RC-111]: ./reviews/rc-111-benchmark-analysis-view-code.md
+[RC-112]: ./reviews/rc-112-analysis-model-name-code.md
+[RC-113]: ./reviews/rc-113-manage-models-code.md
+[RC-249]: ./reviews/rc-249-live-runs-code.md
+[50f850d]: https://github.com/NF-Hotel/NFHotel/commit/50f850d890371ba0759cbba802c27c9b31cf5b69
 [MIL-054]: ../milestones/mil-054-test-coverage.md
 [ADR-0033]: ../adr/adr-0033-sonarqube-cloud-coverage.md
 [RC-258]: ./reviews/rc-258-mil-054-plan.md
@@ -461,5 +486,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-378]: ./reviews/rc-378-mil-055-code-at-the-gate.md
 [RC-379]: ./reviews/rc-379-mil-055-gate.md
 [RC-380]: ./reviews/rc-380-mil-026-service-pin.md
-[48bd88c]: https://github.com/NF-Hotel/NFHotel/commit/48bd88c4cea912fb342d83964bb71d1c3ee27d57
 [46998b0]: https://github.com/NF-Hotel/NFHotel/commit/46998b088196b21f2d0bee4e82c69449c6572886
