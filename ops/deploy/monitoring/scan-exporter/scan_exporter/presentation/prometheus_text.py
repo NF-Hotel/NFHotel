@@ -58,6 +58,9 @@ FAMILIES = (
     ),
 )
 
+# Every name the exporter serves, also before its first read: a report may use none of them.
+METRIC_NAMES = frozenset(family.name for family in FAMILIES)
+
 
 def _escape(value: str) -> str:
     return value.replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')

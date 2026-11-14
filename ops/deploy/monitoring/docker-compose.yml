@@ -121,7 +121,9 @@ services:
   # The results of the security scans of the pipeline (MIL-053): GitHub code scanning, the
   # latest run of each scan workflow and SonarQube Cloud, read every 15 minutes. Standard
   # library only, so the pinned image runs the mounted code and nothing is built. It runs as a
-  # user of its own, which owns the optional token file; no port is published.
+  # user of its own, which owns the optional token file; no port is published. After its own
+  # metrics it serves the valid reports (*.prom) of the report folder of the host, such as the
+  # state of the pull deploy of the monitoring (ADR-0044, MIL-051).
   scan-exporter:
     <<: *hardening
     image: python:3.13-slim@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90
@@ -129,6 +131,7 @@ services:
     environment:
       CONFIG_HASH: ${SCAN_EXPORTER_CONFIG_HASH:-}
       GITHUB_TOKEN_FILE: /run/secrets/github-scan-token
+      REPORT_DIR: /reports
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONUNBUFFERED: "1"
     command: [python, -B, -E, -s, /app/run.py]
@@ -138,6 +141,8 @@ services:
       # deploy-monitoring.sh makes an empty file when there is no token, so compose never makes
       # a folder here; an empty file means code scanning is not read.
       - ./secrets/github-scan-token:/run/secrets/github-scan-token:ro
+      # deploy-monitoring.sh makes the folder; the reports in it are written by root, 0644.
+      - ${MONITORING_REPORT_DIR:-/var/lib/nfhotel-monitoring/metrics}:/reports:ro
     healthcheck:
       test:
         - CMD

@@ -5,6 +5,7 @@ rule_files:
   - rules/applications.yml
   - rules/security.yml
   - rules/scans.yml
+  - rules/monitoring.yml
 
 evaluation_interval: 30s
 
@@ -777,3 +778,158 @@ tests:
                 nfhotel-container-check.timer did not run, Docker did not answer, or a deploy held
                 the lock at each run. Check the timer and its journal on nf-hotel (wiki page
                 Host-Hardening).
+
+  # The pull deploy of the monitoring (ADR-0044, MIL-051). The scan exporter serves its report,
+  # so its series carry the job scans.
+  - name: a failed monitoring deploy fires MonitoringDeployFailed at once, a good one does not
+    interval: 1m
+    input_series:
+      - series: >-
+          nfhotel_monitoring_deploy_failed{host="nf-monitoring", job="scans",
+          instance="scan-exporter:9120"}
+        values: "0 0 _ _"
+      - series: >-
+          nfhotel_monitoring_deploy_failed{host="nf-monitoring", job="scans",
+          instance="scan-exporter:9120", commit="0123456789ab", stage="checks"}
+        values: "_ _ 1 1"
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: MonitoringDeployFailed
+        exp_alerts: []
+      - eval_time: 2m
+        alertname: MonitoringDeployFailed
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-monitoring
+              job: scans
+              instance: scan-exporter:9120
+              commit: 0123456789ab
+              stage: checks
+            exp_annotations:
+              summary: "The monitoring deploy of 0123456789ab failed at checks"
+              description: >-
+                The monitoring host runs the commit it ran before (after stage rollback, maybe
+                nothing). Read why in its journal: journalctl -u nfhotel-monitoring-pull --since
+                -1h. The same head is not tried again: merge a fix, or fix the host and remove
+                /var/lib/nfhotel-monitoring/failed (wiki page Monitoring).
+
+  - name: a change that waits 30 minutes fires MonitoringDeployBehind
+    interval: 1m
+    input_series:
+      - series: >-
+          nfhotel_monitoring_deploy_waiting_since_timestamp_seconds{host="nf-monitoring",
+          job="scans", instance="scan-exporter:9120"}
+        values: "0x40"
+      - series: >-
+          nfhotel_monitoring_deploy_failed{host="nf-monitoring", job="scans",
+          instance="scan-exporter:9120"}
+        values: "0x40"
+    alert_rule_test:
+      - eval_time: 29m
+        alertname: MonitoringDeployBehind
+        exp_alerts: []
+      - eval_time: 31m
+        alertname: MonitoringDeployBehind
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-monitoring
+              job: scans
+              instance: scan-exporter:9120
+            exp_annotations:
+              summary: "A merged change of the monitoring has waited 30 minutes to be deployed"
+              description: >-
+                The Ops CI run of the push of the head of main has not passed, or the pull does
+                not deploy. Check that run in GitHub Actions and the journal on the monitoring
+                host: journalctl -u nfhotel-monitoring-pull --since -1h.
+
+  - name: a change that waits after a failed deploy raises MonitoringDeployFailed, not Behind
+    interval: 1m
+    input_series:
+      - series: >-
+          nfhotel_monitoring_deploy_waiting_since_timestamp_seconds{host="nf-monitoring",
+          job="scans", instance="scan-exporter:9120"}
+        values: "0x40"
+      - series: >-
+          nfhotel_monitoring_deploy_failed{host="nf-monitoring", job="scans",
+          instance="scan-exporter:9120", commit="0123456789ab", stage="ci"}
+        values: "1x40"
+    alert_rule_test:
+      - eval_time: 35m
+        alertname: MonitoringDeployBehind
+        exp_alerts: []
+
+  - name: a pull that has not read main for an hour fires MonitoringDeployStale
+    interval: 2m
+    input_series:
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-monitoring",
+          task="monitoring_pull", job="scans", instance="scan-exporter:9120"}
+        values: "0x40"
+    alert_rule_test:
+      - eval_time: 58m
+        alertname: MonitoringDeployStale
+        exp_alerts: []
+      - eval_time: 62m
+        alertname: MonitoringDeployStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-monitoring
+              task: monitoring_pull
+              job: scans
+              instance: scan-exporter:9120
+            exp_annotations:
+              summary: "The pull deploy of the monitoring has not read main for an hour"
+              description: >-
+                nfhotel-monitoring-pull.timer does not run, or the monitoring host cannot reach
+                GitHub. Check systemctl status nfhotel-monitoring-pull.timer and the journal of
+                the service.
+
+  - name: an exporter without a pull report for 30 minutes fires MonitoringDeployReportMissing
+    interval: 1m
+    input_series:
+      - series: up{job="scans", instance="scan-exporter:9120"}
+        values: "1x40"
+    alert_rule_test:
+      - eval_time: 29m
+        alertname: MonitoringDeployReportMissing
+        exp_alerts: []
+      - eval_time: 31m
+        alertname: MonitoringDeployReportMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              task: monitoring_pull
+            exp_annotations:
+              summary: "The monitoring host reports no pull deploy"
+              description: >-
+                The timer of the pull is not installed, or its report in
+                /var/lib/nfhotel-monitoring/metrics is missing or left out (the log of the scan
+                exporter says why). Install it with pull-monitoring.sh --install (wiki page
+                Monitoring).
+
+  - name: a pull report raises no MonitoringDeployReportMissing
+    interval: 1m
+    input_series:
+      - series: up{job="scans", instance="scan-exporter:9120"}
+        values: "1x40"
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-monitoring",
+          task="monitoring_pull", job="scans", instance="scan-exporter:9120"}
+        values: "0+60x40"
+    alert_rule_test:
+      - eval_time: 35m
+        alertname: MonitoringDeployReportMissing
+        exp_alerts: []
+
+  - name: an exporter that is down raises ScanSourceDown alone, not MonitoringDeployReportMissing
+    interval: 1m
+    input_series:
+      - series: up{job="scans", instance="scan-exporter:9120"}
+        values: "0x40"
+    alert_rule_test:
+      - eval_time: 35m
+        alertname: MonitoringDeployReportMissing
+        exp_alerts: []

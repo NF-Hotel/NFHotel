@@ -137,7 +137,7 @@ Nothing in it is backed up: its secrets are re-issued and its history is accepte
 
 1. On the node, as root: `bash ops/scripts/create-monitoring-lxc.sh <id> --apply` (the steps of [Monitoring](Monitoring#part-b-the-container-proxmox-node-as-root)).
 2. Re-issue the three secrets: a new Discord webhook in #nf-hotel-alerts, the ping address of the Healthchecks.io check, and a new Grafana password ([Monitoring](Monitoring#part-a-accounts-and-access-browser)).
-3. In the LXC: check out the repository in `/opt/nfhotel-monitoring`, write the secrets as [Monitoring](Monitoring#part-c-the-monitoring-inside-the-container) says, and run `bash ops/scripts/deploy-monitoring.sh --apply`.
+3. In the LXC: check out the repository in `/opt/nfhotel-monitoring`, write the secrets as [Monitoring](Monitoring#part-c-the-monitoring-inside-the-container) says, and run `bash ops/scripts/deploy-monitoring.sh --apply`, then `bash ops/scripts/pull-monitoring.sh --install`, so the LXC deploys each later change of `main` by itself again (MIL-051).
 4. If the LXC got a new tailnet address, write it in `ops/deploy/alloy/alloy.env` on `nf-hotel` and re-run CD.
 
 ## The drill
