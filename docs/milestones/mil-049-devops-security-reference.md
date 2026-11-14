@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-30 for documentation of every DevOps choice: the workflows, the containers and where their images come from, the security controls, and the monitoring and alerts, each with why it was chosen and its alternatives. S01 accepted the plan ("Accepter planen"); accepted after RC-249 Go | [a22d404] |
+| 2026-10-30 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; S01 asked in chat on 2026-10-30 for documentation of every DevOps choice: the workflows, the containers and where their images come from, the security controls, and the monitoring and alerts, each with why it was chosen and its alternatives. S01 accepted the plan ("Accepter planen"); accepted after RC-249 Go | [a22d404] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The review record of the plan is RC-371; it was RC-249, an ID that two records carried | pending |
 
 ---
 

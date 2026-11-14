@@ -1,15 +1,16 @@
-# RC-249 Review of MIL-049
+# RC-371 Review of MIL-049
 
 ## Metadata
 | Key | Value |
 | --- | --- |
-| ID | RC-249 |
+| ID | RC-371 |
 | CrossReference | [MIL-049], [QC-MIL-001] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-30 | Accepted | mikemike | AI as stand-in for S01 | Initial version | [a22d404] |
+| 2026-10-30 | Deprecated | mikemike | AI as stand-in for S01 | Initial version | [a22d404] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | ID changed from RC-249 to RC-371: two records carried RC-249 | pending |
 
 ---
 
