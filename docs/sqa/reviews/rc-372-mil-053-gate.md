@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-053 on Ops CI of `main` at 5846e91, the deploys of the monitoring on `nf-monitoring` of 2026-11-14, and the numbers of Prometheus, GitHub code scanning and SonarQube Cloud read in the same minute; Go; mode autonomous, not independent | [8321a92] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | F5 added: the scan exporter reads the measures of SonarQube Cloud that are deprecated, so the summary page of sonarcloud.io shows two other numbers than the dashboard; the evidence of 23:23 UTC and an action item for S01; Go kept | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | F5 added: the scan exporter reads the measures of SonarQube Cloud that are deprecated, so the summary page of sonarcloud.io shows two other numbers than the dashboard; the evidence of 23:23 UTC and an action item for S01; Go kept | [6a47fcb] |
 
 ---
 
@@ -176,3 +176,4 @@ wrote the code of MIL-053 and this record.
 [QC-PY-001]: ../../../framework/qc/code/qc-programming-python.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [8321a92]: https://github.com/NF-Hotel/NFHotel/commit/8321a922c12cd49320870185a8b0e7b6d7e07a72
+[6a47fcb]: https://github.com/NF-Hotel/NFHotel/commit/6a47fcb8d151029e9588abd6a864b8ba7c208ac8
