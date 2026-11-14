@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0008 |
-| CrossReference | [BC-001], [ADR-0004], [ADR-0007], [MIL-021], [MIL-022], [ADR-0011], [ADR-0018], [RC-161], [RC-166], [MIL-074], [RC-361], [MIL-076] |
+| CrossReference | [BC-001], [ADR-0004], [ADR-0007], [MIL-021], [MIL-022], [ADR-0011], [ADR-0018], [RC-161], [RC-166], [MIL-074], [RC-361], [MIL-076], [RC-364] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Decision 1 and the current state: the copy off the VM (D7) is also tried every hour on its own, and the alert BackupTargetDown tells a target that is down while its host is on (MIL-074); reviewed in RC-361, autonomous, not independent | [d8275fa] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | Decisions 1 and 3, the current state and the affected artifacts: every dump is read back to its end while it is made, with the reports backup_check, nfhotel_backup_tables and nfhotel_backup_bytes and the alerts BackupUnreadable and BackupShrunk; a failed read-back only warns until S01 decides at the gate (MIL-076); reviewed in RC-364, autonomous, not independent | pending |
+| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Decision 1 and the current state: the copy off the VM (D7) is also tried every hour on its own, and the alert BackupTargetDown tells a target that is down while its host is on (MIL-074); reviewed in RC-361, autonomous, not independent | [d8275fa] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Decisions 1 and 3, the current state and the affected artifacts: every dump is read back to its end while it is made, with the reports backup_check, nfhotel_backup_tables and nfhotel_backup_bytes and the alerts BackupUnreadable and BackupShrunk; a failed read-back only warns until S01 decides at the gate (MIL-076); reviewed in RC-364, autonomous, not independent | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -95,3 +95,4 @@ WAL archiving is not chosen now: a daily dump with a tested restore fits the dat
 [RC-361]: ../sqa/reviews/rc-361-mil-074-code.md
 [d8275fa]: https://github.com/NF-Hotel/NFHotel/commit/d8275fa8644f686d0bd751a5bc0ac2623fd0c916
 [MIL-076]: ../milestones/mil-076-every-nightly-backup-read-back.md
+[RC-364]: ../sqa/reviews/rc-364-mil-076-code.md

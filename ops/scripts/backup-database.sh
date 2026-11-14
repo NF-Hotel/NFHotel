@@ -9,7 +9,8 @@
 #      the same container, pg_restore --list (the tables) and pg_restore --file=/dev/null (every
 #      block to the end), through named pipes in a private folder, so the clear dump is on no
 #      disk; a read-back that fails warns and reports no backup_check, and the backup goes on
-#      until S01 decides otherwise at the gate of MIL-076
+#      until S01 decides otherwise at the gate of MIL-076; a reader that hangs is stopped after
+#      30 minutes (NFHOTEL_READ_BACK_SECONDS shortens it for the tests)
 #   2. encrypt the dump with age to the public key of S03; the VM cannot read its own
 #      backups, so a stolen VM disk does not reveal them
 #   2b. archive the settings and secrets that the rebuild of the VM needs (MIL-037, ADR-0025):
