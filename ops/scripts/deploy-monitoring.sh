@@ -1,23 +1,29 @@
 #!/usr/bin/env bash
 # Start or update the monitoring of NF Hotel in its LXC container (ADR-0020, MIL-023 task 7).
-# S03 runs it as root in a checkout of NF-Hotel/NFHotel on the LXC, after
-# scripts/create-monitoring-lxc.sh, and again after a change of ops/deploy/monitoring/.
+# The pull deploy of ADR-0044 (scripts/pull-monitoring.sh, MIL-051) runs it as root in the
+# checkout on the LXC after each change of the monitoring on main; S03 runs it by hand after
+# scripts/create-monitoring-lxc.sh, and in an emergency.
 #
 #   1. refuse unless monitoring.env names MONITORING_BIND as an address of this host
 #   2. refuse unless the three secret files exist, are not empty, and no group or other
 #      user can read them; the GitHub token of the scan exporter (MIL-053) is optional
 #   3. check the configuration with the tools of the pinned images: promtool check
 #      config, promtool test rules, amtool check-config, loki -verify-config
-#   4. give each secret file to the user its container runs as (0400), the folder 0711
+#   4. give each secret file to the user its container runs as (0400), the folder 0711, and
+#      make the report folder that the scan exporter serves (MIL-051)
 #   5. docker compose up -d --wait, so it returns once every service is running; each service
 #      whose configuration folder changed is recreated, so it reads the new files
-#   6. check that every container of the monitoring keeps the rights of its profile in
+#   6. check that Prometheus, Alertmanager, Loki, Grafana and the blackbox exporter answer their
+#      ready endpoints, and that Prometheus has loaded every rule of the rule files (MIL-051)
+#   7. check that every container of the monitoring keeps the rights of its profile in
 #      ops/security/container-profiles.tsv (scripts/check-container-runtime.sh, MIL-080)
 #
 # Usage: deploy-monitoring.sh [--apply]
 #   --apply  start or update the services; without it the script only checks (a dry run)
 # Exit:  0 checked (or started); 1 a check or the start failed; 2 usage error
-# Needs: bash 4+, root, docker with the compose plugin, ip (iproute2)
+# Needs: bash 4+, root, docker with the compose plugin, ip (iproute2), curl
+# Environment: MONITORING_REPORT_DIR, the report folder (default
+#   /var/lib/nfhotel-monitoring/metrics; the stack test sets its own)
 
 set -euo pipefail
 
@@ -72,8 +78,10 @@ fi
 echo "==> checking the configuration with the pinned tools"
 # The delimiter is | because the image names hold a slash.
 image() { sed -n "s|^    image: \(.*$1.*\)$|\1|p" "$dir/docker-compose.yml" | head -n 1; }
-docker run --rm --entrypoint promtool -v "$dir/prometheus:/p:ro" -w /p "$(image prom/prometheus)" \
-  check config /p/prometheus.yml >/dev/null || die "promtool check config failed"
+# Mounted where prometheus.yml looks for its rule files, so check config reads every one of
+# them, also a rule file that rules-test.yml does not list (MIL-051).
+docker run --rm --entrypoint promtool -v "$dir/prometheus:/etc/prometheus:ro" "$(image prom/prometheus)" \
+  check config /etc/prometheus/prometheus.yml >/dev/null || die "promtool check config failed"
 docker run --rm --entrypoint promtool -v "$dir/prometheus:/p:ro" -w /p "$(image prom/prometheus)" \
   test rules rules-test.yml >/dev/null || die "the unit tests of the alert rules failed"
 docker run --rm --entrypoint amtool -v "$dir/alertmanager:/etc/alertmanager:ro" \
@@ -102,6 +110,12 @@ chown 10001:10001 "$scan_token" || die "cannot change the owner of the scan expo
 chmod 0400 "$dir/secrets/discord-webhook-url" "$dir/secrets/healthchecks-watchdog-url" \
   "$dir/secrets/grafana-admin-password" "$scan_token" || die "cannot set the mode of the secrets"
 chmod 0711 "$dir/secrets" || die "cannot set the mode of $dir/secrets"
+# The report folder of the host (MIL-051): the scan exporter (user 10001) serves the reports in
+# it, such as the state of the pull deploy (ADR-0044). It is made here, so docker never makes
+# it, and compose reads the same path from the environment.
+export MONITORING_REPORT_DIR="${MONITORING_REPORT_DIR:-/var/lib/nfhotel-monitoring/metrics}"
+[[ "$MONITORING_REPORT_DIR" == /* ]] || die "MONITORING_REPORT_DIR must be an absolute path"
+install -d -m 0755 "$MONITORING_REPORT_DIR" || die "cannot make $MONITORING_REPORT_DIR"
 
 # The configuration files are bind mounts, so compose does not see a change in them, and a
 # running Prometheus kept its old rules (the alarm drill of 2026-10-24). A hash of each folder
@@ -116,9 +130,56 @@ LOKI_CONFIG_HASH="$(hash_of loki)" || die "cannot hash loki/"
 GRAFANA_CONFIG_HASH="$(hash_of grafana)" || die "cannot hash grafana/"
 SCAN_EXPORTER_CONFIG_HASH="$(hash_of scan-exporter)" || die "cannot hash scan-exporter/"
 
+compose() { (cd "$dir" && docker compose --env-file monitoring.env "$@"); }
 echo "==> starting the monitoring on $bind"
-(cd "$dir" && docker compose --env-file monitoring.env up -d --remove-orphans --wait --wait-timeout 180) ||
+compose up -d --remove-orphans --wait --wait-timeout 180 ||
   die "the monitoring did not start; see: docker compose --env-file monitoring.env logs"
+
+# A service can run without answering, and Prometheus keeps running when it cannot read a rule
+# file, so `up --wait` proves neither (MIL-051 task 3). Each service must answer its ready
+# endpoint (Alertmanager and blackbox publish no port, so they are asked from inside their
+# containers), and every rule of the rule files must be loaded. A failure fails the deploy, so
+# the pull deploy goes back to the commit that ran before (ADR-0044).
+echo "==> checking that the services answer and that Prometheus loaded every rule"
+rule_names="$(sed -n 's/^ *- \(alert\|record\): *\([^ ]*\) *$/\2/p' "$dir"/prometheus/rules/*.yml | sort -u)"
+[[ -n "$rule_names" ]] || die "no rule in $dir/prometheus/rules"
+healthy() {
+  local url loaded name
+  for url in "http://$bind:9090/-/ready" "http://$bind:3100/ready" "http://$bind:3000/api/health"; do
+    curl -fsS -o /dev/null --max-time 5 "$url" 2>/dev/null || {
+      unhealthy="$url does not answer"
+      return 1
+    }
+  done
+  compose exec -T alertmanager wget -q -O /dev/null -T 5 http://localhost:9093/-/ready >/dev/null 2>&1 || {
+    unhealthy="Alertmanager does not answer /-/ready"
+    return 1
+  }
+  compose exec -T blackbox wget -q -O /dev/null -T 5 http://localhost:9115/-/healthy >/dev/null 2>&1 || {
+    unhealthy="the blackbox exporter does not answer /-/healthy"
+    return 1
+  }
+  loaded="$(curl -fsS --max-time 10 "http://$bind:9090/api/v1/rules" 2>/dev/null)" || {
+    unhealthy="Prometheus does not answer /api/v1/rules"
+    return 1
+  }
+  unhealthy=""
+  for name in $rule_names; do
+    [[ "$loaded" == *"\"name\":\"$name\""* ]] || unhealthy+=" $name"
+  done
+  [[ -z "$unhealthy" ]] || {
+    unhealthy="Prometheus has not loaded the rules$unhealthy"
+    return 1
+  }
+}
+unhealthy=""
+for _ in $(seq 1 36); do
+  healthy && break
+  sleep 5
+done
+[[ -z "$unhealthy" ]] || die "the monitoring is not healthy after 3 minutes: $unhealthy"
+echo "    the five services answer, and Prometheus loaded all $(wc -w <<<"$rule_names") rules"
+
 echo "==> checking the containers of the monitoring against their profiles (MIL-080)"
 bash "$ROOT/scripts/check-container-runtime.sh" --filter label=com.docker.compose.project=nfhotel-monitoring ||
   die "a container of the monitoring breaks its profile in ops/security/container-profiles.tsv"

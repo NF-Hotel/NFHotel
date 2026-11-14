@@ -35,8 +35,9 @@ image() { sed -n "s|^    image: \(.*$1.*\)$|\1|p" "$2" | head -n 1; }
 echo "https://discord.com/api/webhooks/0/stand-in" >"$W/discord-webhook-url"
 echo "https://hc-ping.com/stand-in" >"$W/healthchecks-watchdog-url"
 
-check "promtool check config" docker run --rm --entrypoint promtool -v "$mon/prometheus:/p:ro" -w /p \
-  "$(image prom/prometheus "$mon/docker-compose.yml")" check config /p/prometheus.yml
+# Mounted where prometheus.yml looks for its rule files, so every rule file is checked (MIL-051).
+check "promtool check config" docker run --rm --entrypoint promtool -v "$mon/prometheus:/etc/prometheus:ro" \
+  "$(image prom/prometheus "$mon/docker-compose.yml")" check config /etc/prometheus/prometheus.yml
 check "promtool test rules" docker run --rm --entrypoint promtool -v "$mon/prometheus:/p:ro" -w /p \
   "$(image prom/prometheus "$mon/docker-compose.yml")" test rules rules-test.yml
 check "amtool check-config" docker run --rm --entrypoint amtool -v "$mon/alertmanager:/etc/alertmanager:ro" \
