@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-075: the passport key out of the web container, with its code review RC-360 (Go-with-conditions) | [8ca858a] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-074: the copy off the VM every hour, the alert BackupTargetDown and the scheduled task of the backup target, with its code review RC-361 (Go-with-conditions) | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-074: the copy off the VM every hour, the alert BackupTargetDown and the scheduled task of the backup target, with its code review RC-361 (Go-with-conditions) | [d8275fa] |
 
 ---
 
@@ -442,3 +442,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-357]: ./reviews/rc-357-mil-052-revision.md
 [RC-358]: ./reviews/rc-358-mil-018-revision.md
 [8ca858a]: https://github.com/NF-Hotel/NFHotel/commit/8ca858a67009163c8e76e707abf63986fa51e220
+[d8275fa]: https://github.com/NF-Hotel/NFHotel/commit/d8275fa8644f686d0bd751a5bc0ac2623fd0c916
