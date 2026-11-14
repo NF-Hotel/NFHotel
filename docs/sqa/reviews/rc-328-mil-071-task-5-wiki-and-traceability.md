@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Proposed | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent | [6e858fa] |
+| 2026-11-11 | Deprecated | Claude (AI) | S01 | Initial version; pre-review by the AI, not independent | [6e858fa] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Criterion 14 passes: the published wiki checked on 2026-11-13 and again on 2026-11-14 after the merge of 1a1796b; accepted by the AI as stand-in for S01 at S01's word in chat ("Ja, godkend dem", to "Skal jeg godkende de fire reviews af MIL-071 i S02's sted og lukke milestonen?"); mode autonomous, not independent | [e26fdf9] |
 
 ---
 
@@ -19,7 +20,7 @@
 - Checklist used: [QC-WIKI-001] (`qc-wiki`) for the wiki; the matrix is checked for rows and links
 - Scope: delta review of the changed text and rows
 - Language and domain: en / it; the PO language of the project is English (`docs/artifact-registry.md`), so the wiki exists once, in English
-- Mode: supervised (the AI wrote the change and the pre-review; S01 reviews)
+- Mode: supervised for the pre-review (the AI wrote the change and the pre-review); criterion 14 checked and the review accepted on 2026-11-14 in autonomous mode by the AI as stand-in for S01, at S01's word in chat: not independent
 
 ## Checklist Results
 
@@ -38,7 +39,7 @@
 | 11 | Every page starts with the language line | Pass | |
 | 12 | Page names carry the language code | N-A | English has no suffix |
 | 13 | Code, commands, file names and IDs stay in English | Pass | |
-| 14 | The sidebar, every page and every link were checked on the published wiki | Open | Done after the merge, when the publish workflow has copied the page; recorded in the review of task 6 |
+| 14 | The sidebar, every page and every link were checked on the published wiki | Pass | 2026-11-14 05:21Z, after the merge of #678: the wiki at 08bda09 (published from 1a1796b) holds the 25 pages of `docs/wiki` with the same blobs; `_Sidebar`, `Home` and `Appendix` link the page; its ten anchors and its link to `Home` resolve, in the files and on the rendered page (HTTP 200, the ten `user-content` anchors). First checked on 2026-11-13 on the wiki of 611909b, with the same result |
 | 15 | A change to the layout rules is made in the template | N-A | No change to the layout |
 
 The facts of the page were read against the code and the service documentation: the horizon, the two earlier years at least, the holidays by name, the weeks without holiday days, the thresholds and percentages of the settings, the cap and the minimum price applied by the website, the labels "Written by an AI" and "Built from the figures", the empty states and the limits (whole-hotel occupancy, no suggestion without a base rate or with too little history).
@@ -47,14 +48,14 @@ Traceability matrix: [MIL-071] has its row with the reviews RC-323 to RC-328 and
 
 ## Overall Verdict
 
-Go: every Mandatory criterion that applies passes, except criterion 14, which cannot be checked before the merge. The matrix holds every artifact of the milestone. The notebook-market-analysis repository has its own documentation task (its MIL-002 task 6); the wiki page describes the rule in plain words and does not copy it.
+Go: every Mandatory criterion that applies passes; criterion 14 passed on the published wiki after the merge (2026-11-13, again on 2026-11-14). The matrix holds every artifact of the milestone. The notebook-market-analysis repository has its own documentation task (its MIL-002 task 6); the wiki page describes the rule in plain words and does not copy it.
 
 ## Action Items
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| Accept the wiki page and the matrix rows | S01 | with the pull request |
-| Check the published wiki page and its links after the merge | S02 | task 6 |
+| Accept the wiki page and the matrix rows | AI as stand-in for S01 | done 2026-11-14 |
+| Check the published wiki page and its links after the merge | AI as stand-in for S02 | done 2026-11-13 and 2026-11-14 (criterion 14) |
 
 ---
 
@@ -64,3 +65,4 @@ Go: every Mandatory criterion that applies passes, except criterion 14, which ca
 [MIL-055]: ../milestones/mil-055-room-price-suggestions.md
 [QC-WIKI-001]: ../../framework/qc/artifacts/qc-wiki.md
 [6e858fa]: https://github.com/NF-Hotel/NFHotel/commit/6e858fa32225ca7fee8351e1c76d5153ae906888
+[e26fdf9]: https://github.com/NF-Hotel/NFHotel/commit/e26fdf91732c20beb97bceea4b9bfdda9606da52

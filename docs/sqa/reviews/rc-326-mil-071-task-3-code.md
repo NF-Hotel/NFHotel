@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Proposed | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | [5649c48] |
+| 2026-11-11 | Deprecated | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | [5649c48] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S02 | Accepted by the AI as stand-in for S02 at S01's word in chat ("Ja, godkend dem", to "Skal jeg godkende de fire reviews af MIL-071 i S02's sted og lukke milestonen?"); mode autonomous, not independent; the action items of tasks 4 and 5 marked done | [e26fdf9] |
 
 ---
 
@@ -19,7 +20,7 @@
 - Checklist used: [QC-CS-001] (`qc-programming-csharp`)
 - Scope: full review of the changed and new files
 - Language and domain: n/a (technical type)
-- Mode: supervised (the AI wrote the code and the pre-review; the reviewer reads the pull request)
+- Mode: supervised for the pre-review (the AI wrote the code and the pre-review); accepted on 2026-11-14 in autonomous mode by the AI as stand-in for S02, at S01's word in chat: not independent
 
 ## Checklist Results
 
@@ -55,12 +56,13 @@ Go: every Mandatory criterion passes, criterion 21 on condition. Go/No-Go criter
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| Accept the code of task 3 | S02 | with the pull request |
-| Reword the empty states and show the new fields on the page | S02 | task 4 |
-| Bring the traceability matrix up to date | S02 | task 5 |
+| Accept the code of task 3 | AI as stand-in for S02 | done 2026-11-14 |
+| Reword the empty states and show the new fields on the page | S02 | done in task 4 (RC-327) |
+| Bring the traceability matrix up to date | S02 | done in task 5 (RC-328) |
 
 ---
 
 [MIL-071]: ../milestones/mil-071-price-suggestions-from-the-service.md
 [QC-CS-001]: ../../framework/qc/code/qc-programming-csharp.md
 [5649c48]: https://github.com/NF-Hotel/NFHotel/commit/5649c4831433f348867ddeb3163554401d39f2cd
+[e26fdf9]: https://github.com/NF-Hotel/NFHotel/commit/e26fdf91732c20beb97bceea4b9bfdda9606da52

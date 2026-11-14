@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Proposed | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | [e68bde9] |
+| 2026-11-11 | Deprecated | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | [e68bde9] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S02 | Accepted by the AI as stand-in for S02 at S01's word in chat ("Ja, godkend dem", to "Skal jeg godkende de fire reviews af MIL-071 i S02's sted og lukke milestonen?"); mode autonomous, not independent; the action item of task 6 marked done | [e26fdf9] |
 
 ---
 
@@ -19,7 +20,7 @@
 - Checklist used: [QC-CS-001] (`qc-programming-csharp`)
 - Scope: full review of the changed files and the new tests
 - Language and domain: n/a (technical type)
-- Mode: supervised (the AI wrote the code and the pre-review; the reviewer reads the pull request)
+- Mode: supervised for the pre-review (the AI wrote the code and the pre-review); accepted on 2026-11-14 in autonomous mode by the AI as stand-in for S02, at S01's word in chat: not independent
 
 ## Checklist Results
 
@@ -55,11 +56,12 @@ Go: every Mandatory criterion passes, criterion 21 on condition. Not yet done: t
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| Accept the code of task 4 | S02 | with the pull request |
-| Look at the page on the dev VM with a real run | S02 | task 6 |
+| Accept the code of task 4 | AI as stand-in for S02 | done 2026-11-14 |
+| Look at the page on the dev VM with a real run | S02 | done in task 6 (RC-329, criterion 9) |
 
 ---
 
 [MIL-071]: ../milestones/mil-071-price-suggestions-from-the-service.md
 [QC-CS-001]: ../../framework/qc/code/qc-programming-csharp.md
 [e68bde9]: https://github.com/NF-Hotel/NFHotel/commit/e68bde92fb7c7286fb911e6ab4b711a7577debe4
+[e26fdf9]: https://github.com/NF-Hotel/NFHotel/commit/e26fdf91732c20beb97bceea4b9bfdda9606da52
