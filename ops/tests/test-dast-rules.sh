@@ -94,7 +94,9 @@ api_report() { # api_report <file> <instances in the 400 range> <instances in th
     {pluginid: "100000", alert: "A Server Error response code was returned by the server",
      riskcode: "1", riskdesc: "Low (High)", instances: $server}]}]}' >"$1"
 }
-answer() { printf '{"method": "%s", "uri": "http://nfhotel-api:8080%s", "evidence": "%s"}' "$1" "$2" "$3"; }
+# answer <method> <path> <status>: one answer of the API, as ZAP writes it for the API on its internal
+# network (ADR-0015).
+answer() { printf '{"method": "%s", "uri": "http://nfhotel-api:8080%s", "evidence": "%s"}' "$1" "$2" "$3"; } # NOSONAR
 api_report "$W/api-ok.json" "[$(answer POST /api/rooms 400),$(answer POST /api/auth/login 401)]" \
   "[$(answer POST /api/market-analysis/runs 503)]"
 api_report "$W/api-500.json" "[$(answer POST /api/rooms 400)]" \

@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | RC-363 |
-| CrossReference | [MIL-077], [RC-337], [MIL-027], [MIL-044], [ADR-0002], [ADR-0004], [ADR-0015], [ADR-0017], [ADR-0032], [ADR-0037], [QC-CS-001], [QC-SH-001], [QC-YML-001], [QC-WF-001], [RC-278], [RC-341] |
+| CrossReference | [MIL-077], [RC-337], [MIL-027], [MIL-044], [ADR-0002], [ADR-0004], [ADR-0015], [ADR-0017], [ADR-0032], [ADR-0033], [ADR-0037], [QC-CS-001], [QC-SH-001], [QC-YML-001], [QC-WF-001], [RC-278], [RC-341] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | [bd11790] |
+| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | [bd11790] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | F13 to F15 from the first checks of the pull request: the generated OpenAPI code left out of the API, the address in a test report marked, the line that only the build of the document runs<br>Criterion 4 read on the run by hand 43603868538; still Go-with-conditions | pending |
 
 ---
 
@@ -157,8 +158,8 @@
 | 1 | Pass | `HostileInputTests` takes the endpoints from the test API and asserts that it attacked as many as the API maps. Before the fixes it failed 350 of 901 requests: 328 refusals named a .NET type, and 22 values were taken (text with a NUL, a right-to-left override or of one megabyte in a search, undefined enum values, a floor or a page below one, dates far from any date of the hotel, a NUL or an override in a room number). The final test sends 898 requests and fails none. With `POST api/rooms/search` changed to throw `InvalidOperationException` on its input, it failed 1 of 898: "plausible values -> 500, a fault" |
 | 2 | Pass | `HostileInputRegressionTests`: 14 of the 21 cases of the first group failed before their fixes, then 2 of 3 (an excluded booking key of 0, a guest key below one), 1 of 2 (a public booking for 0 guests) and 2 of 3 (a benchmark session of 201 characters, a schema version of 0); all pass after. `ApiSecurityHeadersTests`: 5 of 5 failed before the header (F4) |
 | 3 | Pass | The build writes `g/openapi/nfhotel-api.json` (the log of the run by hand: "Writing document named 'v1'"); `OpenApiDocumentTests` holds the document to every endpoint that the API maps and the API in Production to a 404 at `/openapi/v1.json`; the first failed when the document left out `/health`, the second when `MapOpenApi` was added |
-| 4 | Pending | The run by hand 43601706848 at bc7e722: the API scan imported 67 addresses of the document, 496 in all, from 13:55 to 13:58 UTC; no High alert, no answer 500 (400: 236, 401: 1, 404: 347, 405: 188, 409: 2, 415: 39, 422: 11, 429: 40); the one 401 was the sign-in with the example values of the document, so the scan was signed in. Its warnings are handled in the rules file or fixed (F4, F5). The run by hand 43603868538 at 2903e09, and the weekly run of 2026-11-16 for the gate (task 5) |
-| 5 | Pending | The documents, the rules and the linters above pass, and this review is Go-with-conditions; the checks of the pull request |
+| 4 | Pending | The run by hand 43601706848 at bc7e722: the API scan imported 67 addresses of the document, 496 in all, from 13:55 to 13:58 UTC; no High alert, no answer 500 (400: 236, 401: 1, 404: 347, 405: 188, 409: 2, 415: 39, 422: 11, 429: 40); the one 401 was the sign-in with the example values of the document, so the scan was signed in. Its warnings are handled in the rules file or fixed (F4, F5). The run by hand 43603868538 at 2903e09, after F4 and F5: 10021 is gone, 2 and 40014 warn under their lines, 10104 is skipped by its line; no High alert, no answer 500 (400: 235, 401: 1, 404: 351, 405: 188, 415: 39, 422: 11, 429: 40); FAIL-NEW 0, WARN-NEW 2, PASS 110. The weekly run of 2026-11-16 for the gate (task 5) |
+| 5 | Pending | The documents, the rules and the linters above pass, and this review is Go-with-conditions. The first checks of the pull request (run 43604619113) failed the coverage floor and the quality gate of SonarQube Cloud (F13, F14), fixed on the branch; the checks of the fix |
 
 ## Findings of the review
 
@@ -202,14 +203,30 @@
 - **F12, note: two test-support changes.** The pattern of `AsyncRulesTests` now allows an attribute with arguments
   in a parameter list, such as `[Range(1, 10)]`, which the changed controllers have; `RepositoryRoot` moved to
   `NFHotel.TestSupport`, so the API tests use it too.
+- **F13, fixed: generated code in the coverage of the API.** The source generator of `Microsoft.AspNetCore.OpenApi`
+  copied the XML comments of the API into it as code, more than 3,000 lines that no test runs, so the floor step of
+  the first checks measured NFHotel.Api at 15.56 % (590 of 3,791 lines) and the total at 76.95 %. The document needs
+  the routes, the parameters and the schemas, not the descriptions, and the running API never serves it, so
+  `NFHotel.Api.csproj` leaves the generator out instead of excluding its file from coverage ([ADR-0033] decision 5).
+  The build still writes the document (OpenAPI 3.0.4, 56 paths), and the API assembly has no generated type.
+- **F14, fixed: a clear-text address in a test (SonarQube Cloud, rule S5332).** The fake report of the API scan in
+  `test-dast-rules.sh` holds `http://nfhotel-api:8080`, as ZAP writes it for the API on its internal network
+  ([ADR-0015]). It made the security rating of the new code B and failed the quality gate; it is marked `# NOSONAR`,
+  with the reason in the comment above it, as in the other tests of `ops/tests`. Three informational notes of CA1859
+  in `HostileInputTests` (a narrower return type, for speed) are left: test code that reads better with the wider type.
+- **F15, note: a line that no test reaches ([ADR-0033]).** `Program.cs` line 22,
+  `builder.Configuration.AddInMemoryCollection(OpenApiDocumentBuild.StandInSettings())`, runs only when the build
+  writes the document, never under the tests; `OpenApiDocumentTests` reads the document that it lets the build write.
+  Without the generated file, NFHotel.Api had 588 of 612 lines (96.08 %) in the first checks, against 519 of 542 on
+  main.
 
 ## Overall Verdict
 
 Go-with-conditions. Every applicable criterion of [QC-CS-001], [QC-SH-001], [QC-YML-001] and [QC-WF-001] passes,
-criterion 21 of [QC-CS-001] on the condition of [RC-278], after F1 to F4 were fixed on the branch; criteria 1 to 3
-of [MIL-077] pass. The conditions: every check of the pull request is green before the merge, and criterion 4 is
-read again on the run by hand at the head and on the weekly run of 2026-11-16, in the gate (task 5). The reviewer is
-not independent.
+criterion 21 of [QC-CS-001] on the condition of [RC-278], after F1 to F4 were fixed on the branch, and F13 and F14
+after the first checks of the pull request; criteria 1 to 3 of [MIL-077] pass. The conditions: every check of the
+pull request is green before the merge, and criterion 4 is read again on the weekly run of 2026-11-16, in the gate
+(task 5). The reviewer is not independent.
 
 ## Action Items
 
@@ -232,6 +249,7 @@ not independent.
 [ADR-0015]: ../../adr/adr-0015-mobile-app-staff-token-access.md
 [ADR-0017]: ../../adr/adr-0017-staff-passwords-and-audit.md
 [ADR-0032]: ../../adr/adr-0032-what-code-scanning-shows.md
+[ADR-0033]: ../../adr/adr-0033-sonarqube-cloud-coverage.md
 [ADR-0037]: ../../adr/adr-0037-github-actions-hardening-policy.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md

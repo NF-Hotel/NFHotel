@@ -44,4 +44,16 @@
     </PackageReference>
   </ItemGroup>
 
+  <!--
+    The source generator of Microsoft.AspNetCore.OpenApi would copy every XML comment into the API as code, more than
+    3,000 lines, only to add descriptions to the document. The API scan needs the routes, parameters and schemas, not
+    the descriptions, and the running API never serves the document, so the generator stays off and no code that no
+    test reaches is added (ADR-0033, MIL-077).
+  -->
+  <Target Name="LeaveOutTheOpenApiXmlCommentGenerator" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition=" '%(Filename)' == 'Microsoft.AspNetCore.OpenApi.SourceGenerators' " />
+    </ItemGroup>
+  </Target>
+
 </Project>
