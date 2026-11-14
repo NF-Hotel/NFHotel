@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-051, planned at S01's word in chat on 2026-11-01 and accepted with the plan of 2026-11-14 ("Du godkender for mig", RC-356 Go); written by the AI | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-051, planned at S01's word in chat on 2026-11-01 and accepted with the plan of 2026-11-14 ("Du godkender for mig", RC-356 Go); written by the AI; accepted after RC-365 Go | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -24,8 +24,9 @@ godkender for mig"), and the revision of the plan was reviewed in [RC-356] (Go),
 record is task 1 of [MIL-051].
 
 **The problem.** The monitoring runs in the Linux container (LXC) `nf-monitoring` from a checkout of the repository in
-`/opt/nfhotel-monitoring` ([ADR-0020]). Ops CI checks its configuration on every pull request, but the configuration
-reaches the LXC only when a person runs `deploy-monitoring.sh --apply` there ([MIL-023] task 7). A merged rule can
+`/opt/nfhotel-monitoring` ([ADR-0020]). Ops CI, the continuous integration (CI) workflow of `ops/`, checks its
+configuration on every pull request, but the configuration reaches the LXC only when a person runs
+`deploy-monitoring.sh --apply` there ([MIL-023] task 7). A merged rule can
 wait unapplied, and nothing tells that the running stack differs from `main`. Grafana Alloy on the VM is out of scope:
 the release deploy already installs it.
 
@@ -83,11 +84,11 @@ before when a check or the start fails.
 6. **Back on failure.** When the start or its checks fail, it checks out the deployed commit and runs
    `deploy-monitoring.sh --apply` again.
 7. **Recorded and reported.** The deployed commit is kept in `/var/lib/nfhotel-monitoring`. The report
-   `monitoring_pull.prom` gives the deployed commit, the time of the last run that ended well, whether the last
+   `monitoring_pull.prom` gives the deployed commit, the time of the last run that read `main`, whether the last
    attempt failed, and since when a change waits. The scan exporter of [MIL-053] serves every report of a mounted
    folder after its own metrics, so Prometheus reads it with the job `scans`, and no new service or image is needed.
 8. **Alerts.** `MonitoringDeployFailed` (the last attempt failed), `MonitoringDeployBehind` (a change of the
-   monitoring paths has waited 30 minutes), `MonitoringDeployStale` (no run has ended well for an hour) and
+   monitoring paths has waited 30 minutes), `MonitoringDeployStale` (no run has read `main` for an hour) and
    `MonitoringDeployReportMissing` go to Discord through the existing route.
 9. **It updates itself.** After a deploy, the script of the new commit installs itself and the units
    (`pull-monitoring.sh --install`), so a change of them is deployed like any other; the copy is replaced by a rename,
