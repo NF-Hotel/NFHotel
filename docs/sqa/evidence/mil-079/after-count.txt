@@ -1,0 +1,5 @@
+$ for n in FLZ-000001 FLZ-000002 FLZ-000003 FLZ-999999; do printf "%s  " "$n"; curl -s "$HOTEL/booking/$n" | grep -q pub-receipt-number && echo "booking shown" || echo "not found"; done
+FLZ-000001  not found
+FLZ-000002  not found
+FLZ-000003  not found
+FLZ-999999  not found

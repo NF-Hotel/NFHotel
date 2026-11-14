@@ -1,0 +1,10 @@
+$ curl -s "$HOTEL/booking/FLZ-000001" | grep -c 'Keep this number'
+0
+$ curl -s "$HOTEL/booking/FLZ-000001" | grep -cE '<dt>|<dd'
+0
+$ curl -s "$HOTEL/booking/FLZ-000001" | grep -oE 'aria-label="Find your booking"|id="booking-(number|email)"|value="[^"]*"'
+aria-label="Find your booking"
+id="booking-number"
+value="FLZ-000001"
+id="booking-email"
+value=""
