@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using NFHotel.Api.Contracts;
 using NFHotel.Application.Dto.RoomRates;
 using NFHotel.Application.Dto.Staff;
+using NFHotel.Application.Errors;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.ValueObjects;
 
@@ -111,6 +112,24 @@ public sealed class RoomRatesEndpointTests
         // Assert
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Contains(RoomRateErrors.PriceInvalid, body!.Errors);
+    }
+
+    /// <summary>Negative (RC-266 N4): a first save that hits the unique index of the size at the same moment as another is 409 with the conflict code.</summary>
+    [Fact]
+    public async Task Put_UniqueIndexBrokenBySimultaneousSave_Returns409WithTheConflictCode()
+    {
+        // Arrange
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
+        factory.World.UnitOfWork.FailWith = new UniqueConstraintViolationException("duplicate key", "ux_room_rate_size");
+
+        // Act
+        using HttpResponseMessage response = await client.PutAsJsonAsync($"{Route}/single", new SetRoomRateRequest(100m), ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<RoomRateDto>? body = await response.Content.ReadFromJsonAsync<ApiResponse<RoomRateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Contains(RoomRateErrors.ConcurrencyConflict, body!.Errors);
     }
 
     /// <summary>Negative: a role without the permission is 403 and nothing is stored.</summary>

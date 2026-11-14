@@ -8,13 +8,15 @@ namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
 
 /// <summary>
 /// The conflict paths of the database against a real PostgreSQL: the exclusion constraint that stops a
-/// double booking, the unique room number and the concurrency token. Races are forced with a latch and
+/// double booking, the unique room number, the unique indexes of the pricing tables and the concurrency token. Races are forced with a latch and
 /// two contexts, never with a sleep, so the outcome is the same on every run.
 /// </summary>
 [Collection(PostgreSqlCollection.Name)]
 public sealed class ConflictPathTests : IAsyncLifetime
 {
     private static readonly DateOnly Today = new(2030, 1, 1);
+
+    private static readonly DateTimeOffset SetAt = new(2030, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
     private readonly PostgreSqlFixture _fixture;
 
@@ -161,7 +163,53 @@ public sealed class ConflictPathTests : IAsyncLifetime
 
     #endregion
 
+    #region Unique indexes of the pricing tables
+
+    /// <summary>Integration and negative (RC-266 N4): a second base rate for the same room size is stopped by the unique index of the size.</summary>
+    [Fact]
+    public async Task SaveChangesAsync_SecondRateForTheSameSize_ThrowsUniqueConstraintViolation()
+    {
+        // Arrange
+        await SaveRoomRateAsync(RoomSize.Single);
+
+        // Act
+        var exception = await Assert.ThrowsAsync<UniqueConstraintViolationException>(() => SaveRoomRateAsync(RoomSize.Single));
+
+        // Assert
+        Assert.Equal("ux_room_rate_size", exception.ConstraintName);
+    }
+
+    /// <summary>Integration and negative (RC-266 N4): a second row of pricing settings is stopped by the unique index of the one slot.</summary>
+    [Fact]
+    public async Task SaveChangesAsync_SecondRowOfPricingSettings_ThrowsUniqueConstraintViolation()
+    {
+        // Arrange
+        await SavePricingSettingAsync();
+
+        // Act
+        var exception = await Assert.ThrowsAsync<UniqueConstraintViolationException>(SavePricingSettingAsync);
+
+        // Assert
+        Assert.Equal("ux_pricing_settings_slot", exception.ConstraintName);
+    }
+
+    #endregion
+
     #region Helpers
+
+    private async Task SaveRoomRateAsync(RoomSize size)
+    {
+        await using var context = _fixture.CreateContext();
+        new RoomRateRepository(context).Add(RoomRate.Create(size, 100m, "manager", SetAt));
+        await new UnitOfWork(context).SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    private async Task SavePricingSettingAsync()
+    {
+        await using var context = _fixture.CreateContext();
+        new PricingSettingRepository(context).Add(PricingSetting.Create(20m, 15m, 80m, 40m, 30m, 0m, [RoomSize.Single], "manager", SetAt));
+        await new UnitOfWork(context).SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
 
     private async Task<(int RoomId, int GuestId)> SeedRoomAndGuestAsync()
     {
