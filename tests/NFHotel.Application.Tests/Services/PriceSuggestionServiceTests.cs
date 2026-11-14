@@ -344,6 +344,30 @@ public sealed class PriceSuggestionServiceTests
         Assert.True(effective.Value.Price >= 90m);
     }
 
+    /// <summary>
+    /// Boundary (RC-266 N1): settings that allow a discount of 100 percent and no minimum price cut a discount of the whole price to
+    /// 99.99 percent, the largest a price change takes, so the suggestion can be approved and the price never reaches 0.
+    /// </summary>
+    [Fact]
+    public async Task ApproveAsync_DiscountOfTheWholePrice_IsCutToTheLargestDiscountAndApproved()
+    {
+        // Arrange
+        MarketAnalysisContentDto content = PriceSuggestionTestData.Content();
+        MarketAnalysisPriceSuggestionsDto prices = content.PriceSuggestions!;
+        MarketAnalysisPriceSuggestionDto wholePrice = prices.Suggestions.Single(suggestion => suggestion.Change == "discount") with { Percent = 100m };
+        ServiceWorld world = WorldWithReport(content with { PriceSuggestions = prices with { Suggestions = [wholePrice] } });
+        world.PricingSettings.Add(PricingSetting.Create(20m, 100m, 80m, 40m, 100m, 0m, [RoomSize.Single], "manager", world.Clock.UtcNow));
+        PriceSuggestionItemDto item = Assert.Single((await OpenAsync(world)).Items);
+
+        // Act
+        Result<ApprovedPriceChange> approved = await world.PriceSuggestionService().ApproveAsync(new PriceSuggestionApproveRequest(item.Key), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(("single|2028-01-01|2028-02-29|-99.99", -99.99m, 0.01m, true), (item.Key, item.Percentage, item.NewPrice, item.WasLimited));
+        Assert.True(approved.IsSuccess);
+        Assert.Equal(-99.99m, Assert.Single(world.PriceChanges.Items).Percentage);
+    }
+
     /// <summary>Equivalence: the Manager may change the dates; the detail shows the dates that were approved, and one date alone keeps the other of the suggestion.</summary>
     [Fact]
     public async Task ApproveAsync_ChangedDates_AreUsed()
