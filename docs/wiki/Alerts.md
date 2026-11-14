@@ -1,6 +1,6 @@
 # Alerts
 
-**Decisions:** [ADR-0020](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0020-monitoring-stack.md) (the monitoring stack), [ADR-0023](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0023-application-telemetry.md) (application metrics and objectives). **Work:** MIL-023, MIL-034, MIL-036, MIL-040, MIL-049. **Why each product:** [Technology Choices](Technology-Choices).
+**Decisions:** [ADR-0020](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0020-monitoring-stack.md) (the monitoring stack), [ADR-0023](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0023-application-telemetry.md) (application metrics and objectives), [ADR-0044](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0044-monitoring-deployed-by-a-pull-on-its-host.md) (the deploy of the monitoring from `main`). **Work:** MIL-023, MIL-034, MIL-036, MIL-040, MIL-049, MIL-051. **Why each product:** [Technology Choices](Technology-Choices).
 
 Every alert of NF Hotel: what it measures, when it fires, how serious it is, where it goes and what to do. How to set up and operate the monitoring is on [Monitoring](Monitoring); its runbook table has the first commands for each alert. The rules are in `ops/deploy/monitoring/` and are checked in Ops CI with `promtool check rules`, `promtool test rules` (`prometheus/rules-test.yml`) and `amtool check-config`; the Loki rule is proven by `ops/tests/test-monitoring-stack.sh`.
 
@@ -27,7 +27,7 @@ flowchart LR
   HC -->|when the pings stop| D
 ```
 
-- **Where the facts come from.** Prometheus scrapes and evaluates every 30 seconds. Blackbox probes the site from the LXC (jobs `site`, `public_site` and `redirect`). Alloy on the VM pushes the host metrics, the container health (`nfhotel_container_healthy`, from `report-health.sh` every minute), the time of the last success of the backup, the copy off the VM, the certificate renewal and the runtime check of the containers (`nfhotel_task_last_success_timestamp_seconds`), the rules that a container breaks (`nfhotel_container_runtime_violation`, from `nfhotel-container-check.timer` every 15 minutes), the request metrics of the applications over OTLP, and the logs.
+- **Where the facts come from.** Prometheus scrapes and evaluates every 30 seconds. Blackbox probes the site from the LXC (jobs `site`, `public_site` and `redirect`). Alloy on the VM pushes the host metrics, the container health (`nfhotel_container_healthy`, from `report-health.sh` every minute), the time of the last success of the backup, the copy off the VM, the certificate renewal and the runtime check of the containers (`nfhotel_task_last_success_timestamp_seconds`), the rules that a container breaks (`nfhotel_container_runtime_violation`, from `nfhotel-container-check.timer` every 15 minutes), the request metrics of the applications over OTLP, and the logs. On the LXC, the scan exporter (job `scans`) also serves the reports of the LXC itself, such as the state of the deploy from `main` (MIL-051).
 - **Why the monitoring is not on the VM.** A monitor on the machine it watches goes down with it. The LXC on the same Proxmox node sees a VM that stops; Healthchecks.io sees a node that stops.
 - **Retention.** Metrics 30 days, logs 14 days.
 
@@ -104,6 +104,17 @@ The scan exporter (MIL-053) reads GitHub code scanning (CodeQL, Trivy, OWASP ZAP
 | `SonarQualityGateFailed` | `nfhotel_sonar_quality_gate_passed` | 0 for 1 hour | warning | The new code of `main` does not meet the quality gate | The project on sonarcloud.io shows the failing condition |
 | `ScanSourceDown` | `nfhotel_scan_source_up`, or the exporter is not scraped | A source not read for 1 hour | warning | The dashboard *Security scans* is stale | `docker compose logs scan-exporter` in the LXC; a missing or expired token stops `github_code_scanning` ([Monitoring](Monitoring#security-scans)) |
 
+### The deploy of the monitoring: `prometheus/rules/monitoring.yml`
+
+A timer on the LXC deploys each merged change of the monitoring from `main` (ADR-0044, MIL-051). At every run that reads `main` it writes `monitoring_pull.prom`, which the scan exporter serves, so the values are at most a few minutes old.
+
+| Alert | Source | Fires when | Severity | Why | What to do |
+| --- | --- | --- | --- | --- | --- |
+| `MonitoringDeployFailed` | `nfhotel_monitoring_deploy_failed`, with the commit and the stage (`ci`, `ancestry`, `checkout`, `checks`, `start`, `rollback`, `install`) | At once | warning | The commit is refused and not tried again, so waiting fixes nothing; the LXC runs what it ran before, and after `rollback` maybe nothing | `journalctl -u nfhotel-monitoring-pull --since -1h` in the LXC, then the runbook line on [Monitoring](Monitoring#runbook-when-an-alert-arrives) |
+| `MonitoringDeployBehind` | Since when a change of the monitoring paths waits (`nfhotel_monitoring_deploy_waiting_since_timestamp_seconds`) | More than 30 minutes, unless the deploy failed | warning | The Ops CI run of a merge takes about 5 minutes and the timer 2; 30 minutes means a run that hangs or a pull that does not deploy | The Ops CI run of the merge on `main` in GitHub Actions |
+| `MonitoringDeployStale` | Age of the last run of the pull that read `main` (`task="monitoring_pull"`) | Older than 1 hour | warning | It runs every 2 minutes; an hour means the timer is stopped or GitHub cannot be reached | `systemctl status nfhotel-monitoring-pull.timer` in the LXC |
+| `MonitoringDeployReportMissing` | The report of the pull is absent while the scan exporter is scraped | For 30 minutes | warning | A report that does not exist cannot grow old, as with `TaskReportMissing`; when the exporter itself is down, `ScanSourceDown` fires instead | `bash /opt/nfhotel-monitoring/ops/scripts/pull-monitoring.sh --install` in the LXC; `docker compose logs scan-exporter` names a report it left out |
+
 ## The watchdog
 
 An alerting system that is down sends no alerts, and silence looks like health. So `Watchdog` always fires, and Alertmanager sends it to Healthchecks.io every minute. When the pings stop (the LXC, Prometheus, Alertmanager, the node or the network is down), Healthchecks.io alerts on its own, outside our infrastructure. The drill of MIL-023 stops Prometheus and waits for that alert: about 8 minutes. Healthchecks.io receives only a ping, no data.
@@ -125,4 +136,5 @@ An alerting system that is down sends no alerts, and silence looks like health. 
 - One Proxmox node holds both the VM and the monitoring LXC; when the node stops, only Healthchecks.io reports it.
 - No alert on memory or CPU of the VM: the containers have limits, and `ContainerUnhealthy` and the objectives show the effect.
 - No alert on the monitoring LXC's own disk.
+- A rule that is valid but wrong passes the checks of the deploy from `main`; the unit tests in `rules-test.yml` stay the guard.
 - The Discord channel is the only receiver; if Discord is down, alerts wait in Alertmanager.

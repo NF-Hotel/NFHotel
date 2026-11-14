@@ -3,7 +3,7 @@
 The monitoring of NF Hotel tells the team in Discord when the site, a container or a nightly job fails, and keeps 14 days of logs and 30 days of metrics to find out why.
 
 **For:** the people who install, run and change the monitoring (S03), and anyone who answers an alert.
-**Decision:** [ADR-0020](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0020-monitoring-stack.md), which explains why, with the options that were weighed. **Work:** MIL-023 tasks 7 to 10.
+**Decision:** [ADR-0020](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0020-monitoring-stack.md), which explains why, with the options that were weighed, and [ADR-0044](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0044-monitoring-deployed-by-a-pull-on-its-host.md) for the deploy from `main`. **Work:** MIL-023 tasks 7 to 10, MIL-051.
 
 **Contents**
 1. [Overview](#overview)
@@ -48,6 +48,7 @@ flowchart LR
 - **Prometheus** evaluates the alert rules, and **Alertmanager** sends the alerts to Discord.
 - **Healthchecks.io** alerts if the monitoring itself goes silent.
 - **Grafana** shows the dashboard and searches the logs.
+- **A timer in the LXC** deploys each merged change of the monitoring from `main`, after its checks in CI (ADR-0044).
 
 All traffic runs on the tailnet; no part is on the internet.
 
@@ -60,7 +61,8 @@ All traffic runs on the tailnet; no part is on the internet.
 | Watchdog | Healthchecks.io check "NF Hotel monitoring watchdog" |
 | The LXC | Proxmox container `102`, host name `nf-monitoring`; shell: `pct enter 102` on the node, or `tailscale ssh root@nf-monitoring` |
 | IDs on the Proxmox node | `100` nf-hotel (VM), `101` sports-club (VM), `102` nf-monitoring (LXC) |
-| The configuration in the LXC | `/opt/nfhotel-monitoring/ops/deploy/monitoring/` |
+| The configuration in the LXC | `/opt/nfhotel-monitoring/ops/deploy/monitoring/`, a checkout of the deployed commit |
+| The deploy from `main` | `nfhotel-monitoring-pull.timer` in the LXC, every 2 minutes; `journalctl -u nfhotel-monitoring-pull`, and its state in `/var/lib/nfhotel-monitoring/` ([Change the monitoring](#change-the-monitoring)) |
 | Alloy on the VM | `/opt/nfhotel/ops/deploy/alloy/`, started by CD once `alloy.env` exists |
 | Job reports on the VM | `/var/lib/nfhotel-metrics/*.prom` |
 | Retention | Metrics 30 days (`storage.tsdb.retention.time` in `prometheus.yml`), logs 14 days (`retention_period` in the configuration of Loki) |
@@ -225,13 +227,15 @@ Save the Grafana password that the last command shows in your password manager.
 ```bash
 bash /opt/nfhotel-monitoring/ops/scripts/deploy-monitoring.sh
 bash /opt/nfhotel-monitoring/ops/scripts/deploy-monitoring.sh --apply
+bash /opt/nfhotel-monitoring/ops/scripts/pull-monitoring.sh --install
 docker compose --env-file monitoring.env ps
 ```
 
 - The first command checks the settings, the secrets and the configuration, and starts nothing.
-- The second command gives each secret file to the container that reads it, then starts the stack. It returns when every service is up.
+- The second command gives each secret file to the container that reads it, then starts the stack. It returns when every service is up and answers, and Prometheus has loaded every rule.
+- The third installs the deploy from `main` (ADR-0044): the command `/usr/local/sbin/nfhotel-monitoring-pull` and the timer `nfhotel-monitoring-pull.timer`. It records the commit of the checkout as the deployed one; from then on the timer deploys each merged change of the monitoring by itself.
 
-**Result:** the first command ends with `configuration valid`, and `ps` lists six services (`alertmanager`, `blackbox`, `grafana`, `loki`, `prometheus`, `scan-exporter`), all running. Without the optional GitHub token of [Security scans](#security-scans) the first command warns that code scanning is not read.
+**Result:** the first command ends with `configuration valid`, the second shows `the five services answer, and Prometheus loaded all <n> rules`, the third ends with `==> the pull deploy of the monitoring is installed from /opt/nfhotel-monitoring`, and `ps` lists six services (`alertmanager`, `blackbox`, `grafana`, `loki`, `prometheus`, `scan-exporter`), all running. Without the optional GitHub token of [Security scans](#security-scans) the first command warns that code scanning is not read.
 
 **C6. Check that it works.**
 1. On your own computer, open `http://<LXC address>:3000` and sign in as `admin`.
@@ -265,7 +269,7 @@ Raise each alert once on purpose, and record when it arrives in Discord (MIL-023
 | --- | --- | --- |
 | `ContainerUnhealthy` | `sudo docker stop nfhotel-web-nfhotel-web-1`, then `sudo docker start nfhotel-web-nfhotel-web-1` | 3 minutes |
 | `BackupStale` | `sudo sed -i 's/ [0-9]*$/ '"$(($(date +%s) - 97200))"'/' /var/lib/nfhotel-metrics/backup.prom` (27 hours old) | 2 minutes; the next backup writes a fresh file |
-| `CertificateExpiresSoon` | In the LXC, raise the threshold in the local copy only: `cd /opt/nfhotel-monitoring && sed -i 's/ \/ 86400 < 21$/ \/ 86400 < 400/' ops/deploy/monitoring/prometheus/rules/nfhotel.yml && bash ops/scripts/deploy-monitoring.sh --apply`. **After the alert**, set it back: `git checkout -- ops/deploy/monitoring/prometheus/rules/nfhotel.yml && bash ops/scripts/deploy-monitoring.sh --apply` | 11 minutes (the rule waits 10) |
+| `CertificateExpiresSoon` | In the LXC, stop the deploy from `main` (`systemctl stop nfhotel-monitoring-pull.timer`), then raise the threshold in the local copy only: `cd /opt/nfhotel-monitoring && sed -i 's/ \/ 86400 < 21$/ \/ 86400 < 400/' ops/deploy/monitoring/prometheus/rules/nfhotel.yml && bash ops/scripts/deploy-monitoring.sh --apply`. **After the alert**, set it back and start the timer: `git checkout -- ops/deploy/monitoring/prometheus/rules/nfhotel.yml && bash ops/scripts/deploy-monitoring.sh --apply && systemctl start nfhotel-monitoring-pull.timer`. A timer left running refuses each new change of the monitoring while the copy differs from its commit (`MonitoringDeployFailed`, stage `checkout`) | 11 minutes (the rule waits 10) |
 | Watchdog (Healthchecks.io) | `docker compose --env-file monitoring.env stop prometheus` in the LXC. **After the alert**, `start prometheus` | About 8 minutes: Alertmanager keeps the Watchdog until it expires, then Healthchecks.io waits its period and grace |
 
 Run the step that ends a drill only after the alert has arrived. Every alert needs a minute or more to pass the chain: report, scrape, rule evaluation, `for`, and the wait of Alertmanager. A step taken at once ends the drill before the monitoring can see it. Record the times in UTC (`date -u`), as Discord shows local time.
@@ -394,6 +398,10 @@ Each alert in Discord names what failed. Start with the first step below. Once t
 | `ApplicationExceptions` | warning | More than 5 unhandled exceptions in 10 minutes | `sum by (error_type) (increase(aspnetcore_diagnostics_exceptions_total[1h]))`, then the stack trace in the log |
 | `ApplicationMetricsMissing` | warning | No request metrics from the web application | `Telemetry__OtlpEndpoint` of the container, and `sudo docker logs nfhotel-alloy-alloy-1` |
 | `ScanFindingsHigh`, `ScanStale`, `ScanWorkflowFailed`, `SonarQualityGateFailed`, `ScanSourceDown` | warning | A security scan found something, stopped, or cannot be read | The table on [Alerts](Alerts#security-scans-prometheusrulesscansyml); the dashboard *Security scans* |
+| `MonitoringDeployFailed` | warning | The pull refused a change of the monitoring, or its start failed; the LXC runs the commit it ran before (label `stage`) | `journalctl -u nfhotel-monitoring-pull --since -1h` in the LXC. `ci` or `checks`: fix it in a pull request. `checkout`: a file was changed by hand, see `git -C /opt/nfhotel-monitoring status`. `start` or `rollback`: `docker compose --env-file monitoring.env ps` and the logs of the service. The same commit is not tried again: merge the fix, or fix the LXC and `rm /var/lib/nfhotel-monitoring/failed` |
+| `MonitoringDeployBehind` | warning | A merged change of the monitoring has waited 30 minutes | The Ops CI run of the merge on `main` in GitHub Actions: the pull waits while it runs and refuses it when it fails |
+| `MonitoringDeployStale` | warning | The pull has not read `main` for an hour | `systemctl status nfhotel-monitoring-pull.timer` and its journal in the LXC; can the LXC reach GitHub (`curl -sI https://github.com`)? |
+| `MonitoringDeployReportMissing` | warning | The LXC reports no pull deploy | Install it: `bash /opt/nfhotel-monitoring/ops/scripts/pull-monitoring.sh --install`; a report left out is named in `docker compose logs scan-exporter` |
 | Healthchecks.io: down | — | The monitoring itself is silent | `pct status 102` on the node; then `docker compose ps` in the LXC |
 
 ## Troubleshooting
@@ -407,6 +415,8 @@ Each alert in Discord names what failed. Start with the first step below. Once t
 | Alloy restarts on `nf-hotel`, or the CD run warns "alloy did not turn healthy" | Run `sudo docker logs nfhotel-alloy-alloy-1 --tail 20`. Alloy runs as its own user 473 with the host's `systemd-journal` group, which CD finds with `getent group systemd-journal`. `permission denied` means a mount it cannot read; the CI job *Ops monitoring configuration* starts Alloy the same way, so a pull request shows it first |
 | The site probes fail but the site works | The grant `tag:monitoring` → `tag:nfhotel-vm` on 80 and 443 is missing (A3) |
 | No alert in Discord, but Grafana shows a red value | Run `docker compose logs alertmanager` in the LXC; a wrong webhook URL shows there as an error with `receiver=discord` |
+| A merged change of the monitoring does not reach the LXC | `journalctl -u nfhotel-monitoring-pull -n 20` in the LXC says why: `waiting:` while the Ops CI run of the merge runs; `nothing to deploy` when the change is outside the monitoring paths ([Change the monitoring](#change-the-monitoring)); `refused before` when that commit failed once (`MonitoringDeployFailed`). `bash /opt/nfhotel-monitoring/ops/scripts/pull-monitoring.sh` tells what the next run would do, and changes nothing |
+| `pull-monitoring.sh --apply` says to run the installed copy | Run `systemctl start nfhotel-monitoring-pull.service`: a deploy checks out another commit, which would change the script in the checkout while it runs |
 
 ## Change the monitoring
 
@@ -415,15 +425,36 @@ Each alert in Discord names what failed. Start with the first step below. Once t
 2. Add a test case to [`rules-test.yml`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/monitoring/prometheus/rules-test.yml) that shows the alert firing, and not firing when it should not.
 3. Add a row to the runbook above.
 4. Open a pull request. The job *Ops monitoring configuration* runs `promtool test rules`.
+5. After the merge, the LXC deploys the change by itself, as the next paragraph says.
 
-**Deploy a merged change to the LXC.**
+**How a merged change reaches the LXC.** Every 2 minutes `nfhotel-monitoring-pull.timer` fetches `main` over HTTPS and, when a file of the monitoring paths changed, deploys its head ([ADR-0044](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0044-monitoring-deployed-by-a-pull-on-its-host.md)). There is no step of yours:
+
+1. It waits until the Ops CI run of the merge on `main` has passed, about 5 minutes, and refuses the commit when that run failed.
+2. It checks out the commit, runs the checks of `deploy-monitoring.sh`, then `deploy-monitoring.sh --apply`, which also checks that the five services answer and that Prometheus has loaded every rule.
+3. When a check fails, the LXC keeps the commit it ran; when the start fails, it starts that commit again. Either way `MonitoringDeployFailed` fires, and the same commit is not tried again.
+4. After a deploy, the new commit installs its own pull script and timer.
+
+The monitoring paths are `ops/deploy/monitoring/`, `ops/scripts/deploy-monitoring.sh`, `ops/scripts/pull-monitoring.sh`, `ops/scripts/check-container-runtime.sh`, `ops/scripts/lib/` and `ops/security/container-profiles.tsv`; a change of anything else leaves the LXC as it is. In the LXC, `journalctl -u nfhotel-monitoring-pull --since today` shows each run, and `/var/lib/nfhotel-monitoring/deployed-commit` holds the commit that runs. The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no step of yours.
+
+**Pause the deploy from `main`** before you work by hand in the LXC, so the timer does not deploy at the same time:
 
 ```bash
-cd /opt/nfhotel-monitoring && git pull --ff-only
-bash ops/scripts/deploy-monitoring.sh --apply
+systemctl stop nfhotel-monitoring-pull.timer
+flock /var/lib/nfhotel-monitoring/lock true
 ```
 
-The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no step of yours.
+The second command waits for a run that is under way. Afterwards, start the timer again with `systemctl start nfhotel-monitoring-pull.timer`. A pause of more than an hour raises `MonitoringDeployStale`. A file changed by hand in the checkout is never deployed: the pull refuses each new change until the file is set back (`git -C /opt/nfhotel-monitoring checkout -- <file>`).
+
+**Deploy by hand.** For an emergency, or when the pull itself is broken: pause the deploy as above, deploy the head of `main`, and install its pull again, which also starts the timer:
+
+```bash
+cd /opt/nfhotel-monitoring && git fetch origin && git checkout --detach origin/main
+bash ops/scripts/deploy-monitoring.sh --apply
+rm -f /var/lib/nfhotel-monitoring/failed
+bash ops/scripts/pull-monitoring.sh --install
+```
+
+The pull goes on from there. When the commit it recorded is older, its next run deploys the same head once more, which changes nothing that runs.
 
 **Update Docker in the LXC.** Debian's security updates install themselves every day (`install-patching.sh`). Docker Engine, containerd and `runc` come from Docker's repository and are updated by hand, in the monthly window or within a week when an advisory is critical for NF Hotel, as [Container Escape](Container-Escape#when-a-fix-for-an-escape-is-published) says:
 
@@ -433,11 +464,12 @@ The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no s
    pct snapshot 102 before-docker-$(date +%Y%m%d)
    ```
 
-2. In the LXC, install the new packages and start the stack again; the runtime check of the deploy prints the new versions and holds `runc` to its floor:
+2. In the LXC, pause the deploy from `main` (above), install the new packages and start the stack again; the runtime check of the deploy prints the new versions and holds `runc` to its floor. Then start the timer again:
 
    ```bash
    apt-get update && apt-get install --only-upgrade docker-ce docker-ce-cli containerd.io
    cd /opt/nfhotel-monitoring && bash ops/scripts/deploy-monitoring.sh --apply
+   systemctl start nfhotel-monitoring-pull.timer
    ```
 
 3. If the stack does not start, S03 rolls the LXC back on the node with `pct rollback 102 <the snapshot>`, and nothing weakens the AppArmor profile of the LXC instead ([ADR-0043](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0043-docker-packages-and-security-updates-in-the-monitoring-lxc.md)). Otherwise S03 deletes the snapshot before the next one: `pct delsnapshot 102 <the snapshot>`.
@@ -455,7 +487,10 @@ The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no s
 | [`ops/deploy/alloy/config.alloy`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/alloy/config.alloy) | What Alloy collects on `nf-hotel` |
 | [`ops/scripts/report-health.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/report-health.sh) | The container health report, every minute |
 | [`ops/scripts/check-container-runtime.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/check-container-runtime.sh) | The runtime check of the containers against their profiles, and of `runc` against its floor (MIL-083), every 15 minutes on the VM and after each start of this stack (MIL-080) |
-| [`ops/scripts/deploy-monitoring.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/deploy-monitoring.sh) | Checks and starts the stack in the LXC |
+| [`ops/scripts/deploy-monitoring.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/deploy-monitoring.sh) | Checks and starts the stack in the LXC, then checks that its services answer and that Prometheus loaded every rule (MIL-051) |
+| [`ops/scripts/pull-monitoring.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/pull-monitoring.sh) | The deploy from `main` (ADR-0044), installed as `/usr/local/sbin/nfhotel-monitoring-pull` |
+| [`systemd/nfhotel-monitoring-pull.timer`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/monitoring/systemd/nfhotel-monitoring-pull.timer) and [`.service`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/monitoring/systemd/nfhotel-monitoring-pull.service) | Run the pull every 2 minutes, as root |
+| [`prometheus/rules/monitoring.yml`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/monitoring/prometheus/rules/monitoring.yml) | The alerts on the deploy from `main` |
 | [`ops/scripts/create-monitoring-lxc.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/create-monitoring-lxc.sh) | Creates the LXC on the Proxmox node, with Docker from Docker's repository and Debian's security updates, as on the VM (ADR-0043) |
 
 **Job reports on nf-hotel**
@@ -472,13 +507,24 @@ The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no s
 | `containers.prom` | `nfhotel-report-health.timer` (every minute) | A value of 0 for 30 s, or missing |
 | `container-runtime.prom` | `nfhotel-container-check.timer` (every 15 minutes) | A container breaks its profile; `runc` is below its floor; or the last run is older than 45 minutes, or missing |
 
+**Reports on nf-monitoring** (in `/var/lib/nfhotel-monitoring/metrics`, served by the scan exporter with the job `scans`, MIL-051)
+
+| File | Written by | Alert when |
+| --- | --- | --- |
+| `monitoring_pull.prom` | The pull deploy, at each run that read `main`: the deployed commit, whether the last attempt failed (with its commit and stage), and since when a change waits | A failure (`MonitoringDeployFailed`); a change that waits 30 minutes (`MonitoringDeployBehind`); older than 1 h (`MonitoringDeployStale`); missing (`MonitoringDeployReportMissing`) |
+
+The scan exporter serves a report only when it is in the Prometheus text format, uses no name of the exporter and is at most 64 KiB; it logs a report that it leaves out.
+
 **Checks in CI** (job *Ops monitoring configuration*, on every pull request):
-- `promtool check config` and `promtool test rules`;
+- `promtool check config`, which reads every rule file, and `promtool test rules`;
 - `amtool check-config`;
 - `loki -verify-config` and `blackbox_exporter --config.check`;
 - `alloy fmt`;
 - a check that the dashboard is valid JSON;
-- a start of the whole stack as this guide does it, with the runtime check over its six containers.
+- the tests of the scan exporter, with its report folder;
+- a start of the whole stack as this guide does it, with its health check and the runtime check over its six containers; a broken rule that the deploy refuses while the running rules stay; and an alert raised from a report in the report folder.
+
+The job *Ops script tests (test-pull-monitoring.sh)* runs the pull deploy in Debian 13 against a local copy of the repository and a stand-in for the API of GitHub.
 
 ## Why it is built this way
 
@@ -491,3 +537,4 @@ The full reasoning, with the options that were weighed, is in [ADR-0020](https:/
 - **Jobs report their success.** A timer that runs is not proof that the backup worked.
 - **A watchdog outside.** A monitor cannot report its own death.
 - **Everything is code.** It is reviewed, tested in CI, and the same after a rebuild.
+- **Deployed by a pull.** The LXC fetches `main` and deploys a change once its Ops CI run has passed, so no workflow can reach the LXC and its secrets never leave it ([ADR-0044](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0044-monitoring-deployed-by-a-pull-on-its-host.md)).

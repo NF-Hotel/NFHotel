@@ -56,6 +56,7 @@ A rollback changes the images and the compose files, not the database. Migration
 1. Change it in `ops/` or `.github/actions/` by a pull request; the CI (`NF Hotel Ops CI` included) must be green (CODEOWNERS asks codemikemike for review of `ops/` and `.github/`; no approval is required, ADR-0019).
 2. The next release carries it: the workflows read the actions from the same commit, so there is no pin to move.
 3. A script that runs as root on the VM (`deploy-release.sh`, `backup-database.sh`, the backup service and timer) takes effect with the next approved CD. Its first step, `nfhotel-deploy update <sha>`, installs them from the release commit, and only when that commit is on `main` (ADR-0018). The replaced copy is kept as `<file>.previous`, and the release log (`nfhotel-deploy status`) shows the old and new SHA-256. Nobody installs them by hand after the first setup below.
+4. The monitoring in its LXC is not deployed by CD. A merged change of `ops/deploy/monitoring/` or of the scripts it runs is deployed by a timer in the LXC once the Ops CI run of the merge has passed, without an approval of its own (ADR-0044, [Monitoring](Monitoring#change-the-monitoring)).
 
 ## The market-analysis image
 
