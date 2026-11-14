@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 
 using NFHotel.Domain.Entities;
+using NFHotel.TestSupport;
 
 namespace NFHotel.Application.Tests.Architecture;
 

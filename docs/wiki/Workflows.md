@@ -1,6 +1,6 @@
 # Workflows
 
-**Decisions:** [ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md), [ADR-0016](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0016-one-repository-for-application-and-operations.md), [ADR-0021](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0021-automatic-deploy-when-green.md). **Work:** MIL-021, MIL-022, MIL-027, MIL-036, MIL-049. **Why each product:** [Technology Choices](Technology-Choices).
+**Decisions:** [ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md), [ADR-0016](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0016-one-repository-for-application-and-operations.md), [ADR-0021](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0021-automatic-deploy-when-green.md). **Work:** MIL-021, MIL-022, MIL-027, MIL-036, MIL-049, MIL-077. **Why each product:** [Technology Choices](Technology-Choices).
 
 Every GitHub Actions workflow and composite action of NF Hotel: when it runs, what it checks, what it may do, why it exists and what else could have been used. For how to operate the pipeline (a deploy that does not start, a rollback), see [CI-CD](CI-CD). For the security controls behind the checks, see [Security Controls](Security-Controls).
 
@@ -75,13 +75,13 @@ The script tests are: `test-deploy-release.sh`, `test-cd-steps.sh`, `test-vm-set
 
 | | |
 | --- | --- |
-| **Runs on** | Pull requests and pushes to `main` (end-to-end tests and the DAST baseline); every Monday at 03:17 UTC and by hand (the DAST full scan) |
+| **Runs on** | Pull requests and pushes to `main` (end-to-end tests and the DAST baseline); every Monday at 03:17 UTC and by hand (the DAST full scan, with the API scan) |
 | **Jobs** | `End-to-end tests`; `DAST baseline`; `DAST full scan` |
-| **Checks** | A throwaway stack (nginx with a self-signed certificate, web, API, PostgreSQL) is built from the commit. `check-e2e-stack.sh` checks its pages, ports, networks and the hardening of each container, and the runtime check reads each container against its profile (MIL-080). Playwright browser tests sign in and use the pages. The log privacy check fails when the test guest's personal data is in a log. OWASP ZAP scans the stack passively, signed out and signed in; weekly, it attacks it actively. A High alert that is not accepted in `ops/security/zap-rules.tsv` fails the job |
+| **Checks** | A throwaway stack (nginx with a self-signed certificate, web, API, PostgreSQL) is built from the commit. `check-e2e-stack.sh` checks its pages, ports, networks and the hardening of each container, and the runtime check reads each container against its profile (MIL-080). Playwright browser tests sign in and use the pages. The log privacy check fails when the test guest's personal data is in a log. OWASP ZAP scans the stack passively, signed out and signed in; weekly, it attacks it actively. Then the API scan of ZAP attacks the API itself from the internal API network of the stack, with every endpoint of the OpenAPI document that the build of the API writes (`g/openapi/nfhotel-api.json`) and the API token and the staff token of an API scan account of its own on every request (MIL-077). A High alert that is not accepted in `ops/security/zap-rules.tsv`, an answer 500 of the API (a fault; 503 is its answer when a service that it calls is missing, as in the stack) or an API scan that was not signed in fails the job. The alerts of the API scan go to code scanning (`zap-api`), but of its alert on the answer codes only the answers 500: an answer in the 400 range is a refusal, as the API intends |
 | **Permissions** | `contents: read`; `security-events: write` for the ZAP SARIF; `issues: write` for the full scan, which opens one issue when it fails |
 | **Why** | Unit tests stop at the process boundary. These are the only tests of the whole stack as it runs in production, with the same images and compose files, and the only test that attacks it. The stack has no host port, so nothing outside the runner is scanned. |
-| **Alternatives** | Selenium or Cypress instead of Playwright: Playwright has an official .NET library and a Docker image, so the tests are C# with xUnit like the others. Burp Suite or Nuclei instead of ZAP: ZAP is free, scriptable and has GitHub-ready baseline and full scans. Scanning production: rejected; a scan must never touch the VM, the tailnet or the public host. |
-| **Decision** | MIL-027; staging replaced by this throwaway stack: ADR-0026; what reaches code scanning: ADR-0032 |
+| **Alternatives** | Selenium or Cypress instead of Playwright: Playwright has an official .NET library and a Docker image, so the tests are C# with xUnit like the others. Burp Suite or Nuclei instead of ZAP: ZAP is free, scriptable and has GitHub-ready baseline and full scans. Scanning production: rejected; a scan must never touch the VM, the tailnet or the public host. The API scanned through nginx: nginx forwards only the two mobile routes to the API, so most endpoints would answer 404. The API scan signed in as the Manager of the stack: the attacks of the web scan on the login form could throttle its sign-in. |
+| **Decision** | MIL-027; staging replaced by this throwaway stack: ADR-0026; what reaches code scanning: ADR-0032; the API scan: MIL-077 |
 
 ### NF Hotel Release check (`release-check.yaml`)
 
@@ -176,7 +176,7 @@ The workflows keep the trigger, the permissions, the environment and the concurr
 | `release-images` | Release, Release check | Builds the six images, scans each with Trivy before any push (`ops/scripts/scan-gate.sh`), and with `push` pushes them, attests provenance and SBOM, and writes `release.json` and `migrations.sql` |
 | `deploy-release` | CD | Checks the release run, reads the manifest, verifies the attestations, waits for every check (`ops/scripts/cd-steps.sh gate`), joins the tailnet, checks its scope and runs the deploy over Tailscale SSH; writes the audit summary |
 | `e2e-tests` | E2E and DAST | Starts the throwaway stack, runs the Playwright tests, checks the logs for the test guest's personal data, uploads the results and removes the stack |
-| `dast-scan` | E2E and DAST | Starts the throwaway stack, runs the ZAP baseline or full scan, uploads HTML, JSON and SARIF reports and removes the stack |
+| `dast-scan` | E2E and DAST | Starts the throwaway stack, runs the ZAP baseline, or the full scan and the API scan (for which it first builds the API, to get its OpenAPI document), uploads HTML, JSON and SARIF reports and removes the stack |
 
 **Why composite actions and not reusable workflows:** a reusable workflow would need a second checkout to reach the scripts, at a ref that cannot be tied to the `uses:` ref (ADR-0012, option 3). Composite actions run in the caller's job and read the scripts from the same checkout.
 

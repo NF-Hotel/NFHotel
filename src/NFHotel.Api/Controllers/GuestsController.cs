@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 using Microsoft.AspNetCore.Mvc;
 
 using NFHotel.Api.Contracts;
@@ -38,7 +40,7 @@ public sealed class GuestsController : ControllerBase
     /// <returns>The matching guests, sorted by name.</returns>
     [HttpGet]
     [RequiresPermission(Permissions.ViewOtherGuestData)]
-    public async Task<IActionResult> SearchAsync([FromQuery] string? searchText, CancellationToken cancellationToken) =>
+    public async Task<IActionResult> SearchAsync([FromQuery, StringLength(SearchLimits.MaxTextLength)] string? searchText, CancellationToken cancellationToken) =>
         this.ToResponse(await _guests.SearchAsync(searchText, cancellationToken).ConfigureAwait(false));
 
     /// <summary>Creates a guest.</summary>

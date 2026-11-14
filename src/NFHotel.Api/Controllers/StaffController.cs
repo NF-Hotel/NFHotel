@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -94,11 +96,14 @@ public sealed class StaffController : ControllerBase
 
     /// <summary>Reads one page of the audit trail, newest first.</summary>
     /// <param name="page">The page, from 1.</param>
-    /// <param name="pageSize">The lines per page.</param>
+    /// <param name="pageSize">The lines per page, 1 to 200; a value outside is refused with 400.</param>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The page.</returns>
     [HttpGet(ApiRoutes.StaffAudit)]
     [RequiresPermission(Permissions.StaffManage)]
-    public async Task<IActionResult> ListAuditAsync([FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default) =>
+    public async Task<IActionResult> ListAuditAsync(
+        [FromQuery, Range(1, int.MaxValue)] int page = 1,
+        [FromQuery, Range(1, StaffAccountService.MaxAuditPageSize)] int pageSize = 50,
+        CancellationToken cancellationToken = default) =>
         this.ToResponse(await _admin.ListAuditAsync(page, pageSize, cancellationToken).ConfigureAwait(false));
 }

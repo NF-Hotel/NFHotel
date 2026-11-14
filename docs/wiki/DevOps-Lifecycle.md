@@ -42,7 +42,7 @@ How NF Hotel covers the eight phases of the DevOps lifecycle (Plan, Code, Build,
 
 - **xUnit v3:** unit tests, integration tests against a real PostgreSQL (**Testcontainers**), and web tests through **WebApplicationFactory**; more than 1 500 tests.
 - **End-to-end tests** with **Playwright** against a throwaway stack, and **load tests** with **k6**.
-- **Security and quality:** **CodeQL** and **SonarQube Cloud** (static analysis), **OWASP ZAP** (DAST, baseline and full scan), **Trivy** (container scan), **OpenSSF Scorecard**, secret scanning with push protection and NuGet audit.
+- **Security and quality:** **CodeQL** and **SonarQube Cloud** (static analysis), **OWASP ZAP** (DAST, baseline, full scan and API scan), **Trivy** (container scan), **OpenSSF Scorecard**, secret scanning with push protection and NuGet audit.
 - **Operations code:** shellcheck, shfmt, actionlint, yamllint, promtool, amtool and script tests in the ops CI.
 
 ## 5. Release
