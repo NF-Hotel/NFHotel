@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Proposed | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | [95d7856] |
+| 2026-11-11 | Deprecated | Claude (AI) | S02 | Initial version; pre-review by the AI, not independent | [95d7856] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S02 | Criterion 14 of QC-WIKI-001 passed on the published wiki (2026-11-13 and 2026-11-14); issue 31 of the service closed on 2026-11-11; accepted by the AI as stand-in for S02 at S01's word in chat ("Ja, godkend dem", to "Skal jeg godkende de fire reviews af MIL-071 i S02's sted og lukke milestonen?"), with RC-326 to RC-328; mode autonomous, not independent; the milestone closes | pending |
 
 ---
 
@@ -18,7 +19,7 @@
 - Instance reviewed: the whole of [MIL-071] against its Go/No-Go criteria 1 to 9: the contract and client (task 2), the replacement of the rule (task 3), the page (task 4), the wiki and the traceability matrix (task 5) and a real run on the dev VM (this task)
 - Checklist used: [QC-CS-001] (`qc-programming-csharp`) for the code, read in [RC-325], [RC-326] and [RC-327]; [QC-WIKI-001] (`qc-wiki`) for criterion 14 left open in [RC-328]
 - Scope: gate of the milestone; no source file changed in task 6, only the wiki page (labels) and the documents
-- Mode: supervised (the AI ran the check and wrote the pre-review; S02 reviews)
+- Mode: supervised for the pre-review (the AI ran the check and wrote it); accepted on 2026-11-14 in autonomous mode by the AI as stand-in for S02, at S01's word in chat: not independent
 
 ## The real run (criterion 9)
 
@@ -53,7 +54,9 @@ Criterion 9: met.
 
 ## Wiki (criterion 14 of [RC-328])
 
-The wiki page had two inaccuracies, found while comparing it with the page: the field names of the settings (the page says "Surcharge in a high season", "High season from occupancy" and so on) and the names of the states (In force, Coming, Finished, Reverted, Withdrawn). Both are corrected in this task. Criterion 14 (the published wiki, every link) is checked after the merge by the publish workflow; it stays open in this review and is closed by the reviewer on the published wiki.
+The wiki page had two inaccuracies, found while comparing it with the page: the field names of the settings (the page says "Surcharge in a high season", "High season from occupancy" and so on) and the names of the states (In force, Coming, Finished, Reverted, Withdrawn). Both are corrected in this task. Criterion 14 (the published wiki, every link) could be checked only after the merge, when the publish workflow had copied the page.
+
+The published wiki, checked on 2026-11-13 (the wiki of 611909b) and again on 2026-11-14 at 05:21Z (the wiki at 08bda09, published from 1a1796b): the 25 pages are the files of `docs/wiki` with the same blobs; the sidebar, `Home` and `Appendix` link the page; its ten anchors and its link to `Home` resolve on the rendered page. Criterion 14 passes ([RC-328]).
 
 ## Findings
 
@@ -67,14 +70,14 @@ The wiki page had two inaccuracies, found while comparing it with the page: the 
 
 ## Overall Verdict
 
-Go: all nine criteria of [MIL-071] are met and every Mandatory criterion of [QC-CS-001] passes in the reviews of the tasks. Open: criterion 14 of [QC-WIKI-001] (the published wiki, after the merge) and the open documentation task of notebook-market-analysis MIL-002 (task 6, issue 31), which does not block this milestone.
+Go: all nine criteria of [MIL-071] are met, every Mandatory criterion of [QC-CS-001] passes in the reviews of the tasks, and criterion 14 of [QC-WIKI-001] passes on the published wiki (2026-11-13 and 2026-11-14). The documentation task of notebook-market-analysis MIL-002 (task 6, issue 31) was closed on 2026-11-11 by its pull request 35, after the first version of this review.
 
 ## Action Items
 
 | Action | Owner | Due |
 | --- | --- | --- |
-| Accept this review and the milestone [MIL-071] (status Closed when the pull request is merged) | S02 | with the pull request |
-| Check the published wiki page and its links | S02 | after the merge |
+| Accept this review and the milestone [MIL-071] (status Closed when the pull request is merged) | AI as stand-in for S02 | done 2026-11-14 |
+| Check the published wiki page and its links | AI as stand-in for S02 | done 2026-11-13 and 2026-11-14 |
 | Raise F1 to the service | S02 | MIL-002 |
 
 ---
