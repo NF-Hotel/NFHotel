@@ -9,11 +9,17 @@ namespace NFHotel.Web.Features.Admin.MarketAnalysis;
 /// </summary>
 public partial class MarketAnalysisForecast : ComponentBase
 {
+    #region Fields
+
     /// <summary>The id of the heading, which the contents list links to.</summary>
     public const string SectionId = "forecast-title";
 
     /// <summary>The label that says who made the forecast.</summary>
     public const string CalculatedLabel = "Calculated by the service, not by an AI";
+
+    #endregion Fields
+
+    #region Properties
 
     /// <summary>The forecast to show.</summary>
     [Parameter, EditorRequired]
@@ -23,10 +29,16 @@ public partial class MarketAnalysisForecast : ComponentBase
     [Parameter]
     public IReadOnlyList<MarketAnalysisForecastChart> Charts { get; set; } = [];
 
+    #endregion Properties
+
+    #region Private methods
+
     private static string HistoryText(MarketAnalysisForecastDto forecast) =>
         $"It rests on {forecast.HistoryMonths} complete months of history and looks {forecast.HorizonMonths} months ahead. "
         + "It repeats the seasonal pattern of the history; it is not a promise.";
 
     private static string TooShortText(MarketAnalysisForecastDto forecast) =>
         $"The history has {forecast.HistoryMonths} complete months, fewer than the {forecast.MinimumHistoryMonths} months that the service wants, so the pattern may not be reliable.";
+
+    #endregion Private methods
 }

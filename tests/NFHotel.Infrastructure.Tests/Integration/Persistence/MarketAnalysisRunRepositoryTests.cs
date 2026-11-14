@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
 using NFHotel.Domain.Entities;
+using NFHotel.Infrastructure.Persistence;
 using NFHotel.Infrastructure.Repositories;
 
 namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
@@ -27,12 +28,12 @@ public sealed class MarketAnalysisRunRepositoryTests : IAsyncLifetime
     public async Task FindByRunIdAsync_StoredRun_ReturnsItWithItsFields()
     {
         // Arrange
-        var runId = Guid.NewGuid();
+        Guid runId = Guid.NewGuid();
         await AddAsync(runId, 0, "{\"summary\":\"åäö 😀\"}");
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var found = await new MarketAnalysisRunRepository(context).FindByRunIdAsync(runId, TestContext.Current.CancellationToken);
+        MarketAnalysisRun? found = await new MarketAnalysisRunRepository(context).FindByRunIdAsync(runId, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(found);
@@ -45,10 +46,10 @@ public sealed class MarketAnalysisRunRepositoryTests : IAsyncLifetime
     public async Task FindByRunIdAsync_UnknownRun_ReturnsNull()
     {
         // Arrange
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var found = await new MarketAnalysisRunRepository(context).FindByRunIdAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+        MarketAnalysisRun? found = await new MarketAnalysisRunRepository(context).FindByRunIdAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(found);
@@ -59,10 +60,10 @@ public sealed class MarketAnalysisRunRepositoryTests : IAsyncLifetime
     public async Task FindLatestAsync_NothingStored_ReturnsNull()
     {
         // Arrange
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var found = await new MarketAnalysisRunRepository(context).FindLatestAsync(TestContext.Current.CancellationToken);
+        MarketAnalysisRun? found = await new MarketAnalysisRunRepository(context).FindLatestAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(found);
@@ -74,16 +75,17 @@ public sealed class MarketAnalysisRunRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await AddAsync(Guid.NewGuid(), 5, "{}");
-        var newest = Guid.NewGuid();
+        Guid newest = Guid.NewGuid();
         await AddAsync(newest, 9, "{}");
         await AddAsync(Guid.NewGuid(), 1, "{}");
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var found = await new MarketAnalysisRunRepository(context).FindLatestAsync(TestContext.Current.CancellationToken);
+        MarketAnalysisRun? found = await new MarketAnalysisRunRepository(context).FindLatestAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(newest, found!.RunId);
+        Assert.NotNull(found);
+        Assert.Equal(newest, found.RunId);
     }
 
     /// <summary>Negative: the same run id stored twice is refused by the unique index, which also covers two polls at once.</summary>
@@ -91,13 +93,13 @@ public sealed class MarketAnalysisRunRepositoryTests : IAsyncLifetime
     public async Task Add_SameRunIdTwice_IsRefusedByTheDatabase()
     {
         // Arrange
-        var runId = Guid.NewGuid();
+        Guid runId = Guid.NewGuid();
         await AddAsync(runId, 0, "{}");
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
         new MarketAnalysisRunRepository(context).Add(MarketAnalysisRun.Create(runId, 1, Start, Start, null, null, "{}"));
 
         // Act
-        var save = () => context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        Func<Task<int>> save = () => context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await Assert.ThrowsAsync<DbUpdateException>(save);
@@ -105,7 +107,7 @@ public sealed class MarketAnalysisRunRepositoryTests : IAsyncLifetime
 
     private async Task AddAsync(Guid runId, int finishedAfterMinutes, string contentJson)
     {
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
         new MarketAnalysisRunRepository(context).Add(
             MarketAnalysisRun.Create(runId, 1, Start, Start.AddMinutes(finishedAfterMinutes), "ollama", "phi3.5:latest", contentJson));
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);

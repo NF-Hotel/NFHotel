@@ -12,6 +12,8 @@ namespace NFHotel.Domain.Entities;
 /// </summary>
 public sealed class BookingMarketDetail : Entity<int>
 {
+    #region Fields
+
     /// <summary>The longest meal, market segment, customer type, deposit type and room type text.</summary>
     public const int MaxTextLength = 40;
 
@@ -21,9 +23,17 @@ public sealed class BookingMarketDetail : Entity<int>
     /// <summary>The largest price per night.</summary>
     public const double MaxPricePerNight = 1_000_000;
 
+    #endregion Fields
+
+    #region Constructors
+
     private BookingMarketDetail()
     {
     }
+
+    #endregion Constructors
+
+    #region Properties
 
     /// <summary>The booking the details belong to.</summary>
     public int BookingId { get; private set; }
@@ -86,6 +96,10 @@ public sealed class BookingMarketDetail : Entity<int>
     [Range(0, MaxCount, ErrorMessage = BookingMarketDetailErrors.CountInvalid)]
     public int ParkingSpaces { get; private set; }
 
+    #endregion Properties
+
+    #region Public methods
+
     /// <summary>Creates the details of a booking and checks every field.</summary>
     /// <param name="bookingId">The booking; greater than 0.</param>
     /// <param name="bookedAt">The date on which the booking was made.</param>
@@ -96,7 +110,7 @@ public sealed class BookingMarketDetail : Entity<int>
     {
         ArgumentNullException.ThrowIfNull(values);
 
-        var detail = new BookingMarketDetail
+        BookingMarketDetail detail = new BookingMarketDetail
         {
             BookingId = bookingId,
             BookedAt = bookedAt,
@@ -116,7 +130,7 @@ public sealed class BookingMarketDetail : Entity<int>
             ParkingSpaces = values.ParkingSpaces,
         };
 
-        var codes = new List<string>();
+        List<string> codes = new List<string>();
         if (bookingId <= 0)
         {
             codes.Add(BookingMarketDetailErrors.BookingRequired);
@@ -139,5 +153,11 @@ public sealed class BookingMarketDetail : Entity<int>
         return detail;
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static string? Clean(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+
+    #endregion Private methods
 }

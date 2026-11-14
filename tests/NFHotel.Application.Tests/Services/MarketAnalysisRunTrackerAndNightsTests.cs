@@ -1,5 +1,6 @@
 using NFHotel.Application.Dto.MarketAnalysis;
 using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.TestSupport;
 
@@ -13,17 +14,19 @@ public sealed class MarketAnalysisRunTrackerAndNightsTests
     public void Tracker_FullRun_RecordsTheStatesAndTimes()
     {
         // Arrange
-        var clock = new FakeClock();
-        var tracker = new MarketAnalysisRunTracker(clock);
-        var runId = tracker.TryBegin().Value.RunId;
+        FakeClock clock = new FakeClock();
+        MarketAnalysisRunTracker tracker = new MarketAnalysisRunTracker(clock);
+        Guid runId = tracker.TryBegin().Value.RunId;
 
         // Act
-        var queued = tracker.Get(runId)!;
+        // The tracker keeps every run it began, so Get finds this one.
+        MarketAnalysisRunStateDto queued = tracker.Get(runId)!;
         tracker.MarkRunning(runId);
-        var started = clock.UtcNow;
+        DateTimeOffset started = clock.UtcNow;
         clock.TimeOfDay += TimeSpan.FromMinutes(7);
         tracker.MarkCompleted(runId);
-        var done = tracker.Get(runId)!;
+        // The tracker keeps every run it began, so Get finds this one.
+        MarketAnalysisRunStateDto done = tracker.Get(runId)!;
 
         // Assert
         Assert.Equal((MarketAnalysisRunStates.Queued, (DateTimeOffset?)null), (queued.State, queued.StartedAt));
@@ -38,13 +41,13 @@ public sealed class MarketAnalysisRunTrackerAndNightsTests
     public void Tracker_Begin_IsRefusedWhileARunIsActive(bool fails)
     {
         // Arrange
-        var tracker = new MarketAnalysisRunTracker(new FakeClock());
-        var first = tracker.TryBegin().Value.RunId;
+        MarketAnalysisRunTracker tracker = new MarketAnalysisRunTracker(new FakeClock());
+        Guid first = tracker.TryBegin().Value.RunId;
 
         // Act
-        var whileActive = tracker.TryBegin();
+        Result<MarketAnalysisRunStateDto> whileActive = tracker.TryBegin();
         tracker.MarkRunning(first);
-        var whileRunning = tracker.TryBegin();
+        Result<MarketAnalysisRunStateDto> whileRunning = tracker.TryBegin();
         if (fails)
         {
             tracker.MarkFailed(first, ErrorCodes.MarketAnalysisRunner.Unavailable);
@@ -54,7 +57,7 @@ public sealed class MarketAnalysisRunTrackerAndNightsTests
             tracker.MarkCompleted(first);
         }
 
-        var afterwards = tracker.TryBegin();
+        Result<MarketAnalysisRunStateDto> afterwards = tracker.TryBegin();
 
         // Assert
         Assert.Equal(ErrorCodes.MarketAnalysisRunner.AlreadyRunning, Assert.Single(whileActive.Errors).Code);
@@ -68,14 +71,15 @@ public sealed class MarketAnalysisRunTrackerAndNightsTests
     public void Tracker_OtherRunId_IsUnknownAndChangesNothing()
     {
         // Arrange
-        var tracker = new MarketAnalysisRunTracker(new FakeClock());
-        var runId = tracker.TryBegin().Value.RunId;
+        MarketAnalysisRunTracker tracker = new MarketAnalysisRunTracker(new FakeClock());
+        Guid runId = tracker.TryBegin().Value.RunId;
 
         // Act
         tracker.MarkCompleted(Guid.NewGuid());
 
         // Assert
         Assert.Null(tracker.Get(Guid.NewGuid()));
+        // The tracker keeps every run it began, so Get finds this one.
         Assert.Equal(MarketAnalysisRunStates.Queued, tracker.Get(runId)!.State);
     }
 
@@ -84,20 +88,22 @@ public sealed class MarketAnalysisRunTrackerAndNightsTests
     public void Tracker_Current_IsNoneThenTheRunThatGoesOnThenTheOneThatEnded()
     {
         // Arrange
-        var tracker = new MarketAnalysisRunTracker(new FakeClock());
-        var none = tracker.Current;
-        var runId = tracker.TryBegin().Value.RunId;
+        MarketAnalysisRunTracker tracker = new MarketAnalysisRunTracker(new FakeClock());
+        MarketAnalysisRunStateDto? none = tracker.Current;
+        Guid runId = tracker.TryBegin().Value.RunId;
         tracker.MarkRunning(runId);
 
         // Act
-        var running = tracker.Current;
+        MarketAnalysisRunStateDto? running = tracker.Current;
         tracker.MarkCompleted(runId);
-        var ended = tracker.Current;
+        MarketAnalysisRunStateDto? ended = tracker.Current;
 
         // Assert
         Assert.Null(none);
-        Assert.Equal((runId, MarketAnalysisRunStates.Running), (running!.RunId, running.State));
-        Assert.Equal((runId, MarketAnalysisRunStates.Completed), (ended!.RunId, ended.State));
+        Assert.NotNull(running);
+        Assert.Equal((runId, MarketAnalysisRunStates.Running), (running.RunId, running.State));
+        Assert.NotNull(ended);
+        Assert.Equal((runId, MarketAnalysisRunStates.Completed), (ended.RunId, ended.State));
     }
 
     /// <summary>Negative: a failed run keeps its code.</summary>
@@ -105,13 +111,14 @@ public sealed class MarketAnalysisRunTrackerAndNightsTests
     public void Tracker_Failed_KeepsTheCode()
     {
         // Arrange
-        var tracker = new MarketAnalysisRunTracker(new FakeClock());
-        var runId = tracker.TryBegin().Value.RunId;
+        MarketAnalysisRunTracker tracker = new MarketAnalysisRunTracker(new FakeClock());
+        Guid runId = tracker.TryBegin().Value.RunId;
 
         // Act
         tracker.MarkFailed(runId, ErrorCodes.MarketAnalysis.NoBookings);
 
         // Assert
+        // The tracker keeps every run it began, so Get finds this one.
         Assert.Equal(ErrorCodes.MarketAnalysis.NoBookings, tracker.Get(runId)!.Error);
     }
 
@@ -120,7 +127,7 @@ public sealed class MarketAnalysisRunTrackerAndNightsTests
     public void Split_FridayToMonday_IsOneWeekNightAndTwoWeekendNights()
     {
         // Act
-        var (weekend, week) = StayNights.Split(new DateOnly(2019, 3, 1), new DateOnly(2019, 3, 4));
+        (int weekend, int week) = StayNights.Split(new DateOnly(2019, 3, 1), new DateOnly(2019, 3, 4));
 
         // Assert
         Assert.Equal((2, 1), (weekend, week));

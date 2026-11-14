@@ -1,3 +1,4 @@
+@using NFHotel.Application.Dto.MarketAnalysis
 
 @*
     The text alternative of a chart: the values in a table that only screen readers see, and a visible note when a value rests on
@@ -13,7 +14,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var point in Points)
+        @foreach (MarketAnalysisPointDto point in Points)
         {
             <tr>
                 <th scope="row">@point.Label</th>

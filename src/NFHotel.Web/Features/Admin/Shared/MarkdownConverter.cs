@@ -12,10 +12,16 @@ namespace NFHotel.Web.Features.Admin.Shared;
 /// </summary>
 public static class MarkdownConverter
 {
+    #region Fields
+
     private const int LowestHeading = 4;
     private const int DeepestHeading = 6;
 
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder().DisableHtml().Build();
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Converts Markdown to HTML.</summary>
     /// <param name="markdown">The Markdown; <c>null</c> or white space gives an empty text.</param>
@@ -47,6 +53,10 @@ public static class MarkdownConverter
         return Markdown.ToHtml(document, Pipeline);
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     // A link or an image keeps its text (the children) and loses its target.
     private static void Unwrap(LinkInline link)
     {
@@ -61,4 +71,6 @@ public static class MarkdownConverter
 
         link.Remove();
     }
+
+    #endregion Private methods
 }

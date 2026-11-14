@@ -8,8 +8,14 @@ namespace NFHotel.Infrastructure.Persistence.Configurations;
 /// <summary>Maps <see cref="MarketAnalysisRun"/> to the table <c>market_analysis_run</c> (MIL-026).</summary>
 public sealed class MarketAnalysisRunConfiguration : EntityConfiguration<MarketAnalysisRun, int>
 {
+    #region Properties
+
     /// <inheritdoc />
     protected override string TableName => "market_analysis_run";
+
+    #endregion Properties
+
+    #region Protected methods
 
     /// <inheritdoc />
     protected override void ConfigureEntity(EntityTypeBuilder<MarketAnalysisRun> builder)
@@ -31,4 +37,6 @@ public sealed class MarketAnalysisRunConfiguration : EntityConfiguration<MarketA
         builder.HasIndex(run => run.FinishedAt)
             .HasDatabaseName("ix_market_analysis_run_finished_at");
     }
+
+    #endregion Protected methods
 }

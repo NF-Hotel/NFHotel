@@ -15,10 +15,16 @@ namespace NFHotel.Infrastructure.Repositories;
 /// </summary>
 public sealed class MarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
 {
+    #region Fields
+
     /// <summary>The name of the hotel that the markets API is told.</summary>
     public const string HotelName = "NF Hotel";
 
     private readonly HotelDbContext _context;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the reader.</summary>
     /// <param name="context">The database context.</param>
@@ -27,6 +33,10 @@ public sealed class MarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
         ArgumentNullException.ThrowIfNull(context);
         _context = context;
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<MarketBookingDto>> GetBookingsAsync(DateOnly? firstArrival, DateOnly? lastArrival, CancellationToken cancellationToken = default)
@@ -57,9 +67,13 @@ public sealed class MarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
     public Task<int> CountRoomsAsync(CancellationToken cancellationToken = default) =>
         _context.Rooms.AsNoTracking().CountAsync(cancellationToken);
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static MarketBookingDto ToDto(int id, DateOnly start, DateOnly end, BookingStatus status, string country, Domain.Entities.BookingMarketDetail? detail)
     {
-        var (weekend, week) = StayNights.Split(start, end);
+        (int weekend, int week) = StayNights.Split(start, end);
 
         // A booking made in the hotel holds only its price (MIL-055): its guests, meal and so on are not known, and the
         // zeros of the row would count as "0 guests", "not a repeated guest" and "no special requests" in the analysis.
@@ -106,4 +120,6 @@ public sealed class MarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
         && detail.CustomerType is null
         && detail.DepositType is null
         && detail.RoomType is null;
+
+    #endregion Private methods
 }

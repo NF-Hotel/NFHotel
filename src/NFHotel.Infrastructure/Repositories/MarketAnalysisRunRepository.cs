@@ -9,12 +9,18 @@ namespace NFHotel.Infrastructure.Repositories;
 /// <summary>Stores the market analyses that the data analysis service delivers (MIL-026).</summary>
 public sealed class MarketAnalysisRunRepository : Repository<MarketAnalysisRun, int>, IMarketAnalysisRunRepository
 {
+    #region Constructors
+
     /// <summary>Creates the repository.</summary>
     /// <param name="context">The database context.</param>
     public MarketAnalysisRunRepository(HotelDbContext context)
         : base(context)
     {
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <inheritdoc />
     public async Task<MarketAnalysisRun?> FindByRunIdAsync(Guid runId, CancellationToken cancellationToken = default) =>
@@ -31,4 +37,6 @@ public sealed class MarketAnalysisRunRepository : Repository<MarketAnalysisRun, 
             .ThenByDescending(run => run.Id)
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
+
+    #endregion Public methods
 }

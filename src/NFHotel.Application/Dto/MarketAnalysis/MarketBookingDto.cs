@@ -1,8 +1,9 @@
 namespace NFHotel.Application.Dto.MarketAnalysis;
 
 /// <summary>
-/// One booking as the input contract of the markets API wants it (ADR-0001 of <c>Notebook_Market_Analysis</c>). The client
-/// writes the names in snake_case and leaves a <c>null</c> out, which the markets API counts as a missing value.
+/// One booking as the input contract of the markets API wants it (the <c>Booking</c> schema of
+/// <c>openapi/market-contract.yaml</c> of <c>notebook-market-analysis</c>). The client writes the names in snake_case and
+/// leaves a <c>null</c> out, which the markets API counts as a missing value.
 /// </summary>
 /// <param name="BookingId">The booking id.</param>
 /// <param name="Hotel">The hotel name.</param>

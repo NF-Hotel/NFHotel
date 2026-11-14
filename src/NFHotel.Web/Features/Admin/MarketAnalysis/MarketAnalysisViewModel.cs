@@ -14,11 +14,17 @@ namespace NFHotel.Web.Features.Admin.MarketAnalysis;
 /// </summary>
 public sealed class MarketAnalysisViewModel
 {
+    #region Fields
+
     /// <summary>The id of the series of the findings that holds the room revenue of each month; the room revenue panel draws it, so the generic charts leave it out.</summary>
     public const string RoomRevenueSeriesId = "room_revenue.monthly";
 
     private readonly IUseCaseRunner<IMarketAnalysisService> _service;
     private readonly IClock _clock;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the view model.</summary>
     /// <param name="service">Runs the calls to the market analysis use cases.</param>
@@ -32,6 +38,10 @@ public sealed class MarketAnalysisViewModel
         _clock = clock;
     }
 
+    #endregion Constructors
+
+    #region Properties
+
     /// <summary>The report that was stored last, or <c>null</c> when none is stored yet.</summary>
     public MarketAnalysisReportDto? Report { get; private set; }
 
@@ -43,24 +53,6 @@ public sealed class MarketAnalysisViewModel
 
     /// <summary>The last arrival date of the bookings to analyse, or <c>null</c> for no upper limit.</summary>
     public DateOnly? To { get; set; }
-
-    /// <summary>Fills the dates with the last years up to today, for example the last 3 years.</summary>
-    /// <param name="years">The number of years; at least 1.</param>
-    public void UseLastYears(int years)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(years, 1);
-
-        DateOnly today = _clock.Today;
-        From = today.AddYears(-years);
-        To = today;
-    }
-
-    /// <summary>Clears both dates, so that every booking is analysed.</summary>
-    public void UseAllBookings()
-    {
-        From = null;
-        To = null;
-    }
 
     /// <summary>The texts of the last refusal, empty when the last call succeeded.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = [];
@@ -113,6 +105,28 @@ public sealed class MarketAnalysisViewModel
             : [.. Forecast.Measures
                 .Where(measure => measure.Months.Count > 0)
                 .Select(measure => MarketAnalysisForecastChart.From(measure, Forecast))];
+
+    #endregion Properties
+
+    #region Public methods
+
+    /// <summary>Fills the dates with the last years up to today, for example the last 3 years.</summary>
+    /// <param name="years">The number of years; at least 1.</param>
+    public void UseLastYears(int years)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(years, 1);
+
+        DateOnly today = _clock.Today;
+        From = today.AddYears(-years);
+        To = today;
+    }
+
+    /// <summary>Clears both dates, so that every booking is analysed.</summary>
+    public void UseAllBookings()
+    {
+        From = null;
+        To = null;
+    }
 
     /// <summary>Loads the stored report when the page opens, and picks up a run that is still going on.</summary>
     /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
@@ -204,6 +218,10 @@ public sealed class MarketAnalysisViewModel
         }
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     // A page that is opened or reloaded during a run follows it again. A run that has ended is not followed: the stored
     // report is shown as before. A failure of this call is not shown, so the page still works without it.
     private async Task PickUpCurrentRunAsync(CancellationToken cancellationToken)
@@ -241,6 +259,8 @@ public sealed class MarketAnalysisViewModel
 
         Errors = ErrorMessages.Describe(result);
     }
+
+    #endregion Private methods
 }
 
 /// <summary>One analysis of the report as the page draws it.</summary>

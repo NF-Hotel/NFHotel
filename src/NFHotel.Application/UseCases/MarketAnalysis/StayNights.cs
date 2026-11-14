@@ -12,9 +12,9 @@ public static class StayNights
     /// <returns>The weekend nights and the week nights; both 0 when <paramref name="end"/> is not after <paramref name="start"/>.</returns>
     public static (int Weekend, int Week) Split(DateOnly start, DateOnly end)
     {
-        var weekend = 0;
-        var week = 0;
-        for (var night = start; night < end; night = night.AddDays(1))
+        int weekend = 0;
+        int week = 0;
+        for (DateOnly night = start; night < end; night = night.AddDays(1))
         {
             if (night.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             {

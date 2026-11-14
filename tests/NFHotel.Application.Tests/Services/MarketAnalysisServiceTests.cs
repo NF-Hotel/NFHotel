@@ -1,5 +1,7 @@
 using NFHotel.Application.Dto.MarketAnalysis;
 using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.Domain.Entities;
 using NFHotel.TestSupport;
 
@@ -15,18 +17,19 @@ public sealed class MarketAnalysisServiceTests
     public async Task GetCurrentRunAsync_BeforeAndAfterAStart_IsNoneThenTheRun()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var service = world.MarketAnalysisService();
+        ServiceWorld world = new ServiceWorld();
+        MarketAnalysisService service = world.MarketAnalysisService();
 
         // Act
-        var before = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
-        var started = await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
-        var after = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto?> before = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> started = await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto?> after = await service.GetCurrentRunAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(before.IsSuccess);
         Assert.Null(before.Value);
-        Assert.Equal((started.Value.RunId, MarketAnalysisRunStates.Queued), (after.Value!.RunId, after.Value.State));
+        Assert.NotNull(after.Value);
+        Assert.Equal((started.Value.RunId, MarketAnalysisRunStates.Queued), (after.Value.RunId, after.Value.State));
     }
 
     /// <summary>Positive: a start returns at once with a queued run and hands it to the launcher; nothing has run yet.</summary>
@@ -34,10 +37,10 @@ public sealed class MarketAnalysisServiceTests
     public async Task StartRunAsync_NoRunActive_ReturnsTheQueuedRunAndLaunchesIt()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
 
         // Act
-        var result = await world.MarketAnalysisService().StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> result = await world.MarketAnalysisService().StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(MarketAnalysisRunStates.Queued, result.Value.State);
@@ -51,12 +54,12 @@ public sealed class MarketAnalysisServiceTests
     public async Task StartRunAsync_RunActive_IsRefusedAndLaunchesNothing()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var service = world.MarketAnalysisService();
+        ServiceWorld world = new ServiceWorld();
+        MarketAnalysisService service = world.MarketAnalysisService();
         await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
 
         // Act
-        var second = await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> second = await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.MarketAnalysisRunner.AlreadyRunning, Assert.Single(second.Errors).Code);
@@ -68,13 +71,13 @@ public sealed class MarketAnalysisServiceTests
     public async Task StartRunAsync_AfterTheRunEnded_StartsANewRun()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var service = world.MarketAnalysisService();
-        var first = (await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken)).Value;
+        ServiceWorld world = new ServiceWorld();
+        MarketAnalysisService service = world.MarketAnalysisService();
+        MarketAnalysisRunStateDto first = (await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken)).Value;
         await world.MarketAnalysisRunner().ExecuteAsync(first.RunId, TestContext.Current.CancellationToken);
 
         // Act
-        var second = await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> second = await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(second.IsSuccess);
@@ -87,18 +90,18 @@ public sealed class MarketAnalysisServiceTests
     public async Task GetRunStateAsync_RunInProgress_FollowsTheRun()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var service = world.MarketAnalysisService();
-        var runId = (await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken)).Value.RunId;
+        ServiceWorld world = new ServiceWorld();
+        MarketAnalysisService service = world.MarketAnalysisService();
+        Guid runId = (await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken)).Value.RunId;
         world.MarketAnalysisClient.Gate = new TaskCompletionSource();
 
         // Act
-        var queued = await service.GetRunStateAsync(runId, TestContext.Current.CancellationToken);
-        var work = world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
-        var running = await service.GetRunStateAsync(runId, TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> queued = await service.GetRunStateAsync(runId, TestContext.Current.CancellationToken);
+        Task work = world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> running = await service.GetRunStateAsync(runId, TestContext.Current.CancellationToken);
         world.MarketAnalysisClient.Gate.SetResult();
         await work;
-        var completed = await service.GetRunStateAsync(runId, TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> completed = await service.GetRunStateAsync(runId, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(
@@ -112,13 +115,13 @@ public sealed class MarketAnalysisServiceTests
     public async Task GetRunStateAsync_UnknownRun_IsNotFound()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var service = world.MarketAnalysisService();
+        ServiceWorld world = new ServiceWorld();
+        MarketAnalysisService service = world.MarketAnalysisService();
         await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken);
 
         // Act
-        var unknown = await service.GetRunStateAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
-        var empty = await service.GetRunStateAsync(Guid.Empty, TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> unknown = await service.GetRunStateAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> empty = await service.GetRunStateAsync(Guid.Empty, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.MarketAnalysisRunner.RunNotFound, Assert.Single(unknown.Errors).Code);
@@ -134,10 +137,10 @@ public sealed class MarketAnalysisServiceTests
     public async Task GetLatestReportAsync_NothingStored_ReturnsNotFound()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
 
         // Act
-        var result = await world.MarketAnalysisService().GetLatestReportAsync(TestContext.Current.CancellationToken);
+        Result<MarketAnalysisReportDto> result = await world.MarketAnalysisService().GetLatestReportAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.MarketAnalysis.NotFound, Assert.Single(result.Errors).Code);
@@ -148,21 +151,22 @@ public sealed class MarketAnalysisServiceTests
     public async Task GetLatestReportAsync_AfterARun_ReturnsTheDeliveredContent()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var service = world.MarketAnalysisService();
-        var runId = (await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken)).Value.RunId;
+        ServiceWorld world = new ServiceWorld();
+        MarketAnalysisService service = world.MarketAnalysisService();
+        Guid runId = (await service.StartRunAsync(new StartMarketAnalysisRequest(), TestContext.Current.CancellationToken)).Value.RunId;
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
 
         // Act
-        var result = await service.GetLatestReportAsync(TestContext.Current.CancellationToken);
+        Result<MarketAnalysisReportDto> result = await service.GetLatestReportAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var report = result.Value;
-        var cancellations = report.Content.Sections[0];
+        MarketAnalysisReportDto report = result.Value;
+        MarketAnalysisSectionDto cancellations = report.Content.Sections[0];
         Assert.Equal((runId, "ollama", "phi3.5:latest"), (report.RunId, report.Provider, report.Model));
         Assert.Equal("Bookings analysed", Assert.Single(report.Content.Figures).Label);
         Assert.Equal(["cancellations", "room_value"], report.Content.Sections.Select(section => section.Id));
-        Assert.Equal("Non-refundable bookings are cancelled most often.", cancellations.Insight!.ExecutiveSummary);
+        Assert.NotNull(cancellations.Insight);
+        Assert.Equal("Non-refundable bookings are cancelled most often.", cancellations.Insight.ExecutiveSummary);
         Assert.Equal(1200, Assert.Single(cancellations.Insight.Suggestions).SampleSize);
         Assert.Equal(["No Deposit", "Non Refund"], Assert.Single(cancellations.Series).Points.Select(point => point.Label));
         Assert.Equal("Missing field: price_per_night", report.Content.Sections[1].Reason);
@@ -173,12 +177,12 @@ public sealed class MarketAnalysisServiceTests
     public async Task GetLatestReportAsync_TwoRuns_ReturnsTheOneThatFinishedLast()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
         world.MarketAnalysisRuns.Add(Stored("old", new DateTimeOffset(2026, 10, 1, 0, 5, 0, TimeSpan.Zero)));
         world.MarketAnalysisRuns.Add(Stored("new", new DateTimeOffset(2026, 10, 9, 0, 5, 0, TimeSpan.Zero)));
 
         // Act
-        var result = await world.MarketAnalysisService().GetLatestReportAsync(TestContext.Current.CancellationToken);
+        Result<MarketAnalysisReportDto> result = await world.MarketAnalysisService().GetLatestReportAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("new", result.Value.Model);
@@ -189,11 +193,11 @@ public sealed class MarketAnalysisServiceTests
     public async Task GetLatestReportAsync_UnreadableContent_ReturnsInvalidBody()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
         world.MarketAnalysisRuns.Add(MarketAnalysisRun.Create(Guid.NewGuid(), 1, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, null, null, "not json"));
 
         // Act
-        var result = await world.MarketAnalysisService().GetLatestReportAsync(TestContext.Current.CancellationToken);
+        Result<MarketAnalysisReportDto> result = await world.MarketAnalysisService().GetLatestReportAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.MarketAnalysis.BodyInvalid, Assert.Single(result.Errors).Code);

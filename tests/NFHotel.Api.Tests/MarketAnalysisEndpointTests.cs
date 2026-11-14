@@ -23,16 +23,17 @@ public sealed class MarketAnalysisEndpointTests
     public async Task PostRun_Manager_ReturnsTheQueuedRunAndLaunchesTheWork()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new ApiFactory();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        using var response = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
+        ApiResponse<MarketAnalysisRunStateDto>? body = await response.Content.ReadFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(MarketAnalysisRunStates.Queued, body!.Value!.State);
+        Assert.NotNull(body?.Value);
+        Assert.Equal(MarketAnalysisRunStates.Queued, body.Value.State);
         Assert.Equal([body.Value.RunId], factory.World.MarketAnalysisLauncher.Launched);
         Assert.Equal(0, factory.World.MarketAnalysisClient.Calls);
     }
@@ -42,17 +43,18 @@ public sealed class MarketAnalysisEndpointTests
     public async Task PostRun_RunActive_Returns409()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new ApiFactory();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
         await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
 
         // Act
-        using var response = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
+        ApiResponse? body = await response.Content.ReadFromJsonAsync<ApiResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        Assert.Contains(ErrorCodes.MarketAnalysisRunner.AlreadyRunning, body!.Errors);
+        Assert.NotNull(body);
+        Assert.Contains(ErrorCodes.MarketAnalysisRunner.AlreadyRunning, body.Errors);
         Assert.Single(factory.World.MarketAnalysisLauncher.Launched);
     }
 
@@ -61,21 +63,26 @@ public sealed class MarketAnalysisEndpointTests
     public async Task GetRunThenLatest_AfterTheWork_ServesTheStateAndTheReport()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
-        var started = await (await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken))
+        using ApiFactory factory = new ApiFactory();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
+        ApiResponse<MarketAnalysisRunStateDto>? started = await (await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken))
             .Content.ReadFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
-        var runId = started!.Value!.RunId;
+        Assert.NotNull(started?.Value);
+        Guid runId = started.Value.RunId;
 
         // Act
-        var before = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>($"{Route}/runs/{runId}", ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<MarketAnalysisRunStateDto>? before = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>($"{Route}/runs/{runId}", ApiJson.Options, TestContext.Current.CancellationToken);
         await factory.World.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
-        var after = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>($"{Route}/runs/{runId}", ApiJson.Options, TestContext.Current.CancellationToken);
-        var report = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisReportDto>>($"{Route}/latest", ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<MarketAnalysisRunStateDto>? after = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>($"{Route}/runs/{runId}", ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<MarketAnalysisReportDto>? report = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisReportDto>>($"{Route}/latest", ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal((MarketAnalysisRunStates.Queued, MarketAnalysisRunStates.Completed), (before!.Value!.State, after!.Value!.State));
-        Assert.Equal("phi3.5:latest", report!.Value!.Model);
+        Assert.NotNull(before?.Value);
+        Assert.NotNull(after?.Value);
+        Assert.Equal((MarketAnalysisRunStates.Queued, MarketAnalysisRunStates.Completed), (before.Value.State, after.Value.State));
+        Assert.NotNull(report?.Value);
+        Assert.Equal("phi3.5:latest", report.Value.Model);
+        // The fake service client answers with its sample, whose first analysis, cancellations, carries an insight.
         Assert.Equal("Non-refundable bookings are cancelled most often.", report.Value.Content.Sections[0].Insight!.ExecutiveSummary);
     }
 
@@ -84,16 +91,17 @@ public sealed class MarketAnalysisEndpointTests
     public async Task GetLatest_NothingStored_Returns404()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new ApiFactory();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        using var response = await client.GetAsync($"{Route}/latest", TestContext.Current.CancellationToken);
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.GetAsync($"{Route}/latest", TestContext.Current.CancellationToken);
+        ApiResponse? body = await response.Content.ReadFromJsonAsync<ApiResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Contains(ErrorCodes.MarketAnalysis.NotFound, body!.Errors);
+        Assert.NotNull(body);
+        Assert.Contains(ErrorCodes.MarketAnalysis.NotFound, body.Errors);
     }
 
     /// <summary>Boundary: with no run the current run is a 204 without a body.</summary>
@@ -101,11 +109,11 @@ public sealed class MarketAnalysisEndpointTests
     public async Task GetCurrentRun_NoRun_Returns204()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new ApiFactory();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        using var response = await client.GetAsync($"{Route}/runs/current", TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.GetAsync($"{Route}/runs/current", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -117,20 +125,23 @@ public sealed class MarketAnalysisEndpointTests
     public async Task GetCurrentRun_RunGoesOnThenEnds_ReturnsItsState()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
-        var started = await (await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken))
+        using ApiFactory factory = new ApiFactory();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
+        ApiResponse<MarketAnalysisRunStateDto>? started = await (await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken))
             .Content.ReadFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
-        var runId = started!.Value!.RunId;
+        Assert.NotNull(started?.Value);
+        Guid runId = started.Value.RunId;
 
         // Act
-        var during = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>($"{Route}/runs/current", ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<MarketAnalysisRunStateDto>? during = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>($"{Route}/runs/current", ApiJson.Options, TestContext.Current.CancellationToken);
         await factory.World.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
-        var after = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>($"{Route}/runs/current", ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse<MarketAnalysisRunStateDto>? after = await client.GetFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>($"{Route}/runs/current", ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal((runId, MarketAnalysisRunStates.Queued), (during!.Value!.RunId, during.Value.State));
-        Assert.Equal((runId, MarketAnalysisRunStates.Completed), (after!.Value!.RunId, after.Value.State));
+        Assert.NotNull(during?.Value);
+        Assert.Equal((runId, MarketAnalysisRunStates.Queued), (during.Value.RunId, during.Value.State));
+        Assert.NotNull(after?.Value);
+        Assert.Equal((runId, MarketAnalysisRunStates.Completed), (after.Value.RunId, after.Value.State));
     }
 
     /// <summary>Negative: a run the API does not know, for example after a restart, is a 404.</summary>
@@ -138,11 +149,11 @@ public sealed class MarketAnalysisEndpointTests
     public async Task GetRun_UnknownRun_Returns404()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new ApiFactory();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        using var response = await client.GetAsync($"{Route}/runs/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.GetAsync($"{Route}/runs/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -153,17 +164,18 @@ public sealed class MarketAnalysisEndpointTests
     public async Task PostRun_PeriodInTheBody_ReachesTheRun()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
-        var from = new DateOnly(2019, 1, 1);
-        var to = new DateOnly(2019, 12, 31);
+        using ApiFactory factory = new ApiFactory();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
+        DateOnly from = new DateOnly(2019, 1, 1);
+        DateOnly to = new DateOnly(2019, 12, 31);
 
         // Act
-        var started = await (await client.PostAsJsonAsync($"{Route}/runs", new StartMarketAnalysisRequest(from, to), ApiJson.Options, TestContext.Current.CancellationToken))
+        ApiResponse<MarketAnalysisRunStateDto>? started = await (await client.PostAsJsonAsync($"{Route}/runs", new StartMarketAnalysisRequest(from, to), ApiJson.Options, TestContext.Current.CancellationToken))
             .Content.ReadFromJsonAsync<ApiResponse<MarketAnalysisRunStateDto>>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(new StartMarketAnalysisRequest(from, to), factory.World.MarketAnalysisTracker.PeriodOf(started!.Value!.RunId));
+        Assert.NotNull(started?.Value);
+        Assert.Equal(new StartMarketAnalysisRequest(from, to), factory.World.MarketAnalysisTracker.PeriodOf(started.Value.RunId));
     }
 
     /// <summary>Negative: a first date after the last date is a 422 with its code and starts nothing.</summary>
@@ -171,16 +183,17 @@ public sealed class MarketAnalysisEndpointTests
     public async Task PostRun_FromAfterTo_Returns422()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(StaffRole.Manager);
+        using ApiFactory factory = new ApiFactory();
+        using HttpClient client = factory.CreateStaffClient(StaffRole.Manager);
 
         // Act
-        using var response = await client.PostAsJsonAsync($"{Route}/runs", new StartMarketAnalysisRequest(new DateOnly(2020, 1, 1), new DateOnly(2019, 1, 1)), ApiJson.Options, TestContext.Current.CancellationToken);
-        var body = await response.Content.ReadFromJsonAsync<ApiResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.PostAsJsonAsync($"{Route}/runs", new StartMarketAnalysisRequest(new DateOnly(2020, 1, 1), new DateOnly(2019, 1, 1)), ApiJson.Options, TestContext.Current.CancellationToken);
+        ApiResponse? body = await response.Content.ReadFromJsonAsync<ApiResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-        Assert.Contains(ErrorCodes.MarketAnalysis.PeriodInvalid, body!.Errors);
+        Assert.NotNull(body);
+        Assert.Contains(ErrorCodes.MarketAnalysis.PeriodInvalid, body.Errors);
         Assert.Empty(factory.World.MarketAnalysisLauncher.Launched);
     }
 
@@ -195,14 +208,14 @@ public sealed class MarketAnalysisEndpointTests
     public async Task AllEndpoints_OtherRoles_Return403(StaffRole role)
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateStaffClient(role);
+        using ApiFactory factory = new ApiFactory();
+        using HttpClient client = factory.CreateStaffClient(role);
 
         // Act
-        using var start = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
-        using var state = await client.GetAsync($"{Route}/runs/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
-        using var latest = await client.GetAsync($"{Route}/latest", TestContext.Current.CancellationToken);
-        using var current = await client.GetAsync($"{Route}/runs/current", TestContext.Current.CancellationToken);
+        using HttpResponseMessage start = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
+        using HttpResponseMessage state = await client.GetAsync($"{Route}/runs/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
+        using HttpResponseMessage latest = await client.GetAsync($"{Route}/latest", TestContext.Current.CancellationToken);
+        using HttpResponseMessage current = await client.GetAsync($"{Route}/runs/current", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(
@@ -216,13 +229,13 @@ public sealed class MarketAnalysisEndpointTests
     public async Task AllEndpoints_NoStaffToken_Return401()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateServiceClient();
+        using ApiFactory factory = new ApiFactory();
+        using HttpClient client = factory.CreateServiceClient();
 
         // Act
-        using var start = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
-        using var latest = await client.GetAsync($"{Route}/latest", TestContext.Current.CancellationToken);
-        using var current = await client.GetAsync($"{Route}/runs/current", TestContext.Current.CancellationToken);
+        using HttpResponseMessage start = await client.PostAsync($"{Route}/runs", null, TestContext.Current.CancellationToken);
+        using HttpResponseMessage latest = await client.GetAsync($"{Route}/latest", TestContext.Current.CancellationToken);
+        using HttpResponseMessage current = await client.GetAsync($"{Route}/runs/current", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(

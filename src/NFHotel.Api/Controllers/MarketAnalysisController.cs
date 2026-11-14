@@ -17,7 +17,13 @@ namespace NFHotel.Api.Controllers;
 [Route(ApiRoutes.MarketAnalysis)]
 public sealed class MarketAnalysisController : ControllerBase
 {
+    #region Fields
+
     private readonly IMarketAnalysisService _marketAnalysis;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the controller.</summary>
     /// <param name="marketAnalysis">The use cases of the market analysis.</param>
@@ -26,6 +32,10 @@ public sealed class MarketAnalysisController : ControllerBase
         ArgumentNullException.ThrowIfNull(marketAnalysis);
         _marketAnalysis = marketAnalysis;
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <summary>Starts a run in the background for the bookings of a period.</summary>
     /// <param name="request">The period by arrival date; the body may be left out to analyse every booking.</param>
@@ -64,4 +74,6 @@ public sealed class MarketAnalysisController : ControllerBase
     [RequiresPermission(Permissions.MarketAnalysisView)]
     public async Task<IActionResult> GetLatestAsync(CancellationToken cancellationToken) =>
         this.ToResponse(await _marketAnalysis.GetLatestReportAsync(cancellationToken).ConfigureAwait(false));
+
+    #endregion Public methods
 }

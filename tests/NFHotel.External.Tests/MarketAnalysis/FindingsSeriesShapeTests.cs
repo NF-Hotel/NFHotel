@@ -155,6 +155,7 @@ public sealed class FindingsSeriesShapeTests
         const string Stored = """{"Id":"a","Title":"A","Unit":"%","Points":[{"Label":"x","Value":1,"SmallSample":false}]}""";
 
         // Act
+        // Deserialize returns null only for the JSON literal null, and Stored is an object.
         MarketAnalysisSeriesDto series = JsonSerializer.Deserialize<MarketAnalysisSeriesDto>(Stored)!;
 
         // Assert
@@ -209,6 +210,7 @@ public sealed class FindingsSeriesShapeTests
         string json = File.ReadAllText(Path.Join(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
         using JsonDocument document = JsonDocument.Parse(json);
 
+        // The sample is a completed result, so Map reads it, and the mapper always fills its content.
         return MarketAnalysisResultMapper.Map(document.RootElement)!.Content!.Sections.Single(section => section.Id == id);
     }
 

@@ -19,7 +19,7 @@ else
         <div class="chart-donut">
             @BuildSvg()
             <ul class="chart-legend chart-legend-values">
-                @for (var index = 0; index < Points.Count; index++)
+                @for (int index = 0; index < Points.Count; index++)
                 {
                     <li><span class="chart-swatch chart-series-@(index % SeriesColours)"></span>@Points[index].Label: <strong>@PointText(Points[index])</strong></li>
                 }

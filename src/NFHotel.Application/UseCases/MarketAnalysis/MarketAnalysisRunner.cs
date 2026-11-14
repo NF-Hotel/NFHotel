@@ -18,6 +18,8 @@ namespace NFHotel.Application.UseCases.MarketAnalysis;
 /// </summary>
 public sealed class MarketAnalysisRunner
 {
+    #region Fields
+
     /// <summary>The only result schema version (the major number) that is read.</summary>
     public const int SupportedSchemaVersion = 1;
 
@@ -30,6 +32,10 @@ public sealed class MarketAnalysisRunner
     private readonly MarketAnalysisRunTracker _tracker;
     private readonly IClock _clock;
     private readonly IPricingSettingsService? _pricingSettings;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the runner.</summary>
     /// <param name="bookings">The read of the hotel bookings.</param>
@@ -64,6 +70,10 @@ public sealed class MarketAnalysisRunner
         _pricingSettings = pricingSettings;
     }
 
+    #endregion Constructors
+
+    #region Public methods
+
     /// <summary>Runs the analysis and ends the run in the tracker as completed or failed.</summary>
     /// <param name="runId">The id of the run that <see cref="MarketAnalysisRunTracker.TryBegin"/> made.</param>
     /// <param name="cancellationToken">Cancels the run, for example when the API stops.</param>
@@ -71,17 +81,17 @@ public sealed class MarketAnalysisRunner
     public async Task ExecuteAsync(Guid runId, CancellationToken cancellationToken = default)
     {
         _tracker.MarkRunning(runId);
-        var startedAt = _clock.UtcNow;
+        DateTimeOffset startedAt = _clock.UtcNow;
 
-        var period = _tracker.PeriodOf(runId);
-        var bookings = await _bookings.GetBookingsAsync(period.From, period.To, cancellationToken).ConfigureAwait(false);
+        StartMarketAnalysisRequest period = _tracker.PeriodOf(runId);
+        IReadOnlyList<MarketBookingDto> bookings = await _bookings.GetBookingsAsync(period.From, period.To, cancellationToken).ConfigureAwait(false);
         if (bookings.Count == 0)
         {
             _tracker.MarkFailed(runId, ErrorCodes.MarketAnalysis.NoBookings);
             return;
         }
 
-        var rooms = await _bookings.CountRoomsAsync(cancellationToken).ConfigureAwait(false);
+        int rooms = await _bookings.CountRoomsAsync(cancellationToken).ConfigureAwait(false);
         if (rooms < 1)
         {
             _tracker.MarkFailed(runId, ErrorCodes.MarketAnalysisRunner.InputRejected);
@@ -96,7 +106,7 @@ public sealed class MarketAnalysisRunner
             return;
         }
 
-        var dto = result.Value;
+        MarketAnalysisResultDto dto = result.Value;
         if (dto.SchemaVersion != SupportedSchemaVersion)
         {
             _tracker.MarkFailed(runId, ErrorCodes.MarketAnalysis.SchemaVersionUnsupported);
@@ -140,6 +150,10 @@ public sealed class MarketAnalysisRunner
         _tracker.MarkCompleted(runId);
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     // The settings of the Manager decide the thresholds and the percentages; the service makes the suggestions from them. When the
     // settings cannot be read the run asks for the defaults, so a failure there does not stop the analysis.
     private async Task<MarketAnalysisPricingRequest?> PricingRequestAsync(CancellationToken cancellationToken)
@@ -161,4 +175,6 @@ public sealed class MarketAnalysisRunner
             settings?.DiscountPercent ?? defaults.DiscountPercent,
             [.. sizes.Select(size => size.ToLowerInvariant())]);
     }
+
+    #endregion Private methods
 }

@@ -12,10 +12,16 @@ namespace NFHotel.Application.UseCases.MarketAnalysis;
 /// </summary>
 public sealed class MarketAnalysisRunTracker
 {
+    #region Fields
+
     private readonly IClock _clock;
     private readonly object _lock = new();
     private MarketAnalysisRunStateDto? _current;
     private StartMarketAnalysisRequest _period = new();
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the tracker.</summary>
     /// <param name="clock">The clock for the times of a run.</param>
@@ -24,6 +30,27 @@ public sealed class MarketAnalysisRunTracker
         ArgumentNullException.ThrowIfNull(clock);
         _clock = clock;
     }
+
+    #endregion Constructors
+
+    #region Properties
+
+    /// <summary>Reads the run that is going on, or the one that ended last.</summary>
+    /// <returns>The state, or <c>null</c> when no run has begun since the API started.</returns>
+    public MarketAnalysisRunStateDto? Current
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _current;
+            }
+        }
+    }
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <summary>Begins a run when none is going on.</summary>
     /// <param name="from">The first arrival date of the bookings to analyse, or <c>null</c>.</param>
@@ -55,19 +82,6 @@ public sealed class MarketAnalysisRunTracker
         }
     }
 
-    /// <summary>Reads the run that is going on, or the one that ended last.</summary>
-    /// <returns>The state, or <c>null</c> when no run has begun since the API started.</returns>
-    public MarketAnalysisRunStateDto? Current
-    {
-        get
-        {
-            lock (_lock)
-            {
-                return _current;
-            }
-        }
-    }
-
     /// <summary>Reads the period that a run was started for.</summary>
     /// <param name="runId">The run id.</param>
     /// <returns>The period, or an open period when this is not the run that the tracker holds.</returns>
@@ -95,6 +109,10 @@ public sealed class MarketAnalysisRunTracker
     public void MarkFailed(Guid runId, string code) =>
         Change(runId, current => current with { State = MarketAnalysisRunStates.Failed, FinishedAt = _clock.UtcNow, Error = code });
 
+    #endregion Public methods
+
+    #region Private methods
+
     private void Change(Guid runId, Func<MarketAnalysisRunStateDto, MarketAnalysisRunStateDto> change)
     {
         lock (_lock)
@@ -105,4 +123,6 @@ public sealed class MarketAnalysisRunTracker
             }
         }
     }
+
+    #endregion Private methods
 }

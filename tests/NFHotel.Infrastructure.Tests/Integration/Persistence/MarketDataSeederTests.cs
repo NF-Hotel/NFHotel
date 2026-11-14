@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
+using NFHotel.Domain.Entities;
+using NFHotel.Infrastructure.Persistence;
 using NFHotel.Infrastructure.Seeding;
 using NFHotel.Infrastructure.Tests.Seeding;
 
@@ -29,29 +31,29 @@ public sealed class MarketDataSeederTests : IAsyncLifetime
     public async Task SeedAsync_EmptyDatabase_WritesEverything()
     {
         // Arrange
-        var plan = SmallPlan();
-        await using var context = _fixture.CreateContext();
+        MarketSeedPlan plan = SmallPlan();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
         await new MarketDataSeeder(context).SeedAsync(plan, Today, replace: false, TestContext.Current.CancellationToken);
 
         // Assert
-        await using var check = _fixture.CreateContext();
+        await using HotelDbContext check = _fixture.CreateContext();
         Assert.Equal(plan.RoomCount, await check.Rooms.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(plan.GuestCountries.Count, await check.Guests.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(4, await check.Bookings.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(4, await check.BookingMarketDetails.CountAsync(TestContext.Current.CancellationToken));
 
-        var booking = await check.Bookings.SingleAsync(candidate => candidate.Id == 1, TestContext.Current.CancellationToken);
+        Booking booking = await check.Bookings.SingleAsync(candidate => candidate.Id == 1, TestContext.Current.CancellationToken);
         Assert.Equal((new DateOnly(2019, 3, 1), new DateOnly(2019, 3, 4)), (booking.StartDate, booking.EndDate));
         Assert.Equal(NFHotel.Domain.ValueObjects.BookingStatus.CheckedOut, booking.Status);
         Assert.Equal(new DateOnly(2019, 3, 4), booking.CheckOutDate);
 
-        var cancelled = await check.Bookings.SingleAsync(candidate => candidate.Id == 4, TestContext.Current.CancellationToken);
+        Booking cancelled = await check.Bookings.SingleAsync(candidate => candidate.Id == 4, TestContext.Current.CancellationToken);
         Assert.Equal(NFHotel.Domain.ValueObjects.BookingStatus.Cancelled, cancelled.Status);
         Assert.Null(cancelled.CheckInTime);
 
-        var detail = await check.BookingMarketDetails.SingleAsync(candidate => candidate.BookingId == 1, TestContext.Current.CancellationToken);
+        BookingMarketDetail detail = await check.BookingMarketDetails.SingleAsync(candidate => candidate.BookingId == 1, TestContext.Current.CancellationToken);
         Assert.Equal((new DateOnly(2019, 1, 30), 94.00m, "BB", "Direct", "C", 2), (detail.BookedAt, detail.PricePerNight, detail.Meal, detail.MarketSegment, detail.RoomType, detail.Adults));
     }
 
@@ -60,19 +62,19 @@ public sealed class MarketDataSeederTests : IAsyncLifetime
     public async Task SeedAsync_AfterTheSeed_NewRowsGetFreshKeys()
     {
         // Arrange
-        await using (var context = _fixture.CreateContext())
+        await using (HotelDbContext context = _fixture.CreateContext())
         {
             await new MarketDataSeeder(context).SeedAsync(SmallPlan(), Today, replace: false, TestContext.Current.CancellationToken);
         }
 
         // Act
-        await using var add = _fixture.CreateContext();
+        await using HotelDbContext add = _fixture.CreateContext();
         await add.Database.ExecuteSqlRawAsync(
             "INSERT INTO room (room_number, floor, size, capacity, status, housekeeping_status) VALUES ('999', 9, 0, 1, 0, 0)",
             TestContext.Current.CancellationToken);
 
         // Assert
-        var rooms = await add.Rooms.CountAsync(TestContext.Current.CancellationToken);
+        int rooms = await add.Rooms.CountAsync(TestContext.Current.CancellationToken);
         Assert.True(rooms > 1);
         Assert.Equal(rooms, await add.Rooms.Select(room => room.Id).Distinct().CountAsync(TestContext.Current.CancellationToken));
     }
@@ -82,19 +84,19 @@ public sealed class MarketDataSeederTests : IAsyncLifetime
     public async Task SeedAsync_DatabaseHasData_RefusesWithoutReplace()
     {
         // Arrange
-        await using (var context = _fixture.CreateContext())
+        await using (HotelDbContext context = _fixture.CreateContext())
         {
             await new MarketDataSeeder(context).SeedAsync(SmallPlan(), Today, replace: false, TestContext.Current.CancellationToken);
         }
 
-        await using var again = _fixture.CreateContext();
+        await using HotelDbContext again = _fixture.CreateContext();
 
         // Act
-        var seed = () => new MarketDataSeeder(again).SeedAsync(SmallPlan(), Today, replace: false, TestContext.Current.CancellationToken);
+        Func<Task> seed = () => new MarketDataSeeder(again).SeedAsync(SmallPlan(), Today, replace: false, TestContext.Current.CancellationToken);
 
         // Assert
         await Assert.ThrowsAsync<InvalidOperationException>(seed);
-        await using var check = _fixture.CreateContext();
+        await using HotelDbContext check = _fixture.CreateContext();
         Assert.Equal(4, await check.Bookings.CountAsync(TestContext.Current.CancellationToken));
     }
 
@@ -103,19 +105,19 @@ public sealed class MarketDataSeederTests : IAsyncLifetime
     public async Task SeedAsync_Replace_GivesTheSameDataAgain()
     {
         // Arrange
-        await using (var context = _fixture.CreateContext())
+        await using (HotelDbContext context = _fixture.CreateContext())
         {
             await new MarketDataSeeder(context).SeedAsync(SmallPlan(), Today, replace: false, TestContext.Current.CancellationToken);
         }
 
         // Act
-        await using (var again = _fixture.CreateContext())
+        await using (HotelDbContext again = _fixture.CreateContext())
         {
             await new MarketDataSeeder(again).SeedAsync(SmallPlan(), Today, replace: true, TestContext.Current.CancellationToken);
         }
 
         // Assert
-        await using var check = _fixture.CreateContext();
+        await using HotelDbContext check = _fixture.CreateContext();
         Assert.Equal(4, await check.Bookings.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(4, await check.BookingMarketDetails.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal([1, 2, 3, 4], await check.Bookings.OrderBy(booking => booking.Id).Select(booking => booking.Id).ToListAsync(TestContext.Current.CancellationToken));
@@ -126,17 +128,17 @@ public sealed class MarketDataSeederTests : IAsyncLifetime
     public async Task SeedAsync_OverlapInOneRoom_IsRefusedAndRollsBack()
     {
         // Arrange
-        var rows = new[] { MarketSeedPlannerTests.Row(1, 0, 3), MarketSeedPlannerTests.Row(2, 1, 3) };
-        var plan = MarketSeedPlanner.Plan(rows);
-        var broken = plan with { Bookings = [.. plan.Bookings.Select(placement => placement with { Room = 1 })] };
-        await using var context = _fixture.CreateContext();
+        MarketSeedRow[] rows = new[] { MarketSeedPlannerTests.Row(1, 0, 3), MarketSeedPlannerTests.Row(2, 1, 3) };
+        MarketSeedPlan plan = MarketSeedPlanner.Plan(rows);
+        MarketSeedPlan broken = plan with { Bookings = [.. plan.Bookings.Select(placement => placement with { Room = 1 })] };
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var seed = () => new MarketDataSeeder(context).SeedAsync(broken, Today, replace: false, TestContext.Current.CancellationToken);
+        Func<Task> seed = () => new MarketDataSeeder(context).SeedAsync(broken, Today, replace: false, TestContext.Current.CancellationToken);
 
         // Assert
         await Assert.ThrowsAnyAsync<Exception>(seed);
-        await using var check = _fixture.CreateContext();
+        await using HotelDbContext check = _fixture.CreateContext();
         Assert.Equal(0, await check.Bookings.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(0, await check.Rooms.CountAsync(TestContext.Current.CancellationToken));
     }
@@ -146,22 +148,22 @@ public sealed class MarketDataSeederTests : IAsyncLifetime
     public async Task SeedAsync_TheRealFile_LoadsEveryRow()
     {
         // Arrange
-        var path = FindFile();
+        string? path = FindFile();
         if (path is null)
         {
             Assert.Skip("nf_hotel_bookings.csv is not in this checkout.");
         }
 
-        using var reader = new StreamReader(path!);
-        var rows = MarketSeedCsv.Parse(reader);
-        var plan = MarketSeedPlanner.Plan(rows);
-        await using var context = _fixture.CreateContext();
+        using StreamReader reader = new StreamReader(path);
+        IReadOnlyList<MarketSeedRow> rows = MarketSeedCsv.Parse(reader);
+        MarketSeedPlan plan = MarketSeedPlanner.Plan(rows);
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
         await new MarketDataSeeder(context).SeedAsync(plan, Today, replace: false, TestContext.Current.CancellationToken);
 
         // Assert
-        await using var check = _fixture.CreateContext();
+        await using HotelDbContext check = _fixture.CreateContext();
         Assert.Equal(rows.Count, await check.Bookings.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(rows.Count(row => row.IsCanceled), await check.Bookings.CountAsync(booking => booking.Status == NFHotel.Domain.ValueObjects.BookingStatus.Cancelled, TestContext.Current.CancellationToken));
         Assert.Equal(rows.Count, await check.BookingMarketDetails.CountAsync(TestContext.Current.CancellationToken));
@@ -175,7 +177,7 @@ public sealed class MarketDataSeederTests : IAsyncLifetime
     public async Task SeedAsync_BookingsAroundToday_GetTheirStatusFromTheDate()
     {
         // Arrange: today is 2026-10-20
-        var plan = MarketSeedPlanner.Plan(
+        MarketSeedPlan plan = MarketSeedPlanner.Plan(
         [
             Row(1, new DateOnly(2026, 10, 1), 3),
             Row(2, new DateOnly(2026, 10, 19), 3),
@@ -183,14 +185,14 @@ public sealed class MarketDataSeederTests : IAsyncLifetime
             Row(4, new DateOnly(2026, 12, 24), 3),
             Row(5, new DateOnly(2026, 10, 1), 3, canceled: true),
         ]);
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
         await new MarketDataSeeder(context).SeedAsync(plan, Today, replace: false, TestContext.Current.CancellationToken);
 
         // Assert
-        await using var check = _fixture.CreateContext();
-        var bookings = await check.Bookings.OrderBy(booking => booking.Id).ToListAsync(TestContext.Current.CancellationToken);
+        await using HotelDbContext check = _fixture.CreateContext();
+        List<Booking> bookings = await check.Bookings.OrderBy(booking => booking.Id).ToListAsync(TestContext.Current.CancellationToken);
         Assert.Equal(
             [NFHotel.Domain.ValueObjects.BookingStatus.CheckedOut, NFHotel.Domain.ValueObjects.BookingStatus.CheckedIn, NFHotel.Domain.ValueObjects.BookingStatus.CheckedIn, NFHotel.Domain.ValueObjects.BookingStatus.Confirmed, NFHotel.Domain.ValueObjects.BookingStatus.Cancelled],
             bookings.Select(booking => booking.Status));
@@ -205,21 +207,21 @@ public sealed class MarketDataSeederTests : IAsyncLifetime
     public async Task SeedAsync_TheRealFileThrough2026_LoadsEveryRowUpToTheDate()
     {
         // Arrange
-        var path = FindFile();
+        string? path = FindFile();
         if (path is null)
         {
             Assert.Skip("nf_hotel_bookings.csv is not in this checkout.");
         }
 
-        using var reader = new StreamReader(path!);
-        var rows = MarketSeedExpander.Expand(MarketSeedCsv.Parse(reader), new DateOnly(2026, 12, 31));
-        await using var context = _fixture.CreateContext();
+        using StreamReader reader = new StreamReader(path);
+        IReadOnlyList<MarketSeedRow> rows = MarketSeedExpander.Expand(MarketSeedCsv.Parse(reader), new DateOnly(2026, 12, 31));
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
         await new MarketDataSeeder(context).SeedAsync(MarketSeedPlanner.Plan(rows), Today, replace: false, TestContext.Current.CancellationToken);
 
         // Assert
-        await using var check = _fixture.CreateContext();
+        await using HotelDbContext check = _fixture.CreateContext();
         Assert.Equal(rows.Count, await check.Bookings.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(new DateOnly(2018, 7, 1), await check.Bookings.MinAsync(booking => booking.StartDate, TestContext.Current.CancellationToken));
         Assert.True(await check.Bookings.MaxAsync(booking => booking.StartDate, TestContext.Current.CancellationToken) > new DateOnly(2026, 12, 1));
@@ -244,9 +246,9 @@ public sealed class MarketDataSeederTests : IAsyncLifetime
 
     private static string? FindFile()
     {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+        for (DirectoryInfo? directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
         {
-            var candidate = Path.Join(directory.FullName, "src", "NFHotel.DataAnalysis", "data", "nf_hotel_bookings.csv");
+            string candidate = Path.Join(directory.FullName, "src", "NFHotel.DataAnalysis", "data", "nf_hotel_bookings.csv");
             if (File.Exists(candidate))
             {
                 return candidate;

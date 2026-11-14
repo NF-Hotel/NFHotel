@@ -10,7 +10,13 @@ namespace NFHotel.Web.Features.Admin.MarketAnalysis;
 /// </summary>
 public partial class MarketAnalysisReport : CancellableComponentBase
 {
+    #region Fields
+
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
+
+    #endregion Fields
+
+    #region Protected methods
 
     /// <summary>Loads the stored report when the page opens, and then follows a run that is going on, whoever started it.</summary>
     protected override async Task OnInitializedAsync()
@@ -18,6 +24,10 @@ public partial class MarketAnalysisReport : CancellableComponentBase
         await ViewModel.InitializeAsync(ComponentToken);
         _ = PollAsync();
     }
+
+    #endregion Protected methods
+
+    #region Private methods
 
     private async Task StartAsync()
     {
@@ -57,4 +67,6 @@ public partial class MarketAnalysisReport : CancellableComponentBase
 
     private static string Time(DateTimeOffset value) =>
         value.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) + " UTC";
+
+    #endregion Private methods
 }

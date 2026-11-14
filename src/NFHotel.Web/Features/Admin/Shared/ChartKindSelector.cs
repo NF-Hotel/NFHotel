@@ -23,6 +23,8 @@ namespace NFHotel.Web.Features.Admin.Shared;
 /// </summary>
 public static partial class ChartKindSelector
 {
+    #region Fields
+
     /// <summary>The most parts a donut shows; more are ranked bars.</summary>
     public const int MaxDonutParts = 4;
 
@@ -34,6 +36,10 @@ public static partial class ChartKindSelector
 
     /// <summary>A series of months must span at least this many calendar years to be laid out as months against years.</summary>
     public const int HeatmapMinYears = 3;
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Chooses the kind of chart for a series.</summary>
     /// <param name="series">The series.</param>
@@ -71,6 +77,10 @@ public static partial class ChartKindSelector
         return points.Count > MaxDonutParts ? ChartKind.RankedBars : ChartKind.Columns;
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static ChartKind Months(IReadOnlyList<MarketAnalysisPointDto> points)
     {
         if (points.Count >= HeatmapMinPoints && MonthGrid.YearCount(points) >= HeatmapMinYears)
@@ -83,4 +93,6 @@ public static partial class ChartKindSelector
 
     [GeneratedRegex(@"^\d{4}-W\d{2}$", RegexOptions.CultureInvariant)]
     private static partial Regex WeekLabel();
+
+    #endregion Private methods
 }

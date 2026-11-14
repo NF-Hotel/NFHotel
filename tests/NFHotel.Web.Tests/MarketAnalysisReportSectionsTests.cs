@@ -62,7 +62,8 @@ public sealed class MarketAnalysisReportSectionsTests
     {
         // Arrange
         MarketAnalysisContentDto content = MarketSample.Content12();
-        MarketAnalysisForecastMeasureDto measure = content.Forecast!.Measures[0];
+        Assert.NotNull(content.Forecast);
+        MarketAnalysisForecastMeasureDto measure = content.Forecast.Measures[0];
         MarketAnalysisForecastMeasureDto open = measure with { Months = [measure.Months[0] with { Low = null }, .. measure.Months.Skip(1)] };
         MarketAnalysisViewModel viewModel = await LoadedAsync(content with { Forecast = content.Forecast with { Measures = [open] } });
 
@@ -118,6 +119,7 @@ public sealed class MarketAnalysisReportSectionsTests
     public async Task Interpretation_AiText_ShowsMarkdownTheAiLabelAndTheRecommendations()
     {
         // Arrange
+        // The sample of schema 1.2 holds an overall interpretation.
         MarketAnalysisOverallDto overall = MarketSample.Content12().Overall!;
 
         // Act
@@ -176,7 +178,8 @@ public sealed class MarketAnalysisReportSectionsTests
     {
         // Arrange
         MarketAnalysisSectionDto section = MarketSample.Content12().Sections.Single();
-        MarketAnalysisRoomRevenueDto revenue = section.RoomRevenue!;
+        Assert.NotNull(section.RoomRevenue);
+        MarketAnalysisRoomRevenueDto revenue = section.RoomRevenue;
 
         // Act
         string html = await RenderAsync<RoomRevenuePanel>(RevenueParameters(revenue, section));
@@ -242,7 +245,8 @@ public sealed class MarketAnalysisReportSectionsTests
     {
         // Arrange
         MarketAnalysisContentDto content = MarketSample.Content12();
-        MarketAnalysisForecastMeasureDto measure = content.Forecast!.Measures[0];
+        Assert.NotNull(content.Forecast);
+        MarketAnalysisForecastMeasureDto measure = content.Forecast.Measures[0];
         MarketAnalysisForecastMeasureDto open = measure with { Months = [measure.Months[0] with { High = null }, .. measure.Months.Skip(1)] };
         MarketAnalysisViewModel viewModel = await LoadedAsync(content with
         {

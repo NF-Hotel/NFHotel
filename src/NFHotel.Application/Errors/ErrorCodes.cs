@@ -403,13 +403,13 @@ public static class ErrorCodes
         /// <summary>The markets API did not answer in time or could not be reached.</summary>
         public const string Unavailable = "market_analysis_runner.unavailable";
 
-        /// <summary>The markets API refused the call (a gateway in front of it asked for a token).</summary>
+        /// <summary>The markets API refused the call: no or a wrong API key (HTTP 401), or no access (HTTP 403).</summary>
         public const string Unauthorized = "market_analysis_runner.unauthorized";
 
         /// <summary>A run of the market analysis is already active.</summary>
         public const string AlreadyRunning = "market_analysis_runner.already_running";
 
-        /// <summary>The markets API refused the bookings (an input error, status 422).</summary>
+        /// <summary>The markets API refused the input of the run (HTTP 400 or 422), or the hotel has no rooms, which it would refuse.</summary>
         public const string InputRejected = "market_analysis_runner.input_rejected";
 
         /// <summary>The API does not know this run (it keeps the last one in memory, and a restart forgets it).</summary>

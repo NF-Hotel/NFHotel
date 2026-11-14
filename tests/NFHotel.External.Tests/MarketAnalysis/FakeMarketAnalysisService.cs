@@ -81,10 +81,11 @@ internal sealed class FakeMarketAnalysisService : HttpMessageHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var uri = request.RequestUri!;
+        // HttpClient gives every request its absolute URI before it reaches a handler.
+        Uri uri = request.RequestUri!;
         _requests.Add($"{request.Method.Method} {uri.AbsolutePath}{uri.Query}");
         LastAuthority = uri.Authority;
-        LastKey = request.Headers.TryGetValues("X-API-Key", out var keys) ? keys.Single() : null;
+        LastKey = request.Headers.TryGetValues("X-API-Key", out IEnumerable<string>? keys) ? keys.Single() : null;
 
         if (Timeout)
         {
@@ -101,7 +102,7 @@ internal sealed class FakeMarketAnalysisService : HttpMessageHandler
             return Problem(HttpStatusCode.Unauthorized, "unauthorized");
         }
 
-        var path = uri.AbsolutePath;
+        string path = uri.AbsolutePath;
         if (request.Method == HttpMethod.Post && path == RunsPath)
         {
             return await StartAsync(request, cancellationToken);
@@ -109,8 +110,8 @@ internal sealed class FakeMarketAnalysisService : HttpMessageHandler
 
         if (request.Method == HttpMethod.Get && path.StartsWith(RunsPath + "/", StringComparison.Ordinal))
         {
-            var rest = path[(RunsPath.Length + 1)..].Split('/');
-            if (Guid.TryParse(rest[0], out var id))
+            string[] rest = path[(RunsPath.Length + 1)..].Split('/');
+            if (Guid.TryParse(rest[0], out Guid id))
             {
                 return rest.Length switch
                 {
@@ -126,6 +127,7 @@ internal sealed class FakeMarketAnalysisService : HttpMessageHandler
 
     private async Task<HttpResponseMessage> StartAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        // The client posts every start with a JSON body.
         StartedBody = await request.Content!.ReadAsStringAsync(cancellationToken);
 
         if (StartStatus is { } status)
@@ -138,6 +140,7 @@ internal sealed class FakeMarketAnalysisService : HttpMessageHandler
             return Problem(HttpStatusCode.Conflict, "run_active");
         }
 
+        // HttpClient gives every request its absolute URI before it reaches a handler.
         if (!BodyIsValid(StartedBody) || request.RequestUri!.Query != "?insights=true")
         {
             return Problem(HttpStatusCode.BadRequest, "invalid_request");
@@ -156,7 +159,7 @@ internal sealed class FakeMarketAnalysisService : HttpMessageHandler
             return Problem(HttpStatusCode.NotFound, "run_not_found");
         }
 
-        var read = ++_stateReads;
+        int read = ++_stateReads;
         if (ThrowOnStateRead.Contains(read))
         {
             throw new HttpRequestException("connection reset");
@@ -167,7 +170,7 @@ internal sealed class FakeMarketAnalysisService : HttpMessageHandler
             return Problem(status, "problem");
         }
 
-        var state = States[Math.Min(read - 1, States.Count - 1)];
+        string state = States[Math.Min(read - 1, States.Count - 1)];
         _states.Add(state);
 
         return Json(HttpStatusCode.OK, StateBody ?? StateJson(id, state, state == "failed" ? ErrorCode : null));
@@ -192,10 +195,10 @@ internal sealed class FakeMarketAnalysisService : HttpMessageHandler
     // one room and one booking, and every booking a Booking: only its properties, its required fields present.
     private bool BodyIsValid(string body)
     {
-        using var document = JsonDocument.Parse(body);
-        var root = document.RootElement;
-        var allowed = _contract.Properties("RunRequest");
-        var bookingFields = _contract.Properties("Booking");
+        using JsonDocument document = JsonDocument.Parse(body);
+        JsonElement root = document.RootElement;
+        IReadOnlyList<string> allowed = _contract.Properties("RunRequest");
+        IReadOnlyList<string> bookingFields = _contract.Properties("Booking");
 
         return root.ValueKind == JsonValueKind.Object
             && root.EnumerateObject().All(property => allowed.Contains(property.Name))
@@ -205,13 +208,13 @@ internal sealed class FakeMarketAnalysisService : HttpMessageHandler
             && root.GetProperty("bookings").EnumerateArray().All(booking =>
                 booking.EnumerateObject().All(property => bookingFields.Contains(property.Name))
                 && _contract.Required("Booking").All(name => booking.TryGetProperty(name, out _)))
-            && (!root.TryGetProperty("period", out var period)
+            && (!root.TryGetProperty("period", out JsonElement period)
                 || (period.TryGetProperty("first_date", out _) && period.TryGetProperty("last_date", out _)));
     }
 
     private static string StateJson(Guid id, string state, string? errorCode)
     {
-        var fields = new Dictionary<string, object>
+        Dictionary<string, object> fields = new Dictionary<string, object>
         {
             ["run_id"] = id,
             ["state"] = state,
