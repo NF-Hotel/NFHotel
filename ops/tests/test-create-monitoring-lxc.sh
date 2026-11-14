@@ -2,6 +2,9 @@
 # Tests of scripts/create-monitoring-lxc.sh (ADR-0020, MIL-023 task 7): the newest downloaded
 # Debian 13 template is found by itself, a given template wins, an ID that a container or a
 # VM uses is refused, no downloaded template is refused, and the dry run changes nothing.
+# Inside the container it installs the Docker packages of the VM from Docker's signed
+# repository, no Docker package of Debian, and Debian's security updates with
+# install-patching.sh from its checkout (ADR-0043, MIL-083 task 4).
 # Fakes stand in for pct, qm and pveam, so nothing is created.
 #
 # Run it in Debian 12 with the repository at /src:
@@ -73,6 +76,29 @@ FAKE_TEMPLATES="local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst" run 102 --
 
 run 102 --apply && grep -q "pct create 102 local:vztmpl/debian-13-standard_13.6-1_amd64.tar.zst" "$W/log" &&
   grep -q "pct exec 102" "$W/log" && ok "--apply creates, starts and sets up the container" || ko "apply: $(cat "$W/log")"
+# The runtime of the VM (ADR-0043): its packages, read from create-docker-vm.sh, from Docker's
+# signed repository, and none of the Docker packages of Debian.
+vm_docker="$(sed -n 's/^ *- apt-get install -y \(docker-ce .*\)$/\1/p' "$OPS/scripts/create-docker-vm.sh")"
+[[ -n "$vm_docker" ]] && grep -qxF "apt-get install -y -q $vm_docker" "$W/log" &&
+  ok "the container gets the Docker packages of the VM: $vm_docker" ||
+  ko "Docker packages (the VM's: '$vm_docker'): $(grep -F 'apt-get install' "$W/log")"
+grep -qxF 'curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc' "$W/log" &&
+  grep -qF 'deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian trixie stable' "$W/log" &&
+  ok "they come from Docker's signed repository for Debian 13" || ko "Docker's repository: $(grep -F docker "$W/log" | head -6)"
+! grep -qE '(^|[[:space:]])(docker\.io|docker-compose|docker-cli|containerd|runc)([[:space:]]|$)' "$W/log" &&
+  ok "no Docker package of Debian (docker.io, docker-cli, docker-compose, containerd, runc)" ||
+  ko "a Docker package of Debian: $(grep -E 'docker\.io|docker-compose |docker-cli |containerd |runc' "$W/log")"
+# Debian's security updates as on the VM: install-patching.sh from the checkout, after Docker.
+awk '/^apt-get install -y -q docker-ce / { d = NR }
+  /^pct exec 102 -- git clone https:\/\/github.com\/NF-Hotel\/NFHotel.git \/opt\/nfhotel-monitoring$/ { c = NR }
+  /^pct exec 102 -- bash \/opt\/nfhotel-monitoring\/ops\/scripts\/install-patching.sh --apply$/ { p = NR }
+  END { exit !(d && c && p && d < c && c < p) }' "$W/log" &&
+  ok "it clones the checkout and installs Debian's security updates with install-patching.sh, after Docker" ||
+  ko "the checkout and the patching: $(grep -F 'pct exec' "$W/log")"
+sed -n '/^==> done/,$p' "$W/out" | grep -q "deploy-monitoring.sh --apply" && ! sed -n '/^==> done/,$p' "$W/out" | grep -q "git clone" &&
+  ok "the steps left to S03 end with the deploy, without the clone" || ko "S03's steps: $(sed -n '/^==> done/,$p' "$W/out")"
+run 102 && grep -qxF "would run: pct exec 102 -- bash /opt/nfhotel-monitoring/ops/scripts/install-patching.sh --apply" "$W/out" &&
+  [[ ! -s "$W/log" ]] && ok "the dry run prints the patching and runs nothing" || ko "dry run of the patching: $(grep -F install-patching "$W/out")"
 run 12 && ko "accepted a two-digit ID" || ok "an ID below 100 is refused"
 
 echo "RESULT: $pass passed, $fail failed"

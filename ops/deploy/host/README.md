@@ -4,7 +4,9 @@ The files the VM `nf-hotel` reads outside Docker Compose, kept here so that a ch
 is reviewed like any other change. Each is installed by a script in `scripts/` that is a dry run
 by default and changes the VM only with `--apply`. The CIS checklist that selects these
 controls is `docs/sqa/cis-checklist.md` (CIS-001); the order of applying them on the VM is in
-the wiki page `Host-Hardening.md`.
+the wiki page `Host-Hardening.md`. The files of `apt/` and `journald/` are also installed in the
+monitoring LXC `nf-monitoring`, by the same script, which `ops/scripts/create-monitoring-lxc.sh`
+runs there (ADR-0043).
 
 | File | Installed as | By |
 | --- | --- | --- |
