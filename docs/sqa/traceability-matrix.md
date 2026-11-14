@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-073: the pin of the database image and the wiki page, with its code review RC-359 (Go-with-conditions) | [26634dc] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-075: the passport key out of the web container, with its code review RC-360 (Go-with-conditions) | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-075: the passport key out of the web container, with its code review RC-360 (Go-with-conditions) | [8ca858a] |
 
 ---
 
@@ -440,3 +440,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-357]: ./reviews/rc-357-mil-052-revision.md
 [RC-358]: ./reviews/rc-358-mil-018-revision.md
 [26634dc]: https://github.com/NF-Hotel/NFHotel/commit/26634dc25a842119c706a2011812d891e8d4f3bb
+[8ca858a]: https://github.com/NF-Hotel/NFHotel/commit/8ca858a67009163c8e76e707abf63986fa51e220

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-25 | Deprecated | mikemike | AI as stand-in for S01 | Decision 7: the limit is accepted; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | [199bc05] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Decision 2 made precise by MIL-075: each service gets only its own secrets, so the web application no longer gets the passport key (ADR-0004); the script leaves a secret of another service out of every settings file with a warning that names the key, and deletes a secret file that the service no longer gets; reviewed in RC-360 (Go), autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Decision 2 made precise by MIL-075: each service gets only its own secrets, so the web application no longer gets the passport key (ADR-0004); the script leaves a secret of another service out of every settings file with a warning that names the key, and deletes a secret file that the service no longer gets; reviewed in RC-360 (Go), autonomous, not independent | [8ca858a] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -76,3 +76,4 @@ We follow option 2.
 [MIL-075]: ../milestones/mil-075-the-passport-key-out-of-the-web-container.md
 [RC-185]: ../sqa/reviews/rc-185-alloy-docker-discovery.md
 [199bc05]: https://github.com/NF-Hotel/NFHotel/commit/199bc05466d450b92157aa4daead871e7e6d76ce
+[8ca858a]: https://github.com/NF-Hotel/NFHotel/commit/8ca858a67009163c8e76e707abf63986fa51e220

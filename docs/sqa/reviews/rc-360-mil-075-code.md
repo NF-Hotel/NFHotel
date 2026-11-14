@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | [8ca858a] |
 
 ---
 
@@ -185,3 +185,4 @@ deploy. The reviewer is not independent.
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-ADR-001]: ../../../framework/qc/artifacts/qc-adr.md
+[8ca858a]: https://github.com/NF-Hotel/NFHotel/commit/8ca858a67009163c8e76e707abf63986fa51e220
