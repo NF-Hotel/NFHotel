@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | RC-351 |
-| CrossReference | [MIL-082], [RC-345], [RC-350], [RC-347], [RC-349], [MIL-080], [MIL-081], [CIS-001], [ADR-0038], [QC-MIL-001] |
+| CrossReference | [MIL-082], [RC-345], [RC-350], [RC-347], [RC-349], [MIL-080], [MIL-081], [MIL-083], [RC-354], [CIS-001], [ADR-0038], [QC-MIL-001] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-13 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-082 after the CD run of the merge of #676; Go-with-conditions: the rows of `nf-monitoring` in the host-access map wait for the deploy of the monitoring | [29bb301] |
+| 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-082 after the CD run of the merge of #676; Go-with-conditions: the rows of `nf-monitoring` in the host-access map wait for the deploy of the monitoring | [29bb301] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The condition met: the deploy of the monitoring on the LXC, after its switch to Docker's packages (MIL-083), read its six containers, and the map has their rows; criterion 1 passes; mode autonomous, not independent; the verdict is Go | [38e03ae] |
 
 ---
 
@@ -20,7 +21,7 @@
 - Scope: the gate; criteria 2, 5 and 6 cite [RC-350] and the green checks of #676.
 - Language and domain: en / it (the Metadata rows of MIL-082); this record is a technical type.
 - Language reviewer: none.
-- Mode: autonomous, not independent. S01 asked in chat on 2026-11-12 for the three controls and, where one was missing, for a plan carried out in autonomous mode with the right to merge, to open pull requests and to deploy ("færdiggør milestones i automode med rettigheder til self merge og PR og Deploy"), without being asked ("Du behøver ik spørg mig om noget"), and on 2026-11-13 to finish the milestones and the gaps found ("færdiggør disse milestones og de huller du har fundet ovenfor som du snakker om. fix").
+- Mode: autonomous, not independent. S01 asked in chat on 2026-11-12 for the three controls and, where one was missing, for a plan carried out in autonomous mode with the right to merge, to open pull requests and to deploy ("færdiggør milestones i automode med rettigheder til self merge og PR og Deploy"), without being asked ("Du behøver ik spørg mig om noget"), and on 2026-11-13 to finish the milestones and the gaps found ("færdiggør disse milestones og de huller du har fundet ovenfor som du snakker om. fix"). On 2026-11-14 S01 asked in chat to fix and close the milestones in autonomous mode ("fix og luk disse milestones i automode") and accepted [MIL-083], whose fix comes before this gate ("Ja, godkend planen").
 
 **Evidence of 2026-11-13:**
 
@@ -31,11 +32,17 @@
 - **The deploy.** CD run 43513939028, approved by the AI at 21:49 UTC under S01's words above ([ADR-0038] gives the approval to S01, who gave it to the AI for this run), ended with success; its deploy step ran from 21:49 to 21:52 UTC. Its verify step logged "build provenance and SBOM verified" for each of the six digests of the release manifest. The deploy of Ollama created `models-owner`, which exited before Ollama started, and recreated Ollama, which turned healthy; the market analysis service and the benchmark were recreated and turned healthy, as every other container did. "==> the runtime of the containers against container-profiles.tsv (MIL-080)" printed one PASS line for each of the 11 containers, "==> 11 container(s): 11 passed, 0 failed, 0 warned", then "==> Docker Engine 29.9.3, containerd v2.4.2, runc 1.5.2; AppArmor on, seccomp on". The line of Ollama reads "uid 10001, caps none, seccomp filter, apparmor docker-default (enforce), root ro, host paths none, writable mounts none, socket none, networks nfhotel-llm, ports none". The release was recorded ("==> deployed 052c1630dda2…"), and the container check service passed once.
 - **The monitoring LXC.** The monitoring has not been deployed since [MIL-080]: its deploy over Tailscale SSH waits for S01, the condition of [RC-347]. No run of the runtime check on the LXC exists yet.
 
+**Evidence of 2026-11-14:**
+
+- **The runtime of the LXC.** The deploy of the monitoring at 05:57 UTC ([RC-347]) printed the runtime of the LXC: the Docker packages of Debian 13, with runc 1.1.15, which has three known container escapes, and no unattended security updates. That is a security defect, so this gate stopped until [MIL-083] fixed it: on 2026-11-14 the LXC took Docker Engine, containerd and runc from Docker's signed repository and Debian's security updates with `unattended-upgrades`, after a snapshot on the Proxmox node ([RC-354]).
+- **The deploy of the monitoring on the new runtime.** `deploy-monitoring.sh --apply` ran on `nf-monitoring` at 07:34 UTC and ended with exit code 0. "==> the runtime of the containers against container-profiles.tsv (MIL-080)" printed one PASS line for each of the six containers and "==> 6 container(s): 6 passed, 0 failed, 0 warned", then "==> Docker Engine 29.9.3, containerd v2.4.2, runc 1.5.3; AppArmor off, seccomp on". Each line reads no capability, seccomp in filter mode, a read-only root, no host path, no writable mount, no socket and the network `nfhotel-monitoring_default`, with the user of its profile: 65534 for Prometheus, Alertmanager and the blackbox exporter, 10001 for Loki and the scan exporter, and 472 for Grafana; Prometheus, Loki and Grafana publish 9090, 3100 and 3000.
+- **The map.** The six rows of `nf-monitoring` on the page Container-Escape are now the lines of that deploy, with its versions, and the page says why each reads `apparmor unconfined`: AppArmor is off inside the LXC, and the rule `apparmor` asks for a profile only where the daemon has it.
+
 ## Checklist Results
 
 | # | Criterion (MIL-082) | Status | Evidence/Notes |
 | --- | --- | --- | --- |
-| 1 | The page Container-Escape has a row for each path of the deliverable with its measure, evidence, what is left and the decision, and a host-access map with a row for every container of the VM and of the monitoring LXC, taken from the runtime check | Pending | The page has a row for each of the 12 paths of the deliverable, each with its measure, evidence, what is left and the decision with its owner, and evaluates user namespaces and rootless Docker again with what would change the decision. The map of `nf-hotel` has a row for each of the 11 containers of CD run 43513939028, taken from its lines (this pull request moves it from the CD run of 77d755f, with Ollama as 10001), and says why `results-owner` and `models-owner` have none. The six rows of `nf-monitoring` are the lines of the CI job above, labelled as such, because no run of the check on the LXC exists yet: Pending until the deploy of the monitoring |
+| 1 | The page Container-Escape has a row for each path of the deliverable with its measure, evidence, what is left and the decision, and a host-access map with a row for every container of the VM and of the monitoring LXC, taken from the runtime check | Pass | The page has a row for each of the 12 paths of the deliverable, each with its measure, evidence, what is left and the decision with its owner, and evaluates user namespaces and rootless Docker again with what would change the decision. The map of `nf-hotel` has a row for each of the 11 containers of CD run 43513939028, taken from its lines (this pull request moves it from the CD run of 77d755f, with Ollama as 10001), and says why `results-owner` and `models-owner` have none. The six rows of `nf-monitoring` are the lines of the deploy of the monitoring on the LXC at 07:34 UTC on 2026-11-14 (6 passed, 0 failed, 0 warned; Docker Engine 29.9.3, containerd v2.4.2, runc 1.5.3); until then they were the lines of the CI job above |
 | 2 | The CI test of Ollama passes: user 10001, healthy, the models of a volume that root wrote are listed, and it is healthy again after a restart | Pass | 20 of 20 in Ops CI runs 43510803753 and 43512388551; [RC-350] criterion 11: the same test failed 8 of 20 against 7df3d47, before the compose file changed, so it catches Ollama as root |
 | 3 | After the deploy, the runtime check in the CD log shows Ollama with user 10001 and no violation, and the market analysis service and the benchmark are healthy | Pass | CD run 43513939028: "PASS ollama-ollama-1 ollama/ollama - uid 10001, caps none, …" and 11 passed, 0 failed, 0 warned; `market-analysis-market-analysis-api-1` and `benchmark-benchmark-1` "(healthy)" in the status that the deploy printed |
 | 4 | The runtime check prints the versions of Docker Engine, containerd and `runc`, and the page says how a fix for an escape is installed | Pass | CD run 43513939028: "==> Docker Engine 29.9.3, containerd v2.4.2, runc 1.5.2; AppArmor on, seccomp on"; the metric `nfhotel_container_runtime_info` ([RC-350]); the section "When a fix for an escape is published" of the page, with runc 1.5.3 as its first case |
@@ -45,21 +52,22 @@
 ## Findings
 
 1. **The rows of [CIS-001].** Its row of f7dbdae (rows 1.2.2, 2.1 and 4.1, this milestone) becomes Accepted, because criterion 5 passes, and the row before it (f320dbf, row 5.31 of [MIL-081]) becomes Deprecated: the newer row carries the content of the older one. The condition of this record touches the map of the LXC only, not a row of CIS-001.
-2. **The map of `nf-monitoring` comes from CI.** The rows read `blackbox` as 65534, as the CI job did; on the LXC it runs as root until the deploy of the monitoring, as the page says. That deploy prints the six lines and the versions of the LXC, which replace the rows from CI.
+2. **The map of `nf-monitoring` comes from CI.** The rows read `blackbox` as 65534, as the CI job did; on the LXC it runs as root until the deploy of the monitoring, as the page says. That deploy prints the six lines and the versions of the LXC, which replace the rows from CI. Resolved on 2026-11-14: the deploy of 05:57 UTC started the blackbox exporter as 65534 ([RC-347]), and the rows now come from the deploy of 07:34 UTC on the new runtime.
 3. **The copy of the backups off the VM.** The three deploys of 2026-11-13 (CD runs 43498058217, 43506763115 and 43513939028) each took the backups before the migrations, and each copy to the backup target failed: "the backups stay on the VM, and the next run sends what the target lacks"; the last copy off the VM was at 2026-11-12T16:51:23Z. [RC-347] and [RC-349] said the backup was copied; this pull request corrects both with a new row each. Their verdicts stand, because no criterion of either rests on the copy. The copy is outside the scope of MIL-082 and is reported to S01.
-4. **runc 1.5.3.** The VM runs runc 1.5.2. Version 1.5.3 fixes CVE-2026-119101, which needs checkpoint and restore, and NF Hotel uses neither; the page plans it for the monthly window. It is not a condition of this gate.
+4. **runc 1.5.3.** The VM runs runc 1.5.2. Version 1.5.3 fixes CVE-2026-119101, which needs checkpoint and restore, and NF Hotel uses neither; the page plans it for the monthly window. It is not a condition of this gate. The monitoring LXC has run 1.5.3 since its switch on 2026-11-14 ([MIL-083]).
+5. **The runtime of the LXC held this gate.** The deploy that the condition waited for showed runc 1.1.15 of Debian 13 in the LXC, with three known escapes, and no unattended security updates. The gate was held, and S01 accepted [MIL-083] for the fix in chat; the rows of the map come from the deploy after it, so they show the runtime the LXC runs now.
 
 ## Overall Verdict
 
-Go-with-conditions: criteria 2 to 6 pass on the evidence of 2026-11-13, and criterion 1 is Pending for the six rows of `nf-monitoring` in the host-access map, which wait for the deploy of the monitoring. #672 (task 6) closes at the merge of the pull request that carries this record. #667 (task 1), #673 (task 7) and the GitHub milestone #57 stay open until the condition is met and recorded in a new row of this record. The reviewer is not independent.
+Go: criteria 1 to 6 pass, criteria 2 to 6 on the evidence of 2026-11-13 and criterion 1 on the deploy of the monitoring of 2026-11-14 at 07:34 UTC, after the switch of [MIL-083]; the condition of the row of 2026-11-13 is met. #667 (task 1) and #673 (task 7) close at the merge of the pull request that carries this row, and the GitHub milestone #57 is closed after it. The reviewer is not independent.
 
 ## Action Items
 
 | Action | Owner | Due |
 | --- | --- | --- |
 | Close #672 | AI as stand-in for S01 | At the merge of this record |
-| Deploy the monitoring on `nf-monitoring` (`git pull --ff-only` and `bash ops/scripts/deploy-monitoring.sh --apply` in its checkout, or approve the Tailscale SSH check for the AI); then replace the six rows of `nf-monitoring` in the map with the lines of that run, record it in a new row of this record and of [RC-347], and close #667, #673 and the GitHub milestone #57 | S01, then the AI | When S01 is next at the PC |
-| Install runc 1.5.3 on `nf-hotel` and `nf-monitoring` in the monthly window, as the page says | S01, S03 (the reboot of the VM) | The next monthly window |
+| Deploy the monitoring on `nf-monitoring` (`git pull --ff-only` and `bash ops/scripts/deploy-monitoring.sh --apply` in its checkout, or approve the Tailscale SSH check for the AI); then replace the six rows of `nf-monitoring` in the map with the lines of that run, record it in a new row of this record and of [RC-347], and close #667, #673 and the GitHub milestone #57 | S01, then the AI | done 2026-11-14: the deploys of 05:57 UTC ([RC-347]) and of 07:34 UTC after [MIL-083], this row; #667, #673 and #57 at the merge |
+| Install runc 1.5.3 on `nf-hotel` and `nf-monitoring` in the monthly window, as the page says | S01, S03 (the reboot of the VM) | `nf-monitoring` done 2026-11-14 ([MIL-083]); `nf-hotel` in the next monthly window |
 | Find why the copy of the backups to the backup target fails, and check that the next run sends what the target lacks | S01 | Before the next daily backup |
 
 ---
@@ -71,7 +79,10 @@ Go-with-conditions: criteria 2 to 6 pass on the evidence of 2026-11-13, and crit
 [RC-349]: ./rc-349-mil-081-gate.md
 [MIL-080]: ../../milestones/mil-080-every-container-runs-with-the-rights-of-its-profile.md
 [MIL-081]: ../../milestones/mil-081-only-the-calls-of-alloy-through-the-socket-proxy.md
+[MIL-083]: ../../milestones/mil-083-the-monitoring-lxc-patched-as-the-vm-is.md
+[RC-354]: ./rc-354-mil-083-code.md
 [CIS-001]: ../cis-checklist.md
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [29bb301]: https://github.com/NF-Hotel/NFHotel/commit/29bb3014e44bdf741083c5037a6bd97f59b03b53
+[38e03ae]: https://github.com/NF-Hotel/NFHotel/commit/38e03ae60dd0a00a28fff2551c5f14e6864e34cf
