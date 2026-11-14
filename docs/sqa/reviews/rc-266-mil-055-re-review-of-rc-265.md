@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Proposed | Claude (AI) | S01 | Initial version; delta re-review by the AI, not independent, for S01 to accept | [3a17eee] |
+| 2026-11-02 | Deprecated | Claude (AI) | S01 | Initial version; delta re-review by the AI, not independent, for S01 to accept | [3a17eee] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Accepted with its three conditions settled: the code at the gate in RC-378 (F3 closed for MIL-055, F4 under a risk exception, F11 closed, F5, F10 and F14 accepted, N1, N2, N4 and N6 fixed) and UC-007 in RC-377 (N3, N5); at S01's word in chat ("Du godkender for mig"); mode autonomous, not independent | pending |
 
 ---
 

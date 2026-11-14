@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Proposed | Claude (AI) | S01 | Initial version; review by the AI, not independent, for S01 to accept | [3a17eee] |
+| 2026-11-02 | Deprecated | Claude (AI) | S01 | Initial version; review by the AI, not independent, for S01 to accept | [3a17eee] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Accepted as the record of the review of 2026-11-02 (No-Go); its findings are settled in RC-266 and RC-378 (the gate of MIL-055, RC-379); at S01's word in chat ("Du godkender for mig"); mode autonomous, not independent | pending |
 
 ---
 
