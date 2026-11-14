@@ -81,7 +81,7 @@ The cheaper step comes first: the nginx master as a user (`nginxinc/nginx-unpriv
 
 ## When a fix for an escape is published
 
-`unattended-upgrades` installs Debian's security updates, the kernel among them, but not Docker Engine, containerd and `runc`, which come from Docker's own repository ([Host Hardening](Host-Hardening#reboots)). A person watches and installs them:
+`unattended-upgrades` installs Debian's security updates, the kernel among them, but not Docker Engine, containerd and `runc`, which come from Docker's own repository on both hosts, the VM and the monitoring LXC ([Host Hardening](Host-Hardening#reboots), ADR-0043). A person watches and installs them:
 
 1. **Know what runs.** The last lines of each run of the check give the versions of Docker Engine, containerd and `runc`, and Prometheus has those of `nf-hotel` from the timer as the labels of one series:
 
@@ -90,7 +90,7 @@ The cheaper step comes first: the nginx master as a user (`nginxinc/nginx-unpriv
    ```
 
    The monitoring LXC prints the same line at each deploy of the monitoring.
-2. **Know what is fixed.** The security advisories of `opencontainers/runc`, `containerd/containerd` and `moby/moby` on GitHub name the versions that fix an escape; the Debian security tracker does the same for the kernel.
+2. **Know what is fixed.** The security advisories of `opencontainers/runc`, `containerd/containerd` and `moby/moby` on GitHub name the versions that fix an escape; the Debian security tracker does the same for the kernel. The runtime check holds `runc` to a floor, `RUNC_FLOOR` in `ops/scripts/check-container-runtime.sh` (MIL-083): the first version of each line without the escapes that apply to NF Hotel, today 1.2.8 and 1.3.3 for CVE-2025-31133, CVE-2025-52565 and CVE-2025-52881. When an advisory applies to NF Hotel, its fixed versions go into the floor with the unit test at once: the check of the timer then fails, and `ContainerRuntimeKnownEscape` fires, until the VM is updated, and the deploy of the monitoring stops until the LXC is. The deploy of the VM only warns, because neither a release nor its rollback changes the runtime.
 3. **Install.** In the monthly window, or within a week when the advisory is critical or the escape needs nothing that NF Hotel does not already do. On `nf-hotel`, as root:
 
    ```bash
@@ -108,6 +108,6 @@ The cheaper step comes first: the nginx master as a user (`nginxinc/nginx-unpriv
    sudo nfhotel-container-check --profiles /opt/nfhotel/ops/security/container-profiles.tsv
    ```
 
-In the monitoring LXC the same packages are updated inside the LXC; its kernel is the kernel of the Proxmox node, which the updates of the node cover.
+**In the monitoring LXC** the same packages come from the same repository (ADR-0043). S03 first takes a snapshot of the LXC on the Proxmox node, the way back when the new runtime does not start there; then the packages are updated inside the LXC with the same two commands, and `deploy-monitoring.sh --apply` runs the check ([Monitoring](Monitoring#change-the-monitoring)). The node must run Proxmox VE 9.1.1 or later: users reported that the AppArmor rules of older versions refused the writes of a current `runc` to `/proc` in an unprivileged LXC, so no container started. The kernel of the LXC is the kernel of the node, which the updates of the node cover.
 
-**The first case, runc 1.5.3.** It was published on 2026-11-12, and the VM ran runc 1.5.2 on 2026-11-13. It fixes CVE-2026-119101, which lets a crafted image make `runc restore` mount a directory of the host into the container; only a host that checkpoints and restores containers is affected, and NF Hotel does neither. It also keeps the flags `nosuid`, `nodev`, `noexec` and `nosymfollow` of the root mount when it makes the root read-only without a user namespace, as every container here runs; `no-new-privileges` stops a setuid program and Docker's device cgroup a device node either way. So it is not critical for NF Hotel and is installed in the next monthly window (S01, with S03 for the reboot). Docker's repository has had `containerd.io` 2.4.2-4 since 2026-11-12; the line of the check after the update shows which `runc` it carries.
+**The first case, runc 1.5.3.** It was published on 2026-11-12; the VM ran runc 1.5.2 on 2026-11-13, and the monitoring LXC has run 1.5.3 since its switch to Docker's packages on 2026-11-14 (MIL-083). It fixes CVE-2026-119101, which lets a crafted image make `runc restore` mount a directory of the host into the container; only a host that checkpoints and restores containers is affected, and NF Hotel does neither. It also keeps the flags `nosuid`, `nodev`, `noexec` and `nosymfollow` of the root mount when it makes the root read-only without a user namespace, as every container here runs; `no-new-privileges` stops a setuid program and Docker's device cgroup a device node either way. So it is not critical for NF Hotel, does not go into the floor, and is installed on the VM in the next monthly window (S01, with S03 for the reboot). Docker's repository has had `containerd.io` 2.4.2-4, which carries it, since 2026-11-12; the line of the check after the update shows the version.

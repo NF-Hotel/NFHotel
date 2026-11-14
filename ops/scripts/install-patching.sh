@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Install the patching and log settings of the NF Hotel VM (MIL-023 task 4, CIS-001; DSA-001
-# risks R11 and R12). S01 or S03 runs it once as root in the checkout /opt/nfhotel, and again
-# after a file in deploy/host/apt or deploy/host/journald changes in git.
+# risks R11 and R12), and of the monitoring LXC (ADR-0043, MIL-083). S01 or S03 runs it once as
+# root in the checkout /opt/nfhotel of the VM, and again after a file in deploy/host/apt or
+# deploy/host/journald changes in git; in the LXC, create-monitoring-lxc.sh runs it in the
+# checkout /opt/nfhotel-monitoring, and S01 or S03 runs it there again after such a change.
 #
 # It:
 #   1. installs unattended-upgrades and logrotate from Debian
