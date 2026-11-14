@@ -1,6 +1,7 @@
 using System.Reflection;
 
 using NFHotel.Application.Errors;
+using NFHotel.TestSupport;
 
 namespace NFHotel.Application.Tests.Architecture;
 

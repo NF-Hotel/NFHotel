@@ -16,11 +16,21 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddKeyPerFile("/run/secrets", optional: true);
 
+// The build of the OpenAPI document starts the API without its settings; they get stand-ins that reach nothing (MIL-077).
+if (OpenApiDocumentBuild.IsRunning)
+{
+    builder.Configuration.AddInMemoryCollection(OpenApiDocumentBuild.StandInSettings());
+}
+
 // Every value bound from a request meets the input rules before an action runs, and a request that cannot be bound
 // is refused with the code of the API alone, without the names of .NET types (MIL-077).
 builder.Services.AddControllers(options => options.Filters.Add<InputGuardFilter>())
     .ConfigureApiBehaviorOptions(options => options.InvalidModelStateResponseFactory =
         _ => new BadRequestObjectResult(new ApiResponse([ApiErrorCodes.InvalidRequest])));
+
+// The OpenAPI document is written when the API is built (g/openapi/nfhotel-api.json, see the project file). The
+// running API does not serve it: there is no MapOpenApi (MIL-077).
+builder.Services.AddOpenApi();
 builder.Services.AddSingleton(ApiToken.Read(builder.Configuration));
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHotelClock(builder.Configuration);

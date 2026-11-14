@@ -1,3 +1,5 @@
+using NFHotel.TestSupport;
+
 namespace NFHotel.Application.Tests.Architecture;
 
 /// <summary>
