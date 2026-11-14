@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-13 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; the gate of MIL-072 after the CD run of f83859e and the checks from outside of 2026-11-13; Go-with-conditions: the request inside the VM (criterion 4) waits for S01 | [3afb6a3] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The request inside the VM made over Tailscale SSH at S01's word in chat, and the checks of criterion 2 repeated from outside; criterion 4 passes; mode autonomous, not independent; the verdict is Go | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | The request inside the VM made over Tailscale SSH at S01's word in chat, and the checks of criterion 2 repeated from outside; criterion 4 passes; mode autonomous, not independent; the verdict is Go | [d727221] |
 
 ---
 
@@ -77,3 +77,4 @@ Go: criteria 1 to 6 pass, criterion 4 on the request inside the VM of 2026-11-14
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [3afb6a3]: https://github.com/NF-Hotel/NFHotel/commit/3afb6a38797598a205e2c4c82dd19c352967ae89
+[d727221]: https://github.com/NF-Hotel/NFHotel/commit/d7272215314e41b10b2aa2e609b1ae910439b1f7

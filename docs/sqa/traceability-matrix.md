@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-071 and of the wiki page Price-Suggestions at the gate: RC-326 to RC-329 accepted by the AI as stand-in at S01's word in chat; the published wiki checked (criterion 14) | [e26fdf9] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-072 and of its code at the gate: the check inside the VM made at S01's word in chat; gate passed (RC-339) | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-072 and of its code at the gate: the check inside the VM made at S01's word in chat; gate passed (RC-339) | [d727221] |
 
 ---
 
@@ -394,3 +394,4 @@ updated whenever an artifact instance is created or reviewed.
 [876210f]: https://github.com/NF-Hotel/NFHotel/commit/876210f2c9a76d999896850121312db69f66da6a
 [53e3a9e]: https://github.com/NF-Hotel/NFHotel/commit/53e3a9e61c8a078f9472805a6616ae0533e5c569
 [e26fdf9]: https://github.com/NF-Hotel/NFHotel/commit/e26fdf91732c20beb97bceea4b9bfdda9606da52
+[d727221]: https://github.com/NF-Hotel/NFHotel/commit/d7272215314e41b10b2aa2e609b1ae910439b1f7
