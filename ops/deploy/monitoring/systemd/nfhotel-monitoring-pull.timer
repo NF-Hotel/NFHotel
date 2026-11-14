@@ -1,0 +1,13 @@
+# Runs nfhotel-monitoring-pull.service every 2 minutes, so a merged change of the monitoring
+# runs on the LXC a few minutes after the Ops CI run of its push (ADR-0044, MIL-051). A run
+# that finds no change of the monitoring paths only fetches main.
+[Unit]
+Description=Deploy the monitoring of NF Hotel from main every 2 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=10s
+
+[Install]
+WantedBy=timers.target

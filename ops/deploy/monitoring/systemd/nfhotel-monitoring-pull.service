@@ -1,0 +1,19 @@
+# Deploys the monitoring of NF Hotel from main by a pull on its LXC (ADR-0044, MIL-051): it
+# fetches main over HTTPS, waits for the Ops CI run of its push, and runs deploy-monitoring.sh
+# in the checkout when the monitoring paths changed, going back to the deployed commit when a
+# check or the start fails. Installed by `pull-monitoring.sh --install` from
+# ops/deploy/monitoring/systemd/, which also installs the command it runs. It runs as root, as
+# the manual deploy does: it gives the secret files to the users of their containers and runs
+# docker compose. Its report reaches Prometheus through the scan exporter.
+[Unit]
+Description=Deploy the monitoring of NF Hotel from main
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# The checks take a minute, the start and the health check up to 6, and a start that fails is
+# followed by the start of the commit before it.
+TimeoutStartSec=20min
+ExecStart=/usr/local/sbin/nfhotel-monitoring-pull --apply
