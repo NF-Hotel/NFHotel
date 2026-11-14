@@ -16,7 +16,9 @@
 #        e2e-stack.sh down [--name <prefix>]
 #   up       build web and api, start the stack, wait for the health checks, and write
 #            <out>/stack.env: E2E_NETWORK, E2E_BASE_URL and the user name and password
-#            of the Manager, Receptionist and Housekeeping test accounts
+#            of the Manager, Receptionist and Housekeeping test accounts; for the API
+#            scan of the DAST run (MIL-077), E2E_API_NETWORK (the internal network of the
+#            API), E2E_API_TOKEN and the user name and password of its own Manager account
 #   down     remove the containers, volumes and networks of the stack
 #   --name   prefix of the compose projects and networks (default nfhotel-e2e)
 # Exit:  0 done; 1 a build, start or check failed; 2 usage error
@@ -95,6 +97,15 @@ for role in "${ROLES[@]:1}"; do
   passwords[$role]="$password"
 done
 
+# The API scan of the DAST run signs in at the API with a Manager account of its own, so the
+# attacks of the web scan on the login form cannot lock out its account (MIL-077).
+api_user="e2e-api-scan"
+api_password="$(stack_secret 16)"
+echo "==> creating the Manager account $api_user for the API scan"
+stack_create_staff "$api_user" Manager "$api_password" || die "creating the account of the API scan failed"
+api_token="$(sed -n 's/^Api__Token=//p' "$settings/nfhotel-api.env")"
+[[ -n "$api_token" ]] || die "$settings/nfhotel-api.env holds no API token"
+
 umask 077
 {
   echo "E2E_NETWORK=$STACK_PROXY_NET"
@@ -103,6 +114,10 @@ umask 077
     echo "E2E_${role^^}_USER=${users[$role]}"
     echo "E2E_${role^^}_PASSWORD=${passwords[$role]}"
   done
+  echo "E2E_API_NETWORK=$STACK_API_NET"
+  echo "E2E_API_TOKEN=$api_token"
+  echo "E2E_API_USER=$api_user"
+  echo "E2E_API_PASSWORD=$api_password"
 } >"$out/stack.env"
 echo "==> checking that no secret is in the environment of a container (MIL-035)"
 stack_check_secret_env
