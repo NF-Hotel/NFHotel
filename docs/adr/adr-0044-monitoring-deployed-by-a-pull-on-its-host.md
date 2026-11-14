@@ -4,7 +4,7 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0044 |
-| CrossReference | [MIL-051], [ADR-0020], [ADR-0007], [ADR-0018], [MIL-023], [MIL-053], [RC-356] |
+| CrossReference | [MIL-051], [ADR-0020], [ADR-0007], [ADR-0018], [ADR-0038], [MIL-023], [MIL-053], [RC-356] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
@@ -110,6 +110,9 @@ before when a check or the start fails.
 
 - The LXC trusts GitHub for the content of `main` over HTTPS and for the result of Ops CI; a takeover of the
   repository would reach the monitoring, as it would reach the VM through CD.
+- Unlike a release on the VM, which waits for S01's approval in the environment `production` ([ADR-0038]), a deploy
+  of the monitoring waits for no approval of its own: the pull request with its required checks and the Ops CI run
+  of the merge are the gate, as S01 asked for a change that reaches the monitoring without a manual step.
 - A deploy waits for the Ops CI run of the merge, and a change that only Ops CI on the merge refuses stays undeployed
   until a new commit, with `MonitoringDeployFailed` open.
 - The checks cannot catch a rule that is valid but wrong; the rule tests stay the guard.
@@ -131,6 +134,7 @@ maintainability (ISO/IEC 25010:2023).
 [ADR-0020]: ./adr-0020-monitoring-stack.md
 [ADR-0007]: ./adr-0007-cicd-and-supply-chain.md
 [ADR-0018]: ./adr-0018-deploy-command-updates-itself.md
+[ADR-0038]: ./adr-0038-approval-before-a-deploy.md
 [MIL-023]: ../milestones/mil-023-operational-quality.md
 [MIL-053]: ../milestones/mil-053-security-scan-metrics.md
 [RC-356]: ../sqa/reviews/rc-356-mil-051-revision.md
