@@ -163,7 +163,7 @@ Then run it again with `--apply`:
 bash /root/nfhotel/ops/scripts/create-monitoring-lxc.sh 102 --apply
 ```
 
-**Result:** the script ends with `==> done` and lists the next steps. `pct status 102` prints `status: running`.
+**Result:** the script ends with `==> done` and lists the next steps. `pct status 102` prints `status: running`. Inside the container it has installed Docker Engine, containerd, `runc` and the compose plugin from Docker's signed repository, the packages of the VM ([ADR-0043](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0043-docker-packages-and-security-updates-in-the-monitoring-lxc.md)), cloned the repository to `/opt/nfhotel-monitoring`, and installed Debian's security updates from there with `install-patching.sh`, as on the VM: its last line before `==> done` says that `unattended-upgrade` installs Debian security updates only.
 
 If it stops with `is not downloaded`, the script did not find the template: check `pveam list local`, or give `MONITORING_TEMPLATE` as in B2. Nothing was created then, so run it again.
 
@@ -187,10 +187,9 @@ tailscale ip -4
 
 **Result:** an address like `100.x.y.z`. This guide calls it the *LXC address*.
 
-**C2. Get the configuration.**
+**C2. Go to the configuration.** The script of B4 cloned the repository to `/opt/nfhotel-monitoring`.
 
 ```bash
-git clone https://github.com/NF-Hotel/NFHotel.git /opt/nfhotel-monitoring
 cd /opt/nfhotel-monitoring/ops/deploy/monitoring
 ```
 
@@ -420,6 +419,23 @@ bash ops/scripts/deploy-monitoring.sh --apply
 
 The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no step of yours.
 
+**Update Docker in the LXC.** Debian's security updates install themselves every day (`install-patching.sh`). Docker Engine, containerd and `runc` come from Docker's repository and are updated by hand, in the monthly window or within a week when an advisory is critical for NF Hotel, as [Container Escape](Container-Escape#when-a-fix-for-an-escape-is-published) says:
+
+1. S03 takes a snapshot of the LXC on the node, the way back if the new runtime does not start in it:
+
+   ```bash
+   pct snapshot 102 before-docker-$(date +%Y%m%d)
+   ```
+
+2. In the LXC, install the new packages and start the stack again; the runtime check of the deploy prints the new versions and holds `runc` to its floor:
+
+   ```bash
+   apt-get update && apt-get install --only-upgrade docker-ce docker-ce-cli containerd.io
+   cd /opt/nfhotel-monitoring && bash ops/scripts/deploy-monitoring.sh --apply
+   ```
+
+3. If the stack does not start, S03 rolls the LXC back on the node with `pct rollback 102 <the snapshot>`, and nothing weakens the AppArmor profile of the LXC instead ([ADR-0043](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0043-docker-packages-and-security-updates-in-the-monitoring-lxc.md)). Otherwise S03 deletes the snapshot before the next one: `pct delsnapshot 102 <the snapshot>`.
+
 ## Reference
 
 **Files**
@@ -432,9 +448,9 @@ The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no s
 | [`alertmanager/alertmanager.yml`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/monitoring/alertmanager/alertmanager.yml) | The routes to Discord and Healthchecks.io |
 | [`ops/deploy/alloy/config.alloy`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/deploy/alloy/config.alloy) | What Alloy collects on `nf-hotel` |
 | [`ops/scripts/report-health.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/report-health.sh) | The container health report, every minute |
-| [`ops/scripts/check-container-runtime.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/check-container-runtime.sh) | The runtime check of the containers against their profiles, every 15 minutes on the VM and after each start of this stack (MIL-080) |
+| [`ops/scripts/check-container-runtime.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/check-container-runtime.sh) | The runtime check of the containers against their profiles, and of `runc` against its floor (MIL-083), every 15 minutes on the VM and after each start of this stack (MIL-080) |
 | [`ops/scripts/deploy-monitoring.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/deploy-monitoring.sh) | Checks and starts the stack in the LXC |
-| [`ops/scripts/create-monitoring-lxc.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/create-monitoring-lxc.sh) | Creates the LXC on the Proxmox node |
+| [`ops/scripts/create-monitoring-lxc.sh`](https://github.com/NF-Hotel/NFHotel/blob/main/ops/scripts/create-monitoring-lxc.sh) | Creates the LXC on the Proxmox node, with Docker from Docker's repository and Debian's security updates, as on the VM (ADR-0043) |
 
 **Job reports on nf-hotel**
 
@@ -444,7 +460,7 @@ The parts on `nf-hotel` (Alloy and the job reports) are updated by CD, with no s
 | `offvm_copy.prom` | The copy to the legion laptop | Older than 72 h, or missing |
 | `cert_renew.prom` | The certificate renewal (daily) | Older than 26 h, or missing |
 | `containers.prom` | `nfhotel-report-health.timer` (every minute) | A value of 0 for 30 s, or missing |
-| `container-runtime.prom` | `nfhotel-container-check.timer` (every 15 minutes) | A container breaks its profile; or the last run is older than 45 minutes, or missing |
+| `container-runtime.prom` | `nfhotel-container-check.timer` (every 15 minutes) | A container breaks its profile; `runc` is below its floor; or the last run is older than 45 minutes, or missing |
 
 **Checks in CI** (job *Ops monitoring configuration*, on every pull request):
 - `promtool check config` and `promtool test rules`;
@@ -460,6 +476,7 @@ The full reasoning, with the options that were weighed, is in [ADR-0020](https:/
 
 - **Off the VM.** A VM that monitors itself goes silent at the moment it fails.
 - **An unprivileged LXC.** It runs the stack with far less memory than a second VM. Root in the container is not root on the node.
+- **The runtime of the VM.** Docker's packages from Docker's repository and Debian's security updates every day, as on the VM, so a fix of a container escape reaches both hosts the same way ([ADR-0043](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0043-docker-packages-and-security-updates-in-the-monitoring-lxc.md)).
 - **Tailnet only, with pushes from the VM.** No port opens on the internet or on `nf-hotel`.
 - **Jobs report their success.** A timer that runs is not proof that the backup worked.
 - **A watchdog outside.** A monitor cannot report its own death.
