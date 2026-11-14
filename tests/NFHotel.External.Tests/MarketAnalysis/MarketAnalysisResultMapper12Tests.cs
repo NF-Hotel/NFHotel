@@ -19,6 +19,7 @@ public sealed class MarketAnalysisResultMapper12Tests
     public void Map_Version12_ReadsTheRoomRevenue()
     {
         // Act
+        // The mapper always fills Content, and the room_value analysis of the fixture has its room revenue.
         MarketAnalysisRoomRevenueDto revenue = Map(Fixture()).Content!.Sections.Single(section => section.Id == "room_value").RoomRevenue!;
 
         // Assert
@@ -37,10 +38,13 @@ public sealed class MarketAnalysisResultMapper12Tests
     public void Map_RoomRevenueNotUsable_IsNull(string field, string value)
     {
         // Arrange
+        // Parse returns null only for the JSON literal null, and the fixture is an object.
         JsonNode document = JsonNode.Parse(Fixture())!;
+        // The fixture holds analyses.room_value.findings.room_revenue, so no step of the path is null.
         document["analyses"]!["room_value"]!["findings"]!["room_revenue"]![field] = value;
 
         // Act
+        // The mapper always fills Content.
         MarketAnalysisSectionDto section = Map(document.ToJsonString()).Content!.Sections.Single();
 
         // Assert
@@ -53,10 +57,13 @@ public sealed class MarketAnalysisResultMapper12Tests
     public void Map_RoomRevenueWithoutMean_HasANullMean()
     {
         // Arrange
+        // Parse returns null only for the JSON literal null, and the fixture is an object.
         JsonNode document = JsonNode.Parse(Fixture())!;
+        // The fixture holds analyses.room_value.findings.room_revenue, so no step of the path is null.
         document["analyses"]!["room_value"]!["findings"]!["room_revenue"]!["mean"] = null;
 
         // Act
+        // The mapper always fills Content, and a room revenue without its mean is still read.
         MarketAnalysisRoomRevenueDto revenue = Map(document.ToJsonString()).Content!.Sections.Single().RoomRevenue!;
 
         // Assert
@@ -72,6 +79,7 @@ public sealed class MarketAnalysisResultMapper12Tests
     public void Map_Version12_ReadsTheSuggestionsWithTheirSeries()
     {
         // Act
+        // The mapper always fills Content, and the one analysis of the fixture carries an insight.
         MarketAnalysisInsightDto insight = Map(Fixture()).Content!.Sections.Single().Insight!;
 
         // Assert
@@ -91,6 +99,7 @@ public sealed class MarketAnalysisResultMapper12Tests
     public void Map_Version12_ReadsTheForecast()
     {
         // Act
+        // The mapper always fills Content, and the fixture holds a forecast.
         MarketAnalysisForecastDto forecast = Map(Fixture()).Content!.Forecast!;
 
         // Assert
@@ -110,11 +119,15 @@ public sealed class MarketAnalysisResultMapper12Tests
     public void Map_ForecastWithoutBandAndTooShortHistory_KeepsBoth()
     {
         // Arrange
+        // Parse returns null only for the JSON literal null, and the fixture is an object.
         JsonNode document = JsonNode.Parse(Fixture())!;
+        // The fixture holds a forecast object.
         document["forecast"]!["history_too_short"] = true;
+        // The forecast of the fixture holds the months of the arrivals, so no step of the path is null.
         document["forecast"]!["measures"]!["arrivals"]!["months"]![0]!["low"] = null;
 
         // Act
+        // The mapper always fills Content, and the forecast is still read.
         MarketAnalysisForecastDto forecast = Map(document.ToJsonString()).Content!.Forecast!;
 
         // Assert
@@ -128,18 +141,24 @@ public sealed class MarketAnalysisResultMapper12Tests
     public void Map_ForecastWithoutMonthsOrMeasures_LeavesThemOut()
     {
         // Arrange
+        // Parse returns null only for the JSON literal null, and the fixture is an object.
         JsonNode empty = JsonNode.Parse(Fixture())!;
+        // The forecast of the fixture holds the occupancy measure, so no step of the path is null.
         empty["forecast"]!["measures"]!["occupancy"]!["months"] = new JsonArray();
+        // Parse returns null only for the JSON literal null, and the fixture is an object.
         JsonNode none = JsonNode.Parse(Fixture())!;
+        // The fixture holds a forecast object.
         none["forecast"]!.AsObject().Remove("measures");
 
         // Act
+        // The mapper always fills Content, and the forecast is still read.
         MarketAnalysisForecastDto forecast = Map(empty.ToJsonString()).Content!.Forecast!;
         MarketAnalysisResultDto result = Map(none.ToJsonString());
 
         // Assert
         Assert.Equal(["arrivals", "room_revenue"], forecast.Measures.Select(measure => measure.Id));
-        Assert.Null(result.Content!.Forecast);
+        Assert.NotNull(result.Content);
+        Assert.Null(result.Content.Forecast);
     }
 
     #endregion
@@ -151,6 +170,7 @@ public sealed class MarketAnalysisResultMapper12Tests
     public void Map_Version12_ReadsTheOverallInterpretation()
     {
         // Act
+        // The mapper always fills Content, and the fixture holds an overall interpretation.
         MarketAnalysisOverallDto overall = Map(Fixture()).Content!.Overall!;
 
         // Assert
@@ -167,7 +187,9 @@ public sealed class MarketAnalysisResultMapper12Tests
     public void Map_OverallFromFigures_IsNotAi()
     {
         // Arrange
+        // Parse returns null only for the JSON literal null, and the fixture is an object.
         JsonNode document = JsonNode.Parse(Fixture())!;
+        // The fixture holds insights.overall.
         JsonObject overall = document["insights"]!["overall"]!.AsObject();
         overall["source"] = "figures";
         overall["label"] = "Calculated";
@@ -176,6 +198,7 @@ public sealed class MarketAnalysisResultMapper12Tests
         overall.Remove("generated_at");
 
         // Act
+        // The mapper always fills Content, and an overall calculated from the figures is still read.
         MarketAnalysisOverallDto mapped = Map(document.ToJsonString()).Content!.Overall!;
 
         // Assert
@@ -192,7 +215,9 @@ public sealed class MarketAnalysisResultMapper12Tests
     public void Map_NoUsableOverall_IsNull(string scenario)
     {
         // Arrange
+        // Parse returns null only for the JSON literal null, and the fixture is an object.
         JsonNode document = JsonNode.Parse(Fixture())!;
+        // The fixture holds an insights object.
         JsonObject insights = document["insights"]!.AsObject();
         switch (scenario)
         {
@@ -200,9 +225,11 @@ public sealed class MarketAnalysisResultMapper12Tests
                 insights.Remove("overall");
                 break;
             case "text":
+                // The fixture holds insights.overall.
                 insights["overall"]!["text"] = string.Empty;
                 break;
             default:
+                // The fixture holds insights.overall.
                 insights["overall"]!["status"] = "unavailable";
                 break;
         }
@@ -211,7 +238,8 @@ public sealed class MarketAnalysisResultMapper12Tests
         MarketAnalysisResultDto result = Map(document.ToJsonString());
 
         // Assert
-        Assert.Null(result.Content!.Overall);
+        Assert.NotNull(result.Content);
+        Assert.Null(result.Content.Overall);
         Assert.Equal(1, result.SchemaVersion);
     }
 
@@ -227,6 +255,7 @@ public sealed class MarketAnalysisResultMapper12Tests
         string json = File.ReadAllText(Path.Join(AppContext.BaseDirectory, "TestData", "market-analysis-result.json"));
 
         // Act
+        // The mapper always fills Content.
         MarketAnalysisContentDto content = Map(json).Content!;
 
         // Assert

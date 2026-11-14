@@ -1,5 +1,7 @@
 using NFHotel.Application.Dto.MarketAnalysis;
 using NFHotel.Application.Errors;
+using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.MarketAnalysis;
 using NFHotel.TestSupport;
 
 namespace NFHotel.Application.Tests.Services;
@@ -14,10 +16,10 @@ public sealed class MarketAnalysisPeriodTests
     public async Task StartRunAsync_FromAfterTo_IsRefusedAndStartsNothing()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
 
         // Act
-        var result = await world.MarketAnalysisService().StartRunAsync(new StartMarketAnalysisRequest(Arrival.AddDays(1), Arrival), TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> result = await world.MarketAnalysisService().StartRunAsync(new StartMarketAnalysisRequest(Arrival.AddDays(1), Arrival), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ErrorCodes.MarketAnalysis.PeriodInvalid, Assert.Single(result.Errors).Code);
@@ -33,11 +35,11 @@ public sealed class MarketAnalysisPeriodTests
     public async Task StartRunAsync_ValidPeriods_AreAccepted(bool hasFrom, bool hasTo)
     {
         // Arrange
-        var world = new ServiceWorld();
-        var request = new StartMarketAnalysisRequest(hasFrom ? Arrival : null, hasTo ? Arrival : null);
+        ServiceWorld world = new ServiceWorld();
+        StartMarketAnalysisRequest request = new StartMarketAnalysisRequest(hasFrom ? Arrival : null, hasTo ? Arrival : null);
 
         // Act
-        var result = await world.MarketAnalysisService().StartRunAsync(request, TestContext.Current.CancellationToken);
+        Result<MarketAnalysisRunStateDto> result = await world.MarketAnalysisService().StartRunAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -49,14 +51,14 @@ public sealed class MarketAnalysisPeriodTests
     public async Task ExecuteAsync_Period_SendsOnlyTheBookingsOfThePeriod()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new ServiceWorld();
         world.MarketAnalysisBookings.Bookings.Clear();
-        foreach (var offset in new[] { -1, 0, 5, 10, 11 })
+        foreach (int offset in new[] { -1, 0, 5, 10, 11 })
         {
             world.MarketAnalysisBookings.Bookings.Add(FakeMarketAnalysisBookingQueries.Booking(100 + offset) with { ArrivalDate = Arrival.AddDays(offset) });
         }
 
-        var runId = (await world.MarketAnalysisService().StartRunAsync(new StartMarketAnalysisRequest(Arrival, Arrival.AddDays(10)), TestContext.Current.CancellationToken)).Value.RunId;
+        Guid runId = (await world.MarketAnalysisService().StartRunAsync(new StartMarketAnalysisRequest(Arrival, Arrival.AddDays(10)), TestContext.Current.CancellationToken)).Value.RunId;
 
         // Act
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
@@ -71,13 +73,14 @@ public sealed class MarketAnalysisPeriodTests
     public async Task ExecuteAsync_NoBookingInThePeriod_FailsWithoutCallingTheService()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var runId = (await world.MarketAnalysisService().StartRunAsync(new StartMarketAnalysisRequest(new DateOnly(2030, 1, 1), null), TestContext.Current.CancellationToken)).Value.RunId;
+        ServiceWorld world = new ServiceWorld();
+        Guid runId = (await world.MarketAnalysisService().StartRunAsync(new StartMarketAnalysisRequest(new DateOnly(2030, 1, 1), null), TestContext.Current.CancellationToken)).Value.RunId;
 
         // Act
         await world.MarketAnalysisRunner().ExecuteAsync(runId, TestContext.Current.CancellationToken);
 
         // Assert
+        // The tracker keeps every run it began, so Get finds this one.
         Assert.Equal(ErrorCodes.MarketAnalysis.NoBookings, world.MarketAnalysisTracker.Get(runId)!.Error);
         Assert.Equal(0, world.MarketAnalysisClient.Calls);
     }
@@ -87,14 +90,14 @@ public sealed class MarketAnalysisPeriodTests
     public async Task Tracker_PeriodOf_BelongsToTheRun()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var tracker = world.MarketAnalysisTracker;
-        var first = tracker.TryBegin(Arrival, null).Value.RunId;
+        ServiceWorld world = new ServiceWorld();
+        MarketAnalysisRunTracker tracker = world.MarketAnalysisTracker;
+        Guid first = tracker.TryBegin(Arrival, null).Value.RunId;
 
         // Act
-        var other = tracker.PeriodOf(Guid.NewGuid());
+        StartMarketAnalysisRequest other = tracker.PeriodOf(Guid.NewGuid());
         tracker.MarkCompleted(first);
-        var second = tracker.TryBegin(null, Arrival).Value.RunId;
+        Guid second = tracker.TryBegin(null, Arrival).Value.RunId;
         await Task.CompletedTask;
 
         // Assert

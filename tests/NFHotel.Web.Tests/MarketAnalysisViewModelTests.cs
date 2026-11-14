@@ -36,7 +36,8 @@ public sealed class MarketAnalysisViewModelTests
         Assert.Equal(["No Deposit", "Non Refund"], chart.Series.Points.Select(point => point.Label));
         Assert.Equal(27.5, chart.Series.Points[0].Value);
         Assert.Equal(ChartKind.Columns, chart.Kind);
-        Assert.Equal("Non-refundable bookings are cancelled most often.", cancellations.Section.Insight!.ExecutiveSummary);
+        Assert.NotNull(cancellations.Section.Insight);
+        Assert.Equal("Non-refundable bookings are cancelled most often.", cancellations.Section.Insight.ExecutiveSummary);
         Assert.Empty(viewModel.Sections[1].Charts);
         Assert.False(viewModel.HasNoReport);
     }
@@ -132,7 +133,8 @@ public sealed class MarketAnalysisViewModelTests
         await viewModel.StartAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(state, viewModel.CurrentRun!.State);
+        Assert.NotNull(viewModel.CurrentRun);
+        Assert.Equal(state, viewModel.CurrentRun.State);
         Assert.True(viewModel.IsFollowing);
         Assert.False(viewModel.CanStart);
         Assert.NotEmpty(viewModel.Sections);
@@ -411,6 +413,7 @@ public sealed class MarketAnalysisViewModelTests
     private static MarketAnalysisReportDto Report()
     {
         MarketAnalysisResultDto sample = FakeMarketAnalysisServiceClient.SampleResult();
+        // The sample result of the fake client carries its content.
         return new(sample.RunId, sample.StartedAt, sample.FinishedAt, sample.Provider, sample.Model, sample.Content!);
     }
 

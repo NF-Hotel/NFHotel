@@ -21,11 +21,12 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Sample_ReadsTheNineAnalysesAndTheFigures()
     {
         // Act
-        var dto = Map(SampleJson());
+        MarketAnalysisResultDto dto = Map(SampleJson());
 
         // Assert
         Assert.Equal((1, Guid.Parse("fa01a9e2-21eb-4084-bf13-8d52feeb0360"), null, null), (dto.SchemaVersion, dto.RunId, dto.Provider, dto.Model));
-        Assert.Equal(NineAnalyses, dto.Content!.Sections.Select(section => section.Id));
+        Assert.NotNull(dto.Content);
+        Assert.Equal(NineAnalyses, dto.Content.Sections.Select(section => section.Id));
         Assert.Equal(["Bookings analysed", "Bookings with a price of 0", "Duplicate booking ids"], dto.Content.Figures.Select(figure => figure.Label));
         Assert.Equal([5000d, 0d, 0d], dto.Content.Figures.Select(figure => figure.Value));
     }
@@ -35,7 +36,8 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Sample_GivesEverySectionATitle()
     {
         // Act
-        var sections = Map(SampleJson()).Content!.Sections;
+        // The mapper always fills Content.
+        IReadOnlyList<MarketAnalysisSectionDto> sections = Map(SampleJson()).Content!.Sections;
 
         // Assert
         Assert.Equal(
@@ -52,7 +54,7 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_SchemaVersion_IsTheMajorNumber(string version, int major)
     {
         // Act
-        var dto = Map("{\"schema_version\":\"" + version + "\",\"status\":\"completed\",\"analyses\":{}}");
+        MarketAnalysisResultDto dto = Map("{\"schema_version\":\"" + version + "\",\"status\":\"completed\",\"analyses\":{}}");
 
         // Assert
         Assert.Equal(major, dto.SchemaVersion);
@@ -67,7 +69,7 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_NotAResult_IsNull(string json)
     {
         // Act
-        using var document = JsonDocument.Parse(json);
+        using JsonDocument document = JsonDocument.Parse(json);
 
         // Assert
         Assert.Null(MarketAnalysisResultMapper.Map(document.RootElement));
@@ -78,12 +80,14 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Version10_ReadsWithoutTheNewFields()
     {
         // Act
-        var dto = Map("""{"schema_version":"1.0","result_id":"5b3f0e1a-0000-4000-8000-0000000000a1","generated_at":"2026-10-19T10:04:00.000Z","status":"completed","analyses":{"guest_mix":{"status":"available","findings":{}}},"notices":[]}""");
+        MarketAnalysisResultDto dto = Map("""{"schema_version":"1.0","result_id":"5b3f0e1a-0000-4000-8000-0000000000a1","generated_at":"2026-10-19T10:04:00.000Z","status":"completed","analyses":{"guest_mix":{"status":"available","findings":{}}},"notices":[]}""");
 
         // Assert
-        var section = Assert.Single(dto.Content!.Sections);
+        Assert.NotNull(dto.Content);
+        MarketAnalysisSectionDto section = Assert.Single(dto.Content.Sections);
         Assert.Equal(("Guest and booking mix", null, null, null), (section.Title, section.Insight, section.Formula, section.Limitations));
-        Assert.Empty(section.Matrices!);
+        Assert.NotNull(section.Matrices);
+        Assert.Empty(section.Matrices);
     }
 
     #endregion
@@ -95,7 +99,7 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Sample_LeadTimeStartsWithTheBands()
     {
         // Act
-        var lead = Section("lead_time");
+        MarketAnalysisSectionDto lead = Section("lead_time");
 
         // Assert
         Assert.Equal("overall.bands", lead.Series[0].Id);
@@ -109,14 +113,14 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Sample_CancellationsReadTheSplitsAndFlagTheSmallSamples()
     {
         // Act
-        var cancellations = Section("cancellations");
+        MarketAnalysisSectionDto cancellations = Section("cancellations");
 
         // Assert
-        var deposit = cancellations.Series.Single(series => series.Id == "splits.by_deposit_type.groups");
+        MarketAnalysisSeriesDto deposit = cancellations.Series.Single(series => series.Id == "splits.by_deposit_type.groups");
         Assert.Equal("%", deposit.Unit);
         Assert.Equal(["No Deposit", "Non Refund", "Refundable"], deposit.Points.Select(point => point.Label));
         Assert.Equal([41.5, 91.8, 12.9], deposit.Points.Select(point => point.Value));
-        var customers = cancellations.Series.Single(series => series.Id == "splits.by_customer_type.groups");
+        MarketAnalysisSeriesDto customers = cancellations.Series.Single(series => series.Id == "splits.by_customer_type.groups");
         Assert.True(customers.Points.Single(point => point.Label == "Group Contract").SmallSample);
         Assert.False(customers.Points.Single(point => point.Label == "No Contract (Single)").SmallSample);
     }
@@ -126,11 +130,12 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Sample_HolidaysHaveNoSeriesButFormulaAndLimitations()
     {
         // Act
-        var holidays = Section("holidays");
+        MarketAnalysisSectionDto holidays = Section("holidays");
 
         // Assert
         Assert.Empty(holidays.Series);
-        Assert.NotEmpty(holidays.Limitations!);
+        Assert.NotNull(holidays.Limitations);
+        Assert.NotEmpty(holidays.Limitations);
     }
 
     /// <summary>Positive: the occupancy gives the months as shares of the room nights, and the overall figure is not a series.</summary>
@@ -138,10 +143,10 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Sample_OccupancyGivesTheMonthlySeries()
     {
         // Act
-        var occupancy = Section("occupancy");
+        MarketAnalysisSectionDto occupancy = Section("occupancy");
 
         // Assert
-        var monthly = Assert.Single(occupancy.Series);
+        MarketAnalysisSeriesDto monthly = Assert.Single(occupancy.Series);
         Assert.Equal(("monthly", "%", 10), (monthly.Id, monthly.Unit, monthly.Points.Count));
         Assert.Equal(("2018-07", 89.2), (monthly.Points[0].Label, monthly.Points[0].Value));
     }
@@ -151,7 +156,7 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Sample_OccupancyOnHolidaysGivesTwoRates()
     {
         // Act
-        var series = Assert.Single(Section("occupancy_on_holidays").Series);
+        MarketAnalysisSeriesDto series = Assert.Single(Section("occupancy_on_holidays").Series);
 
         // Assert
         Assert.Equal(("holiday_days+other_days", "Holiday days and other days", "%"), (series.Id, series.Title, series.Unit));
@@ -163,11 +168,12 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Sample_CorrelationsAreAMatrix()
     {
         // Act
-        var correlations = Section("correlations");
+        MarketAnalysisSectionDto correlations = Section("correlations");
 
         // Assert
         Assert.Empty(correlations.Series);
-        var matrix = Assert.Single(correlations.Matrices!);
+        Assert.NotNull(correlations.Matrices);
+        MarketAnalysisMatrixDto matrix = Assert.Single(correlations.Matrices);
         Assert.Equal(("matrix", "spearman", 12), (matrix.Id, matrix.Method, matrix.Fields.Count));
         Assert.Equal("lead_time", matrix.Fields[0]);
         Assert.Equal(12, matrix.Cells.Count);
@@ -188,8 +194,8 @@ public sealed class MarketAnalysisResultMapperTests
     public void ExtractMatrices_Shape_DecidesWhetherThereIsAMatrix(string findings, bool found)
     {
         // Act
-        using var document = JsonDocument.Parse(findings);
-        var matrices = FindingsSeries.ExtractMatrices(document.RootElement);
+        using JsonDocument document = JsonDocument.Parse(findings);
+        IReadOnlyList<MarketAnalysisMatrixDto> matrices = FindingsSeries.ExtractMatrices(document.RootElement);
 
         // Assert
         Assert.Equal(found, matrices.Count == 1);
@@ -204,7 +210,7 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Sample_RoomValueWithoutPriceIsUnavailableAndDrawsNoValue()
     {
         // Act
-        var room = Section("room_value");
+        MarketAnalysisSectionDto room = Section("room_value");
 
         // Assert
         Assert.Equal(("unavailable", "NO_PRICE"), (room.Status, room.Reason));
@@ -221,13 +227,15 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Sample_EverySectionHasAFormulaAndLimitations()
     {
         // Act
-        var sections = Map(SampleJson()).Content!.Sections;
+        // The mapper always fills Content.
+        IReadOnlyList<MarketAnalysisSectionDto> sections = Map(SampleJson()).Content!.Sections;
 
         // Assert
         Assert.All(sections, section =>
         {
             Assert.False(string.IsNullOrWhiteSpace(section.Formula));
-            Assert.NotEmpty(section.Limitations!);
+            Assert.NotNull(section.Limitations);
+            Assert.NotEmpty(section.Limitations);
         });
         Assert.StartsWith("Lead time is the supplied lead_time in days.", Section("lead_time").Formula, StringComparison.Ordinal);
     }
@@ -237,13 +245,15 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Sample_ReadsTheInsightWithItsObservations()
     {
         // Act
-        var insight = Section("cancellations").Insight!;
+        // The cancellations analysis of the sample carries an insight.
+        MarketAnalysisInsightDto insight = Section("cancellations").Insight!;
 
         // Assert
         Assert.Equal("available", insight.Status);
         Assert.StartsWith("Almost half of the bookings", insight.ExecutiveSummary, StringComparison.Ordinal);
         Assert.Equal([5000], insight.Suggestions.Select(suggestion => suggestion.SampleSize));
-        Assert.Equal(2, insight.Observations!.Count);
+        Assert.NotNull(insight.Observations);
+        Assert.Equal(2, insight.Observations.Count);
         Assert.Equal(["splits.by_deposit_type.groups", "splits.by_market_segment.groups"], insight.Observations.Select(observation => observation.Series));
         Assert.Contains("438 of 477", insight.Observations[0].Evidence, StringComparison.Ordinal);
     }
@@ -253,11 +263,12 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_Sample_EveryObservationNamesAChartOfItsAnalysis()
     {
         // Act
-        var cancellations = Section("cancellations");
+        MarketAnalysisSectionDto cancellations = Section("cancellations");
 
         // Assert
-        var charts = cancellations.Series.Select(series => series.Id).ToList();
-        Assert.All(cancellations.Insight!.Observations!, observation => Assert.Contains(observation.Series, charts));
+        List<string> charts = cancellations.Series.Select(series => series.Id).ToList();
+        Assert.NotNull(cancellations.Insight?.Observations);
+        Assert.All(cancellations.Insight.Observations, observation => Assert.Contains(observation.Series, charts));
     }
 
     /// <summary>Positive: an analysis without an insight (insights off) has none, and an insight that is unavailable has no observations.</summary>
@@ -265,13 +276,15 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_InsightsOffOrUnavailable_HaveNoObservations()
     {
         // Act
-        var off = Section("lead_time");
-        var unavailable = Map("""{"schema_version":"1.1","status":"completed","analyses":{"occupancy":{"status":"available","findings":{},"insight":{"status":"unavailable","reason":"TIMEOUT"}}}}""")
+        MarketAnalysisSectionDto off = Section("lead_time");
+        // The mapper always fills Content, and the one analysis of this document carries an insight.
+        MarketAnalysisInsightDto unavailable = Map("""{"schema_version":"1.1","status":"completed","analyses":{"occupancy":{"status":"available","findings":{},"insight":{"status":"unavailable","reason":"TIMEOUT"}}}}""")
             .Content!.Sections[0].Insight!;
 
         // Assert
         Assert.Null(off.Insight);
-        Assert.Equal(("unavailable", "TIMEOUT", 0), (unavailable.Status, unavailable.Reason, unavailable.Observations!.Count));
+        Assert.NotNull(unavailable.Observations);
+        Assert.Equal(("unavailable", "TIMEOUT", 0), (unavailable.Status, unavailable.Reason, unavailable.Observations.Count));
     }
 
     /// <summary>Boundary: an observation without text or without the path of its series cannot be put under a chart and is left out.</summary>
@@ -279,7 +292,8 @@ public sealed class MarketAnalysisResultMapperTests
     public void Map_ObservationsWithoutTextOrSeries_AreLeftOut()
     {
         // Act
-        var insight = Map("""
+        // The mapper always fills Content, and the one analysis of this document carries an insight.
+        MarketAnalysisInsightDto insight = Map("""
             {"schema_version":"1.1","status":"completed","analyses":{"occupancy":{"status":"available","findings":{},"insight":{"status":"available","observations":[
               {"series":"monthly","text":"Summer is fuller.","evidence":"2018-07: 89.2%"},
               {"series":"monthly","text":""},
@@ -288,7 +302,8 @@ public sealed class MarketAnalysisResultMapperTests
             """).Content!.Sections[0].Insight!;
 
         // Assert
-        Assert.Equal([("Summer is fuller.", "2018-07: 89.2%"), ("No evidence field.", string.Empty)], insight.Observations!.Select(observation => (observation.Text, observation.Evidence)));
+        Assert.NotNull(insight.Observations);
+        Assert.Equal([("Summer is fuller.", "2018-07: 89.2%"), ("No evidence field.", string.Empty)], insight.Observations.Select(observation => (observation.Text, observation.Evidence)));
     }
 
     #endregion
@@ -300,11 +315,12 @@ public sealed class MarketAnalysisResultMapperTests
 
     private static MarketAnalysisResultDto Map(string json)
     {
-        using var document = JsonDocument.Parse(json);
+        using JsonDocument document = JsonDocument.Parse(json);
 
         return MarketAnalysisResultMapper.Map(document.RootElement) ?? throw new InvalidOperationException("The document is not a result.");
     }
 
+    // The mapper always fills Content.
     private static MarketAnalysisSectionDto Section(string id) =>
         Map(SampleJson()).Content!.Sections.Single(section => section.Id == id);
 

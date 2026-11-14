@@ -4,22 +4,26 @@ using NFHotel.Application.Dto.MarketAnalysis;
 
 namespace NFHotel.Web.Features.Admin.Shared;
 
-/// <summary>One calendar year of a month grid: a value or <c>null</c> for each of the twelve months.</summary>
-/// <param name="Year">The year.</param>
-/// <param name="Values">Twelve values, January first; <c>null</c> where the series has no point for that month.</param>
-/// <param name="SmallSamples">Twelve flags: true where the value rests on too few bookings.</param>
-public sealed record MonthRow(int Year, IReadOnlyList<double?> Values, IReadOnlyList<bool> SmallSamples);
-
 /// <summary>Reads a series of months (labels like <c>2018-07</c>) as months against years, for the heat map.</summary>
 public static class MonthGrid
 {
+    #region Fields
+
     /// <summary>The number of months in a year.</summary>
     public const int MonthsPerYear = 12;
 
     private const int LabelLength = 7;
 
+    #endregion Fields
+
+    #region Properties
+
     /// <summary>The short names of the months, January first.</summary>
     public static IReadOnlyList<string> MonthNames { get; } = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <summary>Reads a label such as <c>2018-07</c>.</summary>
     /// <param name="label">The label.</param>
@@ -74,4 +78,6 @@ public static class MonthGrid
 
         return [.. cells.OrderBy(entry => entry.Key).Select(entry => new MonthRow(entry.Key, entry.Value.Values, entry.Value.Small))];
     }
+
+    #endregion Public methods
 }

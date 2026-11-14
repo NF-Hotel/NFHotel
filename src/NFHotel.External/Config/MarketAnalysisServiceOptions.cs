@@ -7,6 +7,8 @@ namespace NFHotel.External.Config;
 /// </summary>
 public sealed class MarketAnalysisServiceOptions
 {
+    #region Fields
+
     /// <summary>The name of the configuration section.</summary>
     public const string SectionName = "MarketAnalysisService";
 
@@ -43,6 +45,10 @@ public sealed class MarketAnalysisServiceOptions
     /// </summary>
     public const int DefaultRunDeadlineSeconds = 3600;
 
+    #endregion Fields
+
+    #region Properties
+
     /// <summary>
     /// The address of the market analysis service on the shared Docker network. There is no built-in address: it comes from the
     /// settings, and an empty address means the service is not configured.
@@ -67,19 +73,23 @@ public sealed class MarketAnalysisServiceOptions
     /// <summary>True when the address is an absolute http or https address.</summary>
     public bool IsConfigured => TryGetBaseUri(out _);
 
+    #endregion Properties
+
+    #region Public methods
+
     /// <summary>Reads the address as an absolute URI that ends in a slash, so that relative paths are added to it.</summary>
     /// <param name="baseUri">The address when the method returns true.</param>
     /// <returns>True when the address is a usable one.</returns>
     public bool TryGetBaseUri(out Uri baseUri)
     {
-        var text = BaseUrl.Trim();
+        string text = BaseUrl.Trim();
 
         if (!text.EndsWith('/'))
         {
             text += "/";
         }
 
-        if (Uri.TryCreate(text, UriKind.Absolute, out var parsed)
+        if (Uri.TryCreate(text, UriKind.Absolute, out Uri? parsed)
             && (parsed.Scheme == Uri.UriSchemeHttp || parsed.Scheme == Uri.UriSchemeHttps))
         {
             baseUri = parsed;
@@ -91,4 +101,6 @@ public sealed class MarketAnalysisServiceOptions
         baseUri = null!;
         return false;
     }
+
+    #endregion Public methods
 }

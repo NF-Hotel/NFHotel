@@ -5,6 +5,8 @@ namespace NFHotel.Infrastructure.Seeding;
 /// <summary>Reads <c>nf_hotel_bookings.csv</c>: semicolon-delimited, a header line, ISO dates (MIL-026).</summary>
 public static class MarketSeedCsv
 {
+    #region Fields
+
     private const char Separator = ';';
 
     private static readonly string[] RequiredColumns =
@@ -15,6 +17,10 @@ public static class MarketSeedCsv
         "total_of_special_requests",
     ];
 
+    #endregion Fields
+
+    #region Public methods
+
     /// <summary>Reads every row.</summary>
     /// <param name="reader">The text of the file.</param>
     /// <returns>The rows in the order of the file.</returns>
@@ -23,17 +29,17 @@ public static class MarketSeedCsv
     {
         ArgumentNullException.ThrowIfNull(reader);
 
-        var header = reader.ReadLine() ?? throw new FormatException("The file is empty.");
-        var columns = header.TrimStart('﻿').Split(Separator).Select(name => name.Trim()).ToList();
-        var missing = RequiredColumns.Where(name => !columns.Contains(name)).ToArray();
+        string header = reader.ReadLine() ?? throw new FormatException("The file is empty.");
+        List<string> columns = header.TrimStart('﻿').Split(Separator).Select(name => name.Trim()).ToList();
+        string[] missing = RequiredColumns.Where(name => !columns.Contains(name)).ToArray();
         if (missing.Length > 0)
         {
             throw new FormatException($"The header lacks the columns: {string.Join(", ", missing)}.");
         }
 
-        var index = RequiredColumns.ToDictionary(name => name, name => columns.IndexOf(name));
-        var rows = new List<MarketSeedRow>();
-        var line = 1;
+        Dictionary<string, int> index = RequiredColumns.ToDictionary(name => name, columns.IndexOf);
+        List<MarketSeedRow> rows = [];
+        int line = 1;
         while (reader.ReadLine() is { } text)
         {
             line++;
@@ -42,7 +48,7 @@ public static class MarketSeedCsv
                 continue;
             }
 
-            var cells = text.Split(Separator);
+            string[] cells = text.Split(Separator);
             if (cells.Length < columns.Count)
             {
                 throw new FormatException($"Line {line} has {cells.Length} values, expected {columns.Count}.");
@@ -60,6 +66,10 @@ public static class MarketSeedCsv
 
         return rows;
     }
+
+    #endregion Public methods
+
+    #region Private methods
 
     private static MarketSeedRow ToRow(string[] cells, Dictionary<string, int> index)
     {
@@ -88,4 +98,6 @@ public static class MarketSeedCsv
             Number("required_car_parking_spaces"),
             Number("total_of_special_requests"));
     }
+
+    #endregion Private methods
 }

@@ -26,7 +26,7 @@
         <div>
             <strong>What it cannot say.</strong>
             <ul class="chart-caption-limits">
-                @foreach (var limit in Model.Limits)
+                @foreach (string limit in Model.Limits)
                 {
                     <li>@limit</li>
                 }

@@ -24,7 +24,7 @@ public sealed class MarketContractTests
     public void Contract_RunPaths_AreTheThree()
     {
         // Act
-        var paths = MarketContractFile.Load().Paths();
+        IReadOnlyList<string> paths = MarketContractFile.Load().Paths();
 
         // Assert
         Assert.All(RunPaths, path => Assert.Contains(path, paths));
@@ -35,7 +35,7 @@ public sealed class MarketContractTests
     public void RunRequest_Schema_NeedsRoomCountAndBookings()
     {
         // Act
-        var contract = MarketContractFile.Load();
+        MarketContractFile contract = MarketContractFile.Load();
 
         // Assert
         Assert.Equal(["room_count", "bookings"], contract.Required("RunRequest"));
@@ -47,7 +47,7 @@ public sealed class MarketContractTests
     public void Booking_RequiredFields_AreTheSevenOfTheDto()
     {
         // Act
-        var required = MarketContractFile.Load().Required("Booking");
+        IReadOnlyList<string> required = MarketContractFile.Load().Required("Booking");
 
         // Assert
         Assert.Equal(
@@ -63,12 +63,12 @@ public sealed class MarketContractTests
     public void Booking_DtoFields_AreThePropertiesOfTheContract()
     {
         // Arrange
-        var booking = new MarketBookingDto(7, "NF Hotel", true, 30, new DateOnly(2019, 1, 30), new DateOnly(2019, 3, 1), 1, 2, 2, 0, 0, "BB", "Portugal", "Direct", false, 0, "C", 0, "No Deposit", "Contract", 0, 1, 94.50m);
-        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
+        MarketBookingDto booking = new MarketBookingDto(7, "NF Hotel", true, 30, new DateOnly(2019, 1, 30), new DateOnly(2019, 3, 1), 1, 2, 2, 0, 0, "BB", "Portugal", "Direct", false, 0, "C", 0, "No Deposit", "Contract", 0, 1, 94.50m);
+        JsonSerializerOptions options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
         // Act
-        using var written = JsonDocument.Parse(JsonSerializer.Serialize(booking, options));
-        var sent = written.RootElement.EnumerateObject().Select(property => property.Name).Order().ToArray();
+        using JsonDocument written = JsonDocument.Parse(JsonSerializer.Serialize(booking, options));
+        string[] sent = written.RootElement.EnumerateObject().Select(property => property.Name).Order().ToArray();
 
         // Assert
         Assert.Equal(MarketContractFile.Load().Properties("Booking").Order(), sent);
@@ -79,7 +79,7 @@ public sealed class MarketContractTests
     public void RunResult_Schema_HasTheNineAnalyses()
     {
         // Act
-        var analyses = MarketContractFile.Load().NestedRequired("RunResult", "analyses");
+        IReadOnlyList<string> analyses = MarketContractFile.Load().NestedRequired("RunResult", "analyses");
 
         // Assert
         Assert.Equal(

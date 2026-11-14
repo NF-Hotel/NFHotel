@@ -6,7 +6,13 @@ namespace NFHotel.Web.Features.Admin.Shared;
 /// <summary>Text helpers shared by the SVG charts: numbers, labels and encoding. The charts are built as text, so every label is encoded here.</summary>
 public static class ChartFormat
 {
+    #region Fields
+
     private const string Percent = "%";
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Writes a value as the charts show it: a rate as <c>42.5%</c>, a count with a thousands separator.</summary>
     /// <param name="value">The value.</param>
@@ -42,4 +48,6 @@ public static class ChartFormat
     /// <param name="name">The name, for example <c>lead_time</c>.</param>
     /// <returns>The name with spaces.</returns>
     public static string Readable(string name) => name.Replace('_', ' ');
+
+    #endregion Public methods
 }

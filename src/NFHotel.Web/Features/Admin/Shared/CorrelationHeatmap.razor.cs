@@ -10,6 +10,8 @@ namespace NFHotel.Web.Features.Admin.Shared;
 /// <summary>The code behind the correlation heat map: the matrix, the cells and the SVG built from them.</summary>
 public partial class CorrelationHeatmap : ComponentBase
 {
+    #region Fields
+
     private const int Left = 150;
     private const int Top = 128;
     private const int RightMargin = 96;
@@ -22,11 +24,19 @@ public partial class CorrelationHeatmap : ComponentBase
 
     private readonly string _id = Guid.NewGuid().ToString("N")[..8];
 
+    #endregion Fields
+
+    #region Properties
+
     /// <summary>The matrix to draw.</summary>
     [Parameter, EditorRequired]
     public MarketAnalysisMatrixDto Matrix { get; set; } = new("matrix", "Correlations", string.Empty, [], []);
 
     private string Title => string.IsNullOrWhiteSpace(Matrix.Method) ? Matrix.Title : $"{Matrix.Title} ({Matrix.Method})";
+
+    #endregion Properties
+
+    #region Private methods
 
     private string CellText(int row, int column, string missing) =>
         Value(row, column) is { } value ? value.ToString("0.00", CultureInfo.InvariantCulture) : missing;
@@ -36,32 +46,32 @@ public partial class CorrelationHeatmap : ComponentBase
 
     private MarkupString BuildSvg()
     {
-        var count = Matrix.Fields.Count;
-        var cell = Math.Clamp(PlotSize / count, MinCell, MaxCell);
-        var width = Left + (count * cell) + RightMargin;
-        var legendTop = Top + (count * cell) + 24;
-        var height = legendTop + 48;
-        var gradient = $"chart-scale-{_id}";
-        var titleId = $"chart-title-{_id}";
-        var descId = $"chart-desc-{_id}";
-        var svg = new StringBuilder();
+        int count = Matrix.Fields.Count;
+        int cell = Math.Clamp(PlotSize / count, MinCell, MaxCell);
+        int width = Left + (count * cell) + RightMargin;
+        int legendTop = Top + (count * cell) + 24;
+        int height = legendTop + 48;
+        string gradient = $"chart-scale-{_id}";
+        string titleId = $"chart-title-{_id}";
+        string descId = $"chart-desc-{_id}";
+        StringBuilder svg = new StringBuilder();
 
         svg.Append(CultureInfo.InvariantCulture, $"<svg class=\"chart-svg\" viewBox=\"0 0 {width} {height}\" role=\"img\" aria-labelledby=\"{titleId} {descId}\" preserveAspectRatio=\"xMinYMin meet\">");
         svg.Append(CultureInfo.InvariantCulture, $"<title id=\"{titleId}\">{ChartFormat.Encode(Title)}</title><desc id=\"{descId}\">{ChartFormat.Encode($"Correlations between {count} fields from -1 to +1; the values are in the table below the chart.")}</desc>");
         svg.Append(CultureInfo.InvariantCulture, $"<defs><linearGradient id=\"{gradient}\" x1=\"0\" x2=\"1\" y1=\"0\" y2=\"0\"><stop offset=\"0\" stop-color=\"{HeatColor.Diverging(-1)}\"></stop><stop offset=\"0.5\" stop-color=\"{HeatColor.Diverging(0)}\"></stop><stop offset=\"1\" stop-color=\"{HeatColor.Diverging(1)}\"></stop></linearGradient></defs>");
 
-        for (var index = 0; index < count; index++)
+        for (int index = 0; index < count; index++)
         {
-            var name = ChartFormat.Encode(ChartFormat.Shorten(ChartFormat.Readable(Matrix.Fields[index]), LabelLength));
-            var full = ChartFormat.Encode(ChartFormat.Readable(Matrix.Fields[index]));
-            var cx = Left + (index * cell) + (cell / 2);
+            string name = ChartFormat.Encode(ChartFormat.Shorten(ChartFormat.Readable(Matrix.Fields[index]), LabelLength));
+            string full = ChartFormat.Encode(ChartFormat.Readable(Matrix.Fields[index]));
+            int cx = Left + (index * cell) + (cell / 2);
             svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-label\" x=\"{cx}\" y=\"{Top - 8}\" transform=\"rotate(-45 {cx} {Top - 8})\"><title>{full}</title>{name}</text>");
             svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-label\" x=\"{Left - 8}\" y=\"{Top + (index * cell) + (cell / 2) + 4}\" text-anchor=\"end\"><title>{full}</title>{name}</text>");
         }
 
-        for (var row = 0; row < count; row++)
+        for (int row = 0; row < count; row++)
         {
-            for (var column = 0; column < count; column++)
+            for (int column = 0; column < count; column++)
             {
                 AppendCell(svg, row, column, Left + (column * cell), Top + (row * cell), cell);
             }
@@ -79,10 +89,10 @@ public partial class CorrelationHeatmap : ComponentBase
 
     private void AppendCell(StringBuilder svg, int row, int column, int x, int y, int cell)
     {
-        var rowName = ChartFormat.Encode(ChartFormat.Readable(Matrix.Fields[row]));
-        var columnName = ChartFormat.Encode(ChartFormat.Readable(Matrix.Fields[column]));
-        var textX = x + (cell / 2);
-        var textY = y + (cell / 2) + 4;
+        string rowName = ChartFormat.Encode(ChartFormat.Readable(Matrix.Fields[row]));
+        string columnName = ChartFormat.Encode(ChartFormat.Readable(Matrix.Fields[column]));
+        int textX = x + (cell / 2);
+        int textY = y + (cell / 2) + 4;
 
         if (Value(row, column) is not { } value)
         {
@@ -91,9 +101,11 @@ public partial class CorrelationHeatmap : ComponentBase
             return;
         }
 
-        var fill = HeatColor.Diverging(value);
-        var text = value.ToString("0.00", CultureInfo.InvariantCulture);
+        string fill = HeatColor.Diverging(value);
+        string text = value.ToString("0.00", CultureInfo.InvariantCulture);
         svg.Append(CultureInfo.InvariantCulture, $"<rect class=\"chart-cell\" x=\"{x}\" y=\"{y}\" width=\"{cell}\" height=\"{cell}\" fill=\"{fill}\"><title>{rowName} and {columnName}: {text}</title></rect>");
         svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-cell-text\" x=\"{textX}\" y=\"{textY}\" text-anchor=\"middle\" fill=\"{HeatColor.TextOn(fill)}\">{text}</text>");
     }
+
+    #endregion Private methods
 }

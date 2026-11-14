@@ -17,13 +17,15 @@ namespace NFHotel.External.MarketAnalysis;
 /// <summary>
 /// Calls the run API of the market analysis service over HTTP (MIL-026, contract <c>openapi/market-contract.yaml</c> of
 /// <c>notebook-market-analysis</c>): <c>POST /api/v1/market-analysis/runs?insights=true</c> starts a run, <c>GET .../runs/{id}</c>
-/// is followed until the state is <c>completed</c> or <c>failed</c>, and <c>GET .../runs/{id}/result</c> gives result schema 1.1.
+/// is followed until the state is <c>completed</c> or <c>failed</c>, and <c>GET .../runs/{id}/result</c> gives the result.
 /// Every call carries the header <c>X-API-Key</c> and has a short timeout (the one of the <see cref="HttpClient"/>); the poll
 /// loop has its own deadline. Every failure is a code in the <see cref="Result"/>; nothing is thrown for a service that is
 /// down, slow or refuses. The API key is never logged.
 /// </summary>
 public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
 {
+    #region Fields
+
     /// <summary>The header that carries the API key.</summary>
     public const string ApiKeyHeader = "X-API-Key";
 
@@ -43,6 +45,10 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
     private readonly MarketAnalysisServiceOptions _options;
     private readonly ILogger<MarketAnalysisServiceClient> _logger;
     private readonly TimeProvider _time;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the client.</summary>
     /// <param name="httpClient">The client with the address set and a short timeout.</param>
@@ -65,6 +71,10 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
         _time = timeProvider ?? TimeProvider.System;
     }
 
+    #endregion Constructors
+
+    #region Public methods
+
     /// <inheritdoc />
     public async Task<Result<MarketAnalysisResultDto>> AnalyzeAsync(
         MarketAnalysisRunRequest request,
@@ -83,16 +93,16 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
 
         try
         {
-            var started = await StartAsync(request, cancellationToken).ConfigureAwait(false);
+            Result<Guid> started = await StartAsync(request, cancellationToken).ConfigureAwait(false);
             if (started.IsFailure)
             {
                 return Result<MarketAnalysisResultDto>.Failure(started.Errors[0].Code);
             }
 
-            var runId = started.Value;
+            Guid runId = started.Value;
             _logger.LogInformation("The market analysis service queued run {RunId}.", runId);
 
-            var finished = await WaitAsync(runId, cancellationToken).ConfigureAwait(false);
+            Result finished = await WaitAsync(runId, cancellationToken).ConfigureAwait(false);
             return finished.IsFailure
                 ? Result<MarketAnalysisResultDto>.Failure(finished.Errors[0].Code)
                 : await ReadResultAsync(runId, cancellationToken).ConfigureAwait(false);
@@ -118,22 +128,26 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
         }
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private async Task<Result<Guid>> StartAsync(MarketAnalysisRunRequest request, CancellationToken cancellationToken)
     {
         // The period is sent only when both dates are chosen; without it the service takes the span of the bookings.
-        var period = request.From is { } first && request.To is { } last ? new PeriodBody(first, last) : null;
-        var body = new RunBody(request.RoomCount, period, request.Bookings, request.Pricing);
+        PeriodBody? period = request.From is { } first && request.To is { } last ? new PeriodBody(first, last) : null;
+        RunBody body = new RunBody(request.RoomCount, period, request.Bookings, request.Pricing);
 
-        using var message = NewRequest(HttpMethod.Post, $"{RunsPath}?insights=true");
+        using HttpRequestMessage message = NewRequest(HttpMethod.Post, $"{RunsPath}?insights=true");
         message.Content = JsonContent.Create(body, options: RequestOptions);
-        using var response = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+        using HttpResponseMessage response = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
         {
             return Result<Guid>.Failure(await FailAsync(response, "start", cancellationToken).ConfigureAwait(false));
         }
 
-        var state = await ReadStateAsync(response, cancellationToken).ConfigureAwait(false);
+        RunState? state = await ReadStateAsync(response, cancellationToken).ConfigureAwait(false);
         return state is { RunId: { } runId }
             ? Result<Guid>.Success(runId)
             : Result<Guid>.Failure(ErrorCodes.MarketAnalysisRunner.UnexpectedResponse);
@@ -142,19 +156,19 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
     // Asks for the state of the run until it is completed or failed, until the deadline, or until the caller cancels.
     private async Task<Result> WaitAsync(Guid runId, CancellationToken cancellationToken)
     {
-        var deadline = _time.GetUtcNow().AddSeconds(_options.RunDeadlineSeconds);
-        var interval = TimeSpan.FromSeconds(_options.PollIntervalSeconds);
-        var failures = 0;
+        DateTimeOffset deadline = _time.GetUtcNow().AddSeconds(_options.RunDeadlineSeconds);
+        TimeSpan interval = TimeSpan.FromSeconds(_options.PollIntervalSeconds);
+        int failures = 0;
 
         while (true)
         {
-            var transient = false;
+            bool transient = false;
             try
             {
-                var state = await GetStateAsync(runId, cancellationToken).ConfigureAwait(false);
+                Result<RunState> state = await GetStateAsync(runId, cancellationToken).ConfigureAwait(false);
                 if (state.IsFailure)
                 {
-                    var code = state.Errors[0].Code;
+                    string code = state.Errors[0].Code;
                     if (code != ErrorCodes.MarketAnalysisRunner.Unavailable)
                     {
                         return Result.Failure(code);
@@ -204,8 +218,8 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
 
     private async Task<Result<RunState>> GetStateAsync(Guid runId, CancellationToken cancellationToken)
     {
-        using var message = NewRequest(HttpMethod.Get, $"{RunsPath}/{runId}");
-        using var response = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+        using HttpRequestMessage message = NewRequest(HttpMethod.Get, $"{RunsPath}/{runId}");
+        using HttpResponseMessage response = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -219,15 +233,15 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
 
     private async Task<Result<MarketAnalysisResultDto>> ReadResultAsync(Guid runId, CancellationToken cancellationToken)
     {
-        using var message = NewRequest(HttpMethod.Get, $"{RunsPath}/{runId}/result");
-        using var response = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+        using HttpRequestMessage message = NewRequest(HttpMethod.Get, $"{RunsPath}/{runId}/result");
+        using HttpResponseMessage response = await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
         {
             return Result<MarketAnalysisResultDto>.Failure(await FailAsync(response, "result", cancellationToken).ConfigureAwait(false));
         }
 
-        using var document = await JsonDocument.ParseAsync(
+        using JsonDocument document = await JsonDocument.ParseAsync(
             await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false),
             cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -238,7 +252,7 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
 
     private HttpRequestMessage NewRequest(HttpMethod method, string path)
     {
-        var message = new HttpRequestMessage(method, path);
+        HttpRequestMessage message = new HttpRequestMessage(method, path);
         if (!string.IsNullOrWhiteSpace(_options.ApiKey))
         {
             message.Headers.Add(ApiKeyHeader, _options.ApiKey);
@@ -249,36 +263,38 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
 
     private static async Task<RunState?> ReadStateAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
-        using var document = await JsonDocument.ParseAsync(
+        using JsonDocument document = await JsonDocument.ParseAsync(
             await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false),
             cancellationToken: cancellationToken).ConfigureAwait(false);
-        var root = document.RootElement;
+        JsonElement root = document.RootElement;
 
         if (root.ValueKind != JsonValueKind.Object
-            || !root.TryGetProperty("state", out var state)
+            || !root.TryGetProperty("state", out JsonElement state)
             || state.ValueKind != JsonValueKind.String)
         {
             return null;
         }
 
-        var runId = root.TryGetProperty("run_id", out var id) && id.ValueKind == JsonValueKind.String && Guid.TryParse(id.GetString(), out var parsed)
+        Guid? runId = root.TryGetProperty("run_id", out JsonElement id) && id.ValueKind == JsonValueKind.String && Guid.TryParse(id.GetString(), out Guid parsed)
             ? parsed
             : default(Guid?);
-        var errorCode = root.TryGetProperty("error_code", out var code) && code.ValueKind == JsonValueKind.String ? code.GetString() : null;
+        string? errorCode = root.TryGetProperty("error_code", out JsonElement code) && code.ValueKind == JsonValueKind.String ? code.GetString() : null;
 
         return new RunState(runId, state.GetString() ?? string.Empty, errorCode);
     }
 
-    // The problem body is {"code": "...", "message": "..."}; only the code is read, and only to tell two 409 answers apart.
+    // The problem body is {"code": "...", "message": "..."}; only the code is read: it tells two 409 answers apart, and the log
+    // gets it cleaned like the code of a failed run.
     private async Task<string> FailAsync(HttpResponseMessage response, string call, CancellationToken cancellationToken)
     {
-        var problem = await ReadProblemCodeAsync(response, cancellationToken).ConfigureAwait(false);
-        var code = ErrorCodeOf(response.StatusCode, problem);
+        string? problem = await ReadProblemCodeAsync(response, cancellationToken).ConfigureAwait(false);
+        string code = ErrorCodeOf(response.StatusCode, problem);
+        string loggedProblem = CleanCode(problem);
 
         _logger.LogWarning(
             "The market analysis service answered HTTP {Status} ({Problem}) to the {Call} call: {Code}.",
             (int)response.StatusCode,
-            problem ?? "no problem code",
+            loggedProblem.Length == 0 ? "no problem code" : loggedProblem,
             call,
             code);
 
@@ -298,12 +314,12 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
     {
         try
         {
-            using var document = await JsonDocument.ParseAsync(
+            using JsonDocument document = await JsonDocument.ParseAsync(
                 await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false),
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
             return document.RootElement.ValueKind == JsonValueKind.Object
-                && document.RootElement.TryGetProperty("code", out var code)
+                && document.RootElement.TryGetProperty("code", out JsonElement code)
                 && code.ValueKind == JsonValueKind.String
                     ? code.GetString()
                     : null;
@@ -323,18 +339,27 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
             _ => false,
         };
 
-    // The service's error_code is shown to the Manager, so it keeps only letters, digits, underscore, dot and hyphen.
+    // The service's error_code is shown to the Manager, so it is cleaned first; a code with nothing left gives the plain code.
     private static string RunFailedCode(string? errorCode)
     {
-        var clean = new string([.. (errorCode ?? string.Empty).Where(IsCodeCharacter).Take(MaxErrorCodeLength)]);
+        string clean = CleanCode(errorCode);
 
         return clean.Length == 0
             ? ErrorCodes.MarketAnalysisRunner.RunFailed
             : string.Create(CultureInfo.InvariantCulture, $"{ErrorCodes.MarketAnalysisRunner.RunFailed}:{clean}");
     }
 
+    // A code from the service is shown to the Manager or written to the log, so it keeps only letters, digits, underscore, dot
+    // and hyphen, and at most MaxErrorCodeLength of them.
+    private static string CleanCode(string? code) =>
+        new string([.. (code ?? string.Empty).Where(IsCodeCharacter).Take(MaxErrorCodeLength)]);
+
     private static bool IsCodeCharacter(char character) =>
         char.IsAsciiLetterOrDigit(character) || character is '_' or '.' or '-';
+
+    #endregion Private methods
+
+    #region Nested types
 
     private sealed record PeriodBody(DateOnly FirstDate, DateOnly LastDate);
 
@@ -345,4 +370,6 @@ public sealed class MarketAnalysisServiceClient : IMarketAnalysisServiceClient
         MarketAnalysisPricingRequest? Pricing);
 
     private sealed record RunState(Guid? RunId, string State, string? ErrorCode);
+
+    #endregion Nested types
 }

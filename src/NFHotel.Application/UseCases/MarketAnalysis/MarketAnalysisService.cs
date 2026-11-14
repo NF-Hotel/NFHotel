@@ -3,6 +3,7 @@ using System.Text.Json;
 using NFHotel.Application.Dto.MarketAnalysis;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
+using NFHotel.Domain.Entities;
 using NFHotel.Domain.Repositories;
 
 namespace NFHotel.Application.UseCases.MarketAnalysis;
@@ -13,11 +14,17 @@ namespace NFHotel.Application.UseCases.MarketAnalysis;
 /// </summary>
 public sealed class MarketAnalysisService : IMarketAnalysisService
 {
+    #region Fields
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly MarketAnalysisRunTracker _tracker;
     private readonly IMarketAnalysisRunLauncher _launcher;
     private readonly IMarketAnalysisRunRepository _runs;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the service.</summary>
     /// <param name="tracker">The state of the run.</param>
@@ -34,6 +41,10 @@ public sealed class MarketAnalysisService : IMarketAnalysisService
         _runs = runs;
     }
 
+    #endregion Constructors
+
+    #region Public methods
+
     /// <inheritdoc />
     public Task<Result<MarketAnalysisRunStateDto>> StartRunAsync(StartMarketAnalysisRequest request, CancellationToken cancellationToken = default)
     {
@@ -44,7 +55,7 @@ public sealed class MarketAnalysisService : IMarketAnalysisService
             return Task.FromResult(Result<MarketAnalysisRunStateDto>.Failure(ErrorCodes.MarketAnalysis.PeriodInvalid));
         }
 
-        var begun = _tracker.TryBegin(request.From, request.To);
+        Result<MarketAnalysisRunStateDto> begun = _tracker.TryBegin(request.From, request.To);
         if (begun.IsSuccess)
         {
             _launcher.Launch(begun.Value.RunId);
@@ -67,19 +78,23 @@ public sealed class MarketAnalysisService : IMarketAnalysisService
     /// <inheritdoc />
     public async Task<Result<MarketAnalysisReportDto>> GetLatestReportAsync(CancellationToken cancellationToken = default)
     {
-        var run = await _runs.FindLatestAsync(cancellationToken).ConfigureAwait(false);
+        MarketAnalysisRun? run = await _runs.FindLatestAsync(cancellationToken).ConfigureAwait(false);
         if (run is null)
         {
             return Result<MarketAnalysisReportDto>.Failure(ErrorCodes.MarketAnalysis.NotFound);
         }
 
-        var content = ReadContent(run.ContentJson);
+        MarketAnalysisContentDto? content = ReadContent(run.ContentJson);
 
         return content is null
             ? Result<MarketAnalysisReportDto>.Failure(ErrorCodes.MarketAnalysis.BodyInvalid)
             : Result<MarketAnalysisReportDto>.Success(
                 new MarketAnalysisReportDto(run.RunId, run.StartedAt, run.FinishedAt, run.Provider, run.Model, content));
     }
+
+    #endregion Public methods
+
+    #region Private methods
 
     private static MarketAnalysisContentDto? ReadContent(string json)
     {
@@ -93,4 +108,6 @@ public sealed class MarketAnalysisService : IMarketAnalysisService
             return null;
         }
     }
+
+    #endregion Private methods
 }

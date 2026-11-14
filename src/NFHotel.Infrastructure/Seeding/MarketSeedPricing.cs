@@ -7,11 +7,17 @@ namespace NFHotel.Infrastructure.Seeding;
 /// </summary>
 public static class MarketSeedPricing
 {
+    #region Fields
+
     private const decimal BasePrice = 70m;
     private const decimal PricePerRoomTypeStep = 12m;
     private const decimal HighSeasonFactor = 1.35m;
     private const decimal ShoulderSeasonFactor = 1.15m;
     private const string ComplementarySegment = "Complementary";
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>The price of one night.</summary>
     /// <param name="row">The booking.</param>
@@ -25,8 +31,8 @@ public static class MarketSeedPricing
             return 0m;
         }
 
-        var step = row.RoomType.Length == 1 && row.RoomType[0] is >= 'A' and <= 'Z' ? row.RoomType[0] - 'A' : 0;
-        var factor = row.Arrival.Month switch
+        int step = row.RoomType.Length == 1 && row.RoomType[0] is >= 'A' and <= 'Z' ? row.RoomType[0] - 'A' : 0;
+        decimal factor = row.Arrival.Month switch
         {
             >= 6 and <= 8 => HighSeasonFactor,
             5 or 9 => ShoulderSeasonFactor,
@@ -35,4 +41,6 @@ public static class MarketSeedPricing
 
         return Math.Round((BasePrice + (step * PricePerRoomTypeStep)) * factor, 2, MidpointRounding.AwayFromZero);
     }
+
+    #endregion Public methods
 }

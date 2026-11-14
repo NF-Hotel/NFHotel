@@ -14,11 +14,17 @@ namespace NFHotel.Web.Features.Admin.MarketAnalysis;
 /// </summary>
 public sealed class MarketAnalysisViewModel
 {
+    #region Fields
+
     /// <summary>The id of the series of the findings that holds the room revenue of each month; the room revenue panel draws it, so the generic charts leave it out.</summary>
     public const string RoomRevenueSeriesId = "room_revenue.monthly";
 
     private readonly IUseCaseRunner<IMarketAnalysisService> _service;
     private readonly IClock _clock;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the view model.</summary>
     /// <param name="service">Runs the calls to the market analysis use cases.</param>
@@ -32,6 +38,10 @@ public sealed class MarketAnalysisViewModel
         _clock = clock;
     }
 
+    #endregion Constructors
+
+    #region Properties
+
     /// <summary>The report that was stored last, or <c>null</c> when none is stored yet.</summary>
     public MarketAnalysisReportDto? Report { get; private set; }
 
@@ -43,24 +53,6 @@ public sealed class MarketAnalysisViewModel
 
     /// <summary>The last arrival date of the bookings to analyse, or <c>null</c> for no upper limit.</summary>
     public DateOnly? To { get; set; }
-
-    /// <summary>Fills the dates with the last years up to today, for example the last 3 years.</summary>
-    /// <param name="years">The number of years; at least 1.</param>
-    public void UseLastYears(int years)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(years, 1);
-
-        DateOnly today = _clock.Today;
-        From = today.AddYears(-years);
-        To = today;
-    }
-
-    /// <summary>Clears both dates, so that every booking is analysed.</summary>
-    public void UseAllBookings()
-    {
-        From = null;
-        To = null;
-    }
 
     /// <summary>The texts of the last refusal, empty when the last call succeeded.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = [];
@@ -113,6 +105,28 @@ public sealed class MarketAnalysisViewModel
             : [.. Forecast.Measures
                 .Where(measure => measure.Months.Count > 0)
                 .Select(measure => MarketAnalysisForecastChart.From(measure, Forecast))];
+
+    #endregion Properties
+
+    #region Public methods
+
+    /// <summary>Fills the dates with the last years up to today, for example the last 3 years.</summary>
+    /// <param name="years">The number of years; at least 1.</param>
+    public void UseLastYears(int years)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(years, 1);
+
+        DateOnly today = _clock.Today;
+        From = today.AddYears(-years);
+        To = today;
+    }
+
+    /// <summary>Clears both dates, so that every booking is analysed.</summary>
+    public void UseAllBookings()
+    {
+        From = null;
+        To = null;
+    }
 
     /// <summary>Loads the stored report when the page opens, and picks up a run that is still going on.</summary>
     /// <param name="cancellationToken">Cancels the call when the page is closed.</param>
@@ -204,6 +218,10 @@ public sealed class MarketAnalysisViewModel
         }
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     // A page that is opened or reloaded during a run follows it again. A run that has ended is not followed: the stored
     // report is shown as before. A failure of this call is not shown, so the page still works without it.
     private async Task PickUpCurrentRunAsync(CancellationToken cancellationToken)
@@ -241,70 +259,6 @@ public sealed class MarketAnalysisViewModel
 
         Errors = ErrorMessages.Describe(result);
     }
-}
 
-/// <summary>One analysis of the report as the page draws it.</summary>
-/// <param name="Section">The analysis with its AI insight.</param>
-/// <param name="Charts">One chart for each series that has points.</param>
-public sealed record MarketAnalysisSectionView(MarketAnalysisSectionDto Section, IReadOnlyList<MarketAnalysisChart> Charts)
-{
-    /// <summary>The correlation matrices of the analysis, drawn as heat maps.</summary>
-    public IReadOnlyList<MarketAnalysisMatrixDto> Matrices => Section.Matrices ?? [];
-
-    /// <summary>True when the analysis has something to draw.</summary>
-    public bool HasCharts => Charts.Count > 0 || Matrices.Count > 0;
-}
-
-/// <summary>One chart of an analysis as the page draws it.</summary>
-/// <param name="Series">The series to draw.</param>
-/// <param name="Kind">The kind of chart that the rule of <see cref="ChartKindSelector"/> chose for the series.</param>
-public sealed record MarketAnalysisChart(MarketAnalysisSeriesDto Series, ChartKind Kind);
-
-/// <summary>One chart of the forecast as the page draws it: the expected value of each month with the band of the history.</summary>
-/// <param name="Id">The measure: <c>arrivals</c>, <c>occupancy</c> or <c>room_revenue</c>.</param>
-/// <param name="Title">The title of the chart.</param>
-/// <param name="Unit">The unit of the values.</param>
-/// <param name="Points">The expected value of each month.</param>
-/// <param name="Low">The low end of the band for each month; <c>null</c> where it cannot be known.</param>
-/// <param name="High">The high end of the band for each month; <c>null</c> where it cannot be known.</param>
-/// <param name="Caption">What the chart shows and who calculated it.</param>
-public sealed record MarketAnalysisForecastChart(
-    string Id,
-    string Title,
-    string Unit,
-    IReadOnlyList<MarketAnalysisPointDto> Points,
-    IReadOnlyList<double?> Low,
-    IReadOnlyList<double?> High,
-    string Caption)
-{
-    /// <summary>Builds the chart of one measure.</summary>
-    /// <param name="measure">The measure with its months.</param>
-    /// <param name="forecast">The forecast the measure belongs to, for the months of history.</param>
-    /// <returns>The chart.</returns>
-    public static MarketAnalysisForecastChart From(MarketAnalysisForecastMeasureDto measure, MarketAnalysisForecastDto forecast)
-    {
-        ArgumentNullException.ThrowIfNull(measure);
-        ArgumentNullException.ThrowIfNull(forecast);
-
-        string name = measure.Id switch
-        {
-            "arrivals" => "arrivals",
-            "occupancy" => "occupancy",
-            "room_revenue" => "room revenue",
-            _ => ChartFormat.Readable(measure.Id),
-        };
-        bool hasBand = measure.Months.All(month => month.Low.HasValue && month.High.HasValue);
-        string band = hasBand
-            ? "The shaded area is the band from the low to the high value of the same calendar month in the history; the real value can lie outside it."
-            : "The band could not be calculated for every month, so it is not drawn.";
-
-        return new MarketAnalysisForecastChart(
-            measure.Id,
-            $"Forecast of {name}",
-            measure.Unit,
-            [.. measure.Months.Select(month => new MarketAnalysisPointDto(month.Month, month.Value))],
-            [.. measure.Months.Select(month => month.Low)],
-            [.. measure.Months.Select(month => month.High)],
-            $"Forecast of {name} for the next {measure.Months.Count} months, calculated by the service from {forecast.HistoryMonths} months of history, not by an AI. {band}");
-    }
+    #endregion Private methods
 }

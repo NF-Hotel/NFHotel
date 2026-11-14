@@ -1,11 +1,5 @@
 namespace NFHotel.Web.Features.Admin.Shared;
 
-/// <summary>An axis with round limits and the ticks between them.</summary>
-/// <param name="Min">The lower limit, at or below the lowest value.</param>
-/// <param name="Max">The upper limit, at or above the highest value.</param>
-/// <param name="Ticks">The tick values from <paramref name="Min"/> to <paramref name="Max"/>.</param>
-public sealed record NiceAxis(double Min, double Max, IReadOnlyList<double> Ticks);
-
 /// <summary>Maps values of a chart to pixels, and finds round axis limits.</summary>
 /// <remarks>Creates a scale.</remarks>
 /// <param name="domainMin">The value at the start of the range.</param>
@@ -14,12 +8,18 @@ public sealed record NiceAxis(double Min, double Max, IReadOnlyList<double> Tick
 /// <param name="rangeEnd">The pixel of <paramref name="domainMax"/>; smaller than the start for a vertical axis.</param>
 public sealed class LinearScale(double domainMin, double domainMax, double rangeStart, double rangeEnd)
 {
+    #region Fields
+
     private static readonly double[] StepFactors = [1, 2, 2.5, 5, 10];
 
     private readonly double _domainMin = domainMin;
     private readonly double _domainMax = domainMax;
     private readonly double _rangeStart = rangeStart;
     private readonly double _rangeEnd = rangeEnd;
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Finds round limits and ticks that hold the values.</summary>
     /// <param name="min">The lowest value; use 0 to start at zero.</param>
@@ -60,4 +60,6 @@ public sealed class LinearScale(double domainMin, double domainMax, double range
         _domainMax <= _domainMin
             ? (_rangeStart + _rangeEnd) / 2
             : _rangeStart + ((value - _domainMin) / (_domainMax - _domainMin) * (_rangeEnd - _rangeStart));
+
+    #endregion Public methods
 }

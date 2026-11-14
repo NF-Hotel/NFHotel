@@ -14,7 +14,7 @@ public sealed class MarketAnalysisRunTests
     public void Create_ValidHeader_StoresItWithUtcTimes()
     {
         // Act
-        var run = MarketAnalysisRun.Create(RunId, 1, Start, Start.AddMinutes(4), "ollama", "phi3.5:latest", "{}");
+        MarketAnalysisRun run = MarketAnalysisRun.Create(RunId, 1, Start, Start.AddMinutes(4), "ollama", "phi3.5:latest", "{}");
 
         // Assert
         Assert.Equal((RunId, 1, "ollama", "phi3.5:latest", "{}"), (run.RunId, run.SchemaVersion, run.Provider, run.Model, run.ContentJson));
@@ -27,7 +27,7 @@ public sealed class MarketAnalysisRunTests
     public void Create_ZeroDurationAndNoModel_IsValid()
     {
         // Act
-        var run = MarketAnalysisRun.Create(RunId, 1, Start, Start, null, null, "{}");
+        MarketAnalysisRun run = MarketAnalysisRun.Create(RunId, 1, Start, Start, null, null, "{}");
 
         // Assert
         Assert.Null(run.Model);
@@ -39,7 +39,7 @@ public sealed class MarketAnalysisRunTests
     public void Create_SeveralDefects_ThrowsAllTheCodes()
     {
         // Act
-        var exception = Assert.Throws<DomainException>(
+        DomainException exception = Assert.Throws<DomainException>(
             () => MarketAnalysisRun.Create(Guid.Empty, 1, Start, Start.AddSeconds(-1), null, null, string.Empty));
 
         // Assert
@@ -53,12 +53,13 @@ public sealed class MarketAnalysisRunTests
     public void Create_ModelNameLength_AllowsTheLimitAndRefusesOneMore()
     {
         // Act
-        var atLimit = MarketAnalysisRun.Create(RunId, 1, Start, Start, null, new string('m', MarketAnalysisRun.MaxTextLength), "{}");
-        var exception = Assert.Throws<DomainException>(
+        MarketAnalysisRun atLimit = MarketAnalysisRun.Create(RunId, 1, Start, Start, null, new string('m', MarketAnalysisRun.MaxTextLength), "{}");
+        DomainException exception = Assert.Throws<DomainException>(
             () => MarketAnalysisRun.Create(RunId, 1, Start, Start, null, new string('m', MarketAnalysisRun.MaxTextLength + 1), "{}"));
 
         // Assert
-        Assert.Equal(MarketAnalysisRun.MaxTextLength, atLimit.Model!.Length);
+        Assert.NotNull(atLimit.Model);
+        Assert.Equal(MarketAnalysisRun.MaxTextLength, atLimit.Model.Length);
         Assert.Contains(MarketAnalysisErrors.ModelInvalid, exception.Codes);
     }
 }

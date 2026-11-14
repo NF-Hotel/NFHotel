@@ -1,12 +1,17 @@
 using System.Globalization;
+using System.Text;
 
 using Microsoft.AspNetCore.Components;
+
+using NFHotel.Application.Dto.MarketAnalysis;
 
 namespace NFHotel.Web.Features.Admin.Shared;
 
 /// <summary>The code behind the column chart: the layout arithmetic and the SVG built from it.</summary>
 public partial class ColumnChart : SeriesChartBase
 {
+    #region Fields
+
     private const int Width = 640;
     private const int Left = 48;
     private const int Right = 12;
@@ -19,39 +24,43 @@ public partial class ColumnChart : SeriesChartBase
     private const int MaxValueLabels = 16;
     private const int LabelLength = 14;
 
+    #endregion Fields
+
+    #region Private methods
+
     private MarkupString BuildSvg()
     {
-        var count = Points.Count;
-        var turned = count > TurnedAbove || Points.Any(point => point.Label.Length > TurnedLabelLength);
-        var bottom = turned ? 74 : 40;
-        var height = Top + PlotHeight + bottom;
-        var axis = LinearScale.Nice(0, Points.Max(point => point.Value));
-        var y = new LinearScale(axis.Min, axis.Max, Top + PlotHeight, Top);
-        var slot = (Width - Left - Right) / (double)count;
-        var columnWidth = Math.Min(slot * ColumnShare, MaxColumnWidth);
-        var step = LabelThinner.Step(count, MaxValueLabels);
-        var baseline = Top + PlotHeight;
-        var svg = OpenSvg(Width, height);
+        int count = Points.Count;
+        bool turned = count > TurnedAbove || Points.Any(point => point.Label.Length > TurnedLabelLength);
+        int bottom = turned ? 74 : 40;
+        int height = Top + PlotHeight + bottom;
+        NiceAxis axis = LinearScale.Nice(0, Points.Max(point => point.Value));
+        LinearScale y = new LinearScale(axis.Min, axis.Max, Top + PlotHeight, Top);
+        double slot = (Width - Left - Right) / (double)count;
+        double columnWidth = Math.Min(slot * ColumnShare, MaxColumnWidth);
+        int step = LabelThinner.Step(count, MaxValueLabels);
+        int baseline = Top + PlotHeight;
+        StringBuilder svg = OpenSvg(Width, height);
 
-        foreach (var tick in axis.Ticks)
+        foreach (double tick in axis.Ticks)
         {
             svg.Append(CultureInfo.InvariantCulture, $"<line class=\"chart-gridline\" x1=\"{Left}\" y1=\"{ChartFormat.Num(y.Map(tick))}\" x2=\"{Width - Right}\" y2=\"{ChartFormat.Num(y.Map(tick))}\"></line>");
             svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-tick\" x=\"{Left - 6}\" y=\"{ChartFormat.Num(y.Map(tick) + 4)}\" text-anchor=\"end\">{ChartFormat.Encode(ChartFormat.Value(tick, Unit))}</text>");
         }
 
-        for (var index = 0; index < count; index++)
+        for (int index = 0; index < count; index++)
         {
-            var point = Points[index];
-            var centre = Left + (slot * index) + (slot / 2);
-            var top = y.Map(point.Value);
-            var drawn = Math.Max(baseline - top, point.Value > 0 ? 1 : 0);
+            MarketAnalysisPointDto point = Points[index];
+            double centre = Left + (slot * index) + (slot / 2);
+            double top = y.Map(point.Value);
+            double drawn = Math.Max(baseline - top, point.Value > 0 ? 1 : 0);
             svg.Append(CultureInfo.InvariantCulture, $"<rect class=\"chart-bar chart-series-0\" x=\"{ChartFormat.Num(centre - (columnWidth / 2))}\" y=\"{ChartFormat.Num(baseline - drawn)}\" width=\"{ChartFormat.Num(columnWidth)}\" height=\"{ChartFormat.Num(drawn)}\" rx=\"2\"><title>{ChartFormat.Encode(point.Label)}: {ChartFormat.Encode(PointText(point))}</title></rect>");
             if (LabelThinner.IsShown(index, step))
             {
                 svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-value\" x=\"{ChartFormat.Num(centre)}\" y=\"{ChartFormat.Num(baseline - drawn - 4)}\" text-anchor=\"middle\">{ChartFormat.Encode(PointText(point))}</text>");
             }
 
-            var label = ChartFormat.Encode(ChartFormat.Shorten(point.Label, LabelLength));
+            string label = ChartFormat.Encode(ChartFormat.Shorten(point.Label, LabelLength));
             svg.Append(turned
                 ? FormattableString.Invariant($"<text class=\"chart-label\" x=\"{ChartFormat.Num(centre)}\" y=\"{baseline + 14}\" text-anchor=\"end\" transform=\"rotate(-35 {ChartFormat.Num(centre)} {baseline + 14})\">{label}</text>")
                 : FormattableString.Invariant($"<text class=\"chart-label\" x=\"{ChartFormat.Num(centre)}\" y=\"{baseline + 16}\" text-anchor=\"middle\">{label}</text>"));
@@ -62,4 +71,6 @@ public partial class ColumnChart : SeriesChartBase
 
         return CloseSvg(svg);
     }
+
+    #endregion Private methods
 }

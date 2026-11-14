@@ -3,11 +3,15 @@ using System.Text;
 
 using Microsoft.AspNetCore.Components;
 
+using NFHotel.Application.Dto.MarketAnalysis;
+
 namespace NFHotel.Web.Features.Admin.Shared;
 
 /// <summary>The code behind the line chart: the band, the overall level and the SVG built from them.</summary>
 public partial class LineChart : SeriesChartBase
 {
+    #region Fields
+
     private const int Width = 640;
     private const int Left = 48;
     private const int Right = 28;
@@ -17,6 +21,10 @@ public partial class LineChart : SeriesChartBase
     private const int MaxLabels = 12;
     private const int DotRadius = 3;
     private const int Inset = 12;
+
+    #endregion Fields
+
+    #region Properties
 
     /// <summary>The overall level of the series, drawn as a dashed line, or <c>null</c> for none.</summary>
     [Parameter]
@@ -40,19 +48,24 @@ public partial class LineChart : SeriesChartBase
         && low.Count == Points.Count && high.Count == Points.Count
         && low.All(value => value.HasValue) && high.All(value => value.HasValue);
 
+    #endregion Properties
+
+    #region Private methods
+
     private MarkupString BuildSvg()
     {
-        var count = Points.Count;
-        var height = Top + PlotHeight + Bottom;
-        var baseline = Top + PlotHeight;
+        int count = Points.Count;
+        int height = Top + PlotHeight + Bottom;
+        int baseline = Top + PlotHeight;
+        // HasBand is true only when both band lists are set and every entry has a value, so the ! operators cannot hide a null.
         double highest = Math.Max(Math.Max(Points.Max(point => point.Value), ReferenceValue ?? 0), HasBand ? BandHigh!.Max(value => value!.Value) : 0);
-        var axis = LinearScale.Nice(0, highest);
-        var y = new LinearScale(axis.Min, axis.Max, baseline, Top);
-        var x = new LinearScale(0, Math.Max(count - 1, 1), Left + Inset, Width - Right - Inset);
-        var step = LabelThinner.Step(count, MaxLabels);
-        var svg = OpenSvg(Width, height);
+        NiceAxis axis = LinearScale.Nice(0, highest);
+        LinearScale y = new LinearScale(axis.Min, axis.Max, baseline, Top);
+        LinearScale x = new LinearScale(0, Math.Max(count - 1, 1), Left + Inset, Width - Right - Inset);
+        int step = LabelThinner.Step(count, MaxLabels);
+        StringBuilder svg = OpenSvg(Width, height);
 
-        foreach (var tick in axis.Ticks)
+        foreach (double tick in axis.Ticks)
         {
             svg.Append(CultureInfo.InvariantCulture, $"<line class=\"chart-gridline\" x1=\"{Left}\" y1=\"{ChartFormat.Num(y.Map(tick))}\" x2=\"{Width - Right}\" y2=\"{ChartFormat.Num(y.Map(tick))}\"></line>");
             svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-tick\" x=\"{Left - 6}\" y=\"{ChartFormat.Num(y.Map(tick) + 4)}\" text-anchor=\"end\">{ChartFormat.Encode(ChartFormat.Value(tick, Unit))}</text>");
@@ -63,10 +76,10 @@ public partial class LineChart : SeriesChartBase
         AppendReference(svg, y);
         AppendLine(svg, x, y);
 
-        for (var index = 0; index < count; index++)
+        for (int index = 0; index < count; index++)
         {
-            var point = Points[index];
-            var px = ChartFormat.Num(x.Map(index));
+            MarketAnalysisPointDto point = Points[index];
+            string px = ChartFormat.Num(x.Map(index));
             svg.Append(CultureInfo.InvariantCulture, $"<circle class=\"chart-dot\" cx=\"{px}\" cy=\"{ChartFormat.Num(y.Map(point.Value))}\" r=\"{DotRadius}\"><title>{ChartFormat.Encode(point.Label)}: {ChartFormat.Encode(PointText(point))}{BandText(index)}</title></circle>");
             if (LabelThinner.IsShown(index, step))
             {
@@ -87,7 +100,7 @@ public partial class LineChart : SeriesChartBase
             return;
         }
 
-        var path = string.Join(" ", Points.Select((point, index) => FormattableString.Invariant($"{(index == 0 ? "M" : "L")} {ChartFormat.Num(x.Map(index))} {ChartFormat.Num(y.Map(point.Value))}")));
+        string path = string.Join(" ", Points.Select((point, index) => FormattableString.Invariant($"{(index == 0 ? "M" : "L")} {ChartFormat.Num(x.Map(index))} {ChartFormat.Num(y.Map(point.Value))}")));
         svg.Append(CultureInfo.InvariantCulture, $"<path class=\"chart-line\" d=\"{path}\"></path>");
     }
 
@@ -102,6 +115,7 @@ public partial class LineChart : SeriesChartBase
             return;
         }
 
+        // HasBand was checked above: both lists are set and every entry has a value, so the ! operators on the next two lines cannot hide a null.
         IEnumerable<string> upper = BandHigh!.Select((value, index) => FormattableString.Invariant($"{ChartFormat.Num(x.Map(index))} {ChartFormat.Num(y.Map(value!.Value))}"));
         IEnumerable<string> lower = BandLow!.Select((value, index) => FormattableString.Invariant($"{ChartFormat.Num(x.Map(index))} {ChartFormat.Num(y.Map(value!.Value))}")).Reverse();
         svg.Append(CultureInfo.InvariantCulture, $"<path class=\"chart-band\" d=\"M {string.Join(" L ", upper.Concat(lower))} Z\"></path>");
@@ -114,8 +128,10 @@ public partial class LineChart : SeriesChartBase
             return;
         }
 
-        var ry = ChartFormat.Num(y.Map(level));
+        string ry = ChartFormat.Num(y.Map(level));
         svg.Append(CultureInfo.InvariantCulture, $"<line class=\"chart-reference\" x1=\"{Left}\" y1=\"{ry}\" x2=\"{Width - Right}\" y2=\"{ry}\"></line>");
         svg.Append(CultureInfo.InvariantCulture, $"<text class=\"chart-reference-label\" x=\"{Width - Right}\" y=\"{ChartFormat.Num(y.Map(level) - 5)}\" text-anchor=\"end\">{ChartFormat.Encode(ReferenceLabel ?? "Overall")} {ChartFormat.Encode(ChartFormat.Value(level, Unit))}</text>");
     }
+
+    #endregion Private methods
 }
