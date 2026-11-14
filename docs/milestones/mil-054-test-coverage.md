@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Accepted | mikemike | S01 | Initial version; S01 asked in chat on 2026-11-01 how to get the code coverage over 90 %, and to plan for close to 100 % where possible ("planlæg at ram næsten 100% hvis muligt"); S01 accepted the plan in chat ("Ja, godkend og byg") after RC-258 Go | [4395227] |
+| 2026-11-01 | Deprecated | mikemike | S01 | Initial version; S01 asked in chat on 2026-11-01 how to get the code coverage over 90 %, and to plan for close to 100 % where possible ("planlæg at ram næsten 100% hvis muligt"); S01 accepted the plan in chat ("Ja, godkend og byg") after RC-258 Go | [4395227] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Gate: the seven criteria pass on the measurement of `main` at 9de9be4 (SonarQube Cloud 95.9 %, the lowest project 96.03 % in CI) and on the diff of #435 (RC-367, Go); tasks 1 to 9 done; accepted at S01's word in chat ("Du godkender for mig") | [5f17ee9] |
 
 ---
 
@@ -87,3 +88,4 @@ The target is **95 % or more** for the whole product code and **90 % or more** f
 [ADR-0033]: ../adr/adr-0033-sonarqube-cloud-coverage.md
 [MIL-047]: mil-047-sonarqube-cloud-coverage.md
 [4395227]: https://github.com/NF-Hotel/NFHotel/commit/4395227efef641b6f8939f00e52c3640334b1032
+[5f17ee9]: https://github.com/NF-Hotel/NFHotel/commit/5f17ee9ed16c21c3831c135ce805d8218424827a

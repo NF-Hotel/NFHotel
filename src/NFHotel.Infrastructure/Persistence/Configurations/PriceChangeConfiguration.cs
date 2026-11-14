@@ -8,8 +8,14 @@ namespace NFHotel.Infrastructure.Persistence.Configurations;
 /// <summary>Maps <see cref="PriceChange"/> to the table <c>price_change</c> (MIL-055).</summary>
 public sealed class PriceChangeConfiguration : EntityConfiguration<PriceChange, int>
 {
+    #region Properties
+
     /// <inheritdoc />
     protected override string TableName => "price_change";
+
+    #endregion Properties
+
+    #region Protected methods
 
     /// <inheritdoc />
     protected override void ConfigureEntity(EntityTypeBuilder<PriceChange> builder)
@@ -29,4 +35,6 @@ public sealed class PriceChangeConfiguration : EntityConfiguration<PriceChange, 
         builder.HasIndex(value => new { value.Size, value.FirstDay })
             .HasDatabaseName("ix_price_change_size_first_day");
     }
+
+    #endregion Protected methods
 }

@@ -15,9 +15,15 @@ namespace NFHotel.Web.Features.Admin.Pricing;
 /// </summary>
 public sealed class PricingSettingsViewModel
 {
+    #region Fields
+
     private readonly IUseCaseRunner<IPricingSettingsService> _settings;
     private readonly Dictionary<string, string> _inputs = [];
     private readonly HashSet<RoomSize> _sizes = [];
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the view model.</summary>
     /// <param name="settings">Runs the pricing settings use cases.</param>
@@ -28,27 +34,9 @@ public sealed class PricingSettingsViewModel
         _settings = settings;
     }
 
-    /// <summary>The names of the number fields.</summary>
-    public static class Fields
-    {
-        /// <summary>The surcharge of a high season.</summary>
-        public const string Surcharge = "surcharge";
+    #endregion Constructors
 
-        /// <summary>The discount of a low season.</summary>
-        public const string Discount = "discount";
-
-        /// <summary>The high threshold.</summary>
-        public const string HighThreshold = "high-threshold";
-
-        /// <summary>The low threshold.</summary>
-        public const string LowThreshold = "low-threshold";
-
-        /// <summary>The largest change.</summary>
-        public const string MaxChange = "max-change";
-
-        /// <summary>The minimum nightly price.</summary>
-        public const string MinimumPrice = "minimum-price";
-    }
+    #region Properties
 
     /// <summary>The room sizes that can get a discount, in the order they are shown.</summary>
     public static IReadOnlyList<RoomSize> Sizes { get; } = Enum.GetValues<RoomSize>();
@@ -78,6 +66,10 @@ public sealed class PricingSettingsViewModel
             : Current.SetAt is { } at
                 ? $"Last saved by {Current.SetBy} at {at.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC."
                 : "Defaults (not saved yet).";
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <summary>Gets the text in a number field.</summary>
     /// <param name="field">One of <see cref="Fields"/>.</param>
@@ -189,6 +181,10 @@ public sealed class PricingSettingsViewModel
         }
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private decimal Read(string field, string code, List<string> codes)
     {
         if (NumberInput.TryParseDecimal(InputOf(field), out decimal value))
@@ -215,4 +211,32 @@ public sealed class PricingSettingsViewModel
             _sizes.Add(Enum.Parse<RoomSize>(name));
         }
     }
+
+    #endregion Private methods
+
+    #region Nested types
+
+    /// <summary>The names of the number fields.</summary>
+    public static class Fields
+    {
+        /// <summary>The surcharge of a high season.</summary>
+        public const string Surcharge = "surcharge";
+
+        /// <summary>The discount of a low season.</summary>
+        public const string Discount = "discount";
+
+        /// <summary>The high threshold.</summary>
+        public const string HighThreshold = "high-threshold";
+
+        /// <summary>The low threshold.</summary>
+        public const string LowThreshold = "low-threshold";
+
+        /// <summary>The largest change.</summary>
+        public const string MaxChange = "max-change";
+
+        /// <summary>The minimum nightly price.</summary>
+        public const string MinimumPrice = "minimum-price";
+    }
+
+    #endregion Nested types
 }

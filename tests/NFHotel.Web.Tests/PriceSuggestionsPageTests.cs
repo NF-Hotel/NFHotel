@@ -1,3 +1,5 @@
+using AngleSharp.Dom;
+
 using Bunit;
 
 using NFHotel.Application.Dto.Pricing;
@@ -69,6 +71,30 @@ public sealed class PriceSuggestionsPageTests : IAsyncDisposable
         // Assert
         Assert.Contains("Nothing can be approved until then", page.Markup, StringComparison.Ordinal);
         Assert.DoesNotContain(page.FindAll("button"), button => button.TextContent.Trim() == "Approve");
+    }
+
+    /// <summary>Positive: an approved change that has not begun is listed as coming, with its dates, who approved it and a Revert button.</summary>
+    [Fact]
+    public void Render_ComingChange_ListsItWithItsRevertButton()
+    {
+        // Arrange
+        PriceChangeDto change = new(
+            7, "Single", 20m, new DateOnly(2026, 12, 24), new DateOnly(2026, 12, 26), "Approved", "manager",
+            new DateTimeOffset(2026, 11, 10, 9, 30, 0, TimeSpan.Zero), null, null, null);
+        _service.GetChangesAsync(Arg.Any<CancellationToken>()).Returns(Result<IReadOnlyList<PriceChangeDto>>.Success([change]));
+        _service.GetOpenAsync(Arg.Any<CancellationToken>())
+            .Returns(Result<PriceSuggestionListDto>.Success(new PriceSuggestionListDto(PriceSuggestionBasis.Ok, Today, [], null)));
+
+        // Act
+        IRenderedComponent<PriceSuggestions> page = _host.Render<PriceSuggestions>();
+
+        // Assert
+        IElement revert = page.Find("button[aria-label='Revert the change of Single +20 % from 2026-12-24']");
+        Assert.Equal("Revert", revert.TextContent.Trim());
+        IElement? row = revert.Closest("tr");
+        Assert.NotNull(row);
+        string[] cells = [.. row.QuerySelectorAll("td").Select(cell => cell.TextContent.Trim())];
+        Assert.Equal(["+20 %", "2026-12-24", "2026-12-26", "Coming", "manager", "2026-11-10 09:30", "-", "-", "Revert"], cells);
     }
 
     /// <summary>Boundary: a report of the service with no suggestion says that no holiday or week needs a change, and shows no approval.</summary>

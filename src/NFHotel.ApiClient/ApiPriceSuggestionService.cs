@@ -13,7 +13,13 @@ namespace NFHotel.ApiClient;
 /// </summary>
 public sealed class ApiPriceSuggestionService : IPriceSuggestionService
 {
+    #region Fields
+
     private readonly ApiGateway _api;
+
+    #endregion Fields
+
+    #region Constructors
 
     /// <summary>Creates the client.</summary>
     /// <param name="api">The gateway that carries the tokens.</param>
@@ -22,6 +28,10 @@ public sealed class ApiPriceSuggestionService : IPriceSuggestionService
         ArgumentNullException.ThrowIfNull(api);
         _api = api;
     }
+
+    #endregion Constructors
+
+    #region Public methods
 
     /// <inheritdoc />
     public Task<Result<PriceSuggestionListDto>> GetOpenAsync(CancellationToken cancellationToken = default) =>
@@ -57,4 +67,6 @@ public sealed class ApiPriceSuggestionService : IPriceSuggestionService
 
         return _api.GetAsync<IReadOnlyList<EffectivePriceDto>>(path, cancellationToken);
     }
+
+    #endregion Public methods
 }

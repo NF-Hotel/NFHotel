@@ -8,10 +8,16 @@ namespace NFHotel.Application.UseCases.Pricing;
 /// </summary>
 public static class OccupancyObservationReader
 {
+    #region Fields
+
     /// <summary>The id of the occupancy section of the markets API.</summary>
     public const string SectionId = "occupancy";
 
     private const string AvailableStatus = "available";
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Reads the executive summary of the AI insight of the occupancy section.</summary>
     /// <param name="content">The content of the report.</param>
@@ -27,4 +33,6 @@ public static class OccupancyObservationReader
 
         return string.IsNullOrWhiteSpace(insight.ExecutiveSummary) ? null : insight.ExecutiveSummary.Trim();
     }
+
+    #endregion Public methods
 }
