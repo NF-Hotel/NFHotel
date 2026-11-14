@@ -41,22 +41,14 @@ public sealed class MarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
     /// <inheritdoc />
     public async Task<IReadOnlyList<MarketBookingDto>> GetBookingsAsync(DateOnly? firstArrival, DateOnly? lastArrival, CancellationToken cancellationToken = default)
     {
-        var rows = await (
+        List<BookingRow> rows = await (
                 from booking in _context.Bookings.AsNoTracking()
                 where (firstArrival == null || booking.StartDate >= firstArrival) && (lastArrival == null || booking.StartDate <= lastArrival)
                 join guest in _context.Guests.AsNoTracking() on booking.GuestId equals guest.Id
                 join detail in _context.BookingMarketDetails.AsNoTracking() on booking.Id equals detail.BookingId into details
                 from detail in details.DefaultIfEmpty()
                 orderby booking.Id
-                select new
-                {
-                    booking.Id,
-                    booking.StartDate,
-                    booking.EndDate,
-                    booking.Status,
-                    guest.Country,
-                    Detail = detail,
-                })
+                select new BookingRow(booking.Id, booking.StartDate, booking.EndDate, booking.Status, guest.Country, detail))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -122,4 +114,11 @@ public sealed class MarketAnalysisBookingQueries : IMarketAnalysisBookingQueries
         && detail.RoomType is null;
 
     #endregion Private methods
+
+    #region Nested types
+
+    /// <summary>One booking with the country of its guest and its market detail, as the query reads them.</summary>
+    private sealed record BookingRow(int Id, DateOnly StartDate, DateOnly EndDate, BookingStatus Status, string Country, Domain.Entities.BookingMarketDetail? Detail);
+
+    #endregion Nested types
 }
