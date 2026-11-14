@@ -149,6 +149,133 @@ tests:
         alertname: BackupTargetDown
         exp_alerts: []
 
+  - name: a backup newer than its read-back fires BackupUnreadable
+    interval: 1h
+    input_series:
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup"}'
+        values: "3600x3 90000x3"
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup_check"}
+        values: "3600x7"
+    alert_rule_test:
+      - eval_time: 2h
+        alertname: BackupUnreadable
+        exp_alerts: []
+      - eval_time: 5h
+        alertname: BackupUnreadable
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "The newest database backup could not be read back"
+              description: >-
+                pg_restore did not read the dump of the newest backup to its end; the journal
+                of nfhotel-backup on nf-hotel names the error. Run the backup again, and the
+                restore drill if the next one fails too (wiki page Disaster-Recovery).
+
+  - name: a backup read back every night keeps BackupUnreadable silent
+    interval: 1h
+    input_series:
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup"}'
+        values: "3600x3 90000x3"
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup_check"}
+        values: "3600x3 90000x3"
+    alert_rule_test:
+      - eval_time: 5h
+        alertname: BackupUnreadable
+        exp_alerts: []
+
+  - name: backup_check 0 (no dump read back yet) fires BackupUnreadable, no report at all does not
+    interval: 1h
+    input_series:
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup"}'
+        values: "3600x3"
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup_check"}
+        values: "0x3"
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="other", task="backup"}'
+        values: "3600x3"
+    alert_rule_test:
+      - eval_time: 1h
+        alertname: BackupUnreadable
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "The newest database backup could not be read back"
+              description: >-
+                pg_restore did not read the dump of the newest backup to its end; the journal
+                of nfhotel-backup on nf-hotel names the error. Run the backup again, and the
+                restore drill if the next one fails too (wiki page Disaster-Recovery).
+
+  - name: a dump with fewer tables than the most of 8 days fires BackupShrunk until 8 days pass
+    interval: 1h
+    input_series:
+      - series: 'nfhotel_backup_tables{host="nf-hotel"}'
+        values: "16x24 15x200"
+      - series: 'nfhotel_backup_bytes{host="nf-hotel"}'
+        values: "1000000x224"
+    alert_rule_test:
+      - eval_time: 24h
+        alertname: BackupShrunk
+        exp_alerts: []
+      - eval_time: 30h
+        alertname: BackupShrunk
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "The newest database backup is smaller than the backups of the last 8 days"
+              description: >-
+                It has fewer tables than the most of the last 8 days, or less than half the size
+                of the largest. A migration that removed a table explains the first, and it
+                stays for 8 days; otherwise check the database and its backups (wiki page
+                Disaster-Recovery).
+      - eval_time: 218h
+        alertname: BackupShrunk
+        exp_alerts: []
+
+  - name: a dump under half the size of the largest of 8 days fires BackupShrunk, over half not
+    interval: 1h
+    input_series:
+      - series: 'nfhotel_backup_tables{host="nf-hotel"}'
+        values: "15x60"
+      - series: 'nfhotel_backup_bytes{host="nf-hotel"}'
+        values: "1000000x20 600000x20 400000x20"
+    alert_rule_test:
+      - eval_time: 30h
+        alertname: BackupShrunk
+        exp_alerts: []
+      - eval_time: 50h
+        alertname: BackupShrunk
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "The newest database backup is smaller than the backups of the last 8 days"
+              description: >-
+                It has fewer tables than the most of the last 8 days, or less than half the size
+                of the largest. A migration that removed a table explains the first, and it
+                stays for 8 days; otherwise check the database and its backups (wiki page
+                Disaster-Recovery).
+
+  - name: a dump that grows keeps BackupShrunk silent
+    interval: 1h
+    input_series:
+      - series: 'nfhotel_backup_tables{host="nf-hotel"}'
+        values: "15x20 16x20"
+      - series: 'nfhotel_backup_bytes{host="nf-hotel"}'
+        values: "1000000+10000x40"
+    alert_rule_test:
+      - eval_time: 39h
+        alertname: BackupShrunk
+        exp_alerts: []
+
   - name: a missing report fires TaskReportMissing and HealthReportMissing, while nf-hotel sends
     interval: 1m
     input_series:
