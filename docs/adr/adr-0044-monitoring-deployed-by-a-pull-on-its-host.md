@@ -72,9 +72,11 @@ before when a check or the start fails.
 3. **Only a green commit of `main`.** The deployed commit must be an ancestor of the head, and the Ops CI run of the
    push of the head to `main` must have passed, read from the API of GitHub without a token. While that run is not
    finished, the timer waits; a run that failed refuses the commit, and the same head is not tried again.
-4. **The checks first.** It checks out the head, detached, and runs `deploy-monitoring.sh` without `--apply`:
-   `promtool check config`, `promtool test rules`, `amtool check-config` and `loki -verify-config`. A failed check
-   returns the checkout to the deployed commit, and nothing starts.
+4. **The checks first.** A checkout in which a tracked file was changed by hand is refused, because `git checkout`
+   would carry the change over to the head and the stack would start what no review saw. Otherwise it checks out the
+   head, detached, and runs `deploy-monitoring.sh` without `--apply`: `promtool check config`, `promtool test rules`,
+   `amtool check-config` and `loki -verify-config`. A failed check returns the checkout to the deployed commit, and
+   nothing starts.
 5. **Start, then health.** `deploy-monitoring.sh --apply` starts the stack and now also checks that Prometheus,
    Alertmanager, Loki, Grafana and the blackbox exporter answer their ready endpoints and that Prometheus has loaded
    every rule of the rule files, so a manual deploy is checked the same way.

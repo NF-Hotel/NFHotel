@@ -13,7 +13,8 @@ groups:
           description: >-
             The monitoring host runs the commit it ran before (after stage rollback, maybe
             nothing). Read why in its journal: journalctl -u nfhotel-monitoring-pull --since -1h.
-            The same head is not tried again; merge a fix (wiki page Monitoring).
+            The same head is not tried again: merge a fix, or fix the host and remove
+            /var/lib/nfhotel-monitoring/failed (wiki page Monitoring).
 
       - alert: MonitoringDeployBehind
         expr: >-

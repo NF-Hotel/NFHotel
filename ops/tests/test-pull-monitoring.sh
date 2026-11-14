@@ -4,11 +4,12 @@
 # run of its push and is then deployed; a head whose Ops CI run failed, which is not tried again;
 # the dry run; a broken rule, refused before the start; a failed start, which starts the deployed
 # commit again; a later good commit, which clears the failure and installs its own pull script
-# and units; a head that does not descend from the deployed commit; a main that cannot be
-# fetched; the lock; and that the scan exporter accepts every report. A stand-in
-# deploy-monitoring.sh records its calls and fails its checks or its start when the rule file
-# says so, a local HTTP server stands in for the API of GitHub, and git rewrites the URL of
-# GitHub to a local repository, so nothing leaves the container and no container runs.
+# and units; a change made by hand in the checkout, which is refused and kept; a head that does
+# not descend from the deployed commit; a main that cannot be fetched; the lock; and that the
+# scan exporter accepts every report. A stand-in deploy-monitoring.sh records its calls and fails
+# its checks or its start when the rule file says so, a local HTTP server stands in for the API
+# of GitHub, and git rewrites the URL of GitHub to a local repository, so nothing leaves the
+# container and no container runs.
 #
 # Run it in Debian 13, the release of the monitoring LXC, with the operations folder at /src:
 #   docker run --rm -v "$PWD/ops:/src:ro" debian:13-slim bash /src/tests/test-pull-monitoring.sh
@@ -235,6 +236,24 @@ cmp -s "$W/sbin/nfhotel-monitoring-pull" "$W/src/ops/scripts/pull-monitoring.sh"
   ko "installed: $(diff "$W/sbin/nfhotel-monitoring-pull" "$W/src/ops/scripts/pull-monitoring.sh" | head -3);" \
     "systemctl: $(cat "$W/systemctl")"
 
+# A tracked file changed by hand in the checkout would start with the next head, which does not
+# change that file: the head is refused before the checkout, and the change stays for its owner.
+: >"$W/calls"
+echo "# changed by hand" >>"$W/opt/$mon/prometheus/rules/a.yml"
+I="$(commit "$mon/prometheus/rules/b.yml" good5)"
+ci "$I" completed '"success"'
+pull --apply
+[[ "$rc" == 1 && -z "$(calls)" && "$(at)" == "$G" && "$(state failed)" == "$I checkout" ]] &&
+  grep -q "changed by hand" "$W/out" && grep -q "^# changed by hand$" "$W/opt/$mon/prometheus/rules/a.yml" &&
+  has "$(failed_line "$I" checkout)" && ok "a change made by hand in the checkout is refused and kept" ||
+  ko "rc $rc, calls $(calls), at $(at), failed $(state failed): $(cat "$W/out")"
+git -C "$W/opt" checkout -q -- .
+rm -f "$W/state/failed"
+pull --apply
+[[ "$rc" == 0 && "$(calls)" == "$I check;$I --apply" && "$(state deployed-commit)" == "$I" ]] &&
+  ok "once the change is undone and the failure removed, the next run deploys the head" ||
+  ko "rc $rc, calls $(calls), failed $(state failed): $(cat "$W/out")"
+
 # A head that does not descend from the deployed commit is refused before the API is asked.
 : >"$W/calls"
 git -C "$W/src" reset -q --hard "$C"
@@ -244,7 +263,7 @@ H="$(git -C "$W/src" rev-parse HEAD)"
 before="$(asked)"
 pull --apply
 [[ "$rc" == 1 && -z "$(calls)" && "$(asked)" == "$before" && "$(state failed)" == "$H ancestry" ]] &&
-  grep -q "does not descend from the deployed commit $G" "$W/out" &&
+  grep -q "does not descend from the deployed commit $I" "$W/out" &&
   ok "a head that does not descend from the deployed commit is refused" ||
   ko "rc $rc, calls $(calls), failed $(state failed): $(cat "$W/out")"
 

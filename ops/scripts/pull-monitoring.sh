@@ -9,10 +9,11 @@
 #   3. refuse a head that does not descend from the deployed commit
 #   4. wait while the Ops CI run of the push of the head to main has not passed, and refuse the
 #      head when that run failed; the API of GitHub is read without a token
-#   5. check out the head (detached) and run deploy-monitoring.sh, first its checks, then with
-#      --apply, which starts the stack and checks its health. When the checks fail, the deployed
-#      commit is checked out again and nothing starts; when the start fails, the deployed commit
-#      is also started again
+#   5. refuse a checkout in which a tracked file was changed by hand, as the change would start
+#      with the head; check out the head (detached) and run deploy-monitoring.sh, first its
+#      checks, then with --apply, which starts the stack and checks its health. When the checks
+#      fail, the deployed commit is checked out again and nothing starts; when the start fails,
+#      the deployed commit is also started again
 #   6. record the deployed commit; after a deploy, the script and the units of the new commit
 #      install themselves (--install), so a change of them is deployed like any other
 #   7. write the report monitoring_pull.prom, which the scan exporter serves to Prometheus: the
@@ -173,8 +174,16 @@ write_report() {
 deploy_monitoring() { bash "$checkout/ops/scripts/deploy-monitoring.sh" "$@" 9>&-; }
 
 deploy() {
-  local target="$1"
+  local target="$1" changed
   echo "==> deploying $target; the deployed commit is $deployed"
+  # git checkout carries a change made by hand over to the head when the head does not change
+  # that file, so the stack would start what no review saw (ADR-0044).
+  changed="$(git -C "$checkout" status --porcelain --untracked-files=no)" || die "cannot read the state of $checkout"
+  if [[ -n "$changed" ]]; then
+    record_failed "$target" checkout
+    echo "error: a tracked file of $checkout was changed by hand; see git -C $checkout status" >&2
+    return 1
+  fi
   git -C "$checkout" checkout -q --detach "$target" || {
     record_failed "$target" checkout
     echo "error: cannot check out $target in $checkout" >&2
