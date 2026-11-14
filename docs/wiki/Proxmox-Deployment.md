@@ -133,7 +133,7 @@ Settings files are git-ignored and never committed.
 
 **Decision:** [ADR-0024](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0024-secrets-as-files.md). **Work:** MIL-035.
 
-No secret reaches a container as an environment variable. You write each secret once, in the settings file of its service, as before. At every deploy, `ops/scripts/write-secret-files.sh` splits the file into `secrets/settings.env` (everything except the secrets) and one file per secret in `ops/deploy/<service>/secrets/`, and compose mounts each file at `/run/secrets/<name>`.
+No secret reaches a container as an environment variable. You write each secret once, in the settings file of its service, as before. At every deploy, `ops/scripts/write-secret-files.sh` splits the file into `secrets/settings.env` (everything except the secrets) and one file per secret in `ops/deploy/<service>/secrets/`, and compose mounts each file at `/run/secrets/<name>`. Each service gets only its own secrets: a secret of another service written in its settings file is left out with a warning that names the key, and an old secret file that the service no longer gets is deleted (MIL-075).
 
 *Why files:* an environment variable is shown by `docker inspect`, by `/proc/1/environ` and by the Docker socket proxy of the monitoring; a mounted file is not. *Why written by the deploy:* you keep one place to edit, and a changed value reaches the container at the next deploy.
 
@@ -143,7 +143,7 @@ No secret reaches a container as an environment variable. You write each secret 
 | `Api__Token` | `nfhotel-api/nfhotel-api.env` | the API and the web application (and the benchmark service, from its environment) |
 | `Staff__Token__SigningKey` | `nfhotel-api/nfhotel-api.env` | the API |
 | `Staff__InitialManager__Password` | `nfhotel-api/nfhotel-api.env` | the API, only while no staff account exists |
-| `Encryption__PassportKey` | `nfhotel-api.env` and `nfhotel-web.env` | the API and the web application |
+| `Encryption__PassportKey` | `nfhotel-api/nfhotel-api.env` | the API only (ADR-0004) |
 | `MarketAnalysisService__ApiKey`, `HolidayApi__ApiKey`, `BenchmarkService__Token` | their service's settings | the API or the web application |
 
 The login of `nfhotel_app` (ADR-0011) stays in root's `/etc/nfhotel/secrets/nfhotel-api-database.env`; the deploy passes it to the script, which writes it as the connection string.

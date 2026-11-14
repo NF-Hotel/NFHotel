@@ -6,6 +6,11 @@
 # environment of a container, where docker inspect, the socket proxy of Alloy and any process
 # of the container could read it (RC-185).
 #
+# A service gets only its own secrets (MIL-075). A line in its settings file whose key is a secret
+# of another service, such as the passport key that the settings of the web held before only the
+# API had it (ADR-0004), is left out of its settings with a warning that names the key, never the
+# value; and a secret file of another service in its folder is deleted.
+#
 # The settings files stay the one place where an operator writes a secret; this script is run
 # by every deploy (scripts/deploy-services.sh) and by the throwaway stacks, so a rotated value
 # reaches the containers at the next deploy. This file holds the one list of the secrets.
@@ -19,13 +24,14 @@
 #             login of nfhotel_app, ADR-0011, passed by scripts/deploy-release.sh)
 #   web       needs --web and --api (the API token); --benchmark gives the benchmark token
 #   cloudflared  needs --cloudflared (the tunnel token of MIL-040, ADR-0028)
-#   --out     written: <folder>/settings.env (the settings without the secrets) and
-#             <folder>/<name> for each secret; the folder is 0700, so only its owner (the
-#             deploying user) and root read it on the host. The files are 0444 because the
-#             container user (app, postgres) differs from the owner and Compose without Swarm
-#             cannot change the owner of a bind-mounted secret; inside the container only the
-#             one file is mounted. A secret that is not set is written empty, which the
-#             applications read as not set.
+#   --out     written: <folder>/settings.env (the settings without the secrets of any service)
+#             and <folder>/<name> for each secret of the service, one folder per service: a
+#             file named for a secret of another service is deleted, any other file stays.
+#             The folder is 0700, so only its owner (the deploying user) and root read it on
+#             the host. The files are 0444 because the container user (app, postgres) differs
+#             from the owner and Compose without Swarm cannot change the owner of a bind-mounted
+#             secret; inside the container only the one file is mounted. A secret that is not
+#             set is written empty, which the applications read as not set.
 #   --list    print the names of the secrets of the service, one per line
 # Env:   NFHOTEL_ENVIRONMENT  when set, the settings of the API and the web application get
 #        ASPNETCORE_ENVIRONMENT with this value instead of their own (scripts/deploy-release.sh sets
@@ -36,11 +42,12 @@
 
 set -euo pipefail
 
-# The secrets of each service, by the name the container reads them under.
+# The secrets of each service, by the name the container reads them under. Only the API holds the
+# passport key: the web application gets its use cases from the API (ADR-0004).
 declare -A SECRETS=(
   [postgres]="POSTGRES_PASSWORD"
   [api]="ConnectionStrings__HotelDatabase Encryption__PassportKey Api__Token Staff__Token__SigningKey Staff__InitialManager__Password MarketAnalysisService__ApiKey"
-  [web]="Encryption__PassportKey Api__Token HolidayApi__ApiKey BenchmarkService__Token"
+  [web]="Api__Token HolidayApi__ApiKey BenchmarkService__Token"
   [cloudflared]="TUNNEL_TOKEN"
 )
 
@@ -67,6 +74,12 @@ setting() {
       return 0
     fi
   done <"$1"
+}
+
+# key_pattern <names>: an extended regular expression that matches a settings line whose key is
+# one of the names, given as words separated by spaces.
+key_pattern() {
+  printf '^(%s)=' "$(tr ' ' '|' <<<"$1")"
 }
 
 if [[ "${1:-}" == "--list" ]]; then
@@ -126,7 +139,7 @@ case "$service" in
     need web "$web_env"
     need api "$api_env"
     own="$web_env"
-    for name in Encryption__PassportKey HolidayApi__ApiKey BenchmarkService__Token; do
+    for name in HolidayApi__ApiKey BenchmarkService__Token; do
       values[$name]="$(setting "$web_env" "$name")"
     done
     # The API token and the benchmark token are written in the settings of their own service only.
@@ -143,6 +156,14 @@ case "$service" in
     ;;
 esac
 
+# The secrets of the other services that this service does not get itself.
+declare -A foreign=()
+for other in "${!SECRETS[@]}"; do
+  for name in ${SECRETS[$other]}; do
+    [[ " ${SECRETS[$service]} " == *" $name "* ]] || foreign[$name]=1
+  done
+done
+
 mkdir -p "$out"
 chmod 0700 "$out"
 umask 077
@@ -152,10 +173,21 @@ for name in ${SECRETS[$service]}; do
   chmod 0444 "$out/.$name.new"
   mv -f "$out/.$name.new" "$out/$name"
 done
+# A secret file that the service got before and no longer gets is not left readable on the host.
+for name in "${!foreign[@]}"; do
+  if [[ -e "$out/$name" ]]; then
+    rm -f "$out/$name"
+    echo "deleted $out/$name: $service no longer gets this secret" >&2
+  fi
+done
 
-# The settings without the secrets: each line whose key is a secret is left out.
-pattern="^($(tr ' ' '|' <<<"${SECRETS[$service]}"))="
-grep -Ev "$pattern" "$own" | tr -d '\r' >"$out/.settings.env.new" || true
+# The settings without the secrets: each line whose key is a secret of any service is left out.
+# The secret of another service does not belong in these settings at all, so it is named in a
+# warning; grep -o gives the key alone, so its value is never read here.
+while IFS= read -r key; do
+  echo "warning: $own holds ${key%=}, a secret of another service; it is left out of the settings of $service" >&2
+done < <(grep -Eo "$(key_pattern "${!foreign[*]}")" "$own" || true)
+grep -Ev "$(key_pattern "${SECRETS[*]}")" "$own" | tr -d '\r' >"$out/.settings.env.new" || true
 # The deploy of a release decides the environment, not the settings file (MIL-040).
 if [[ -n "${NFHOTEL_ENVIRONMENT:-}" && ("$service" == api || "$service" == web) ]]; then
   [[ "$NFHOTEL_ENVIRONMENT" =~ ^[A-Za-z]+$ ]] || die "NFHOTEL_ENVIRONMENT '$NFHOTEL_ENVIRONMENT' is not a name"

@@ -299,8 +299,6 @@ nginx_dir="$ops/deploy/nginx"
 
 new_api=0
 [[ -f "$api_dir/nfhotel-api.env" ]] || new_api=1
-new_web=0
-[[ -f "$web_dir/nfhotel-web.env" ]] || new_web=1
 if make_env "$pg_dir" postgres.env; then
   sed -i "s#^POSTGRES_PASSWORD=.*#POSTGRES_PASSWORD=$(secret 18)#" "$pg_dir/postgres.env"
 fi
@@ -351,9 +349,6 @@ if ((new_api)); then
     -e "s#^Staff__InitialManager__Password=.*#Staff__InitialManager__Password=$(secret 18)#" \
     -e "s#^Staff__InitialManager__MustChangePassword=.*#Staff__InitialManager__MustChangePassword=false#" \
     "$api_dir/nfhotel-api.env"
-fi
-if ((new_web)); then
-  sed -i "s#^Encryption__PassportKey=.*#Encryption__PassportKey=${passport_key}#" "$web_dir/nfhotel-web.env"
 fi
 
 # Run a command inside the Proxmox VE container.

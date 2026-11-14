@@ -23,11 +23,9 @@ builder.Configuration.AddKeyPerFile("/run/secrets", optional: true);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Infrastructure registers the DbContext factory, repositories, IUnitOfWork, IClock,
-// IStringEncryptor and the three Application services. Web knows only this one call.
-// It also validates the encryption key and the time zone at start-up, so a missing key
-// stops the app here rather than at the first guest update (B-09, A-05).
-// The use cases come from the database API, never from the database (ADR-0004).
+// The use cases come from the database API, never from the database (ADR-0004): Web knows
+// only this one call. So Web holds no database login and no passport key. Only the API
+// decrypts a passport number, and it checks the key at its own start-up (B-09, MIL-075).
 builder.Services.AddApiClient(builder.Configuration);
 builder.Services.AddHotelClock(builder.Configuration);
 builder.Services.AddHolidayApi(builder.Configuration);
