@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-073 in its rows: RC-362 Go after the deploy of CD run 43590287146, the row counts inside the VM and the daily scan run by hand, accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [cee9c20] |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-077: the input guard and the header of the API, the OpenAPI document at build time and the ZAP API scan, with its code review RC-363 (Go-with-conditions) | [bd11790] |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-076: the read-back of every dump, its reports and the alerts BackupUnreadable and BackupShrunk, with its code review RC-364 (Go-with-conditions) | [c48b8db] |
 
 ---
 
@@ -108,6 +108,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-075] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-335) | en | it | [BC-001], [ADR-0004], [ADR-0024], MIL-015, MIL-035 | planned: the passport key off the web's list, loop and compose file, the secrets of every service left out of every settings file with a warning, and the deletion of a secret file that a service no longer lists (task 1), the web started without the key (task 2), the documents (task 3), the deploy with the checks in the VM (task 4) and the gate (task 5) | [RC-335] |
 | The code of MIL-075: the lists and the filter of `ops/scripts/write-secret-files.sh` and its test, `ops/deploy/nfhotel-web/docker-compose.yml` and `nfhotel-web.env.example`, the comment in `src/NFHotel.Web/Program.cs`, `tests/NFHotel.Web.Tests/PassportKeyTests.cs`, `scripts/dev-up.sh`, the wiki pages Environment-Files and Proxmox-Deployment, and the row of 2026-11-14 of ADR-0024 | Shell, C#, YAML, ADR (reviewed 2026-11-14, Go-with-conditions: the checks of the pull request) | - | - | [MIL-075] tasks 1 to 3, [ADR-0004], [ADR-0024] | - | [RC-360] |
 | [MIL-076] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-336) | en | it | [BC-001], [ADR-0008], [ADR-0020], ADR-0025, MIL-021, MIL-023, MIL-074 | planned: the read-back of every dump with two `pg_restore` readers and the reports `backup_check`, `nfhotel_backup_tables` and `nfhotel_backup_bytes` (task 1), the rules `BackupUnreadable` and `BackupShrunk` (task 2), the documents (task 3), the deploy and the checks (task 4), seven nights and the gate (task 5) | [RC-336] |
+| The code of MIL-076: the read-back, the report `backup_check` and the metrics `nfhotel_backup_tables` and `nfhotel_backup_bytes` of `ops/scripts/backup-database.sh`, the test `ops/tests/test-backup-read-back.sh` and the read-back in `ops/tests/test-database.sh`, the new script test of Ops CI, the rules `BackupUnreadable` and `BackupShrunk` and their rule tests, the wiki pages Disaster-Recovery, Alerts, Monitoring, CI-CD, Technology-Choices and Workflows, and the row of 2026-11-14 of ADR-0008 | Shell, YAML, workflow, ADR (reviewed 2026-11-14, Go-with-conditions: the checks of the pull request) | - | - | [MIL-076] tasks 1 to 3, [ADR-0008], [ADR-0020] | - | [RC-364] |
 | [MIL-077] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-337) | en | it | [BC-001], [ADR-0002], [ADR-0004], MIL-015, MIL-027, MIL-044, MIL-067 | planned: the test of hostile input over every endpoint of the API and its fixes (task 1), the OpenAPI document made at build time and not served (task 2), the ZAP API scan in the weekly run (task 3), the documents (task 4) and the gate after the first weekly run (task 5) | [RC-337] |
 | The code of MIL-077: `InputGuardFilter`, `InputRules` and `ApiSecurityHeaders` of the API, `ApiErrorCodes`, the limits of the request records and the controllers, the OpenAPI document at build time (`OpenApiDocumentBuild` and the project file), the two search boxes of the back office, their tests, the API scan in `ops/scripts/dast-scan.sh` and `e2e-stack.sh` with their tests, the action `dast-scan` and `e2e-dast.yaml`, `ops/security/zap-rules.tsv`, and the wiki pages Security-Controls, Workflows, DevOps-Lifecycle and Technology-Choices | C#, Razor, Shell, YAML, workflow (reviewed 2026-11-14, Go-with-conditions: the checks of the pull request) | - | - | [MIL-077] tasks 1 to 4, [ADR-0002], [ADR-0004], [ADR-0032] | - | [RC-363] |
 | [MIL-078] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-12, RC-338) | en | it | [BC-001], [ADR-0037], ADR-0027, ADR-0028, ADR-0029, MIL-038, MIL-040, MIL-041, MIL-072 | planned: the ADR on OpenTofu (task 1), the routes and Access in `ops/infra/cloudflare/` with `import` blocks (task 2), the weekly comparison that opens and closes an issue (task 3), the documents (task 4), the two tokens, the first plan and the drill with S01 (task 5) and the gate (task 6) | [RC-338] |
@@ -431,6 +432,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-361]: ./reviews/rc-361-mil-074-code.md
 [RC-362]: ./reviews/rc-362-mil-073-gate.md
 [RC-363]: ./reviews/rc-363-mil-077-code.md
+[RC-364]: ./reviews/rc-364-mil-076-code.md
 [RC-336]: ./reviews/rc-336-mil-076.md
 [RC-337]: ./reviews/rc-337-mil-077.md
 [RC-338]: ./reviews/rc-338-mil-078.md
@@ -444,5 +446,5 @@ updated whenever an artifact instance is created or reviewed.
 [RC-356]: ./reviews/rc-356-mil-051-revision.md
 [RC-357]: ./reviews/rc-357-mil-052-revision.md
 [RC-358]: ./reviews/rc-358-mil-018-revision.md
-[cee9c20]: https://github.com/NF-Hotel/NFHotel/commit/cee9c202c9a01660c76140226b8db4cf67f1c61d
 [bd11790]: https://github.com/NF-Hotel/NFHotel/commit/bd11790faa51533044da78369b0789049ebd51e6
+[c48b8db]: https://github.com/NF-Hotel/NFHotel/commit/c48b8dbd50d448d02e879f37a241c1443ae35207

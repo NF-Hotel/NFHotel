@@ -7,6 +7,8 @@
 #   nfhotel_container_healthy  1 when a container reports healthy (scripts/report-health.sh)
 #   nfhotel_task_last_success_timestamp_seconds{task}  written by the backup, the copy off
 #                              the VM and the certificate renewal when they succeed
+#   nfhotel_backup_tables, nfhotel_backup_bytes  the tables and the size of the newest dump
+#                              (MIL-076), written by the backup
 groups:
   - name: nfhotel
     rules:
@@ -131,6 +133,43 @@ groups:
           description: >-
             Docker Desktop or the backup target on the backup host is down. Start them (wiki page
             Disaster-Recovery); the next hourly copy sends what the target lacks.
+
+      # The backup reads its dump back while it is made (MIL-076) and gives backup_check the time
+      # of the backup when pg_restore read the dump to its end, or 0 while no dump has been read
+      # back. A backup newer than backup_check is one that could not be read. The backup itself
+      # succeeded and kept the dump, so a deploy went on; this alert is the only report.
+      - alert: BackupUnreadable
+        expr: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup"}
+          > ignoring(task)
+          nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup_check"}
+        labels:
+          severity: warning
+        annotations:
+          summary: "The newest database backup could not be read back"
+          description: >-
+            pg_restore did not read the dump of the newest backup to its end; the journal of
+            nfhotel-backup on nf-hotel names the error. Run the backup again, and the restore
+            drill if the next one fails too (wiki page Disaster-Recovery).
+
+      # A dump with fewer tables than the most of the last 8 days, or under half the size of the
+      # largest, is the dump of a database that lost data, or of another database (MIL-076).
+      # Matched without the metric name, `or` keeps one alert when both are true.
+      - alert: BackupShrunk
+        expr: >-
+          nfhotel_backup_tables{host="nf-hotel"}
+          < max_over_time(nfhotel_backup_tables{host="nf-hotel"}[8d])
+          or
+          nfhotel_backup_bytes{host="nf-hotel"}
+          < 0.5 * max_over_time(nfhotel_backup_bytes{host="nf-hotel"}[8d])
+        labels:
+          severity: warning
+        annotations:
+          summary: "The newest database backup is smaller than the backups of the last 8 days"
+          description: >-
+            It has fewer tables than the most of the last 8 days, or less than half the size of
+            the largest. A migration that removed a table explains the first, and it stays for
+            8 days; otherwise check the database and its backups (wiki page Disaster-Recovery).
 
       - alert: CertificateRenewalStale
         expr: >-
