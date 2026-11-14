@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code rows of MIL-055: RC-378 is Go without a risk exception (its second version, after the regions of 17d67cc and the pricing tabs of 96b93dc); `PricingTabs` in the row of the pricing pages; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [46998b0] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-026, which the matrix did not have: the milestone with its plan reviews; its code and its tests with the code reviews, RC-373 to RC-375 (No-Go) and RC-376 (Go, after the fixes); the pin check of the service; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-026, which the matrix did not have: the milestone with its plan reviews; its code and its tests with the code reviews, RC-373 to RC-375 (No-Go) and RC-376 (Go, after the fixes); the pin check of the service; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [b371b85] |
 
 ---
 
@@ -485,3 +485,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-375]: ./reviews/rc-375-mil-026-code-of-tasks-20-and-21.md
 [RC-376]: ./reviews/rc-376-mil-026-re-review-after-the-fixes.md
 [46998b0]: https://github.com/NF-Hotel/NFHotel/commit/46998b088196b21f2d0bee4e82c69449c6572886
+[b371b85]: https://github.com/NF-Hotel/NFHotel/commit/b371b851b7cf3d83d587639cf7533afdeaa3fc6b

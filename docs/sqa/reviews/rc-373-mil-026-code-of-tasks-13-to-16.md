@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the review of the merged code of tasks 13 to 16; No-Go; mode autonomous, not independent | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the review of the merged code of tasks 13 to 16; No-Go; mode autonomous, not independent | [b371b85] |
 
 ---
 
@@ -148,3 +148,4 @@ No-Go. Criteria 3, 4, 13 and 21 of [QC-CS-001] fail, and each is Mandatory, so e
 [RC-341]: ./rc-341-mil-079-code.md
 [RC-363]: ./rc-363-mil-077-code.md
 [RC-375]: ./rc-375-mil-026-code-of-tasks-20-and-21.md
+[b371b85]: https://github.com/NF-Hotel/NFHotel/commit/b371b851b7cf3d83d587639cf7533afdeaa3fc6b
