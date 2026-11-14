@@ -126,9 +126,10 @@ public sealed class BookingPriceTests
         Assert.Single(world.BookingMarketDetails.Discarded);
     }
 
-    /// <summary>Negative: a lost price is reported once as a warning with the booking id and the exception, and nothing about the guest.</summary>
+    /// <summary>Negative: a lost price is reported once as a warning with the booking id and the type of the exception, and
+    /// neither the message of the exception nor anything about the guest (RC-266 N2).</summary>
     [Fact]
-    public async Task CreateAsync_SavingTheDetailFails_WritesAWarningWithTheBookingIdAndTheException()
+    public async Task CreateAsync_SavingTheDetailFails_WritesAWarningWithTheBookingIdAndTheExceptionType()
     {
         // Arrange
         (ServiceWorld? world, Room? room) = await WorldWithChangeAsync(20m);
@@ -142,6 +143,7 @@ public sealed class BookingPriceTests
         string warning = Assert.Single(world.Warnings.Messages);
         Assert.Contains($"booking {bookingId} ", warning, StringComparison.Ordinal);
         Assert.Contains(nameof(InvalidOperationException), warning, StringComparison.Ordinal);
+        Assert.DoesNotContain("The database could not save.", warning, StringComparison.Ordinal);
     }
 
     /// <summary>Positive: a stored price writes no warning.</summary>

@@ -80,12 +80,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @for (var index = 0; index < ViewModel.Suggestions.Count; index++)
+                            @for (int index = 0; index < ViewModel.Suggestions.Count; index++)
                             {
-                                var row = ViewModel.Suggestions[index];
-                                var key = row.Key;
-                                var firstId = $"first-{index}";
-                                var lastId = $"last-{index}";
+                                PriceSuggestionsViewModel.SuggestionRow row = ViewModel.Suggestions[index];
+                                string key = row.Key;
+                                string firstId = $"first-{index}";
+                                string lastId = $"last-{index}";
                                 <tr>
                                     <th scope="row">@row.Size</th>
                                     <td>@row.Season</td>
@@ -138,7 +138,7 @@
             <section class="card card-pad stack" aria-labelledby="ideas">
                 <h2 class="subtitle" id="ideas">Further ideas (no price, not applied)</h2>
                 <ul>
-                    @foreach (var idea in ViewModel.Ideas)
+                    @foreach (PriceSuggestionsViewModel.IdeaRow idea in ViewModel.Ideas)
                     {
                         <li>@idea.Text <span class="muted">(@idea.Label)</span></li>
                     }
@@ -180,9 +180,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var change in ViewModel.Changes)
+                            @foreach (PriceSuggestionsViewModel.ChangeRow change in ViewModel.Changes)
                             {
-                                var id = change.Id;
+                                int id = change.Id;
                                 <tr>
                                     <th scope="row">@change.Size</th>
                                     <td>@change.Change</td>
@@ -223,7 +223,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var price in ViewModel.EffectivePrices)
+                        @foreach (PriceSuggestionsViewModel.EffectiveRow price in ViewModel.EffectivePrices)
                         {
                             <tr>
                                 <th scope="row">@price.Size</th>

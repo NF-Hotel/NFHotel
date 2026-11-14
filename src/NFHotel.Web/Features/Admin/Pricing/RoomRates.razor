@@ -4,6 +4,7 @@
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
 @using System.Globalization
+@using NFHotel.Application.Dto.RoomRates
 @using NFHotel.Web.Common
 @using NFHotel.Web.Features.Admin.Pricing
 @inject RoomRatesViewModel ViewModel
@@ -45,10 +46,10 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var size in RoomRatesViewModel.Sizes)
+                @foreach (RoomSize size in RoomRatesViewModel.Sizes)
                 {
-                    var rate = ViewModel.RateOf(size);
-                    var id = $"rate-{size.ToString().ToLowerInvariant()}";
+                    RoomRateDto? rate = ViewModel.RateOf(size);
+                    string id = $"rate-{size.ToString().ToLowerInvariant()}";
                     <tr>
                         <th scope="row">@DisplayText.Describe(size)</th>
                         <td class="numeric-start">@(rate is null ? "not set" : rate.NightlyPrice.ToString("0.00", CultureInfo.InvariantCulture))</td>

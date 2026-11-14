@@ -22,6 +22,9 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
     // process serialises the check and the save.
     private static readonly SemaphoreSlim ApprovalLock = new(1, 1);
 
+    // The largest discount a price change takes (99.99 percent): a change never takes the whole price away.
+    private static readonly decimal LargestDiscount = -(decimal)PriceChange.MinPercentage;
+
     private readonly IMarketAnalysisService _reports;
     private readonly IRoomRateRepository _rates;
     private readonly IPricingSettingRepository _settings;
@@ -212,6 +215,12 @@ public sealed class PriceSuggestionService : IPriceSuggestionService
         foreach (RoomRate rate in matching)
         {
             decimal percentage = Math.Min(suggestion.Percent, settings.MaxChangePercent);
+            if (!isHigh)
+            {
+                // The settings allow a discount and a largest change of 100 percent, which an approval would refuse (RC-266 N1).
+                percentage = Math.Min(percentage, LargestDiscount);
+            }
+
             bool limited = percentage < suggestion.Percent;
             decimal newPrice = PriceMath.ApplyPercentage(rate.NightlyPrice, isHigh ? percentage : -percentage);
             if (!isHigh && newPrice < settings.MinimumNightlyPrice)

@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-02 | Proposed | Claude (AI) | S01 | Initial version; delta re-review by the AI, not independent, for S01 to accept | [3a17eee] |
+| 2026-11-02 | Deprecated | Claude (AI) | S01 | Initial version; delta re-review by the AI, not independent, for S01 to accept | [3a17eee] |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Accepted with its three conditions settled: the code at the gate in RC-378 (F3 closed for MIL-055, F4 under a risk exception, F11 closed, F5, F10 and F14 accepted, N1, N2, N4 and N6 fixed) and UC-007 in RC-377 (N3, N5); at S01's word in chat ("Du godkender for mig"); mode autonomous, not independent | [852803e] |
 
 ---
 
@@ -133,3 +134,4 @@ Not verified: the page in a browser, the real unique-index race and the HTTP 409
 [RC-265]: ./rc-265-mil-055-tasks-3-to-9-code.md
 [QC-CS-001]: ../../../framework/qc/code/qc-programming-csharp.md
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
+[852803e]: https://github.com/NF-Hotel/NFHotel/commit/852803eae5904913edb95063c33eb964bcd73205
