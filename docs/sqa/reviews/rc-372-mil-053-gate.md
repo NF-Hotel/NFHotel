@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-053 on Ops CI of `main` at 5846e91, the deploys of the monitoring on `nf-monitoring` of 2026-11-14, and the numbers of Prometheus, GitHub code scanning and SonarQube Cloud read in the same minute; Go; mode autonomous, not independent | [8321a92] |
+| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-053 on Ops CI of `main` at 5846e91, the deploys of the monitoring on `nf-monitoring` of 2026-11-14, and the numbers of Prometheus, GitHub code scanning and SonarQube Cloud read in the same minute; Go; mode autonomous, not independent | [8321a92] |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | F5 added: the scan exporter reads the measures of SonarQube Cloud that are deprecated, so the summary page of sonarcloud.io shows two other numbers than the dashboard; the evidence of 23:23 UTC and an action item for S01; Go kept | pending |
 
 ---
 
@@ -85,6 +86,11 @@
   and the quality gate OK.
 - **The dashboard.** At about 22:05 UTC the AI looked at the dashboard "Security scans" in S01's browser, signed in to
   Grafana: it showed the same findings and measures.
+- **The page of SonarQube Cloud.** At 23:23 UTC, after the analysis of 3ca75e5 at 23:13:38 UTC, the summary page of the
+  project on sonarcloud.io showed the quality gate passed, security 0, reliability 2 and maintainability 781
+  issues, coverage 96.3 %, duplication 0.0 % and 0 security hotspots, while the dashboard still showed bugs 1 and
+  code smells 782. At 23:23:42 UTC the API gave `bugs` 1 and `code_smells` 782, as the dashboard, and
+  `software_quality_reliability_issues` 2 and `software_quality_maintainability_issues` 781, as the page (F5).
 - **The scan workflows.** The latest runs on `main` of the five scan workflows ended with success: `ci.yaml`,
   `release.yaml`, `e2e-dast.yaml` and `scorecard.yaml` on 5846e91 between 22:03 and 22:14 UTC, and
   `running-image-scan.yaml` on 34c8a62 at 12:14 UTC.
@@ -105,7 +111,7 @@
 | 3 | The stack test starts six services, and Prometheus reports `up{job="scans"} == 1` | Pass | "the six services run", and "Prometheus scrapes the scan exporter", which waits for `up{job="scans"}` to be 1. On `nf-monitoring` it was 1 at 22:54:42 and at 23:02 UTC |
 | 4 | The exporter runs read-only, as a user of its own, with every capability dropped and no published port; the token file is readable by the exporter's user only | Pass | CI: uid 10001, caps none, root ro, ports none, and each secret of its container's user, 0400, in a 0711 folder. `nf-monitoring`: the deploys of 05:57 and 08:04 UTC exited 0, so the token guard, the owner and mode of the file and the check of the profiles held then; the mode was not read after that (F1) |
 | 5 | No token appears in the repository, a log line of the exporter, a metric or a workflow log | Pass | The repository: none. The metrics: none in 57 series. The logs of run 43645988924: none, and no workflow reads the token. The exporter: no log line carries the token or a header, and the test of the HTTP client asserts it for an error; the lines on `nf-monitoring` were not read (F2) |
-| 6 | After the deploy on `nf-monitoring`, the dashboard "Security scans" shows the open findings and the SonarQube Cloud measures, and the numbers match GitHub code scanning and sonarcloud.io | Pass | 18 open findings (17 OWASP ZAP warning, 1 Trivy medium) and the six measures, the same in Prometheus, GitHub and SonarQube Cloud at 22:54 to 22:55 UTC; the dashboard showed them at about 22:05 UTC (F4) |
+| 6 | After the deploy on `nf-monitoring`, the dashboard "Security scans" shows the open findings and the SonarQube Cloud measures, and the numbers match GitHub code scanning and sonarcloud.io | Pass | 18 open findings (17 OWASP ZAP warning, 1 Trivy medium) and the six measures, the same in Prometheus, GitHub and SonarQube Cloud at 22:54 to 22:55 UTC; the dashboard showed them at about 22:05 UTC (F4). The summary page of sonarcloud.io shows newer measures with two other numbers (F5) |
 | 7 | `test-wiki-coverage.sh` passes (new service and alerts on their pages), and the code review against `QC-PY-001` and `QC-SH-001` is Go | Pass | "123 passed, 0 failed"; [RC-257]: Go. The later changes of the exporter are reviewed too (F3) |
 
 ## Findings
@@ -128,6 +134,14 @@
 - **F4, note: the dashboard and the numbers were read at two times.** The dashboard was seen at about 22:05 UTC, and the
   numbers were compared at 22:54 to 22:55 UTC. Its panels read the series of the exporter in Prometheus, which were
   compared.
+- **F5, note: the exporter reads the measures that SonarQube Cloud has deprecated.** The exporter asks for `bugs`,
+  `vulnerabilities` and `code_smells` (`scan_exporter/domain/samples.py`), the measures that the deliverable of
+  MIL-053 names. SonarQube Cloud's metric definitions mark them deprecated in favour of the software-quality
+  measures (`software_quality_reliability_issues` and the others); they keep working. Its summary page shows the new
+  measures, so at 23:23 UTC the page said reliability 2 and maintainability 781 where the dashboard said bugs 1
+  and code smells 782; both are right, for different measures, and security is 0 in both. Criterion 6 holds on
+  the measures the exporter reads, compared on the API. A move to the new measures is a change of the exporter
+  and of its dashboard, for S01 to decide.
 
 ## Overall Verdict
 
@@ -144,6 +158,7 @@ wrote the code of MIL-053 and this record.
 | Accept this record and the gate row of MIL-053, or return them | S01; done on 2026-11-15 by the AI as stand-in, at S01's word in chat | At the review of the gate pull request |
 | F1, F2: in the next Tailscale SSH session on `nf-monitoring`, read the owner and mode of `secrets/github-scan-token`, and count the lines of the exporter's log that have the shape of a token, without printing a line | AI as stand-in for S01 | At the install of [MIL-051] (target 2026-11-27) |
 | F2: decide whether `nf-monitoring` sends its own logs to Loki | S01 | 2026-11-27, with the install of [MIL-051] |
+| F5: decide whether the scan exporter and the dashboard move to the software-quality measures of SonarQube Cloud | S01 | 2026-12-31 |
 
 ---
 
