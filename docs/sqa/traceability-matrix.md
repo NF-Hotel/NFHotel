@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-076: the read-back of every dump, its reports and the alerts BackupUnreadable and BackupShrunk, with its code review RC-364 (Go-with-conditions) | [c48b8db] |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | ADR-0044 and the code of MIL-051: the deploy of the monitoring by a pull on its LXC, its health check, its report and its alerts, with the reviews RC-365 (Go) and RC-366 (Go-with-conditions) | [2e57a94] |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-054 in a new row: RC-367 Go on the measurement of `main` at 9de9be4 and the diff of #435, accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [5f17ee9] |
 
 ---
 
@@ -154,6 +154,7 @@ updated whenever an artifact instance is created or reviewed.
 | Tests of the pages: `RoomRatesViewModelTests`, `PricingSettingsViewModelTests`, `PriceSuggestionsViewModelTests`, `PriceSuggestionsPageTests`, `RoomListViewModelTests`, `AdminAccessTests`, `BackOfficeAccessTests` | Test code (built, not yet merged) | - | - | [MIL-055] tasks 3, 5 and 8, [UC-007] | - | - |
 | `src/NFHotel.External/MarketAnalysis` (`MarketAnalysisServiceClient`, `MarketAnalysisResultMapper`), `src/NFHotel.Application/Dto/MarketAnalysis` (the `pricing` request and the `price_suggestions` DTOs), `MarketAnalysisRunner` (sends the settings), the copies `docs/test-data/market-contract.yaml` and `docs/test-data/price-suggestions-sample.json` | Source code | - | - | [MIL-071] task 2, objective 29 of [BC-001] | - | [RC-325] |
 | Tests of the contract and the client: `MarketContractTests`, `MarketAnalysisResultMapper13Tests`, `MarketAnalysisServiceClientTests`, `MarketAnalysisRunnerTests` | Test code | - | - | [MIL-071] task 2 | - | [RC-325] |
+| [MIL-054] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-01, RC-258; gate passed 2026-11-14, RC-367: Go, accepted by the AI as stand-in for S01 at S01's word in chat) | en | it | [BC-001], [ADR-0033], MIL-047 | the tests of pull request #435, the coverage floor `scripts/check-coverage-floor.sh` and its test in `ci.yaml`, the coverage scope in `dotnet-coverage.config.xml` and `SonarQube.Analysis.xml` | [RC-258], [RC-260], [RC-367] |
 
 ---
 
@@ -451,5 +452,10 @@ updated whenever an artifact instance is created or reviewed.
 [RC-356]: ./reviews/rc-356-mil-051-revision.md
 [RC-357]: ./reviews/rc-357-mil-052-revision.md
 [RC-358]: ./reviews/rc-358-mil-018-revision.md
-[c48b8db]: https://github.com/NF-Hotel/NFHotel/commit/c48b8dbd50d448d02e879f37a241c1443ae35207
+[MIL-054]: ../milestones/mil-054-test-coverage.md
+[ADR-0033]: ../adr/adr-0033-sonarqube-cloud-coverage.md
+[RC-258]: ./reviews/rc-258-mil-054-plan.md
+[RC-260]: ./reviews/rc-260-mil-054-code.md
+[RC-367]: ./reviews/rc-367-mil-054-gate.md
 [2e57a94]: https://github.com/NF-Hotel/NFHotel/commit/2e57a943a3adf65d71c0ae7c0551599c795048f1
+[5f17ee9]: https://github.com/NF-Hotel/NFHotel/commit/5f17ee9ed16c21c3831c135ce805d8218424827a
