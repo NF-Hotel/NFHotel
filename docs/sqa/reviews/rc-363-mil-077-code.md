@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | [bd11790] |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | F13 to F15 from the first checks of the pull request: the generated OpenAPI code left out of the API, the address in a test report marked, the line that only the build of the document runs<br>Criterion 4 read on the run by hand 43603868538; still Go-with-conditions | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | F13 to F15 from the first checks of the pull request: the generated OpenAPI code left out of the API, the address in a test report marked, the line that only the build of the document runs<br>Criterion 4 read on the run by hand 43603868538; still Go-with-conditions | [a3ea74a] |
 
 ---
 
@@ -258,3 +258,4 @@ pull request is green before the merge, and criterion 4 is read again on the wee
 [RC-278]: ./rc-278-mil-058-code.md
 [RC-341]: ./rc-341-mil-079-code.md
 [bd11790]: https://github.com/NF-Hotel/NFHotel/commit/bd11790faa51533044da78369b0789049ebd51e6
+[a3ea74a]: https://github.com/NF-Hotel/NFHotel/commit/a3ea74ad9b0d319435bebca0b5fe8b0f91c4c8a7
