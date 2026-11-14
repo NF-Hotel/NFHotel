@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-079 in its rows: RC-342 Go after the deploy of CD run 43256465429 and the check on the live site, accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [fc88265] |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-073: the pin of the database image and the wiki page, with its code review RC-359 (Go-with-conditions) | pending |
+| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The code of MIL-073: the pin of the database image and the wiki page, with its code review RC-359 (Go-with-conditions) | [26634dc] |
 
 ---
 
@@ -438,3 +438,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-357]: ./reviews/rc-357-mil-052-revision.md
 [RC-358]: ./reviews/rc-358-mil-018-revision.md
 [fc88265]: https://github.com/NF-Hotel/NFHotel/commit/fc88265603804b527f97224c87d91dca53e09e69
+[26634dc]: https://github.com/NF-Hotel/NFHotel/commit/26634dc25a842119c706a2011812d891e8d4f3bb

@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | pending |
+| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | [26634dc] |
 
 ---
 
@@ -121,3 +121,4 @@ conditions: every check of the pull request is green before the merge, and the d
 [DSA-001]: ../devsecops-assessment.md
 [MIL-065]: ../../milestones/mil-065-third-party-image-remedies.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[26634dc]: https://github.com/NF-Hotel/NFHotel/commit/26634dc25a842119c706a2011812d891e8d4f3bb
