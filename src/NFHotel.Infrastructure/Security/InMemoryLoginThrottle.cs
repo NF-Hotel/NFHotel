@@ -84,35 +84,41 @@ public sealed class InMemoryLoginThrottle : ILoginThrottle
         ArgumentNullException.ThrowIfNull(key);
 
         DateTimeOffset now = _clock.UtcNow;
-        bool isCounted = false;
-        _windows.AddOrUpdate(
-            key,
-            _ =>
+
+        // The check and the count are one compare-and-swap: if another attempt changed the window meanwhile, the swap
+        // fails and the window is read again, so two attempts cannot both take the last free count.
+        while (true)
+        {
+            if (!_windows.TryGetValue(key, out Window? current))
             {
-                isCounted = true;
-                return new Window(now, 1);
-            },
-            (_, current) =>
-            {
-                if (now - current.Start >= _window)
+                if (_windows.TryAdd(key, new Window(now, 1)))
                 {
-                    isCounted = true;
-                    return new Window(now, 1);
+                    break;
                 }
 
-                // The check and the count are one step of the dictionary, which runs this again if another attempt
-                // changed the window meanwhile, so two attempts cannot both take the last free count. A refused
-                // attempt leaves the window as it is: it neither counts nor extends it.
-                isCounted = current.Failures < _maxFailures;
-                return isCounted ? current with { Failures = current.Failures + 1 } : current;
-            });
+                continue;
+            }
 
-        if (isCounted && Interlocked.Increment(ref _failuresSinceStart) % FailuresPerSweep == 0)
+            bool hasRunOut = now - current.Start >= _window;
+            if (!hasRunOut && current.Failures >= _maxFailures)
+            {
+                // A refused attempt leaves the window as it is: it neither counts nor extends it.
+                return false;
+            }
+
+            Window counted = hasRunOut ? new Window(now, 1) : current with { Failures = current.Failures + 1 };
+            if (_windows.TryUpdate(key, counted, current))
+            {
+                break;
+            }
+        }
+
+        if (Interlocked.Increment(ref _failuresSinceStart) % FailuresPerSweep == 0)
         {
             SweepRunOutWindows(now);
         }
 
-        return isCounted;
+        return true;
     }
 
     /// <inheritdoc />

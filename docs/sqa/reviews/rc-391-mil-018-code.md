@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the code of MIL-018 (tasks 3 to 6) against QC-CS-001 and QC-SH-001; F1 to F3, F6, F7, F11, F12, F14 and F15 fixed; Go; mode autonomous, not independent | [9e72b0e] |
+| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: review of the code of MIL-018 (tasks 3 to 6) against QC-CS-001 and QC-SH-001; F1 to F3, F6, F7, F11, F12, F14 and F15 fixed; Go; mode autonomous, not independent | [9e72b0e] |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | F1: `TryCountAttempt` written as a compare-and-swap loop after SonarCloud S2583 (a false positive on the flag set in the delegates); behaviour and tests unchanged<br>CA1829 and CA1859 of `AccessControlMatrixTests` fixed; Go unchanged | pending |
 
 ---
 
@@ -124,7 +125,11 @@ F1 to F13 are the reading of the separate AI agent; F14 and F15 are from the che
   after the read. Attempts sent at the same time all passed the check before any of them was counted, so more than
   five emails could be tried in one window. The path dates from [MIL-079]; the guest sign-in made it guard a session
   that can change a booking. Since the fix, `ILoginThrottle.TryCountAttempt` counts each attempt before the read, in
-  one atomic step with the check (`ConcurrentDictionary.AddOrUpdate`), and only a success clears the count. Tests: five
+  one atomic step with the check (a compare-and-swap with `ConcurrentDictionary.TryUpdate`, which reads the window
+  again when another attempt changed it), and only a success clears the count. The first form of the fix set a flag
+  inside the delegates of `AddOrUpdate`; SonarCloud's rule S2583 read that flag as always false (a false positive that
+  failed the quality gate of the pull request), so the method became the loop, with the same behaviour and the same
+  tests. Tests: five
   in `InMemoryLoginThrottleTests` (the sixth attempt refused, a reset, a new window, 16 threads released at once in ten
   rounds, a null key) and `LookUpReceiptAsync_ManyAtTheSameTime_ReadsOnlyAsManyAsTheThrottleAllows`, which failed on
   the old code. [ADR-0047] decision 3 and [OC-001] say so now.

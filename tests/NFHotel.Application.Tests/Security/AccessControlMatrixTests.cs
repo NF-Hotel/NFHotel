@@ -96,7 +96,7 @@ public sealed partial class AccessControlMatrixTests
     public void EveryCell_RolesTimesPermissions_CoversTheWholeTable()
     {
         // Act
-        int cases = EveryCell().Count();
+        int cases = EveryCell().Count;
 
         // Assert
         Assert.Equal(RoleColumns.Length * Permissions.All.Count, cases);
@@ -123,7 +123,7 @@ public sealed partial class AccessControlMatrixTests
     }
 
     /// <summary>Reads the rows of the matrix whose second cell names a permission in backticks.</summary>
-    private static IReadOnlyList<MatrixRow> ReadMatrix()
+    private static List<MatrixRow> ReadMatrix()
     {
         List<MatrixRow> rows = [];
         foreach (string line in File.ReadLines(MatrixPath()))
