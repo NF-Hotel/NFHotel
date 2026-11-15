@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-018] (RC-392, Go) on the row of the milestone and the row of its code | [6adb41a] |
-| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The fixes for the two notes of GitHub code quality on the code of [MIL-018] (RC-393, Go) on the row of its code | pending |
+| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The fixes for the two notes of GitHub code quality on the code of [MIL-018] (RC-393, Go) on the row of its code | [ba23b07] |
 
 ---
 
@@ -545,3 +545,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-381]: ./reviews/rc-381-mil-028-service-code.md
 [RC-382]: ./reviews/rc-382-mil-028-gate.md
 [6adb41a]: https://github.com/NF-Hotel/NFHotel/commit/6adb41acb602f289447eab8f65265649466ad14b
+[ba23b07]: https://github.com/NF-Hotel/NFHotel/commit/ba23b07aa6dd2a94a89db71a8958bd1332ddf9a8
