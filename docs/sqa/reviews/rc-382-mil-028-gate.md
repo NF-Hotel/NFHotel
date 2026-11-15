@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 and S03 | Initial version: gate of MIL-028 on the service at the pin 97ca890 with the fixes merged in d46df37; No-Go for now, criterion 9 fails on QC-PY-001 (RC-381); mode autonomous, not independent | [b8c8a9c] |
+| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 and S03 | Initial version: gate of MIL-028 on the service at the pin 97ca890 with the fixes merged in d46df37; No-Go for now, criterion 9 fails on QC-PY-001 (RC-381); mode autonomous, not independent | [b8c8a9c] |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 and S03 | The verdict: a risk exception is approved by S04, the escalation role, never by its owner (PRC-001); it said that S01 grants one; mode autonomous, not independent | pending |
 
 ---
 
@@ -49,7 +50,7 @@
 
 ## Overall Verdict
 
-No-Go for now. Criteria 1 to 8 pass, criterion 7 after the fixes of d46df37; criterion 9 fails on QC-PY-001 ([RC-381]). [MIL-028] is unchanged until a review of the service gives QC-PY-001 Go or S01 grants a risk exception; then the gate is checked again. MIL-028 has no synced issue to keep open.
+No-Go for now. Criteria 1 to 8 pass, criterion 7 after the fixes of d46df37; criterion 9 fails on QC-PY-001 ([RC-381]). [MIL-028] is unchanged until a review of the service gives QC-PY-001 Go or S04, the escalation role, approves a risk exception that S01 asks for ([PRC-001]); then the gate is checked again. MIL-028 has no synced issue to keep open.
 
 ## Action Items
 
