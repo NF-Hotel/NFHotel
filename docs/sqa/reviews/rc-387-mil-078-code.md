@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every check of the pull request green | [fe54d45] |
 
 ---
 
@@ -195,3 +195,4 @@ merge, and the gate of [MIL-078] reads the first run of the workflow on GitHub. 
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[fe54d45]: https://github.com/NF-Hotel/NFHotel/commit/fe54d457cf64a1e9ea741518731ee654dce26475

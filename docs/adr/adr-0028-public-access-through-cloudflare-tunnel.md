@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-25 | Deprecated | mikemike | AI as stand-in for S01 | Decision 3 changed by ADR-0029: `/admin` on the public name behind Cloudflare Access (MIL-041) | [1cc0e5d] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Decision 8 changed by ADR-0046: the routes of the tunnel are code in `ops/infra/cloudflare/`, changed by a pull request, applied by S01 or S03 and compared with the account every week; the zone settings stay in the dashboard (MIL-078) | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Decision 8 changed by ADR-0046: the routes of the tunnel are code in `ops/infra/cloudflare/`, changed by a pull request, applied by S01 or S03 and compared with the account every week; the zone settings stay in the dashboard (MIL-078) | [fe54d45] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -76,3 +76,4 @@ We follow option 3.
 [MIL-040]: ../milestones/mil-040-public-access.md
 [ADR-0046]: ./adr-0046-the-tunnel-routes-and-access-in-opentofu.md
 [1cc0e5d]: https://github.com/NF-Hotel/NFHotel/commit/1cc0e5d9c925b30a189e5e8ae8e93957c923bbaf
+[fe54d45]: https://github.com/NF-Hotel/NFHotel/commit/fe54d457cf64a1e9ea741518731ee654dce26475

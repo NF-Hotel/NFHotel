@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-078, whose plan S01 accepted in chat on 2026-11-12 (RC-338 Go); written by the AI | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-078, whose plan S01 accepted in chat on 2026-11-12 (RC-338 Go); written by the AI | [fe54d45] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -178,3 +178,4 @@ maintainability (the edge reviewed as code) and reliability (a drift found withi
 [MIL-072]: ../milestones/mil-072-the-access-check-on-every-admin-path.md
 [RC-338]: ../sqa/reviews/rc-338-mil-078.md
 [RC-339]: ../sqa/reviews/rc-339-mil-072-gate.md
+[fe54d45]: https://github.com/NF-Hotel/NFHotel/commit/fe54d457cf64a1e9ea741518731ee654dce26475

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-11 | Deprecated | mikemike | AI as stand-in for S01 | Decision 1: the session lasts 1 week, as the Access application is set; S01 decided in chat that this record follows the setting; accepted at the gate of MIL-072 (RC-339) | [3afb6a3] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Decision 5 and two negative consequences changed by ADR-0046: the routes in their order, the Access application and its policy are code in `ops/infra/cloudflare/`, applied by S01 or S03 and compared with the account every week; the addresses of the staff are a setting outside git (MIL-078) | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Decision 5 and two negative consequences changed by ADR-0046: the routes in their order, the Access application and its policy are code in `ops/infra/cloudflare/`, applied by S01 or S03 and compared with the account every week; the addresses of the staff are a setting outside git (MIL-078) | [fe54d45] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -69,3 +69,4 @@ We follow option 3. It changes ADR-0028 decision 3 for `/admin` only.
 [MIL-072]: ../milestones/mil-072-the-access-check-on-every-admin-path.md
 [ADR-0046]: ./adr-0046-the-tunnel-routes-and-access-in-opentofu.md
 [3afb6a3]: https://github.com/NF-Hotel/NFHotel/commit/3afb6a38797598a205e2c4c82dd19c352967ae89
+[fe54d45]: https://github.com/NF-Hotel/NFHotel/commit/fe54d457cf64a1e9ea741518731ee654dce26475

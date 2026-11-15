@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-25 | Deprecated | mikemike | AI as stand-in for S01 | Decision 4: the work is deferred until a trigger; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | [199bc05] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Context: ADR-0046 brings a third setting of a console into git, the routes of the Cloudflare tunnel and the Access application of the back office, with OpenTofu and without a state store (MIL-078); the two parts of decision 4 stay deferred | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Context: ADR-0046 brings a third setting of a console into git, the routes of the Cloudflare tunnel and the Access application of the back office, with OpenTofu and without a state store (MIL-078); the two parts of decision 4 stay deferred | [fe54d45] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -64,3 +64,4 @@ Options considered:
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
 [ADR-0046]: ./adr-0046-the-tunnel-routes-and-access-in-opentofu.md
 [199bc05]: https://github.com/NF-Hotel/NFHotel/commit/199bc05466d450b92157aa4daead871e7e6d76ce
+[fe54d45]: https://github.com/NF-Hotel/NFHotel/commit/fe54d457cf64a1e9ea741518731ee654dce26475

@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0045], the read-only access of the AI assistant to the monitoring (MIL-052 task 3, with the check of the logs of task 2), and its review RC-385 (Go), on a row of their own and on the row of the milestone; accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [76bff8d] |
-| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0046], the routes of the tunnel and Access as code in OpenTofu (MIL-078 task 1), with its review RC-386 (Go), and the code review RC-387 (Go-with-conditions) of tasks 2 to 4, on a row of their own and on the row of the milestone; accepted 2026-11-15 by the AI as stand-in for S01, under the plan of MIL-078 that S01 accepted in chat on 2026-11-12 | pending |
+| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0046], the routes of the tunnel and Access as code in OpenTofu (MIL-078 task 1), with its review RC-386 (Go), and the code review RC-387 (Go-with-conditions) of tasks 2 to 4, on a row of their own and on the row of the milestone; accepted 2026-11-15 by the AI as stand-in for S01, under the plan of MIL-078 that S01 accepted in chat on 2026-11-12 | [fe54d45] |
 
 ---
 
@@ -530,3 +530,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-381]: ./reviews/rc-381-mil-028-service-code.md
 [RC-382]: ./reviews/rc-382-mil-028-gate.md
 [76bff8d]: https://github.com/NF-Hotel/NFHotel/commit/76bff8de1dc7acaa5eab0c31eef2acd7358de036
+[fe54d45]: https://github.com/NF-Hotel/NFHotel/commit/fe54d457cf64a1e9ea741518731ee654dce26475
