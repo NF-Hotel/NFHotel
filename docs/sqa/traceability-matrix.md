@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | UC-008 and UC-009 with their reviews RC-369 and RC-370 (Go), the delta review RC-368 of UCD-001, and rows for MIL-019 and MIL-020 with their use cases | [50f850d] |
 | 2026-11-14 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-026, which the matrix did not have: the milestone with its plan reviews; its code and its tests with the code reviews, RC-373 to RC-375 (No-Go) and RC-376 (Go, after the fixes); the pin check of the service; accepted 2026-11-14 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [b371b85] |
+| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-053, which the matrix did not have: the milestone with its gate, RC-372 Go, and the code of the scan exporter with its reviews, RC-257, RC-277 and RC-366; accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [8321a92] |
 
 ---
 
@@ -119,6 +119,8 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-051] | Milestone (Accepted, Go; plan reviewed in RC-254; revised 2026-11-14, the ADR without a fixed number and the target 2026-11-27, and accepted by the AI as stand-in for S01 at S01's word in chat, RC-356) | en | it | [BC-001], ADR-0007, ADR-0020, MIL-023 | planned: the ADR on a push or pull deploy (task 1), the automatic deploy with its health check and rollback (tasks 2 and 3), the alert on a failed or lagging deploy (task 4), the tailnet policy (task 5), the tests in Ops CI (task 6), the wiki and the first deploy through the new flow (task 7) | [RC-254], [RC-356] |
 | The code of MIL-051: the pull `ops/scripts/pull-monitoring.sh` with its units in `ops/deploy/monitoring/systemd/` and the fourth step of `ops/scripts/create-monitoring-lxc.sh`, the health check of `ops/scripts/deploy-monitoring.sh`, the report folder of the scan exporter, the rules of `prometheus/rules/monitoring.yml` with their rule tests, the tests `ops/tests/test-pull-monitoring.sh`, `test-monitoring-stack.sh` and `test-create-monitoring-lxc.sh`, the new script test of Ops CI, and the wiki pages Monitoring, Alerts, CI-CD, Disaster-Recovery, Container-Escape and Workflows | Shell, Python, YAML, workflow (reviewed 2026-11-14, Go-with-conditions: the checks of the pull request) | - | - | [MIL-051] tasks 2 to 7, [ADR-0044], [ADR-0020], [MIL-053] | - | [RC-366] |
 | [MIL-052] | Milestone (Accepted, Go; plan reviewed in RC-255; revised 2026-11-14, the ADR without a fixed number and the target 2026-12-02, and accepted by the AI as stand-in for S01 at S01's word in chat, RC-357) | en | it | [BC-001], ADR-0020, [MIL-051] | planned: the tailnet policy reconciled with the wiki (task 1), the logs checked for personal data (task 2), the ADR on the AI's read access (task 3), the Viewer service account and `mcp-grafana`, set up by S01 (task 4), the proof of read-only and of the revocation (task 5), the wiki and the gate (task 6) | [RC-255], [RC-357] |
+| [MIL-053] | Milestone (Accepted, Go; plan reviewed in RC-256; gate passed 2026-11-15, RC-372: Go, accepted by the AI as stand-in for S01 at S01's word in chat) | en | it | [BC-001], [ADR-0007], [ADR-0020], [MIL-051] | the scan exporter, its service, token and scrape job, the rules `scans.yml`, the dashboard "Security scans" and their tests (the row below); the wiki pages Monitoring, Alerts and Containers-and-Images | [RC-256], [RC-257], [RC-372] |
+| The code of MIL-053: the scan exporter in `ops/deploy/monitoring/scan-exporter/` with its unit and integration tests, the service `scan-exporter` of `ops/deploy/monitoring/docker-compose.yml`, the token file of `ops/scripts/deploy-monitoring.sh`, the job `scans` of Prometheus, `prometheus/rules/scans.yml` with its tests in `rules-test.yml`, the dashboard `grafana/dashboards/nfhotel-security-scans.json`, `ops/tests/test-scan-exporter.sh` and the stack test `ops/tests/test-monitoring-stack.sh`, and the wiki pages Monitoring, Alerts and Containers-and-Images | Python, Shell, YAML (reviewed 2026-11-01, Go; deployed to `nf-monitoring`; gate 2026-11-15, RC-372) | - | - | [MIL-053] tasks 1 to 6, [ADR-0020] | - | [RC-257], [RC-277], [RC-366], [RC-372] |
 | [MIL-018] | Milestone (Accepted, Go; plan reviewed in RC-084; task 1 done, RC-083; revised 2026-11-14, the read closed by MIL-079 noted, the ADR without a fixed number and the target 2026-12-11, and accepted by the AI as stand-in for S01 at S01's word in chat, RC-358) | en | it | [BC-001], MIL-016, MIL-017, ADR-0005, [MIL-079] | planned: the ADR on the guest sign-in (task 2), the use case, the guest token and the ownership rule (task 3), the API endpoints (task 4), the guest pages (task 5), the smoke test and the wiki (task 6), the proof in the VM (task 7) and the reviews (task 8) | [RC-083], [RC-084], [RC-358] |
 | The code of MIL-070: `as_app` of `ops/scripts/deploy-release.sh`, its test `ops/tests/test-sudo-log.sh` and its entry in the matrix of `.github/workflows/ops-ci.yaml`, the section "No secret in the log of sudo" of the wiki page Host-Hardening, the section "A new password for `nfhotel_app`" of the wiki page Database-Preparation, and the script tests of the wiki page Workflows | Shell, YAML (reviewed 2026-11-08, Go; deployed to the VM 2026-11-08, RC-321) | - | - | [MIL-070] tasks 1 to 3, [ADR-0041], [CIS-001] | - | [RC-320], [RC-321] |
 | The code of MIL-072: `location ~* ^/admin` in `ops/deploy/nginx/templates/public.conf.template`, its regression test in `ops/tests/test-nginx.sh`, which Ops CI runs, the rows of 2026-11-11 of ADR-0029, and the table, the setup of the back office and "Check it" of the wiki page Public-Access | Shell, nginx (reviewed 2026-11-11, Go, accepted by S01; deployed 2026-11-12 by CD run 43262765251 and checked inside the VM 2026-11-14, RC-339) | - | - | [MIL-072] tasks 2 to 4, ADR-0029 | - | [RC-331], [RC-339] |
@@ -447,6 +449,9 @@ updated whenever an artifact instance is created or reviewed.
 [ADR-0044]: ../adr/adr-0044-monitoring-deployed-by-a-pull-on-its-host.md
 [RC-365]: ./reviews/rc-365-adr-0044.md
 [RC-366]: ./reviews/rc-366-mil-051-code.md
+[RC-256]: ./reviews/rc-256-mil-053-plan.md
+[RC-257]: ./reviews/rc-257-mil-053-code.md
+[RC-372]: ./reviews/rc-372-mil-053-gate.md
 [RC-336]: ./reviews/rc-336-mil-076.md
 [RC-337]: ./reviews/rc-337-mil-077.md
 [RC-338]: ./reviews/rc-338-mil-078.md
@@ -480,7 +485,6 @@ updated whenever an artifact instance is created or reviewed.
 [RC-112]: ./reviews/rc-112-analysis-model-name-code.md
 [RC-113]: ./reviews/rc-113-manage-models-code.md
 [RC-249]: ./reviews/rc-249-live-runs-code.md
-[50f850d]: https://github.com/NF-Hotel/NFHotel/commit/50f850d890371ba0759cbba802c27c9b31cf5b69
 [MIL-054]: ../milestones/mil-054-test-coverage.md
 [ADR-0033]: ../adr/adr-0033-sonarqube-cloud-coverage.md
 [RC-258]: ./reviews/rc-258-mil-054-plan.md
@@ -490,6 +494,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-378]: ./reviews/rc-378-mil-055-code-at-the-gate.md
 [RC-379]: ./reviews/rc-379-mil-055-gate.md
 [RC-380]: ./reviews/rc-380-mil-026-service-pin.md
+[8321a92]: https://github.com/NF-Hotel/NFHotel/commit/8321a922c12cd49320870185a8b0e7b6d7e07a72
 [RC-114]: ./reviews/rc-114-mil-026.md
 [RC-115]: ./reviews/rc-115-market-analysis-code.md
 [RC-117]: ./reviews/rc-117-mil-026-amendment.md
