@@ -35,7 +35,7 @@ services:
   # no other image is pulled; Dependabot changes both image lines, and test-ollama-user.sh fails
   # when they differ.
   models-owner:
-    image: ollama/ollama:0.40.13@sha256:b2f0122c476bc9fe7ce679d8bb4bd555351e25e2554eefb156f61cb0a89cf429
+    image: ollama/ollama:0.40.15@sha256:0e59999e0e8f9fd4e704bd788a89b7e4cad399367fb1365f8c102ac662288761
     user: "0"
     entrypoint: ["chown", "-R", *ollama-user, "/models"]
     restart: "no"
@@ -52,7 +52,7 @@ services:
     pids_limit: 32
 
   ollama:
-    image: ollama/ollama:0.40.13@sha256:b2f0122c476bc9fe7ce679d8bb4bd555351e25e2554eefb156f61cb0a89cf429
+    image: ollama/ollama:0.40.15@sha256:0e59999e0e8f9fd4e704bd788a89b7e4cad399367fb1365f8c102ac662288761
     restart: unless-stopped
     env_file: ${OLLAMA_ENV_FILE:-ollama.env}
     # Hardening (MIL-023 task 2, CIS-001). Ollama runs as 10001 (MIL-082), which owns the volume of
