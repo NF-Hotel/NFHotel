@@ -25,6 +25,12 @@ public static class ApiAuthentication
     public const string StaffTokenHeader = "X-Staff-Token";
 
     /// <summary>
+    /// The header with the token of a signed-in guest (MIL-018, ADR-0047). It travels beside the token of the web
+    /// application, like the staff token, and is read only when the call carries no valid staff token.
+    /// </summary>
+    public const string GuestTokenHeader = "X-Guest-Token";
+
+    /// <summary>
     /// The header in which the web application passes the address of the browser to the API, so the audit trail can
     /// record it (ADR-0017). The API trusts it because the call carries the service token.
     /// </summary>

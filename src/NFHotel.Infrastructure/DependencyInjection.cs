@@ -166,6 +166,11 @@ public static class DependencyInjection
 
         // A caller that is not an HTTP request knows nobody; the API replaces this with the one that reads the token (ADR-0017).
         services.TryAddScoped<IStaffCallContext, AnonymousStaffCallContext>();
+
+        // MIL-018: the guest token is signed with the same key, and a caller that is not an HTTP request is no guest; the
+        // API replaces the context with the one that reads the guest token.
+        services.AddSingleton<IGuestTokenIssuer, JwtGuestTokenIssuer>();
+        services.TryAddScoped<IGuestCallContext, AnonymousGuestCallContext>();
     }
 
     /// <summary>
@@ -195,6 +200,7 @@ public static class DependencyInjection
         services.AddScoped<IBenchmarkIntake>(provider => provider.GetRequiredService<BenchmarkService>());
         services.AddScoped<IBenchmarkRequestService, BenchmarkRequestService>();
         services.AddScoped<IGuestService, GuestService>();
+        services.AddScoped<IGuestAccessService, GuestAccessService>();
         services.AddScoped<IStaffAuthService, StaffAuthService>();
         services.AddScoped<StaffAccountService>();
         services.AddScoped<IStaffAccountService>(provider => provider.GetRequiredService<StaffAccountService>());

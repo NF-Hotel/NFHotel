@@ -190,7 +190,13 @@ docker exec -e STAFF_PASSWORD='<at least 12 characters>' nfhotel-api-nfhotel-api
 ```
 
 - **Roles.** Receptionist: bookings, guests, rooms to read. Manager: everything, including rooms,
-  cleaning status and revenue. Housekeeping: rooms and their cleaning status only.
+  cleaning status and revenue. Housekeeping: rooms and their cleaning status only. The full table,
+  with the role Guest, is the Access Control Matrix (`docs/refactor/Access-Control-Matrix.md`).
+- **Guests (MIL-018, ADR-0047).** A guest signs in on `/booking` with the booking number and the
+  email of the booking, and manages that booking on `/my-booking` for two hours: new dates in the
+  same room, cancel, sign out. The guest cookie `nfhotel.guest` is separate from the staff cookie
+  and never opens `/admin`. Five wrong emails for a number in fifteen minutes stop that number
+  (HTTP 429). Check it after a deploy with `ops/scripts/check-guest-login.sh` (see its header).
 - **Wrong passwords.** Five failures of a user name in fifteen minutes stop that name until the
   window has passed (HTTP 429). Restarting the API clears the count.
 

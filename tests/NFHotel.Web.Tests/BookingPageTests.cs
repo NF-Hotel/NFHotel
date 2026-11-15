@@ -10,6 +10,7 @@ using NFHotel.Application.UseCases.Guests;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.TestSupport;
 using NFHotel.Web.Features.Booking;
+using NFHotel.Web.Security;
 
 using NSubstitute;
 
@@ -17,20 +18,29 @@ using static NFHotel.Web.Tests.AdminSamples;
 
 namespace NFHotel.Web.Tests;
 
-/// <summary>The public booking page and the receipt page, rendered and clicked (MIL-054 task 3).</summary>
+/// <summary>
+/// The public booking page, rendered and clicked (MIL-054 task 3). The guest sign-in and the guest's own booking are
+/// static pages with a cookie; <see cref="GuestPagesTests"/> drives them through the real pipeline (MIL-018).
+/// </summary>
 public sealed class BookingPageTests : IAsyncDisposable
 {
     #region Setup
 
     private readonly IBookingService _bookings = Substitute.For<IBookingService>();
     private readonly IGuestService _guests = Substitute.For<IGuestService>();
+    private readonly IGuestAccessService _access = Substitute.For<IGuestAccessService>();
+    private readonly GuestSessionTickets _tickets = new(new FakeClock { Today = Today });
     private readonly PageHost _host = new();
 
     public BookingPageTests()
     {
         var bookings = new PassThroughRunner<IBookingService>(_bookings);
-        _host.With(new BookingFlowViewModel(bookings, new PassThroughRunner<IGuestService>(_guests), new FakeClock { Today = Today }))
-            .With(new BookingReceiptViewModel(bookings));
+        _host.With(new BookingFlowViewModel(
+            bookings,
+            new PassThroughRunner<IGuestService>(_guests),
+            new PassThroughRunner<IGuestAccessService>(_access),
+            _tickets,
+            new FakeClock { Today = Today }));
         _guests.ValidateFields(Arg.Any<GuestFields>()).Returns(Result.Success());
     }
 
@@ -46,13 +56,16 @@ public sealed class BookingPageTests : IAsyncDisposable
 
     /// <summary>
     /// Positive: a guest walks through dates, room type and details, sees the receipt on the same page with a link to
-    /// find it again, and can book again. The page does not move on to the lookup page, which asks for the email (MIL-079).
+    /// find it again, and can book again. The page does not move on to the sign-in, which asks for the email (MIL-079);
+    /// instead "Manage your booking" posts the one-time ticket of the guest's session, which opens it once (MIL-018).
     /// </summary>
     [Fact]
-    public void Book_WholeFlow_EndsOnTheReceipt()
+    public void Book_WholeFlow_EndsOnTheReceiptWithTheSessionTicket()
     {
         RoomsAre(FreeRoom(1), FreeRoom(2));
-        _bookings.CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>()).Returns(Ok(BookingDetails(9)));
+        GuestSessionDto session = new("guest-token-9", new DateTimeOffset(2026, 3, 10, 14, 0, 0, TimeSpan.Zero), 9);
+        _access.BookAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Ok(new PublicBookingDto(BookingDetails(9), session)));
         var page = _host.Render<Book>();
 
         page.Find("#check-in").Change("2026-03-12");
@@ -74,7 +87,12 @@ public sealed class BookingPageTests : IAsyncDisposable
         Assert.DoesNotContain("rita@example.com", page.Markup, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll("a[href='/booking/B-0009']"));
         Assert.DoesNotContain("/booking/", _host.Navigation.Uri, StringComparison.Ordinal);
-        _bookings.Received(1).CreatePublicAsync(
+        Assert.DoesNotContain(session.Token, page.Markup, StringComparison.Ordinal);
+        Assert.Equal(GuestSignInRegistration.SessionPath, page.Find("form[method='post']").GetAttribute("action"));
+        Assert.True(page.HasButton("Manage your booking"));
+        string? ticket = page.Find($"input[name='{GuestSignInRegistration.TicketField}']").GetAttribute("value");
+        Assert.Equal(session, _tickets.Redeem(ticket));
+        _access.Received(1).BookAsync(
             Arg.Is<CreatePublicBookingRequest>(request => request.RoomSize == RoomSize.Double && request.CheckInDate == new DateOnly(2026, 3, 12) && request.NewGuest!.PassportNumber == "P1"),
             Arg.Any<CancellationToken>());
 
@@ -143,72 +161,6 @@ public sealed class BookingPageTests : IAsyncDisposable
         Assert.Equal("true", page.Find("#email").GetAttribute("aria-invalid"));
         Assert.Null(page.Find("#first-name").GetAttribute("aria-invalid"));
         Assert.Contains(Text(ErrorCodes.Guest.EmailInvalid), page.Markup, StringComparison.Ordinal);
-    }
-
-    #endregion
-
-    #region Receipt
-
-    /// <summary>
-    /// Security: a number in the address without the email shows no booking and looks nothing up, in the first render
-    /// as well, which is what the server sends as the first HTML (MIL-079 criterion 3).
-    /// </summary>
-    [Fact]
-    public void Receipt_NumberInTheAddressWithoutTheEmail_ShowsNoBooking()
-    {
-        var page = _host.Render<BookingReceipt>(parameters => parameters.Add(receipt => receipt.BookingNumber, "FLZ-000001"));
-
-        Assert.Empty(page.FindAll(".pub-receipt"));
-        Assert.Equal("FLZ-000001", page.Find("#booking-number").GetAttribute("value"));
-        Assert.Empty(_bookings.ReceivedCalls());
-    }
-
-    /// <summary>
-    /// Positive: the number from the address and the email that the guest types show the receipt, and the lookup sends
-    /// the number as the key of the booking and the email as typed (MIL-079).
-    /// </summary>
-    [Fact]
-    public void Receipt_NumberFromTheAddressAndEmail_ShowsTheReceipt()
-    {
-        _bookings.LookUpReceiptAsync(new BookingReceiptRequest(42, "rita@example.com"), Arg.Any<CancellationToken>())
-            .Returns(Ok(BookingReceiptDto.From(BookingDetails(42))));
-        var page = _host.Render<BookingReceipt>(parameters => parameters.Add(receipt => receipt.BookingNumber, "FLZ-42"));
-
-        Assert.Equal("FLZ-42", page.Find("#booking-number").GetAttribute("value"));
-        page.Find("#booking-email").Change("rita@example.com");
-        page.Find("form").Submit();
-
-        Assert.Contains("B-0042", page.Markup, StringComparison.Ordinal);
-        Assert.Contains("Double room · the room number is given at check-in", page.Markup, StringComparison.Ordinal);
-        Assert.DoesNotContain("Room 101", page.Markup, StringComparison.Ordinal);
-        Assert.Empty(page.FindAll("#booking-email"));
-    }
-
-    /// <summary>Security: a wrong email says not found, keeps the form and shows no receipt.</summary>
-    [Fact]
-    public void Receipt_WrongEmail_SaysNotFoundAndKeepsTheForm()
-    {
-        _bookings.LookUpReceiptAsync(Arg.Any<BookingReceiptRequest>(), Arg.Any<CancellationToken>())
-            .Returns(Fail<BookingReceiptDto>(ErrorCodes.Booking.NotFound));
-        var page = _host.Render<BookingReceipt>(parameters => parameters.Add(receipt => receipt.BookingNumber, "FLZ-42"));
-
-        page.Find("#booking-email").Change("someone@example.com");
-        page.Find("form").Submit();
-
-        Assert.Contains(Text(ErrorCodes.Booking.NotFound), page.Markup, StringComparison.Ordinal);
-        Assert.NotEmpty(page.FindAll("#booking-email"));
-        Assert.Empty(page.FindAll(".pub-receipt"));
-    }
-
-    /// <summary>Edge: the page without a number in the address shows an empty form and looks nothing up.</summary>
-    [Fact]
-    public void Receipt_NoNumberInTheAddress_ShowsAnEmptyFormWithoutALookup()
-    {
-        var page = _host.Render<BookingReceipt>();
-
-        Assert.Equal(string.Empty, page.Find("#booking-number").GetAttribute("value") ?? string.Empty);
-        Assert.Empty(page.FindAll(".pub-receipt"));
-        Assert.Empty(_bookings.ReceivedCalls());
     }
 
     #endregion

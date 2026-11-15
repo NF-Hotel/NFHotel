@@ -27,7 +27,8 @@ public static class BookingFeatureRegistration
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddScoped<BookingFlowViewModel>();
-        services.AddScoped<BookingReceiptViewModel>();
+        services.AddScoped<GuestSignInViewModel>();   // the guest sign-in on /booking (MIL-018)
+        services.AddScoped<MyBookingViewModel>();     // the guest's own booking on /my-booking (MIL-018)
 
         return services;
     }

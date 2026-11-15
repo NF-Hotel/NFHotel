@@ -30,7 +30,10 @@ public interface IBookingService
     /// <param name="bookingId">The booking id.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the booking, or <see cref="ErrorCodes.Booking.NotFound"/>.</returns>
-    /// <remarks>For staff who may see the bookings (<c>Bookings.View</c>, MIL-079); a guest uses <see cref="LookUpReceiptAsync"/>.</remarks>
+    /// <remarks>
+    /// For staff who may see the bookings (<c>Bookings.View</c>, MIL-079), and for the signed-in guest of this booking
+    /// (MIL-018); any other caller gets <see cref="ErrorCodes.Api.Forbidden"/>.
+    /// </remarks>
     Task<Result<BookingDetailsDto>> GetByIdAsync(int bookingId, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -165,7 +168,8 @@ public interface IBookingService
     /// <returns>The booking, or <see cref="ErrorCodes.Booking.CancelNotAllowed"/>.</returns>
     /// <remarks>
     /// Soft delete: the status is set, the row stays (BR-13). It is the only transition that
-    /// releases the room completely (A-01).
+    /// releases the room completely (A-01). Staff who may change other guests' bookings cancel any booking; the
+    /// signed-in guest of a booking cancels only that one (MIL-018).
     /// </remarks>
     Task<Result<BookingDetailsDto>> CancelAsync(int bookingId, CancellationToken cancellationToken = default);
 
@@ -178,7 +182,8 @@ public interface IBookingService
     /// <returns>The moved booking, or the broken rules.</returns>
     /// <remarks>
     /// Uses the same overlap function as <see cref="CreateAsync"/>, which closes
-    /// the contradiction between BR-19 and BR-39.
+    /// the contradiction between BR-19 and BR-39. The signed-in guest of a booking moves only that one, and only to
+    /// other dates in the same room (MIL-018); another room gives <see cref="ErrorCodes.Api.Forbidden"/>.
     /// </remarks>
     Task<Result<BookingDetailsDto>> RescheduleAsync(
         RescheduleBookingRequest request,

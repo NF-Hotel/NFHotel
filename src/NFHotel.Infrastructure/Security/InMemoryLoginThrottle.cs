@@ -44,7 +44,7 @@ public sealed class InMemoryLoginThrottle : ILoginThrottle
     {
         ArgumentNullException.ThrowIfNull(key);
 
-        if (!_windows.TryGetValue(key, out var window))
+        if (!_windows.TryGetValue(key, out Window? window))
         {
             return false;
         }
@@ -63,7 +63,7 @@ public sealed class InMemoryLoginThrottle : ILoginThrottle
     {
         ArgumentNullException.ThrowIfNull(key);
 
-        var now = _clock.UtcNow;
+        DateTimeOffset now = _clock.UtcNow;
         _windows.AddOrUpdate(
             key,
             _ => new Window(now, 1),
@@ -76,6 +76,43 @@ public sealed class InMemoryLoginThrottle : ILoginThrottle
         {
             SweepRunOutWindows(now);
         }
+    }
+
+    /// <inheritdoc />
+    public bool TryCountAttempt(string key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+
+        DateTimeOffset now = _clock.UtcNow;
+        bool isCounted = false;
+        _windows.AddOrUpdate(
+            key,
+            _ =>
+            {
+                isCounted = true;
+                return new Window(now, 1);
+            },
+            (_, current) =>
+            {
+                if (now - current.Start >= _window)
+                {
+                    isCounted = true;
+                    return new Window(now, 1);
+                }
+
+                // The check and the count are one step of the dictionary, which runs this again if another attempt
+                // changed the window meanwhile, so two attempts cannot both take the last free count. A refused
+                // attempt leaves the window as it is: it neither counts nor extends it.
+                isCounted = current.Failures < _maxFailures;
+                return isCounted ? current with { Failures = current.Failures + 1 } : current;
+            });
+
+        if (isCounted && Interlocked.Increment(ref _failuresSinceStart) % FailuresPerSweep == 0)
+        {
+            SweepRunOutWindows(now);
+        }
+
+        return isCounted;
     }
 
     /// <inheritdoc />

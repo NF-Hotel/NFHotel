@@ -25,6 +25,9 @@ internal sealed class StubHandler : HttpMessageHandler
     /// <summary>The staff token header of the last call, or <c>null</c> when it had none.</summary>
     public string? StaffToken { get; private set; }
 
+    /// <summary>The guest token header of the last call, or <c>null</c> when it had none (MIL-018).</summary>
+    public string? GuestToken { get; private set; }
+
     /// <summary>The forwarded-for header of the last call, or <c>null</c> when it had none.</summary>
     public string? ForwardedFor { get; private set; }
 
@@ -63,6 +66,7 @@ internal sealed class StubHandler : HttpMessageHandler
         Method = request.Method;
         PathAndQuery = request.RequestUri?.PathAndQuery;
         StaffToken = request.Headers.TryGetValues("X-Staff-Token", out var values) ? string.Join(",", values) : null;
+        GuestToken = request.Headers.TryGetValues("X-Guest-Token", out IEnumerable<string>? guest) ? string.Join(",", guest) : null;
         ForwardedFor = request.Headers.TryGetValues("X-Forwarded-For", out var forwarded) ? string.Join(",", forwarded) : null;
         Body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();

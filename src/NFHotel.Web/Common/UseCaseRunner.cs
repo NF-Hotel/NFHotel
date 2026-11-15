@@ -10,6 +10,7 @@ namespace NFHotel.Web.Common;
 /// <remarks>
 /// Registered as an open generic scoped service in <c>Program.cs</c> (ADR-0005). It is stateless, but it reads the
 /// staff token of the circuit it belongs to and gives it to the scope of each call, so the API sees who is calling.
+/// On a guest page it gives the guest token instead, and then no staff token (MIL-018).
 /// </remarks>
 public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     where TService : notnull
@@ -18,6 +19,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     private readonly ILogger<UseCaseRunner<TService>> _logger;
     private readonly IStaffTokenSource _tokenSource;
     private readonly IHttpContextAccessor? _httpContext;
+    private readonly IGuestTokenSource? _guestTokens;
 
     /// <summary>
     /// Creates the runner.
@@ -26,11 +28,13 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     /// <param name="logger">Logger for the technical errors the user never gets to see.</param>
     /// <param name="tokenSource">Gives the staff token of the signed-in user, if any.</param>
     /// <param name="httpContext">Gives the request of a static page, whose address goes to the API for the audit trail (ADR-0017).</param>
+    /// <param name="guestTokens">Gives the guest token of a guest page, if any (MIL-018).</param>
     public UseCaseRunner(
         IServiceScopeFactory scopeFactory,
         ILogger<UseCaseRunner<TService>> logger,
         IStaffTokenSource tokenSource,
-        IHttpContextAccessor? httpContext = null)
+        IHttpContextAccessor? httpContext = null,
+        IGuestTokenSource? guestTokens = null)
     {
         ArgumentNullException.ThrowIfNull(scopeFactory);
         ArgumentNullException.ThrowIfNull(logger);
@@ -40,6 +44,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
         _logger = logger;
         _tokenSource = tokenSource;
         _httpContext = httpContext;
+        _guestTokens = guestTokens;
     }
 
     /// <inheritdoc />
@@ -53,7 +58,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
         {
             // The scope — and thereby the DbContext — lives only as long as the use case runs.
             await using var scope = _scopeFactory.CreateAsyncScope();
-            await GiveStaffTokenAsync(scope).ConfigureAwait(false);
+            await GiveCallerTokenAsync(scope).ConfigureAwait(false);
 
             var service = scope.ServiceProvider.GetRequiredService<TService>();
 
@@ -77,7 +82,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
         try
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
-            await GiveStaffTokenAsync(scope).ConfigureAwait(false);
+            await GiveCallerTokenAsync(scope).ConfigureAwait(false);
 
             var service = scope.ServiceProvider.GetRequiredService<TService>();
 
@@ -126,12 +131,25 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     private static bool ShouldHandle(Exception exception, CancellationToken cancellationToken) =>
         exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested;
 
-    private async Task GiveStaffTokenAsync(AsyncServiceScope scope)
+    private async Task GiveCallerTokenAsync(AsyncServiceScope scope)
     {
-        var token = await _tokenSource.GetTokenAsync().ConfigureAwait(false);
         var context = scope.ServiceProvider.GetRequiredService<StaffCallContext>();
-        context.Token = token;
         context.ClientAddress = ClientAddressOf(_httpContext?.HttpContext);
+
+        // A guest page speaks as the guest and only as the guest (MIL-018, ADR-0047 decision 6): with a guest token the
+        // call carries no staff token, even when the same browser is signed in to the back office. A host without the
+        // guest context cannot send the guest token, so the call goes without a caller token rather than as staff.
+        if (_guestTokens?.Token is string guestToken)
+        {
+            if (scope.ServiceProvider.GetService<GuestCallContext>() is GuestCallContext guest)
+            {
+                guest.Token = guestToken;
+            }
+
+            return;
+        }
+
+        context.Token = await _tokenSource.GetTokenAsync().ConfigureAwait(false);
     }
 
     // The first address of X-Forwarded-For (set by the proxy), or the address of the connection. A circuit has no request.

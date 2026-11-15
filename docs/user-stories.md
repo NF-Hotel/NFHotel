@@ -4,18 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | US-001 |
-| CrossReference | [UCD-001], [BC-001], [MIL-002], [MIL-016], [MIL-055] |
+| CrossReference | [UCD-001], [BC-001], [MIL-002], [MIL-016], [MIL-055], [MIL-018], [SA-001] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.10 and US-001.11, the password and account stories (MIL-030) (accepted after RC-153 Go) | [0891cf1] |
-| 2026-10-26 | Accepted | mikemike | AI as stand-in for S01 | US-001.04 gains a criterion: a run that a restart stops is shown as interrupted and can be started again (MIL-043, ADR-0031) | [43bcf70] |
-| 2026-11-01 | Deprecated | Claude (AI) | S01 | Added US-001.12, approve a price suggestion (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-263 Go | [3a17eee] |
-
-| 2026-11-11 | Accepted | Claude (AI) | S01 | US-001.12 reworded: the suggestions come from the market analysis service, for the holidays and weeks of the next two months (MIL-071); accepted by S01 in chat on 2026-11-11 | [f674e8a] |
+| 2026-11-11 | Deprecated | Claude (AI) | S01 | US-001.12 reworded: the suggestions come from the market analysis service, for the holidays and weeks of the next two months (MIL-071); accepted by S01 in chat on 2026-11-11 | [f674e8a] |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.13, a guest sees, moves and cancels the own booking (MIL-018, UC-010)<br>The Version History cut to its two latest rows, the blank line that split it removed<br>Go in RC-390; accepted by the AI as stand-in for S01 | pending |
 
 ---
 
@@ -224,6 +221,24 @@ analysis without anyone starting it by hand.
 | --- | --- | --- | --- | --- |
 | UCD-001 use case "Approve a Price Suggestion" | does not yet fit one iteration | Small: splits into rates, the rule, the settings, the approval and the page (MIL-055 tasks 3 to 8) | Should | The owner wants the market analysis to lead to a price, and a room has no price today |
 
+### US-001.13 — See, move and cancel my own booking
+
+**As** a guest (S06), **I want** to open my booking with its booking number and the email it was made with, and there move its dates or cancel it, **so that** I serve my own booking without an account, a password or a call to the hotel, while nobody else can see it.
+
+**Acceptance Criteria**
+
+- Given a booking that is not cancelled, when I give its number and its email, then I am signed in to that booking and see its dates, its nights, its room type, its status and its payment, with the changes it allows now.
+- Given an unknown number, a wrong email or a cancelled booking, when I try to sign in, then I am told in the same words every time that the number and the email do not match a booking.
+- Given five failed attempts for one booking number within 15 minutes, when I try again, then I am refused until the 15 minutes have passed.
+- Given I am signed in to a pending or confirmed booking, when I give new dates and the room is free for every night, then the booking keeps its room and shows the new dates; when a night is taken or the dates are not valid, I am told why and the booking stays as it was.
+- Given I am signed in to a pending or confirmed booking, when I cancel it, then it is shown as cancelled and is not deleted.
+- Given I am signed in, when I ask for another booking, the details of another guest, a passport number or a page of the back office, then I see nothing of it.
+- Given I signed out or signed in more than two hours ago, when I open my booking, then I am asked to sign in again; a staff sign-in in the same browser stays as it was.
+
+| Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
+| --- | --- | --- | --- | --- |
+| UCD-001 use case "View and Change Own Booking" (UC-010) | does not yet fit one iteration | Small: splits into the sign-in, the own booking, the change of dates and the cancellation ([MIL-018] tasks 2 to 6) | Should | Objective 21 of the Business Case: a guest reaches the own booking without the staff |
+
 ## INVEST Check
 
 - Independent: US-001.01 needs US-001.05; US-001.02 needs US-001.04; US-001.04 and US-001.05 need US-001.03. The order is stated in the Reason column.
@@ -246,10 +261,7 @@ for US-001.02.
 [BC-001]: ./business-case.md
 [MIL-002]: ./milestones/mil-002-nginx-proxy-and-web-compose.md
 [SA-001]: ./stakeholder-analysis.md
-[fc8ec78]: https://github.com/NF-Hotel/NFHotel/commit/fc8ec78b24b805b10d5c056b19ed2785697ee8ff
 [MIL-016]: ./milestones/mil-016-backoffice-login.md
 [MIL-055]: ./milestones/mil-055-room-price-suggestions.md
-[0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
-[43bcf70]: https://github.com/NF-Hotel/NFHotel/commit/43bcf70046d2f2537672030b83f39f8b3fda4551
-[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
+[MIL-018]: ./milestones/mil-018-guest-login.md
 [f674e8a]: https://github.com/NF-Hotel/NFHotel/commit/f674e8a3fe47dfe3c36bbc59f4eeae6180985b0d

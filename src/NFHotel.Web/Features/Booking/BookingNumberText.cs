@@ -8,7 +8,7 @@ namespace NFHotel.Web.Features.Booking;
 /// Reads a booking number from a URL back to the id of the booking.
 /// </summary>
 /// <remarks>
-/// The receipt page looks up the number (BR-C-06), but <c>IBookingService</c> deliberately has
+/// The guest sign-in looks the number up (BR-C-06, MIL-018), but <c>IBookingService</c> deliberately has
 /// no "fetch by number": the number <i>is</i> the id in displayed form (BR-109), and an extra
 /// use case would be the same lookup with a different key.
 /// <para>

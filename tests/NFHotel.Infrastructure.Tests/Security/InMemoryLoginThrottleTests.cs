@@ -172,6 +172,122 @@ public sealed class InMemoryLoginThrottleTests
 
     #endregion
 
+    #region Counting before the check (MIL-018)
+
+    /// <summary>Boundary: five attempts are counted, the sixth is refused and counts nothing.</summary>
+    [Fact]
+    public void TryCountAttempt_SixAttempts_CountsFiveAndRefusesTheSixth()
+    {
+        // Arrange
+        InMemoryLoginThrottle throttle = Build(new FakeClock());
+
+        // Act
+        bool[] counted = [.. Enumerable.Range(0, 6).Select(_ => throttle.TryCountAttempt(ReceiptKey(7)))];
+
+        // Assert
+        Assert.Equal([true, true, true, true, true, false], counted);
+        Assert.True(throttle.IsBlocked(ReceiptKey(7)));
+    }
+
+    /// <summary>State transition: a success clears the counted attempts, so the next attempt is counted in a new count.</summary>
+    [Fact]
+    public void TryCountAttempt_AfterReset_CountsAgain()
+    {
+        // Arrange
+        InMemoryLoginThrottle throttle = Build(new FakeClock());
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            throttle.TryCountAttempt(ReceiptKey(7));
+        }
+
+        // Act
+        throttle.Reset(ReceiptKey(7));
+        bool isCounted = throttle.TryCountAttempt(ReceiptKey(7));
+
+        // Assert
+        Assert.True(isCounted);
+        Assert.False(throttle.IsBlocked(ReceiptKey(7)));
+    }
+
+    /// <summary>
+    /// Boundary: a refused attempt does not extend the window; one minute before its end the key is still refused, and
+    /// at its end the next attempt is counted in a new window.
+    /// </summary>
+    [Fact]
+    public void TryCountAttempt_RefusedThenAtTheEndOfTheWindow_CountsInANewWindow()
+    {
+        // Arrange
+        FakeClock clock = new() { TimeOfDay = TimeSpan.FromHours(8) };
+        InMemoryLoginThrottle throttle = Build(clock);
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            throttle.TryCountAttempt(ReceiptKey(7));
+        }
+
+        // Act
+        clock.TimeOfDay = TimeSpan.FromHours(8) + TimeSpan.FromMinutes(14);
+        bool isCountedBeforeTheEnd = throttle.TryCountAttempt(ReceiptKey(7));
+        clock.TimeOfDay = TimeSpan.FromHours(8) + TimeSpan.FromMinutes(15);
+        bool isCountedAtTheEnd = throttle.TryCountAttempt(ReceiptKey(7));
+
+        // Assert
+        Assert.False(isCountedBeforeTheEnd);
+        Assert.True(isCountedAtTheEnd);
+        Assert.False(throttle.IsBlocked(ReceiptKey(7)));
+    }
+
+    /// <summary>
+    /// Concurrency: attempts for one key from many threads, released at once by a latch, are counted only up to the
+    /// limit, because the check and the count are one step (MIL-018). The rounds repeat only to widen the interleaving.
+    /// </summary>
+    [Fact]
+    public void TryCountAttempt_ManyThreadsAtOnce_CountsNoMoreThanTheLimit()
+    {
+        for (int round = 0; round < 10; round++)
+        {
+            // Arrange
+            InMemoryLoginThrottle throttle = Build(new FakeClock());
+            using ManualResetEventSlim release = new(initialState: false);
+            int counted = 0;
+            Thread[] threads = [.. Enumerable.Range(0, 16).Select(_ => new Thread(() =>
+            {
+                release.Wait();
+                if (throttle.TryCountAttempt(ReceiptKey(7)))
+                {
+                    Interlocked.Increment(ref counted);
+                }
+            }))];
+
+            // Act
+            foreach (Thread thread in threads)
+            {
+                thread.Start();
+            }
+
+            release.Set();
+            foreach (Thread thread in threads)
+            {
+                thread.Join();
+            }
+
+            // Assert
+            Assert.Equal(5, counted);
+        }
+    }
+
+    /// <summary>Negative: a missing key is a programming error.</summary>
+    [Fact]
+    public void TryCountAttempt_NullKey_Throws()
+    {
+        // Arrange
+        InMemoryLoginThrottle throttle = Build(new FakeClock());
+
+        // Act and assert: the null-forgiving operator passes the null that the guard must refuse.
+        Assert.Throws<ArgumentNullException>(() => throttle.TryCountAttempt(null!));
+    }
+
+    #endregion
+
     #region Bad input
 
     /// <summary>Negative: a missing key is a programming error.</summary>

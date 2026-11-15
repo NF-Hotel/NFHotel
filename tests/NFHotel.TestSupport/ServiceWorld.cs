@@ -344,18 +344,40 @@ public sealed class ServiceWorld
 
     public RecordingWarningLog Warnings { get; } = new();
 
+    /// <summary>The signed-in guest of the services' calls (MIL-018): none until a test sets a booking.</summary>
+    public FakeGuestCallContext GuestCall { get; } = new();
+
+    /// <summary>The issuer of the guest tokens of <see cref="GuestAccessService"/> (MIL-018).</summary>
+    public FakeGuestTokenIssuer GuestTokens { get; } = new();
+
     /// <summary>
-    /// Builds the service; <paramref name="prices"/> replaces the real price lookup, for example to make it fail, and
-    /// <paramref name="receiptThrottle"/> the throttle of the guest's lookup, which otherwise never blocks.
+    /// Builds the service; <paramref name="prices"/> replaces the real price lookup, for example to make it fail,
+    /// <paramref name="receiptThrottle"/> the throttle of the guest's lookup, which otherwise never blocks, and
+    /// <paramref name="guestCall"/> the signed-in guest, which is otherwise <see cref="GuestCall"/>.
     /// </summary>
     public BookingService BookingService(
         IStaffAuthorizationService? authorization = null,
         IPriceChangeService? prices = null,
-        ILoginThrottle? receiptThrottle = null) =>
-        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings, receiptThrottle ?? Substitute.For<ILoginThrottle>());
+        ILoginThrottle? receiptThrottle = null,
+        IGuestCallContext? guestCall = null) =>
+        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings, receiptThrottle ?? OpenThrottle(), guestCall ?? GuestCall);
 
-    public GuestService GuestService(IStaffAuthorizationService? authorization = null) =>
-      new(Guests, GuestQueries, UnitOfWork, authorization ?? Substitute.For<IStaffAuthorizationService>());
+    /// <summary>Builds the service; <paramref name="guestCall"/> replaces the signed-in guest, which is otherwise <see cref="GuestCall"/>.</summary>
+    public GuestService GuestService(IStaffAuthorizationService? authorization = null, IGuestCallContext? guestCall = null) =>
+      new(Guests, GuestQueries, UnitOfWork, authorization ?? Substitute.For<IStaffAuthorizationService>(), BookingQueries, guestCall ?? GuestCall);
+
+    /// <summary>A throttle substitute that never blocks: every attempt is counted and may go on (MIL-018).</summary>
+    /// <returns>The substitute, which a test can still configure or check.</returns>
+    public static ILoginThrottle OpenThrottle()
+    {
+        ILoginThrottle throttle = Substitute.For<ILoginThrottle>();
+        throttle.TryCountAttempt(Arg.Any<string>()).Returns(true);
+        return throttle;
+    }
+
+    /// <summary>Builds the guest sign-in over <see cref="BookingService"/>, with the tokens of <see cref="GuestTokens"/> (MIL-018).</summary>
+    public GuestAccessService GuestAccessService(IStaffAuthorizationService? authorization = null, ILoginThrottle? receiptThrottle = null) =>
+        new(BookingService(authorization, receiptThrottle: receiptThrottle), GuestTokens);
 
     public StaffAuthService StaffAuthService(IPasswordHasher? hasher = null, IStaffTokenIssuer? tokens = null, ILoginThrottle? throttle = null) =>
         new(Staff, hasher ?? new FakePasswordHasher(), tokens ?? new FakeStaffTokenIssuer(), throttle ?? Substitute.For<ILoginThrottle>(), UnitOfWork, StaffAudit, CallContext, Clock);
@@ -398,6 +420,10 @@ public sealed class ServiceWorld
 
     public Guest AddGuest(string firstName = "Anna", string lastName = "Jensen") =>
         AddGuestCore(Guest.Create(firstName, lastName, "anna@example.com", "+4512345678", "Denmark", null));
+
+    /// <summary>Stores a guest with an email and a passport number of the test's own, for the guest sign-in (MIL-018).</summary>
+    public Guest AddGuest(string firstName, string lastName, string email, string? passportNumber) =>
+        AddGuestCore(Guest.Create(firstName, lastName, email, "+4512345678", "Denmark", passportNumber));
 
     public Booking AddBooking(int roomId, int guestId, int startOffsetDays = 0, int nights = 3)
     {

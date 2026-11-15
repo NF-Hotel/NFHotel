@@ -108,6 +108,10 @@ public static class ErrorMessages
             [ErrorCodes.Api.UnexpectedResponse] = "The hotel system answered something we couldn't use. Please try again.",
             [ErrorCodes.Api.StaffUnauthorized] = "Your session has ended. Sign in again.",
             [ErrorCodes.Api.Forbidden] = "Your role isn't allowed to do that.",
+
+            // The one refusal of the guest sign-in (MIL-018): a wrong email, an unknown number, a cancelled booking and an
+            // ended guest session read alike, so the text tells nobody which of them it was.
+            [ErrorCodes.Api.GuestUnauthorized] = "We couldn't find that booking. Check the booking number and the email you booked with.",
             [ErrorCodes.Staff.InvalidCredentials] = "The user name or the password is wrong.",
             [ErrorCodes.Staff.TooManyAttempts] = "Too many failed attempts. Wait fifteen minutes and try again.",
             [AiDefaultErrors.PurposeInvalid] = "The default AI model can be set for the website or the market analysis.",

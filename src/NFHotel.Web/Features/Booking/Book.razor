@@ -1,6 +1,7 @@
 @page "/book"
 @rendermode InteractiveServer
 @inherits NFHotel.Web.Common.CancellableComponentBase
+@using NFHotel.Web.Security
 
 @inject BookingFlowViewModel ViewModel
 
@@ -12,8 +13,11 @@
     BookingFlowViewModel (UI-Spec section 4, B-10). Book.razor.cs contains only forwarding and the
     hand-over of the address to the viewmodel.
 
-    The receipt stays on this page as step 4. The flow does not move on to /booking/{number}: since MIL-079 that
-    page asks for the email as well, and the guest who has just booked should not have to type it again.
+    The receipt stays on this page as step 4. The flow does not move on to the sign-in on /booking: that page asks for
+    the email as well, and the guest who has just booked should not have to type it again. The booking answer carries
+    the guest's session (MIL-018, ADR-0047 decision 2), but this page runs in a circuit, which cannot set a cookie. The
+    button "Manage your booking" therefore posts a one-time ticket for the session to /my-booking/start, whose answer
+    sets the guest cookie and opens the guest's own booking.
 
     PublicLayout is the default layout (Routes.razor), so there is no @@layout line.
 
@@ -269,13 +273,20 @@
                     <BookingReceiptCard Receipt="ViewModel.Confirmation" />
 
                     <p class="muted">
-                        To see the booking again later, open <a href="@ReceiptUrl">Find your booking</a> and enter
-                        the booking number with the email you booked with.
+                        Manage your booking now to see it, change the dates or cancel it. To come back later, open
+                        <a href="@ReceiptUrl">Find your booking</a> and enter the booking number with the email you
+                        booked with.
                     </p>
 
-                    <div class="row">
+                    <form method="post" action="@GuestSignInRegistration.SessionPath" class="row">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="@GuestSignInRegistration.TicketField" value="@ViewModel.SessionTicket" />
+                        @if (ViewModel.SessionTicket is not null)
+                        {
+                            <button type="submit" class="btn btn-primary">Manage your booking</button>
+                        }
                         <button type="button" class="btn btn-ghost" @onclick="StartOver">Book another stay</button>
-                    </div>
+                    </form>
                 </section>
             }
         </div>

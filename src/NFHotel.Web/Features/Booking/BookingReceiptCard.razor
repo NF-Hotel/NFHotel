@@ -11,15 +11,16 @@
 @using NFHotel.Domain.Repositories
 
 @*
-    The receipt for one booking. Used both as step 4 in the flow and on the lookup page /booking once the number and
-    the email have found the booking.
+    The receipt for one booking. Used both as step 4 in the flow and on /my-booking, the own booking of a guest whom
+    /booking has signed in with the number and the email of the booking (MIL-018, ADR-0047).
 
     BR-C-06 — WHY THERE IS NO NAME HERE
     The card takes BookingReceiptDto, which has only booking number, period, number of nights, room type and status
     (BR-C-05). There is no guest in it, so the card cannot show a name, an email or a phone number, not even by mistake.
     Before MIL-079 the card took the whole booking and left the guest fields unused, while the number alone opened the
-    page: FLZ-000123 is one digit from the next guest's booking. Now the API answers the public lookup with the receipt
-    only, and only for the number together with the email of the booking (MIL-079).
+    page: FLZ-000123 is one digit from the next guest's booking. MIL-079 made the number open the receipt only together
+    with the email of the booking; since MIL-018 the two sign the guest in, and the API answers a guest only about the
+    own booking.
 
     There is no price either. The price model does not exist in Phase 1 (BR-C-05, BR-31), and
     "Payment on arrival" is the honest answer rather than an empty field that looks like a fault.

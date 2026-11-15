@@ -14,7 +14,10 @@ public interface IGuestService
     /// <param name="guestId">The id of the guest.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The details of the guest, or <see cref="ErrorCodes.Guest.NotFound"/>.</returns>
-    /// <remarks>Also used to prefill a new booking for a known guest.</remarks>
+    /// <remarks>
+    /// Also used to prefill a new booking for a known guest. The signed-in guest of a booking reads only the guest of
+    /// that booking, without the passport number; any other guest gives <see cref="ErrorCodes.Api.Forbidden"/> (MIL-018).
+    /// </remarks>
     Task<Result<GuestDetailsDto>> GetByIdAsync(int guestId, CancellationToken cancellationToken = default);
 
     /// <summary>

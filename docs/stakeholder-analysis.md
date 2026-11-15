@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (instructed by the user) | Token role row and revocation rationale changed for the throwaway container | [7c6d8f8] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added S05, the hotel staff who use the back office (MIL-007) | [a29c54a] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added S05, the hotel staff who use the back office (MIL-007) | [a29c54a] |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Added S06, the hotel guests, who see and change their own booking with its number and email (MIL-018, UC-010), and the conflict of S06 with S01 and its mitigation<br>The concerns get stable IDs, CN-001 to CN-007, as the concern register<br>Removed the commit links that no row uses<br>Go in RC-390; accepted by the AI as stand-in for S01 | pending |
 
 ---
 
@@ -31,6 +31,7 @@ stable IDs. The method is a power/interest grid; concerns are mapped to FURPS+.
 | S03 | Proxmox VE administrator | Owner of the Proxmox server | NFHotel 2.0 project (held by S01 for now) | HIGH | MEDIUM | Keep Satisfied | The server is never changed or loaded by tests |
 | S04 | Valdamar | Stand-in for the Product Owner; reviewer and approver of the artifacts | NFHotel 2.0 project | HIGH | HIGH | Manage Closely | A clear plan and a result he can accept or reject |
 | S05 | Hotel staff | Receptionists and housekeeping who use the back office to manage bookings, rooms and guests; represented by S01 and S04 until real users are named | NF Hotel | MEDIUM | HIGH | Keep Informed | Rules that stop double booking and wrong status changes, and a screen that shows what is allowed |
+| S06 | Hotel guests | The persons a booking is made for, who book on the website and serve their own booking with its number and email; represented by S01 and S04 until real guests are asked | NF Hotel | LOW | HIGH | Keep Informed | Their own booking, and nobody else's, without an account or a password; their personal data kept private |
 
 ## Power/Interest Classification Rationale
 
@@ -39,17 +40,21 @@ stable IDs. The method is a power/interest grid; concerns are mapped to FURPS+.
 - S03 can refuse access to the Docker host or stop the container at any time: high power; interest is medium because the tests are small and read-only.
 - S04 (Valdamar) stands in for the Product Owner: he reviews and accepts every artifact, so high power and high interest. S01 and S03 are the same group today (Team 2); the roles stay separate so the Business Case can name who guards the server.
 - S05 uses the back office every day but does not decide the project: medium power, high interest. No real staff member has been named, so S01 and S04 speak for S05 until one is.
+- S06 is affected by every booking but has no say in the project: low power, high interest. No real guest has been asked, so S01 and S04 speak for S06 until one is.
 
 ## Primary Concerns and FURPS+ Mapping
 
-| ID | Concern | FURPS+ attribute |
-| --- | --- | --- |
-| S01 | Run without interaction | Usability, Functionality |
-| S01 | Credentials stay out of git | Functionality (security) |
-| S02 | Clear pass/fail message naming the failing check | Usability |
-| S03 | Read-only access, bounded request time | Reliability, Performance |
-| S04 | Reviewable, traceable artifacts | Maintainability |
-| S05 | No double booking; only allowed actions offered | Functionality, Reliability |
+The concern register: each concern has a stable ID, which is never renumbered or reused.
+
+| Concern ID | Stakeholder | Concern | FURPS+ attribute |
+| --- | --- | --- | --- |
+| CN-001 | S01 | Run without interaction | Usability, Functionality |
+| CN-002 | S01 | Credentials stay out of git | Functionality (security) |
+| CN-003 | S02 | Clear pass/fail message naming the failing check | Usability |
+| CN-004 | S03 | Read-only access, bounded request time | Reliability, Performance |
+| CN-005 | S04 | Reviewable, traceable artifacts | Maintainability |
+| CN-006 | S05 | No double booking; only allowed actions offered | Functionality, Reliability |
+| CN-007 | S06 | Only the own booking, without an account; personal data kept private | Usability, Functionality (security) |
 
 ## Communication Requirements
 
@@ -60,6 +65,7 @@ stable IDs. The method is a power/interest grid; concerns are mapped to FURPS+.
 | S03 | Chat | Once | Root password in `pve.env` only; token created per run | MIL-003 |
 | S04 | Chat | Per milestone | Review records and run summary | MIL-001 |
 | S05 | Through S01 and S04 | On change | The domain rules in the Domain Dictionary and the Domain Model | MIL-007 |
+| S06 | Through S01 and S04 | On change | The guest pages and the sign-in rules of UC-010 | MIL-018 |
 
 ## Conflicting Interests and Mitigations
 
@@ -67,6 +73,7 @@ stable IDs. The method is a power/interest grid; concerns are mapped to FURPS+.
 | --- | --- | --- |
 | Useful tests (deep checks) versus no server changes | S02, S03 | Only GET requests; deeper checks need a new milestone and S03's consent |
 | Easy sharing of config versus secret hygiene | S02, S01 | Share `pve.env.example` only; `pve.env` stays local and ignored |
+| Easy access to the own booking versus the privacy of every other guest | S06, S01 | The booking number and the email, five failed attempts per number in 15 minutes, one booking per sign-in for two hours, and no passport number in any answer to a guest (ADR-0047) |
 
 ## Traceability Analysis
 
@@ -74,12 +81,13 @@ stable IDs. The method is a power/interest grid; concerns are mapped to FURPS+.
 
 | Stakeholder | Concern | Business Case objective |
 | --- | --- | --- |
-| S01 | Run without interaction | Objective 2 |
-| S01 | Credentials stay out of git | Objective 1 |
-| S02 | Clear pass/fail message | Objective 3 |
-| S03 | Read-only access | Objective 4 |
-| S04 | Reviewable, traceable artifacts | Objectives 1-4 |
-| S05 | No double booking; only allowed actions offered | Objective 10 |
+| S01 | CN-001 Run without interaction | Objective 2 |
+| S01 | CN-002 Credentials stay out of git | Objective 1 |
+| S02 | CN-003 Clear pass/fail message | Objective 3 |
+| S03 | CN-004 Read-only access | Objective 4 |
+| S04 | CN-005 Reviewable, traceable artifacts | Objectives 1-4 |
+| S05 | CN-006 No double booking; only allowed actions offered | Objective 10 |
+| S06 | CN-007 Only the own booking, without an account | Objective 21 |
 
 ## Sign-Off
 
@@ -88,7 +96,4 @@ Reviewer and approver: S04 (in autonomous mode the AI acts as his stand-in, see 
 ---
 
 [BC-001]: ./business-case.md
-[b690b57]: https://github.com/NF-Hotel/NFHotel/commit/b690b576d531e9f26709b6f21275cbc675065d03
-[88a4946]: https://github.com/NF-Hotel/NFHotel/commit/88a49468aa21b75a0a5f9c8fd5a214164e1676ca
-[7c6d8f8]: https://github.com/NF-Hotel/NFHotel/commit/7c6d8f85d2177b9fe9f2d11d175df7f0b8f1b5d5
 [a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d

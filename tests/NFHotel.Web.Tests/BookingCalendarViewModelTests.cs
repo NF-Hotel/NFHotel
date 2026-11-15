@@ -1,6 +1,5 @@
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Errors;
-using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.TestSupport;

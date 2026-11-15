@@ -17,15 +17,21 @@ public sealed class ApiGateway
 {
     private readonly HttpClient _http;
     private readonly StaffCallContext? _staff;
+    private readonly GuestCallContext? _guest;
 
     /// <summary>Creates the gateway.</summary>
     /// <param name="http">The client, with the base address, the token and the timeout set.</param>
     /// <param name="staff">Holds the staff token of the call, if a member of staff is signed in (ADR-0005).</param>
-    public ApiGateway(HttpClient http, StaffCallContext? staff = null)
+    /// <param name="guest">
+    /// Holds the guest token of the call, if a guest is signed in (MIL-018). It is sent only when the call has no staff
+    /// token, so a call never carries both and the API never has to choose.
+    /// </param>
+    public ApiGateway(HttpClient http, StaffCallContext? staff = null, GuestCallContext? guest = null)
     {
         ArgumentNullException.ThrowIfNull(http);
         _http = http;
         _staff = staff;
+        _guest = guest;
     }
 
     /// <summary>Gets a resource.</summary>
@@ -78,14 +84,17 @@ public sealed class ApiGateway
     public Task<Result> PostWithoutValueAsync(string path, object? body, CancellationToken cancellationToken) =>
         SendAsync(HttpMethod.Post, path, body, ReadWithoutValueAsync, Result.Failure, cancellationToken);
 
-    /// <summary>Posts a body to an endpoint that answers with a value, without a staff token, such as the sign-in.</summary>
+    /// <summary>
+    /// Posts a body to an endpoint that answers with a value, without a staff or guest token, such as the staff and the
+    /// guest sign-in.
+    /// </summary>
     /// <typeparam name="TValue">The type of the value.</typeparam>
     /// <param name="path">The path below the base address.</param>
     /// <param name="body">The request body.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The result; a 401 or 429 from the API keeps its own error code.</returns>
     public Task<Result<TValue>> PostAnonymousAsync<TValue>(string path, object body, CancellationToken cancellationToken) =>
-        SendAsync(HttpMethod.Post, path, body, ReadValueAsync<TValue>, Result<TValue>.Failure, cancellationToken, withStaffToken: false);
+        SendAsync(HttpMethod.Post, path, body, ReadValueAsync<TValue>, Result<TValue>.Failure, cancellationToken, withCallerToken: false);
 
     private async Task<TResult> SendAsync<TResult>(
         HttpMethod method,
@@ -94,13 +103,18 @@ public sealed class ApiGateway
         Func<HttpResponseMessage, CancellationToken, Task<TResult>> read,
         Func<string, TResult> fail,
         CancellationToken cancellationToken,
-        bool withStaffToken = true)
+        bool withCallerToken = true)
         where TResult : Result
     {
         using var request = new HttpRequestMessage(method, path);
-        if (withStaffToken && !string.IsNullOrEmpty(_staff?.Token))
+        if (withCallerToken && !string.IsNullOrEmpty(_staff?.Token))
         {
             request.Headers.TryAddWithoutValidation(ApiAuthentication.StaffTokenHeader, _staff.Token);
+        }
+        else if (withCallerToken && !string.IsNullOrEmpty(_guest?.Token))
+        {
+            // The guest token goes only where no staff token does (MIL-018): one call, one caller.
+            request.Headers.TryAddWithoutValidation(ApiAuthentication.GuestTokenHeader, _guest.Token);
         }
 
         if (!string.IsNullOrEmpty(_staff?.ClientAddress))
@@ -136,12 +150,16 @@ public sealed class ApiGateway
         }
     }
 
-    // A 401 is the service token that was refused, unless the API says it is the staff token or the sign-in (ADR-0005).
+    // A 401 is the service token that was refused, unless the API says it is the staff token or the sign-in (ADR-0005),
+    // or the guest token or the guest sign-in (MIL-018).
     private static TResult UnauthorizedResult<TResult>(TResult answer, Func<string, TResult> fail)
         where TResult : Result
     {
         var code = answer.FirstError?.Code;
-        return code is not null && (code == ErrorCodes.Api.StaffUnauthorized || code.StartsWith("staff.", StringComparison.Ordinal))
+        return code is not null
+            && (code == ErrorCodes.Api.StaffUnauthorized
+                || code == ErrorCodes.Api.GuestUnauthorized
+                || code.StartsWith("staff.", StringComparison.Ordinal))
             ? answer
             : fail(ErrorCodes.Api.Unauthorized);
     }

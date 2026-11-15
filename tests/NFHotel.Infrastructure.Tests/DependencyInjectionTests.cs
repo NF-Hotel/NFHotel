@@ -53,6 +53,9 @@ public sealed class DependencyInjectionTests
     [InlineData(typeof(IPasswordHasher))]
     [InlineData(typeof(IStaffTokenIssuer))]
     [InlineData(typeof(ILoginThrottle))]
+    [InlineData(typeof(IGuestTokenIssuer))]
+    [InlineData(typeof(IGuestCallContext))]
+    [InlineData(typeof(IGuestAccessService))]
     public void GetRequiredService_EveryPortAndService_IsRegistered(Type serviceType)
     {
         using var provider = BuildProvider();
