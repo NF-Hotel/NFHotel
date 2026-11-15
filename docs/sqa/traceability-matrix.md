@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-028, which the matrix did not have: the milestone with its plan reviews and its gate, RC-382 (No-Go for now), and the code of the market analysis service with its review, RC-381 (QC-PY-001 No-Go, QC-YML-001 Go); accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [b8c8a9c] |
-| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-051, RC-384 (No-Go for now: criterion 7 fails on the live tailnet filter, and the risk exception that S01 chose waits for S04), on the row of the milestone; the change of pull request 759, `TaskReportMissing` watching `backup_check`, and its review RC-383 (Go) on the rows of the code of MIL-051 and MIL-076; accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-051, RC-384 (No-Go for now: criterion 7 fails on the live tailnet filter, and the risk exception that S01 chose waits for S04), on the row of the milestone; the change of pull request 759, `TaskReportMissing` watching `backup_check`, and its review RC-383 (Go) on the rows of the code of MIL-051 and MIL-076; accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [9da77ab] |
 
 ---
 
@@ -523,3 +523,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-381]: ./reviews/rc-381-mil-028-service-code.md
 [RC-382]: ./reviews/rc-382-mil-028-gate.md
 [b8c8a9c]: https://github.com/NF-Hotel/NFHotel/commit/b8c8a9c1ec6cde722a4d6aeb89648fd7c743bfd8
+[9da77ab]: https://github.com/NF-Hotel/NFHotel/commit/9da77ab7a72173754403f906237c210c1874d44c

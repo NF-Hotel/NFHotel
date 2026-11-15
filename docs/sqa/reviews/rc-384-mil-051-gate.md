@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-051 on the install of the pull on `nf-monitoring`, a documents merge that deployed nothing and a monitoring merge that the pull deployed by itself in 13 minutes and 15 seconds; No-Go for now, criterion 7 fails on the live tailnet filter, and the risk exception that S01 chose waits for the approval of S04; mode autonomous, not independent | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-051 on the install of the pull on `nf-monitoring`, a documents merge that deployed nothing and a monitoring merge that the pull deployed by itself in 13 minutes and 15 seconds; No-Go for now, criterion 7 fails on the live tailnet filter, and the risk exception that S01 chose waits for the approval of S04; mode autonomous, not independent | [9da77ab] |
 
 ---
 
@@ -173,3 +173,4 @@ checked again in a delta re-review, which adds the table of risk exceptions, and
 [RC-383]: ./rc-383-mil-051-first-pull-deploy.md
 [PRC-001]: ../../../framework/process/review-checklist-process.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[9da77ab]: https://github.com/NF-Hotel/NFHotel/commit/9da77ab7a72173754403f906237c210c1874d44c

@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go | [9da77ab] |
 
 ---
 
@@ -100,3 +100,4 @@ of F3 of [RC-364] has passed. The reviewer is not independent.
 [RC-366]: ./rc-366-mil-051-code.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [93f5514]: https://github.com/NF-Hotel/NFHotel/commit/93f5514f5986fabfd8e84eeea3c79d6e2cf5598a
+[9da77ab]: https://github.com/NF-Hotel/NFHotel/commit/9da77ab7a72173754403f906237c210c1874d44c
