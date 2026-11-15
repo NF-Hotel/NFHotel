@@ -50,8 +50,9 @@ public static class GuestClaims
     /// <param name="guest">The principal of the guest cookie, or <c>null</c> when there is none.</param>
     /// <returns>The key of the booking, or <c>null</c> when no guest is signed in.</returns>
     public static int? BookingIdOf(ClaimsPrincipal? guest) =>
-        TokenOf(guest) is not null
-        && int.TryParse(guest?.FindFirst(BookingClaim)?.Value, NumberStyles.None, CultureInfo.InvariantCulture, out int bookingId)
+        guest is not null
+        && TokenOf(guest) is not null
+        && int.TryParse(guest.FindFirst(BookingClaim)?.Value, NumberStyles.None, CultureInfo.InvariantCulture, out int bookingId)
         && bookingId > 0
             ? bookingId
             : null;
