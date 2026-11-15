@@ -177,7 +177,7 @@ S03 and a repository administrator do this once, in this order.
    - `TS_OIDC_CLIENT_ID` and `TS_OIDC_AUDIENCE` (from Tailscale);
    - `NFHOTEL_VM_HOST` (the tailnet name of the VM, for example `nf-hotel`).
 
-   No secret is needed in the environment. The repository has one secret, `SONAR_TOKEN`: an analysis token from SonarQube Cloud (My Account, Security), used with Automatic Analysis turned off in the project (Administration, Analysis Method); renew it before it expires (ADR-0033).
+   No secret is needed in the environment. The repository has one secret, `SONAR_TOKEN`: an analysis token from SonarQube Cloud (My Account, Security), used with Automatic Analysis turned off in the project (Administration, Analysis Method); renew it before it expires (ADR-0033). The weekly comparison of the public edge has an environment of its own, `cloudflare-read`, with seven secrets; [Public Access](Public-Access#set-up-the-weekly-comparison) sets it up (ADR-0046).
 3. **The packages stay private.** Decision D2 of DSA-001 recommended public packages; S01 chose private ones on 2026-11-08, and the release and the deploy work with that:
    - CD logs in to GHCR with the job token (`packages: read`) only to verify the attestations of each digest;
    - the VM pulls the images with a read credential of its own, set up on the VM and never stored in the repository;

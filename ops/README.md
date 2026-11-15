@@ -7,7 +7,8 @@ Everything that builds, releases, deploys, secures and runs NF Hotel (ADR-0016).
 | Path | What it is |
 | --- | --- |
 | `deploy/` | Docker Compose files per service, nginx, systemd units, the patch layer on the frozen market-analysis image (ADR-0030); settings examples (`*.env.example`) |
-| `scripts/` | Release build and scan, CD steps, the deploy command of the VM (`deploy-release.sh`), deploy, backup, restore, database preparation, Proxmox and VM setup, the throwaway E2E stack, the DAST scan |
+| `infra/cloudflare/` | The routes of the Cloudflare tunnel and the Access application of the back office, in OpenTofu with no stored state (ADR-0046); `edge.env.example` is the example of its git-ignored settings |
+| `scripts/` | Release build and scan, CD steps, the deploy command of the VM (`deploy-release.sh`), deploy, backup, restore, database preparation, Proxmox and VM setup, the throwaway E2E stack, the DAST scan, OpenTofu for the public edge (`edge-tofu.sh`) and its weekly comparison |
 | `security/` | `trivyignore.yaml` and `zap-rules.tsv`: accepted findings, each with a reason and an expiry |
 | `tests/` | Tests of the scripts and the configuration; `tests/lint.sh` runs every linter of `ops/` and of `.github/`. `tests/NFHotel.Proxmox.Tests` is a .NET solution of its own; its live tests run through `scripts/run-proxmox-tests.sh` |
 | `deploy.env.example`, `pve.env.example` | Settings of `scripts/deploy.sh` and of the Proxmox tests (copy without `.example`; git-ignored) |

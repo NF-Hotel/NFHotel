@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0028 |
-| CrossReference | [ADR-0006], [ADR-0009], [ADR-0015], [ADR-0024], [ADR-0025], [MIL-040] |
+| CrossReference | [ADR-0006], [ADR-0009], [ADR-0015], [ADR-0024], [ADR-0025], [MIL-040], [ADR-0046] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-25 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-040, which S01 accepted in chat on 2026-10-25; the choice of Cloudflare Tunnel and the domain are S01's | [21ba03e] |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 3 changed by ADR-0029: `/admin` on the public name behind Cloudflare Access (MIL-041) | [1cc0e5d] |
+| 2026-10-25 | Deprecated | mikemike | AI as stand-in for S01 | Decision 3 changed by ADR-0029: `/admin` on the public name behind Cloudflare Access (MIL-041) | [1cc0e5d] |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Decision 8 changed by ADR-0046: the routes of the tunnel are code in `ops/infra/cloudflare/`, changed by a pull request, applied by S01 or S03 and compared with the account every week; the zone settings stay in the dashboard (MIL-078) | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -41,7 +41,7 @@ We follow option 3.
 5. **The token** is a secret file (ADR-0024): S01 writes it once into `cloudflared.env` on the VM, the deploy writes it to `secrets/TUNNEL_TOKEN`, and `cloudflared` reads it with `--token-file`. It is never in git, a log or an environment variable, and `check-secret-env.sh` checks the tunnel when it runs.
 6. **Production.** The deploy of a release runs the API and the web application as `Production` whatever the settings files say, so an error shows the error page and never a stack trace.
 7. **Optional and safe to lose.** Without `cloudflared.env` the deploy leaves the tunnel out and the site stays on the tailnet. A tunnel that does not turn healthy only warns: the hotel keeps running on the tailnet, and `PublicSiteDown` alerts.
-8. **Cloudflare settings,** set by S01 in the dashboard and written down in the wiki page Public-Access: the public host name pointing to `http://nginx:8082`, SSL mode Full, "Always Use HTTPS", and a rate-limiting rule on the sign-in paths.
+8. **Cloudflare settings,** set by S01 in the dashboard and written down in the wiki page Public-Access: the public host name pointing to `http://nginx:8082`, SSL mode Full, "Always Use HTTPS", and a rate-limiting rule on the sign-in paths. **Changed by ADR-0046 (2026-11-15):** the routes of the tunnel, the public host name among them, are code in `ops/infra/cloudflare/`, changed by a pull request and applied by S01 or S03 from their own machine, and a weekly plan compares them with the account; the SSL mode, "Always Use HTTPS" and the rate-limiting rule stay in the dashboard.
 9. **Personal data (GDPR).** Cloudflare ends TLS and so processes what guests send (name, e-mail, phone, passport number) as a processor under its Data Processing Addendum, which applies to every Cloudflare account. It stores no page content; its logs hold addresses and paths. The hotel names Cloudflare as a processor in its privacy notice.
 10. **Turning it off.** Removing `cloudflared.env` and deploying, or pausing the tunnel in the dashboard, takes the site off the internet at once and leaves the tailnet unchanged.
 
@@ -74,5 +74,5 @@ We follow option 3.
 [ADR-0024]: ./adr-0024-secrets-as-files.md
 [ADR-0025]: ./adr-0025-recovery-objectives.md
 [MIL-040]: ../milestones/mil-040-public-access.md
-[21ba03e]: https://github.com/NF-Hotel/NFHotel/commit/21ba03eedb3836936f623ea3bd93871f097cab3c
+[ADR-0046]: ./adr-0046-the-tunnel-routes-and-access-in-opentofu.md
 [1cc0e5d]: https://github.com/NF-Hotel/NFHotel/commit/1cc0e5d9c925b30a189e5e8ae8e93957c923bbaf

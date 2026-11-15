@@ -1,7 +1,8 @@
 # Environment Files
 
 This page explains every `*.env` file of the deployment: what it is for, who reads it, which keys matter and which ones
-are secrets. The files live in `ops/` and `ops/deploy/<service>/`.
+are secrets. The files live in `ops/` and `ops/deploy/<service>/`, and the settings of the public edge in
+`ops/infra/cloudflare/`.
 
 ## How the files work
 
@@ -47,6 +48,7 @@ are secrets. The files live in `ops/` and `ops/deploy/<service>/`.
 | `ops/deploy/alloy/alloy.env` | Alloy (telemetry) | monitoring only | no |
 | `ops/deploy/monitoring/monitoring.env` | Grafana, Prometheus, Loki | monitoring host only | no |
 | `ops/deploy/backup-target/backup-target.env` | backup target | backup host only | public key only |
+| `ops/infra/cloudflare/edge.env` | `edge-tofu.sh` (the public edge in OpenTofu) | on the machine of S01 or S03 only | no token; the identifiers of the Cloudflare account and the addresses of the staff, kept out of git |
 
 `dev-up.sh` also writes `ops/deploy/nfhotel-api/dev-staff.env` (git-ignored) with the passwords of the three
 development back office accounts. It is for development only and is never made for a release.
@@ -182,6 +184,17 @@ are published. See [Monitoring](Monitoring).
 On the backup host. `BACKUP_PUBLIC_KEY` is the public key of root on the server (not secret), `BACKUP_TARGET_BIND` and
 `BACKUP_TARGET_PORT` are the tailnet address and port of ssh, and `BACKUP_TARGET_DIR` is where the encrypted backups land.
 See [Disaster Recovery](Disaster-Recovery).
+
+### `ops/infra/cloudflare/edge.env`
+
+Only on the machine of S01 or S03, for `ops/scripts/edge-tofu.sh`, which plans and applies the routes of the tunnel and
+the Access application (ADR-0046). It holds the values of `ops/infra/cloudflare/variables.tf`: `TF_VAR_account_id`,
+`TF_VAR_tunnel_id`, `TF_VAR_access_application_id`, `TF_VAR_access_policy_id`, `TF_VAR_access_team_name`, and
+`TF_VAR_team_emails`, the addresses of the policy `Team` as a JSON list. The token is never in it: `edge-tofu.sh` reads
+`CLOUDFLARE_API_TOKEN`, or asks for it without echo. Docker reads the file, so a value has no quotes around it. The same
+values are the secrets of the environment `cloudflare-read` of the weekly comparison: change both together, or the
+comparison reports a difference after the next apply. See [Public Access](Public-Access#the-settings-outside-git);
+`dev-up.sh` never makes this file.
 
 ## Secrets that must match
 

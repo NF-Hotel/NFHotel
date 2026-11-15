@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0029 |
-| CrossReference | [ADR-0028], [ADR-0005], [MIL-041], [MIL-072] |
+| CrossReference | [ADR-0028], [ADR-0005], [MIL-041], [MIL-072], [ADR-0046] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Deprecated | mikemike | S01 | Decisions 2, 3 and 5 made precise by MIL-072, after the validating route was found second in the list and its path and the guard of nginx were found to compare letter case: the validating route first, with the path `(?i)^/admin`; the guard of nginx for every spelling of `/admin`; the order of the routes checked in the log of `cloudflared` | [a1a7092] |
-| 2026-11-11 | Accepted | mikemike | AI as stand-in for S01 | Decision 1: the session lasts 1 week, as the Access application is set; S01 decided in chat that this record follows the setting; accepted at the gate of MIL-072 (RC-339) | [3afb6a3] |
+| 2026-11-11 | Deprecated | mikemike | AI as stand-in for S01 | Decision 1: the session lasts 1 week, as the Access application is set; S01 decided in chat that this record follows the setting; accepted at the gate of MIL-072 (RC-339) | [3afb6a3] |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Decision 5 and two negative consequences changed by ADR-0046: the routes in their order, the Access application and its policy are code in `ops/infra/cloudflare/`, applied by S01 or S03 and compared with the account every week; the addresses of the staff are a setting outside git (MIL-078) | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -40,7 +40,7 @@ We follow option 3. It changes ADR-0028 decision 3 for `/admin` only.
 2. **The tunnel validates the token.** A published route of the tunnel, path `(?i)^/admin`, has "Validate the Access JWT at the tunnel" on, with the team name and the Application Audience (AUD) tag of the Access application, and it stands first in the list of routes: `cloudflared` takes the first route that matches, so below the route without a path it would never be used. The path ignores letter case, as the routes of the web application do. So a request for `/admin`, in any spelling, that did not pass Access stops at `cloudflared` and never reaches the virtual machine (VM).
 3. **nginx adds a second line.** The public listener serves `/admin`, in any spelling, only to requests that carry `Cf-Access-Jwt-Assertion` (`location ~* ^/admin`); without it, `/admin` still answers 404. nginx does not validate the token; the tunnel does.
 4. **Two locks.** Access decides who may see the sign-in; the hotel's own sign-in, roles and per-address limit stay as they are. A leaked password alone is not enough from the internet.
-5. **The order of the rollout.** The Access application and the validating route, first in the list, exist before the nginx change is deployed, so `/admin` is never open on the public name without Access. After a change of the routes, the order is checked in the log of `cloudflared`, which writes its routes in order at every new configuration.
+5. **The order of the rollout.** The Access application and the validating route, first in the list, exist before the nginx change is deployed, so `/admin` is never open on the public name without Access. After a change of the routes, the order is checked in the log of `cloudflared`, which writes its routes in order at every new configuration. **Changed by ADR-0046 (2026-11-15):** the routes in their order, the Access application and its policy are code in `ops/infra/cloudflare/`; a change of them is a pull request, applied by S01 or S03 from their own machine, and a weekly plan with a token that reads reports any difference between the account and the code. The log of `cloudflared` stays the check of the order right after a change.
 
 ## Consequences
 
@@ -52,8 +52,8 @@ We follow option 3. It changes ADR-0028 decision 3 for `/admin` only.
 **Negative:**
 
 - Cloudflare learns the e-mail addresses of the staff and when they sign in.
-- A member of staff needs access to their e-mail to get a code; adding or removing someone is a change in the Cloudflare dashboard, written down in the wiki page Public-Access.
-- The routes of the tunnel live in the dashboard, not in git, so no test of the repository sees their order; a later change of them is seen in the log of `cloudflared` (decision 5).
+- A member of staff needs access to their e-mail to get a code; adding or removing someone is a change in the Cloudflare dashboard, written down in the wiki page Public-Access. **Changed by ADR-0046 (2026-11-15):** the addresses are a setting outside git, applied with the code; the dashboard stays the way to take someone off the list at once, and the weekly comparison then reports the difference until the setting follows.
+- The routes of the tunnel live in the dashboard, not in git, so no test of the repository sees their order; a later change of them is seen in the log of `cloudflared` (decision 5). **Changed by ADR-0046 (2026-11-15):** the routes are code in git, and the weekly comparison finds a change of their order within a week.
 
 ## Affected Artifacts
 
@@ -67,5 +67,5 @@ We follow option 3. It changes ADR-0028 decision 3 for `/admin` only.
 [ADR-0028]: ./adr-0028-public-access-through-cloudflare-tunnel.md
 [MIL-041]: ../milestones/mil-041-admin-behind-cloudflare-access.md
 [MIL-072]: ../milestones/mil-072-the-access-check-on-every-admin-path.md
-[a1a7092]: https://github.com/NF-Hotel/NFHotel/commit/a1a709262eda420d46bb2be56f639718b97ba48c
+[ADR-0046]: ./adr-0046-the-tunnel-routes-and-access-in-opentofu.md
 [3afb6a3]: https://github.com/NF-Hotel/NFHotel/commit/3afb6a38797598a205e2c4c82dd19c352967ae89
