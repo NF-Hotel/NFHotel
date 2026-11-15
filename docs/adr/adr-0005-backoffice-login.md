@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Names the later decisions that changed it (RC-161): ADR-0006, ADR-0008, ADR-0011, ADR-0015, ADR-0017 | [12a64c3] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | The current state names ADR-0047: the Guest role and the guest login of MIL-018, with the own-resource check that replaces the open receipt page<br>Go in RC-388; accepted by the AI as stand-in for S01 | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | The current state names ADR-0047: the Guest role and the guest login of MIL-018, with the own-resource check that replaces the open receipt page<br>Go in RC-388; accepted by the AI as stand-in for S01 | [9e72b0e] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -91,3 +91,4 @@ Quality attributes: security improves (authentication, least privilege, defence 
 [ADR-0047]: ./adr-0047-guest-login.md
 [RC-388]: ../sqa/reviews/rc-388-adr-0047.md
 [12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
+[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee

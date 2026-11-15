@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-11 | Deprecated | Claude (AI) | S01 | US-001.12 reworded: the suggestions come from the market analysis service, for the holidays and weeks of the next two months (MIL-071); accepted by S01 in chat on 2026-11-11 | [f674e8a] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.13, a guest sees, moves and cancels the own booking (MIL-018, UC-010)<br>The Version History cut to its two latest rows, the blank line that split it removed<br>Go in RC-390; accepted by the AI as stand-in for S01 | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.13, a guest sees, moves and cancels the own booking (MIL-018, UC-010)<br>The Version History cut to its two latest rows, the blank line that split it removed<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
 
 ---
 
@@ -265,3 +265,4 @@ for US-001.02.
 [MIL-055]: ./milestones/mil-055-room-price-suggestions.md
 [MIL-018]: ./milestones/mil-018-guest-login.md
 [f674e8a]: https://github.com/NF-Hotel/NFHotel/commit/f674e8a3fe47dfe3c36bbc59f4eeae6180985b0d
+[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee

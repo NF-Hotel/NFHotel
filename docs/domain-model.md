@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-01 | Deprecated | Claude (AI) | S01 | Added Room rate, Price change, Price suggestion and Pricing settings, and four actions of the Audit event (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-264 Go-with-conditions | [3a17eee] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Cited UC-010 and SSD-001, the first System Sequence Diagram (MIL-018); no concept added or changed: a guest signs in with the booking number of the Booking and the email of its Guest<br>Go in RC-390; accepted by the AI as stand-in for S01 | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Cited UC-010 and SSD-001, the first System Sequence Diagram (MIL-018); no concept added or changed: a guest signs in with the booking number of the Booking and the email of its Guest<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
 
 ---
 
@@ -158,3 +158,4 @@ None. No concept is a kind of another concept.
 [SSD-001]: ./use-cases/uc-010/ssd.md
 [RC-036]: ./sqa/reviews/rc-036-domain-model.md
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
+[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee

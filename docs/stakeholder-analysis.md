@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Added S05, the hotel staff who use the back office (MIL-007) | [a29c54a] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Added S06, the hotel guests, who see and change their own booking with its number and email (MIL-018, UC-010), and the conflict of S06 with S01 and its mitigation<br>The concerns get stable IDs, CN-001 to CN-007, as the concern register<br>Removed the commit links that no row uses<br>Go in RC-390; accepted by the AI as stand-in for S01 | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Added S06, the hotel guests, who see and change their own booking with its number and email (MIL-018, UC-010), and the conflict of S06 with S01 and its mitigation<br>The concerns get stable IDs, CN-001 to CN-007, as the concern register<br>Removed the commit links that no row uses<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
 
 ---
 
@@ -97,3 +97,4 @@ Reviewer and approver: S04 (in autonomous mode the AI acts as his stand-in, see 
 
 [BC-001]: ./business-case.md
 [a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d
+[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee

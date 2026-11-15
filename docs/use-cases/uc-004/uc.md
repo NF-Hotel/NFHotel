@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Open issues closed by UC-005, UC-006 and ADR-0017 (MIL-030) (accepted after RC-154 Go) | [0891cf1] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | The open issue on the Guest role closed by UC-010 (MIL-018)<br>The Version History cut to its two latest rows<br>Go in RC-390; accepted by the AI as stand-in for S01 | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | The open issue on the Guest role closed by UC-010 (MIL-018)<br>The Version History cut to its two latest rows<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
 
 ---
 
@@ -77,3 +77,4 @@
 [SA-001]: ../../stakeholder-analysis.md
 [ADR-0005]: ../../adr/adr-0005-backoffice-login.md
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
+[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee

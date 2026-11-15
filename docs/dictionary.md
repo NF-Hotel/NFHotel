@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-01 | Deprecated | Claude (AI) | S01 | Added Room rate, Price change, Price suggestion, Season and Pricing settings (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-264 Go-with-conditions | [3a17eee] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Added Guest sign-in (MIL-018: UC-010, OC-001)<br>The rows sorted by the PO term<br>Go in RC-390; accepted by the AI as stand-in for S01 | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Added Guest sign-in (MIL-018: UC-010, OC-001)<br>The rows sorted by the PO term<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
 
 ---
 
@@ -78,3 +78,4 @@ English (en), domain it, as set in the registry.
 [UC-010]: ./use-cases/uc-010/uc.md
 [OC-001]: ./use-cases/uc-010/oc.md
 [3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
+[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | The benchmark use cases aligned with MIL-019 and MIL-020 (UC-008, UC-009): Hotel staff (Manager) on Compare Models by Time and Quality, which includes Sign In To The Back Office, and, beside DevOps, on Run Time and Quality Benchmark; the Owner works through the role Manager; the service repository is notebook-market-analysis; the older rows of the Version History left to git; accepted after RC-368 Go, at S01's word in chat ("Du godkender for mig"); mode autonomous, not independent | [50f850d] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | The actor Guest (S06) and the use case View and Change Own Booking (UC-010, US-001.13) added for MIL-018; a guest's own booking is inside the boundary, making a booking on the website stays outside<br>Go in RC-390; accepted by the AI as stand-in for S01 | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | The actor Guest (S06) and the use case View and Change Own Booking (UC-010, US-001.13) added for MIL-018; a guest's own booking is inside the boundary, making a booking on the website stays outside<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
 
 ---
 
@@ -157,3 +157,4 @@ may also view the analysis is a question for the Product Owner.
 [UC-009]: ./use-cases/uc-009/uc.md
 [UC-010]: ./use-cases/uc-010/uc.md
 [50f850d]: https://github.com/NF-Hotel/NFHotel/commit/50f850d890371ba0759cbba802c27c9b31cf5b69
+[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee

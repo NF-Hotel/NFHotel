@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the six documents that MIL-018 amends; Go; mode autonomous, not independent | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the six documents that MIL-018 amends; Go; mode autonomous, not independent | [9e72b0e] |
 
 ---
 
@@ -186,3 +186,4 @@ Deprecated. The reviewer is not independent: an AI wrote the amendments and this
 [RC-368]: ./rc-368-ucd-001-benchmark-actors.md
 [RC-389]: ./rc-389-uc-010.md
 [RC-391]: ./rc-391-mil-018-code.md
+[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee

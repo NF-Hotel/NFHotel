@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0046], the routes of the tunnel and Access as code in OpenTofu (MIL-078 task 1), with its review RC-386 (Go), and the code review RC-387 (Go-with-conditions) of tasks 2 to 4, on a row of their own and on the row of the milestone; accepted 2026-11-15 by the AI as stand-in for S01, under the plan of MIL-078 that S01 accepted in chat on 2026-11-12 | [fe54d45] |
-| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0047] (RC-388), [UC-010] with [SSD-001] and [OC-001] (RC-389) and the code of MIL-018 (RC-391) on rows of their own; the row of MIL-018 and the rows of the documents it amends (RC-390) updated | pending |
+| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0047] (RC-388), [UC-010] with [SSD-001] and [OC-001] (RC-389) and the code of MIL-018 (RC-391) on rows of their own; the row of MIL-018 and the rows of the documents it amends (RC-390) updated | [9e72b0e] |
 
 ---
 
@@ -543,3 +543,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-381]: ./reviews/rc-381-mil-028-service-code.md
 [RC-382]: ./reviews/rc-382-mil-028-gate.md
 [fe54d45]: https://github.com/NF-Hotel/NFHotel/commit/fe54d457cf64a1e9ea741518731ee654dce26475
+[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
