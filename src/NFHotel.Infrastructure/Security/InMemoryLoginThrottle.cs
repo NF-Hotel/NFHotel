@@ -44,7 +44,7 @@ public sealed class InMemoryLoginThrottle : ILoginThrottle
     {
         ArgumentNullException.ThrowIfNull(key);
 
-        if (!_windows.TryGetValue(key, out var window))
+        if (!_windows.TryGetValue(key, out Window? window))
         {
             return false;
         }
@@ -63,7 +63,7 @@ public sealed class InMemoryLoginThrottle : ILoginThrottle
     {
         ArgumentNullException.ThrowIfNull(key);
 
-        var now = _clock.UtcNow;
+        DateTimeOffset now = _clock.UtcNow;
         _windows.AddOrUpdate(
             key,
             _ => new Window(now, 1),
@@ -76,6 +76,49 @@ public sealed class InMemoryLoginThrottle : ILoginThrottle
         {
             SweepRunOutWindows(now);
         }
+    }
+
+    /// <inheritdoc />
+    public bool TryCountAttempt(string key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+
+        DateTimeOffset now = _clock.UtcNow;
+
+        // The check and the count are one compare-and-swap: if another attempt changed the window meanwhile, the swap
+        // fails and the window is read again, so two attempts cannot both take the last free count.
+        while (true)
+        {
+            if (!_windows.TryGetValue(key, out Window? current))
+            {
+                if (_windows.TryAdd(key, new Window(now, 1)))
+                {
+                    break;
+                }
+
+                continue;
+            }
+
+            bool hasRunOut = now - current.Start >= _window;
+            if (!hasRunOut && current.Failures >= _maxFailures)
+            {
+                // A refused attempt leaves the window as it is: it neither counts nor extends it.
+                return false;
+            }
+
+            Window counted = hasRunOut ? new Window(now, 1) : current with { Failures = current.Failures + 1 };
+            if (_windows.TryUpdate(key, counted, current))
+            {
+                break;
+            }
+        }
+
+        if (Interlocked.Increment(ref _failuresSinceStart) % FailuresPerSweep == 0)
+        {
+            SweepRunOutWindows(now);
+        }
+
+        return true;
     }
 
     /// <inheritdoc />

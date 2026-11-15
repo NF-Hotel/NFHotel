@@ -1,17 +1,17 @@
 # RBAC — Access Control Matrix
 
-> The access control matrix describes which roles may access which functions and data in NFHotel.
-> The matrix is the basis for the later implementation of authentication and authorisation.
+> The access control matrix states which roles may use which functions and data in NFHotel.
+> Since MIL-018 it is the implemented table: the code holds the same table, and a test compares the two cell by cell.
 
 ---
 
 ## Purpose
 
-The purpose of the matrix is to define the access rights of the different roles in NFHotel before they are implemented in the system.
+The purpose of the matrix is to define the access rights of the different roles in NFHotel, and to be the one place where a reader can see them.
 
-The matrix must make clear which functions and data the different roles need access to, and at the same time support the principle of **least privilege** — a user should only have the rights that are necessary for the user's tasks.
+The matrix makes clear which functions and data the different roles need access to, and supports the principle of **least privilege**: a user only has the rights that are necessary for the user's tasks.
 
-Access control must be enforced not only in the user interface, but also in the application layer.
+Access control is enforced not only in the user interface, but also in the API and the application layer.
 
 ---
 
@@ -19,42 +19,69 @@ Access control must be enforced not only in the user interface, but also in the 
 
 | Role | Description |
 |---|---|
-| **Guest** | The hotel's guest. Login and authorisation for Guest are implemented in a later phase. |
+| **Guest** | The hotel's guest. A guest signs in with the booking number and the email of the booking; there is no guest account and no password. The guest token names one booking, and every guest right is limited to that booking ([ADR-0047], MIL-018). |
 | **Receptionist** | Employee who handles guests and bookings. |
 | **Manager** | Employee with extended administrative rights. |
 | **Housekeeping** | Employee who handles cleaning and housekeeping tasks. |
 
 ---
 
-
 ## Access control matrix
 
-| Function / data | Guest | Receptionist | Manager | Housekeeping |
-|---|:---:|:---:|:---:|:---:|
-| Create booking | o | o | o | x |
-| Change own booking | o | o | o | x |
-| Change other guests' bookings | x | o | o | x |
-| See own guest details | o | o | o | x |
-| See other guests' details | x | o | o | x |
-| See own passport data | ? | o | o | x |
-| See other guests' passport data | x | o | o | x |
-| Change prices/discounts | x | x | o | x |
-| See housekeeping information | x | o | o | o |
-| Change housekeeping status | x | x | o | o |
+One row per permission of the code (`Permissions` in `NFHotel.Application`). The first ten rows are the functions of the
+original matrix; the rows after them are the permissions that the back office added since ([ADR-0005], [ADR-0013],
+[ADR-0014], [ADR-0017]).
+
+| Function / data | Permission | Guest | Receptionist | Manager | Housekeeping |
+|---|---|:---:|:---:|:---:|:---:|
+| Create booking | `Bookings.Create` | o | o | o | x |
+| Change own booking | `Bookings.EditOwn` | o | o | o | x |
+| Change other guests' bookings | `Bookings.EditOthers` | x | o | o | x |
+| See own guest details | `Guests.ViewOwn` | o | o | o | x |
+| See other guests' details | `Guests.ViewOthers` | x | o | o | x |
+| See own passport data | `Guests.Passport.ViewOwn` | x | x | x | x |
+| See other guests' passport data | `Guests.Passport.ViewGuest` | x | o | o | x |
+| Change prices/discounts | `Prices.Manage` | x | x | o | x |
+| See housekeeping information | `Housekeeping.View` | x | o | o | o |
+| Change housekeeping status | `Housekeeping.UpdateStatus` | x | x | o | o |
+| See bookings in the back office | `Bookings.View` | x | o | o | x |
+| Change and delete guests in the back office | `Guests.Manage` | x | o | o | x |
+| See rooms and their status | `Rooms.View` | x | o | o | o |
+| Create, change and delete rooms | `Rooms.Manage` | x | x | o | x |
+| See the revenue | `Sales.View` | x | x | o | x |
+| See the stored benchmark runs | `Benchmark.View` | x | x | o | x |
+| Start a benchmark run | `Benchmark.Run` | x | x | o | x |
+| Delete a stored benchmark run | `Benchmark.Delete` | x | x | o | x |
+| Set the default AI models | `AiDefaults.Manage` | x | x | o | x |
+| Add and delete benchmark models | `Benchmark.ModelsManage` | x | x | o | x |
+| Read the market analysis report | `MarketAnalysis.View` | x | x | o | x |
+| Start a market analysis run | `MarketAnalysis.Start` | x | x | o | x |
+| Manage staff accounts and read the audit trail | `Staff.Manage` | x | x | o | x |
+| Change own staff password | `Staff.ChangeOwnPassword` | x | o | o | o |
 
 **Symbols:**
 
-- `o` = access
-- `x` = no access
-- `?` = to be clarified
+- `o` = allowed
+- `x` = refused
+
+**Notes:**
+
+- *Own* for a guest means the booking in the guest token and the guest of that booking. A guest reads that booking and
+  that guest, cancels the booking and moves it to other dates in the same room; any other booking or guest is refused
+  with 403 ([ADR-0047] decision 5).
+- *See own passport data* is refused for every role. A guest never sees a passport number, not even the own one: the
+  guest's answers carry no passport number ([ADR-0047] decision 4). Staff are not guests and have no own passport data
+  in the system; they read a guest's passport number through the next row.
+- *Create booking* stays public: a visitor without any token books a stay and lists the free rooms. The guest who has
+  just booked receives the guest token with the booking ([ADR-0047] decisions 2 and 5).
 
 ---
 
 ## Open questions
 
-The following access rules must be clarified with the team/PO before they are implemented:
+The question of the own passport data is answered by [ADR-0047]: a guest does not see it. The following access rules
+are still to be clarified with the team/PO:
 
-- Should a Guest be able to see their own passport data after upload?
 - Which booking details does Housekeeping specifically need?
 - Should Housekeeping have a limited view of booking details instead of access to the whole booking?
 - Are any functions or data missing from the access control matrix?
@@ -63,8 +90,18 @@ The following access rules must be clarified with the team/PO before they are im
 
 ## Implementation note
 
-The matrix describes the desired access control and is not itself an implementation.
+The matrix is implemented by `RolePermissions` in `NFHotel.Application`, the one table the API and the web application
+read. `AccessControlMatrixTests` reads this file and fails when a permission is missing here, when a cell is neither
+`o` nor `x`, or when a cell differs from the table in the code (MIL-018 criterion 6). A change of a right is therefore a
+change of both, in the same pull request.
 
-When the access rules have been reviewed and approved, this can be used as the basis for implementing roles and authorisation in NFHotel.
+Access to own resources requires more than a check of the user's role. For a guest the API also checks that the
+specific booking belongs to the guest token (`GuestOwnership`, [ADR-0047] decision 5).
 
-Access to own resources requires more than a check of the user's role. If a Guest may, for example, see their own booking, the system must also check that the specific booking belongs to the authenticated user.
+---
+
+[ADR-0005]: ../adr/adr-0005-backoffice-login.md
+[ADR-0013]: ../adr/adr-0013-benchmark-results.md
+[ADR-0014]: ../adr/adr-0014-default-ai-model.md
+[ADR-0017]: ../adr/adr-0017-staff-passwords-and-audit.md
+[ADR-0047]: ../adr/adr-0047-guest-login.md

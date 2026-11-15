@@ -87,11 +87,14 @@ public static class ApiRoutes
     /// <summary>One run below <see cref="MarketAnalysis"/>, by the run id of the data analysis service.</summary>
     public const string MarketAnalysisRunById = "runs/{runId:guid}";
 
-    /// <summary>The route prefix of the staff sign-in (ADR-0005).</summary>
+    /// <summary>The route prefix of the staff sign-in (ADR-0005) and the guest sign-in (MIL-018).</summary>
     public const string Auth = "api/auth";
 
     /// <summary>The sign-in below <see cref="Auth"/>.</summary>
     public const string Login = "login";
+
+    /// <summary>The guest sign-in with the number and the email of a booking, below <see cref="Auth"/> (MIL-018, ADR-0047).</summary>
+    public const string GuestLogin = "guest-login";
 
     /// <summary>The route prefix of the staff accounts (ADR-0017).</summary>
     public const string Staff = "api/staff";

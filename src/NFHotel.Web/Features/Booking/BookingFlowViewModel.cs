@@ -10,6 +10,7 @@ using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
+using NFHotel.Web.Security;
 
 namespace NFHotel.Web.Features.Booking;
 
@@ -57,6 +58,8 @@ public sealed class BookingFlowViewModel
 
     private readonly IUseCaseRunner<IBookingService> _bookings;
     private readonly IUseCaseRunner<IGuestService> _guests;
+    private readonly IUseCaseRunner<IGuestAccessService> _guestAccess;
+    private readonly GuestSessionTickets _tickets;
     private readonly IClock _clock;
 
     private int _party = 1;
@@ -66,18 +69,26 @@ public sealed class BookingFlowViewModel
     /// </summary>
     /// <param name="bookings">Runs use cases on <see cref="IBookingService"/>.</param>
     /// <param name="guests">Runs use cases on <see cref="IGuestService"/>.</param>
+    /// <param name="guestAccess">Runs the public booking that answers with the guest's session (MIL-018).</param>
+    /// <param name="tickets">Keeps that session under a one-time ticket until the guest asks for it (MIL-018).</param>
     /// <param name="clock">Hotellets ur (A-05).</param>
     public BookingFlowViewModel(
         IUseCaseRunner<IBookingService> bookings,
         IUseCaseRunner<IGuestService> guests,
+        IUseCaseRunner<IGuestAccessService> guestAccess,
+        GuestSessionTickets tickets,
         IClock clock)
     {
         ArgumentNullException.ThrowIfNull(bookings);
         ArgumentNullException.ThrowIfNull(guests);
+        ArgumentNullException.ThrowIfNull(guestAccess);
+        ArgumentNullException.ThrowIfNull(tickets);
         ArgumentNullException.ThrowIfNull(clock);
 
         _bookings = bookings;
         _guests = guests;
+        _guestAccess = guestAccess;
+        _tickets = tickets;
         _clock = clock;
 
         CheckInDate = clock.Today.AddDays(1);
@@ -166,6 +177,12 @@ public sealed class BookingFlowViewModel
     /// booking that the service answers with: the guest has just typed the rest, and the page shows no more (MIL-079).
     /// </summary>
     public BookingReceiptDto? Confirmation { get; private set; }
+
+    /// <summary>
+    /// The one-time ticket of the guest session of the booking just created, or <c>null</c> until step 4 (MIL-018). The
+    /// button "Manage your booking" posts it, and the answer sets the guest cookie; the token itself stays on the server.
+    /// </summary>
+    public string? SessionTicket { get; private set; }
 
     /// <summary>True when the user has tried to move on from the date step at least once.</summary>
     /// <remarks>
@@ -534,14 +551,15 @@ public sealed class BookingFlowViewModel
             Guests,
             fields);
 
-        Result<BookingDetailsDto> result;
+        Result<PublicBookingDto> result;
 
         IsBusy = true;
 
         try
         {
-            result = await _bookings
-                .RunAsync((service, token) => service.CreatePublicAsync(request, token), cancellationToken)
+            // The public booking answers with the booking and the guest's session (MIL-018, ADR-0047 decision 2).
+            result = await _guestAccess
+                .RunAsync((service, token) => service.BookAsync(request, token), cancellationToken)
                 .ConfigureAwait(false);
         }
         finally
@@ -551,7 +569,8 @@ public sealed class BookingFlowViewModel
 
         if (result.IsSuccess)
         {
-            Confirmation = BookingReceiptDto.From(result.Value);
+            Confirmation = BookingReceiptDto.From(result.Value.Booking);
+            SessionTicket = _tickets.Issue(result.Value.Session);
             CurrentStep = BookingFlowStep.Receipt;
 
             return;
@@ -602,6 +621,7 @@ public sealed class BookingFlowViewModel
         PassportNumber = string.Empty;
         GuestErrors = GuestFieldErrors.None;
         Confirmation = null;
+        SessionTicket = null;
         Errors = NoMessages;
         CurrentStep = BookingFlowStep.Dates;
     }

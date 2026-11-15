@@ -11,9 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-17 | Proposed | Claude (AI) | AI as stand-in for S01 | Initial version (MIL-016) | [1593b34] |
-| 2026-10-17 | Deprecated | Claude (AI) | AI as stand-in for S01 | Accepted after RC-070 Go | [1593b34] |
-| 2026-10-20 | Accepted | mikemike | AI as stand-in for S01 | Open issues closed by UC-005, UC-006 and ADR-0017 (MIL-030) (accepted after RC-154 Go) | [0891cf1] |
+| 2026-10-20 | Deprecated | mikemike | AI as stand-in for S01 | Open issues closed by UC-005, UC-006 and ADR-0017 (MIL-030) (accepted after RC-154 Go) | [0891cf1] |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | The open issue on the Guest role closed by UC-010 (MIL-018)<br>The Version History cut to its two latest rows<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
 
 ---
 
@@ -68,7 +67,7 @@
 
 - The network carries the password in clear text until the public port has TLS (ADR-0005); the sign-in is not to be used over an untrusted network until then.
 - A stolen session works until it expires; there is no revocation list. (Closed by ADR-0017: the security stamp ends old sessions.)
-- The Guest role (a guest sees their own booking) is a later milestone; the booking receipt page is open by its number until then.
+- The Guest role (a guest sees their own booking) is a later milestone; the booking receipt page is open by its number until then. (Closed by UC-010: a guest signs in with the booking number and the email and sees only the own booking; the guest's own page replaces the receipt page.)
 - Staff accounts are made by the Manager's command line, not on a screen. (Closed by UC-006.)
 
 ---
@@ -77,5 +76,5 @@
 [US-001]: ../../user-stories.md
 [SA-001]: ../../stakeholder-analysis.md
 [ADR-0005]: ../../adr/adr-0005-backoffice-login.md
-[1593b34]: https://github.com/NF-Hotel/NFHotel/commit/1593b34bb7cc020a8564f1030f49e2c395803ad4
 [0891cf1]: https://github.com/NF-Hotel/NFHotel/commit/0891cf138311b2c3a9a6e2b20ad92c501ddf80cf
+[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee

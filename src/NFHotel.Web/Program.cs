@@ -41,6 +41,7 @@ builder.Services.AddScoped(typeof(IUseCaseRunner<>), typeof(UseCaseRunner<>));
 var requireTls = HttpsRequirement.IsRequired(builder.Configuration);
 builder.Services.AddPersistentDataProtection(builder.Configuration);   // the keys survive a deploy (ADR-0031)
 builder.Services.AddStaffSignIn(requireTls);
+builder.Services.AddGuestSignIn(requireTls);   // the guest cookie, a scheme of its own beside the staff cookie (MIL-018)
 builder.Services.AddSecureAntiforgery(requireTls);   // the antiforgery cookie follows the staff cookie (MIL-033)
 builder.Services.AddHttpContextAccessor();
 
@@ -50,7 +51,7 @@ builder.Services.AddHttpContextAccessor();
 // Each UI area registers its own — so adding a screen touches one file,
 // not the composition root.
 builder.Services.AddHomeFeature();      // the front page: the map of the neighbourhood
-builder.Services.AddBookingFeature();   // the customer's booking flow: /book and /booking/{number}
+builder.Services.AddBookingFeature();   // the customer's booking flow: /book, the guest sign-in /booking, /my-booking
 builder.Services.AddAdminFeature();     // the staff's back office: /admin/**, behind the sign-in
 
 var app = builder.Build();
@@ -77,6 +78,7 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapStaffSignOut();
+app.MapGuestSession();   // the guest session from a booking just made, and the guest's sign-out (MIL-018)
 app.MapAdminTheme();   // the light or dark theme of the back office, a cookie (app.css section 12)
 // Blazor's own policy (frame-ancestors 'self') is turned off: UseSecurityHeaders sends the complete one.
 app.MapRazorComponents<App>()

@@ -49,7 +49,9 @@ public static class DependencyInjection
         services.AddScoped<IMarketAnalysisService, ApiMarketAnalysisService>();
         services.AddScoped<IStaffAuthService, ApiStaffAuthService>();
         services.AddScoped<IStaffAdminService, ApiStaffAdminService>();
+        services.AddScoped<IGuestAccessService, ApiGuestAccessService>();   // the guest sign-in (MIL-018)
         services.AddScoped<StaffCallContext>();
+        services.AddScoped<GuestCallContext>();
         return services;
     }
 }

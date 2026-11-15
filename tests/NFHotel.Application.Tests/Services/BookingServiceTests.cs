@@ -3,6 +3,7 @@ using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
+using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
@@ -97,7 +98,7 @@ public sealed class BookingServiceTests
         var world = new ServiceWorld();
         var room = world.AddRoom();
         var booking = world.AddBooking(room.Id, world.AddGuest().Id, startOffsetDays: 5, nights: 2);
-        var throttle = Substitute.For<ILoginThrottle>();
+        ILoginThrottle throttle = ServiceWorld.OpenThrottle();
 
         // Act
         var result = await world.BookingService(receiptThrottle: throttle).LookUpReceiptAsync(
@@ -109,6 +110,7 @@ public sealed class BookingServiceTests
         Assert.Equal(
             new BookingReceiptDto($"FLZ-{booking.Id:D6}", world.Clock.Today.AddDays(5), world.Clock.Today.AddDays(7), 2, room.Size, BookingStatus.Pending),
             result.Value);
+        throttle.Received(1).TryCountAttempt($"booking-receipt:{booking.Id}");
         throttle.Received(1).Reset($"booking-receipt:{booking.Id}");
         throttle.DidNotReceiveWithAnyArgs().RecordFailure(default!);
     }
@@ -148,7 +150,7 @@ public sealed class BookingServiceTests
         var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
         var bookingId = isUnknownNumber ? booking.Id + 100 : booking.Id;
         var email = isUnknownNumber ? "anna@example.com" : "bo@example.com";
-        var throttle = Substitute.For<ILoginThrottle>();
+        ILoginThrottle throttle = ServiceWorld.OpenThrottle();
 
         // Act
         var result = await world.BookingService(receiptThrottle: throttle).LookUpReceiptAsync(
@@ -158,7 +160,7 @@ public sealed class BookingServiceTests
         // Assert
         Assert.Equal(ErrorCodes.Booking.NotFound, result.FirstError?.Code);
         await world.BookingQueries.Received(1).GetReadModelAsync(bookingId, Arg.Any<CancellationToken>());
-        throttle.Received(1).RecordFailure($"booking-receipt:{bookingId}");
+        throttle.Received(1).TryCountAttempt($"booking-receipt:{bookingId}");
         throttle.DidNotReceiveWithAnyArgs().Reset(default!);
     }
 
@@ -170,7 +172,7 @@ public sealed class BookingServiceTests
         var world = new ServiceWorld();
         var booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
         var throttle = Substitute.For<ILoginThrottle>();
-        throttle.IsBlocked($"booking-receipt:{booking.Id}").Returns(true);
+        throttle.TryCountAttempt($"booking-receipt:{booking.Id}").Returns(false);
 
         // Act
         var result = await world.BookingService(receiptThrottle: throttle).LookUpReceiptAsync(
@@ -201,10 +203,10 @@ public sealed class BookingServiceTests
             new BookingReceiptRequest(booking.Id, email),
             TestContext.Current.CancellationToken);
 
-        // Assert
+        // Assert: the null-forgiving operator fills an argument that DidNotReceiveWithAnyArgs ignores.
         Assert.Equal(ErrorCodes.Booking.ReceiptEmailRequired, result.FirstError?.Code);
         await world.BookingQueries.DidNotReceiveWithAnyArgs().GetReadModelAsync(default, TestContext.Current.CancellationToken);
-        throttle.DidNotReceiveWithAnyArgs().RecordFailure(default!);
+        throttle.DidNotReceiveWithAnyArgs().TryCountAttempt(default!);
     }
 
     /// <summary>Boundary: a key below one is a number that cannot exist; it is not found, without a count.</summary>
@@ -223,9 +225,64 @@ public sealed class BookingServiceTests
             new BookingReceiptRequest(bookingId, "anna@example.com"),
             TestContext.Current.CancellationToken);
 
-        // Assert
+        // Assert: the null-forgiving operator fills an argument that DidNotReceiveWithAnyArgs ignores.
         Assert.Equal(ErrorCodes.Booking.NotFound, result.FirstError?.Code);
-        throttle.DidNotReceiveWithAnyArgs().RecordFailure(default!);
+        throttle.DidNotReceiveWithAnyArgs().TryCountAttempt(default!);
+    }
+
+    /// <summary>
+    /// Security: the right email of a cancelled booking returns its receipt but keeps the count, as a wrong email does,
+    /// because the guest sign-in answers a cancelled booking as a wrong email (ADR-0047 decisions 3 and 7): the count
+    /// must not tell a guesser that the email was right.
+    /// </summary>
+    [Fact]
+    public async Task LookUpReceiptAsync_RightEmailOfACancelledBooking_ReturnsTheReceiptAndKeepsTheCount()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        Booking booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id, startOffsetDays: 3);
+        booking.Cancel();
+        ILoginThrottle throttle = ServiceWorld.OpenThrottle();
+
+        // Act
+        Result<BookingReceiptDto> result = await world.BookingService(receiptThrottle: throttle).LookUpReceiptAsync(
+            new BookingReceiptRequest(booking.Id, "anna@example.com"),
+            TestContext.Current.CancellationToken);
+
+        // Assert: the null-forgiving operator fills an argument that DidNotReceiveWithAnyArgs ignores.
+        Assert.Equal(BookingStatus.Cancelled, result.Value.Status);
+        throttle.Received(1).TryCountAttempt($"booking-receipt:{booking.Id}");
+        throttle.DidNotReceiveWithAnyArgs().Reset(default!);
+    }
+
+    /// <summary>
+    /// Race condition: lookups of one number sent at the same time are each counted before any of them reads, so only
+    /// as many reach the read as the throttle allows and the rest are refused at once (MIL-018). The reads are held
+    /// until every lookup has started: the interleaving that let all of them pass a check made apart from the count.
+    /// </summary>
+    [Fact]
+    public async Task LookUpReceiptAsync_ManyAtTheSameTime_ReadsOnlyAsManyAsTheThrottleAllows()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        Booking booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
+        TaskCompletionSource<BookingReadModel?> heldRead = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        world.BookingQueries.GetReadModelAsync(booking.Id, Arg.Any<CancellationToken>()).Returns(_ => heldRead.Task);
+        BookingService service = world.BookingService(receiptThrottle: new CountingLoginThrottle(maxFailures: 5));
+
+        // Act
+        Task<Result<BookingReceiptDto>>[] lookups = Enumerable.Range(0, 10)
+            .Select(attempt => service.LookUpReceiptAsync(
+                new BookingReceiptRequest(booking.Id, $"guess{attempt}@example.com"),
+                TestContext.Current.CancellationToken))
+            .ToArray();
+        heldRead.SetResult(null);
+        Result<BookingReceiptDto>[] results = await Task.WhenAll(lookups);
+
+        // Assert
+        Assert.Equal(5, results.Count(result => result.FirstError?.Code == ErrorCodes.Booking.NotFound));
+        Assert.Equal(5, results.Count(result => result.FirstError?.Code == ErrorCodes.Booking.TooManyLookups));
+        await world.BookingQueries.Received(5).GetReadModelAsync(booking.Id, Arg.Any<CancellationToken>());
     }
 
     /// <summary>Negative: a missing request is a programming error, not a failed lookup.</summary>

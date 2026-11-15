@@ -6,31 +6,39 @@ using NFHotel.Api.Contracts;
 using NFHotel.Api.Security;
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.UseCases.Bookings;
+using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.Staff;
 
 namespace NFHotel.Api.Controllers;
 
-/// <summary>The booking use cases over HTTP: one endpoint per method of <see cref="IBookingService"/>.</summary>
+/// <summary>
+/// The booking use cases over HTTP: one endpoint per method of <see cref="IBookingService"/>. The public booking answers
+/// with the guest session of <see cref="IGuestAccessService"/>, so the guest who has just booked is signed in (MIL-018).
+/// </summary>
 [ApiController]
 [Route(ApiRoutes.Bookings)]
 public sealed class BookingsController : ControllerBase
 {
     private readonly IBookingService _bookings;
+    private readonly IGuestAccessService _guestAccess;
 
     /// <summary>Creates the controller.</summary>
     /// <param name="bookings">The booking use cases.</param>
-    public BookingsController(IBookingService bookings)
+    /// <param name="guestAccess">The public booking that signs its guest in (MIL-018).</param>
+    public BookingsController(IBookingService bookings, IGuestAccessService guestAccess)
     {
         ArgumentNullException.ThrowIfNull(bookings);
+        ArgumentNullException.ThrowIfNull(guestAccess);
         _bookings = bookings;
+        _guestAccess = guestAccess;
     }
 
-    /// <summary>Gets one booking, for staff who may see the bookings (MIL-079).</summary>
+    /// <summary>Gets one booking, for staff who may see the bookings (MIL-079) and for the signed-in guest of the booking (MIL-018).</summary>
     /// <param name="id">The booking key.</param>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
-    /// <returns>The details, 404, or 401 and 403 for a caller without the permission.</returns>
+    /// <returns>The details, 404, or 401 and 403 for a caller without the permission or a guest of another booking.</returns>
     [HttpGet(ApiRoutes.ById)]
-    [RequiresPermission(Permissions.BookingsView)]
+    [RequiresPermission(Permissions.BookingsView, GuestPermission = Permissions.ViewOwnGuestData)]
     public async Task<IActionResult> GetByIdAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings.GetByIdAsync(id, cancellationToken).ConfigureAwait(false));
 
@@ -93,17 +101,17 @@ public sealed class BookingsController : ControllerBase
         this.ToResponse(await _bookings.CreateAsync(request, cancellationToken).ConfigureAwait(false));
 
     /// <summary>
-    /// Creates a public booking for a new guest in a free room of the chosen type.
+    /// Creates a public booking for a new guest in a free room of the chosen type, and signs the guest in to it (MIL-018).
     /// </summary>
     /// <param name="request">The stay, the room type, the party and the new guest.</param>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
-    /// <returns>The created booking or validation errors.</returns>
+    /// <returns>The created booking with the guest session, or validation errors.</returns>
     [HttpPost(ApiRoutes.PublicBooking)]
     public async Task<IActionResult> CreatePublicAsync(
         [FromBody] CreatePublicBookingRequest request,
         CancellationToken cancellationToken) =>
         this.ToResponse(
-            await _bookings.CreatePublicAsync(request, cancellationToken)
+            await _guestAccess.BookAsync(request, cancellationToken)
                 .ConfigureAwait(false));
 
     /// <summary>Confirms a booking.</summary>
@@ -133,21 +141,21 @@ public sealed class BookingsController : ControllerBase
     public async Task<IActionResult> CheckOutAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings.CheckOutAsync(id, cancellationToken).ConfigureAwait(false));
 
-    /// <summary>Cancels a booking.</summary>
+    /// <summary>Cancels a booking; a signed-in guest cancels only their own (MIL-018).</summary>
     /// <param name="id">The booking key.</param>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
-    /// <returns>The booking after the change.</returns>
+    /// <returns>The booking after the change, or 403 for a guest of another booking.</returns>
     [HttpPost(ApiRoutes.BookingAction.Cancel)]
-    [RequiresPermission(Permissions.EditOtherBookings)]
+    [RequiresPermission(Permissions.EditOtherBookings, GuestPermission = Permissions.EditOwnBooking)]
     public async Task<IActionResult> CancelAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings.CancelAsync(id, cancellationToken).ConfigureAwait(false));
 
-    /// <summary>Moves a booking to other dates or another room.</summary>
+    /// <summary>Moves a booking to other dates or another room; a signed-in guest moves only their own, in its room (MIL-018).</summary>
     /// <param name="request">The booking and its new period and room.</param>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
-    /// <returns>The booking after the change.</returns>
+    /// <returns>The booking after the change, or 403 for a guest of another booking or another room.</returns>
     [HttpPost(ApiRoutes.Reschedule)]
-    [RequiresPermission(Permissions.EditOtherBookings)]
+    [RequiresPermission(Permissions.EditOtherBookings, GuestPermission = Permissions.EditOwnBooking)]
     public async Task<IActionResult> RescheduleAsync([FromBody] RescheduleBookingRequest request, CancellationToken cancellationToken) =>
         this.ToResponse(await _bookings.RescheduleAsync(request, cancellationToken).ConfigureAwait(false));
 }

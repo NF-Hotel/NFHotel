@@ -2,7 +2,6 @@ using System.Globalization;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.JsonWebTokens;
-using Microsoft.IdentityModel.Tokens;
 
 using NFHotel.Api.Contracts;
 using NFHotel.Domain.Repositories;
@@ -26,21 +25,8 @@ public static class StaffAuthentication
             .Configure<StaffSecurityOptions>((bearer, staff) =>
             {
                 bearer.MapInboundClaims = false;
-                bearer.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidIssuer = StaffSecurityOptions.Issuer,
-                    ValidateAudience = true,
-                    ValidAudience = StaffSecurityOptions.Audience,
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = JwtStaffTokenIssuer.SigningKeyFor(staff),
-                    ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
-                    ValidateLifetime = true,
-                    RequireExpirationTime = true,
-                    ClockSkew = TimeSpan.FromSeconds(30),
-                    NameClaimType = JwtStaffTokenIssuer.NameClaim,
-                    RoleClaimType = JwtStaffTokenIssuer.RoleClaim,
-                };
+                bearer.TokenValidationParameters = ApiTokenValidation.For(staff, StaffSecurityOptions.Audience);
+                bearer.TokenValidationParameters.NameClaimType = JwtStaffTokenIssuer.NameClaim;
                 bearer.Events = new JwtBearerEvents
                 {
                     // A valid signature is not enough: the account must still exist, be active and have the stamp that the
@@ -66,8 +52,7 @@ public static class StaffAuthentication
                     // The Authorization header belongs to the token of the web application (ADR-0004).
                     OnMessageReceived = context =>
                     {
-                        var token = context.Request.Headers[ApiAuthentication.StaffTokenHeader].ToString().Trim();
-                        context.Token = token.Length == 0 ? null : token;
+                        ApiTokenValidation.ReadToken(context, ApiAuthentication.StaffTokenHeader);
                         return Task.CompletedTask;
                     },
                 };

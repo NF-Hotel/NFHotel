@@ -40,8 +40,10 @@ builder.Services.AddSingleton<ChannelMarketAnalysisRunLauncher>();
 builder.Services.AddSingleton<IMarketAnalysisRunLauncher>(provider => provider.GetRequiredService<ChannelMarketAnalysisRunLauncher>());
 builder.Services.AddHostedService<MarketAnalysisRunWorker>();
 builder.Services.AddStaffAuthentication();
+builder.Services.AddGuestAuthentication();   // the guest token of the guest sign-in, beside the staff token (MIL-018)
 builder.Services.AddHttpContextAccessor();
 builder.Services.Replace(ServiceDescriptor.Scoped<IStaffCallContext, HttpStaffCallContext>());
+builder.Services.Replace(ServiceDescriptor.Scoped<IGuestCallContext, HttpGuestCallContext>());
 builder.Services.AddStaffWriteRateLimit();
 builder.Services.AddSingleton<AddressLoginThrottle>();   // the limit per client address for the mobile app (ADR-0015)
 builder.Services.AddScoped<LoginAddressLimitFilter>();
@@ -76,6 +78,7 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 
 app.UseMiddleware<ApiTokenMiddleware>();
 app.UseAuthentication();
+app.UseGuestAuthentication();
 app.UseRateLimiter();
 
 await ApiStartup.MigrateIfRequestedAsync(app, app.Lifetime.ApplicationStopping).ConfigureAwait(false);

@@ -60,6 +60,7 @@ public sealed class BookingService : IBookingService
     private readonly IBookingMarketDetailRepository _marketDetails;
     private readonly IWarningLog _warnings;
     private readonly ILoginThrottle _receiptThrottle;
+    private readonly IGuestCallContext _guestCall;
 
     /// <summary>
     /// Creates the service.
@@ -79,6 +80,10 @@ public sealed class BookingService : IBookingService
     /// Counts the failed lookups of a booking number by a guest (MIL-079): the throttle of the staff sign-in, with a key of
     /// its own per booking.
     /// </param>
+    /// <param name="guestCall">
+    /// The signed-in guest of the call, if any (MIL-018): a guest reads, cancels and moves only the booking in the guest
+    /// token (<see cref="GuestOwnership"/>).
+    /// </param>
     public BookingService(
         IBookingRepository bookingRepository,
         IRoomRepository roomRepository,
@@ -91,7 +96,8 @@ public sealed class BookingService : IBookingService
         IPriceChangeService prices,
         IBookingMarketDetailRepository marketDetails,
         IWarningLog warnings,
-        ILoginThrottle receiptThrottle)
+        ILoginThrottle receiptThrottle,
+        IGuestCallContext guestCall)
     {
         ArgumentNullException.ThrowIfNull(bookingRepository);
         ArgumentNullException.ThrowIfNull(roomRepository);
@@ -105,6 +111,7 @@ public sealed class BookingService : IBookingService
         ArgumentNullException.ThrowIfNull(marketDetails);
         ArgumentNullException.ThrowIfNull(warnings);
         ArgumentNullException.ThrowIfNull(receiptThrottle);
+        ArgumentNullException.ThrowIfNull(guestCall);
 
         _bookingRepository = bookingRepository;
         _roomRepository = roomRepository;
@@ -118,6 +125,7 @@ public sealed class BookingService : IBookingService
         _marketDetails = marketDetails;
         _warnings = warnings;
         _receiptThrottle = receiptThrottle;
+        _guestCall = guestCall;
     }
 
     // --------------------------------------------------------
@@ -134,9 +142,12 @@ public sealed class BookingService : IBookingService
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bookingId);
 
-        // The details hold the guest, so only staff who may see the bookings read them (MIL-079). The check is here as
-        // well as on the endpoint, as for the other reads: the endpoint is the door, the use case the rule.
-        if (!await _authorization.HasPermissionAsync(Permissions.BookingsView, cancellationToken).ConfigureAwait(false))
+        // The details hold the guest, so only staff who may see the bookings read them (MIL-079), and the guest of the
+        // booking, whose own data they are (MIL-018). The check is here as well as on the endpoint, as for the other
+        // reads: the endpoint is the door, the use case the rule. A guest asking for another booking gets 403 before
+        // anything is read, so the answer does not tell whether that booking exists.
+        if (!await _authorization.HasPermissionAsync(Permissions.BookingsView, cancellationToken).ConfigureAwait(false)
+            && !GuestOwnership.Allows(_guestCall, bookingId, Permissions.ViewOwnGuestData))
         {
             return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
         }
@@ -161,7 +172,9 @@ public sealed class BookingService : IBookingService
     /// in both cases, so neither the answer nor its cost tells a guesser whether a number exists. Each failure counts
     /// against the number; after the most failures that the staff sign-in allows in its window, the number is refused
     /// with <see cref="ErrorCodes.Booking.TooManyLookups"/> for the rest of the window, so the email of a known number
-    /// cannot be found by trying. A lookup that succeeds clears the count.
+    /// cannot be found by trying. Each attempt is counted before the booking is read, in one step with the check, so
+    /// lookups sent at the same time are counted too (MIL-018). A lookup that succeeds clears the count, except for a
+    /// cancelled booking, which the guest sign-in refuses with the answer of a wrong email.
     /// </remarks>
     public async Task<Result<BookingReceiptDto>> LookUpReceiptAsync(
         BookingReceiptRequest request,
@@ -179,8 +192,9 @@ public sealed class BookingService : IBookingService
             return Result<BookingReceiptDto>.Failure(ErrorCodes.Booking.NotFound);
         }
 
+        // The attempt counts as a failure from here until it succeeds.
         string throttleKey = ReceiptThrottleKey(request.BookingId);
-        if (_receiptThrottle.IsBlocked(throttleKey))
+        if (!_receiptThrottle.TryCountAttempt(throttleKey))
         {
             return Result<BookingReceiptDto>.Failure(ErrorCodes.Booking.TooManyLookups);
         }
@@ -191,11 +205,16 @@ public sealed class BookingService : IBookingService
         BookingDetailsDto? details = readModel?.ToDetails(_clock.Today);
         if (details is null || !IsSameEmail(details.Guest.Email, request.Email))
         {
-            _receiptThrottle.RecordFailure(throttleKey);
             return Result<BookingReceiptDto>.Failure(ErrorCodes.Booking.NotFound);
         }
 
-        _receiptThrottle.Reset(throttleKey);
+        // The guest sign-in answers a cancelled booking as a wrong email (ADR-0047 decisions 3 and 7), so its right email
+        // keeps the count as a wrong email does: the count must not tell a guesser that the email was right.
+        if (details.Status != BookingStatus.Cancelled)
+        {
+            _receiptThrottle.Reset(throttleKey);
+        }
+
         return Result<BookingReceiptDto>.Success(BookingReceiptDto.From(details));
     }
 
@@ -743,10 +762,12 @@ public sealed class BookingService : IBookingService
         int bookingId,
         CancellationToken cancellationToken = default)
     {
-        // Checks whether the staff member has permission to cancel bookings.
+        // Checks whether the staff member has permission to cancel bookings, or the caller is the guest of this booking
+        // (MIL-018): a guest cancels only the booking in the guest token.
         if (!await _authorization.HasPermissionAsync(
-            Permissions.EditOtherBookings,
-            cancellationToken))
+                Permissions.EditOtherBookings,
+                cancellationToken).ConfigureAwait(false)
+            && !GuestOwnership.Allows(_guestCall, bookingId, Permissions.EditOwnBooking))
         {
             return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
         }
@@ -770,10 +791,12 @@ public sealed class BookingService : IBookingService
         ArgumentNullException.ThrowIfNull(request);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.BookingId);
 
-        // Checks whether the staff member has permission to reschedule bookings.
-        if (!await _authorization.HasPermissionAsync(
+        // Checks whether the staff member has permission to reschedule bookings, or the caller is the guest of this
+        // booking (MIL-018): a guest moves only the booking in the guest token.
+        bool isStaff = await _authorization.HasPermissionAsync(
             Permissions.EditOtherBookings,
-            cancellationToken))
+            cancellationToken).ConfigureAwait(false);
+        if (!isStaff && !GuestOwnership.Allows(_guestCall, request.BookingId, Permissions.EditOwnBooking))
         {
             return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
         }
@@ -790,6 +813,13 @@ public sealed class BookingService : IBookingService
         if (booking is null)
         {
             return Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.NotFound);
+        }
+
+        // A guest changes the dates and keeps the room (MIL-018): the guest chose a room type and the hotel chose the
+        // room, so another room is reception's to give, and could be another type at another price.
+        if (!isStaff && request.RoomId != booking.RoomId)
+        {
+            return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
         }
 
         var roomCheck = await CheckRoomIsBookableAsync(request.RoomId, cancellationToken).ConfigureAwait(false);

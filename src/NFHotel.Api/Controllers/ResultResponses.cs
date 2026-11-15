@@ -71,9 +71,17 @@ internal static class ResultResponses
             return StatusCodes.Status429TooManyRequests;
         }
 
-        if (codes.Contains(ErrorCodes.Staff.InvalidCredentials) || codes.Contains(ErrorCodes.Api.StaffUnauthorized))
+        if (codes.Contains(ErrorCodes.Staff.InvalidCredentials)
+            || codes.Contains(ErrorCodes.Api.StaffUnauthorized)
+            || codes.Contains(ErrorCodes.Api.GuestUnauthorized))
         {
             return StatusCodes.Status401Unauthorized;
+        }
+
+        // A use case refuses a caller whose role lacks the permission, and a guest whose booking it is not (MIL-018).
+        if (codes.Contains(ErrorCodes.Api.Forbidden))
+        {
+            return StatusCodes.Status403Forbidden;
         }
 
         if (codes.Any(code => code.EndsWith(".not_found", StringComparison.Ordinal)

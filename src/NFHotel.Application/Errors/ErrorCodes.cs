@@ -181,8 +181,18 @@ public static class ErrorCodes
         /// <summary>The call needs a valid staff token and had none (ADR-0005).</summary>
         public const string StaffUnauthorized = "api.staff_unauthorized";
 
-        /// <summary>The role of the signed-in member of staff lacks the permission (ADR-0005).</summary>
+        /// <summary>
+        /// The role of the signed-in member of staff lacks the permission (ADR-0005), or a signed-in guest asked for a
+        /// booking or a guest that is not their own (MIL-018).
+        /// </summary>
         public const string Forbidden = "api.forbidden";
+
+        /// <summary>
+        /// The guest sign-in was refused, or the guest token of the call has expired, was changed or is not a guest token
+        /// (MIL-018, ADR-0047). One code for a wrong email, an unknown number and a bad token, so the answer never tells
+        /// whether a booking number exists.
+        /// </summary>
+        public const string GuestUnauthorized = "api.guest_unauthorized";
     }
 
     /// <summary>Codes of the staff sign-in and accounts (ADR-0005).</summary>

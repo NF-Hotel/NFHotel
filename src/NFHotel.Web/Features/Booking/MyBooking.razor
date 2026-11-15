@@ -1,0 +1,108 @@
+@attribute [Route(GuestSignInRegistration.MyBookingPath)]
+@inherits NFHotel.Web.Common.CancellableComponentBase
+@using NFHotel.Web.Security
+
+@inject MyBookingViewModel ViewModel
+@inject GuestTokenHolder GuestTokens
+@inject NavigationManager Navigation
+
+@*
+    The signed-in guest's own booking (MIL-018, ADR-0047, UC-010): the receipt, the name and email it was booked in, the
+    dates to change and the button to cancel. Without a guest cookie the page sends the guest to the sign-in.
+
+    A static server-rendered page, like the sign-in: the guest cookie travels with each request to this page and its
+    forms, and no circuit is opened, so the guest token never leaves the request it came with. Each change posts the
+    form, the API checks that the booking is the one in the guest token, and a change that succeeded sends the browser
+    back to this page with the result in the address, so a reload shows it again and does not post it again.
+
+    The page shows no passport number and no room number: the guest's answers carry no passport number (ADR-0047
+    decision 4), and the room is given at check-in, as on the receipt.
+*@
+
+<PageTitle>Your booking — NFHotel</PageTitle>
+
+<div class="pub-section">
+    <div class="pub-wrap">
+        <div class="pub-booking stack-lg">
+            <PageHeader Title="Your booking"
+                        Subtitle="See your stay, change the dates or cancel it." />
+
+            @if (ViewModel.Notice is not null)
+            {
+                <AlertBox Kind="AlertKind.Ok" Message="@ViewModel.Notice" />
+            }
+
+            <ErrorAlert Errors="ViewModel.Errors" />
+
+            @if (ViewModel.Booking is not null)
+            {
+                <BookingReceiptCard Receipt="ViewModel.Receipt" />
+
+                <section class="card card-pad stack" aria-labelledby="my-booking-guest">
+                    <h2 class="subtitle" id="my-booking-guest">Booked in the name of</h2>
+                    <p>@ViewModel.Booking.Guest.FullName · @ViewModel.Booking.Guest.Email</p>
+                </section>
+
+                @if (ViewModel.CanReschedule)
+                {
+                    <section class="card card-pad stack" aria-labelledby="my-booking-change">
+                        <h2 class="subtitle" id="my-booking-change">Change the dates</h2>
+                        <p class="muted">
+                            Your room type stays the same. If it isn't free on the new dates, we'll say so here and your
+                            booking stays as it is.
+                        </p>
+
+                        @* Change is set in OnInitializedAsync, before the first render, so it is never null where the fields bind to it. *@
+                        <EditForm Model="Change" FormName="@ChangeForm" OnValidSubmit="RescheduleAsync" method="post" class="stack">
+                            <DataAnnotationsValidator />
+
+                            <div class="field-row">
+                                <FormField Label="Check-in" For="change-check-in" IsRequired="true">
+                                    <InputDate id="change-check-in" class="field-input" @bind-Value="Change!.CheckIn" />
+                                </FormField>
+
+                                <FormField Label="Check-out" For="change-check-out" IsRequired="true">
+                                    <InputDate id="change-check-out" class="field-input" @bind-Value="Change!.CheckOut" />
+                                </FormField>
+                            </div>
+
+                            <ValidationSummary />
+
+                            <div class="row">
+                                <button type="submit" class="btn btn-primary">Save the new dates</button>
+                            </div>
+                        </EditForm>
+                    </section>
+                }
+
+                @if (ViewModel.CanCancel)
+                {
+                    <section class="card card-pad stack" aria-labelledby="my-booking-cancel">
+                        <h2 class="subtitle" id="my-booking-cancel">Cancel the booking</h2>
+                        <p class="muted">
+                            A cancelled booking can't be changed again, and its number and email no longer sign you in.
+                        </p>
+
+                        <form method="post" @formname="@CancelForm" @onsubmit="CancelAsync" class="row">
+                            <AntiforgeryToken />
+                            <button type="submit" class="btn btn-danger">Cancel my booking</button>
+                        </form>
+                    </section>
+                }
+            }
+            else
+            {
+                <p>
+                    <a href="@GuestSignInRegistration.SignInPath">Sign in again</a> with your booking number and the email
+                    you booked with.
+                </p>
+            }
+
+            <form method="post" action="@GuestSignInRegistration.SignOutPath" class="row">
+                <AntiforgeryToken />
+                <button type="submit" class="btn btn-ghost">Sign out</button>
+                <a class="btn btn-ghost" href="/book">Book another stay</a>
+            </form>
+        </div>
+    </div>
+</div>

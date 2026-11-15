@@ -8,6 +8,7 @@ using NFHotel.Application.UseCases.Guests;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.TestSupport;
 using NFHotel.Web.Features.Booking;
+using NFHotel.Web.Security;
 
 using NSubstitute;
 
@@ -22,12 +23,28 @@ public sealed class BookingFlowViewModelTests
 
     private readonly IBookingService _bookings = Substitute.For<IBookingService>();
     private readonly IGuestService _guests = Substitute.For<IGuestService>();
+    private readonly IGuestAccessService _access = Substitute.For<IGuestAccessService>();
     private readonly FakeClock _clock = new() { Today = Today };
+    private readonly GuestSessionTickets _tickets;
+
+    public BookingFlowViewModelTests()
+    {
+        _tickets = new GuestSessionTickets(_clock);
+    }
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     private BookingFlowViewModel Create() =>
-        new(new PassThroughRunner<IBookingService>(_bookings), new PassThroughRunner<IGuestService>(_guests), _clock);
+        new(
+            new PassThroughRunner<IBookingService>(_bookings),
+            new PassThroughRunner<IGuestService>(_guests),
+            new PassThroughRunner<IGuestAccessService>(_access),
+            _tickets,
+            _clock);
+
+    /// <summary>The answer of the public booking: the booking and the guest's session (MIL-018).</summary>
+    private static PublicBookingDto Booked(int id) =>
+        new(BookingDetails(id), new GuestSessionDto($"guest-token-{id}", new DateTimeOffset(2026, 3, 10, 14, 0, 0, TimeSpan.Zero), id));
 
     private void RoomsAre(params AvailableRoomDto[] rooms) =>
         _bookings.GetAvailableRoomsAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<int?>(), Arg.Any<CancellationToken>())
@@ -55,12 +72,16 @@ public sealed class BookingFlowViewModelTests
     [Fact]
     public void Constructor_MissingDependency_Throws()
     {
-        var bookings = new PassThroughRunner<IBookingService>(_bookings);
-        var guests = new PassThroughRunner<IGuestService>(_guests);
+        PassThroughRunner<IBookingService> bookings = new(_bookings);
+        PassThroughRunner<IGuestService> guests = new(_guests);
+        PassThroughRunner<IGuestAccessService> access = new(_access);
 
-        Assert.Throws<ArgumentNullException>(() => new BookingFlowViewModel(null!, guests, _clock));
-        Assert.Throws<ArgumentNullException>(() => new BookingFlowViewModel(bookings, null!, _clock));
-        Assert.Throws<ArgumentNullException>(() => new BookingFlowViewModel(bookings, guests, null!));
+        // The null-forgiving operator passes the null that the guard must refuse.
+        Assert.Throws<ArgumentNullException>(() => new BookingFlowViewModel(null!, guests, access, _tickets, _clock));
+        Assert.Throws<ArgumentNullException>(() => new BookingFlowViewModel(bookings, null!, access, _tickets, _clock));
+        Assert.Throws<ArgumentNullException>(() => new BookingFlowViewModel(bookings, guests, null!, _tickets, _clock));
+        Assert.Throws<ArgumentNullException>(() => new BookingFlowViewModel(bookings, guests, access, null!, _clock));
+        Assert.Throws<ArgumentNullException>(() => new BookingFlowViewModel(bookings, guests, access, _tickets, null!));
     }
 
     /// <summary>Positive: the flow starts at the dates, tomorrow for one night, with no error shown yet.</summary>
@@ -269,15 +290,18 @@ public sealed class BookingFlowViewModelTests
         Assert.Equal(Text(ErrorCodes.Guest.FirstNameRequired), viewModel.GuestErrors.FirstName);
         Assert.Equal(Text(ErrorCodes.Guest.EmailInvalid), viewModel.GuestErrors.Email);
         Assert.Equal([Text(ErrorCodes.Booking.NotFound)], viewModel.Errors);
-        await _bookings.DidNotReceiveWithAnyArgs().CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>());
+        await _access.DidNotReceiveWithAnyArgs().BookAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>());
     }
 
-    /// <summary>Positive: a valid booking is sent as a new guest with trimmed fields and keeps only its receipt (MIL-079).</summary>
+    /// <summary>
+    /// Positive: a valid booking is sent as a new guest with trimmed fields, keeps only its receipt (MIL-079), and keeps the
+    /// guest's session under a one-time ticket that opens it once (MIL-018).
+    /// </summary>
     [Fact]
-    public async Task SubmitAsync_ValidBooking_ShowsTheReceipt()
+    public async Task SubmitAsync_ValidBooking_ShowsTheReceiptAndKeepsTheSessionUnderATicket()
     {
         _guests.ValidateFields(Arg.Any<GuestFields>()).Returns(Result.Success());
-        _bookings.CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>()).Returns(Ok(BookingDetails(9)));
+        _access.BookAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>()).Returns(Ok(Booked(9)));
         var viewModel = await AtGuestStepAsync();
         viewModel.PassportNumber = " P1 ";
 
@@ -285,7 +309,10 @@ public sealed class BookingFlowViewModelTests
 
         Assert.Equal(BookingFlowStep.Receipt, viewModel.CurrentStep);
         Assert.Equal(BookingReceiptDto.From(BookingDetails(9)), viewModel.Confirmation);
-        await _bookings.Received(1).CreatePublicAsync(
+        Assert.NotNull(viewModel.SessionTicket);
+        Assert.Equal(Booked(9).Session, _tickets.Redeem(viewModel.SessionTicket));
+        Assert.Null(_tickets.Redeem(viewModel.SessionTicket));
+        await _access.Received(1).BookAsync(
             new CreatePublicBookingRequest(
                 Today.AddDays(1),
                 Today.AddDays(2),
@@ -302,8 +329,8 @@ public sealed class BookingFlowViewModelTests
     public async Task SubmitAsync_TypeTakenMeanwhile_SearchesAgainAndKeepsTheReason(string code)
     {
         _guests.ValidateFields(Arg.Any<GuestFields>()).Returns(Result.Success());
-        _bookings.CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>())
-            .Returns(Fail<BookingDetailsDto>(code));
+        _access.BookAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Fail<PublicBookingDto>(code));
         BookingFlowViewModel viewModel = await AtGuestStepAsync();
 
         await viewModel.SubmitAsync(Token);
@@ -318,8 +345,8 @@ public sealed class BookingFlowViewModelTests
     public async Task SubmitAsync_OtherRefusalOrFailedSearch_ShowsTheRightReason()
     {
         _guests.ValidateFields(Arg.Any<GuestFields>()).Returns(Result.Success());
-        _bookings.CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>())
-            .Returns(Fail<BookingDetailsDto>(ErrorCodes.Booking.ConcurrencyConflict), Fail<BookingDetailsDto>(ErrorCodes.Booking.RoomNotBookable));
+        _access.BookAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Fail<PublicBookingDto>(ErrorCodes.Booking.ConcurrencyConflict), Fail<PublicBookingDto>(ErrorCodes.Booking.RoomNotBookable));
         var viewModel = await AtGuestStepAsync();
 
         await viewModel.SubmitAsync(Token);
@@ -388,7 +415,7 @@ public sealed class BookingFlowViewModelTests
     public async Task StartOver_AfterReceipt_ClearsTheFlow()
     {
         _guests.ValidateFields(Arg.Any<GuestFields>()).Returns(Result.Success());
-        _bookings.CreatePublicAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>()).Returns(Ok(BookingDetails(9)));
+        _access.BookAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>()).Returns(Ok(Booked(9)));
         var viewModel = await AtGuestStepAsync();
         await viewModel.SubmitAsync(Token);
         _clock.Today = Today.AddDays(5);
@@ -397,6 +424,7 @@ public sealed class BookingFlowViewModelTests
 
         Assert.Equal(BookingFlowStep.Dates, viewModel.CurrentStep);
         Assert.Null(viewModel.Confirmation);
+        Assert.Null(viewModel.SessionTicket);
         Assert.Null(viewModel.SelectedRoomType);
         Assert.Empty(viewModel.AvailableRooms);
         Assert.Equal(string.Empty, viewModel.FirstName);
@@ -531,111 +559,9 @@ public sealed class BookingFlowViewModelTests
     #endregion
 }
 
-/// <summary>The receipt lookup (MIL-054 task 3, MIL-079), the guest field errors, the booking number and the public dates.</summary>
-public sealed class BookingReceiptTests
+/// <summary>The guest field errors, the booking number and the public dates of the booking flow (MIL-054 task 3).</summary>
+public sealed class BookingFlowTextTests
 {
-    private readonly IBookingService _bookings = Substitute.For<IBookingService>();
-
-    private static CancellationToken Token => TestContext.Current.CancellationToken;
-
-    private BookingReceiptViewModel Create() => new(new PassThroughRunner<IBookingService>(_bookings));
-
-    /// <summary>Negative: the runner is required.</summary>
-    [Fact]
-    public void Constructor_MissingRunner_Throws()
-    {
-        Assert.Throws<ArgumentNullException>(() => new BookingReceiptViewModel(null!));
-    }
-
-    /// <summary>Positive: the number and the email find the receipt; the number is sent as the key and the email as typed.</summary>
-    [Fact]
-    public async Task LookUpAsync_NumberAndEmail_ShowsTheReceipt()
-    {
-        var receipt = BookingReceiptDto.From(BookingDetails(42));
-        _bookings.LookUpReceiptAsync(new BookingReceiptRequest(42, " Rita@Example.com"), Arg.Any<CancellationToken>()).Returns(Ok(receipt));
-        var viewModel = Create();
-        viewModel.Prefill("FLZ-42");
-        viewModel.Email = " Rita@Example.com";
-
-        await viewModel.LookUpAsync(Token);
-
-        Assert.Equal(receipt, viewModel.Receipt);
-        Assert.Empty(viewModel.Errors);
-        Assert.False(viewModel.IsBusy);
-    }
-
-    /// <summary>Negative: an unreadable number is not looked up and gets the answer of a number that does not exist.</summary>
-    [Fact]
-    public async Task LookUpAsync_UnreadableNumber_SaysNotFoundWithoutALookup()
-    {
-        var viewModel = Create();
-        viewModel.BookingNumber = "abc";
-        viewModel.Email = "rita@example.com";
-
-        await viewModel.LookUpAsync(Token);
-
-        Assert.Null(viewModel.Receipt);
-        Assert.Equal([Text(ErrorCodes.Booking.NotFound)], viewModel.Errors);
-        Assert.Empty(_bookings.ReceivedCalls());
-    }
-
-    /// <summary>Error handling: each refusal of the lookup shows its own text and no receipt.</summary>
-    /// <param name="code">The code of the refusal.</param>
-    [Theory]
-    [InlineData(ErrorCodes.Booking.NotFound)]
-    [InlineData(ErrorCodes.Booking.ReceiptEmailRequired)]
-    [InlineData(ErrorCodes.Booking.TooManyLookups)]
-    public async Task LookUpAsync_Refused_ShowsTheTextOfTheRefusal(string code)
-    {
-        _bookings.LookUpReceiptAsync(Arg.Any<BookingReceiptRequest>(), Arg.Any<CancellationToken>()).Returns(Fail<BookingReceiptDto>(code));
-        var viewModel = Create();
-        viewModel.Prefill("42");
-
-        await viewModel.LookUpAsync(Token);
-
-        Assert.Null(viewModel.Receipt);
-        Assert.Equal([Text(code)], viewModel.Errors);
-    }
-
-    /// <summary>State transition: a new number from the address fills in the form and forgets the last answer.</summary>
-    [Fact]
-    public async Task Prefill_AfterAnAnswer_FillsInTheNumberAndForgetsTheAnswer()
-    {
-        _bookings.LookUpReceiptAsync(Arg.Any<BookingReceiptRequest>(), Arg.Any<CancellationToken>()).Returns(Fail<BookingReceiptDto>(ErrorCodes.Booking.NotFound));
-        var viewModel = Create();
-        viewModel.Prefill("42");
-        await viewModel.LookUpAsync(Token);
-
-        viewModel.Prefill(" FLZ-7 ");
-        var withNumber = viewModel.BookingNumber;
-        viewModel.Prefill(null);
-
-        Assert.Equal("FLZ-7", withNumber);
-        Assert.Equal(string.Empty, viewModel.BookingNumber);
-        Assert.Empty(viewModel.Errors);
-        Assert.Null(viewModel.Receipt);
-    }
-
-    /// <summary>Concurrency: a second lookup while one runs is ignored.</summary>
-    [Fact]
-    public async Task LookUpAsync_WhileLookingUp_IsIgnored()
-    {
-        var pending = new TaskCompletionSource<Result<BookingReceiptDto>>();
-        _bookings.LookUpReceiptAsync(Arg.Any<BookingReceiptRequest>(), Arg.Any<CancellationToken>()).Returns(pending.Task);
-        var viewModel = Create();
-        viewModel.Prefill("42");
-        viewModel.Email = "rita@example.com";
-
-        var lookUp = viewModel.LookUpAsync(Token);
-        Assert.True(viewModel.IsBusy);
-        await viewModel.LookUpAsync(Token);
-        pending.SetResult(Result<BookingReceiptDto>.Success(BookingReceiptDto.From(BookingDetails(42))));
-        await lookUp;
-
-        await _bookings.Received(1).LookUpReceiptAsync(Arg.Any<BookingReceiptRequest>(), Arg.Any<CancellationToken>());
-        Assert.False(viewModel.IsBusy);
-    }
-
     /// <summary>Boundary and equivalence: the booking number with or without its prefix, and every way it can be unreadable.</summary>
     [Theory]
     [InlineData("FLZ-0042", true, 42)]

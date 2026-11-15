@@ -1,0 +1,64 @@
+@attribute [Route(GuestSignInRegistration.SignInPath)]
+@attribute [Route(GuestSignInRegistration.SignInPath + "/{BookingNumber}")]
+@using NFHotel.Web.Security
+@inherits NFHotel.Web.Common.CancellableComponentBase
+
+@inject GuestSignInViewModel ViewModel
+@inject NavigationManager Navigation
+
+@*
+    The guest sign-in (MIL-018, ADR-0047, UC-010): the booking number and the email the booking was made with sign the
+    guest in to that booking, and the guest's own page /my-booking shows it, with the dates to change and the button to
+    cancel. Until MIL-018 this page showed the receipt itself (MIL-079); now it opens the guest's session instead, so the
+    same two fields lead to the receipt and to the changes.
+
+    A static server-rendered form, with no @@rendermode: the guest cookie can only be set while the response is being
+    made, and a SignalR circuit cannot set one. The cookie is a scheme of its own, beside the staff cookie, so a guest is
+    never taken for a member of staff (ADR-0047 decision 6).
+
+    The address may carry the number (/booking/FLZ-000123), so the links and bookmarks from before still fill in the
+    form. The email never goes in the address: the form sends it in the body, so it stays out of access logs and the
+    browser history.
+
+    PublicLayout is the default layout (Routes.razor), so there is no @@layout line.
+*@
+
+<PageTitle>Find your booking — NFHotel</PageTitle>
+
+<div class="pub-section">
+    <div class="pub-wrap">
+        <div class="pub-booking stack-lg">
+            <PageHeader Title="Find your booking"
+                        Subtitle="Enter your booking number and the email you booked with." />
+
+            <ErrorAlert Errors="ViewModel.Errors" />
+
+            @* Input is set in OnInitialized, before the first render, so it is never null where the fields bind to it. *@
+            <EditForm Model="Input" FormName="@FormName" OnValidSubmit="SignInAsync" method="post" class="card card-pad stack">
+                <DataAnnotationsValidator />
+
+                <div class="field-row">
+                    <FormField Label="Booking number" For="booking-number" IsRequired="true"
+                               Hint="It is on your confirmation and looks like this: FLZ-000123.">
+                        <InputText id="booking-number" class="field-input numeric" autocomplete="off" @bind-Value="Input!.BookingNumber" />
+                    </FormField>
+
+                    <FormField Label="Email" For="booking-email" IsRequired="true"
+                               Hint="The email you booked with.">
+                        <InputText id="booking-email" type="email" class="field-input" autocomplete="email" @bind-Value="Input!.Email" />
+                    </FormField>
+                </div>
+
+                <ValidationSummary />
+
+                <div class="row">
+                    <button type="submit" class="btn btn-primary">Show my booking</button>
+                </div>
+            </EditForm>
+
+            <p class="muted">
+                If it still doesn't work, email help@nfhotel.com and reception will find the booking for you.
+            </p>
+        </div>
+    </div>
+</div>
