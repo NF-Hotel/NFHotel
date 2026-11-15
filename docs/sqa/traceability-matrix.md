@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-053, which the matrix did not have: the milestone with its gate, RC-372 Go, and the code of the scan exporter with its reviews, RC-257, RC-277 and RC-366; accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [8321a92] |
-| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-028, which the matrix did not have: the milestone with its plan reviews and its gate, RC-382 (No-Go for now), and the code of the market analysis service with its review, RC-381 (QC-PY-001 No-Go, QC-YML-001 Go); accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The rows of MIL-028, which the matrix did not have: the milestone with its plan reviews and its gate, RC-382 (No-Go for now), and the code of the market analysis service with its review, RC-381 (QC-PY-001 No-Go, QC-YML-001 Go); accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [b8c8a9c] |
 
 ---
 
@@ -521,3 +521,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-129]: ./reviews/rc-129-mil-028-timeouts.md
 [RC-381]: ./reviews/rc-381-mil-028-service-code.md
 [RC-382]: ./reviews/rc-382-mil-028-gate.md
+[b8c8a9c]: https://github.com/NF-Hotel/NFHotel/commit/b8c8a9c1ec6cde722a4d6aeb89648fd7c743bfd8

@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 and S03 | Initial version: gate of MIL-028 on the service at the pin 97ca890 with the fixes merged in d46df37; No-Go for now, criterion 9 fails on QC-PY-001 (RC-381); mode autonomous, not independent | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 and S03 | Initial version: gate of MIL-028 on the service at the pin 97ca890 with the fixes merged in d46df37; No-Go for now, criterion 9 fails on QC-PY-001 (RC-381); mode autonomous, not independent | [b8c8a9c] |
 
 ---
 
@@ -74,3 +74,4 @@ No-Go for now. Criteria 1 to 8 pass, criterion 7 after the fixes of d46df37; cri
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-PY-001]: ../../../framework/qc/code/qc-programming-python.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[b8c8a9c]: https://github.com/NF-Hotel/NFHotel/commit/b8c8a9c1ec6cde722a4d6aeb89648fd7c743bfd8

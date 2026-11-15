@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 and S03 | Initial version: review of NF-Hotel/notebook-market-analysis for the gate of MIL-028, at the pin 97ca890 with the fixes merged in d46df37; QC-PY-001 No-Go, QC-YML-001 Go after the fixes; mode autonomous, not independent | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 and S03 | Initial version: review of NF-Hotel/notebook-market-analysis for the gate of MIL-028, at the pin 97ca890 with the fixes merged in d46df37; QC-PY-001 No-Go, QC-YML-001 Go after the fixes; mode autonomous, not independent | [b8c8a9c] |
 
 ---
 
@@ -133,3 +133,4 @@ The reviewer is not independent: the AI made the fixes and wrote this record, as
 [PRC-001]: ../../../framework/process/review-checklist-process.md
 [QC-PY-001]: ../../../framework/qc/code/qc-programming-python.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
+[b8c8a9c]: https://github.com/NF-Hotel/NFHotel/commit/b8c8a9c1ec6cde722a4d6aeb89648fd7c743bfd8
