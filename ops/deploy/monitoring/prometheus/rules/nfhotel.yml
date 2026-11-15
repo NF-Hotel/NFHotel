@@ -182,11 +182,14 @@ groups:
           description: "Check nfhotel-cert-renew.service on nf-hotel (ADR-0009, RC-162)."
 
       # A report that does not exist cannot grow old, so the alerts above would never fire for
-      # a job that never ran or a file that was removed (ADR-0020 decision 4). These fire only
-      # while nf-hotel sends metrics, so a VM that is down raises NoMetricsFromNfHotel alone.
+      # a job that never ran or a file that was removed (ADR-0020 decision 4). backup_check is
+      # one of them: BackupUnreadable compares it with backup, so without it that alert is
+      # silent (MIL-076). These fire only while nf-hotel sends metrics, so a VM that is down
+      # raises NoMetricsFromNfHotel alone.
       - alert: TaskReportMissing
         expr: >-
           (label_replace(vector(1), "task", "backup", "", "")
+          or label_replace(vector(1), "task", "backup_check", "", "")
           or label_replace(vector(1), "task", "offvm_copy", "", "")
           or label_replace(vector(1), "task", "cert_renew", "", "")
           or label_replace(vector(1), "task", "container_check", "", ""))

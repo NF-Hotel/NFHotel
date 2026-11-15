@@ -293,6 +293,15 @@ tests:
           - exp_labels:
               severity: warning
               host: nf-hotel
+              task: backup_check
+            exp_annotations:
+              summary: "nf-hotel has no backup_check report"
+              description: >-
+                The job has not succeeded since /var/lib/nfhotel-metrics was made, or its report was
+                removed. Check its timer and journal on nf-hotel (wiki page Monitoring).
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
               task: cert_renew
             exp_annotations:
               summary: "nf-hotel has no cert_renew report"
@@ -331,6 +340,30 @@ tests:
         exp_alerts: []
       - eval_time: 40m
         alertname: HealthReportMissing
+        exp_alerts: []
+
+  - name: a backup_check of 0 (no dump read back yet) is a report, so no TaskReportMissing
+    interval: 1m
+    input_series:
+      - series: 'node_uname_info{host="nf-hotel"}'
+        values: "1x60"
+      - series: 'nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup"}'
+        values: "3600x60"
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup_check"}
+        values: "0x60"
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="offvm_copy"}
+        values: "3600x60"
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="cert_renew"}
+        values: "3600x60"
+      - series: >-
+          nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="container_check"}
+        values: "3600x60"
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: TaskReportMissing
         exp_alerts: []
 
   - name: an unhealthy container fires ContainerUnhealthy
