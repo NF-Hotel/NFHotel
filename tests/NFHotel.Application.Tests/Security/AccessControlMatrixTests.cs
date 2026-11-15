@@ -126,15 +126,14 @@ public sealed partial class AccessControlMatrixTests
     private static List<MatrixRow> ReadMatrix()
     {
         List<MatrixRow> rows = [];
-        foreach (string line in File.ReadLines(MatrixPath()))
+        IEnumerable<Match> permissionRows = File.ReadLines(MatrixPath())
+            .Select(line => PermissionRow().Match(line))
+            .Where(match => match.Success);
+        foreach (Match match in permissionRows)
         {
-            Match match = PermissionRow().Match(line);
-            if (match.Success)
-            {
-                string[] cells = match.Groups["cells"].Value.Split('|').Select(cell => cell.Trim()).ToArray();
-                Assert.True(cells.Length == RoleColumns.Length, $"The row of {match.Groups["permission"].Value} has {cells.Length} role cells.");
-                rows.Add(new MatrixRow(match.Groups["permission"].Value, cells));
-            }
+            string[] cells = match.Groups["cells"].Value.Split('|').Select(cell => cell.Trim()).ToArray();
+            Assert.True(cells.Length == RoleColumns.Length, $"The row of {match.Groups["permission"].Value} has {cells.Length} role cells.");
+            rows.Add(new MatrixRow(match.Groups["permission"].Value, cells));
         }
 
         Assert.NotEmpty(rows);
