@@ -1,0 +1,86 @@
+# Compare the public edge with its code every week (MIL-078 task 3, ADR-0046): a plan of
+# ops/infra/cloudflare against the live Cloudflare account, with a token that only reads. The
+# plan imports the routes of the tunnel nf-hotel, the Access application of the back office and
+# its policy Team; an object to add, change or destroy beside the three imports means that the
+# live account differs from the code. A difference opens an issue, or adds to the open one, and
+# a clean plan closes it, as the daily scan of the running images does
+# (running-image-scan.yaml). The log of this public repository is public, so the plan itself is
+# never printed: the log and the issue give the counts and the names of the objects that differ.
+# The steps are subcommands of ops/scripts/edge-comparison-steps.sh, tested by
+# ops/tests/test-edge-comparison.sh. tofu runs from its official image, pinned by digest in
+# ops/scripts/edge-tofu.sh, so no action of a new publisher is used (ADR-0037).
+#
+# Triggers: weekly (Monday 04:23 UTC), and by hand.
+# Secrets: of the environment cloudflare-read, which S01 limits to main (wiki page
+#   Public-Access): CLOUDFLARE_READ_TOKEN, a token that only reads the tunnel and Access;
+#   CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_TUNNEL_ID, CLOUDFLARE_ACCESS_APP_ID,
+#   CLOUDFLARE_ACCESS_POLICY_ID, CLOUDFLARE_TEAM_NAME and CLOUDFLARE_TEAM_EMAILS (the addresses of
+#   the policy Team as a JSON list). Each is a secret so that GitHub masks it in the log. While
+#   one is missing, a run names the missing ones in a warning, compares nothing and stays green.
+#   The job's GITHUB_TOKEN writes the issue.
+# Changes outside the repository: none; the plan only reads, and nothing is applied.
+# Verified with actionlint 1.7.7 (ops/tests/lint.sh), for GitHub.com.
+name: NF Hotel edge comparison
+
+on:
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    name: Compare the edge with its code
+    runs-on: ubuntu-24.04
+    # The provider is about 200 MB to download; the plan reads three objects.
+    timeout-minutes: 15
+    environment: cloudflare-read
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      # The steps of this job are in ops/scripts/edge-comparison-steps.sh, one subcommand each.
+      # Only a yes or a no per secret reaches this step, never a value.
+      - name: Check that every secret of the environment is set
+        id: check
+        env:
+          HAS_CLOUDFLARE_READ_TOKEN: ${{ secrets.CLOUDFLARE_READ_TOKEN != '' }}
+          HAS_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+          HAS_CLOUDFLARE_TUNNEL_ID: ${{ secrets.CLOUDFLARE_TUNNEL_ID != '' }}
+          HAS_CLOUDFLARE_ACCESS_APP_ID: ${{ secrets.CLOUDFLARE_ACCESS_APP_ID != '' }}
+          HAS_CLOUDFLARE_ACCESS_POLICY_ID: ${{ secrets.CLOUDFLARE_ACCESS_POLICY_ID != '' }}
+          HAS_CLOUDFLARE_TEAM_NAME: ${{ secrets.CLOUDFLARE_TEAM_NAME != '' }}
+          HAS_CLOUDFLARE_TEAM_EMAILS: ${{ secrets.CLOUDFLARE_TEAM_EMAILS != '' }}
+        run: bash ops/scripts/edge-comparison-steps.sh check
+      # The token and the values reach this step only, and tofu only through docker -e NAME.
+      - name: Plan against the live account and count what differs
+        id: compare
+        if: steps.check.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_READ_TOKEN }}
+          TF_VAR_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_tunnel_id: ${{ secrets.CLOUDFLARE_TUNNEL_ID }}
+          TF_VAR_access_application_id: ${{ secrets.CLOUDFLARE_ACCESS_APP_ID }}
+          TF_VAR_access_policy_id: ${{ secrets.CLOUDFLARE_ACCESS_POLICY_ID }}
+          TF_VAR_access_team_name: ${{ secrets.CLOUDFLARE_TEAM_NAME }}
+          TF_VAR_team_emails: ${{ secrets.CLOUDFLARE_TEAM_EMAILS }}
+        run: bash ops/scripts/edge-comparison-steps.sh compare
+      - name: Open, update or close the issue
+        if: steps.check.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SERVER: ${{ github.server_url }}
+          RUN_ID: ${{ github.run_id }}
+          DIFFERS: ${{ steps.compare.outputs.differs }}
+        run: bash ops/scripts/edge-comparison-steps.sh report

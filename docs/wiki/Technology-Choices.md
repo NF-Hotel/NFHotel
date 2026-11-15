@@ -30,7 +30,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 | Build | GitHub Actions, Docker, GHCR, Microsoft's .NET images, Debian slim and Alpine images | Jenkins, GitLab CI; Podman; Docker Hub; distroless, Chainguard |
 | Test | xUnit, Testcontainers, Playwright, k6, SonarQube Cloud, CodeQL, OWASP ZAP, Trivy | NUnit, MSTest; Selenium, Cypress; JMeter, Locust; Codacy; Semgrep; Burp Suite; Grype, Docker Scout |
 | Release | Dependabot, GitHub artifact attestations and SBOMs, OpenSSF Scorecard | Renovate; cosign with Sigstore directly |
-| Deploy | Docker Compose, Proxmox VE, Debian, nginx, HAProxy, Cloudflare Tunnel, Cloudflare Access, Tailscale, Let's Encrypt | Kubernetes, k3s, Nomad; VMware ESXi, Hyper-V; Ubuntu Server; Caddy, Traefik; port forwarding, Tailscale Funnel; Authelia; WireGuard, OpenVPN, ZeroTier |
+| Deploy | Docker Compose, Proxmox VE, Debian, nginx, HAProxy, Cloudflare Tunnel, Cloudflare Access, OpenTofu, Tailscale, Let's Encrypt | Kubernetes, k3s, Nomad; VMware ESXi, Hyper-V; Ubuntu Server; Caddy, Traefik; port forwarding, Tailscale Funnel; Authelia; Terraform, Pulumi; WireGuard, OpenVPN, ZeroTier |
 | Operate | pg_dump, age, rsync and rrsync, systemd timers, nftables, unattended-upgrades, secrets as files | pgBackRest, Barman; GPG; restic, Borg; cron; ufw, iptables; Vault, SOPS |
 | Monitor | Prometheus, Grafana, Loki, Grafana Alloy, Alertmanager, Healthchecks.io, OpenTelemetry, the blackbox exporter | Zabbix, InfluxDB; Kibana; Elasticsearch, OpenSearch; Promtail, Vector, Fluent Bit; PagerDuty; Uptime Kuma, Gatus; vendor agents |
 | Security | GitHub secret scanning, the Docker socket proxy, and the products above | gitleaks, TruffleHog; mounting the Docker socket |
@@ -157,7 +157,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 
 ### GitHub Actions
 
-- **Used for:** the ten workflows and four composite actions on [Workflows](Workflows): CI, the release, the deploy, the scans and the wiki.
+- **Used for:** the eleven workflows and four composite actions on [Workflows](Workflows): CI, the release, the deploy, the scans, the comparison of the public edge and the wiki.
 - **Alternatives:** Jenkins, GitLab CI, Azure Pipelines, a self-hosted runner, Woodpecker or Drone.
 - **For it:** built into GitHub, so a check is on the pull request with no integration; hosted Linux runners with no server to maintain; OIDC tokens for Tailscale and for attestations; free for the project's usage.
 - **Against it:** the feedback loop is push and wait; YAML logic is hard to test locally; third-party actions are a supply-chain risk (they must be pinned); its price and minutes are Microsoft's to change.
@@ -393,6 +393,20 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 - **Our reason:** [ADR-0029](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0029-back-office-behind-cloudflare-access.md), option 3.
 - **Choose the alternative when:** the tunnel is replaced (then Authelia or a VPN).
 
+### OpenTofu
+
+- **Used for:** the routes of the Cloudflare tunnel and the Access application of the back office with its policy, as code in `ops/infra/cloudflare/` with the Cloudflare provider. `ops/scripts/edge-tofu.sh` runs `tofu` from its official image `ghcr.io/opentofu/opentofu`, the minimal variant, pinned by digest; Ops CI checks the format and validates the code, and `edge-comparison.yaml` compares it with the live account every week ([ADR-0046](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0046-the-tunnel-routes-and-access-in-opentofu.md), [Public Access](Public-Access#the-edge-as-code)).
+- **Alternatives:** Terraform, Pulumi, a script against the API of Cloudflare, a local configuration file of `cloudflared` in git, or the dashboard alone, set by hand from the wiki.
+- **For it:** a plan compares the code with the live account, which is the whole weekly check; `import` blocks read the existing objects, so it works without a state file; open source under the Mozilla Public License 2.0, governed by the Linux Foundation, with the language and the providers of Terraform; one static binary in a pinned image, so no new action and no new publisher.
+- **Against it:** a second configuration language (HCL) in the repository; without a state file it never deletes an object taken out of the code; the provider is a download of about 200 MB on every run, and the pins of the image and the provider are updated by hand; Terraform and the fork drift apart, so an example written for one may need changes for the other.
+- **What practitioners say:**
+  - When HashiCorp moved Terraform to the Business Source License in August 2023, the most discussed thread read it as the end of Terraform as open source, and many contributors felt let down; a minority defended the license as protection against cloud vendors reselling the product ([HashiCorp adopts Business Source License](https://news.ycombinator.com/item?id=37081306)).
+  - The fork was welcomed as the continuation of the open project: commenters compared it with Jenkins after Hudson and LibreOffice after OpenOffice, and valued a foundation that asks for no contributor license agreement ([OpenTF announces fork of Terraform](https://news.ycombinator.com/item?id=37262440)).
+  - Large users moved to avoid the uncertainty of the license ([Oracle dumps Terraform for OpenTofu](https://news.ycombinator.com/item?id=40365198)).
+  - On running without state, the highest-ranked comment holds that a state file is needed to know what changed and what to delete, and others point out that the state holds secrets in clear text, which is why state encryption was among the first wishes for OpenTofu ([A more mature take on stateless Terraform](https://news.ycombinator.com/item?id=37809111)). NF Hotel accepts the first point (an object taken out of the code is deleted by hand) to avoid the second.
+- **Our reason:** [ADR-0046](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0046-the-tunnel-routes-and-access-in-opentofu.md), option 3: the edge had drifted once unseen (MIL-072), and only a tool with a plan against the live account finds that within a week. OpenTofu over Terraform for its open license, and over Pulumi and an own script because the plan and the import are built in.
+- **Choose the alternative when:** the code must also delete what it no longer names, or several people apply at once (then a state file, encrypted by OpenTofu, in a store of its own); Pulumi when the team would rather write the edge in a general-purpose language.
+
 ### Tailscale
 
 - **Used for:** the private network (tailnet) of the team, the VM and the monitoring LXC; CD joins it as an ephemeral node with OIDC and deploys over Tailscale SSH ([ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md)); `tailscale cert` gives the tailnet certificate ([ADR-0009](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0009-tls-certificates.md)); the policy is in git ([ADR-0027](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0027-configuration-as-code.md)).
@@ -587,7 +601,7 @@ The order a change takes from a pull request to production. The details of each 
 | 8 | Release build without push (`release-check.yaml`) | composite action `release-images` | The same action as the release, so a broken release is found before the merge | none |
 | 9 | Code scanning (GitHub default setup) | CodeQL | Free, data-flow analysis, on the pull request | Semgrep |
 | 10 | Ops linters (`ops-ci.yaml`, `lint`) | actionlint, shellcheck, shfmt, yamllint, in pinned containers | The standard linter of each file type; containers give the same versions locally and in CI | super-linter (one large image) |
-| 11 | Ops tests (`ops-ci.yaml`, the other jobs) | Bash tests in Debian 12 and 13 containers, network namespaces, `promtool`, `amtool`, a real PostgreSQL 16, a throwaway stack | Each script is tested where it runs, without touching a real host | bats-core (a test framework for Bash) |
+| 11 | Ops tests (`ops-ci.yaml`, the other jobs) | Bash tests in Debian 12 and 13 containers, network namespaces, `promtool`, `amtool`, a real PostgreSQL 16, a throwaway stack, `tofu fmt -check` and `tofu validate` for the code of the public edge | Each script is tested where it runs, without touching a real host | bats-core (a test framework for Bash) |
 | 12 | Wiki coverage (`ops-ci.yaml`, `wiki-coverage`) | `ops/tests/test-wiki-coverage.sh` | Keeps the reference pages, this one too, true | none |
 | 13 | End-to-end tests (`e2e-dast.yaml`, `e2e`) | Playwright on a throwaway stack; a log privacy check | Real browsers against the real images | Selenium |
 | 14 | DAST baseline, signed out and in (`dast-baseline`) | OWASP ZAP | Free, made for CI | Burp Suite |
@@ -604,6 +618,7 @@ The order a change takes from a pull request to production. The details of each 
 | 25 | Load test, weekly (`load-test.yaml`) | k6 | Thresholds as pass or fail | JMeter |
 | 26 | Scorecard (`scorecard.yaml`) | OpenSSF Scorecard | An outside score of the repository's practices | none |
 | 27 | Publish the wiki (`publish-wiki.yaml`) | Own script | ADR-0022: the wiki is reviewed in `docs/wiki` like code | Editing the wiki by hand |
+| 28 | Compare the public edge with its code, weekly (`edge-comparison.yaml`) | OpenTofu with the Cloudflare provider and a token that reads; `jq` reduces the plan to its counts | ADR-0046: a plan against the live account finds a change of the routes or of Access within a week, and the plan itself never reaches the public log | A script against the API of Cloudflare; the dashboard checked by hand |
 
 The housekeeping steps of every job (check out, install the .NET SDK, log in to and out of GHCR, keep artifacts and reports, upload SARIF to code scanning) use GitHub's own actions: `actions/checkout`, `actions/setup-dotnet`, `actions/upload-artifact`, `actions/download-artifact` and `github/codeql-action/upload-sarif`, each pinned by commit SHA. They are the platform's standard, and no alternative is worth weighing.
 

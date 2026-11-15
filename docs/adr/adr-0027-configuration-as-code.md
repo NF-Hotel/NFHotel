@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0027 |
-| CrossReference | [ADR-0003], [ADR-0020], [MIL-038], [RC-161] |
+| CrossReference | [ADR-0003], [ADR-0020], [MIL-038], [RC-161], [ADR-0046] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; written by the AI in autonomous mode under MIL-038, which S01 accepted in chat on 2026-10-24 | [bfaa680] |
-| 2026-10-25 | Accepted | mikemike | AI as stand-in for S01 | Decision 4: the work is deferred until a trigger; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | [199bc05] |
+| 2026-10-25 | Deprecated | mikemike | AI as stand-in for S01 | Decision 4: the work is deferred until a trigger; S01 decided in chat on 2026-10-25 ("Ja og begrunde med et acceptabelt hvorfor og valg") | [199bc05] |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Context: ADR-0046 brings a third setting of a console into git, the routes of the Cloudflare tunnel and the Access application of the back office, with OpenTofu and without a state store (MIL-078); the two parts of decision 4 stay deferred | [fe54d45] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -29,6 +29,8 @@ Options considered:
 1. **Keep the consoles,** and write changes in the wiki. Nothing to build, but a change and its reason can drift apart, and nobody is told.
 2. **The tailnet policy in git, tested and applied by the Tailscale GitOps action** (`tailscale/gitops-acl-action`). A pull request runs the policy's own `tests` against the policy; a merge to main applies it with an OAuth client that may only write the policy file. The console then shows a banner that the policy is managed in git.
 3. **Terraform** for the tailnet and for Proxmox (the providers `tailscale/tailscale` and `bpg/proxmox`). One tool for both, but it needs a state store and a token with write access to the whole node, which is the root of every VM on it, including `sports-club`, which is not ours.
+
+**2026-11-15 ([ADR-0046], MIL-078).** A third setting that lived only in a console, the routes of the Cloudflare tunnel and the Access application of the back office, is now code in `ops/infra/cloudflare/`, with OpenTofu, the open fork of Terraform. It meets the two objections to option 3 for its own case: it keeps no state store, because every plan imports the live objects, and the token that writes stays on the machine of S01 or S03. The tailnet policy and the Proxmox definitions stay deferred as decision 4 says.
 
 ## Decision
 
@@ -60,5 +62,6 @@ Options considered:
 [ADR-0020]: ./adr-0020-monitoring-stack.md
 [MIL-038]: ../milestones/mil-038-configuration-as-code.md
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
-[bfaa680]: https://github.com/NF-Hotel/NFHotel/commit/bfaa68027c5070fca1a3ac9cf35d339b87d6dd20
+[ADR-0046]: ./adr-0046-the-tunnel-routes-and-access-in-opentofu.md
 [199bc05]: https://github.com/NF-Hotel/NFHotel/commit/199bc05466d450b92157aa4daead871e7e6d76ce
+[fe54d45]: https://github.com/NF-Hotel/NFHotel/commit/fe54d457cf64a1e9ea741518731ee654dce26475

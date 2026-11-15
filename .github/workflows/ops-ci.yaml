@@ -1,9 +1,10 @@
 # CI of the operations code in ops/ (ADR-0016, formerly the CI of NF-Hotel/DevOps): the
 # linters of ops/ and of the workflows and actions, the coverage of the wiki reference pages
 # (MIL-049), the script tests, the monitoring configuration (ADR-0020), the runtime check of
-# the containers against their profiles (MIL-080), the nginx routes, the networks of the services
-# (ADR-0039), the pin of the market analysis service against its contract (MIL-026), the
-# volume of the benchmark (MIL-045), Ollama as a user that is not root (MIL-082),
+# the containers against their profiles (MIL-080), the nginx routes, the OpenTofu code of the
+# public edge (MIL-078), the networks of the services (ADR-0039), the pin of the market
+# analysis service against its contract (MIL-026), the volume of the benchmark (MIL-045),
+# Ollama as a user that is not root (MIL-082),
 # the Proxmox tests (the live ones skip), the PostgreSQL preparation with the real
 # migrations of this commit, the two local development modes (ADR-0035, ADR-0036), and the
 # rotation drill of the secrets (ADR-0024). The release build and the throwaway end-to-end
@@ -97,6 +98,7 @@ jobs:
           - test-check-container-runtime.sh
           - test-backup-read-back.sh
           - test-pull-monitoring.sh
+          - test-edge-comparison.sh
         # Debian 13: the rrsync of the backup target has -no-overwrite (MIL-066 task 1),
         # remove-desktop.sh is for the VM, which runs Debian 13 (MIL-068), test-sudo-log.sh
         # checks the log of the sudo of the VM (MIL-070), the runtime check runs on the VM
@@ -181,6 +183,23 @@ jobs:
           persist-credentials: false
       - name: Test the routes with and without the optional API route
         run: bash ops/tests/test-nginx.sh
+
+  # The routes of the tunnel and the Access application in OpenTofu (MIL-078, ADR-0046), in the
+  # image of OpenTofu pinned by digest. No token: nothing here reaches the Cloudflare account,
+  # which only the weekly edge-comparison.yaml reads.
+  edge-code:
+    name: Ops edge code (MIL-078)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the format of the code (tofu fmt -check)
+        run: bash ops/scripts/edge-tofu.sh fmt
+      - name: Check the provider against its lock file, and validate the code (tofu validate)
+        run: bash ops/scripts/edge-tofu.sh validate
 
   service-networks:
     name: Ops service networks (MIL-061)
