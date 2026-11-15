@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: review of the code of MIL-018 (tasks 3 to 6) against QC-CS-001 and QC-SH-001; F1 to F3, F6, F7, F11, F12, F14 and F15 fixed; Go; mode autonomous, not independent | [9e72b0e] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | F1: `TryCountAttempt` written as a compare-and-swap loop after SonarCloud S2583 (a false positive on the flag set in the delegates); behaviour and tests unchanged<br>CA1829 and CA1859 of `AccessControlMatrixTests` fixed; Go unchanged | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | F1: `TryCountAttempt` written as a compare-and-swap loop after SonarCloud S2583 (a false positive on the flag set in the delegates); behaviour and tests unchanged<br>CA1829 and CA1859 of `AccessControlMatrixTests` fixed; Go unchanged | [0532e78] |
 
 ---
 
@@ -221,3 +221,4 @@ agent.
 [RC-389]: ./rc-389-uc-010.md
 [RC-390]: ./rc-390-mil-018-amendments.md
 [9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
+[0532e78]: https://github.com/NF-Hotel/NFHotel/commit/0532e7808c80425204915f0759279b548bece1e3
