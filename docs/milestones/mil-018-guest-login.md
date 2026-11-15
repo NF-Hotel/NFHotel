@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | The read that MIL-079 closed on 2026-11-12 noted in the Purpose; the ADR of task 2 takes the next free number (ADR-0007 went to CI/CD); the target moved from 2027-03-19 to 2026-12-11; accepted after RC-358 Go, at S01's word in chat ("Du godkender for mig") | [62301c4] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-392 Go on criteria 1 to 8; tasks 2 to 6 in pull request 774 (RC-388 to RC-391, Go); task 7 on the deployed site with the test booking FLZ-158425, booked, signed out, looked up and cancelled; at S01's word in chat ("Du godkender for mig", "gennemfør derfor alt"); mode autonomous, not independent | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-392 Go on criteria 1 to 8; tasks 2 to 6 in pull request 774 (RC-388 to RC-391, Go); task 7 on the deployed site with the test booking FLZ-158425, booked, signed out, looked up and cancelled; at S01's word in chat ("Du godkender for mig", "gennemfør derfor alt"); mode autonomous, not independent | [6adb41a] |
 
 ---
 
@@ -105,3 +105,4 @@ Since 2026-11-12 the read is closed by [MIL-079]: the receipt page opens a booki
 [ADR-0006]: ../adr/adr-0006-tls.md
 [MIL-079]: ./mil-079-a-booking-opened-only-with-its-email.md
 [62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59
+[6adb41a]: https://github.com/NF-Hotel/NFHotel/commit/6adb41acb602f289447eab8f65265649466ad14b

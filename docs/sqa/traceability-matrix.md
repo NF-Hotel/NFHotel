@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0047] (RC-388), [UC-010] with [SSD-001] and [OC-001] (RC-389) and the code of MIL-018 (RC-391) on rows of their own; the row of MIL-018 and the rows of the documents it amends (RC-390) updated | [9e72b0e] |
-| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-018] (RC-392, Go) on the row of the milestone and the row of its code | pending |
+| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-018] (RC-392, Go) on the row of the milestone and the row of its code | [6adb41a] |
 
 ---
 
@@ -544,3 +544,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-381]: ./reviews/rc-381-mil-028-service-code.md
 [RC-382]: ./reviews/rc-382-mil-028-gate.md
 [9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
+[6adb41a]: https://github.com/NF-Hotel/NFHotel/commit/6adb41acb602f289447eab8f65265649466ad14b

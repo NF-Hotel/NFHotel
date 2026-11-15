@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-018 after the merge of pull request 774 (afa2d09), its deploy and the run on the deployed site; Go; mode autonomous, not independent | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-018 after the merge of pull request 774 (afa2d09), its deploy and the run on the deployed site; Go; mode autonomous, not independent | [6adb41a] |
 
 ---
 
@@ -86,3 +86,4 @@ Go. Every criterion passes: 1 to 4 and 6 on the tests of pull request 774, which
 [RC-390]: ./rc-390-mil-018-amendments.md
 [RC-391]: ./rc-391-mil-018-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[6adb41a]: https://github.com/NF-Hotel/NFHotel/commit/6adb41acb602f289447eab8f65265649466ad14b
