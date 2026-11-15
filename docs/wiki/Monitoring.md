@@ -370,6 +370,37 @@ docker compose --env-file monitoring.env exec alertmanager amtool silence add \
 - End a silence early with `amtool silence expire <id>`.
 - The matcher `alertname!=Watchdog` silences every alert except the Watchdog, so Healthchecks.io still knows that the monitoring is alive.
 
+## AI read access
+
+The AI assistant that S01 uses in Claude Code reads the monitoring through Grafana, read only ([ADR-0045](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0045-read-only-monitoring-access-for-the-ai-assistant.md), MIL-052): the metrics, the alerts and the dashboards, and no logs.
+
+**What it can read.** The data source *Prometheus* (every metric, the rules, and the alert series `ALERTS` and `ALERTS_FOR_STATE`) and the two dashboards. Not the data source *Loki*: the logs hold the Tailscale logins and the command lines of the SSH sessions of the staff, and the addresses of the visitors in the log of nginx. It can change nothing: its service account has the Viewer role, and the dashboards come from git.
+
+**Set it up (S01, once).**
+1. In Grafana, open *Administration*, *Users and access*, *Service accounts*, and click *Add service account*. Display name `ai-assistant-read`, role *Viewer*. Click *Create*.
+2. Click *Add service account token*. Name `claude-code`, *Expiration* 30 days from today. Click *Generate token*, copy the token into your password manager, and close the dialog. Never paste it into the chat.
+3. From the release v2.1.1 of `grafana/mcp-grafana` on GitHub, download `mcp-grafana_Windows_x86_64.zip` and `mcp-grafana_2.1.1_checksums.txt`. In PowerShell, `Get-FileHash .\mcp-grafana_Windows_x86_64.zip -Algorithm SHA256` must give the hash on the line of that archive in the checksums file. Unpack `mcp-grafana.exe` into `%USERPROFILE%\Tools\mcp-grafana\`.
+4. Open `%USERPROFILE%\.claude.json` in a text editor. In the top-level `"mcpServers"` object (the user scope), add the entry below, put the token from your password manager in place of `<token>`, and save. The token is never typed on a command line.
+
+   ```json
+   "grafana": {
+     "type": "stdio",
+     "command": "C:\\Users\\<you>\\Tools\\mcp-grafana\\mcp-grafana.exe",
+     "args": ["--enabled-tools=prometheus,alerting,dashboard,search", "--disable-write", "--usage-stats=disabled"],
+     "env": {
+       "GRAFANA_URL": "http://<LXC address>:3000",
+       "GRAFANA_SERVICE_ACCOUNT_TOKEN": "<token>"
+     }
+   }
+   ```
+
+   `--enabled-tools` registers only the tools for metrics, alerts, dashboards and search. It leaves out the log tools, and `grafana_api_request`, which can call any API of Grafana, the proxy of Loki included. `--disable-write` registers no tool that changes anything, and `--usage-stats=disabled` stops the usage report that the server otherwise sends to Grafana Labs. Keep the three flags when you take a newer release.
+5. Restart Claude Code and run `/mcp`: `grafana` shows as connected.
+
+**Result:** the assistant answers a question about an alert from a Prometheus query, and names the query. The checks of MIL-052 (writes refused with HTTP 403, reads answered, a question about a past alert, and the revocation) go into its gate review.
+
+**Renew or revoke it.** Before the 30 days are up, add a new token to the service account, replace the old one in `.claude.json`, and delete the old token. To stop the access, delete the token, or the service account: the next request of the MCP server is refused at once. Delete both when the project ends.
+
 ## Runbook: when an alert arrives
 
 Each alert in Discord names what failed. Start with the first step below. Once the cause is gone, Alertmanager posts *RESOLVED* by itself.
@@ -538,3 +569,4 @@ The full reasoning, with the options that were weighed, is in [ADR-0020](https:/
 - **A watchdog outside.** A monitor cannot report its own death.
 - **Everything is code.** It is reviewed, tested in CI, and the same after a rebuild.
 - **Deployed by a pull.** The LXC fetches `main` and deploys a change once its Ops CI run has passed, so no workflow can reach the LXC and its secrets never leave it ([ADR-0044](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0044-monitoring-deployed-by-a-pull-on-its-host.md)).
+- **Read only for the AI assistant.** It reads through Grafana with a Viewer token that S01 can revoke at once, and no logs, so no personal data leaves with the chat ([ADR-0045](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0045-read-only-monitoring-access-for-the-ai-assistant.md)).
