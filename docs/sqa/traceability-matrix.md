@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | The gate of MIL-051, RC-384 (No-Go for now: criterion 7 fails on the live tailnet filter, and the risk exception that S01 chose waits for S04), on the row of the milestone; the change of pull request 759, `TaskReportMissing` watching `backup_check`, and its review RC-383 (Go) on the rows of the code of MIL-051 and MIL-076; accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [9da77ab] |
-| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0045], the read-only access of the AI assistant to the monitoring (MIL-052 task 3, with the check of the logs of task 2), and its review RC-385 (Go), on a row of their own and on the row of the milestone; accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | pending |
+| 2026-11-15 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0045], the read-only access of the AI assistant to the monitoring (MIL-052 task 3, with the check of the logs of task 2), and its review RC-385 (Go), on a row of their own and on the row of the milestone; accepted 2026-11-15 by the AI as stand-in for S01, at S01's word in chat ("Du godkender for mig") | [76bff8d] |
 
 ---
 
@@ -526,3 +526,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-381]: ./reviews/rc-381-mil-028-service-code.md
 [RC-382]: ./reviews/rc-382-mil-028-gate.md
 [9da77ab]: https://github.com/NF-Hotel/NFHotel/commit/9da77ab7a72173754403f906237c210c1874d44c
+[76bff8d]: https://github.com/NF-Hotel/NFHotel/commit/76bff8de1dc7acaa5eab0c31eef2acd7358de036

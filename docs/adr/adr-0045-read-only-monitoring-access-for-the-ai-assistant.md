@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version: task 3 of MIL-052, with the check of the logs of task 2; planned with the plan of 2026-11-14 and accepted at S01's word in chat ("Du godkender for mig"); written by the AI | pending |
+| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version: task 3 of MIL-052, with the check of the logs of task 2; planned with the plan of 2026-11-14 and accepted at S01's word in chat ("Du godkender for mig"); written by the AI | [76bff8d] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -161,3 +161,4 @@ and a pinned release of the MCP server to keep up to date.
 [ADR-0020]: ./adr-0020-monitoring-stack.md
 [ADR-0044]: ./adr-0044-monitoring-deployed-by-a-pull-on-its-host.md
 [RC-384]: ../sqa/reviews/rc-384-mil-051-gate.md
+[76bff8d]: https://github.com/NF-Hotel/NFHotel/commit/76bff8de1dc7acaa5eab0c31eef2acd7358de036
