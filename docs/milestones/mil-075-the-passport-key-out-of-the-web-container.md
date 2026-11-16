@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-12 | Accepted | mikemike | S01 | Initial version: the web container gets the passport key as a secret file, though BC-001 objective 18 and the web's compose file say that it holds none, and no code of the web reads it; planned at S01's request in chat ("Skriv 1–4", to the plan of 2026-11-12) | [62301c4] |
+| 2026-11-12 | Deprecated | mikemike | S01 | Initial version: the web container gets the passport key as a secret file, though BC-001 objective 18 and the web's compose file say that it holds none, and no code of the web reads it; planned at S01's request in chat ("Skriv 1–4", to the plan of 2026-11-12) | [62301c4] |
+| 2026-11-16 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-396 Go on criteria 1, 2, 3 and 5, and criterion 4 waived by S01 in chat ("luk milestonen, jeg kigger ikke ydeligere ind i dette"); tasks 1 to 3 in pull request 746 (RC-360, Go-with-conditions, conditions met); task 4: the deploy of 2026-11-14 and the read of the web container on 2026-11-16, while the line of the key stays in the web's settings file on the VM and no guest with a passport number was opened; at S01's word in chat ("Du godkender for mig", "færdiggør dem alle og luk dem når de er 100% done"); mode autonomous, not independent | [553bec3] |
 
 ---
 
@@ -91,3 +92,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-015]: ./mil-015-database-api.md
 [MIL-035]: ./mil-035-secrets-as-files.md
 [62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59
+[553bec3]: https://github.com/NF-Hotel/NFHotel/commit/553bec398d57a3bbf6d96b595b11a0bd85d2f926
