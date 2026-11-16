@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-12 | Accepted | mikemike | S01 | Initial version: the scans reach the web pages through nginx but not the JSON endpoints of the database API, and no test sends every endpoint malformed or oversized input; planned at S01's request in chat ("Skriv 1–4", to the plan of 2026-11-12) | [62301c4] |
+| 2026-11-12 | Deprecated | mikemike | S01 | Initial version: the scans reach the web pages through nginx but not the JSON endpoints of the database API, and no test sends every endpoint malformed or oversized input; planned at S01's request in chat ("Skriv 1–4", to the plan of 2026-11-12) | [62301c4] |
+| 2026-11-16 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-395 Go on criteria 1 to 5; tasks 1 to 4 in pull request 749 (RC-363, Go-with-conditions, both conditions met); the first weekly run with the API scan, on 2026-11-16, was run 43855866018 at 772cf65, with no High alert and no answer 500; at S01's word in chat ("Du godkender for mig", "færdiggør dem alle og luk dem når de er 100% done"); mode autonomous, not independent | pending |
 
 ---
 
