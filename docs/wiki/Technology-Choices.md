@@ -103,7 +103,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 
 ### Python
 
-- **Used for:** the market analysis and benchmark services (`NF-Hotel/notebook-market-analysis`, `NF-Hotel/notebook-benchmark`), built from `python:3.13-slim` and `python:3.14-slim`.
+- **Used for:** the market analysis and benchmark services (`NF-Hotel/notebook-market-analysis`, `NF-Hotel/notebook-benchmark`), built from `python:3.15-slim`.
 - **Alternatives:** R; C# for the analysis too.
 - **For it:** the language of data and AI work: notebooks, pandas, model clients; the services started as notebooks.
 - **Against it:** a second language and runtime to patch; packaging is slower to make reproducible than .NET.

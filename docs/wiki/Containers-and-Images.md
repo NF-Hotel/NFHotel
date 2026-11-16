@@ -60,8 +60,8 @@ Every service publishes no host port unless the table says so; the others are re
 | `market-analysis-api` (`market-analysis`) | The market analysis service of `NF-Hotel/notebook-market-analysis` | `ghcr.io/nf-hotel/market-analysis` | GHCR (our build) | python, llm | none |
 | `benchmark` (`benchmark`) | The benchmark service of `NF-Hotel/notebook-benchmark`: compares the local AI models | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | python, llm | none |
 | `results-owner` (`benchmark`) | One-shot job before `benchmark`: gives the results volume to the service's user (MIL-045), with no network | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | none | none |
-| `ollama` (`ollama`) | Local model server for the benchmark and the market analysis, as the user 10001 (MIL-082) | `ollama/ollama:0.40.13` | Docker Hub | llm | none |
-| `models-owner` (`ollama`) | One-shot job before `ollama`: gives the volume of the models to the user of Ollama (MIL-082), with no network | `ollama/ollama:0.40.13` | Docker Hub | none | none |
+| `ollama` (`ollama`) | Local model server for the benchmark and the market analysis, as the user 10001 (MIL-082) | `ollama/ollama:0.40.15` | Docker Hub | llm | none |
+| `models-owner` (`ollama`) | One-shot job before `ollama`: gives the volume of the models to the user of Ollama (MIL-082), with no network | `ollama/ollama:0.40.15` | Docker Hub | none | none |
 | `alloy` (`alloy`) | Agent that sends the logs and metrics of the VM to the monitoring LXC | `grafana/alloy:v1.21.3` | Docker Hub | internal, egress, apps | none |
 | `socket-proxy` (`alloy`) | Lets Alloy make only the calls of its allowlist to the Docker API: the list of the containers and of the networks, and the inspect and the logs of a container; every other call answers 403 (ADR-0042) | `ghcr.io/nf-hotel/nfhotel-socket-proxy`: `tecnativa/docker-socket-proxy:v0.5.0` with the fixes of its Alpine packages (ADR-0040) and the allowlist (ADR-0042) | GHCR, built by Release | internal | none |
 
@@ -81,12 +81,12 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 
 | Service (compose folder) | Runs on | What it does | Image | Registry | Published port |
 | --- | --- | --- | --- | --- | --- |
-| `prometheus` (`monitoring`) | Monitoring LXC | Metrics store and alert rules | `prom/prometheus:v3.15.1` | Docker Hub | 9090 on the LXC's tailnet address |
+| `prometheus` (`monitoring`) | Monitoring LXC | Metrics store and alert rules | `prom/prometheus:v3.16.0` | Docker Hub | 9090 on the LXC's tailnet address |
 | `alertmanager` (`monitoring`) | Monitoring LXC | Sends alerts to Discord and the watchdog ping to Healthchecks.io | `prom/alertmanager:v0.34.2` | Docker Hub | none |
 | `blackbox` (`monitoring`) | Monitoring LXC | Probes the site over HTTPS, the redirect and the public name | `prom/blackbox-exporter:v0.29.1` | Docker Hub | none |
 | `loki` (`monitoring`) | Monitoring LXC | Log store, kept 14 days; its ruler evaluates the log alert | `grafana/loki:3.7.9` | Docker Hub | 3100 on the LXC's tailnet address |
 | `grafana` (`monitoring`) | Monitoring LXC | Dashboards and log search | `grafana/grafana:13.3.0` | Docker Hub | 3000 on the LXC's tailnet address |
-| `scan-exporter` (`monitoring`) | Monitoring LXC | Reads the results of the security scans (GitHub code scanning, the scan workflows, SonarQube Cloud) every 15 minutes for Prometheus (MIL-053); the code is mounted read-only, nothing is built | `python:3.13-slim` | Docker Hub | none |
+| `scan-exporter` (`monitoring`) | Monitoring LXC | Reads the results of the security scans (GitHub code scanning, the scan workflows, SonarQube Cloud) every 15 minutes for Prometheus (MIL-053); the code is mounted read-only, nothing is built | `python:3.15-slim` | Docker Hub | none |
 | `backup-target` (`backup-target`) | Backup host (legion laptop of S03) | Write-only SSH target of the nightly off-VM copy of the encrypted backup; the key of the VM can neither replace nor delete a file there (ADR-0008) | `nfhotel-backup-target:local`, built there from `debian:13-slim` | built locally | SSH on the host's tailnet address |
 | `prune` (`backup-target`) | Backup host (legion laptop of S03) | Deletes the copies that the retention no longer keeps, at its start and then once a day: daily files after 30 days and weekly files after 12 weeks, by the time in the name, never the newest 14 daily and 8 weekly of each kind (MIL-069); no network, read-only, as `nfhotel-backup` | `nfhotel-backup-target:local`, the same image | built locally | none |
 | `proxmox` (`proxmox`) | CI and a developer machine only | Throwaway Proxmox VE for the Proxmox integration tests (MIL-003) | `dockurr/proxmox:9.2.20` | Docker Hub | `127.0.0.1:18006` |
@@ -97,7 +97,7 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 | --- | --- | --- |
 | **GHCR** (`ghcr.io/nf-hotel/`) | `nfhotel-web`, `nfhotel-api`, `market-analysis`, `benchmark`, `nfhotel-nginx`, `nfhotel-socket-proxy` | Our own builds, and the two proxies with their patch layers. The Release workflow pushes with the job token, so no registry password is stored; the packages belong to the organisation and stay private, so the VM pulls them with a read credential of its own ([CI-CD](CI-CD)); the provenance and the SBOM are stored beside each digest |
 | **Microsoft Container Registry** (`mcr.microsoft.com`) | `mcr.microsoft.com/dotnet/sdk:10.0.404` (build stage) and `mcr.microsoft.com/dotnet/aspnet:10.0.15` (runtime) | Microsoft publishes the .NET images only there |
-| **Docker Hub** | the base images `python:3.14-slim`, `python:3.13-slim`, `debian:12-slim`, `debian:13-slim`, and every third-party service above | Where the projects publish their official images |
+| **Docker Hub** | the base images `python:3.15-slim`, `debian:12-slim`, `debian:13-slim`, and every third-party service above | Where the projects publish their official images |
 
 **Why not build everything ourselves:** an image always starts `FROM` another. Building PostgreSQL, nginx or Grafana from source would make us responsible for every security fix in them. The official images are patched by their maintainers; we pin them, scan them and take the next version when Dependabot proposes it. The daily scan checks every third-party image pinned in a compose file again (MIL-064). When a maintainer has not rebuilt an image whose findings are all in its operating-system packages, as with nginx and the socket proxy of Alloy in November 2026, the release adds a patch layer on top of the pinned image (ADR-0040). A finding that the newest build still has is accepted for a time, as the [accepted findings](#the-accepted-findings-of-the-third-party-images) below say.
 
@@ -109,8 +109,8 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 | --- | --- | --- | --- |
 | `nfhotel-web` | `Dockerfile` | `src/` of this repository, multi-stage on `dotnet/sdk`, final stage `dotnet/aspnet` | `app` (non-root) |
 | `nfhotel-api` | `Dockerfile.api` | the same, for `NFHotel.Api` | `app` (non-root) |
-| `market-analysis` | `ops/deploy/market-analysis/Dockerfile` | the source of `NF-Hotel/notebook-market-analysis` at the pinned commit `MARKET_ANALYSIS_REF`, on `python:3.13-slim`, with every dependency locked by hash (`requirements.lock`) | `app`, uid 10001 |
-| `benchmark` | `ops/deploy/benchmark/Dockerfile` | the source of `NF-Hotel/notebook-benchmark` at the pinned commit `BENCHMARK_REF`, on `python:3.14-slim`, locked by hash | `app`, uid 10001 |
+| `market-analysis` | `ops/deploy/market-analysis/Dockerfile` | the source of `NF-Hotel/notebook-market-analysis` at the pinned commit `MARKET_ANALYSIS_REF`, on `python:3.15-slim`, with every dependency locked by hash (`requirements.lock`) | `app`, uid 10001 |
+| `benchmark` | `ops/deploy/benchmark/Dockerfile` | the source of `NF-Hotel/notebook-benchmark` at the pinned commit `BENCHMARK_REF`, on `python:3.15-slim`, locked by hash | `app`, uid 10001 |
 | `nfhotel-nginx` | `ops/deploy/nginx/Dockerfile` | the pinned `nginx:1.29-alpine` and one `apk upgrade --no-cache` layer with the fixes of its Alpine packages; nginx itself stays the build of nginx.org, and the build fails if the upgrade replaces it (ADR-0040) | the master process `root`, the workers `nginx`, as upstream |
 | `nfhotel-socket-proxy` | `ops/deploy/alloy/socket-proxy/Dockerfile` | the pinned `tecnativa/docker-socket-proxy:v0.5.0` and one `apk upgrade --no-cache` layer with the fixes of its Alpine packages; HAProxy stays the build of the upstream image, and the build fails if the upgrade replaces it (ADR-0040, MIL-065). `haproxy.cfg` of the same folder replaces the template of the upstream image with the allowlist of ADR-0042, and the build checks it with `haproxy -c` (MIL-081) | `root`, as upstream: HAProxy reads the Docker socket, which root owns |
 
@@ -134,11 +134,11 @@ A pinned third-party image can keep a finding that its newest build has not fixe
 | Image | What is accepted | What the check found |
 | --- | --- | --- |
 | `postgres:16-alpine` | 26 findings of the Go standard library in `gosu` 1.19, built with Go 1.24.6 | Not in the binary: `gosu` has functions of `os`, `syscall` and `github.com/moby/sys/user` only; the entry point runs it once, to start the server as `postgres`, and no build of the tag has a newer `gosu`: the build of 2026-11-12 has the same binary |
-| `ollama/ollama:0.40.13`, `grafana/alloy:v1.21.3` | The HTML parser of `golang.org/x/net` in `ollama` and `alloy`; `apt` 2.8.3 of Ubuntu 24.04 | Not in the binary for the parser; accepted for `apt`, which runs only when an image is built and never in these containers |
+| `ollama/ollama:0.40.15`, `grafana/alloy:v1.21.3` | The HTML parser of `golang.org/x/net` in `ollama` and `alloy`; `apt` 2.8.3 of Ubuntu 24.04 | Not in the binary for the parser; accepted for `apt`, which runs only when an image is built and never in these containers |
 | `cloudflare/cloudflared:2026.10.7` | The HTML parser of `golang.org/x/net` in `cloudflared`; two findings in Debian's `zlib1g` | Not in the binary; not used, because `cloudflared` is a static Go binary that never loads `libz` |
-| `prom/prometheus:v3.15.1`, `prom/alertmanager:v0.34.2`, `prom/blackbox-exporter:v0.29.1`, `grafana/loki:3.7.9` | The HTML parser of `golang.org/x/net` in their binaries | Not in the binary |
+| `prom/prometheus:v3.16.0`, `prom/alertmanager:v0.34.2`, `prom/blackbox-exporter:v0.29.1`, `grafana/loki:3.7.9` | The HTML parser of `golang.org/x/net` in their binaries | Not in the binary |
 | `grafana/grafana:13.3.0` | Eight findings (seven vulnerabilities) in the `grafana` server and its bundled data source plugins | Accepted or not in the binary: Grafana provisions only the Prometheus and Loki data sources, over plain HTTP inside the monitoring network, and is reached only on the tailnet address of the monitoring LXC after a login; 13.3.0 is the newest release |
-| `python:3.13-slim` (the scan exporter) | `setuptools`, `msgpack` and `urllib3`, vendored inside pip; two findings in Debian's `zlib1g` | Not used: the exporter runs its own module with the standard library and never pip, and its Python calls none of the `gz*` functions of the two zlib findings |
+| `python:3.15-slim` (the scan exporter) | `setuptools`, `msgpack` and `urllib3`, vendored inside pip; two findings in Debian's `zlib1g` | Not used: the exporter runs its own module with the standard library and never pip, and its Python calls none of the `gz*` functions of the two zlib findings |
 
 ## How every container is locked down
 

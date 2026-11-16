@@ -16,7 +16,7 @@ To upgrade, set `MARKET_ANALYSIS_REF` in `market-analysis.env.example` and in th
 then regenerate the lock file from that commit's `pyproject.toml`:
 
 ```bash
-uv pip compile pyproject.toml --generate-hashes --python-platform linux --python-version 3.13 --no-header -o requirements.lock
+uv pip compile pyproject.toml --generate-hashes --python-platform linux --python-version 3.15 --no-header -o requirements.lock
 ```
 
 ## Start

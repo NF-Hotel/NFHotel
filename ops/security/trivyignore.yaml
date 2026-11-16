@@ -249,7 +249,7 @@ vulnerabilities:
       - "pkg:deb/ubuntu/libapt-pkg6.0t64@2.8.3?arch=amd64&distro=ubuntu-24.04"
     statement: "Accepted: the finding needs apt to download packages, and apt runs only when an image is built; the Alloy and Ollama containers run alloy and ollama and never apt. Ubuntu has 2.8.4ubuntu0.1; no build of these images has it yet (2026-11-08)."
     expired_at: 2026-12-08
-  # Debian 13.7 zlib1g in cloudflare/cloudflared and python:3.13-slim (MIL-065 tasks 3 and 11)
+  # Debian 13.7 zlib1g in cloudflare/cloudflared and python:3.15-slim (MIL-065 tasks 3 and 11)
   - id: CVE-2026-76844
     purls:
       - "pkg:deb/debian/zlib1g@1.3.dfsg%2Breally1.3.1-1%2Bb1?arch=amd64&distro=debian-13.7&epoch=1"
@@ -260,29 +260,29 @@ vulnerabilities:
       - "pkg:deb/debian/zlib1g@1.3.dfsg%2Breally1.3.1-1%2Bb1?arch=amd64&distro=debian-13.7&epoch=1"
     statement: "Not used: the finding is in gz_vacate, after gzprintf or gzvprintf. cloudflared is a static Go binary that never loads libz, and the Python of the scan exporter links libz only in its zlib and binascii modules, which call no gz* function (2026-11-08). Debian has 1:1.3.dfsg+really1.3.1-1+deb13u1; the upstream builds do not have it yet."
     expired_at: 2026-12-08
-  # The packages that pip vendors in python:3.13-slim (MIL-065 task 11)
+  # The packages that pip vendors in python:3.15-slim (MIL-065 task 11)
   - id: CVE-2025-47273
     purls:
       - "pkg:pypi/setuptools@70.3.0"
-    statement: "Not used: the setuptools vendored inside pip 26.2.2 in python:3.13-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
+    statement: "Not used: the setuptools vendored inside pip 26.2.2 in python:3.15-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
     expired_at: 2026-12-08
   - id: CVE-2026-114613
     purls:
       - "pkg:pypi/msgpack@1.1.2"
-    statement: "Not used: the msgpack vendored inside pip 26.2.2 in python:3.13-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
+    statement: "Not used: the msgpack vendored inside pip 26.2.2 in python:3.15-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
     expired_at: 2026-12-08
   - id: GHSA-6v7p-g79w-8964
     purls:
       - "pkg:pypi/msgpack@1.1.2"
-    statement: "Not used: the msgpack vendored inside pip 26.2.2 in python:3.13-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
+    statement: "Not used: the msgpack vendored inside pip 26.2.2 in python:3.15-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
     expired_at: 2026-12-08
   - id: CVE-2026-97687
     purls:
       - "pkg:pypi/urllib3@2.7.0"
-    statement: "Not used: the urllib3 vendored inside pip 26.2.2 in python:3.13-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
+    statement: "Not used: the urllib3 vendored inside pip 26.2.2 in python:3.15-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
     expired_at: 2026-12-08
   - id: CVE-2026-97689
     purls:
       - "pkg:pypi/urllib3@2.7.0"
-    statement: "Not used: the urllib3 vendored inside pip 26.2.2 in python:3.13-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
+    statement: "Not used: the urllib3 vendored inside pip 26.2.2 in python:3.15-slim and used only when pip runs; the scan exporter runs python -B -E -s /app/run.py with the standard library only and never runs pip, and the image has no other copy of the package (2026-11-08)."
     expired_at: 2026-12-08
