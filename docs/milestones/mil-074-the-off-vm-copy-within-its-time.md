@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the newest copy off the VM was 54 hours old on 2026-11-11, because the copy is tried once a night and the backup target had stayed stopped for a day; planned at S01's request in chat ("Lav så backuppen er inden for tiden også fremadrettet. Du sørger for det."); the target moved from 2026-11-15 to 2026-11-18 on 2026-11-14, before its acceptance; accepted after RC-334 Go, at S01's word in chat ("Du godkender for mig") | [62301c4] |
+| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: the newest copy off the VM was 54 hours old on 2026-11-11, because the copy is tried once a night and the backup target had stayed stopped for a day; planned at S01's request in chat ("Lav så backuppen er inden for tiden også fremadrettet. Du sørger for det."); the target moved from 2026-11-15 to 2026-11-18 on 2026-11-14, before its acceptance; accepted after RC-334 Go, at S01's word in chat ("Du godkender for mig") | [62301c4] |
+| 2026-11-16 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-394 Go on criteria 1 to 6; tasks 1 to 3 in pull request 747 (RC-361, Go-with-conditions, both conditions met); task 4: the scheduled task since 2026-11-14, and on 2026-11-16 S01's restart of the backup host, after which both services ran again by themselves, and Docker Desktop set to start at sign-in at S01's word; task 5: the timer, the journal and Prometheus read on 2026-11-16; no second target now, S01's decision in chat; at S01's word in chat ("Du godkender for mig", "færdiggør dem alle og luk dem når de er 100% done"); mode autonomous, not independent | pending |
 
 ---
 
