@@ -45,9 +45,9 @@ A deploy waits first for S01's approval (ADR-0038): open the run (Actions, NF Ho
 ## Roll back
 
 - **To the release before the latest one:** on the VM, run `sudo /usr/local/sbin/nfhotel-deploy rollback`. Running it again switches back to where you came from. The images of that release are still on the VM: the deploy keeps the images of the two latest releases and removes the older ones (MIL-062), so this rollback pulls nothing.
-- **To any earlier release:** start `NF Hotel CD` by hand (Actions, NF Hotel CD, Run workflow) with the run ID of the `NF Hotel Release` run you want to deploy. It is approved like any other deploy.
+- **To any earlier release:** start `NF Hotel CD` by hand (Actions, NF Hotel CD, Run workflow) with the run ID of the `NF Hotel Release` run you want to deploy. It is approved like any other deploy. Its update step installs the operations commands of that release; the checkout on the VM is shallow, so for a release older than the checkout it first fetches main back to that release.
 - **To see what is deployed:** `sudo /usr/local/sbin/nfhotel-deploy status` prints the release log (`/var/lib/nfhotel-deploy/releases.log`).
-- **Rollback drill (MIL-021 criterion 6):** start `NF Hotel CD` by hand with `apply` and `rollback_drill` ticked. The run deploys the release, then rolls back to the previous release on purpose, and ends red. The drilled release is not recorded in the release log. Run a normal deploy of the release afterwards.
+- **Rollback drill (MIL-021 criterion 6):** start `NF Hotel CD` by hand with `apply` and `rollback_drill` ticked. The run deploys the release, then rolls back on purpose to the release that ran before, and ends red. The release may be a new one or an earlier one, such as the release before the latest, so a drill needs no new release. The drilled release is not recorded in the release log, but its operations commands stay installed: run a normal deploy of the latest release afterwards.
 
 A rollback changes the images and the compose files, not the database. Migrations are written so that the previous release still runs on the new schema (ADR-0008, expand then contract).
 

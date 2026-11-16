@@ -364,6 +364,22 @@ STDIN="$W/f.sql" expect_code 1 "a failing script fails migrate" migrate "$(sha25
   [[ $? == 2 ]] && [[ "$(cat "$W/sbin/nfhotel-deploy")" == "echo deploy v3" ]] &&
     ok "a shallow checkout also refuses a pull-request commit" || ko "shallow refusal: $(tail -2 "$W/out")"
 
+  # A rollback through CD, or a drill, names a release older than the shallow checkout, below
+  # its boundary: update fetches main back to it and installs its commands. A commit that is
+  # only on a pull-request ref is still refused after that.
+  git clone -q --depth 1 "file://$W/nfh-origin.git" "$W/nfhr"
+  git -C "$W/nfhr" remote set-url origin https://github.com/NF-Hotel/NFHotel.git
+  run "$W/nfhr" update "$U1" && [[ "$(cat "$W/sbin/nfhotel-deploy")" == "echo deploy v1" ]] &&
+    grep -q "fetching main back" "$W/out" &&
+    ok "update installs a main commit older than the shallow checkout (a rollback)" || ko "older release: $(tail -2 "$W/out")"
+  # CD runs update again when it replaced nfhotel-deploy, then with the commands of that release,
+  # which may predate the fetch back: the history stays, so their plain check passes.
+  run "$W/nfhr" update "$U1" && ! grep -q "fetching main back" "$W/out" &&
+    ok "the history fetched back stays for the second update of CD" || ko "second update: $(tail -2 "$W/out")"
+  run "$W/nfhr" update "$P"
+  [[ $? == 2 ]] && grep -q "not on main" "$W/out" && [[ "$(cat "$W/sbin/nfhotel-deploy")" == "echo deploy v1" ]] &&
+    ok "after fetching main back, a pull-request commit is still refused" || ko "refusal after fetching back: $(tail -2 "$W/out")"
+
   # A failed install stops update with an error, though it runs inside a condition where
   # set -e does not apply, and update leaves no temporary file behind.
   echo 'echo deploy v4' >"$W/nfh-src/ops/scripts/deploy-release.sh"

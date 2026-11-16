@@ -50,7 +50,9 @@
 #           migrate and deploy. It fetches main from origin and refuses a commit that is
 #           not reachable from origin/main, the branch the ruleset protects: GitHub serves
 #           commits of open pull requests by SHA, so this keeps unreviewed code from running
-#           as root. From that commit (git show, never the working tree) it installs
+#           as root. A release older than the shallow checkout (a rollback through CD, or a
+#           drill) lies below its boundary, so for such a commit main is first fetched back
+#           to a day before it. From the commit (git show, never the working tree) it installs
 #           ops/scripts/deploy-release.sh as nfhotel-deploy, ops/scripts/backup-database.sh
 #           as nfhotel-backup, ops/scripts/renew-certificate.sh as nfhotel-cert-renew,
 #           ops/scripts/report-health.sh as nfhotel-report-health,
@@ -110,6 +112,13 @@ readonly BACKUP_COMMAND="${NFHOTEL_BACKUP_COMMAND:-/usr/local/sbin/nfhotel-backu
 readonly COMMAND_DIR="${NFHOTEL_COMMAND_DIR:-/usr/local/sbin}"
 readonly SYSTEMD_DIR="${NFHOTEL_SYSTEMD_DIR:-/etc/systemd/system}"
 readonly SYSTEMCTL="${NFHOTEL_SYSTEMCTL:-systemctl}"
+# main of origin as the checkout tracks it: the branch the ruleset protects, the only one update
+# installs from (ADR-0018).
+readonly MAIN_REF=refs/remotes/origin/main
+# How long before a release that is older than the shallow checkout update fetches main back to.
+# GitHub makes the commits on main as pull requests merge, so their dates grow along main; the
+# day is a margin for a clock that is off.
+readonly DEEPEN_MARGIN_SECONDS=86400
 # The images of a release (ADR-0040). A reference names its image, so a new image is a name here
 # and in cd-steps.sh, never a new argument position.
 readonly NAMES=(nfhotel-web nfhotel-api market-analysis benchmark nfhotel-nginx nfhotel-socket-proxy)
@@ -484,8 +493,18 @@ install_from() {
   echo "    installed $target from $path"
 }
 
+# fetch_main [option...]: fetch main of origin into MAIN_REF, with the options given.
+fetch_main() {
+  as_app git fetch --quiet --no-tags "$@" origin "+refs/heads/main:$MAIN_REF"
+}
+
+# on_main <commit>: whether the commit is on main of origin, as far as the checkout has its history.
+on_main() {
+  as_app git merge-base --is-ancestor "$1" "$MAIN_REF"
+}
+
 update() {
-  local sha="${1:-}" units=0 copy_units=0 cert_units=0 health_units=0 check_units=0
+  local sha="${1:-}" committed units=0 copy_units=0 cert_units=0 health_units=0 check_units=0
   [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || refuse "the commit must be 40 lower-case hex characters"
   update_dir="$(mktemp -d)"
   trap 'rm -rf "$update_dir"' EXIT
@@ -493,13 +512,19 @@ update() {
   [[ "$(ops_rel)" == ops ]] || die "$app_dir has no ops/; update needs a checkout of NF-Hotel/NFHotel (ADR-0016)"
   echo "==> update: installing the operations commands of $sha (ADR-0018)"
   # The checkout is shallow. Fetching main brings the commits between its tip and what the
-  # checkout has, which holds every release commit since; an older commit is refused.
-  as_app git fetch --quiet --no-tags origin "+refs/heads/main:refs/remotes/origin/main" ||
-    die "cannot fetch main from origin"
+  # checkout has, which holds every release commit since the last deploy. Each deploy fetches
+  # its release with depth 1, so an older release (a rollback through CD, or a drill) lies below
+  # the boundary: main is then fetched back to a day before that commit, and checked again.
+  fetch_main || die "cannot fetch main from origin"
   as_app git cat-file -e "$sha^{commit}" 2>/dev/null ||
     as_app git fetch --quiet --no-tags --depth 1 origin "$sha" || die "cannot fetch $sha from origin"
-  as_app git merge-base --is-ancestor "$sha" refs/remotes/origin/main ||
-    refuse "$sha is not on main of origin; only a reviewed commit is installed (ADR-0018)"
+  if ! on_main "$sha" && [[ "$(as_app git rev-parse --is-shallow-repository)" == true ]]; then
+    committed="$(as_app git show -s --format=%ct "$sha")" || die "cannot read the date of $sha"
+    echo "==> update: $sha is not in the shallow history of main; fetching main back to a day before it"
+    fetch_main --shallow-since="@$((committed - DEEPEN_MARGIN_SECONDS)) +0000" ||
+      die "cannot fetch the history of main from origin"
+  fi
+  on_main "$sha" || refuse "$sha is not on main of origin; only a reviewed commit is installed (ADR-0018)"
 
   install_from "$sha" ops/scripts/deploy-release.sh "$COMMAND_DIR/nfhotel-deploy" 0755 || true
   install_from "$sha" ops/scripts/backup-database.sh "$COMMAND_DIR/nfhotel-backup" 0755 || true
