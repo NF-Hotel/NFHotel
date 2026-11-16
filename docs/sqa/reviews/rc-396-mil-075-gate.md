@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-16 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-075 after the deploy and the read of the web container; Go on criteria 1, 2, 3 and 5, criterion 4 waived by S01 in chat; mode autonomous, not independent | pending |
+| 2026-11-16 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-075 after the deploy and the read of the web container; Go on criteria 1, 2, 3 and 5, criterion 4 waived by S01 in chat; mode autonomous, not independent | [553bec3] |
 
 ---
 
@@ -114,3 +114,4 @@ is Accepted and its row of 2026-11-12 Deprecated. The reviewer is not independen
 [ADR-0024]: ../../adr/adr-0024-secrets-as-files.md
 [BC-001]: ../../business-case.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[553bec3]: https://github.com/NF-Hotel/NFHotel/commit/553bec398d57a3bbf6d96b595b11a0bd85d2f926
