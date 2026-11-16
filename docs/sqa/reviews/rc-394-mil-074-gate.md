@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-16 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-074 after the restart of the backup host, the hourly copies inside the VM and the read of Prometheus; Go; mode autonomous, not independent | pending |
+| 2026-11-16 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-074 after the restart of the backup host, the hourly copies inside the VM and the read of Prometheus; Go; mode autonomous, not independent | [b7c15af] |
 
 ---
 
@@ -133,3 +133,4 @@ independent.
 [ADR-0020]: ../../adr/adr-0020-monitoring-stack.md
 [BC-001]: ../../business-case.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[b7c15af]: https://github.com/NF-Hotel/NFHotel/commit/b7c15af7684e22922b02d4a85d648ae3677583b6
