@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-17 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the fix of `update` in `ops/scripts/deploy-release.sh` for a release older than the shallow checkout of the VM against QC-SH-001; F1 fixed; Go; mode autonomous, not independent | pending |
+| 2026-11-17 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the fix of `update` in `ops/scripts/deploy-release.sh` for a release older than the shallow checkout of the VM against QC-SH-001; F1 fixed; Go; mode autonomous, not independent | [72dba2f] |
 
 ---
 
@@ -111,3 +111,4 @@ S01's approval of each run. The reviewer is not independent: the AI wrote the fi
 [MIL-021]: ../../milestones/mil-021-secure-cicd-foundation.md
 [ADR-0038]: ../../adr/adr-0038-approval-before-a-deploy.md
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
+[72dba2f]: https://github.com/NF-Hotel/NFHotel/commit/72dba2f2ce6f64d2d4d394b3dab851739eac8fb1

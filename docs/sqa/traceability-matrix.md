@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-16 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-077] (RC-395, Go) on the row of the milestone and the row of its code | [9bcf071] |
-| 2026-11-17 | Proposed | mikemike | AI as stand-in for S01 | The fix of `update` for a release older than the shallow checkout of the VM (RC-397, Go) on a row of its own | pending |
+| 2026-11-17 | Proposed | mikemike | AI as stand-in for S01 | The fix of `update` for a release older than the shallow checkout of the VM (RC-397, Go) on a row of its own | [72dba2f] |
 
 ---
 
@@ -551,3 +551,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-381]: ./reviews/rc-381-mil-028-service-code.md
 [RC-382]: ./reviews/rc-382-mil-028-gate.md
 [9bcf071]: https://github.com/NF-Hotel/NFHotel/commit/9bcf0716d39f1382aa565ae6f0fae6c32d9fb811
+[72dba2f]: https://github.com/NF-Hotel/NFHotel/commit/72dba2f2ce6f64d2d4d394b3dab851739eac8fb1
