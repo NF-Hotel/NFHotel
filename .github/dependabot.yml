@@ -19,6 +19,19 @@ updates:
     groups:
       nuget-minor-and-patch:
         update-types: ["minor", "patch"]
+    ignore:
+      # The packages that follow .NET move with it (the docker entry below): the odd majors do not
+      # come as updates, the even ones do. "11.*" is the NuGet form of the range 11 up to 12.
+      - dependency-name: "Microsoft.AspNetCore.*"
+        versions: ["11.*", "13.*", "15.*"]
+      - dependency-name: "Microsoft.EntityFrameworkCore*"
+        versions: ["11.*", "13.*", "15.*"]
+      - dependency-name: "Microsoft.Extensions.*"
+        versions: ["11.*", "13.*", "15.*"]
+      - dependency-name: "Npgsql.EntityFrameworkCore.PostgreSQL"
+        versions: ["11.*", "13.*", "15.*"]
+      - dependency-name: "EFCore.NamingConventions"
+        versions: ["11.*", "13.*", "15.*"]
     commit-message:
       prefix: "Packages:"
 
@@ -38,6 +51,17 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    ignore:
+      # .NET has a long-term support release on every even major (10, 12, 14) and a standard-term
+      # release on every odd one (11, 13, 15). S01 chose on 2026-11-16 to follow the even majors
+      # only, so an odd major does not come as an update. An even major does, and its pull request
+      # is the reminder of a migration with a milestone of its own: it changes the target framework
+      # of every project, the SDK of global.json and the packages that follow .NET (the nuget entry
+      # above). "~> 11.0" is the Ruby form of the range 11 up to 12, which the docker entries use.
+      - dependency-name: dotnet/sdk
+        versions: ["~> 11.0", "~> 13.0", "~> 15.0"]
+      - dependency-name: dotnet/aspnet
+        versions: ["~> 11.0", "~> 13.0", "~> 15.0"]
     commit-message:
       prefix: "Images:"
 
