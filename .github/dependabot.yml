@@ -19,6 +19,19 @@ updates:
     groups:
       nuget-minor-and-patch:
         update-types: ["minor", "patch"]
+    ignore:
+      # The packages that follow the major of .NET stay on it with the runtime (the docker entry
+      # below): a new major needs the target framework of every project with it.
+      - dependency-name: "Microsoft.AspNetCore.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.EntityFrameworkCore*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Npgsql.EntityFrameworkCore.PostgreSQL"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "EFCore.NamingConventions"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "Packages:"
 
@@ -38,6 +51,15 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    ignore:
+      # A new major of .NET changes the target framework of every project, the SDK of global.json
+      # and the packages that follow .NET (the nuget entry above): a migration with a milestone of
+      # its own, not a pull. S01 chose on 2026-11-16 to stay on .NET 10 (LTS); its minor and patch
+      # updates still come.
+      - dependency-name: dotnet/sdk
+        update-types: ["version-update:semver-major"]
+      - dependency-name: dotnet/aspnet
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "Images:"
 
