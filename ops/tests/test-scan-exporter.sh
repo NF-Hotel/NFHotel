@@ -5,7 +5,7 @@
 # scan-exporter-requirements.lock and installed in a throwaway container of the image the exporter runs in; the
 # source is mounted read-only. After a change of scan-exporter-requirements.in, make the lock again with
 #   uv pip compile scan-exporter-requirements.in --generate-hashes --python-platform linux \
-#     --python-version 3.13 --no-header -o scan-exporter-requirements.lock
+#     --python-version 3.15 --no-header -o scan-exporter-requirements.lock
 #
 # Usage: bash ops/tests/test-scan-exporter.sh
 # Exit:  0 every check passed; 1 a check failed

@@ -7,9 +7,9 @@
 # backend runs. requirements.lock pins every dependency with hashes for the pinned commit. After changing
 # MARKET_ANALYSIS_REF, regenerate it from that commit's pyproject.toml:
 #   uv pip compile pyproject.toml --generate-hashes --python-platform linux \
-#     --python-version 3.13 --no-header -o requirements.lock
+#     --python-version 3.15 --no-header -o requirements.lock
 # Pinned by digest; Dependabot proposes the next one.
-FROM python:3.13-slim@sha256:2d44738ebf4ce5f63b9d9ea871e9c7cfdc0426f7b0c97cac915fd88ded1d86bb
+FROM python:3.15-slim@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928
 
 ARG MARKET_ANALYSIS_REPO
 ARG MARKET_ANALYSIS_REF

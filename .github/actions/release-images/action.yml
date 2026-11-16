@@ -56,7 +56,7 @@ runs:
     # The migration script of a release is made with the SDK of the checkout (MIL-022 task 6).
     - name: Install the .NET SDK of the checkout
       if: inputs.push == 'true'
-      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
+      uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73  # v6.1.0
       with:
         global-json-file: ${{ inputs.app-path }}/global.json
 
@@ -78,7 +78,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('release-scan/nfhotel-web.sarif') != ''
-      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.39.1
+      uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066  # v4.39.3
       with:
         sarif_file: release-scan/nfhotel-web.sarif
         category: trivy-nfhotel-web
@@ -86,7 +86,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('release-scan/nfhotel-api.sarif') != ''
-      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.39.1
+      uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066  # v4.39.3
       with:
         sarif_file: release-scan/nfhotel-api.sarif
         category: trivy-nfhotel-api
@@ -94,7 +94,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('release-scan/market-analysis.sarif') != ''
-      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.39.1
+      uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066  # v4.39.3
       with:
         sarif_file: release-scan/market-analysis.sarif
         category: trivy-market-analysis
@@ -102,7 +102,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('release-scan/benchmark.sarif') != ''
-      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.39.1
+      uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066  # v4.39.3
       with:
         sarif_file: release-scan/benchmark.sarif
         category: trivy-benchmark
@@ -110,7 +110,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('release-scan/nfhotel-nginx.sarif') != ''
-      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.39.1
+      uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066  # v4.39.3
       with:
         sarif_file: release-scan/nfhotel-nginx.sarif
         category: trivy-nfhotel-nginx
@@ -118,7 +118,7 @@ runs:
       if: >-
         always() && inputs.upload-sarif == 'true' &&
         hashFiles('release-scan/nfhotel-socket-proxy.sarif') != ''
-      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.39.1
+      uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066  # v4.39.3
       with:
         sarif_file: release-scan/nfhotel-socket-proxy.sarif
         category: trivy-nfhotel-socket-proxy

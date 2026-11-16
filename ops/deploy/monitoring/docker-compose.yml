@@ -27,7 +27,7 @@ x-hardening: &hardening
 services:
   prometheus:
     <<: *hardening
-    image: prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
+    image: prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06
     environment:
       CONFIG_HASH: ${PROMETHEUS_CONFIG_HASH:-}
     command:
@@ -126,7 +126,7 @@ services:
   # state of the pull deploy of the monitoring (ADR-0044, MIL-051).
   scan-exporter:
     <<: *hardening
-    image: python:3.13-slim@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90
+    image: python:3.15-slim@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928
     user: "10001:10001"
     environment:
       CONFIG_HASH: ${SCAN_EXPORTER_CONFIG_HASH:-}
