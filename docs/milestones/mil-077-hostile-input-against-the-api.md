@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-12 | Deprecated | mikemike | S01 | Initial version: the scans reach the web pages through nginx but not the JSON endpoints of the database API, and no test sends every endpoint malformed or oversized input; planned at S01's request in chat ("Skriv 1–4", to the plan of 2026-11-12) | [62301c4] |
-| 2026-11-16 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-395 Go on criteria 1 to 5; tasks 1 to 4 in pull request 749 (RC-363, Go-with-conditions, both conditions met); the first weekly run with the API scan, on 2026-11-16, was run 43855866018 at 772cf65, with no High alert and no answer 500; at S01's word in chat ("Du godkender for mig", "færdiggør dem alle og luk dem når de er 100% done"); mode autonomous, not independent | pending |
+| 2026-11-16 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-395 Go on criteria 1 to 5; tasks 1 to 4 in pull request 749 (RC-363, Go-with-conditions, both conditions met); the first weekly run with the API scan, on 2026-11-16, was run 43855866018 at 772cf65, with no High alert and no answer 500; at S01's word in chat ("Du godkender for mig", "færdiggør dem alle og luk dem når de er 100% done"); mode autonomous, not independent | [9bcf071] |
 
 ---
 
@@ -98,3 +98,4 @@ Order: the review of this document first (QC-MIL-001 and QC-LANG-001), then task
 [MIL-044]: ./mil-044-security-overview.md
 [MIL-067]: ./mil-067-bad-input-on-the-web-pages.md
 [62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59
+[9bcf071]: https://github.com/NF-Hotel/NFHotel/commit/9bcf0716d39f1382aa565ae6f0fae6c32d9fb811

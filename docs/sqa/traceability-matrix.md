@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-16 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-074] (RC-394, Go) on the row of the milestone and the row of its code | [b7c15af] |
-| 2026-11-16 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-077] (RC-395, Go) on the row of the milestone and the row of its code | pending |
+| 2026-11-16 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-077] (RC-395, Go) on the row of the milestone and the row of its code | [9bcf071] |
 
 ---
 
@@ -548,3 +548,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-381]: ./reviews/rc-381-mil-028-service-code.md
 [RC-382]: ./reviews/rc-382-mil-028-gate.md
 [b7c15af]: https://github.com/NF-Hotel/NFHotel/commit/b7c15af7684e22922b02d4a85d648ae3677583b6
+[9bcf071]: https://github.com/NF-Hotel/NFHotel/commit/9bcf0716d39f1382aa565ae6f0fae6c32d9fb811

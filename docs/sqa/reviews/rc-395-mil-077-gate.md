@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-16 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-077 after the weekly run of 2026-11-16 with the API scan; Go; mode autonomous, not independent | pending |
+| 2026-11-16 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-077 after the weekly run of 2026-11-16 with the API scan; Go; mode autonomous, not independent | [9bcf071] |
 
 ---
 
@@ -96,3 +96,4 @@ Deprecated. The reviewer is not independent.
 [RC-337]: ./rc-337-mil-077.md
 [RC-363]: ./rc-363-mil-077-code.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
+[9bcf071]: https://github.com/NF-Hotel/NFHotel/commit/9bcf0716d39f1382aa565ae6f0fae6c32d9fb811
