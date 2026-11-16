@@ -5,6 +5,7 @@
     <ModulePaths>
       <Include>
         <ModulePath>.*[\\/]NFHotel\.[^\\/]*\.dll$</ModulePath>
+        <ModulePath>.*[\\/]KeyRotationPrototype\.dll$</ModulePath>
       </Include>
       <Exclude>
         <ModulePath>.*\.Tests\.dll$</ModulePath>
