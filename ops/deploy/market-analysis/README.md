@@ -13,11 +13,16 @@ route to it (ADR-0039).
 private package is needed. The base image is pinned by digest and Dependabot proposes the next one.
 
 To upgrade, set `MARKET_ANALYSIS_REF` in `market-analysis.env.example` and in the default of `docker-compose.yml`,
-then regenerate the lock file from that commit's `pyproject.toml`:
+then regenerate the lock file from that commit's `requirements.in`, the run-time dependencies of the API (its
+`pyproject.toml` also lists the notebook libraries, which the image does not install):
 
 ```bash
-uv pip compile pyproject.toml --generate-hashes --python-platform linux --python-version 3.15 --no-header -o requirements.lock
+uv pip compile requirements.in --generate-hashes --python-platform linux --python-version 3.15 --no-header -o requirements.lock
 ```
+
+When the scan reports a Python package with a fix, run the same command with this folder's `requirements.lock` as the
+output file and add `--upgrade-package <name>`: uv keeps every other version of the existing file and moves only that
+package.
 
 ## Start
 
