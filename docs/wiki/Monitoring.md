@@ -374,11 +374,11 @@ docker compose --env-file monitoring.env exec alertmanager amtool silence add \
 
 The AI assistant that S01 uses in Claude Code reads the monitoring through Grafana, read only ([ADR-0045](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0045-read-only-monitoring-access-for-the-ai-assistant.md), MIL-052): the metrics, the alerts and the dashboards, and no logs.
 
-**What it can read.** The data source *Prometheus* (every metric, the rules, and the alert series `ALERTS` and `ALERTS_FOR_STATE`) and the two dashboards. Not the data source *Loki*: the logs hold the Tailscale logins and the command lines of the SSH sessions of the staff, and the addresses of the visitors in the log of nginx. It can change nothing: its service account has the Viewer role, and the dashboards come from git.
+**What it can read.** The data source *Prometheus* (every metric, the rules, and the alert series `ALERTS` and `ALERTS_FOR_STATE`) and the two dashboards. Not the data source *Loki*: the logs hold the Tailscale logins and the command lines of the SSH sessions of the staff, and the addresses of the visitors in the log of nginx. It changes nothing: the MCP server registers no tool that writes (`--disable-write`), and the dashboards come from git. Its service account has the Editor role, which S01 chose (ADR-0045), so the token itself could write in Grafana: keep it only in `.claude.json`.
 
 **Set it up (S01, once).**
-1. In Grafana, open *Administration*, *Users and access*, *Service accounts*, and click *Add service account*. Display name `ai-assistant-read`, role *Viewer*. Click *Create*.
-2. Click *Add service account token*. Name `claude-code`, *Expiration* 30 days from today. Click *Generate token*, copy the token into your password manager, and close the dialog. Never paste it into the chat.
+1. In Grafana, open *Administration*, *Users and access*, *Service accounts*, and click *Add service account*. Display name `ai-assistant-read`, role *Editor*, as S01 chose (ADR-0045). Click *Create*.
+2. Click *Add service account token*. Name `claude-code`, no expiration, as S01 chose (ADR-0045). Click *Generate token*, copy the token into your password manager, and close the dialog. Never paste it into the chat.
 3. From the release v2.1.1 of `grafana/mcp-grafana` on GitHub, download `mcp-grafana_Windows_x86_64.zip` and `mcp-grafana_2.1.1_checksums.txt`. In PowerShell, `Get-FileHash .\mcp-grafana_Windows_x86_64.zip -Algorithm SHA256` must give the hash on the line of that archive in the checksums file. Unpack `mcp-grafana.exe` into `%USERPROFILE%\Tools\mcp-grafana\`.
 4. Open `%USERPROFILE%\.claude.json` in a text editor. In the top-level `"mcpServers"` object (the user scope), add the entry below, put the token from your password manager in place of `<token>`, and save. The token is never typed on a command line.
 
@@ -395,11 +395,11 @@ The AI assistant that S01 uses in Claude Code reads the monitoring through Grafa
    ```
 
    `--enabled-tools` registers only the tools for metrics, alerts, dashboards and search. It leaves out the log tools, and `grafana_api_request`, which can call any API of Grafana, the proxy of Loki included. `--disable-write` registers no tool that changes anything, and `--usage-stats=disabled` stops the usage report that the server otherwise sends to Grafana Labs. Keep the three flags when you take a newer release.
-5. Restart Claude Code and run `/mcp`: `grafana` shows as connected.
+5. Restart Claude Code and run `/mcp`: `grafana` shows as connected. In the Claude desktop app, closing the window leaves the app running: quit it from its icon by the clock, then start it again.
 
-**Result:** the assistant answers a question about an alert from a Prometheus query, and names the query. The checks of MIL-052 (writes refused with HTTP 403, reads answered, a question about a past alert, and the revocation) go into its gate review.
+**Result:** the assistant answers a question about an alert from a Prometheus query, and names the query. The checks of MIL-052 (the tools of the server, which only read, the reads answered, a question about a past alert, and the stop of the access) go into its gate review.
 
-**Renew or revoke it.** Before the 30 days are up, add a new token to the service account, replace the old one in `.claude.json`, and delete the old token. To stop the access, delete the token, or the service account: the next request of the MCP server is refused at once. Delete both when the project ends.
+**Stop or replace it.** To stop the access, open the service account and click *Disable service account*: the next request of the MCP server is refused (HTTP 401) at once, and *Enable service account* gives the same token its access back. To stop it for good, delete the token, or the service account; delete both when the project ends. The token has no expiry (S01's choice). To replace it, add a new token to the service account, put it in `.claude.json` in place of the old one, restart the app, and delete the old token. Claude Code keeps copies of `.claude.json` in `%USERPROFILE%\.claude\backups`, and they hold the token too: an old token is stopped only by deleting it in Grafana.
 
 ## Runbook: when an alert arrives
 
