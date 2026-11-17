@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-16 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-074] (RC-394, Go) on the row of the milestone and the row of its code | [b7c15af] |
 | 2026-11-16 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-077] (RC-395, Go) on the row of the milestone and the row of its code | [9bcf071] |
+| 2026-11-17 | Proposed | mikemike | AI as stand-in for S01 | The fix of `update` for a release older than the shallow checkout of the VM (RC-397, Go) on a row of its own | [72dba2f] |
 
 ---
 
@@ -174,6 +174,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-019] | Milestone (Accepted, Go; plan reviewed in RC-086; tasks 1 to 7 marked done after RC-104 and RC-105) | en | it | [BC-001], [MIL-018], [ADR-0004], ADR-0005 | ADR-0013, the code of its tasks 3 to 6 (`BenchmarkRun`, `BenchmarkService`, `BenchmarkController`, the page `/admin/benchmark`), [UC-008] | [RC-086], [RC-104], [RC-105] |
 | [MIL-020] | Milestone (Accepted, Go; plan reviewed in RC-087; tasks 1 to 11 marked done after RC-106 to RC-113 and RC-249) | en | it | [BC-001], [MIL-019], [ADR-0003] | ADR-0014, the code and the deploy files of its tasks 1 to 3 and 5 to 11 (`BenchmarkServiceClient`, the page `/admin/benchmark/start` with its panel of the installed models, `AiDefault`, `BenchmarkRunAnalysis`), [UC-009] | [RC-087], [RC-106], [RC-107], [RC-108], [RC-109], [RC-110], [RC-111], [RC-112], [RC-113], [RC-249] |
 | [MIL-054] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-01, RC-258; gate passed 2026-11-14, RC-367: Go, accepted by the AI as stand-in for S01 at S01's word in chat) | en | it | [BC-001], [ADR-0033], MIL-047 | the tests of pull request #435, the coverage floor `scripts/check-coverage-floor.sh` and its test in `ci.yaml`, the coverage scope in `dotnet-coverage.config.xml` and `SonarQube.Analysis.xml` | [RC-258], [RC-260], [RC-367] |
+| The code of `update` in `ops/scripts/deploy-release.sh` for a release older than the shallow checkout of the VM: the fetch of main back to a day before that release, the helpers `fetch_main` and `on_main` with the constants `MAIN_REF` and `DEEPEN_MARGIN_SECONDS`, its three checks in `ops/tests/test-deploy-release.sh`, and the section "Roll back" of the wiki page CI-CD | Shell (reviewed 2026-11-17, Go; not yet deployed) | - | - | [ADR-0018], [MIL-032], [MIL-021] criterion 6 | - | [RC-397] |
 
 ---
 
@@ -295,6 +296,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-026]: ../milestones/mil-026-market-analysis-report.md
 [MIL-028]: ../milestones/mil-028-market-analysis-run-api.md
 [MIL-030]: ../milestones/mil-030-staff-accounts-and-password.md
+[MIL-032]: ../milestones/mil-032-self-updating-deploy-command.md
 [MIL-044]: ../milestones/mil-044-security-overview.md
 [MIL-053]: ../milestones/mil-053-security-scan-metrics.md
 [MIL-058]: ../milestones/mil-058-codeql-code-quality-findings.md
@@ -494,6 +496,7 @@ updated whenever an artifact instance is created or reviewed.
 [RC-394]: ./reviews/rc-394-mil-074-gate.md
 [RC-395]: ./reviews/rc-395-mil-077-gate.md
 [RC-396]: ./reviews/rc-396-mil-075-gate.md
+[RC-397]: ./reviews/rc-397-deploy-update-older-release.md
 [UC-008]: ../use-cases/uc-008/uc.md
 [UC-009]: ../use-cases/uc-009/uc.md
 [MIL-019]: ../milestones/mil-019-benchmark-results-api.md
@@ -547,5 +550,5 @@ updated whenever an artifact instance is created or reviewed.
 [RC-129]: ./reviews/rc-129-mil-028-timeouts.md
 [RC-381]: ./reviews/rc-381-mil-028-service-code.md
 [RC-382]: ./reviews/rc-382-mil-028-gate.md
-[b7c15af]: https://github.com/NF-Hotel/NFHotel/commit/b7c15af7684e22922b02d4a85d648ae3677583b6
 [9bcf071]: https://github.com/NF-Hotel/NFHotel/commit/9bcf0716d39f1382aa565ae6f0fae6c32d9fb811
+[72dba2f]: https://github.com/NF-Hotel/NFHotel/commit/72dba2f2ce6f64d2d4d394b3dab851739eac8fb1
