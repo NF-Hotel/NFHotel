@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-17 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-052 after S01 set up the service account and the MCP server, with the tools of the server, a past alert, the search for the token and the account disabled and enabled again; No-Go for now, criterion 6 fails on the live tailnet filter, as F5 of RC-384; mode autonomous, not independent | pending |
+| 2026-11-17 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-052 after S01 set up the service account and the MCP server, with the tools of the server, a past alert, the search for the token and the account disabled and enabled again; No-Go for now, criterion 6 fails on the live tailnet filter, as F5 of RC-384; mode autonomous, not independent | [7fdb18c] |
 
 ---
 
@@ -152,3 +152,4 @@ milestone.
 [PRC-001]: ../../../framework/process/review-checklist-process.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-WIKI-001]: ../../../framework/qc/artifacts/qc-wiki.md
+[7fdb18c]: https://github.com/NF-Hotel/NFHotel/commit/7fdb18c25de137c04985b3fd0f66798157834164

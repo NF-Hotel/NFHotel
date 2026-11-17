@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: task 3 of MIL-052, with the check of the logs of task 2; planned with the plan of 2026-11-14 and accepted at S01's word in chat ("Du godkender for mig"); written by the AI | [76bff8d] |
-| 2026-11-17 | Accepted | mikemike | AI as stand-in for S01 | S01's decisions of 2026-11-17 in chat: the service account keeps the Editor role ("Du må gerne ha Editor adgang. Det bestemmer jeg."), its token keeps no expiry date, and S01 stops the access by disabling the account ("du må gerne beholde adgangen til grafana. det bestemmer jeg"); the decision, points 3 to 6, the consequences and the quality attributes follow them; accepted after RC-398 Go | pending |
+| 2026-11-17 | Accepted | mikemike | AI as stand-in for S01 | S01's decisions of 2026-11-17 in chat: the service account keeps the Editor role ("Du må gerne ha Editor adgang. Det bestemmer jeg."), its token keeps no expiry date, and S01 stops the access by disabling the account ("du må gerne beholde adgangen til grafana. det bestemmer jeg"); the decision, points 3 to 6, the consequences and the quality attributes follow them; accepted after RC-398 Go | [7fdb18c] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -185,3 +185,4 @@ maintainability: a pinned release of the MCP server to keep up to date.
 [ADR-0044]: ./adr-0044-monitoring-deployed-by-a-pull-on-its-host.md
 [RC-384]: ../sqa/reviews/rc-384-mil-051-gate.md
 [76bff8d]: https://github.com/NF-Hotel/NFHotel/commit/76bff8de1dc7acaa5eab0c31eef2acd7358de036
+[7fdb18c]: https://github.com/NF-Hotel/NFHotel/commit/7fdb18c25de137c04985b3fd0f66798157834164

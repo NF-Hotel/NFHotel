@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-17 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the amendments of ADR-0045 and MIL-052 to S01's decisions of 2026-11-17, the Editor role, no expiry date and the account disabled to stop the access; Go; mode autonomous, not independent | pending |
+| 2026-11-17 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the amendments of ADR-0045 and MIL-052 to S01's decisions of 2026-11-17, the Editor role, no expiry date and the account disabled to stop the access; Go; mode autonomous, not independent | [7fdb18c] |
 
 ---
 
@@ -146,3 +146,4 @@ and what they cost (F1 to F3). The AI accepted both amendments and this record a
 [RC-357]: ./rc-357-mil-052-revision.md
 [RC-385]: ./rc-385-adr-0045.md
 [RC-399]: ./rc-399-mil-052-gate.md
+[7fdb18c]: https://github.com/NF-Hotel/NFHotel/commit/7fdb18c25de137c04985b3fd0f66798157834164

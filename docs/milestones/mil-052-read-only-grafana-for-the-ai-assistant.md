@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | The ADR of task 3 takes the next free number (ADR-0036 went to MIL-057); the target moved from 2026-11-08 to 2026-12-02; accepted after RC-357 Go, at S01's word in chat ("Du godkender for mig") | [62301c4] |
-| 2026-11-17 | Accepted | mikemike | AI as stand-in for S01 | Criteria 3, 5 and 7, the purpose, the deliverable and tasks 4 and 5 follow S01's decisions of 2026-11-17 in chat: the service account keeps the Editor role, its token has no expiry date, and S01 stops the access by disabling the account, so the assistant keeps it; [ADR-0045] cited; accepted after RC-398 Go | pending |
+| 2026-11-17 | Accepted | mikemike | AI as stand-in for S01 | Criteria 3, 5 and 7, the purpose, the deliverable and tasks 4 and 5 follow S01's decisions of 2026-11-17 in chat: the service account keeps the Editor role, its token has no expiry date, and S01 stops the access by disabling the account, so the assistant keeps it; [ADR-0045] cited; accepted after RC-398 Go | [7fdb18c] |
 
 ---
 
@@ -90,3 +90,4 @@ A check from S01's PC on 2026-11-01 found that `nf-monitoring` answers on port 3
 [MIL-051]: mil-051-monitoring-continuous-deployment.md
 [ADR-0045]: ../adr/adr-0045-read-only-monitoring-access-for-the-ai-assistant.md
 [62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59
+[7fdb18c]: https://github.com/NF-Hotel/NFHotel/commit/7fdb18c25de137c04985b3fd0f66798157834164
