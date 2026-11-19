@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-086, written by the AI before any code<br>Go in RC-420; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-086, written by the AI before any code<br>Go in RC-420; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [30b3aae] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -251,3 +251,4 @@ the files that this change edits.
 [UC-010]: ../use-cases/uc-010/uc.md
 [BC-001]: ../business-case.md
 [RC-420]: ../sqa/reviews/rc-420-adr-0050.md
+[30b3aae]: https://github.com/NF-Hotel/NFHotel/commit/30b3aaec46795a06f6df4336b23fe7c31cda3ac3
