@@ -35,18 +35,6 @@ public sealed class HttpStaffCallContext : IStaffCallContext
             : null;
 
     /// <inheritdoc />
-    public string? RemoteAddress
-    {
-        get
-        {
-            var context = _accessor.HttpContext;
-            if (context is null)
-            {
-                return null;
-            }
-
-            var forwarded = context.Request.Headers[ApiAuthentication.ClientAddressHeader].ToString().Split(',')[0].Trim();
-            return forwarded.Length > 0 ? forwarded : context.Connection.RemoteIpAddress?.ToString();
-        }
-    }
+    /// <remarks>The same address as the limits of the guest sign-in read (<see cref="HttpCallerAddress"/>).</remarks>
+    public string? RemoteAddress => HttpCallerAddress.Of(_accessor.HttpContext);
 }

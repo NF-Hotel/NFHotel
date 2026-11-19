@@ -8,7 +8,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// A booking with everything the detail screen needs.
 /// </summary>
 /// <param name="BookingId">The booking id.</param>
-/// <param name="BookingNumber">Displayed booking number (BR-109).</param>
+/// <param name="Reference">The reference that names the booking to the guest and to staff (BR-109, ADR-0049).</param>
 /// <param name="StartDate">Arrival date.</param>
 /// <param name="EndDate">Booked departure date (history, A-01).</param>
 /// <param name="EffectiveEndDate">The date up to which the room is actually occupied (A-01).</param>
@@ -22,7 +22,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// <param name="Actions">Which actions are legal right now (BR-22).</param>
 public sealed record BookingDetailsDto(
     int BookingId,
-    string BookingNumber,
+    Guid Reference,
     DateOnly StartDate,
     DateOnly EndDate,
     DateOnly EffectiveEndDate,

@@ -7,8 +7,8 @@ using NFHotel.Application.UseCases.Guests;
 namespace NFHotel.ApiClient;
 
 /// <summary>
-/// <see cref="IGuestAccessService"/> over HTTP (MIL-018, ADR-0047): the sign-in and the public booking go to the API,
-/// which checks the email and issues the guest token.
+/// <see cref="IGuestAccessService"/> over HTTP (MIL-018, ADR-0049): the sign-in with the reference and the email and the
+/// public booking go to the API, which checks the email and the limits and issues the guest token.
 /// </summary>
 public sealed class ApiGuestAccessService : IGuestAccessService
 {
@@ -36,7 +36,7 @@ public sealed class ApiGuestAccessService : IGuestAccessService
     /// <inheritdoc />
     /// <remarks>The sign-in carries no token of the caller, as the staff sign-in does not.</remarks>
     public async Task<Result<GuestSessionDto>> SignInAsync(
-        BookingReceiptRequest request,
+        GuestSignInRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);

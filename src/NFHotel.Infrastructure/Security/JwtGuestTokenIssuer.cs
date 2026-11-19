@@ -77,7 +77,7 @@ public sealed class JwtGuestTokenIssuer : IGuestTokenIssuer
             },
         };
 
-        return new GuestSessionDto(new JsonWebTokenHandler().CreateToken(descriptor), expires, bookingId);
+        return new GuestSessionDto(new JsonWebTokenHandler().CreateToken(descriptor), expires);
     }
 
     #endregion Public methods

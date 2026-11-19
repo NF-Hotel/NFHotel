@@ -56,7 +56,7 @@
 | BR-46 | The guest details are validated via `Guest.Validate()`; only the FIRST error is shown to the user and the creation is aborted. | `ViewModels/NewBookingViewModel.cs:288-304` | validation | | |
 | BR-47 | A guest with `GuestID == 0` is considered new and is created in the database before the booking, after which the assigned id is used; an existing guest is reused unchanged. | `ViewModels/NewBookingViewModel.cs:306-312` | calculation | | |
 | BR-48 | The booking is saved with the selected dates, the selected room's `RoomId`, the guest's id and status `Pending`. | `ViewModels/NewBookingViewModel.cs:314-328` | state transition | | |
-| BR-49 | On success the booking number, the guest's name and the number of nights (`Booking.NumberOfNights`) are shown in the receipt text. | `ViewModels/NewBookingViewModel.cs:331` | calculation | T-09, T-10 | |
+| BR-49 | On success the booking number, the guest's name and the number of nights (`Booking.NumberOfNights`) are shown in the receipt text. | `ViewModels/NewBookingViewModel.cs:331` | calculation | T-09, T-10 | Changed by MIL-085: the receipt shows the booking reference in place of the number, and no page shows a booking number (ADR-0049) |
 | BR-50 | The booking window closes automatically 2000 ms after a successful creation. | `ViewModels/NewBookingViewModel.cs:334-340` | calculation | | |
 | BR-51 | Any `ArgumentException` from the validation is shown as error text; other errors as "An unexpected error occurred: …" — no booking is created in either case. | `ViewModels/NewBookingViewModel.cs:342-349` | validation | | |
 | BR-52 | The guest's first name is required ("First name is required."). | `ViewModels/NewGuestViewModel.cs:177-180` | validation | T-11, T-12 | |
@@ -116,7 +116,7 @@
 | BR-106 | A booking must have a guest: error only if both `Guest` is null AND `GuestID` is 0. | `Models/Booking.cs:62-63` | validation | T-06 | |
 | BR-107 | When both `CheckInTime` and `CheckOutTime` have a value, `CheckOutTime` must be strictly greater than `CheckInTime`. | `Models/Booking.cs:65-66` | validation | T-07 | |
 | BR-108 | `Booking.ValidateEdit(newStart, newEnd)` requires `newEnd > newStart` and `newStart.Date >= today` on the submitted dates. | `Models/Booking.cs:75-79` | validation | T-08 | |
-| BR-109 | `NumberOfNights` = `(EndDate - StartDate).Days`, and 0 if one of the dates is `default`. The booking number is formatted as `FLZ-{BookingID:D6}`. | `Models/Booking.cs:13, 30-39` | calculation | T-09, T-10 | |
+| BR-109 | `NumberOfNights` = `(EndDate - StartDate).Days`, and 0 if one of the dates is `default`. The booking number is formatted as `FLZ-{BookingID:D6}`. | `Models/Booking.cs:13, 30-39` | calculation | T-09, T-10 | `NumberOfNights` holds. The format `FLZ-` is retired by MIL-085: a booking is named by its booking reference, a random version 4 UUID (ADR-0049; see On BR-109) |
 | BR-110 | Only rooms with status `Available` count as available — the filter lives in the data access layer. | `Repositories/RoomRepo.cs:220` | calculation | T-37 | |
 | BR-111 | Selection of bookings by status happens as an in-memory filter after a full table pull. | `Repositories/BookingRepo.cs:173` | calculation | | |
 | BR-112 | A room with existing bookings must not be deleted; the user is directed to set it "Out of service". The rule is coded as a `catch` of SQL error 547. | `Repositories/RoomRepo.cs:208-210` | validation | | |
@@ -218,8 +218,8 @@ stateDiagram-v2
 | BR-C-02 | The customer sees only rooms that are free in the chosen period — never a room that cannot be booked | `GetAvailableRoomsAsync`, which calls the same overlap function as the creation | |
 | BR-C-03 | A customer booking is created with status `Pending`. Confirmation is the staff's action | Follows from BR-01; the customer side has no confirm action | |
 | BR-C-04 | The customer cannot choose a room without first having chosen valid dates | `BookingFlowViewModel` — checked on room search, room selection and submission, not only on step change | |
-| BR-C-05 | The receipt shows booking number, period, number of nights and room — no price, since the price model does not exist | `BookingReceiptCard` shows "Betaling ved ankomst" (payment on arrival) | |
-| BR-C-06 | The customer cannot see other guests' bookings or personal data. A booking opens only with its booking number together with the email it was made with, and the receipt shows only booking and room details | `BookingService.LookUpReceiptAsync` answers only `BookingReceiptDto`, which has no guest fields, and the same not-found for a wrong email and an unknown number; the read by id needs `Bookings.View` (MIL-079) | |
+| BR-C-05 | The receipt shows the booking reference, period, number of nights and room — no price, since the price model does not exist | `BookingReceiptCard` shows "Betaling ved ankomst" (payment on arrival) | |
+| BR-C-06 | The customer cannot see other guests' bookings or personal data. A booking opens only with its booking reference together with the email it was made with, and the receipt shows only booking and room details | The guest sign-in `GuestAccessService.SignInAsync` is the one lookup: an unknown, unreadable or old reference, a wrong email and a cancelled booking get the same refusal; the guest routes answer only `BookingReceiptDto`, which has no guest fields; the read by id needs `Bookings.View` (MIL-079, MIL-085) | |
 
 **On BR-C-06.** Until MIL-079 the booking number was the only key to the receipt page, and `FLZ-000123` is one
 digit from the next booking: anyone could count through every booking and read its dates, room type and status.
@@ -228,6 +228,13 @@ an unreadable number get the same answer, five failed lookups of one number with
 for the rest of the window, and the read of a whole booking by its id is for staff with `Bookings.View` only.
 Even with the right email the page shows neither name, e-mail, phone nor passport number: the API answers the
 lookup with the receipt fields only. A guest sign-in with changes to the booking stays with MIL-018.
+
+**On BR-109.** Since MIL-085 the booking number is gone. A booking is named by its booking reference, a random
+version 4 UUID that the domain gives it when the booking is made (ADR-0049), so no page, address or answer to a guest
+shows a number from which another booking follows; the back office shows and searches the reference too. The
+reference names a booking and opens nothing: the email of the booking is still needed, an old number such as
+`FLZ-000123` gets the same refusal as a wrong email, and failed attempts are limited per reference (5) and per caller
+address (20) in 15 minutes. The key of the table still counts up, inside the system only.
 
 **On access control.** `/admin/**` needs a signed-in member of staff since MIL-016 (ADR-0005, UC-004):
 the roles Receptionist, Manager and Housekeeping hold the permissions of the Access Control Matrix,

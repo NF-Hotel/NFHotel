@@ -66,9 +66,10 @@ public static class DependencyInjection
         var connectionString = ReadConnectionString(configuration);
         var encryptionOptions = ReadEncryptionOptions(configuration);
         var staffOptions = ReadStaffOptions(configuration);
+        GuestLookupOptions guestLookupOptions = ReadGuestLookupOptions(configuration);
 
         AddPersistence(services, connectionString);
-        AddSecurity(services, encryptionOptions, staffOptions);
+        AddSecurity(services, encryptionOptions, staffOptions, guestLookupOptions);
         AddApplicationServices(services);
 
         return services;
@@ -152,7 +153,11 @@ public static class DependencyInjection
     }
 
     /// <summary>Registers the encryption. Singleton: the key is immutable, and AesGcm is created per operation.</summary>
-    private static void AddSecurity(IServiceCollection services, EncryptionOptions options, StaffSecurityOptions staffOptions)
+    private static void AddSecurity(
+        IServiceCollection services,
+        EncryptionOptions options,
+        StaffSecurityOptions staffOptions,
+        GuestLookupOptions guestLookupOptions)
     {
         services.AddSingleton(options);
         services.AddSingleton<IStringEncryptor, AesGcmStringEncryptor>();
@@ -171,6 +176,12 @@ public static class DependencyInjection
         // API replaces the context with the one that reads the guest token.
         services.AddSingleton<IGuestTokenIssuer, JwtGuestTokenIssuer>();
         services.TryAddScoped<IGuestCallContext, AnonymousGuestCallContext>();
+
+        // ADR-0049 decision 6: the limits of the guest sign-in are one store for the whole process, apart from the
+        // throttle of the staff sign-in; a caller that is not an HTTP request has no address, and the API replaces it.
+        services.AddSingleton(guestLookupOptions);
+        services.AddSingleton<IGuestSignInLimits, InMemoryGuestSignInLimits>();
+        services.TryAddScoped<ICallerAddress, UnknownCallerAddress>();
     }
 
     /// <summary>
@@ -182,7 +193,11 @@ public static class DependencyInjection
     /// </remarks>
     private static void AddApplicationServices(IServiceCollection services)
     {
-        services.AddScoped<IBookingService, BookingService>();
+        // One booking service per scope behind two doors: the use cases of staff, and the public booking whose answer
+        // holds the key of the new booking, which only the guest sign-in reads (ADR-0049 decision 3).
+        services.AddScoped<BookingService>();
+        services.AddScoped<IBookingService>(provider => provider.GetRequiredService<BookingService>());
+        services.AddScoped<IPublicBookingService>(provider => provider.GetRequiredService<BookingService>());
         services.AddScoped<IRoomService, RoomService>();
         services.AddScoped<IAiDefaultService, AiDefaultService>();
         services.AddScoped<IRoomRateService, RoomRateService>();
@@ -201,6 +216,7 @@ public static class DependencyInjection
         services.AddScoped<IBenchmarkRequestService, BenchmarkRequestService>();
         services.AddScoped<IGuestService, GuestService>();
         services.AddScoped<IGuestAccessService, GuestAccessService>();
+        services.AddScoped<IGuestBookingService, GuestBookingService>();
         services.AddScoped<IStaffAuthService, StaffAuthService>();
         services.AddScoped<StaffAccountService>();
         services.AddScoped<IStaffAccountService>(provider => provider.GetRequiredService<StaffAccountService>());
@@ -258,6 +274,33 @@ public static class DependencyInjection
             MaxFailures = ReadInt(section, "Throttle:MaxFailures", 5),
             ThrottleWindowMinutes = ReadInt(section, "Throttle:WindowMinutes", 15),
         };
+    }
+
+    /// <summary>
+    /// Reads the limits of the guest sign-in (ADR-0049 decision 6). A setting below one stops the start-up, so a typing
+    /// mistake cannot switch a limit off.
+    /// </summary>
+    private static GuestLookupOptions ReadGuestLookupOptions(IConfiguration configuration)
+    {
+        IConfigurationSection section = configuration.GetSection(GuestLookupOptions.SectionName);
+        GuestLookupOptions defaults = new();
+        GuestLookupOptions options = new()
+        {
+            MaxFailuresPerReference = ReadSetting(section, nameof(GuestLookupOptions.MaxFailuresPerReference), defaults.MaxFailuresPerReference),
+            MaxFailuresPerAddress = ReadSetting(section, nameof(GuestLookupOptions.MaxFailuresPerAddress), defaults.MaxFailuresPerAddress),
+            WindowMinutes = ReadSetting(section, nameof(GuestLookupOptions.WindowMinutes), defaults.WindowMinutes),
+            MaxTrackedKeys = ReadSetting(section, nameof(GuestLookupOptions.MaxTrackedKeys), defaults.MaxTrackedKeys),
+        };
+
+        return options;
+
+        static int ReadSetting(IConfigurationSection section, string key, int fallback)
+        {
+            int value = ReadInt(section, key, fallback);
+            return value >= 1
+                ? value
+                : throw new InvalidOperationException($"'{GuestLookupOptions.SectionName}:{key}' must be at least 1.");
+        }
     }
 
     private static int ReadInt(IConfigurationSection section, string key, int fallback) =>

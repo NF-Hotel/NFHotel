@@ -7,10 +7,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using NFHotel.ApiClient;
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Guests;
-using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases;
-using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Domain.ValueObjects;
 
@@ -19,17 +17,15 @@ using NSubstitute;
 namespace NFHotel.Web.Tests;
 
 /// <summary>
-/// Hosts the real web application with substitutes for the guest sign-in and the booking use cases (MIL-018): the guest
-/// of booking 7 signs in with its number and <see cref="Email"/>, and every call to the booking use cases records the
-/// tokens of its scope, so a test sees as whom a page spoke to the API.
+/// Hosts the real web application with substitutes for the guest sign-in and the guest booking use cases (MIL-018, and
+/// since MIL-085 ADR-0049): the guest of one booking signs in with its <see cref="Reference"/> and <see cref="Email"/>,
+/// and every call to the guest booking use cases records the tokens of its scope, so a test sees as whom a page spoke to
+/// the API.
 /// </summary>
 public class GuestWebFactory : WebFactory
 {
-    /// <summary>The key of the booking that the substitute knows.</summary>
-    public const int BookingId = 7;
-
-    /// <summary>The number of that booking.</summary>
-    public const string BookingNumber = "FLZ-000007";
+    /// <summary>The reference of the booking that the substitute knows, in its text form.</summary>
+    public const string Reference = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
 
     /// <summary>The email the booking was made with.</summary>
     public const string Email = "anna@example.com";
@@ -37,57 +33,55 @@ public class GuestWebFactory : WebFactory
     /// <summary>The guest token the substitute hands out, so a test can look for it in a cookie or a page.</summary>
     public const string GuestToken = "secret-guest-token-that-must-not-leak-0123456789";
 
-    /// <summary>The room of the booking, which a guest keeps when the dates change.</summary>
-    public const int RoomId = 3;
-
     /// <summary>The end of the guest session the substitute hands out.</summary>
     public static readonly DateTimeOffset ExpiresAt = new(2100, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
     /// <summary>Creates the factory and gives the substitutes their answers.</summary>
     public GuestWebFactory()
     {
-        GuestSessionDto session = new(GuestToken, ExpiresAt, BookingId);
-        Access.SignInAsync(Arg.Any<BookingReceiptRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
+        GuestSessionDto session = new(GuestToken, ExpiresAt);
+        Access.SignInAsync(Arg.Any<GuestSignInRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
         {
-            BookingReceiptRequest request = call.Arg<BookingReceiptRequest>();
+            GuestSignInRequest request = call.Arg<GuestSignInRequest>();
             return Task.FromResult(
-                request.BookingId == BookingId && string.Equals(request.Email?.Trim(), Email, StringComparison.OrdinalIgnoreCase)
+                string.Equals(request.Reference?.Trim(), Reference, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(request.Email?.Trim(), Email, StringComparison.OrdinalIgnoreCase)
                     ? Result<GuestSessionDto>.Success(session)
                     : Result<GuestSessionDto>.Failure(ErrorCodes.Api.GuestUnauthorized));
         });
-        Bookings.GetByIdAsync(BookingId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Result<BookingDetailsDto>.Success(Booked(BookingStatus.Pending))));
-        Bookings.CancelAsync(BookingId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Result<BookingDetailsDto>.Success(Booked(BookingStatus.Cancelled))));
-        Bookings.RescheduleAsync(Arg.Any<RescheduleBookingRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
+        Bookings.GetAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(Result<BookingReceiptDto>.Success(Receipt(BookingStatus.Pending))));
+        Bookings.CancelAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(Result<BookingReceiptDto>.Success(Receipt(BookingStatus.Cancelled))));
+        Bookings.RescheduleAsync(Arg.Any<GuestRescheduleRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
         {
-            RescheduleBookingRequest request = call.Arg<RescheduleBookingRequest>();
-            return Task.FromResult(Result<BookingDetailsDto>.Success(
-                Booked(BookingStatus.Pending) with { StartDate = request.NewStartDate, EndDate = request.NewEndDate }));
+            GuestRescheduleRequest request = call.Arg<GuestRescheduleRequest>();
+            return Task.FromResult(Result<BookingReceiptDto>.Success(
+                Receipt(BookingStatus.Pending) with { StartDate = request.CheckInDate, EndDate = request.CheckOutDate }));
         });
     }
 
     /// <summary>The guest sign-in that the pages call instead of the API.</summary>
     public IGuestAccessService Access { get; } = Substitute.For<IGuestAccessService>();
 
-    /// <summary>The booking use cases that the pages call instead of the API.</summary>
-    public IBookingService Bookings { get; } = Substitute.For<IBookingService>();
+    /// <summary>The guest booking use cases that the pages call instead of the API.</summary>
+    public IGuestBookingService Bookings { get; } = Substitute.For<IGuestBookingService>();
 
-    /// <summary>The staff and the guest token of the scope of each booking call, in order.</summary>
+    /// <summary>The staff and the guest token of the scope of each guest booking call, in order.</summary>
     public ConcurrentQueue<(string? Staff, string? Guest)> Callers { get; } = new();
 
     /// <summary>Opens the guest sign-in, fills the form and posts it.</summary>
     /// <param name="browser">The client that holds the cookies.</param>
-    /// <param name="bookingNumber">The booking number.</param>
+    /// <param name="reference">The booking reference, as a guest would type it.</param>
     /// <param name="email">The email.</param>
     /// <returns>The answer to the post.</returns>
-    public static async Task<HttpResponseMessage> SignInAsGuestAsync(HttpClient browser, string bookingNumber, string email)
+    public static async Task<HttpResponseMessage> SignInAsGuestAsync(HttpClient browser, string reference, string email)
     {
         ArgumentNullException.ThrowIfNull(browser);
 
         string html = await browser.GetStringAsync("/booking", TestContext.Current.CancellationToken);
         Dictionary<string, string> fields = HiddenFields(html);
-        fields[InputName(html, "booking-number")] = bookingNumber;
+        fields[InputName(html, "booking-reference")] = reference;
         fields[InputName(html, "booking-email")] = email;
         using FormUrlEncodedContent form = new(fields);
         return await browser.PostAsync("/booking", form, TestContext.Current.CancellationToken);
@@ -103,7 +97,7 @@ public class GuestWebFactory : WebFactory
         {
             services.RemoveAll<IGuestAccessService>();
             services.AddScoped(_ => Access);
-            services.RemoveAll<IBookingService>();
+            services.RemoveAll<IGuestBookingService>();
             services.AddScoped(provider =>
             {
                 Callers.Enqueue((provider.GetRequiredService<StaffCallContext>().Token, provider.GetRequiredService<GuestCallContext>().Token));
@@ -112,21 +106,6 @@ public class GuestWebFactory : WebFactory
         });
     }
 
-    private static BookingDetailsDto Booked(BookingStatus status) =>
-        new(
-            BookingId,
-            BookingNumber,
-            new DateOnly(2026, 3, 10),
-            new DateOnly(2026, 3, 12),
-            new DateOnly(2026, 3, 12),
-            2,
-            status,
-            null,
-            null,
-            null,
-            new RoomListItemDto(RoomId, "103", 1, RoomSize.Double, 2, RoomStatus.Available, HousekeepingStatus.Clean),
-            new GuestListItemDto(1, "Anna", "Jensen", "Anna Jensen", Email, "+4512345678", "Denmark", true),
-            status == BookingStatus.Cancelled
-                ? new BookingActionsDto(false, false, false, false, false)
-                : new BookingActionsDto(true, false, false, true, true));
+    private static BookingReceiptDto Receipt(BookingStatus status) =>
+        new(Guid.Parse(Reference), new DateOnly(2026, 3, 10), new DateOnly(2026, 3, 12), 2, RoomSize.Double, status);
 }

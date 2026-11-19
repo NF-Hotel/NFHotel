@@ -1,3 +1,4 @@
+using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Domain.Entities;
 using NFHotel.TestSupport;
@@ -71,6 +72,34 @@ public sealed class BookingMappingTests
         // Assert
         Assert.True(actions.CanCancel);
         Assert.True(actions.CanReschedule);
+    }
+
+    #endregion
+
+    #region Reference (MIL-085)
+
+    /// <summary>
+    /// BR-109 (ADR-0049 decision 3): the row of the overview, the details and the receipt carry the reference of the
+    /// booking; the key stays beside it only where staff work with it.
+    /// </summary>
+    [Fact]
+    public void ToListItemToDetailsAndReceipt_AnyBooking_CarryTheReferenceOfTheBooking()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        Booking booking = ConfirmedBookingToday(world, out _);
+        BookingReadModel readModel = world.ReadModelFor(booking);
+
+        // Act
+        BookingListItemDto item = readModel.ToListItem(world.Clock.Today);
+        BookingDetailsDto details = readModel.ToDetails(world.Clock.Today);
+        BookingReceiptDto receipt = BookingReceiptDto.From(details);
+
+        // Assert
+        Assert.Equal(booking.Reference, item.Reference);
+        Assert.Equal(booking.Reference, details.Reference);
+        Assert.Equal(booking.Reference, receipt.Reference);
+        Assert.Equal(booking.Id, details.BookingId);
     }
 
     #endregion

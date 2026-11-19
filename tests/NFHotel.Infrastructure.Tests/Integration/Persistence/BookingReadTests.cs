@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+
+using NFHotel.Application.Dto.Bookings;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.Infrastructure.Persistence;
@@ -131,20 +134,107 @@ public sealed class BookingReadTests : IAsyncLifetime
 
     #endregion
 
+    #region The reference (MIL-085)
+
+    /// <summary>Integration (ADR-0049 decision 4): a new booking keeps the reference the domain gave it; the database default does not replace it.</summary>
+    [Fact]
+    public async Task Save_NewBooking_StoresTheReferenceOfTheDomain()
+    {
+        // Arrange
+        Booking booking = await SeedAsync("101", Today);
+        await using HotelDbContext context = _fixture.CreateContext();
+
+        // Act
+        Guid stored = await context.Bookings.AsNoTracking()
+            .Where(item => item.Id == booking.Id)
+            .Select(item => item.Reference)
+            .SingleAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(booking.Reference, stored);
+        Assert.Equal(4, stored.Version);
+    }
+
+    /// <summary>Integration and positive: the read model of a reference is the booking with that reference, with its key.</summary>
+    [Fact]
+    public async Task GetReadModelByReferenceAsync_StoredBooking_ReturnsItsReadModel()
+    {
+        // Arrange
+        Booking first = await SeedAsync("101", Today);
+        Booking second = await SeedAsync("102", Today);
+        await using HotelDbContext context = _fixture.CreateContext();
+
+        // Act
+        BookingReadModel? readModel = await new BookingRepository(context).GetReadModelByReferenceAsync(second.Reference, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.NotNull(readModel);
+        Assert.Equal(second.Id, readModel.BookingId);
+        Assert.Equal(second.Reference, readModel.Reference);
+        Assert.Equal("102", readModel.Room.RoomNumber);
+        Assert.NotEqual(first.Reference, second.Reference);
+    }
+
+    /// <summary>Negative: a reference that no booking has gives no read model.</summary>
+    [Fact]
+    public async Task GetReadModelByReferenceAsync_UnknownReference_ReturnsNull()
+    {
+        // Arrange
+        await SeedAsync("101", Today);
+        await using HotelDbContext context = _fixture.CreateContext();
+
+        // Act
+        BookingReadModel? readModel = await new BookingRepository(context).GetReadModelByReferenceAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Null(readModel);
+    }
+
+    /// <summary>
+    /// Equivalence (ADR-0049 decision 3): staff find a booking by its whole reference or a part of it, in any letter case,
+    /// and the search finds that booking only.
+    /// </summary>
+    /// <param name="part">Which part of the reference is searched for.</param>
+    [Theory]
+    [InlineData("whole")]
+    [InlineData("first eight")]
+    public async Task GetOverviewAsync_SearchByReference_ReturnsThatBookingOnly(string part)
+    {
+        // Arrange
+        await SeedAsync("101", Today);
+        Booking wanted = await SeedAsync("102", Today);
+        string text = wanted.Reference.ToString().ToUpperInvariant();
+        string searchText = part == "whole" ? text : text[..8];
+        await using HotelDbContext context = _fixture.CreateContext();
+
+        // Act
+        IReadOnlyList<BookingReadModel> rows = await new BookingRepository(context).GetOverviewAsync(
+            Today, Today.AddDays(30), [BookingStatus.Pending], searchText, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(wanted.Id, Assert.Single(rows).BookingId);
+        Assert.Equal(wanted.Reference, Assert.Single(rows).Reference);
+    }
+
+    #endregion
+
     #region Helpers
 
-    private async Task<int> SeedBookingAsync()
+    private async Task<int> SeedBookingAsync() => (await SeedAsync("101", Today)).Id;
+
+    /// <summary>Stores a room with the number given, a guest, and a booking of three nights from the date given in that room.</summary>
+    private async Task<Booking> SeedAsync(string roomNumber, DateOnly start)
     {
-        await using var context = _fixture.CreateContext();
-        var room = Room.Create("101", 1, RoomSize.Double, 2);
-        var guest = Guest.Create("Anna", "Jensen", "anna@example.com", "+4512345678", "Denmark", null);
+        await using HotelDbContext context = _fixture.CreateContext();
+        Room room = Room.Create(roomNumber, 1, RoomSize.Double, 2);
+        Guest guest = Guest.Create("Anna", "Jensen", "anna@example.com", "+4512345678", "Denmark", null);
         new RoomRepository(context).Add(room);
         new GuestRepository(context).Add(guest);
         await new UnitOfWork(context).SaveChangesAsync(TestContext.Current.CancellationToken);
-        var booking = Booking.Create(new DateRange(Today, Today.AddDays(3)), room.Id, guest.Id, Today);
+        Booking booking = Booking.Create(new DateRange(start, start.AddDays(3)), room.Id, guest.Id, Today);
         new BookingRepository(context).Add(booking);
         await new UnitOfWork(context).SaveChangesAsync(TestContext.Current.CancellationToken);
-        return booking.Id;
+        return booking;
     }
 
     #endregion

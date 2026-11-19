@@ -63,9 +63,9 @@ public sealed class BookingPageTests : IAsyncDisposable
     public void Book_WholeFlow_EndsOnTheReceiptWithTheSessionTicket()
     {
         RoomsAre(FreeRoom(1), FreeRoom(2));
-        GuestSessionDto session = new("guest-token-9", new DateTimeOffset(2026, 3, 10, 14, 0, 0, TimeSpan.Zero), 9);
+        GuestSessionDto session = new("guest-token-9", new DateTimeOffset(2026, 3, 10, 14, 0, 0, TimeSpan.Zero));
         _access.BookAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>())
-            .Returns(Ok(new PublicBookingDto(BookingDetails(9), session)));
+            .Returns(Ok(new PublicBookingDto(Receipt(9), session)));
         var page = _host.Render<Book>();
 
         page.Find("#check-in").Change("2026-03-12");
@@ -83,9 +83,10 @@ public sealed class BookingPageTests : IAsyncDisposable
         page.Button("Send booking request").Click();
 
         Assert.Contains("Your confirmation", page.Markup, StringComparison.Ordinal);
-        Assert.Contains("B-0009", page.Markup, StringComparison.Ordinal);
+        Assert.Contains(ReferenceOf(9).ToString(), page.Markup, StringComparison.Ordinal);
         Assert.DoesNotContain("rita@example.com", page.Markup, StringComparison.Ordinal);
-        Assert.NotEmpty(page.FindAll("a[href='/booking/B-0009']"));
+        Assert.NotEmpty(page.FindAll("a[href='/booking']"));
+        Assert.Empty(page.FindAll($"a[href*='{ReferenceOf(9)}']"));
         Assert.DoesNotContain("/booking/", _host.Navigation.Uri, StringComparison.Ordinal);
         Assert.DoesNotContain(session.Token, page.Markup, StringComparison.Ordinal);
         Assert.Equal(GuestSignInRegistration.SessionPath, page.Find("form[method='post']").GetAttribute("action"));

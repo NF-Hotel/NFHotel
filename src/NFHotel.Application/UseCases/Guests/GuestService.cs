@@ -1,4 +1,3 @@
-using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Guests;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
@@ -25,8 +24,6 @@ public sealed class GuestService : IGuestService
     private readonly IGuestQueries _guestQueries;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IStaffAuthorizationService _authorization;
-    private readonly IBookingQueries _bookingQueries;
-    private readonly IGuestCallContext _guestCall;
 
     /// <summary>
     /// Creates the service.
@@ -35,29 +32,21 @@ public sealed class GuestService : IGuestService
     /// <param name="guestQueries">Reading guests as projections (A-11).</param>
     /// <param name="unitOfWork">The transaction boundary.</param>
     /// <param name="authorization">The service for checking staff permissions.</param>
-    /// <param name="bookingQueries">Reads the booking of a signed-in guest, to find its guest (MIL-018).</param>
-    /// <param name="guestCall">The signed-in guest of the call, if any (MIL-018).</param>
     public GuestService(
         IGuestRepository guestRepository,
         IGuestQueries guestQueries,
         IUnitOfWork unitOfWork,
-        IStaffAuthorizationService authorization,
-        IBookingQueries bookingQueries,
-        IGuestCallContext guestCall)
+        IStaffAuthorizationService authorization)
     {
         ArgumentNullException.ThrowIfNull(guestRepository);
         ArgumentNullException.ThrowIfNull(guestQueries);
         ArgumentNullException.ThrowIfNull(unitOfWork);
         ArgumentNullException.ThrowIfNull(authorization);
-        ArgumentNullException.ThrowIfNull(bookingQueries);
-        ArgumentNullException.ThrowIfNull(guestCall);
 
         _guestRepository = guestRepository;
         _guestQueries = guestQueries;
         _unitOfWork = unitOfWork;
         _authorization = authorization;
-        _bookingQueries = bookingQueries;
-        _guestCall = guestCall;
     }
 
     /// <summary>Fetches one guest (BR-35, BR-115).</summary>
@@ -68,8 +57,8 @@ public sealed class GuestService : IGuestService
     /// or the staff member lacks the required permissions.
     /// </returns>
     /// <remarks>
-    /// The signed-in guest of a booking reads the guest of that booking and no other, and never the passport number:
-    /// the Guest role does not hold the permission to see it (MIL-018, ADR-0047).
+    /// A signed-in guest reads no guest by its key, not even the guest of the own booking: no page of a guest needs it,
+    /// and the receipt is all a guest sees (ADR-0049 decisions 3 and 7).
     /// </remarks>
     public async Task<Result<GuestDetailsDto>> GetByIdAsync(
         int guestId,
@@ -77,13 +66,12 @@ public sealed class GuestService : IGuestService
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(guestId);
 
-        // Checks whether the staff member can view other guests' information; a caller who may not is either the
-        // signed-in guest of a booking, who reads only their own details, or refused.
+        // Checks whether the staff member can view other guests' information.
         if (!await _authorization.HasPermissionAsync(
             Permissions.ViewOtherGuestData,
             cancellationToken).ConfigureAwait(false))
         {
-            return await GetOwnGuestAsync(guestId, cancellationToken).ConfigureAwait(false);
+            return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
         }
 
         // Checks whether the staff member can view guest passport data.
@@ -356,42 +344,6 @@ public sealed class GuestService : IGuestService
         {
             return exception.Codes;
         }
-    }
-
-    /// <summary>
-    /// Reads the guest of the signed-in guest's own booking (MIL-018): the guest in the booking of the guest token, and
-    /// only that guest, without the passport number.
-    /// </summary>
-    /// <param name="guestId">The id of the guest that was asked for.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The guest details without the passport number, or <see cref="ErrorCodes.Api.Forbidden"/>.</returns>
-    private async Task<Result<GuestDetailsDto>> GetOwnGuestAsync(int guestId, CancellationToken cancellationToken)
-    {
-        if (_guestCall.BookingId is not int bookingId
-            || !GuestOwnership.Allows(_guestCall, bookingId, Permissions.ViewOwnGuestData))
-        {
-            return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
-        }
-
-        BookingReadModel? booking = await _bookingQueries
-            .GetReadModelAsync(bookingId, cancellationToken)
-            .ConfigureAwait(false);
-        if (booking is null || booking.Guest.GuestId != guestId)
-        {
-            return Result<GuestDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
-        }
-
-        GuestDetailsDto? details = await _guestQueries.GetDetailsAsync(guestId, cancellationToken).ConfigureAwait(false);
-        if (details is null)
-        {
-            return Result<GuestDetailsDto>.Failure(ErrorCodes.Guest.NotFound);
-        }
-
-        // The passport number goes out only if the table gives the Guest role the permission to see its own, which it
-        // does not (ADR-0047 decision 4); the table stays the one place that decides it.
-        return RolePermissions.HasPermission(Roles.Guest, Permissions.ViewOwnPassportData)
-            ? Result<GuestDetailsDto>.Success(details)
-            : Result<GuestDetailsDto>.Success(details with { PassportNumber = null });
     }
 
     /// <summary>

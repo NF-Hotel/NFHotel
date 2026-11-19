@@ -11,7 +11,7 @@ namespace NFHotel.Web.Features.Booking;
 
 /// <summary>
 /// The code behind the guest's own booking: the guest cookie, the hand-over of its token to the runner, and the
-/// forwarding of the two forms to <see cref="MyBookingViewModel"/> (MIL-018).
+/// forwarding of the two forms to <see cref="MyBookingViewModel"/> (MIL-018, ADR-0049).
 /// </summary>
 public partial class MyBooking : CancellableComponentBase
 {
@@ -43,21 +43,21 @@ public partial class MyBooking : CancellableComponentBase
 
     /// <summary>
     /// Reads the guest cookie: without a guest the page goes to the sign-in; with one, the token goes to the runner of
-    /// this request and the booking in the cookie is read.
+    /// this request, and the API reads the booking that the token names.
     /// </summary>
     protected override async Task OnInitializedAsync()
     {
         ClaimsPrincipal? guest = await GuestSignInRegistration.ReadGuestAsync(HttpContext);
-        if (GuestClaims.BookingIdOf(guest) is not int bookingId)
+        if (GuestClaims.TokenOf(guest) is null)
         {
             Navigation.NavigateTo(GuestSignInRegistration.SignInPath);
             return;
         }
 
         GuestTokens.Hold(guest);
-        await ViewModel.LoadAsync(bookingId, Done, ComponentToken);
-        Change ??= ViewModel.Booking is BookingDetailsDto booking
-            ? new ChangeInput { CheckIn = booking.StartDate, CheckOut = booking.EndDate }
+        await ViewModel.LoadAsync(Done, ComponentToken);
+        Change ??= ViewModel.Receipt is BookingReceiptDto receipt
+            ? new ChangeInput { CheckIn = receipt.StartDate, CheckOut = receipt.EndDate }
             : new ChangeInput();
     }
 

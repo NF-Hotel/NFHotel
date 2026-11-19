@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0047 |
-| CrossReference | [MIL-018], [MIL-079], [MIL-016], [MIL-017], [ADR-0004], [ADR-0005], [ADR-0006], [BC-001], [UC-010], [RC-358] |
+| CrossReference | [MIL-018], [MIL-079], [MIL-016], [MIL-017], [ADR-0004], [ADR-0005], [ADR-0006], [BC-001], [UC-010], [RC-358], [ADR-0049], [MIL-085], [RC-417] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 2 of MIL-018, written by the AI<br>Go in RC-388; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 2 of MIL-018, written by the AI<br>Go in RC-388; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The current state names ADR-0049: the booking reference in place of the number, limits of the guest sign-in per reference and per address, guest routes without a key, and one lookup (MIL-085)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -105,6 +106,16 @@ token in a guest cookie apart from the staff sign-in.
    every cancelled booking is refused, which includes the 30 days. A session opened before the cancellation lasts
    until its end, so the guest sees that the booking is cancelled.
 
+**Current state (2026-11-19, [RC-417]).** The decision stands; [ADR-0049] ([MIL-085]) changed parts of it. A guest
+signs in with the booking reference, a random version 4 UUID, in place of the booking number, which no page, address
+or answer to a guest shows any more (decision 1). The answer to the sign-in and to a public booking holds the token
+and its end but no booking key, and the guest cookie holds the token only (decisions 2 and 6). An unknown, unreadable
+or old reference gets the one refusal (decision 3); the throttle of [MIL-079] gives way to two limits of the guest
+sign-in alone, 5 failed attempts per reference and 20 per caller address in 15 minutes, and the older receipt lookup
+is gone, so the sign-in is the one lookup. The four operations of decision 5 are now three guest routes,
+`api/guest/booking` with `cancel` and `reschedule`, which take no key and answer with the receipt alone; every staff
+route, the read of a guest included, refuses a guest token with 403.
+
 ## Consequences
 
 **Positive:**
@@ -159,4 +170,8 @@ interaction capability (no account to create) and maintainability (one table, on
 [BC-001]: ../business-case.md
 [UC-010]: ../use-cases/uc-010/uc.md
 [RC-358]: ../sqa/reviews/rc-358-mil-018-revision.md
+[ADR-0049]: ./adr-0049-booking-reference.md
+[MIL-085]: ../milestones/mil-085-a-booking-reference-that-cannot-be-guessed.md
+[RC-417]: ../sqa/reviews/rc-417-mil-085-documents.md
 [9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

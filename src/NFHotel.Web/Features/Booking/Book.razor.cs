@@ -28,14 +28,6 @@ public partial class Book : CancellableComponentBase
     public string? GuestsQuery { get; set; }
 
     /// <summary>
-    /// The guest sign-in with the number of the booking just created filled in. The guest adds the email there, so the
-    /// link is only a way back later; the receipt itself is shown on this page (MIL-079), and the button "Manage your
-    /// booking" signs the guest in at once (MIL-018).
-    /// </summary>
-    private string ReceiptUrl =>
-        ViewModel.Confirmation is null ? "/book" : $"/booking/{ViewModel.Confirmation.BookingNumber}";
-
-    /// <summary>
     /// Hands the address to the viewmodel. Valid dates go straight to the free rooms, so the guest who
     /// filled in the box on the front page is not asked the same question twice.
     /// </summary>
@@ -57,7 +49,7 @@ public partial class Book : CancellableComponentBase
 
     /// <summary>
     /// Sends the order. The receipt is step 4 on this page: the guest who has just booked sees it at once, without
-    /// the number and the email that the guest sign-in on /booking asks for (MIL-079, MIL-018).
+    /// the reference and the email that the guest sign-in on /booking asks for (MIL-079, MIL-018, ADR-0049).
     /// </summary>
     private Task SubmitAsync() => ViewModel.SubmitAsync(ComponentToken);
 }

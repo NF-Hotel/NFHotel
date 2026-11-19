@@ -12,8 +12,17 @@ public static class ApiRoutes
     /// <summary>The route for public guest booking creation.</summary>
     public const string PublicBooking = "public";
 
-    /// <summary>The route of a guest's lookup of a booking by its number and email (MIL-079).</summary>
-    public const string PublicReceipt = "public/receipt";
+    /// <summary>
+    /// The route of the signed-in guest's own booking (ADR-0049 decision 3): it takes no key, because the guest token names
+    /// the booking.
+    /// </summary>
+    public const string GuestBooking = "api/guest/booking";
+
+    /// <summary>The cancel of the guest's booking below <see cref="GuestBooking"/>.</summary>
+    public const string GuestBookingCancel = "cancel";
+
+    /// <summary>The move of the guest's booking to new dates below <see cref="GuestBooking"/>.</summary>
+    public const string GuestBookingReschedule = "reschedule";
 
     /// <summary>The route prefix of the guest endpoints.</summary>
     public const string Guests = "api/guests";
@@ -93,7 +102,7 @@ public static class ApiRoutes
     /// <summary>The sign-in below <see cref="Auth"/>.</summary>
     public const string Login = "login";
 
-    /// <summary>The guest sign-in with the number and the email of a booking, below <see cref="Auth"/> (MIL-018, ADR-0047).</summary>
+    /// <summary>The guest sign-in with the reference and the email of a booking, below <see cref="Auth"/> (MIL-018, ADR-0049).</summary>
     public const string GuestLogin = "guest-login";
 
     /// <summary>The route prefix of the staff accounts (ADR-0017).</summary>

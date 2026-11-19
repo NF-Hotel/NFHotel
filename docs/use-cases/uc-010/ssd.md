@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 3 of MIL-018, written by the AI<br>Go in RC-389; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 3 of MIL-018, written by the AI<br>Go in RC-389; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | signIn takes the booking reference in place of the booking number, and the refused sign-in counts per reference and per address (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
 
 ---
 
@@ -32,7 +33,7 @@ hide footbox
 actor "Guest" as Guest
 participant ":System" as System
 
-Guest -> System : signIn(bookingNumber, email)
+Guest -> System : signIn(bookingReference, email)
 activate System
 System --> Guest : own booking, changes it allows now
 deactivate System
@@ -63,14 +64,14 @@ hide footbox
 actor "Guest" as Guest
 participant ":System" as System
 
-loop five failed attempts within 15 minutes
-  Guest -> System : signIn(bookingNumber, email)
+loop five failed attempts for one reference, or twenty from one address, within 15 minutes
+  Guest -> System : signIn(bookingReference, email)
   activate System
-  System --> Guest : refusal: the number and the email do not match a booking
+  System --> Guest : refusal: the reference and the email do not match a booking
   deactivate System
 end
 
-Guest -> System : signIn(bookingNumber, email)
+Guest -> System : signIn(bookingReference, email)
 activate System
 System --> Guest : refusal: too many attempts, try again later
 deactivate System
@@ -81,7 +82,7 @@ deactivate System
 
 | Step | Message (verb phrase) | Parameters | Return | Use case step |
 | --- | --- | --- | --- | --- |
-| 1 | signIn | booking number, email | the own booking with the changes it allows now | 1, 2 |
+| 1 | signIn | booking reference, email | the own booking with the changes it allows now | 1, 2 |
 | 2 | changeDates | startDate (the arrival date), endDate (the departure date) | the booking with the new dates | 3, 4 |
 | 3 | cancelBooking | none | the cancelled booking | 5, 6 |
 | 4 | signOut | none | none | 7, 8 |
@@ -102,3 +103,4 @@ changeDates and cancelBooking name no booking: they act on the booking of the gu
 [DM-004]: ../../domain-model.md
 [OC-001]: ./oc.md
 [9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

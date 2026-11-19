@@ -35,7 +35,7 @@ public sealed class InMemoryLoginThrottle : ILoginThrottle
 
     /// <summary>
     /// The number of keys that have a window, run-out windows included until the next sweep. For tests and diagnostics:
-    /// it shows that keys which fail once and are never tried again do not stay in memory (MIL-079).
+    /// it shows that keys which fail once and are never tried again do not stay in memory.
     /// </summary>
     public int TrackedKeyCount => _windows.Count;
 
@@ -69,56 +69,13 @@ public sealed class InMemoryLoginThrottle : ILoginThrottle
             _ => new Window(now, 1),
             (_, current) => now - current.Start >= _window ? new Window(now, 1) : current with { Failures = current.Failures + 1 });
 
-        // A key is otherwise dropped only when it is checked again after its window. A sign-in tries few names, but a
-        // guest's lookup can be tried with any booking number (MIL-079), so the windows that have run out are swept now
-        // and then, and the memory stays bounded by the failures of one window.
+        // A key is otherwise dropped only when it is checked again after its window, and a caller can try any user name,
+        // so the windows that have run out are swept now and then, and the memory stays bounded by the failures of one
+        // window.
         if (Interlocked.Increment(ref _failuresSinceStart) % FailuresPerSweep == 0)
         {
             SweepRunOutWindows(now);
         }
-    }
-
-    /// <inheritdoc />
-    public bool TryCountAttempt(string key)
-    {
-        ArgumentNullException.ThrowIfNull(key);
-
-        DateTimeOffset now = _clock.UtcNow;
-
-        // The check and the count are one compare-and-swap: if another attempt changed the window meanwhile, the swap
-        // fails and the window is read again, so two attempts cannot both take the last free count.
-        while (true)
-        {
-            if (!_windows.TryGetValue(key, out Window? current))
-            {
-                if (_windows.TryAdd(key, new Window(now, 1)))
-                {
-                    break;
-                }
-
-                continue;
-            }
-
-            bool hasRunOut = now - current.Start >= _window;
-            if (!hasRunOut && current.Failures >= _maxFailures)
-            {
-                // A refused attempt leaves the window as it is: it neither counts nor extends it.
-                return false;
-            }
-
-            Window counted = hasRunOut ? new Window(now, 1) : current with { Failures = current.Failures + 1 };
-            if (_windows.TryUpdate(key, counted, current))
-            {
-                break;
-            }
-        }
-
-        if (Interlocked.Increment(ref _failuresSinceStart) % FailuresPerSweep == 0)
-        {
-            SweepRunOutWindows(now);
-        }
-
-        return true;
     }
 
     /// <inheritdoc />

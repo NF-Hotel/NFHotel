@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Security.Claims;
 
 using NFHotel.Application.Dto.Guests;
@@ -6,9 +5,10 @@ using NFHotel.Application.Dto.Guests;
 namespace NFHotel.Web.Security;
 
 /// <summary>
-/// The claims of a signed-in guest in the web application (MIL-018, ADR-0047 decision 6): the booking and the guest token
-/// for the API. The guest cookie holds them, in a cookie scheme of its own, so a guest is never taken for a member of
-/// staff: the staff cookie is the default scheme and the only one the staff pages and policies read.
+/// The claims of a signed-in guest in the web application (MIL-018, ADR-0047 decision 6, ADR-0049 decision 3): the guest
+/// token for the API and nothing else, so the cookie names no key of a booking; the API reads the booking from the token.
+/// The guest cookie holds it, in a cookie scheme of its own, so a guest is never taken for a member of staff: the staff
+/// cookie is the default scheme and the only one the staff pages and policies read.
 /// </summary>
 public static class GuestClaims
 {
@@ -23,9 +23,6 @@ public static class GuestClaims
     /// <summary>The claim that carries the guest token for the API.</summary>
     public const string TokenClaim = "guest_token";
 
-    /// <summary>The claim with the key of the booking that the guest signed in to.</summary>
-    public const string BookingClaim = "guest_booking";
-
     #endregion Fields
 
     #region Public methods
@@ -37,25 +34,9 @@ public static class GuestClaims
     {
         ArgumentNullException.ThrowIfNull(session);
 
-        ClaimsIdentity identity = new(
-            [
-                new Claim(BookingClaim, session.BookingId.ToString(CultureInfo.InvariantCulture)),
-                new Claim(TokenClaim, session.Token),
-            ],
-            CookieScheme);
+        ClaimsIdentity identity = new([new Claim(TokenClaim, session.Token)], CookieScheme);
         return new ClaimsPrincipal(identity);
     }
-
-    /// <summary>Reads the booking of a signed-in guest.</summary>
-    /// <param name="guest">The principal of the guest cookie, or <c>null</c> when there is none.</param>
-    /// <returns>The key of the booking, or <c>null</c> when no guest is signed in.</returns>
-    public static int? BookingIdOf(ClaimsPrincipal? guest) =>
-        guest is not null
-        && TokenOf(guest) is not null
-        && int.TryParse(guest.FindFirst(BookingClaim)?.Value, NumberStyles.None, CultureInfo.InvariantCulture, out int bookingId)
-        && bookingId > 0
-            ? bookingId
-            : null;
 
     /// <summary>Reads the guest token of a signed-in guest.</summary>
     /// <param name="guest">The principal of the guest cookie, or <c>null</c> when there is none.</param>

@@ -113,7 +113,7 @@
                                     @foreach (var booking in ViewModel.Arrivals)
                                     {
                                         <tr>
-                                            <td class="numeric-start">@booking.BookingNumber</td>
+                                            <td class="booking-reference">@booking.Reference</td>
                                             <td>
                                                 <strong>@booking.GuestFullName</strong>
                                                 <span class="sub">@booking.GuestCountry</span>
@@ -162,7 +162,7 @@
                                     @foreach (var booking in ViewModel.Departures)
                                     {
                                         <tr>
-                                            <td class="numeric-start">@booking.BookingNumber</td>
+                                            <td class="booking-reference">@booking.Reference</td>
                                             <td><strong>@booking.GuestFullName</strong></td>
                                             <td class="numeric-start">@booking.RoomNumber</td>
                                             <td class="numeric-start">@AdminFormat.Date(booking.StartDate)</td>
@@ -200,7 +200,7 @@
                                     <span class="tint tint-amber item-icon" aria-hidden="true"><AdminIcon Name="clock" /></span>
                                     <span class="grow">
                                         <span class="item-title">@Plural(ViewModel.PendingArrivals.Count, "arrival") pending confirmation</span>
-                                        <span class="item-meta">@string.Join(" · ", ViewModel.PendingArrivals.Select(booking => $"{booking.BookingNumber} {booking.GuestFullName}"))</span>
+                                        <span class="item-meta">@string.Join(" · ", ViewModel.PendingArrivals.Select(booking => $"{booking.Reference} {booking.GuestFullName}"))</span>
                                     </span>
                                     <AdminIcon Name="arrow" Class="arrow" />
                                 </a>

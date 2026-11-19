@@ -1,0 +1,45 @@
+# MIL-085, review RC-418: the same tests after the fixes of the review (2026-11-19)
+# dotnet build NFHotel.sln -c Release -warnaserror
+    0 Error(s)
+    0 Warning(s)
+# dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build --filter-class NFHotel.Infrastructure.Tests.Security.InMemoryGuestSignInLimitsTests
+Test run summary: Passed!
+  total: 22
+  failed: 0
+  succeeded: 22
+# dotnet test --project tests/NFHotel.Application.Tests -c Release --no-build --filter-class NFHotel.Application.Tests.Services.GuestAccessServiceTests
+Test run summary: Passed!
+  total: 34
+  failed: 0
+  succeeded: 34
+# dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build --filter-class NFHotel.Api.Tests.GuestAccessTests
+Test run summary: Passed!
+  total: 103
+  failed: 0
+  succeeded: 103
+# dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build --filter-class NFHotel.Api.Tests.HttpCallerAddressTests
+Test run summary: Passed!
+  total: 9
+  failed: 0
+  succeeded: 9
+# dotnet test --project tests/NFHotel.ApiClient.Tests -c Release --no-build --filter-class NFHotel.ApiClient.Tests.GuestGatewayTests
+Test run summary: Passed!
+  total: 18
+  failed: 0
+  succeeded: 18
+# dotnet test --project tests/NFHotel.Web.Tests -c Release --no-build --filter-class NFHotel.Web.Tests.UseCaseRunnerTests
+Test run summary: Passed!
+  total: 11
+  failed: 0
+  succeeded: 11
+# dotnet test --project tests/NFHotel.Web.Tests -c Release --no-build --filter-class NFHotel.Web.Tests.BookingListViewModelTests
+Test run summary: Passed!
+  total: 16
+  failed: 0
+  succeeded: 16
+# dotnet test --project tests/NFHotel.Web.Tests -c Release --no-build --filter-class NFHotel.Web.Tests.GuestPagesTests
+Test run summary: Passed!
+  total: 16
+  failed: 0
+  succeeded: 16
+# done

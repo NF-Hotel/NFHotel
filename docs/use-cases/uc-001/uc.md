@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version, derived from the rule ledger | [a29c54a] |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 | Added the room rule of the check-in and the period rule of the overview (MIL-013) | [109bf1b] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 | Added the room rule of the check-in and the period rule of the overview (MIL-013) | [109bf1b] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The system gives a new booking a booking reference in place of a booking number (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
 
 ---
 
@@ -34,7 +34,7 @@
 
 1. Hotel staff ask for a booking for a guest, a room and an arrival and departure date.
 2. The system checks the dates and that the room is free for every night of the period.
-3. The system stores the booking as pending and gives it a booking number.
+3. The system stores the booking as pending and gives it a booking reference.
 4. Hotel staff confirm the booking.
 5. When the guest arrives, hotel staff check the guest in.
 6. When the guest leaves, hotel staff check the guest out.
@@ -80,5 +80,5 @@
 [UCD-001]: ../../use-case-diagram.md
 [US-001]: ../../user-stories.md
 [SA-001]: ../../stakeholder-analysis.md
-[a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d
 [109bf1b]: https://github.com/NF-Hotel/NFHotel/commit/109bf1b06ce371a66a1ad4fcfa0ac85e84a71d7e
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

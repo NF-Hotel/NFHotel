@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Deprecated | Claude (AI) | S01 | Added Room rate, Price change, Price suggestion, Season and Pricing settings (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-264 Go-with-conditions | [3a17eee] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Added Guest sign-in (MIL-018: UC-010, OC-001)<br>The rows sorted by the PO term<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Added Guest sign-in (MIL-018: UC-010, OC-001)<br>The rows sorted by the PO term<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Booking number replaced by Booking reference (`BookingReference`); Guest sign-in opened with the reference (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
 
 ---
 
@@ -31,7 +31,7 @@ English (en), domain it, as set in the registry.
 | Audit event | en | StaffAuditEvent | A record of an act on a staff account or at the sign-in: who, to whom, when, what and the result. | DM, UC | OC, SD, DCD, ERD |
 | Bookability | en | RoomStatus | Whether the room may be let: available, out of service or maintenance. | DM, UC | OC, SD, DCD, ERD |
 | Booking | en | Booking | A guest's claim on one room for the nights from an arrival date to a departure date. | DM, UC, US | OC, SD, DCD, ERD |
-| Booking number | en | BookingNumber | The number by which staff and guest refer to one booking. | DM, UC | OC, SD, DCD, ERD |
+| Booking reference | en | BookingReference | The random reference by which staff and guest name one booking; without the email of the booking it opens nothing. | DM, UC, US | OC, SD, DCD, ERD |
 | Booking status | en | BookingStatus | Where the booking is in its life: pending, confirmed, checked in, checked out or cancelled. | DM, UC | OC, SD, DCD, ERD |
 | Capacity | en | Capacity | The number of guests the room is made for. | DM, UC | OC, SD, DCD, ERD |
 | Check-in time | en | CheckInTime | The moment the guest was checked in. | DM, UC | OC, SD, DCD, ERD |
@@ -44,7 +44,7 @@ English (en), domain it, as set in the registry.
 | First name | en | FirstName | The given name of the guest. | DM, UC | OC, SD, DCD, ERD |
 | Floor | en | Floor | The floor of the hotel the room is on. | DM, UC | OC, SD, DCD, ERD |
 | Guest | en | Guest | A person who stays, or will stay, in the hotel and for whom a booking is made. | DM, UC, US | OC, SD, DCD, ERD |
-| Guest sign-in | en | GuestSession | A guest's access to one booking, opened with the booking number and the email of the booking; it ends at the sign-out or two hours after the sign-in. | UC | OC |
+| Guest sign-in | en | GuestSession | A guest's access to one booking, opened with the booking reference and the email of the booking; it ends at the sign-out or two hours after the sign-in. | UC | OC |
 | Last name | en | LastName | The family name of the guest. | DM, UC | OC, SD, DCD, ERD |
 | Must change password | en | MustChangePassword | Whether a staff member has to choose a new password before using any other function. | DM, UC | OC, SD, DCD, ERD |
 | Number of nights | en | NumberOfNights | The count of nights from the arrival date to the effective end date. | DM, UC | OC, SD, DCD, ERD |
@@ -77,5 +77,5 @@ English (en), domain it, as set in the registry.
 [UC-007]: ./use-cases/uc-007/uc.md
 [UC-010]: ./use-cases/uc-010/uc.md
 [OC-001]: ./use-cases/uc-010/oc.md
-[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
 [9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

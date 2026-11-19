@@ -50,6 +50,15 @@ public sealed class BookingRepository : Repository<Booking, int>, IBookingReposi
             .ConfigureAwait(false);
 
     /// <inheritdoc />
+    /// <remarks>The unique index on the reference makes this one lookup in an index (ADR-0049 decision 4).</remarks>
+    public async Task<BookingReadModel?> GetReadModelByReferenceAsync(
+        Guid reference,
+        CancellationToken cancellationToken = default) =>
+        await ProjectReadModels(Context.Bookings.AsNoTracking().Where(booking => booking.Reference == reference))
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<BookingReadModel>> GetOverviewAsync(
         DateOnly periodStart,
         DateOnly periodEnd,
@@ -163,7 +172,8 @@ public sealed class BookingRepository : Repository<Booking, int>, IBookingReposi
     }
 
     /// <summary>
-    /// Filters on free text in the guest's name, country and email and in the room number (BR-25).
+    /// Filters on free text in the guest's name, country and email, in the room number (BR-25) and in the reference of the
+    /// booking (ADR-0049 decision 3), so staff find a booking by the whole reference or a part of it, in any letter case.
     /// </summary>
     /// <param name="query">The query being narrowed.</param>
     /// <param name="searchText">Free text, or <c>null</c>/whitespace for no filter.</param>
@@ -182,7 +192,8 @@ public sealed class BookingRepository : Repository<Booking, int>, IBookingReposi
             || EF.Functions.ILike(booking.Guest!.LastName, pattern, SqlPattern.EscapeCharacter)
             || EF.Functions.ILike(booking.Guest!.Country, pattern, SqlPattern.EscapeCharacter)
             || EF.Functions.ILike(booking.Guest!.Email, pattern, SqlPattern.EscapeCharacter)
-            || EF.Functions.ILike(booking.Room!.RoomNumber, pattern, SqlPattern.EscapeCharacter));
+            || EF.Functions.ILike(booking.Room!.RoomNumber, pattern, SqlPattern.EscapeCharacter)
+            || EF.Functions.ILike(booking.Reference.ToString(), pattern, SqlPattern.EscapeCharacter));
     }
 
     /// <summary>
@@ -199,6 +210,7 @@ public sealed class BookingRepository : Repository<Booking, int>, IBookingReposi
     private static IQueryable<BookingReadModel> ProjectReadModels(IQueryable<Booking> query) =>
         query.Select(booking => new BookingReadModel(
             booking.Id,
+            booking.Reference,
             booking.StartDate,
             booking.EndDate,
             EF.Property<DateOnly>(booking, BookingOverlapConstraint.EffectiveEndDateProperty),

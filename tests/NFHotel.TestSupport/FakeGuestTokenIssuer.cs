@@ -24,7 +24,7 @@ public sealed class FakeGuestTokenIssuer : IGuestTokenIssuer
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bookingId);
 
         Issued.Add(bookingId);
-        return new GuestSessionDto($"guest-token-{Issued.Count}-booking-{bookingId}", ExpiresAt, bookingId);
+        return new GuestSessionDto($"guest-token-{Issued.Count}-booking-{bookingId}", ExpiresAt);
     }
 
     #endregion Public methods

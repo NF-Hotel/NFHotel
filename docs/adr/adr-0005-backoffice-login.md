@@ -4,13 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0005 |
-| CrossReference | [BC-001], [MIL-016], [ADR-0004], [ADR-0006], [ADR-0008], [ADR-0011], [ADR-0015], [ADR-0017], [RC-161], [ADR-0047] |
+| CrossReference | [BC-001], [MIL-016], [ADR-0004], [ADR-0006], [ADR-0008], [ADR-0011], [ADR-0015], [ADR-0017], [RC-161], [ADR-0047], [ADR-0049], [RC-417] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-21 | Deprecated | mikemike | AI as stand-in for S01 | Names the later decisions that changed it (RC-161): ADR-0006, ADR-0008, ADR-0011, ADR-0015, ADR-0017 | [12a64c3] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | The current state names ADR-0047: the Guest role and the guest login of MIL-018, with the own-resource check that replaces the open receipt page<br>Go in RC-388; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | The current state names ADR-0047: the Guest role and the guest login of MIL-018, with the own-resource check that replaces the open receipt page<br>Go in RC-388; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The current state names ADR-0049: the guest sign-in counts its failed attempts in limits of its own, apart from the throttle of the staff sign-in (MIL-085)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -50,7 +50,7 @@ We follow option 3.
 - **Web session.** The login page is a static server-rendered form that posts to the web application, calls the API, and signs in a cookie (`HttpOnly`, `SameSite=Lax`, `Secure` when the request is HTTPS, expiry equal to the token) that holds the claims and the staff token. The cookie is encrypted by ASP.NET Core data protection. `/admin/**` requires a signed-in user and redirects to `/admin/login`. Each use-case call copies the staff token from the circuit to the call.
 - **First account and schema.** The API applies the pending migrations at start when `Database__MigrateOnStart` is true, and creates a first Manager from `Staff__InitialManager__UserName` and `__Password` when the table is empty. A second start changes nothing. Further accounts are made with `dotnet NFHotel.Api.dll create-staff <user> <role>`, the password read from `STAFF_PASSWORD`.
 
-**Current state (2026-11-15, [RC-161], [RC-388]).** The decision stands; later decisions changed parts of it. [ADR-0006] puts HTTPS on the public port, so the negative on plain HTTP is resolved. [ADR-0008] and [ADR-0011] move the migrations to CD: production runs with `Database__MigrateOnStart=false`, and the API connects as `nfhotel_app` (logged by every deploy). [ADR-0015] lets the sign-in and the rooms routes accept the staff token alone. [ADR-0017] adds password change and reset, a security stamp that ends every session of an account at once, and an audit trail, which resolves the negatives on revocation and on deactivation. [ADR-0047] adds the Guest role and the guest login (MIL-018): a guest signs in with the booking number and the email of the booking, every guest call is checked against the own booking, and the guest's own page replaces the booking receipt page that was open by its number.
+**Current state (2026-11-19, [RC-161], [RC-388], [RC-417]).** The decision stands; later decisions changed parts of it. [ADR-0006] puts HTTPS on the public port, so the negative on plain HTTP is resolved. [ADR-0008] and [ADR-0011] move the migrations to CD: production runs with `Database__MigrateOnStart=false`, and the API connects as `nfhotel_app` (logged by every deploy). [ADR-0015] lets the sign-in and the rooms routes accept the staff token alone. [ADR-0017] adds password change and reset, a security stamp that ends every session of an account at once, and an audit trail, which resolves the negatives on revocation and on deactivation. [ADR-0047] adds the Guest role and the guest login (MIL-018): a guest signs in with the booking number and the email of the booking, every guest call is checked against the own booking, and the guest's own page replaces the booking receipt page that was open by its number. [ADR-0049] (MIL-085) names a booking by a random reference in place of the number and counts the failed attempts of the guest sign-in per reference and per caller address in stores of its own, so the throttle of the staff sign-in holds staff sign-ins only.
 
 ## Consequences
 
@@ -90,5 +90,7 @@ Quality attributes: security improves (authentication, least privilege, defence 
 [RC-161]: ../sqa/reviews/rc-161-adr-refresh.md
 [ADR-0047]: ./adr-0047-guest-login.md
 [RC-388]: ../sqa/reviews/rc-388-adr-0047.md
-[12a64c3]: https://github.com/NF-Hotel/NFHotel/commit/12a64c3225c75ebc1b83a0e6d0ee08115ec1a493
+[ADR-0049]: ./adr-0049-booking-reference.md
+[RC-417]: ../sqa/reviews/rc-417-mil-085-documents.md
 [9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

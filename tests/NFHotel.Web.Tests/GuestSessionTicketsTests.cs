@@ -157,7 +157,7 @@ public sealed class GuestSessionTicketsTests
 
     #region Helpers
 
-    private GuestSessionDto Session(int hoursLeft) => new("guest-token", _clock.UtcNow.AddHours(hoursLeft), 7);
+    private GuestSessionDto Session(int hoursLeft) => new("guest-token", _clock.UtcNow.AddHours(hoursLeft));
 
     #endregion
 }

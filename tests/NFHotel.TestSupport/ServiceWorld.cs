@@ -156,6 +156,9 @@ public sealed class ServiceWorld
     {
         BookingQueries.GetReadModelAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(call => Task.FromResult(ReadModelOrNull(call.Arg<int>())));
+        BookingQueries.GetReadModelByReferenceAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult(ReadModelOrNull(call.Arg<Guid>())));
+        GuestSignInLimits.TryCount(Arg.Any<Guid?>(), Arg.Any<string>()).Returns(true);
         ReadSideFromTheRepositories();
         BenchmarkReadSideFromTheRepository();
     }
@@ -351,33 +354,42 @@ public sealed class ServiceWorld
     public FakeGuestTokenIssuer GuestTokens { get; } = new();
 
     /// <summary>
-    /// Builds the service; <paramref name="prices"/> replaces the real price lookup, for example to make it fail,
-    /// <paramref name="receiptThrottle"/> the throttle of the guest's lookup, which otherwise never blocks, and
+    /// The limits on the tries of the guest sign-in (ADR-0049 decision 6): a substitute that counts every try and never
+    /// refuses, which a test can still configure or check.
+    /// </summary>
+    public IGuestSignInLimits GuestSignInLimits { get; } = Substitute.For<IGuestSignInLimits>();
+
+    /// <summary>The address of the caller of the guest sign-in (ADR-0049 decision 6).</summary>
+    public FakeCallerAddress CallerAddress { get; } = new();
+
+    /// <summary>
+    /// Builds the service; <paramref name="prices"/> replaces the real price lookup, for example to make it fail, and
     /// <paramref name="guestCall"/> the signed-in guest, which is otherwise <see cref="GuestCall"/>.
     /// </summary>
     public BookingService BookingService(
         IStaffAuthorizationService? authorization = null,
         IPriceChangeService? prices = null,
-        ILoginThrottle? receiptThrottle = null,
         IGuestCallContext? guestCall = null) =>
-        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings, receiptThrottle ?? OpenThrottle(), guestCall ?? GuestCall);
+        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings, guestCall ?? GuestCall);
 
-    /// <summary>Builds the service; <paramref name="guestCall"/> replaces the signed-in guest, which is otherwise <see cref="GuestCall"/>.</summary>
-    public GuestService GuestService(IStaffAuthorizationService? authorization = null, IGuestCallContext? guestCall = null) =>
-      new(Guests, GuestQueries, UnitOfWork, authorization ?? Substitute.For<IStaffAuthorizationService>(), BookingQueries, guestCall ?? GuestCall);
+    /// <summary>Builds the service. A guest reads no guest by its key since MIL-085 (ADR-0049 decision 3).</summary>
+    public GuestService GuestService(IStaffAuthorizationService? authorization = null) =>
+      new(Guests, GuestQueries, UnitOfWork, authorization ?? Substitute.For<IStaffAuthorizationService>());
 
-    /// <summary>A throttle substitute that never blocks: every attempt is counted and may go on (MIL-018).</summary>
-    /// <returns>The substitute, which a test can still configure or check.</returns>
-    public static ILoginThrottle OpenThrottle()
-    {
-        ILoginThrottle throttle = Substitute.For<ILoginThrottle>();
-        throttle.TryCountAttempt(Arg.Any<string>()).Returns(true);
-        return throttle;
-    }
+    /// <summary>
+    /// Builds the guest sign-in over <see cref="BookingService"/> and <see cref="BookingQueries"/>, with the tokens of
+    /// <see cref="GuestTokens"/>, the limits of <see cref="GuestSignInLimits"/> unless <paramref name="limits"/> replaces
+    /// them, and the address of <see cref="CallerAddress"/> (MIL-018, ADR-0049).
+    /// </summary>
+    public GuestAccessService GuestAccessService(IGuestSignInLimits? limits = null, IStaffAuthorizationService? authorization = null) =>
+        new(BookingService(authorization), BookingQueries, GuestTokens, limits ?? GuestSignInLimits, CallerAddress);
 
-    /// <summary>Builds the guest sign-in over <see cref="BookingService"/>, with the tokens of <see cref="GuestTokens"/> (MIL-018).</summary>
-    public GuestAccessService GuestAccessService(IStaffAuthorizationService? authorization = null, ILoginThrottle? receiptThrottle = null) =>
-        new(BookingService(authorization, receiptThrottle: receiptThrottle), GuestTokens);
+    /// <summary>
+    /// Builds the guest's own booking over <see cref="BookingService"/> (ADR-0049 decision 3); <paramref name="guestCall"/>
+    /// replaces the signed-in guest, which is otherwise <see cref="GuestCall"/>.
+    /// </summary>
+    public GuestBookingService GuestBookingService(IGuestCallContext? guestCall = null) =>
+        new(BookingService(guestCall: guestCall ?? GuestCall), guestCall ?? GuestCall);
 
     public StaffAuthService StaffAuthService(IPasswordHasher? hasher = null, IStaffTokenIssuer? tokens = null, ILoginThrottle? throttle = null) =>
         new(Staff, hasher ?? new FakePasswordHasher(), tokens ?? new FakeStaffTokenIssuer(), throttle ?? Substitute.For<ILoginThrottle>(), UnitOfWork, StaffAudit, CallContext, Clock);
@@ -453,12 +465,19 @@ public sealed class ServiceWorld
         return ReadModelFor(booking);
     }
 
+    private BookingReadModel? ReadModelOrNull(Guid reference)
+    {
+        Booking? booking = Bookings.Items.SingleOrDefault(item => item.Reference == reference);
+        return booking is null ? null : ReadModelFor(booking);
+    }
+
     public BookingReadModel ReadModelFor(Booking booking)
     {
         var room = Rooms.Items.Single(item => item.Id == booking.RoomId);
         var guest = Guests.Items.Single(item => item.Id == booking.GuestId);
         return new BookingReadModel(
             booking.Id,
+            booking.Reference,
             booking.StartDate,
             booking.EndDate,
             booking.EffectiveEndDate,
