@@ -1,6 +1,7 @@
 # Security alerts from the metrics (MIL-036 task 2). The API counts its answers per route and
 # status (MIL-034), so failed staff sign-ins (401) and refused ones over the rate limit (429)
-# are seen here; the audit table of ADR-0017 keeps who and when.
+# are seen here; the audit table of ADR-0017 keeps who and when. Since MIL-087 it also counts
+# the security events of the booking flow.
 groups:
   - name: nfhotel-security
     rules:
@@ -17,6 +18,37 @@ groups:
           description: >-
             Someone may be guessing passwords. The audit log of the back office names the user
             names (ADR-0017); follow the incident procedure (wiki page Incidents).
+
+      # The security events of the booking flow (MIL-087, ADR-0051 decision 6): the API counts
+      # each one in nfhotel_security_events_total with its kind, and a refusal with its limit.
+      - alert: BookingFlowRefusals
+        expr: >-
+          sum(increase(nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api",
+          kind="limit_refused"}[10m])) > 20
+        labels:
+          severity: warning
+          host: nf-hotel
+        annotations:
+          summary: >-
+            {{ $value | humanize }} refusals by the limits of the booking flow in 10 minutes
+          description: >-
+            A sender asks the booking flow for more than its limits allow (ADR-0051). The
+            events limit_refused in the log of the API name the limit and the address; follow
+            the wiki page Alerts, section Booking flow.
+
+      - alert: PublicBookingSurge
+        expr: >-
+          sum(increase(nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api",
+          kind="public_booking_made"}[1h])) > 10
+        labels:
+          severity: warning
+          host: nf-hotel
+        annotations:
+          summary: "{{ $value | humanize }} bookings on the public site in an hour"
+          description: >-
+            More bookings than usual came from the public site; one sender may hold rooms with
+            many addresses and emails (ADR-0051). Follow the wiki page Alerts, section Booking
+            flow.
 
       # The runtime check of MIL-080 (nfhotel-container-check.timer, every 15 minutes) reports one
       # series for each rule that a running container on nf-hotel breaks.

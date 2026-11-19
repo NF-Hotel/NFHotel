@@ -19,15 +19,20 @@ public static class SqlPattern
     /// </summary>
     /// <param name="value">Free text from the user.</param>
     /// <returns>The pattern <c>%value%</c> with wildcards and escape characters escaped.</returns>
-    public static string Contains(string value)
+    public static string Contains(string value) => $"%{Exactly(value)}%";
+
+    /// <summary>
+    /// Builds a pattern that matches the text itself only, so that <c>ILIKE</c> compares it without letter case (MIL-087).
+    /// </summary>
+    /// <param name="value">The text.</param>
+    /// <returns>The text with wildcards and escape characters escaped.</returns>
+    public static string Exactly(string value)
     {
         ArgumentNullException.ThrowIfNull(value);
 
-        var escaped = value
+        return value
             .Replace(EscapeCharacter, EscapeCharacter + EscapeCharacter, StringComparison.Ordinal)
             .Replace("%", EscapeCharacter + "%", StringComparison.Ordinal)
             .Replace("_", EscapeCharacter + "_", StringComparison.Ordinal);
-
-        return $"%{escaped}%";
     }
 }

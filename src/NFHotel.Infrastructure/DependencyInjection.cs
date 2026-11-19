@@ -67,9 +67,10 @@ public static class DependencyInjection
         var encryptionOptions = ReadEncryptionOptions(configuration);
         var staffOptions = ReadStaffOptions(configuration);
         GuestLookupOptions guestLookupOptions = ReadGuestLookupOptions(configuration);
+        SenderLimitOptions senderLimitOptions = ReadSenderLimitOptions(configuration);
 
         AddPersistence(services, connectionString);
-        AddSecurity(services, encryptionOptions, staffOptions, guestLookupOptions);
+        AddSecurity(services, encryptionOptions, staffOptions, guestLookupOptions, senderLimitOptions);
         AddApplicationServices(services);
 
         return services;
@@ -157,7 +158,8 @@ public static class DependencyInjection
         IServiceCollection services,
         EncryptionOptions options,
         StaffSecurityOptions staffOptions,
-        GuestLookupOptions guestLookupOptions)
+        GuestLookupOptions guestLookupOptions,
+        SenderLimitOptions senderLimitOptions)
     {
         services.AddSingleton(options);
         services.AddSingleton<IStringEncryptor, AesGcmStringEncryptor>();
@@ -182,6 +184,11 @@ public static class DependencyInjection
         services.AddSingleton(guestLookupOptions);
         services.AddSingleton<IGuestSignInLimits, InMemoryGuestSignInLimits>();
         services.TryAddScoped<ICallerAddress, UnknownCallerAddress>();
+
+        // ADR-0051 decision 5: the counts per address of the searches and of the public booking requests are one store
+        // for the whole process, like the limits of the guest sign-in.
+        services.AddSingleton(senderLimitOptions);
+        services.AddSingleton<ISenderLimits, InMemorySenderLimits>();
     }
 
     /// <summary>
@@ -286,21 +293,43 @@ public static class DependencyInjection
         GuestLookupOptions defaults = new();
         GuestLookupOptions options = new()
         {
-            MaxFailuresPerReference = ReadSetting(section, nameof(GuestLookupOptions.MaxFailuresPerReference), defaults.MaxFailuresPerReference),
-            MaxFailuresPerAddress = ReadSetting(section, nameof(GuestLookupOptions.MaxFailuresPerAddress), defaults.MaxFailuresPerAddress),
-            WindowMinutes = ReadSetting(section, nameof(GuestLookupOptions.WindowMinutes), defaults.WindowMinutes),
-            MaxTrackedKeys = ReadSetting(section, nameof(GuestLookupOptions.MaxTrackedKeys), defaults.MaxTrackedKeys),
+            MaxFailuresPerReference = ReadLimit(section, nameof(GuestLookupOptions.MaxFailuresPerReference), defaults.MaxFailuresPerReference),
+            MaxFailuresPerAddress = ReadLimit(section, nameof(GuestLookupOptions.MaxFailuresPerAddress), defaults.MaxFailuresPerAddress),
+            WindowMinutes = ReadLimit(section, nameof(GuestLookupOptions.WindowMinutes), defaults.WindowMinutes),
+            MaxTrackedKeys = ReadLimit(section, nameof(GuestLookupOptions.MaxTrackedKeys), defaults.MaxTrackedKeys),
         };
 
         return options;
+    }
 
-        static int ReadSetting(IConfigurationSection section, string key, int fallback)
+    /// <summary>
+    /// Reads the limits of the booking flow (MIL-087, ADR-0051 decision 5). A setting below one stops the start-up, as
+    /// for the guest sign-in, so a typing mistake cannot switch a limit off.
+    /// </summary>
+    private static SenderLimitOptions ReadSenderLimitOptions(IConfiguration configuration)
+    {
+        IConfigurationSection section = configuration.GetSection(SenderLimitOptions.SectionName);
+        SenderLimitOptions defaults = new();
+        SenderLimitOptions options = new()
         {
-            int value = ReadInt(section, key, fallback);
-            return value >= 1
-                ? value
-                : throw new InvalidOperationException($"'{GuestLookupOptions.SectionName}:{key}' must be at least 1.");
-        }
+            SearchesPerMinute = ReadLimit(section, nameof(SenderLimitOptions.SearchesPerMinute), defaults.SearchesPerMinute),
+            BookingRequestsPerHour = ReadLimit(section, nameof(SenderLimitOptions.BookingRequestsPerHour), defaults.BookingRequestsPerHour),
+            BookingRequestsPerDay = ReadLimit(section, nameof(SenderLimitOptions.BookingRequestsPerDay), defaults.BookingRequestsPerDay),
+            ComingPublicBookingsPerEmail = ReadLimit(section, nameof(SenderLimitOptions.ComingPublicBookingsPerEmail), defaults.ComingPublicBookingsPerEmail),
+            MaxTrackedKeys = ReadLimit(section, nameof(SenderLimitOptions.MaxTrackedKeys), defaults.MaxTrackedKeys),
+        };
+
+        return options;
+    }
+
+    /// <summary>Reads the number of a limit, which must be at least one.</summary>
+    /// <exception cref="InvalidOperationException">The setting is below one; the message names it by its path.</exception>
+    private static int ReadLimit(IConfigurationSection section, string key, int fallback)
+    {
+        int value = ReadInt(section, key, fallback);
+        return value >= 1
+            ? value
+            : throw new InvalidOperationException($"'{section.Path}:{key}' must be at least 1.");
     }
 
     private static int ReadInt(IConfigurationSection section, string key, int fallback) =>

@@ -402,6 +402,10 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("guest_id");
 
+                    b.Property<bool>("MadeOnPublicSite")
+                        .HasColumnType("boolean")
+                        .HasColumnName("made_on_public_site");
+
                     b.Property<Guid>("Reference")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
@@ -581,7 +585,7 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .HasColumnName("last_name");
 
                     b.Property<string>("PassportNumber")
-                        .HasMaxLength(50)
+                        .HasMaxLength(20)
                         .HasColumnType("text")
                         .HasColumnName("passport_number");
 

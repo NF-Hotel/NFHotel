@@ -179,6 +179,9 @@ public sealed class ServiceWorld
         BookingQueries.GetReadModelByReferenceAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(call => Task.FromResult(ReadModelOrNull(call.Arg<Guid>())));
         GuestSignInLimits.TryCount(Arg.Any<Guid?>(), Arg.Any<string>()).Returns(true);
+        SenderLimits.ComingPublicBookingsPerEmail.Returns(3);
+        SenderLimits.TryCountSearch(Arg.Any<string>()).Returns(SenderLimitDecision.Allowed);
+        SenderLimits.TryCountBookingRequest(Arg.Any<string>()).Returns(SenderLimitDecision.Allowed);
         ReadSideFromTheRepositories();
         BenchmarkReadSideFromTheRepository();
     }
@@ -190,6 +193,8 @@ public sealed class ServiceWorld
     /// </summary>
     private void ReadSideFromTheRepositories()
     {
+        BookingQueries.CountComingPublicBookingsAsync(Arg.Any<string>(), Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult(CountComingPublicBookings(call.ArgAt<string>(0), call.ArgAt<DateOnly>(1))));
         GuestQueries.GetDetailsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(call => Task.FromResult(Guests.Items.Where(guest => guest.Id == call.Arg<int>()).Select(GuestDetails).FirstOrDefault()));
         GuestQueries.SearchAsync(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
@@ -299,6 +304,22 @@ public sealed class ServiceWorld
     private static string GuestText(Guest guest) =>
         $"{guest.FirstName} {guest.LastName} {guest.Email} {guest.Country}";
 
+    // The count per email of ADR-0051 decision 3 over the in-memory repositories: the email in its normal form and
+    // without letter case, as the query of the database compares it.
+    private int CountComingPublicBookings(string email, DateOnly today)
+    {
+        string wanted = TextNormalForm.Normalize(email).ToUpperInvariant();
+        HashSet<int> guestIds = Guests.Items
+            .Where(guest => TextNormalForm.Normalize(guest.Email).ToUpperInvariant() == wanted)
+            .Select(guest => guest.Id)
+            .ToHashSet();
+
+        return Bookings.Items.Count(booking => booking.MadeOnPublicSite
+            && booking.Status != BookingStatus.Cancelled
+            && booking.EndDate >= today
+            && guestIds.Contains(booking.GuestId));
+    }
+
     private static GuestDetailsDto GuestDetails(Guest guest) =>
         new(guest.Id, guest.FirstName, guest.LastName, $"{guest.FirstName} {guest.LastName}", guest.Email, guest.PhoneNumber, guest.Country, guest.PassportNumber);
 
@@ -383,14 +404,22 @@ public sealed class ServiceWorld
     public FakeCallerAddress CallerAddress { get; } = new();
 
     /// <summary>
-    /// Builds the service; <paramref name="prices"/> replaces the real price lookup, for example to make it fail, and
-    /// <paramref name="guestCall"/> the signed-in guest, which is otherwise <see cref="GuestCall"/>.
+    /// The limits of the booking flow (MIL-087, ADR-0051): a substitute that allows every request and holds the number of
+    /// the table for the limit per email, which a test can still configure or check.
+    /// </summary>
+    public ISenderLimits SenderLimits { get; } = Substitute.For<ISenderLimits>();
+
+    /// <summary>
+    /// Builds the service; <paramref name="prices"/> replaces the real price lookup, for example to make it fail,
+    /// <paramref name="guestCall"/> the signed-in guest, which is otherwise <see cref="GuestCall"/>, and
+    /// <paramref name="senderLimits"/> the limits of the booking flow, which are otherwise <see cref="SenderLimits"/>.
     /// </summary>
     public BookingService BookingService(
         IStaffAuthorizationService? authorization = null,
         IPriceChangeService? prices = null,
-        IGuestCallContext? guestCall = null) =>
-        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings, guestCall ?? GuestCall);
+        IGuestCallContext? guestCall = null,
+        ISenderLimits? senderLimits = null) =>
+        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings, guestCall ?? GuestCall, senderLimits ?? SenderLimits);
 
     /// <summary>Builds the service. A guest reads no guest by its key since MIL-085 (ADR-0049 decision 3).</summary>
     public GuestService GuestService(IStaffAuthorizationService? authorization = null) =>

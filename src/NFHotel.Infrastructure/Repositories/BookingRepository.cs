@@ -59,6 +59,27 @@ public sealed class BookingRepository : Repository<Booking, int>, IBookingReposi
             .ConfigureAwait(false);
 
     /// <inheritdoc />
+    /// <remarks>
+    /// The stored email is in its normal form since MIL-086, and the email of the request is brought to it here; ILIKE
+    /// with the wildcards escaped compares the two without letter case and matches the email itself only.
+    /// </remarks>
+    public async Task<int> CountComingPublicBookingsAsync(string email, DateOnly today, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(email);
+
+        string pattern = SqlPattern.Exactly(TextNormalForm.Normalize(email));
+
+        // Guest is a navigation that the query turns into a join, so it is not null here.
+        return await Context.Bookings.AsNoTracking()
+            .Where(booking => booking.MadeOnPublicSite
+                && booking.Status != BookingStatus.Cancelled
+                && booking.EndDate >= today
+                && EF.Functions.ILike(booking.Guest!.Email, pattern, SqlPattern.EscapeCharacter))
+            .CountAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<BookingReadModel>> GetOverviewAsync(
         DateOnly periodStart,
         DateOnly periodEnd,

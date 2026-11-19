@@ -71,7 +71,7 @@ public sealed class GuestBookingController : ControllerBase
 
     // A booking that is gone since the token was issued gets the refusal of a guest, with the text of a refused token,
     // not the envelope of a value (ADR-0047 decision 3, ADR-0049 decision 2).
-    private IActionResult Answer(Result<BookingReceiptDto> result) =>
+    private ObjectResult Answer(Result<BookingReceiptDto> result) =>
         result.Errors.Any(static error => error.Code == ErrorCodes.Api.GuestUnauthorized)
             ? GuestAuthentication.Refusal()
             : this.ToResponse(result);

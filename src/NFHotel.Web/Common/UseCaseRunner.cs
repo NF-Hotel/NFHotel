@@ -18,7 +18,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<UseCaseRunner<TService>> _logger;
     private readonly IStaffTokenSource _tokenSource;
-    private readonly IHttpContextAccessor? _httpContext;
+    private readonly IClientAddressSource? _clientAddresses;
     private readonly IGuestTokenSource? _guestTokens;
 
     /// <summary>
@@ -27,13 +27,16 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     /// <param name="scopeFactory">The factory that makes a fresh DI scope per call.</param>
     /// <param name="logger">Logger for the technical errors the user never gets to see.</param>
     /// <param name="tokenSource">Gives the staff token of the signed-in user, if any.</param>
-    /// <param name="httpContext">Gives the request of a static page, whose address goes to the API for the audit trail (ADR-0017).</param>
+    /// <param name="clientAddresses">
+    /// Gives the address of the browser, which goes to the API for the audit trail (ADR-0017) and the limits of the booking
+    /// flow (MIL-087, ADR-0051 decision 4).
+    /// </param>
     /// <param name="guestTokens">Gives the guest token of a guest page, if any (MIL-018).</param>
     public UseCaseRunner(
         IServiceScopeFactory scopeFactory,
         ILogger<UseCaseRunner<TService>> logger,
         IStaffTokenSource tokenSource,
-        IHttpContextAccessor? httpContext = null,
+        IClientAddressSource? clientAddresses = null,
         IGuestTokenSource? guestTokens = null)
     {
         ArgumentNullException.ThrowIfNull(scopeFactory);
@@ -43,7 +46,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
         _scopeFactory = scopeFactory;
         _logger = logger;
         _tokenSource = tokenSource;
-        _httpContext = httpContext;
+        _clientAddresses = clientAddresses;
         _guestTokens = guestTokens;
     }
 
@@ -134,7 +137,7 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
     private async Task GiveCallerTokenAsync(AsyncServiceScope scope)
     {
         var context = scope.ServiceProvider.GetRequiredService<StaffCallContext>();
-        context.ClientAddress = ClientAddressOf(_httpContext?.HttpContext);
+        context.ClientAddress = _clientAddresses is null ? null : await _clientAddresses.GetAddressAsync().ConfigureAwait(false);
 
         // A guest page speaks as the guest and only as the guest (MIL-018, ADR-0047 decision 6): with a guest token the
         // call carries no staff token, even when the same browser is signed in to the back office. A host without the
@@ -150,18 +153,6 @@ public sealed class UseCaseRunner<TService> : IUseCaseRunner<TService>
         }
 
         context.Token = await _tokenSource.GetTokenAsync().ConfigureAwait(false);
-    }
-
-    // The first address of X-Forwarded-For (set by the proxy), or the address of the connection. A circuit has no request.
-    private static string? ClientAddressOf(HttpContext? request)
-    {
-        if (request is null)
-        {
-            return null;
-        }
-
-        var forwarded = request.Request.Headers["X-Forwarded-For"].ToString().Split(',')[0].Trim();
-        return forwarded.Length > 0 ? forwarded : request.Connection.RemoteIpAddress?.ToString();
     }
 
     private void Log(Exception exception) =>

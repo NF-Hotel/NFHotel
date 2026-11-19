@@ -112,6 +112,13 @@ public class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("HotelTime:TimeZoneId", "Europe/Copenhagen");
         builder.UseSetting("Staff:Token:SigningKey", SigningKey);
         builder.UseSetting("Staff:PasswordIterations", "1000");
+
+        // The limits of the booking flow (MIL-087) stand far above what a test sends from the one address of the
+        // in-memory server; the tests of the limits set the numbers of the table in their own settings.
+        builder.UseSetting("SenderLimits:SearchesPerMinute", "100000");
+        builder.UseSetting("SenderLimits:BookingRequestsPerHour", "100000");
+        builder.UseSetting("SenderLimits:BookingRequestsPerDay", "100000");
+        builder.UseSetting("SenderLimits:ComingPublicBookingsPerEmail", "100000");
         foreach (var (name, value) in ExtraSettings())
         {
             builder.UseSetting(name, value);
@@ -147,7 +154,8 @@ public class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IPublicBookingService>();
             services.AddScoped(provider => World.BookingService(
                 provider.GetRequiredService<IStaffAuthorizationService>(),
-                guestCall: provider.GetRequiredService<IGuestCallContext>()));
+                guestCall: provider.GetRequiredService<IGuestCallContext>(),
+                senderLimits: provider.GetRequiredService<ISenderLimits>()));
             services.AddScoped<IBookingService>(provider => provider.GetRequiredService<BookingService>());
             services.AddScoped<IPublicBookingService>(provider => provider.GetRequiredService<BookingService>());
 

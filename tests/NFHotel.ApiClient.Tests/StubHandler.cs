@@ -28,7 +28,13 @@ internal sealed class StubHandler : HttpMessageHandler
     /// <summary>The guest token header of the last call, or <c>null</c> when it had none (MIL-018).</summary>
     public string? GuestToken { get; private set; }
 
-    /// <summary>The forwarded-for header of the last call, or <c>null</c> when it had none.</summary>
+    /// <summary>
+    /// The header of the last call that carries the address of the browser (MIL-087, ADR-0051 decision 4), or <c>null</c>
+    /// when it had none. The name is written out here, so a test pins the name on the wire and not only the constant.
+    /// </summary>
+    public string? ClientAddress { get; private set; }
+
+    /// <summary>The forwarded-for header of the last call, or <c>null</c> when it had none; the client never sends one.</summary>
     public string? ForwardedFor { get; private set; }
 
     /// <summary>The number of calls received.</summary>
@@ -67,6 +73,7 @@ internal sealed class StubHandler : HttpMessageHandler
         PathAndQuery = request.RequestUri?.PathAndQuery;
         StaffToken = request.Headers.TryGetValues("X-Staff-Token", out var values) ? string.Join(",", values) : null;
         GuestToken = request.Headers.TryGetValues("X-Guest-Token", out IEnumerable<string>? guest) ? string.Join(",", guest) : null;
+        ClientAddress = request.Headers.TryGetValues("X-NFHotel-Client-Address", out IEnumerable<string>? address) ? string.Join(",", address) : null;
         ForwardedFor = request.Headers.TryGetValues("X-Forwarded-For", out var forwarded) ? string.Join(",", forwarded) : null;
         Body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();

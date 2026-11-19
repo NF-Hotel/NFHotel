@@ -59,6 +59,11 @@ public sealed class BookingConfiguration : EntityConfiguration<Booking, int>
             .IsUnique()
             .HasDatabaseName(ReferenceIndex);
 
+        // MIL-087 (ADR-0051 decision 3): the mark of a booking made on the public site, which the limit per email counts.
+        // The migration gives the bookings stored before it false: they were made by staff or before the limit.
+        builder.Property(booking => booking.MadeOnPublicSite)
+            .IsRequired();
+
         builder.Property(booking => booking.StartDate)
             .HasColumnType("date")
             .IsRequired();

@@ -16,6 +16,8 @@ namespace NFHotel.Infrastructure.Tests;
 /// </summary>
 public sealed class DependencyInjectionTests
 {
+    #region Setup
+
     private const string SigningKey = "staff-signing-key-0123456789-staff-signing-key";
 
     private static ServiceProvider BuildProvider(string? signingKey = SigningKey, Dictionary<string, string?>? extra = null)
@@ -42,6 +44,10 @@ public sealed class DependencyInjectionTests
         return services.BuildServiceProvider(validateScopes: true);
     }
 
+    #endregion
+
+    #region Registrations
+
     [Theory]
     [InlineData(typeof(IBookingService))]
     [InlineData(typeof(IGuestService))]
@@ -66,6 +72,7 @@ public sealed class DependencyInjectionTests
     [InlineData(typeof(IPublicBookingService))]
     [InlineData(typeof(IGuestSignInLimits))]
     [InlineData(typeof(ICallerAddress))]
+    [InlineData(typeof(ISenderLimits))]
     public void GetRequiredService_EveryPortAndService_IsRegistered(Type serviceType)
     {
         using var provider = BuildProvider();
@@ -75,6 +82,10 @@ public sealed class DependencyInjectionTests
 
         Assert.NotNull(service);
     }
+
+    #endregion
+
+    #region The limits
 
     /// <summary>
     /// Security (ADR-0049 decision 6): the limits of the guest sign-in are one store for the whole process, apart from
@@ -104,6 +115,63 @@ public sealed class DependencyInjectionTests
         Assert.Equal([true, true, false], counted);
     }
 
+    /// <summary>
+    /// Security (MIL-087, ADR-0051 decisions 1 and 5): the limits per sender are one store for the whole process, and they
+    /// read their numbers from the settings <c>SenderLimits</c>.
+    /// </summary>
+    [Fact]
+    public void SenderLimits_TwoScopes_AreOneStoreWithTheNumbersOfTheSettings()
+    {
+        // Arrange
+        using ServiceProvider provider = BuildProvider(extra: new Dictionary<string, string?>
+        {
+            ["SenderLimits:SearchesPerMinute"] = "2",
+            ["SenderLimits:ComingPublicBookingsPerEmail"] = "4",
+        });
+        using IServiceScope first = provider.CreateScope();
+        using IServiceScope second = provider.CreateScope();
+
+        // Act
+        ISenderLimits limits = first.ServiceProvider.GetRequiredService<ISenderLimits>();
+        bool[] counted =
+        [
+            limits.TryCountSearch("203.0.113.1").IsAllowed,
+            second.ServiceProvider.GetRequiredService<ISenderLimits>().TryCountSearch("203.0.113.1").IsAllowed,
+            limits.TryCountSearch("203.0.113.1").IsAllowed,
+        ];
+
+        // Assert
+        Assert.Same(limits, second.ServiceProvider.GetRequiredService<ISenderLimits>());
+        Assert.Equal([true, true, false], counted);
+        Assert.Equal(4, limits.ComingPublicBookingsPerEmail);
+    }
+
+    /// <summary>
+    /// Negative (ADR-0051 decision 1): a number of the limits below one stops the start-up and names the setting, so a
+    /// typing error cannot switch a limit off or refuse every request.
+    /// </summary>
+    /// <param name="key">The setting under <c>SenderLimits</c>.</param>
+    /// <param name="value">The value given.</param>
+    [Theory]
+    [InlineData("SearchesPerMinute", "0")]
+    [InlineData("BookingRequestsPerHour", "0")]
+    [InlineData("BookingRequestsPerDay", "-1")]
+    [InlineData("ComingPublicBookingsPerEmail", "0")]
+    [InlineData("MaxTrackedKeys", "0")]
+    public void AddInfrastructure_SenderLimitBelowOne_Throws(string key, string value)
+    {
+        // Arrange and act
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(
+            () => BuildProvider(extra: new Dictionary<string, string?> { [$"SenderLimits:{key}"] = value }));
+
+        // Assert
+        Assert.Contains($"SenderLimits:{key}", error.Message, StringComparison.Ordinal);
+    }
+
+    #endregion
+
+    #region The signing key
+
     /// <summary>Negative: a missing or too short signing key stops the start-up, so the API never issues tokens signed with a weak secret.</summary>
     [Theory]
     [InlineData(null)]
@@ -118,6 +186,10 @@ public sealed class DependencyInjectionTests
         Assert.Contains("Staff:Token:SigningKey", error.Message, StringComparison.Ordinal);
     }
 
+    #endregion
+
+    #region Test doubles
+
     /// <summary>A clock that stands still: the composition test needs one because the clock is registered by NFHotel.External.</summary>
     private sealed class FixedClock : IClock
     {
@@ -126,4 +198,5 @@ public sealed class DependencyInjectionTests
         public DateOnly Today => new(2026, 1, 1);
     }
 
+    #endregion
 }

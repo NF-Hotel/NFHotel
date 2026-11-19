@@ -89,8 +89,9 @@ public sealed partial class ValidationRulesTableTests
 
         // Act
         string[] wrong = ValidationRulesTable.Read()
-            .Where(row => fields.ContainsKey(row.Field) && row.Type != TypeName(fields[row.Field]))
-            .Select(row => $"{row.Field}: '{row.Type}', expected '{TypeName(fields[row.Field])}'")
+            .Select(row => (Row: row, Expected: fields.TryGetValue(row.Field, out Type? field) ? TypeName(field) : null))
+            .Where(pair => pair.Expected is not null && pair.Row.Type != pair.Expected)
+            .Select(pair => $"{pair.Row.Field}: '{pair.Row.Type}', expected '{pair.Expected}'")
             .ToArray();
 
         // Assert

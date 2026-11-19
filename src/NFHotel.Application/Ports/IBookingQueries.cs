@@ -70,4 +70,15 @@ public interface IBookingQueries
         DateOnly periodEnd,
         IReadOnlyCollection<BookingStatus> blockingStatuses,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Counts the coming bookings made on the public site for an email (MIL-087, ADR-0051 decision 3): not cancelled,
+    /// with the departure on <paramref name="today"/> or later, the email compared in its normal form and without
+    /// letter case.
+    /// </summary>
+    /// <param name="email">The email of the new booking.</param>
+    /// <param name="today">The day of the hotel.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of such bookings.</returns>
+    Task<int> CountComingPublicBookingsAsync(string email, DateOnly today, CancellationToken cancellationToken = default);
 }

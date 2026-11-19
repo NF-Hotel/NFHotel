@@ -63,6 +63,7 @@ public static class ErrorMessages
             [ErrorCodes.Booking.ConcurrencyConflict] = "Someone else changed this booking. Reload the page and start over.",
             [ErrorCodes.Booking.ReceiptEmailRequired] = "Enter the email you booked with.",
             [ErrorCodes.Booking.TooManyLookups] = "Too many attempts. Wait fifteen minutes and try again.",
+            [ErrorCodes.Booking.TooManyRequests] = "Too many requests in a short time. Please wait a while and try again, or contact the hotel.",
 
             // ----------------------------------------------------------
             // ROOM

@@ -63,21 +63,22 @@ public sealed class GuestFieldErrorsTests
         Assert.Contains((ErrorCodes.Guest.PassportNumberInvalid, "PassportNumber"), codes);
     }
 
-    private static List<(string Code, string Field)> FieldOfEachCode()
-    {
-        List<(string Code, string Field)> codes = [];
-        foreach (FieldInfo constant in typeof(ErrorCodes.Guest).GetFields(BindingFlags.Public | BindingFlags.Static))
-        {
-            if (constant.IsLiteral
-                && constant.GetRawConstantValue() is string code
-                && Fields.FirstOrDefault(field => constant.Name.StartsWith(field, StringComparison.Ordinal)) is { } field)
-            {
-                codes.Add((code, field));
-            }
-        }
+    private static List<(string Code, string Field)> FieldOfEachCode() =>
+    [
+        .. typeof(ErrorCodes.Guest).GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(constant => constant.IsLiteral)
+            .Select(CodeAndField)
+            .OfType<(string Code, string Field)>(),
+    ];
 
-        return codes;
-    }
+    /// <summary>The code of one constant with the field that its name begins with.</summary>
+    /// <param name="constant">A literal constant of <see cref="ErrorCodes.Guest"/>.</param>
+    /// <returns>The pair, or <c>null</c> when the constant is no text or names no field.</returns>
+    private static (string Code, string Field)? CodeAndField(FieldInfo constant) =>
+        constant.GetRawConstantValue() is string code
+        && Fields.FirstOrDefault(field => constant.Name.StartsWith(field, StringComparison.Ordinal)) is { } field
+            ? (code, field)
+            : null;
 
     private static string? TextAt(GuestFieldErrors errors, string field) => field switch
     {

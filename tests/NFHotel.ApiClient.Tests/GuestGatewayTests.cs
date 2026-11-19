@@ -140,8 +140,9 @@ public sealed class GuestGatewayTests
     }
 
     /// <summary>
-    /// Positive (ADR-0049 decision 6, review RC-418): the sign-in carries the address of the browser to the API, so the
-    /// limit per address counts the guest and not the web application, which every guest would share.
+    /// Positive (ADR-0049 decision 6, ADR-0051 decision 4): the sign-in carries the address of the browser to the API in
+    /// the header of the stack and not in the forwarded-for header, so the limit per address counts the guest and not the
+    /// web application, which every guest would share.
     /// </summary>
     [Fact]
     public async Task SignInAsync_WithTheAddressOfTheBrowser_ForwardsIt()
@@ -156,7 +157,8 @@ public sealed class GuestGatewayTests
         await service.SignInAsync(new GuestSignInRequest(Reference, "anna@example.com"), TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal("203.0.113.7", handler.ForwardedFor);
+        Assert.Equal("203.0.113.7", handler.ClientAddress);
+        Assert.Null(handler.ForwardedFor);
     }
 
     /// <summary>Negative: the one refusal and the limit keep their own codes.</summary>

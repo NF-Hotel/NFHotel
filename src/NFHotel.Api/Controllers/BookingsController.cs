@@ -59,6 +59,7 @@ public sealed class BookingsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The free rooms.</returns>
     [HttpGet(ApiRoutes.AvailableRooms)]
+    [SenderLimit(SenderLimitKind.Search)]
     public async Task<IActionResult> GetAvailableRoomsAsync(
         [FromQuery] DateOnly checkInDate,
         [FromQuery] DateOnly checkOutDate,
@@ -97,6 +98,8 @@ public sealed class BookingsController : ControllerBase
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>The receipt with the guest session, or validation errors (ADR-0049 decision 7).</returns>
     [HttpPost(ApiRoutes.PublicBooking)]
+    [SenderLimit(SenderLimitKind.BookingRequest)]
+    [BookingFlowEvent(BookingFlowStep.PublicBooking)]
     public async Task<IActionResult> CreatePublicAsync(
         [FromBody] CreatePublicBookingRequest request,
         CancellationToken cancellationToken) =>

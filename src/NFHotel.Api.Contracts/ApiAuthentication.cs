@@ -31,8 +31,10 @@ public static class ApiAuthentication
     public const string GuestTokenHeader = "X-Guest-Token";
 
     /// <summary>
-    /// The header in which the web application passes the address of the browser to the API, so the audit trail can
-    /// record it (ADR-0017). The API trusts it because the call carries the service token.
+    /// The header with the address of the browser (MIL-087, ADR-0051 decision 4): nginx writes the address it saw into it
+    /// and replaces a value that the caller wrote, the web application reads it from nginx and passes it on to the API,
+    /// and the API reads it only on a call that carries the service token. The audit trail (ADR-0017) and the limits of
+    /// the booking flow use it.
     /// </summary>
-    public const string ClientAddressHeader = "X-Forwarded-For";
+    public const string ClientAddressHeader = "X-NFHotel-Client-Address";
 }
