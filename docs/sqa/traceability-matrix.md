@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The code and the documents of [MIL-086] (tasks 1 to 7): its row, the row of [ADR-0050], and RC-423 on the rows of UC-001, UC-003 and UC-010; RC-423 and RC-424, Go; mode autonomous, not independent | [7de27c7] |
-| 2026-11-19 | Proposed | mikemike | S01 | The plan of [MIL-090], accepted by S01 in chat on 2026-11-19 (RC-445, Go): its row, and [MIL-090] downstream of [BC-001]; supervised mode | pending |
+| 2026-11-19 | Proposed | mikemike | S01 | The plan of [MIL-090], accepted by S01 in chat on 2026-11-19 (RC-445, Go): its row, and [MIL-090] downstream of [BC-001]; supervised mode | [b7687d5] |
 
 ---
 
@@ -596,3 +596,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-424]: ./reviews/rc-424-mil-086-code.md
 [RC-445]: ./reviews/rc-445-mil-090.md
 [7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81
+[b7687d5]: https://github.com/NF-Hotel/NFHotel/commit/b7687d524f90b010060d8312fa7456914816a889

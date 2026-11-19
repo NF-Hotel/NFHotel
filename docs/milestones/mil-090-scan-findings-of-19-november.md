@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("Ja, planlæg"), after the read-only analysis of the open alerts of code scanning that S01 asked for the same day ("kan du check up på disse og fix de issues og beskytte så de ikke sker igen fremover"); supervised mode; accepted as it stands by S01 in chat on 2026-11-19 ("Ja, accepter") after RC-445, Go | pending |
+| 2026-11-19 | Accepted | mikemike | S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("Ja, planlæg"), after the read-only analysis of the open alerts of code scanning that S01 asked for the same day ("kan du check up på disse og fix de issues og beskytte så de ikke sker igen fremover"); supervised mode; accepted as it stands by S01 in chat on 2026-11-19 ("Ja, accepter") after RC-445, Go | [b7687d5] |
 
 ---
 
@@ -139,3 +139,4 @@ What is known on 2026-11-19, before the work. The source is a read-only analysis
 [RC-313]: ../sqa/reviews/rc-313-mil-066-gate.md
 [RC-363]: ../sqa/reviews/rc-363-mil-077-code.md
 [RC-395]: ../sqa/reviews/rc-395-mil-077-gate.md
+[b7687d5]: https://github.com/NF-Hotel/NFHotel/commit/b7687d524f90b010060d8312fa7456914816a889
