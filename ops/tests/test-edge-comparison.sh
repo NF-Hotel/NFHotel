@@ -10,11 +10,12 @@
 # a plan that fails, with its errors redacted; report opens, comments on or closes the issue as
 # the daily scan of the running images does. The steps of the job look (MIL-084 task 5,
 # ADR-0048): look runs check-security-txt.sh on the public address of security.txt with the file
-# of the checkout, the addresses that the file names and the front page, through a fake curl
-# that answers as the public listener and GitHub will after the deploy; a missing file, a file
-# that differs from main, an Expires fewer than 30 days ahead, a named address that fails or
-# ends on another host, and another Strict-Transport-Security each open the issue, and a look
-# that passes closes it. Fakes stand in for docker, gh, curl, edge-tofu.sh and
+# of the checkout and the addresses that the file names, through a fake curl that answers as the
+# public listener and GitHub will after the deploy, and as the edge answers the front page to a
+# runner (by itself, without the site's headers), which the look does not ask; a missing file, a
+# file that differs from main, an Expires fewer than 30 days ahead, and a named address that
+# fails or ends on another host each open the issue, and a look that passes closes it. Fakes
+# stand in for docker, gh, curl, edge-tofu.sh and
 # check-security-txt.sh, so nothing reaches Cloudflare, GitHub or the public site. The
 # identifiers and the e-mail addresses below are made up; the web addresses of the look are
 # those of the public site.
@@ -306,9 +307,9 @@ chmod +x "$W/check"
 step_env=("NFHOTEL_CHECK_SECURITY_TXT=$W/check")
 FAKE_FOUND="PASS  $SECURITY_TXT meets RFC 9116 and the rules of ADR-0048" steps look &&
   [[ "$(cat "$W/job/output")" == failed=false ]] &&
-  [[ "$(grep '^check ' "$W/log")" == "check --url $SECURITY_TXT --canonical $SECURITY_TXT --same-as $FILE --links --hsts-like $FRONT_PAGE --expect-warnings unsigned,no-encryption,no-role-address" ]] &&
+  [[ "$(grep '^check ' "$W/log")" == "check --url $SECURITY_TXT --canonical $SECURITY_TXT --same-as $FILE --links --expect-warnings unsigned,no-encryption,no-role-address" ]] &&
   cmp -s "$W/job/results/summary.md" "$W/job/step-summary" &&
-  ok "look checks the public address with the file of the checkout, the addresses it names and the front page" ||
+  ok "look checks the public address with the file of the checkout and the addresses it names, not the front page" ||
   ko "look arguments: $(cat "$W/log" "$W/stdout")"
 FAKE_FOUND="error: --same-as names no readable file" FAKE_EXIT=2 steps look && ko "look accepted a check that could not run" ||
   { grep -q "^::error::check-security-txt.sh stopped with exit 2" "$W/stdout" &&
@@ -372,15 +373,17 @@ CONTACT="$(sed -n 's/^Contact: \(https:.*\)$/\1/p' "$FILE")"
 POLICY_PAGE="$(sed -n 's/^Policy: //p' "$FILE")"
 readonly TYPE='Content-Type: text/plain; charset=utf-8' HTML='Content-Type: text/html; charset=utf-8'
 readonly HSTS='Strict-Transport-Security: max-age=2592000'
-# site: the answers after the deploy: the file as the public listener serves it, the front page,
-# each address that the file names, and the report form of GitHub, which sends a visitor without
-# a session to the sign-in on its own host.
+# site: the answers after the deploy: the file as the public listener serves it, each address
+# that the file names, the report form of GitHub, which sends a visitor without a session to the
+# sign-in on its own host, and the front page as the edge answered it to a runner of GitHub on
+# 2026-11-19: by itself, without the headers of the site (ADR-0048, decision 6); the status 403
+# is made up, as the log of the runner does not show it.
 site() {
   local address
   rm -rf "$W/web" && mkdir -p "$W/web"
   for address in "${NAMED[@]}"; do serve "$address" 200 /dev/null "$HTML"; done
   serve "$SECURITY_TXT" 200 "$FILE" "$TYPE" "X-Content-Type-Options: nosniff" "$HSTS"
-  serve "$FRONT_PAGE" 200 /dev/null "$HTML" "$HSTS"
+  serve "$FRONT_PAGE" 403 /dev/null "$HTML"
   moved "$CONTACT" https://github.com/login
 }
 expires_s="$(date -u -d "$(sed -n 's/^Expires: //p' "$FILE")" +%s)"
@@ -409,8 +412,10 @@ looks && [[ "$(cat "$W/job/output")" == failed=false ]] &&
   ok "the file of the repository, served as the public listener serves it, passes the look, and no issue is written" ||
   ko "look passes: $(cat "$W/stdout" "$W/log")"
 missing=""
-for address in "$FRONT_PAGE" "${NAMED[@]}"; do grep -qxF "$address" "$W/web/asked" || missing+=" $address"; done
-[[ -z "$missing" ]] && ok "the look asks the front page and each address that the file names" || ko "not asked:$missing"
+for address in "${NAMED[@]}"; do grep -qxF "$address" "$W/web/asked" || missing+=" $address"; done
+[[ -z "$missing" ]] && ! grep -qxF "$FRONT_PAGE" "$W/web/asked" &&
+  ok "the look asks each address that the file names, and not the front page" ||
+  ko "not asked:$missing; asked: $(tr '\n' ' ' <"$W/web/asked")"
 [[ -s "$W/job/results/summary.md" ]] && ! grep -q '@' "$W/job/results/summary.md" "$W/stdout" &&
   ok "no mailbox address reaches the issue or the log" ||
   ko "a mailbox: $(cat "$W/job/results/summary.md")"
@@ -444,11 +449,6 @@ moved "$CONTACT" https://login.example.net/
 looks && grep -qF "(Contact) ends on another host: login.example.net" "$W/job/results/summary.md" &&
   grep -q "^gh issue create" "$W/log" && ok "a named address that ends on another host opens the issue" ||
   ko "look other host: $(cat "$W/stdout")"
-site
-serve "$FRONT_PAGE" 200 /dev/null "$HTML" "Strict-Transport-Security: max-age=31536000"
-looks && grep -qF "Strict-Transport-Security is 'max-age=2592000', and $FRONT_PAGE sends 'max-age=31536000'" \
-  "$W/job/results/summary.md" && grep -q "^gh issue create" "$W/log" &&
-  ok "a Strict-Transport-Security other than the one of the front page opens the issue" || ko "look hsts: $(cat "$W/stdout")"
 
 step_env=(REPO=NF-Hotel/NFHotel SERVER=https://github.com RUN_ID=42 FAILED=yes)
 SUMMARY_TEXT="the summary" steps look-report && ko "look-report accepted no result of look" ||
