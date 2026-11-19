@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the second version of ADR-0050 (task 1 of MIL-086), written after the first tests of task 3 met the structure tests; Go; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the second version of ADR-0050 (task 1 of MIL-086), written after the first tests of task 3 met the structure tests; Go; mode autonomous, not independent | [ae4f4c0] |
 
 ---
 
@@ -103,3 +103,4 @@ this record. S01 may challenge any decision of it, F2 and F3 above all.
 [ADR-0002]: ../../adr/adr-0002-validation-attributes-on-entities.md
 [MIL-008]: ../../milestones/mil-008-domain-rules-in-entities.md
 [RC-420]: ./rc-420-adr-0050.md
+[ae4f4c0]: https://github.com/NF-Hotel/NFHotel/commit/ae4f4c0c03a8dda8d8578f90131fc44598e4814c

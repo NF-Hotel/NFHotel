@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-086, written by the AI before any code<br>Go in RC-420; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [30b3aae] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Where the rules live, after the first tests of task 3 met the structure tests of ADR-0001: the format of each guest field is an attribute in Domain/Attributes, the limits of a stay are static members of Booking, the normal form and the countries are value objects, and no Domain/Rules namespace comes back; option F added<br>Go in RC-421; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Where the rules live, after the first tests of task 3 met the structure tests of ADR-0001: the format of each guest field is an attribute in Domain/Attributes, the limits of a stay are static members of Booking, the normal form and the countries are value objects, and no Domain/Rules namespace comes back; option F added<br>Go in RC-421; accepted by the AI as stand-in for S01 in autonomous mode | [ae4f4c0] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -272,3 +272,4 @@ the files that this change edits.
 [RC-420]: ../sqa/reviews/rc-420-adr-0050.md
 [RC-421]: ../sqa/reviews/rc-421-adr-0050-where-the-rules-live.md
 [30b3aae]: https://github.com/NF-Hotel/NFHotel/commit/30b3aaec46795a06f6df4336b23fe7c31cda3ac3
+[ae4f4c0]: https://github.com/NF-Hotel/NFHotel/commit/ae4f4c0c03a8dda8d8578f90131fc44598e4814c
