@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-085 after the deploy of 7fd5bea (CD run 44514175991) and the check of criterion 8 on the live site; Go on criteria 1 to 8; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-085 after the deploy of 7fd5bea (CD run 44514175991) and the check of criterion 8 on the live site; Go on criteria 1 to 8; mode autonomous, not independent | [3eb436c] |
 
 ---
 
@@ -143,3 +143,4 @@ in the summary of the run.
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [MIL-086]: ../../milestones/mil-086-booking-input-checked-by-one-set-of-rules.md
 [MIL-087]: ../../milestones/mil-087-limits-on-what-one-sender-can-ask.md
+[3eb436c]: https://github.com/NF-Hotel/NFHotel/commit/3eb436c17387d2a967beb61f23a78d43f10d8648

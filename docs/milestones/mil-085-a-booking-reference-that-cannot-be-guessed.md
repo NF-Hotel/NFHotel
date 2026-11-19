@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: planned at S01's request in chat on 2026-11-19, after a capture-the-flag team told S01 that the next and the previous booking number can be worked out ("booking numre er unikke og ikke kommer lige efter hinanden. Det skal gerne være GUID"); the decisions are the AI's for S01 ("Du skal tage beslutningerne for mig"), and the plan is accepted by the AI as stand-in after RC-410, Go, for a run in autonomous mode ("Når din plan er lavet skal Opus 5.5 lave det hele i automode") | [9f5c208] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-422 Go on criteria 1 to 8; tasks 1 to 5 in pull request 837 (RC-416 Go, RC-417 Go, RC-418 Go-with-conditions with its condition met, RC-419 Go); the CD run 44510422356 of the merge failed at the image pull and rolled back to 46b29fb on the migrated database; S01 renewed the read credential of the VM, and the CD run 44514175991 of 7fd5bea, approved from S01's account, deployed it; task 6: the check of criterion 8 on the live site passed 21 of 21 on a booking that the AI made at S01's word in chat; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-422 Go on criteria 1 to 8; tasks 1 to 5 in pull request 837 (RC-416 Go, RC-417 Go, RC-418 Go-with-conditions with its condition met, RC-419 Go); the CD run 44510422356 of the merge failed at the image pull and rolled back to 46b29fb on the migrated database; S01 renewed the read credential of the VM, and the CD run 44514175991 of 7fd5bea, approved from S01's account, deployed it; task 6: the check of criterion 8 on the live site passed 21 of 21 on a booking that the AI made at S01's word in chat; mode autonomous, not independent | [3eb436c] |
 
 ---
 
@@ -122,3 +122,4 @@ Read for this plan on 2026-11-19, and used in the decisions:
 [MIL-018]: ./mil-018-guest-login.md
 [MIL-079]: ./mil-079-a-booking-opened-only-with-its-email.md
 [9f5c208]: https://github.com/NF-Hotel/NFHotel/commit/9f5c208a73c7fbd268341b25501f518f39ad568e
+[3eb436c]: https://github.com/NF-Hotel/NFHotel/commit/3eb436c17387d2a967beb61f23a78d43f10d8648

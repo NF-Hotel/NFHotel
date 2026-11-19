@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-084] (RC-404, Go on criteria 1 to 8) and its code deployed with pull request 834; mode autonomous, not independent | [8aedf53] |
-| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-085] (RC-422, Go on criteria 1 to 8) and its code deployed at 7fd5bea; mode autonomous, not independent | pending |
+| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-085] (RC-422, Go on criteria 1 to 8) and its code deployed at 7fd5bea; mode autonomous, not independent | [3eb436c] |
 
 ---
 
@@ -587,3 +587,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-419]: ./reviews/rc-419-adr-0049-after-the-code-review.md
 [RC-422]: ./reviews/rc-422-mil-085-gate.md
 [8aedf53]: https://github.com/NF-Hotel/NFHotel/commit/8aedf535a484cf75f27032c1a4da3dc13ae6942d
+[3eb436c]: https://github.com/NF-Hotel/NFHotel/commit/3eb436c17387d2a967beb61f23a78d43f10d8648
