@@ -45,6 +45,7 @@ public sealed class BenchmarkController : ControllerBase
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The status code and the envelope.</returns>
     [HttpPost(ApiRoutes.BenchmarkResults)]
+    [RequestSizeLimit(RequestBodyLimit.BenchmarkIntakeMaxBytes)]   // a run carries model outputs (ADR-0050 decision 4)
     public async Task<IActionResult> PostResultAsync(
         [FromBody] SubmitBenchmarkRunRequest request,
         CancellationToken cancellationToken)

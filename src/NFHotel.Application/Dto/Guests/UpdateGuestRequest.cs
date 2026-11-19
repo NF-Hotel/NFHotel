@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace NFHotel.Application.Dto.Guests;
 
 /// <summary>
@@ -11,4 +13,5 @@ namespace NFHotel.Application.Dto.Guests;
 /// </remarks>
 /// <param name="GuestId">The id of the guest. Must be greater than 0.</param>
 /// <param name="Fields">The new field values.</param>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record UpdateGuestRequest(int GuestId, GuestFields Fields);

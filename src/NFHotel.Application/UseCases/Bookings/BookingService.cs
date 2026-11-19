@@ -178,8 +178,10 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         // BR-13: cancelled bookings are not deleted, so they must be possible to hide in the overview.
         var statuses = query.IncludeCancelled ? AllStatuses : BlockingStatuses;
 
+        // MIL-086 decision 4: the search text is asked for in its normal form, and white space only is no search.
+        var searchText = TextNormalForm.NormalizeOptional(query.SearchText);
         var readModels = await _bookingQueries
-            .GetOverviewAsync(query.PeriodStart, query.PeriodEnd, statuses, query.SearchText, cancellationToken)
+            .GetOverviewAsync(query.PeriodStart, query.PeriodEnd, statuses, searchText, cancellationToken)
             .ConfigureAwait(false);
 
         var today = _clock.Today;
@@ -205,6 +207,12 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         if (!TryCreatePeriod(checkInDate, checkOutDate, out var period, out var periodError))
         {
             return Result<IReadOnlyList<AvailableRoomDto>>.Failure(periodError);
+        }
+
+        // BR-C-07 (MIL-086): no search for a stay that could not be booked, before today or beyond five years.
+        if (Booking.CheckPeriod(period, _clock.Today) is { } stayError)
+        {
+            return Result<IReadOnlyList<AvailableRoomDto>>.Failure(stayError);
         }
 
         // BR-110: only rooms that may be let at all. The service chooses the status — the repository
@@ -380,6 +388,18 @@ public sealed class BookingService : IBookingService, IPublicBookingService
                 ErrorCodes.Booking.GuestSelectionInvalid);
         }
 
+        // BR-C-07 (MIL-086): the limits of the public site, which staff do not have, before anything else runs.
+        if (Booking.CheckPublicParty(request.Guests) is { } partyError)
+        {
+            return Result<BookingDetailsDto>.Failure(partyError);
+        }
+
+        if (TryCreatePeriod(request.CheckInDate, request.CheckOutDate, out var stay, out _)
+            && Booking.CheckPublicNights(stay) is { } nightsError)
+        {
+            return Result<BookingDetailsDto>.Failure(nightsError);
+        }
+
         Result<IReadOnlyList<AvailableRoomDto>> available = await GetAvailableRoomsAsync(
             request.CheckInDate,
             request.CheckOutDate,
@@ -442,6 +462,13 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         if (!TryCreatePeriod(request.CheckInDate, request.CheckOutDate, out var period, out var periodError))
         {
             return Result<BookingDetailsDto>.Failure(periodError);
+        }
+
+        // BR-44, BR-C-07 (MIL-086): the dates are checked before a new guest is saved, so a refused stay stores
+        // nothing; Booking.Create checks them again.
+        if (Booking.CheckPeriod(period, _clock.Today) is { } stayError)
+        {
+            return Result<BookingDetailsDto>.Failure(stayError);
         }
 
         var roomCheck = await CheckRoomIsBookableAsync(request.RoomId, cancellationToken).ConfigureAwait(false);

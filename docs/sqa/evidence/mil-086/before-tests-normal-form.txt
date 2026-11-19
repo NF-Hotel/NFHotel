@@ -1,0 +1,16 @@
+# MIL-086 task 4: the tests of the normal form of the sign-in email and of the two staff searches (decision 4 of
+# ADR-0050), written after the first code run showed that the code did not yet normalise them, and run before
+# that code. Branch mil-086-validation-rules in the worktree of the build session, 2026-11-19, on this machine
+# (Windows, .NET SDK 10). The same run shows one more failure: the async rule test read "context.Result" in the
+# new event filter of the API as a blocking Task.Result; the filter now uses a property pattern, and the rule is
+# unchanged. The decomposed letters are written as escapes in the test sources; the runner prints them composed.
+# dotnet test --project tests/NFHotel.Application.Tests -c Release --no-build
+failed NFHotel.Application.Tests.Architecture.AsyncRulesTests.Source_InEveryLayer_HasNoBlockingCallOrAsyncVoid
+failed NFHotel.Application.Tests.Services.BookingServiceTests.GetOverviewAsync_SearchText_IsAskedInItsNormalForm(searchText: "  René ", asked: "René")
+failed NFHotel.Application.Tests.Services.BookingServiceTests.GetOverviewAsync_SearchText_IsAskedInItsNormalForm(searchText: " \t ", asked: null)
+failed NFHotel.Application.Tests.Services.GuestAccessServiceTests.SignInAsync_EmailWithADecomposedLetter_GivesASession
+failed NFHotel.Application.Tests.Services.GuestServiceTests.SearchAsync_DecomposedLetter_AsksWithTheComposedTerm
+  total: 781
+  failed: 5
+  succeeded: 776
+  skipped: 0

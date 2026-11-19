@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace NFHotel.Application.Dto.Bookings;
 
 /// <summary>
@@ -6,4 +8,5 @@ namespace NFHotel.Application.Dto.Bookings;
 /// </summary>
 /// <param name="CheckInDate">The new arrival date.</param>
 /// <param name="CheckOutDate">The new departure date, exclusive.</param>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record GuestRescheduleRequest(DateOnly CheckInDate, DateOnly CheckOutDate);

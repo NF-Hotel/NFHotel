@@ -59,7 +59,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
             lastName: "Guest",
             email: "test@example.com",
             phoneNumber: "12345678",
-            country: "Testland",
+            country: "Denmark",
             passportNumber: passportNumber);
 
         // Creates a fake AES-256 key only for the integration test.
@@ -149,7 +149,7 @@ public sealed class GuestEncryptionTests : IAsyncLifetime
           lastName: "NoPassport",
           email: "nopassport@example.com",
           phoneNumber: "12345678",
-          country: "Testland",
+          country: "Denmark",
           passportNumber: null);
 
 

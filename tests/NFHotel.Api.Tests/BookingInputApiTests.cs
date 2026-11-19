@@ -191,7 +191,7 @@ public sealed class BookingInputApiTests : IClassFixture<BookingInputApiTests.Fa
                 ["periodEnd"] = Day(Today.AddDays(30)),
                 ["searchText"] = value,
             };
-            var (overviewStatus, _) = await PostAsync(client, OverviewPath, overview);
+            var (overviewStatus, _) = await PostOnSharedClientAsync(client, OverviewPath, overview);
 
             // Assert
             Assert.True(guests.StatusCode == HttpStatusCode.OK, $"The guest search answered {guests.StatusCode} to {kind}.");
@@ -219,7 +219,7 @@ public sealed class BookingInputApiTests : IClassFixture<BookingInputApiTests.Fa
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, publicThirty);
-        Assert.Equal((HttpStatusCode.UnprocessableEntity, new[] { ErrorCodes.Booking.StayTooLong }), (publicThirtyOne, codes));
+        Assert.Equal((HttpStatusCode.UnprocessableEntity, ErrorCodes.Booking.StayTooLong), (publicThirtyOne, string.Join(", ", codes)));
         Assert.Equal(HttpStatusCode.OK, staff);
     }
 
@@ -238,8 +238,8 @@ public sealed class BookingInputApiTests : IClassFixture<BookingInputApiTests.Fa
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, publicLast);
-        Assert.Equal((HttpStatusCode.UnprocessableEntity, new[] { ErrorCodes.Booking.EndDateTooFarAhead }), (publicLater, publicCodes));
-        Assert.Equal((HttpStatusCode.UnprocessableEntity, new[] { ErrorCodes.Booking.EndDateTooFarAhead }), (staffLater, staffCodes));
+        Assert.Equal((HttpStatusCode.UnprocessableEntity, ErrorCodes.Booking.EndDateTooFarAhead), (publicLater, string.Join(", ", publicCodes)));
+        Assert.Equal((HttpStatusCode.UnprocessableEntity, ErrorCodes.Booking.EndDateTooFarAhead), (staffLater, string.Join(", ", staffCodes)));
     }
 
     /// <summary>Criterion 4: staff cannot move a booking to end beyond the five years, and the free rooms are not looked up there either.</summary>
@@ -259,14 +259,14 @@ public sealed class BookingInputApiTests : IClassFixture<BookingInputApiTests.Fa
         using var client = _factory.CreateAuthorizedClient();
 
         // Act
-        var (moved, moveCodes) = await PostAsync(client, StaffReschedulePath, move);
+        var (moved, moveCodes) = await PostOnSharedClientAsync(client, StaffReschedulePath, move);
         using var free = await client.GetAsync($"{AvailableRoomsPath}?checkInDate={Day(LastDay)}&checkOutDate={Day(LastDay.AddDays(1))}", TestContext.Current.CancellationToken);
         using var past = await client.GetAsync($"{AvailableRoomsPath}?checkInDate={Day(Today.AddDays(-1))}&checkOutDate={Day(Today.AddDays(1))}", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal((HttpStatusCode.UnprocessableEntity, new[] { ErrorCodes.Booking.EndDateTooFarAhead }), (moved, moveCodes));
-        Assert.Equal((HttpStatusCode.UnprocessableEntity, new[] { ErrorCodes.Booking.EndDateTooFarAhead }), (free.StatusCode, Codes(await free.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))));
-        Assert.Equal((HttpStatusCode.UnprocessableEntity, new[] { ErrorCodes.Booking.StartDateInPast }), (past.StatusCode, Codes(await past.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))));
+        Assert.Equal((HttpStatusCode.UnprocessableEntity, ErrorCodes.Booking.EndDateTooFarAhead), (moved, string.Join(", ", moveCodes)));
+        Assert.Equal((HttpStatusCode.UnprocessableEntity, ErrorCodes.Booking.EndDateTooFarAhead), (free.StatusCode, string.Join(", ", Codes(await free.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)))));
+        Assert.Equal((HttpStatusCode.UnprocessableEntity, ErrorCodes.Booking.StartDateInPast), (past.StatusCode, string.Join(", ", Codes(await past.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)))));
     }
 
     /// <summary>Criterion 4: an arrival yesterday is refused on the public site.</summary>
@@ -277,7 +277,7 @@ public sealed class BookingInputApiTests : IClassFixture<BookingInputApiTests.Fa
         var (status, codes) = await PostAsync(_factory.CreateServiceClient(), PublicBookingPath, PublicBody((Today.AddDays(-1), Today.AddDays(1)), RoomSize.Double, 1));
 
         // Assert
-        Assert.Equal((HttpStatusCode.UnprocessableEntity, new[] { ErrorCodes.Booking.StartDateInPast }), (status, codes));
+        Assert.Equal((HttpStatusCode.UnprocessableEntity, ErrorCodes.Booking.StartDateInPast), (status, string.Join(", ", codes)));
     }
 
     /// <summary>Criterion 3: a party of 1 and 4 is booked; 0 and 5 are refused with the code of the field.</summary>
@@ -313,7 +313,7 @@ public sealed class BookingInputApiTests : IClassFixture<BookingInputApiTests.Fa
         var (status, codes) = await PostAsync(_factory.CreateServiceClient(), PublicBookingPath, body);
 
         // Assert
-        Assert.Equal((HttpStatusCode.BadRequest, new[] { ApiErrorCodes.InvalidRequest }), (status, codes));
+        Assert.Equal((HttpStatusCode.BadRequest, ApiErrorCodes.InvalidRequest), (status, string.Join(", ", codes)));
     }
 
     #endregion
@@ -334,7 +334,7 @@ public sealed class BookingInputApiTests : IClassFixture<BookingInputApiTests.Fa
         var (status, codes) = await PostAsync(_factory.CreateServiceClient(), PublicBookingPath, body);
 
         // Assert
-        Assert.Equal((HttpStatusCode.BadRequest, new[] { ApiErrorCodes.InvalidRequest }), (status, codes));
+        Assert.Equal((HttpStatusCode.BadRequest, ApiErrorCodes.InvalidRequest), (status, string.Join(", ", codes)));
         Assert.DoesNotContain(_factory.World.Guests.Items, guest => guest.Email == "unknown-field@example.com");
     }
 
@@ -408,7 +408,7 @@ public sealed class BookingInputApiTests : IClassFixture<BookingInputApiTests.Fa
         var text = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal((expected, new[] { code }), (response.StatusCode, Codes(text)));
+        Assert.Equal((expected, code), (response.StatusCode, string.Join(", ", Codes(text))));
     }
 
     #endregion
@@ -456,7 +456,7 @@ public sealed class BookingInputApiTests : IClassFixture<BookingInputApiTests.Fa
         _factory.Logs.Clear();
 
         // Act
-        var (unknownStatus, _) = await PostAsync(service, PublicBookingPath, unknown);
+        var (unknownStatus, _) = await PostOnSharedClientAsync(service, PublicBookingPath, unknown);
         using var large = await service.PostAsync(PublicBookingPath, tooLarge, TestContext.Current.CancellationToken);
         using var search = await staff.GetAsync($"{GuestsPath}?searchText={longSearch}", TestContext.Current.CancellationToken);
 
@@ -489,17 +489,24 @@ public sealed class BookingInputApiTests : IClassFixture<BookingInputApiTests.Fa
         }
         else
         {
-            Assert.Equal((HttpStatusCode.UnprocessableEntity, new[] { code }), (status, codes));
+            Assert.Equal((HttpStatusCode.UnprocessableEntity, code), (status, string.Join(", ", codes)));
         }
     }
 
+    // Posts with a client made for this one call and disposes it.
     private static async Task<(HttpStatusCode Status, string[] Codes)> PostAsync(HttpClient client, string path, JsonObject body)
     {
         using (client)
         {
-            using var response = await client.PostAsync(path, Json(body), TestContext.Current.CancellationToken);
-            return (response.StatusCode, Codes(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)));
+            return await PostOnSharedClientAsync(client, path, body);
         }
+    }
+
+    // Posts with a client that the test goes on using; the test disposes it.
+    private static async Task<(HttpStatusCode Status, string[] Codes)> PostOnSharedClientAsync(HttpClient client, string path, JsonObject body)
+    {
+        using var response = await client.PostAsync(path, Json(body), TestContext.Current.CancellationToken);
+        return (response.StatusCode, Codes(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)));
     }
 
     private static string[] Codes(string text)

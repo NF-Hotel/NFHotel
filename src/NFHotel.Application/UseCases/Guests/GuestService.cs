@@ -5,6 +5,7 @@ using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.Repositories;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.UseCases.Guests;
 
@@ -347,19 +348,21 @@ public sealed class GuestService : IGuestService
     }
 
     /// <summary>
-    /// Splits the search text into words (BR-68). Empty or only whitespace gives an empty set, which
-    /// the repository interprets as "all guests" (BR-70).
+    /// Splits the search text into words (BR-68), after bringing it to its normal form (trimmed, Unicode normal form C;
+    /// MIL-086 decision 4). Empty or only whitespace gives an empty set, which the repository interprets as
+    /// "all guests" (BR-70).
     /// </summary>
     /// <param name="searchText">Free text from the user.</param>
     /// <returns>The search words without empty elements.</returns>
     private static IReadOnlyCollection<string> Tokenize(string? searchText)
     {
-        if (string.IsNullOrWhiteSpace(searchText))
+        string? text = TextNormalForm.Normalize(searchText);
+        if (string.IsNullOrWhiteSpace(text))
         {
             return Array.Empty<string>();
         }
 
-        return searchText.Split(SearchTermSeparators, StringSplitOptions.RemoveEmptyEntries);
+        return text.Split(SearchTermSeparators, StringSplitOptions.RemoveEmptyEntries);
     }
 
     /// <summary>

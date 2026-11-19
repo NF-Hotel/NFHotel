@@ -133,6 +133,37 @@ public sealed class BookingServiceTests
             TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Equivalence (MIL-086 decision 4): the search text is trimmed and brought to Unicode normal form C before it is
+    /// asked for, so a letter typed with its accent as two characters is asked for as the composed letter that is stored;
+    /// a text of white space only is no search.
+    /// </summary>
+    /// <param name="searchText">The search text as typed.</param>
+    /// <param name="asked">The search text that the queries are asked for.</param>
+    [Theory]
+    [InlineData("  René ", "René")]
+    [InlineData(" \t ", null)]
+    public async Task GetOverviewAsync_SearchText_IsAskedInItsNormalForm(string searchText, string? asked)
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var query = new BookingOverviewQuery(world.Clock.Today, world.Clock.Today.AddDays(30), SearchText: searchText);
+        world.BookingQueries
+            .GetOverviewAsync(default, default, default!, default, TestContext.Current.CancellationToken)
+            .ReturnsForAnyArgs(Task.FromResult<IReadOnlyList<BookingReadModel>>([]));
+
+        // Act
+        await world.BookingService(CreateBookingOverviewAuthorization()).GetOverviewAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        await world.BookingQueries.Received(1).GetOverviewAsync(
+            query.PeriodStart,
+            query.PeriodEnd,
+            Arg.Any<IReadOnlyCollection<BookingStatus>>(),
+            asked,
+            TestContext.Current.CancellationToken);
+    }
+
     /// <summary>Positive: the list is sorted as asked, with the order in which the bookings were made as tie-breaker.</summary>
     [Fact]
     public async Task GetOverviewAsync_SortedByStartDateDescending_ReturnsLatestStartFirst()

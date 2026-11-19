@@ -57,6 +57,28 @@ public sealed class BenchmarkEndpointTests
         Assert.Single(factory.World.Benchmarks.Items);
     }
 
+    /// <summary>
+    /// Boundary (MIL-086, ADR-0050 decision 4): a run whose output is longer than the 1,000 characters of a text without
+    /// a rule of its own, in a body larger than the 64 kilobytes of the other endpoints, is read and stored whole: the
+    /// intake has a size limit of its own and the output a length of its own.
+    /// </summary>
+    [Fact]
+    public async Task PostResult_LongOutputInABodyOverSixtyFourKilobytes_Returns201AndStoresItWhole()
+    {
+        // Arrange
+        using var factory = new ApiFactory();
+        using var client = factory.CreateServiceClient();
+        string output = new('x', 100_000);
+        SubmitBenchmarkRunRequest body = Body() with { Results = [Result("m1") with { Output = output }, Result("m2")] };
+
+        // Act
+        using var response = await client.PostAsJsonAsync(Results, body, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Contains(Assert.Single(factory.World.Benchmarks.Items).Results, result => result.Output == output);
+    }
+
     /// <summary>Negative: a post without the service token is 401 and stores nothing.</summary>
     [Fact]
     public async Task PostResult_WithoutTheServiceToken_Returns401AndStoresNothing()

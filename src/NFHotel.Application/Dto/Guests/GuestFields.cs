@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace NFHotel.Application.Dto.Guests;
 
 /// <summary>
@@ -19,6 +21,7 @@ namespace NFHotel.Application.Dto.Guests;
 /// <param name="PhoneNumber">Phone number. No format requirement (BR-94).</param>
 /// <param name="Country">Land.</param>
 /// <param name="PassportNumber">Passport number. Optional and not validated beyond its length (BR-57).</param>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record GuestFields(
     string FirstName,
     string LastName,
