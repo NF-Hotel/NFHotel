@@ -8,6 +8,10 @@ namespace NFHotel.Infrastructure.Security;
 /// </summary>
 public sealed class UnknownCallerAddress : ICallerAddress
 {
+    #region Properties
+
     /// <inheritdoc />
     public string? Address => null;
+
+    #endregion Properties
 }

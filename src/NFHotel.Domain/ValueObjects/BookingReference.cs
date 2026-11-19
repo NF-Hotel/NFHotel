@@ -14,6 +14,8 @@ namespace NFHotel.Domain.ValueObjects;
 /// </remarks>
 public static class BookingReference
 {
+    #region Fields
+
     /// <summary>The length of the text form: 32 hexadecimal digits and 4 hyphens.</summary>
     public const int TextLength = 36;
 
@@ -26,6 +28,10 @@ public static class BookingReference
     // The variant of RFC 9562 has the bits 10 at the top of its nibble (section 4.1).
     private const int VariantMask = 0b1100;
     private const int RfcVariant = 0b1000;
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Makes a new reference.</summary>
     /// <returns>A version 4 UUID with the variant of RFC 9562.</returns>
@@ -61,6 +67,10 @@ public static class BookingReference
         return true;
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     // Exactly 36 characters: hexadecimal digits in groups of 8, 4, 4, 4 and 12, with a hyphen between them. The check
     // comes before the parser, so a long text is refused by its length and no other form of the parser is accepted.
     private static bool HasTheUsualForm(ReadOnlySpan<char> text)
@@ -83,4 +93,6 @@ public static class BookingReference
     }
 
     private static bool IsRandom(Guid value) => value.Version == RandomVersion && (value.Variant & VariantMask) == RfcVariant;
+
+    #endregion Private methods
 }

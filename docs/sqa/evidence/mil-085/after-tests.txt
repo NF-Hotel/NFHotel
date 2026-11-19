@@ -1,0 +1,132 @@
+# MIL-085, review RC-418: the checks after the last fix of the review (2026-11-19), on the branch
+# mil-085-booking-reference with the changes of the review. The public address is in a variable ($SITE), and the
+# only email is guest@example.com.
+## dotnet build NFHotel.sln -c Release -warnaserror
+    0 Warning(s)
+    0 Error(s)
+## dotnet format NFHotel.sln --verify-no-changes --no-restore
+format exit 0
+## dotnet test --project tests/NFHotel.Domain.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 516
+  failed: 0
+  succeeded: 516
+## dotnet test --project tests/NFHotel.Application.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 746
+  failed: 0
+  succeeded: 746
+## dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 426
+  failed: 0
+  succeeded: 426
+## dotnet test --project tests/NFHotel.ApiClient.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 122
+  failed: 0
+  succeeded: 122
+## dotnet test --project tests/NFHotel.Web.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 838
+  failed: 0
+  succeeded: 838
+## dotnet test --project tests/NFHotel.External.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 217
+  failed: 0
+  succeeded: 217
+## dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build, without PostgreSQL:
+## --filter-namespace NFHotel.Infrastructure.Tests.Security, then --filter-class NFHotel.Infrastructure.Tests.DependencyInjectionTests
+Test run summary: Passed!
+  total: 69
+  failed: 0
+  succeeded: 69
+Test run summary: Passed!
+  total: 27
+  failed: 0
+  succeeded: 27
+## Every test with coverage, as the build job of NF Hotel CI runs them, in mcr.microsoft.com/dotnet/sdk:10.0.400 on
+## the Docker engine of WSL, at 87bb891 (before the review). All 113 failed tests are in
+## NFHotel.Infrastructure.Tests.Integration.Persistence, and each failed because its PostgreSQL container refused the
+## connection on that engine (113 lines "Connection refused"); the coverage of NFHotel.Infrastructure is the share
+## without them. NF Hotel CI runs them on the pull request and reads the floor there.
+  total: 3103
+  failed: 113
+  succeeded: 2975
+  skipped: 15
+TESTS EXIT 2
+KeyRotationPrototype                 90/93      96.77 %  ok
+NFHotel.Api                         707/734     96.32 %  ok
+NFHotel.Api.Contracts                 3/3      100.00 %  ok
+NFHotel.ApiClient                   365/369     98.92 %  ok
+NFHotel.Application                2644/2685    98.47 %  ok
+NFHotel.Domain                      728/728    100.00 %  ok
+NFHotel.External                   1107/1147    96.51 %  ok
+NFHotel.Infrastructure              936/1636    57.21 %  UNDER
+NFHotel.Web                        5137/5303    96.87 %  ok
+total                             11717/12698   92.27 %  UNDER
+FLOOR EXIT 1
+## bash -n, shellcheck v0.11.0 -x and shfmt v3.14.1 -i 2 -ci -d over ops/scripts/check-guest-login.sh and
+## ops/tests/check-e2e-stack.sh, in containers on the Docker engine of WSL
+bash-n=0
+shellcheck=0
+shfmt=0
+## bash ops/tests/test-wiki-coverage.sh
+124 passed, 0 failed
+## The failure paths of check-guest-login.sh (the temporary folder shown as <work>, the times of curl as N)
+$ bash ops/scripts/check-guest-login.sh
+Check the guest sign-in of MIL-018 (ADR-0047, and since MIL-085 ADR-0049) on a deployed NF
+exit 2
+$ bash ops/scripts/check-guest-login.sh --bogus "$SITE" 3f2504e0-4f89-41d3-9a0c-0305e82c3301
+Check the guest sign-in of MIL-018 (ADR-0047, and since MIL-085 ADR-0049) on a deployed NF
+exit 2
+$ bash ops/scripts/check-guest-login.sh nosite 3f2504e0-4f89-41d3-9a0c-0305e82c3301
+error: the site must be an address such as ${SITE}, not nosite
+exit 1
+$ bash ops/scripts/check-guest-login.sh http://127.0.0.1:9 FLZ-000001
+error: the booking reference has 36 letters and digits in five groups, as the receipt shows it
+exit 1
+$ GUEST_EMAIL= bash ops/scripts/check-guest-login.sh http://127.0.0.1:9 3f2504e0-4f89-41d3-9a0c-0305e82c3301 </dev/null
+error: set GUEST_EMAIL to the email of the booking, or run the script in a terminal
+exit 1
+$ GUEST_EMAIL=guest@example.com bash ops/scripts/check-guest-login.sh http://127.0.0.1:9 3f2504e0-4f89-41d3-9a0c-0305e82c3301   # a closed port
+==> the guest sign-in on http://127.0.0.1:9 for booking 3f2504e0-4f89-41d3-9a0c-0305e82c3301
+curl: (7) Failed to connect to 127.0.0.1:9 after N ms: Could not connect to server
+FAIL  the sign-in page answers (expected '200', got '000no answer')
+grep: <work>/signin.html: No such file or directory
+grep: <work>/signin.html: No such file or directory
+grep: <work>/signin.html: No such file or directory
+grep: <work>/signin.html: No such file or directory
+FAIL  the sign-in page has its form (expected 'guest-sign-in yes', got ' ')
+grep: <work>/signin.html: No such file or directory
+PASS  the sign-in page names no booking number
+curl: (7) Failed to connect to 127.0.0.1:9 after N ms: Could not connect to server
+FAIL  an old address with a booking number goes to the empty sign-in (expected '302 /booking', got '000 ')
+curl: (7) Failed to connect to 127.0.0.1:9 after N ms: Could not connect to server
+FAIL  a wrong email is refused on the page (expected '200', got 'no-answer')
+grep: <work>/wrong.html: No such file or directory
+FAIL  the refusal says that the booking was not found (expected 'yes', got '')
+PASS  a wrong email sets no guest cookie
+curl: (7) Failed to connect to 127.0.0.1:9 after N ms: Could not connect to server
+FAIL  an old booking number with the right email is refused (expected '200', got 'no-answer')
+grep: <work>/old.html: No such file or directory
+FAIL  the old number gets the same refusal (expected 'yes', got '')
+PASS  an old booking number sets no guest cookie
+curl: (7) Failed to connect to 127.0.0.1:9 after N ms: Could not connect to server
+FAIL  the reference and the email sign the guest in (expected '302 /my-booking', got 'no-answer')
+FAIL  the guest cookie is Secure, HttpOnly, SameSite=Lax, for /my-booking, and ends (expected 'secure httponly samesite=lax path=/my-booking expires=', got 'none')
+curl: (7) Failed to connect to 127.0.0.1:9 after N ms: Could not connect to server
+FAIL  the own booking opens (expected '200', got '000no answer')
+grep: <work>/own.html: No such file or directory
+FAIL  the own booking shows its reference (expected 'yes', got '')
+grep: <work>/own.html: No such file or directory
+PASS  the own booking shows no email
+grep: <work>/own.html: No such file or directory
+curl: (7) Failed to connect to 127.0.0.1:9 after N ms: Could not connect to server
+FAIL  the guest signs out (expected '302 /booking', got 'no-answer')
+FAIL  the sign-out removes the guest cookie (expected 'yes', got '')
+curl: (7) Failed to connect to 127.0.0.1:9 after N ms: Could not connect to server
+FAIL  after the sign-out the own booking asks for the sign-in (expected '302', got '000no answer')
+error: 14 check(s) failed
+exit 1

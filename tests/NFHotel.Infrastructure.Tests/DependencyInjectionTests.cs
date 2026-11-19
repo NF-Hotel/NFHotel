@@ -20,22 +20,22 @@ public sealed class DependencyInjectionTests
 
     private static ServiceProvider BuildProvider(string? signingKey = SigningKey, Dictionary<string, string?>? extra = null)
     {
-        var settings = new Dictionary<string, string?>
+        Dictionary<string, string?> settings = new()
         {
             ["ConnectionStrings:HotelDatabase"] = "Host=localhost;Database=model-only",
             ["Encryption:PassportKey"] = Convert.ToBase64String(new byte[32]),
             ["Staff:Token:SigningKey"] = signingKey,
         };
-        foreach (var (name, value) in extra ?? [])
+        foreach ((string name, string? value) in extra ?? [])
         {
             settings[name] = value;
         }
 
-        var configuration = new ConfigurationBuilder()
+        IConfigurationRoot configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(settings)
             .Build();
 
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         services.AddLogging();
         services.AddSingleton<IClock>(new FixedClock());
         services.AddInfrastructure(configuration);
@@ -84,13 +84,13 @@ public sealed class DependencyInjectionTests
     public void GuestSignInLimits_TwoScopes_AreOneStoreWithTheNumbersOfTheSettings()
     {
         // Arrange
-        using var provider = BuildProvider(extra: new Dictionary<string, string?> { ["GuestLookup:MaxFailuresPerReference"] = "2" });
-        using var first = provider.CreateScope();
-        using var second = provider.CreateScope();
-        var reference = Guid.NewGuid();
+        using ServiceProvider provider = BuildProvider(extra: new Dictionary<string, string?> { ["GuestLookup:MaxFailuresPerReference"] = "2" });
+        using IServiceScope first = provider.CreateScope();
+        using IServiceScope second = provider.CreateScope();
+        Guid reference = Guid.NewGuid();
 
         // Act
-        var limits = first.ServiceProvider.GetRequiredService<IGuestSignInLimits>();
+        IGuestSignInLimits limits = first.ServiceProvider.GetRequiredService<IGuestSignInLimits>();
         bool[] counted =
         [
             limits.TryCount(reference, "203.0.113.1"),

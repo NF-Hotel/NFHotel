@@ -6,6 +6,10 @@ namespace NFHotel.Application.Ports;
 /// </summary>
 public interface ICallerAddress
 {
+    #region Properties
+
     /// <summary>The address of the caller, or <see langword="null"/> when the API does not know it.</summary>
     string? Address { get; }
+
+    #endregion Properties
 }

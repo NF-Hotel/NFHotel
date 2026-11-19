@@ -1,3 +1,4 @@
+using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Domain.Entities;
 using NFHotel.TestSupport;
@@ -85,14 +86,14 @@ public sealed class BookingMappingTests
     public void ToListItemToDetailsAndReceipt_AnyBooking_CarryTheReferenceOfTheBooking()
     {
         // Arrange
-        var world = new ServiceWorld();
-        var booking = ConfirmedBookingToday(world, out _);
-        var readModel = world.ReadModelFor(booking);
+        ServiceWorld world = new();
+        Booking booking = ConfirmedBookingToday(world, out _);
+        BookingReadModel readModel = world.ReadModelFor(booking);
 
         // Act
-        var item = readModel.ToListItem(world.Clock.Today);
-        var details = readModel.ToDetails(world.Clock.Today);
-        var receipt = NFHotel.Application.Dto.Bookings.BookingReceiptDto.From(details);
+        BookingListItemDto item = readModel.ToListItem(world.Clock.Today);
+        BookingDetailsDto details = readModel.ToDetails(world.Clock.Today);
+        BookingReceiptDto receipt = BookingReceiptDto.From(details);
 
         // Assert
         Assert.Equal(booking.Reference, item.Reference);

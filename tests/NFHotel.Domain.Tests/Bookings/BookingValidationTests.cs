@@ -142,8 +142,8 @@ public class BookingValidationTests
     public void Reference_KeyGivenAfterwards_StaysTheReferenceTheBookingWasMadeWith(int bookingId)
     {
         // Arrange
-        var booking = BookingFactory.Pending();
-        var reference = booking.Reference;
+        Booking booking = BookingFactory.Pending();
+        Guid reference = booking.Reference;
 
         // Act
         BookingFactory.WithBookingId(booking, bookingId);

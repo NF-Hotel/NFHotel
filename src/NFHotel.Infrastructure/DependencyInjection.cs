@@ -66,7 +66,7 @@ public static class DependencyInjection
         var connectionString = ReadConnectionString(configuration);
         var encryptionOptions = ReadEncryptionOptions(configuration);
         var staffOptions = ReadStaffOptions(configuration);
-        var guestLookupOptions = ReadGuestLookupOptions(configuration);
+        GuestLookupOptions guestLookupOptions = ReadGuestLookupOptions(configuration);
 
         AddPersistence(services, connectionString);
         AddSecurity(services, encryptionOptions, staffOptions, guestLookupOptions);
@@ -282,9 +282,9 @@ public static class DependencyInjection
     /// </summary>
     private static GuestLookupOptions ReadGuestLookupOptions(IConfiguration configuration)
     {
-        var section = configuration.GetSection(GuestLookupOptions.SectionName);
-        var defaults = new GuestLookupOptions();
-        var options = new GuestLookupOptions
+        IConfigurationSection section = configuration.GetSection(GuestLookupOptions.SectionName);
+        GuestLookupOptions defaults = new();
+        GuestLookupOptions options = new()
         {
             MaxFailuresPerReference = ReadSetting(section, nameof(GuestLookupOptions.MaxFailuresPerReference), defaults.MaxFailuresPerReference),
             MaxFailuresPerAddress = ReadSetting(section, nameof(GuestLookupOptions.MaxFailuresPerAddress), defaults.MaxFailuresPerAddress),

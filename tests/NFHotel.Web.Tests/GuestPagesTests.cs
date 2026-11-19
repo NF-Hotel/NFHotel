@@ -70,7 +70,10 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         Assert.False(HasSetCookie(response, GuestCookie));
     }
 
-    /// <summary>Positive (ADR-0049 decision 1): the form asks for the booking reference, and nothing is looked up before a post.</summary>
+    /// <summary>
+    /// Positive (ADR-0049 decision 1): the form asks for the booking reference, no text of the page, the footer of the
+    /// public layout included, asks for a number, and nothing is looked up before a post.
+    /// </summary>
     [Fact]
     public async Task SignInPage_Opened_AsksForTheReferenceAndTheEmail()
     {
@@ -89,6 +92,7 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         Assert.Contains("id=\"booking-email\"", html, StringComparison.Ordinal);
         Assert.DoesNotContain("FLZ-", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("booking number", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("its number", html, StringComparison.OrdinalIgnoreCase);
         Assert.Empty(_factory.Access.ReceivedCalls());
     }
 

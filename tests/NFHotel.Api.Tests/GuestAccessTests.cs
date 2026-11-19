@@ -331,6 +331,58 @@ public sealed class GuestAccessTests : IClassFixture<ApiFactory>
     }
 
     /// <summary>
+    /// Robustness (MIL-077, ADR-0049 decision 2, review RC-418): a reference with a control or a direction character is
+    /// refused by the input rules of every request before the sign-in runs, with the 400 of any hostile input, which
+    /// names no booking; nothing is read and no try is counted.
+    /// </summary>
+    /// <param name="character">The character at the end of a reference of the usual form.</param>
+    [Theory]
+    [InlineData(0x0000)]
+    [InlineData(0x202E)]
+    public async Task SignIn_ReferenceWithAControlOrDirectionCharacter_GetsTheRefusalOfHostileInputAndCountsNothing(int character)
+    {
+        // Arrange
+        InMemoryGuestSignInLimits limits = Limits();
+        int addresses = limits.TrackedAddressCount;
+        string reference = "3f2504e0-4f89-41d3-9a0c-0305e82c3301" + (char)character;
+
+        // Act
+        (HttpStatusCode status, string text) = await SignInRawAsync(reference, "anna@example.com", NextAddress());
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, status);
+        Assert.Contains("api.invalid_request", text, StringComparison.Ordinal);
+        Assert.Equal(addresses, limits.TrackedAddressCount);
+    }
+
+    /// <summary>
+    /// Robustness (MIL-077, ADR-0049 decision 2, review RC-418): a reference that is no text cannot be bound and gets the
+    /// same 400 as any request that cannot be bound; nothing is read and no try is counted.
+    /// </summary>
+    [Fact]
+    public async Task SignIn_ReferenceThatIsNoText_GetsTheRefusalOfHostileInputAndCountsNothing()
+    {
+        // Arrange
+        InMemoryGuestSignInLimits limits = Limits();
+        int addresses = limits.TrackedAddressCount;
+        using HttpClient client = _factory.CreateServiceClient();
+        using HttpRequestMessage request = new(HttpMethod.Post, GuestLoginPath)
+        {
+            Content = new StringContent("""{"reference":123,"email":"anna@example.com"}""", Encoding.UTF8, "application/json"),
+        };
+        request.Headers.Add(ApiAuthentication.ClientAddressHeader, NextAddress());
+
+        // Act
+        using HttpResponseMessage response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        string text = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("api.invalid_request", text, StringComparison.Ordinal);
+        Assert.Equal(addresses, limits.TrackedAddressCount);
+    }
+
+    /// <summary>
     /// Boundary (ADR-0049 decision 6, MIL-085 criterion 4): five failed sign-ins for one reference get the refusal; the
     /// sixth within 15 minutes gets 429, even with the right email, and from another address too.
     /// </summary>
@@ -614,9 +666,12 @@ public sealed class GuestAccessTests : IClassFixture<ApiFactory>
         : segment.Contains(":guid", StringComparison.Ordinal) ? "00000000-0000-0000-0000-000000000001"
         : "x";
 
-    /// <summary>An address of its own for each test, from the range that IPv6 keeps for documentation (RFC 3849).</summary>
+    /// <summary>
+    /// A network of its own for each test, from the range that IPv6 keeps for documentation (RFC 3849): the limit per
+    /// address counts an IPv6 caller by its first 64 bits (ADR-0049 decision 6).
+    /// </summary>
     private static string NextAddress() =>
-        string.Create(CultureInfo.InvariantCulture, $"2001:db8::85:{Interlocked.Increment(ref s_nextAddress):x}");
+        string.Create(CultureInfo.InvariantCulture, $"2001:db8:85:{Interlocked.Increment(ref s_nextAddress):x}::1");
 
     /// <summary>A pending booking in a room of its own, with a guest whose email is unique to it.</summary>
     private (Booking Booking, string Email) SeedBooking(string? passportNumber = null)
@@ -638,6 +693,10 @@ public sealed class GuestAccessTests : IClassFixture<ApiFactory>
         Assert.True(status == HttpStatusCode.OK, $"The sign-in failed: {(int)status} {text}");
         return ValueOf<GuestSessionDto>(text).Token;
     }
+
+    /// <summary>The limits of the guest sign-in of the API under test.</summary>
+    private InMemoryGuestSignInLimits Limits() =>
+        (InMemoryGuestSignInLimits)_factory.Services.GetRequiredService<IGuestSignInLimits>();
 
     /// <summary>Posts a sign-in from the address of this test, or from the address given.</summary>
     private async Task<(HttpStatusCode Status, string Text)> SignInRawAsync(string reference, string email, string? address = null)

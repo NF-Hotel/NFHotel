@@ -1,3 +1,4 @@
+using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.Tests.TestSupport;
 using NFHotel.Domain.ValueObjects;
@@ -416,10 +417,10 @@ public class BookingStateMachineTests
     public void IsOpen_AnyStatus_SaysWhatCancelAndRescheduleSay(BookingStatus status, bool expected)
     {
         // Arrange
-        var booking = BookingFactory.InStatus(status);
+        Booking booking = BookingFactory.InStatus(status);
 
         // Act
-        var isOpen = status.IsOpen();
+        bool isOpen = status.IsOpen();
 
         // Assert
         Assert.Equal(expected, isOpen);

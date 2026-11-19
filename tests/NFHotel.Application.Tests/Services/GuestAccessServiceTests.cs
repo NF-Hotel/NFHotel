@@ -1,7 +1,6 @@
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Guests;
 using NFHotel.Application.Errors;
-using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
@@ -246,6 +245,35 @@ public sealed class GuestAccessServiceTests
         world.GuestSignInLimits.Received(1).TryCount(booking.Reference, FakeCallerAddress.DefaultAddress);
         world.GuestSignInLimits.DidNotReceiveWithAnyArgs().Succeeded(default, default!);
         Assert.Empty(world.GuestTokens.Issued);
+    }
+
+    /// <summary>
+    /// Equivalence (ADR-0049 decision 6, review RC-418): one caller is one key. An IPv4 address in IPv6 form counts as the
+    /// IPv4 address, and an IPv6 address counts by its first 64 bits, the network that the caller was given, so a caller
+    /// cannot get new tries by changing the last 64 bits, which every host may choose.
+    /// </summary>
+    /// <param name="address">The address of the caller.</param>
+    /// <param name="key">The key that the limits count.</param>
+    [Theory]
+    [InlineData("203.0.113.7", "203.0.113.7")]
+    [InlineData("::ffff:203.0.113.7", "203.0.113.7")]
+    [InlineData("2001:db8:1:2::1", "2001:db8:1:2::/64")]
+    [InlineData("2001:DB8:1:2:AAAA:BBBB:CCCC:DDDD", "2001:db8:1:2::/64")]
+    [InlineData("2001:db8:1:3::1", "2001:db8:1:3::/64")]
+    [InlineData("not an address", GuestAccessService.UnknownAddress)]
+    public async Task SignInAsync_CallerAddressInAnyForm_IsCountedUnderTheKeyOfItsCaller(string address, string key)
+    {
+        // Arrange
+        ServiceWorld world = new();
+        world.CallerAddress.Address = address;
+        Booking booking = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id);
+
+        // Act
+        await world.GuestAccessService()
+            .SignInAsync(new GuestSignInRequest(BookingReference.Format(booking.Reference), "wrong@example.com"), TestContext.Current.CancellationToken);
+
+        // Assert
+        world.GuestSignInLimits.Received(1).TryCount(booking.Reference, key);
     }
 
     /// <summary>Boundary: a caller whose address the API does not know is counted under one name for all of them.</summary>

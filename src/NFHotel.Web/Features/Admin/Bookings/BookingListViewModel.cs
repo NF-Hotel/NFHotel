@@ -110,7 +110,7 @@ public sealed class BookingListViewModel
         var query = new BookingOverviewQuery(
             PeriodStart,
             PeriodEnd,
-            string.IsNullOrWhiteSpace(SearchText) ? null : SearchText,
+            string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim(),
             SortBy,
             Direction,
             IncludeCancelled);

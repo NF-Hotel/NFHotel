@@ -55,7 +55,7 @@ public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixt
         await FillGuestAsync("grace@example.com");
         await Page.GetByRole(AriaRole.Button, new() { Name = "Send booking request" }).ClickAsync();
         await Assertions.Expect(Page.Locator(".pub-receipt-reference")).ToBeVisibleAsync();
-        var reference = (await Page.Locator(".pub-receipt-reference").InnerTextAsync()).Trim();
+        string reference = (await Page.Locator(".pub-receipt-reference").InnerTextAsync()).Trim();
         Assert.Matches(Version4, reference);
 
         // The receipt links to the sign-in; neither the reference nor the email is in the address (MIL-079, ADR-0049).
@@ -118,7 +118,7 @@ public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixt
     [E2EFact]
     public async Task SignIn_OldLinkWithABookingNumber_EndsOnTheEmptySignIn()
     {
-        var response = await Pages.OpenAsync(Page, "booking/FLZ-000001");
+        IResponse? response = await Pages.OpenAsync(Page, "booking/FLZ-000001");
 
         Assert.NotNull(response);
         Assert.True(response.Status < 500, $"The sign-in answered {response.Status}.");

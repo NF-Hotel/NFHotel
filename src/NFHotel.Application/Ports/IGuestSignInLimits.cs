@@ -6,6 +6,8 @@ namespace NFHotel.Application.Ports;
 /// </summary>
 public interface IGuestSignInLimits
 {
+    #region Public methods
+
     /// <summary>
     /// Counts one try against the reference and the address unless either has used up its tries in its window, as one
     /// atomic step, so that tries sent at the same time cannot all pass the check before any of them is counted. The
@@ -29,4 +31,6 @@ public interface IGuestSignInLimits
     /// <param name="reference">The reference that signed in.</param>
     /// <param name="address">The address of the caller.</param>
     void Succeeded(Guid reference, string address);
+
+    #endregion Public methods
 }

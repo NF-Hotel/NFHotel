@@ -467,7 +467,7 @@ public sealed class ServiceWorld
 
     private BookingReadModel? ReadModelOrNull(Guid reference)
     {
-        var booking = Bookings.Items.SingleOrDefault(item => item.Reference == reference);
+        Booking? booking = Bookings.Items.SingleOrDefault(item => item.Reference == reference);
         return booking is null ? null : ReadModelFor(booking);
     }
 

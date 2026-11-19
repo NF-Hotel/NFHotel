@@ -17,6 +17,8 @@ namespace NFHotel.Api.Security;
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
 public sealed class RequiresGuestAttribute : Attribute, IAuthorizationFilter
 {
+    #region Constructors
+
     /// <summary>Creates the attribute.</summary>
     /// <param name="permission">The permission of the Guest role that the endpoint needs (the Access Control Matrix).</param>
     public RequiresGuestAttribute(string permission)
@@ -24,8 +26,16 @@ public sealed class RequiresGuestAttribute : Attribute, IAuthorizationFilter
         Permission = permission;
     }
 
+    #endregion Constructors
+
+    #region Properties
+
     /// <summary>The permission of the Guest role that the endpoint needs.</summary>
     public string Permission { get; }
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <inheritdoc />
     public void OnAuthorization(AuthorizationFilterContext context)
@@ -51,6 +61,12 @@ public sealed class RequiresGuestAttribute : Attribute, IAuthorizationFilter
         }
     }
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static ObjectResult Forbidden() =>
         new(new ApiResponse([ErrorCodes.Api.Forbidden])) { StatusCode = StatusCodes.Status403Forbidden };
+
+    #endregion Private methods
 }

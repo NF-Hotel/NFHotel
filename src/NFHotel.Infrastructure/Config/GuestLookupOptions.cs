@@ -7,8 +7,14 @@ namespace NFHotel.Infrastructure.Config;
 /// </summary>
 public sealed class GuestLookupOptions
 {
+    #region Fields
+
     /// <summary>The configuration section.</summary>
     public const string SectionName = "GuestLookup";
+
+    #endregion Fields
+
+    #region Properties
 
     /// <summary>Failed tries of one reference in a window (<c>GuestLookup:MaxFailuresPerReference</c>).</summary>
     public int MaxFailuresPerReference { get; init; } = 5;
@@ -24,4 +30,6 @@ public sealed class GuestLookupOptions
 
     /// <summary>The most windows that each of the two stores holds (<c>GuestLookup:MaxTrackedKeys</c>).</summary>
     public int MaxTrackedKeys { get; init; } = 10_000;
+
+    #endregion Properties
 }

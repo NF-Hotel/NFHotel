@@ -3,7 +3,6 @@ using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
-using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;

@@ -15,6 +15,8 @@ public sealed class InMemoryGuestSignInLimitsTests
 
     private static readonly Guid Reference = Guid.Parse("3f2504e0-4f89-41d3-9a0c-0305e82c3301");
 
+    private int _lastAddress = 1_000;
+
     #region Per reference
 
     /// <summary>Boundary: five tries for one reference are counted, the sixth is refused, even from other addresses.</summary>
@@ -144,6 +146,33 @@ public sealed class InMemoryGuestSignInLimitsTests
         // Assert
         Assert.True(twentieth);
         Assert.False(twentyFirst);
+    }
+
+    /// <summary>
+    /// State transition (review RC-418): a success after the window of the address has run out gives nothing back, and the
+    /// next try from that address starts a window of its own with the full twenty tries.
+    /// </summary>
+    [Fact]
+    public void Succeeded_AfterTheWindowOfTheAddressRanOut_GivesNothingBackAndTheNextTryStartsANewWindow()
+    {
+        // Arrange
+        FakeClock clock = new() { TimeOfDay = TimeSpan.FromHours(8) };
+        InMemoryGuestSignInLimits limits = Build(clock);
+        for (int attempt = 0; attempt < 19; attempt++)
+        {
+            limits.TryCount(null, Address);
+        }
+
+        limits.TryCount(Reference, Address);
+        clock.TimeOfDay = TimeSpan.FromHours(8) + TimeSpan.FromMinutes(15);
+
+        // Act
+        limits.Succeeded(Reference, Address);
+        int counted = Enumerable.Range(0, 21).Count(_ => limits.TryCount(null, Address));
+
+        // Assert
+        Assert.Equal(20, counted);
+        Assert.Equal(1, limits.TrackedAddressCount);
     }
 
     #endregion
@@ -291,39 +320,107 @@ public sealed class InMemoryGuestSignInLimitsTests
     }
 
     /// <summary>
-    /// Boundary: a full store with no window that has run out drops the window that started first, which is the nearest to
-    /// its end, so the least protection is lost.
+    /// Boundary (ADR-0049 decision 6, review RC-418): a full store never drops a window that is at its limit, so a flood of
+    /// new references from new addresses cannot free a reference whose tries are used up.
     /// </summary>
     [Fact]
-    public void TryCount_FullStoreWithoutRunOutWindows_DropsTheWindowThatStartedFirst()
+    public void TryCount_FullStoreAndAFloodOfNewReferences_KeepsAReferenceAtItsLimitLocked()
     {
         // Arrange
         FakeClock clock = new() { TimeOfDay = TimeSpan.FromHours(8) };
         InMemoryGuestSignInLimits limits = Build(clock, maxTrackedKeys: 3);
-        Guid oldest = Guid.NewGuid();
-        Guid younger = Guid.NewGuid();
-        for (int attempt = 0; attempt < 5; attempt++)
-        {
-            limits.TryCount(oldest, AddressNumber(attempt));
-        }
-
+        Tries(limits, Reference, 5);
         clock.TimeOfDay = TimeSpan.FromHours(8) + TimeSpan.FromMinutes(1);
-        for (int attempt = 0; attempt < 5; attempt++)
+
+        // Act
+        for (int number = 0; number < 100; number++)
         {
-            limits.TryCount(younger, AddressNumber(attempt + 10));
+            limits.TryCount(Guid.NewGuid(), NextAddress());
         }
 
+        // Assert
+        Assert.False(limits.TryCount(Reference, NextAddress()));
+        Assert.Equal(3, limits.TrackedReferenceCount);
+    }
+
+    /// <summary>
+    /// Boundary (ADR-0049 decision 6): a full store drops the window with the fewest failed tries first, the oldest of
+    /// those first, so the windows that hold the most protection stay.
+    /// </summary>
+    [Fact]
+    public void TryCount_FullStore_DropsTheWindowWithTheFewestFailuresFirst()
+    {
+        // Arrange: the oldest window has three failures, then one has one failure, then one has two
+        FakeClock clock = new() { TimeOfDay = TimeSpan.FromHours(8) };
+        InMemoryGuestSignInLimits limits = Build(clock, maxTrackedKeys: 3);
+        Guid threeFailures = Guid.NewGuid();
+        Guid oneFailure = Guid.NewGuid();
+        Guid twoFailures = Guid.NewGuid();
+        Tries(limits, threeFailures, 3);
+        clock.TimeOfDay = TimeSpan.FromHours(8) + TimeSpan.FromMinutes(1);
+        Tries(limits, oneFailure, 1);
         clock.TimeOfDay = TimeSpan.FromHours(8) + TimeSpan.FromMinutes(2);
-        limits.TryCount(Guid.NewGuid(), AddressNumber(20));
+        Tries(limits, twoFailures, 2);
 
         // Act
         clock.TimeOfDay = TimeSpan.FromHours(8) + TimeSpan.FromMinutes(3);
-        limits.TryCount(Guid.NewGuid(), AddressNumber(21));
+        limits.TryCount(Guid.NewGuid(), NextAddress());
+
+        // Assert: the two other windows kept their failures; the window of one failure went, so it starts again at five
+        Assert.Equal(2, TriesLeft(limits, threeFailures));
+        Assert.Equal(3, TriesLeft(limits, twoFailures));
+        Assert.Equal(5, TriesLeft(limits, oneFailure));
+    }
+
+    /// <summary>
+    /// Boundary (ADR-0049 decision 6): when every window of a full store is at its limit, a try for a new reference is
+    /// refused and counted in neither store, rather than freeing a reference whose tries are used up.
+    /// </summary>
+    [Fact]
+    public void TryCount_FullStoreOfReferencesAtTheirLimit_RefusesANewReferenceAndCountsNothing()
+    {
+        // Arrange: two references at their limit, all ten tries from one address
+        InMemoryGuestSignInLimits limits = Build(new FakeClock(), maxTrackedKeys: 2);
+        Guid first = Guid.NewGuid();
+        Guid second = Guid.NewGuid();
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            limits.TryCount(first, Address);
+            limits.TryCount(second, Address);
+        }
+
+        // Act
+        bool newReference = limits.TryCount(Guid.NewGuid(), Address);
+
+        // Assert: the refused try took none of the ten tries that the address has left
+        Assert.False(newReference);
+        Assert.False(limits.TryCount(first, NextAddress()));
+        Assert.Equal(10, Enumerable.Range(0, 11).Count(_ => limits.TryCount(null, Address)));
+    }
+
+    /// <summary>
+    /// Boundary (ADR-0049 decision 6): the store of addresses keeps an address at its limit the same way, so a flood from
+    /// new addresses cannot free an address whose tries are used up.
+    /// </summary>
+    [Fact]
+    public void TryCount_FullStoreAndAFloodFromNewAddresses_KeepsAnAddressAtItsLimitLocked()
+    {
+        // Arrange
+        InMemoryGuestSignInLimits limits = Build(new FakeClock(), maxTrackedKeys: 3);
+        for (int attempt = 0; attempt < 20; attempt++)
+        {
+            limits.TryCount(null, Address);
+        }
+
+        // Act
+        for (int number = 0; number < 100; number++)
+        {
+            limits.TryCount(null, NextAddress());
+        }
 
         // Assert
-        Assert.Equal(3, limits.TrackedReferenceCount);
-        Assert.False(limits.TryCount(younger, AddressNumber(30)));
-        Assert.True(limits.TryCount(oldest, AddressNumber(31)));
+        Assert.False(limits.TryCount(null, Address));
+        Assert.Equal(3, limits.TrackedAddressCount);
     }
 
     #endregion
@@ -382,6 +479,30 @@ public sealed class InMemoryGuestSignInLimitsTests
 
     private static InMemoryGuestSignInLimits Build(FakeClock clock, int maxTrackedKeys = 10_000) =>
         new(new GuestLookupOptions { MaxTrackedKeys = maxTrackedKeys }, clock);
+
+    /// <summary>Makes failed tries for a reference, each from an address of its own, so the limit per address stays out of the way.</summary>
+    private void Tries(InMemoryGuestSignInLimits limits, Guid reference, int count)
+    {
+        for (int attempt = 0; attempt < count; attempt++)
+        {
+            Assert.True(limits.TryCount(reference, NextAddress()));
+        }
+    }
+
+    /// <summary>Uses up the tries that a reference has left, each from an address of its own, and says how many there were.</summary>
+    private int TriesLeft(InMemoryGuestSignInLimits limits, Guid reference)
+    {
+        int left = 0;
+        while (left <= 5 && limits.TryCount(reference, NextAddress()))
+        {
+            left++;
+        }
+
+        return left;
+    }
+
+    /// <summary>An address that no other try of this test has used.</summary>
+    private string NextAddress() => AddressNumber(++_lastAddress);
 
     /// <summary>An address of the documentation ranges for a number (RFC 3849), so many callers can be told apart.</summary>
     private static string AddressNumber(int number) =>

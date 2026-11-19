@@ -24,7 +24,8 @@
 #                        certificate of a VM; the cookie must still be Secure
 # Env:   GUEST_EMAIL     the email of the booking; when it is not set, the script asks for
 #                        it, so the email is never on a command line
-# Exit:  0 every check passed; 1 a check failed or the email is missing; 2 usage error
+# Exit:  0 every check passed; 1 a check failed, or the site, the reference or the email
+#        cannot be used; 2 usage error
 # Needs: bash 4+, curl, grep, sed, mktemp
 
 set -euo pipefail
@@ -145,7 +146,7 @@ reference_field="$(input_name "$work/signin.html" booking-reference)"
 email_field="$(input_name "$work/signin.html" booking-email)"
 check "the sign-in page has its form" "guest-sign-in yes" \
   "$handler $([[ -n "$token" && -n "$reference_field" && -n "$email_field" ]] && echo yes)"
-check "the sign-in page names no booking number" no "$(grep -qiE 'booking number|FLZ-' "$work/signin.html" && echo yes || echo no)"
+check "the sign-in page names no booking number" no "$(grep -qiE 'booking number|its number|FLZ-' "$work/signin.html" && echo yes || echo no)"
 check "an old address with a booking number goes to the empty sign-in" "302 /booking" \
   "$(curl "${curl_options[@]}" --output /dev/null --write-out '%{http_code} %{redirect_url}' "$site/booking/$OLD_NUMBER" |
     sed "s#$site##")"

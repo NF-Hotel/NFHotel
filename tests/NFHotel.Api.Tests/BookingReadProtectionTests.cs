@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 using NFHotel.Api.Contracts;
 using NFHotel.Application.Errors;
@@ -93,13 +92,13 @@ public sealed class BookingReadProtectionTests : IClassFixture<ApiFactory>
     public async Task OldLookup_AnyCall_IsNoEndpointAnyMore()
     {
         // Arrange
-        var bookingId = SeedBooking();
-        using var client = _factory.CreateServiceClient();
+        int bookingId = SeedBooking();
+        using HttpClient client = _factory.CreateServiceClient();
 
         // Act
-        using var response = await client.PostAsJsonAsync(
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
             OldReceiptPath, new { bookingId, email = GuestEmail }, ApiJson.Options, TestContext.Current.CancellationToken);
-        var text = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        string text = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);

@@ -103,14 +103,14 @@ public sealed partial class ContractParityTests : IAsyncLifetime
     public void Scenarios_AllInterfaceMethods_AreCovered()
     {
         // Arrange
-        var names = Scenarios().Select(scenario => scenario.Name).ToArray();
-        var methods = new[] { typeof(IBookingService), typeof(IGuestService), typeof(IRoomService), typeof(IGuestAccessService) }
+        string[] names = Scenarios().Select(scenario => scenario.Name).ToArray();
+        string[] methods = new[] { typeof(IBookingService), typeof(IGuestService), typeof(IRoomService), typeof(IGuestAccessService) }
             .SelectMany(contract => contract.GetMethods().Select(method => $"{contract.Name}.{method.Name}"))
             .Distinct()
             .ToArray();
 
         // Act
-        var uncovered = methods.Where(method => !names.Any(name => name.StartsWith(method, StringComparison.Ordinal))).ToArray();
+        string[] uncovered = methods.Where(method => !names.Any(name => name.StartsWith(method, StringComparison.Ordinal))).ToArray();
 
         // Assert
         Assert.True(uncovered.Length == 0, $"Methods without a scenario: {string.Join(", ", uncovered)}");
@@ -160,7 +160,8 @@ public sealed partial class ContractParityTests : IAsyncLifetime
         AddB("CreateAsync unknown room", b => b.CreateAsync(new CreateBookingRequest(today.AddDays(30), today.AddDays(31), 99, 1, null), ct));
         AddThrows("IBookingService.CreateAsync null", s => s.Bookings.CreateAsync(null!, ct));
 
-        // --- the public booking and the guest sign-in: refusals only (MIL-018, ADR-0049)
+        // --- the public booking and the guest sign-in: refusals only (MIL-018, ADR-0049); in AddThrows the
+        // null-forgiving operator passes the null that the service must refuse
         AddA("BookAsync no guest details", a => a.BookAsync(new CreatePublicBookingRequest(today.AddDays(30), today.AddDays(31), RoomSize.Double, 1, null), ct));
         AddA("BookAsync no room of the type sleeps the party", a => a.BookAsync(new CreatePublicBookingRequest(today.AddDays(30), today.AddDays(31), RoomSize.Single, 4, fields), ct));
         AddA("BookAsync inverted period", a => a.BookAsync(new CreatePublicBookingRequest(today.AddDays(9), today.AddDays(3), RoomSize.Double, 1, fields), ct));

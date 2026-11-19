@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using NFHotel.Application.Dto.Bookings;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.Infrastructure.Persistence;
@@ -141,7 +142,7 @@ public sealed class BookingReadTests : IAsyncLifetime
     {
         // Arrange
         Booking booking = await SeedAsync("101", Today);
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
         Guid stored = await context.Bookings.AsNoTracking()
@@ -161,10 +162,10 @@ public sealed class BookingReadTests : IAsyncLifetime
         // Arrange
         Booking first = await SeedAsync("101", Today);
         Booking second = await SeedAsync("102", Today);
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var readModel = await new BookingRepository(context).GetReadModelByReferenceAsync(second.Reference, TestContext.Current.CancellationToken);
+        BookingReadModel? readModel = await new BookingRepository(context).GetReadModelByReferenceAsync(second.Reference, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(readModel);
@@ -180,10 +181,10 @@ public sealed class BookingReadTests : IAsyncLifetime
     {
         // Arrange
         await SeedAsync("101", Today);
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var readModel = await new BookingRepository(context).GetReadModelByReferenceAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+        BookingReadModel? readModel = await new BookingRepository(context).GetReadModelByReferenceAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(readModel);
@@ -204,10 +205,10 @@ public sealed class BookingReadTests : IAsyncLifetime
         Booking wanted = await SeedAsync("102", Today);
         string text = wanted.Reference.ToString().ToUpperInvariant();
         string searchText = part == "whole" ? text : text[..8];
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var rows = await new BookingRepository(context).GetOverviewAsync(
+        IReadOnlyList<BookingReadModel> rows = await new BookingRepository(context).GetOverviewAsync(
             Today, Today.AddDays(30), [BookingStatus.Pending], searchText, TestContext.Current.CancellationToken);
 
         // Assert
@@ -224,13 +225,13 @@ public sealed class BookingReadTests : IAsyncLifetime
     /// <summary>Stores a room with the number given, a guest, and a booking of three nights from the date given in that room.</summary>
     private async Task<Booking> SeedAsync(string roomNumber, DateOnly start)
     {
-        await using var context = _fixture.CreateContext();
-        var room = Room.Create(roomNumber, 1, RoomSize.Double, 2);
-        var guest = Guest.Create("Anna", "Jensen", "anna@example.com", "+4512345678", "Denmark", null);
+        await using HotelDbContext context = _fixture.CreateContext();
+        Room room = Room.Create(roomNumber, 1, RoomSize.Double, 2);
+        Guest guest = Guest.Create("Anna", "Jensen", "anna@example.com", "+4512345678", "Denmark", null);
         new RoomRepository(context).Add(room);
         new GuestRepository(context).Add(guest);
         await new UnitOfWork(context).SaveChangesAsync(TestContext.Current.CancellationToken);
-        var booking = Booking.Create(new DateRange(start, start.AddDays(3)), room.Id, guest.Id, Today);
+        Booking booking = Booking.Create(new DateRange(start, start.AddDays(3)), room.Id, guest.Id, Today);
         new BookingRepository(context).Add(booking);
         await new UnitOfWork(context).SaveChangesAsync(TestContext.Current.CancellationToken);
         return booking;

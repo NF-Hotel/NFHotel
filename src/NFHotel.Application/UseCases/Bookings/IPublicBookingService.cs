@@ -10,6 +10,8 @@ namespace NFHotel.Application.UseCases.Bookings;
 /// </summary>
 public interface IPublicBookingService
 {
+    #region Public methods
+
     /// <summary>
     /// Creates a booking through the public guest booking flow: the guest chooses a room type and the service picks
     /// a free room of that type. Only new guest details are accepted.
@@ -21,4 +23,6 @@ public interface IPublicBookingService
     Task<Result<BookingDetailsDto>> CreatePublicAsync(
         CreatePublicBookingRequest request,
         CancellationToken cancellationToken = default);
+
+    #endregion Public methods
 }

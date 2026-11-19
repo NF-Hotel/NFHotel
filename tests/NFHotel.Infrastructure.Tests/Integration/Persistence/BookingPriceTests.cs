@@ -8,10 +8,8 @@ using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Pricing;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
-using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Persistence;
 using NFHotel.Infrastructure.Repositories;
-using NFHotel.Infrastructure.Security;
 using NFHotel.TestSupport;
 
 namespace NFHotel.Infrastructure.Tests.Integration.Persistence;

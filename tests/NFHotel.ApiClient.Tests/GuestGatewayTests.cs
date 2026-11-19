@@ -139,6 +139,26 @@ public sealed class GuestGatewayTests
         Assert.Equal(new GuestSessionDto("t", new DateTimeOffset(2030, 1, 1, 10, 0, 0, TimeSpan.Zero)), result.Value);
     }
 
+    /// <summary>
+    /// Positive (ADR-0049 decision 6, review RC-418): the sign-in carries the address of the browser to the API, so the
+    /// limit per address counts the guest and not the web application, which every guest would share.
+    /// </summary>
+    [Fact]
+    public async Task SignInAsync_WithTheAddressOfTheBrowser_ForwardsIt()
+    {
+        // Arrange
+        StubHandler handler = StubHandler.Json(
+            HttpStatusCode.OK,
+            """{"value":{"token":"t","expiresAt":"2030-01-01T10:00:00+00:00"},"errors":[]}""");
+        ApiGuestAccessService service = new(Gateway(handler, new StaffCallContext { ClientAddress = "203.0.113.7" }));
+
+        // Act
+        await service.SignInAsync(new GuestSignInRequest(Reference, "anna@example.com"), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("203.0.113.7", handler.ForwardedFor);
+    }
+
     /// <summary>Negative: the one refusal and the limit keep their own codes.</summary>
     /// <param name="status">The status of the answer.</param>
     /// <param name="code">The code in the answer.</param>
