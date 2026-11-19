@@ -1,7 +1,8 @@
 # CI of the operations code in ops/ (ADR-0016, formerly the CI of NF-Hotel/DevOps): the
 # linters of ops/ and of the workflows and actions, the coverage of the wiki reference pages
 # (MIL-049), the script tests, the monitoring configuration (ADR-0020), the runtime check of
-# the containers against their profiles (MIL-080), the nginx routes, the OpenTofu code of the
+# the containers against their profiles (MIL-080), the nginx routes and the security.txt that
+# they serve (MIL-084), the OpenTofu code of the
 # public edge (MIL-078), the networks of the services (ADR-0039), the pin of the market
 # analysis service against its contract (MIL-026), the volume of the benchmark (MIL-045),
 # Ollama as a user that is not root (MIL-082),
@@ -99,6 +100,7 @@ jobs:
           - test-backup-read-back.sh
           - test-pull-monitoring.sh
           - test-edge-comparison.sh
+          - test-check-security-txt.sh
         # Debian 13: the rrsync of the backup target has -no-overwrite (MIL-066 task 1),
         # remove-desktop.sh is for the VM, which runs Debian 13 (MIL-068), test-sudo-log.sh
         # checks the log of the sudo of the VM (MIL-070), the runtime check runs on the VM
@@ -183,6 +185,13 @@ jobs:
           persist-credentials: false
       - name: Test the routes with and without the optional API route
         run: bash ops/tests/test-nginx.sh
+      # The file that the public listener serves, against RFC 9116 and the rules of ADR-0048, with
+      # the clock of the run: from 30 days before its Expires this fails until the date is moved.
+      - name: Check security.txt (MIL-084)
+        run: >-
+          bash ops/scripts/check-security-txt.sh --file ops/deploy/nginx/well-known/security.txt
+          --canonical https://nfhotel.devmatiker.com/.well-known/security.txt
+          --expect-warnings unsigned,no-encryption,no-role-address
 
   # The routes of the tunnel and the Access application in OpenTofu (MIL-078, ADR-0046), in the
   # image of OpenTofu pinned by digest. No token: nothing here reaches the Cloudflare account,
