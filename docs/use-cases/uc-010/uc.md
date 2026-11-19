@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | UC-010 |
-| CrossReference | [UCD-001], [US-001], [SA-001], [UC-001], [UC-004], [MIL-018], [MIL-079], [ADR-0005], [ADR-0047], [SSD-001], [MIL-085], [ADR-0049] |
+| CrossReference | [UCD-001], [US-001], [SA-001], [UC-001], [UC-004], [MIL-018], [MIL-079], [ADR-0005], [ADR-0047], [SSD-001], [MIL-085], [ADR-0049], [MIL-086], [ADR-0050] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 3 of MIL-018, written by the AI<br>Go in RC-389; accepted by the AI as stand-in for S01 | [9e72b0e] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The guest names the booking by its booking reference, a random universally unique identifier (UUID) of version 4, in place of the booking number; a number of the old kind gets the one refusal; failed attempts are limited per reference and per address; the booking is shown as its receipt, without the guest (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | The guest names the booking by its booking reference, a random universally unique identifier (UUID) of version 4, in place of the booking number; a number of the old kind gets the one refusal; failed attempts are limited per reference and per address; the booking is shown as its receipt, without the guest (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The email of the sign-in is compared in its normal form; new dates of a guest end at most five years after today and have at most 30 nights, and the guest is offered only those days (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 ---
 
@@ -70,12 +70,12 @@
 
 | Step | Rule |
 | --- | --- |
-| 1, 2 | A guest signs in with the booking reference and the email of the booking; there is no guest account and no password (ADR-0047, decision 1; ADR-0049, decision 2). The reference is a random universally unique identifier (UUID) of version 4, read in its usual form of 36 characters in any letter case; the email is compared without letter case and surrounding spaces (ADR-0049, decision 1; MIL-079) |
+| 1, 2 | A guest signs in with the booking reference and the email of the booking; there is no guest account and no password (ADR-0047, decision 1; ADR-0049, decision 2). The reference is a random universally unique identifier (UUID) of version 4, read in its usual form of 36 characters in any letter case; the email is compared in its normal form (trimmed, Unicode normal form C) and without letter case (ADR-0049, decision 1; MIL-079; ADR-0050, decision 4). Neither may be longer than a booking reference or the email of a booking can be (MIL-086) |
 | 2a, *a | An unknown or unreadable reference, a booking number of the old kind, a wrong email and a cancelled booking get the same refusal in the same words; an ended or invalid sign-in is refused in the same way and shows nothing of the booking (ADR-0047, decisions 3 and 7; ADR-0049, decisions 2 and 5) |
 | 2b | After five failed attempts for one reference within 15 minutes, the next attempt for that reference is refused until the 15 minutes have passed, and after twenty failed attempts from one address within 15 minutes, so is the next attempt from that address; the refusal names no booking (ADR-0049, decision 6) |
 | 2 | A sign-in lasts two hours and is not extended (ADR-0047, decision 2). The booking is shown as its receipt: the reference, the dates, the nights, the room type and the status, and nothing of its guest (ADR-0049, decision 7) |
 | all | The role Guest holds `Bookings.Create`, `Bookings.EditOwn` and `Guests.ViewOwn` and nothing else: the guest sees and changes only the booking signed in to, no request of the guest names a booking after the sign-in, and no passport number is ever shown (ADR-0047, decisions 4 and 5; ADR-0049, decision 3; the Access Control Matrix) |
-| 3, 4 | New dates keep the room and follow the checks of a new booking: valid dates and a free room for every night; the booking does not block itself (UC-001, 2 and 5b) |
+| 3, 4 | New dates keep the room and follow the checks of a new booking on the public site: valid dates, a stay that ends at most five years after today and has at most 30 nights (BR-N-08, BR-C-07), and a free room for every night; the booking does not block itself (UC-001, 2 and 5b). The guest is offered only the days that the rules allow, and a move that breaks a rule is refused with the text of the rule (MIL-086, ADR-0050) |
 | 3c, 5a | Only a pending or confirmed booking can be moved or cancelled; cancelling never deletes (UC-001, 5a and 5b; BR-11, BR-13, BR-14) |
 | 7, 8, 7a | Signing out ends only the guest's sign-in (ADR-0047, decision 6) |
 
@@ -97,5 +97,6 @@
 [SSD-001]: ./ssd.md
 [MIL-085]: ../../milestones/mil-085-a-booking-reference-that-cannot-be-guessed.md
 [ADR-0049]: ../../adr/adr-0049-booking-reference.md
-[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
+[MIL-086]: ../../milestones/mil-086-booking-input-checked-by-one-set-of-rules.md
+[ADR-0050]: ../../adr/adr-0050-where-the-rules-of-the-booking-input-live.md
 [e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

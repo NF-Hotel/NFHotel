@@ -1,6 +1,8 @@
 # Test plan — manual testing
 
 > Updated 2026-09-07 after the UI overhaul. Covers the front page, customer booking and admin.
+> MIL-086 (2026-11-19) added the rules of the booking input: the negative tests of section 3 and the dates and the
+> guest form of section 4.
 > The purpose is not to click through everything, but to prove the five things that are hard to get right.
 
 ---
@@ -78,7 +80,13 @@ The front page must still respond normally.
 |---|---|
 | Departure before arrival | Error, cannot proceed |
 | Arrival yesterday | Error — the past cannot be booked (BR-44) |
-| Empty e-mail, or `anne` without `@` and `.` | Field error on the right field (BR-55) |
+| Empty e-mail, `anne`, or two addresses such as `a@example.com, b@example.com` | Field error at the email: "Enter one email address, such as name@example.com." (BR-55, MIL-086) |
+| A first name with a digit or `<b>` | Field error: "A first name can hold letters, spaces, apostrophes, hyphens and full stops." Nothing is stored |
+| Phone `12` | Field error: 7 to 15 digits (MIL-086) |
+| Country | A list: a country that is not on it cannot be chosen (MIL-086) |
+| Departure 31 nights after the arrival | The departure shows "A stay booked here can be at most 30 nights." and **Find available rooms** stays off (BR-C-07) |
+| Departure five years and a day from today | The departure shows "The stay must end within five years from today."; the date field offers no later day (BR-N-08) |
+| Open `/book?guests=5` | The guests field shows 1: a party outside 1 to 4 in the address is ignored (MIL-086) |
 | Go back to step 1 and change the date | Entered details must **not** be gone |
 
 ---
@@ -105,6 +113,8 @@ The seed data is made so the buttons can be tried out. This is where the state m
 
 **Reschedule booking:** choose a `Pending`, move the dates. Try moving it on top of another booking's period on the same room → must be rejected.
 
+**The five years and the 30 nights (MIL-086):** create a booking of 31 nights → accepted, because the 30 nights hold only on the public site; a departure five years and a day from today → rejected with "The stay must end within five years from today."; the date fields offer no arrival before today and no departure after five years.
+
 ### `/admin/rum`
 
 - [ ] Filters on floor, size, status
@@ -125,6 +135,7 @@ psql $env:NFHOTEL_CONNECTION -c "SELECT first_name, passport_number FROM guest W
 The field must be unreadable base64 — not what you typed. Open the same guest in the UI: the real value is shown. That is B-09.
 
 - [ ] Search on a first name, a last name and a country — all three must give hits (BR-68)
+- [ ] The country is a list. Edit a guest stored with a country that is not on it: the list shows the stored value as "(not in the list)", and saving asks for a country from the list (MIL-086, ADR-0050 decision 8)
 
 ---
 

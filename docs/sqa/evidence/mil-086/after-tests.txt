@@ -1,0 +1,62 @@
+# MIL-086 tasks 4 to 6: the whole run after the code, on the branch mil-086-validation-rules in the worktree of the
+# build session, 2026-11-19, on this machine (Windows, .NET SDK 10, Docker Desktop for PostgreSQL and nginx).
+# Every test of tasks 2 and 3 that failed in before-tests.txt passes. The infrastructure tests ran against a
+# PostgreSQL container of Testcontainers; their first run here found two older tests that made a guest of the
+# country "Testland", which the list of countries refuses, and the run below is the one after that test data was
+# set to "Denmark". The browser tests (E2E) run in CI. Each project lists its summary; the durations are removed.
+# dotnet build NFHotel.sln -c Release -warnaserror
+    0 Error(s)
+    0 Warning(s)
+# dotnet test --project tests/NFHotel.Domain.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 716
+  failed: 0
+  succeeded: 716
+  skipped: 0
+# dotnet test --project tests/NFHotel.Application.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 781
+  failed: 0
+  succeeded: 781
+  skipped: 0
+# dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build
+# (run again after the test that the benchmark intake still takes a run over 64 kilobytes was added)
+Test run summary: Passed!
+  total: 605
+  failed: 0
+  succeeded: 605
+  skipped: 0
+# dotnet test --project tests/NFHotel.ApiClient.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 122
+  failed: 0
+  succeeded: 122
+  skipped: 0
+# dotnet test --project tests/NFHotel.Web.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 863
+  failed: 0
+  succeeded: 863
+  skipped: 0
+# dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 243
+  failed: 0
+  succeeded: 243
+  skipped: 0
+# dotnet format whitespace NFHotel.sln --verify-no-changes --no-restore
+    exit 0, no change
+# bash ops/tests/lint.sh (actionlint, shellcheck, shfmt, yamllint in their pinned containers)
+PASS  one copy of the operations, in ops/ (ADR-0016)
+==> all linters are clean
+# bash ops/tests/test-nginx.sh (in WSL, Docker Desktop): the checks of MIL-086 and the summary
+== the size and the time limits of a request (MIL-086)
+PASS  the public listener takes a body of 64 kilobytes (200)
+PASS  the public listener refuses a body of 64 kilobytes and one byte (413)
+PASS  the HTTPS server of the tailnet keeps its limit of 1 megabyte (200)
+PASS  the web socket of the pages reaches the web application with the client's scheme and address (https 203.0.113.7)
+PASS  the web socket of the pages reaches the web application on the HTTPS server of the tailnet (https)
+PASS  the shared proxy settings wait 60 seconds (proxy_read_timeout 60s; proxy_send_timeout 60s;)
+PASS  only the location of the web socket waits an hour (/etc/nginx/snippets/blazor.conf)
+PASS  both servers of the web application have the location of the web socket (2)
+RESULT: 51 passed, 0 failed

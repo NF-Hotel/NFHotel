@@ -1,0 +1,57 @@
+# dotnet build NFHotel.sln -c Release -warnaserror
+    0 Error(s)
+    0 Warning(s)
+# dotnet test --project tests/NFHotel.Domain.Tests -c Release --no-build
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.Normalize_NonCharacterFFFE_LeavesTheTextForTheRuleToRefuse
+Test run summary: Failed!
+  total: 717
+  failed: 1
+  succeeded: 716
+  skipped: 0
+# dotnet test --project tests/NFHotel.Application.Tests -c Release --no-build
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreateAsync_DayTurnsAfterTheCheck_BooksAgainstTheCheckedDay
+Test run summary: Failed!
+  total: 782
+  failed: 1
+  succeeded: 781
+  skipped: 0
+# dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_HostileString_IsRefusedByTheFieldOrStoredUnchanged(field: "email", value: "Ann\xfffe")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_HostileString_IsRefusedByTheFieldOrStoredUnchanged(field: "passportNumber", value: "Ann\xfffe")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_HostileString_IsRefusedByTheFieldOrStoredUnchanged(field: "phoneNumber", value: "Ann\xfffe")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_HostileString_IsRefusedByTheFieldOrStoredUnchanged(field: "firstName", value: "Ann\xfffe")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_HostileString_IsRefusedByTheFieldOrStoredUnchanged(field: "lastName", value: "Ann\xfffe")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_HostileString_IsRefusedByTheFieldOrStoredUnchanged(field: "country", value: "Ann\xfffe")
+failed NFHotel.Api.Tests.BookingInputApiTests.Searches_HostileStrings_AreTextAndNoFault
+failed NFHotel.Api.Tests.BookingInputApiTests.Refusal_ByTheHandlerOfExceptions_WritesTheSecurityEvent
+Test run summary: Failed!
+  total: 613
+  failed: 8
+  succeeded: 605
+  skipped: 0
+# dotnet test --project tests/NFHotel.ApiClient.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 122
+  failed: 0
+  succeeded: 122
+  skipped: 0
+# dotnet test --project tests/NFHotel.Web.Tests -c Release --no-build
+failed NFHotel.Web.Tests.GuestFieldErrorsTests.FromResult_CodeOfAField_StandsAtThatField(code: "guest.country_invalid", field: "Country")
+failed NFHotel.Web.Tests.GuestFieldErrorsTests.FromResult_CodeOfAField_StandsAtThatField(code: "guest.passport_number_invalid", field: "PassportNumber")
+failed NFHotel.Web.Tests.GuestFieldErrorsTests.FromResult_CodeOfAField_StandsAtThatField(code: "guest.last_name_invalid", field: "LastName")
+failed NFHotel.Web.Tests.GuestFieldErrorsTests.FromResult_CodeOfAField_StandsAtThatField(code: "guest.first_name_invalid", field: "FirstName")
+failed NFHotel.Web.Tests.GuestFieldErrorsTests.FromResult_CodeOfAField_StandsAtThatField(code: "guest.phone_number_invalid", field: "PhoneNumber")
+Test run summary: Failed!
+  total: 881
+  failed: 5
+  succeeded: 876
+  skipped: 0
+# done
+# dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build
+failed NFHotel.Infrastructure.Tests.Integration.Persistence.GuestAndRoomReadTests.Guest_HostileStringsThatMeetTheRules_AreStoredAndReadUnchanged
+Test run summary: Failed!
+  total: 243
+  failed: 1
+  succeeded: 242
+  skipped: 0
+# all done

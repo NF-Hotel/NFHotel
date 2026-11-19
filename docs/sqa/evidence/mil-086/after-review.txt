@@ -1,0 +1,46 @@
+# dotnet build NFHotel.sln -c Release -warnaserror
+    0 Error(s)
+    0 Warning(s)
+# dotnet test --project tests/NFHotel.Domain.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 717
+  failed: 0
+  succeeded: 717
+  skipped: 0
+# dotnet test --project tests/NFHotel.Application.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 782
+  failed: 0
+  succeeded: 782
+  skipped: 0
+# dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 613
+  failed: 0
+  succeeded: 613
+  skipped: 0
+# dotnet test --project tests/NFHotel.ApiClient.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 122
+  failed: 0
+  succeeded: 122
+  skipped: 0
+# dotnet test --project tests/NFHotel.Web.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 881
+  failed: 0
+  succeeded: 881
+  skipped: 0
+# done
+# dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 243
+  failed: 0
+  succeeded: 243
+  skipped: 0
+# all done
+# dotnet format whitespace NFHotel.sln --verify-no-changes --no-restore
+    exit 0
+# dotnet format NFHotel.sln --verify-no-changes --no-restore (whitespace, style and analyzers)
+    exit 0
+# format done
