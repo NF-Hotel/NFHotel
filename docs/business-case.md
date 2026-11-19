@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Deprecated | Claude (AI) | S01 | Amended: objective 29 says that the market analysis service makes the price suggestions from holidays and the occupancy history of the next two months, and the back office presents them (MIL-071); the website no longer works them out; accepted by S01 in chat on 2026-11-11 | [f674e8a] |
-| 2026-11-12 | Accepted | mikemike | AI as stand-in for S01 | Brought in line with the products as they run on 2026-11-11, at S01's request in chat ("Ret det så der er overensstemmelse med det aktuelle", "Indkluder dem alle"): the summary, problem, opportunity, scope, benefits, risks, assumptions, constraints (.NET 10), stakeholders and recommendation<br>Objectives 6, 7, 18 and 28 and success criteria 7, 9, 21, 27, 31 and 32 as they are now<br>Objectives 30 to 40 and success criteria 33 to 43 for the eleven products that had none<br>Objectives 18, 31, 32 and 34 and success criteria 34, 35 and 37 extended, objective 41 and success criterion 44 added (configuration as code), and two lines out of scope (Kubernetes in production, the Proxmox machines as declarative code), for MIL-075 to MIL-078, planned at S01's request in chat on 2026-11-12 ("Skriv 1–4") | [62301c4] |
+| 2026-11-12 | Deprecated | mikemike | AI as stand-in for S01 | Brought in line with the products as they run on 2026-11-11, at S01's request in chat ("Ret det så der er overensstemmelse med det aktuelle", "Indkluder dem alle"): the summary, problem, opportunity, scope, benefits, risks, assumptions, constraints (.NET 10), stakeholders and recommendation<br>Objectives 6, 7, 18 and 28 and success criteria 7, 9, 21, 27, 31 and 32 as they are now<br>Objectives 30 to 40 and success criteria 33 to 43 for the eleven products that had none<br>Objectives 18, 31, 32 and 34 and success criteria 34, 35 and 37 extended, objective 41 and success criterion 44 added (configuration as code), and two lines out of scope (Kubernetes in production, the Proxmox machines as declarative code), for MIL-075 to MIL-078, planned at S01's request in chat on 2026-11-12 ("Skriv 1–4") | [62301c4] |
+| 2026-11-17 | Accepted | mikemike | S01 | Objective 42 and success criterion 45 (vulnerability disclosure: a `security.txt` on the public site and the policy behind it) and one line in scope, for MIL-084, after S01 asked in chat on 2026-11-17 for a plan of a `security.txt` after RFC 9116; accepted by S01 in chat the same day after RC-401 Go | pending |
 
 ---
 
@@ -117,6 +117,7 @@ the team runs the hotel system in production on its own hardware.
 39. Let the team work directly in the database: a personal role each, in a group that reads and writes the tables but cannot change the schema, over the tailnet only, and every change logged with the role's name (ADR-0034, MIL-048).
 40. Handle incidents and know the capacity before guests notice: a daily scan of the images that run, alerts on failed sign-ins, a written incident process with severities and the 72-hour rule of the General Data Protection Regulation (GDPR), and a weekly load test against a throwaway stack (MIL-036, MIL-064).
 41. Keep the configuration of the platform in git and reviewed: the compose files, the units and the scripts that set up the VM and the LXC in git; the routes of the tunnel and the Access application as code that a weekly check compares with the live setting; and the tailnet policy and the Proxmox definitions brought into git when a trigger of ADR-0027 comes (ADR-0027, MIL-038, MIL-078).
+42. Let a person who finds a vulnerability reach the team and know the terms: a `security.txt` at the address that RFC 9116 names on the public site, served from git, with the way to report, an expiry date and a link to a policy that names the scope, what may be tested and what may not, and that gives no permission to test (MIL-084).
 
 ## Scope
 
@@ -161,6 +162,7 @@ the team runs the hotel system in production on its own hardware.
 - Dependabot for NuGet packages, Docker images, compose pins and actions (MIL-060)
 - Direct access to the database for the team, over the tailnet with personal roles (MIL-048, ADR-0034)
 - The daily scan of the images that run with the remedies for a third-party image, alerts on failed sign-ins, the incident process and a weekly load test (MIL-036, MIL-064, MIL-065, ADR-0040)
+- A `security.txt` on the public site and the disclosure policy of the repository, for a person who finds a vulnerability (MIL-084)
 
 ### Out of Scope
 
@@ -251,6 +253,7 @@ the host desktop (`framework/process/gui-testing.md`).
 | 42 | Team access to the database | Port 5432 answers only on the tailnet address of the VM, to the team's devices; each member has a personal role in a group that reads and writes the tables and cannot create or truncate; 1 administrator role; every change is logged with the role's name and kept 14 days | `test-team-db-users.sh` in the required checks, a scan from the local network, a query of the roles in the VM and a change found in Loki |
 | 43 | Incident response and capacity | The daily scan of the images that run opens an issue on a finding that blocks a release and closes it when fixed; more than 20 failed staff sign-ins or more than 10 failed Secure Shell (SSH) logins in 10 minutes alert; the wiki page Incidents has the severities SEV1 to SEV3, the 72-hour rule of the GDPR and a postmortem template; the weekly load test with 20 virtual users for 2 minutes keeps the 95th percentile under 1,000 ms and the failed requests under 5 percent | The issue list, the rule tests, the wiki page Incidents and the runs of the load test |
 | 44 | Configuration as code | The routes of the tunnel and the Access application with its policy are in git; the weekly plan against Cloudflare shows 0 changes, or an open issue names the difference and is closed when it is fixed; 0 Cloudflare tokens that can write in GitHub; a change of the edge reaches Cloudflare only from a reviewed pull request | The runs of the comparison workflow, the issue list and the secrets of the repository |
+| 45 | Vulnerability disclosure | From outside the tailnet and without a sign-in, `/.well-known/security.txt` on the public name answers 200 as `text/plain; charset=utf-8` with the fields Contact, Expires, Preferred-Languages, Canonical and Policy of RFC 9116; its Expires is at most one year and at least 30 days ahead, or an open issue names it; the file on the site equals the file on `main`; the policy names the scope, the tests that are allowed and those that are not, and gives no permission to test; a report is confirmed within 5 working days | `check-security-txt.sh` in Ops CI and in the weekly comparison, `test-nginx.sh`, a request from outside the tailnet and the security advisories of the repository |
 
 ## Risks
 
@@ -332,5 +335,4 @@ Proceed. The platform runs and meets most of its criteria. Continue with what is
 [SA-001]: ./stakeholder-analysis.md
 [UCD-001]: ./use-case-diagram.md
 [US-001]: ./user-stories.md
-[f674e8a]: https://github.com/NF-Hotel/NFHotel/commit/f674e8a3fe47dfe3c36bbc59f4eeae6180985b0d
 [62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59
