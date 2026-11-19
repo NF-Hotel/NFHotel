@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version, derived from the rule ledger | [a29c54a] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Each detail of a guest follows its row of the validation rules of the booking flow: letters in a name, one plain email, 7 to 15 digits in a phone number, a country from the list, letters and digits in a passport number; a guest stored before keeps its details until it is edited (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Each detail of a guest follows its row of the validation rules of the booking flow: letters in a name, one plain email, 7 to 15 digits in a phone number, a country from the list, letters and digits in a passport number; a guest stored before keeps its details until it is edited (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | [7de27c7] |
 
 ---
 
@@ -68,3 +68,4 @@
 [US-001]: ../../user-stories.md
 [SA-001]: ../../stakeholder-analysis.md
 [a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d
+[7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81

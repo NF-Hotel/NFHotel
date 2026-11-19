@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | The guest names the booking by its booking reference, a random universally unique identifier (UUID) of version 4, in place of the booking number; a number of the old kind gets the one refusal; failed attempts are limited per reference and per address; the booking is shown as its receipt, without the guest (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The email of the sign-in is compared in its normal form; new dates of a guest end at most five years after today and have at most 30 nights, and the guest is offered only those days (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The email of the sign-in is compared in its normal form; new dates of a guest end at most five years after today and have at most 30 nights, and the guest is offered only those days (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | [7de27c7] |
 
 ---
 
@@ -100,3 +100,4 @@
 [MIL-086]: ../../milestones/mil-086-booking-input-checked-by-one-set-of-rules.md
 [ADR-0050]: ../../adr/adr-0050-where-the-rules-of-the-booking-input-live.md
 [e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81
+[7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81

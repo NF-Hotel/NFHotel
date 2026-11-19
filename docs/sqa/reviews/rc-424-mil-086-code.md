@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: code review of tasks 3 to 6 of MIL-086 and of the fixes of its findings; Go-with-conditions: every required check of the pull request green; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: code review of tasks 3 to 6 of MIL-086 and of the fixes of its findings; Go-with-conditions: every required check of the pull request green; mode autonomous, not independent | [7de27c7] |
 
 ---
 
@@ -260,3 +260,4 @@ merge. The reviewer is not independent.
 [RC-418]: ./rc-418-mil-085-code.md
 [RC-391]: ./rc-391-mil-018-code.md
 [RC-422]: ./rc-422-mil-085-gate.md
+[7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81

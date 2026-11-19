@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the documents that MIL-086 adds and amends (tasks 2 and 7); Go; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the documents that MIL-086 adds and amends (tasks 2 and 7); Go; mode autonomous, not independent | [7de27c7] |
 
 ---
 
@@ -218,3 +218,4 @@ reviewer is not independent.
 [RC-420]: ./rc-420-adr-0050.md
 [RC-421]: ./rc-421-adr-0050-where-the-rules-live.md
 [RC-424]: ./rc-424-mil-086-code.md
+[7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81

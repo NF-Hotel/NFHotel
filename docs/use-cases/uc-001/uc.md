@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | The system gives a new booking a booking reference in place of a booking number (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | A stay ends at most five years after today, for hotel staff too, when a booking is made and when it is moved; hotel staff are not held to the 30 nights of the public site; the details of a new guest follow the validation rules of the booking flow (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | A stay ends at most five years after today, for hotel staff too, when a booking is made and when it is moved; hotel staff are not held to the 30 nights of the public site; the details of a new guest follow the validation rules of the booking flow (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | [7de27c7] |
 
 ---
 
@@ -81,3 +81,4 @@
 [US-001]: ../../user-stories.md
 [SA-001]: ../../stakeholder-analysis.md
 [e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81
+[7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81
