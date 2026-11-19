@@ -23,10 +23,18 @@ if (OpenApiDocumentBuild.IsRunning)
 }
 
 // Every value bound from a request meets the input rules before an action runs, and a request that cannot be bound
-// is refused with the code of the API alone, without the names of .NET types (MIL-077).
-builder.Services.AddControllers(options => options.Filters.Add<InputGuardFilter>())
+// is refused with the code of the API alone, without the names of .NET types (MIL-077). Each refusal of input
+// writes one security event (MIL-086).
+builder.Services.AddControllers(options =>
+    {
+        options.Filters.Add<InputGuardFilter>();
+        options.Filters.Add<InputRefusalEventFilter>();
+    })
     .ConfigureApiBehaviorOptions(options => options.InvalidModelStateResponseFactory =
         _ => new BadRequestObjectResult(new ApiResponse([ApiErrorCodes.InvalidRequest])));
+
+// A request body holds at most 64 KB unless its endpoint sets more (MIL-086, ADR-0050 decision 4).
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = RequestBodyLimit.DefaultMaxBytes);
 
 // The OpenAPI document is written when the API is built (g/openapi/nfhotel-api.json, see the project file). The
 // running API does not serve it: there is no MapOpenApi (MIL-077).
@@ -64,12 +72,26 @@ var app = builder.Build();
 app.UseApiSecurityHeaders();
 app.UseForwardedHeaders();
 
-// A key below one or a missing argument is a programming error of the caller: 400. Anything else is a
-// fault of the API: 500, without a stack trace or a message that could leak a setting.
+// A body that grew over its limit while it was read is answered 413 (MIL-086). A key below one or a missing argument
+// is a programming error of the caller: 400. Both are refusals of input and write the security event (ADR-0050
+// decision 6). Anything else is a fault of the API: 500, without a stack trace or a message that could leak a setting.
 app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 {
-    var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
-    var invalid = error is ArgumentException;
+    IExceptionHandlerFeature? feature = context.Features.Get<IExceptionHandlerFeature>();
+    Exception? error = feature?.Error;
+    if (error is BadHttpRequestException { StatusCode: StatusCodes.Status413PayloadTooLarge })
+    {
+        await RequestBodyLimit.RefuseAsync(context, SecurityEvents.RouteOf(feature?.Endpoint)).ConfigureAwait(false);
+        return;
+    }
+
+    bool invalid = error is ArgumentException;
+    if (invalid)
+    {
+        SecurityEvents.WriteInputRefused(
+            context, SecurityEvents.RouteOf(feature?.Endpoint), StatusCodes.Status400BadRequest, ApiErrorCodes.InvalidRequest);
+    }
+
     context.Response.StatusCode = invalid ? StatusCodes.Status400BadRequest : StatusCodes.Status500InternalServerError;
     await context.Response.WriteAsJsonAsync(
         new ApiResponse([invalid ? ApiErrorCodes.InvalidRequest : ApiErrorCodes.UnexpectedError]),
@@ -77,6 +99,7 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
         context.RequestAborted).ConfigureAwait(false);
 }));
 
+app.UseRequestBodyLimit();
 app.UseMiddleware<ApiTokenMiddleware>();
 app.UseAuthentication();
 app.UseGuestAuthentication();

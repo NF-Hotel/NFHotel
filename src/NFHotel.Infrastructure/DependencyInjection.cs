@@ -234,7 +234,7 @@ public static class DependencyInjection
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
-                $"Connection stringen 'ConnectionStrings:{ConnectionStringName}' mangler i konfigurationen.");
+                $"The connection string 'ConnectionStrings:{ConnectionStringName}' is missing from the configuration.");
         }
 
         return connectionString;

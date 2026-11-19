@@ -1,6 +1,7 @@
 using NFHotel.Application.Dto.Guests;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.TestSupport;
@@ -176,6 +177,28 @@ public sealed class GuestServiceTests
         // Assert
         await world.GuestQueries.Received(1).SearchAsync(
             Arg.Is<IReadOnlyCollection<string>>(terms => terms.SequenceEqual(new[] { "anna", "jensen" })),
+            TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Equivalence (MIL-086 decision 4): the search text is brought to Unicode normal form C before it is split, so a
+    /// letter typed with its accent as two characters is asked for as the composed letter that is stored.
+    /// </summary>
+    [Fact]
+    public async Task SearchAsync_DecomposedLetter_AsksWithTheComposedTerm()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        world.GuestQueries.SearchAsync(Arg.Any<IReadOnlyCollection<string>>(), TestContext.Current.CancellationToken)
+            .Returns(Task.FromResult<IReadOnlyList<GuestListItemDto>>([]));
+        GuestService service = world.GuestService(CreateAuthorization(Permissions.ViewOtherGuestData));
+
+        // Act
+        await service.SearchAsync(" René ", TestContext.Current.CancellationToken);
+
+        // Assert
+        await world.GuestQueries.Received(1).SearchAsync(
+            Arg.Is<IReadOnlyCollection<string>>(terms => terms.SequenceEqual(new[] { "René" })),
             TestContext.Current.CancellationToken);
     }
 

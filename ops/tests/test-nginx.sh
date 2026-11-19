@@ -6,7 +6,10 @@
 # Access token header in any spelling of /admin (MIL-041, MIL-072), and only the two mobile routes
 # of the API. The public listener serves security.txt from the folder well-known, with its type and
 # headers, and redirects /security.txt to it, while every other path of /.well-known/ and the HTTPS
-# server of the tailnet still go to the web application (MIL-084, ADR-0048). Last, the hardened
+# server of the tailnet still go to the web application (MIL-084, ADR-0048). The public listener refuses a
+# body over 64 kilobytes with 413 while the HTTPS server of the tailnet keeps 1 megabyte, and in the loaded
+# configuration every location waits 60 seconds and only the web socket of the pages, /_blazor on both
+# servers, an hour (MIL-086 decisions 4 and 7). Last, the hardened
 # service of deploy/nginx/docker-compose.yml (MIL-023 task 2) starts and turns healthy with a key as
 # production has it: 0600 and owned by another user than root, and serves security.txt from its mount.
 #
@@ -142,6 +145,30 @@ check "the mobile sign-in route reaches the API" api-reached \
 check "the mobile rooms route reaches the API" 200 "$(public /mobile-api/api/rooms/3)"
 check "another API route is not public" 404 "$(public /mobile-api/api/bookings)"
 check "the API itself is not on the public site" 404 "$(public /mobile-api/)"
+
+echo "== the size and the time limits of a request (MIL-086)"
+# body <bytes> <address>: the status of a POST of that many bytes; the stand-in answers every request with 200.
+body() {
+  head -c "$1" /dev/zero | docker run --rm -i --network t-ngnet "$CURL" -sk -o /dev/null -w '%{http_code}' \
+    -X POST -H 'Content-Type: application/octet-stream' --data-binary @- "$2"
+}
+check "the public listener takes a body of 64 kilobytes" 200 "$(body 65536 "$PUBLIC/book")"
+check "the public listener refuses a body of 64 kilobytes and one byte" 413 "$(body 65537 "$PUBLIC/book")"
+check "the HTTPS server of the tailnet keeps its limit of 1 megabyte" 200 "$(body 65537 https://t-nginx/book)"
+check "the web socket of the pages reaches the web application with the client's scheme and address" \
+  "https 203.0.113.7" "$(docker run --rm --network t-ngnet "$CURL" -s -H 'CF-Connecting-IP: 203.0.113.7' \
+    "$PUBLIC/_blazor?id=t")"
+check "the web socket of the pages reaches the web application on the HTTPS server of the tailnet" https \
+  "$(docker run --rm --network t-ngnet "$CURL" -sk 'https://t-nginx/_blazor?id=t' | cut -d' ' -f1)"
+# The configuration that nginx loaded (nginx -T), with the name of each file before its lines.
+loaded="$(docker exec t-nginx nginx -T 2>/dev/null)"
+check "the shared proxy settings wait 60 seconds" "proxy_read_timeout 60s; proxy_send_timeout 60s;" \
+  "$(awk '/^# configuration file /{file=$4; next} file == "/etc/nginx/snippets/proxy.conf:" && /_timeout/' \
+    <<<"$loaded" | paste -sd' ')"
+check "only the location of the web socket waits an hour" /etc/nginx/snippets/blazor.conf \
+  "$(awk '/^# configuration file /{file=$4} /_timeout 1h;/{print file}' <<<"$loaded" | tr -d ':' | sort -u | paste -sd' ')"
+check "both servers of the web application have the location of the web socket" 2 \
+  "$(grep -c 'include /etc/nginx/snippets/blazor.conf;' <<<"$loaded")"
 
 echo "== security.txt on the public listener (MIL-084, ADR-0048)"
 readonly SECURITY_TXT="$REPO/deploy/nginx/well-known/security.txt"

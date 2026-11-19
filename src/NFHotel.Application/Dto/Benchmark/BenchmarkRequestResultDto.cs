@@ -63,6 +63,6 @@ public sealed record BenchmarkRequestResultDto(
     [property: JsonPropertyName("gpu_vram_peak_mb")] double? GpuVramPeakMb,
     [property: JsonPropertyName("passed")] bool? Passed,
     [property: JsonPropertyName("response_valid")] bool? ResponseValid,
-    [property: JsonPropertyName("validation_error")] string? ValidationError,
-    [property: JsonPropertyName("output")] string? Output,
-    [property: JsonPropertyName("error")] string? Error);
+    [StringLength(BenchmarkResult.MaxTextLength)][property: JsonPropertyName("validation_error")] string? ValidationError,
+    [StringLength(BenchmarkResult.MaxTextLength)][property: JsonPropertyName("output")] string? Output,
+    [StringLength(BenchmarkResult.MaxTextLength)][property: JsonPropertyName("error")] string? Error);

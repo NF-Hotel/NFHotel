@@ -171,13 +171,13 @@ public sealed class GuestAccessService : IGuestAccessService
     }
 
     /// <summary>
-    /// Compares two emails without letter case and surrounding spaces, in a time that does not depend on where they
-    /// first differ.
+    /// Compares two emails in their normal form (trimmed, Unicode normal form C; MIL-086 decision 4) and without letter
+    /// case, in a time that does not depend on where they first differ.
     /// </summary>
     private static bool IsSameEmail(string stored, string given) =>
         CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(stored.Trim().ToUpperInvariant()),
-            Encoding.UTF8.GetBytes(given.Trim().ToUpperInvariant()));
+            Encoding.UTF8.GetBytes(TextNormalForm.Normalize(stored).ToUpperInvariant()),
+            Encoding.UTF8.GetBytes(TextNormalForm.Normalize(given).ToUpperInvariant()));
 
     #endregion Private methods
 }

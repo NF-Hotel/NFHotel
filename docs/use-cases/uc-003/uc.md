@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version, derived from the rule ledger | [a29c54a] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version, derived from the rule ledger | [a29c54a] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Each detail of a guest follows its row of the validation rules of the booking flow: letters in a name, one plain email, 7 to 15 digits in a phone number, a country from the list, letters and digits in a passport number; a guest stored before keeps its details until it is edited (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | [7de27c7] |
 
 ---
 
@@ -51,7 +52,8 @@
 | Step | Rule |
 | --- | --- |
 | 2 | An empty search lists all guests; search words are combined with AND (BR-68 to BR-70, BR-116) |
-| 4 | First name, last name, email, phone number and country are required; the passport number is optional (BR-52 to BR-57, BR-91 to BR-96) |
+| 4 | First name, last name, email, phone number and country are required; the passport number is optional (BR-52 to BR-57, BR-91 to BR-96). Each follows its row of the table "Validation rules of the booking flow" of the ledger: letters with their marks and the signs of a name, one plain email, 7 to 15 digits in a phone number, a country chosen from the list, the letters A to Z and the digits 0 to 9 in a passport number (MIL-086, ADR-0050) |
+| 4 | A guest stored before MIL-086 keeps its details until hotel staff edit it; the edit must meet the rules, so a country that is not on the list is chosen again (ADR-0050, decision 8) |
 | 4 | The passport number is stored encrypted and is never shown in a list (B-09, D-04) |
 | 6a | A guest with bookings is not deleted (D-05) |
 
@@ -66,3 +68,4 @@
 [US-001]: ../../user-stories.md
 [SA-001]: ../../stakeholder-analysis.md
 [a29c54a]: https://github.com/NF-Hotel/NFHotel/commit/a29c54a0e6cc95b2b627748aa841ee24a399c15d
+[7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81

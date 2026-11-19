@@ -1,8 +1,11 @@
 using NFHotel.Application.Dto.Bookings;
+using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
+
+using BookingEntity = NFHotel.Domain.Entities.Booking;
 
 namespace NFHotel.Web.Features.Booking;
 
@@ -29,6 +32,7 @@ public sealed class MyBookingViewModel
     private static readonly IReadOnlyList<string> NoMessages = Array.Empty<string>();
 
     private readonly IUseCaseRunner<IGuestBookingService> _booking;
+    private readonly IClock _clock;
 
     #endregion Fields
 
@@ -36,16 +40,34 @@ public sealed class MyBookingViewModel
 
     /// <summary>Creates the view model.</summary>
     /// <param name="booking">Runs use cases on <see cref="IGuestBookingService"/> with the guest token of the request.</param>
-    public MyBookingViewModel(IUseCaseRunner<IGuestBookingService> booking)
+    /// <param name="clock">Gives the date of today for the limits of the new dates (MIL-086).</param>
+    public MyBookingViewModel(IUseCaseRunner<IGuestBookingService> booking, IClock clock)
     {
         ArgumentNullException.ThrowIfNull(booking);
+        ArgumentNullException.ThrowIfNull(clock);
 
         _booking = booking;
+        _clock = clock;
     }
 
     #endregion Constructors
 
     #region Properties
+
+    /// <summary>The first arrival that the form offers: today (MIL-086).</summary>
+    public DateOnly EarliestCheckIn => _clock.Today;
+
+    /// <summary>The last arrival that the form offers: the day before the last departure (MIL-086).</summary>
+    public DateOnly LatestCheckIn => StayDates.LatestArrival(_clock.Today);
+
+    /// <summary>The first departure that the form offers: tomorrow (MIL-086).</summary>
+    public DateOnly EarliestCheckOut => _clock.Today.AddDays(1);
+
+    /// <summary>
+    /// The last departure that the form offers: five years ahead (BR-N-08, MIL-086). The 30 nights depend on the arrival
+    /// that the guest picks on a page without a live connection, so <see cref="RescheduleAsync"/> checks them.
+    /// </summary>
+    public DateOnly LatestCheckOut => BookingEntity.LatestDeparture(_clock.Today);
 
     /// <summary>The receipt of the guest's booking, or <c>null</c> until it is read or when it could not be read.</summary>
     public BookingReceiptDto? Receipt { get; private set; }
@@ -103,10 +125,21 @@ public sealed class MyBookingViewModel
     /// <param name="checkOut">The new departure date.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True when the new dates were saved; false with <see cref="Errors"/> set.</returns>
+    /// <remarks>
+    /// The rules of the stay of the public site are checked first (BR-C-07, BR-N-08, MIL-086), with the texts of their
+    /// codes, so the API is not asked for a move that it would refuse.
+    /// </remarks>
     public async Task<bool> RescheduleAsync(DateOnly checkIn, DateOnly checkOut, CancellationToken cancellationToken = default)
     {
         if (Receipt is null)
         {
+            return false;
+        }
+
+        if (StayDates.PublicError(checkIn, checkOut, _clock.Today) is { } code)
+        {
+            Notice = null;
+            Errors = [ErrorMessages.Describe(new Error(code))];
             return false;
         }
 

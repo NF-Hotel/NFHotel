@@ -1,0 +1,21 @@
+# MIL-086 task 3, first run: the tests of tasks 2 and 3 on a skeleton that followed the first version of ADR-0050,
+# with the rules in NFHotel.Domain.Rules (GuestFieldRules, StayRules, Countries, IsoCountry). Branch
+# mil-086-validation-rules on the code of main 0b1350b6, 2026-11-19T12:09Z, on this machine.
+# The architecture tests of the Application test project refused the folder and the names (ADR-0001, MIL-008), and
+# the rules of the tests refused ten test names of two parts and a long test class with one region. The fifth
+# failure, the screen texts of the new error codes, is a part of the code still due and fails in before-tests.txt
+# too. The messages are as the tests wrote them; the paths of this machine are removed. The second version of
+# ADR-0050 (RC-421) moved the rules, and the tests were renamed; before-tests.txt is the run after that.
+# The other failures of this run were the rules that the code did not have yet, as in before-tests.txt:
+# Domain 143 of 716, Application 25 of 777 (these five and 20 others), Api 63 of 604, ApiClient 0 of 122,
+# Web 25 of 863.
+failed NFHotel.Application.Tests.Architecture.ErrorCodeTextTests.ErrorCodes_EveryConstant_HasATextInErrorMessages
+  Error codes without a screen text: ErrorCodes.Booking.EndDateTooFarAhead, ErrorCodes.Booking.StayTooLong, ErrorCodes.Booking.GuestsOutOfRange, ErrorCodes.Api.RequestTooLarge, ErrorCodes.Guest.FirstNameInvalid, ErrorCodes.Guest.LastNameInvalid, ErrorCodes.Guest.PhoneNumberInvalid, ErrorCodes.Guest.CountryInvalid, ErrorCodes.Guest.PassportNumberInvalid
+failed NFHotel.Application.Tests.Architecture.StructureTests.Domain_EveryType_IsInOneOfTheSkillFolders
+  Typer uden for skillets mapper: NFHotel.Domain.Rules.IsoCountry, NFHotel.Domain.Rules.Countries, NFHotel.Domain.Rules.GuestFieldRules, NFHotel.Domain.Rules.StayRules
+failed NFHotel.Application.Tests.Architecture.StructureTests.Domain_WhenInspected_HasNoRulesNamespaceOrRulesClass
+  The rules belong to entities, value objects and errors: NFHotel.Domain.Rules.IsoCountry, NFHotel.Domain.Rules.Countries, NFHotel.Domain.Rules.GuestFieldRules, NFHotel.Domain.Rules.StayRules
+failed NFHotel.Application.Tests.Architecture.TestRulesTests.LongTestClasses_InEveryTestProject_HaveNamedRegions
+  Long test classes without matching named regions: ValidationRulesTableTests.cs (1 regions, 1 ends)
+failed NFHotel.Application.Tests.Architecture.TestRulesTests.TestMethods_InEveryTestProject_HaveThreePartNames
+  Test names with fewer than three parts: BookingInputApiTests.cs: RefusedField_WritesOneSecurityEventWithoutTheValue, BookingInputApiTests.cs: RefusalsBeforeTheAction_WriteTheSecurityEventWithoutTheRequest, ValidationRulesTableTests.cs: FlowTypes_RefuseUnknownFieldsAndBoundTheirLists, BookingFlowViewModelTests.cs: DateLimits_FollowTheRulesOfTheStay, BookingFormViewModelTests.cs: DateLimits_FollowTheRulesOfTheStayForStaff, BookingListPageTests.cs: Form_FieldsHaveTheLimitsOfTheRules, BookingPageTests.cs: Dates_OfferTheDaysThatTheRulesAllow, BookingPageTests.cs: Details_FieldsHaveTheLengthsAndTheListOfTheRules, MyBookingViewModelTests.cs: DateLimits_FollowTheRulesOfTheStay, RoomAndGuestPageTests.cs: Form_FieldsHaveTheLengthsAndTheListOfTheRules

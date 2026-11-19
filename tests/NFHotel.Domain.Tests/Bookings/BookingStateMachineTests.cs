@@ -550,6 +550,36 @@ public class BookingStateMachineTests
         Assert.Equal(BookingFactory.RoomId, booking.RoomId);
     }
 
+    /// <summary>
+    /// BR-N-08, MIL-086: a move may end exactly five years after today and not a day later, and a refused move leaves
+    /// the booking as it was.
+    /// </summary>
+    [Theory]
+    [InlineData("2031-01-01", true)]
+    [InlineData("2031-01-02", false)]
+    public void Reschedule_NewDepartureAtOrBeyondFiveYears_IsAcceptedOrRefused(string departure, bool accepted)
+    {
+        // Arrange
+        Booking booking = BookingFactory.Pending();
+        DateRange newPeriod = new(TestDate.Of("2030-12-20"), TestDate.Of(departure));
+
+        // Act
+        Exception? exception = Record.Exception(() => booking.Reschedule(newPeriod, 42, BookingFactory.Today));
+
+        // Assert
+        if (accepted)
+        {
+            Assert.Null(exception);
+            Assert.Equal(newPeriod, booking.Period);
+        }
+        else
+        {
+            Assert.Equal(BookingErrors.EndDateTooFarAhead, Assert.IsType<DomainException>(exception).Code);
+            Assert.Equal(BookingFactory.StandardPeriod, booking.Period);
+            Assert.Equal(BookingFactory.RoomId, booking.RoomId);
+        }
+    }
+
     /// <summary>BR-45, BR-105: rescheduling still requires a valid room.</summary>
     [Theory]
     [InlineData(0)]

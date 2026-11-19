@@ -53,11 +53,13 @@
 
                             <div class="field-row">
                                 <FormField Label="Check-in" For="change-check-in" IsRequired="true">
-                                    <InputDate id="change-check-in" class="field-input" @bind-Value="Change!.CheckIn" />
+                                    <InputDate id="change-check-in" class="field-input" min="@DateInput.Text(ViewModel.EarliestCheckIn)"
+                                               max="@DateInput.Text(ViewModel.LatestCheckIn)" @bind-Value="Change!.CheckIn" />
                                 </FormField>
 
                                 <FormField Label="Check-out" For="change-check-out" IsRequired="true">
-                                    <InputDate id="change-check-out" class="field-input" @bind-Value="Change!.CheckOut" />
+                                    <InputDate id="change-check-out" class="field-input" min="@DateInput.Text(ViewModel.EarliestCheckOut)"
+                                               max="@DateInput.Text(ViewModel.LatestCheckOut)" @bind-Value="Change!.CheckOut" />
                                 </FormField>
                             </div>
 

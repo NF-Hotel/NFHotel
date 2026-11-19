@@ -26,7 +26,8 @@
 #                        it, so the email is never on a command line
 # Exit:  0 every check passed; 1 a check failed, or the site, the reference or the email
 #        cannot be used; 2 usage error
-# Needs: bash 4+, curl, grep, sed, mktemp
+# Needs: bash 4+, curl, grep, sed, mktemp, on Linux or in WSL: the curl of Git Bash on Windows cannot open
+#        the files that the script hands it with @, so it would send no email (RC-422 F3)
 
 set -euo pipefail
 

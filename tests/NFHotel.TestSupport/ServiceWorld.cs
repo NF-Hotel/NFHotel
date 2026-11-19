@@ -25,12 +25,32 @@ namespace NFHotel.TestSupport;
 /// <summary>A clock that stands still: "today" is set by the test, never read from the system.</summary>
 public sealed class FakeClock : IClock
 {
-    public DateOnly Today { get; set; } = new(2026, 1, 1);
+    private DateOnly _today = new(2026, 1, 1);
+
+    public DateOnly Today
+    {
+        get
+        {
+            DateOnly today = _today;
+            if (NextDay is { } next)
+            {
+                _today = next;
+                NextDay = null;
+            }
+
+            return today;
+        }
+
+        set => _today = value;
+    }
+
+    /// <summary>The day that <see cref="Today"/> turns to once it has been read: a test lets midnight pass between two reads.</summary>
+    public DateOnly? NextDay { get; set; }
 
     /// <summary>The time of day on <see cref="Today"/>; a test moves it to let time pass.</summary>
     public TimeSpan TimeOfDay { get; set; } = TimeSpan.FromHours(12);
 
-    public DateTimeOffset UtcNow => new(Today.ToDateTime(TimeOnly.MinValue) + TimeOfDay, TimeSpan.Zero);
+    public DateTimeOffset UtcNow => new(_today.ToDateTime(TimeOnly.MinValue) + TimeOfDay, TimeSpan.Zero);
 }
 
 /// <summary>Keeps the warnings the Application layer wrote.</summary>

@@ -2,6 +2,7 @@ using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Domain.ValueObjects;
+using NFHotel.TestSupport;
 using NFHotel.Web.Features.Booking;
 
 using NSubstitute;
@@ -16,6 +17,7 @@ namespace NFHotel.Web.Tests;
 public sealed class MyBookingViewModelTests
 {
     private readonly IGuestBookingService _bookings = Substitute.For<IGuestBookingService>();
+    private readonly FakeClock _clock = new() { Today = AdminSamples.Today };
 
     #region Load
 
@@ -110,7 +112,8 @@ public sealed class MyBookingViewModelTests
     public void Constructor_MissingRunner_Throws()
     {
         // Act and assert: the null-forgiving operator passes the null that the guard must refuse.
-        Assert.Throws<ArgumentNullException>(() => new MyBookingViewModel(null!));
+        Assert.Throws<ArgumentNullException>(() => new MyBookingViewModel(null!, _clock));
+        Assert.Throws<ArgumentNullException>(() => new MyBookingViewModel(new PassThroughRunner<IGuestBookingService>(_bookings), null!));
     }
 
     #endregion
@@ -212,11 +215,60 @@ public sealed class MyBookingViewModelTests
         Assert.Equal([AdminSamples.Text(ErrorCodes.Booking.RoomNotAvailable)], viewModel.Errors);
     }
 
+    /// <summary>
+    /// Boundary (MIL-086, BR-C-07 and BR-N-08): a move to 31 nights, or to a departure a day after the five years, is
+    /// refused on the page with the text of its rule, and the API is not asked; 30 nights up to the last day are asked.
+    /// Today is 2026-03-10, so the five years end on 2031-03-10.
+    /// </summary>
+    /// <param name="checkIn">The new arrival.</param>
+    /// <param name="checkOut">The new departure.</param>
+    /// <param name="code">The code of the rule that the move breaks, or <c>null</c> when it breaks none.</param>
+    [Theory]
+    [InlineData("2026-03-20", "2026-04-19", null)]
+    [InlineData("2026-03-20", "2026-04-20", ErrorCodes.Booking.StayTooLong)]
+    [InlineData("2031-03-08", "2031-03-10", null)]
+    [InlineData("2031-03-09", "2031-03-11", ErrorCodes.Booking.EndDateTooFarAhead)]
+    [InlineData("2026-03-09", "2026-03-11", ErrorCodes.Booking.StartDateInPast)]
+    public async Task RescheduleAsync_NewDates_AreCheckedByTheRulesOfTheStayFirst(string checkIn, string checkOut, string? code)
+    {
+        // Arrange
+        MyBookingViewModel viewModel = await LoadedAsync();
+        _bookings.RescheduleAsync(Arg.Any<GuestRescheduleRequest>(), Arg.Any<CancellationToken>())
+            .Returns(AdminSamples.Ok(AdminSamples.Receipt(7)));
+
+        // Act
+        bool moved = await viewModel.RescheduleAsync(DateOnly.Parse(checkIn, System.Globalization.CultureInfo.InvariantCulture), DateOnly.Parse(checkOut, System.Globalization.CultureInfo.InvariantCulture), TestContext.Current.CancellationToken);
+
+        // Assert
+        string[] expected = code is null ? Array.Empty<string>() : new[] { AdminSamples.Text(code) };
+        Assert.Equal(code is null, moved);
+        Assert.Equal(expected, viewModel.Errors);
+        await _bookings.Received(code is null ? 1 : 0).RescheduleAsync(Arg.Any<GuestRescheduleRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>
+    /// Boundary: the date fields of the change offer the days that the rules allow: the arrival from today to the day
+    /// before the last departure, and the departure up to five years ahead. The 30 nights depend on the arrival that the
+    /// guest picks on a page without a live connection, so they are checked when the form is sent.
+    /// </summary>
+    [Fact]
+    public void DateLimits_WithTheClock_FollowTheRulesOfTheStay()
+    {
+        // Act
+        MyBookingViewModel viewModel = Create();
+
+        // Assert
+        Assert.Equal(AdminSamples.Today, viewModel.EarliestCheckIn);
+        Assert.Equal(new DateOnly(2031, 3, 9), viewModel.LatestCheckIn);
+        Assert.Equal(AdminSamples.Today.AddDays(1), viewModel.EarliestCheckOut);
+        Assert.Equal(new DateOnly(2031, 3, 10), viewModel.LatestCheckOut);
+    }
+
     #endregion
 
     #region Helpers
 
-    private MyBookingViewModel Create() => new(new PassThroughRunner<IGuestBookingService>(_bookings));
+    private MyBookingViewModel Create() => new(new PassThroughRunner<IGuestBookingService>(_bookings), _clock);
 
     private async Task<MyBookingViewModel> LoadedAsync()
     {

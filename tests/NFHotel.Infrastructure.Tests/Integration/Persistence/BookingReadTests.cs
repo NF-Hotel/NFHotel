@@ -216,18 +216,46 @@ public sealed class BookingReadTests : IAsyncLifetime
         Assert.Equal(wanted.Reference, Assert.Single(rows).Reference);
     }
 
+    /// <summary>
+    /// Edge (MIL-086 decision 5): the two characters of a SQL pattern are searched as themselves, so a search for one of
+    /// them finds the booking of the guest whose email holds it and no other.
+    /// </summary>
+    /// <param name="searchText">The character that is searched for.</param>
+    /// <param name="roomNumber">The room of the only booking whose guest has it in the email.</param>
+    [Theory]
+    [InlineData("%", "101")]
+    [InlineData("_", "102")]
+    public async Task GetOverviewAsync_WildcardInTheSearch_FindsThatBookingOnly(string searchText, string roomNumber)
+    {
+        // Arrange
+        await SeedAsync("101", Today, "anna%sale@example.com");
+        await SeedAsync("102", Today, "bo_jensen@example.com");
+        await SeedAsync("103", Today, "carl@example.com");
+        await using HotelDbContext context = _fixture.CreateContext();
+
+        // Act
+        IReadOnlyList<BookingReadModel> rows = await new BookingRepository(context).GetOverviewAsync(
+            Today, Today.AddDays(30), [BookingStatus.Pending], searchText, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(roomNumber, Assert.Single(rows).Room.RoomNumber);
+    }
+
     #endregion
 
     #region Helpers
 
     private async Task<int> SeedBookingAsync() => (await SeedAsync("101", Today)).Id;
 
-    /// <summary>Stores a room with the number given, a guest, and a booking of three nights from the date given in that room.</summary>
-    private async Task<Booking> SeedAsync(string roomNumber, DateOnly start)
+    /// <summary>
+    /// Stores a room with the number given, a guest with the email given, and a booking of three nights from the date
+    /// given in that room.
+    /// </summary>
+    private async Task<Booking> SeedAsync(string roomNumber, DateOnly start, string email = "anna@example.com")
     {
         await using HotelDbContext context = _fixture.CreateContext();
         Room room = Room.Create(roomNumber, 1, RoomSize.Double, 2);
-        Guest guest = Guest.Create("Anna", "Jensen", "anna@example.com", "+4512345678", "Denmark", null);
+        Guest guest = Guest.Create("Anna", "Jensen", email, "+4512345678", "Denmark", null);
         new RoomRepository(context).Add(room);
         new GuestRepository(context).Add(guest);
         await new UnitOfWork(context).SaveChangesAsync(TestContext.Current.CancellationToken);

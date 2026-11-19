@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 using NFHotel.Application.Dto.Guests;
 
@@ -17,6 +18,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// <param name="SortBy">The field to sort on (BR-32).</param>
 /// <param name="Direction">The sort direction.</param>
 /// <param name="IncludeCancelled">Whether cancelled bookings are included (the soft delete of BR-13).</param>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record BookingOverviewQuery(
     DateOnly PeriodStart,
     DateOnly PeriodEnd,

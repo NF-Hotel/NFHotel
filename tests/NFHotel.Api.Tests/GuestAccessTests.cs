@@ -211,7 +211,10 @@ public sealed class GuestAccessTests : IClassFixture<ApiFactory>
         Assert.Contains(ErrorCodes.Api.Forbidden, text, StringComparison.Ordinal);
     }
 
-    /// <summary>Security: a guest moves the own booking to other dates in its room; the request has no room to name (UC-010).</summary>
+    /// <summary>
+    /// Security: a guest moves the own booking to other dates in its room; the request has no room to name (UC-010),
+    /// and since MIL-086 a request that names one anyway is refused as a field the request does not have.
+    /// </summary>
     [Fact]
     public async Task Reschedule_GuestRoute_KeepsTheRoomOfTheBooking()
     {
@@ -222,13 +225,19 @@ public sealed class GuestAccessTests : IClassFixture<ApiFactory>
         DateOnly checkIn = own.StartDate.AddDays(30);
 
         // Act
-        (HttpStatusCode status, string text) = await SendAsync(
+        (HttpStatusCode namedRoom, string namedText) = await SendAsync(
             HttpMethod.Post,
             GuestReschedulePath,
             token,
             new { checkInDate = checkIn, checkOutDate = checkIn.AddDays(3), roomId = 1 });
+        (HttpStatusCode status, string text) = await SendAsync(
+            HttpMethod.Post,
+            GuestReschedulePath,
+            token,
+            new { checkInDate = checkIn, checkOutDate = checkIn.AddDays(3) });
 
         // Assert
+        Assert.True(namedRoom == HttpStatusCode.BadRequest, $"{(int)namedRoom} {namedText}");
         Assert.True(status == HttpStatusCode.OK, $"{(int)status} {text}");
         Assert.Equal(roomBefore, own.RoomId);
         Assert.Equal(checkIn, own.StartDate);
@@ -310,7 +319,9 @@ public sealed class GuestAccessTests : IClassFixture<ApiFactory>
 
     /// <summary>
     /// Robustness (MIL-085 criterion 6): references that are hostile, very long or not text of the usual kind get the one
-    /// refusal and never an answer of the 500 kind.
+    /// refusal and never an answer of the 500 kind. Very long is 1,000 characters, the longest text without a length of
+    /// its own that the input rules let through (MIL-086, ADR-0050 decision 4); a longer one is refused by the input
+    /// rules before the sign-in runs, as <see cref="BookingInputApiTests"/> shows.
     /// </summary>
     /// <param name="reference">The reference that is tried.</param>
     [Theory]
@@ -322,7 +333,7 @@ public sealed class GuestAccessTests : IClassFixture<ApiFactory>
     {
         // Act
         (HttpStatusCode status, string text) = await SignInRawAsync(reference, "anna@example.com");
-        (HttpStatusCode longStatus, _) = await SignInRawAsync(new string('9', 10_000), "anna@example.com");
+        (HttpStatusCode longStatus, _) = await SignInRawAsync(new string('9', 1_000), "anna@example.com");
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, status);

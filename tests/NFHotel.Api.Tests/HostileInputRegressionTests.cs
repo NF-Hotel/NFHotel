@@ -245,12 +245,15 @@ public sealed class HostileInputRegressionTests : IClassFixture<ApiFactory>
         await AssertRefusedAsync(response);
     }
 
-    /// <summary>Boundary: a public booking for one guest is made and a booking for no guest is refused; it counted as one and was made.</summary>
+    /// <summary>
+    /// Boundary: a public booking for one guest is made and a booking for no guest is refused; it counted as one and
+    /// was made. Since MIL-086 the refusal is the rule of the party with its own code (422), not the binding (400).
+    /// </summary>
     /// <param name="guests">The number of guests.</param>
     /// <param name="expected">The expected status.</param>
     [Theory]
     [InlineData(1, HttpStatusCode.OK)]
-    [InlineData(0, HttpStatusCode.BadRequest)]
+    [InlineData(0, HttpStatusCode.UnprocessableEntity)]
     public async Task CreatePublicBooking_Guests_StartsAtOne(int guests, HttpStatusCode expected)
     {
         // Arrange

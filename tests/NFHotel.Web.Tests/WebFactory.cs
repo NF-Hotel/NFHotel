@@ -101,6 +101,24 @@ public partial class WebFactory : WebApplicationFactory<Program>
         throw new InvalidOperationException($"No input with the id '{id}' on the page.");
     }
 
+    /// <summary>Reads an attribute of the input with an id, such as its <c>maxlength</c> or its <c>max</c>.</summary>
+    /// <param name="html">The page.</param>
+    /// <param name="id">The id of the input.</param>
+    /// <param name="name">The name of the attribute.</param>
+    /// <returns>The value of the attribute, or an empty text when the input does not have it.</returns>
+    public static string InputAttribute(string html, string id, string name)
+    {
+        foreach (Match input in InputTag().Matches(html))
+        {
+            if (input.Value.Contains($"id=\"{id}\"", StringComparison.Ordinal))
+            {
+                return Attribute(input.Value, name);
+            }
+        }
+
+        throw new InvalidOperationException($"No input with the id '{id}' on the page.");
+    }
+
     /// <summary>Extra settings for the host; a derived factory adds its own.</summary>
     /// <returns>Pairs of setting name and value.</returns>
     protected virtual IEnumerable<KeyValuePair<string, string>> ExtraSettings() => [];

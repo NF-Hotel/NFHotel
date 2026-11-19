@@ -77,6 +77,26 @@ public sealed class GuestAccessServiceTests
     }
 
     /// <summary>
+    /// Equivalence (MIL-086 decision 4): the email is brought to Unicode normal form C before it is compared, so an email
+    /// typed with a letter and its accent as two characters opens the booking whose email holds the composed letter.
+    /// </summary>
+    [Fact]
+    public async Task SignInAsync_EmailWithADecomposedLetter_GivesASession()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        Booking booking = world.AddBooking(world.AddRoom().Id, world.AddGuest("René", "Jensen", "rené@example.com", null).Id);
+
+        // Act
+        Result<GuestSessionDto> result = await world.GuestAccessService()
+            .SignInAsync(new GuestSignInRequest(BookingReference.Format(booking.Reference), "rené@example.com"), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal([booking.Id], world.GuestTokens.Issued);
+    }
+
+    /// <summary>
     /// Security: a wrong email, an unknown reference, an unreadable one, a booking number of the old kind, the key of the
     /// booking and a cancelled booking give the same one refusal, and no token is issued (ADR-0049 decisions 2 and 5,
     /// MIL-085 criterion 4).

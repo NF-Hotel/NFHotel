@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace NFHotel.Application.Dto.Guests;
 
 /// <summary>
@@ -12,4 +14,5 @@ namespace NFHotel.Application.Dto.Guests;
 /// The email of the booking, in any letter case. Nullable on purpose: a missing email reaches the use case, which
 /// refuses it with its own code on every path, instead of the model validation of the API answering it alone.
 /// </param>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record GuestSignInRequest(string? Reference, string? Email);

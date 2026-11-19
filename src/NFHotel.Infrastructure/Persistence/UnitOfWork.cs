@@ -68,12 +68,12 @@ public sealed class UnitOfWork : IUnitOfWork
             // The service has already asked the domain; this is the race between two simultaneous
             // creations that both saw a free room (B-03).
             PostgresErrorCodes.ExclusionViolation => new BookingOverlapConflictException(
-                $"Exclusion constrainten '{postgres.ConstraintName}' afviste bookingen (SQLSTATE {postgres.SqlState}).",
+                $"The exclusion constraint '{postgres.ConstraintName}' refused the booking (SQLSTATE {postgres.SqlState}).",
                 original),
 
             // 23505: for example ux_room_room_number (BR-N-01).
             PostgresErrorCodes.UniqueViolation => new UniqueConstraintViolationException(
-                $"Unik-constrainten '{postgres.ConstraintName}' blev brudt (SQLSTATE {postgres.SqlState}).",
+                $"The unique constraint '{postgres.ConstraintName}' was violated (SQLSTATE {postgres.SqlState}).",
                 postgres.ConstraintName ?? string.Empty,
                 original),
 

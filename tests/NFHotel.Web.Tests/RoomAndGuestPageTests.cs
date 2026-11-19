@@ -17,6 +17,8 @@ using NSubstitute;
 
 using static NFHotel.Web.Tests.AdminSamples;
 
+using GuestEntity = NFHotel.Domain.Entities.Guest;
+
 namespace NFHotel.Web.Tests;
 
 /// <summary>The room page of the back office, rendered and clicked (MIL-054 task 4).</summary>
@@ -231,6 +233,44 @@ public sealed class GuestListPageTests : IAsyncDisposable
         Assert.Contains("2 guests", page.Markup, StringComparison.Ordinal);
         Assert.Contains("On file", page.Markup, StringComparison.Ordinal);
         Assert.Contains("Ole Hansen", page.Markup, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Negative (MIL-086 decisions 5 and 8): guests stored before the rules, whose fields hold the hostile strings, are
+    /// listed with each value as text.
+    /// </summary>
+    [Fact]
+    public void Render_StoredHostileValues_AreShownAsText()
+    {
+        List<string> values = HostileStrings.All.Select(item => item.Value).ToList();
+        SearchFinds(values.Select((value, index) => new GuestListItemDto(index + 1, value, value, value, value, value, value, false)).ToArray());
+
+        IRenderedComponent<GuestList> page = _host.Render<GuestList>();
+
+        HostileMarkup.AssertShownAsText(page, values);
+    }
+
+    /// <summary>
+    /// Boundary (MIL-086 decision 2): the fields of the guest form take no more characters than their rules, and the
+    /// country is chosen from the list of the rules after an empty choice that asks for one.
+    /// </summary>
+    [Fact]
+    public void Form_NewGuest_FieldsHaveTheLengthsAndTheListOfTheRules()
+    {
+        SearchFinds();
+        IRenderedComponent<GuestList> page = _host.Render<GuestList>();
+
+        page.Button("New guest").Click();
+        List<string?> options = page.FindAll("#guest-country option").Select(option => option.GetAttribute("value")).ToList();
+
+        Assert.Equal($"{GuestEntity.MaxNameLength}", page.Find("#guest-first-name").GetAttribute("maxlength"));
+        Assert.Equal($"{GuestEntity.MaxNameLength}", page.Find("#guest-last-name").GetAttribute("maxlength"));
+        Assert.Equal($"{GuestEntity.MaxEmailLength}", page.Find("#guest-email").GetAttribute("maxlength"));
+        Assert.Equal($"{GuestEntity.MaxPhoneNumberLength}", page.Find("#guest-phone").GetAttribute("maxlength"));
+        Assert.Equal($"{GuestEntity.MaxPassportNumberLength}", page.Find("#guest-passport").GetAttribute("maxlength"));
+        Assert.Equal("SELECT", page.Find("#guest-country").TagName);
+        Assert.Equal(string.Empty, options[0]);
+        Assert.Equal(Countries.All.Select(country => country.Name), options.Skip(1));
     }
 
     /// <summary>Positive: a new guest is typed in, validated as it is typed, and saved.</summary>

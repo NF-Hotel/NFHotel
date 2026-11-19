@@ -9,6 +9,15 @@ public static class BookingErrors
     /// <summary>Error code: the period starts before today (BR-44, BR-104, BR-108).</summary>
     public const string StartDateInPast = "booking.start_date_in_past";
 
+    /// <summary>Error code: the stay ends more than five years after today (BR-N-08, MIL-086, ADR-0050).</summary>
+    public const string EndDateTooFarAhead = "booking.end_date_too_far_ahead";
+
+    /// <summary>Error code: a stay booked or moved on the public site has more than 30 nights (BR-C-07, MIL-086).</summary>
+    public const string StayTooLong = "booking.stay_too_long";
+
+    /// <summary>Error code: the party of a public booking is not 1 to 4 guests (BR-C-07, MIL-086).</summary>
+    public const string GuestsOutOfRange = "booking.guests_out_of_range";
+
     /// <summary>Error code: the booking has no room reference (BR-45, BR-105).</summary>
     public const string RoomRequired = "booking.room_required";
 

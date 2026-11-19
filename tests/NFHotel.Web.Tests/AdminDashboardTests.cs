@@ -59,6 +59,22 @@ public sealed class AdminDashboardTests : IAsyncDisposable
         Assert.Contains("102", page.Markup, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Negative (MIL-086 decisions 5 and 8): arrivals of guests stored before the rules, whose name and country hold the
+    /// hostile strings, are listed with each value as text.
+    /// </summary>
+    [Fact]
+    public void Render_StoredHostileValues_AreShownAsText()
+    {
+        List<string> values = HostileStrings.All.Select(item => item.Value).ToList();
+        _bookings.GetOverviewAsync(Arg.Any<BookingOverviewQuery>(), Arg.Any<CancellationToken>())
+            .Returns(List(values.Select((value, index) => BookingItem(index + 1) with { GuestFullName = value, GuestCountry = value }).ToArray()));
+
+        IRenderedComponent<AdminDashboard> page = Render();
+
+        HostileMarkup.AssertShownAsText(page, values);
+    }
+
     /// <summary>Edge: a quiet day shows the three empty states, and Refresh loads again.</summary>
     [Fact]
     public void Render_QuietDay_ShowsEmptyStatesAndRefreshes()

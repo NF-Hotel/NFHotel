@@ -2,6 +2,9 @@ using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases.Bookings;
+using NFHotel.Domain.Entities;
+using NFHotel.Domain.Errors;
+using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Application.UseCases.Guests;
 
@@ -74,6 +77,13 @@ public sealed class GuestBookingService : IGuestBookingService
             return Refused();
         }
 
+        // BR-C-07 (MIL-086): a guest moves a stay within the limit of nights of the public site; the dates against
+        // today are checked by the move itself.
+        if (PublicNightsError(request) is { } nightsError)
+        {
+            return Result<BookingReceiptDto>.Failure(nightsError);
+        }
+
         // The guest keeps the room (MIL-018), so the move names the room that the booking has.
         Result<BookingDetailsDto> current = await _bookings.GetByIdAsync(bookingId, cancellationToken).ConfigureAwait(false);
         if (current.IsFailure)
@@ -91,6 +101,19 @@ public sealed class GuestBookingService : IGuestBookingService
     #region Private methods
 
     private static Result<BookingReceiptDto> Refused() => Result<BookingReceiptDto>.Failure(ErrorCodes.Api.GuestUnauthorized);
+
+    // The nights of the public site; a period that cannot be built is left to the move, which answers its own code.
+    private static string? PublicNightsError(GuestRescheduleRequest request)
+    {
+        try
+        {
+            return Booking.CheckPublicNights(new DateRange(request.CheckInDate, request.CheckOutDate));
+        }
+        catch (DomainException)
+        {
+            return null;
+        }
+    }
 
     // A token whose booking is gone gets the one refusal of a guest, as a token that is no longer valid does; any other
     // failure keeps the code of the booking.

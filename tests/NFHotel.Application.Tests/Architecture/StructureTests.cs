@@ -15,8 +15,10 @@ public sealed partial class StructureTests
     private static readonly Assembly DomainAssembly = typeof(Entity<>).Assembly;
     private static readonly Assembly ApplicationAssembly = typeof(UseCases.Result).Assembly;
 
+    // The folders of the skill (ADR-0001); Attributes holds the domain's own validation attributes (ADR-0050).
     private static readonly string[] DomainFolders =
     [
+        "NFHotel.Domain.Attributes",
         "NFHotel.Domain.Entities",
         "NFHotel.Domain.Errors",
         "NFHotel.Domain.Repositories",

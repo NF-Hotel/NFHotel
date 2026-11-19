@@ -1,0 +1,45 @@
+# mutation: 1. the intake of a benchmark run without its RequestSizeLimit
+    0 Error(s)
+    0 Warning(s)
+failed NFHotel.Api.Tests.BenchmarkEndpointTests.PostResult_LongOutputInABodyOverSixtyFourKilobytes_Returns201AndStoresItWhole
+  Expected: Created
+  Actual:   RequestEntityTooLarge
+failed NFHotel.Api.Tests.BookingInputApiTests.BenchmarkIntake_ChunkedRunOfMoreThan64Kilobytes_IsStoredByTheServer
+  Expected: Created
+  Actual:   RequestEntityTooLarge
+Test run summary: Failed!
+  total: 2
+  failed: 2
+  succeeded: 0
+  skipped: 0
+# mutation: 2. the middleware does not set the limit of the server; the limit of Kestrel for every request stays
+    0 Error(s)
+    0 Warning(s)
+Test run summary: Passed!
+  total: 1
+  failed: 0
+  succeeded: 1
+  skipped: 0
+# mutation: 3. no limit of Kestrel for every request; the middleware still sets the limit of the endpoint
+    0 Error(s)
+    0 Warning(s)
+Test run summary: Passed!
+  total: 1
+  failed: 0
+  succeeded: 1
+  skipped: 0
+# mutation: 4. neither: the server keeps its default of about 28.6 MB
+    0 Error(s)
+    0 Warning(s)
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_ChunkedBodyOverTheLimit_IsRefusedWith413ByTheServer
+  Expected: RequestEntityTooLarge
+  Actual:   OK
+Test run summary: Failed!
+  total: 1
+  failed: 1
+  succeeded: 0
+  skipped: 0
+# the three files put back
+    identical to the copies
+rebuilt:     0 Error(s)
+rebuilt:     0 Warning(s)

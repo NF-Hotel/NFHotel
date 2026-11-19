@@ -7,6 +7,8 @@ using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Web.Common;
 
+using BookingEntity = NFHotel.Domain.Entities.Booking;
+
 namespace NFHotel.Web.Features.Admin.Bookings;
 
 /// <summary>
@@ -76,6 +78,23 @@ public sealed class BookingFormViewModel
 
     /// <summary>Arrival date, inclusive.</summary>
     public DateOnly CheckInDate { get; set; }
+
+    /// <summary>The first arrival that the form offers: today (MIL-086).</summary>
+    public DateOnly EarliestCheckIn => _clock.Today;
+
+    /// <summary>The last arrival that the form offers: the day before the last departure (MIL-086).</summary>
+    public DateOnly LatestCheckIn => StayDates.LatestArrival(_clock.Today);
+
+    /// <summary>The first departure that the form offers: the day after an arrival it offers, or tomorrow (MIL-086).</summary>
+    public DateOnly EarliestCheckOut =>
+        (CheckInDate >= _clock.Today && CheckInDate <= LatestCheckIn ? CheckInDate : _clock.Today).AddDays(1);
+
+    /// <summary>
+    /// The last departure that the form offers: five years ahead (BR-N-08, MIL-086), without the 30 nights of the public
+    /// site, which do not bind the staff (decision 3 of ADR-0050). These are the days the fields offer; the service
+    /// still decides (B-10).
+    /// </summary>
+    public DateOnly LatestCheckOut => BookingEntity.LatestDeparture(_clock.Today);
 
     /// <summary>Departure date, exclusive.</summary>
     public DateOnly CheckOutDate { get; set; }

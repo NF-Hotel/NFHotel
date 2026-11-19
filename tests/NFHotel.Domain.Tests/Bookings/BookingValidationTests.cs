@@ -43,7 +43,7 @@ public class BookingValidationTests
     [Theory]
     [InlineData("2026-01-01")] // the arrival is today
     [InlineData("2025-12-31")] // the arrival is tomorrow
-    [InlineData("2020-06-15")] // the arrival is years into the future
+    [InlineData("2021-01-10")] // the departure is exactly five years ahead (BR-N-08)
     public void Create_StartDateOnOrAfterToday_IsAccepted(string today)
     {
         // Arrange
@@ -71,6 +71,50 @@ public class BookingValidationTests
 
         // Assert
         Assert.Equal(BookingErrors.StartDateInPast, exception.Code);
+    }
+
+    /// <summary>
+    /// BR-N-08, MIL-086: a stay ends at most five years after today. The departure of the standard period is
+    /// 2026-01-10, so on 2021-01-09 it lies a day beyond the five years, for a guest and for staff alike.
+    /// </summary>
+    [Theory]
+    [InlineData("2021-01-09")]
+    [InlineData("2020-06-15")]
+    public void Create_DepartureMoreThanFiveYearsAhead_ThrowsEndDateTooFarAhead(string today)
+    {
+        // Arrange
+        DateRange period = BookingFactory.StandardPeriod;
+
+        // Act
+        DomainException exception = Assert.Throws<DomainException>(
+            () => Booking.Create(period, BookingFactory.RoomId, BookingFactory.GuestId, TestDate.Of(today)));
+
+        // Assert
+        Assert.Equal(BookingErrors.EndDateTooFarAhead, exception.Code);
+    }
+
+    /// <summary>BR-N-08, MIL-086: on a leap day the five years end on 28 February; the day after is refused.</summary>
+    [Theory]
+    [InlineData("2033-02-28", true)]
+    [InlineData("2033-03-01", false)]
+    public void Create_OnALeapDay_EndsTheFiveYearsOnTheLastDayOfFebruary(string departure, bool accepted)
+    {
+        // Arrange
+        DateOnly today = TestDate.Of("2028-02-29");
+        DateRange period = new(today.AddDays(1), TestDate.Of(departure));
+
+        // Act
+        Exception? exception = Record.Exception(() => Booking.Create(period, BookingFactory.RoomId, BookingFactory.GuestId, today));
+
+        // Assert
+        if (accepted)
+        {
+            Assert.Null(exception);
+        }
+        else
+        {
+            Assert.Equal(BookingErrors.EndDateTooFarAhead, Assert.IsType<DomainException>(exception).Code);
+        }
     }
 
     /// <summary>BR-45, BR-105: a booking without a room cannot be created.</summary>

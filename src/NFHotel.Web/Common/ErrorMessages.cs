@@ -41,6 +41,9 @@ public static class ErrorMessages
             [ErrorCodes.Booking.EndDateRequired] = "Enter a check-out date.",
             [ErrorCodes.Booking.EndNotAfterStart] = "The check-out date must be after the check-in date.",
             [ErrorCodes.Booking.StartDateInPast] = "The check-in date can't be in the past.",
+            [ErrorCodes.Booking.EndDateTooFarAhead] = "The stay must end within five years from today.",
+            [ErrorCodes.Booking.StayTooLong] = "A stay booked here can be at most 30 nights.",
+            [ErrorCodes.Booking.GuestsOutOfRange] = "A booking here is for 1 to 4 guests.",
             [ErrorCodes.Booking.RoomRequired] = "Select a room.",
             [ErrorCodes.Booking.GuestRequired] = "Select a guest.",
             [ErrorCodes.Booking.CheckOutBeforeCheckIn] = "The guest can't check out before they check in.",
@@ -87,16 +90,21 @@ public static class ErrorMessages
             [ErrorCodes.Guest.NotFound] = "We couldn't find that guest.",
             [ErrorCodes.Guest.FirstNameRequired] = "Enter a first name.",
             [ErrorCodes.Guest.FirstNameTooLong] = "That first name is too long.",
+            [ErrorCodes.Guest.FirstNameInvalid] = "A first name can hold letters, spaces, apostrophes, hyphens and full stops.",
             [ErrorCodes.Guest.LastNameRequired] = "Enter a last name.",
             [ErrorCodes.Guest.LastNameTooLong] = "That last name is too long.",
+            [ErrorCodes.Guest.LastNameInvalid] = "A last name can hold letters, spaces, apostrophes, hyphens and full stops.",
             [ErrorCodes.Guest.EmailRequired] = "Enter an email address.",
-            [ErrorCodes.Guest.EmailInvalid] = "The email address must contain both '@' and '.'.",
+            [ErrorCodes.Guest.EmailInvalid] = "Enter one email address, such as name@example.com.",
             [ErrorCodes.Guest.EmailTooLong] = "That email address is too long.",
             [ErrorCodes.Guest.PhoneNumberRequired] = "Enter a phone number.",
             [ErrorCodes.Guest.PhoneNumberTooLong] = "That phone number is too long.",
-            [ErrorCodes.Guest.CountryRequired] = "Enter a country.",
+            [ErrorCodes.Guest.PhoneNumberInvalid] = "Enter a phone number of 7 to 15 digits; spaces, hyphens, brackets and a + first are allowed.",
+            [ErrorCodes.Guest.CountryRequired] = "Choose a country.",
             [ErrorCodes.Guest.CountryTooLong] = "That country name is too long.",
+            [ErrorCodes.Guest.CountryInvalid] = "Choose a country from the list.",
             [ErrorCodes.Guest.PassportNumberTooLong] = "That passport number is too long.",
+            [ErrorCodes.Guest.PassportNumberInvalid] = "A passport number can hold the letters A to Z and the digits 0 to 9.",
 
             // ----------------------------------------------------------
             // HELLIGDAGE (analysetjenesten)
@@ -112,6 +120,7 @@ public static class ErrorMessages
             // The one refusal of the guest sign-in (MIL-018): a wrong email, an unknown number, a cancelled booking and an
             // ended guest session read alike, so the text tells nobody which of them it was.
             [ErrorCodes.Api.GuestUnauthorized] = "We couldn't find that booking. Check the booking reference and the email you booked with.",
+            [ErrorCodes.Api.RequestTooLarge] = "That was more than the hotel system takes at once. Please shorten the text and try again.",
             [ErrorCodes.Staff.InvalidCredentials] = "The user name or the password is wrong.",
             [ErrorCodes.Staff.TooManyAttempts] = "Too many failed attempts. Wait fifteen minutes and try again.",
             [AiDefaultErrors.PurposeInvalid] = "The default AI model can be set for the website or the market analysis.",

@@ -37,6 +37,9 @@ server {
   # mounts it, and an include that matches no file is allowed, so a release deployment has none of them.
   include /etc/nginx/dev/*.conf;
 
+  # The web socket of the pages, the one location that waits an hour (MIL-086 decision 7).
+  include /etc/nginx/snippets/blazor.conf;
+
   location / {
     proxy_pass $upstream;
     include /etc/nginx/snippets/proxy.conf;

@@ -1,8 +1,11 @@
+using NFHotel.Application.Dto.Guests;
 using NFHotel.Application.Dto.Rooms;
 using NFHotel.Domain.Entities;
+using NFHotel.Domain.Errors;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.Infrastructure.Persistence;
 using NFHotel.Infrastructure.Repositories;
+using NFHotel.TestSupport;
 
 namespace NFHotel.Infrastructure.Tests.Integration.Persistence;
 
@@ -89,6 +92,76 @@ public sealed class GuestAndRoomReadTests : IAsyncLifetime
 
         // Assert
         Assert.Empty(found);
+    }
+
+    /// <summary>
+    /// Edge (MIL-086 decision 5): the two characters of a SQL pattern in an email are found as themselves, so a search
+    /// for one of them finds the guest whose email holds it and no one else.
+    /// </summary>
+    /// <param name="term">The character that is searched for.</param>
+    /// <param name="expectedEmail">The only email that holds it.</param>
+    [Theory]
+    [InlineData("%", "anna%sale@example.com")]
+    [InlineData("_", "bo_jensen@example.com")]
+    public async Task GuestSearchAsync_WildcardInAnEmail_FindsThatGuestOnly(string term, string expectedEmail)
+    {
+        // Arrange
+        await SeedGuestAsync("Anna", "Jensen", null, "anna%sale@example.com");
+        await SeedGuestAsync("Bo", "Jensen", null, "bo_jensen@example.com");
+        await SeedGuestAsync("Carl", "Jensen", null, "carl@example.com");
+        await using HotelDbContext context = _fixture.CreateContext();
+
+        // Act
+        IReadOnlyList<GuestListItemDto> found = await new GuestRepository(context).SearchAsync([term], TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(expectedEmail, Assert.Single(found).Email);
+    }
+
+    /// <summary>
+    /// Integration (MIL-086 decision 5): each hostile string that meets the rule of a field of the guest is stored and
+    /// read back unchanged, character for character; the others are refused by the rule before anything is stored.
+    /// </summary>
+    [Fact]
+    public async Task Guest_HostileStringsThatMeetTheRules_AreStoredAndReadUnchanged()
+    {
+        // Arrange
+        List<(int GuestId, string Field, string Value)> stored = [];
+        foreach ((string _, string? value) in HostileStrings.All)
+        {
+            foreach (string field in GuestFieldNames)
+            {
+                Guest guest;
+                try
+                {
+                    guest = CreateGuestWith(field, value);
+                }
+                catch (DomainException)
+                {
+                    continue;
+                }
+
+                await using HotelDbContext seedContext = _fixture.CreateContext();
+                new GuestRepository(seedContext).Add(guest);
+                await new UnitOfWork(seedContext).SaveChangesAsync(TestContext.Current.CancellationToken);
+                stored.Add((guest.Id, field, value));
+            }
+        }
+
+        await using HotelDbContext context = _fixture.CreateContext();
+        GuestRepository repository = new(context);
+
+        // Act
+        List<(string Field, string Value, string? Read)> readBack = [];
+        foreach ((int guestId, string? field, string? value) in stored)
+        {
+            GuestDetailsDto? details = await repository.GetDetailsAsync(guestId, TestContext.Current.CancellationToken);
+            readBack.Add((field, value, FieldOf(details, field)));
+        }
+
+        // Assert
+        Assert.NotEmpty(stored);
+        Assert.All(readBack, item => Assert.Equal(item.Value, item.Read));
     }
 
     /// <summary>Integration: the existence and booking checks answer from the database.</summary>
@@ -199,14 +272,36 @@ public sealed class GuestAndRoomReadTests : IAsyncLifetime
 
     #region Helpers
 
-    private async Task<int> SeedGuestAsync(string firstName, string lastName, string? passportNumber)
+    private static readonly string[] GuestFieldNames = ["firstName", "lastName", "email", "phoneNumber", "country", "passportNumber"];
+
+    private async Task<int> SeedGuestAsync(string firstName, string lastName, string? passportNumber, string? email = null)
     {
         await using var context = _fixture.CreateContext();
-        var guest = Guest.Create(firstName, lastName, $"{firstName.ToLowerInvariant()}@example.com", "+4512345678", "Denmark", passportNumber);
+        Guest guest = Guest.Create(firstName, lastName, email ?? $"{firstName.ToLowerInvariant()}@example.com", "+4512345678", "Denmark", passportNumber);
         new GuestRepository(context).Add(guest);
         await new UnitOfWork(context).SaveChangesAsync(TestContext.Current.CancellationToken);
         return guest.Id;
     }
+
+    // A guest whose one field holds the value, and plausible values in the others.
+    private static Guest CreateGuestWith(string field, string value) => Guest.Create(
+        field == "firstName" ? value : "Anna",
+        field == "lastName" ? value : "Jensen",
+        field == "email" ? value : "anna@example.com",
+        field == "phoneNumber" ? value : "+4512345678",
+        field == "country" ? value : "Denmark",
+        field == "passportNumber" ? value : null);
+
+    private static string? FieldOf(GuestDetailsDto? details, string field) => field switch
+    {
+        "firstName" => details?.FirstName,
+        "lastName" => details?.LastName,
+        "email" => details?.Email,
+        "phoneNumber" => details?.PhoneNumber,
+        "country" => details?.Country,
+        "passportNumber" => details?.PassportNumber,
+        _ => throw new ArgumentOutOfRangeException(nameof(field), field, "Not a field of the guest."),
+    };
 
     private async Task<int> SeedRoomAsync(string number, int floor, RoomSize size, bool outOfService = false)
     {

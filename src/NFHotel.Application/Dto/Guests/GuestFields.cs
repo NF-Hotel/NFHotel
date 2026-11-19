@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace NFHotel.Application.Dto.Guests;
 
 /// <summary>
@@ -13,12 +15,13 @@ namespace NFHotel.Application.Dto.Guests;
 /// an empty string from a form is a user outcome, not a programmer error.
 /// </para>
 /// </remarks>
-/// <param name="FirstName">Fornavn.</param>
-/// <param name="LastName">Efternavn.</param>
-/// <param name="Email">Email. Must contain both '@' and '.' (BR-55, BR-93).</param>
-/// <param name="PhoneNumber">Phone number. No format requirement (BR-94).</param>
-/// <param name="Country">Land.</param>
-/// <param name="PassportNumber">Passport number. Optional and not validated beyond its length (BR-57).</param>
+/// <param name="FirstName">First name; its characters are the rule of <c>PersonNameAttribute</c> (BR-52, BR-91, MIL-086).</param>
+/// <param name="LastName">Last name; its characters are the rule of <c>PersonNameAttribute</c> (BR-53, BR-92, MIL-086).</param>
+/// <param name="Email">Email; one plain address, the rule of <c>EmailFormatAttribute</c> (BR-55, BR-93, MIL-086).</param>
+/// <param name="PhoneNumber">Phone number; 7 to 15 digits, the rule of <c>PhoneNumberAttribute</c> (BR-54, BR-94, MIL-086).</param>
+/// <param name="Country">Country; a name of the list of ISO 3166-1, the rule of <c>CountryNameAttribute</c> (BR-56, BR-95, MIL-086).</param>
+/// <param name="PassportNumber">Passport number; optional, ASCII letters and digits, the rule of <c>PassportNumberAttribute</c> (BR-57, MIL-086).</param>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record GuestFields(
     string FirstName,
     string LastName,

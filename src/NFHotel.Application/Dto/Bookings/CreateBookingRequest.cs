@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 using NFHotel.Application.Dto.Guests;
 
@@ -17,6 +18,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// <param name="RoomId">The id of the room (BR-45, BR-105).</param>
 /// <param name="GuestId">The id of an existing guest, or <c>null</c> if the guest is created now.</param>
 /// <param name="NewGuest">The fields for a new guest, or <c>null</c> if an existing one is chosen.</param>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record CreateBookingRequest(
     DateOnly CheckInDate,
     DateOnly CheckOutDate,

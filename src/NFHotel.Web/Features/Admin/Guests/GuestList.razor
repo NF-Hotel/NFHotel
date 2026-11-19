@@ -49,6 +49,7 @@
             <div class="field-row">
                 <FormField Label="First name" For="guest-first-name" IsRequired="true">
                     <input id="guest-first-name"
+                           maxlength="@Guest.MaxNameLength"
                            class="field-input"
                            disabled="@ViewModel.IsBusy"
                            @bind="ViewModel.FirstName"
@@ -58,6 +59,7 @@
 
                 <FormField Label="Last name" For="guest-last-name" IsRequired="true">
                     <input id="guest-last-name"
+                           maxlength="@Guest.MaxNameLength"
                            class="field-input"
                            disabled="@ViewModel.IsBusy"
                            @bind="ViewModel.LastName"
@@ -69,6 +71,7 @@
             <div class="field-row">
                 <FormField Label="Email" For="guest-email" IsRequired="true">
                     <input id="guest-email"
+                           maxlength="@Guest.MaxEmailLength"
                            type="email"
                            class="field-input"
                            disabled="@ViewModel.IsBusy"
@@ -79,6 +82,7 @@
 
                 <FormField Label="Phone" For="guest-phone" IsRequired="true">
                     <input id="guest-phone"
+                           maxlength="@Guest.MaxPhoneNumberLength"
                            type="tel"
                            class="field-input"
                            disabled="@ViewModel.IsBusy"
@@ -90,16 +94,27 @@
 
             <div class="field-row">
                 <FormField Label="Country" For="guest-country" IsRequired="true">
-                    <input id="guest-country"
-                           class="field-input"
-                           disabled="@ViewModel.IsBusy"
-                           @bind="ViewModel.Country"
-                           @bind:event="oninput"
-                           @bind:after="Validate" />
+                    <select id="guest-country"
+                            class="field-select"
+                            disabled="@ViewModel.IsBusy"
+                            @bind="ViewModel.Country"
+                            @bind:event="oninput"
+                            @bind:after="Validate">
+                        <option value="">Choose a country</option>
+                        @if (!string.IsNullOrEmpty(ViewModel.Country) && !Countries.IsName(ViewModel.Country))
+                        {
+                            <option value="@ViewModel.Country">@ViewModel.Country (not in the list)</option>
+                        }
+                        @foreach (IsoCountry country in Countries.All)
+                        {
+                            <option value="@country.Name">@country.Name</option>
+                        }
+                    </select>
                 </FormField>
 
                 <FormField Label="Passport number" For="guest-passport" Hint="Optional. Stored encrypted.">
                     <input id="guest-passport"
+                           maxlength="@Guest.MaxPassportNumberLength"
                            class="field-input"
                            disabled="@ViewModel.IsBusy"
                            @bind="ViewModel.PassportNumber"

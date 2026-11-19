@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace NFHotel.Application.Dto.Bookings;
 
 /// <summary>
@@ -11,6 +13,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// <param name="NewStartDate">New arrival date. Must be today or later (BR-108).</param>
 /// <param name="NewEndDate">New departure date, exclusive.</param>
 /// <param name="RoomId">The id of the room — the same as before, or a new room.</param>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record RescheduleBookingRequest(
     int BookingId,
     DateOnly NewStartDate,

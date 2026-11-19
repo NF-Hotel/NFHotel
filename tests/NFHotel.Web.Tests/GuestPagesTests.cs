@@ -1,9 +1,12 @@
+using System.Globalization;
 using System.Net;
 
 using Microsoft.Extensions.DependencyInjection;
 
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Guests;
+using NFHotel.Application.Ports;
+using NFHotel.Domain.Entities;
 using NFHotel.Web.Security;
 
 using NSubstitute;
@@ -94,6 +97,24 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         Assert.DoesNotContain("booking number", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("its number", html, StringComparison.OrdinalIgnoreCase);
         Assert.Empty(_factory.Access.ReceivedCalls());
+    }
+
+    /// <summary>
+    /// Boundary (MIL-086 decision 2): the fields of the sign-in take no more characters than a reference and an email of
+    /// a booking have.
+    /// </summary>
+    [Fact]
+    public async Task SignInPage_Opened_FieldsHaveTheLengthsOfTheRules()
+    {
+        // Arrange
+        using HttpClient browser = _factory.CreateBrowser();
+
+        // Act
+        string html = await browser.GetStringAsync(GuestSignInRegistration.SignInPath, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("36", WebFactory.InputAttribute(html, "booking-reference", "maxlength"));
+        Assert.Equal($"{Guest.MaxEmailLength}", WebFactory.InputAttribute(html, "booking-email", "maxlength"));
     }
 
     /// <summary>
@@ -228,16 +249,20 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         Assert.Contains("Your booking is cancelled.", notice, StringComparison.Ordinal);
     }
 
-    /// <summary>Positive: the change form moves the booking of the guest to the new dates; the request names no booking and no room.</summary>
+    /// <summary>
+    /// Positive: the change form moves the booking of the guest to new dates that the rules allow on the clock of the
+    /// hotel; the request names no booking and no room.
+    /// </summary>
     [Fact]
     public async Task Reschedule_SignedInGuest_AsksForTheNewDatesInTheSameRoom()
     {
         // Arrange
         using HttpClient browser = await SignedInGuestAsync();
+        DateOnly today = _factory.Services.GetRequiredService<IClock>().Today;
         string html = await browser.GetStringAsync(GuestSignInRegistration.MyBookingPath, TestContext.Current.CancellationToken);
         Dictionary<string, string> fields = await FormFieldsAsync(browser, "guest-reschedule");
-        fields[WebFactory.InputName(html, "change-check-in")] = "2026-04-20";
-        fields[WebFactory.InputName(html, "change-check-out")] = "2026-04-23";
+        fields[WebFactory.InputName(html, "change-check-in")] = Day(today.AddDays(30));
+        fields[WebFactory.InputName(html, "change-check-out")] = Day(today.AddDays(33));
         _factory.Bookings.ClearReceivedCalls();
 
         // Act
@@ -248,8 +273,29 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal("/my-booking?done=rescheduled", LocalPath(response));
         await _factory.Bookings.Received(1).RescheduleAsync(
-            new GuestRescheduleRequest(new DateOnly(2026, 4, 20), new DateOnly(2026, 4, 23)),
+            new GuestRescheduleRequest(today.AddDays(30), today.AddDays(33)),
             Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>
+    /// Boundary (MIL-086 decision 3): the date fields of the change offer the days that the rules allow on the clock of
+    /// the hotel: the arrival from today to the day before the last departure, and the departure up to five years ahead.
+    /// </summary>
+    [Fact]
+    public async Task MyBooking_SignedInGuest_DateFieldsOfferTheDaysThatTheRulesAllow()
+    {
+        // Arrange
+        using HttpClient browser = await SignedInGuestAsync();
+        DateOnly today = _factory.Services.GetRequiredService<IClock>().Today;
+
+        // Act
+        string html = await browser.GetStringAsync(GuestSignInRegistration.MyBookingPath, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(Day(today), WebFactory.InputAttribute(html, "change-check-in", "min"));
+        Assert.Equal(Day(Booking.LatestDeparture(today).AddDays(-1)), WebFactory.InputAttribute(html, "change-check-in", "max"));
+        Assert.Equal(Day(today.AddDays(1)), WebFactory.InputAttribute(html, "change-check-out", "min"));
+        Assert.Equal(Day(Booking.LatestDeparture(today)), WebFactory.InputAttribute(html, "change-check-out", "max"));
     }
 
     /// <summary>Security: the guest cookie alone opens no back office page; the back office asks for the staff sign-in.</summary>
@@ -377,6 +423,8 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         Uri location = response.Headers.Location ?? throw new InvalidOperationException("The answer has no Location.");
         return location.IsAbsoluteUri ? location.PathAndQuery : location.OriginalString;
     }
+
+    private static string Day(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private static bool HasSetCookie(HttpResponseMessage response, string prefix) =>
         response.Headers.TryGetValues("Set-Cookie", out IEnumerable<string>? cookies)

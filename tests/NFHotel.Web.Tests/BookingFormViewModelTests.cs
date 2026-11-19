@@ -62,6 +62,24 @@ public sealed class BookingFormViewModelTests
         Assert.False(viewModel.HasNoAvailableRooms);
     }
 
+    /// <summary>
+    /// Boundary (MIL-086 decision 3, BR-N-08): the date fields of the form offer the days that the rules allow staff: the
+    /// arrival from today to the day before the last departure, the departure from the day after the arrival up to five
+    /// years ahead, without the 30 nights of the public site. Today is 2026-03-10, so the five years end on 2031-03-10.
+    /// </summary>
+    [Fact]
+    public void DateLimits_WithTheClock_FollowTheRulesOfTheStayForStaff()
+    {
+        BookingFormViewModel viewModel = Create();
+
+        viewModel.CheckInDate = Today.AddDays(2);
+
+        Assert.Equal(Today, viewModel.EarliestCheckIn);
+        Assert.Equal(new DateOnly(2031, 3, 9), viewModel.LatestCheckIn);
+        Assert.Equal(Today.AddDays(3), viewModel.EarliestCheckOut);
+        Assert.Equal(new DateOnly(2031, 3, 10), viewModel.LatestCheckOut);
+    }
+
     #endregion
 
     #region BeginCreate

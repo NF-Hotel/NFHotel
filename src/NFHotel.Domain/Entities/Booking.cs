@@ -18,6 +18,18 @@ namespace NFHotel.Domain.Entities;
 /// </remarks>
 public sealed class Booking : Entity<int>
 {
+    /// <summary>The most calendar years after today that a stay may end (BR-N-08, MIL-086).</summary>
+    public const int MaxYearsAhead = 5;
+
+    /// <summary>The most nights of a stay booked or moved on the public site (BR-C-07, MIL-086).</summary>
+    public const int MaxPublicNights = 30;
+
+    /// <summary>The fewest guests of a public booking (BR-C-07, MIL-086).</summary>
+    public const int MinPublicGuests = 1;
+
+    /// <summary>The most guests of a public booking (BR-C-07, MIL-086).</summary>
+    public const int MaxPublicGuests = 4;
+
     private const string EntityName = "booking";
 
     /// <summary>For EF Core. Use <see cref="Create"/> in code.</summary>
@@ -148,7 +160,7 @@ public sealed class Booking : Entity<int>
     /// </exception>
     public static Booking Create(DateRange period, int roomId, int guestId, DateOnly today)
     {
-        GuardPeriodIsNotInThePast(period, today);
+        GuardPeriod(period, today);
         GuardRoomId(roomId);
         GuardGuestId(guestId);
 
@@ -299,7 +311,7 @@ public sealed class Booking : Entity<int>
             throw InvalidStateTransitionException.For(EntityName, nameof(Reschedule), Status);
         }
 
-        GuardPeriodIsNotInThePast(newPeriod, today);
+        GuardPeriod(newPeriod, today);
         GuardRoomId(newRoomId);
 
         StartDate = newPeriod.Start;
@@ -307,12 +319,67 @@ public sealed class Booking : Entity<int>
         RoomId = newRoomId;
     }
 
-    /// <summary>Rejects a period that starts before today (BR-44, BR-104, BR-108).</summary>
-    private static void GuardPeriodIsNotInThePast(DateRange period, DateOnly today)
+    /// <summary>
+    /// The latest departure of any stay: five calendar years after today (BR-C-07, MIL-086 decision 3). From
+    /// 29 February it is 28 February, because <see cref="DateOnly.AddYears"/> takes the last day of the month.
+    /// </summary>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
+    /// <returns>The last allowed departure.</returns>
+    public static DateOnly LatestDeparture(DateOnly today) => today.AddYears(MaxYearsAhead);
+
+    /// <summary>
+    /// The latest departure of a stay booked or moved on the public site: thirty nights after the arrival, and never
+    /// after <see cref="LatestDeparture"/> (BR-C-07, MIL-086 decision 3).
+    /// </summary>
+    /// <param name="arrival">The arrival.</param>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
+    /// <returns>The last allowed departure for that arrival.</returns>
+    public static DateOnly LatestPublicDeparture(DateOnly arrival, DateOnly today)
+    {
+        DateOnly byNights = arrival.AddDays(MaxPublicNights);
+        DateOnly byYears = LatestDeparture(today);
+
+        return byNights < byYears ? byNights : byYears;
+    }
+
+    /// <summary>
+    /// Checks a period against today for every booking and move, by a guest or by staff (BR-44, BR-104, BR-108,
+    /// BR-C-07): the arrival is not before today and the departure not after <see cref="LatestDeparture"/>.
+    /// </summary>
+    /// <param name="period">The period.</param>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
+    /// <returns>The code of the broken rule, or <see langword="null"/> when the period is allowed.</returns>
+    public static string? CheckPeriod(DateRange period, DateOnly today)
     {
         if (!period.StartsOnOrAfter(today))
         {
-            throw new DomainException(BookingErrors.StartDateInPast);
+            return BookingErrors.StartDateInPast;
+        }
+
+        return period.End > LatestDeparture(today) ? BookingErrors.EndDateTooFarAhead : null;
+    }
+
+    /// <summary>Checks the nights of a stay booked or moved on the public site: at most thirty (BR-C-07).</summary>
+    /// <param name="period">The period.</param>
+    /// <returns>The code of the broken rule, or <see langword="null"/> when the stay is allowed.</returns>
+    public static string? CheckPublicNights(DateRange period)
+    {
+        return period.Nights > MaxPublicNights ? BookingErrors.StayTooLong : null;
+    }
+
+    /// <summary>Checks the party of a public booking: one to four guests (BR-C-07, MIL-086 decision 2).</summary>
+    /// <param name="guests">The number of guests.</param>
+    /// <returns>The code of the broken rule, or <see langword="null"/> when the party is allowed.</returns>
+    public static string? CheckPublicParty(int guests) =>
+        guests is < MinPublicGuests or > MaxPublicGuests ? BookingErrors.GuestsOutOfRange : null;
+
+    /// <summary>Rejects a period that <see cref="CheckPeriod"/> refuses (BR-44, BR-104, BR-108, BR-C-07).</summary>
+    private static void GuardPeriod(DateRange period, DateOnly today)
+    {
+        string? error = CheckPeriod(period, today);
+        if (error is not null)
+        {
+            throw new DomainException(error);
         }
     }
 

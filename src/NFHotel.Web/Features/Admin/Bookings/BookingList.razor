@@ -97,6 +97,8 @@
                                 <input id="form-check-in"
                                        type="date"
                                        class="field-input"
+                                       min="@DateInput.Text(Form.EarliestCheckIn)"
+                                       max="@DateInput.Text(Form.LatestCheckIn)"
                                        disabled="@Form.IsBusy"
                                        @bind="Form.CheckInDate" />
                             </FormField>
@@ -105,6 +107,8 @@
                                 <input id="form-check-out"
                                        type="date"
                                        class="field-input"
+                                       min="@DateInput.Text(Form.EarliestCheckOut)"
+                                       max="@DateInput.Text(Form.LatestCheckOut)"
                                        disabled="@Form.IsBusy"
                                        @bind="Form.CheckOutDate" />
                             </FormField>
@@ -283,6 +287,7 @@
                                 <div class="field-row">
                                     <FormField Label="First name" For="form-first-name" IsRequired="true">
                                         <input id="form-first-name"
+                                               maxlength="@Guest.MaxNameLength"
                                                class="field-input"
                                                disabled="@Form.IsBusy"
                                                @bind="Form.FirstName"
@@ -292,6 +297,7 @@
 
                                     <FormField Label="Last name" For="form-last-name" IsRequired="true">
                                         <input id="form-last-name"
+                                               maxlength="@Guest.MaxNameLength"
                                                class="field-input"
                                                disabled="@Form.IsBusy"
                                                @bind="Form.LastName"
@@ -303,6 +309,7 @@
                                 <div class="field-row">
                                     <FormField Label="Email" For="form-email" IsRequired="true">
                                         <input id="form-email"
+                                               maxlength="@Guest.MaxEmailLength"
                                                type="email"
                                                class="field-input"
                                                disabled="@Form.IsBusy"
@@ -313,6 +320,7 @@
 
                                     <FormField Label="Phone" For="form-phone" IsRequired="true">
                                         <input id="form-phone"
+                                               maxlength="@Guest.MaxPhoneNumberLength"
                                                type="tel"
                                                class="field-input"
                                                disabled="@Form.IsBusy"
@@ -324,16 +332,23 @@
 
                                 <div class="field-row">
                                     <FormField Label="Country" For="form-country" IsRequired="true">
-                                        <input id="form-country"
-                                               class="field-input"
-                                               disabled="@Form.IsBusy"
-                                               @bind="Form.Country"
-                                               @bind:event="oninput"
-                                               @bind:after="ValidateGuest" />
+                                        <select id="form-country"
+                                                class="field-select"
+                                                disabled="@Form.IsBusy"
+                                                @bind="Form.Country"
+                                                @bind:event="oninput"
+                                                @bind:after="ValidateGuest">
+                                            <option value="">Choose a country</option>
+                                            @foreach (IsoCountry country in Countries.All)
+                                            {
+                                                <option value="@country.Name">@country.Name</option>
+                                            }
+                                        </select>
                                     </FormField>
 
                                     <FormField Label="Passport number" For="form-passport" Hint="Optional. Stored encrypted; can be added at check-in.">
                                         <input id="form-passport"
+                                               maxlength="@Guest.MaxPassportNumberLength"
                                                class="field-input"
                                                disabled="@Form.IsBusy"
                                                @bind="Form.PassportNumber"

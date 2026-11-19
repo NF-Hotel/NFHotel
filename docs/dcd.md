@@ -39,6 +39,15 @@ package "domain" {
     +int babies
     +String marketSegment
     +String mealPlan
+    +{static} int maxYearsAhead = 5
+    +{static} int maxPublicNights = 30
+    +{static} int minPublicGuests = 1
+    +{static} int maxPublicGuests = 4
+    +{static} latestDeparture(today) LocalDate
+    +{static} latestPublicDeparture(arrival, today) LocalDate
+    +{static} checkPeriod(period, today) String
+    +{static} checkPublicNights(period) String
+    +{static} checkPublicParty(guests) String
   }
 
   class Room {
@@ -186,6 +195,46 @@ package "domain" {
     +format(reference) String
     +tryParse(text, out reference) bool
   }
+
+  ' === Validation rules of the booking input (MIL-086, ADR-0050) ===
+  class TextNormalForm <<static>> {
+    +normalize(value) String
+    +normalizeOptional(value) String
+  }
+
+  class Countries <<static>> {
+    +List<IsoCountry> all
+    +isName(name) bool
+  }
+
+  class IsoCountry <<record>> {
+    +String alpha2Code
+    +String name
+  }
+
+  class PersonNameAttribute <<attribute>> {
+    +{static} accepts(value) bool
+  }
+
+  class EmailFormatAttribute <<attribute>> {
+    +{static} int maxLocalPartLength = 64
+    +{static} int maxLabelLength = 63
+    +{static} accepts(value) bool
+  }
+
+  class PhoneNumberAttribute <<attribute>> {
+    +{static} int minDigits = 7
+    +{static} int maxDigits = 15
+    +{static} accepts(value) bool
+  }
+
+  class CountryNameAttribute <<attribute>> {
+    +{static} accepts(value) bool
+  }
+
+  class PassportNumberAttribute <<attribute>> {
+    +{static} accepts(value) bool
+  }
 }
 
 ' === Relationships ===
@@ -193,6 +242,14 @@ Guest "1" --> "1..*" Booking : makes >
 Booking "1" --> "0..*" RoomPriceSnapshot : includes >   ' ← per night!
 Booking "1" --> "1" Room : occupies >
 Booking ..> BookingReference : gets its reference from >
+Guest ..> TextNormalForm : brings its details to normal form C >
+Guest ..> PersonNameAttribute : first and last name >
+Guest ..> EmailFormatAttribute : email >
+Guest ..> PhoneNumberAttribute : phone number >
+Guest ..> CountryNameAttribute : country >
+Guest ..> PassportNumberAttribute : passport number >
+CountryNameAttribute ..> Countries : reads the names of >
+Countries "1" *-- "249" IsoCountry : holds >
 
 Room "1" *-- "0..*" RoomPrice : has active pricing history >
 Room "1" *-- "0..*" PriceList : belongs to list (optional, e.g., by variant)

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 using NFHotel.Api.Contracts;
@@ -22,7 +23,7 @@ public sealed class InputGuardFilter : IActionFilter
         {
             if (parameter.BindingInfo?.BindingSource is { IsFromRequest: true }
                 && context.ActionArguments.TryGetValue(parameter.Name, out object? value)
-                && !InputRules.IsAccepted(value))
+                && !InputRules.IsAccepted(value, (parameter as ControllerParameterDescriptor)?.ParameterInfo))
             {
                 context.Result = new BadRequestObjectResult(new ApiResponse([ApiErrorCodes.InvalidRequest]));
                 return;

@@ -57,7 +57,7 @@ public sealed class GuestBookingController : ControllerBase
         Answer(await _booking.CancelAsync(cancellationToken).ConfigureAwait(false));
 
     /// <summary>Moves the guest's booking to new dates in the room it has.</summary>
-    /// <param name="request">The new dates; a room in the body is not read.</param>
+    /// <param name="request">The new dates; a field that the type does not have, a room among them, is refused with 400 (MIL-086).</param>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
     /// <returns>200 with the receipt, the codes of the booking when the move breaks a rule, or the one 401.</returns>
     [HttpPost(ApiRoutes.GuestBookingReschedule)]

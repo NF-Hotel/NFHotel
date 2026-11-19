@@ -15,6 +15,9 @@ using NSubstitute;
 
 using static NFHotel.Web.Tests.AdminSamples;
 
+using BookingEntity = NFHotel.Domain.Entities.Booking;
+using GuestEntity = NFHotel.Domain.Entities.Guest;
+
 namespace NFHotel.Web.Tests;
 
 /// <summary>The booking page of the back office, rendered and clicked (MIL-054 task 2).</summary>
@@ -208,6 +211,51 @@ public sealed class BookingListPageTests : IAsyncDisposable
     #endregion
 
     #region Form
+
+    /// <summary>
+    /// Boundary (MIL-086 decisions 2 and 3): the date fields of the form offer the days that the rules allow staff, the
+    /// arrival from today and the departure up to five years ahead without the 30 nights of the public site, and the
+    /// fields of a new guest take no more characters than their rules, with the country from the list.
+    /// </summary>
+    [Fact]
+    public void Form_NewBooking_FieldsHaveTheLimitsOfTheRules()
+    {
+        OverviewIs();
+        IRenderedComponent<BookingList> page = _host.Render<BookingList>();
+        page.Button("New booking").Click();
+
+        page.Find("#form-check-in").Change(Iso(Today.AddDays(2)));
+        page.Button("New guest").Click();
+        List<string?> options = page.FindAll("#form-country option").Select(option => option.GetAttribute("value")).ToList();
+
+        Assert.Equal(Iso(Today), page.Find("#form-check-in").GetAttribute("min"));
+        Assert.Equal(Iso(BookingEntity.LatestDeparture(Today).AddDays(-1)), page.Find("#form-check-in").GetAttribute("max"));
+        Assert.Equal(Iso(Today.AddDays(3)), page.Find("#form-check-out").GetAttribute("min"));
+        Assert.Equal(Iso(BookingEntity.LatestDeparture(Today)), page.Find("#form-check-out").GetAttribute("max"));
+        Assert.Equal($"{GuestEntity.MaxNameLength}", page.Find("#form-first-name").GetAttribute("maxlength"));
+        Assert.Equal($"{GuestEntity.MaxNameLength}", page.Find("#form-last-name").GetAttribute("maxlength"));
+        Assert.Equal($"{GuestEntity.MaxEmailLength}", page.Find("#form-email").GetAttribute("maxlength"));
+        Assert.Equal($"{GuestEntity.MaxPhoneNumberLength}", page.Find("#form-phone").GetAttribute("maxlength"));
+        Assert.Equal($"{GuestEntity.MaxPassportNumberLength}", page.Find("#form-passport").GetAttribute("maxlength"));
+        Assert.Equal("SELECT", page.Find("#form-country").TagName);
+        Assert.Equal(string.Empty, options[0]);
+        Assert.Equal(Countries.All.Select(country => country.Name), options.Skip(1));
+    }
+
+    /// <summary>
+    /// Negative (MIL-086 decisions 5 and 8): bookings of guests stored before the rules, whose name, country and email
+    /// hold the hostile strings, are listed with each value as text.
+    /// </summary>
+    [Fact]
+    public void Render_StoredHostileValues_AreShownAsText()
+    {
+        List<string> values = HostileStrings.All.Select(item => item.Value).ToList();
+        OverviewIs(values.Select((value, index) => BookingItem(index + 1) with { GuestFullName = value, GuestCountry = value, GuestEmail = value }).ToArray());
+
+        IRenderedComponent<BookingList> page = _host.Render<BookingList>();
+
+        HostileMarkup.AssertShownAsText(page, values);
+    }
 
     /// <summary>Edge: no free rooms and no matching guests each say so; cancel closes the form.</summary>
     [Fact]
