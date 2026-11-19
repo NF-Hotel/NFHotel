@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the documents that MIL-087 adds and amends (tasks 2 and 7); Go; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the documents that MIL-087 adds and amends (tasks 2 and 7); Go; mode autonomous, not independent | [a574bf6] |
 
 ---
 
@@ -203,3 +203,4 @@ The reviewer is not independent.
 [RC-428]: ./rc-428-mil-087-code.md
 [ADR-0049]: ../../adr/adr-0049-booking-reference.md
 [MIL-088]: ../../milestones/mil-088-a-booking-verified-by-email.md
+[a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | The email of the sign-in is compared in its normal form; new dates of a guest end at most five years after today and have at most 30 nights, and the guest is offered only those days (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | [7de27c7] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The failed attempts from one address are counted under the address from which they reached the site, which no caller can set (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The failed attempts from one address are counted under the address from which they reached the site, which no caller can set (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
 
 ---
 
@@ -102,3 +102,4 @@
 [MIL-087]: ../../milestones/mil-087-limits-on-what-one-sender-can-ask.md
 [ADR-0051]: ../../adr/adr-0051-limits-of-the-booking-flow-and-the-caller-address.md
 [7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81
+[a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251

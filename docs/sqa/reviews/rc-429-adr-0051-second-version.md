@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the second version of ADR-0051 (task 7 of MIL-087), written after the code review RC-428; Go; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the second version of ADR-0051 (task 7 of MIL-087), written after the code review RC-428; Go; mode autonomous, not independent | [a574bf6] |
 
 ---
 
@@ -124,3 +124,4 @@ decision of it, F2 and F3 above all.
 [RC-418]: ./rc-418-mil-085-code.md
 [RC-081]: ./rc-081-tls-code.md
 [MIL-089]: ../../milestones/mil-089-the-booking-flow-attacked-and-measured.md
+[a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251

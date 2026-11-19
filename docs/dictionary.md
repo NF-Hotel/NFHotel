@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Booking number replaced by Booking reference (`BookingReference`); Guest sign-in opened with the reference (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Added Made on the public site (`MadeOnPublicSite`), which the limit per email of the public site counts (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Added Made on the public site (`MadeOnPublicSite`), which the limit per email of the public site counts (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
 
 ---
 
@@ -79,3 +79,4 @@ English (en), domain it, as set in the registry.
 [UC-010]: ./use-cases/uc-010/uc.md
 [OC-001]: ./use-cases/uc-010/oc.md
 [e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81
+[a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251

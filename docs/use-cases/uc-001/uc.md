@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | A stay ends at most five years after today, for hotel staff too, when a booking is made and when it is moved; hotel staff are not held to the 30 nights of the public site; the details of a new guest follow the validation rules of the booking flow (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | [7de27c7] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | A search for free rooms is limited per caller address, and hotel staff may see its refusal; the limits of the public site on booking requests per caller address and on coming bookings per email do not hold for hotel staff (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | A search for free rooms is limited per caller address, and hotel staff may see its refusal; the limits of the public site on booking requests per caller address and on coming bookings per email do not hold for hotel staff (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
 
 ---
 
@@ -84,3 +84,4 @@
 [US-001]: ../../user-stories.md
 [SA-001]: ../../stakeholder-analysis.md
 [7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81
+[a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251

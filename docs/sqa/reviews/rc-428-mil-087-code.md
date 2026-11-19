@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: code review of tasks 3 to 6 of MIL-087 and of the fixes of its findings; Go-with-conditions: every required check of the pull request green and the load test passed on the branch; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: code review of tasks 3 to 6 of MIL-087 and of the fixes of its findings; Go-with-conditions: every required check of the pull request green and the load test passed on the branch; mode autonomous, not independent | [a574bf6] |
 
 ---
 
@@ -279,3 +279,4 @@ of it, F1, F2 and F4 above all.
 [RC-425]: ./rc-425-mil-086-gate.md
 [RC-081]: ./rc-081-tls-code.md
 [MIL-089]: ../../milestones/mil-089-the-booking-flow-attacked-and-measured.md
+[a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251

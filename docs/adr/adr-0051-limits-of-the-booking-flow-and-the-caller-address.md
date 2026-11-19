@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-087, written by the AI before any code<br>Go in RC-426; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [a3edc6d] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Second version, after the code review RC-428 of MIL-087: decision 2 says that a refusal by the limit per email keeps the counts per address; decision 4 says what the forwarded headers of the web application do, and that the sign-in limit of the mobile app counts a whole address; decision 5 says what a full store drops for each kind of key, and caps a limit at 100,000; two negative consequences<br>Go in RC-429; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Second version, after the code review RC-428 of MIL-087: decision 2 says that a refusal by the limit per email keeps the counts per address; decision 4 says what the forwarded headers of the web application do, and that the sign-in limit of the mobile app counts a whole address; decision 5 says what a full store drops for each kind of key, and caps a limit at 100,000; two negative consequences<br>Go in RC-429; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -288,3 +288,4 @@ the public host name (option B), then Turnstile on the booking page (option C), 
 [UC-010]: ../use-cases/uc-010/uc.md
 [BC-001]: ../business-case.md
 [a3edc6d]: https://github.com/NF-Hotel/NFHotel/commit/a3edc6d282ca80a45a27abe8e894918a545d9772
+[a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251
