@@ -28,3 +28,10 @@ After the code review (RC-424), 2026-11-19:
   per endpoint: with either left the chunked body is refused, and with both removed it is read and the test fails.
 - after-review.txt: the whole run after the fixes: the build with no warning, every test project but the browser
   tests green (the infrastructure tests against PostgreSQL in a container), and both format checks.
+
+The gate (MIL-086 task 8), 2026-11-19:
+- live-check.txt: the check of criterion 8 on the live site after the deploy of 886c8e8 (NF Hotel CD run
+  44569420887). One GET of /book reads the earliest and the latest day of its two date fields; four stays typed into
+  /book in Chromium, in the container image of Playwright, show a stay that ends five years and a day ahead and a stay
+  of 31 nights refused with the text of each rule and the search button disabled, and the stays at both limits
+  offered. No search was sent and nothing was booked.
