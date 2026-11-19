@@ -12,10 +12,10 @@
 #
 # The job look (MIL-084 task 5, ADR-0048) is the watch that RFC 9116, section 5.1, asks for: it
 # runs ops/scripts/check-security-txt.sh on the public security.txt, with the file of main, its
-# Canonical, every address that it names and the Strict-Transport-Security of the front page. A
-# file that is missing, differs, expires within 30 days or names an address that fails opens the
-# issue "The public security.txt fails its weekly check", or comments on the open one, and a look
-# that passes closes it. Until the first deploy of the file the look reports it as missing.
+# Canonical and every address that it names. A file that is missing, differs, expires within 30
+# days or names an address that fails opens the issue "The public security.txt fails its weekly
+# check", or comments on the open one, and a look that passes closes it. It leaves out the
+# Strict-Transport-Security of the front page, which the edge answers to a runner by itself.
 #
 # Triggers: weekly (Monday 04:23 UTC), and by hand.
 # Secrets: of the environment cloudflare-read, which S01 limits to main (wiki page

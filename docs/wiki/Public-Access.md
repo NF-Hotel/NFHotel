@@ -230,12 +230,13 @@ The dashboard stays the fastest way to act: to take the site off the internet ([
 
 1. **The pull request.** Change the file in a pull request; `CODEOWNERS` asks S01 for every change under `ops/`. Ops CI checks the file against RFC 9116 and ADR-0048 (the step `Check security.txt (MIL-084)` of `Ops nginx routes`), and `test-nginx.sh` checks that the public listener serves it unchanged, with its headers.
 2. **The deploy.** The file reaches the site with the next release, like any other change: S01 approves the CD run.
-3. **Check it** from outside the tailnet: `curl -sS -D - https://nfhotel.devmatiker.com/.well-known/security.txt` answers `200` with the type and the three headers above, and the body is the file of `main`. The whole check, as the weekly look runs it, works on Linux or WSL with curl:
+3. **Check it** from outside the tailnet: `curl -sS -D - https://nfhotel.devmatiker.com/.well-known/security.txt` answers `200` with the type and the three headers above, and the body is the file of `main`. The whole check works on Linux or WSL with curl. It is the check of the weekly look plus `--hsts-like`, which compares the Strict-Transport-Security of the file with the one of the front page; the weekly look cannot make that comparison (below), so make it here after a change of either value:
    ```bash
    u=https://nfhotel.devmatiker.com/.well-known/security.txt
    bash ops/scripts/check-security-txt.sh --url "$u" --canonical "$u" --same-as ops/deploy/nginx/well-known/security.txt \
      --links --hsts-like https://nfhotel.devmatiker.com/ --expect-warnings unsigned,no-encryption,no-role-address
    ```
+   `Strict-Transport-Security is ...` means that the web application sends another value now; change the location in `public.conf.template` to the same.
 
 ### Keep the contacts and the date
 
@@ -245,7 +246,7 @@ The dashboard stays the fastest way to act: to take the site off the internet ([
 
 ### The weekly look
 
-The job `Look at the public security.txt` of the workflow `NF Hotel edge comparison` runs every Monday beside the comparison of the edge, without an environment and without a secret. It fetches the public file and checks it as Ops CI does; it also compares the body with the file of `main`, asks every address that the file names, and compares the Strict-Transport-Security with the one of the front page (RFC 9116, section 5.1: watch the file and what it refers to).
+The job `Look at the public security.txt` of the workflow `NF Hotel edge comparison` runs every Monday beside the comparison of the edge, without an environment and without a secret. It fetches the public file and checks it as Ops CI does; it also compares the body with the file of `main` and asks every address that the file names (RFC 9116, section 5.1: watch the file and what it refers to). It does not compare the Strict-Transport-Security with the one of the front page: Cloudflare answers the front page to a runner of GitHub by itself, without the headers of the site (ADR-0048, decision 6), so that comparison is made by hand (step 3 of [Change it](#change-it)).
 
 | The run | What it means | What to do |
 | --- | --- | --- |
@@ -259,7 +260,6 @@ What a line of the issue usually means:
 - **`the body differs from`:** the live file is not the file of `main`: a release with a new file is not deployed yet, or the file on the VM was changed outside git. Treat a change outside git as a possible incident ([Incidents](Incidents)): find out who changed it before you deploy the file again.
 - **`Expires is ... days ahead, fewer than 30`:** move the date, as above.
 - **An address `answers` an error, or `ends on another host`:** the report form, the policy or the file moved or broke. The report form sends a visitor without a session to the sign-in of GitHub on `github.com`, which passes; if GitHub changes that, this line appears. Open the address in a browser, and correct the file if it moved.
-- **`Strict-Transport-Security is ...`:** the web application sends another value now; change the location in `public.conf.template` to the same.
 - **`the warnings are ...`:** an exception was closed, or a new gap opened; see the exceptions above.
 
 After the fix, run the workflow by hand (**Actions → NF Hotel edge comparison → Run workflow**, on `main`): a look that passes closes the issue.
