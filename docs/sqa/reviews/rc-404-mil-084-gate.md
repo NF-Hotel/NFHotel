@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-084 after the deploy of pull request 834, the look from outside, the change of the weekly look in pull request 836 and its run by hand; Go on criteria 1 to 8; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-084 after the deploy of pull request 834, the look from outside, the change of the weekly look in pull request 836 and its run by hand; Go on criteria 1 to 8; mode autonomous, not independent | [8aedf53] |
 
 ---
 
@@ -164,3 +164,4 @@ named in the summary of the run.
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [DSA-001]: ../devsecops-assessment.md
 [MIL-078]: ../../milestones/mil-078-the-tunnel-routes-and-access-as-code.md
+[8aedf53]: https://github.com/NF-Hotel/NFHotel/commit/8aedf535a484cf75f27032c1a4da3dc13ae6942d
