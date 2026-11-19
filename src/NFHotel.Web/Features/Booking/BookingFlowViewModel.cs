@@ -557,7 +557,7 @@ public sealed class BookingFlowViewModel
 
         try
         {
-            // The public booking answers with the booking and the guest's session (MIL-018, ADR-0047 decision 2).
+            // The public booking answers with the receipt and the guest's session (MIL-018, ADR-0049 decision 3).
             result = await _guestAccess
                 .RunAsync((service, token) => service.BookAsync(request, token), cancellationToken)
                 .ConfigureAwait(false);
@@ -569,7 +569,7 @@ public sealed class BookingFlowViewModel
 
         if (result.IsSuccess)
         {
-            Confirmation = BookingReceiptDto.From(result.Value.Booking);
+            Confirmation = result.Value.Receipt;
             SessionTicket = _tickets.Issue(result.Value.Session);
             CurrentStep = BookingFlowStep.Receipt;
 

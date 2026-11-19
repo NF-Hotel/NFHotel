@@ -487,6 +487,28 @@ public sealed class GuestAccessTests : IClassFixture<ApiFactory>
         Assert.NotEmpty(StaffEndpoints());
     }
 
+    /// <summary>
+    /// Security (ADR-0049 decision 3): each guest route names the permission that the staff routes held for a guest before
+    /// (MIL-018), the read the permission to see the own data and the two changes the permission to edit the own booking,
+    /// and the Guest role holds each of them, as the Access Control Matrix says.
+    /// </summary>
+    [Fact]
+    public void GuestEndpoints_EachRoute_NamesAPermissionOfTheGuestRole()
+    {
+        // Act
+        Dictionary<string, string> permissions = typeof(NFHotel.Api.Controllers.GuestBookingController)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Select(action => (action.Name, Guest: action.GetCustomAttribute<RequiresGuestAttribute>()))
+            .Where(entry => entry.Guest is not null)
+            .ToDictionary(entry => entry.Name, entry => entry.Guest!.Permission, StringComparer.Ordinal);
+
+        // Assert
+        Assert.Equal(Permissions.ViewOwnGuestData, permissions["GetAsync"]);
+        Assert.Equal(Permissions.EditOwnBooking, permissions["CancelAsync"]);
+        Assert.Equal(Permissions.EditOwnBooking, permissions["RescheduleAsync"]);
+        Assert.All(permissions.Values, permission => Assert.True(RolePermissions.HasPermission(Roles.Guest, permission), permission));
+    }
+
     /// <summary>Security: a guest token in the staff header is no staff token; it gives no staff rights and no guest rights.</summary>
     [Fact]
     public async Task StaffHeader_GuestToken_ReturnsUnauthorized()

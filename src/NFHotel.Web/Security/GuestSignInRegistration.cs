@@ -10,14 +10,14 @@ namespace NFHotel.Web.Security;
 
 /// <summary>
 /// Registers the guest sign-in of the web application (MIL-018, ADR-0047 decision 6): a second cookie scheme beside the
-/// staff cookie, the holder of the guest token for the use-case runner, the tickets of the booking flow, and the two
-/// endpoints that start and end a guest session.
+/// staff cookie, the holder of the guest token for the use-case runner, the tickets of the booking flow, the two
+/// endpoints that start and end a guest session, and the redirect of an old address that carried a booking number.
 /// </summary>
 public static class GuestSignInRegistration
 {
     #region Fields
 
-    /// <summary>The page where a guest signs in with the number and the email of the booking.</summary>
+    /// <summary>The page where a guest signs in with the reference and the email of the booking (ADR-0049).</summary>
     public const string SignInPath = "/booking";
 
     /// <summary>The page of the signed-in guest's own booking.</summary>
@@ -71,12 +71,20 @@ public static class GuestSignInRegistration
         return services;
     }
 
-    /// <summary>Maps the endpoints that start a guest session from a ticket and end a guest session.</summary>
+    /// <summary>
+    /// Maps the endpoints that start a guest session from a ticket and end a guest session, and the redirect of an old
+    /// address of the sign-in.
+    /// </summary>
     /// <param name="app">The application.</param>
     /// <returns>The application.</returns>
     public static WebApplication MapGuestSession(this WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
+
+        // Before MIL-085 the sign-in took a booking number from the address (/booking/FLZ-000123). An old link now goes
+        // to the empty sign-in: the number is neither filled in nor looked up, and a reference never stands in an address,
+        // where access logs and the history of the browser would keep it (ADR-0049 decisions 3 and 5).
+        app.MapGet(SignInPath + "/{address}", () => Results.Redirect(SignInPath));
 
         app.MapPost(SessionPath, async (HttpContext context, IAntiforgery antiforgery, GuestSessionTickets tickets) =>
         {
@@ -89,7 +97,7 @@ public static class GuestSignInRegistration
             GuestSessionDto? session = tickets.Redeem(form[TicketField].ToString());
             if (session is null)
             {
-                // A used or expired ticket: the guest signs in with the number and the email instead.
+                // A used or expired ticket: the guest signs in with the reference and the email instead.
                 return Results.Redirect(SignInPath);
             }
 

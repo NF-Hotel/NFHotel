@@ -21,6 +21,14 @@ public interface IBookingQueries
     Task<BookingReadModel?> GetReadModelAsync(int bookingId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Fetches the read model of the booking with a reference, for the guest sign-in (ADR-0049 decision 2).
+    /// </summary>
+    /// <param name="reference">The reference of the booking.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The read model, or <c>null</c> if no booking has the reference.</returns>
+    Task<BookingReadModel?> GetReadModelByReferenceAsync(Guid reference, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Fetches the booking overview for a date window (BR-23, BR-24, BR-25).
     /// </summary>
     /// <param name="periodStart">The first date of the window, inclusive.</param>

@@ -1,6 +1,4 @@
-using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Guests;
-using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Web.Common;
@@ -8,18 +6,19 @@ using NFHotel.Web.Common;
 namespace NFHotel.Web.Features.Booking;
 
 /// <summary>
-/// The guest sign-in on the public page <c>/booking</c> (MIL-018, ADR-0047, UC-010): the number and the email of a
+/// The guest sign-in on the public page <c>/booking</c> (MIL-018, ADR-0049, UC-010): the reference and the email of a
 /// booking sign the guest in to that booking, and to nothing else.
 /// </summary>
 /// <remarks>
-/// <b>Why the number alone is not enough.</b> The number is <c>FLZ-</c> plus the key of the booking (BR-109), so
-/// <c>FLZ-000123</c> is one digit from <c>FLZ-000124</c>. The email the booking was made with is the other half of the
-/// key (MIL-079): the guest has it, a guesser does not. The API answers a wrong email, an unknown number and a
-/// cancelled booking with the same refusal, and refuses a number after a few failed attempts, so neither the number
-/// nor the email can be found by trying.
+/// <b>Why the reference alone is not enough.</b> The reference is random (ADR-0049 decision 1), so it cannot be worked
+/// out from another booking, but it is written on a receipt that a guest may forward or lose. The email the booking was
+/// made with is the other half (MIL-079): the guest has it, a finder of the receipt may not. The API answers a wrong
+/// email, an unknown or unreadable reference and a cancelled booking with the same refusal, and stops a reference and an
+/// address after a few failed tries (ADR-0049 decisions 2 and 6).
 /// <para>
-/// The view model only asks: the page sets the guest cookie with the session it returns, because only the answer to a
-/// request can set a cookie.
+/// The view model reads nothing in the text the guest typed: the API is the one place that decides what a reference is,
+/// so every try, a text that is no reference among them, is counted there. The page sets the guest cookie with the
+/// session that comes back, because only the answer to a request can set a cookie.
 /// </para>
 /// </remarks>
 public sealed class GuestSignInViewModel
@@ -49,7 +48,7 @@ public sealed class GuestSignInViewModel
 
     /// <summary>The errors to show. Empty before the first attempt and after one that signed the guest in.</summary>
     /// <remarks>
-    /// An unreadable number, an unknown number, a wrong email and a cancelled booking give the same text: the difference
+    /// An unreadable reference, an unknown one, a wrong email and a cancelled booking give the same text: the difference
     /// would only inform whoever is trying their way forward.
     /// </remarks>
     public IReadOnlyList<string> Errors { get; private set; } = NoMessages;
@@ -58,24 +57,17 @@ public sealed class GuestSignInViewModel
 
     #region Public methods
 
-    /// <summary>Signs the guest in with the number and the email of the booking.</summary>
-    /// <param name="bookingNumber">The booking number as the guest typed it, for example <c>FLZ-000123</c>.</param>
+    /// <summary>Signs the guest in with the reference and the email of the booking.</summary>
+    /// <param name="reference">The reference as the guest typed it, in any letter case.</param>
     /// <param name="email">The email the guest booked with, in any letter case.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The guest session for the page to keep in the guest cookie, or <c>null</c> with <see cref="Errors"/> set.</returns>
     public async Task<GuestSessionDto?> SignInAsync(
-        string? bookingNumber,
+        string? reference,
         string? email,
         CancellationToken cancellationToken = default)
     {
-        if (!BookingNumberText.TryParseId(bookingNumber, out int bookingId))
-        {
-            // An unreadable number does not cost an attempt, and it gets the answer of a number that does not exist.
-            Errors = [Describe(ErrorCodes.Api.GuestUnauthorized)];
-            return null;
-        }
-
-        BookingReceiptRequest request = new(bookingId, email);
+        GuestSignInRequest request = new(reference, email);
         Result<GuestSessionDto> result = await _access
             .RunAsync((service, token) => service.SignInAsync(request, token), cancellationToken)
             .ConfigureAwait(false);
@@ -92,11 +84,4 @@ public sealed class GuestSignInViewModel
     }
 
     #endregion Public methods
-
-    #region Private methods
-
-    /// <summary>Translates one error code to the text the guest reads.</summary>
-    private static string Describe(string code) => ErrorMessages.Describe(new Error(code));
-
-    #endregion Private methods
 }

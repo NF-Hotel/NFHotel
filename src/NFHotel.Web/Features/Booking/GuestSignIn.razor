@@ -1,5 +1,4 @@
 @attribute [Route(GuestSignInRegistration.SignInPath)]
-@attribute [Route(GuestSignInRegistration.SignInPath + "/{BookingNumber}")]
 @using NFHotel.Web.Security
 @inherits NFHotel.Web.Common.CancellableComponentBase
 
@@ -7,18 +6,18 @@
 @inject NavigationManager Navigation
 
 @*
-    The guest sign-in (MIL-018, ADR-0047, UC-010): the booking number and the email the booking was made with sign the
-    guest in to that booking, and the guest's own page /my-booking shows it, with the dates to change and the button to
-    cancel. Until MIL-018 this page showed the receipt itself (MIL-079); now it opens the guest's session instead, so the
-    same two fields lead to the receipt and to the changes.
+    The guest sign-in (MIL-018, ADR-0049, UC-010): the booking reference and the email the booking was made with sign
+    the guest in to that booking, and the guest's own page /my-booking shows it, with the dates to change and the button
+    to cancel. The reference is random (ADR-0049 decision 1), so it cannot be worked out from another booking; the page
+    reads nothing in it and sends it to the API as typed, which decides and counts every try.
 
     A static server-rendered form, with no @@rendermode: the guest cookie can only be set while the response is being
     made, and a SignalR circuit cannot set one. The cookie is a scheme of its own, beside the staff cookie, so a guest is
     never taken for a member of staff (ADR-0047 decision 6).
 
-    The address may carry the number (/booking/FLZ-000123), so the links and bookmarks from before still fill in the
-    form. The email never goes in the address: the form sends it in the body, so it stays out of access logs and the
-    browser history.
+    Neither the reference nor the email goes in the address: the form sends both in the body, so they stay out of access
+    logs and the browser history. An old link with a booking number (/booking/FLZ-000123) is sent to this page empty
+    (GuestSignInRegistration.MapGuestSession).
 
     PublicLayout is the default layout (Routes.razor), so there is no @@layout line.
 *@
@@ -29,7 +28,7 @@
     <div class="pub-wrap">
         <div class="pub-booking stack-lg">
             <PageHeader Title="Find your booking"
-                        Subtitle="Enter your booking number and the email you booked with." />
+                        Subtitle="Enter your booking reference and the email you booked with." />
 
             <ErrorAlert Errors="ViewModel.Errors" />
 
@@ -38,9 +37,10 @@
                 <DataAnnotationsValidator />
 
                 <div class="field-row">
-                    <FormField Label="Booking number" For="booking-number" IsRequired="true"
-                               Hint="It is on your confirmation and looks like this: FLZ-000123.">
-                        <InputText id="booking-number" class="field-input numeric" autocomplete="off" @bind-Value="Input!.BookingNumber" />
+                    <FormField Label="Booking reference" For="booking-reference" IsRequired="true"
+                               Hint="It is on your confirmation: letters and digits in five groups.">
+                        <InputText id="booking-reference" class="field-input pub-reference-input" autocomplete="off"
+                                   spellcheck="false" @bind-Value="Input!.Reference" />
                     </FormField>
 
                     <FormField Label="Email" For="booking-email" IsRequired="true"

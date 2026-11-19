@@ -9,8 +9,11 @@ namespace NFHotel.Application.Dto.Bookings;
 /// </remarks>
 public enum BookingSortField
 {
-    /// <summary>Booking number — corresponds to the id order (BR-109).</summary>
-    BookingNumber = 0,
+    /// <summary>
+    /// The order in which the bookings were made: the order of their keys. The reference is random, so it gives no
+    /// order (BR-109, ADR-0049).
+    /// </summary>
+    Created = 0,
 
     /// <summary>The full name of the guest (BR-25).</summary>
     GuestName = 1,

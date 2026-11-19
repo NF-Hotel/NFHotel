@@ -5,7 +5,7 @@ namespace NFHotel.Web.Features.Admin.Shared;
 /// <summary>The code behind the confirmation strip: its texts, its busy state and the two callbacks.</summary>
 public partial class ConfirmPanel : ComponentBase
 {
-    /// <summary>The heading, for example "Cancel booking FLZ-000123?".</summary>
+    /// <summary>The heading, for example "Cancel booking 3f2504e0-4f89-41d3-9a0c-0305e82c3301?".</summary>
     [Parameter]
     [EditorRequired]
     public string Title { get; set; } = string.Empty;

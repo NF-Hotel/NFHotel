@@ -16,6 +16,8 @@ public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixt
     /// <summary>The text of a version 4 UUID in lower case (RFC 9562), the form of a reference (ADR-0049 decision 1).</summary>
     private const string Version4 = "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$";
 
+    #region The booking flow
+
     [E2EFact]
     public async Task Book_FreeRoomWithCompleteForm_ShowsTheReceipt()
     {
@@ -41,6 +43,10 @@ public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixt
         await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Your details" })).ToBeVisibleAsync();
         Assert.Equal("/book", Pages.PathOf(Page));
     }
+
+    #endregion
+
+    #region The guest sign-in and the own booking
 
     [E2EFact]
     public async Task FindBooking_ReferenceWithAnotherEmailThenItsOwn_SignsInOnlyWithItsOwn()
@@ -104,6 +110,10 @@ public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixt
         await Assertions.Expect(Page.GetByText("Your booking is cancelled.")).ToBeVisibleAsync();
     }
 
+    #endregion
+
+    #region Old booking numbers
+
     /// <summary>ADR-0049 decision 5: an old link with a booking number ends on the empty sign-in, never on an error.</summary>
     [E2EFact]
     public async Task SignIn_OldLinkWithABookingNumber_EndsOnTheEmptySignIn()
@@ -134,6 +144,10 @@ public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixt
         Assert.Equal("/booking", Pages.PathOf(Page));
     }
 
+    #endregion
+
+    #region Helpers
+
     private async Task FillGuestAsync(string email)
     {
         await Pages.FillAsync(Page.Locator("#first-name"), "Ada");
@@ -153,4 +167,6 @@ public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixt
         await Page.GetByRole(AriaRole.Button, new() { Name = "Choose Single room" }).ClickAsync();
         await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Your details" })).ToBeVisibleAsync();
     }
+
+    #endregion
 }

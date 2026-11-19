@@ -20,6 +20,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// </para>
 /// </remarks>
 /// <param name="BookingId">The booking id.</param>
+/// <param name="Reference">The reference of the booking (BR-109, ADR-0049).</param>
 /// <param name="StartDate">Arrival date.</param>
 /// <param name="EndDate">Booked departure date.</param>
 /// <param name="EffectiveEndDate">
@@ -34,6 +35,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// <param name="Guest">The guest, projected along, with passport number.</param>
 public sealed record BookingReadModel(
     int BookingId,
+    Guid Reference,
     DateOnly StartDate,
     DateOnly EndDate,
     DateOnly EffectiveEndDate,

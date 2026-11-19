@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 
 using NFHotel.Application.Dto.Bookings;
+using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Booking;
@@ -15,6 +16,9 @@ public partial class BookingReceiptCard : ComponentBase
     [Parameter]
     [EditorRequired]
     public BookingReceiptDto? Receipt { get; set; }
+
+    /// <summary>The reference in its one text form: lower case, with its hyphens (ADR-0049 decision 1).</summary>
+    private string ReferenceText => Receipt is null ? string.Empty : BookingReference.Format(Receipt.Reference);
 
     /// <summary>
     /// The room as the customer reads it: the type only. The room itself is given at check-in, so reception can move

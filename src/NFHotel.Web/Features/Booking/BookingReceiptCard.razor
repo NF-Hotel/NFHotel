@@ -12,15 +12,15 @@
 
 @*
     The receipt for one booking. Used both as step 4 in the flow and on /my-booking, the own booking of a guest whom
-    /booking has signed in with the number and the email of the booking (MIL-018, ADR-0047).
+    /booking has signed in with the reference and the email of the booking (MIL-018, ADR-0049).
 
     BR-C-06 — WHY THERE IS NO NAME HERE
-    The card takes BookingReceiptDto, which has only booking number, period, number of nights, room type and status
-    (BR-C-05). There is no guest in it, so the card cannot show a name, an email or a phone number, not even by mistake.
-    Before MIL-079 the card took the whole booking and left the guest fields unused, while the number alone opened the
-    page: FLZ-000123 is one digit from the next guest's booking. MIL-079 made the number open the receipt only together
-    with the email of the booking; since MIL-018 the two sign the guest in, and the API answers a guest only about the
-    own booking.
+    The card takes BookingReceiptDto, which has only the reference, the period, the number of nights, the room type and
+    the status (BR-C-05, ADR-0049 decision 7). There is no guest in it, so the card cannot show a name, an email or a
+    phone number, not even by mistake. Before MIL-079 the card took the whole booking, while the number alone opened the
+    page: FLZ-000123 was one digit from the next guest's booking. MIL-079 made the number open the receipt only together
+    with the email of the booking, MIL-018 made the two sign the guest in, and MIL-085 replaced the number with a random
+    reference that cannot be worked out from another booking (ADR-0049 decision 1).
 
     There is no price either. The price model does not exist in Phase 1 (BR-C-05, BR-31), and
     "Payment on arrival" is the honest answer rather than an empty field that looks like a fault.
@@ -30,9 +30,9 @@
 {
     <article class="card card-pad stack pub-receipt">
         <div class="stack-sm">
-            <span class="eyebrow">Booking number</span>
-            <p class="pub-receipt-number numeric">@Receipt.BookingNumber</p>
-            <p class="muted">Keep this number. With the email you booked with, it opens this booking again.</p>
+            <span class="eyebrow">Booking reference</span>
+            <p class="pub-receipt-reference">@ReferenceText</p>
+            <p class="muted">Keep this reference. With the email you booked with, it opens this booking again.</p>
         </div>
 
         <div class="divider"></div>

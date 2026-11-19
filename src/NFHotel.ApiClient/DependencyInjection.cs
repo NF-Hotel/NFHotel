@@ -50,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<IStaffAuthService, ApiStaffAuthService>();
         services.AddScoped<IStaffAdminService, ApiStaffAdminService>();
         services.AddScoped<IGuestAccessService, ApiGuestAccessService>();   // the guest sign-in (MIL-018)
+        services.AddScoped<IGuestBookingService, ApiGuestBookingService>();   // the guest's own booking (ADR-0049)
         services.AddScoped<StaffCallContext>();
         services.AddScoped<GuestCallContext>();
         return services;

@@ -18,25 +18,6 @@ namespace NFHotel.Application.UseCases.Bookings;
 /// </remarks>
 public static class BookingMapping
 {
-    /// <summary>Prefix of the displayed booking number (BR-109).</summary>
-    private const string BookingNumberPrefix = "FLZ-";
-
-    /// <summary>Digit format of the displayed booking number (BR-109).</summary>
-    private const string BookingNumberFormat = "D6";
-
-    /// <summary>
-    /// Formats the displayed booking number, for example <c>FLZ-000123</c> (BR-109).
-    /// </summary>
-    /// <param name="bookingId">The booking id.</param>
-    /// <returns>Bookingnummeret.</returns>
-    /// <remarks>
-    /// Mirrors <see cref="Booking.BookingNumber"/>, which can be computed only on the entity.
-    /// Read paths have no entity (A-11), so the format necessarily exists in two places —
-    /// a parity test in Application.Tests must pin them together.
-    /// </remarks>
-    public static string FormatBookingNumber(int bookingId) =>
-        $"{BookingNumberPrefix}{bookingId.ToString(BookingNumberFormat, System.Globalization.CultureInfo.InvariantCulture)}";
-
     /// <summary>
     /// Computes which actions are legal on a booking right now (BR-22).
     /// </summary>
@@ -102,7 +83,7 @@ public static class BookingMapping
 
         return new BookingListItemDto(
             booking.BookingId,
-            FormatBookingNumber(booking.BookingId),
+            booking.Reference,
             booking.StartDate,
             booking.EndDate,
             booking.EffectiveEndDate,
@@ -131,7 +112,7 @@ public static class BookingMapping
 
         return new BookingDetailsDto(
             booking.BookingId,
-            FormatBookingNumber(booking.BookingId),
+            booking.Reference,
             booking.StartDate,
             booking.EndDate,
             booking.EffectiveEndDate,

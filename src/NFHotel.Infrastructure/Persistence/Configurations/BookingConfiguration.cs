@@ -19,6 +19,12 @@ namespace NFHotel.Infrastructure.Persistence.Configurations;
 /// </remarks>
 public sealed class BookingConfiguration : EntityConfiguration<Booking, int>
 {
+    /// <summary>The column of the reference of a booking (ADR-0049).</summary>
+    public const string ReferenceColumn = "reference";
+
+    /// <summary>The unique index on the reference, whose name a refused insert reports.</summary>
+    public const string ReferenceIndex = "ux_booking_reference";
+
     /// <inheritdoc />
     protected override string TableName => BookingOverlapConstraint.TableName;
 
@@ -40,6 +46,19 @@ public sealed class BookingConfiguration : EntityConfiguration<Booking, int>
     /// <inheritdoc />
     protected override void ConfigureEntity(EntityTypeBuilder<Booking> builder)
     {
+        // ADR-0049 decision 4: the domain gives every new booking its reference; the default of the column gives one to
+        // every booking that existed before the column and to every booking that the release before inserts, so the
+        // migration only adds and a rollback stays possible. The unique index is the safeguard behind Guid.NewGuid.
+        builder.Property(booking => booking.Reference)
+            .HasColumnName(ReferenceColumn)
+            .HasColumnType("uuid")
+            .HasDefaultValueSql("gen_random_uuid()")
+            .IsRequired();
+
+        builder.HasIndex(booking => booking.Reference)
+            .IsUnique()
+            .HasDatabaseName(ReferenceIndex);
+
         builder.Property(booking => booking.StartDate)
             .HasColumnType("date")
             .IsRequired();
@@ -67,12 +86,11 @@ public sealed class BookingConfiguration : EntityConfiguration<Booking, int>
             .HasConversion<int>()
             .IsRequired();
 
-        // Derived values without a column. BookingNumber did not have a column before either.
+        // Derived values without a column.
         builder.Ignore(booking => booking.Period);
         builder.Ignore(booking => booking.EffectivePeriod);
         builder.Ignore(booking => booking.EffectiveEndDate);
         builder.Ignore(booking => booking.NumberOfNights);
-        builder.Ignore(booking => booking.BookingNumber);
         builder.Ignore(booking => booking.CanConfirm);
         builder.Ignore(booking => booking.CanCheckOut);
         builder.Ignore(booking => booking.CanCancel);

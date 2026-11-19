@@ -14,9 +14,9 @@ namespace NFHotel.Api.Security;
 /// 401 without a valid staff token, 403 when the role lacks the permission. The use case is not called in either case.
 /// An endpoint without this attribute is public to every caller that holds the token of the web application.
 /// <para>
-/// A signed-in guest (MIL-018, ADR-0047) passes only an endpoint that names a <see cref="GuestPermission"/> which the
-/// Guest role holds; the use case then checks that the booking is the guest's own. A guest token on any other endpoint
-/// gets 403, and a guest token that is expired or tampered gets the 401 of a refused guest sign-in.
+/// A route of staff is never a route of a guest (ADR-0049 decision 3): a valid guest token gets 403 here, and a guest
+/// token that is expired or tampered gets the 401 of a refused guest sign-in. The guest's own booking has its own routes,
+/// behind <see cref="RequiresGuestAttribute"/>.
 /// </para>
 /// </summary>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
@@ -31,12 +31,6 @@ public sealed class RequiresPermissionAttribute : Attribute, IAuthorizationFilte
 
     /// <summary>The permission the endpoint needs.</summary>
     public string Permission { get; }
-
-    /// <summary>
-    /// The permission of the Guest role that lets a signed-in guest call the endpoint for their own booking, or
-    /// <c>null</c> when the endpoint is for staff only (MIL-018).
-    /// </summary>
-    public string? GuestPermission { get; set; }
 
     /// <inheritdoc />
     public void OnAuthorization(AuthorizationFilterContext context)
@@ -68,26 +62,21 @@ public sealed class RequiresPermissionAttribute : Attribute, IAuthorizationFilte
     }
 
     /// <summary>
-    /// The answer to a call without a valid staff token (MIL-018): without a guest token it is the 401 of ADR-0005; a
-    /// refused guest token gets the one refusal of the guest sign-in; a valid guest token passes only where the Guest role
-    /// holds the guest permission of the endpoint, and gets 403 everywhere else.
+    /// The answer to a call without a valid staff token: without a guest token it is the 401 of ADR-0005; a refused guest
+    /// token gets the one refusal of the guest sign-in (MIL-018); a valid guest token gets 403, because no route of staff
+    /// admits a guest (ADR-0049 decision 3).
     /// </summary>
     /// <param name="http">The request.</param>
-    /// <returns>The refusal, or <c>null</c> to let the guest through to the use case.</returns>
-    private ObjectResult? GuestRefusal(HttpContext http)
+    /// <returns>The refusal.</returns>
+    private static ObjectResult GuestRefusal(HttpContext http)
     {
         if (GuestAuthentication.IsRefused(http))
         {
             return GuestAuthentication.Refusal();
         }
 
-        if (GuestAuthentication.BookingIdOf(http) is null)
-        {
-            return Refuse(StatusCodes.Status401Unauthorized, ErrorCodes.Api.StaffUnauthorized);
-        }
-
-        return GuestPermission is not null && RolePermissions.HasPermission(Roles.Guest, GuestPermission)
-            ? null
+        return GuestAuthentication.BookingIdOf(http) is null
+            ? Refuse(StatusCodes.Status401Unauthorized, ErrorCodes.Api.StaffUnauthorized)
             : Refuse(StatusCodes.Status403Forbidden, ErrorCodes.Api.Forbidden);
     }
 

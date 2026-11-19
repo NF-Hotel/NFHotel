@@ -7,16 +7,16 @@
 @inject NavigationManager Navigation
 
 @*
-    The signed-in guest's own booking (MIL-018, ADR-0047, UC-010): the receipt, the name and email it was booked in, the
-    dates to change and the button to cancel. Without a guest cookie the page sends the guest to the sign-in.
+    The signed-in guest's own booking (MIL-018, ADR-0049, UC-010): the receipt, the dates to change and the button to
+    cancel. Without a guest cookie the page sends the guest to the sign-in.
 
     A static server-rendered page, like the sign-in: the guest cookie travels with each request to this page and its
     forms, and no circuit is opened, so the guest token never leaves the request it came with. Each change posts the
-    form, the API checks that the booking is the one in the guest token, and a change that succeeded sends the browser
-    back to this page with the result in the address, so a reload shows it again and does not post it again.
+    form, the API works on the booking in the guest token, which no call names, and a change that succeeded sends the
+    browser back to this page with the result in the address, so a reload shows it again and does not post it again.
 
-    The page shows no passport number and no room number: the guest's answers carry no passport number (ADR-0047
-    decision 4), and the room is given at check-in, as on the receipt.
+    The page shows the receipt and nothing more (ADR-0049 decision 7): no name, no email, no passport number and no room
+    number. The guest knows who booked; a page that showed it would tell whoever holds the guest's session.
 *@
 
 <PageTitle>Your booking — NFHotel</PageTitle>
@@ -34,14 +34,9 @@
 
             <ErrorAlert Errors="ViewModel.Errors" />
 
-            @if (ViewModel.Booking is not null)
+            @if (ViewModel.Receipt is not null)
             {
                 <BookingReceiptCard Receipt="ViewModel.Receipt" />
-
-                <section class="card card-pad stack" aria-labelledby="my-booking-guest">
-                    <h2 class="subtitle" id="my-booking-guest">Booked in the name of</h2>
-                    <p>@ViewModel.Booking.Guest.FullName · @ViewModel.Booking.Guest.Email</p>
-                </section>
 
                 @if (ViewModel.CanReschedule)
                 {
@@ -80,7 +75,7 @@
                     <section class="card card-pad stack" aria-labelledby="my-booking-cancel">
                         <h2 class="subtitle" id="my-booking-cancel">Cancel the booking</h2>
                         <p class="muted">
-                            A cancelled booking can't be changed again, and its number and email no longer sign you in.
+                            A cancelled booking can't be changed again, and its reference and email no longer sign you in.
                         </p>
 
                         <form method="post" @formname="@CancelForm" @onsubmit="CancelAsync" class="row">
@@ -93,8 +88,8 @@
             else
             {
                 <p>
-                    <a href="@GuestSignInRegistration.SignInPath">Sign in again</a> with your booking number and the email
-                    you booked with.
+                    <a href="@GuestSignInRegistration.SignInPath">Sign in again</a> with your booking reference and the
+                    email you booked with.
                 </p>
             }
 

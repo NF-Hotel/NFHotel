@@ -32,19 +32,6 @@ public sealed class ApiBookingService : IBookingService
     }
 
     /// <inheritdoc />
-    public async Task<Result<BookingReceiptDto>> LookUpReceiptAsync(
-        BookingReceiptRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-        return await _api.PostAsync<BookingReceiptDto>(
-                $"{ApiRoutes.Bookings}/{ApiRoutes.PublicReceipt}",
-                request,
-                cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    /// <inheritdoc />
     public async Task<Result<IReadOnlyList<BookingListItemDto>>> GetOverviewAsync(BookingOverviewQuery query, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -87,27 +74,6 @@ public sealed class ApiBookingService : IBookingService
     {
         ArgumentNullException.ThrowIfNull(request);
         return await _api.PostAsync<BookingDetailsDto>(ApiRoutes.Bookings, request, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc />
-    /// <remarks>
-    /// The API answers the public booking with the booking and the guest session together (MIL-018); this method keeps
-    /// the booking, as the use case does. <see cref="ApiGuestAccessService.BookAsync"/> keeps both.
-    /// </remarks>
-    public async Task<Result<BookingDetailsDto>> CreatePublicAsync(
-        CreatePublicBookingRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-
-        Result<PublicBookingDto> created = await _api.PostAsync<PublicBookingDto>(
-            $"{ApiRoutes.Bookings}/{ApiRoutes.PublicBooking}",
-            request,
-            cancellationToken).ConfigureAwait(false);
-
-        return created.IsSuccess
-            ? Result<BookingDetailsDto>.Success(created.Value.Booking)
-            : Result<BookingDetailsDto>.Failure(created.Errors);
     }
 
     /// <inheritdoc />

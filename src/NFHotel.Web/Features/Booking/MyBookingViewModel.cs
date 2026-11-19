@@ -1,18 +1,20 @@
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.UseCases;
-using NFHotel.Application.UseCases.Bookings;
+using NFHotel.Application.UseCases.Guests;
+using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
 
 namespace NFHotel.Web.Features.Booking;
 
 /// <summary>
-/// The signed-in guest's own booking on <c>/my-booking</c> (MIL-018, ADR-0047, UC-010): the receipt, the dates to change
+/// The signed-in guest's own booking on <c>/my-booking</c> (MIL-018, ADR-0049, UC-010): the receipt, the dates to change
 /// and the cancellation.
 /// </summary>
 /// <remarks>
-/// Every call carries the guest token, and the API decides: it answers only for the booking in the token, and a guest
-/// changes the dates but keeps the room type and the room (ADR-0047 decision 5). The page offers what the booking allows
-/// right now (<see cref="BookingActionsDto"/>), so a guest is not shown a button the API would refuse.
+/// Every call carries the guest token and names no booking: the API answers for the booking in the token, with the
+/// receipt alone, and a guest changes the dates but keeps the room type and the room (ADR-0047 decision 5, ADR-0049
+/// decisions 3 and 7). The page offers the two changes for an open booking only, by the rule of the domain, so a guest is
+/// not shown a button the API would refuse.
 /// </remarks>
 public sealed class MyBookingViewModel
 {
@@ -26,36 +28,33 @@ public sealed class MyBookingViewModel
 
     private static readonly IReadOnlyList<string> NoMessages = Array.Empty<string>();
 
-    private readonly IUseCaseRunner<IBookingService> _bookings;
+    private readonly IUseCaseRunner<IGuestBookingService> _booking;
 
     #endregion Fields
 
     #region Constructors
 
     /// <summary>Creates the view model.</summary>
-    /// <param name="bookings">Runs use cases on <see cref="IBookingService"/> with the guest token of the request.</param>
-    public MyBookingViewModel(IUseCaseRunner<IBookingService> bookings)
+    /// <param name="booking">Runs use cases on <see cref="IGuestBookingService"/> with the guest token of the request.</param>
+    public MyBookingViewModel(IUseCaseRunner<IGuestBookingService> booking)
     {
-        ArgumentNullException.ThrowIfNull(bookings);
+        ArgumentNullException.ThrowIfNull(booking);
 
-        _bookings = bookings;
+        _booking = booking;
     }
 
     #endregion Constructors
 
     #region Properties
 
-    /// <summary>The booking of the signed-in guest, or <c>null</c> until it is read or when it could not be read.</summary>
-    public BookingDetailsDto? Booking { get; private set; }
+    /// <summary>The receipt of the guest's booking, or <c>null</c> until it is read or when it could not be read.</summary>
+    public BookingReceiptDto? Receipt { get; private set; }
 
-    /// <summary>The receipt of the booking, or <c>null</c> without a booking.</summary>
-    public BookingReceiptDto? Receipt => Booking is null ? null : BookingReceiptDto.From(Booking);
+    /// <summary>True when the booking may be cancelled: it is open (BR-11).</summary>
+    public bool CanCancel => Receipt?.Status.IsOpen() == true;
 
-    /// <summary>True when the booking may be cancelled right now (BR-11).</summary>
-    public bool CanCancel => Booking?.Actions.CanCancel == true;
-
-    /// <summary>True when the dates of the booking may be changed right now (BR-14).</summary>
-    public bool CanReschedule => Booking?.Actions.CanReschedule == true;
+    /// <summary>True when the dates of the booking may be changed: it is open (BR-14).</summary>
+    public bool CanReschedule => Receipt?.Status.IsOpen() == true;
 
     /// <summary>The result of the last change, or <c>null</c>.</summary>
     public string? Notice { get; private set; }
@@ -67,20 +66,17 @@ public sealed class MyBookingViewModel
 
     #region Public methods
 
-    /// <summary>Reads the booking of the signed-in guest.</summary>
-    /// <param name="bookingId">The key of the booking in the guest cookie.</param>
+    /// <summary>Reads the receipt of the signed-in guest's booking.</summary>
     /// <param name="result">The word of the last change from the address, or <c>null</c>.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task that completes when the booking is read or the errors are set.</returns>
-    public async Task LoadAsync(int bookingId, string? result, CancellationToken cancellationToken = default)
+    /// <returns>A task that completes when the receipt is read or the errors are set.</returns>
+    public async Task LoadAsync(string? result, CancellationToken cancellationToken = default)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bookingId);
-
-        Result<BookingDetailsDto> read = await _bookings
-            .RunAsync((service, token) => service.GetByIdAsync(bookingId, token), cancellationToken)
+        Result<BookingReceiptDto> read = await _booking
+            .RunAsync((service, token) => service.GetAsync(token), cancellationToken)
             .ConfigureAwait(false);
 
-        Booking = read.IsSuccess ? read.Value : null;
+        Receipt = read.IsSuccess ? read.Value : null;
         Errors = read.IsSuccess ? NoMessages : TextsOf(read);
         Notice = read.IsSuccess ? NoticeFor(result) : null;
     }
@@ -90,14 +86,13 @@ public sealed class MyBookingViewModel
     /// <returns>True when the booking was cancelled; false with <see cref="Errors"/> set.</returns>
     public async Task<bool> CancelAsync(CancellationToken cancellationToken = default)
     {
-        if (Booking is not BookingDetailsDto booking)
+        if (Receipt is null)
         {
             return false;
         }
 
-        int bookingId = booking.BookingId;
-        Result<BookingDetailsDto> cancelled = await _bookings
-            .RunAsync((service, token) => service.CancelAsync(bookingId, token), cancellationToken)
+        Result<BookingReceiptDto> cancelled = await _booking
+            .RunAsync((service, token) => service.CancelAsync(token), cancellationToken)
             .ConfigureAwait(false);
 
         return Apply(cancelled);
@@ -110,13 +105,13 @@ public sealed class MyBookingViewModel
     /// <returns>True when the new dates were saved; false with <see cref="Errors"/> set.</returns>
     public async Task<bool> RescheduleAsync(DateOnly checkIn, DateOnly checkOut, CancellationToken cancellationToken = default)
     {
-        if (Booking is not BookingDetailsDto booking)
+        if (Receipt is null)
         {
             return false;
         }
 
-        RescheduleBookingRequest request = new(booking.BookingId, checkIn, checkOut, booking.Room.RoomId);
-        Result<BookingDetailsDto> moved = await _bookings
+        GuestRescheduleRequest request = new(checkIn, checkOut);
+        Result<BookingReceiptDto> moved = await _booking
             .RunAsync((service, token) => service.RescheduleAsync(request, token), cancellationToken)
             .ConfigureAwait(false);
 
@@ -141,8 +136,8 @@ public sealed class MyBookingViewModel
         return texts.Count > 0 ? texts : [ErrorMessages.Unexpected];
     }
 
-    /// <summary>Keeps the booking after a change, or the errors of a refusal and the booking as it was.</summary>
-    private bool Apply(Result<BookingDetailsDto> changed)
+    /// <summary>Keeps the receipt after a change, or the errors of a refusal and the receipt as it was.</summary>
+    private bool Apply(Result<BookingReceiptDto> changed)
     {
         Notice = null;
         if (changed.IsFailure)
@@ -151,7 +146,7 @@ public sealed class MyBookingViewModel
             return false;
         }
 
-        Booking = changed.Value;
+        Receipt = changed.Value;
         Errors = NoMessages;
         return true;
     }
