@@ -18,6 +18,10 @@ server {
   resolver 127.0.0.11 valid=10s;
   set $upstream http://${UPSTREAM_HOST}:${UPSTREAM_PORT};
 
+  # The largest request body (MIL-086 decision 4): the forms of the site send a few kilobytes, and a larger body is
+  # answered 413 here, before it reaches an application. The API has the same limit of its own.
+  client_max_body_size 64k;
+
   # The back office (MIL-041, ADR-0029). Cloudflare Access stands in front of /admin, and the first route of the
   # tunnel, path (?i)^/admin, validates its token, so a stranger sees Cloudflare's e-mail page and never the staff
   # sign-in. A request that reaches this listener without the token header (another container on the proxy network,
@@ -53,6 +57,9 @@ server {
     add_header Strict-Transport-Security "max-age=2592000" always;
     return 301 /.well-known/security.txt;
   }
+
+  # The web socket of the pages, the one location that waits an hour (MIL-086 decision 7).
+  include /etc/nginx/snippets/blazor.conf;
 
   location / {
     proxy_pass $upstream;
