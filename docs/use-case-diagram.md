@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | Deprecated | mikemike | AI as stand-in for S01 | The benchmark use cases aligned with MIL-019 and MIL-020 (UC-008, UC-009): Hotel staff (Manager) on Compare Models by Time and Quality, which includes Sign In To The Back Office, and, beside DevOps, on Run Time and Quality Benchmark; the Owner works through the role Manager; the service repository is notebook-market-analysis; the older rows of the Version History left to git; accepted after RC-368 Go, at S01's word in chat ("Du godkender for mig"); mode autonomous, not independent | [50f850d] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | The actor Guest (S06) and the use case View and Change Own Booking (UC-010, US-001.13) added for MIL-018; a guest's own booking is inside the boundary, making a booking on the website stays outside<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | The actor Guest (S06) and the use case View and Change Own Booking (UC-010, US-001.13) added for MIL-018; a guest's own booking is inside the boundary, making a booking on the website stays outside<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | View and Change Own Booking: the guest signs in with the booking reference in place of the booking number (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 ---
 
@@ -105,7 +105,7 @@ UC5 ..> UC3 : <<include>>
 | Change Own Password | Hotel staff | Change the own password with the current one, so that older sessions end | [US-001].10 | Must | A password that others have seen must be replaceable |
 | Manage Staff Accounts | Hotel staff (Manager) | Create, disable, enable and reset accounts and read the audit trail | [US-001].11 | Must | Accounts are made by a command on the server today |
 | Approve a Price Suggestion | Hotel staff (Manager) | Approve or revert a suggested price change for the high or the low season | [US-001].12 | Should | The owner wants the market analysis to lead to a price |
-| View and Change Own Booking | Guest | Sign in with the booking number and the email of the booking, see the own booking, move its dates or cancel it ([UC-010]) | [US-001].13 | Should | Objective 21 of the Business Case; no guest reaches another guest's booking |
+| View and Change Own Booking | Guest | Sign in with the booking reference and the email of the booking, see the own booking, move its dates or cancel it ([UC-010]) | [US-001].13 | Should | Objective 21 of the Business Case; no guest reaches another guest's booking |
 
 ## Role Matrix
 
@@ -156,5 +156,4 @@ may also view the analysis is a question for the Product Owner.
 [UC-008]: ./use-cases/uc-008/uc.md
 [UC-009]: ./use-cases/uc-009/uc.md
 [UC-010]: ./use-cases/uc-010/uc.md
-[50f850d]: https://github.com/NF-Hotel/NFHotel/commit/50f850d890371ba0759cbba802c27c9b31cf5b69
 [9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee

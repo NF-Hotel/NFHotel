@@ -23,7 +23,7 @@ NF Hotel is public at `https://nfhotel.devmatiker.com` through Cloudflare Tunnel
 
 | Path on `nfhotel.devmatiker.com` | Public | Why |
 | --- | --- | --- |
-| `/`, `/book`, `/booking/...`, `/my-booking...` | Yes | Guests look, book, sign in to their booking with its number and email, and change or cancel it (MIL-079, MIL-018) |
+| `/`, `/book`, `/booking/...`, `/my-booking...` | Yes | Guests look, book, sign in to their booking with its reference and email, and change or cancel it; an old address `/booking/<number>` leads to the empty sign-in form (MIL-079, MIL-018, MIL-085) |
 | `/mobile-api/api/auth/login`, `/mobile-api/api/rooms...` | Yes | The two routes of the mobile app (ADR-0015) |
 | `/admin...`, in any letter case | Behind Cloudflare Access | Only listed staff get past the e-mail code to the hotel's sign-in (MIL-041, MIL-072); without it, 404 |
 | `/.well-known/security.txt`, and `/security.txt` as a redirect to it | Yes | Where to report a security problem (RFC 9116, MIL-084); nginx serves it from git, so it answers while the web application is down ([The security.txt](#the-securitytxt)) |

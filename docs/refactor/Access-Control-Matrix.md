@@ -19,7 +19,7 @@ Access control is enforced not only in the user interface, but also in the API a
 
 | Role | Description |
 |---|---|
-| **Guest** | The hotel's guest. A guest signs in with the booking number and the email of the booking; there is no guest account and no password. The guest token names one booking, and every guest right is limited to that booking ([ADR-0047], MIL-018). |
+| **Guest** | The hotel's guest. A guest signs in with the booking reference and the email of the booking; there is no guest account and no password. The guest token names one booking, and every guest right is limited to that booking ([ADR-0047], MIL-018, [ADR-0049]). |
 | **Receptionist** | Employee who handles guests and bookings. |
 | **Manager** | Employee with extended administrative rights. |
 | **Housekeeping** | Employee who handles cleaning and housekeeping tasks. |
@@ -66,9 +66,10 @@ original matrix; the rows after them are the permissions that the back office ad
 
 **Notes:**
 
-- *Own* for a guest means the booking in the guest token and the guest of that booking. A guest reads that booking and
-  that guest, cancels the booking and moves it to other dates in the same room; any other booking or guest is refused
-  with 403 ([ADR-0047] decision 5).
+- *Own* for a guest means the booking in the guest token. A guest reads the receipt of that booking, cancels it and
+  moves it to other dates in the same room through the guest routes `api/guest/booking`, which take no key, so no other
+  booking can be named; the receipt holds nothing of the guest. A guest token on any other route of the API gets 403
+  ([ADR-0047] decision 5, [ADR-0049] decision 3).
 - *See own passport data* is refused for every role. A guest never sees a passport number, not even the own one: the
   guest's answers carry no passport number ([ADR-0047] decision 4). Staff are not guests and have no own passport data
   in the system; they read a guest's passport number through the next row.
@@ -95,8 +96,9 @@ read. `AccessControlMatrixTests` reads this file and fails when a permission is 
 `o` nor `x`, or when a cell differs from the table in the code (MIL-018 criterion 6). A change of a right is therefore a
 change of both, in the same pull request.
 
-Access to own resources requires more than a check of the user's role. For a guest the API also checks that the
-specific booking belongs to the guest token (`GuestOwnership`, [ADR-0047] decision 5).
+Access to own resources requires more than a check of the user's role. For a guest the API takes the booking
+from the guest token, and the use cases check again that it is the booking of the token (`GuestOwnership`, [ADR-0047]
+decision 5, [ADR-0049] decision 3).
 
 ---
 
@@ -105,3 +107,4 @@ specific booking belongs to the guest token (`GuestOwnership`, [ADR-0047] decisi
 [ADR-0014]: ../adr/adr-0014-default-ai-model.md
 [ADR-0017]: ../adr/adr-0017-staff-passwords-and-audit.md
 [ADR-0047]: ../adr/adr-0047-guest-login.md
+[ADR-0049]: ../adr/adr-0049-booking-reference.md

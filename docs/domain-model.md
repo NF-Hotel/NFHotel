@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-01 | Deprecated | Claude (AI) | S01 | Added Room rate, Price change, Price suggestion and Pricing settings, and four actions of the Audit event (MIL-055) ; accepted by S01 in chat on 2026-11-01 after RC-264 Go-with-conditions | [3a17eee] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Cited UC-010 and SSD-001, the first System Sequence Diagram (MIL-018); no concept added or changed: a guest signs in with the booking number of the Booking and the email of its Guest<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Cited UC-010 and SSD-001, the first System Sequence Diagram (MIL-018); no concept added or changed: a guest signs in with the booking number of the Booking and the email of its Guest<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The attribute booking number of Booking renamed booking reference: a booking is named by a random reference, and a guest signs in with it and the email of its Guest (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 ---
 
@@ -29,7 +29,7 @@ Concepts, attributes and associations only — no operations. A slash marks a de
 skinparam classAttributeIconSize 0
 hide methods
 class Booking {
-  booking number
+  booking reference
   arrival date
   departure date
   actual check-out date
@@ -114,7 +114,7 @@ PriceSuggestion "0..1" -- "0..1" PriceChange : becomes >
 
 | Concept | Definition | Attributes | Source (use case / glossary) |
 | --- | --- | --- | --- |
-| Booking | A guest's claim on one room for the nights from an arrival date to a departure date | booking number, arrival date, departure date, actual check-out date, /effective end date, /number of nights, check-in time, check-out time, booking status (pending, confirmed, checked in, checked out, cancelled) | UC-001 steps 1 to 6; glossary: Booking, Booking number, Booking status |
+| Booking | A guest's claim on one room for the nights from an arrival date to a departure date | booking reference, arrival date, departure date, actual check-out date, /effective end date, /number of nights, check-in time, check-out time, booking status (pending, confirmed, checked in, checked out, cancelled) | UC-001 steps 1 to 6; glossary: Booking, Booking reference, Booking status |
 | Room | A lettable room of the hotel that a booking can claim | room number, floor, room size (single, double, suite), capacity, bookability (available, out of service, maintenance), cleaning state (clean, daily cleaning due, departure cleaning due, cleaning in progress, service required, service in progress) | UC-002 steps 1 to 7; glossary: Room, Room number, Bookability, Cleaning state |
 | Guest | A person who stays, or will stay, in the hotel and for whom a booking is made | first name, last name, email, phone number, country, passport number (optional) | UC-003 steps 1 to 6; glossary: Guest, Passport number |
 | Staff member | A person of the hotel who signs in to the back office with a user name and a password | user name (the same in any case), password (kept only as a salted hash), active, must change password (set for the first Manager and after a reset), security stamp (rises when the password changes or the account is disabled or enabled, so older sessions end) | UC-004 steps 3 and 4; UC-005; UC-006; glossary: Staff member, User name |
@@ -157,5 +157,4 @@ None. No concept is a kind of another concept.
 [UC-010]: ./use-cases/uc-010/uc.md
 [SSD-001]: ./use-cases/uc-010/ssd.md
 [RC-036]: ./sqa/reviews/rc-036-domain-model.md
-[3a17eee]: https://github.com/NF-Hotel/NFHotel/commit/3a17eeed8127f7dab532e5afb78b09e005ec3118
 [9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee

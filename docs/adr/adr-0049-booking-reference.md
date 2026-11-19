@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0049 |
-| CrossReference | [MIL-085], [ADR-0047], [ADR-0005], [ADR-0004], [ADR-0015], [MIL-079], [MIL-018], [MIL-087], [UC-010], [BC-001], [RC-416] |
+| CrossReference | [MIL-085], [ADR-0047], [ADR-0005], [ADR-0004], [ADR-0015], [MIL-079], [MIL-018], [MIL-087], [MIL-077], [UC-010], [BC-001], [RC-416], [RC-418], [RC-419] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-085, written by the AI before any code<br>Go in RC-416; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | pending |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-085, written by the AI before any code<br>Go in RC-416; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [f8cd896] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Decisions 2 and 6 and the consequences after the code review RC-418: a full store keeps every window at its limit and refuses a new key when all are at it; an IPv6 caller counts by its first 64 bits; the time of the answer and the refusal of hostile input as they are<br>Go in RC-419; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -112,11 +113,17 @@ In detail, numbered as the decisions of [MIL-085]:
    version is 4 and its variant is the one of RFC 9562; anything else is unreadable.
 2. **The reference names, the email opens.** The guest sign-in asks for the reference and the email of the booking.
    An unknown reference, an unreadable one, a number of the old kind and a wrong email get the same status and the
-   same body: 401 with `api.guest_unauthorized`, the one refusal of [ADR-0047] decision 3. The booking is read, and the
-   email compared in fixed time against a stand-in when there is no booking, so the cost of the answer does not tell
-   either. The reference has 122 random bits, fewer than the 128 that ASVS 11.5.1 asks of a value that must not be
-   guessed, and it is not used as one: it names a booking (RFC 9562 section 8), and what opens a booking is the pair of
-   reference and email behind the limits of decision 6.
+   same body: 401 with `api.guest_unauthorized`, the one refusal of [ADR-0047] decision 3. The email is compared with
+   `CryptographicOperations.FixedTimeEquals`, against a stand-in when there is no booking, so the time does not depend
+   on where two emails of one length differ. The time of the answer is not the same in every case: a reference that
+   exists costs the read of one booking more than one that does not, and two emails of different lengths are told
+   apart at once. Both tell a caller only about a reference that the caller already holds, and decision 6 allows five
+   such tries in 15 minutes. A reference that holds a control or direction character, or that is no text, never
+   reaches the sign-in: the input rules of every request ([MIL-077]) refuse it with 400 and `api.invalid_request`,
+   the answer to any hostile input, which names no booking; nothing is read and no try is counted. The reference has
+   122 random bits, fewer than the 128 that ASVS 11.5.1 asks of a value that must not be guessed, and it is not used
+   as one: it names a booking (RFC 9562 section 8), and what opens a booking is the pair of reference and email behind
+   the limits of decision 6.
 3. **The counting key stays inside.** It is the key of the table, of the staff routes between the web application
    and the API (`api/bookings/{id}` and its actions), of the guest token's claim `booking`, and of the feed to the
    market analysis service. No public or guest operation takes it or returns it:
@@ -145,12 +152,16 @@ In detail, numbered as the decisions of [MIL-085]:
      factor that the limit per address of the staff sign-in uses since [ADR-0015]: a family or an office behind one
      address has room for typing mistakes, and a caller who tries emails against many references is stopped after 20.
      Unreadable references count here too. A success gives the try back and does not clear the window, so one's own
-     booking cannot be used to reset the count;
+     booking cannot be used to reset the count. An IPv6 caller counts by the first 64 bits of its address, the
+     prefix of its link, because the last 64 bits are its interface identifier (RFC 4291 section 2.5.1), which a host
+     forms itself and may change at will (RFC 8981); an IPv4 address in IPv6 form counts as the IPv4 address;
    - the try over a limit gets 429 with `booking.too_many_lookups` and a text that names no booking;
    - each store holds at most **10,000** windows. When it is full, the windows that have run out are dropped first,
-     then the one that started first; that window is the nearest to its end, so the least protection is lost, and a
-     flood that wants to push out the window of one reference needs more than 10,000 failed tries in 15 minutes, which
-     the limit per address spreads over at least 500 addresses. A restart clears both stores;
+     then the window with the fewest failed tries, of those the one that reached its count first. A window at its
+     limit is never dropped: when every window of a full store is at its limit, the try of a new key is refused with
+     the answer of the limit and counted in neither store. So a flood of new keys cannot free a reference or an
+     address whose tries are used up; it can push out only windows below their limit, and a window with more failed
+     tries only after every window with fewer is gone. A restart clears both stores;
    - the numbers are settings (`GuestLookup:MaxFailuresPerReference`, `GuestLookup:MaxFailuresPerAddress`,
      `GuestLookup:WindowMinutes`, `GuestLookup:MaxTrackedKeys`) whose defaults are the numbers above; [MIL-087] puts them
      in its table of limits;
@@ -172,7 +183,8 @@ In detail, numbered as the decisions of [MIL-085]:
 - No page, address, mail or public answer shows a number from which another booking follows; the order and the count
   of the bookings are no longer visible (finding 1 of [MIL-085]).
 - One caller can no longer try an email against every reference: 20 failed tries per address in 15 minutes, beside the
-  5 per reference (finding 3), and the stores cannot be grown without a bound.
+  5 per reference (finding 3); the stores cannot be grown without a bound, and a flood cannot free a reference whose
+  tries are used up.
 - The guest routes take no key at all, so a guest cannot even name another booking; less personal data crosses the
   wire to the web application (finding 4), and one lookup is left to keep right (finding 5).
 - The migration only adds, so the release before keeps working and a rollback stays possible.
@@ -182,9 +194,16 @@ In detail, numbered as the decisions of [MIL-085]:
 - A reference of 36 characters is long to read out; a guest on the phone is found by name and dates.
 - Old numbers stop working on the day of the deploy, also for guests who hold one; they have to contact the hotel.
 - Until [MIL-087], the address that the limit per address counts is the first entry of `X-Forwarded-For`, which a
-  caller can write; the limit per reference holds regardless.
-- A flood of failed tries from many addresses can still push old windows out of a full store, and a restart clears
-  the counts; both are accepted for one instance in memory.
+  caller can write: a caller can dodge the limit per address, and can use up the 20 tries of another address for 15
+  minutes. A caller that holds more than one prefix of 64 bits, as a site with a /56 or a /48 does, also has as many
+  addresses for the limit. The limit per reference holds regardless, because a full store never drops a window at its
+  limit.
+- A flood can fill a store with windows at their limit: at least 50,000 failed tries in 15 minutes for the store of
+  references (10,000 windows of five), and 200,000 for the store of addresses. Until those windows run out, a try for
+  a key that has no window is refused, so the sign-in fails closed rather than open. A smaller flood can push out
+  windows below their limit, which gives such a reference its tries back after at least 10,000 failed tries, and a
+  restart clears the counts. All three are accepted for one instance in memory; [MIL-087] alerts on refusals by the
+  limits.
 - The guest page shows less than before (no name and email). After a rollback to the release before, a guest whose
   cookie this release wrote signs in again, because that cookie holds no booking key.
 
@@ -213,3 +232,7 @@ In detail, numbered as the decisions of [MIL-085]:
 [UC-010]: ../use-cases/uc-010/uc.md
 [BC-001]: ../business-case.md
 [RC-416]: ../sqa/reviews/rc-416-adr-0049.md
+[MIL-077]: ../milestones/mil-077-hostile-input-against-the-api.md
+[RC-418]: ../sqa/reviews/rc-418-mil-085-code.md
+[RC-419]: ../sqa/reviews/rc-419-adr-0049-after-the-code-review.md
+[f8cd896]: https://github.com/NF-Hotel/NFHotel/commit/f8cd8968c55bf9989d469393ec470c8df00d27bf

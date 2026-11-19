@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-16 | Accepted | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version | [2242b02] |
+| 2026-10-16 | Deprecated | Claude (AI) | AI as stand-in for S01 (terminology confirmed by the user) | Initial version | [2242b02] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The attribute booking number of Booking renamed booking reference: a booking is named by a random reference, and a guest signs in with it and the email of its Guest (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 ---
 
@@ -28,7 +29,7 @@ Concepts, attributes and associations only — no operations. A slash marks a de
 skinparam classAttributeIconSize 0
 hide methods
 class Booking {
-  booking number
+  booking reference
   arrival date
   departure date
   actual check-out date
@@ -49,7 +50,7 @@ Booking "0..*" -- "1" Room : reserves >
 
 | Concept | Definition | Attributes | Source (use case / glossary) |
 | --- | --- | --- | --- |
-| Booking | A guest's claim on one room for the nights from an arrival date to a departure date | booking number, arrival date, departure date, actual check-out date, /effective end date, /number of nights, check-in time, check-out time, booking status (pending, confirmed, checked in, checked out, cancelled) | UC-001 steps 1 to 6; glossary: Booking, Booking number, Booking status |
+| Booking | A guest's claim on one room for the nights from an arrival date to a departure date | booking reference, arrival date, departure date, actual check-out date, /effective end date, /number of nights, check-in time, check-out time, booking status (pending, confirmed, checked in, checked out, cancelled) | UC-001 steps 1 to 6; glossary: Booking, Booking reference, Booking status |
 | Guest | A person for whom a booking is made (attributes in DM-003) | none here | UC-001 step 1 |
 | Room | A room that a booking claims (attributes in DM-002) | none here | UC-001 step 1 |
 

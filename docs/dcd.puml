@@ -15,7 +15,7 @@ package "domain" {
 
   class Booking {
     +UUID id
-    +int BookingRef
+    +UUID reference
     +LocalDate startAt
     +LocalDate endAt
     +LocalDateTime checkInAt
@@ -165,12 +165,21 @@ package "domain" {
     APPROVED
     REVERTED
   }
+
+  ' === Booking reference (MIL-085, ADR-0049) ===
+  class BookingReference <<static>> {
+    +int textLength = 36
+    +new() UUID
+    +format(reference) String
+    +tryParse(text, out reference) bool
+  }
 }
 
 ' === Relationships ===
 Guest "1" --> "1..*" Booking : makes >
 Booking "1" --> "0..*" RoomPriceSnapshot : includes >   ' ← per night!
 Booking "1" --> "1" Room : occupies >
+Booking ..> BookingReference : gets its reference from >
 
 Room "1" *-- "0..*" RoomPrice : has active pricing history >
 Room "1" *-- "0..*" PriceList : belongs to list (optional, e.g., by variant)

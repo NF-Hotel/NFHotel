@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Deprecated | Claude (AI) | S01 | US-001.12 reworded: the suggestions come from the market analysis service, for the holidays and weeks of the next two months (MIL-071); accepted by S01 in chat on 2026-11-11 | [f674e8a] |
-| 2026-11-15 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.13, a guest sees, moves and cancels the own booking (MIL-018, UC-010)<br>The Version History cut to its two latest rows, the blank line that split it removed<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Added US-001.13, a guest sees, moves and cancels the own booking (MIL-018, UC-010)<br>The Version History cut to its two latest rows, the blank line that split it removed<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | US-001.13: the guest opens the booking with its booking reference in place of its number, and failed attempts are limited per reference and per address (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 ---
 
@@ -223,13 +223,13 @@ analysis without anyone starting it by hand.
 
 ### US-001.13 — See, move and cancel my own booking
 
-**As** a guest (S06), **I want** to open my booking with its booking number and the email it was made with, and there move its dates or cancel it, **so that** I serve my own booking without an account, a password or a call to the hotel, while nobody else can see it.
+**As** a guest (S06), **I want** to open my booking with its booking reference and the email it was made with, and there move its dates or cancel it, **so that** I serve my own booking without an account, a password or a call to the hotel, while nobody else can see it.
 
 **Acceptance Criteria**
 
-- Given a booking that is not cancelled, when I give its number and its email, then I am signed in to that booking and see its dates, its nights, its room type, its status and its payment, with the changes it allows now.
-- Given an unknown number, a wrong email or a cancelled booking, when I try to sign in, then I am told in the same words every time that the number and the email do not match a booking.
-- Given five failed attempts for one booking number within 15 minutes, when I try again, then I am refused until the 15 minutes have passed.
+- Given a booking that is not cancelled, when I give its reference and its email, then I am signed in to that booking and see its reference, its dates, its nights, its room type, its status and its payment, with the changes it allows now.
+- Given an unknown reference, a booking number of the old kind, a wrong email or a cancelled booking, when I try to sign in, then I am told in the same words every time that the reference and the email do not match a booking.
+- Given five failed attempts for one booking reference, or twenty from my address, within 15 minutes, when I try again, then I am refused until the 15 minutes have passed.
 - Given I am signed in to a pending or confirmed booking, when I give new dates and the room is free for every night, then the booking keeps its room and shows the new dates; when a night is taken or the dates are not valid, I am told why and the booking stays as it was.
 - Given I am signed in to a pending or confirmed booking, when I cancel it, then it is shown as cancelled and is not deleted.
 - Given I am signed in, when I ask for another booking, the details of another guest, a passport number or a page of the back office, then I see nothing of it.
@@ -264,5 +264,4 @@ for US-001.02.
 [MIL-016]: ./milestones/mil-016-backoffice-login.md
 [MIL-055]: ./milestones/mil-055-room-price-suggestions.md
 [MIL-018]: ./milestones/mil-018-guest-login.md
-[f674e8a]: https://github.com/NF-Hotel/NFHotel/commit/f674e8a3fe47dfe3c36bbc59f4eeae6180985b0d
 [9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee

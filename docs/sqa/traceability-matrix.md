@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The plan of the booking flow: [MIL-085] to [MIL-089] (RC-410 to RC-413 and RC-415, Go), and objective 43 and success criteria 46 to 48 of [BC-001] (RC-414, Go); planned and accepted by the AI as stand-in at S01's word in chat on 2026-11-19 | [9f5c208] |
 | 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0048], task 1 of MIL-084 (RC-402, Go), and the code and the documents of tasks 2 to 6 (RC-403, Go-with-conditions) on rows of their own, and the downstream of MIL-084; prepared in supervised mode, then accepted by the AI as stand-in for S01 after S01 switched MIL-084 to autonomous mode in chat on 2026-11-19 | [870014d] |
+| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | MIL-085: [ADR-0049] (RC-416, Go; its amendment after the code review RC-419, Go) with the code (RC-418) on a row of its own, and RC-417 on the rows of the documents it reviewed: UC-010, SSD-001, OC-001, UC-001, DM-001, DM-004, DICT-001, US-001, UCD-001 and ADR-0047; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 ---
 
@@ -53,16 +53,16 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0012] | ADR | en | it | [BC-001], [ADR-0003], [ADR-0006] | [MIL-025] | [RC-102] |
 | [MIL-025] | Milestone | en | it | [BC-001], [ADR-0012] | - | [RC-103] |
 | [ADR-0011] | ADR | en | it | [ADR-0004], [ADR-0010], [DSA-001] | [MIL-024] | [RC-100] |
-| [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001], [UC-007], [UC-008], [UC-009], [UC-010] | [RC-013], [RC-028], [RC-368], [RC-390] |
-| [US-001] | User Story | en | it | [UCD-001], [BC-001] | [MIL-055], [UC-007] (US-001.12), [UC-010] (US-001.13) | [RC-012], [RC-027], [RC-263], [RC-390] |
-| [DICT-001] | Domain Dictionary | en | it | [BC-001], [SA-001], [UC-007], [UC-010] | [DM-004], [OC-001] | [RC-029], [RC-264], [RC-390] |
-| [UC-001] | Use Case | en | it | [UCD-001], [US-001], [SA-001] | [DM-001] | [RC-030] |
+| [UCD-001] | Use Case Diagram | en | it | [SA-001], [BC-001] | [US-001], [UC-007], [UC-008], [UC-009], [UC-010] | [RC-013], [RC-028], [RC-368], [RC-390], [RC-417] |
+| [US-001] | User Story | en | it | [UCD-001], [BC-001] | [MIL-055], [UC-007] (US-001.12), [UC-010] (US-001.13) | [RC-012], [RC-027], [RC-263], [RC-390], [RC-417] |
+| [DICT-001] | Domain Dictionary | en | it | [BC-001], [SA-001], [UC-007], [UC-010] | [DM-004], [OC-001] | [RC-029], [RC-264], [RC-390], [RC-417] |
+| [UC-001] | Use Case | en | it | [UCD-001], [US-001], [SA-001] | [DM-001] | [RC-030], [RC-417] |
 | [UC-002] | Use Case | en | it | [UCD-001], [US-001], [SA-001] | [DM-002] | [RC-031] |
 | [UC-003] | Use Case | en | it | [UCD-001], [US-001], [SA-001] | [DM-003] | [RC-032] |
-| [DM-001] | Domain Model | en | it | [UC-001], [UCD-001], [DICT-001] | [DM-004] | [RC-033] |
+| [DM-001] | Domain Model | en | it | [UC-001], [UCD-001], [DICT-001] | [DM-004] | [RC-033], [RC-417] |
 | [DM-002] | Domain Model | en | it | [UC-002], [UCD-001], [DICT-001] | [DM-004] | [RC-034] |
 | [DM-003] | Domain Model | en | it | [UC-003], [UCD-001], [DICT-001] | [DM-004] | [RC-035] |
-| [DM-004] | Domain Model | en | it | [UC-001], [UC-002], [UC-003], [DM-001], [DM-002], [DM-003], [DICT-001], [UC-007], [UC-010], [SSD-001] | [OC-001] | [RC-036], [RC-264], [RC-390] |
+| [DM-004] | Domain Model | en | it | [UC-001], [UC-002], [UC-003], [DM-001], [DM-002], [DM-003], [DICT-001], [UC-007], [UC-010], [SSD-001] | [OC-001] | [RC-036], [RC-264], [RC-390], [RC-417] |
 | `tests/NFHotel.Proxmox.Tests`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-001] | - | [RC-004] |
 | `deploy/`, `scripts/test-compose-proxy.sh` | Source code | - | - | [MIL-002] | - | [RC-007] |
 | `deploy/proxmox`, `scripts/pve-token.sh`, `scripts/run-proxmox-tests.sh` | Source code | - | - | [MIL-003] | - | [RC-011] |
@@ -149,8 +149,9 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0044] | ADR (Accepted) | - | - | [MIL-051], [ADR-0020], [ADR-0007], [ADR-0018], [ADR-0038], [MIL-023], [MIL-053] | the deploy of the monitoring by a pull on its LXC (2026-11-14): `ops/scripts/pull-monitoring.sh` and its timer, the health check of `ops/scripts/deploy-monitoring.sh` and the alerts of `prometheus/rules/monitoring.yml` (MIL-051 tasks 2 to 7, RC-366) | [RC-365], [RC-366] (the code) |
 | [ADR-0045] | ADR (Accepted) | - | - | [MIL-052], [ADR-0020], [ADR-0044], [MIL-051], [RC-384] | the read-only access of the AI assistant to the monitoring (2026-11-15; amended 2026-11-17 to S01's decisions: the Editor role, no expiry date, the account disabled to stop the access): Grafana with a service account through `mcp-grafana` v2.1.1 limited to its tools for metrics, alerts and dashboards and to tools that only read, and no logs, after the check of the logs (MIL-052 task 2); the set-up in `docs/wiki/Monitoring.md` | [RC-385], [RC-398] |
 | [ADR-0046] | ADR (Accepted) | - | - | [MIL-078], ADR-0027, ADR-0028, ADR-0029, [ADR-0037], [ADR-0021], [MIL-072] | the routes of the Cloudflare tunnel and the Access application of the back office as code in OpenTofu, without a stored state (2026-11-15): `ops/infra/cloudflare/`, applied by S01 or S03 from their own machine, and the weekly comparison `edge-comparison.yaml` with a token that reads; the set-up in `docs/wiki/Public-Access.md` | [RC-386] |
-| [ADR-0047] | ADR (Accepted) | - | - | [MIL-018], [BC-001], ADR-0005, [MIL-079] | the guest sign-in with the booking number and the email (2026-11-15): no account, the guest token, the one refusal and the throttle that counts each attempt first, the role Guest of the one table, ownership in the API, the guest cookie, and cancelled bookings refused; the code of MIL-018 | [RC-388] |
+| [ADR-0047] | ADR (Accepted) | - | - | [MIL-018], [BC-001], ADR-0005, [MIL-079] | the guest sign-in with the booking number and the email (2026-11-15): no account, the guest token, the one refusal and the throttle that counts each attempt first, the role Guest of the one table, ownership in the API, the guest cookie, and cancelled bookings refused; the code of MIL-018 | [RC-388], [RC-417] |
 | [ADR-0048] | ADR (Accepted with the exceptions E1 to E4 by the AI as stand-in for S01; RC-402 Go) | - | - | [MIL-084], ADR-0028, ADR-0029, [ADR-0037], [ADR-0021], [ADR-0046], [MIL-066], [DSA-001] | where `security.txt` is served (2026-11-18): one file in git on the public listener of nginx only, with the redirect of `/security.txt` and its own headers; the date as a value in git; the check in three kinds (RFC 9116, rule of the ADR, warning); the weekly look; the policy in `SECURITY.md`; the code of MIL-084 | [RC-402] |
+| [ADR-0049] | ADR (Accepted) | - | - | [MIL-085], [ADR-0047], ADR-0005, [MIL-079], [MIL-018], [MIL-087] | the booking reference (2026-11-19): a version 4 UUID in a column of its own, the counting key kept inside, one lookup, 5 failed attempts per reference and 20 per caller address in 15 minutes in bounded stores that never drop a used-up key, and the receipt as the only answer to a guest; the code of MIL-085 | [RC-416], [RC-418], [RC-419] |
 | [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
 | [ADR-0031] | ADR (Accepted; decisions 2 and 3 added 2026-10-26) | - | - | ADR-0005, ADR-0013, [ADR-0004], ADR-0024, MIL-020, MIL-043 | the sign-in keys and the benchmark run tracker of `src/NFHotel.Web`, [MIL-046] | [RC-227], [RC-239] |
 | [MIL-056] | Milestone (Accepted, Go; gate passed 2026-11-05 after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding) | en | it | [BC-001], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | [ADR-0035], `scripts/dev-up.sh --lite`, `ops/scripts/lib/`, the Ops CI test and the macOS job, the wiki page Local Development Deploy | [RC-271], [RC-272], [RC-286] |
@@ -174,9 +175,9 @@ updated whenever an artifact instance is created or reviewed.
 | Tests of the contract and the client: `MarketContractTests`, `MarketAnalysisResultMapper13Tests`, `MarketAnalysisServiceClientTests`, `MarketAnalysisRunnerTests` | Test code | - | - | [MIL-071] task 2 | - | [RC-325] |
 | [UC-008] | Use Case (Accepted) | en | it | [UCD-001], [US-001], [SA-001], [MIL-019] | the reads of `BenchmarkController`, the pages `BenchmarkRuns` and `BenchmarkRunAnalysis` of `src/NFHotel.Web/Features/Admin/Benchmark` | [RC-369] |
 | [UC-009] | Use Case (Accepted) | en | it | [UCD-001], [US-001], [SA-001], [MIL-020] | the pages `BenchmarkStart` and `ModelsPanel` and `BenchmarkRunTracker` of `src/NFHotel.Web/Features/Admin/Benchmark`, `BenchmarkServiceClient` of `src/NFHotel.External/Benchmark`, the record of a run in `BenchmarkController` and the default AI model in `AiDefaultsController` | [RC-370] |
-| [UC-010] | Use Case (Accepted) | en | it | [UCD-001], [US-001] (US-001.13), [SA-001], [MIL-018], [ADR-0047] | [SSD-001], [OC-001], the code of MIL-018 | [RC-389] |
-| [SSD-001] | System Sequence Diagram (Accepted) | en | it | [UC-010] | [OC-001] | [RC-389] |
-| [OC-001] | Operation Contract (Accepted) | - | - | [SSD-001], [DM-004], [DICT-001] | the code of MIL-018 | [RC-389] |
+| [UC-010] | Use Case (Accepted) | en | it | [UCD-001], [US-001] (US-001.13), [SA-001], [MIL-018], [ADR-0047] | [SSD-001], [OC-001], the code of MIL-018 | [RC-389], [RC-417] |
+| [SSD-001] | System Sequence Diagram (Accepted) | en | it | [UC-010] | [OC-001] | [RC-389], [RC-417] |
+| [OC-001] | Operation Contract (Accepted) | - | - | [SSD-001], [DM-004], [DICT-001] | the code of MIL-018 | [RC-389], [RC-417] |
 | [MIL-019] | Milestone (Accepted, Go; plan reviewed in RC-086; tasks 1 to 7 marked done after RC-104 and RC-105) | en | it | [BC-001], [MIL-018], [ADR-0004], ADR-0005 | ADR-0013, the code of its tasks 3 to 6 (`BenchmarkRun`, `BenchmarkService`, `BenchmarkController`, the page `/admin/benchmark`), [UC-008] | [RC-086], [RC-104], [RC-105] |
 | [MIL-020] | Milestone (Accepted, Go; plan reviewed in RC-087; tasks 1 to 11 marked done after RC-106 to RC-113 and RC-249) | en | it | [BC-001], [MIL-019], [ADR-0003] | ADR-0014, the code and the deploy files of its tasks 1 to 3 and 5 to 11 (`BenchmarkServiceClient`, the page `/admin/benchmark/start` with its panel of the installed models, `AiDefault`, `BenchmarkRunAnalysis`), [UC-009] | [RC-087], [RC-106], [RC-107], [RC-108], [RC-109], [RC-110], [RC-111], [RC-112], [RC-113], [RC-249] |
 | [MIL-054] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-01, RC-258; gate passed 2026-11-14, RC-367: Go, accepted by the AI as stand-in for S01 at S01's word in chat) | en | it | [BC-001], [ADR-0033], MIL-047 | the tests of pull request #435, the coverage floor `scripts/check-coverage-floor.sh` and its test in `ci.yaml`, the coverage scope in `dotnet-coverage.config.xml` and `SonarQube.Analysis.xml` | [RC-258], [RC-260], [RC-367] |
@@ -578,4 +579,8 @@ updated whenever an artifact instance is created or reviewed.
 [RC-413]: ./reviews/rc-413-mil-088.md
 [RC-414]: ./reviews/rc-414-bc-001-booking-flow.md
 [RC-415]: ./reviews/rc-415-mil-089.md
-[9f5c208]: https://github.com/NF-Hotel/NFHotel/commit/9f5c208a73c7fbd268341b25501f518f39ad568e
+[ADR-0049]: ../adr/adr-0049-booking-reference.md
+[RC-416]: ./reviews/rc-416-adr-0049.md
+[RC-417]: ./reviews/rc-417-mil-085-documents.md
+[RC-418]: ./reviews/rc-418-mil-085-code.md
+[RC-419]: ./reviews/rc-419-adr-0049-after-the-code-review.md
