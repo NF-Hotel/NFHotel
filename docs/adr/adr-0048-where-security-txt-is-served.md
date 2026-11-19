@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0048 |
-| CrossReference | [MIL-084], [ADR-0028], [ADR-0029], [ADR-0037], [ADR-0021], [ADR-0046], [MIL-066], [DSA-001], [RC-400], [RC-402] |
+| CrossReference | [MIL-084], [ADR-0028], [ADR-0029], [ADR-0037], [ADR-0021], [ADR-0046], [MIL-066], [DSA-001], [RC-400], [RC-402], [RC-405] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-18 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-084, whose amended plan S01 accepted in chat on 2026-11-18 (RC-400, Go); written by the AI in supervised mode and reviewed in RC-402; accepted with the exceptions E1 to E4 on 2026-11-19 by the AI as stand-in for S01, after S01 switched MIL-084 to autonomous mode in chat ("Automode og deploy") | [3b63129] |
+| 2026-11-18 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-084, whose amended plan S01 accepted in chat on 2026-11-18 (RC-400, Go); written by the AI in supervised mode and reviewed in RC-402; accepted with the exceptions E1 to E4 on 2026-11-19 by the AI as stand-in for S01, after S01 switched MIL-084 to autonomous mode in chat ("Automode og deploy") | [3b63129] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Decision 6 and the consequences: the weekly look leaves out the Strict-Transport-Security of the front page, which the edge answers to a runner of GitHub by itself, so the look failed although the site sends the same value (found at the gate of MIL-084 on 2026-11-19); decisions 2 and 5 say who compares the two values; RC-405, Go; mode autonomous, not independent | [2d9c1c8] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -108,9 +109,9 @@ and the policy behind it is `SECURITY.md`.
    know the public scheme or port. *Why the value of Strict-Transport-Security is written out:* `${NGINX_HSTS}` would
    give the public name the value of the tailnet server through a side door, while its length is S01's open decision
    ([MIL-066]); a location with a header of its own inherits none, so the location names the value that the
-   application sends for the public site, and the weekly look compares the two. The HTTPS server of the tailnet is
-   not changed: there the path goes to the application, as before. No other path under `/.well-known/` gets an answer
-   of its own.
+   application sends for the public site, and the look by hand compares the two (decision 6). The HTTPS server of
+   the tailnet is not changed: there the path goes to the application, as before. No other path under `/.well-known/`
+   gets an answer of its own.
 3. **The mount.** `docker-compose.yml` of the proxy mounts the folder `./well-known` read-only at
    `/etc/nginx/well-known`. The folder, not the file: a mount of a file keeps the old file when git replaces it, and a
    mount of the folder shows the file of the next release at once. `well-known` is not part of `NGINX_CONFIG_HASH` in
@@ -137,8 +138,8 @@ and the policy behind it is `SECURITY.md`.
      field over 2,048 characters (the limits a reader may apply, RFC 9116, section 5.4); a signed file, which the
      check cannot read yet (E1); and, for an address, a redirect, or a file whose Canonical fields do not name the
      address it was fetched from (section 2.5.2 says such a file should not be trusted), a body that differs from the
-     file on `main`, an address in the file that answers 400 or more or ends on another host, and a
-     Strict-Transport-Security other than the one of the front page.
+     file on `main`, an address in the file that answers 400 or more or ends on another host, and, when it is given
+     a page to compare with (`--hsts-like`), a Strict-Transport-Security other than the one of that page.
    - *A recommendation of RFC 9116 that this record lists as an exception* is a warning: `unsigned` (E1),
      `no-encryption` (E3) and `no-role-address` (E2). `--expect-warnings` names the expected ones, and a run whose
      warnings differ from them fails: a new gap fails, and so does an exception that is closed, until this record and
@@ -149,10 +150,15 @@ and the policy behind it is `SECURITY.md`.
 6. **The watch.** The workflow Ops CI (continuous integration) runs the unit test of the check and, in the job
    `Ops nginx routes`, the check on the file of the commit. Every Monday a second job of `edge-comparison.yaml`,
    without an environment and without a secret, fetches the public file and runs the check with the address, the
-   Canonical, the file of `main`, the addresses it names and the front page; a failure opens the issue "The public
-   security.txt fails its weekly check", or comments on the open one, and a clean run closes it (RFC 9116, section
-   5.1). A failure leaves the run green, as a difference of the edge does ([ADR-0021], [ADR-0046]); a check that
-   cannot run turns it red. Until the first deploy of the file the job reports it as missing.
+   Canonical, the file of `main` and the addresses it names; a failure opens the issue "The public security.txt fails
+   its weekly check", or comments on the open one, and a clean run closes it (RFC 9116, section 5.1). A failure
+   leaves the run green, as a difference of the edge does ([ADR-0021], [ADR-0046]); a check that cannot run turns it
+   red. Until the first deploy of the file the job reports it as missing. The job does not compare the
+   Strict-Transport-Security of the file with the one of the front page: the edge answers the front page to a runner
+   of GitHub by itself, without the headers of the site. On 2026-11-19 the job failed on that comparison alone, while
+   the access log of nginx held the two requests of the runner for the file and none for the front page, and the same
+   comparison passed from a workstation of the team (task 7 of [MIL-084]). The comparison is a step of the look by
+   hand on the wiki page Public-Access (`--hsts-like`).
 7. **The policy and the handling.** `SECURITY.md` says what is in scope, how to report, what a finder may and may
    not do, which findings are not handled, that neither the policy nor the file gives a permission to test (RFC 9116,
    section 5.5), and how a report is handled, with the times of [DSA-001]. The wiki page Incidents says how the team
@@ -213,15 +219,16 @@ Rows for the reader of a file (a researcher) say what this project does for that
   in git; no code of the web application changes, and the tailnet server stays as it is.
 - The date cannot run out unseen: the check fails 30 days before it on every pull request, and the weekly look opens
   an issue.
-- The weekly look also finds a changed file, a dead or redirected address and a different Strict-Transport-Security
-  on the live site (RFC 9116, section 5.1).
+- The weekly look also finds a changed file and a dead or redirected address on the live site (RFC 9116, section
+  5.1).
 
 **Negative:**
 
 - From 30 days before the date, the job `Ops nginx routes` fails on every pull request and every push to `main`, and
   CD deploys nothing ([ADR-0021]) until the date is moved; a fix in that window has to carry the new date.
 - The value of Strict-Transport-Security stands in two places, the default of `app.UseHsts()` and the location; a
-  change of one alone is found by the weekly look and by task 7 of [MIL-084], not by the pull request.
+  change of one alone is found only by the look by hand and by task 7 of [MIL-084], not by the pull request and not
+  by the weekly look, to which the edge does not show the front page of the site (decision 6).
 - The file is not signed (E1), and the mailbox is a personal one without a key (E2, E3): a finder must trust HTTPS
   and the Canonical, and spam reaches a person.
 - No promise about legal steps (E4): a cautious finder may not report at all.
@@ -260,4 +267,6 @@ route in git, tested in continuous integration) and compatibility (the format of
 [DSA-001]: ../sqa/devsecops-assessment.md
 [RC-400]: ../sqa/reviews/rc-400-mil-084.md
 [RC-402]: ../sqa/reviews/rc-402-adr-0048.md
+[RC-405]: ../sqa/reviews/rc-405-the-weekly-look-without-the-front-page.md
 [3b63129]: https://github.com/NF-Hotel/NFHotel/commit/3b6312966875c845a2881da6dc02f9729e0e184e
+[2d9c1c8]: https://github.com/NF-Hotel/NFHotel/commit/2d9c1c8c7d201ea0c6b9aaf8cf8ecb6c6dc3c24b

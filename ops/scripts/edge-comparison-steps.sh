@@ -19,8 +19,8 @@
 #   report   open the issue "The public edge differs from its code", or comment on the open
 #            one, when DIFFERS is true; close the open one with the summary when it is false
 #   look     run check-security-txt.sh on the public address of security.txt with the file of
-#            the checkout, the Canonical, the addresses that the file names and the
-#            Strict-Transport-Security of the front page (RFC 9116, section 5.1); writes
+#            the checkout, the Canonical and the addresses that the file names (RFC 9116,
+#            section 5.1); writes
 #            results/summary.md, the step summary and failed=true or failed=false to
 #            GITHUB_OUTPUT. A finding of the check is not a failure of the step; a check that
 #            cannot run (exit 2 or more) is
@@ -51,12 +51,13 @@ edge_tofu="${NFHOTEL_EDGE_TOFU:-$ROOT/scripts/edge-tofu.sh}"
 check_security_txt="${NFHOTEL_CHECK_SECURITY_TXT:-$ROOT/scripts/check-security-txt.sh}"
 readonly SUMMARY=results/summary.md
 readonly ISSUE_TITLE="The public edge differs from its code"
-# The look at the public security.txt (ADR-0048, decision 6): its address, the front page whose
-# Strict-Transport-Security it must send, the warnings that ADR-0048 lists as the exceptions E1
-# to E3, the title of its issue, and the most lines of the check that the issue quotes (the body
-# of an issue holds 65,536 characters; the log keeps every line).
+# The look at the public security.txt (ADR-0048, decision 6): its address, the warnings that
+# ADR-0048 lists as the exceptions E1 to E3, the title of its issue, and the most lines of the
+# check that the issue quotes (the body of an issue holds 65,536 characters; the log keeps every
+# line). It leaves out the Strict-Transport-Security of the front page: the edge answers the front
+# page to a runner of GitHub by itself, without the headers of the site, so the comparison is
+# made by hand (wiki page Public-Access).
 readonly SECURITY_TXT_URL=https://nfhotel.devmatiker.com/.well-known/security.txt
-readonly FRONT_PAGE_URL=https://nfhotel.devmatiker.com/
 readonly SECURITY_TXT_WARNINGS=unsigned,no-encryption,no-role-address
 readonly LOOK_TITLE="The public security.txt fails its weekly check"
 readonly MAX_QUOTED_LINES=50
@@ -251,7 +252,7 @@ write_look_summary() {
 look() {
   local status=0 failed
   local args=(--url "$SECURITY_TXT_URL" --canonical "$SECURITY_TXT_URL"
-    --same-as "$ROOT/deploy/nginx/well-known/security.txt" --links --hsts-like "$FRONT_PAGE_URL"
+    --same-as "$ROOT/deploy/nginx/well-known/security.txt" --links
     --expect-warnings "$SECURITY_TXT_WARNINGS")
   : "${GITHUB_OUTPUT:?GITHUB_OUTPUT is not set}" "${GITHUB_STEP_SUMMARY:?GITHUB_STEP_SUMMARY is not set}"
   if [[ -n "${NFHOTEL_NOW:-}" ]]; then
