@@ -117,7 +117,7 @@ public sealed class DependencyInjectionTests
     }
 
     /// <summary>
-    /// Security (MIL-087, ADR-0051 decisions 1, 3 and 5): the limits per sender are one store for the whole process, and
+    /// Security (MIL-087, ADR-0051 decisions 1, 3 and 5): the limits per caller are one store for the whole process, and
     /// they read their numbers from the settings <c>SenderLimits</c>, the limit per email through a port of its own
     /// (review RC-428).
     /// </summary>

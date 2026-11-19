@@ -28,7 +28,7 @@ using NFHotel.TestSupport;
 namespace NFHotel.Api.Tests;
 
 /// <summary>
-/// The limits on what one sender can ask of the booking flow, through the API (MIL-087 criteria 3 to 6, ADR-0051): each
+/// The limits on what one caller can ask of the booking flow, through the API (MIL-087 criteria 3 to 6, ADR-0051): each
 /// limit per caller address at its number with the fixed clock of the test world, the limit per email, the address that a
 /// caller cannot name, and the security events and their counter. Each test starts a host of its own, so no count of one
 /// test reaches another.

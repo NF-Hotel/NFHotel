@@ -40,7 +40,7 @@ public static class ErrorCodes
         public const string TooManyLookups = "booking.too_many_lookups";
 
         /// <summary>
-        /// Too many requests of one sender: a limit of the booking flow per caller address or per email refused the
+        /// Too many requests of one caller: a limit of the booking flow per caller address or per email refused the
         /// request (MIL-087, ADR-0051); the API answers 429.
         /// </summary>
         public const string TooManyRequests = "booking.too_many_requests";

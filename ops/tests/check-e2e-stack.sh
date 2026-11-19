@@ -160,7 +160,8 @@ check "the old lookup of a receipt is gone" 404 "$(guest_value old_lookup)"
 # 20 failures per address (ADR-0049) counts the address that nginx saw, so the 21st is refused; with the first entry of
 # X-Forwarded-For, as before MIL-087, every attempt would count under a forged address and none would be refused. The
 # client has a fixed address near the top of the network, which Docker gives no other container, as it hands out the
-# low addresses first, so the used-up limit never meets the browser of the end-to-end tests.
+# low addresses first, so the used-up limit never meets the browser of the end-to-end tests. A fixed address needs a
+# network whose subnet was named, as lib/stack.sh names the subnet of the proxy network.
 address_script="$(
   cat <<'SH'
 set -u

@@ -1,7 +1,7 @@
 namespace NFHotel.Infrastructure.Config;
 
 /// <summary>
-/// The numbers of the limits on what one sender can ask of the booking flow (MIL-087, ADR-0051 decisions 1 to 3), read
+/// The numbers of the limits on what one caller can ask of the booking flow (MIL-087, ADR-0051 decisions 1 to 3), read
 /// from the section <c>SenderLimits</c>. The defaults are the table "Limits of the booking flow" of
 /// <c>docs/refactor/BusinessRules.md</c>, which a test holds them to.
 /// </summary>

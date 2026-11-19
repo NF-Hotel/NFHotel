@@ -1,7 +1,7 @@
 namespace NFHotel.Application.Ports;
 
 /// <summary>
-/// The limits on what one sender can ask of the booking flow per caller address (MIL-087, ADR-0051 decisions 2 and 5):
+/// The limits on what one caller can ask of the booking flow per caller address (MIL-087, ADR-0051 decisions 2 and 5):
 /// the searches for free rooms and the public booking requests. The counts are keys of <c>CallerAddressKey</c>; the limit
 /// per email is <see cref="IPublicBookingEmailLimit"/>.
 /// </summary>
