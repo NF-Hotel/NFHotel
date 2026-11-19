@@ -73,6 +73,7 @@ public sealed class DependencyInjectionTests
     [InlineData(typeof(IGuestSignInLimits))]
     [InlineData(typeof(ICallerAddress))]
     [InlineData(typeof(ISenderLimits))]
+    [InlineData(typeof(IPublicBookingEmailLimit))]
     public void GetRequiredService_EveryPortAndService_IsRegistered(Type serviceType)
     {
         using var provider = BuildProvider();
@@ -116,8 +117,9 @@ public sealed class DependencyInjectionTests
     }
 
     /// <summary>
-    /// Security (MIL-087, ADR-0051 decisions 1 and 5): the limits per sender are one store for the whole process, and they
-    /// read their numbers from the settings <c>SenderLimits</c>.
+    /// Security (MIL-087, ADR-0051 decisions 1, 3 and 5): the limits per sender are one store for the whole process, and
+    /// they read their numbers from the settings <c>SenderLimits</c>, the limit per email through a port of its own
+    /// (review RC-428).
     /// </summary>
     [Fact]
     public void SenderLimits_TwoScopes_AreOneStoreWithTheNumbersOfTheSettings()
@@ -139,11 +141,12 @@ public sealed class DependencyInjectionTests
             second.ServiceProvider.GetRequiredService<ISenderLimits>().TryCountSearch("203.0.113.1").IsAllowed,
             limits.TryCountSearch("203.0.113.1").IsAllowed,
         ];
+        int perEmail = second.ServiceProvider.GetRequiredService<IPublicBookingEmailLimit>().ComingPublicBookingsPerEmail;
 
         // Assert
         Assert.Same(limits, second.ServiceProvider.GetRequiredService<ISenderLimits>());
         Assert.Equal([true, true, false], counted);
-        Assert.Equal(4, limits.ComingPublicBookingsPerEmail);
+        Assert.Equal(4, perEmail);
     }
 
     /// <summary>
@@ -166,6 +169,46 @@ public sealed class DependencyInjectionTests
 
         // Assert
         Assert.Contains($"SenderLimits:{key}", error.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Negative (ADR-0051 decision 5, review RC-428): a limit of a window above 100,000 stops the start-up and names the
+    /// setting, before a store would refuse it at the first request that needs it.
+    /// </summary>
+    /// <param name="key">The setting, with its section.</param>
+    [Theory]
+    [InlineData("SenderLimits:SearchesPerMinute")]
+    [InlineData("SenderLimits:BookingRequestsPerHour")]
+    [InlineData("SenderLimits:BookingRequestsPerDay")]
+    [InlineData("GuestLookup:MaxFailuresPerReference")]
+    [InlineData("GuestLookup:MaxFailuresPerAddress")]
+    public void AddInfrastructure_WindowLimitAboveTheCap_Throws(string key)
+    {
+        // Arrange and act
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(
+            () => BuildProvider(extra: new Dictionary<string, string?> { [key] = "100001" }));
+
+        // Assert
+        Assert.Contains(key, error.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>Boundary (review RC-428): a limit of a window of exactly 100,000, as the tests of the API set, starts.</summary>
+    [Fact]
+    public void AddInfrastructure_WindowLimitAtTheCap_Starts()
+    {
+        // Arrange
+        using ServiceProvider provider = BuildProvider(extra: new Dictionary<string, string?>
+        {
+            ["SenderLimits:SearchesPerMinute"] = "100000",
+            ["GuestLookup:MaxFailuresPerAddress"] = "100000",
+        });
+
+        // Act
+        bool counted = provider.GetRequiredService<ISenderLimits>().TryCountSearch("203.0.113.1").IsAllowed;
+
+        // Assert
+        Assert.True(counted);
+        Assert.NotNull(provider.GetRequiredService<IGuestSignInLimits>());
     }
 
     #endregion

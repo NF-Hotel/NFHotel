@@ -9,8 +9,9 @@
 # account of the scan (MIL-077), and a guest who signs in with the booking reference and the
 # email reaches the own booking and nothing else (MIL-018, ADR-0047, ADR-0049). Last, the address of
 # a caller (MIL-087, ADR-0051): a client that writes the address headers itself is counted and
-# audited under the address that nginx saw, and the log of the API names a public booking with its
-# address and a masked email, never the email itself.
+# audited under the address that nginx saw; the search for free rooms and the public booking
+# request are refused at the numbers of production; and the log of the API names a public booking
+# and each refusal with its address and a masked email, never the email itself.
 #
 # Usage: check-e2e-stack.sh <stack.env> [<name>]
 # Exit:  0 every check passed; 1 a check failed; 2 usage error
@@ -237,15 +238,91 @@ check "the audit trail names the address that nginx saw" yes \
   "$([[ "$(address_value client)" =~ ^[1-9][0-9]*$ ]] && echo yes)"
 check "no event of the audit trail names a forged address" 0 "$(address_value forged)"
 
-# The log of the API (MIL-087, ADR-0051 decision 6): the two public bookings of the guest smoke test are events with
-# the email masked to its first character and its domain; neither email nor the reference is in a log of the stack.
+# The limits of the booking flow with the numbers of production (MIL-087, ADR-0051 decision 2). A client on the
+# internal network of the API, with the API token as the web application holds it, names the address of its caller in
+# X-NFHotel-Client-Address, as the web application does: addresses of the documentation range 192.0.2.0/24, which no
+# container of the stack has, so no other check meets their counts. From one address the 60 searches for free rooms of
+# a minute are answered and the 61st is refused with 429, the code booking.too_many_requests and the whole seconds to
+# wait in Retry-After, while a search from another address is still answered. From a third address the 5 public
+# booking requests of an hour, each with an email and a stay of its own in 2031, are accepted, and the 6th, as valid as
+# the others, is refused in the same way.
+limits_script="$(
+  cat <<'SH'
+set -u
+api=http://nfhotel-api:8080
+umask 077
+dir="$(mktemp -d)"
+printf 'Authorization: Bearer %s\n' "$E2E_API_TOKEN" >"$dir/auth"
+# call <address> <curl argument>...: one call to the API for a caller at the address; prints the status.
+call() {
+  address="$1"
+  shift
+  curl -s -o "$dir/answer" -D "$dir/headers" -w '%{http_code}' -H @"$dir/auth" \
+    -H "X-NFHotel-Client-Address: $address" "$@"
+}
+# outcome <status> <pattern>: a for an answer with the pattern, r for the refusal of a limit, ? for anything else.
+outcome() {
+  if [ "$1" = 429 ] && grep -q 'booking\.too_many_requests' "$dir/answer"; then
+    printf r
+  elif [ "$1" = 200 ] && grep -q "$2" "$dir/answer"; then
+    printf a
+  else
+    printf '?'
+  fi
+}
+retry_after() { tr -d '\r' <"$dir/headers" | sed -n 's/^[Rr]etry-[Aa]fter: *//p'; }
+search="$api/api/bookings/available-rooms?checkInDate=2031-06-01&checkOutDate=2031-06-03"
+outcomes=""
+for n in $(seq 1 61); do
+  outcomes="$outcomes$(outcome "$(call 192.0.2.10 "$search")" .)"
+done
+echo "searches=$outcomes"
+echo "search_wait=$(retry_after)"
+echo "other=$(outcome "$(call 192.0.2.11 "$search")" .)"
+outcomes=""
+for n in 1 2 3 4 5 6; do
+  stay="\"checkInDate\":\"2031-05-$(printf '%02d' $((n * 4 - 3)))\",\"checkOutDate\":\"2031-05-$(printf '%02d' $((n * 4 - 1)))\""
+  guest="\"firstName\":\"Limit\",\"lastName\":\"Guest\",\"email\":\"limit-$n-$GUEST_ROOM@example.com\",\"phoneNumber\":\"+4512345678\",\"country\":\"Denmark\",\"passportNumber\":null"
+  status="$(call 192.0.2.20 -H 'Content-Type: application/json' \
+    -d "{$stay,\"roomSize\":2,\"guests\":1,\"newGuest\":{$guest}}" "$api/api/bookings/public")"
+  outcomes="$outcomes$(outcome "$status" '"reference":"')"
+done
+echo "bookings=$outcomes"
+echo "booking_wait=$(retry_after)"
+SH
+)"
+limits="$(MSYS_NO_PATHCONV=1 docker run --rm --network "$api_network" --env-file "$stack_env" \
+  --env GUEST_ROOM="$guest_room" "$CURL" sh -c "$limits_script" || true)"
+limits_value() { sed -n "s/^$1=//p" <<<"$limits"; }
+# within <value> <most>: yes when the value is whole seconds from 1 to the most.
+within() { [[ "$1" =~ ^[1-9][0-9]*$ ]] && (($1 <= $2)) && echo yes; }
+check "60 searches for free rooms from one address in a minute are answered, and the 61st is refused" \
+  "$(printf 'a%.0s' {1..60})r" "$(limits_value searches)"
+check "the refused search names the whole seconds to wait, at most a minute" yes \
+  "$(within "$(limits_value search_wait)" 60)"
+check "a search from another address is still answered" a "$(limits_value other)"
+check "5 public booking requests from one address in an hour are accepted, and the 6th is refused" aaaaar \
+  "$(limits_value bookings)"
+check "the refused booking request names the whole seconds to wait, at most an hour" yes \
+  "$(within "$(limits_value booking_wait)" 3600)"
+
+# The log of the API (MIL-087, ADR-0051 decision 6): the two public bookings of the guest smoke test and the two
+# refusals of the limits are events with the address and the email masked to its first character and its domain; no
+# email of these checks and not the reference is in a log of the stack.
 api_log="$(docker logs "$(docker ps --format '{{.Names}}' | grep -m 1 "^$name.*nfhotel-api")" 2>&1 || true)"
 check "the log of the API has the event of each public booking with the masked email" 2 \
   "$(grep -E 'public_booking_made' <<<"$api_log" | grep -cE '[ab]\*\*\*@example\.com')"
-check "no log of the stack holds an email or the reference of the guest smoke test" 0 \
+check "the log of the API has the event of the refused search with its address" 1 \
+  "$(grep -cE 'limit_refused search 192\.0\.2\.10 ' <<<"$api_log")"
+check "the log of the API has the event of the refused booking request with its address and the masked email" 1 \
+  "$(grep -cE 'limit_refused booking_hour 192\.0\.2\.20 l\*\*\*@example\.com' <<<"$api_log")"
+emails=("a-$guest_room@example.com" "b-$guest_room@example.com")
+for n in 1 2 3 4 5 6; do
+  emails+=("limit-$n-$guest_room@example.com")
+done
+check "no log of the stack holds an email or the reference of these checks" 0 \
   "$(
-    bash "$ROOT/scripts/check-log-privacy.sh" --name "$name" "a-$guest_room@example.com" "b-$guest_room@example.com" \
-      "$(guest_value reference)" >/dev/null 2>&1
+    bash "$ROOT/scripts/check-log-privacy.sh" --name "$name" "${emails[@]}" "$(guest_value reference)" >/dev/null 2>&1
     echo $?
   )"
 

@@ -179,9 +179,7 @@ public sealed class ServiceWorld
         BookingQueries.GetReadModelByReferenceAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(call => Task.FromResult(ReadModelOrNull(call.Arg<Guid>())));
         GuestSignInLimits.TryCount(Arg.Any<Guid?>(), Arg.Any<string>()).Returns(true);
-        SenderLimits.ComingPublicBookingsPerEmail.Returns(3);
-        SenderLimits.TryCountSearch(Arg.Any<string>()).Returns(SenderLimitDecision.Allowed);
-        SenderLimits.TryCountBookingRequest(Arg.Any<string>()).Returns(SenderLimitDecision.Allowed);
+        EmailLimit.ComingPublicBookingsPerEmail.Returns(3);
         ReadSideFromTheRepositories();
         BenchmarkReadSideFromTheRepository();
     }
@@ -404,22 +402,22 @@ public sealed class ServiceWorld
     public FakeCallerAddress CallerAddress { get; } = new();
 
     /// <summary>
-    /// The limits of the booking flow (MIL-087, ADR-0051): a substitute that allows every request and holds the number of
-    /// the table for the limit per email, which a test can still configure or check.
+    /// The limit per email of the public booking (MIL-087, ADR-0051 decision 3): a substitute that holds the number of the
+    /// table, which a test can still configure.
     /// </summary>
-    public ISenderLimits SenderLimits { get; } = Substitute.For<ISenderLimits>();
+    public IPublicBookingEmailLimit EmailLimit { get; } = Substitute.For<IPublicBookingEmailLimit>();
 
     /// <summary>
     /// Builds the service; <paramref name="prices"/> replaces the real price lookup, for example to make it fail,
     /// <paramref name="guestCall"/> the signed-in guest, which is otherwise <see cref="GuestCall"/>, and
-    /// <paramref name="senderLimits"/> the limits of the booking flow, which are otherwise <see cref="SenderLimits"/>.
+    /// <paramref name="emailLimit"/> the limit per email, which is otherwise <see cref="EmailLimit"/>.
     /// </summary>
     public BookingService BookingService(
         IStaffAuthorizationService? authorization = null,
         IPriceChangeService? prices = null,
         IGuestCallContext? guestCall = null,
-        ISenderLimits? senderLimits = null) =>
-        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings, guestCall ?? GuestCall, senderLimits ?? SenderLimits);
+        IPublicBookingEmailLimit? emailLimit = null) =>
+        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings, guestCall ?? GuestCall, emailLimit ?? EmailLimit);
 
     /// <summary>Builds the service. A guest reads no guest by its key since MIL-085 (ADR-0049 decision 3).</summary>
     public GuestService GuestService(IStaffAuthorizationService? authorization = null) =>

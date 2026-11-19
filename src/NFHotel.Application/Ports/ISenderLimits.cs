@@ -1,19 +1,12 @@
 namespace NFHotel.Application.Ports;
 
 /// <summary>
-/// The limits on what one sender can ask of the booking flow (MIL-087, ADR-0051 decisions 2, 3 and 5): the searches for
-/// free rooms and the public booking requests counted per caller address, and the number of coming public bookings
-/// that one email may hold. The counts per address are keys of <c>CallerAddressKey</c>.
+/// The limits on what one sender can ask of the booking flow per caller address (MIL-087, ADR-0051 decisions 2 and 5):
+/// the searches for free rooms and the public booking requests. The counts are keys of <c>CallerAddressKey</c>; the limit
+/// per email is <see cref="IPublicBookingEmailLimit"/>.
 /// </summary>
 public interface ISenderLimits
 {
-    #region Properties
-
-    /// <summary>The number of coming bookings made on the public site that one email may hold (decision 3).</summary>
-    int ComingPublicBookingsPerEmail { get; }
-
-    #endregion Properties
-
     #region Public methods
 
     /// <summary>

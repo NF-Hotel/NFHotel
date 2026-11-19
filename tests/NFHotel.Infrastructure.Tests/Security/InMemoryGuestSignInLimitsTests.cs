@@ -423,6 +423,40 @@ public sealed class InMemoryGuestSignInLimitsTests
         Assert.Equal(3, limits.TrackedAddressCount);
     }
 
+    /// <summary>
+    /// Security (review RC-428 F2, ADR-0051 decision 5): when every window of the full store of addresses is at its
+    /// limit, a try from a new address is still counted and the address whose window runs out first loses its window, so
+    /// senders with more addresses than the store holds cannot lock every other guest out of the sign-in; an address at
+    /// its limit whose window was not dropped stays refused.
+    /// </summary>
+    [Fact]
+    public void TryCount_FullStoreOfAddressesAtTheirLimit_CountsANewAddressAndDropsTheFirstToRunOut()
+    {
+        // Arrange: two addresses at their twenty tries, without a reference, in a store of two addresses
+        FakeClock clock = new();
+        InMemoryGuestSignInLimits limits = Build(clock, maxTrackedKeys: 2);
+        string first = NextAddress();
+        string second = NextAddress();
+        for (int attempt = 0; attempt < 20; attempt++)
+        {
+            limits.TryCount(null, first);
+        }
+
+        clock.TimeOfDay += TimeSpan.FromSeconds(1);
+        for (int attempt = 0; attempt < 20; attempt++)
+        {
+            limits.TryCount(null, second);
+        }
+
+        // Act
+        bool newcomer = limits.TryCount(null, NextAddress());
+
+        // Assert
+        Assert.True(newcomer);
+        Assert.Equal(2, limits.TrackedAddressCount);
+        Assert.False(limits.TryCount(null, second));
+    }
+
     #endregion
 
     #region Bad input

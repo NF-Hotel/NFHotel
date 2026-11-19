@@ -260,6 +260,60 @@ public sealed class InMemorySenderLimitsTests
         Assert.False(limits.TryCountBookingRequest(Address).IsAllowed);
     }
 
+    /// <summary>
+    /// Security (review RC-428 F2, ADR-0051 decision 5): when every window of the full store of the searches is at its
+    /// limit, a new address is still counted and the window that runs out first is dropped, so senders with more
+    /// addresses than the store holds cannot make the limit refuse every other address; the store keeps its bound, and
+    /// an address at its limit whose window was not dropped stays refused.
+    /// </summary>
+    [Fact]
+    public void TryCountSearch_FullStoreOfAddressesAtTheirLimit_CountsANewAddressAndDropsTheFirstToRunOut()
+    {
+        // Arrange
+        FakeClock clock = new();
+        InMemorySenderLimits limits = new(SmallOptions(), clock);
+        CountSearches(limits, "203.0.113.1", 2);
+        clock.TimeOfDay += TimeSpan.FromSeconds(1);
+        CountSearches(limits, "203.0.113.2", 2);
+        clock.TimeOfDay += TimeSpan.FromSeconds(1);
+
+        // Act
+        SenderLimitDecision newcomer = limits.TryCountSearch("203.0.113.3");
+
+        // Assert: the first address lost its window, so it starts a new one; the second keeps its used-up window.
+        Assert.True(newcomer.IsAllowed);
+        Assert.Equal(2, limits.TrackedSearchAddressCount);
+        Assert.True(limits.TryCountSearch("203.0.113.1").IsAllowed);
+        Assert.False(limits.TryCountSearch("203.0.113.2").IsAllowed);
+        Assert.Equal(2, limits.TrackedSearchAddressCount);
+    }
+
+    /// <summary>
+    /// Security (review RC-428 F2, ADR-0051 decision 5): the same for the booking requests, in the store of the hour and
+    /// the store of the day: a new address is counted in both, the stores keep their bound, and an address at both
+    /// limits stays refused.
+    /// </summary>
+    [Fact]
+    public void TryCountBookingRequest_FullStoresOfAddressesAtTheirLimits_CountANewAddressAndDropTheFirstToRunOut()
+    {
+        // Arrange: two requests an hour and two a day, so both stores hold two addresses at their limits.
+        FakeClock clock = new();
+        InMemorySenderLimits limits = new(SmallOptions(), clock);
+        CountBookingRequests(limits, "203.0.113.1", 2);
+        clock.TimeOfDay += TimeSpan.FromSeconds(1);
+        CountBookingRequests(limits, "203.0.113.2", 2);
+        clock.TimeOfDay += TimeSpan.FromSeconds(1);
+
+        // Act
+        SenderLimitDecision newcomer = limits.TryCountBookingRequest("203.0.113.3");
+
+        // Assert
+        Assert.True(newcomer.IsAllowed);
+        Assert.Equal(2, limits.TrackedBookingHourAddressCount);
+        Assert.Equal(2, limits.TrackedBookingDayAddressCount);
+        Assert.False(limits.TryCountBookingRequest("203.0.113.2").IsAllowed);
+    }
+
     #endregion
 
     #region The settings
@@ -287,23 +341,29 @@ public sealed class InMemorySenderLimitsTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new InMemorySenderLimits(options, new FakeClock()));
     }
 
-    /// <summary>Positive: the limit per email is the number of the settings, for the use case to compare with the count of the database.</summary>
-    [Fact]
-    public void ComingPublicBookingsPerEmail_FromTheSettings_IsTheirNumber()
+    /// <summary>
+    /// Negative (review RC-428 F11): a limit above 100,000 is a mistake of the setup, refused when the limits are made,
+    /// before a store sets aside room for every count up to it.
+    /// </summary>
+    /// <param name="setting">The setting that is set to one more than the cap.</param>
+    [Theory]
+    [InlineData(nameof(SenderLimitOptions.SearchesPerMinute))]
+    [InlineData(nameof(SenderLimitOptions.BookingRequestsPerHour))]
+    [InlineData(nameof(SenderLimitOptions.BookingRequestsPerDay))]
+    public void Constructor_LimitAboveTheCap_Throws(string setting)
     {
         // Arrange
         SenderLimitOptions options = new()
         {
-            SearchesPerMinute = 60,
-            BookingRequestsPerHour = 5,
-            BookingRequestsPerDay = 20,
-            ComingPublicBookingsPerEmail = 7,
+            SearchesPerMinute = setting == nameof(SenderLimitOptions.SearchesPerMinute) ? 100_001 : 60,
+            BookingRequestsPerHour = setting == nameof(SenderLimitOptions.BookingRequestsPerHour) ? 100_001 : 5,
+            BookingRequestsPerDay = setting == nameof(SenderLimitOptions.BookingRequestsPerDay) ? 100_001 : 20,
+            ComingPublicBookingsPerEmail = 3,
             MaxTrackedKeys = 10_000,
         };
-        InMemorySenderLimits limits = new(options, new FakeClock());
 
         // Act and assert
-        Assert.Equal(7, limits.ComingPublicBookingsPerEmail);
+        Assert.Throws<ArgumentOutOfRangeException>(() => new InMemorySenderLimits(options, new FakeClock()));
     }
 
     #endregion
@@ -320,6 +380,16 @@ public sealed class InMemorySenderLimitsTests
     };
 
     private static InMemorySenderLimits Build(FakeClock clock) => new(Options(), clock);
+
+    // Two of each in stores of two addresses, so a test fills a store with a few requests.
+    private static SenderLimitOptions SmallOptions() => new()
+    {
+        SearchesPerMinute = 2,
+        BookingRequestsPerHour = 2,
+        BookingRequestsPerDay = 2,
+        ComingPublicBookingsPerEmail = 3,
+        MaxTrackedKeys = 2,
+    };
 
     private static void CountSearches(InMemorySenderLimits limits, string address, int count)
     {

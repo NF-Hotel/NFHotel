@@ -221,7 +221,7 @@ public sealed class ClientAddressMiddlewareTests
     [Fact]
     public void UseClientAddressAndAddressOf_Null_Throw()
     {
-        // Act and assert
+        // Act and assert: the null-forgiving operator passes the null that the guard must refuse.
         Assert.Throws<ArgumentNullException>(() => ClientAddressMiddleware.UseClientAddress(null!));
         Assert.Throws<ArgumentNullException>(() => ClientAddressMiddleware.AddressOf(null!));
         Assert.Throws<ArgumentNullException>(() => ClientAddressClaims.IdentityFor(null!));

@@ -8,6 +8,12 @@ namespace NFHotel.Web.Security;
 /// <see cref="ClientAddresses.StackNetworks"/> and only when it is one address; otherwise the address of the connection,
 /// as in development without nginx.
 /// </summary>
+/// <remarks>
+/// In the deployment the web application takes forwarded headers (<c>ASPNETCORE_FORWARDEDHEADERS_ENABLED</c>), so the
+/// address of the connection is already the last entry of <c>X-Forwarded-For</c>, which nginx added, and the peer that
+/// this step checks is that address, not the address of nginx. Both ways give the address that nginx saw, because nginx
+/// writes both headers and is the only peer: the web application publishes no port (review RC-428).
+/// </remarks>
 public static class ClientAddressMiddleware
 {
     #region Public methods
@@ -42,8 +48,8 @@ public static class ClientAddressMiddleware
             return null;
         }
 
-        // Only nginx, a peer of the stack, can write the header: the web application publishes no port. A list, a second
-        // header or a value that is not one address is not trusted, and the connection stands in for it.
+        // Only nginx reaches the web application, which publishes no port, so only nginx writes the header. A list, a
+        // second header or a value that is not one address is not trusted, and the connection stands in for it.
         if (ClientAddresses.IsInStack(peer)
             && context.Request.Headers[ApiAuthentication.ClientAddressHeader] is { Count: 1 } header
             && ClientAddresses.TryNormalize(header.ToString(), out string? address))

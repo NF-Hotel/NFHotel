@@ -70,7 +70,7 @@ public sealed class AuthenticationStateClientAddressSourceTests
     [Fact]
     public void Constructor_MissingDependency_Throws()
     {
-        // Act and assert
+        // Act and assert: the null-forgiving operator passes the null that the guard must refuse.
         Assert.Throws<ArgumentNullException>(() => new AuthenticationStateClientAddressSource(null!, new HttpContextAccessor()));
         Assert.Throws<ArgumentNullException>(() => new AuthenticationStateClientAddressSource(new ServerAuthenticationStateProvider(), null!));
     }

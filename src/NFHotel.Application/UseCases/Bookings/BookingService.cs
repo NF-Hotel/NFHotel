@@ -56,7 +56,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
     private readonly IBookingMarketDetailRepository _marketDetails;
     private readonly IWarningLog _warnings;
     private readonly IGuestCallContext _guestCall;
-    private readonly ISenderLimits _senderLimits;
+    private readonly IPublicBookingEmailLimit _emailLimit;
 
     /// <summary>
     /// Creates the service.
@@ -76,7 +76,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
     /// The signed-in guest of the call, if any (MIL-018): a guest reads, cancels and moves only the booking in the guest
     /// token (<see cref="GuestOwnership"/>).
     /// </param>
-    /// <param name="senderLimits">The number of coming public bookings that one email may hold (MIL-087, ADR-0051 decision 3).</param>
+    /// <param name="emailLimit">The number of coming public bookings that one email may hold (MIL-087, ADR-0051 decision 3).</param>
     public BookingService(
         IBookingRepository bookingRepository,
         IRoomRepository roomRepository,
@@ -90,7 +90,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         IBookingMarketDetailRepository marketDetails,
         IWarningLog warnings,
         IGuestCallContext guestCall,
-        ISenderLimits senderLimits)
+        IPublicBookingEmailLimit emailLimit)
     {
         ArgumentNullException.ThrowIfNull(bookingRepository);
         ArgumentNullException.ThrowIfNull(roomRepository);
@@ -104,7 +104,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         ArgumentNullException.ThrowIfNull(marketDetails);
         ArgumentNullException.ThrowIfNull(warnings);
         ArgumentNullException.ThrowIfNull(guestCall);
-        ArgumentNullException.ThrowIfNull(senderLimits);
+        ArgumentNullException.ThrowIfNull(emailLimit);
 
         _bookingRepository = bookingRepository;
         _roomRepository = roomRepository;
@@ -118,7 +118,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         _marketDetails = marketDetails;
         _warnings = warnings;
         _guestCall = guestCall;
-        _senderLimits = senderLimits;
+        _emailLimit = emailLimit;
     }
 
     // --------------------------------------------------------
@@ -500,7 +500,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         // rule of the guest below.
         if (madeOnPublicSite && request.NewGuest is { Email: { } email }
             && await _bookingQueries.CountComingPublicBookingsAsync(email, today, cancellationToken).ConfigureAwait(false)
-                >= _senderLimits.ComingPublicBookingsPerEmail)
+                >= _emailLimit.ComingPublicBookingsPerEmail)
         {
             return Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.TooManyRequests);
         }

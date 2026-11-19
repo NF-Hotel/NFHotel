@@ -18,8 +18,8 @@ public sealed class BookingFlowEventFilter(BookingFlowStep step, ICallerAddress 
     #region Fields
 
     private readonly BookingFlowStep _step = step;
-    private readonly ICallerAddress _caller = caller;
-    private readonly BookingFlowEvents _events = events;
+    private readonly ICallerAddress _caller = caller ?? throw new ArgumentNullException(nameof(caller));
+    private readonly BookingFlowEvents _events = events ?? throw new ArgumentNullException(nameof(events));
 
     #endregion Fields
 

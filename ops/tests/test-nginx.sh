@@ -16,8 +16,9 @@
 # production has it: 0600 and owned by another user than root, and serves security.txt from its mount.
 #
 # Usage: test-nginx.sh
-# Env:   REPO_HOST  the repository path as the Docker daemon sees it (default: this
-#                   checkout; on Windows give C:/... for Docker Desktop)
+# Env:   REPO_HOST  the path of the folder ops/ of this checkout as the Docker daemon sees
+#                   it (default: that folder; on Windows give C:/.../ops for Docker Desktop).
+#                   The work folder is ops/tests/output/nginx, which git ignores (MIL-087, RC-428).
 # It builds the image nfhotel-nginx:local from deploy/nginx (the proxy of production, ADR-0040) and
 # starts the containers t-nginx, nfhotel-web and nfhotel-api, the compose project t-hardened, and the
 # networks t-ngnet, t-tsnet and t-apinet, and removes them, not the image, at the end.

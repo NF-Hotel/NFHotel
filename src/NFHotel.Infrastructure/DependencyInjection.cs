@@ -186,9 +186,11 @@ public static class DependencyInjection
         services.TryAddScoped<ICallerAddress, UnknownCallerAddress>();
 
         // ADR-0051 decision 5: the counts per address of the searches and of the public booking requests are one store
-        // for the whole process, like the limits of the guest sign-in.
+        // for the whole process, like the limits of the guest sign-in. The limit per email (decision 3) is counted in
+        // the database; the use case reads its number through a port of its own (review RC-428).
         services.AddSingleton(senderLimitOptions);
         services.AddSingleton<ISenderLimits, InMemorySenderLimits>();
+        services.AddSingleton<IPublicBookingEmailLimit, ConfiguredPublicBookingEmailLimit>();
     }
 
     /// <summary>
@@ -285,7 +287,7 @@ public static class DependencyInjection
 
     /// <summary>
     /// Reads the limits of the guest sign-in (ADR-0049 decision 6). A setting below one stops the start-up, so a typing
-    /// mistake cannot switch a limit off.
+    /// mistake cannot switch a limit off, and so does a limit of a window above the cap of its store (review RC-428).
     /// </summary>
     private static GuestLookupOptions ReadGuestLookupOptions(IConfiguration configuration)
     {
@@ -293,8 +295,8 @@ public static class DependencyInjection
         GuestLookupOptions defaults = new();
         GuestLookupOptions options = new()
         {
-            MaxFailuresPerReference = ReadLimit(section, nameof(GuestLookupOptions.MaxFailuresPerReference), defaults.MaxFailuresPerReference),
-            MaxFailuresPerAddress = ReadLimit(section, nameof(GuestLookupOptions.MaxFailuresPerAddress), defaults.MaxFailuresPerAddress),
+            MaxFailuresPerReference = ReadWindowLimit(section, nameof(GuestLookupOptions.MaxFailuresPerReference), defaults.MaxFailuresPerReference),
+            MaxFailuresPerAddress = ReadWindowLimit(section, nameof(GuestLookupOptions.MaxFailuresPerAddress), defaults.MaxFailuresPerAddress),
             WindowMinutes = ReadLimit(section, nameof(GuestLookupOptions.WindowMinutes), defaults.WindowMinutes),
             MaxTrackedKeys = ReadLimit(section, nameof(GuestLookupOptions.MaxTrackedKeys), defaults.MaxTrackedKeys),
         };
@@ -304,7 +306,8 @@ public static class DependencyInjection
 
     /// <summary>
     /// Reads the limits of the booking flow (MIL-087, ADR-0051 decision 5). A setting below one stops the start-up, as
-    /// for the guest sign-in, so a typing mistake cannot switch a limit off.
+    /// for the guest sign-in, so a typing mistake cannot switch a limit off, and so does a limit of a window above the cap
+    /// of its store (review RC-428).
     /// </summary>
     private static SenderLimitOptions ReadSenderLimitOptions(IConfiguration configuration)
     {
@@ -312,9 +315,9 @@ public static class DependencyInjection
         SenderLimitOptions defaults = new();
         SenderLimitOptions options = new()
         {
-            SearchesPerMinute = ReadLimit(section, nameof(SenderLimitOptions.SearchesPerMinute), defaults.SearchesPerMinute),
-            BookingRequestsPerHour = ReadLimit(section, nameof(SenderLimitOptions.BookingRequestsPerHour), defaults.BookingRequestsPerHour),
-            BookingRequestsPerDay = ReadLimit(section, nameof(SenderLimitOptions.BookingRequestsPerDay), defaults.BookingRequestsPerDay),
+            SearchesPerMinute = ReadWindowLimit(section, nameof(SenderLimitOptions.SearchesPerMinute), defaults.SearchesPerMinute),
+            BookingRequestsPerHour = ReadWindowLimit(section, nameof(SenderLimitOptions.BookingRequestsPerHour), defaults.BookingRequestsPerHour),
+            BookingRequestsPerDay = ReadWindowLimit(section, nameof(SenderLimitOptions.BookingRequestsPerDay), defaults.BookingRequestsPerDay),
             ComingPublicBookingsPerEmail = ReadLimit(section, nameof(SenderLimitOptions.ComingPublicBookingsPerEmail), defaults.ComingPublicBookingsPerEmail),
             MaxTrackedKeys = ReadLimit(section, nameof(SenderLimitOptions.MaxTrackedKeys), defaults.MaxTrackedKeys),
         };
@@ -330,6 +333,21 @@ public static class DependencyInjection
         return value >= 1
             ? value
             : throw new InvalidOperationException($"'{section.Path}:{key}' must be at least 1.");
+    }
+
+    /// <summary>
+    /// Reads the number of a limit that a store of windows counts up to, which must be at least one and at most
+    /// <see cref="BoundedWindowStore{TKey}.MaxLimit"/>, so the start-up refuses what the store would refuse later.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The setting is below one or above the cap; the message names it by its path.</exception>
+    private static int ReadWindowLimit(IConfigurationSection section, string key, int fallback)
+    {
+        int value = ReadLimit(section, key, fallback);
+        return value <= BoundedWindowStore<string>.MaxLimit
+            ? value
+            : throw new InvalidOperationException(string.Create(
+                System.Globalization.CultureInfo.InvariantCulture,
+                $"'{section.Path}:{key}' must be at most {BoundedWindowStore<string>.MaxLimit}."));
     }
 
     private static int ReadInt(IConfigurationSection section, string key, int fallback) =>

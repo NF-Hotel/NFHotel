@@ -11,9 +11,12 @@ namespace NFHotel.Infrastructure.Security;
 /// <remarks>
 /// One lock guards both stores, so the check of both limits and the count in both are one step: tries sent at the same
 /// time cannot pass the check before another is counted, and a try that one limit refuses is counted in neither store.
-/// Each store drops its windows as <see cref="BoundedWindowStore{TKey}"/> says: when every window is at its limit, the
-/// try of a new key is refused and counted in neither store, so a flood of new keys cannot free a key whose tries are
-/// used up (review RC-418). A restart of the API clears both stores.
+/// Each store drops its windows as <see cref="BoundedWindowStore{TKey}"/> says. When every window of the full store of
+/// references is at its limit, the try of a new reference is refused and counted in neither store, so a flood of new
+/// references cannot free a reference whose tries are used up (review RC-418). When every window of the full store of
+/// addresses is at its limit, the window that runs out first is dropped, so senders with more addresses than the store
+/// holds cannot lock every other guest out (ADR-0051 decision 5, review RC-428). A restart of the API clears both
+/// stores.
 /// </remarks>
 public sealed class InMemoryGuestSignInLimits : IGuestSignInLimits
 {
@@ -31,7 +34,7 @@ public sealed class InMemoryGuestSignInLimits : IGuestSignInLimits
     /// <summary>Creates the limits.</summary>
     /// <param name="options">The limits, the length of the window and the size of each store.</param>
     /// <param name="clock">The source of the time, so tests can fix it.</param>
-    /// <exception cref="ArgumentOutOfRangeException">A setting is below one.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">A setting is below one, or a limit is above <see cref="BoundedWindowStore{TKey}.MaxLimit"/>.</exception>
     public InMemoryGuestSignInLimits(GuestLookupOptions options, IClock clock)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -42,8 +45,8 @@ public sealed class InMemoryGuestSignInLimits : IGuestSignInLimits
         ArgumentOutOfRangeException.ThrowIfLessThan(options.MaxTrackedKeys, 1);
 
         TimeSpan window = TimeSpan.FromMinutes(options.WindowMinutes);
-        _references = new BoundedWindowStore<Guid>(window, options.MaxTrackedKeys, options.MaxFailuresPerReference, EqualityComparer<Guid>.Default);
-        _addresses = new BoundedWindowStore<string>(window, options.MaxTrackedKeys, options.MaxFailuresPerAddress, StringComparer.Ordinal);
+        _references = new BoundedWindowStore<Guid>(window, options.MaxTrackedKeys, options.MaxFailuresPerReference, EqualityComparer<Guid>.Default, dropsUsedUpWindowsWhenFull: false);
+        _addresses = new BoundedWindowStore<string>(window, options.MaxTrackedKeys, options.MaxFailuresPerAddress, StringComparer.Ordinal, dropsUsedUpWindowsWhenFull: true);
         _clock = clock;
     }
 

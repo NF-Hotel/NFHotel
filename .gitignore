@@ -442,6 +442,12 @@ g/
 # Certificate and key of the nginx proxy (MIL-017); never committed.
 deploy/nginx/tls/
 
+# Work folder of ops/tests/test-nginx.sh with its test certificate and key (ops/tests/output, or tests/output when
+# REPO_HOST names the root of the checkout), which a run that stops early can leave behind (MIL-087, RC-428); never
+# committed.
+/ops/tests/output/
+/tests/output/
+
 # Third-party specimen images (Edison TD), local use only; never committed.
 docs/test-data/real-specimens/
 

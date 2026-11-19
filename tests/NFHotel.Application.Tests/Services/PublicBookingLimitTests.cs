@@ -15,7 +15,7 @@ namespace NFHotel.Application.Tests.Services;
 
 /// <summary>
 /// The limit per email of the public booking (MIL-087 criterion 3, ADR-0051 decision 3): at most the number of
-/// <c>ISenderLimits.ComingPublicBookingsPerEmail</c> coming bookings made on the public site for one email, where coming
+/// <c>IPublicBookingEmailLimit.ComingPublicBookingsPerEmail</c> coming bookings made on the public site for one email, where coming
 /// means not cancelled and with the departure today or later; a booking by staff is neither limited nor counted, and every
 /// public booking is marked as one.
 /// </summary>
@@ -78,7 +78,7 @@ public sealed class PublicBookingLimitTests
     {
         // Arrange
         ServiceWorld world = World();
-        world.SenderLimits.ComingPublicBookingsPerEmail.Returns(1);
+        world.EmailLimit.ComingPublicBookingsPerEmail.Returns(1);
 
         // Act
         bool[] made = await BookAsync(world, 0, 2, Email);

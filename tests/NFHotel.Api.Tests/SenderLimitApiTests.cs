@@ -76,6 +76,32 @@ public sealed class SenderLimitApiTests
         Assert.Equal(TimeSpan.FromSeconds(1), refused.Headers.RetryAfter?.Delta);
     }
 
+    /// <summary>
+    /// Boundary (review RC-428 F12): the time to wait is rounded up to whole seconds, never down or to the nearest:
+    /// half a second left is one second, 1.8 seconds are two, and 1.3 seconds are two.
+    /// </summary>
+    /// <param name="elapsedMilliseconds">The time between the first search and the refused one.</param>
+    /// <param name="wait">The whole seconds of <c>Retry-After</c>.</param>
+    [Theory]
+    [InlineData(59_500, 1)]
+    [InlineData(58_200, 2)]
+    [InlineData(58_700, 2)]
+    public async Task Search_RefusedWithPartOfASecondLeft_NamesTheWholeSecondsRoundedUp(int elapsedMilliseconds, int wait)
+    {
+        // Arrange
+        await using Factory factory = new();
+        using HttpClient client = factory.CreateServiceClient();
+        await SearchManyAsync(client, Address, 60);
+        factory.World.Clock.TimeOfDay += TimeSpan.FromMilliseconds(elapsedMilliseconds);
+
+        // Act
+        using HttpResponseMessage refused = await SearchAsync(client, Address);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.TooManyRequests, refused.StatusCode);
+        Assert.Equal(TimeSpan.FromSeconds(wait), refused.Headers.RetryAfter?.Delta);
+    }
+
     /// <summary>Boundary (criterion 3): when the minute of the window has passed, the count starts again.</summary>
     [Fact]
     public async Task Search_AfterTheMinute_IsAnsweredAgain()
@@ -318,6 +344,40 @@ public sealed class SenderLimitApiTests
         Assert.Null(refused.Headers.RetryAfter);
         Assert.Equal(guestsBefore, factory.World.Guests.Items.Count);
         Assert.Equal(3, factory.World.Bookings.Items.Count);
+    }
+
+    /// <summary>
+    /// Equivalence (criterion 3, ADR-0051 decision 2): a request that the limit per email refuses keeps its count of the
+    /// address, because a limit refused it, not a rule. After three bookings of one email and the refused fourth from
+    /// one address, the fifth request, of another email, is made and the sixth is refused by the limit of the hour.
+    /// </summary>
+    [Fact]
+    public async Task Booking_RefusedByTheLimitPerEmail_KeepsItsCount()
+    {
+        // Arrange
+        await using Factory factory = new();
+        using HttpClient client = factory.CreateServiceClient();
+        List<HttpStatusCode> made = [];
+        for (int booking = 0; booking < 3; booking++)
+        {
+            using HttpResponseMessage response = await BookAsync(client, Address, booking, "anna@example.com");
+            made.Add(response.StatusCode);
+        }
+
+        using HttpResponseMessage refusedByTheEmail = await BookAsync(client, Address, 3, "anna@example.com");
+
+        // Act
+        using HttpResponseMessage fifth = await BookAsync(client, Address, 4, Email(4));
+        using HttpResponseMessage sixth = await BookAsync(client, Address, 5, Email(5));
+
+        // Assert
+        Assert.All(made, status => Assert.Equal(HttpStatusCode.OK, status));
+        Assert.Equal(HttpStatusCode.TooManyRequests, refusedByTheEmail.StatusCode);
+        Assert.Null(refusedByTheEmail.Headers.RetryAfter);
+        Assert.Equal(HttpStatusCode.OK, fifth.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, sixth.StatusCode);
+        Assert.NotNull(sixth.Headers.RetryAfter);
+        Assert.Equal(4, factory.World.Bookings.Items.Count);
     }
 
     /// <summary>Equivalence (criterion 3, ADR-0051 decision 3): staff can always book, also for an email at its limit.</summary>

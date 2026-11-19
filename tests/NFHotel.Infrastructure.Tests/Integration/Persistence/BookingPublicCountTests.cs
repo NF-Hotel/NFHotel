@@ -53,6 +53,47 @@ public sealed class BookingPublicCountTests : IAsyncLifetime
         Assert.Equal(2, count);
     }
 
+    /// <summary>
+    /// Security (review RC-428 F12): the email is matched as itself and never as a pattern of the database: an underscore
+    /// or a percent sign in it matches only itself, not another character or a run of them.
+    /// </summary>
+    [Fact]
+    public async Task CountComingPublicBookingsAsync_EmailWithAPatternCharacter_MatchesOnlyItself()
+    {
+        // Arrange
+        await SeedAsync("axb@example.com", Today.AddDays(10), isPublic: true);
+        await SeedAsync("abcd@example.com", Today.AddDays(20), isPublic: true);
+        await SeedAsync("a_b@example.com", Today.AddDays(30), isPublic: true);
+        await using HotelDbContext context = _fixture.CreateContext();
+        BookingRepository bookings = new(context);
+
+        // Act
+        int underscore = await bookings.CountComingPublicBookingsAsync("a_b@example.com", Today, TestContext.Current.CancellationToken);
+        int percent = await bookings.CountComingPublicBookingsAsync("a%d@example.com", Today, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(1, underscore);
+        Assert.Equal(0, percent);
+    }
+
+    /// <summary>
+    /// Integration (review RC-428 F12, MIL-086 decision 4): the email is counted in its normal form, so spaces around it
+    /// and another letter case count the bookings of the same email.
+    /// </summary>
+    [Fact]
+    public async Task CountComingPublicBookingsAsync_EmailWithSpacesAndCapitals_CountsTheSameEmail()
+    {
+        // Arrange
+        await SeedAsync("anna@example.com", Today.AddDays(10), isPublic: true);
+        await using HotelDbContext context = _fixture.CreateContext();
+
+        // Act
+        int count = await new BookingRepository(context).CountComingPublicBookingsAsync("  ANNA@example.com ", Today, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(1, count);
+    }
+
     /// <summary>Integration: the mark of a public booking is stored, and a booking without it is read back unmarked.</summary>
     [Fact]
     public async Task Add_PublicAndStaffBookings_StoresTheMark()

@@ -155,7 +155,7 @@ public class ApiFactory : WebApplicationFactory<Program>
             services.AddScoped(provider => World.BookingService(
                 provider.GetRequiredService<IStaffAuthorizationService>(),
                 guestCall: provider.GetRequiredService<IGuestCallContext>(),
-                senderLimits: provider.GetRequiredService<ISenderLimits>()));
+                emailLimit: provider.GetRequiredService<IPublicBookingEmailLimit>()));
             services.AddScoped<IBookingService>(provider => provider.GetRequiredService<BookingService>());
             services.AddScoped<IPublicBookingService>(provider => provider.GetRequiredService<BookingService>());
 

@@ -25,9 +25,9 @@ public sealed class SenderLimitFilter(SenderLimitKind kind, ISenderLimits limits
     #region Fields
 
     private readonly SenderLimitKind _kind = kind;
-    private readonly ISenderLimits _limits = limits;
-    private readonly ICallerAddress _caller = caller;
-    private readonly BookingFlowEvents _events = events;
+    private readonly ISenderLimits _limits = limits ?? throw new ArgumentNullException(nameof(limits));
+    private readonly ICallerAddress _caller = caller ?? throw new ArgumentNullException(nameof(caller));
+    private readonly BookingFlowEvents _events = events ?? throw new ArgumentNullException(nameof(events));
 
     #endregion Fields
 
