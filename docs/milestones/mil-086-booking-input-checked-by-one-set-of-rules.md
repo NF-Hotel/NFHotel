@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("bedre validering på input felterne og laves så man ikke kan booke mere end 5 år frem", "sikret mod forskellige typer XSS samt SQL injection"); the decisions are the AI's for S01 ("Du skal tage beslutningerne for mig"), and the plan is accepted by the AI as stand-in after RC-411, Go, for a run in autonomous mode ("Når din plan er lavet skal Opus 5.5 lave det hele i automode") | [9f5c208] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-425 Go on criteria 1 to 8; tasks 1 to 7 in pull request 841 (RC-420 Go, RC-421 Go, RC-423 Go, RC-424 Go-with-conditions with its condition met); the CD run 44569420887 of 886c8e8, approved from S01's account at S01's word in chat, deployed it; task 8: on the live site the booking page refuses a stay that ends five years and a day ahead and a stay of 31 nights with the text of each rule, and its date fields carry their earliest and latest day, checked in a container with nothing booked; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-425 Go on criteria 1 to 8; tasks 1 to 7 in pull request 841 (RC-420 Go, RC-421 Go, RC-423 Go, RC-424 Go-with-conditions with its condition met); the CD run 44569420887 of 886c8e8, approved from S01's account at S01's word in chat, deployed it; task 8: on the live site the booking page refuses a stay that ends five years and a day ahead and a stay of 31 nights with the text of each rule, and its date fields carry their earliest and latest day, checked in a container with nothing booked; mode autonomous, not independent | [53c8189] |
 
 ---
 
@@ -120,3 +120,4 @@ Read for this plan on 2026-11-19: the Application Security Verification Standard
 [MIL-067]: ./mil-067-bad-input-on-the-web-pages.md
 [MIL-077]: ./mil-077-hostile-input-against-the-api.md
 [9f5c208]: https://github.com/NF-Hotel/NFHotel/commit/9f5c208a73c7fbd268341b25501f518f39ad568e
+[53c8189]: https://github.com/NF-Hotel/NFHotel/commit/53c81895ad26b5271982c606ef45cd07af03eed9

@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Proposed | mikemike | S01 | The plan of [MIL-090], accepted by S01 in chat on 2026-11-19 (RC-445, Go): its row, and [MIL-090] downstream of [BC-001]; supervised mode | [b7687d5] |
-| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-086] (RC-425, Go on criteria 1 to 8) and its code deployed at 886c8e8; mode autonomous, not independent | pending |
+| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-086] (RC-425, Go on criteria 1 to 8) and its code deployed at 886c8e8; mode autonomous, not independent | [53c8189] |
 
 ---
 
@@ -597,3 +597,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-425]: ./reviews/rc-425-mil-086-gate.md
 [RC-445]: ./reviews/rc-445-mil-090.md
 [b7687d5]: https://github.com/NF-Hotel/NFHotel/commit/b7687d524f90b010060d8312fa7456914816a889
+[53c8189]: https://github.com/NF-Hotel/NFHotel/commit/53c81895ad26b5271982c606ef45cd07af03eed9

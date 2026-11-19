@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-086 after the deploy of 886c8e8 (CD run 44569420887) and the check of criterion 8 on the live site; Go on criteria 1 to 8; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-086 after the deploy of 886c8e8 (CD run 44569420887) and the check of criterion 8 on the live site; Go on criteria 1 to 8; mode autonomous, not independent | [53c8189] |
 
 ---
 
@@ -141,3 +141,4 @@ is not independent, and each stand-in decision is named in the summary of the ru
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [MIL-087]: ../../milestones/mil-087-limits-on-what-one-sender-can-ask.md
 [MIL-090]: ../../milestones/mil-090-scan-findings-of-19-november.md
+[53c8189]: https://github.com/NF-Hotel/NFHotel/commit/53c81895ad26b5271982c606ef45cd07af03eed9
