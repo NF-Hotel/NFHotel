@@ -3,8 +3,9 @@ namespace NFHotel.TestSupport;
 /// <summary>
 /// The hostile strings that the tests carry through every text field of the booking flow (MIL-086 decision 5,
 /// ADR-0050): markup, a <c>javascript:</c> address, fragments of SQL, format strings, template expressions, a line
-/// break with a mail header, and the two wildcards of a SQL pattern. Each one is either refused by the rule of its field
-/// or stored unchanged and shown as text; no rule strips or rewrites it.
+/// break with a mail header, the two wildcards of a SQL pattern, and a noncharacter that the runtime cannot bring to
+/// normal form. Each one is either refused by the rule of its field or stored unchanged and shown as text; no rule
+/// strips or rewrites it.
 /// </summary>
 /// <remarks>
 /// The list is shared, so the domain, the use cases, the API, the database and the pages are tested with the same
@@ -30,5 +31,6 @@ public static class HostileStrings
         ("a line break with a mail header", "a@example.com\r\nBcc: b@example.com"),
         ("the wildcard of any text", "%"),
         ("the wildcard of one character", "_"),
+        ("a noncharacter that the runtime cannot bring to normal form", "Ann\uFFFE"),
     ];
 }

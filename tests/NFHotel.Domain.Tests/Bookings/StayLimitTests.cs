@@ -21,8 +21,8 @@ public class StayLimitTests
     public void CheckPeriod_EndsFiveYearsAhead_IsAcceptedAndADayLaterIsRefused()
     {
         // Arrange
-        var lastDay = new DateRange(Today.AddDays(10), new DateOnly(2031, 3, 1));
-        var dayAfter = new DateRange(Today.AddDays(10), new DateOnly(2031, 3, 2));
+        DateRange lastDay = new(Today.AddDays(10), new DateOnly(2031, 3, 1));
+        DateRange dayAfter = new(Today.AddDays(10), new DateOnly(2031, 3, 2));
 
         // Act & Assert
         Assert.Null(Booking.CheckPeriod(lastDay, Today));
@@ -34,8 +34,8 @@ public class StayLimitTests
     public void CheckPeriod_ArrivalTodayOrYesterday_IsAcceptedOrRefused()
     {
         // Arrange
-        var fromToday = new DateRange(Today, Today.AddDays(2));
-        var fromYesterday = new DateRange(Today.AddDays(-1), Today.AddDays(2));
+        DateRange fromToday = new(Today, Today.AddDays(2));
+        DateRange fromYesterday = new(Today.AddDays(-1), Today.AddDays(2));
 
         // Act & Assert
         Assert.Null(Booking.CheckPeriod(fromToday, Today));
@@ -56,11 +56,11 @@ public class StayLimitTests
     public void CheckPeriod_AcrossTheLeapDay_CountsCalendarYears(string today, string departure, bool accepted)
     {
         // Arrange
-        var day = TestDate.Of(today);
-        var period = new DateRange(day.AddDays(1), TestDate.Of(departure));
+        DateOnly day = TestDate.Of(today);
+        DateRange period = new(day.AddDays(1), TestDate.Of(departure));
 
         // Act
-        var error = Booking.CheckPeriod(period, day);
+        string? error = Booking.CheckPeriod(period, day);
 
         // Assert
         Assert.Equal(accepted ? null : BookingErrors.EndDateTooFarAhead, error);
@@ -74,7 +74,7 @@ public class StayLimitTests
     public void LatestDeparture_Today_IsFiveCalendarYearsLater(string today, string expected)
     {
         // Act
-        var latest = Booking.LatestDeparture(TestDate.Of(today));
+        DateOnly latest = Booking.LatestDeparture(TestDate.Of(today));
 
         // Assert
         Assert.Equal(TestDate.Of(expected), latest);
@@ -93,10 +93,10 @@ public class StayLimitTests
     public void CheckPublicNights_Nights_AcceptsUpToThirty(int nights, bool accepted)
     {
         // Arrange
-        var period = new DateRange(Today, Today.AddDays(nights));
+        DateRange period = new(Today, Today.AddDays(nights));
 
         // Act
-        var error = Booking.CheckPublicNights(period);
+        string? error = Booking.CheckPublicNights(period);
 
         // Assert
         Assert.Equal(accepted ? null : BookingErrors.StayTooLong, error);
@@ -114,7 +114,7 @@ public class StayLimitTests
     public void CheckPublicParty_Guests_AcceptsOneToFour(int guests, bool accepted)
     {
         // Act
-        var error = Booking.CheckPublicParty(guests);
+        string? error = Booking.CheckPublicParty(guests);
 
         // Assert
         Assert.Equal(accepted ? null : BookingErrors.GuestsOutOfRange, error);
@@ -130,7 +130,7 @@ public class StayLimitTests
     public void LatestPublicDeparture_Arrival_IsThirtyNightsOrTheFiveYears(string arrival, string expected)
     {
         // Act
-        var latest = Booking.LatestPublicDeparture(TestDate.Of(arrival), Today);
+        DateOnly latest = Booking.LatestPublicDeparture(TestDate.Of(arrival), Today);
 
         // Assert
         Assert.Equal(TestDate.Of(expected), latest);

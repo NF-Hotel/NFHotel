@@ -8,11 +8,19 @@ namespace NFHotel.Web.Common;
 /// </summary>
 public static class DateInput
 {
+    #region Fields
+
     /// <summary>The format of a date in a date field of HTML.</summary>
     public const string Format = "yyyy-MM-dd";
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>The date as a date field of HTML writes it.</summary>
     /// <param name="date">The date.</param>
     /// <returns>The date as <c>yyyy-MM-dd</c>.</returns>
     public static string Text(DateOnly date) => date.ToString(Format, CultureInfo.InvariantCulture);
+
+    #endregion Public methods
 }

@@ -109,10 +109,10 @@ public sealed class GuestAndRoomReadTests : IAsyncLifetime
         await SeedGuestAsync("Anna", "Jensen", null, "anna%sale@example.com");
         await SeedGuestAsync("Bo", "Jensen", null, "bo_jensen@example.com");
         await SeedGuestAsync("Carl", "Jensen", null, "carl@example.com");
-        await using var context = _fixture.CreateContext();
+        await using HotelDbContext context = _fixture.CreateContext();
 
         // Act
-        var found = await new GuestRepository(context).SearchAsync([term], TestContext.Current.CancellationToken);
+        IReadOnlyList<GuestListItemDto> found = await new GuestRepository(context).SearchAsync([term], TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedEmail, Assert.Single(found).Email);
@@ -126,10 +126,10 @@ public sealed class GuestAndRoomReadTests : IAsyncLifetime
     public async Task Guest_HostileStringsThatMeetTheRules_AreStoredAndReadUnchanged()
     {
         // Arrange
-        var stored = new List<(int GuestId, string Field, string Value)>();
-        foreach (var (_, value) in HostileStrings.All)
+        List<(int GuestId, string Field, string Value)> stored = [];
+        foreach ((string _, string? value) in HostileStrings.All)
         {
-            foreach (var field in GuestFieldNames)
+            foreach (string field in GuestFieldNames)
             {
                 Guest guest;
                 try
@@ -141,21 +141,21 @@ public sealed class GuestAndRoomReadTests : IAsyncLifetime
                     continue;
                 }
 
-                await using var seedContext = _fixture.CreateContext();
+                await using HotelDbContext seedContext = _fixture.CreateContext();
                 new GuestRepository(seedContext).Add(guest);
                 await new UnitOfWork(seedContext).SaveChangesAsync(TestContext.Current.CancellationToken);
                 stored.Add((guest.Id, field, value));
             }
         }
 
-        await using var context = _fixture.CreateContext();
-        var repository = new GuestRepository(context);
+        await using HotelDbContext context = _fixture.CreateContext();
+        GuestRepository repository = new(context);
 
         // Act
-        var readBack = new List<(string Field, string Value, string? Read)>();
-        foreach (var (guestId, field, value) in stored)
+        List<(string Field, string Value, string? Read)> readBack = [];
+        foreach ((int guestId, string? field, string? value) in stored)
         {
-            var details = await repository.GetDetailsAsync(guestId, TestContext.Current.CancellationToken);
+            GuestDetailsDto? details = await repository.GetDetailsAsync(guestId, TestContext.Current.CancellationToken);
             readBack.Add((field, value, FieldOf(details, field)));
         }
 
@@ -277,7 +277,7 @@ public sealed class GuestAndRoomReadTests : IAsyncLifetime
     private async Task<int> SeedGuestAsync(string firstName, string lastName, string? passportNumber, string? email = null)
     {
         await using var context = _fixture.CreateContext();
-        var guest = Guest.Create(firstName, lastName, email ?? $"{firstName.ToLowerInvariant()}@example.com", "+4512345678", "Denmark", passportNumber);
+        Guest guest = Guest.Create(firstName, lastName, email ?? $"{firstName.ToLowerInvariant()}@example.com", "+4512345678", "Denmark", passportNumber);
         new GuestRepository(context).Add(guest);
         await new UnitOfWork(context).SaveChangesAsync(TestContext.Current.CancellationToken);
         return guest.Id;

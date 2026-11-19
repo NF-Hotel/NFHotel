@@ -12,6 +12,8 @@ namespace NFHotel.Domain.Attributes;
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
 public sealed class PersonNameAttribute : ValidationAttribute
 {
+    #region Public methods
+
     /// <summary>Tells whether a text is made of the characters of a name.</summary>
     /// <param name="value">The text, in normal form.</param>
     /// <returns><see langword="true"/> when every character is allowed and one is a letter.</returns>
@@ -22,10 +24,10 @@ public sealed class PersonNameAttribute : ValidationAttribute
             return false;
         }
 
-        var hasLetter = false;
+        bool hasLetter = false;
 
         // A lone surrogate comes out as U+FFFD, a symbol, so it is refused here.
-        foreach (var rune in value.EnumerateRunes())
+        foreach (Rune rune in value.EnumerateRunes())
         {
             if (IsLetter(rune))
             {
@@ -43,6 +45,10 @@ public sealed class PersonNameAttribute : ValidationAttribute
     /// <inheritdoc/>
     public override bool IsValid(object? value) => value is null || (value is string text && Accepts(text));
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static bool IsLetter(Rune rune) => Rune.GetUnicodeCategory(rune) is
         UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter or UnicodeCategory.TitlecaseLetter
         or UnicodeCategory.ModifierLetter or UnicodeCategory.OtherLetter;
@@ -51,4 +57,6 @@ public sealed class PersonNameAttribute : ValidationAttribute
         UnicodeCategory.NonSpacingMark or UnicodeCategory.SpacingCombiningMark or UnicodeCategory.EnclosingMark;
 
     private static bool IsAllowedSign(Rune rune) => rune.Value is ' ' or '\'' or '\u2019' or '-' or '.';
+
+    #endregion Private methods
 }

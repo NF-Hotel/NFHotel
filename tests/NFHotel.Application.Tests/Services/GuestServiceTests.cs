@@ -1,6 +1,7 @@
 using NFHotel.Application.Dto.Guests;
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Entities;
 using NFHotel.TestSupport;
@@ -187,10 +188,10 @@ public sealed class GuestServiceTests
     public async Task SearchAsync_DecomposedLetter_AsksWithTheComposedTerm()
     {
         // Arrange
-        var world = new ServiceWorld();
+        ServiceWorld world = new();
         world.GuestQueries.SearchAsync(Arg.Any<IReadOnlyCollection<string>>(), TestContext.Current.CancellationToken)
             .Returns(Task.FromResult<IReadOnlyList<GuestListItemDto>>([]));
-        var service = world.GuestService(CreateAuthorization(Permissions.ViewOtherGuestData));
+        GuestService service = world.GuestService(CreateAuthorization(Permissions.ViewOtherGuestData));
 
         // Act
         await service.SearchAsync(" René ", TestContext.Current.CancellationToken);

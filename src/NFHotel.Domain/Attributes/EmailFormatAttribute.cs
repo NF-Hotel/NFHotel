@@ -12,11 +12,17 @@ namespace NFHotel.Domain.Attributes;
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
 public sealed class EmailFormatAttribute : ValidationAttribute
 {
+    #region Fields
+
     /// <summary>The most characters of the part before the at sign (RFC 5321, 4.5.3.1.1).</summary>
     public const int MaxLocalPartLength = 64;
 
     /// <summary>The most characters of one label of the domain (RFC 1035, 2.3.4).</summary>
     public const int MaxLabelLength = 63;
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Tells whether a text is one plain email address.</summary>
     /// <param name="value">The text, in normal form.</param>
@@ -24,7 +30,7 @@ public sealed class EmailFormatAttribute : ValidationAttribute
     public static bool Accepts(string? value)
     {
         if (string.IsNullOrEmpty(value)
-            || !MailAddress.TryCreate(value, out var address)
+            || !MailAddress.TryCreate(value, out MailAddress? address)
             || !string.Equals(address.Address, value, StringComparison.Ordinal)
             || !string.IsNullOrEmpty(address.DisplayName))
         {
@@ -37,6 +43,10 @@ public sealed class EmailFormatAttribute : ValidationAttribute
     /// <inheritdoc/>
     public override bool IsValid(object? value) => value is null || (value is string text && Accepts(text));
 
+    #endregion Public methods
+
+    #region Private methods
+
     private static bool IsLocalPart(string local) =>
         local.Length is > 0 and <= MaxLocalPartLength
         && local.All(character => !char.IsWhiteSpace(character)
@@ -45,7 +55,7 @@ public sealed class EmailFormatAttribute : ValidationAttribute
 
     private static bool IsDomain(string host)
     {
-        var labels = host.Split('.');
+        string[] labels = host.Split('.');
 
         return labels.Length >= 2 && labels.All(IsLabel);
     }
@@ -55,4 +65,6 @@ public sealed class EmailFormatAttribute : ValidationAttribute
         && label[0] != '-'
         && label[^1] != '-'
         && label.All(character => char.IsLetter(character) || char.IsAsciiDigit(character) || character == '-');
+
+    #endregion Private methods
 }

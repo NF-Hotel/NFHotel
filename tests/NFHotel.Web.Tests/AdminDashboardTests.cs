@@ -66,11 +66,11 @@ public sealed class AdminDashboardTests : IAsyncDisposable
     [Fact]
     public void Render_StoredHostileValues_AreShownAsText()
     {
-        var values = HostileStrings.All.Select(item => item.Value).ToList();
+        List<string> values = HostileStrings.All.Select(item => item.Value).ToList();
         _bookings.GetOverviewAsync(Arg.Any<BookingOverviewQuery>(), Arg.Any<CancellationToken>())
             .Returns(List(values.Select((value, index) => BookingItem(index + 1) with { GuestFullName = value, GuestCountry = value }).ToArray()));
 
-        var page = Render();
+        IRenderedComponent<AdminDashboard> page = Render();
 
         HostileMarkup.AssertShownAsText(page, values);
     }

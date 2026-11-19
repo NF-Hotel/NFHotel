@@ -11,7 +11,13 @@ namespace NFHotel.Api.Security;
 /// <param name="loggerFactory">The factory of the logger of <see cref="SecurityEvents.Category"/>.</param>
 public sealed class InputRefusalEventFilter(ILoggerFactory loggerFactory) : IAlwaysRunResultFilter
 {
+    #region Fields
+
     private readonly ILogger _logger = loggerFactory.CreateLogger(SecurityEvents.Category);
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <inheritdoc/>
     public void OnResultExecuting(ResultExecutingContext context)
@@ -35,4 +41,6 @@ public sealed class InputRefusalEventFilter(ILoggerFactory loggerFactory) : IAlw
     {
         // The event is written before the answer.
     }
+
+    #endregion Public methods
 }

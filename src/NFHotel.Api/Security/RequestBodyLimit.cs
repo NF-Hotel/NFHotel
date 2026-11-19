@@ -13,11 +13,17 @@ namespace NFHotel.Api.Security;
 /// </summary>
 public static class RequestBodyLimit
 {
+    #region Fields
+
     /// <summary>The most bytes of a request body at an endpoint that sets no limit of its own: 64 KB.</summary>
     public const long DefaultMaxBytes = 65_536;
 
     /// <summary>The most bytes of a run that the benchmark service sends to its intake.</summary>
     public const long BenchmarkIntakeMaxBytes = 30_000_000;
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Refuses a request whose declared body is over the limit of its endpoint, and sets that limit for the read.</summary>
     /// <param name="app">The application.</param>
@@ -25,8 +31,8 @@ public static class RequestBodyLimit
     public static IApplicationBuilder UseRequestBodyLimit(this IApplicationBuilder app) =>
         app.Use(async (context, next) =>
         {
-            var endpoint = context.GetEndpoint();
-            var limit = endpoint?.Metadata.GetMetadata<IRequestSizeLimitMetadata>()?.MaxRequestBodySize ?? DefaultMaxBytes;
+            Endpoint? endpoint = context.GetEndpoint();
+            long limit = endpoint?.Metadata.GetMetadata<IRequestSizeLimitMetadata>()?.MaxRequestBodySize ?? DefaultMaxBytes;
 
             if (context.Request.ContentLength > limit)
             {
@@ -50,9 +56,7 @@ public static class RequestBodyLimit
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        context.RequestServices.GetRequiredService<ILoggerFactory>()
-            .CreateLogger(SecurityEvents.Category)
-            .InputRefused(context.Request.Method, route, StatusCodes.Status413PayloadTooLarge, ApiErrorCodes.RequestTooLarge);
+        SecurityEvents.WriteInputRefused(context, route, StatusCodes.Status413PayloadTooLarge, ApiErrorCodes.RequestTooLarge);
 
         context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
         await context.Response.WriteAsJsonAsync(
@@ -60,4 +64,6 @@ public static class RequestBodyLimit
             ApiJson.Options,
             context.RequestAborted).ConfigureAwait(false);
     }
+
+    #endregion Public methods
 }

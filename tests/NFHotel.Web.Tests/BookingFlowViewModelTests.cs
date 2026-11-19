@@ -540,12 +540,12 @@ public sealed class BookingFlowViewModelTests
     [Fact]
     public void Dates_DepartureFiveYearsAheadAndADayLater_AreValidOrShowTheRule()
     {
-        var viewModel = Create();
+        BookingFlowViewModel viewModel = Create();
 
         viewModel.CheckInDate = new DateOnly(2031, 3, 8);
         viewModel.CheckOutDate = new DateOnly(2031, 3, 10);
-        var lastDayIsValid = viewModel.HasValidDates;
-        var lastDayError = viewModel.CheckOutError;
+        bool lastDayIsValid = viewModel.HasValidDates;
+        string? lastDayError = viewModel.CheckOutError;
         viewModel.CheckOutDate = new DateOnly(2031, 3, 11);
 
         Assert.True(lastDayIsValid);
@@ -559,11 +559,11 @@ public sealed class BookingFlowViewModelTests
     [Fact]
     public void Dates_ThirtyAndThirtyOneNights_AreValidOrShowTheRule()
     {
-        var viewModel = Create();
+        BookingFlowViewModel viewModel = Create();
 
         viewModel.CheckInDate = new DateOnly(2026, 3, 12);
         viewModel.CheckOutDate = new DateOnly(2026, 4, 11);
-        var thirtyIsValid = viewModel.HasValidDates;
+        bool thirtyIsValid = viewModel.HasValidDates;
         viewModel.CheckOutDate = new DateOnly(2026, 4, 12);
 
         Assert.True(thirtyIsValid);
@@ -576,7 +576,7 @@ public sealed class BookingFlowViewModelTests
     [Fact]
     public async Task FindRooms_ThirtyOneNights_DoesNotCallTheService()
     {
-        var viewModel = Create();
+        BookingFlowViewModel viewModel = Create();
         viewModel.CheckInDate = new DateOnly(2026, 3, 12);
         viewModel.CheckOutDate = new DateOnly(2026, 4, 12);
 
@@ -593,12 +593,12 @@ public sealed class BookingFlowViewModelTests
     [Fact]
     public void DateLimits_WithTheClock_FollowTheRulesOfTheStay()
     {
-        var viewModel = Create();
+        BookingFlowViewModel viewModel = Create();
         viewModel.CheckInDate = null;
 
-        var withoutArrival = viewModel.LatestCheckOut;
+        DateOnly withoutArrival = viewModel.LatestCheckOut;
         viewModel.CheckInDate = new DateOnly(2026, 3, 12);
-        var afterAnArrival = viewModel.LatestCheckOut;
+        DateOnly afterAnArrival = viewModel.LatestCheckOut;
         viewModel.CheckInDate = new DateOnly(2031, 3, 1);
 
         Assert.Equal(Today, viewModel.EarliestCheckIn);
@@ -612,9 +612,9 @@ public sealed class BookingFlowViewModelTests
     [Fact]
     public void Prefill_StayBeyondTheRules_IsTakenButNotReady()
     {
-        var viewModel = Create();
+        BookingFlowViewModel viewModel = Create();
 
-        var ready = viewModel.Prefill("2026-03-12", "2026-04-12", "2");
+        bool ready = viewModel.Prefill("2026-03-12", "2026-04-12", "2");
 
         Assert.False(ready);
         Assert.Equal(new DateOnly(2026, 4, 12), viewModel.CheckOutDate);

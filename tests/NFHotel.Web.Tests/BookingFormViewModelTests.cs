@@ -70,7 +70,7 @@ public sealed class BookingFormViewModelTests
     [Fact]
     public void DateLimits_WithTheClock_FollowTheRulesOfTheStayForStaff()
     {
-        var viewModel = Create();
+        BookingFormViewModel viewModel = Create();
 
         viewModel.CheckInDate = Today.AddDays(2);
 

@@ -221,12 +221,12 @@ public sealed class BookingListPageTests : IAsyncDisposable
     public void Form_NewBooking_FieldsHaveTheLimitsOfTheRules()
     {
         OverviewIs();
-        var page = _host.Render<BookingList>();
+        IRenderedComponent<BookingList> page = _host.Render<BookingList>();
         page.Button("New booking").Click();
 
         page.Find("#form-check-in").Change(Iso(Today.AddDays(2)));
         page.Button("New guest").Click();
-        var options = page.FindAll("#form-country option").Select(option => option.GetAttribute("value")).ToList();
+        List<string?> options = page.FindAll("#form-country option").Select(option => option.GetAttribute("value")).ToList();
 
         Assert.Equal(Iso(Today), page.Find("#form-check-in").GetAttribute("min"));
         Assert.Equal(Iso(BookingEntity.LatestDeparture(Today).AddDays(-1)), page.Find("#form-check-in").GetAttribute("max"));
@@ -249,10 +249,10 @@ public sealed class BookingListPageTests : IAsyncDisposable
     [Fact]
     public void Render_StoredHostileValues_AreShownAsText()
     {
-        var values = HostileStrings.All.Select(item => item.Value).ToList();
+        List<string> values = HostileStrings.All.Select(item => item.Value).ToList();
         OverviewIs(values.Select((value, index) => BookingItem(index + 1) with { GuestFullName = value, GuestCountry = value, GuestEmail = value }).ToArray());
 
-        var page = _host.Render<BookingList>();
+        IRenderedComponent<BookingList> page = _host.Render<BookingList>();
 
         HostileMarkup.AssertShownAsText(page, values);
     }

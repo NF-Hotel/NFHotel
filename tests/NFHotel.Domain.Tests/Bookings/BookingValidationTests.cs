@@ -83,10 +83,10 @@ public class BookingValidationTests
     public void Create_DepartureMoreThanFiveYearsAhead_ThrowsEndDateTooFarAhead(string today)
     {
         // Arrange
-        var period = BookingFactory.StandardPeriod;
+        DateRange period = BookingFactory.StandardPeriod;
 
         // Act
-        var exception = Assert.Throws<DomainException>(
+        DomainException exception = Assert.Throws<DomainException>(
             () => Booking.Create(period, BookingFactory.RoomId, BookingFactory.GuestId, TestDate.Of(today)));
 
         // Assert
@@ -100,11 +100,11 @@ public class BookingValidationTests
     public void Create_OnALeapDay_EndsTheFiveYearsOnTheLastDayOfFebruary(string departure, bool accepted)
     {
         // Arrange
-        var today = TestDate.Of("2028-02-29");
-        var period = new DateRange(today.AddDays(1), TestDate.Of(departure));
+        DateOnly today = TestDate.Of("2028-02-29");
+        DateRange period = new(today.AddDays(1), TestDate.Of(departure));
 
         // Act
-        var exception = Record.Exception(() => Booking.Create(period, BookingFactory.RoomId, BookingFactory.GuestId, today));
+        Exception? exception = Record.Exception(() => Booking.Create(period, BookingFactory.RoomId, BookingFactory.GuestId, today));
 
         // Assert
         if (accepted)

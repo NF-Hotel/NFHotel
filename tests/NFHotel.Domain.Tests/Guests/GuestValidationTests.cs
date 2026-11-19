@@ -1,3 +1,5 @@
+using System.Text;
+
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 
@@ -192,11 +194,11 @@ public class GuestValidationTests
         var firstName = new string('a', Guest.MaxNameLength);
         var lastName = new string('b', Guest.MaxNameLength);
         var email = EmailOfLength(Guest.MaxEmailLength);
-        var phoneNumber = PhoneNumberOfLength(Guest.MaxPhoneNumberLength);
+        string phoneNumber = PhoneNumberOfLength(Guest.MaxPhoneNumberLength);
         var passportNumber = new string('9', Guest.MaxPassportNumberLength);
 
         // Act
-        var errors = ErrorsOf(firstName, lastName, email, phoneNumber, ValidCountry, passportNumber);
+        IReadOnlyList<string> errors = ErrorsOf(firstName, lastName, email, phoneNumber, ValidCountry, passportNumber);
 
         // Assert
         Assert.Empty(errors);
@@ -214,11 +216,11 @@ public class GuestValidationTests
         var firstName = new string('a', Guest.MaxNameLength + 1);
         var lastName = new string('b', Guest.MaxNameLength + 1);
         var email = EmailOfLength(Guest.MaxEmailLength + 1);
-        var phoneNumber = PhoneNumberOfLength(Guest.MaxPhoneNumberLength + 1);
+        string phoneNumber = PhoneNumberOfLength(Guest.MaxPhoneNumberLength + 1);
         var passportNumber = new string('9', Guest.MaxPassportNumberLength + 1);
 
         // Act
-        var errors = ErrorsOf(firstName, lastName, email, phoneNumber, ValidCountry, passportNumber);
+        IReadOnlyList<string> errors = ErrorsOf(firstName, lastName, email, phoneNumber, ValidCountry, passportNumber);
 
         // Assert
         Assert.Collection(
@@ -235,10 +237,10 @@ public class GuestValidationTests
     public void Validate_CountryExceedsItsMaxLength_ReturnsTheLengthAndTheListCode()
     {
         // Arrange
-        var country = new string('c', Guest.MaxCountryLength + 1);
+        string country = new('c', Guest.MaxCountryLength + 1);
 
         // Act
-        var errors = ErrorsOf(ValidFirstName, ValidLastName, ValidEmail, ValidPhoneNumber, country);
+        IReadOnlyList<string> errors = ErrorsOf(ValidFirstName, ValidLastName, ValidEmail, ValidPhoneNumber, country);
 
         // Assert
         Assert.Equal(new[] { GuestErrors.CountryTooLong, GuestErrors.CountryInvalid }, errors);
@@ -277,7 +279,7 @@ public class GuestValidationTests
     public void Validate_EveryFieldBreaksTheRuleOfItsCharacters_ReturnsEachCode()
     {
         // Arrange & Act
-        var errors = ErrorsOf("Anna1", "<b>", "anna@example", "12 ab", "Danmark", "AB-123");
+        IReadOnlyList<string> errors = ErrorsOf("Anna1", "<b>", "anna@example", "12 ab", "Danmark", "AB-123");
 
         // Assert
         Assert.Equal(
@@ -298,7 +300,7 @@ public class GuestValidationTests
     public void Create_TextsWithWhiteSpaceAndDecomposedLetters_StoresTheNormalForm()
     {
         // Arrange & Act
-        var guest = Guest.Create(" Jose\u0301 ", "\tHolm\n", " valdemar@nfhotel.dk ", " +45 12 34 56 78 ", " Co\u0302te d'Ivoire ", " AB123 ");
+        Guest guest = Guest.Create(" Jose\u0301 ", "\tHolm\n", " valdemar@nfhotel.dk ", " +45 12 34 56 78 ", " Co\u0302te d'Ivoire ", " AB123 ");
 
         // Assert
         Assert.Equal("Jos\u00E9", guest.FirstName);
@@ -314,7 +316,7 @@ public class GuestValidationTests
     public void Create_PassportNumberOfWhiteSpace_StoresNone()
     {
         // Arrange & Act
-        var guest = Guest.Create(ValidFirstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry, "   ");
+        Guest guest = Guest.Create(ValidFirstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry, "   ");
 
         // Assert
         Assert.Null(guest.PassportNumber);
@@ -335,7 +337,7 @@ public class GuestValidationTests
     public void Create_HostileFirstName_IsStoredUnchangedOrRefused(string firstName, bool stored)
     {
         // Arrange & Act
-        var errors = ErrorsOf(firstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry);
+        IReadOnlyList<string> errors = ErrorsOf(firstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry);
 
         // Assert
         if (stored)
@@ -464,14 +466,14 @@ public class GuestValidationTests
     private static string EmailOfLength(int length)
     {
         const string Domain = "example.com";
-        var local = Math.Min(64, length - Domain.Length - 1);
-        var rest = length - Domain.Length - 1 - local;
+        int local = Math.Min(64, length - Domain.Length - 1);
+        int rest = length - Domain.Length - 1 - local;
 
         // What does not fit before the at sign becomes labels of up to 60 letters in front of the domain.
-        var text = new System.Text.StringBuilder(new string('a', local)).Append('@');
+        StringBuilder text = new StringBuilder(new string('a', local)).Append('@');
         while (rest > 0)
         {
-            var label = Math.Min(60, rest - 1);
+            int label = Math.Min(60, rest - 1);
             text.Append('b', label).Append('.');
             rest -= label + 1;
         }

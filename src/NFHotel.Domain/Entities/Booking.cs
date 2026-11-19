@@ -336,8 +336,8 @@ public sealed class Booking : Entity<int>
     /// <returns>The last allowed departure for that arrival.</returns>
     public static DateOnly LatestPublicDeparture(DateOnly arrival, DateOnly today)
     {
-        var byNights = arrival.AddDays(MaxPublicNights);
-        var byYears = LatestDeparture(today);
+        DateOnly byNights = arrival.AddDays(MaxPublicNights);
+        DateOnly byYears = LatestDeparture(today);
 
         return byNights < byYears ? byNights : byYears;
     }
@@ -376,7 +376,7 @@ public sealed class Booking : Entity<int>
     /// <summary>Rejects a period that <see cref="CheckPeriod"/> refuses (BR-44, BR-104, BR-108, BR-C-07).</summary>
     private static void GuardPeriod(DateRange period, DateOnly today)
     {
-        var error = CheckPeriod(period, today);
+        string? error = CheckPeriod(period, today);
         if (error is not null)
         {
             throw new DomainException(error);

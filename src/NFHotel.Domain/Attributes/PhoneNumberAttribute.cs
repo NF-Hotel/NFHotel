@@ -11,11 +11,17 @@ namespace NFHotel.Domain.Attributes;
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
 public sealed class PhoneNumberAttribute : ValidationAttribute
 {
+    #region Fields
+
     /// <summary>The fewest digits of a phone number.</summary>
     public const int MinDigits = 7;
 
     /// <summary>The most digits of a phone number (ITU-T E.164).</summary>
     public const int MaxDigits = 15;
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Tells whether a text is a phone number.</summary>
     /// <param name="value">The text, in normal form.</param>
@@ -27,7 +33,7 @@ public sealed class PhoneNumberAttribute : ValidationAttribute
             return false;
         }
 
-        var body = value[0] == '+' ? value[1..] : value;
+        string body = value[0] == '+' ? value[1..] : value;
         if (body.Length == 0
             || !(char.IsAsciiDigit(body[0]) || body[0] == '(')
             || !(char.IsAsciiDigit(body[^1]) || body[^1] == ')'))
@@ -35,8 +41,8 @@ public sealed class PhoneNumberAttribute : ValidationAttribute
             return false;
         }
 
-        var digits = 0;
-        foreach (var character in body)
+        int digits = 0;
+        foreach (char character in body)
         {
             if (char.IsAsciiDigit(character))
             {
@@ -53,4 +59,6 @@ public sealed class PhoneNumberAttribute : ValidationAttribute
 
     /// <inheritdoc/>
     public override bool IsValid(object? value) => value is null || (value is string text && Accepts(text));
+
+    #endregion Public methods
 }

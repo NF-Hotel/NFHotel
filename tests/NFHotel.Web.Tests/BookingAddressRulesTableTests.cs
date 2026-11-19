@@ -30,14 +30,14 @@ public sealed class BookingAddressRulesTableTests
     public void Table_RowsOfTheBookingPage_AreTheValuesThatThePageReads()
     {
         // Arrange
-        var read = typeof(Book).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+        string[] read = typeof(Book).GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Select(property => property.GetCustomAttribute<SupplyParameterFromQueryAttribute>()?.Name)
             .OfType<string>()
             .Order(StringComparer.Ordinal)
             .ToArray();
 
         // Act
-        var rows = BookingPageRows()
+        string[] rows = BookingPageRows()
             .Select(row => row.Field[BookingPageRowPrefix.Length..])
             .Order(StringComparer.Ordinal)
             .ToArray();
@@ -52,7 +52,7 @@ public sealed class BookingAddressRulesTableTests
     public void Table_EveryRuleOfTheBookingPage_Exists()
     {
         // Act
-        var missing = BookingPageRows()
+        string[] missing = BookingPageRows()
             .SelectMany(row => ValidationRulesTable.NamesOfCode(row.RuleInTheCode))
             .Where(name => !ValidationRulesTable.Exists(name, RuleAssemblies))
             .Distinct(StringComparer.Ordinal)

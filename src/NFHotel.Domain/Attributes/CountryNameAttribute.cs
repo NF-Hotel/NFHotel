@@ -11,6 +11,8 @@ namespace NFHotel.Domain.Attributes;
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
 public sealed class CountryNameAttribute : ValidationAttribute
 {
+    #region Public methods
+
     /// <summary>Tells whether a text is the name of a country of the list.</summary>
     /// <param name="value">The text, in normal form.</param>
     /// <returns><see langword="true"/> when the list holds the name as it is written.</returns>
@@ -18,4 +20,6 @@ public sealed class CountryNameAttribute : ValidationAttribute
 
     /// <inheritdoc/>
     public override bool IsValid(object? value) => value is null || (value is string text && Accepts(text));
+
+    #endregion Public methods
 }

@@ -23,7 +23,7 @@ public class GuestFieldFormatTests
     public void Normalize_Text_TrimsAndComposes(string text, string expected)
     {
         // Act
-        var normalized = TextNormalForm.Normalize(text);
+        string normalized = TextNormalForm.Normalize(text);
 
         // Assert
         Assert.Equal(expected, normalized);
@@ -46,7 +46,25 @@ public class GuestFieldFormatTests
         const string text = "An\uD800na";
 
         // Act
-        var normalized = TextNormalForm.Normalize(text);
+        string normalized = TextNormalForm.Normalize(text);
+
+        // Assert
+        Assert.Equal(text, normalized);
+        Assert.False(PersonNameAttribute.Accepts(normalized));
+    }
+
+    /// <summary>
+    /// Negative: the runtime cannot normalise a text with the noncharacter U+FFFE either; it is left as it is, and its
+    /// rule refuses it.
+    /// </summary>
+    [Fact]
+    public void Normalize_NonCharacterFFFE_LeavesTheTextForTheRuleToRefuse()
+    {
+        // Arrange
+        const string text = "Ann\uFFFE";
+
+        // Act
+        string normalized = TextNormalForm.Normalize(text);
 
         // Assert
         Assert.Equal(text, normalized);
@@ -62,7 +80,7 @@ public class GuestFieldFormatTests
     public void NormalizeOptional_Text_GivesNullForNothing(string? text, string? expected)
     {
         // Act
-        var normalized = TextNormalForm.NormalizeOptional(text);
+        string? normalized = TextNormalForm.NormalizeOptional(text);
 
         // Assert
         Assert.Equal(expected, normalized);
@@ -145,8 +163,8 @@ public class GuestFieldFormatTests
     public void EmailFormat_LocalPartAndLabelAtTheirLimits_AreAcceptedAndOneMoreIsRefused()
     {
         // Arrange
-        var local64 = new string('a', 64);
-        var label63 = new string('b', 63);
+        string local64 = new('a', 64);
+        string label63 = new('b', 63);
 
         // Act & Assert
         Assert.True(EmailFormatAttribute.Accepts($"{local64}@example.com"));

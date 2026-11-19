@@ -10,6 +10,8 @@ namespace NFHotel.Domain.Attributes;
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
 public sealed class PassportNumberAttribute : ValidationAttribute
 {
+    #region Public methods
+
     /// <summary>Tells whether a text is made of ASCII letters and digits.</summary>
     /// <param name="value">The text, in normal form.</param>
     /// <returns><see langword="true"/> when the text is not empty and every character is an ASCII letter or digit.</returns>
@@ -17,4 +19,6 @@ public sealed class PassportNumberAttribute : ValidationAttribute
 
     /// <inheritdoc/>
     public override bool IsValid(object? value) => value is null || (value is string text && Accepts(text));
+
+    #endregion Public methods
 }

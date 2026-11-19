@@ -60,21 +60,25 @@ public sealed class BenchmarkEndpointTests
     /// <summary>
     /// Boundary (MIL-086, ADR-0050 decision 4): a run whose output is longer than the 1,000 characters of a text without
     /// a rule of its own, in a body larger than the 64 kilobytes of the other endpoints, is read and stored whole: the
-    /// intake has a size limit of its own and the output a length of its own.
+    /// intake has a size limit of its own and the output a length of its own. The body declares its length, so the API
+    /// reads the limit of the endpoint before it reads the body.
     /// </summary>
     [Fact]
     public async Task PostResult_LongOutputInABodyOverSixtyFourKilobytes_Returns201AndStoresItWhole()
     {
         // Arrange
-        using var factory = new ApiFactory();
-        using var client = factory.CreateServiceClient();
+        using ApiFactory factory = new();
+        using HttpClient client = factory.CreateServiceClient();
         string output = new('x', 100_000);
         SubmitBenchmarkRunRequest body = Body() with { Results = [Result("m1") with { Output = output }, Result("m2")] };
+        using JsonContent content = JsonContent.Create(body);
+        await content.LoadIntoBufferAsync(TestContext.Current.CancellationToken);
 
         // Act
-        using var response = await client.PostAsJsonAsync(Results, body, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await client.PostAsync(Results, content, TestContext.Current.CancellationToken);
 
         // Assert
+        Assert.True(content.Headers.ContentLength > 65_536, "The body declares a length over 64 KB.");
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.Contains(Assert.Single(factory.World.Benchmarks.Items).Results, result => result.Output == output);
     }

@@ -238,7 +238,7 @@
                                     aria-invalid="@Invalid(ViewModel.GuestErrors.Country)"
                                     @bind="ViewModel.Country">
                                 <option value="">Choose a country</option>
-                                @foreach (var country in Countries.All)
+                                @foreach (IsoCountry country in Countries.All)
                                 {
                                     <option value="@country.Name">@country.Name</option>
                                 }

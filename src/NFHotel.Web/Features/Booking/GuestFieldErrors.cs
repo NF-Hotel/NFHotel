@@ -77,11 +77,13 @@ public sealed class GuestFieldErrors
             {
                 case ErrorCodes.Guest.FirstNameRequired:
                 case ErrorCodes.Guest.FirstNameTooLong:
+                case ErrorCodes.Guest.FirstNameInvalid:
                     firstName ??= text;
                     break;
 
                 case ErrorCodes.Guest.LastNameRequired:
                 case ErrorCodes.Guest.LastNameTooLong:
+                case ErrorCodes.Guest.LastNameInvalid:
                     lastName ??= text;
                     break;
 
@@ -93,15 +95,18 @@ public sealed class GuestFieldErrors
 
                 case ErrorCodes.Guest.PhoneNumberRequired:
                 case ErrorCodes.Guest.PhoneNumberTooLong:
+                case ErrorCodes.Guest.PhoneNumberInvalid:
                     phoneNumber ??= text;
                     break;
 
                 case ErrorCodes.Guest.CountryRequired:
                 case ErrorCodes.Guest.CountryTooLong:
+                case ErrorCodes.Guest.CountryInvalid:
                     country ??= text;
                     break;
 
                 case ErrorCodes.Guest.PassportNumberTooLong:
+                case ErrorCodes.Guest.PassportNumberInvalid:
                     passportNumber ??= text;
                     break;
 

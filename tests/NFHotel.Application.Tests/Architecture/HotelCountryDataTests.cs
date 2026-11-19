@@ -19,13 +19,13 @@ public sealed class HotelCountryDataTests
     public void HotelData_EveryCountry_IsANameOfTheList()
     {
         // Arrange
-        var path = Path.Join(RepositoryRoot.Find(), "src", "NFHotel.DataAnalysis", "data", "nf_hotel_bookings.csv");
-        var lines = File.ReadAllLines(path);
-        var header = lines[0].Split(';');
-        var column = Array.IndexOf(header, "country");
+        string path = Path.Join(RepositoryRoot.Find(), "src", "NFHotel.DataAnalysis", "data", "nf_hotel_bookings.csv");
+        string[] lines = File.ReadAllLines(path);
+        string[] header = lines[0].Split(';');
+        int column = Array.IndexOf(header, "country");
 
         // Act
-        var countries = lines
+        string[] countries = lines
             .Skip(1)
             .Select(line => line.Split(';')[column])
             .Where(country => country != NoCountry)

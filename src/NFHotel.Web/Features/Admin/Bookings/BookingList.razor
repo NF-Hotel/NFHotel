@@ -339,7 +339,7 @@
                                                 @bind:event="oninput"
                                                 @bind:after="ValidateGuest">
                                             <option value="">Choose a country</option>
-                                            @foreach (var country in Countries.All)
+                                            @foreach (IsoCountry country in Countries.All)
                                             {
                                                 <option value="@country.Name">@country.Name</option>
                                             }

@@ -14,6 +14,8 @@ namespace NFHotel.Domain.ValueObjects;
 /// </remarks>
 public static class Countries
 {
+    #region Fields
+
     private static readonly IsoCountry[] Entries =
     [
         new("AF", "Afghanistan"),
@@ -269,11 +271,21 @@ public static class Countries
 
     private static readonly FrozenSet<string> Names = Entries.Select(country => country.Name).ToFrozenSet(StringComparer.Ordinal);
 
+    #endregion Fields
+
+    #region Properties
+
     /// <summary>The countries, sorted by name.</summary>
     public static IReadOnlyList<IsoCountry> All { get; } = Array.AsReadOnly(Entries);
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <summary>Tells whether a text is the name of a country of the list, exactly as it is written there.</summary>
     /// <param name="name">The text.</param>
     /// <returns><see langword="true"/> when the list holds the name.</returns>
     public static bool IsName(string name) => Names.Contains(name);
+
+    #endregion Public methods
 }

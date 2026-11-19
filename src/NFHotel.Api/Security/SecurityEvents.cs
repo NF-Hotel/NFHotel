@@ -9,11 +9,17 @@ namespace NFHotel.Api.Security;
 /// </summary>
 public static partial class SecurityEvents
 {
+    #region Fields
+
     /// <summary>The log category of every security event of the API.</summary>
     public const string Category = "NFHotel.Security";
 
     /// <summary>The route that an event names when the request matched no endpoint.</summary>
     public const string NoRoute = "(no route)";
+
+    #endregion Fields
+
+    #region Public methods
 
     /// <summary>Tells whether a status is a refusal of input: 400, 413 or 422.</summary>
     /// <param name="status">The status of the answer.</param>
@@ -42,6 +48,20 @@ public static partial class SecurityEvents
         return errors is null ? null : string.Join(",", errors);
     }
 
+    /// <summary>Writes the event of a request refused for its input with a logger from the services of the request.</summary>
+    /// <param name="context">The request.</param>
+    /// <param name="route">The route template of its endpoint.</param>
+    /// <param name="status">The status of the answer.</param>
+    /// <param name="codes">The codes of the answer.</param>
+    public static void WriteInputRefused(HttpContext context, string route, int status, string codes)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        context.RequestServices.GetRequiredService<ILoggerFactory>()
+            .CreateLogger(Category)
+            .InputRefused(context.Request.Method, route, status, codes);
+    }
+
     /// <summary>Writes the event of a request refused for its input, at the level Warning.</summary>
     /// <param name="logger">A logger of <see cref="Category"/>.</param>
     /// <param name="method">The method of the request.</param>
@@ -51,4 +71,6 @@ public static partial class SecurityEvents
     [LoggerMessage(EventId = 8601, EventName = "input_refused", Level = LogLevel.Warning,
         Message = "input_refused {Method} {Route} {Status} {Codes}")]
     public static partial void InputRefused(this ILogger logger, string method, string route, int status, string codes);
+
+    #endregion Public methods
 }

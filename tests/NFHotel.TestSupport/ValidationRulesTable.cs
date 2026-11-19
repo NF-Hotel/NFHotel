@@ -22,23 +22,23 @@ public static partial class ValidationRulesTable
     /// <exception cref="InvalidOperationException">The ledger has no such section or table, or a row has another number of cells.</exception>
     public static IReadOnlyList<ValidationRule> Read()
     {
-        var lines = File.ReadAllLines(Path.Join(RepositoryRoot.Find(), "docs", "refactor", "BusinessRules.md"));
-        var start = Array.IndexOf(lines, Section);
+        string[] lines = File.ReadAllLines(Path.Join(RepositoryRoot.Find(), "docs", "refactor", "BusinessRules.md"));
+        int start = Array.IndexOf(lines, Section);
         if (start < 0)
         {
             throw new InvalidOperationException($"The rule ledger has no section \"{Section[3..]}\".");
         }
 
-        var header = Array.FindIndex(lines, start, line => line.StartsWith("| Field |", StringComparison.Ordinal));
+        int header = Array.FindIndex(lines, start, line => line.StartsWith("| Field |", StringComparison.Ordinal));
         if (header < 0)
         {
             throw new InvalidOperationException("The section has no table.");
         }
 
-        var rows = new List<ValidationRule>();
-        for (var index = header + 2; index < lines.Length && lines[index].StartsWith('|'); index++)
+        List<ValidationRule> rows = [];
+        for (int index = header + 2; index < lines.Length && lines[index].StartsWith('|'); index++)
         {
-            var cells = lines[index].Trim().Trim('|').Split('|').Select(cell => cell.Trim()).ToArray();
+            string[] cells = lines[index].Trim().Trim('|').Split('|').Select(cell => cell.Trim()).ToArray();
             if (cells.Length != ColumnCount)
             {
                 throw new InvalidOperationException($"Line {index + 1} of the rule ledger has {cells.Length} cells, not {ColumnCount}.");
@@ -63,8 +63,8 @@ public static partial class ValidationRulesTable
     public static bool Exists(string name, IEnumerable<Assembly> assemblies)
     {
         ArgumentNullException.ThrowIfNull(name);
-        var parts = name.Split('.');
-        var types = assemblies.SelectMany(assembly => assembly.GetTypes()).Where(type => type.Name == parts[0]).ToArray();
+        string[] parts = name.Split('.');
+        Type[] types = assemblies.SelectMany(assembly => assembly.GetTypes()).Where(type => type.Name == parts[0]).ToArray();
         return parts.Length switch
         {
             1 => types.Length > 0,

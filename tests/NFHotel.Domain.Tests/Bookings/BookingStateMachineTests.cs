@@ -560,11 +560,11 @@ public class BookingStateMachineTests
     public void Reschedule_NewDepartureAtOrBeyondFiveYears_IsAcceptedOrRefused(string departure, bool accepted)
     {
         // Arrange
-        var booking = BookingFactory.Pending();
-        var newPeriod = new DateRange(TestDate.Of("2030-12-20"), TestDate.Of(departure));
+        Booking booking = BookingFactory.Pending();
+        DateRange newPeriod = new(TestDate.Of("2030-12-20"), TestDate.Of(departure));
 
         // Act
-        var exception = Record.Exception(() => booking.Reschedule(newPeriod, 42, BookingFactory.Today));
+        Exception? exception = Record.Exception(() => booking.Reschedule(newPeriod, 42, BookingFactory.Today));
 
         // Assert
         if (accepted)

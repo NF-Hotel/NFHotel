@@ -10,6 +10,8 @@ namespace NFHotel.Web.Common;
 /// </summary>
 public static class StayDates
 {
+    #region Public methods
+
     /// <summary>The last arrival that a page offers: the day before the last departure.</summary>
     /// <param name="today">Today on the clock of the hotel.</param>
     /// <returns>The last arrival.</returns>
@@ -37,4 +39,6 @@ public static class StayDates
         DateRange stay = new(checkIn, checkOut);
         return Booking.CheckPeriod(stay, today) ?? Booking.CheckPublicNights(stay);
     }
+
+    #endregion Public methods
 }

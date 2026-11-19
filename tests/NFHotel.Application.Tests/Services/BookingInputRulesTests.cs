@@ -233,6 +233,29 @@ public sealed class BookingInputRulesTests
         AssertNothingStored(world);
     }
 
+    /// <summary>
+    /// Boundary: the day turns after the stay is checked and the new guest is saved; the booking is made against the
+    /// day that was checked, so no guest is left stored without its booking.
+    /// </summary>
+    [Fact]
+    public async Task CreateAsync_DayTurnsAfterTheCheck_BooksAgainstTheCheckedDay()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        Room room = world.AddRoom();
+        DateOnly today = world.Clock.Today;
+        CreateBookingRequest request = new(today, today.AddDays(2), room.Id, null, ServiceWorld.ValidGuestFields());
+        world.Clock.NextDay = today.AddDays(1);
+
+        // Act
+        Result<BookingDetailsDto> result = await world.BookingService(Allow(Permissions.CreateBooking)).CreateAsync(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess, result.FirstError?.Code);
+        Assert.Equal(today, Assert.Single(world.Bookings.Items).StartDate);
+        Assert.Single(world.Guests.Items);
+    }
+
     /// <summary>Boundary: staff may move a booking to end exactly five years ahead, and 31 nights; a day later is refused and changes nothing.</summary>
     [Theory]
     [InlineData(0, true)]

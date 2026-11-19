@@ -24,7 +24,7 @@ internal static class HostileMarkup
         Assert.Empty(page.FindAll("script"));
         Assert.Empty(page.FindAll("img"));
         Assert.Empty(page.FindAll("[onmouseover], [onerror]"));
-        var text = string.Concat(page.Nodes.Select(node => node.TextContent));
+        string text = string.Concat(page.Nodes.Select(node => node.TextContent));
         Assert.All(values, value => Assert.Contains(value.ReplaceLineEndings("\n"), text, StringComparison.Ordinal));
     }
 }

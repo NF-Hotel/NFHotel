@@ -73,19 +73,25 @@ app.UseApiSecurityHeaders();
 app.UseForwardedHeaders();
 
 // A body that grew over its limit while it was read is answered 413 (MIL-086). A key below one or a missing argument
-// is a programming error of the caller: 400. Anything else is a fault of the API: 500, without a stack trace or a
-// message that could leak a setting.
+// is a programming error of the caller: 400. Both are refusals of input and write the security event (ADR-0050
+// decision 6). Anything else is a fault of the API: 500, without a stack trace or a message that could leak a setting.
 app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
 {
-    var feature = context.Features.Get<IExceptionHandlerFeature>();
-    var error = feature?.Error;
+    IExceptionHandlerFeature? feature = context.Features.Get<IExceptionHandlerFeature>();
+    Exception? error = feature?.Error;
     if (error is BadHttpRequestException { StatusCode: StatusCodes.Status413PayloadTooLarge })
     {
         await RequestBodyLimit.RefuseAsync(context, SecurityEvents.RouteOf(feature?.Endpoint)).ConfigureAwait(false);
         return;
     }
 
-    var invalid = error is ArgumentException;
+    bool invalid = error is ArgumentException;
+    if (invalid)
+    {
+        SecurityEvents.WriteInputRefused(
+            context, SecurityEvents.RouteOf(feature?.Endpoint), StatusCodes.Status400BadRequest, ApiErrorCodes.InvalidRequest);
+    }
+
     context.Response.StatusCode = invalid ? StatusCodes.Status400BadRequest : StatusCodes.Status500InternalServerError;
     await context.Response.WriteAsJsonAsync(
         new ApiResponse([invalid ? ApiErrorCodes.InvalidRequest : ApiErrorCodes.UnexpectedError]),

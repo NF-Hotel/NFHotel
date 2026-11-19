@@ -179,7 +179,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         var statuses = query.IncludeCancelled ? AllStatuses : BlockingStatuses;
 
         // MIL-086 decision 4: the search text is asked for in its normal form, and white space only is no search.
-        var searchText = TextNormalForm.NormalizeOptional(query.SearchText);
+        string? searchText = TextNormalForm.NormalizeOptional(query.SearchText);
         var readModels = await _bookingQueries
             .GetOverviewAsync(query.PeriodStart, query.PeriodEnd, statuses, searchText, cancellationToken)
             .ConfigureAwait(false);
@@ -394,7 +394,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
             return Result<BookingDetailsDto>.Failure(partyError);
         }
 
-        if (TryCreatePeriod(request.CheckInDate, request.CheckOutDate, out var stay, out _)
+        if (TryCreatePeriod(request.CheckInDate, request.CheckOutDate, out DateRange stay, out _)
             && Booking.CheckPublicNights(stay) is { } nightsError)
         {
             return Result<BookingDetailsDto>.Failure(nightsError);
@@ -465,8 +465,10 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         }
 
         // BR-44, BR-C-07 (MIL-086): the dates are checked before a new guest is saved, so a refused stay stores
-        // nothing; Booking.Create checks them again.
-        if (Booking.CheckPeriod(period, _clock.Today) is { } stayError)
+        // nothing; Booking.Create checks them again against the same day, so a day that turns in between cannot refuse
+        // the booking of a guest who is already saved.
+        DateOnly today = _clock.Today;
+        if (Booking.CheckPeriod(period, today) is { } stayError)
         {
             return Result<BookingDetailsDto>.Failure(stayError);
         }
@@ -497,7 +499,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
 
         try
         {
-            booking = Booking.Create(period, request.RoomId, guestResult.Value, _clock.Today);
+            booking = Booking.Create(period, request.RoomId, guestResult.Value, today);
         }
         catch (DomainException exception)
         {

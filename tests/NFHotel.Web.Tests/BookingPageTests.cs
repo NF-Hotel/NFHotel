@@ -51,7 +51,7 @@ public sealed class BookingPageTests : IAsyncDisposable
     private IRenderedComponent<Book> AtTheDetails()
     {
         RoomsAre(FreeRoom(1));
-        var page = _host.Render<Book>();
+        IRenderedComponent<Book> page = _host.Render<Book>();
         page.Button("Find available rooms").Click();
         page.Button("Choose Double room").Click();
         return page;
@@ -136,7 +136,7 @@ public sealed class BookingPageTests : IAsyncDisposable
     [Fact]
     public void Dates_OnThePage_OfferTheDaysThatTheRulesAllow()
     {
-        var page = _host.Render<Book>();
+        IRenderedComponent<Book> page = _host.Render<Book>();
 
         page.Find("#check-in").Change("2026-03-12");
 
@@ -150,7 +150,7 @@ public sealed class BookingPageTests : IAsyncDisposable
     [Fact]
     public void Dates_ThirtyOneNights_AreMarkedInvalid()
     {
-        var page = _host.Render<Book>();
+        IRenderedComponent<Book> page = _host.Render<Book>();
 
         page.Find("#check-in").Change("2026-03-12");
         page.Find("#check-out").Change("2026-04-12");
@@ -213,9 +213,9 @@ public sealed class BookingPageTests : IAsyncDisposable
     [Fact]
     public void Details_OnThePage_FieldsHaveTheLengthsAndTheListOfTheRules()
     {
-        var page = AtTheDetails();
+        IRenderedComponent<Book> page = AtTheDetails();
 
-        var options = page.FindAll("#country option").Select(option => option.GetAttribute("value")).ToList();
+        List<string?> options = page.FindAll("#country option").Select(option => option.GetAttribute("value")).ToList();
 
         Assert.Equal($"{GuestEntity.MaxNameLength}", page.Find("#first-name").GetAttribute("maxlength"));
         Assert.Equal($"{GuestEntity.MaxNameLength}", page.Find("#last-name").GetAttribute("maxlength"));
@@ -235,11 +235,11 @@ public sealed class BookingPageTests : IAsyncDisposable
     [Fact]
     public void Details_HostileStrings_StayTextInTheFields()
     {
-        var page = AtTheDetails();
+        IRenderedComponent<Book> page = AtTheDetails();
 
-        foreach (var (kind, value) in HostileStrings.All)
+        foreach ((string? kind, string? value) in HostileStrings.All)
         {
-            foreach (var id in new[] { "#first-name", "#last-name", "#email", "#phone", "#passport" })
+            foreach (string id in new[] { "#first-name", "#last-name", "#email", "#phone", "#passport" })
             {
                 page.Find(id).Change(value);
 

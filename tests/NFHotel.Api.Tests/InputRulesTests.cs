@@ -222,10 +222,10 @@ public sealed class InputRulesTests
     public void IsAccepted_TextWithoutALengthOfItsOwn_HasAtMostAThousandCharacters(int length, bool expected)
     {
         // Arrange
-        var text = new string('a', length);
+        string text = new('a', length);
 
         // Act
-        var isAccepted = InputRules.IsAccepted(new SampleText(text)) && InputRules.IsAccepted(text) && InputRules.IsAccepted(new[] { text });
+        bool isAccepted = InputRules.IsAccepted(new SampleText(text)) && InputRules.IsAccepted(text) && InputRules.IsAccepted(new[] { text });
 
         // Assert
         Assert.Equal(expected, isAccepted);
@@ -240,11 +240,11 @@ public sealed class InputRulesTests
     public void IsAccepted_TextWithALengthOfItsOwn_IsNotHeldToTheDefault()
     {
         // Arrange
-        var text = new string('a', 5000);
-        var parameter = typeof(InputRulesTests).GetMethod(nameof(SampleAction), BindingFlags.NonPublic | BindingFlags.Static)!.GetParameters()[0];
+        string text = new('a', 5000);
+        ParameterInfo parameter = typeof(InputRulesTests).GetMethod(nameof(SampleAction), BindingFlags.NonPublic | BindingFlags.Static)!.GetParameters()[0];
 
         // Act
-        var areAccepted = InputRules.IsAccepted(new SampleRecordParameterLength(text))
+        bool areAccepted = InputRules.IsAccepted(new SampleRecordParameterLength(text))
             && InputRules.IsAccepted(new SamplePropertyLength(text))
             && InputRules.IsAccepted(text, parameter);
 
@@ -257,10 +257,10 @@ public sealed class InputRulesTests
     public void IsAccepted_LongTextInANestedRecord_IsRefused()
     {
         // Arrange
-        var request = new CreateGuestRequest(ServiceWorld.ValidGuestFields() with { Country = new string('a', 1001) });
+        CreateGuestRequest request = new(ServiceWorld.ValidGuestFields() with { Country = new string('a', 1001) });
 
         // Act
-        var isAccepted = InputRules.IsAccepted(request);
+        bool isAccepted = InputRules.IsAccepted(request);
 
         // Assert
         Assert.False(isAccepted);

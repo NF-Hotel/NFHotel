@@ -18,7 +18,7 @@ public class CountriesTests
     public void All_TheCountriesOfIso3166_HasEachCodeAndNameOnce()
     {
         // Act
-        var all = Countries.All;
+        IReadOnlyList<IsoCountry> all = Countries.All;
 
         // Assert
         Assert.Equal(249, all.Count);
@@ -45,10 +45,10 @@ public class CountriesTests
     public void All_Order_IsTheOrderOfTheNames()
     {
         // Arrange
-        var names = Countries.All.Select(country => country.Name).ToArray();
+        string[] names = Countries.All.Select(country => country.Name).ToArray();
 
         // Act
-        var sorted = names.Order(StringComparer.Create(CultureInfo.InvariantCulture, ignoreCase: false)).ToArray();
+        string[] sorted = names.Order(StringComparer.Create(CultureInfo.InvariantCulture, ignoreCase: false)).ToArray();
 
         // Assert
         Assert.Equal(sorted, names);
@@ -70,7 +70,7 @@ public class CountriesTests
     public void All_CorrectedEntries_HoldTheirNames(string code, string name)
     {
         // Act
-        var country = Assert.Single(Countries.All, entry => entry.Alpha2Code == code);
+        IsoCountry country = Assert.Single(Countries.All, entry => entry.Alpha2Code == code);
 
         // Assert
         Assert.Equal(name, country.Name);
@@ -87,7 +87,7 @@ public class CountriesTests
     public void All_Neighbours_HoldTheirNames(string code, string name)
     {
         // Act
-        var country = Assert.Single(Countries.All, entry => entry.Alpha2Code == code);
+        IsoCountry country = Assert.Single(Countries.All, entry => entry.Alpha2Code == code);
 
         // Assert
         Assert.Equal(name, country.Name);

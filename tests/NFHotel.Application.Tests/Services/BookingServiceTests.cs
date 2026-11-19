@@ -146,8 +146,10 @@ public sealed class BookingServiceTests
     public async Task GetOverviewAsync_SearchText_IsAskedInItsNormalForm(string searchText, string? asked)
     {
         // Arrange
-        var world = new ServiceWorld();
-        var query = new BookingOverviewQuery(world.Clock.Today, world.Clock.Today.AddDays(30), SearchText: searchText);
+        ServiceWorld world = new();
+        BookingOverviewQuery query = new(world.Clock.Today, world.Clock.Today.AddDays(30), SearchText: searchText);
+        // ReturnsForAnyArgs answers every call, so the arguments of this set-up are placeholders; the null-forgiving
+        // default stands for the list of statuses, which the assertion below matches with Arg.Any.
         world.BookingQueries
             .GetOverviewAsync(default, default, default!, default, TestContext.Current.CancellationToken)
             .ReturnsForAnyArgs(Task.FromResult<IReadOnlyList<BookingReadModel>>([]));

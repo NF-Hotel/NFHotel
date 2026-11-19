@@ -242,10 +242,10 @@ public sealed class GuestListPageTests : IAsyncDisposable
     [Fact]
     public void Render_StoredHostileValues_AreShownAsText()
     {
-        var values = HostileStrings.All.Select(item => item.Value).ToList();
+        List<string> values = HostileStrings.All.Select(item => item.Value).ToList();
         SearchFinds(values.Select((value, index) => new GuestListItemDto(index + 1, value, value, value, value, value, value, false)).ToArray());
 
-        var page = _host.Render<GuestList>();
+        IRenderedComponent<GuestList> page = _host.Render<GuestList>();
 
         HostileMarkup.AssertShownAsText(page, values);
     }
@@ -258,10 +258,10 @@ public sealed class GuestListPageTests : IAsyncDisposable
     public void Form_NewGuest_FieldsHaveTheLengthsAndTheListOfTheRules()
     {
         SearchFinds();
-        var page = _host.Render<GuestList>();
+        IRenderedComponent<GuestList> page = _host.Render<GuestList>();
 
         page.Button("New guest").Click();
-        var options = page.FindAll("#guest-country option").Select(option => option.GetAttribute("value")).ToList();
+        List<string?> options = page.FindAll("#guest-country option").Select(option => option.GetAttribute("value")).ToList();
 
         Assert.Equal($"{GuestEntity.MaxNameLength}", page.Find("#guest-first-name").GetAttribute("maxlength"));
         Assert.Equal($"{GuestEntity.MaxNameLength}", page.Find("#guest-last-name").GetAttribute("maxlength"));

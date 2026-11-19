@@ -45,7 +45,7 @@ public sealed class RecordingLoggerProvider : ILoggerProvider
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
             ArgumentNullException.ThrowIfNull(formatter);
-            var values = state as IReadOnlyList<KeyValuePair<string, object?>> ?? [];
+            IReadOnlyList<KeyValuePair<string, object?>> values = state as IReadOnlyList<KeyValuePair<string, object?>> ?? [];
             entries.Enqueue(new LogEntry(category, logLevel, formatter(state, exception), values));
         }
     }

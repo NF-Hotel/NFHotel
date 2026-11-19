@@ -98,7 +98,7 @@ public static class InputRules
     // The length that a StringLength or a MaxLength sets; a MaxLength without a number sets none of its own.
     private static int? OwnLength(ICustomAttributeProvider declaredOn)
     {
-        foreach (var attribute in declaredOn.GetCustomAttributes(true))
+        foreach (object attribute in declaredOn.GetCustomAttributes(true))
         {
             switch (attribute)
             {
@@ -128,7 +128,7 @@ public static class InputRules
     private static (PropertyInfo Property, int MaxTextLength)[] PropertiesOf(Type type) =>
         PropertiesByType.GetOrAdd(type, static key =>
         {
-            var parameters = key.GetConstructors().SelectMany(constructor => constructor.GetParameters()).ToArray();
+            ParameterInfo[] parameters = key.GetConstructors().SelectMany(constructor => constructor.GetParameters()).ToArray();
 
             return key
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)

@@ -54,10 +54,10 @@ public sealed partial class ValidationRulesTableTests
     public void Table_EveryFieldOfTheFlow_HasARow()
     {
         // Arrange
-        var rows = ValidationRulesTable.Read().Select(row => row.Field).ToHashSet(StringComparer.Ordinal);
+        HashSet<string> rows = ValidationRulesTable.Read().Select(row => row.Field).ToHashSet(StringComparer.Ordinal);
 
         // Act
-        var missing = FieldsOfTheFlow().Keys.Where(field => !rows.Contains(field)).Order(StringComparer.Ordinal).ToArray();
+        string[] missing = FieldsOfTheFlow().Keys.Where(field => !rows.Contains(field)).Order(StringComparer.Ordinal).ToArray();
 
         // Assert
         Assert.True(missing.Length == 0, "The table has no row for: " + string.Join(", ", missing));
@@ -68,10 +68,10 @@ public sealed partial class ValidationRulesTableTests
     public void Table_EveryRow_NamesAFieldOfTheFlow()
     {
         // Arrange
-        var fields = FieldsOfTheFlow();
+        Dictionary<string, Type> fields = FieldsOfTheFlow();
 
         // Act
-        var stale = ValidationRulesTable.Read()
+        string[] stale = ValidationRulesTable.Read()
             .Where(row => !row.Field.StartsWith(ValidationRulesTable.PageRowPrefix, StringComparison.Ordinal) && !fields.ContainsKey(row.Field))
             .Select(row => row.Field)
             .ToArray();
@@ -85,10 +85,10 @@ public sealed partial class ValidationRulesTableTests
     public void Table_TypeOfEachRow_IsTheTypeOfItsField()
     {
         // Arrange
-        var fields = FieldsOfTheFlow();
+        Dictionary<string, Type> fields = FieldsOfTheFlow();
 
         // Act
-        var wrong = ValidationRulesTable.Read()
+        string[] wrong = ValidationRulesTable.Read()
             .Where(row => fields.ContainsKey(row.Field) && row.Type != TypeName(fields[row.Field]))
             .Select(row => $"{row.Field}: '{row.Type}', expected '{TypeName(fields[row.Field])}'")
             .ToArray();
@@ -102,7 +102,7 @@ public sealed partial class ValidationRulesTableTests
     public void Table_EveryRow_FillsEveryColumnAndGivesATextItsLength()
     {
         // Act
-        var rows = ValidationRulesTable.Read();
+        IReadOnlyList<ValidationRule> rows = ValidationRulesTable.Read();
 
         // Assert
         Assert.NotEmpty(rows);
@@ -121,10 +121,10 @@ public sealed partial class ValidationRulesTableTests
     public void Table_EveryCode_IsACodeOfTheApi()
     {
         // Arrange
-        var codes = KnownCodes();
+        HashSet<string> codes = KnownCodes();
 
         // Act
-        var unknown = ValidationRulesTable.Read()
+        string[] unknown = ValidationRulesTable.Read()
             .SelectMany(row => CodePattern().Matches(row.Code).Select(match => match.Groups[1].Value))
             .Where(code => !codes.Contains(code))
             .Distinct(StringComparer.Ordinal)
@@ -139,7 +139,7 @@ public sealed partial class ValidationRulesTableTests
     public void Table_EveryRuleInTheCode_Exists()
     {
         // Act
-        var missing = ValidationRulesTable.Read()
+        string[] missing = ValidationRulesTable.Read()
             .Where(row => !row.Field.StartsWith(ValidationRulesTable.PageRowPrefix, StringComparison.Ordinal))
             .SelectMany(row => ValidationRulesTable.NamesOfCode(row.RuleInTheCode))
             .Where(name => !ValidationRulesTable.Exists(name, RuleAssemblies))
@@ -158,13 +158,13 @@ public sealed partial class ValidationRulesTableTests
     public void FlowTypes_WhenInspected_RefuseUnknownFieldsAndBoundTheirLists()
     {
         // Act
-        var types = BodyTypesOfTheFlow();
+        List<Type> types = BodyTypesOfTheFlow();
 
         // Assert
         Assert.NotEmpty(types);
         Assert.All(types, type =>
         {
-            var handling = type.GetCustomAttribute<JsonUnmappedMemberHandlingAttribute>();
+            JsonUnmappedMemberHandlingAttribute? handling = type.GetCustomAttribute<JsonUnmappedMemberHandlingAttribute>();
             Assert.True(handling?.UnmappedMemberHandling == JsonUnmappedMemberHandling.Disallow, $"{type.Name} lets an unknown field through.");
             Assert.All(
                 type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -179,11 +179,11 @@ public sealed partial class ValidationRulesTableTests
 
     private static Dictionary<string, Type> FieldsOfTheFlow()
     {
-        var fields = new Dictionary<string, Type>(StringComparer.Ordinal);
-        foreach (var (controller, action) in FlowActions)
+        Dictionary<string, Type> fields = new(StringComparer.Ordinal);
+        foreach ((Type? controller, string? action) in FlowActions)
         {
-            var method = controller.GetMethod(action) ?? throw new InvalidOperationException($"{controller.Name} has no action {action}.");
-            foreach (var parameter in method.GetParameters().Where(parameter => parameter.ParameterType != typeof(CancellationToken)))
+            MethodInfo method = controller.GetMethod(action) ?? throw new InvalidOperationException($"{controller.Name} has no action {action}.");
+            foreach (ParameterInfo? parameter in method.GetParameters().Where(parameter => parameter.ParameterType != typeof(CancellationToken)))
             {
                 if (parameter.GetCustomAttribute<FromBodyAttribute>() is not null)
                 {
@@ -205,7 +205,7 @@ public sealed partial class ValidationRulesTableTests
 
     private static void AddFields(Type type, Dictionary<string, Type> fields)
     {
-        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
             fields[$"{type.Name}.{property.Name}"] = property.PropertyType;
             if (IsObject(property.PropertyType))
@@ -217,10 +217,10 @@ public sealed partial class ValidationRulesTableTests
 
     private static List<Type> BodyTypesOfTheFlow()
     {
-        var types = new List<Type>();
-        foreach (var (controller, action) in FlowActions)
+        List<Type> types = [];
+        foreach ((Type? controller, string? action) in FlowActions)
         {
-            foreach (var parameter in controller.GetMethod(action)!.GetParameters().Where(parameter => parameter.GetCustomAttribute<FromBodyAttribute>() is not null))
+            foreach (ParameterInfo? parameter in controller.GetMethod(action)!.GetParameters().Where(parameter => parameter.GetCustomAttribute<FromBodyAttribute>() is not null))
             {
                 AddObjectTypes(parameter.ParameterType, types);
             }
@@ -237,7 +237,7 @@ public sealed partial class ValidationRulesTableTests
         }
 
         types.Add(type);
-        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(property => IsObject(property.PropertyType)))
+        foreach (PropertyInfo? property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(property => IsObject(property.PropertyType)))
         {
             AddObjectTypes(property.PropertyType, types);
         }
@@ -253,7 +253,7 @@ public sealed partial class ValidationRulesTableTests
 
     private static string TypeName(Type type)
     {
-        var underlying = Nullable.GetUnderlyingType(type) ?? type;
+        Type underlying = Nullable.GetUnderlyingType(type) ?? type;
         return underlying switch
         {
             _ when underlying == typeof(string) => "text",
@@ -268,8 +268,8 @@ public sealed partial class ValidationRulesTableTests
 
     private static HashSet<string> KnownCodes()
     {
-        var codes = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var type in new[] { typeof(ErrorCodes), typeof(ApiErrorCodes) })
+        HashSet<string> codes = new(StringComparer.Ordinal);
+        foreach (Type? type in new[] { typeof(ErrorCodes), typeof(ApiErrorCodes) })
         {
             AddConstants(type, codes);
         }
@@ -279,12 +279,12 @@ public sealed partial class ValidationRulesTableTests
 
     private static void AddConstants(Type type, HashSet<string> codes)
     {
-        foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Static).Where(field => field.IsLiteral && field.FieldType == typeof(string)))
+        foreach (FieldInfo? field in type.GetFields(BindingFlags.Public | BindingFlags.Static).Where(field => field.IsLiteral && field.FieldType == typeof(string)))
         {
             codes.Add((string)field.GetRawConstantValue()!);
         }
 
-        foreach (var nested in type.GetNestedTypes(BindingFlags.Public))
+        foreach (Type nested in type.GetNestedTypes(BindingFlags.Public))
         {
             AddConstants(nested, codes);
         }
