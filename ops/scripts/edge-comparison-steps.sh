@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# The steps of the workflow edge-comparison.yaml (MIL-078 task 3, ADR-0046), one subcommand per
-# step, so that the workflow keeps one line of shell per step (QC-YML-001 criterion 7), as
-# running-image-scan-steps.sh does for the daily scan of the running images.
+# The steps of the workflow edge-comparison.yaml (MIL-078 task 3, ADR-0046; MIL-084 task 5,
+# ADR-0048), one subcommand per step, so that the workflow keeps one line of shell per step
+# (QC-YML-001 criterion 7), as running-image-scan-steps.sh does for the daily scan of the running
+# images.
 #
-# Usage: edge-comparison-steps.sh check|compare|report
+# Usage: edge-comparison-steps.sh check|compare|report|look|look-report
 #   check    whether every secret of the environment cloudflare-read is set, from HAS_<NAME>
 #            (true or false) for each name of SECRETS below; writes ready=true or ready=false to
 #            GITHUB_OUTPUT. A missing secret is not a failure: the step names the missing ones in
@@ -17,15 +18,28 @@
 #            identifiers and addresses are replaced
 #   report   open the issue "The public edge differs from its code", or comment on the open
 #            one, when DIFFERS is true; close the open one with the summary when it is false
+#   look     run check-security-txt.sh on the public address of security.txt with the file of
+#            the checkout, the Canonical, the addresses that the file names and the
+#            Strict-Transport-Security of the front page (RFC 9116, section 5.1); writes
+#            results/summary.md, the step summary and failed=true or failed=false to
+#            GITHUB_OUTPUT. A finding of the check is not a failure of the step; a check that
+#            cannot run (exit 2 or more) is
+#   look-report  open the issue "The public security.txt fails its weekly check", or comment
+#            on the open one, when FAILED is true; close the open one with the summary when it
+#            is false
 # Each runs in the folder of the checkout, which holds results/.
 #
-# Env:   GITHUB_OUTPUT and GITHUB_STEP_SUMMARY (check, compare); HAS_<NAME> (check);
+# Env:   GITHUB_OUTPUT and GITHUB_STEP_SUMMARY (check, compare, look); HAS_<NAME> (check);
 #        CLOUDFLARE_API_TOKEN and TF_VAR_* (compare, for edge-tofu.sh); REPO, SERVER, RUN_ID,
-#        GH_TOKEN and DIFFERS (report); NFHOTEL_GH (default gh) and NFHOTEL_EDGE_TOFU (default
-#        scripts/edge-tofu.sh), for the tests
+#        GH_TOKEN and DIFFERS (report) or FAILED (look-report); for the tests NFHOTEL_GH
+#        (default gh), NFHOTEL_EDGE_TOFU (default scripts/edge-tofu.sh),
+#        NFHOTEL_CHECK_SECURITY_TXT (default scripts/check-security-txt.sh), NFHOTEL_NOW (the
+#        clock of the check, default now) and NFHOTEL_CURL (read by the check)
 # Exit:  0 done; 1 the workflow passed no HAS_<NAME>, the addresses are not a JSON list, the
-#        plan failed or gave no summary, or report found no summary; 2 usage error
-# Needs: bash 4+, jq, gh (report), docker (compare, through edge-tofu.sh)
+#        plan failed or gave no summary, the check could not run, or report or look-report
+#        found no summary; 2 usage error
+# Needs: bash 4+, jq, gh (report, look-report), docker (compare, through edge-tofu.sh), curl,
+#        iconv and cmp (look, through check-security-txt.sh)
 
 set -euo pipefail
 
@@ -34,8 +48,18 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "$ROOT/scripts/lib/common.sh"
 gh="${NFHOTEL_GH:-gh}"
 edge_tofu="${NFHOTEL_EDGE_TOFU:-$ROOT/scripts/edge-tofu.sh}"
+check_security_txt="${NFHOTEL_CHECK_SECURITY_TXT:-$ROOT/scripts/check-security-txt.sh}"
 readonly SUMMARY=results/summary.md
 readonly ISSUE_TITLE="The public edge differs from its code"
+# The look at the public security.txt (ADR-0048, decision 6): its address, the front page whose
+# Strict-Transport-Security it must send, the warnings that ADR-0048 lists as the exceptions E1
+# to E3, the title of its issue, and the most lines of the check that the issue quotes (the body
+# of an issue holds 65,536 characters; the log keeps every line).
+readonly SECURITY_TXT_URL=https://nfhotel.devmatiker.com/.well-known/security.txt
+readonly FRONT_PAGE_URL=https://nfhotel.devmatiker.com/
+readonly SECURITY_TXT_WARNINGS=unsigned,no-encryption,no-role-address
+readonly LOOK_TITLE="The public security.txt fails its weekly check"
+readonly MAX_QUOTED_LINES=50
 # The secrets of the environment cloudflare-read, named in edge-comparison.yaml and in the wiki
 # page Public-Access.
 readonly SECRETS=(CLOUDFLARE_READ_TOKEN CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_TUNNEL_ID
@@ -165,27 +189,97 @@ compare() {
   echo "differs=$differs" >>"$GITHUB_OUTPUT"
 }
 
-report() {
-  local open
-  : "${REPO:?REPO is not set}" "${SERVER:?SERVER is not set}" "${RUN_ID:?RUN_ID is not set}"
-  [[ "${DIFFERS:-}" == true || "${DIFFERS:-}" == false ]] || fail "DIFFERS is not true or false"
-  [[ -f "$SUMMARY" ]] || fail "no $SUMMARY: the step compare did not write it"
+# file_issue <title> <found>: add the address of the run to results/summary.md; then, when found
+# is true, comment with it on the open issue of that title or open one, and when it is false,
+# close the open one with it. A finding is reported by the issue, not by a red run: the run is a
+# check of the commit on main, and the CD gate (ADR-0021) refuses a commit with a failed check,
+# as the daily scan of the running images says.
+file_issue() {
+  local title="$1" found="$2" open
   printf '\nRun: %s/%s/actions/runs/%s\n' "$SERVER" "$REPO" "$RUN_ID" >>"$SUMMARY"
-  export ISSUE_TITLE
-  open="$("$gh" issue list --repo "$REPO" --state open --search "in:title \"$ISSUE_TITLE\"" \
-    --json number,title --jq "map(select(.title == env.ISSUE_TITLE))[0].number // empty")"
-  if [[ "$DIFFERS" == true ]]; then
+  open="$(TITLE="$title" "$gh" issue list --repo "$REPO" --state open --search "in:title \"$title\"" \
+    --json number,title --jq "map(select(.title == env.TITLE))[0].number // empty")"
+  if [[ "$found" == true ]]; then
     if [[ -n "$open" ]]; then
       "$gh" issue comment "$open" --repo "$REPO" --body-file "$SUMMARY"
     else
-      "$gh" issue create --repo "$REPO" --title "$ISSUE_TITLE" --body-file "$SUMMARY"
+      "$gh" issue create --repo "$REPO" --title "$title" --body-file "$SUMMARY"
     fi
-    # A difference is reported by the issue, not by a red run: the run is a check of the commit
-    # on main, and the CD gate (ADR-0021) refuses a commit with a failed check, as the daily scan
-    # of the running images says.
-    echo "::warning::the public edge differs from its code; see the issue \"$ISSUE_TITLE\""
   elif [[ -n "$open" ]]; then
     "$gh" issue close "$open" --repo "$REPO" --comment "$(cat "$SUMMARY")"
+  fi
+}
+
+report() {
+  : "${REPO:?REPO is not set}" "${SERVER:?SERVER is not set}" "${RUN_ID:?RUN_ID is not set}"
+  [[ "${DIFFERS:-}" == true || "${DIFFERS:-}" == false ]] || fail "DIFFERS is not true or false"
+  [[ -f "$SUMMARY" ]] || fail "no $SUMMARY: the step compare did not write it"
+  file_issue "$ISSUE_TITLE" "$DIFFERS"
+  if [[ "$DIFFERS" == true ]]; then
+    echo "::warning::the public edge differs from its code; see the issue \"$ISSUE_TITLE\""
+  fi
+}
+
+# write_look_summary <output of the check> <failed>: results/summary.md, which the issue quotes:
+# what the look found, and the first lines of the check in a block of text without backticks, so
+# that nothing in them is read as Markdown, a link or a mention.
+write_look_summary() {
+  local found="$1" failed="$2" lines
+  lines="$(wc -l <"$found")"
+  {
+    echo "## The public security.txt"
+    echo
+    if [[ "$failed" == true ]]; then
+      echo "The weekly look at $SECURITY_TXT_URL failed (RFC 9116, section 5.1; ADR-0048): the file is" \
+        "missing or differs from \`ops/deploy/nginx/well-known/security.txt\` on main, is not served as" \
+        "RFC 9116 asks, expires within 30 days, or names an address that fails or ends on another host." \
+        "The wiki page Public-Access says what to do (\"The security.txt\"). The check found:"
+    else
+      echo "The weekly look at $SECURITY_TXT_URL passed (RFC 9116, section 5.1; ADR-0048). The check found:"
+    fi
+    echo
+    echo '```text'
+    head -n "$MAX_QUOTED_LINES" "$found" | tr -d '`'
+    echo '```'
+    if ((lines > MAX_QUOTED_LINES)); then
+      echo
+      echo "$((lines - MAX_QUOTED_LINES)) more lines are in the log of the run."
+    fi
+  } >"$SUMMARY"
+}
+
+look() {
+  local status=0 failed
+  local args=(--url "$SECURITY_TXT_URL" --canonical "$SECURITY_TXT_URL"
+    --same-as "$ROOT/deploy/nginx/well-known/security.txt" --links --hsts-like "$FRONT_PAGE_URL"
+    --expect-warnings "$SECURITY_TXT_WARNINGS")
+  : "${GITHUB_OUTPUT:?GITHUB_OUTPUT is not set}" "${GITHUB_STEP_SUMMARY:?GITHUB_STEP_SUMMARY is not set}"
+  if [[ -n "${NFHOTEL_NOW:-}" ]]; then
+    args+=(--now "$NFHOTEL_NOW")
+  fi
+  mkdir -p results
+  # Not local: the trap runs after the function has returned.
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' EXIT
+  bash "$check_security_txt" "${args[@]}" >"$tmp/found" 2>&1 || status=$?
+  cat "$tmp/found"
+  case "$status" in
+    0) failed=false ;;
+    1) failed=true ;;
+    *) fail "check-security-txt.sh stopped with exit $status, so nothing was checked; what it said is above" ;;
+  esac
+  write_look_summary "$tmp/found" "$failed"
+  cat "$SUMMARY" >>"$GITHUB_STEP_SUMMARY"
+  echo "failed=$failed" >>"$GITHUB_OUTPUT"
+}
+
+look_report() {
+  : "${REPO:?REPO is not set}" "${SERVER:?SERVER is not set}" "${RUN_ID:?RUN_ID is not set}"
+  [[ "${FAILED:-}" == true || "${FAILED:-}" == false ]] || fail "FAILED is not true or false"
+  [[ -f "$SUMMARY" ]] || fail "no $SUMMARY: the step look did not write it"
+  file_issue "$LOOK_TITLE" "$FAILED"
+  if [[ "$FAILED" == true ]]; then
+    echo "::warning::the public security.txt fails its weekly check; see the issue \"$LOOK_TITLE\""
   fi
 }
 
@@ -197,6 +291,8 @@ case "$1" in
   check) check ;;
   compare) compare ;;
   report) report ;;
+  look) look ;;
+  look-report) look_report ;;
   -h | --help) usage ;;
   *)
     usage >&2

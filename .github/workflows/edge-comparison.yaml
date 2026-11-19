@@ -10,6 +10,13 @@
 # ops/tests/test-edge-comparison.sh. tofu runs from its official image, pinned by digest in
 # ops/scripts/edge-tofu.sh, so no action of a new publisher is used (ADR-0037).
 #
+# The job look (MIL-084 task 5, ADR-0048) is the watch that RFC 9116, section 5.1, asks for: it
+# runs ops/scripts/check-security-txt.sh on the public security.txt, with the file of main, its
+# Canonical, every address that it names and the Strict-Transport-Security of the front page. A
+# file that is missing, differs, expires within 30 days or names an address that fails opens the
+# issue "The public security.txt fails its weekly check", or comments on the open one, and a look
+# that passes closes it. Until the first deploy of the file the look reports it as missing.
+#
 # Triggers: weekly (Monday 04:23 UTC), and by hand.
 # Secrets: of the environment cloudflare-read, which S01 limits to main (wiki page
 #   Public-Access): CLOUDFLARE_READ_TOKEN, a token that only reads the tunnel and Access;
@@ -17,8 +24,10 @@
 #   CLOUDFLARE_ACCESS_POLICY_ID, CLOUDFLARE_TEAM_NAME and CLOUDFLARE_TEAM_EMAILS (the addresses of
 #   the policy Team as a JSON list). Each is a secret so that GitHub masks it in the log. While
 #   one is missing, a run names the missing ones in a warning, compares nothing and stays green.
-#   The job's GITHUB_TOKEN writes the issue.
-# Changes outside the repository: none; the plan only reads, and nothing is applied.
+#   The job's GITHUB_TOKEN writes the issue. The job look has no environment and no secret; its
+#   own GITHUB_TOKEN writes its issue.
+# Changes outside the repository: none; the plan only reads, nothing is applied, and the look
+#   only reads public pages.
 # Verified with actionlint 1.7.7 (ops/tests/lint.sh), for GitHub.com.
 name: NF Hotel edge comparison
 
@@ -84,3 +93,30 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           DIFFERS: ${{ steps.compare.outputs.differs }}
         run: bash ops/scripts/edge-comparison-steps.sh report
+
+  look:
+    name: Look at the public security.txt
+    runs-on: ubuntu-24.04
+    # A handful of requests to the public site and to GitHub, each limited to 20 seconds.
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      # The steps of this job are the subcommands look and look-report of the same script. A
+      # finding leaves the step green and goes to the issue; a check that cannot run fails it.
+      - name: Check the public security.txt
+        id: look
+        run: bash ops/scripts/edge-comparison-steps.sh look
+      - name: Open, update or close the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SERVER: ${{ github.server_url }}
+          RUN_ID: ${{ github.run_id }}
+          FAILED: ${{ steps.look.outputs.failed }}
+        run: bash ops/scripts/edge-comparison-steps.sh look-report
