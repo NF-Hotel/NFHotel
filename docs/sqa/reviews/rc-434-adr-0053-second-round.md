@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the second review of ADR-0053 by a second AI, after the rework that RC-432 asked for; Go-with-conditions, the conditions closed in the text accepted here; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the second review of ADR-0053 by a second AI, after the rework that RC-432 asked for; Go-with-conditions, the conditions closed in the text accepted here; mode autonomous, not independent | [baaf79b] |
 
 ---
 
@@ -110,3 +110,4 @@ and a second AI gave the findings.
 [ADR-0035]: ../../adr/adr-0035-light-local-development-stack.md
 [RC-432]: ./rc-432-adr-0053.md
 [RC-433]: ./rc-433-adr-0052-second-round.md
+[baaf79b]: https://github.com/NF-Hotel/NFHotel/commit/baaf79babbf7d3ff7c52b39b60f1c31def2fdccb

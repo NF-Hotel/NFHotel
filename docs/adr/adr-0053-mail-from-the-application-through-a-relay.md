@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 2 of MIL-088, written by the AI before any code<br>Reworked after the review by a second AI: Go with conditions in RC-432 (a network of its own for the forwarder, one source for the address of the relay, the risks of a private mailbox and of the fuse, the claims scoped), then Go with conditions in RC-434 (the forwarder on IPv4 and given only the host and the port, the catcher with TLS from the first byte, the two limits of Gmail), conditions closed; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 2 of MIL-088, written by the AI before any code<br>Reworked after the review by a second AI: Go with conditions in RC-432 (a network of its own for the forwarder, one source for the address of the relay, the risks of a private mailbox and of the fuse, the claims scoped), then Go with conditions in RC-434 (the forwarder on IPv4 and given only the host and the port, the catcher with TLS from the first byte, the two limits of Gmail), conditions closed; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [baaf79b] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -284,3 +284,4 @@ to the alert rules of the monitoring with their rule tests.
 [BC-001]: ../business-case.md
 [RC-432]: ../sqa/reviews/rc-432-adr-0053.md
 [RC-434]: ../sqa/reviews/rc-434-adr-0053-second-round.md
+[baaf79b]: https://github.com/NF-Hotel/NFHotel/commit/baaf79babbf7d3ff7c52b39b60f1c31def2fdccb

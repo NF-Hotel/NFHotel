@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the second review of ADR-0052 by a second AI, after the rework that RC-431 asked for; Go-with-conditions, the conditions closed in the text accepted here; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the second review of ADR-0052 by a second AI, after the rework that RC-431 asked for; Go-with-conditions, the conditions closed in the text accepted here; mode autonomous, not independent | [baaf79b] |
 
 ---
 
@@ -110,3 +110,4 @@ code of condition 10 above all.
 [DM-004]: ../../domain-model.md
 [RC-431]: ./rc-431-adr-0052.md
 [RC-434]: ./rc-434-adr-0053-second-round.md
+[baaf79b]: https://github.com/NF-Hotel/NFHotel/commit/baaf79babbf7d3ff7c52b39b60f1c31def2fdccb

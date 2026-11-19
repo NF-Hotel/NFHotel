@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-088, written by the AI before any code<br>Reworked after the review by a second AI: No-Go in RC-431 (the claim before the booking, the limits per mailbox under one lock, the claims narrowed), then Go with conditions in RC-433 (the next free room after a lost race, the count of the bookings by mailbox, googlemail.com, the code of the mail limit), conditions closed; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-088, written by the AI before any code<br>Reworked after the review by a second AI: No-Go in RC-431 (the claim before the booking, the limits per mailbox under one lock, the claims narrowed), then Go with conditions in RC-433 (the next free room after a lost race, the count of the bookings by mailbox, googlemail.com, the code of the mail limit), conditions closed; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [baaf79b] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -303,3 +303,4 @@ cite this record when they exist.
 [BC-001]: ../business-case.md
 [RC-431]: ../sqa/reviews/rc-431-adr-0052.md
 [RC-433]: ../sqa/reviews/rc-433-adr-0052-second-round.md
+[baaf79b]: https://github.com/NF-Hotel/NFHotel/commit/baaf79babbf7d3ff7c52b39b60f1c31def2fdccb
