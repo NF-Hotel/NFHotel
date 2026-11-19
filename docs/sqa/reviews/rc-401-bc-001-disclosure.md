@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-17 | Accepted | mikemike | S01 | Initial version; supervised mode: the AI prepared the review; Go; S01 accepted the change in chat on 2026-11-17, with the plan of MIL-084 ("1. Ja") | pending |
+| 2026-11-17 | Accepted | mikemike | S01 | Initial version; supervised mode: the AI prepared the review; Go; S01 accepted the change in chat on 2026-11-17, with the plan of MIL-084 ("1. Ja") | [91b74ec] |
 
 ---
 
@@ -73,3 +73,4 @@ Go. Criteria 3 and 4 of QC-BC-001 pass, and every Mandatory criterion of QC-LANG
 [QC-LANG-001]: ../../../framework/qc/artifacts/qc-language-domain.md
 [MIL-084]: ../../milestones/mil-084-a-security-txt-and-a-disclosure-policy.md
 [RC-332]: ./rc-332-bc-001-products-of-2026-11-11.md
+[91b74ec]: https://github.com/NF-Hotel/NFHotel/commit/91b74ecad8fe5599e484de8c979956a5ab7832f0

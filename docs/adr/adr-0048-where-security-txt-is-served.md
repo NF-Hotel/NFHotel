@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-18 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-084, whose amended plan S01 accepted in chat on 2026-11-18 (RC-400, Go); written by the AI in supervised mode and reviewed in RC-402; accepted with the exceptions E1 to E4 on 2026-11-19 by the AI as stand-in for S01, after S01 switched MIL-084 to autonomous mode in chat ("Automode og deploy") | pending |
+| 2026-11-18 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-084, whose amended plan S01 accepted in chat on 2026-11-18 (RC-400, Go); written by the AI in supervised mode and reviewed in RC-402; accepted with the exceptions E1 to E4 on 2026-11-19 by the AI as stand-in for S01, after S01 switched MIL-084 to autonomous mode in chat ("Automode og deploy") | [3b63129] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -260,3 +260,4 @@ route in git, tested in continuous integration) and compatibility (the format of
 [DSA-001]: ../sqa/devsecops-assessment.md
 [RC-400]: ../sqa/reviews/rc-400-mil-084.md
 [RC-402]: ../sqa/reviews/rc-402-adr-0048.md
+[3b63129]: https://github.com/NF-Hotel/NFHotel/commit/3b6312966875c845a2881da6dc02f9729e0e184e

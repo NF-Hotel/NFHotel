@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-17 | Proposed | mikemike | S01 | The plan of [MIL-084], a `security.txt` and a disclosure policy for the public site (RC-400), and objective 42 and success criterion 45 of [BC-001] (RC-401). S01 accepted both in chat the same day; the plan of MIL-084 was then amended for the standards it rests on, and S01 accepted the amended plan on 2026-11-18 | pending |
-| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0048], task 1 of MIL-084 (RC-402, Go), and the code and the documents of tasks 2 to 6 (RC-403, Go-with-conditions) on rows of their own, and the downstream of MIL-084; prepared in supervised mode, then accepted by the AI as stand-in for S01 after S01 switched MIL-084 to autonomous mode in chat on 2026-11-19 | pending |
+| 2026-11-17 | Proposed | mikemike | S01 | The plan of [MIL-084], a `security.txt` and a disclosure policy for the public site (RC-400), and objective 42 and success criterion 45 of [BC-001] (RC-401). S01 accepted both in chat the same day; the plan of MIL-084 was then amended for the standards it rests on, and S01 accepted the amended plan on 2026-11-18 | [870014d] |
+| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0048], task 1 of MIL-084 (RC-402, Go), and the code and the documents of tasks 2 to 6 (RC-403, Go-with-conditions) on rows of their own, and the downstream of MIL-084; prepared in supervised mode, then accepted by the AI as stand-in for S01 after S01 switched MIL-084 to autonomous mode in chat on 2026-11-19 | [870014d] |
 
 ---
 
@@ -561,3 +561,4 @@ updated whenever an artifact instance is created or reviewed.
 [ADR-0048]: ../adr/adr-0048-where-security-txt-is-served.md
 [RC-402]: ./reviews/rc-402-adr-0048.md
 [RC-403]: ./reviews/rc-403-mil-084-code.md
+[870014d]: https://github.com/NF-Hotel/NFHotel/commit/870014d14342835a06c7e347a1d7da22e7b4dd24

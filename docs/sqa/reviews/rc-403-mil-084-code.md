@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; prepared in supervised mode; Go-with-conditions: every required check of the pull request green. The same day S01 switched MIL-084 to autonomous mode in chat ("Automode og deploy"), and the AI accepted this review as stand-in for S01 | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; prepared in supervised mode; Go-with-conditions: every required check of the pull request green. The same day S01 switched MIL-084 to autonomous mode in chat ("Automode og deploy"), and the AI accepted this review as stand-in for S01 | [870014d] |
 
 ---
 
@@ -246,3 +246,4 @@ of the run.
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[870014d]: https://github.com/NF-Hotel/NFHotel/commit/870014d14342835a06c7e347a1d7da22e7b4dd24
