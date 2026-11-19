@@ -56,6 +56,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
     private readonly IBookingMarketDetailRepository _marketDetails;
     private readonly IWarningLog _warnings;
     private readonly IGuestCallContext _guestCall;
+    private readonly IPublicBookingEmailLimit _emailLimit;
 
     /// <summary>
     /// Creates the service.
@@ -75,6 +76,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
     /// The signed-in guest of the call, if any (MIL-018): a guest reads, cancels and moves only the booking in the guest
     /// token (<see cref="GuestOwnership"/>).
     /// </param>
+    /// <param name="emailLimit">The number of coming public bookings that one email may hold (MIL-087, ADR-0051 decision 3).</param>
     public BookingService(
         IBookingRepository bookingRepository,
         IRoomRepository roomRepository,
@@ -87,7 +89,8 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         IPriceChangeService prices,
         IBookingMarketDetailRepository marketDetails,
         IWarningLog warnings,
-        IGuestCallContext guestCall)
+        IGuestCallContext guestCall,
+        IPublicBookingEmailLimit emailLimit)
     {
         ArgumentNullException.ThrowIfNull(bookingRepository);
         ArgumentNullException.ThrowIfNull(roomRepository);
@@ -101,6 +104,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         ArgumentNullException.ThrowIfNull(marketDetails);
         ArgumentNullException.ThrowIfNull(warnings);
         ArgumentNullException.ThrowIfNull(guestCall);
+        ArgumentNullException.ThrowIfNull(emailLimit);
 
         _bookingRepository = bookingRepository;
         _roomRepository = roomRepository;
@@ -114,6 +118,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         _marketDetails = marketDetails;
         _warnings = warnings;
         _guestCall = guestCall;
+        _emailLimit = emailLimit;
     }
 
     // --------------------------------------------------------
@@ -366,8 +371,8 @@ public sealed class BookingService : IBookingService, IPublicBookingService
             return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
         }
 
-        // Calls the shared booking creation logic.
-        return await CreateBookingInternalAsync(request, cancellationToken)
+        // Calls the shared booking creation logic; staff are not under the limit per email (ADR-0051 decision 3).
+        return await CreateBookingInternalAsync(request, madeOnPublicSite: false, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -422,7 +427,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         // book it: the second one is told the room is taken (BR-19, B-03).
         CreateBookingRequest booking = new(request.CheckInDate, request.CheckOutDate, room.RoomId, null, request.NewGuest);
 
-        return await CreateBookingInternalAsync(booking, cancellationToken)
+        return await CreateBookingInternalAsync(booking, madeOnPublicSite: true, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -443,10 +448,12 @@ public sealed class BookingService : IBookingService, IPublicBookingService
     }
 
     /// <summary>
-    /// Creates a booking using the shared booking rules.
+    /// Creates a booking using the shared booking rules; a booking made on the public site is under the limit per email
+    /// and is marked, so that the limit counts it (MIL-087, ADR-0051 decision 3).
     /// </summary>
     private async Task<Result<BookingDetailsDto>> CreateBookingInternalAsync(
         CreateBookingRequest request,
+        bool madeOnPublicSite,
         CancellationToken cancellationToken)
     {
         // BR-47: exactly one of the two guest paths. Both and neither are a rule error,
@@ -488,6 +495,16 @@ public sealed class BookingService : IBookingService, IPublicBookingService
             return Result<BookingDetailsDto>.Failure(overlapError);
         }
 
+        // ADR-0051 decision 3: after the rules of the stay and of the room, so a stay that a rule refuses gets the code of
+        // the rule, and before a new guest is saved, so a refused request stores nothing. A missing email is left to the
+        // rule of the guest below.
+        if (madeOnPublicSite && request.NewGuest is { Email: { } email }
+            && await _bookingQueries.CountComingPublicBookingsAsync(email, today, cancellationToken).ConfigureAwait(false)
+                >= _emailLimit.ComingPublicBookingsPerEmail)
+        {
+            return Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.TooManyRequests);
+        }
+
         var guestResult = await ResolveGuestIdAsync(request, cancellationToken).ConfigureAwait(false);
 
         if (guestResult.IsFailure)
@@ -504,6 +521,11 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         catch (DomainException exception)
         {
             return Result<BookingDetailsDto>.Failure(exception.Code);
+        }
+
+        if (madeOnPublicSite)
+        {
+            booking.MarkMadeOnPublicSite();
         }
 
         // MIL-055: the price is looked up before the booking is saved and stored after it; a booking made

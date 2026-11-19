@@ -661,6 +661,72 @@ public sealed class BookingFlowViewModelTests
     }
 
     #endregion
+
+    #region The limits of the booking flow (MIL-087)
+
+    /// <summary>The one text of a refusal by the limits (ADR-0051 decision 2), written out so the test pins the words.</summary>
+    private const string TooManyRequestsText =
+        "Too many requests in a short time. Please wait a while and try again, or contact the hotel.";
+
+    /// <summary>
+    /// Error handling (MIL-087 criterion 1, ADR-0051 decision 2): a search that a limit refuses stays at the dates with the
+    /// one text of the limits, and a search after it, once the limit has room again, shows the rooms.
+    /// </summary>
+    [Fact]
+    public async Task FindRoomsAsync_RefusedByALimit_ShowsTheTextAndCanSearchAgain()
+    {
+        // Arrange
+        _bookings.GetAvailableRoomsAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<int?>(), Arg.Any<CancellationToken>())
+            .Returns(Fail<IReadOnlyList<AvailableRoomDto>>(ErrorCodes.Booking.TooManyRequests), List(FreeRoom(1)));
+        BookingFlowViewModel viewModel = Create();
+
+        // Act
+        await viewModel.FindRoomsAsync(Token);
+        BookingFlowStep refusedAt = viewModel.CurrentStep;
+        IReadOnlyList<string> refusal = viewModel.Errors;
+        bool canSearchAgain = viewModel.CanFindRooms;
+        await viewModel.FindRoomsAsync(Token);
+
+        // Assert
+        Assert.Equal(BookingFlowStep.Dates, refusedAt);
+        Assert.Equal([TooManyRequestsText], refusal);
+        Assert.True(canSearchAgain);
+        Assert.Equal(BookingFlowStep.Room, viewModel.CurrentStep);
+        Assert.Empty(viewModel.Errors);
+    }
+
+    /// <summary>
+    /// Error handling (MIL-087 criteria 2 and 3): a booking that a limit refuses stays at the guest with everything typed
+    /// and the room type chosen, shows the one text, and the same form can be sent again.
+    /// </summary>
+    [Fact]
+    public async Task SubmitAsync_RefusedByALimit_KeepsTheFormAndShowsTheText()
+    {
+        // Arrange
+        _guests.ValidateFields(Arg.Any<GuestFields>()).Returns(Result.Success());
+        _access.BookAsync(Arg.Any<CreatePublicBookingRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Fail<PublicBookingDto>(ErrorCodes.Booking.TooManyRequests), Ok(Booked(9)));
+        BookingFlowViewModel viewModel = await AtGuestStepAsync();
+
+        // Act
+        await viewModel.SubmitAsync(Token);
+        BookingFlowStep refusedAt = viewModel.CurrentStep;
+        IReadOnlyList<string> refusal = viewModel.Errors;
+        RoomSize? chosen = viewModel.SelectedRoomType;
+        string email = viewModel.Email;
+        bool canSubmitAgain = viewModel.CanSubmit;
+        await viewModel.SubmitAsync(Token);
+
+        // Assert
+        Assert.Equal(BookingFlowStep.Guest, refusedAt);
+        Assert.Equal([TooManyRequestsText], refusal);
+        Assert.Equal(RoomSize.Double, chosen);
+        Assert.Equal("rita@example.com", email);
+        Assert.True(canSubmitAgain);
+        Assert.Equal(BookingFlowStep.Receipt, viewModel.CurrentStep);
+    }
+
+    #endregion
 }
 
 /// <summary>The guest field errors and the public dates of the booking flow (MIL-054 task 3).</summary>

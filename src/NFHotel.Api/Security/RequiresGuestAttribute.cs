@@ -14,24 +14,14 @@ namespace NFHotel.Api.Security;
 /// sign-in; a call with a valid staff token gets 403, because a route of a guest is never a route of staff, and so does a
 /// guest when the Guest role lacks the permission. The use case is not called in any of these cases.
 /// </summary>
+/// <param name="permission">The permission of the Guest role that the endpoint needs (the Access Control Matrix).</param>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
-public sealed class RequiresGuestAttribute : Attribute, IAuthorizationFilter
+public sealed class RequiresGuestAttribute(string permission) : Attribute, IAuthorizationFilter
 {
-    #region Constructors
-
-    /// <summary>Creates the attribute.</summary>
-    /// <param name="permission">The permission of the Guest role that the endpoint needs (the Access Control Matrix).</param>
-    public RequiresGuestAttribute(string permission)
-    {
-        Permission = permission;
-    }
-
-    #endregion Constructors
-
     #region Properties
 
     /// <summary>The permission of the Guest role that the endpoint needs.</summary>
-    public string Permission { get; }
+    public string Permission { get; } = permission;
 
     #endregion Properties
 

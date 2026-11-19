@@ -9,13 +9,16 @@
 # server of the tailnet still go to the web application (MIL-084, ADR-0048). The public listener refuses a
 # body over 64 kilobytes with 413 while the HTTPS server of the tailnet keeps 1 megabyte, and in the loaded
 # configuration every location waits 60 seconds and only the web socket of the pages, /_blazor on both
-# servers, an hour (MIL-086 decisions 4 and 7). Last, the hardened
+# servers, an hour (MIL-086 decisions 4 and 7). Every proxied location of both listeners, the routes of the API
+# among them, sends the address that nginx saw in X-NFHotel-Client-Address and replaces a value that the caller wrote
+# (MIL-087, ADR-0051 decision 4). Last, the hardened
 # service of deploy/nginx/docker-compose.yml (MIL-023 task 2) starts and turns healthy with a key as
 # production has it: 0600 and owned by another user than root, and serves security.txt from its mount.
 #
 # Usage: test-nginx.sh
-# Env:   REPO_HOST  the repository path as the Docker daemon sees it (default: this
-#                   checkout; on Windows give C:/... for Docker Desktop)
+# Env:   REPO_HOST  the path of the folder ops/ of this checkout as the Docker daemon sees
+#                   it (default: that folder; on Windows give C:/.../ops for Docker Desktop).
+#                   The work folder is ops/tests/output/nginx, which git ignores (MIL-087, RC-428).
 # It builds the image nfhotel-nginx:local from deploy/nginx (the proxy of production, ADR-0040) and
 # starts the containers t-nginx, nfhotel-web and nfhotel-api, the compose project t-hardened, and the
 # networks t-ngnet, t-tsnet and t-apinet, and removes them, not the image, at the end.
@@ -210,6 +213,40 @@ check "security.txt spelt in capitals reaches the web application" "https 203.0.
   "$(guest /.well-known/SECURITY.TXT)"
 check "the HTTPS server of the tailnet hands security.txt to the web application" https \
   "$(docker run --rm --network t-ngnet "$CURL" -sk https://t-nginx/.well-known/security.txt | cut -d' ' -f1)"
+echo "== the address of the browser (MIL-087, ADR-0051 decision 4)"
+# The stand-ins of the web application and of the API now answer with the address header they got and with X-Real-IP,
+# the address that nginx saw, separated by a bar. Every request writes the header itself, with another address.
+# shellcheck disable=SC2016 # nginx variables, written as they are into its configuration
+printf 'server { listen 8080; location / { return 200 "$http_x_nfhotel_client_address|$http_x_real_ip"; } }' \
+  >"$W/web/default.conf"
+docker exec nfhotel-web nginx -s reload >/dev/null 2>&1
+docker rm -f nfhotel-api >/dev/null 2>&1
+docker run -d --name nfhotel-api --network t-ngnet -v "$W_HOST/web:/etc/nginx/conf.d:ro" "$NGINX" >/dev/null
+sleep 2
+readonly FORGED='X-NFHotel-Client-Address: 198.51.100.66'
+# seen <network> <curl option...>: what the stand-in got for a request that writes the header itself.
+seen() {
+  local -r net="$1"
+  shift
+  docker run --rm --network "$net" "$CURL" -sk -H "$FORGED" "$@"
+}
+# same <answer>: "yes" when the stand-in got the address that nginx saw, which is not empty and not the forged one.
+same() { [[ -n "${1#*|}" && "${1%%|*}" == "${1#*|}" && "$1" != *198.51.100.66* ]] && echo yes || echo "no: $1"; }
+check "the public site sends the client's address and replaces the one the caller wrote" "203.0.113.7|203.0.113.7" \
+  "$(seen t-ngnet -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC/book")"
+check "the web socket of the pages on the public site sends the client's address" "203.0.113.7|203.0.113.7" \
+  "$(seen t-ngnet -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC/_blazor?id=t")"
+check "the back office on the public site sends the client's address" "203.0.113.7|203.0.113.7" \
+  "$(seen t-ngnet -H 'CF-Connecting-IP: 203.0.113.7' -H 'Cf-Access-Jwt-Assertion: eyJ.test.token' "$PUBLIC/admin/login")"
+check "the mobile route of the API on the public site sends the client's address" "203.0.113.7|203.0.113.7" \
+  "$(seen t-ngnet -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC/mobile-api/api/rooms/3")"
+check "the HTTPS server of the tailnet sends the address it saw and replaces the one the caller wrote" yes \
+  "$(same "$(seen t-ngnet https://t-nginx/book)")"
+check "the web socket of the pages on the HTTPS server of the tailnet sends the address it saw" yes \
+  "$(same "$(seen t-ngnet 'https://t-nginx/_blazor?id=t')")"
+check "the optional route of the API sends the address it saw" yes \
+  "$(same "$(seen t-tsnet "https://$ip/api/rooms")")"
+
 # The stand-in leaves, so the hardened proxy below finds no web application, as before.
 docker rm -f nfhotel-web >/dev/null 2>&1
 

@@ -47,6 +47,7 @@ public sealed class GuestAuthController : ControllerBase
     /// reference or from the address of the caller (ADR-0049 decision 6).
     /// </returns>
     [HttpPost(ApiRoutes.GuestLogin)]
+    [BookingFlowEvent(BookingFlowStep.GuestSignIn)]
     public async Task<IActionResult> SignInAsync([FromBody] GuestSignInRequest request, CancellationToken cancellationToken)
     {
         Result<GuestSessionDto> result = await _access.SignInAsync(request, cancellationToken).ConfigureAwait(false);

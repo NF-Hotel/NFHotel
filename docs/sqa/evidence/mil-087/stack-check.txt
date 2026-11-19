@@ -1,0 +1,64 @@
+# MIL-087 criteria 4, 6 and 8 on the throwaway stack: ops/tests/check-e2e-stack.sh against the stack of
+# ops/scripts/e2e-stack.sh (nginx with a self-signed certificate, the web application, the API and an empty
+# PostgreSQL), built from the branch mil-087-sender-limits: the code of b626fdbf merged with main at 84ab63f4, and
+# the new checks of the limits in this script. It ran from WSL on Docker Desktop on the machine of the build
+# session, 2026-11-19, under the project name nfhotel-e2e087, with the settings of the code left at their defaults,
+# which are the numbers of production (the table "Limits of the booking flow"). The stack was removed after the run.
+# The lines of the image builds and of the creation of the test accounts are left out; the check prints no secret,
+# and its emails are of example.com. NF Hotel CI runs the same check on the pull request (the end-to-end action).
+#
+# The checks of MIL-087: the 21 failed guest sign-ins with forged address headers through nginx and the audit trail
+# (criterion 4); the 61 searches for free rooms from one address and the 6 public booking requests from another,
+# each with the 429, the code booking.too_many_requests and the whole seconds of Retry-After (criterion 8, "the
+# limit on booking requests is shown on the throwaway stack with the numbers of production"); a search from a third
+# address still answered (criterion 5); and the events of the log with the address and a masked email, with no
+# email of the check in any log of the stack (criterion 6).
+==> check 2026-11-19T20:41:06Z
+PASS  the home page answers over TLS
+PASS  the booking page answers over TLS
+PASS  the login page answers over TLS
+PASS  the back office sends a visitor to the login
+PASS  port 80 redirects to HTTPS
+PASS  /nfhotel-e2e087-nginx-nginx-1 has the hardening
+PASS  /nfhotel-e2e087-nfhotel-web-nfhotel-web-1 has the hardening
+PASS  /nfhotel-e2e087-nfhotel-api-nfhotel-api-1 has the hardening
+PASS  /nfhotel-e2e087-postgres-postgres-1 has the hardening
+PASS  no container of the stack publishes a host port
+PASS  the API is not on the proxy network
+PASS  nginx is not on the python network
+PASS  the web application and the API are on the python network
+PASS  stack.env holds the MANAGER account
+PASS  stack.env holds the RECEPTIONIST account
+PASS  stack.env holds the HOUSEKEEPING account
+PASS  stack.env names the internal network of the API
+PASS  stack.env holds the API token and the account of the API scan
+PASS  the guest smoke test has a Suite of its own
+PASS  the public booking answers two random references
+PASS  the public booking answers no key, guest or email
+PASS  a guest signs in with the reference in upper case and the email in another letter case
+PASS  the guest reads the own booking on the guest route
+PASS  the guest's answer names no key, guest or email
+PASS  the guest is refused the read of a booking on a staff route
+PASS  the guest is refused the cancellation on a staff route
+PASS  the guest is refused a staff endpoint
+PASS  the guest route without a guest token gets 401
+PASS  a wrong email gets 401
+PASS  an old booking number with its email gets 401
+PASS  the old lookup of a receipt is gone
+PASS  20 failed guest sign-ins with forged addresses through nginx are answered, and the 21st is refused
+PASS  the failed staff sign-in through nginx is refused
+PASS  the audit trail names the address that nginx saw
+PASS  no event of the audit trail names a forged address
+PASS  60 searches for free rooms from one address in a minute are answered, and the 61st is refused
+PASS  the refused search names the whole seconds to wait, at most a minute
+PASS  a search from another address is still answered
+PASS  5 public booking requests from one address in an hour are accepted, and the 6th is refused
+PASS  the refused booking request names the whole seconds to wait, at most an hour
+PASS  the log of the API has the event of each public booking with the masked email
+PASS  the log of the API has the event of the refused search with its address
+PASS  the log of the API has the event of the refused booking request with its address and the masked email
+PASS  no log of the stack holds an email or the reference of these checks
+==> the end-to-end stack is as expected
+==> down 2026-11-19T20:41:23Z
+==> removed the stack nfhotel-e2e087
+==> exit 0

@@ -17,6 +17,9 @@ namespace NFHotel.Application.Tests.Services;
 /// </summary>
 public sealed class GuestServiceTests
 {
+    /// <summary>The one search term that the text " René " leaves after the trimming.</summary>
+    private static readonly string[] TrimmedTerm = ["René"];
+
     private static IStaffAuthorizationService CreateAuthorization(
     params string[] permissions)
     {
@@ -198,7 +201,7 @@ public sealed class GuestServiceTests
 
         // Assert
         await world.GuestQueries.Received(1).SearchAsync(
-            Arg.Is<IReadOnlyCollection<string>>(terms => terms.SequenceEqual(new[] { "René" })),
+            Arg.Is<IReadOnlyCollection<string>>(terms => terms.SequenceEqual(TrimmedTerm)),
             TestContext.Current.CancellationToken);
     }
 

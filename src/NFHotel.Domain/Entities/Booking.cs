@@ -123,6 +123,12 @@ public sealed class Booking : Entity<int>
     /// </summary>
     public Guid Reference { get; private set; }
 
+    /// <summary>
+    /// True for a booking that a guest made on the public site, which the limit per email counts (MIL-087, ADR-0051
+    /// decision 3); false for a booking by staff and for every booking stored before MIL-087.
+    /// </summary>
+    public bool MadeOnPublicSite { get; private set; }
+
     /// <summary>True if the booking may be confirmed (BR-02, BR-121).</summary>
     public bool CanConfirm => Status == BookingStatus.Pending;
 
@@ -269,6 +275,9 @@ public sealed class Booking : Entity<int>
         CheckOutDate = checkOutDate;
         Status = BookingStatus.CheckedOut;
     }
+
+    /// <summary>Marks the booking as made by a guest on the public site (ADR-0051 decision 3).</summary>
+    public void MarkMadeOnPublicSite() => MadeOnPublicSite = true;
 
     /// <summary>
     /// Cancels the booking (BR-11, BR-13). Soft delete — the row is never deleted.

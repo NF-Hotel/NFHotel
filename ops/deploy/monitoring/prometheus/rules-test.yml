@@ -578,6 +578,89 @@ tests:
         alertname: StaffSignInFailures
         exp_alerts: []
 
+  # The booking flow (MIL-087, ADR-0051 decision 6).
+  - name: many refusals by the limits of the booking flow fire BookingFlowRefusals
+    interval: 1m
+    input_series:
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api", kind="limit_refused",
+          limit="booking_hour"}
+        values: "0+2x30"
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api", kind="limit_refused",
+          limit="search"}
+        values: "0+1x30"
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api",
+          kind="guest_lookup_failed"}
+        values: "0+5x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: BookingFlowRefusals
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "30 refusals by the limits of the booking flow in 10 minutes"
+              description: >-
+                A sender asks the booking flow for more than its limits allow (ADR-0051). The
+                events limit_refused in the log of the API name the limit and the address; follow
+                the wiki page Alerts, section Booking flow.
+
+  - name: twenty refusals in 10 minutes and failed lookups alone do not fire BookingFlowRefusals
+    interval: 1m
+    input_series:
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api", kind="limit_refused",
+          limit="email"}
+        values: "0+2x30"
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api",
+          kind="guest_lookup_failed"}
+        values: "0+5x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: BookingFlowRefusals
+        exp_alerts: []
+
+  - name: many bookings on the public site in an hour fire PublicBookingSurge
+    interval: 5m
+    input_series:
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api",
+          kind="public_booking_made"}
+        values: "0+1x24"
+    alert_rule_test:
+      - eval_time: 90m
+        alertname: PublicBookingSurge
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "12 bookings on the public site in an hour"
+              description: >-
+                More bookings than usual came from the public site; one sender may hold rooms with
+                many addresses and emails (ADR-0051). Follow the wiki page Alerts, section Booking
+                flow.
+
+  - name: ten bookings on the public site in an hour do not fire PublicBookingSurge
+    interval: 6m
+    input_series:
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api",
+          kind="public_booking_made"}
+        values: "0+1x20"
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api", kind="limit_refused",
+          limit="search"}
+        values: "0+10x20"
+    alert_rule_test:
+      - eval_time: 90m
+        alertname: PublicBookingSurge
+        exp_alerts: []
+
   # The scan rules (MIL-053).
   - name: open high findings of a tool fire ScanFindingsHigh after 30 minutes
     interval: 5m

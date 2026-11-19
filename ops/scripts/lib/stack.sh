@@ -61,13 +61,20 @@ stack_down() {
 
 # stack_networks: create the networks that are missing; the API, database and python networks are internal.
 # The python network carries the calls to the Python services (ADR-0039), which the stacks do not run; the
-# compose files of the web application and the API name it, so it must exist.
+# compose files of the web application and the API name it, so it must exist. The proxy network is made with its
+# subnet named: Docker picks a free subnet for it, and the network is made again with that subnet, because the
+# Docker of the GitHub runners gives a container a fixed address (docker run --ip) only on a network whose subnet was
+# named, and check-e2e-stack.sh gives its client one (MIL-087).
 stack_networks() {
-  local net
+  local net subnet
   for net in "$STACK_PROXY_NET" "$STACK_API_NET" "$STACK_DB_NET" "$STACK_PYTHON_NET"; do
     docker network inspect "$net" >/dev/null 2>&1 && continue
     if [[ "$net" == "$STACK_PROXY_NET" ]]; then
       docker network create "$net" >/dev/null
+      subnet="$(docker network inspect "$net" --format '{{range .IPAM.Config}}{{.Subnet}} {{end}}' |
+        tr ' ' '\n' | grep -m 1 -E '^[0-9.]+/[0-9]+$')" || die "Docker gave the network $net no IPv4 subnet"
+      docker network rm "$net" >/dev/null
+      docker network create --subnet "$subnet" "$net" >/dev/null
     else
       docker network create --internal "$net" >/dev/null
     fi

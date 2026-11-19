@@ -102,7 +102,7 @@ public sealed class GuestUseCaseRunnerTests
             provider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<UseCaseRunner<CallerProbe>>.Instance,
             new FixedStaffTokenSource(staffToken),
-            httpContext: null,
+            clientAddresses: null,
             guestTokens);
 
     /// <summary>A service that reports the tokens the scope it lives in holds.</summary>

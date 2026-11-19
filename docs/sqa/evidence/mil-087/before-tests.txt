@@ -1,0 +1,177 @@
+# MIL-087 task 3: the tests of tasks 2 and 3 on a skeleton of the code, before the code of tasks 4 to 6.
+# Branch mil-087-sender-limits on the code of main 886c8e86, with ADR-0051 and RC-426 (53128393), in the worktree of
+# the build session, 2026-11-19T17:40Z, on this machine (Windows, .NET SDK 10).
+# The skeleton gives the names that the tests use and no behaviour: ClientAddresses has no network and reads no
+# address, the API still takes the first entry of the address header on every call, the sender limits count nothing,
+# refuse nothing and check no setting, their settings have no defaults, the security events mask nothing and write
+# nothing, the filters of the limits and of the events do nothing, Booking.MarkMadeOnPublicSite marks nothing, the
+# count of coming public bookings throws, the middleware of the web application adds no address and its source gives
+# none. The new error code has its final value and no screen text yet. The new column of the booking has no migration
+# yet, so the mapping of the skeleton ignores the property; without that line every test that migrates a database
+# stops on the pending model change before its own check.
+# The solution builds with no warning; every failure below is a rule that the code does not have yet. The browser
+# tests (E2E), the nginx test and the check of the E2E stack run in CI and are not in this run; the infrastructure
+# tests ran against PostgreSQL in a container.
+# Each project lists its failed tests, sorted, and its summary; the durations are removed.
+# dotnet build NFHotel.sln -c Release -warnaserror
+    0 Warning(s)
+    0 Error(s)
+# dotnet test --project tests/NFHotel.Domain.Tests -c Release --no-build
+failed NFHotel.Domain.Tests.Bookings.BookingPublicSiteTests.MarkMadeOnPublicSite_NewBooking_IsMarked
+Test run summary: Failed!
+  total: 719
+  failed: 1
+  succeeded: 718
+  skipped: 0
+# dotnet test --project tests/NFHotel.Application.Tests -c Release --no-build
+failed NFHotel.Application.Tests.Architecture.ErrorCodeTextTests.ErrorCodes_EveryConstant_HasATextInErrorMessages
+failed NFHotel.Application.Tests.Services.PublicBookingLimitTests.CreatePublicAsync_ABookingWhoseDepartureHasPassed_DoesNotCount
+failed NFHotel.Application.Tests.Services.PublicBookingLimitTests.CreatePublicAsync_FourthComingBookingOfOneEmail_IsRefused
+failed NFHotel.Application.Tests.Services.PublicBookingLimitTests.CreatePublicAsync_LimitOfOne_RefusesTheSecond
+failed NFHotel.Application.Tests.Services.PublicBookingLimitTests.Create_ByStaff_IsNeitherLimitedNorCounted
+failed NFHotel.Application.Tests.Services.PublicBookingLimitTests.Create_PublicAndByStaff_MarksOnlyThePublicBooking
+Test run summary: Failed!
+  total: 790
+  failed: 6
+  succeeded: 784
+  skipped: 0
+# dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build
+failed NFHotel.Api.Tests.ClientAddressesTests.IsInStack_LoopbackAndPrivateRanges_IsTrue(peer: "10.0.0.1")
+failed NFHotel.Api.Tests.ClientAddressesTests.IsInStack_LoopbackAndPrivateRanges_IsTrue(peer: "10.255.255.255")
+failed NFHotel.Api.Tests.ClientAddressesTests.IsInStack_LoopbackAndPrivateRanges_IsTrue(peer: "127.0.0.1")
+failed NFHotel.Api.Tests.ClientAddressesTests.IsInStack_LoopbackAndPrivateRanges_IsTrue(peer: "172.16.0.1")
+failed NFHotel.Api.Tests.ClientAddressesTests.IsInStack_LoopbackAndPrivateRanges_IsTrue(peer: "172.31.255.255")
+failed NFHotel.Api.Tests.ClientAddressesTests.IsInStack_LoopbackAndPrivateRanges_IsTrue(peer: "192.168.0.1")
+failed NFHotel.Api.Tests.ClientAddressesTests.IsInStack_LoopbackAndPrivateRanges_IsTrue(peer: "::1")
+failed NFHotel.Api.Tests.ClientAddressesTests.IsInStack_LoopbackAndPrivateRanges_IsTrue(peer: "::ffff:172.18.0.4")
+failed NFHotel.Api.Tests.ClientAddressesTests.Normalize_MappedAndOtherAddresses_AreWrittenInTheirOneForm
+failed NFHotel.Api.Tests.ClientAddressesTests.StackNetworks_InTheirOrder_AreLoopbackAndThePrivateRanges
+failed NFHotel.Api.Tests.ClientAddressesTests.TryNormalize_OneAddress_IsItsOneForm(value: " 203.0.113.7 ", expected: "203.0.113.7")
+failed NFHotel.Api.Tests.ClientAddressesTests.TryNormalize_OneAddress_IsItsOneForm(value: "2001:DB8:0:0:0:0:0:7", expected: "2001:db8::7")
+failed NFHotel.Api.Tests.ClientAddressesTests.TryNormalize_OneAddress_IsItsOneForm(value: "203.0.113.7", expected: "203.0.113.7")
+failed NFHotel.Api.Tests.ClientAddressesTests.TryNormalize_OneAddress_IsItsOneForm(value: "::ffff:203.0.113.7", expected: "203.0.113.7")
+failed NFHotel.Api.Tests.HttpCallerAddressTests.IsMarked_BeforeAndAfterTheMark_IsTrueOnlyAfterIt
+failed NFHotel.Api.Tests.HttpCallerAddressTests.Of_CallWithoutTheServiceToken_IgnoresTheHeader
+failed NFHotel.Api.Tests.HttpCallerAddressTests.Of_MappedConnectionAddress_IsTheIPv4Form
+failed NFHotel.Api.Tests.HttpCallerAddressTests.Of_ServiceCallWithAnAddress_IsThatAddress(header: "2001:DB8::7", expected: "2001:db8::7")
+failed NFHotel.Api.Tests.HttpCallerAddressTests.Of_ServiceCallWithAnAddress_IsThatAddress(header: "::ffff:203.0.113.7", expected: "203.0.113.7")
+failed NFHotel.Api.Tests.HttpCallerAddressTests.Of_ServiceCallWithoutOneAddress_IsTheAddressOfTheConnection(header: "127.1")
+failed NFHotel.Api.Tests.HttpCallerAddressTests.Of_ServiceCallWithoutOneAddress_IsTheAddressOfTheConnection(header: "203.0.113.7, 10.0.0.2")
+failed NFHotel.Api.Tests.HttpCallerAddressTests.Of_ServiceCallWithoutOneAddress_IsTheAddressOfTheConnection(header: "203.0.113.7:443")
+failed NFHotel.Api.Tests.HttpCallerAddressTests.Of_ServiceCallWithoutOneAddress_IsTheAddressOfTheConnection(header: "[2001:db8::7]:443")
+failed NFHotel.Api.Tests.HttpCallerAddressTests.Of_ServiceCallWithoutOneAddress_IsTheAddressOfTheConnection(header: "not-an-address")
+failed NFHotel.Api.Tests.LimitsTableTests.Settings_MaxTrackedKeys_BoundEachStoreAtTenThousand
+failed NFHotel.Api.Tests.LimitsTableTests.Table_Numbers_AreTheDefaultsOfTheirSettings
+failed NFHotel.Api.Tests.LimitsTableTests.Table_Windows_AreTheWindowsOfTheLimits
+failed NFHotel.Api.Tests.SecurityEventValuesTests.EmailOf_RequestsOfTheBookingFlow_IsTheirEmail
+failed NFHotel.Api.Tests.SecurityEventValuesTests.MaskEmail_Email_KeepsTheFirstCharacterAndTheDomain(email: " Anna@Example.com ", expected: "A***@Example.com")
+failed NFHotel.Api.Tests.SecurityEventValuesTests.MaskEmail_Email_KeepsTheFirstCharacterAndTheDomain(email: "a@b.dk", expected: "a***@b.dk")
+failed NFHotel.Api.Tests.SecurityEventValuesTests.MaskEmail_Email_KeepsTheFirstCharacterAndTheDomain(email: "anna+tag@sub.example.co.uk", expected: "a***@sub.example.co.uk")
+failed NFHotel.Api.Tests.SecurityEventValuesTests.MaskEmail_Email_KeepsTheFirstCharacterAndTheDomain(email: "anna@example.com", expected: "a***@example.com")
+failed NFHotel.Api.Tests.SecurityEventValuesTests.MaskEmail_NoPlainEmail_KeepsNoTypedText(email: "<anna@example.com", expected: "***@example.com")
+failed NFHotel.Api.Tests.SecurityEventValuesTests.MaskEmail_NoPlainEmail_KeepsNoTypedText(email: "@example.com", expected: "***")
+failed NFHotel.Api.Tests.SecurityEventValuesTests.MaskEmail_NoPlainEmail_KeepsNoTypedText(email: "anna", expected: "a***")
+failed NFHotel.Api.Tests.SecurityEventValuesTests.MaskEmail_NoPlainEmail_KeepsNoTypedText(email: "anna@", expected: "a***")
+failed NFHotel.Api.Tests.SecurityEventValuesTests.MaskEmail_NoPlainEmail_KeepsNoTypedText(email: "anna@exa mple.com", expected: "a***")
+failed NFHotel.Api.Tests.SecurityEventValuesTests.MaskEmail_NoPlainEmail_KeepsNoTypedText(email: "anna@example.com\r\nkind=limit_refused", expected: "a***")
+failed NFHotel.Api.Tests.SenderLimitApiTests.Booking_AfterTheHour_IsMadeAgain
+failed NFHotel.Api.Tests.SenderLimitApiTests.Booking_FourthComingBookingOfOneEmail_IsRefusedWithoutTheTimeToWait
+failed NFHotel.Api.Tests.SenderLimitApiTests.Booking_Made_WritesOneEventWithTheAddressAndTheMaskedEmail
+failed NFHotel.Api.Tests.SenderLimitApiTests.Booking_RefusedByARuleOfTheUseCase_GetsItsCountBack
+failed NFHotel.Api.Tests.SenderLimitApiTests.Booking_RefusedByTheRulesOfTheFields_IsNotCounted
+failed NFHotel.Api.Tests.SenderLimitApiTests.Booking_SixthInAnHour_IsRefusedWithTheCodeAndTheTimeToWait
+failed NFHotel.Api.Tests.SenderLimitApiTests.Booking_TwentyFirstInADay_IsRefusedByTheLimitOfTheDay
+failed NFHotel.Api.Tests.SenderLimitApiTests.Events_OfTheBookingFlow_AreCountedOnceWithTheirKindAndLimit
+failed NFHotel.Api.Tests.SenderLimitApiTests.GuestSignIn_WithAWrongEmail_WritesOneEventWithoutTheReference
+failed NFHotel.Api.Tests.SenderLimitApiTests.Refusals_OfEveryLimit_WriteOneEventEachWithTheName
+failed NFHotel.Api.Tests.SenderLimitApiTests.Search_AfterTheMinute_IsAnsweredAgain
+failed NFHotel.Api.Tests.SenderLimitApiTests.Search_HundredAtTheSameTime_AnswersSixty
+failed NFHotel.Api.Tests.SenderLimitApiTests.Search_OfAnotherAddress_IsNotStopped
+failed NFHotel.Api.Tests.SenderLimitApiTests.Search_SixtyFirstInAMinute_IsRefusedWithTheCodeAndTheTimeToWait
+failed NFHotel.Api.Tests.SenderLimitApiTests.StaffSignIn_ForwardedFromOutsideTheStack_IsAuditedUnderThePeer
+failed NFHotel.Api.Tests.SenderLimitApiTests.StaffSignIn_WithoutTheServiceToken_CannotNameTheAddress
+failed NFHotel.Api.Tests.SenderLimitApiTests.Telemetry_Meters_IncludeTheMeterOfTheSecurityEvents
+Test run summary: Failed!
+  total: 693
+  failed: 55
+  succeeded: 638
+  skipped: 0
+# dotnet test --project tests/NFHotel.ApiClient.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 122
+  failed: 0
+  succeeded: 122
+  skipped: 0
+# dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build
+failed NFHotel.Infrastructure.Tests.DependencyInjectionTests.AddInfrastructure_SenderLimitBelowOne_Throws(key: "BookingRequestsPerDay", value: "-1")
+failed NFHotel.Infrastructure.Tests.DependencyInjectionTests.AddInfrastructure_SenderLimitBelowOne_Throws(key: "BookingRequestsPerHour", value: "0")
+failed NFHotel.Infrastructure.Tests.DependencyInjectionTests.AddInfrastructure_SenderLimitBelowOne_Throws(key: "ComingPublicBookingsPerEmail", value: "0")
+failed NFHotel.Infrastructure.Tests.DependencyInjectionTests.AddInfrastructure_SenderLimitBelowOne_Throws(key: "MaxTrackedKeys", value: "0")
+failed NFHotel.Infrastructure.Tests.DependencyInjectionTests.AddInfrastructure_SenderLimitBelowOne_Throws(key: "SearchesPerMinute", value: "0")
+failed NFHotel.Infrastructure.Tests.DependencyInjectionTests.SenderLimits_TwoScopes_AreOneStoreWithTheNumbersOfTheSettings
+failed NFHotel.Infrastructure.Tests.Integration.Persistence.BookingPublicCountTests.Add_PublicAndStaffBookings_StoresTheMark
+failed NFHotel.Infrastructure.Tests.Integration.Persistence.BookingPublicCountTests.CountComingPublicBookingsAsync_MixedBookings_CountsTheComingPublicOnesOfTheEmail
+failed NFHotel.Infrastructure.Tests.Integration.Persistence.BookingPublicSiteMigrationTests.Insert_ByTheReleaseBefore_IsNotMarked
+failed NFHotel.Infrastructure.Tests.Integration.Persistence.BookingPublicSiteMigrationTests.Migrate_DownOverFiftyBookings_RemovesTheColumnKeepsTheBookingsAndAppliesAgain
+failed NFHotel.Infrastructure.Tests.Integration.Persistence.BookingPublicSiteMigrationTests.Migrate_EmptyDatabaseToTheLatest_AddsTheColumn
+failed NFHotel.Infrastructure.Tests.Integration.Persistence.BookingPublicSiteMigrationTests.Migrate_OverFiftyBookings_MarksNone
+failed NFHotel.Infrastructure.Tests.Integration.Persistence.BookingPublicSiteMigrationTests.Migrate_ThePublicSiteMigration_AddsOneColumnOnly
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.Constructor_SettingBelowOne_Throws(setting: "BookingRequestsPerDay")
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.Constructor_SettingBelowOne_Throws(setting: "BookingRequestsPerHour")
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.Constructor_SettingBelowOne_Throws(setting: "MaxTrackedKeys")
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.Constructor_SettingBelowOne_Throws(setting: "SearchesPerMinute")
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.GiveBackBookingRequest_AfterFive_LeavesRoomForOneMore
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.GiveBackBookingRequest_WithoutACount_ChangesNothing
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.TryCountBookingRequest_Refused_CountsInNoWindow
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.TryCountBookingRequest_SixthInAnHour_IsRefusedByTheLimitOfTheHour
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.TryCountBookingRequest_TwentyFirstInADay_IsRefusedByTheLimitOfTheDay
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.TryCountSearch_RefusedThenAtTheEndOfTheMinute_CountsInANewWindow
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.TryCountSearch_SixtyFirstInAMinute_IsRefusedByTheLimitOfTheSearch
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.TryCount_HundredThousandAddresses_StaysWithinTheBound
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.TryCount_ManyAtTheSameTime_CountsExactlyTheLimit
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.TryCount_OtherAddress_IsCountedApart
+Test run summary: Failed!
+  total: 272
+  failed: 27
+  succeeded: 245
+  skipped: 0
+# dotnet test --project tests/NFHotel.Web.Tests -c Release --no-build
+failed NFHotel.Web.Tests.AuthenticationStateClientAddressSourceTests.GetAddressAsync_NoStateSetUp_TakesTheRequest
+failed NFHotel.Web.Tests.AuthenticationStateClientAddressSourceTests.GetAddressAsync_StateWithTheAddress_GivesIt
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.FindRoomsAsync_RefusedByALimit_ShowsTheTextAndCanSearchAgain
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.SubmitAsync_RefusedByALimit_KeepsTheFormAndShowsTheText
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.IdentityFor_Address_HoldsTheOneClaimWithoutAuthentication
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_HeaderInAnotherForm_IsKeptInItsOneForm(header: " 203.0.113.7 ")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_HeaderInAnotherForm_IsKeptInItsOneForm(header: "::ffff:203.0.113.7")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_NoHeader_TakesTheConnection
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_PeerOutsideTheStackWithTheHeader_TakesTheConnection(peer: "172.15.255.255", expected: "172.15.255.255")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_PeerOutsideTheStackWithTheHeader_TakesTheConnection(peer: "172.32.0.1", expected: "172.32.0.1")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_PeerOutsideTheStackWithTheHeader_TakesTheConnection(peer: "198.51.100.4", expected: "198.51.100.4")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_PeerOutsideTheStackWithTheHeader_TakesTheConnection(peer: "2001:db8::4", expected: "2001:db8::4")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_PeerOutsideTheStackWithTheHeader_TakesTheConnection(peer: "::ffff:198.51.100.4", expected: "198.51.100.4")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_SignedInAndAnonymousUsers_StayWhoTheyWere
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithAnInvalidHeader_TakesTheConnection(header: " ")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithAnInvalidHeader_TakesTheConnection(header: "")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithAnInvalidHeader_TakesTheConnection(header: "010.0.0.1")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithAnInvalidHeader_TakesTheConnection(header: "127.1")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithAnInvalidHeader_TakesTheConnection(header: "203.0.113.7, 203.0.113.8")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithAnInvalidHeader_TakesTheConnection(header: "203.0.113.7:443")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithAnInvalidHeader_TakesTheConnection(header: "[2001:db8::7]")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithAnInvalidHeader_TakesTheConnection(header: "example.com")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithTheHeader_TakesTheHeader(peer: "10.1.2.3")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithTheHeader_TakesTheHeader(peer: "127.0.0.1")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithTheHeader_TakesTheHeader(peer: "172.16.0.1")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithTheHeader_TakesTheHeader(peer: "172.18.0.5")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithTheHeader_TakesTheHeader(peer: "172.31.255.254")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithTheHeader_TakesTheHeader(peer: "192.168.1.10")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithTheHeader_TakesTheHeader(peer: "::1")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithTheHeader_TakesTheHeader(peer: "::ffff:172.18.0.5")
+failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_StackPeerWithTwoHeaders_TakesTheConnection
+failed NFHotel.Web.Tests.UseCaseRunnerTests.RunAsync_CallWithoutAnAnswer_GivesTheAddressToTheCall
+failed NFHotel.Web.Tests.UseCaseRunnerTests.RunAsync_SourceWithAnAddress_GivesItToTheCall
+Test run summary: Failed!
+  total: 917
+  failed: 33
+  succeeded: 884
+  skipped: 0
+# done

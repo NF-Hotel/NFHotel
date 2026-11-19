@@ -11,8 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | The system gives a new booking a booking reference in place of a booking number (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | A stay ends at most five years after today, for hotel staff too, when a booking is made and when it is moved; hotel staff are not held to the 30 nights of the public site; the details of a new guest follow the validation rules of the booking flow (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | [7de27c7] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | A stay ends at most five years after today, for hotel staff too, when a booking is made and when it is moved; hotel staff are not held to the 30 nights of the public site; the details of a new guest follow the validation rules of the booking flow (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | [7de27c7] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | A search for free rooms is limited per caller address, and hotel staff may see its refusal; the limits of the public site on booking requests per caller address and on coming bookings per email do not hold for hotel staff (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
 
 ---
 
@@ -41,6 +41,8 @@
 
 ### Extensions (Alternative / Exception Flows)
 
+- 1a. Hotel staff look for the free rooms of a period more than 60 times in a minute from one address:
+  1. The system refuses the search with the text of a refusal by a limit, shows no rooms and stores nothing. Hotel staff search again when the minute has passed.
 - 2a. The dates are invalid or the room is booked for any night of the period:
   1. The system reports every problem at once and stores nothing.
 - 4a. The guest has not paid in advance:
@@ -61,7 +63,8 @@
 
 | Step | Rule |
 | --- | --- |
-| 1 | A new booking is always pending (BR-01); arrival and departure date follow BR-41 to BR-48 of the ledger, and the stay ends at most five years after today (BR-N-08). Hotel staff may book more than 30 nights: that limit holds only on the public site (BR-C-07). The details of a new guest follow the table "Validation rules of the booking flow" of the ledger (MIL-086, ADR-0050) |
+| 1 | A new booking is always pending (BR-01); arrival and departure date follow BR-41 to BR-48 of the ledger, and the stay ends at most five years after today (BR-N-08). Hotel staff may book more than 30 nights: that limit holds only on the public site (BR-C-07). The details of a new guest follow the table "Validation rules of the booking flow" of the ledger (MIL-086, ADR-0050). The limits of the public site on booking requests per caller address and on coming bookings per email neither count nor limit a booking by hotel staff (the table "Limits of the booking flow" of the ledger; ADR-0051, decisions 2 and 3) |
+| 1a | A search for free rooms, on the public site or in the back office, is limited to 60 in a minute per address of the caller: the address from which the search reached the site, which the caller cannot set. A refused search shows the one text of a refusal by a limit of the booking flow (the table "Limits of the booking flow" of the ledger; ADR-0051, decisions 2 and 4) |
 | 2 | The period is half-open: a guest leaving on a day and a guest arriving on that day do not share the room (BR-19, BR-39, BR-N-07) |
 | 4 | Only a pending booking can be confirmed (BR-02, BR-03, BR-05) |
 | 5 | Check-in is allowed for a pending or confirmed booking from the arrival date, once (BR-06, BR-07) |
@@ -80,5 +83,5 @@
 [UCD-001]: ../../use-case-diagram.md
 [US-001]: ../../user-stories.md
 [SA-001]: ../../stakeholder-analysis.md
-[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81
 [7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81
+[a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251

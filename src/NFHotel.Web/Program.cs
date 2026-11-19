@@ -45,6 +45,9 @@ builder.Services.AddGuestSignIn(requireTls);   // the guest cookie, a scheme of 
 builder.Services.AddSecureAntiforgery(requireTls);   // the antiforgery cookie follows the staff cookie (MIL-033)
 builder.Services.AddHttpContextAccessor();
 
+// The address of the browser, from nginx through the user of the request or the circuit to the API (MIL-087, ADR-0051).
+builder.Services.AddScoped<IClientAddressSource, AuthenticationStateClientAddressSource>();
+
 // ViewModels are Scoped: in Blazor Server a scope is one SignalR circuit, that is, one user's
 // session in one tab. That is exactly the lifetime the state of the screen should have.
 //
@@ -72,6 +75,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRequirement(requireTls);
 app.UseHttpsRedirection();
 app.UseAuthentication();
+app.UseClientAddress();   // after the authentication, which sets the user that gets the address (MIL-087)
 app.UseAuthorization();
 app.UseMustChangePassword();
 app.UseAntiforgery();

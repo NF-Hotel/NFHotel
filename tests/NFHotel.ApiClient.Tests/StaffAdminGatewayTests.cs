@@ -114,7 +114,10 @@ public sealed class StaffAdminGatewayTests
         Assert.Equal(code, result.FirstError?.Code);
     }
 
-    /// <summary>The client forwards the address of the browser to the API in the forwarded-for header.</summary>
+    /// <summary>
+    /// The client gives the address of the browser to the API in the header of the stack (ADR-0051 decision 4), and sends
+    /// no forwarded-for header.
+    /// </summary>
     [Fact]
     public async Task ListAsync_WithAClientAddress_ForwardsIt()
     {
@@ -126,7 +129,8 @@ public sealed class StaffAdminGatewayTests
         await service.ListAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal("203.0.113.7", handler.ForwardedFor);
+        Assert.Equal("203.0.113.7", handler.ClientAddress);
+        Assert.Null(handler.ForwardedFor);
     }
 
     /// <summary>Negative: a key below one and a missing request are programming errors.</summary>

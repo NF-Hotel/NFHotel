@@ -1,0 +1,51 @@
+# MIL-087 task 7, the code review RC-428: the tests of its points, written before their fixes and run on the code
+# that the review read (the branch mil-087-sender-limits at bb075b41, the code of b626fdbf merged with main at
+# 84ab63f4), in the worktree of the build session, 2026-11-19, on this machine (Windows, .NET SDK 10). The
+# infrastructure tests ran against PostgreSQL in a container.
+# Each failure is its point: the null checks of the two filters (point 7); a full store of caller addresses whose
+# windows are all at their limit refuses a new address instead of dropping the window that runs out first (point
+# 2), in the stores of the booking flow and in the store of addresses of the guest sign-in; a limit above 100,000
+# is taken by the store (point 11) and by the start-up. The tests of point 12 (the whole seconds of Retry-After
+# rounded up, and the email count with a pattern character, spaces and capitals) passed in this run: the code was
+# right, and the tests close the gap that the review named. The narrow port of the limit per email (point 6) has
+# no failing run: before the port existed, the tests that name it did not compile.
+# Each run lists its failed tests, sorted, and its summary; the durations are removed.
+# dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build
+failed NFHotel.Api.Tests.BookingFlowFilterArgumentsTests.BookingFlowEventFilter_MissingDependency_Throws
+failed NFHotel.Api.Tests.BookingFlowFilterArgumentsTests.SenderLimitFilter_MissingDependency_Throws
+Test run summary: Failed!
+  total: 698
+  failed: 2
+  succeeded: 696
+  skipped: 0
+# dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.Constructor_LimitAboveTheCap_Throws(setting: "BookingRequestsPerDay")
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.Constructor_LimitAboveTheCap_Throws(setting: "BookingRequestsPerHour")
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.Constructor_LimitAboveTheCap_Throws(setting: "SearchesPerMinute")
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.TryCountBookingRequest_FullStoresOfAddressesAtTheirLimits_CountANewAddressAndDropTheFirstToRunOut
+failed NFHotel.Infrastructure.Tests.Security.InMemorySenderLimitsTests.TryCountSearch_FullStoreOfAddressesAtTheirLimit_CountsANewAddressAndDropsTheFirstToRunOut
+Test run summary: Failed!
+  total: 279
+  failed: 5
+  succeeded: 274
+  skipped: 0
+# dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build, filtered to the test of the store of
+# addresses of the guest sign-in, written after the run above
+failed NFHotel.Infrastructure.Tests.Security.InMemoryGuestSignInLimitsTests.TryCount_FullStoreOfAddressesAtTheirLimit_CountsANewAddressAndDropsTheFirstToRunOut
+Test run summary: Failed!
+  total: 1
+  failed: 1
+  succeeded: 0
+  skipped: 0
+# dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build --filter-method "*AddInfrastructure_WindowLimit*"
+# (the cap at the start-up, written after the cap of the store was in place)
+failed NFHotel.Infrastructure.Tests.DependencyInjectionTests.AddInfrastructure_WindowLimitAboveTheCap_Throws(key: "GuestLookup:MaxFailuresPerAddress")
+failed NFHotel.Infrastructure.Tests.DependencyInjectionTests.AddInfrastructure_WindowLimitAboveTheCap_Throws(key: "GuestLookup:MaxFailuresPerReference")
+failed NFHotel.Infrastructure.Tests.DependencyInjectionTests.AddInfrastructure_WindowLimitAboveTheCap_Throws(key: "SenderLimits:BookingRequestsPerDay")
+failed NFHotel.Infrastructure.Tests.DependencyInjectionTests.AddInfrastructure_WindowLimitAboveTheCap_Throws(key: "SenderLimits:BookingRequestsPerHour")
+failed NFHotel.Infrastructure.Tests.DependencyInjectionTests.AddInfrastructure_WindowLimitAboveTheCap_Throws(key: "SenderLimits:SearchesPerMinute")
+Test run summary: Failed!
+  total: 6
+  failed: 5
+  succeeded: 1
+  skipped: 0

@@ -56,14 +56,22 @@ builder.Services.Replace(ServiceDescriptor.Scoped<ICallerAddress, HttpCallerAddr
 builder.Services.AddStaffWriteRateLimit();
 builder.Services.AddSingleton<AddressLoginThrottle>();   // the limit per client address for the mobile app (ADR-0015)
 builder.Services.AddScoped<LoginAddressLimitFilter>();
+builder.Services.AddSingleton<SecurityMetrics>();   // the counter and the events of the booking flow (ADR-0051 decision 6)
+builder.Services.AddSingleton<BookingFlowEvents>();
 
-// Behind the proxy the peer is nginx; the address of the phone is in X-Forwarded-For. The API publishes no port, so
-// only the proxy and the web application on the internal networks can send the header (ADR-0015).
+// Behind the proxy the peer is nginx; the address of the phone is in X-Forwarded-For. Only a peer in the networks of the
+// stack is trusted with the header, and only its last entry counts, the one that nginx added (ADR-0015, ADR-0051
+// decision 4): an address that a caller wrote in front of it, or a header from a peer outside the stack, is ignored.
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+    options.ForwardLimit = 1;
     options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
+    foreach (System.Net.IPNetwork network in ClientAddresses.StackNetworks)
+    {
+        options.KnownIPNetworks.Add(network);
+    }
 });
 
 var app = builder.Build();

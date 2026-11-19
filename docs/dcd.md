@@ -39,6 +39,7 @@ package "domain" {
     +int babies
     +String marketSegment
     +String mealPlan
+    +boolean madeOnPublicSite
     +{static} int maxYearsAhead = 5
     +{static} int maxPublicNights = 30
     +{static} int minPublicGuests = 1

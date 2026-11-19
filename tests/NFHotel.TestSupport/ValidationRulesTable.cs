@@ -20,35 +20,8 @@ public static partial class ValidationRulesTable
     /// <summary>Reads the rows of the table, in their order.</summary>
     /// <returns>The rows.</returns>
     /// <exception cref="InvalidOperationException">The ledger has no such section or table, or a row has another number of cells.</exception>
-    public static IReadOnlyList<ValidationRule> Read()
-    {
-        string[] lines = File.ReadAllLines(Path.Join(RepositoryRoot.Find(), "docs", "refactor", "BusinessRules.md"));
-        int start = Array.IndexOf(lines, Section);
-        if (start < 0)
-        {
-            throw new InvalidOperationException($"The rule ledger has no section \"{Section[3..]}\".");
-        }
-
-        int header = Array.FindIndex(lines, start, line => line.StartsWith("| Field |", StringComparison.Ordinal));
-        if (header < 0)
-        {
-            throw new InvalidOperationException("The section has no table.");
-        }
-
-        List<ValidationRule> rows = [];
-        for (int index = header + 2; index < lines.Length && lines[index].StartsWith('|'); index++)
-        {
-            string[] cells = lines[index].Trim().Trim('|').Split('|').Select(cell => cell.Trim()).ToArray();
-            if (cells.Length != ColumnCount)
-            {
-                throw new InvalidOperationException($"Line {index + 1} of the rule ledger has {cells.Length} cells, not {ColumnCount}.");
-            }
-
-            rows.Add(new ValidationRule(cells));
-        }
-
-        return rows;
-    }
+    public static IReadOnlyList<ValidationRule> Read() =>
+        [.. RuleLedger.ReadTable(Section, "Field", ColumnCount).Select(cells => new ValidationRule(cells))];
 
     /// <summary>The names of code in back quotes in a cell, such as <c>Booking.CheckPeriod</c> or <c>DateRange</c>.</summary>
     /// <param name="cell">The text of a cell.</param>

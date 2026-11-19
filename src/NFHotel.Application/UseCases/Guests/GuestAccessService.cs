@@ -1,6 +1,3 @@
-using System.Globalization;
-using System.Net;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -29,7 +26,7 @@ public sealed class GuestAccessService : IGuestAccessService
     #region Fields
 
     /// <summary>The name under which the tries of the callers whose address the API does not know are counted together.</summary>
-    public const string UnknownAddress = "unknown";
+    public const string UnknownAddress = CallerAddressKey.Unknown;
 
     // A reference that no booking has is compared with this text, so that its answer costs what a wrong email costs. The
     // comparison gives the time only: without a booking there is no session, whatever the email.
@@ -93,7 +90,7 @@ public sealed class GuestAccessService : IGuestAccessService
         }
 
         Guid? reference = BookingReference.TryParse(request.Reference, out Guid read) ? read : null;
-        string address = AddressKey(_caller.Address);
+        string address = CallerAddressKey.Of(_caller.Address);
 
         // The try counts as a failure from here until it succeeds.
         if (!_limits.TryCount(reference, address))
@@ -141,34 +138,6 @@ public sealed class GuestAccessService : IGuestAccessService
     #region Private methods
 
     private static Result<GuestSessionDto> Refused() => Result<GuestSessionDto>.Failure(ErrorCodes.Api.GuestUnauthorized);
-
-    /// <summary>
-    /// The key of the caller, so that one caller is one key (ADR-0049 decision 6): an IPv4 address, also in IPv6 form,
-    /// counts as itself; an IPv6 address counts by its first 64 bits, the prefix of its link, because the last 64 bits
-    /// are its interface identifier (RFC 4291 section 2.5.1), which a host forms itself and may change for each try
-    /// (RFC 8981). An address that is missing or that is no address counts under <see cref="UnknownAddress"/>.
-    /// </summary>
-    private static string AddressKey(string? address)
-    {
-        if (!IPAddress.TryParse(address, out IPAddress? parsed))
-        {
-            return UnknownAddress;
-        }
-
-        if (parsed.IsIPv4MappedToIPv6)
-        {
-            return parsed.MapToIPv4().ToString();
-        }
-
-        if (parsed.AddressFamily != AddressFamily.InterNetworkV6)
-        {
-            return parsed.ToString();
-        }
-
-        byte[] network = parsed.GetAddressBytes();
-        Array.Clear(network, 8, 8);
-        return string.Create(CultureInfo.InvariantCulture, $"{new IPAddress(network)}/64");
-    }
 
     /// <summary>
     /// Compares two emails in their normal form (trimmed, Unicode normal form C; MIL-086 decision 4) and without letter

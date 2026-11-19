@@ -36,7 +36,13 @@ public sealed class ApiTokenMiddleware
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        if (context.Request.Path.StartsWithSegments(ApiPrefix, StringComparison.OrdinalIgnoreCase) && !IsAuthorized(context) && !IsMobileRoute(context))
+        bool isApi = context.Request.Path.StartsWithSegments(ApiPrefix, StringComparison.OrdinalIgnoreCase);
+        if (isApi && IsAuthorized(context))
+        {
+            // ADR-0051 decision 4: only a call with the service token may name the address of its caller.
+            ServiceCall.Mark(context);
+        }
+        else if (isApi && !IsMobileRoute(context))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             context.Response.Headers.WWWAuthenticate = ApiAuthentication.Scheme;

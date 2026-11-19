@@ -323,3 +323,37 @@ refused, and the address only suggests what the guest then chooses in the form.
 
 **On the room size.** Until MIL-086 a public booking without a room size was read as a single room, the first member
 of `RoomSize`. The field is now required, so the API never chooses a size that the guest did not ask for.
+
+## Limits of the booking flow
+
+> Added 2026-11-19 by MIL-087 (ADR-0051). One row per limit on what one sender can ask of the booking flow. A test of
+> the API (`LimitsTableTests`) reads this table and fails when a number or a window differs from the default of its
+> setting, when a setting does not exist, when a name of the first column is not a limit that the API names in its
+> security events, or when a code of the last column is not a code of the API.
+
+Every limit per caller address counts under the address that nginx saw (ADR-0051 decision 4): an IPv4 address as itself,
+an IPv6 address by its first 64 bits. A window opens with the first request that it counts and runs its length; a
+request that a limit per address refuses counts in no window. Each store of counts in the memory of the API holds at
+most 10,000 keys (`SenderLimits:MaxTrackedKeys`, `GuestLookup:MaxTrackedKeys`), and a restart of the API clears them. A
+full store drops a window below its limit before one at it; when every window is at its limit, a store of caller
+addresses drops the window that runs out first, and the store of booking references refuses a new reference until a
+window runs out (ADR-0051 decision 5). A limit that a store counts up to is at most 100,000: a setting above it, or
+below one, stops the start-up of the API. The count per email is read from the database.
+
+| Limit | Who is counted | What is counted | Window | Number | Setting | Refusal |
+| --- | --- | --- | --- | --- | --- | --- |
+| `search` | A caller address | Searches for free rooms (`GET api/bookings/available-rooms`), by the public site and by staff | 1 minute | 60 | `SenderLimits:SearchesPerMinute` | 429, `booking.too_many_requests`, `Retry-After` |
+| `booking_hour` | A caller address | Public booking requests (`POST api/bookings/public`) that passed the rules of the fields; a request that a rule of the use case refuses with 400 or 422 gets its count back, and one that the limit per email refuses keeps it | 1 hour | 5 | `SenderLimits:BookingRequestsPerHour` | 429, `booking.too_many_requests`, `Retry-After` |
+| `booking_day` | A caller address | As `booking_hour` | 1 day | 20 | `SenderLimits:BookingRequestsPerDay` | 429, `booking.too_many_requests`, `Retry-After` |
+| `email` | An email, in its normal form and without letter case | Coming bookings made on the public site: not cancelled, with the departure today or later. Bookings by staff are neither counted nor limited | None | 3 | `SenderLimits:ComingPublicBookingsPerEmail` | 429, `booking.too_many_requests` |
+| `guest_sign_in` | A booking reference | Failed guest sign-ins (ADR-0049 decision 6) | 15 minutes | 5 | `GuestLookup:MaxFailuresPerReference` | 429, `booking.too_many_lookups` |
+| `guest_sign_in` | A caller address | Failed guest sign-ins (ADR-0049 decision 6) | 15 minutes | 20 | `GuestLookup:MaxFailuresPerAddress` | 429, `booking.too_many_lookups` |
+
+**The text of a refusal.** The pages show one text for `booking.too_many_requests`: "Too many requests in a short
+time. Please wait a while and try again, or contact the hotel." It names no number of minutes, because the windows
+differ; `Retry-After` gives the whole seconds until the window that refused has room again. The refusal per email has
+no window and no `Retry-After`. `booking.too_many_lookups` keeps its text of ADR-0049, which names its fifteen minutes.
+
+**The events.** Each refusal by a limit writes the security event `limit_refused` with the name of the first column;
+each booking made on the public site writes `public_booking_made`, and each failed guest sign-in
+`guest_lookup_failed` (ADR-0051 decision 6).

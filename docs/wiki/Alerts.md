@@ -92,6 +92,15 @@ The applications push their request metrics over OTLP (ADR-0023), so these rules
 | `ContainerCheckStale` | Prometheus: age of the last run of the runtime check (`task="container_check"`) | Older than 45 minutes | warning | It runs every 15 minutes; three missed runs mean the timer, Docker or a stuck deploy | `systemctl status nfhotel-container-check.timer` and its journal |
 | `SshLoginFailures` | Loki ruler: `Failed password`, `Invalid user` or `authentication failure` in the journal of `ssh.service` | More than 10 in 10 minutes | warning | sshd answers on the tailnet only, so a failed login comes from a device of the tailnet | `tailscale status` to find the device; follow [Incidents](Incidents) |
 
+### Booking flow: `prometheus/rules/security.yml`
+
+The API counts the security events of the booking flow in `nfhotel_security_events_total` by `kind`: `public_booking_made`, `guest_lookup_failed` and `limit_refused`, and a refusal also by `limit`: `search`, `booking_hour`, `booking_day`, `email` or `guest_sign_in` (MIL-087, [ADR-0051](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0051-limits-of-the-booking-flow-and-the-caller-address.md) decision 6). Each event is also a line in the log of the API, in the category `NFHotel.Security`, with the address that nginx saw and the email masked to its first character and its domain. The limits are the table "Limits of the booking flow" in `docs/refactor/BusinessRules.md`.
+
+| Alert | Source | Fires when | Severity | Why | What to do |
+| --- | --- | --- | --- | --- | --- |
+| `BookingFlowRefusals` | Prometheus: `nfhotel_security_events_total{kind="limit_refused"}` of `nfhotel-api` | More than 20 in 10 minutes | warning | One sender asks for more than the limits allow: a script that searches or books, or someone who keeps guessing at the guest sign-in. The limits already refuse it; the alert says that it happens | In Grafana, *Explore*, data source *Loki*, `{host="nf-hotel"} \|= "limit_refused"` shows the limit and the address of each refusal. One address with many refusals is a script and needs nothing more; many addresses, or a refusal of the `email` limit for many emails, is an attack on the bookings: follow [Incidents](Incidents) |
+| `PublicBookingSurge` | Prometheus: `nfhotel_security_events_total{kind="public_booking_made"}` of `nfhotel-api` | More than 10 in an hour | warning | The public site gets a few bookings a day. Many in an hour can be one sender who holds rooms with many addresses and emails, which the limits per address and per email do not stop | `{host="nf-hotel"} \|= "public_booking_made"` in Loki shows the addresses; look at the new pending bookings in the back office, cancel those that are not real, and follow [Incidents](Incidents) |
+
 ### Security scans: `prometheus/rules/scans.yml`
 
 The scan exporter (MIL-053) reads GitHub code scanning (CodeQL, Trivy, OWASP ZAP, OpenSSF Scorecard), the latest run on `main` of each scan workflow and SonarQube Cloud every 15 minutes. Every rule waits longer than one read, so a finding fixed in the meantime does not alert.

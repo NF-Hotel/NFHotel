@@ -1,6 +1,3 @@
-using System.Net;
-
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -166,21 +163,15 @@ public sealed class UseCaseRunnerTests
     #region The address of the browser
 
     /// <summary>
-    /// Positive (ADR-0049 decision 6, review RC-418): a call made for a request carries the first address that the proxy
-    /// forwarded, so the limit per address of the guest sign-in counts the browser and not the web application.
+    /// Positive (MIL-087 criterion 4, ADR-0051 decision 4): a call carries the address that the source of addresses gives,
+    /// so the API counts and audits the browser and not the web application.
     /// </summary>
-    /// <param name="header">The forwarded-for header of the request.</param>
-    [Theory]
-    [InlineData("203.0.113.7")]
-    [InlineData("203.0.113.7, 172.18.0.5")]
-    public async Task RunAsync_RequestWithForwardedAddresses_GivesTheFirstToTheCall(string header)
+    [Fact]
+    public async Task RunAsync_SourceWithAnAddress_GivesItToTheCall()
     {
         // Arrange
         using ServiceProvider provider = Provider();
-        DefaultHttpContext request = new();
-        request.Request.Headers["X-Forwarded-For"] = header;
-        request.Connection.RemoteIpAddress = IPAddress.Parse("172.18.0.5");
-        UseCaseRunner<Probe> runner = Runner(provider, null, request);
+        UseCaseRunner<Probe> runner = Runner(provider, null, new FixedAddressSource("203.0.113.7"));
 
         // Act
         Result<string?> result = await runner.RunAsync(
@@ -191,29 +182,49 @@ public sealed class UseCaseRunnerTests
         Assert.Equal("203.0.113.7", result.Value);
     }
 
-    /// <summary>
-    /// Equivalence: a request without a forwarded address gives the address of its connection, and a call outside a
-    /// request, as from a circuit, gives none.
-    /// </summary>
+    /// <summary>Positive: a call without an answer carries the address too, so a refused guest sign-in is counted per browser.</summary>
     [Fact]
-    public async Task RunAsync_NoForwardedAddressOrNoRequest_GivesTheConnectionOrNothing()
+    public async Task RunAsync_CallWithoutAnAnswer_GivesTheAddressToTheCall()
     {
         // Arrange
         using ServiceProvider provider = Provider();
-        DefaultHttpContext request = new();
-        request.Connection.RemoteIpAddress = IPAddress.Parse("198.51.100.4");
+        UseCaseRunner<Probe> runner = Runner(provider, null, new FixedAddressSource("203.0.113.8"));
+        string? seen = null;
 
         // Act
-        Result<string?> fromRequest = await Runner(provider, null, request).RunAsync(
+        await runner.RunAsync(
+            (service, _) =>
+            {
+                seen = service.AddressSeen;
+                return Task.FromResult(Result.Success());
+            },
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("203.0.113.8", seen);
+    }
+
+    /// <summary>
+    /// Equivalence: a source without an address, and a host without a source, give the call no address; the runner reads
+    /// no header of its own, so a header that a browser sends never reaches the API as its address.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_SourceWithoutAnAddressOrNoSource_GivesNone()
+    {
+        // Arrange
+        using ServiceProvider provider = Provider();
+
+        // Act
+        Result<string?> fromEmptySource = await Runner(provider, null, new FixedAddressSource(null)).RunAsync(
             (service, _) => Task.FromResult(Result<string?>.Success(service.AddressSeen)),
             TestContext.Current.CancellationToken);
-        Result<string?> fromCircuit = await Runner(provider, null).RunAsync(
+        Result<string?> withoutSource = await Runner(provider, null).RunAsync(
             (service, _) => Task.FromResult(Result<string?>.Success(service.AddressSeen)),
             TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal("198.51.100.4", fromRequest.Value);
-        Assert.Null(fromCircuit.Value);
+        Assert.Null(fromEmptySource.Value);
+        Assert.Null(withoutSource.Value);
     }
 
     #endregion
@@ -228,12 +239,12 @@ public sealed class UseCaseRunnerTests
         return services.BuildServiceProvider(validateScopes: true);
     }
 
-    private static UseCaseRunner<Probe> Runner(ServiceProvider provider, string? token, HttpContext? request = null) =>
+    private static UseCaseRunner<Probe> Runner(ServiceProvider provider, string? token, IClientAddressSource? addresses = null) =>
         new(
             provider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<UseCaseRunner<Probe>>.Instance,
             new FixedTokenSource(token),
-            request is null ? null : new HttpContextAccessor { HttpContext = request });
+            addresses);
 
     /// <summary>A service that reports what the scope it lives in holds.</summary>
     private sealed class Probe
@@ -262,6 +273,18 @@ public sealed class UseCaseRunnerTests
         }
 
         public ValueTask<string?> GetTokenAsync() => ValueTask.FromResult(_token);
+    }
+
+    private sealed class FixedAddressSource : IClientAddressSource
+    {
+        private readonly string? _address;
+
+        public FixedAddressSource(string? address)
+        {
+            _address = address;
+        }
+
+        public ValueTask<string?> GetAddressAsync() => ValueTask.FromResult(_address);
     }
 
     #endregion
