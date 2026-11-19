@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-085] (RC-422, Go on criteria 1 to 8) and its code deployed at 7fd5bea; mode autonomous, not independent | [3eb436c] |
 | 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The code and the documents of [MIL-086] (tasks 1 to 7): its row, the row of [ADR-0050], and RC-423 on the rows of UC-001, UC-003 and UC-010; RC-423 and RC-424, Go; mode autonomous, not independent | [7de27c7] |
+| 2026-11-19 | Proposed | mikemike | S01 | The plan of [MIL-090], accepted by S01 in chat on 2026-11-19 (RC-445, Go): its row, and [MIL-090] downstream of [BC-001]; supervised mode | [b7687d5] |
 
 ---
 
@@ -24,7 +24,7 @@ updated whenever an artifact instance is created or reviewed.
 
 | Artifact Instance | Type | Language | Domain | Upstream (Backward Link) | Downstream (Forward Link) | Last Reviewed (RC-ID) |
 | --- | --- | --- | --- | --- | --- | --- |
-| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-021], [MIL-022], [MIL-023], [UCD-001], [US-001], [MIL-055], [MIL-071], [MIL-073], [MIL-074], [MIL-075], [MIL-076], [MIL-077], [MIL-078], [MIL-084], [MIL-085], [MIL-086], [MIL-087], [MIL-088], [MIL-089] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044], [RC-088], [RC-332], [RC-401], [RC-414] |
+| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-021], [MIL-022], [MIL-023], [UCD-001], [US-001], [MIL-055], [MIL-071], [MIL-073], [MIL-074], [MIL-075], [MIL-076], [MIL-077], [MIL-078], [MIL-084], [MIL-085], [MIL-086], [MIL-087], [MIL-088], [MIL-089], [MIL-090] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044], [RC-088], [RC-332], [RC-401], [RC-414] |
 | [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009], [RC-026], [RC-390] |
 | [MIL-001] | Milestone | en | it | [BC-001] | - | [RC-003] |
 | [MIL-002] | Milestone | en | it | [BC-001] | - | [RC-006] |
@@ -141,6 +141,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-087] | Milestone (Accepted, Go; plan reviewed in autonomous mode by the AI as stand-in for S01 2026-11-19, RC-412, at S01's word in chat) | en | it | [BC-001], [ADR-0004], ADR-0005, ADR-0015, [MIL-036], [MIL-085], [MIL-086] | planned: ADR-0051, the table of the limits of the booking flow, the address of a caller from nginx to the API and the audit trail, the limits per address and per email, the security events and counters of the flow, and two alert rules with their rule tests | [RC-412] |
 | [MIL-088] | Milestone (Accepted, Go; plan reviewed in autonomous mode by the AI as stand-in for S01 2026-11-19, RC-413, at S01's word in chat) | en | it | [BC-001], [ADR-0004], [ADR-0024], [MIL-018], MIL-035, [MIL-085], [MIL-086], [MIL-087] | planned: ADR-0052 and ADR-0053, UC-011 with US-001.14 and its artifacts, the booking request with its verification link and its clean-up job, the mail port with a relay adapter and a mail catcher in the stacks, the pages to ask, verify and send again, and the relay in production, which is S01's | [RC-413] |
 | [MIL-089] | Milestone (Accepted, Go; plan reviewed in autonomous mode by the AI as stand-in for S01 2026-11-19, RC-415, at S01's word in chat) | en | it | [BC-001], ADR-0015, [ADR-0047], MIL-027, [MIL-036], [MIL-054], [MIL-077], [MIL-085], [MIL-086], [MIL-087], [MIL-088], [SAR-001] | planned: SAR-002, the security audit report of the booking flow against OWASP ASVS 5.0 at level 2, the tests of the abuse cases, the scans with the renewed rules, the load test with the booking flow, the verdicts on four points seen outside the flow, and version 0.3.0 | [RC-415] |
+| [MIL-090] | Milestone (Accepted, Go; plan prepared by the AI in supervised mode 2026-11-19 and accepted as it stands by S01 in chat the same day, RC-445) | en | it | [BC-001], ADR-0017, [ADR-0032], [ADR-0040], MIL-027, [MIL-036], [MIL-065], [MIL-066], [MIL-077], [MIL-086], [MIL-087], [MIL-089], [RC-313], [RC-363], [RC-395] | planned: the check of the nine third-party images of issue #840 (CVE-2026-97054) with a new pin or an ignore entry for each, the 41 exceptions of the image scan checked again before they lapse on 2026-12-08, a warning seven days before a lapse, tests that show alerts 647 and 668 of ZAP false, the drawings without comments, a test that finds a new `MarkupString`, Informational alerts as `note` in code scanning, and lines for the rules 10029, 10058, 90027 and 40025 | [RC-445] |
 | The code of MIL-083: steps 2 and 3 of `ops/scripts/create-monitoring-lxc.sh` (Docker's packages from Docker's signed repository, the checkout and `install-patching.sh`) with its test, the floor of `runc` in `ops/scripts/check-container-runtime.sh` with its unit test and the metric `nfhotel_container_runtime_runc_below_floor`, the rule `ContainerRuntimeKnownEscape` with its promtool test, and the wiki pages Container-Escape, Monitoring, Host-Hardening and Alerts | Shell, YAML (reviewed 2026-11-14, Go-with-conditions; the LXC switched by hand 2026-11-14, RC-354; the conditions met at the gate, RC-355) | - | - | [MIL-083] tasks 3 to 6, [ADR-0043], [CIS-001] | - | [RC-354], [RC-355] |
 | [ADR-0040] | ADR (Accepted) | - | - | [MIL-064], [ADR-0007], [ADR-0030], [MIL-022], [MIL-036], [MIL-059] | the patch layer of the proxy in `ops/deploy/nginx/Dockerfile` and its entry in `ops/scripts/build-release-images.sh`, the release references by name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, the `docker` entry of `.github/dependabot.yml` (MIL-064 tasks 2 to 7, RC-300) | [RC-299], [RC-300] (the code) |
 | [ADR-0041] | ADR (Accepted) | - | - | [MIL-070], [ADR-0011], [ADR-0024], [MIL-023], [CIS-001] | `as_app` of `ops/scripts/deploy-release.sh`, the second check of `ops/tests/test-sudo-log.sh`, and the sections of the wiki pages Host-Hardening and Database-Preparation (MIL-070 tasks 1 to 3, RC-320) | [RC-320] |
@@ -575,6 +576,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-087]: ../milestones/mil-087-limits-on-what-one-sender-can-ask.md
 [MIL-088]: ../milestones/mil-088-a-booking-verified-by-email.md
 [MIL-089]: ../milestones/mil-089-the-booking-flow-attacked-and-measured.md
+[MIL-090]: ../milestones/mil-090-scan-findings-of-19-november.md
 [RC-410]: ./reviews/rc-410-mil-085.md
 [RC-411]: ./reviews/rc-411-mil-086.md
 [RC-412]: ./reviews/rc-412-mil-087.md
@@ -592,5 +594,6 @@ updated whenever an artifact instance is created or reviewed.
 [RC-421]: ./reviews/rc-421-adr-0050-where-the-rules-live.md
 [RC-423]: ./reviews/rc-423-mil-086-documents.md
 [RC-424]: ./reviews/rc-424-mil-086-code.md
-[3eb436c]: https://github.com/NF-Hotel/NFHotel/commit/3eb436c17387d2a967beb61f23a78d43f10d8648
+[RC-445]: ./reviews/rc-445-mil-090.md
 [7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81
+[b7687d5]: https://github.com/NF-Hotel/NFHotel/commit/b7687d524f90b010060d8312fa7456914816a889
