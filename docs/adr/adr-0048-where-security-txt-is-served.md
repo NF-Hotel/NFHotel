@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-18 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-084, whose amended plan S01 accepted in chat on 2026-11-18 (RC-400, Go); written by the AI in supervised mode and reviewed in RC-402; accepted with the exceptions E1 to E4 on 2026-11-19 by the AI as stand-in for S01, after S01 switched MIL-084 to autonomous mode in chat ("Automode og deploy") | [3b63129] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Decision 6 and the consequences: the weekly look leaves out the Strict-Transport-Security of the front page, which the edge answers to a runner of GitHub by itself, so the look failed although the site sends the same value (found at the gate of MIL-084 on 2026-11-19); decisions 2 and 5 say who compares the two values; RC-405, Go; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Decision 6 and the consequences: the weekly look leaves out the Strict-Transport-Security of the front page, which the edge answers to a runner of GitHub by itself, so the look failed although the site sends the same value (found at the gate of MIL-084 on 2026-11-19); decisions 2 and 5 say who compares the two values; RC-405, Go; mode autonomous, not independent | [2d9c1c8] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -269,3 +269,4 @@ route in git, tested in continuous integration) and compatibility (the format of
 [RC-402]: ../sqa/reviews/rc-402-adr-0048.md
 [RC-405]: ../sqa/reviews/rc-405-the-weekly-look-without-the-front-page.md
 [3b63129]: https://github.com/NF-Hotel/NFHotel/commit/3b6312966875c845a2881da6dc02f9729e0e184e
+[2d9c1c8]: https://github.com/NF-Hotel/NFHotel/commit/2d9c1c8c7d201ea0c6b9aaf8cf8ecb6c6dc3c24b

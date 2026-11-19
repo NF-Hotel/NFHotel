@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; Go; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; Go; mode autonomous, not independent | [2d9c1c8] |
 
 ---
 
@@ -145,3 +145,4 @@ reviewer is not independent, and the decision is named in the summary of the run
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [QC-ADR-001]: ../../../framework/qc/artifacts/qc-adr.md
+[2d9c1c8]: https://github.com/NF-Hotel/NFHotel/commit/2d9c1c8c7d201ea0c6b9aaf8cf8ecb6c6dc3c24b

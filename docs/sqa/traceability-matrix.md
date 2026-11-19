@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0048], task 1 of MIL-084 (RC-402, Go), and the code and the documents of tasks 2 to 6 (RC-403, Go-with-conditions) on rows of their own, and the downstream of MIL-084; prepared in supervised mode, then accepted by the AI as stand-in for S01 after S01 switched MIL-084 to autonomous mode in chat on 2026-11-19 | [870014d] |
-| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The weekly look of MIL-084 without the front page, and decision 6 of [ADR-0048] with it (RC-405, Go; mode autonomous, not independent) | pending |
+| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The weekly look of MIL-084 without the front page, and decision 6 of [ADR-0048] with it (RC-405, Go; mode autonomous, not independent) | [2d9c1c8] |
 
 ---
 
@@ -579,3 +579,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-413]: ./reviews/rc-413-mil-088.md
 [RC-414]: ./reviews/rc-414-bc-001-booking-flow.md
 [RC-415]: ./reviews/rc-415-mil-089.md
+[2d9c1c8]: https://github.com/NF-Hotel/NFHotel/commit/2d9c1c8c7d201ea0c6b9aaf8cf8ecb6c6dc3c24b
