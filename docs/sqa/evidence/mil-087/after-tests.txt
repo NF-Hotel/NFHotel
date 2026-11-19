@@ -1,0 +1,65 @@
+# MIL-087 tasks 2 to 7: the whole run after the code and the fixes of the code review RC-428, on the branch
+# mil-087-sender-limits (the code of b626fdbf merged with main at 84ab63f4, and the fixes of the review, not yet
+# committed), in the worktree of the build session, 2026-11-19, on this machine (Windows, .NET SDK 10). The
+# infrastructure tests ran against PostgreSQL in a container. The browser tests (E2E), the baseline scan, CodeQL
+# and the coverage floor run in NF Hotel CI on the pull request; the check of the throwaway stack is in
+# stack-check.txt.
+# dotnet build NFHotel.sln -c Release -warnaserror
+    0 Warning(s)
+    0 Error(s)
+# dotnet test --project tests/NFHotel.Domain.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 719
+  failed: 0
+  succeeded: 719
+  skipped: 0
+# dotnet test --project tests/NFHotel.Application.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 790
+  failed: 0
+  succeeded: 790
+  skipped: 0
+# dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 699
+  failed: 0
+  succeeded: 699
+  skipped: 0
+# dotnet test --project tests/NFHotel.ApiClient.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 122
+  failed: 0
+  succeeded: 122
+  skipped: 0
+# dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 291
+  failed: 0
+  succeeded: 291
+  skipped: 0
+# dotnet test --project tests/NFHotel.Web.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 917
+  failed: 0
+  succeeded: 917
+  skipped: 0
+# dotnet format whitespace NFHotel.sln --verify-no-changes --no-restore
+exit 0
+# bash ops/tests/lint.sh (actionlint, shellcheck, shfmt and yamllint in their pinned containers)
+==> layout (ADR-0016)
+PASS  one copy of the operations, in ops/ (ADR-0016)
+==> actionlint
+==> shellcheck
+==> shfmt
+==> yamllint
+==> all linters are clean
+# bash ops/tests/check-monitoring.sh, from WSL (promtool test rules holds the two alerts of MIL-087)
+PASS  promtool check config
+PASS  promtool test rules
+PASS  amtool check-config
+PASS  loki -verify-config
+PASS  blackbox_exporter --config.check
+PASS  alloy fmt
+PASS  Grafana dashboards are JSON
+# bash ops/tests/test-wiki-coverage.sh
+126 passed, 0 failed

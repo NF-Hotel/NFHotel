@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-087, written by the AI before any code<br>Go in RC-426; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [a3edc6d] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-087, written by the AI before any code<br>Go in RC-426; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [a3edc6d] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Second version, after the code review RC-428 of MIL-087: decision 2 says that a refusal by the limit per email keeps the counts per address; decision 4 says what the forwarded headers of the web application do, and that the sign-in limit of the mobile app counts a whole address; decision 5 says what a full store drops for each kind of key, and caps a limit at 100,000; two negative consequences<br>Go in RC-429; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -129,8 +130,10 @@ IPv6 address by its first 64 bits):
 - A window opens with the first request that it counts and runs its length, as the windows of [ADR-0049] do.
 - A booking request counts when it has passed the rules of the fields: the attribute rules of the request type
   refuse a bad value before the count, and a request that a rule of the use case refuses with 400 or 422 gets its
-  count back. The check and the count are one atomic step, so requests sent at the same time cannot all pass the check
-  before any of them is counted; a refused request counts in no window.
+  count back. A request that the limit per email of decision 3 refuses keeps its count: it is refused by a limit, not
+  by a rule, so a sender who tries one email after another is still counted per address. The check and the count are
+  one atomic step, so requests sent at the same time cannot all pass the check before any of them is counted; a
+  request that a limit per address refuses counts in no window.
 - Staff are counted only by the search: they book through their own endpoint, and they search from the back office,
   behind other addresses than the guests, so 60 a minute does not stop them.
 - A refusal is status 429 with the one code `booking.too_many_requests`, the one text of the pages, and `Retry-After`
@@ -159,7 +162,11 @@ code and text as the limits per address, without `Retry-After`, because it has n
   networks ([ADR-0028]). The optional route to the API sets it too.
 - The web application reads the header only from a peer in the networks of the stack (loopback and the private ranges
   that Docker uses: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), and only a valid address; otherwise it takes the
-  address of the connection, as in development without nginx. A middleware after the authentication adds the address
+  address of the connection, as in development without nginx. In the deployment the web application takes forwarded
+  headers (`ASPNETCORE_FORWARDEDHEADERS_ENABLED`), which trust any peer and take the last entry of `X-Forwarded-For`,
+  the one nginx added. So the address of its connection, and the peer that the check sees, is already the address
+  that nginx saw, not the address of nginx; both ways give that address, because nginx writes both headers and is the
+  only peer: the web application publishes no port. A middleware after the authentication adds the address
   to the user of every request as the one claim of an identity without authentication, so the user stays who they
   were. The address reaches a circuit as the staff token does: Blazor fills the authentication state of the circuit
   from the user of its connection. The web application reads the address from the authentication state, on a static
@@ -171,14 +178,25 @@ code and text as the limits per address, without `Retry-After`, because it has n
   headers that the API takes only from loopback and the three private ranges, and only their last entry, the one
   nginx added. `HttpCallerAddress` is the one reader: the audit trail, the limits of [ADR-0049] and the limits of this
   record use its value.
+- The sign-in limit per address of the mobile app ([ADR-0015]) reads the address of the connection as before and
+  counts it whole, an IPv6 address too, not by the key of 64 bits of [ADR-0049] decision 6. It is outside the booking
+  flow and unchanged here; its limit per user name holds whatever the address.
 - The key `unknown` of [ADR-0049] stays only for a host without the address of a connection, the in-memory server of
   the tests; through nginx every request has an address.
 
 **5. Where the counts live.** The counts per address are in the memory of the API, in stores with a bound: one for
 the minute of the searches, one each for the hour and the day of the booking requests, with at most 10,000 keys each
 (`SenderLimits:MaxTrackedKeys`). The bounded store of [ADR-0049] becomes one shared class, so the guest sign-in and
-these limits use one implementation: when a store is full it drops the window that gives back least, never a window
-at its limit, and a new key is refused only while every window is at its limit. A restart of the API clears the
+these limits use one implementation. When a store is full it drops the window that gives back least, never a window
+at its limit while another is below it. When every window is at its limit, the kind of key decides:
+
+- The store of booking references of [ADR-0049] refuses the new key and counts it nowhere, so a flood of new
+  references cannot free a reference whose tries are used up.
+- A store of caller addresses (the three of this record and the one of [ADR-0049]) drops the window that runs out
+  first, so a sender with more addresses than the store holds cannot make it refuse every other caller.
+
+A store counts up to its limit in one list for each count, so a limit above 100,000 is a mistake of the setup: a
+setting above it, like one below one, stops the start-up and names the setting. A restart of the API clears the
 counts; the count per email lives in the database and survives it.
 
 **6. Security events, counters and alerts.**
@@ -221,6 +239,14 @@ the public host name (option B), then Turnstile on the booking page (option C), 
   stranger that an email has three coming bookings, nothing more.
 - Bookings made before the deploy do not count per email.
 - Every request of the web application carries one more identity in its user.
+- A sender with very many addresses can still lock out the guest sign-in for a while: filling the store of references
+  with used-up windows takes about 50,000 failed sign-ins in 15 minutes from 2,500 or more addresses (or networks of
+  64 bits), and then a reference without a window waits until windows run out. The store of references stays
+  closed, because freeing a used-up reference would give a guesser new tries. The failed sign-ins show in the counter
+  as `guest_lookup_failed`, which no alert watches; `BookingFlowRefusals` fires only when more than 20 sign-ins are
+  refused in 10 minutes.
+- The sign-in limit of the mobile app counts a whole IPv6 address, so a sender with a network of 64 bits gets many
+  addresses there; its limit per user name still holds.
 - Quality attributes: security (ASVS 2.1.3, 2.3.2, 2.4.1, 4.1.3, 15.3.4, V16.3) and availability gain; interaction
   capability loses a little for guests behind a shared address; maintainability gains from one table and one store.
 
@@ -232,7 +258,7 @@ the public host name (option B), then Turnstile on the booking page (option C), 
 - [ADR-0050] — the category of its security events gets three kinds
 - [ADR-0004] — stands: the service token now also vouches for the address header
 - [ADR-0015] — the mobile app keeps its sign-in limit per address; its address comes from forwarded headers of the
-  networks of the stack only
+  networks of the stack only, and is counted whole, not by its first 64 bits
 - [ADR-0017] — the audit trail records the address that nginx saw
 - [ADR-0023] — one more meter
 - [ADR-0028] — nginx sets the header on the public listener
