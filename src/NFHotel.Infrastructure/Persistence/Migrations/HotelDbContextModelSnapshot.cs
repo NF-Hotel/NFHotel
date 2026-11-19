@@ -18,7 +18,7 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "btree_gist");
@@ -402,6 +402,12 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("guest_id");
 
+                    b.Property<Guid>("Reference")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("reference")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
                     b.Property<int>("RoomId")
                         .HasColumnType("integer")
                         .HasColumnName("room_id");
@@ -431,6 +437,10 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("GuestId")
                         .HasDatabaseName("ix_booking_guest_id");
+
+                    b.HasIndex("Reference")
+                        .IsUnique()
+                        .HasDatabaseName("ux_booking_reference");
 
                     b.HasIndex("RoomId")
                         .HasDatabaseName("ix_booking_room_id");

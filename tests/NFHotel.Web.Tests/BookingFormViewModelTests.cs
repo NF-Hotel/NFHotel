@@ -80,7 +80,7 @@ public sealed class BookingFormViewModelTests
         Assert.True(viewModel.IsOpen);
         Assert.Equal(BookingFormMode.Create, viewModel.Mode);
         Assert.Null(viewModel.BookingId);
-        Assert.Null(viewModel.BookingNumber);
+        Assert.Null(viewModel.Reference);
         Assert.Null(viewModel.SelectedRoomId);
         Assert.Empty(viewModel.AvailableRooms);
         Assert.Equal(Today.AddDays(3), viewModel.CheckInDate);
@@ -119,7 +119,7 @@ public sealed class BookingFormViewModelTests
         await viewModel.BeginRescheduleAsync(BookingItem(7), Token);
 
         Assert.Equal(BookingFormMode.Reschedule, viewModel.Mode);
-        Assert.Equal("Reschedule booking B-0007", viewModel.Title);
+        Assert.Equal($"Reschedule booking {ReferenceOf(7)}", viewModel.Title);
         Assert.Equal(1, viewModel.SelectedRoomId);
         Assert.True(viewModel.HasSearchedRooms);
         Assert.Equal(2, viewModel.AvailableRooms.Count);
@@ -296,7 +296,7 @@ public sealed class BookingFormViewModelTests
 
         Assert.True(viewModel.SavedSuccessfully);
         Assert.False(viewModel.IsOpen);
-        Assert.Equal("Booking B-0009 was created.", viewModel.SuccessMessage);
+        Assert.Equal($"Booking {ReferenceOf(9)} was created.", viewModel.SuccessMessage);
         await _bookings.Received(1).CreateAsync(
             new CreateBookingRequest(Today, Today.AddDays(1), 2, 4, null),
             Arg.Any<CancellationToken>());
@@ -346,7 +346,7 @@ public sealed class BookingFormViewModelTests
 
         await viewModel.SaveAsync(Token);
 
-        Assert.Equal("Booking B-0007 was moved to the new dates.", viewModel.SuccessMessage);
+        Assert.Equal($"Booking {ReferenceOf(7)} was moved to the new dates.", viewModel.SuccessMessage);
         await _bookings.Received(1).RescheduleAsync(
             new RescheduleBookingRequest(7, Today, Today.AddDays(5), 1),
             Arg.Any<CancellationToken>());

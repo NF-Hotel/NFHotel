@@ -81,6 +81,21 @@ public sealed class BookingListViewModelTests
             Arg.Any<CancellationToken>());
     }
 
+    /// <summary>Edge (review RC-418): search text with spaces or a line end around it, as a pasted reference has, is sent trimmed.</summary>
+    [Fact]
+    public async Task SearchAsync_TextWithSpacesAround_SendsTheTrimmedText()
+    {
+        OverviewIs();
+        BookingListViewModel viewModel = Create();
+        viewModel.SearchText = " 3f2504e0-4f89-41d3-9a0c-0305e82c3301\n";
+
+        await viewModel.SearchAsync(Token);
+
+        await _bookings.Received(1).GetOverviewAsync(
+            Arg.Is<BookingOverviewQuery>(query => query.SearchText == "3f2504e0-4f89-41d3-9a0c-0305e82c3301"),
+            Arg.Any<CancellationToken>());
+    }
+
     /// <summary>Error handling: a refused load shows the text and empties the list.</summary>
     [Fact]
     public async Task SearchAsync_Refused_ShowsTheErrorAndEmptiesTheList()

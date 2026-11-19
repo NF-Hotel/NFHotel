@@ -66,13 +66,13 @@ public sealed class BookingFormViewModel
     /// <summary>The booking being rescheduled, or <c>null</c> on creation.</summary>
     public int? BookingId { get; private set; }
 
-    /// <summary>The number of the booking being rescheduled, for the heading (BR-109).</summary>
-    public string? BookingNumber { get; private set; }
+    /// <summary>The reference of the booking being rescheduled, for the heading (BR-109, ADR-0049).</summary>
+    public Guid? Reference { get; private set; }
 
     /// <summary>The heading of the form.</summary>
     public string Title => Mode == BookingFormMode.Create
         ? "New booking"
-        : $"Reschedule booking {BookingNumber}";
+        : $"Reschedule booking {Reference}";
 
     /// <summary>Arrival date, inclusive.</summary>
     public DateOnly CheckInDate { get; set; }
@@ -183,7 +183,7 @@ public sealed class BookingFormViewModel
 
         Mode = BookingFormMode.Create;
         BookingId = null;
-        BookingNumber = null;
+        Reference = null;
         CheckInDate = _clock.Today;
         CheckOutDate = _clock.Today.AddDays(1);
         IsOpen = true;
@@ -224,7 +224,7 @@ public sealed class BookingFormViewModel
 
         Mode = BookingFormMode.Reschedule;
         BookingId = booking.BookingId;
-        BookingNumber = booking.BookingNumber;
+        Reference = booking.Reference;
         CheckInDate = booking.StartDate;
         CheckOutDate = booking.EndDate;
         SelectedRoomId = booking.RoomId;
@@ -423,8 +423,8 @@ public sealed class BookingFormViewModel
             Errors = Array.Empty<string>();
             SavedSuccessfully = true;
             SuccessMessage = Mode == BookingFormMode.Create
-                ? $"Booking {booking.BookingNumber} was created."
-                : $"Booking {booking.BookingNumber} was moved to the new dates.";
+                ? $"Booking {booking.Reference} was created."
+                : $"Booking {booking.Reference} was moved to the new dates.";
 
             var message = SuccessMessage;
 

@@ -6,7 +6,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// A booking as it is shown in the overview.
 /// </summary>
 /// <param name="BookingId">The booking id.</param>
-/// <param name="BookingNumber">Displayed booking number, for example <c>FLZ-000123</c> (BR-109).</param>
+/// <param name="Reference">The reference that names the booking to the guest and to staff (BR-109, ADR-0049).</param>
 /// <param name="StartDate">Arrival date.</param>
 /// <param name="EndDate">Booked departure date. History — never changed by a check-out (A-01).</param>
 /// <param name="EffectiveEndDate">
@@ -26,7 +26,7 @@ namespace NFHotel.Application.Dto.Bookings;
 /// <param name="Actions">Which actions are legal right now (BR-22).</param>
 public sealed record BookingListItemDto(
     int BookingId,
-    string BookingNumber,
+    Guid Reference,
     DateOnly StartDate,
     DateOnly EndDate,
     DateOnly EffectiveEndDate,

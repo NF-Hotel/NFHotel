@@ -1,25 +1,31 @@
 #!/usr/bin/env bash
-# Check the guest sign-in of MIL-018 (ADR-0047) on a deployed NF Hotel site, the way a
-# browser uses it: the sign-in page answers; a wrong email is refused and sets no cookie; the
-# booking number with the right email signs the guest in with the cookie nfhotel.guest, which
-# is Secure, HttpOnly, SameSite=Lax, sent only to /my-booking and ends with the session; the
-# own booking opens; with --cancel the booking is cancelled; the sign-out removes the cookie,
-# and the own booking then asks for the sign-in again. Task 7 of MIL-018 runs it after the
-# deploy, with a booking made for the test on /book (criterion 5).
+# Check the guest sign-in of MIL-018 (ADR-0047, and since MIL-085 ADR-0049) on a deployed NF
+# Hotel site, the way a browser uses it: the sign-in page answers and asks for the booking
+# reference; an old address with a booking number goes to the empty sign-in; a wrong email
+# and an old booking number with the right email are refused and set no cookie; the reference
+# with the right email signs the guest in with the cookie nfhotel.guest, which is Secure,
+# HttpOnly, SameSite=Lax, sent only to /my-booking and ends with the session; the own booking
+# opens with its reference; with --cancel the booking is cancelled; the sign-out removes the
+# cookie, and the own booking then asks for the sign-in again. MIL-018 task 7 and MIL-085
+# task 6 run it after the deploy, with a booking made for the test on /book.
 #
-# Each run makes one failed attempt for the booking number (the wrong email). Five failures
-# within 15 minutes stop the number for 15 minutes (HTTP 429), so wait between many runs.
+# Each run makes two failed tries (the wrong email and the old number), which count against
+# the address of the caller: twenty failed tries within 15 minutes stop the address for the
+# rest of the window (HTTP 429), so wait between many runs. The right email afterwards clears
+# the count of the reference (ADR-0049 decision 6).
 #
-# Usage: check-guest-login.sh [--cancel] [--insecure] <site> <booking number>
-#   <site>            the address of the site, for example https://nfhotel.devmatiker.com
-#   <booking number>  the number of the test booking as the receipt shows it (FLZ-000123)
-#   --cancel          also cancel the booking, which cannot be undone; without it the
-#                     booking stays as it is
-#   --insecure        accept a certificate that is not trusted, such as the development
-#                     certificate of a VM; the cookie must still be Secure
-# Env:   GUEST_EMAIL  the email of the booking; when it is not set, the script asks for it,
-#                     so the email is never on a command line
-# Exit:  0 every check passed; 1 a check failed or the email is missing; 2 usage error
+# Usage: check-guest-login.sh [--cancel] [--insecure] <site> <booking reference>
+#   <site>               the address of the site, for example https://nfhotel.devmatiker.com
+#   <booking reference>  the reference of the test booking as the receipt shows it, 36
+#                        letters and digits in five groups
+#   --cancel             also cancel the booking, which cannot be undone; without it the
+#                        booking stays as it is
+#   --insecure           accept a certificate that is not trusted, such as the development
+#                        certificate of a VM; the cookie must still be Secure
+# Env:   GUEST_EMAIL     the email of the booking; when it is not set, the script asks for
+#                        it, so the email is never on a command line
+# Exit:  0 every check passed; 1 a check failed, or the site, the reference or the email
+#        cannot be used; 2 usage error
 # Needs: bash 4+, curl, grep, sed, mktemp
 
 set -euo pipefail
@@ -30,6 +36,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly COOKIE=nfhotel.guest
 readonly REFUSAL="find that booking"
 readonly CANCELLED="Your booking is cancelled."
+readonly OLD_NUMBER=FLZ-000001
+readonly REFERENCE_FORM='^[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}$'
 
 is_cancel=0
 is_insecure=0
@@ -55,11 +63,12 @@ done
   exit 2
 }
 site="${positional[0]%/}"
-number="${positional[1]}"
+reference="${positional[1]}"
 [[ "$site" =~ ^https?://[^/]+$ ]] || die "the site must be an address such as https://nfhotel.devmatiker.com, not $site"
+[[ "$reference" =~ $REFERENCE_FORM ]] || die "the booking reference has 36 letters and digits in five groups, as the receipt shows it"
 email="${GUEST_EMAIL:-}"
 if [[ -z "$email" && -t 0 ]]; then
-  read -r -p "Email of booking $number: " email
+  read -r -p "Email of booking $reference: " email
 fi
 [[ -n "$email" ]] || die "set GUEST_EMAIL to the email of the booking, or run the script in a terminal"
 
@@ -129,27 +138,38 @@ cookie_attributes() {
   echo "${found[*]}"
 }
 
-echo "==> the guest sign-in on $site for booking $number"
+echo "==> the guest sign-in on $site for booking $reference"
 check "the sign-in page answers" 200 "$(fetch /booking "$work/signin.html")"
 token="$(hidden_value "$work/signin.html" __RequestVerificationToken)"
 handler="$(hidden_value "$work/signin.html" _handler)"
-number_field="$(input_name "$work/signin.html" booking-number)"
+reference_field="$(input_name "$work/signin.html" booking-reference)"
 email_field="$(input_name "$work/signin.html" booking-email)"
 check "the sign-in page has its form" "guest-sign-in yes" \
-  "$handler $([[ -n "$token" && -n "$number_field" && -n "$email_field" ]] && echo yes)"
-form=("_handler=$handler" "__RequestVerificationToken=$token" "$number_field=$number")
+  "$handler $([[ -n "$token" && -n "$reference_field" && -n "$email_field" ]] && echo yes)"
+check "the sign-in page names no booking number" no "$(grep -qiE 'booking number|its number|FLZ-' "$work/signin.html" && echo yes || echo no)"
+check "an old address with a booking number goes to the empty sign-in" "302 /booking" \
+  "$(curl "${curl_options[@]}" --output /dev/null --write-out '%{http_code} %{redirect_url}' "$site/booking/$OLD_NUMBER" |
+    sed "s#$site##")"
+base=("_handler=$handler" "__RequestVerificationToken=$token")
+form=("${base[@]}" "$reference_field=$reference")
 
 check "a wrong email is refused on the page" 200 "$(post /booking wrong "${form[@]}" "$email_field@$work/wrong")"
 check "the refusal says that the booking was not found" yes "$(grep -qF "$REFUSAL" "$work/wrong.html" && echo yes)"
 check "a wrong email sets no guest cookie" none "$(cookie_attributes wrong)"
 
-check "the number and the email sign the guest in" "302 /my-booking" \
+check "an old booking number with the right email is refused" 200 \
+  "$(post /booking old "${base[@]}" "$reference_field=$OLD_NUMBER" "$email_field@$work/email")"
+check "the old number gets the same refusal" yes "$(grep -qF "$REFUSAL" "$work/old.html" && echo yes)"
+check "an old booking number sets no guest cookie" none "$(cookie_attributes old)"
+
+check "the reference and the email sign the guest in" "302 /my-booking" \
   "$(post /booking right "${form[@]}" "$email_field@$work/email")"
 check "the guest cookie is Secure, HttpOnly, SameSite=Lax, for /my-booking, and ends" \
   "secure httponly samesite=lax path=/my-booking expires=" "$(cookie_attributes right)"
 
 check "the own booking opens" 200 "$(fetch /my-booking "$work/own.html")"
-check "the own booking shows its number" yes "$(grep -qF "$number" "$work/own.html" && echo yes)"
+check "the own booking shows its reference" yes "$(grep -qiF "$reference" "$work/own.html" && echo yes)"
+check "the own booking shows no email" no "$(grep -qiF "$email" "$work/own.html" && echo yes || echo no)"
 token="$(hidden_value "$work/own.html" __RequestVerificationToken)"
 
 if ((is_cancel)); then

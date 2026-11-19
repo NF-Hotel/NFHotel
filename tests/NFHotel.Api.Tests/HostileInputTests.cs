@@ -83,8 +83,8 @@ public sealed class HostileInputTests : IClassFixture<ApiFactory>
     private static readonly Dictionary<string, string> RefusedPlausibleRequests = new(StringComparer.Ordinal)
     {
         ["POST api/auth/login"] = "the plausible user name has no account: 401",
-        ["POST api/bookings/public/receipt"] = "a receipt opens only with the email of the guest of the booking: 404",
-        ["POST api/auth/guest-login"] = "a guest signs in only with the email of the guest of the booking: 401 (MIL-018)",
+        ["POST api/auth/guest-login"] = "a guest signs in only with the reference and the email of a booking, and the plausible reference is no reference: 401 (MIL-018, ADR-0049)",
+        ["POST api/guest/booking/reschedule"] = "a route of the guest refuses the staff token that every request here carries: 403 (ADR-0049 decision 3)",
         ["POST api/price-suggestions/approve"] = "the key names a suggestion of the latest market analysis, and the test world holds none: 404",
         ["PUT api/benchmark/requests/{runId:guid}/state"] = "the state is set on a request that the benchmark tool took, and the test world holds none: 404",
         ["POST api/rooms/{id:int}/complete-service"] = "a service is completed only on a room in service, and the seeded room is not: 422",

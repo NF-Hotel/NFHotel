@@ -44,6 +44,7 @@ builder.Services.AddGuestAuthentication();   // the guest token of the guest sig
 builder.Services.AddHttpContextAccessor();
 builder.Services.Replace(ServiceDescriptor.Scoped<IStaffCallContext, HttpStaffCallContext>());
 builder.Services.Replace(ServiceDescriptor.Scoped<IGuestCallContext, HttpGuestCallContext>());
+builder.Services.Replace(ServiceDescriptor.Scoped<ICallerAddress, HttpCallerAddress>());   // the limits of the guest sign-in (ADR-0049)
 builder.Services.AddStaffWriteRateLimit();
 builder.Services.AddSingleton<AddressLoginThrottle>();   // the limit per client address for the mobile app (ADR-0015)
 builder.Services.AddScoped<LoginAddressLimitFilter>();

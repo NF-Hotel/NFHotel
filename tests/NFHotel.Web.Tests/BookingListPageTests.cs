@@ -65,7 +65,7 @@ public sealed class BookingListPageTests : IAsyncDisposable
         var page = _host.Render<BookingList>();
 
         Assert.Contains("2 bookings in this period", page.Markup, StringComparison.Ordinal);
-        Assert.Contains("B-0001", page.Markup, StringComparison.Ordinal);
+        Assert.Contains(ReferenceOf(1).ToString(), page.Markup, StringComparison.Ordinal);
         Assert.Contains("Checked out", page.Markup, StringComparison.Ordinal);
         Assert.Equal(1, page.FindAll("button").Count(button => button.TextContent.Trim() == "Confirm"));
         Assert.True(page.HasButton("Reschedule"));
@@ -112,9 +112,9 @@ public sealed class BookingListPageTests : IAsyncDisposable
         var page = _host.Render<BookingList>();
 
         page.Button("Cancel").Click();
-        Assert.Contains("Cancel booking B-0001?", page.Markup, StringComparison.Ordinal);
+        Assert.Contains($"Cancel booking {ReferenceOf(1)}?", page.Markup, StringComparison.Ordinal);
         page.Button("Go back").Click();
-        Assert.DoesNotContain("Cancel booking B-0001?", page.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain($"Cancel booking {ReferenceOf(1)}?", page.Markup, StringComparison.Ordinal);
 
         page.Button("Cancel").Click();
         page.Button("Cancel booking").Click();
@@ -141,7 +141,7 @@ public sealed class BookingListPageTests : IAsyncDisposable
         Assert.Contains("No bookings with that status", page.Markup, StringComparison.Ordinal);
 
         page.Button("Show all statuses").Click();
-        Assert.Contains("B-0001", page.Markup, StringComparison.Ordinal);
+        Assert.Contains(ReferenceOf(1).ToString(), page.Markup, StringComparison.Ordinal);
     }
 
     /// <summary>Error handling: a refused load shows the error text.</summary>
@@ -180,7 +180,7 @@ public sealed class BookingListPageTests : IAsyncDisposable
         page.Button("Choose Rita Hansen").Click();
         page.Button("Create booking").Click();
 
-        Assert.Contains("Booking B-0009 was created.", page.Markup, StringComparison.Ordinal);
+        Assert.Contains($"Booking {ReferenceOf(9)} was created.", page.Markup, StringComparison.Ordinal);
         _bookings.Received(1).CreateAsync(new CreateBookingRequest(Today.AddDays(1), Today.AddDays(3), 1, 4, null), Arg.Any<CancellationToken>());
         _bookings.Received(2).GetOverviewAsync(Arg.Any<BookingOverviewQuery>(), Arg.Any<CancellationToken>());
     }
@@ -242,11 +242,11 @@ public sealed class BookingListPageTests : IAsyncDisposable
         var page = _host.Render<BookingList>();
 
         page.Button("Reschedule").Click();
-        Assert.Contains("Reschedule booking B-0001", page.Markup, StringComparison.Ordinal);
+        Assert.Contains($"Reschedule booking {ReferenceOf(1)}", page.Markup, StringComparison.Ordinal);
         Assert.False(page.HasButton("New guest"));
         page.Button("Save new dates").Click();
 
-        Assert.Contains("Booking B-0001 was moved to the new dates.", page.Markup, StringComparison.Ordinal);
+        Assert.Contains($"Booking {ReferenceOf(1)} was moved to the new dates.", page.Markup, StringComparison.Ordinal);
     }
 
     #endregion

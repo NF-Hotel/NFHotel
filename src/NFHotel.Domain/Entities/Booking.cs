@@ -19,8 +19,6 @@ namespace NFHotel.Domain.Entities;
 public sealed class Booking : Entity<int>
 {
     private const string EntityName = "booking";
-    private const string BookingNumberPrefix = "FLZ-";
-    private const string BookingNumberFormat = "D6";
 
     /// <summary>For EF Core. Use <see cref="Create"/> in code.</summary>
     private Booking()
@@ -108,9 +106,10 @@ public sealed class Booking : Entity<int>
     public int NumberOfNights => Period.Nights;
 
     /// <summary>
-    /// Displayed booking number, for example <c>FLZ-000123</c> (BR-109). Derived, never persisted.
+    /// The reference that names the booking to the guest and to staff (BR-109, ADR-0049): a version 4 UUID made when
+    /// the booking is made, apart from the key, which stays inside the system.
     /// </summary>
-    public string BookingNumber => $"{BookingNumberPrefix}{Id.ToString(BookingNumberFormat)}";
+    public Guid Reference { get; private set; }
 
     /// <summary>True if the booking may be confirmed (BR-02, BR-121).</summary>
     public bool CanConfirm => Status == BookingStatus.Pending;
@@ -120,10 +119,10 @@ public sealed class Booking : Entity<int>
         Status == BookingStatus.CheckedIn && CheckInTime is not null && CheckOutTime is null;
 
     /// <summary>True if the booking may be cancelled (BR-11, BR-122).</summary>
-    public bool CanCancel => Status is BookingStatus.Pending or BookingStatus.Confirmed;
+    public bool CanCancel => Status.IsOpen();
 
     /// <summary>True if the dates and the room of the booking may be changed (BR-14, BR-123, A-06).</summary>
-    public bool CanReschedule => Status is BookingStatus.Pending or BookingStatus.Confirmed;
+    public bool CanReschedule => Status.IsOpen();
 
     /// <summary>
     /// Decides whether the booking may be checked in on the given date (BR-06).
@@ -155,6 +154,7 @@ public sealed class Booking : Entity<int>
 
         return new Booking
         {
+            Reference = BookingReference.New(),
             StartDate = period.Start,
             EndDate = period.End,
             RoomId = roomId,

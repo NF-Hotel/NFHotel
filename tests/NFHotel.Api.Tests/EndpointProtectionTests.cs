@@ -8,19 +8,20 @@ using NFHotel.Api.Security;
 namespace NFHotel.Api.Tests;
 
 /// <summary>
-/// No endpoint can be added without a decision about who may call it (ADR-0005): each action of each controller either
-/// carries <see cref="RequiresPermissionAttribute"/> or is on the short list of public endpoints below.
+/// No endpoint can be added without a decision about who may call it (ADR-0005): each action of each controller carries
+/// <see cref="RequiresPermissionAttribute"/> for staff, carries <see cref="RequiresGuestAttribute"/> for the guest of one
+/// booking (ADR-0049), or is on the short list of public endpoints below.
 /// </summary>
 public sealed class EndpointProtectionTests
 {
     /// <summary>
     /// The actions that need only the token of the web application: the public booking flow, the staff and the guest
     /// sign-in, and the read of the default AI models that the market analysis service makes. The read of a booking by id
-    /// is not among them since MIL-079; a guest signs in with the number and the email of the booking instead (MIL-018).
+    /// is not among them since MIL-079, and the older lookup of a receipt is gone since MIL-085; a guest signs in with the
+    /// reference and the email of the booking instead (MIL-018, ADR-0049).
     /// </summary>
     private static readonly string[] PublicActions =
     [
-        "BookingsController.LookUpReceiptAsync",
         "BookingsController.GetAvailableRoomsAsync",
         "BookingsController.CreatePublicAsync",
         "AuthController.LoginAsync",
@@ -31,13 +32,14 @@ public sealed class EndpointProtectionTests
 
     #region Protection
 
-    /// <summary>Every controller action is either on the public list or requires a permission.</summary>
+    /// <summary>Every controller action is on the public list, requires a permission of staff or requires a guest.</summary>
     [Fact]
     public void Controllers_EveryAction_RequiresAPermissionOrIsPublic()
     {
         // Arrange
         var unprotected = ActionsOfTheApi()
             .Where(action => action.GetCustomAttribute<RequiresPermissionAttribute>() is null)
+            .Where(action => action.GetCustomAttribute<RequiresGuestAttribute>() is null)
             .Select(Describe)
             .Except(PublicActions)
             .ToArray();
@@ -73,6 +75,30 @@ public sealed class EndpointProtectionTests
 
         // Act and assert
         Assert.True(both.Length == 0, $"Public and protected at the same time: {string.Join(", ", both)}");
+    }
+
+    /// <summary>
+    /// An action is for staff or for a guest, never for both (ADR-0049 decision 3): no action carries the two attributes,
+    /// and no public action carries the attribute of a guest.
+    /// </summary>
+    [Fact]
+    public void Actions_StaffAndGuest_AreNeverTheSameAction()
+    {
+        // Arrange
+        MethodInfo[] guestActions = ActionsOfTheApi()
+            .Where(action => action.GetCustomAttribute<RequiresGuestAttribute>() is not null)
+            .ToArray();
+
+        // Act
+        string[] both = guestActions
+            .Where(action => action.GetCustomAttribute<RequiresPermissionAttribute>() is not null)
+            .Select(Describe)
+            .Concat(guestActions.Select(Describe).Intersect(PublicActions))
+            .ToArray();
+
+        // Assert
+        Assert.NotEmpty(guestActions);
+        Assert.True(both.Length == 0, $"Guest actions that are also staff or public actions: {string.Join(", ", both)}");
     }
 
     /// <summary>

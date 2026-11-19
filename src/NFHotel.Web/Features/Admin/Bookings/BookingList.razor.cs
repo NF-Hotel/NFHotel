@@ -20,7 +20,7 @@ public partial class BookingList : CancellableComponentBase
 
     /// <summary>The heading in the confirmation of a cancellation.</summary>
     private string CancelTitle =>
-        $"Cancel booking {ViewModel.BookingPendingCancellation?.BookingNumber}?";
+        $"Cancel booking {ViewModel.BookingPendingCancellation?.Reference}?";
 
     /// <summary>The value of <c>?view=</c> that opens the page on the calendar.</summary>
     private const string CalendarView = "calendar";

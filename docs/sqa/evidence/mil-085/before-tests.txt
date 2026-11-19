@@ -1,0 +1,43 @@
+$ dotnet build NFHotel.sln -nologo -clp:NoSummary -v q
+# on the code of main 04c0a878 (branch mil-085-booking-reference at f8cd8968: the decision record only) with the
+# new and changed tests of MIL-085 task 2, 2026-11-19T06:05Z. The build fails: the tests name what the code does
+# not have yet. 36 errors in 3 projects (Domain.Tests 18, ApiClient.Tests 13, TestSupport 5); the test
+# projects that use NFHotel.TestSupport (Application, Infrastructure, Api, Web) are not compiled while it fails.
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(39,30): error CS0103: The name 'BookingReference' does not exist in the current context
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(58,45): error CS1061: 'Booking' does not contain a definition for 'Reference' and no accessible extension method 'Reference' accepting a first argument of type 'Booking' could be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(59,45): error CS1061: 'Booking' does not contain a definition for 'Reference' and no accessible extension method 'Reference' accepting a first argument of type 'Booking' could be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(60,42): error CS1061: 'Booking' does not contain a definition for 'Reference' and no accessible extension method 'Reference' accepting a first argument of type 'Booking' could be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(72,31): error CS1061: 'Booking' does not contain a definition for 'Reference' and no accessible extension method 'Reference' accepting a first argument of type 'Booking' could be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(72,49): error CS1061: 'Booking' does not contain a definition for 'Reference' and no accessible extension method 'Reference' accepting a first argument of type 'Booking' could be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(87,23): error CS0103: The name 'BookingReference' does not exist in the current context
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(91,22): error CS0103: The name 'BookingReference' does not exist in the current context
+tests/NFHotel.Domain.Tests/Bookings/BookingValidationTests.cs(146,33): error CS1061: 'Booking' does not contain a definition for 'Reference' and no accessible extension method 'Reference' accepting a first argument of type 'Booking' could be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.Domain.Tests/Bookings/BookingValidationTests.cs(152,41): error CS1061: 'Booking' does not contain a definition for 'Reference' and no accessible extension method 'Reference' accepting a first argument of type 'Booking' could be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.Domain.Tests/Bookings/BookingValidationTests.cs(153,45): error CS1061: 'Booking' does not contain a definition for 'Reference' and no accessible extension method 'Reference' accepting a first argument of type 'Booking' could be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(99,26): error CS0103: The name 'BookingReference' does not exist in the current context
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(102,21): error CS0103: The name 'BookingReference' does not exist in the current context
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(102,47): error CS0103: The name 'BookingReference' does not exist in the current context
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(124,21): error CS0103: The name 'BookingReference' does not exist in the current context
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(157,21): error CS0103: The name 'BookingReference' does not exist in the current context
+tests/NFHotel.Domain.Tests/Bookings/BookingReferenceTests.cs(172,21): error CS0103: The name 'BookingReference' does not exist in the current context
+tests/NFHotel.Domain.Tests/Bookings/BookingStateMachineTests.cs(422,29): error CS1061: 'BookingStatus' does not contain a definition for 'IsOpen' and no accessible extension method 'IsOpen' accepting a first argument of type 'BookingStatus' could be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.TestSupport/CountingGuestSignInLimits.cs(10,49): error CS0246: The type or namespace name 'IGuestSignInLimits' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.TestSupport/FakeCallerAddress.cs(6,41): error CS0246: The type or namespace name 'ICallerAddress' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.TestSupport/ServiceWorld.cs(360,12): error CS0246: The type or namespace name 'IGuestSignInLimits' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.TestSupport/ServiceWorld.cs(384,50): error CS0246: The type or namespace name 'IGuestSignInLimits' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.TestSupport/ServiceWorld.cs(391,12): error CS0246: The type or namespace name 'GuestBookingService' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(130,72): error CS0246: The type or namespace name 'GuestSignInRequest' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(139,26): error CS7036: There is no argument given that corresponds to the required parameter 'BookingId' of 'GuestSessionDto.GuestSessionDto(string, DateTimeOffset, int)'
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(154,72): error CS0246: The type or namespace name 'GuestSignInRequest' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(165,54): error CS7036: There is no argument given that corresponds to the required parameter 'BookingId' of 'GuestSessionDto.GuestSessionDto(string, DateTimeOffset, int)'
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(217,9): error CS0246: The type or namespace name 'ApiGuestBookingService' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(235,9): error CS0246: The type or namespace name 'ApiGuestBookingService' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(252,9): error CS0246: The type or namespace name 'ApiGuestBookingService' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(255,43): error CS0246: The type or namespace name 'GuestRescheduleRequest' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(270,9): error CS0246: The type or namespace name 'ApiGuestBookingService' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(278,47): error CS0246: The type or namespace name 'GuestRescheduleRequest' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(291,9): error CS0246: The type or namespace name 'ApiGuestBookingService' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(294,56): error CS0246: The type or namespace name 'ApiGuestBookingService' could not be found (are you missing a using directive or an assembly reference?)
+tests/NFHotel.ApiClient.Tests/GuestGatewayTests.cs(318,13): error CS1503: Argument 1: cannot convert from 'System.Guid' to 'string'
+Build FAILED.
+exit 1

@@ -1,6 +1,6 @@
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Errors;
-using NFHotel.Application.UseCases.Bookings;
+using NFHotel.Application.UseCases.Guests;
 using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Features.Booking;
 
@@ -9,33 +9,60 @@ using NSubstitute;
 namespace NFHotel.Web.Tests;
 
 /// <summary>
-/// The presentation logic of the guest's own booking on <c>/my-booking</c> (MIL-018, UC-010): the receipt, the change of
-/// dates in the same room, the cancellation, and the result after a change.
+/// The presentation logic of the guest's own booking on <c>/my-booking</c> (MIL-018, UC-010, and since MIL-085 ADR-0049):
+/// the receipt, the change of dates in the same room, the cancellation, and the result after a change. No call names a
+/// booking: the API answers for the booking in the guest token.
 /// </summary>
 public sealed class MyBookingViewModelTests
 {
-    private readonly IBookingService _bookings = Substitute.For<IBookingService>();
+    private readonly IGuestBookingService _bookings = Substitute.For<IGuestBookingService>();
 
     #region Load
 
-    /// <summary>Positive: the booking in the cookie is read, with its receipt and the actions it allows now.</summary>
+    /// <summary>Positive: the booking of the guest is read, with its receipt and the actions its status allows.</summary>
     [Fact]
-    public async Task LoadAsync_OwnBooking_ShowsTheBookingAndItsActions()
+    public async Task LoadAsync_OwnBooking_ShowsTheReceiptAndItsActions()
     {
         // Arrange
-        _bookings.GetByIdAsync(7, Arg.Any<CancellationToken>()).Returns(AdminSamples.Ok(AdminSamples.BookingDetails(7)));
+        _bookings.GetAsync(Arg.Any<CancellationToken>()).Returns(AdminSamples.Ok(AdminSamples.Receipt(7)));
         MyBookingViewModel viewModel = Create();
 
         // Act
-        await viewModel.LoadAsync(7, null, TestContext.Current.CancellationToken);
+        await viewModel.LoadAsync(null, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(7, viewModel.Booking?.BookingId);
-        Assert.Equal("B-0007", viewModel.Receipt?.BookingNumber);
+        Assert.Equal(AdminSamples.Receipt(7), viewModel.Receipt);
+        Assert.Equal(AdminSamples.ReferenceOf(7), viewModel.Receipt?.Reference);
         Assert.True(viewModel.CanCancel);
         Assert.True(viewModel.CanReschedule);
         Assert.Empty(viewModel.Errors);
         Assert.Null(viewModel.Notice);
+    }
+
+    /// <summary>
+    /// Equivalence (ADR-0049 decision 7): the page offers the move and the cancellation for an open booking only, by the
+    /// rule of the domain, so a guest is not shown a button the API would refuse.
+    /// </summary>
+    /// <param name="status">The status of the booking.</param>
+    /// <param name="open">Whether the booking may still be moved and cancelled.</param>
+    [Theory]
+    [InlineData(BookingStatus.Pending, true)]
+    [InlineData(BookingStatus.Confirmed, true)]
+    [InlineData(BookingStatus.CheckedIn, false)]
+    [InlineData(BookingStatus.CheckedOut, false)]
+    [InlineData(BookingStatus.Cancelled, false)]
+    public async Task LoadAsync_AnyStatus_OffersTheChangesOfAnOpenBookingOnly(BookingStatus status, bool open)
+    {
+        // Arrange
+        _bookings.GetAsync(Arg.Any<CancellationToken>()).Returns(AdminSamples.Ok(AdminSamples.Receipt(7, status)));
+        MyBookingViewModel viewModel = Create();
+
+        // Act
+        await viewModel.LoadAsync(null, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(open, viewModel.CanCancel);
+        Assert.Equal(open, viewModel.CanReschedule);
     }
 
     /// <summary>Equivalence: the word in the address after a change gives its notice; any other word gives none.</summary>
@@ -49,29 +76,28 @@ public sealed class MyBookingViewModelTests
     public async Task LoadAsync_ResultInTheAddress_ShowsItsNoticeOnly(string? result, string? notice)
     {
         // Arrange
-        _bookings.GetByIdAsync(7, Arg.Any<CancellationToken>()).Returns(AdminSamples.Ok(AdminSamples.BookingDetails(7)));
+        _bookings.GetAsync(Arg.Any<CancellationToken>()).Returns(AdminSamples.Ok(AdminSamples.Receipt(7)));
         MyBookingViewModel viewModel = Create();
 
         // Act
-        await viewModel.LoadAsync(7, result, TestContext.Current.CancellationToken);
+        await viewModel.LoadAsync(result, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(notice, viewModel.Notice);
     }
 
-    /// <summary>Negative: a refused read shows the text of the refusal, no booking, no actions and no notice.</summary>
+    /// <summary>Negative: a refused read shows the text of the refusal, no receipt, no actions and no notice.</summary>
     [Fact]
-    public async Task LoadAsync_Refused_ShowsTheErrorAndNoBooking()
+    public async Task LoadAsync_Refused_ShowsTheErrorAndNoReceipt()
     {
         // Arrange
-        _bookings.GetByIdAsync(7, Arg.Any<CancellationToken>()).Returns(AdminSamples.Fail<BookingDetailsDto>(ErrorCodes.Api.GuestUnauthorized));
+        _bookings.GetAsync(Arg.Any<CancellationToken>()).Returns(AdminSamples.Fail<BookingReceiptDto>(ErrorCodes.Api.GuestUnauthorized));
         MyBookingViewModel viewModel = Create();
 
         // Act
-        await viewModel.LoadAsync(7, MyBookingViewModel.CancelledResult, TestContext.Current.CancellationToken);
+        await viewModel.LoadAsync(MyBookingViewModel.CancelledResult, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Null(viewModel.Booking);
         Assert.Null(viewModel.Receipt);
         Assert.False(viewModel.CanCancel);
         Assert.False(viewModel.CanReschedule);
@@ -79,15 +105,11 @@ public sealed class MyBookingViewModelTests
         Assert.Equal([AdminSamples.Text(ErrorCodes.Api.GuestUnauthorized)], viewModel.Errors);
     }
 
-    /// <summary>Negative: a key below one is a programming error, and the runner is required.</summary>
+    /// <summary>Negative: the runner is required.</summary>
     [Fact]
-    public async Task LoadAsync_InvalidKeyOrMissingRunner_Throws()
+    public void Constructor_MissingRunner_Throws()
     {
-        // Arrange
-        MyBookingViewModel viewModel = Create();
-
         // Act and assert: the null-forgiving operator passes the null that the guard must refuse.
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => viewModel.LoadAsync(0, null, TestContext.Current.CancellationToken));
         Assert.Throws<ArgumentNullException>(() => new MyBookingViewModel(null!));
     }
 
@@ -95,39 +117,38 @@ public sealed class MyBookingViewModelTests
 
     #region Cancel
 
-    /// <summary>Positive: the cancellation is of the booking that was read, and the page keeps the cancelled booking.</summary>
+    /// <summary>Positive: the cancellation is of the booking of the guest, and the page keeps the cancelled receipt.</summary>
     [Fact]
     public async Task CancelAsync_LoadedBooking_CancelsItAndKeepsTheAnswer()
     {
         // Arrange
         MyBookingViewModel viewModel = await LoadedAsync();
-        _bookings.CancelAsync(7, Arg.Any<CancellationToken>())
-            .Returns(AdminSamples.Ok(AdminSamples.BookingDetails(7, BookingStatus.Cancelled) with { Actions = AdminSamples.NoActions }));
+        _bookings.CancelAsync(Arg.Any<CancellationToken>()).Returns(AdminSamples.Ok(AdminSamples.Receipt(7, BookingStatus.Cancelled)));
 
         // Act
         bool cancelled = await viewModel.CancelAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(cancelled);
-        Assert.Equal(BookingStatus.Cancelled, viewModel.Booking?.Status);
+        Assert.Equal(BookingStatus.Cancelled, viewModel.Receipt?.Status);
         Assert.False(viewModel.CanCancel);
-        await _bookings.Received(1).CancelAsync(7, Arg.Any<CancellationToken>());
+        await _bookings.Received(1).CancelAsync(Arg.Any<CancellationToken>());
     }
 
-    /// <summary>Negative: a refused cancellation keeps the booking as it was and shows the text of the refusal.</summary>
+    /// <summary>Negative: a refused cancellation keeps the receipt as it was and shows the text of the refusal.</summary>
     [Fact]
-    public async Task CancelAsync_Refused_KeepsTheBookingAndShowsTheError()
+    public async Task CancelAsync_Refused_KeepsTheReceiptAndShowsTheError()
     {
         // Arrange
         MyBookingViewModel viewModel = await LoadedAsync();
-        _bookings.CancelAsync(7, Arg.Any<CancellationToken>()).Returns(AdminSamples.Fail<BookingDetailsDto>(ErrorCodes.Api.Forbidden));
+        _bookings.CancelAsync(Arg.Any<CancellationToken>()).Returns(AdminSamples.Fail<BookingReceiptDto>(ErrorCodes.Api.Forbidden));
 
         // Act
         bool cancelled = await viewModel.CancelAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(cancelled);
-        Assert.Equal(BookingStatus.Pending, viewModel.Booking?.Status);
+        Assert.Equal(BookingStatus.Pending, viewModel.Receipt?.Status);
         Assert.Equal([AdminSamples.Text(ErrorCodes.Api.Forbidden)], viewModel.Errors);
     }
 
@@ -152,42 +173,42 @@ public sealed class MyBookingViewModelTests
 
     #region Reschedule
 
-    /// <summary>Positive: new dates are asked for the booking that was read, in the room it has (UC-010).</summary>
+    /// <summary>Positive: new dates are asked for the booking of the guest; the request names no booking and no room (UC-010).</summary>
     [Fact]
-    public async Task RescheduleAsync_LoadedBooking_AsksForTheNewDatesInTheSameRoom()
+    public async Task RescheduleAsync_LoadedBooking_AsksForTheNewDatesOnly()
     {
         // Arrange
         MyBookingViewModel viewModel = await LoadedAsync();
         DateOnly checkIn = AdminSamples.Today.AddDays(10);
         DateOnly checkOut = AdminSamples.Today.AddDays(12);
-        RescheduleBookingRequest expected = new(7, checkIn, checkOut, AdminSamples.BookingDetails(7).Room.RoomId);
+        GuestRescheduleRequest expected = new(checkIn, checkOut);
         _bookings.RescheduleAsync(expected, Arg.Any<CancellationToken>())
-            .Returns(AdminSamples.Ok(AdminSamples.BookingDetails(7) with { StartDate = checkIn, EndDate = checkOut }));
+            .Returns(AdminSamples.Ok(AdminSamples.Receipt(7) with { StartDate = checkIn, EndDate = checkOut }));
 
         // Act
         bool moved = await viewModel.RescheduleAsync(checkIn, checkOut, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(moved);
-        Assert.Equal(checkIn, viewModel.Booking?.StartDate);
+        Assert.Equal(checkIn, viewModel.Receipt?.StartDate);
         await _bookings.Received(1).RescheduleAsync(expected, Arg.Any<CancellationToken>());
     }
 
-    /// <summary>Negative: new dates that are refused keep the booking and show the text of the refusal.</summary>
+    /// <summary>Negative: new dates that are refused keep the receipt and show the text of the refusal.</summary>
     [Fact]
-    public async Task RescheduleAsync_Refused_KeepsTheBookingAndShowsTheError()
+    public async Task RescheduleAsync_Refused_KeepsTheReceiptAndShowsTheError()
     {
         // Arrange
         MyBookingViewModel viewModel = await LoadedAsync();
-        _bookings.RescheduleAsync(Arg.Any<RescheduleBookingRequest>(), Arg.Any<CancellationToken>())
-            .Returns(AdminSamples.Fail<BookingDetailsDto>(ErrorCodes.Booking.RoomNotAvailable));
+        _bookings.RescheduleAsync(Arg.Any<GuestRescheduleRequest>(), Arg.Any<CancellationToken>())
+            .Returns(AdminSamples.Fail<BookingReceiptDto>(ErrorCodes.Booking.RoomNotAvailable));
 
         // Act
         bool moved = await viewModel.RescheduleAsync(AdminSamples.Today.AddDays(10), AdminSamples.Today.AddDays(12), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(moved);
-        Assert.Equal(AdminSamples.Today, viewModel.Booking?.StartDate);
+        Assert.Equal(AdminSamples.Today, viewModel.Receipt?.StartDate);
         Assert.Equal([AdminSamples.Text(ErrorCodes.Booking.RoomNotAvailable)], viewModel.Errors);
     }
 
@@ -195,13 +216,13 @@ public sealed class MyBookingViewModelTests
 
     #region Helpers
 
-    private MyBookingViewModel Create() => new(new PassThroughRunner<IBookingService>(_bookings));
+    private MyBookingViewModel Create() => new(new PassThroughRunner<IGuestBookingService>(_bookings));
 
     private async Task<MyBookingViewModel> LoadedAsync()
     {
-        _bookings.GetByIdAsync(7, Arg.Any<CancellationToken>()).Returns(AdminSamples.Ok(AdminSamples.BookingDetails(7)));
+        _bookings.GetAsync(Arg.Any<CancellationToken>()).Returns(AdminSamples.Ok(AdminSamples.Receipt(7)));
         MyBookingViewModel viewModel = Create();
-        await viewModel.LoadAsync(7, null, TestContext.Current.CancellationToken);
+        await viewModel.LoadAsync(null, TestContext.Current.CancellationToken);
         return viewModel;
     }
 

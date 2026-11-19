@@ -21,7 +21,10 @@ public sealed class JwtGuestTokenIssuerTests
 
     #region Claims
 
-    /// <summary>Positive: the token carries the role Guest, the booking, the issuer and the guest audience.</summary>
+    /// <summary>
+    /// Positive: the token carries the role Guest, the booking, the issuer and the guest audience; the session that the
+    /// guest gets holds the token and its end, and no key (ADR-0049 decision 3).
+    /// </summary>
     [Fact]
     public async Task Issue_Booking_ProducesATokenWithTheGuestRoleAndTheBooking()
     {
@@ -34,7 +37,7 @@ public sealed class JwtGuestTokenIssuerTests
         Assert.Equal("Guest", result.Claims["role"]);
         Assert.Equal("7", result.Claims[JwtGuestTokenIssuer.BookingClaim]);
         Assert.Equal(StaffSecurityOptions.Issuer, result.Claims["iss"]);
-        Assert.Equal(7, session.BookingId);
+        Assert.Equal(["ExpiresAt", "Token"], typeof(GuestSessionDto).GetProperties().Select(property => property.Name).Order());
     }
 
     /// <summary>

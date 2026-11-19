@@ -25,12 +25,12 @@ public sealed class GuestsController : ControllerBase
         _guests = guests;
     }
 
-    /// <summary>Gets one guest; a signed-in guest gets only the guest of their own booking, without the passport number (MIL-018).</summary>
+    /// <summary>Gets one guest, for staff who may see the data of guests; a guest token gets 403 (ADR-0049 decision 3).</summary>
     /// <param name="id">The guest key.</param>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
-    /// <returns>The details, 404, or 403 for a guest who asks for another guest.</returns>
+    /// <returns>The details, 404, or 401 and 403 for a caller without the permission.</returns>
     [HttpGet(ApiRoutes.ById)]
-    [RequiresPermission(Permissions.ViewOtherGuestData, GuestPermission = Permissions.ViewOwnGuestData)]
+    [RequiresPermission(Permissions.ViewOtherGuestData)]
     public async Task<IActionResult> GetByIdAsync(int id, CancellationToken cancellationToken) =>
         this.ToResponse(await _guests.GetByIdAsync(id, cancellationToken).ConfigureAwait(false));
 

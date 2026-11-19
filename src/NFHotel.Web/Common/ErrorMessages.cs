@@ -59,7 +59,7 @@ public static class ErrorMessages
             [ErrorCodes.Booking.GuestSelectionInvalid] = "Pick an existing guest or create a new one — not both.",
             [ErrorCodes.Booking.ConcurrencyConflict] = "Someone else changed this booking. Reload the page and start over.",
             [ErrorCodes.Booking.ReceiptEmailRequired] = "Enter the email you booked with.",
-            [ErrorCodes.Booking.TooManyLookups] = "Too many attempts for this booking number. Wait fifteen minutes and try again.",
+            [ErrorCodes.Booking.TooManyLookups] = "Too many attempts. Wait fifteen minutes and try again.",
 
             // ----------------------------------------------------------
             // ROOM
@@ -111,7 +111,7 @@ public static class ErrorMessages
 
             // The one refusal of the guest sign-in (MIL-018): a wrong email, an unknown number, a cancelled booking and an
             // ended guest session read alike, so the text tells nobody which of them it was.
-            [ErrorCodes.Api.GuestUnauthorized] = "We couldn't find that booking. Check the booking number and the email you booked with.",
+            [ErrorCodes.Api.GuestUnauthorized] = "We couldn't find that booking. Check the booking reference and the email you booked with.",
             [ErrorCodes.Staff.InvalidCredentials] = "The user name or the password is wrong.",
             [ErrorCodes.Staff.TooManyAttempts] = "Too many failed attempts. Wait fifteen minutes and try again.",
             [AiDefaultErrors.PurposeInvalid] = "The default AI model can be set for the website or the market analysis.",

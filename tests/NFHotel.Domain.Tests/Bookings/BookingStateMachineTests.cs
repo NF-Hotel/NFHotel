@@ -1,3 +1,4 @@
+using NFHotel.Domain.Entities;
 using NFHotel.Domain.Errors;
 using NFHotel.Domain.Tests.TestSupport;
 using NFHotel.Domain.ValueObjects;
@@ -401,6 +402,30 @@ public class BookingStateMachineTests
 
         // Assert
         Assert.Equal(expected, canCancel);
+    }
+
+    /// <summary>
+    /// BR-11, BR-14 (MIL-085): a status is open while the booking may still be cancelled or moved. The guest page reads
+    /// the rule from the status alone, so it must say the same as the booking does.
+    /// </summary>
+    [Theory]
+    [InlineData(BookingStatus.Pending, true)]
+    [InlineData(BookingStatus.Confirmed, true)]
+    [InlineData(BookingStatus.CheckedIn, false)]
+    [InlineData(BookingStatus.CheckedOut, false)]
+    [InlineData(BookingStatus.Cancelled, false)]
+    public void IsOpen_AnyStatus_SaysWhatCancelAndRescheduleSay(BookingStatus status, bool expected)
+    {
+        // Arrange
+        Booking booking = BookingFactory.InStatus(status);
+
+        // Act
+        bool isOpen = status.IsOpen();
+
+        // Assert
+        Assert.Equal(expected, isOpen);
+        Assert.Equal(booking.CanCancel, isOpen);
+        Assert.Equal(booking.CanReschedule, isOpen);
     }
 
     /// <summary>BR-13: cancellation is a soft delete — the status changes, the booking remains.</summary>

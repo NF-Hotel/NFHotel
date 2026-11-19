@@ -308,6 +308,14 @@ h1:focus-visible {
     font-feature-settings: "tnum" 1;
 }
 
+/* The reference of a booking (ADR-0049): fixed width and a little smaller, on one line, so a column of references
+   lines up group by group. */
+.table td.booking-reference {
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+    font-size: .8rem;
+    white-space: nowrap;
+}
+
 
 /* --------------------------------------------------------------------------
    5. SURFACES
@@ -1694,10 +1702,18 @@ h1:focus-visible {
     grid-column: 2;
 }
 
-.pub-receipt-number {
-    font-family: var(--font-serif);
-    font-size: 1.8rem;
+/* The booking reference (ADR-0049): 36 characters in fixed width, so a guest can read it back group by group, and it
+   breaks between groups rather than running out of a narrow screen. */
+.pub-receipt-reference {
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+    font-size: 1.15rem;
+    letter-spacing: .02em;
+    overflow-wrap: anywhere;
     margin: 0 0 4px;
+}
+
+.pub-reference-input {
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
 }
 
 .pub-receipt dl {

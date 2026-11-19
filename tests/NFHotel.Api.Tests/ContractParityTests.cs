@@ -18,11 +18,13 @@ using NSubstitute;
 namespace NFHotel.Api.Tests;
 
 /// <summary>
-/// The contract of ADR-0004: every method of the three use-case interfaces gives the same result, value or error
+/// The contract of ADR-0004: every method of the four use-case interfaces gives the same result, value or error
 /// codes or exception, whether it is called on the service directly or through the client, the HTTP API and the
-/// controllers. Both sides start from the same data and are driven in step, so state changes line up.
+/// controllers. Both sides start from the same data and are driven in step, so state changes line up. The guest
+/// sign-in and the public booking are compared on their refusals only, because the two sides issue different tokens
+/// (MIL-018, ADR-0049).
 /// </summary>
-public sealed class ContractParityTests : IAsyncLifetime
+public sealed partial class ContractParityTests : IAsyncLifetime
 {
     private readonly ApiFactory _factory = new();
     private readonly ServiceWorld _direct = new();
@@ -45,10 +47,15 @@ public sealed class ContractParityTests : IAsyncLifetime
         _directServices = new Services(
             _direct.BookingService(authorization),
             _direct.GuestService(authorization),
-            _direct.RoomService());
+            _direct.RoomService(),
+            _direct.GuestAccessService());
 
         var gateway = new ApiGateway(_factory.CreateAuthorizedClient());
-        _viaApi = new Services(new ApiBookingService(gateway), new ApiGuestService(gateway), new ApiRoomService(gateway));
+        _viaApi = new Services(
+            new ApiBookingService(gateway),
+            new ApiGuestService(gateway),
+            new ApiRoomService(gateway),
+            new ApiGuestAccessService(gateway));
         return ValueTask.CompletedTask;
     }
 
@@ -91,19 +98,19 @@ public sealed class ContractParityTests : IAsyncLifetime
         Assert.True(mismatches.Count == 0, string.Join("\n", mismatches));
     }
 
-    /// <summary>The scenarios touch every method of the three interfaces, so a new method cannot escape the contract.</summary>
+    /// <summary>The scenarios touch every method of the four interfaces, so a new method cannot escape the contract.</summary>
     [Fact]
     public void Scenarios_AllInterfaceMethods_AreCovered()
     {
         // Arrange
-        var names = Scenarios().Select(scenario => scenario.Name).ToArray();
-        var methods = new[] { typeof(IBookingService), typeof(IGuestService), typeof(IRoomService) }
+        string[] names = Scenarios().Select(scenario => scenario.Name).ToArray();
+        string[] methods = new[] { typeof(IBookingService), typeof(IGuestService), typeof(IRoomService), typeof(IGuestAccessService) }
             .SelectMany(contract => contract.GetMethods().Select(method => $"{contract.Name}.{method.Name}"))
             .Distinct()
             .ToArray();
 
         // Act
-        var uncovered = methods.Where(method => !names.Any(name => name.StartsWith(method, StringComparison.Ordinal))).ToArray();
+        string[] uncovered = methods.Where(method => !names.Any(name => name.StartsWith(method, StringComparison.Ordinal))).ToArray();
 
         // Assert
         Assert.True(uncovered.Length == 0, $"Methods without a scenario: {string.Join(", ", uncovered)}");
@@ -123,6 +130,7 @@ public sealed class ContractParityTests : IAsyncLifetime
         void Add(string name, Func<Services, Task<string>> run) => list.Add((name, run));
         void AddB<T>(string name, Func<IBookingService, Task<Result<T>>> call) => Add($"IBookingService.{name}", async s => Describe(await call(s.Bookings)));
         void AddG<T>(string name, Func<IGuestService, Task<Result<T>>> call) => Add($"IGuestService.{name}", async s => Describe(await call(s.Guests)));
+        void AddA<T>(string name, Func<IGuestAccessService, Task<Result<T>>> call) => Add($"IGuestAccessService.{name}", async s => Describe(await call(s.Access)));
         void AddR<T>(string name, Func<IRoomService, Task<Result<T>>> call) => Add($"IRoomService.{name}", async s => Describe(await call(s.Rooms)));
         void AddThrows(string name, Func<Services, Task> call) => Add(name, async s => await Throws(() => call(s)));
 
@@ -130,14 +138,6 @@ public sealed class ContractParityTests : IAsyncLifetime
         AddB("GetByIdAsync existing", b => b.GetByIdAsync(1, ct));
         AddB("GetByIdAsync unknown", b => b.GetByIdAsync(99, ct));
         AddThrows("IBookingService.GetByIdAsync key zero", s => s.Bookings.GetByIdAsync(0, ct));
-        AddB("LookUpReceiptAsync right email", b => b.LookUpReceiptAsync(new BookingReceiptRequest(1, "anna@example.com"), ct));
-        AddB("LookUpReceiptAsync email in another case with spaces", b => b.LookUpReceiptAsync(new BookingReceiptRequest(1, "  ANNA@Example.com "), ct));
-        AddB("LookUpReceiptAsync wrong email", b => b.LookUpReceiptAsync(new BookingReceiptRequest(1, "bo@example.com"), ct));
-        AddB("LookUpReceiptAsync unknown number", b => b.LookUpReceiptAsync(new BookingReceiptRequest(99, "anna@example.com"), ct));
-        AddB("LookUpReceiptAsync key zero", b => b.LookUpReceiptAsync(new BookingReceiptRequest(0, "anna@example.com"), ct));
-        AddB("LookUpReceiptAsync blank email", b => b.LookUpReceiptAsync(new BookingReceiptRequest(1, " "), ct));
-        AddB("LookUpReceiptAsync no email", b => b.LookUpReceiptAsync(new BookingReceiptRequest(1, null), ct));
-        AddThrows("IBookingService.LookUpReceiptAsync null", s => s.Bookings.LookUpReceiptAsync(null!, ct));
         AddB("GetOverviewAsync month", b => b.GetOverviewAsync(new BookingOverviewQuery(today, today.AddDays(30)), ct));
         AddB("GetOverviewAsync search and sort", b => b.GetOverviewAsync(new BookingOverviewQuery(today, today.AddDays(60), "anna", BookingSortField.GuestName, SortDirection.Descending, IncludeCancelled: true), ct));
         AddB("GetOverviewAsync inverted period", b => b.GetOverviewAsync(new BookingOverviewQuery(today.AddDays(5), today), ct));
@@ -159,9 +159,17 @@ public sealed class ContractParityTests : IAsyncLifetime
         AddB("CreateAsync inverted period", b => b.CreateAsync(new CreateBookingRequest(today.AddDays(9), today.AddDays(3), 3, 1, null), ct));
         AddB("CreateAsync unknown room", b => b.CreateAsync(new CreateBookingRequest(today.AddDays(30), today.AddDays(31), 99, 1, null), ct));
         AddThrows("IBookingService.CreateAsync null", s => s.Bookings.CreateAsync(null!, ct));
-        AddB("CreatePublicAsync no guest details", b => b.CreatePublicAsync(new CreatePublicBookingRequest(today.AddDays(30), today.AddDays(31), RoomSize.Double, 1, null), ct));
-        AddB("CreatePublicAsync no room of the type sleeps the party", b => b.CreatePublicAsync(new CreatePublicBookingRequest(today.AddDays(30), today.AddDays(31), RoomSize.Single, 4, fields), ct));
-        AddB("CreatePublicAsync inverted period", b => b.CreatePublicAsync(new CreatePublicBookingRequest(today.AddDays(9), today.AddDays(3), RoomSize.Double, 1, fields), ct));
+
+        // --- the public booking and the guest sign-in: refusals only (MIL-018, ADR-0049); in AddThrows the
+        // null-forgiving operator passes the null that the service must refuse
+        AddA("BookAsync no guest details", a => a.BookAsync(new CreatePublicBookingRequest(today.AddDays(30), today.AddDays(31), RoomSize.Double, 1, null), ct));
+        AddA("BookAsync no room of the type sleeps the party", a => a.BookAsync(new CreatePublicBookingRequest(today.AddDays(30), today.AddDays(31), RoomSize.Single, 4, fields), ct));
+        AddA("BookAsync inverted period", a => a.BookAsync(new CreatePublicBookingRequest(today.AddDays(9), today.AddDays(3), RoomSize.Double, 1, fields), ct));
+        AddThrows("IGuestAccessService.BookAsync null", s => s.Access.BookAsync(null!, ct));
+        AddA("SignInAsync no email", a => a.SignInAsync(new GuestSignInRequest("3f2504e0-4f89-41d3-9a0c-0305e82c3301", null), ct));
+        AddA("SignInAsync unknown reference", a => a.SignInAsync(new GuestSignInRequest("3f2504e0-4f89-41d3-9a0c-0305e82c3301", "maja@example.com"), ct));
+        AddA("SignInAsync old booking number", a => a.SignInAsync(new GuestSignInRequest("FLZ-000001", "maja@example.com"), ct));
+        AddThrows("IGuestAccessService.SignInAsync null", s => s.Access.SignInAsync(null!, ct));
 
         // --- bookings: transitions and moving
         AddB("ConfirmAsync pending", b => b.ConfirmAsync(1, ct));
@@ -249,10 +257,17 @@ public sealed class ContractParityTests : IAsyncLifetime
         world.Guests.GuestIdsWithBookings.Add(bo.Id);
     }
 
+    /// <summary>
+    /// Describes a result. The two worlds give their bookings references of their own (ADR-0049), so a reference is
+    /// described by what it must be, a version 4 UUID, and anything else in its place stays visible as a mismatch.
+    /// </summary>
     private static string Describe<TValue>(Result<TValue> result) =>
         result.IsSuccess
-            ? "ok " + JsonSerializer.Serialize(result.Value, ApiJson.Options)
+            ? "ok " + RandomReference().Replace(JsonSerializer.Serialize(result.Value, ApiJson.Options), "\"reference\":\"(a version 4 UUID)\"")
             : "err " + string.Join(",", result.Errors.Select(error => error.Code));
+
+    [System.Text.RegularExpressions.GeneratedRegex("\"reference\":\"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\"")]
+    private static partial System.Text.RegularExpressions.Regex RandomReference();
 
     private static string Describe(Result result) =>
         result.IsSuccess ? "ok" : "err " + string.Join(",", result.Errors.Select(error => error.Code));
@@ -270,7 +285,7 @@ public sealed class ContractParityTests : IAsyncLifetime
         }
     }
 
-    private sealed record Services(IBookingService Bookings, IGuestService Guests, IRoomService Rooms);
+    private sealed record Services(IBookingService Bookings, IGuestService Guests, IRoomService Rooms, IGuestAccessService Access);
 
     #endregion
 }

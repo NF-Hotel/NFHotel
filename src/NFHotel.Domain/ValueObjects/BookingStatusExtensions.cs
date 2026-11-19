@@ -16,4 +16,15 @@ public static class BookingStatusExtensions
     /// remaining nights (A-01). Corresponds to the database <c>WHERE (status &lt;&gt; 4)</c>.
     /// </remarks>
     public static bool BlocksRoom(this BookingStatus status) => status != BookingStatus.Cancelled;
+
+    /// <summary>
+    /// Decides whether a booking with the given status is still open: it may be cancelled and moved (BR-11, BR-14).
+    /// </summary>
+    /// <param name="status">The status of the booking.</param>
+    /// <returns>True for <see cref="BookingStatus.Pending"/> and <see cref="BookingStatus.Confirmed"/>.</returns>
+    /// <remarks>
+    /// The guest page reads what it may offer from the status of the receipt alone (ADR-0049 decision 7), so the rule
+    /// lives here once, beside the booking that applies it.
+    /// </remarks>
+    public static bool IsOpen(this BookingStatus status) => status is BookingStatus.Pending or BookingStatus.Confirmed;
 }
