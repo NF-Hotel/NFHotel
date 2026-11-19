@@ -16,3 +16,11 @@ The code review RC-418, 2026-11-19:
   on the Docker engine of WSL (its 113 failures are the tests on PostgreSQL, which could not reach their container
   there and run in CI), the linters of the two scripts, the wiki coverage test, and the failure paths of
   check-guest-login.sh.
+
+The gate (MIL-085 task 6), 2026-11-19:
+- live-check.txt: the check of criterion 8 on the live site after the deploy of 7fd5bea (NF Hotel CD run
+  44514175991, which deployed the merge of pull request 837 together with pull request 836). The planning session
+  ran check-guest-login.sh with --cancel in WSL on a booking that it made for the test on /book at S01's word in chat.
+  21 of 21 checks pass, and the booking is cancelled, so it holds no room. Its reference,
+  25082319-9db9-435f-866f-9f7674f44256, is of version 4 and of the variant of RFC 9562. A second test booking, made
+  later for a picture and cancelled by the same check, is not evidence.
