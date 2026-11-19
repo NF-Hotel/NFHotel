@@ -1,0 +1,25 @@
+# MIL-086 task 8: the check of criterion 8 on the live site after the deploy of 886c8e8 (NF Hotel CD run
+# 44569420887, 2026-11-19, job 16:50:13Z to 16:53:46Z).
+# Run by the build session from a workstation: one GET of /book with curl, then four stays on /book in Chromium
+# without a window, driven by Playwright 1.62.0 in its container image mcr.microsoft.com/playwright/dotnet:v1.62.0-noble,
+# never on the desktop of the host (framework/process/gui-testing.md). The dates are typed into the fields and each
+# field is left with Tab, as a guest does. The button "Find available rooms" is only read, never pressed, so no search
+# was asked and nothing was stored. The site stays in the variable PUBLIC and would be shown as <public>. The output
+# holds no personal data.
+
+== the date fields of /book: their earliest and latest day
+run at 2026-11-19T20:07:00Z: one GET of /book, nothing sent
+GET /book answered 200
+9575 bytes of HTML
+#check-in type="date" min="2026-11-19" max="2031-11-18" value="2026-11-20"
+#check-out type="date" min="2026-11-21" max="2026-12-20" value="2026-11-21"
+
+== four stays on /book: refused with the text of the rule, or offered at the limit
+run from 2026-11-19T20:07:06Z in mcr.microsoft.com/playwright/dotnet:v1.62.0-noble, Chromium headless
+the page /book answered 200; the earliest arrival that it offers, the day of the hotel: 2026-11-19
+ends five years and a day ahead: arrival 2031-11-17, departure 2031-11-20; the text at the field: "The stay must end within five years from today."; the button "Find available rooms" disabled: True
+ends exactly five years ahead (the limit, offered): arrival 2031-11-17, departure 2031-11-19; the text at the field: (none); the button "Find available rooms" disabled: False
+31 nights: arrival 2026-12-01, departure 2027-01-01; the text at the field: "A stay booked here can be at most 30 nights."; the button "Find available rooms" disabled: True
+30 nights (the limit, offered): arrival 2026-12-01, departure 2026-12-31; the text at the field: (none); the button "Find available rooms" disabled: False
+exit code: 0
+ended at 2026-11-19T20:07:15Z
