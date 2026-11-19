@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-087, written by the AI before any code<br>Go in RC-426; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-087, written by the AI before any code<br>Go in RC-426; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [a3edc6d] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -261,3 +261,4 @@ the public host name (option B), then Turnstile on the booking page (option C), 
 [UC-001]: ../use-cases/uc-001/uc.md
 [UC-010]: ../use-cases/uc-010/uc.md
 [BC-001]: ../business-case.md
+[a3edc6d]: https://github.com/NF-Hotel/NFHotel/commit/a3edc6d282ca80a45a27abe8e894918a545d9772
