@@ -144,13 +144,23 @@ public class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IMarketAnalysisRunLauncher>(World.MarketAnalysisLauncher);
             services.AddSingleton(World.MarketAnalysisTracker);
             services.AddSingleton<IMarketAnalysisService>(_ => World.MarketAnalysisService());
-            services.AddScoped<IBookingService>(provider => World.BookingService(
+            services.RemoveAll<IPublicBookingService>();
+            services.AddScoped(provider => World.BookingService(
                 provider.GetRequiredService<IStaffAuthorizationService>(),
-                receiptThrottle: provider.GetRequiredService<ILoginThrottle>(),
                 guestCall: provider.GetRequiredService<IGuestCallContext>()));
-            services.AddScoped<IGuestService>(provider => World.GuestService(
-                provider.GetRequiredService<IStaffAuthorizationService>(),
-                provider.GetRequiredService<IGuestCallContext>()));
+            services.AddScoped<IBookingService>(provider => provider.GetRequiredService<BookingService>());
+            services.AddScoped<IPublicBookingService>(provider => provider.GetRequiredService<BookingService>());
+
+            // The guest sign-in reads the bookings of the world, with the real token issuer, the real limits of the
+            // guest sign-in and the real address of the caller (ADR-0049).
+            services.RemoveAll<IGuestAccessService>();
+            services.AddScoped<IGuestAccessService>(provider => new GuestAccessService(
+                provider.GetRequiredService<IPublicBookingService>(),
+                World.BookingQueries,
+                provider.GetRequiredService<IGuestTokenIssuer>(),
+                provider.GetRequiredService<IGuestSignInLimits>(),
+                provider.GetRequiredService<ICallerAddress>()));
+            services.AddScoped<IGuestService>(provider => World.GuestService(provider.GetRequiredService<IStaffAuthorizationService>()));
             services.AddSingleton<IRoomService>(_ => World.RoomService());
             services.AddSingleton(_ => World.BenchmarkService());
             services.AddSingleton<IBenchmarkService>(provider => provider.GetRequiredService<BenchmarkService>());

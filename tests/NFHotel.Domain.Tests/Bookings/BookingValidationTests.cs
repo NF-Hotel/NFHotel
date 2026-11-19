@@ -132,25 +132,25 @@ public class BookingValidationTests
     }
 
     /// <summary>
-    /// BR-109: the booking number is shown as <c>FLZ-</c> plus the id zero-padded to six
-    /// digits. An id of more than six digits is not truncated.
+    /// BR-109 (MIL-085, ADR-0049): the reference of a booking is not made from its key. The key that the database gives
+    /// the booking later leaves the reference as it was made.
     /// </summary>
     [Theory]
-    [InlineData(0, "FLZ-000000")]
-    [InlineData(1, "FLZ-000001")]
-    [InlineData(123, "FLZ-000123")]
-    [InlineData(999999, "FLZ-999999")]
-    [InlineData(1234567, "FLZ-1234567")]
-    public void BookingNumber_AnyId_IsPrefixedAndPaddedToSixDigits(int bookingId, string expected)
+    [InlineData(1)]
+    [InlineData(123)]
+    [InlineData(1234567)]
+    public void Reference_KeyGivenAfterwards_StaysTheReferenceTheBookingWasMadeWith(int bookingId)
     {
         // Arrange
-        var booking = BookingFactory.WithBookingId(BookingFactory.Pending(), bookingId);
+        var booking = BookingFactory.Pending();
+        var reference = booking.Reference;
 
         // Act
-        var bookingNumber = booking.BookingNumber;
+        BookingFactory.WithBookingId(booking, bookingId);
 
         // Assert
-        Assert.Equal(expected, bookingNumber);
+        Assert.Equal(reference, booking.Reference);
+        Assert.NotEqual(Guid.Empty, booking.Reference);
     }
 
     #endregion

@@ -7,18 +7,22 @@ using NFHotel.Web.Security;
 namespace NFHotel.Web.Tests;
 
 /// <summary>
-/// The principal of the guest cookie (MIL-018, ADR-0047 decision 6): the booking and the guest token, no role, so no staff
-/// policy can accept it; and the holder that hands the token of a request to the runner.
+/// The principal of the guest cookie (MIL-018, ADR-0047 decision 6, and since MIL-085 ADR-0049 decision 3): the guest
+/// token and nothing else, no key of a booking and no role, so no staff policy can accept it; and the holder that hands
+/// the token of a request to the runner.
 /// </summary>
 public sealed class GuestClaimsTests
 {
-    private static readonly GuestSessionDto Session = new("the-guest-token", new DateTimeOffset(2030, 1, 1, 10, 0, 0, TimeSpan.Zero), 7);
+    private static readonly GuestSessionDto Session = new("the-guest-token", new DateTimeOffset(2030, 1, 1, 10, 0, 0, TimeSpan.Zero));
 
     #region The principal
 
-    /// <summary>Positive: the principal carries the booking and the token of the session, and is signed in by the guest scheme.</summary>
+    /// <summary>
+    /// Positive (ADR-0049 decision 3): the principal carries the token of the session and no other claim, and is signed
+    /// in by the guest scheme.
+    /// </summary>
     [Fact]
-    public void CreatePrincipal_Session_CarriesTheBookingAndTheToken()
+    public void CreatePrincipal_Session_CarriesTheTokenOnly()
     {
         // Act
         ClaimsPrincipal guest = GuestClaims.CreatePrincipal(Session);
@@ -26,8 +30,8 @@ public sealed class GuestClaimsTests
         // Assert
         Assert.True(guest.Identity?.IsAuthenticated);
         Assert.Equal(GuestClaims.CookieScheme, guest.Identity?.AuthenticationType);
-        Assert.Equal(7, GuestClaims.BookingIdOf(guest));
         Assert.Equal("the-guest-token", GuestClaims.TokenOf(guest));
+        Assert.Equal([GuestClaims.TokenClaim], guest.Claims.Select(claim => claim.Type));
     }
 
     /// <summary>
@@ -54,33 +58,31 @@ public sealed class GuestClaimsTests
     }
 
     /// <summary>
-    /// Negative: no principal, a principal that is not signed in, one without a token and one with an unreadable booking
-    /// give no booking, so the own booking page sends the visitor to the sign-in.
+    /// Negative: no principal, a principal that is not signed in, one without a token and one with an empty token give no
+    /// token, so the own booking page sends the visitor to the sign-in.
     /// </summary>
     /// <param name="kind">Which principal is read.</param>
     [Theory]
     [InlineData("none")]
     [InlineData("not signed in")]
     [InlineData("no token")]
-    [InlineData("booking 0")]
-    [InlineData("booking not a number")]
-    public void BookingIdOf_NoValidGuest_IsNull(string kind)
+    [InlineData("empty token")]
+    public void TokenOf_NoValidGuest_IsNull(string kind)
     {
         // Arrange
         ClaimsPrincipal? principal = kind switch
         {
             "none" => null,
-            "not signed in" => new ClaimsPrincipal(new ClaimsIdentity([new Claim(GuestClaims.BookingClaim, "7"), new Claim(GuestClaims.TokenClaim, "t")])),
-            "no token" => Principal(new Claim(GuestClaims.BookingClaim, "7")),
-            "booking 0" => Principal(new Claim(GuestClaims.BookingClaim, "0"), new Claim(GuestClaims.TokenClaim, "t")),
-            _ => Principal(new Claim(GuestClaims.BookingClaim, "7a"), new Claim(GuestClaims.TokenClaim, "t")),
+            "not signed in" => new ClaimsPrincipal(new ClaimsIdentity([new Claim(GuestClaims.TokenClaim, "t")])),
+            "no token" => Principal(new Claim("guest_booking", "7")),
+            _ => Principal(new Claim(GuestClaims.TokenClaim, string.Empty)),
         };
 
         // Act
-        int? bookingId = GuestClaims.BookingIdOf(principal);
+        string? token = GuestClaims.TokenOf(principal);
 
         // Assert
-        Assert.Null(bookingId);
+        Assert.Null(token);
     }
 
     #endregion

@@ -42,9 +42,9 @@ public sealed class BookingFlowViewModelTests
             _tickets,
             _clock);
 
-    /// <summary>The answer of the public booking: the booking and the guest's session (MIL-018).</summary>
+    /// <summary>The answer of the public booking: the receipt and the session of the guest (MIL-018, ADR-0049 decision 3).</summary>
     private static PublicBookingDto Booked(int id) =>
-        new(BookingDetails(id), new GuestSessionDto($"guest-token-{id}", new DateTimeOffset(2026, 3, 10, 14, 0, 0, TimeSpan.Zero), id));
+        new(Receipt(id), new GuestSessionDto($"guest-token-{id}", new DateTimeOffset(2026, 3, 10, 14, 0, 0, TimeSpan.Zero)));
 
     private void RoomsAre(params AvailableRoomDto[] rooms) =>
         _bookings.GetAvailableRoomsAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<int?>(), Arg.Any<CancellationToken>())
@@ -308,7 +308,7 @@ public sealed class BookingFlowViewModelTests
         await viewModel.SubmitAsync(Token);
 
         Assert.Equal(BookingFlowStep.Receipt, viewModel.CurrentStep);
-        Assert.Equal(BookingReceiptDto.From(BookingDetails(9)), viewModel.Confirmation);
+        Assert.Equal(Receipt(9), viewModel.Confirmation);
         Assert.NotNull(viewModel.SessionTicket);
         Assert.Equal(Booked(9).Session, _tickets.Redeem(viewModel.SessionTicket));
         Assert.Null(_tickets.Redeem(viewModel.SessionTicket));
@@ -559,27 +559,9 @@ public sealed class BookingFlowViewModelTests
     #endregion
 }
 
-/// <summary>The guest field errors, the booking number and the public dates of the booking flow (MIL-054 task 3).</summary>
+/// <summary>The guest field errors and the public dates of the booking flow (MIL-054 task 3).</summary>
 public sealed class BookingFlowTextTests
 {
-    /// <summary>Boundary and equivalence: the booking number with or without its prefix, and every way it can be unreadable.</summary>
-    [Theory]
-    [InlineData("FLZ-0042", true, 42)]
-    [InlineData(" flz-7 ", true, 7)]
-    [InlineData("123456789", true, 123456789)]
-    [InlineData("1234567890", false, 0)]
-    [InlineData("FLZ-", false, 0)]
-    [InlineData("0", false, 0)]
-    [InlineData("-5", false, 0)]
-    [InlineData("4 2", false, 0)]
-    [InlineData("", false, 0)]
-    [InlineData(null, false, 0)]
-    public void TryParseId_Text_ReadsOnlyAPositiveNumber(string? text, bool expected, int expectedId)
-    {
-        Assert.Equal(expected, BookingNumberText.TryParseId(text, out var id));
-        Assert.Equal(expectedId, id);
-    }
-
     /// <summary>Equivalence: each guest error lands on its field once; the rest are other errors; a success has none.</summary>
     [Fact]
     public void FromResult_EveryGuestError_LandsOnItsField()

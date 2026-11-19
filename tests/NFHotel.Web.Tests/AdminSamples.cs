@@ -39,6 +39,16 @@ internal static class AdminSamples
     public static GuestDetailsDto GuestDetails(int id = 1, string? passport = null) =>
         new(id, "Rita", "Hansen", "Rita Hansen", "rita@example.com", "+4512345678", "Denmark", passport);
 
+    /// <summary>
+    /// The reference of a sample booking: a version 4 UUID whose last digits are the key, so a test can name it
+    /// (ADR-0049 decision 1).
+    /// </summary>
+    public static Guid ReferenceOf(int id) => Guid.Parse($"00000000-0000-4000-8000-{id:000000000000}");
+
+    /// <summary>The receipt of a sample booking, as a guest sees it (ADR-0049 decision 7).</summary>
+    public static BookingReceiptDto Receipt(int id = 1, BookingStatus status = BookingStatus.Pending) =>
+        new(ReferenceOf(id), Today, Today.AddDays(2), 2, RoomSize.Double, status);
+
     public static BookingListItemDto BookingItem(
         int id = 1,
         BookingStatus status = BookingStatus.Pending,
@@ -46,7 +56,7 @@ internal static class AdminSamples
         int roomId = 1) =>
         new(
             id,
-            $"B-{id:0000}",
+            ReferenceOf(id),
             Today,
             Today.AddDays(2),
             Today.AddDays(2),
@@ -65,7 +75,7 @@ internal static class AdminSamples
     public static BookingDetailsDto BookingDetails(int id = 1, BookingStatus status = BookingStatus.Pending) =>
         new(
             id,
-            $"B-{id:0000}",
+            ReferenceOf(id),
             Today,
             Today.AddDays(2),
             Today.AddDays(2),

@@ -75,6 +75,34 @@ public sealed class BookingMappingTests
 
     #endregion
 
+    #region Reference (MIL-085)
+
+    /// <summary>
+    /// BR-109 (ADR-0049 decision 3): the row of the overview, the details and the receipt carry the reference of the
+    /// booking; the key stays beside it only where staff work with it.
+    /// </summary>
+    [Fact]
+    public void ToListItemToDetailsAndReceipt_AnyBooking_CarryTheReferenceOfTheBooking()
+    {
+        // Arrange
+        var world = new ServiceWorld();
+        var booking = ConfirmedBookingToday(world, out _);
+        var readModel = world.ReadModelFor(booking);
+
+        // Act
+        var item = readModel.ToListItem(world.Clock.Today);
+        var details = readModel.ToDetails(world.Clock.Today);
+        var receipt = NFHotel.Application.Dto.Bookings.BookingReceiptDto.From(details);
+
+        // Assert
+        Assert.Equal(booking.Reference, item.Reference);
+        Assert.Equal(booking.Reference, details.Reference);
+        Assert.Equal(booking.Reference, receipt.Reference);
+        Assert.Equal(booking.Id, details.BookingId);
+    }
+
+    #endregion
+
     #region Helpers
 
     private static Booking ConfirmedBookingToday(ServiceWorld world, out Room room)

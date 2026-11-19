@@ -4,7 +4,6 @@ using System.Text.Json;
 using NFHotel.Api.Contracts;
 using NFHotel.Application.Dto.Bookings;
 using NFHotel.Application.Dto.Guests;
-using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
 using NFHotel.Application.UseCases;
 using NFHotel.Domain.ValueObjects;
@@ -12,11 +11,14 @@ using NFHotel.Domain.ValueObjects;
 namespace NFHotel.ApiClient.Tests;
 
 /// <summary>
-/// How the client carries the guest token and keeps the codes of the guest sign-in (MIL-018, ADR-0047): one token per
-/// call, the staff token before the guest token, and none on a sign-in.
+/// How the client carries the guest token and keeps the codes of the guest sign-in (MIL-018, ADR-0047, and since MIL-085
+/// ADR-0049): one token per call, the staff token before the guest token, none on a sign-in, and the guest routes that
+/// name no booking.
 /// </summary>
 public sealed class GuestGatewayTests
 {
+    private const string Reference = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
+
     private static readonly Uri Base = new("http://api.test/");
 
     #region The guest header
@@ -111,28 +113,33 @@ public sealed class GuestGatewayTests
 
     #region The guest sign-in and the public booking
 
-    /// <summary>Positive: the sign-in posts the number and the email to the guest route, with no caller token, and returns the session.</summary>
+    /// <summary>
+    /// Positive (ADR-0049 decision 2): the sign-in posts the reference as typed and the email to the guest route, with no
+    /// caller token, and returns the session, which names no booking.
+    /// </summary>
     [Fact]
     public async Task SignInAsync_Success_PostsToTheGuestRouteAndReturnsTheSession()
     {
         // Arrange
         StubHandler handler = StubHandler.Json(
             HttpStatusCode.OK,
-            """{"value":{"token":"t","expiresAt":"2030-01-01T10:00:00+00:00","bookingId":7},"errors":[]}""");
+            """{"value":{"token":"t","expiresAt":"2030-01-01T10:00:00+00:00"},"errors":[]}""");
         ApiGuestAccessService service = new(Gateway(handler, new StaffCallContext { Token = "staff" }, new GuestCallContext { Token = "guest" }));
 
         // Act
-        Result<GuestSessionDto> result = await service.SignInAsync(new BookingReceiptRequest(7, "anna@example.com"), TestContext.Current.CancellationToken);
+        Result<GuestSessionDto> result = await service.SignInAsync(new GuestSignInRequest(Reference, "anna@example.com"), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal((HttpMethod.Post, "/api/auth/guest-login"), (handler.Method, handler.PathAndQuery));
-        Assert.Contains("anna@example.com", handler.Body, StringComparison.Ordinal);
+        Assert.Contains($"\"reference\":\"{Reference}\"", handler.Body, StringComparison.Ordinal);
+        Assert.Contains("\"email\":\"anna@example.com\"", handler.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("bookingId", handler.Body, StringComparison.OrdinalIgnoreCase);
         Assert.Null(handler.StaffToken);
         Assert.Null(handler.GuestToken);
-        Assert.Equal(new GuestSessionDto("t", new DateTimeOffset(2030, 1, 1, 10, 0, 0, TimeSpan.Zero), 7), result.Value);
+        Assert.Equal(new GuestSessionDto("t", new DateTimeOffset(2030, 1, 1, 10, 0, 0, TimeSpan.Zero)), result.Value);
     }
 
-    /// <summary>Negative: the one refusal and the throttle keep their own codes.</summary>
+    /// <summary>Negative: the one refusal and the limit keep their own codes.</summary>
     /// <param name="status">The status of the answer.</param>
     /// <param name="code">The code in the answer.</param>
     [Theory]
@@ -144,18 +151,18 @@ public sealed class GuestGatewayTests
         ApiGuestAccessService service = new(Gateway(StubHandler.Json(status, $$"""{"errors":["{{code}}"]}""")));
 
         // Act
-        Result<GuestSessionDto> result = await service.SignInAsync(new BookingReceiptRequest(7, "anna@example.com"), TestContext.Current.CancellationToken);
+        Result<GuestSessionDto> result = await service.SignInAsync(new GuestSignInRequest(Reference, "anna@example.com"), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(code, result.FirstError?.Code);
     }
 
-    /// <summary>Positive: the public booking posts to the public route and keeps both the booking and the session.</summary>
+    /// <summary>Positive (ADR-0049 decision 3): the public booking posts to the public route and keeps the receipt and the session.</summary>
     [Fact]
-    public async Task BookAsync_Success_PostsToThePublicRouteAndKeepsTheBookingAndTheSession()
+    public async Task BookAsync_Success_PostsToThePublicRouteAndKeepsTheReceiptAndTheSession()
     {
         // Arrange
-        PublicBookingDto answer = new(Booked(9), new GuestSessionDto("t", new DateTimeOffset(2030, 1, 1, 10, 0, 0, TimeSpan.Zero), 9));
+        PublicBookingDto answer = new(Receipt(), new GuestSessionDto("t", new DateTimeOffset(2030, 1, 1, 10, 0, 0, TimeSpan.Zero)));
         StubHandler handler = StubHandler.Json(HttpStatusCode.OK, Envelope(answer));
         ApiGuestAccessService service = new(Gateway(handler));
 
@@ -164,42 +171,21 @@ public sealed class GuestGatewayTests
 
         // Assert
         Assert.Equal((HttpMethod.Post, "/api/bookings/public"), (handler.Method, handler.PathAndQuery));
-        Assert.Equal(9, result.Value.Booking.BookingId);
-        Assert.Equal("t", result.Value.Session.Token);
+        Assert.Equal(answer, result.Value);
     }
 
-    /// <summary>
-    /// Equivalence: the booking service reads the same answer and keeps only the booking, as its use case promises, so
-    /// the staff side of the flow is unchanged.
-    /// </summary>
+    /// <summary>Negative: a refused public booking keeps the code of the API.</summary>
     [Fact]
-    public async Task CreatePublicAsync_AnswerWithASession_ReturnsTheBooking()
-    {
-        // Arrange
-        PublicBookingDto answer = new(Booked(9), new GuestSessionDto("t", new DateTimeOffset(2030, 1, 1, 10, 0, 0, TimeSpan.Zero), 9));
-        ApiBookingService service = new(Gateway(StubHandler.Json(HttpStatusCode.OK, Envelope(answer))));
-
-        // Act
-        Result<BookingDetailsDto> result = await service.CreatePublicAsync(PublicRequest(), TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(9, result.Value.BookingId);
-    }
-
-    /// <summary>Negative: a refused public booking keeps the codes of the API in both services.</summary>
-    [Fact]
-    public async Task CreatePublicAsync_Refused_KeepsTheCode()
+    public async Task BookAsync_Refused_KeepsTheCode()
     {
         // Arrange
         ApiGateway gateway = Gateway(StubHandler.Json(HttpStatusCode.Conflict, """{"value":null,"errors":["booking.room_type_not_available"]}"""));
 
         // Act
-        Result<BookingDetailsDto> booking = await new ApiBookingService(gateway).CreatePublicAsync(PublicRequest(), TestContext.Current.CancellationToken);
-        Result<PublicBookingDto> session = await new ApiGuestAccessService(gateway).BookAsync(PublicRequest(), TestContext.Current.CancellationToken);
+        Result<PublicBookingDto> result = await new ApiGuestAccessService(gateway).BookAsync(PublicRequest(), TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal("booking.room_type_not_available", booking.FirstError?.Code);
-        Assert.Equal("booking.room_type_not_available", session.FirstError?.Code);
+        Assert.Equal("booking.room_type_not_available", result.FirstError?.Code);
     }
 
     /// <summary>Negative: a missing gateway or request is a programming error.</summary>
@@ -217,13 +203,108 @@ public sealed class GuestGatewayTests
 
     #endregion
 
+    #region The own booking of the guest
+
+    /// <summary>
+    /// Positive (ADR-0049 decision 3): the guest reads the own booking on the guest route, which names no booking, with
+    /// the guest token and without a staff token, and gets the receipt.
+    /// </summary>
+    [Fact]
+    public async Task GetAsync_GuestScope_ReadsTheGuestRouteWithTheGuestToken()
+    {
+        // Arrange
+        StubHandler handler = StubHandler.Json(HttpStatusCode.OK, Envelope(Receipt()));
+        ApiGuestBookingService service = new(Gateway(handler, new StaffCallContext(), new GuestCallContext { Token = "guest" }));
+
+        // Act
+        Result<BookingReceiptDto> result = await service.GetAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal((HttpMethod.Get, "/api/guest/booking"), (handler.Method, handler.PathAndQuery));
+        Assert.Equal("guest", handler.GuestToken);
+        Assert.Null(handler.StaffToken);
+        Assert.Equal(Receipt(), result.Value);
+    }
+
+    /// <summary>Positive: the cancellation posts to the guest route with no body that could name a booking.</summary>
+    [Fact]
+    public async Task CancelAsync_GuestScope_PostsToTheGuestCancelRoute()
+    {
+        // Arrange
+        StubHandler handler = StubHandler.Json(HttpStatusCode.OK, Envelope(Receipt() with { Status = BookingStatus.Cancelled }));
+        ApiGuestBookingService service = new(Gateway(handler, new StaffCallContext(), new GuestCallContext { Token = "guest" }));
+
+        // Act
+        Result<BookingReceiptDto> result = await service.CancelAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal((HttpMethod.Post, "/api/guest/booking/cancel"), (handler.Method, handler.PathAndQuery));
+        Assert.Equal("guest", handler.GuestToken);
+        Assert.Equal(BookingStatus.Cancelled, result.Value.Status);
+    }
+
+    /// <summary>Positive: the move posts the two dates to the guest route, and no key of a booking or a room.</summary>
+    [Fact]
+    public async Task RescheduleAsync_GuestScope_PostsTheDatesOnly()
+    {
+        // Arrange
+        StubHandler handler = StubHandler.Json(HttpStatusCode.OK, Envelope(Receipt()));
+        ApiGuestBookingService service = new(Gateway(handler, new StaffCallContext(), new GuestCallContext { Token = "guest" }));
+
+        // Act
+        await service.RescheduleAsync(new GuestRescheduleRequest(new DateOnly(2030, 2, 1), new DateOnly(2030, 2, 3)), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal((HttpMethod.Post, "/api/guest/booking/reschedule"), (handler.Method, handler.PathAndQuery));
+        Assert.Contains("\"checkInDate\":\"2030-02-01\"", handler.Body, StringComparison.Ordinal);
+        Assert.Contains("\"checkOutDate\":\"2030-02-03\"", handler.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("bookingId", handler.Body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("roomId", handler.Body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Negative: the one refusal of a guest keeps its code on every guest operation.</summary>
+    [Fact]
+    public async Task GuestOperations_Refused_KeepTheGuestCode()
+    {
+        // Arrange
+        ApiGuestBookingService service = new(Gateway(StubHandler.Json(HttpStatusCode.Unauthorized, """{"errors":["api.guest_unauthorized"]}""")));
+        CancellationToken token = TestContext.Current.CancellationToken;
+
+        // Act
+        Result<BookingReceiptDto>[] results =
+        [
+            await service.GetAsync(token),
+            await service.CancelAsync(token),
+            await service.RescheduleAsync(new GuestRescheduleRequest(new DateOnly(2030, 2, 1), new DateOnly(2030, 2, 3)), token),
+        ];
+
+        // Assert
+        Assert.All(results, result => Assert.Equal(ErrorCodes.Api.GuestUnauthorized, result.FirstError?.Code));
+    }
+
+    /// <summary>Negative: a missing gateway or request is a programming error, and no call is made.</summary>
+    [Fact]
+    public async Task GuestBookingService_MissingGatewayOrRequest_Throws()
+    {
+        // Arrange
+        StubHandler handler = StubHandler.Json(HttpStatusCode.OK, "{}");
+        ApiGuestBookingService service = new(Gateway(handler));
+
+        // Act and assert: the null-forgiving operator passes the null that the guard must refuse.
+        Assert.Throws<ArgumentNullException>(() => new ApiGuestBookingService(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => service.RescheduleAsync(null!, TestContext.Current.CancellationToken));
+        Assert.Null(handler.Method);
+    }
+
+    #endregion
+
     #region Helpers
 
     private static ApiGateway Gateway(StubHandler handler, StaffCallContext? staff = null, GuestCallContext? guest = null) =>
         new(new HttpClient(handler, disposeHandler: false) { BaseAddress = Base }, staff, guest);
 
-    private static string Envelope(PublicBookingDto value) =>
-        JsonSerializer.Serialize(new ApiResponse<PublicBookingDto>(value, []), ApiJson.Options);
+    private static string Envelope<TValue>(TValue value) =>
+        JsonSerializer.Serialize(new ApiResponse<TValue>(value, []), ApiJson.Options);
 
     private static CreatePublicBookingRequest PublicRequest() =>
         new(
@@ -233,21 +314,8 @@ public sealed class GuestGatewayTests
             2,
             new GuestFields("Anna", "Jensen", "anna@example.com", "+4512345678", "Denmark", null));
 
-    private static BookingDetailsDto Booked(int id) =>
-        new(
-            id,
-            $"FLZ-{id:D6}",
-            new DateOnly(2030, 1, 10),
-            new DateOnly(2030, 1, 12),
-            new DateOnly(2030, 1, 12),
-            2,
-            BookingStatus.Pending,
-            null,
-            null,
-            null,
-            new RoomListItemDto(1, "101", 1, RoomSize.Double, 2, RoomStatus.Available, HousekeepingStatus.Clean),
-            new GuestListItemDto(1, "Anna", "Jensen", "Anna Jensen", "anna@example.com", "+4512345678", "Denmark", false),
-            new BookingActionsDto(true, false, false, true, true));
+    private static BookingReceiptDto Receipt() =>
+        new(Guid.Parse(Reference), new DateOnly(2030, 1, 10), new DateOnly(2030, 1, 12), 2, RoomSize.Double, BookingStatus.Pending);
 
     private sealed record Sample(int N);
 

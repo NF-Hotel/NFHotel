@@ -15,8 +15,8 @@ namespace NFHotel.Application.Tests.Security;
 
 /// <summary>
 /// The ownership rule of the guest sign-in (MIL-018, ADR-0047 decision 5, UC-010): a signed-in guest reads, cancels and
-/// moves only the booking in the guest token, reads only the guest of that booking, never sees a passport number, and
-/// keeps the room. Every guest operation is stated allowed or refused, for the guest's own booking and another one.
+/// moves only the booking in the guest token and keeps the room; since MIL-085 a guest reads no guest by its key at all
+/// (ADR-0049 decision 3). Every guest operation is stated allowed or refused, for the own booking and another one.
 /// </summary>
 public sealed class GuestOwnershipTests
 {
@@ -100,7 +100,6 @@ public sealed class GuestOwnershipTests
     /// <param name="operation">The operation.</param>
     [Theory]
     [InlineData(ReadBooking)]
-    [InlineData(ReadGuest)]
     [InlineData(Cancel)]
     [InlineData(Reschedule)]
     public async Task GuestOperation_OwnBooking_IsAllowed(string operation)
@@ -187,9 +186,12 @@ public sealed class GuestOwnershipTests
         Assert.Equal(roomBefore, own.RoomId);
     }
 
-    /// <summary>Security: the guest's own details come without the passport number, which the Guest role may not see (MIL-018 criterion 4).</summary>
+    /// <summary>
+    /// Security (ADR-0049 decision 3): a guest token reads no guest by its key, not even the guest of the own booking,
+    /// because no page of a guest needs it; the receipt is all a guest sees.
+    /// </summary>
     [Fact]
-    public async Task GetByIdAsync_OwnGuestWithAPassport_ComesWithoutThePassportNumber()
+    public async Task GetByIdAsync_GuestOfTheOwnBooking_IsForbidden()
     {
         // Arrange
         ServiceWorld world = new();
@@ -200,9 +202,7 @@ public sealed class GuestOwnershipTests
         Result<GuestDetailsDto> result = await world.GuestService().GetByIdAsync(own.GuestId, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.IsSuccess);
-        Assert.Null(result.Value.PassportNumber);
-        Assert.Equal("anna@example.com", result.Value.Email);
+        Assert.Equal(ErrorCodes.Api.Forbidden, result.FirstError?.Code);
     }
 
     /// <summary>Negative: a guest token for a booking that no longer exists reads no guest.</summary>

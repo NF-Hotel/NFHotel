@@ -117,7 +117,7 @@ internal static class BookingFactory
     /// <returns>The same booking, with <see cref="Entity{TKey}.Id"/> set.</returns>
     /// <remarks>
     /// <see cref="Entity{TKey}.Id"/> has a private setter, because only EF Core may assign it
-    /// (A-15). The booking number format of BR-109 can be tested only with a realistic id, so
+    /// (A-15). That the reference stays apart from the key can be tested only with a realistic id, so
     /// the key is set here via reflection instead of opening the setter to production code.
     /// </remarks>
     internal static Booking WithBookingId(Booking booking, int bookingId)

@@ -15,7 +15,7 @@ namespace NFHotel.Web.Tests;
 /// </summary>
 public sealed class GuestUseCaseRunnerTests
 {
-    private static readonly GuestSessionDto Session = new("the-guest-token", new DateTimeOffset(2100, 1, 1, 0, 0, 0, TimeSpan.Zero), 7);
+    private static readonly GuestSessionDto Session = new("the-guest-token", new DateTimeOffset(2100, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
     #region The guest token
 

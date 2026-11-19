@@ -54,8 +54,8 @@ public sealed class AdminDashboardTests : IAsyncDisposable
         Assert.Contains("Bookings checking in on", page.Markup, StringComparison.Ordinal);
         Assert.Contains("Bookings freeing up their room on", page.Markup, StringComparison.Ordinal);
         Assert.Contains("Rooms where cleaning can be started", page.Markup, StringComparison.Ordinal);
-        Assert.Contains("B-0001", page.Markup, StringComparison.Ordinal);
-        Assert.Contains("B-0002", page.Markup, StringComparison.Ordinal);
+        Assert.Contains(ReferenceOf(1).ToString(), page.Markup, StringComparison.Ordinal);
+        Assert.Contains(ReferenceOf(2).ToString(), page.Markup, StringComparison.Ordinal);
         Assert.Contains("102", page.Markup, StringComparison.Ordinal);
     }
 

@@ -11,9 +11,10 @@ using NSubstitute;
 namespace NFHotel.Web.Tests;
 
 /// <summary>
-/// The guest pages through the real pipeline of the web application (MIL-018, ADR-0047 decision 6, UC-010): the sign-in
-/// on <c>/booking</c>, the guest cookie, the own booking on <c>/my-booking</c> with its two changes, the session from the
-/// booking flow, and the sign-out. The API is a substitute; what reaches it is recorded.
+/// The guest pages through the real pipeline of the web application (MIL-018, ADR-0047 decision 6, UC-010, and since
+/// MIL-085 ADR-0049): the sign-in on <c>/booking</c> with the reference, the guest cookie, the own booking on
+/// <c>/my-booking</c> with its two changes, the session from the booking flow, and the sign-out. The API is a substitute;
+/// what reaches it is recorded.
 /// </summary>
 public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
 {
@@ -29,17 +30,17 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
     #region The sign-in and the cookie
 
     /// <summary>
-    /// Positive: the number and the email set the guest cookie, HttpOnly, SameSite=Lax, only for the own booking pages,
+    /// Positive: the reference and the email set the guest cookie, HttpOnly, SameSite=Lax, only for the own booking pages,
     /// expiring with the guest token, and the browser goes to the own booking. The cookie does not show the token.
     /// </summary>
     [Fact]
-    public async Task SignIn_RightNumberAndEmail_SetsTheGuestCookieAndGoesToTheOwnBooking()
+    public async Task SignIn_RightReferenceAndEmail_SetsTheGuestCookieAndGoesToTheOwnBooking()
     {
         // Arrange
         using HttpClient browser = _factory.CreateBrowser();
 
         // Act
-        using HttpResponseMessage response = await GuestWebFactory.SignInAsGuestAsync(browser, GuestWebFactory.BookingNumber, GuestWebFactory.Email);
+        using HttpResponseMessage response = await GuestWebFactory.SignInAsGuestAsync(browser, GuestWebFactory.Reference, GuestWebFactory.Email);
         string cookie = SetCookie(response, GuestCookie);
 
         // Assert
@@ -60,13 +61,58 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         using HttpClient browser = _factory.CreateBrowser();
 
         // Act
-        using HttpResponseMessage response = await GuestWebFactory.SignInAsGuestAsync(browser, GuestWebFactory.BookingNumber, "bo@example.com");
+        using HttpResponseMessage response = await GuestWebFactory.SignInAsGuestAsync(browser, GuestWebFactory.Reference, "bo@example.com");
         string html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Check the booking number and the email you booked with.", html, StringComparison.Ordinal);
+        Assert.Contains("Check the booking reference and the email you booked with.", html, StringComparison.Ordinal);
         Assert.False(HasSetCookie(response, GuestCookie));
+    }
+
+    /// <summary>Positive (ADR-0049 decision 1): the form asks for the booking reference, and nothing is looked up before a post.</summary>
+    [Fact]
+    public async Task SignInPage_Opened_AsksForTheReferenceAndTheEmail()
+    {
+        // Arrange
+        using HttpClient browser = _factory.CreateBrowser();
+        _factory.Access.ClearReceivedCalls();
+
+        // Act
+        using HttpResponseMessage response = await browser.GetAsync(GuestSignInRegistration.SignInPath, TestContext.Current.CancellationToken);
+        string html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Booking reference", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"booking-reference\"", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"booking-email\"", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("FLZ-", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("booking number", html, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(_factory.Access.ReceivedCalls());
+    }
+
+    /// <summary>
+    /// Negative (ADR-0049 decisions 3 and 5): the address of an old link with a booking number sends the browser to the
+    /// empty sign-in, so the number is neither filled in nor looked up, and the address bar no longer shows it.
+    /// </summary>
+    /// <param name="path">The address of an old link.</param>
+    [Theory]
+    [InlineData("/booking/FLZ-000123")]
+    [InlineData("/booking/3f2504e0-4f89-41d3-9a0c-0305e82c3301")]
+    public async Task SignInPage_AddressWithANumberOrAReference_GoesToTheEmptySignIn(string path)
+    {
+        // Arrange
+        using HttpClient browser = _factory.CreateBrowser();
+        _factory.Access.ClearReceivedCalls();
+
+        // Act
+        using HttpResponseMessage response = await browser.GetAsync(path, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(GuestSignInRegistration.SignInPath, LocalPath(response));
+        Assert.Empty(_factory.Access.ReceivedCalls());
     }
 
     /// <summary>Positive (MIL-018 criterion 5, in process): behind the TLS proxy the guest cookie is Secure as well as HttpOnly.</summary>
@@ -80,7 +126,7 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         browser.DefaultRequestHeaders.Add("X-Forwarded-Proto", "https");
 
         // Act
-        using HttpResponseMessage response = await GuestWebFactory.SignInAsGuestAsync(browser, GuestWebFactory.BookingNumber, GuestWebFactory.Email);
+        using HttpResponseMessage response = await GuestWebFactory.SignInAsGuestAsync(browser, GuestWebFactory.Reference, GuestWebFactory.Email);
         string cookie = SetCookie(response, GuestCookie);
 
         // Assert
@@ -126,8 +172,9 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
     }
 
     /// <summary>
-    /// Security: the signed-in guest sees the own booking, and the page speaks to the API as the guest and only as the
-    /// guest, even in a browser that is also signed in to the back office. The token never reaches the page.
+    /// Security: the signed-in guest sees the receipt of the own booking without the name and the email (ADR-0049
+    /// decision 7), and the page speaks to the API as the guest and only as the guest, even in a browser that is also
+    /// signed in to the back office. The token never reaches the page.
     /// </summary>
     [Fact]
     public async Task MyBooking_GuestAndStaffInOneBrowser_ShowsTheBookingAndSpeaksOnlyAsTheGuest()
@@ -135,7 +182,7 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         // Arrange
         using HttpClient browser = _factory.CreateBrowser();
         using HttpResponseMessage staff = await WebFactory.SignInAsync(browser, "mona", WebFactory.Password);
-        using HttpResponseMessage guest = await GuestWebFactory.SignInAsGuestAsync(browser, GuestWebFactory.BookingNumber, GuestWebFactory.Email);
+        using HttpResponseMessage guest = await GuestWebFactory.SignInAsGuestAsync(browser, GuestWebFactory.Reference, GuestWebFactory.Email);
         _factory.Callers.Clear();
 
         // Act
@@ -144,8 +191,9 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains(GuestWebFactory.BookingNumber, html, StringComparison.Ordinal);
-        Assert.Contains("Anna Jensen", html, StringComparison.Ordinal);
+        Assert.Contains(GuestWebFactory.Reference, html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Anna Jensen", html, StringComparison.Ordinal);
+        Assert.DoesNotContain(GuestWebFactory.Email, html, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Cancel my booking", html, StringComparison.Ordinal);
         Assert.Contains("Save the new dates", html, StringComparison.Ordinal);
         Assert.DoesNotContain(GuestWebFactory.GuestToken, html, StringComparison.Ordinal);
@@ -153,7 +201,7 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
     }
 
     /// <summary>
-    /// Positive: the cancel form cancels the booking in the cookie and sends the browser back with the result in the
+    /// Positive: the cancel form cancels the booking of the guest and sends the browser back with the result in the
     /// address, so a reload shows it and does not post again.
     /// </summary>
     [Fact]
@@ -172,11 +220,11 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         // Assert
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal("/my-booking?done=cancelled", LocalPath(response));
-        await _factory.Bookings.Received(1).CancelAsync(GuestWebFactory.BookingId, Arg.Any<CancellationToken>());
+        await _factory.Bookings.Received(1).CancelAsync(Arg.Any<CancellationToken>());
         Assert.Contains("Your booking is cancelled.", notice, StringComparison.Ordinal);
     }
 
-    /// <summary>Positive: the change form moves the booking in the cookie to the new dates, in its own room.</summary>
+    /// <summary>Positive: the change form moves the booking of the guest to the new dates; the request names no booking and no room.</summary>
     [Fact]
     public async Task Reschedule_SignedInGuest_AsksForTheNewDatesInTheSameRoom()
     {
@@ -196,7 +244,7 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal("/my-booking?done=rescheduled", LocalPath(response));
         await _factory.Bookings.Received(1).RescheduleAsync(
-            new RescheduleBookingRequest(GuestWebFactory.BookingId, new DateOnly(2026, 4, 20), new DateOnly(2026, 4, 23), GuestWebFactory.RoomId),
+            new GuestRescheduleRequest(new DateOnly(2026, 4, 20), new DateOnly(2026, 4, 23)),
             Arg.Any<CancellationToken>());
     }
 
@@ -229,7 +277,7 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         // Arrange
         using HttpClient browser = _factory.CreateBrowser();
         string ticket = _factory.Services.GetRequiredService<GuestSessionTickets>()
-            .Issue(new GuestSessionDto(GuestWebFactory.GuestToken, GuestWebFactory.ExpiresAt, GuestWebFactory.BookingId));
+            .Issue(new GuestSessionDto(GuestWebFactory.GuestToken, GuestWebFactory.ExpiresAt));
         Dictionary<string, string> fields = await AntiforgeryFieldAsync(browser);
         fields[GuestSignInRegistration.TicketField] = ticket;
 
@@ -273,7 +321,7 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         // Arrange
         using HttpClient browser = _factory.CreateBrowser();
         using HttpResponseMessage staff = await WebFactory.SignInAsync(browser, "mona", WebFactory.Password);
-        using HttpResponseMessage guest = await GuestWebFactory.SignInAsGuestAsync(browser, GuestWebFactory.BookingNumber, GuestWebFactory.Email);
+        using HttpResponseMessage guest = await GuestWebFactory.SignInAsGuestAsync(browser, GuestWebFactory.Reference, GuestWebFactory.Email);
         Dictionary<string, string> fields = await AntiforgeryFieldAsync(browser);
 
         // Act
@@ -297,7 +345,7 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
     private async Task<HttpClient> SignedInGuestAsync()
     {
         HttpClient browser = _factory.CreateBrowser();
-        using HttpResponseMessage response = await GuestWebFactory.SignInAsGuestAsync(browser, GuestWebFactory.BookingNumber, GuestWebFactory.Email);
+        using HttpResponseMessage response = await GuestWebFactory.SignInAsGuestAsync(browser, GuestWebFactory.Reference, GuestWebFactory.Email);
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         return browser;
     }
