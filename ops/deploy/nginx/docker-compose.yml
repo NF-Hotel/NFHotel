@@ -55,6 +55,10 @@ services:
     volumes:
       - ./templates:/etc/nginx/templates:ro
       - ./snippets:/etc/nginx/snippets:ro
+      # security.txt of the public listener (MIL-084, ADR-0048). The folder, not the file: the
+      # file of the next release shows at once. It is not part of NGINX_CONFIG_HASH, so a new
+      # Expires does not recreate the proxy.
+      - ./well-known:/etc/nginx/well-known:ro
       # fullchain.pem and privkey.pem: made by scripts/make-dev-certificate.sh,
       # or put there by the owner (a real certificate).
       - ${NGINX_TLS_DIR:-./tls}:/etc/nginx/tls:ro

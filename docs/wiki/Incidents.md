@@ -3,16 +3,17 @@
 This page says what the team does when NF Hotel is down, slow or attacked, how it writes up what happened afterwards, and what the logs may and may not contain.
 
 **For:** anyone in the team (S01) who answers an alert in Discord, and the owner of the Proxmox server (S03) when the node is involved.
-**Work:** MIL-036 task 4. **Related:** [Monitoring](Monitoring) (the alerts and their first steps), [Host Hardening](Host-Hardening) (console recovery), [CI-CD](CI-CD) (roll back a release).
+**Work:** MIL-036 task 4; MIL-084 for a report from outside. **Related:** [Monitoring](Monitoring) (the alerts and their first steps), [Host Hardening](Host-Hardening) (console recovery), [CI-CD](CI-CD) (roll back a release), [Public Access](Public-Access#the-securitytxt) (the `security.txt` of the site).
 
 **Contents**
 1. [What counts as an incident](#what-counts-as-an-incident)
 2. [Step by step: handle an incident](#step-by-step-handle-an-incident)
-3. [When personal data may have leaked](#when-personal-data-may-have-leaked)
-4. [Write the postmortem](#write-the-postmortem)
-5. [Log policy](#log-policy)
-6. [Postmortems](#postmortems)
-7. [Why it is done this way](#why-it-is-done-this-way)
+3. [A vulnerability report from outside](#a-vulnerability-report-from-outside)
+4. [When personal data may have leaked](#when-personal-data-may-have-leaked)
+5. [Write the postmortem](#write-the-postmortem)
+6. [Log policy](#log-policy)
+7. [Postmortems](#postmortems)
+8. [Why it is done this way](#why-it-is-done-this-way)
 
 ---
 
@@ -40,6 +41,20 @@ An incident is anything that stops guests from booking, stops the staff from wor
 4. **Keep the evidence.** Before a restart or a rebuild of a suspected attack, save `sudo docker logs <container> > ~/incident-<date>-<container>.log` and note the time window for Loki. *Why:* a restart throws the container log away, and Loki keeps only 14 days.
 5. **Check that it is fixed** the way the alert checks it: wait for *RESOLVED* in Discord, and open the site yourself. *Why:* the alert is the definition of "working"; a fix that the alert does not see is not proven.
 6. **Close the issue** with one line on the cause and a link to the postmortem (SEV1 and SEV2), or the fix (SEV3).
+
+## A vulnerability report from outside
+
+`SECURITY.md` and the `security.txt` of the site ask someone who finds a weakness to report it privately: through the report form of GitHub (private vulnerability reporting), or by e-mail to the mailbox that the file names second. This is how the team keeps what the policy promises (MIL-084, [ADR-0048](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0048-where-security-txt-is-served.md)). A report is not an incident by itself; step 5 says when it becomes one.
+
+1. **Who reads, and how often.** S01 gets an e-mail from GitHub for each new private report, and reads the mailbox at least twice a week; the confirmation is due within 5 working days. GitHub sends that e-mail only to an administrator who watches the repository with **Security alerts** (or **All Activity**) and has e-mail turned on for watching, so S01 keeps both settings (**Watch → Custom** on the repository, and **Settings → Notifications** of the account). *Why:* the policy promises an answer in 5 working days, and a report that nobody sees breaks the promise without anyone noticing.
+2. **Answer first.** Thank the finder and confirm the report, in Danish or in English. A report through the form shows under **Security and quality → Advisories** of the repository, with the status *Triage*: answer there with an ordinary comment, which the finder sees; a confidential comment is for the team only. Ask politely for what is missing. Ask for nothing to be signed. To a demand for payment before the details: no reward is paid, and the form is open to everyone. *Why:* a quick, polite answer keeps the finder on the private channel; a finder who hears nothing may publish.
+3. **The report is untrusted.** Open no attachment and follow no link of a report on a machine that is signed in to the accounts of the project. Reproduce a proof of concept in the development environment or in a throwaway container, never against production and never with real data. *Why:* a report can itself be phishing, or a script that attacks whoever runs it.
+4. **Check and rate.** Reproduce the weakness. Then **Accept and open as draft** (for a report by e-mail, **New draft security advisory** on the same page), and rate it with the CVSS calculator of the draft. The rating gives the time of DSA-001: a fix within 7 days for a critical weakness and within 30 days for a high one. A report that is no weakness is closed with **Close security advisory** and a comment that says why. *Why:* the score is a measure that the finder and the advisory databases share, and it sets the deadline instead of a feeling.
+5. **Is it an incident?** If the report shows that data was reached, or that the weakness is being used, follow [Step by step: handle an incident](#step-by-step-handle-an-incident), and [When personal data may have leaked](#when-personal-data-may-have-leaked), with its 72 hours, when personal data may have leaked. *Why:* a weakness that someone used is harm that has happened, not only a risk, and the 72 hours run from when the team knew.
+6. **Fix in private.** The repository is public, so an ordinary pull request shows the weakness before the fix is live. Prepare the fix in the temporary private fork of the draft advisory (**Start a temporary private fork**). No status check runs on a pull request there, and GitHub does not enforce the protection rules of `main` when the advisory merges it: run the tests on your own machine before the merge, and see the checks of the merge commit on `main` turn green before S01 approves the CD run. When the checks must run before the merge, open an ordinary pull request with a neutral title instead, and deploy as soon as it is merged. S01 merges and approves the CD run. *Why:* the time between a public fix and its deploy is the time in which anyone can read how to attack the live site.
+7. **Tell the finder, then publish.** Tell the finder when the fix is live. Publish the advisory on the agreed date. When others may run the affected code, ask GitHub for a CVE through the advisory before it is published. Credit the finder only with their consent: GitHub shows a credit only after the person accepts it. *Why:* the advisory tells the users of the code what to update, and a finder who is treated fairly reports again.
+8. **Afterwards.** Add a regression test that fails without the fix. A weakness in the service of another party (a library, Cloudflare, GitHub) is passed on to that party, and the finder is told. *Why:* a weakness that came back would be found by the next finder, and the other party's users have the same weakness.
+9. **Junk.** Output of a scanner without a proof, and reports outside the scope of `SECURITY.md`, get one short answer that points to the policy, and are closed. *Why:* such reports are many and cheap to send; one polite answer is enough.
 
 ## When personal data may have leaked
 

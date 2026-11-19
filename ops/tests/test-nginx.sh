@@ -4,9 +4,11 @@
 # tailnet address and refused from another address. Then the public listener of MIL-040 (port 8082,
 # Cloudflare Tunnel): the site with the client's scheme and address, the back office only with the
 # Access token header in any spelling of /admin (MIL-041, MIL-072), and only the two mobile routes
-# of the API. Last, the hardened service of
-# deploy/nginx/docker-compose.yml (MIL-023 task 2) starts and turns healthy with a key as
-# production has it: 0600 and owned by another user than root.
+# of the API. The public listener serves security.txt from the folder well-known, with its type and
+# headers, and redirects /security.txt to it, while every other path of /.well-known/ and the HTTPS
+# server of the tailnet still go to the web application (MIL-084, ADR-0048). Last, the hardened
+# service of deploy/nginx/docker-compose.yml (MIL-023 task 2) starts and turns healthy with a key as
+# production has it: 0600 and owned by another user than root, and serves security.txt from its mount.
 #
 # Usage: test-nginx.sh
 # Env:   REPO_HOST  the repository path as the Docker daemon sees it (default: this
@@ -70,6 +72,7 @@ start_nginx() {
     -v "$REPO_HOST/deploy/nginx/templates/00-server-tokens.conf.template:/etc/nginx/templates/00-server-tokens.conf.template:ro" \
     -v "$REPO_HOST/deploy/nginx/templates/00-forwarded.conf.template:/etc/nginx/templates/00-forwarded.conf.template:ro" \
     -v "$REPO_HOST/deploy/nginx/templates/public.conf.template:/etc/nginx/templates/public.conf.template:ro" \
+    -v "$REPO_HOST/deploy/nginx/well-known:/etc/nginx/well-known:ro" \
     -v "$W_HOST/snippets:/etc/nginx/snippets:ro" -v "$W_HOST/tls:/etc/nginx/tls:ro" "$NGINX" >/dev/null
   sleep 3
 }
@@ -139,6 +142,47 @@ check "the mobile sign-in route reaches the API" api-reached \
 check "the mobile rooms route reaches the API" 200 "$(public /mobile-api/api/rooms/3)"
 check "another API route is not public" 404 "$(public /mobile-api/api/bookings)"
 check "the API itself is not on the public site" 404 "$(public /mobile-api/)"
+
+echo "== security.txt on the public listener (MIL-084, ADR-0048)"
+readonly SECURITY_TXT="$REPO/deploy/nginx/well-known/security.txt"
+# answer <path> [curl option...]: the status line and the headers of the public listener's answer, without CR.
+answer() {
+  local path="$1"
+  shift
+  docker run --rm --network t-ngnet "$CURL" -s -o /dev/null -D - "$@" "$PUBLIC$path" | tr -d '\r' # NOSONAR: see PUBLIC
+}
+# status <answer>: the status code of an answer; field <name> <answer>: the value of one of its headers.
+status() { awk 'NR == 1 { print $2 }' <<<"$1"; }
+field() { sed -n "s/^$1: //Ip" <<<"$2" | head -n 1; }
+# guest <path>: the body of the public listener's answer to a guest at 203.0.113.7.
+guest() {
+  docker run --rm --network t-ngnet "$CURL" -s -H 'CF-Connecting-IP: 203.0.113.7' "$PUBLIC$1" # NOSONAR: see PUBLIC
+}
+# digest: the SHA-256 of standard input.
+digest() { sha256sum | cut -d' ' -f1; }
+file_answer="$(answer /.well-known/security.txt)"
+check "security.txt answers 200 without the Access token" 200 "$(status "$file_answer")"
+check "security.txt is text/plain in UTF-8 (RFC 9116, section 3)" "text/plain; charset=utf-8" \
+  "$(field Content-Type "$file_answer")"
+check "security.txt is sent with nosniff (RFC 8615, section 4.2)" nosniff "$(field X-Content-Type-Options "$file_answer")"
+check "security.txt is sent with a content security policy that allows nothing" \
+  "default-src 'none'; frame-ancestors 'none'" "$(field Content-Security-Policy "$file_answer")"
+check "security.txt is sent with the Strict-Transport-Security of the web application" max-age=2592000 \
+  "$(field Strict-Transport-Security "$file_answer")"
+check "the body of security.txt is the file of the repository" "$(digest <"$SECURITY_TXT")" \
+  "$(guest /.well-known/security.txt | digest)"
+check "HEAD of security.txt answers 200" 200 "$(status "$(answer /.well-known/security.txt -I)")"
+redirect="$(answer /security.txt)"
+check "/security.txt answers 301 (RFC 9116, section 3)" 301 "$(status "$redirect")"
+check "the redirect names security.txt by a relative address" /.well-known/security.txt "$(field Location "$redirect")"
+check "the redirect is sent with the Strict-Transport-Security of the web application" max-age=2592000 \
+  "$(field Strict-Transport-Security "$redirect")"
+check "another path of /.well-known/ reaches the web application" "https 203.0.113.7" \
+  "$(guest /.well-known/change-password)"
+check "security.txt spelt in capitals reaches the web application" "https 203.0.113.7" \
+  "$(guest /.well-known/SECURITY.TXT)"
+check "the HTTPS server of the tailnet hands security.txt to the web application" https \
+  "$(docker run --rm --network t-ngnet "$CURL" -sk https://t-nginx/.well-known/security.txt | cut -d' ' -f1)"
 # The stand-in leaves, so the hardened proxy below finds no web application, as before.
 docker rm -f nfhotel-web >/dev/null 2>&1
 
@@ -170,6 +214,8 @@ check "the hardened proxy turns healthy with a 0600 key of another user" healthy
   "$(docker inspect -f '{{.State.Health.Status}}' t-hardened-nginx-1 2>/dev/null || echo missing)"
 check "the hardened proxy redirects port 80" 301 "$(code http://t-hardened-nginx-1/)"
 check "the hardened proxy serves HTTPS (no web application here)" 502 "$(code https://t-hardened-nginx-1/)"
+check "the hardened proxy serves security.txt from its read-only mount" "$(digest <"$SECURITY_TXT")" \
+  "$(docker run --rm --network t-ngnet "$CURL" -s http://t-hardened-nginx-1:8082/.well-known/security.txt | digest)"
 if ((fail)); then
   { cat "$W/hardened.out" && docker logs --tail 20 t-hardened-nginx-1; } 2>&1 | sed 's/^/      /'
 fi
