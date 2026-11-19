@@ -1,0 +1,9 @@
+# NF Hotel: where to report a security problem (RFC 9116).
+# Source: ops/deploy/nginx/well-known/security.txt in https://github.com/NF-Hotel/NFHotel
+Contact: https://github.com/NF-Hotel/NFHotel/security/advisories/new
+Contact: mailto:mikr71394@edu.ucl.dk
+Expires: 2027-05-18T00:00:00Z
+Preferred-Languages: da, en
+Canonical: https://nfhotel.devmatiker.com/.well-known/security.txt
+Policy: https://github.com/NF-Hotel/NFHotel/security/policy
+Bug-Bounty: False

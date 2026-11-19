@@ -11,10 +11,11 @@ NF Hotel is public at `https://nfhotel.devmatiker.com` through Cloudflare Tunnel
 3. [Set it up, step by step](#set-it-up-step-by-step)
 4. [The back office from the internet](#the-back-office-from-the-internet)
 5. [The edge as code](#the-edge-as-code)
-6. [Check it](#check-it)
-7. [Turn it off](#turn-it-off)
-8. [When the public site is down](#when-the-public-site-is-down)
-9. [Why it is built this way](#why-it-is-built-this-way)
+6. [The security.txt](#the-securitytxt)
+7. [Check it](#check-it)
+8. [Turn it off](#turn-it-off)
+9. [When the public site is down](#when-the-public-site-is-down)
+10. [Why it is built this way](#why-it-is-built-this-way)
 
 ---
 
@@ -25,6 +26,7 @@ NF Hotel is public at `https://nfhotel.devmatiker.com` through Cloudflare Tunnel
 | `/`, `/book`, `/booking/...`, `/my-booking...` | Yes | Guests look, book, sign in to their booking with its number and email, and change or cancel it (MIL-079, MIL-018) |
 | `/mobile-api/api/auth/login`, `/mobile-api/api/rooms...` | Yes | The two routes of the mobile app (ADR-0015) |
 | `/admin...`, in any letter case | Behind Cloudflare Access | Only listed staff get past the e-mail code to the hotel's sign-in (MIL-041, MIL-072); without it, 404 |
+| `/.well-known/security.txt`, and `/security.txt` as a redirect to it | Yes | Where to report a security problem (RFC 9116, MIL-084); nginx serves it from git, so it answers while the web application is down ([The security.txt](#the-securitytxt)) |
 | Any other path of `/mobile-api/` | No, 404 | The API has no other public path |
 | SSH, the monitoring, PostgreSQL | No | Not on the tunnel at all |
 
@@ -212,6 +214,56 @@ S01, once:
 
 The dashboard stays the fastest way to act: to take the site off the internet ([Turn it off](#turn-it-off)) or a member of staff off the list. The weekly comparison then reports the difference until the code and the dashboard agree again: write the change into the code afterwards, or undo it in the dashboard.
 
+## The security.txt
+
+**Decision:** [ADR-0048](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0048-where-security-txt-is-served.md). **Work:** MIL-084. **The policy:** `SECURITY.md` in the repository, which GitHub also shows as the security policy of the repository.
+
+`https://nfhotel.devmatiker.com/.well-known/security.txt` tells someone who finds a weakness where to report it, in the form of RFC 9116: the private report form of GitHub and a mailbox as the two contacts, the policy, the languages (Danish and English), the address of the file itself (`Canonical`), that there is no bug bounty, and the date after which the file is not to be trusted (`Expires`). `/security.txt` answers with a redirect to it. How a report is handled: [Incidents](Incidents#a-vulnerability-report-from-outside).
+
+### Where it is
+
+- **The file** is `ops/deploy/nginx/well-known/security.txt` in git: ASCII, with LF line ends. The folder is `well-known`, without the dot, so it is not hidden.
+- **The route** is an exact location of the public listener in `ops/deploy/nginx/templates/public.conf.template`, before every other location and without the check of Cloudflare Access. It sends `text/plain; charset=utf-8`, `nosniff`, a content security policy that allows nothing, and the Strict-Transport-Security that the web application sends for the public site; keep the two equal. The HTTPS server of the tailnet has no such route: the file speaks for the public name only, and on the tailnet the path goes to the web application as before.
+- **The mount:** `docker-compose.yml` of the proxy mounts the folder read-only at `/etc/nginx/well-known`. nginx reads the file at every request, so a new file is live as soon as the checkout on the VM has it; a change of the file alone does not recreate the proxy.
+
+### Change it
+
+1. **The pull request.** Change the file in a pull request; `CODEOWNERS` asks S01 for every change under `ops/`. Ops CI checks the file against RFC 9116 and ADR-0048 (the step `Check security.txt (MIL-084)` of `Ops nginx routes`), and `test-nginx.sh` checks that the public listener serves it unchanged, with its headers.
+2. **The deploy.** The file reaches the site with the next release, like any other change: S01 approves the CD run.
+3. **Check it** from outside the tailnet: `curl -sS -D - https://nfhotel.devmatiker.com/.well-known/security.txt` answers `200` with the type and the three headers above, and the body is the file of `main`. The whole check, as the weekly look runs it, works on Linux or WSL with curl:
+   ```bash
+   u=https://nfhotel.devmatiker.com/.well-known/security.txt
+   bash ops/scripts/check-security-txt.sh --url "$u" --canonical "$u" --same-as ops/deploy/nginx/well-known/security.txt \
+     --links --hsts-like https://nfhotel.devmatiker.com/ --expect-warnings unsigned,no-encryption,no-role-address
+   ```
+
+### Keep the contacts and the date
+
+- **The date.** `Expires` is set 180 days ahead, at 00:00 UTC, on the day of the pull request that sets it (S01, MIL-084): `date -u -d '+180 days' +%Y-%m-%dT00:00:00Z`. From 30 days before the date the check fails: the job `Ops nginx routes` then fails on every pull request and every push to `main`, so nothing is merged or deployed (ADR-0021) until a pull request moves the date, and the weekly look opens its issue. Move the date before that; a fix in that window has to carry the new date. The check refuses a date more than 366 days ahead.
+- **The contacts.** The first is the private report form of GitHub (private vulnerability reporting, turned on in the settings of the repository); the second is the mailbox that S01 named for the file. When either changes (the form is turned off, the mailbox closes), change the file and the sentence of `SECURITY.md` that names the mailbox in one pull request, the same week.
+- **The exceptions of ADR-0048.** The file is not signed (E1), names no role address such as `security@` (E2) and no key for encryption (E3), and `SECURITY.md` promises no safe harbour (E4). The check reports E1 to E3 as the warnings `unsigned`, `no-role-address` and `no-encryption`, and fails when the warnings differ from the expected ones. When an exception is closed, change ADR-0048, the file, `--expect-warnings` in `ops-ci.yaml` and `SECURITY_TXT_WARNINGS` in `ops/scripts/edge-comparison-steps.sh` in one pull request.
+
+### The weekly look
+
+The job `Look at the public security.txt` of the workflow `NF Hotel edge comparison` runs every Monday beside the comparison of the edge, without an environment and without a secret. It fetches the public file and checks it as Ops CI does; it also compares the body with the file of `main`, asks every address that the file names, and compares the Strict-Transport-Security with the one of the front page (RFC 9116, section 5.1: watch the file and what it refers to).
+
+| The run | What it means | What to do |
+| --- | --- | --- |
+| Green, the look passes | The live file is the file of `main`, and every address answers on its own host; an open issue is closed | Nothing |
+| Green with a warning: the issue **The public security.txt fails its weekly check** is opened, or has a new comment | The issue quotes the check: each line names the kind (`RFC 9116` with its section, or `ADR-0048 rule`), the line of the file and the field, never a value | Read the list below |
+| Red | The check could not run, for example a wrong option or a missing tool; the log shows what it said | Correct the script or the workflow |
+
+What a line of the issue usually means:
+
+- **The file `answers 404`, or `could not be fetched`:** the file is not deployed (expected until the first deploy of MIL-084), the proxy lacks the mount, or the site is down ([When the public site is down](#when-the-public-site-is-down)).
+- **`the body differs from`:** the live file is not the file of `main`: a release with a new file is not deployed yet, or the file on the VM was changed outside git. Treat a change outside git as a possible incident ([Incidents](Incidents)): find out who changed it before you deploy the file again.
+- **`Expires is ... days ahead, fewer than 30`:** move the date, as above.
+- **An address `answers` an error, or `ends on another host`:** the report form, the policy or the file moved or broke. The report form sends a visitor without a session to the sign-in of GitHub on `github.com`, which passes; if GitHub changes that, this line appears. Open the address in a browser, and correct the file if it moved.
+- **`Strict-Transport-Security is ...`:** the web application sends another value now; change the location in `public.conf.template` to the same.
+- **`the warnings are ...`:** an exception was closed, or a new gap opened; see the exceptions above.
+
+After the fix, run the workflow by hand (**Actions → NF Hotel edge comparison → Run workflow**, on `main`): a look that passes closes the issue.
+
 ## Check it
 
 From a phone with Tailscale turned off, or any machine outside the tailnet:
@@ -221,6 +273,7 @@ From a phone with Tailscale turned off, or any machine outside the tailnet:
 - In the Cloudflare dashboard the tunnel `nf-hotel` shows **Healthy**, and under **Routes** the route with the path `(?i)^/admin` has **Order 1**. After any change of the routes, the newest line `Updated to new configuration` of `cloudflared` in Grafana (Loki) lists that route first.
 - In Grafana, the public probe (`job="public_site"`) shows success.
 - The newest run of `NF Hotel edge comparison` says that the live account matches the code, and no issue **The public edge differs from its code** is open.
+- `https://nfhotel.devmatiker.com/.well-known/security.txt` shows the file of `main`, and no issue **The public security.txt fails its weekly check** is open ([The security.txt](#the-securitytxt)).
 
 ## Turn it off
 
@@ -243,4 +296,5 @@ From a phone with Tailscale turned off, or any machine outside the tailnet:
 - **The back office behind Cloudflare Access.** Strangers cannot try passwords on a sign-in page they cannot see, and staff need no Tailscale (ADR-0029).
 - **The routes and Access as code, without a state file.** The order of the routes once changed unseen in the dashboard (MIL-072); in git each change has a review, and a weekly plan finds a change made elsewhere. Every plan imports the live objects, so no state file with the identifiers and the addresses exists, and the only token in CI can read but not write (ADR-0046).
 - **The token as a file.** Like every other secret since ADR-0024, it is never an environment variable, so `docker inspect` and the monitoring cannot read it.
+- **The security.txt from nginx, in git.** A finder finds the contacts where RFC 9116 says to look, also while the web application is down; each change has a review, and a date in git runs out where every pull request sees it, not unseen in a dashboard (ADR-0048).
 - **Production on every release.** An error shows the error page, never a stack trace, to a guest.

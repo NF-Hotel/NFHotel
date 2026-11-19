@@ -8,8 +8,16 @@
 # secrets and lets the run stay green; compare masks each address, reduces the plan to its counts
 # and the names of the objects that differ, never prints an identifier or an address, and fails
 # a plan that fails, with its errors redacted; report opens, comments on or closes the issue as
-# the daily scan of the running images does. Fakes stand in for docker, gh and edge-tofu.sh, so
-# nothing reaches Cloudflare or GitHub. The identifiers and addresses below are made up.
+# the daily scan of the running images does. The steps of the job look (MIL-084 task 5,
+# ADR-0048): look runs check-security-txt.sh on the public address of security.txt with the file
+# of the checkout, the addresses that the file names and the front page, through a fake curl
+# that answers as the public listener and GitHub will after the deploy; a missing file, a file
+# that differs from main, an Expires fewer than 30 days ahead, a named address that fails or
+# ends on another host, and another Strict-Transport-Security each open the issue, and a look
+# that passes closes it. Fakes stand in for docker, gh, curl, edge-tofu.sh and
+# check-security-txt.sh, so nothing reaches Cloudflare, GitHub or the public site. The
+# identifiers and the e-mail addresses below are made up; the web addresses of the look are
+# those of the public site.
 #
 # Run it in Debian 12 with the repository's ops/ at /src:
 #   docker run --rm -v "$PWD/ops:/src:ro" debian:12-slim bash /src/tests/test-edge-comparison.sh
@@ -282,6 +290,174 @@ step_env=(REPO=NF-Hotel/NFHotel SERVER=https://github.com RUN_ID=42 DIFFERS=true
 steps report && ko "report ran without a summary" ||
   { grep -q "::error::no results/summary.md" "$W/stdout" && [[ ! -s "$W/log" ]] &&
     ok "report without a summary fails before gh"; } || ko "report no summary: $(cat "$W/stdout")"
+
+echo "== the look at the public security.txt (MIL-084 task 5, ADR-0048)"
+readonly SECURITY_TXT=https://nfhotel.devmatiker.com/.well-known/security.txt FRONT_PAGE=https://nfhotel.devmatiker.com/
+readonly FILE="$OPS/deploy/nginx/well-known/security.txt" LOOK_TITLE="The public security.txt fails its weekly check"
+tick=$'\x60'
+# The fake check-security-txt.sh logs its arguments, prints FAKE_FOUND and exits with FAKE_EXIT.
+cat >"$W/check" <<'EOF'
+#!/bin/bash
+echo "check $*" >>"$FAKE_LOG"
+[[ -z "${FAKE_FOUND:-}" ]] || printf '%s\n' "$FAKE_FOUND"
+exit "${FAKE_EXIT:-0}"
+EOF
+chmod +x "$W/check"
+step_env=("NFHOTEL_CHECK_SECURITY_TXT=$W/check")
+FAKE_FOUND="PASS  $SECURITY_TXT meets RFC 9116 and the rules of ADR-0048" steps look &&
+  [[ "$(cat "$W/job/output")" == failed=false ]] &&
+  [[ "$(grep '^check ' "$W/log")" == "check --url $SECURITY_TXT --canonical $SECURITY_TXT --same-as $FILE --links --hsts-like $FRONT_PAGE --expect-warnings unsigned,no-encryption,no-role-address" ]] &&
+  cmp -s "$W/job/results/summary.md" "$W/job/step-summary" &&
+  ok "look checks the public address with the file of the checkout, the addresses it names and the front page" ||
+  ko "look arguments: $(cat "$W/log" "$W/stdout")"
+FAKE_FOUND="error: --same-as names no readable file" FAKE_EXIT=2 steps look && ko "look accepted a check that could not run" ||
+  { grep -q "^::error::check-security-txt.sh stopped with exit 2" "$W/stdout" &&
+    grep -q "^error: --same-as names no readable file$" "$W/stdout" && [[ ! -s "$W/job/output" ]] &&
+    ok "look fails when the check cannot run, and shows what the check said"; } || ko "look exit 2: $(cat "$W/stdout")"
+FAKE_FOUND="$(for n in $(seq 60); do echo "FAIL  ADR-0048 rule: finding $tick$n$tick"; done)" FAKE_EXIT=1 steps look &&
+  [[ "$(cat "$W/job/output")" == failed=true ]] &&
+  grep -q "^FAIL  ADR-0048 rule: finding 50$" "$W/job/results/summary.md" && ! grep -q "finding 51" "$W/job/results/summary.md" &&
+  grep -q "^10 more lines are in the log of the run.$" "$W/job/results/summary.md" &&
+  grep -qF "finding ${tick}60$tick" "$W/stdout" && [[ "$(grep -c "^$tick$tick$tick" "$W/job/results/summary.md")" == 2 ]] &&
+  ok "the issue quotes the first 50 lines of the check without backticks, and the log has them all" ||
+  ko "look lines: $(cat "$W/job/results/summary.md")"
+
+# The real check-security-txt.sh, through a fake curl. The fake answers an address from
+# $FAKE_WEB/<the address with _ for each other character>/: status, headers, body, and with
+# --location the final address in effective. It logs each address it is asked.
+cat >"$W/curl" <<'EOF'
+#!/bin/bash
+output=/dev/null headers=/dev/null format="" address="" follow=0
+while (($#)); do
+  case "$1" in
+    --output) output="$2" && shift ;;
+    --dump-header) headers="$2" && shift ;;
+    --write-out) format="$2" && shift ;;
+    --location) follow=1 ;;
+    --max-time | --max-filesize | --proto | --proto-redir | --max-redirs) shift ;;
+    -*) ;;
+    *) address="$1" ;;
+  esac
+  shift
+done
+echo "$address" >>"$FAKE_WEB/asked"
+d="$FAKE_WEB/$(printf '%s' "$address" | tr -c 'A-Za-z0-9' '_')"
+[[ -d "$d" ]] || { echo "curl: (6) Could not resolve host" >&2 && exit 6; }
+final="$address"
+((follow)) && [[ -f "$d/effective" ]] && final="$(cat "$d/effective")"
+cat "$d/headers" >"$headers"
+cat "$d/body" >"$output"
+format="${format//'%{http_code}'/$(cat "$d/status")}"
+printf '%s' "${format//'%{url_effective}'/$final}"
+EOF
+chmod +x "$W/curl"
+# place <address>: the folder of the fake for the address.
+place() { printf '%s/%s' "$W/web" "$(printf '%s' "$1" | tr -c 'A-Za-z0-9' '_')"; }
+# serve <address> <status> <body file> [header...]: the fake answers the address with them.
+serve() {
+  local d
+  d="$(place "$1")"
+  mkdir -p "$d"
+  echo "$2" >"$d/status"
+  printf 'HTTP/1.1 %s\r\n' "$2" >"$d/headers"
+  if (($# > 3)); then printf '%s\r\n' "${@:4}" >>"$d/headers"; fi
+  cp "$3" "$d/body"
+  rm -f "$d/effective"
+}
+# moved <address> <final address>: with --location, the address ends at the final address.
+moved() { echo "$2" >"$(place "$1")/effective"; }
+# The https addresses that the fields of the file name, and two of them.
+mapfile -t NAMED < <(sed -n 's/^[A-Za-z-]*: \(https:[^[:space:]]*\)$/\1/p' "$FILE")
+CONTACT="$(sed -n 's/^Contact: \(https:.*\)$/\1/p' "$FILE")"
+POLICY_PAGE="$(sed -n 's/^Policy: //p' "$FILE")"
+readonly TYPE='Content-Type: text/plain; charset=utf-8' HTML='Content-Type: text/html; charset=utf-8'
+readonly HSTS='Strict-Transport-Security: max-age=2592000'
+# site: the answers after the deploy: the file as the public listener serves it, the front page,
+# each address that the file names, and the report form of GitHub, which sends a visitor without
+# a session to the sign-in on its own host.
+site() {
+  local address
+  rm -rf "$W/web" && mkdir -p "$W/web"
+  for address in "${NAMED[@]}"; do serve "$address" 200 /dev/null "$HTML"; done
+  serve "$SECURITY_TXT" 200 "$FILE" "$TYPE" "X-Content-Type-Options: nosniff" "$HSTS"
+  serve "$FRONT_PAGE" 200 /dev/null "$HTML" "$HSTS"
+  moved "$CONTACT" https://github.com/login
+}
+expires_s="$(date -u -d "$(sed -n 's/^Expires: //p' "$FILE")" +%s)"
+# looks [days]: the steps look and look-report in one job folder, as the job runs them, each with
+# the variables that the workflow gives it, and the clock of the check the days (default 100)
+# before the Expires of the file; FAILED is what look wrote.
+looks() {
+  local now
+  now="$(date -u -d "@$((expires_s - ${1:-100} * 86400))" +%Y-%m-%dT%H:%M:%SZ)"
+  rm -rf "$W/job" && mkdir -p "$W/job" && : >"$W/log"
+  (
+    cd "$W/job" || exit 1
+    env GITHUB_OUTPUT="$W/job/output" GITHUB_STEP_SUMMARY="$W/job/step-summary" NFHOTEL_NOW="$now" \
+      NFHOTEL_CURL="$W/curl" FAKE_WEB="$W/web" bash "$OPS/scripts/edge-comparison-steps.sh" look || exit
+    env REPO=NF-Hotel/NFHotel SERVER=https://github.com RUN_ID=42 FAILED="$(sed -n 's/^failed=//p' output)" \
+      NFHOTEL_GH="$W/gh" FAKE_LOG="$W/log" bash "$OPS/scripts/edge-comparison-steps.sh" look-report
+  ) >"$W/stdout" 2>&1
+}
+
+site
+looks && [[ "$(cat "$W/job/output")" == failed=false ]] &&
+  grep -qF "The weekly look at $SECURITY_TXT passed" "$W/job/results/summary.md" &&
+  grep -qF "PASS  $SECURITY_TXT meets RFC 9116 and the rules of ADR-0048 (warnings: no-encryption,no-role-address,unsigned)" "$W/job/results/summary.md" &&
+  grep -qF "gh issue list --repo NF-Hotel/NFHotel --state open --search in:title \"$LOOK_TITLE\"" "$W/log" &&
+  ! grep -q -e "^gh issue create" -e "^gh issue comment" -e "^gh issue close" "$W/log" && ! grep -q '::warning::' "$W/stdout" &&
+  ok "the file of the repository, served as the public listener serves it, passes the look, and no issue is written" ||
+  ko "look passes: $(cat "$W/stdout" "$W/log")"
+missing=""
+for address in "$FRONT_PAGE" "${NAMED[@]}"; do grep -qxF "$address" "$W/web/asked" || missing+=" $address"; done
+[[ -z "$missing" ]] && ok "the look asks the front page and each address that the file names" || ko "not asked:$missing"
+[[ -s "$W/job/results/summary.md" ]] && ! grep -q '@' "$W/job/results/summary.md" "$W/stdout" &&
+  ok "no mailbox address reaches the issue or the log" ||
+  ko "a mailbox: $(cat "$W/job/results/summary.md")"
+FAKE_OPEN=9 looks && grep -q "^gh issue close 9 --repo NF-Hotel/NFHotel --comment ## The public security.txt$" "$W/log" &&
+  ok "a look that passes closes the open issue with its summary" || ko "look close: $(cat "$W/log")"
+
+serve "$SECURITY_TXT" 404 /dev/null "$HTML"
+looks && [[ "$(cat "$W/job/output")" == failed=true ]] &&
+  grep -qF "FAIL  RFC 9116 3: $SECURITY_TXT answers 404, not 200" "$W/job/results/summary.md" &&
+  grep -q "^gh issue create --repo NF-Hotel/NFHotel --title $LOOK_TITLE --body-file results/summary.md$" "$W/log" &&
+  grep -q "^Run: https://github.com/NF-Hotel/NFHotel/actions/runs/42$" "$W/job/results/summary.md" &&
+  grep -qF "::warning::the public security.txt fails its weekly check; see the issue \"$LOOK_TITLE\"" "$W/stdout" &&
+  ok "a missing file opens the issue, with the run, and leaves the run green" || ko "look missing: $(cat "$W/stdout" "$W/log")"
+site
+sed '1s/.*/# A line that main does not have./' "$FILE" >"$W/changed"
+serve "$SECURITY_TXT" 200 "$W/changed" "$TYPE" "$HSTS"
+FAKE_OPEN=9 looks && [[ "$(cat "$W/job/output")" == failed=true ]] &&
+  grep -qF "FAIL  ADR-0048 rule: the body differs from $FILE" "$W/job/results/summary.md" &&
+  [[ "$(grep -c '^FAIL' "$W/job/results/summary.md")" == 1 ]] &&
+  grep -q "^gh issue comment 9 --repo NF-Hotel/NFHotel --body-file results/summary.md$" "$W/log" &&
+  ok "a file that differs from main comments on the open issue" || ko "look differs: $(cat "$W/stdout" "$W/log")"
+site
+looks 20 && grep -qF "FAIL  ADR-0048 rule: Expires is 20 days ahead, fewer than 30" "$W/job/results/summary.md" &&
+  [[ "$(grep -c '^FAIL' "$W/job/results/summary.md")" == 1 ]] && grep -q "^gh issue create" "$W/log" &&
+  ok "an Expires fewer than 30 days ahead opens the issue" || ko "look expires: $(cat "$W/stdout")"
+serve "$POLICY_PAGE" 404 /dev/null "$HTML"
+looks && grep -qF "(Policy) answers 404" "$W/job/results/summary.md" && grep -q "^gh issue create" "$W/log" &&
+  ok "a named address that fails opens the issue" || ko "look dead address: $(cat "$W/stdout")"
+site
+moved "$CONTACT" https://login.example.net/
+looks && grep -qF "(Contact) ends on another host: login.example.net" "$W/job/results/summary.md" &&
+  grep -q "^gh issue create" "$W/log" && ok "a named address that ends on another host opens the issue" ||
+  ko "look other host: $(cat "$W/stdout")"
+site
+serve "$FRONT_PAGE" 200 /dev/null "$HTML" "Strict-Transport-Security: max-age=31536000"
+looks && grep -qF "Strict-Transport-Security is 'max-age=2592000', and $FRONT_PAGE sends 'max-age=31536000'" \
+  "$W/job/results/summary.md" && grep -q "^gh issue create" "$W/log" &&
+  ok "a Strict-Transport-Security other than the one of the front page opens the issue" || ko "look hsts: $(cat "$W/stdout")"
+
+step_env=(REPO=NF-Hotel/NFHotel SERVER=https://github.com RUN_ID=42 FAILED=yes)
+SUMMARY_TEXT="the summary" steps look-report && ko "look-report accepted no result of look" ||
+  { grep -q "::error::FAILED is not true or false" "$W/stdout" && [[ ! -s "$W/log" ]] &&
+    ok "look-report without the result of look fails before gh"; } || ko "look-report failed: $(cat "$W/stdout")"
+step_env=(REPO=NF-Hotel/NFHotel SERVER=https://github.com RUN_ID=42 FAILED=true)
+steps look-report && ko "look-report ran without a summary" ||
+  { grep -q "::error::no results/summary.md: the step look did not write it" "$W/stdout" && [[ ! -s "$W/log" ]] &&
+    ok "look-report without a summary fails before gh"; } || ko "look-report no summary: $(cat "$W/stdout")"
 
 step_env=()
 steps

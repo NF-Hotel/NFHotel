@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-17 | Proposed | mikemike | AI as stand-in for S01 | [MIL-052] and [ADR-0045] amended to S01's decisions of 2026-11-17 (RC-398, Go), and the gate of MIL-052, No-Go for now on criterion 6 (RC-399) | [7fdb18c] |
 | 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The plan of the booking flow: [MIL-085] to [MIL-089] (RC-410 to RC-413 and RC-415, Go), and objective 43 and success criteria 46 to 48 of [BC-001] (RC-414, Go); planned and accepted by the AI as stand-in at S01's word in chat on 2026-11-19 | [9f5c208] |
+| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0048], task 1 of MIL-084 (RC-402, Go), and the code and the documents of tasks 2 to 6 (RC-403, Go-with-conditions) on rows of their own, and the downstream of MIL-084; prepared in supervised mode, then accepted by the AI as stand-in for S01 after S01 switched MIL-084 to autonomous mode in chat on 2026-11-19 | [870014d] |
 
 ---
 
@@ -24,7 +24,7 @@ updated whenever an artifact instance is created or reviewed.
 
 | Artifact Instance | Type | Language | Domain | Upstream (Backward Link) | Downstream (Forward Link) | Last Reviewed (RC-ID) |
 | --- | --- | --- | --- | --- | --- | --- |
-| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-021], [MIL-022], [MIL-023], [UCD-001], [US-001], [MIL-055], [MIL-071], [MIL-073], [MIL-074], [MIL-075], [MIL-076], [MIL-077], [MIL-078], [MIL-085], [MIL-086], [MIL-087], [MIL-088], [MIL-089] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044], [RC-088], [RC-332], [RC-414] |
+| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-021], [MIL-022], [MIL-023], [UCD-001], [US-001], [MIL-055], [MIL-071], [MIL-073], [MIL-074], [MIL-075], [MIL-076], [MIL-077], [MIL-078], [MIL-084], [MIL-085], [MIL-086], [MIL-087], [MIL-088], [MIL-089] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044], [RC-088], [RC-332], [RC-401], [RC-414] |
 | [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009], [RC-026], [RC-390] |
 | [MIL-001] | Milestone | en | it | [BC-001] | - | [RC-003] |
 | [MIL-002] | Milestone | en | it | [BC-001] | - | [RC-006] |
@@ -150,6 +150,7 @@ updated whenever an artifact instance is created or reviewed.
 | [ADR-0045] | ADR (Accepted) | - | - | [MIL-052], [ADR-0020], [ADR-0044], [MIL-051], [RC-384] | the read-only access of the AI assistant to the monitoring (2026-11-15; amended 2026-11-17 to S01's decisions: the Editor role, no expiry date, the account disabled to stop the access): Grafana with a service account through `mcp-grafana` v2.1.1 limited to its tools for metrics, alerts and dashboards and to tools that only read, and no logs, after the check of the logs (MIL-052 task 2); the set-up in `docs/wiki/Monitoring.md` | [RC-385], [RC-398] |
 | [ADR-0046] | ADR (Accepted) | - | - | [MIL-078], ADR-0027, ADR-0028, ADR-0029, [ADR-0037], [ADR-0021], [MIL-072] | the routes of the Cloudflare tunnel and the Access application of the back office as code in OpenTofu, without a stored state (2026-11-15): `ops/infra/cloudflare/`, applied by S01 or S03 from their own machine, and the weekly comparison `edge-comparison.yaml` with a token that reads; the set-up in `docs/wiki/Public-Access.md` | [RC-386] |
 | [ADR-0047] | ADR (Accepted) | - | - | [MIL-018], [BC-001], ADR-0005, [MIL-079] | the guest sign-in with the booking number and the email (2026-11-15): no account, the guest token, the one refusal and the throttle that counts each attempt first, the role Guest of the one table, ownership in the API, the guest cookie, and cancelled bookings refused; the code of MIL-018 | [RC-388] |
+| [ADR-0048] | ADR (Accepted with the exceptions E1 to E4 by the AI as stand-in for S01; RC-402 Go) | - | - | [MIL-084], ADR-0028, ADR-0029, [ADR-0037], [ADR-0021], [ADR-0046], [MIL-066], [DSA-001] | where `security.txt` is served (2026-11-18): one file in git on the public listener of nginx only, with the redirect of `/security.txt` and its own headers; the date as a value in git; the check in three kinds (RFC 9116, rule of the ADR, warning); the weekly look; the policy in `SECURITY.md`; the code of MIL-084 | [RC-402] |
 | [MIL-046] | Milestone (Accepted, Go; gate passed 2026-11-05) | en | it | [BC-001], [ADR-0031], MIL-043, MIL-045, US-001.04 | [ADR-0031] (decisions 2 and 3), `BenchmarkRequest` and `BenchmarkRunTracker` of its task 2 | [RC-238], [RC-239], [RC-283] |
 | [ADR-0031] | ADR (Accepted; decisions 2 and 3 added 2026-10-26) | - | - | ADR-0005, ADR-0013, [ADR-0004], ADR-0024, MIL-020, MIL-043 | the sign-in keys and the benchmark run tracker of `src/NFHotel.Web`, [MIL-046] | [RC-227], [RC-239] |
 | [MIL-056] | Milestone (Accepted, Go; gate passed 2026-11-05 after the amendment of criterion 3; the run on a Mac by S02 is recorded at S02's onboarding) | en | it | [BC-001], [ADR-0003], ADR-0015, ADR-0024, MIL-027 | [ADR-0035], `scripts/dev-up.sh --lite`, `ops/scripts/lib/`, the Ops CI test and the macOS job, the wiki page Local Development Deploy | [RC-271], [RC-272], [RC-286] |
@@ -180,6 +181,8 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-020] | Milestone (Accepted, Go; plan reviewed in RC-087; tasks 1 to 11 marked done after RC-106 to RC-113 and RC-249) | en | it | [BC-001], [MIL-019], [ADR-0003] | ADR-0014, the code and the deploy files of its tasks 1 to 3 and 5 to 11 (`BenchmarkServiceClient`, the page `/admin/benchmark/start` with its panel of the installed models, `AiDefault`, `BenchmarkRunAnalysis`), [UC-009] | [RC-087], [RC-106], [RC-107], [RC-108], [RC-109], [RC-110], [RC-111], [RC-112], [RC-113], [RC-249] |
 | [MIL-054] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-01, RC-258; gate passed 2026-11-14, RC-367: Go, accepted by the AI as stand-in for S01 at S01's word in chat) | en | it | [BC-001], [ADR-0033], MIL-047 | the tests of pull request #435, the coverage floor `scripts/check-coverage-floor.sh` and its test in `ci.yaml`, the coverage scope in `dotnet-coverage.config.xml` and `SonarQube.Analysis.xml` | [RC-258], [RC-260], [RC-367] |
 | The code of `update` in `ops/scripts/deploy-release.sh` for a release older than the shallow checkout of the VM: the fetch of main back to a day before that release, the helpers `fetch_main` and `on_main` with the constants `MAIN_REF` and `DEEPEN_MARGIN_SECONDS`, its three checks in `ops/tests/test-deploy-release.sh`, and the section "Roll back" of the wiki page CI-CD | Shell (reviewed 2026-11-17, Go; not yet deployed) | - | - | [ADR-0018], [MIL-032], [MIL-021] criterion 6 | - | [RC-397] |
+| [MIL-084] | Milestone (Accepted, Go; plan prepared by the AI in supervised mode 2026-11-17 and amended the same day for the standards it rests on; S01 accepted the amended plan in chat 2026-11-18, RC-400; autonomous mode since S01's word in chat 2026-11-19) | en | it | [BC-001], ADR-0028, ADR-0029, [ADR-0037], MIL-040, MIL-041, [MIL-066], [MIL-072], [MIL-078], [DSA-001] | [ADR-0048] (task 1, Accepted, RC-402) with its table of the requirements of RFC 9116 and RFC 8615; the extended `SECURITY.md` (task 2); the code below (tasks 3 to 5) and the wiki pages Public-Access, Incidents, Security-Controls and Workflows (task 6), reviewed in [RC-403] (Go-with-conditions); planned: the deploy and the look from outside (task 7) and the gate (task 8) | [RC-400] |
+| The code of MIL-084: `ops/deploy/nginx/well-known/security.txt`, its location and the redirect of `/security.txt` in `ops/deploy/nginx/templates/public.conf.template`, the mount in `ops/deploy/nginx/docker-compose.yml`; `ops/scripts/check-security-txt.sh` with `ops/tests/test-check-security-txt.sh`, and the checks of `security.txt` in `ops/tests/test-nginx.sh`; the subcommands `look` and `look-report` of `ops/scripts/edge-comparison-steps.sh` with their tests in `ops/tests/test-edge-comparison.sh`; the job `look` of `.github/workflows/edge-comparison.yaml`, and the step and the script test of `.github/workflows/ops-ci.yaml` | Shell, nginx, YAML (reviewed 2026-11-19, Go-with-conditions; not yet deployed) | - | - | [MIL-084] tasks 3 to 5, [ADR-0048] | - | [RC-403] |
 
 ---
 
@@ -557,7 +560,13 @@ updated whenever an artifact instance is created or reviewed.
 [RC-129]: ./reviews/rc-129-mil-028-timeouts.md
 [RC-381]: ./reviews/rc-381-mil-028-service-code.md
 [RC-382]: ./reviews/rc-382-mil-028-gate.md
-[7fdb18c]: https://github.com/NF-Hotel/NFHotel/commit/7fdb18c25de137c04985b3fd0f66798157834164
+[MIL-084]: ../milestones/mil-084-a-security-txt-and-a-disclosure-policy.md
+[RC-400]: ./reviews/rc-400-mil-084.md
+[RC-401]: ./reviews/rc-401-bc-001-disclosure.md
+[ADR-0048]: ../adr/adr-0048-where-security-txt-is-served.md
+[RC-402]: ./reviews/rc-402-adr-0048.md
+[RC-403]: ./reviews/rc-403-mil-084-code.md
+[870014d]: https://github.com/NF-Hotel/NFHotel/commit/870014d14342835a06c7e347a1d7da22e7b4dd24
 [MIL-085]: ../milestones/mil-085-a-booking-reference-that-cannot-be-guessed.md
 [MIL-086]: ../milestones/mil-086-booking-input-checked-by-one-set-of-rules.md
 [MIL-087]: ../milestones/mil-087-limits-on-what-one-sender-can-ask.md

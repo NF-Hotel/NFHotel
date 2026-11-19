@@ -34,6 +34,26 @@ server {
   # The two routes of the mobile app (ADR-0015); every other path of /mobile-api/ answers 404.
   include /etc/nginx/snippets/mobile-api.conf;
 
+  # security.txt (RFC 9116, MIL-084, ADR-0048): one file from git, on the public name only, without a sign-in.
+  # The application sets the security headers of the site, so this location names its own. Strict-Transport-Security
+  # has the value that the application sends for the public site: keep the two equal.
+  location = /.well-known/security.txt {
+    alias /etc/nginx/well-known/security.txt;
+    default_type text/plain;
+    charset utf-8;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'" always;
+    add_header Strict-Transport-Security "max-age=2592000" always;
+  }
+
+  # The old address at the top level (RFC 9116, section 3): a redirect, so the name is taken and the file exists once.
+  location = /security.txt {
+    absolute_redirect off;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Strict-Transport-Security "max-age=2592000" always;
+    return 301 /.well-known/security.txt;
+  }
+
   location / {
     proxy_pass $upstream;
     include /etc/nginx/snippets/proxy.conf;
