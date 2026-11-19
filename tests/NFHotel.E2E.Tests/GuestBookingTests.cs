@@ -154,7 +154,7 @@ public sealed class GuestBookingTests(BrowserFixture fixture) : BrowserTest(fixt
         await Pages.FillAsync(Page.Locator("#last-name"), "Lovelace");
         await Pages.FillAsync(Page.Locator("#email"), email);
         await Pages.FillAsync(Page.Locator("#phone"), "+4512345678");
-        await Pages.FillAsync(Page.Locator("#country"), "Denmark");
+        await Pages.SelectAsync(Page.Locator("#country"), "Denmark");
     }
 
     private async Task ChooseTestRoomAsync(string checkIn, string checkOut)

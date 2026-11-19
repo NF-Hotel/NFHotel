@@ -206,6 +206,15 @@ public sealed class BookingFlowViewModel
         && checkIn >= _clock.Today
         && checkOut > checkIn;
 
+    /// <summary>The first arrival that the page offers: today (MIL-086).</summary>
+    public DateOnly EarliestCheckIn => _clock.Today;
+
+    /// <summary>The last arrival that the page offers (MIL-086 skeleton: not set yet).</summary>
+    public DateOnly LatestCheckIn => default;
+
+    /// <summary>The last departure that the page offers (MIL-086 skeleton: not set yet).</summary>
+    public DateOnly LatestCheckOut => default;
+
     /// <summary>The error text at the arrival field, or <c>null</c>.</summary>
     public string? CheckInError => Describe(CheckInErrorCode);
 

@@ -18,7 +18,7 @@ public class GuestValidationTests
     private const string ValidLastName = "Holm";
     private const string ValidEmail = "valdemar@nfhotel.dk";
     private const string ValidPhoneNumber = "+45 12 34 56 78";
-    private const string ValidCountry = "Danmark";
+    private const string ValidCountry = "Denmark";
     private const string ValidPassportNumber = "123456789";
 
     #region Required fields (BR-91 to BR-95)
@@ -81,20 +81,23 @@ public class GuestValidationTests
     }
 
     /// <summary>
-    /// BR-94: the phone number deliberately has no format requirement — only that something is there.
-    /// The rule must not be tightened without a decision; foreign guests have all formats.
+    /// BR-94, MIL-086: a phone number is an optional plus and 7 to 15 digits with spaces, hyphens and round brackets
+    /// between them; text that is not a number gives <c>phone_number_invalid</c>.
     /// </summary>
     [Theory]
-    [InlineData("12345678")]
-    [InlineData("+45 12 34 56 78")]
-    [InlineData("ikke et nummer")]
-    public void Validate_PhoneNumberHasAnyNonBlankValue_ReturnsNoErrors(string phoneNumber)
+    [InlineData("12345678", true)]
+    [InlineData("+45 12 34 56 78", true)]
+    [InlineData("+1 (555) 123-4567", true)]
+    [InlineData("ikke et nummer", false)]
+    [InlineData("123456", false)]
+    public void Validate_PhoneNumberFormat_FollowsTheRuleOfTheField(string phoneNumber, bool expected)
     {
         // Arrange & Act
         var errors = ErrorsOf(ValidFirstName, ValidLastName, ValidEmail, phoneNumber, ValidCountry);
 
         // Assert
-        Assert.Empty(errors);
+        string[] expectedErrors = expected ? [] : [GuestErrors.PhoneNumberInvalid];
+        Assert.Equal(expectedErrors, errors);
     }
 
     /// <summary>BR-56, BR-95: country must not be empty.</summary>
@@ -116,17 +119,20 @@ public class GuestValidationTests
     #region Email (BR-55, BR-93)
 
     /// <summary>
-    /// BR-55, BR-93: the email must contain both '@' and '.'. The position is deliberately
-    /// not checked — a stricter rule would break parity with the old system.
+    /// BR-55, BR-93, MIL-086: the email is one plain address that a parser reads, with a domain of two or more labels.
+    /// The shapes that the old rule let through (an at sign and a dot anywhere) are refused.
     /// </summary>
     [Theory]
     [InlineData("valdemar@nfhotel.dk", true)]
+    [InlineData("a@b.dk", true)]
     [InlineData("a@b.c", true)]
-    [InlineData(".@", true)] // absurd, but meets the rule exactly as it is formulated
-    [InlineData("valdemar.nfhotel.dk", false)] // intet '@'
-    [InlineData("valdemar@nfhoteldk", false)] // intet '.'
+    [InlineData(".@", false)]
+    [InlineData("valdemar.nfhotel.dk", false)]
+    [InlineData("valdemar@nfhoteldk", false)]
     [InlineData("valdemar", false)]
-    public void Email_AnyShape_RequiresBothAtSignAndDot(string email, bool expected)
+    [InlineData("Valdemar <valdemar@nfhotel.dk>", false)]
+    [InlineData("valdemar@nfhotel.dk\r\nBcc: eve@example.com", false)]
+    public void Email_AnyShape_MustBeOnePlainAddress(string email, bool expected)
     {
         // Arrange & Act
         var isValid = ErrorsOf(ValidFirstName, ValidLastName, email, ValidPhoneNumber, ValidCountry).Count == 0;
@@ -139,6 +145,7 @@ public class GuestValidationTests
     [Theory]
     [InlineData("valdemar.nfhotel.dk")]
     [InlineData("valdemar@nfhoteldk")]
+    [InlineData("valdemar@@nfhotel.dk")]
     public void Validate_EmailIsMalformed_ReturnsEmailInvalid(string email)
     {
         // Arrange & Act
@@ -174,8 +181,9 @@ public class GuestValidationTests
     #region Length limits (A-10)
 
     /// <summary>
-    /// A-10: the limit itself is allowed. The test guards against the classic off-by-one, where
-    /// the EF configuration and the domain disagree by one character.
+    /// A-10: the limit itself is allowed. The test guards against the classic off-by-one, where the EF configuration
+    /// and the domain disagree by one character. Each value meets the rule of its field, so only the length is tested;
+    /// a country has no length of its own, because it is a name of the list (MIL-086).
     /// </summary>
     [Fact]
     public void Validate_EveryFieldIsExactlyAtItsMaxLength_ReturnsNoErrors()
@@ -184,20 +192,20 @@ public class GuestValidationTests
         var firstName = new string('a', Guest.MaxNameLength);
         var lastName = new string('b', Guest.MaxNameLength);
         var email = EmailOfLength(Guest.MaxEmailLength);
-        var phoneNumber = new string('1', Guest.MaxPhoneNumberLength);
-        var country = new string('c', Guest.MaxCountryLength);
+        var phoneNumber = PhoneNumberOfLength(Guest.MaxPhoneNumberLength);
         var passportNumber = new string('9', Guest.MaxPassportNumberLength);
 
         // Act
-        var errors = ErrorsOf(firstName, lastName, email, phoneNumber, country, passportNumber);
+        var errors = ErrorsOf(firstName, lastName, email, phoneNumber, ValidCountry, passportNumber);
 
         // Assert
         Assert.Empty(errors);
+        Assert.Equal(20, Guest.MaxPassportNumberLength);
     }
 
     /// <summary>
-    /// A-10: one character over the limit is rejected by Domain — not first by the database as a
-    /// <c>DbUpdateException</c>. All six fields each have their own code.
+    /// A-10: one character over the limit is rejected by Domain, not first by the database as a
+    /// <c>DbUpdateException</c>. Each field has its own code of length.
     /// </summary>
     [Fact]
     public void Validate_EveryFieldExceedsItsMaxLength_ReturnsOneLengthErrorPerField()
@@ -206,12 +214,11 @@ public class GuestValidationTests
         var firstName = new string('a', Guest.MaxNameLength + 1);
         var lastName = new string('b', Guest.MaxNameLength + 1);
         var email = EmailOfLength(Guest.MaxEmailLength + 1);
-        var phoneNumber = new string('1', Guest.MaxPhoneNumberLength + 1);
-        var country = new string('c', Guest.MaxCountryLength + 1);
+        var phoneNumber = PhoneNumberOfLength(Guest.MaxPhoneNumberLength + 1);
         var passportNumber = new string('9', Guest.MaxPassportNumberLength + 1);
 
         // Act
-        var errors = ErrorsOf(firstName, lastName, email, phoneNumber, country, passportNumber);
+        var errors = ErrorsOf(firstName, lastName, email, phoneNumber, ValidCountry, passportNumber);
 
         // Assert
         Assert.Collection(
@@ -220,8 +227,21 @@ public class GuestValidationTests
             error => Assert.Equal(GuestErrors.LastNameTooLong, error),
             error => Assert.Equal(GuestErrors.EmailTooLong, error),
             error => Assert.Equal(GuestErrors.PhoneNumberTooLong, error),
-            error => Assert.Equal(GuestErrors.CountryTooLong, error),
             error => Assert.Equal(GuestErrors.PassportNumberTooLong, error));
+    }
+
+    /// <summary>A-10, MIL-086: a country over its length is also no name of the list, so it gets both codes.</summary>
+    [Fact]
+    public void Validate_CountryExceedsItsMaxLength_ReturnsTheLengthAndTheListCode()
+    {
+        // Arrange
+        var country = new string('c', Guest.MaxCountryLength + 1);
+
+        // Act
+        var errors = ErrorsOf(ValidFirstName, ValidLastName, ValidEmail, ValidPhoneNumber, country);
+
+        // Assert
+        Assert.Equal(new[] { GuestErrors.CountryTooLong, GuestErrors.CountryInvalid }, errors);
     }
 
     /// <summary>
@@ -231,6 +251,7 @@ public class GuestValidationTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
+    [InlineData("   ")]
     [InlineData(ValidPassportNumber)]
     public void Validate_PassportNumberIsOptional_ReturnsNoErrors(string? passportNumber)
     {
@@ -245,6 +266,87 @@ public class GuestValidationTests
 
         // Assert
         Assert.Empty(errors);
+    }
+
+    #endregion
+
+    #region The rules of the fields (MIL-086, ADR-0050)
+
+    /// <summary>MIL-086: each field that has a rule of its characters answers its own code, all at once (BR-96).</summary>
+    [Fact]
+    public void Validate_EveryFieldBreaksTheRuleOfItsCharacters_ReturnsEachCode()
+    {
+        // Arrange & Act
+        var errors = ErrorsOf("Anna1", "<b>", "anna@example", "12 ab", "Danmark", "AB-123");
+
+        // Assert
+        Assert.Equal(
+            new[]
+            {
+                GuestErrors.FirstNameInvalid,
+                GuestErrors.LastNameInvalid,
+                GuestErrors.EmailInvalid,
+                GuestErrors.PhoneNumberInvalid,
+                GuestErrors.CountryInvalid,
+                GuestErrors.PassportNumberInvalid,
+            },
+            errors);
+    }
+
+    /// <summary>MIL-086: every text is trimmed and composed before its rule, and the stored text is the normalised one.</summary>
+    [Fact]
+    public void Create_TextsWithWhiteSpaceAndDecomposedLetters_StoresTheNormalForm()
+    {
+        // Arrange & Act
+        var guest = Guest.Create(" Jose\u0301 ", "\tHolm\n", " valdemar@nfhotel.dk ", " +45 12 34 56 78 ", " Co\u0302te d'Ivoire ", " AB123 ");
+
+        // Assert
+        Assert.Equal("Jos\u00E9", guest.FirstName);
+        Assert.Equal("Holm", guest.LastName);
+        Assert.Equal("valdemar@nfhotel.dk", guest.Email);
+        Assert.Equal("+45 12 34 56 78", guest.PhoneNumber);
+        Assert.Equal("C\u00F4te d'Ivoire", guest.Country);
+        Assert.Equal("AB123", guest.PassportNumber);
+    }
+
+    /// <summary>MIL-086: a passport number of white space only is no passport number.</summary>
+    [Fact]
+    public void Create_PassportNumberOfWhiteSpace_StoresNone()
+    {
+        // Arrange & Act
+        var guest = Guest.Create(ValidFirstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry, "   ");
+
+        // Assert
+        Assert.Null(guest.PassportNumber);
+    }
+
+    /// <summary>
+    /// MIL-086 decision 5: markup and query text are data. A name made of letters, spaces and apostrophes is stored as
+    /// it is; anything with other signs is refused with the code of the field, never stripped.
+    /// </summary>
+    [Theory]
+    [InlineData("x' OR 'x", true)]
+    [InlineData("Robert'); DROP TABLE guests;--", false)]
+    [InlineData("<script>alert(1)</script>", false)]
+    [InlineData("<img src=x onerror=alert(1)>", false)]
+    [InlineData("javascript:alert(1)", false)]
+    [InlineData("%s%s%n", false)]
+    [InlineData("{{7*7}}", false)]
+    public void Create_HostileFirstName_IsStoredUnchangedOrRefused(string firstName, bool stored)
+    {
+        // Arrange & Act
+        var errors = ErrorsOf(firstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry);
+
+        // Assert
+        if (stored)
+        {
+            Assert.Empty(errors);
+            Assert.Equal(firstName, Guest.Create(firstName, ValidLastName, ValidEmail, ValidPhoneNumber, ValidCountry, null).FirstName);
+        }
+        else
+        {
+            Assert.Equal(GuestErrors.FirstNameInvalid, Assert.Single(errors));
+        }
     }
 
     #endregion
@@ -321,7 +423,7 @@ public class GuestValidationTests
 
         // Act
         var exception = Assert.Throws<DomainException>(
-            () => guest.UpdateDetails("Ny", "Person", "ugyldig-email", "87654321", "Sverige", null));
+            () => guest.UpdateDetails("Ny", "Person", "ugyldig-email", "87654321", "Sweden", null));
 
         // Assert
         Assert.Equal(GuestErrors.EmailInvalid, exception.Code);
@@ -344,14 +446,14 @@ public class GuestValidationTests
             ValidPassportNumber);
 
         // Act
-        guest.UpdateDetails("Ny", "Person", "ny@person.dk", "87654321", "Sverige", null);
+        guest.UpdateDetails("Ny", "Person", "ny@person.dk", "87654321", "Sweden", null);
 
         // Assert
         Assert.Equal("Ny", guest.FirstName);
         Assert.Equal("Person", guest.LastName);
         Assert.Equal("ny@person.dk", guest.Email);
         Assert.Equal("87654321", guest.PhoneNumber);
-        Assert.Equal("Sverige", guest.Country);
+        Assert.Equal("Sweden", guest.Country);
         Assert.Null(guest.PassportNumber);
     }
 
@@ -359,7 +461,29 @@ public class GuestValidationTests
     /// Builds a format-valid email of an exact length, so the length rule can be tested
     /// without at the same time triggering the format error (BR-55).
     /// </summary>
-    private static string EmailOfLength(int length) => $"a@b.{new string('c', length - 4)}";
+    private static string EmailOfLength(int length)
+    {
+        const string Domain = "example.com";
+        var local = Math.Min(64, length - Domain.Length - 1);
+        var rest = length - Domain.Length - 1 - local;
+
+        // What does not fit before the at sign becomes labels of up to 60 letters in front of the domain.
+        var text = new System.Text.StringBuilder(new string('a', local)).Append('@');
+        while (rest > 0)
+        {
+            var label = Math.Min(60, rest - 1);
+            text.Append('b', label).Append('.');
+            rest -= label + 1;
+        }
+
+        return text.Append(Domain).ToString();
+    }
+
+    /// <summary>
+    /// Builds a phone number of an exact length that meets the rule of the field: eight digits with spaces between the
+    /// first two and the rest, so the length can be tested without the format error (MIL-086).
+    /// </summary>
+    private static string PhoneNumberOfLength(int length) => $"12{new string(' ', length - 8)}345678";
 
     /// <summary>
     /// Builds a guest and returns every error code, or an empty list when the guest is valid.

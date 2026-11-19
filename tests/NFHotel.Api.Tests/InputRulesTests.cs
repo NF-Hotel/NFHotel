@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using System.Reflection;
 
 using NFHotel.Api.Security;
 using NFHotel.Application.Dto.Guests;
@@ -206,6 +208,72 @@ public sealed class InputRulesTests
         // Assert
         Assert.True(areRefused);
     }
+
+    #endregion
+
+    #region The length of a text without a length of its own (MIL-086)
+
+    /// <summary>Boundary: a text without a length of its own is accepted with 1,000 characters and refused with 1,001.</summary>
+    /// <param name="length">The length of the text.</param>
+    /// <param name="expected">Whether the text is accepted.</param>
+    [Theory]
+    [InlineData(1000, true)]
+    [InlineData(1001, false)]
+    public void IsAccepted_TextWithoutALengthOfItsOwn_HasAtMostAThousandCharacters(int length, bool expected)
+    {
+        // Arrange
+        var text = new string('a', length);
+
+        // Act
+        var isAccepted = InputRules.IsAccepted(new SampleText(text)) && InputRules.IsAccepted(text) && InputRules.IsAccepted(new[] { text });
+
+        // Assert
+        Assert.Equal(expected, isAccepted);
+        Assert.Equal(1000, InputRules.DefaultMaxTextLength);
+    }
+
+    /// <summary>
+    /// Positive: a text whose property, whose parameter of the record or whose parameter of the action has a length of
+    /// its own is not held to 1,000 characters; that length is checked by the validation of the model instead.
+    /// </summary>
+    [Fact]
+    public void IsAccepted_TextWithALengthOfItsOwn_IsNotHeldToTheDefault()
+    {
+        // Arrange
+        var text = new string('a', 5000);
+        var parameter = typeof(InputRulesTests).GetMethod(nameof(SampleAction), BindingFlags.NonPublic | BindingFlags.Static)!.GetParameters()[0];
+
+        // Act
+        var areAccepted = InputRules.IsAccepted(new SampleRecordParameterLength(text))
+            && InputRules.IsAccepted(new SamplePropertyLength(text))
+            && InputRules.IsAccepted(text, parameter);
+
+        // Assert
+        Assert.True(areAccepted);
+    }
+
+    /// <summary>Negative: the default holds inside a record inside a record, as the fields of a guest inside a booking.</summary>
+    [Fact]
+    public void IsAccepted_LongTextInANestedRecord_IsRefused()
+    {
+        // Arrange
+        var request = new CreateGuestRequest(ServiceWorld.ValidGuestFields() with { Country = new string('a', 1001) });
+
+        // Act
+        var isAccepted = InputRules.IsAccepted(request);
+
+        // Assert
+        Assert.False(isAccepted);
+    }
+
+    // The parameter of an action with a length of its own, as GuestsController.SearchAsync has.
+    private static void SampleAction([StringLength(5000)] string text) => _ = text;
+
+    private sealed record SampleText(string Text);
+
+    private sealed record SampleRecordParameterLength([StringLength(5000)] string Text);
+
+    private sealed record SamplePropertyLength([property: MaxLength(5000)] string Text);
 
     #endregion
 }

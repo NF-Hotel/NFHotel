@@ -56,8 +56,9 @@ public sealed class HostileInputTests : IClassFixture<ApiFactory>
 
     private static readonly string Megabyte = new('a', OneMegabyte);
 
-    // The first day of the plausible stays; each request books its own three days after it, so that no two overlap.
-    private static readonly DateOnly FirstDay = new(2030, 6, 10);
+    // The first day of the plausible stays; each endpoint books its own three days after it, so that no two overlap, and
+    // the last of them still ends within the five years after the day of the test world (MIL-086, ADR-0050).
+    private static readonly DateOnly FirstDay = new(2027, 1, 10);
 
     private static readonly (string Kind, string Value)[] HostileText =
     [
@@ -251,19 +252,19 @@ public sealed class HostileInputTests : IClassFixture<ApiFactory>
         var bodyParameter = BodyParameter(action);
         Dictionary<string, string> Query()
         {
-            _window++;
             return queries.ToDictionary(parameter => parameter.Name, parameter => PlausibleQueryValue(parameter.ParameterType, parameter.Name), StringComparer.Ordinal);
         }
 
         JsonNode? NewBody()
         {
-            _window++;
             return bodyParameter is null ? null : Plausible(bodyParameter.ParameterType, bodyParameter.Name, 0);
         }
 
         HttpContent? Body() => NewBody() is { } body ? Json(body) : null;
 
-        // The plausible request first: whatever it answers, it is no fault and shows nothing of the server.
+        // The plausible request first: whatever it answers, it is no fault and shows nothing of the server. It gets days
+        // of its own; the hostile requests after it are refused before a use case runs, so they keep the same days.
+        _window++;
         yield return new(method, Path(endpoint, routeValues), Query(), Body(), PlausibleValues);
 
         foreach (var part in endpoint.RoutePattern.Parameters)
@@ -464,6 +465,8 @@ public sealed class HostileInputTests : IClassFixture<ApiFactory>
         var unique = $"test{Interlocked.Increment(ref _unique)}";
         return name switch
         {
+            _ when Has(name, "firstName") => "Anna",
+            _ when Has(name, "lastName") => "Jensen",
             _ when Has(name, "email") => $"{unique}@example.com",
             _ when Has(name, "currentPassword") => KnownPassword,
             _ when Has(name, "password") => NewPassword,

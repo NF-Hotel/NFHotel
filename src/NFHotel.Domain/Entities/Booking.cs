@@ -18,6 +18,18 @@ namespace NFHotel.Domain.Entities;
 /// </remarks>
 public sealed class Booking : Entity<int>
 {
+    /// <summary>The most calendar years after today that a stay may end (BR-N-08, MIL-086).</summary>
+    public const int MaxYearsAhead = 5;
+
+    /// <summary>The most nights of a stay booked or moved on the public site (BR-C-07, MIL-086).</summary>
+    public const int MaxPublicNights = 30;
+
+    /// <summary>The fewest guests of a public booking (BR-C-07, MIL-086).</summary>
+    public const int MinPublicGuests = 1;
+
+    /// <summary>The most guests of a public booking (BR-C-07, MIL-086).</summary>
+    public const int MaxPublicGuests = 4;
+
     private const string EntityName = "booking";
 
     /// <summary>For EF Core. Use <see cref="Create"/> in code.</summary>
@@ -306,6 +318,33 @@ public sealed class Booking : Entity<int>
         EndDate = newPeriod.End;
         RoomId = newRoomId;
     }
+
+    /// <summary>The latest departure of a stay (MIL-086 skeleton: not set yet).</summary>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
+    /// <returns>The default date.</returns>
+    public static DateOnly LatestDeparture(DateOnly today) => default;
+
+    /// <summary>The latest departure of a stay booked on the public site (MIL-086 skeleton: not set yet).</summary>
+    /// <param name="arrival">The arrival.</param>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
+    /// <returns>The default date.</returns>
+    public static DateOnly LatestPublicDeparture(DateOnly arrival, DateOnly today) => default;
+
+    /// <summary>Checks a period against today (MIL-086 skeleton: no rule yet).</summary>
+    /// <param name="period">The period.</param>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
+    /// <returns><see langword="null"/>.</returns>
+    public static string? CheckPeriod(DateRange period, DateOnly today) => null;
+
+    /// <summary>Checks the nights of a stay of the public site (MIL-086 skeleton: no rule yet).</summary>
+    /// <param name="period">The period.</param>
+    /// <returns><see langword="null"/>.</returns>
+    public static string? CheckPublicNights(DateRange period) => null;
+
+    /// <summary>Checks the party of a public booking (MIL-086 skeleton: no rule yet).</summary>
+    /// <param name="guests">The number of guests.</param>
+    /// <returns><see langword="null"/>.</returns>
+    public static string? CheckPublicParty(int guests) => null;
 
     /// <summary>Rejects a period that starts before today (BR-44, BR-104, BR-108).</summary>
     private static void GuardPeriodIsNotInThePast(DateRange period, DateOnly today)

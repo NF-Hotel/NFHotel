@@ -1,4 +1,5 @@
 using NFHotel.Application.Dto.Bookings;
+using NFHotel.Application.Ports;
 using NFHotel.Application.UseCases;
 using NFHotel.Application.UseCases.Guests;
 using NFHotel.Domain.ValueObjects;
@@ -29,6 +30,7 @@ public sealed class MyBookingViewModel
     private static readonly IReadOnlyList<string> NoMessages = Array.Empty<string>();
 
     private readonly IUseCaseRunner<IGuestBookingService> _booking;
+    private readonly IClock _clock;
 
     #endregion Fields
 
@@ -36,16 +38,31 @@ public sealed class MyBookingViewModel
 
     /// <summary>Creates the view model.</summary>
     /// <param name="booking">Runs use cases on <see cref="IGuestBookingService"/> with the guest token of the request.</param>
-    public MyBookingViewModel(IUseCaseRunner<IGuestBookingService> booking)
+    /// <param name="clock">Gives the date of today for the limits of the new dates (MIL-086).</param>
+    public MyBookingViewModel(IUseCaseRunner<IGuestBookingService> booking, IClock clock)
     {
         ArgumentNullException.ThrowIfNull(booking);
+        ArgumentNullException.ThrowIfNull(clock);
 
         _booking = booking;
+        _clock = clock;
     }
 
     #endregion Constructors
 
     #region Properties
+
+    /// <summary>The first arrival that the form offers (MIL-086 skeleton: not set yet).</summary>
+    public DateOnly EarliestCheckIn => _clock.Today;
+
+    /// <summary>The last arrival that the form offers (MIL-086 skeleton: not set yet).</summary>
+    public DateOnly LatestCheckIn => default;
+
+    /// <summary>The first departure that the form offers (MIL-086 skeleton: not set yet).</summary>
+    public DateOnly EarliestCheckOut => default;
+
+    /// <summary>The last departure that the form offers (MIL-086 skeleton: not set yet).</summary>
+    public DateOnly LatestCheckOut => default;
 
     /// <summary>The receipt of the guest's booking, or <c>null</c> until it is read or when it could not be read.</summary>
     public BookingReceiptDto? Receipt { get; private set; }

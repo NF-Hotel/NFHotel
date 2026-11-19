@@ -1,0 +1,296 @@
+# MIL-086 task 3: the tests of tasks 2 and 3 on a skeleton of the code, before the code of tasks 4 to 6.
+# Branch mil-086-validation-rules on the code of main 0b1350b6, with ADR-0050 (second version) and RC-420, in the
+# worktree of the build session, 2026-11-19T14:29Z, on this machine (Windows, .NET SDK 10).
+# The skeleton gives the names that the tests use and no behaviour: the five attributes of the guest fields accept
+# every value, TextNormalForm returns the text unchanged, Countries.All is empty, the stay members of Booking answer
+# no error and the default date, InputRules checks no length, and the three web view models give the default date
+# as their limits. The new error codes have their final values and no screen text yet.
+# The solution builds with no warning; every failure below is a rule that the code does not have yet. The test
+# projects that need PostgreSQL (Infrastructure) or a browser (E2E) run in CI and are not in this run.
+# Each project lists its failed tests, sorted, and its summary; the durations are removed.
+# dotnet build NFHotel.sln -c Release -warnaserror
+    0 Error(s)
+    0 Warning(s)
+# dotnet test --project tests/NFHotel.Domain.Tests -c Release --no-build
+failed NFHotel.Domain.Tests.Bookings.BookingStateMachineTests.Reschedule_NewDepartureAtOrBeyondFiveYears_IsAcceptedOrRefused(departure: "2031-01-02", accepted: False)
+failed NFHotel.Domain.Tests.Bookings.BookingValidationTests.Create_DepartureMoreThanFiveYearsAhead_ThrowsEndDateTooFarAhead(today: "2020-06-15")
+failed NFHotel.Domain.Tests.Bookings.BookingValidationTests.Create_DepartureMoreThanFiveYearsAhead_ThrowsEndDateTooFarAhead(today: "2021-01-09")
+failed NFHotel.Domain.Tests.Bookings.BookingValidationTests.Create_OnALeapDay_EndsTheFiveYearsOnTheLastDayOfFebruary(departure: "2033-03-01", accepted: False)
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.CheckPeriod_AcrossTheLeapDay_CountsCalendarYears(today: "2027-02-28", departure: "2032-02-29", accepted: False)
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.CheckPeriod_AcrossTheLeapDay_CountsCalendarYears(today: "2027-03-01", departure: "2032-03-02", accepted: False)
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.CheckPeriod_AcrossTheLeapDay_CountsCalendarYears(today: "2028-02-29", departure: "2033-03-01", accepted: False)
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.CheckPeriod_ArrivalTodayOrYesterday_IsAcceptedOrRefused
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.CheckPeriod_EndsFiveYearsAhead_IsAcceptedAndADayLaterIsRefused
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.CheckPublicNights_Nights_AcceptsUpToThirty(nights: 31, accepted: False)
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.CheckPublicNights_Nights_AcceptsUpToThirty(nights: 365, accepted: False)
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.CheckPublicParty_Guests_AcceptsOneToFour(guests: -1, accepted: False)
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.CheckPublicParty_Guests_AcceptsOneToFour(guests: -2147483648, accepted: False)
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.CheckPublicParty_Guests_AcceptsOneToFour(guests: 0, accepted: False)
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.CheckPublicParty_Guests_AcceptsOneToFour(guests: 2147483647, accepted: False)
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.CheckPublicParty_Guests_AcceptsOneToFour(guests: 5, accepted: False)
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.LatestDeparture_Today_IsFiveCalendarYearsLater(today: "2026-03-01", expected: "2031-03-01")
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.LatestDeparture_Today_IsFiveCalendarYearsLater(today: "2026-12-31", expected: "2031-12-31")
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.LatestDeparture_Today_IsFiveCalendarYearsLater(today: "2028-02-29", expected: "2033-02-28")
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.LatestPublicDeparture_Arrival_IsThirtyNightsOrTheFiveYears(arrival: "2026-03-10", expected: "2026-04-09")
+failed NFHotel.Domain.Tests.Bookings.StayLimitTests.LatestPublicDeparture_Arrival_IsThirtyNightsOrTheFiveYears(arrival: "2031-02-20", expected: "2031-03-01")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_CorrectedEntries_HoldTheirNames(code: "AX", name: "Åland Islands")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_CorrectedEntries_HoldTheirNames(code: "BL", name: "Saint Barthélemy")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_CorrectedEntries_HoldTheirNames(code: "CI", name: "Côte d'Ivoire")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_CorrectedEntries_HoldTheirNames(code: "CW", name: "Curaçao")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_CorrectedEntries_HoldTheirNames(code: "GB", name: "United Kingdom of Great Britain and Northern Irela"···)
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_CorrectedEntries_HoldTheirNames(code: "NL", name: "Netherlands (Kingdom of the)")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_CorrectedEntries_HoldTheirNames(code: "RE", name: "Réunion")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_CorrectedEntries_HoldTheirNames(code: "TR", name: "Türkiye")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_Neighbours_HoldTheirNames(code: "DE", name: "Germany")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_Neighbours_HoldTheirNames(code: "DK", name: "Denmark")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_Neighbours_HoldTheirNames(code: "FI", name: "Finland")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_Neighbours_HoldTheirNames(code: "IS", name: "Iceland")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_Neighbours_HoldTheirNames(code: "NO", name: "Norway")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_Neighbours_HoldTheirNames(code: "SE", name: "Sweden")
+failed NFHotel.Domain.Tests.Guests.CountriesTests.All_TheCountriesOfIso3166_HasEachCodeAndNameOnce
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: " Denmark")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: "")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: "Côte d'Ivoire")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: "DENMARK")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: "DK")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: "DNK")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: "Danmark")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: "Denmark<script>")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: "Testland")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: "Turkey")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: "United Kingdom")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: "Unknown")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: "denmark")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.CountryName_AnythingElse_IsRefused(country: null)
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_LocalPartAndLabelAtTheirLimits_AreAcceptedAndOneMoreIsRefused
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "<anna@example.com>")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "@example.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "Anna <anna@example.com>")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "\"anna\"@example.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "`anna`@example.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "an\\na@example.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna jensen@example.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna(comment)@example.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@-example.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@.example.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@@example.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@[127.0.0.1]")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@exa_mple.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@exam ple.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@example")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@example-.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@example.")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@example..com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@example.com, eve@example.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: "anna@example.com\r\nBcc: eve@example.com")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.EmailFormat_NotOnePlainAddress_IsRefused(email: null)
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.NormalizeOptional_Text_GivesNullForNothing(text: " AB123 ", expected: "AB123")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.NormalizeOptional_Text_GivesNullForNothing(text: " \t ", expected: null)
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.NormalizeOptional_Text_GivesNullForNothing(text: "", expected: null)
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.Normalize_LoneSurrogate_LeavesTheTextForTheRuleToRefuse
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.Normalize_NullOrWhiteSpace_GivesNullOrEmpty
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.Normalize_Text_TrimsAndComposes(text: "  Anna  ", expected: "Anna")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.Normalize_Text_TrimsAndComposes(text: "Ångström", expected: "Ångström")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.Normalize_Text_TrimsAndComposes(text: "José", expected: "José")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.Normalize_Text_TrimsAndComposes(text: "\tAnna\r\n", expected: "Anna")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PassportNumber_OtherText_IsRefused(passportNumber: "")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PassportNumber_OtherText_IsRefused(passportNumber: "%_")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PassportNumber_OtherText_IsRefused(passportNumber: "<script>")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PassportNumber_OtherText_IsRefused(passportNumber: "AB 1234567")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PassportNumber_OtherText_IsRefused(passportNumber: "AB-1234567")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PassportNumber_OtherText_IsRefused(passportNumber: "AB12345\n")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PassportNumber_OtherText_IsRefused(passportNumber: "ÆB123")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PassportNumber_OtherText_IsRefused(passportNumber: "１２３")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PassportNumber_OtherText_IsRefused(passportNumber: null)
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "'.")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "-")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "<script>")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "Anna%")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "Anna1")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "Anna;")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "Anna\"")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "Anna\nJensen")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "Anna\tJensen")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "Anna_")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "Anna Jensen")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "a@b")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "{0}")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: "😀")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PersonName_OtherCharacters_IsRefused(name: null)
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "+ 4512345678")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "+")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "++4512345678")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "+1234567890123456")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "-12345678")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "1 2 3 4 5 6")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "12.34.56.78")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "12/345678")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "123456")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "12345678-")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "12345678\nBcc")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "1234567a")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "4512345678+")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "<script>")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: "١٢٣٤٥٦٧")
+failed NFHotel.Domain.Tests.Guests.GuestFieldFormatTests.PhoneNumber_OtherText_IsRefused(phoneNumber: null)
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Create_HostileFirstName_IsStoredUnchangedOrRefused(firstName: "%s%s%n", stored: False)
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Create_HostileFirstName_IsStoredUnchangedOrRefused(firstName: "<img src=x onerror=alert(1)>", stored: False)
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Create_HostileFirstName_IsStoredUnchangedOrRefused(firstName: "<script>alert(1)</script>", stored: False)
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Create_HostileFirstName_IsStoredUnchangedOrRefused(firstName: "Robert'); DROP TABLE guests;--", stored: False)
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Create_HostileFirstName_IsStoredUnchangedOrRefused(firstName: "javascript:alert(1)", stored: False)
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Create_HostileFirstName_IsStoredUnchangedOrRefused(firstName: "{{7*7}}", stored: False)
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Create_PassportNumberOfWhiteSpace_StoresNone
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Create_TextsWithWhiteSpaceAndDecomposedLetters_StoresTheNormalForm
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Email_AnyShape_MustBeOnePlainAddress(email: ".@", expected: False)
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Email_AnyShape_MustBeOnePlainAddress(email: "Valdemar <valdemar@nfhotel.dk>", expected: False)
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Email_AnyShape_MustBeOnePlainAddress(email: "valdemar@nfhotel.dk\r\nBcc: eve@example.com", expected: False)
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Validate_CountryExceedsItsMaxLength_ReturnsTheLengthAndTheListCode
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Validate_EmailIsMalformed_ReturnsEmailInvalid(email: "valdemar@@nfhotel.dk")
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Validate_EveryFieldBreaksTheRuleOfItsCharacters_ReturnsEachCode
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Validate_EveryFieldIsExactlyAtItsMaxLength_ReturnsNoErrors
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Validate_PhoneNumberFormat_FollowsTheRuleOfTheField(phoneNumber: "123456", expected: False)
+failed NFHotel.Domain.Tests.Guests.GuestValidationTests.Validate_PhoneNumberFormat_FollowsTheRuleOfTheField(phoneNumber: "ikke et nummer", expected: False)
+Test run summary: Failed!
+  total: 716
+  failed: 143
+  succeeded: 573
+  skipped: 0
+# dotnet test --project tests/NFHotel.Application.Tests -c Release --no-build
+failed NFHotel.Application.Tests.Architecture.ErrorCodeTextTests.ErrorCodes_EveryConstant_HasATextInErrorMessages
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreateAsync_ArrivalYesterdayWithNewGuest_StoresNoGuest
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreateAsync_Departure_IsAtMostFiveYearsAheadForStaff(daysBeyond: 1, accepted: False)
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_ArrivalYesterday_IsRefusedWithoutStoringTheGuest
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_Departure_IsAtMostFiveYearsAhead(daysBeyond: 1, accepted: False)
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_FieldsWithWhiteSpace_StoresTheNormalForm
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_GuestFieldBreaksItsRule_IsRefusedWithItsCode(firstName: "Anna", lastName: "<b>", email: "anna@example.com", phoneNumber: "+4512345678", country: "Denmark", code: "guest.last_name_invalid")
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_GuestFieldBreaksItsRule_IsRefusedWithItsCode(firstName: "Anna", lastName: "Jensen", email: "Anna <anna@example.com>", phoneNumber: "+4512345678", country: "Denmark", code: "guest.email_invalid")
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_GuestFieldBreaksItsRule_IsRefusedWithItsCode(firstName: "Anna", lastName: "Jensen", email: "anna@example.com", phoneNumber: "+4512345678", country: "Testland", code: "guest.country_invalid")
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_GuestFieldBreaksItsRule_IsRefusedWithItsCode(firstName: "Anna", lastName: "Jensen", email: "anna@example.com", phoneNumber: "call me", country: "Denmark", code: "guest.phone_number_invalid")
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_GuestFieldBreaksItsRule_IsRefusedWithItsCode(firstName: "Anna1", lastName: "Jensen", email: "anna@example.com", phoneNumber: "+4512345678", country: "Denmark", code: "guest.first_name_invalid")
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_Nights_AreAtMostThirty(nights: 31, accepted: False)
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_Party_IsOneToFour(guests: -1, accepted: False)
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_Party_IsOneToFour(guests: 0, accepted: False)
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_Party_IsOneToFour(guests: 2147483647, accepted: False)
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.CreatePublicAsync_Party_IsOneToFour(guests: 5, accepted: False)
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.GetAvailableRoomsAsync_ArrivalYesterday_IsRefused
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.GetAvailableRoomsAsync_Departure_IsAtMostFiveYearsAhead(daysBeyond: 1, accepted: False)
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.GuestRescheduleAsync_Departure_IsAtMostFiveYearsAhead(daysBeyond: 1, accepted: False)
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.GuestRescheduleAsync_Nights_AreAtMostThirty(nights: 31, accepted: False)
+failed NFHotel.Application.Tests.Services.BookingInputRulesTests.RescheduleAsync_NewDeparture_IsAtMostFiveYearsAhead(daysBeyond: 1, accepted: False)
+Test run summary: Failed!
+  total: 777
+  failed: 21
+  succeeded: 756
+  skipped: 0
+# dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build
+failed NFHotel.Api.Tests.BookingInputApiTests.Departure_FiveYearsAheadAndADayLater_IsBookedOrRefused
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "country", value: "", code: "guest.country_required")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "country", value: "Testland", code: "guest.country_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "country", value: "denmark", code: "guest.country_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "email", value: "", code: "guest.email_required")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "email", value: "Anna <anna@example.com>", code: "guest.email_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "email", value: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"···, code: "guest.email_too_long")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "email", value: "anna@example", code: "guest.email_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "email", value: "anna@example.com\r\nBcc: eve@example.com", code: "guest.email_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "firstName", value: " ", code: "guest.first_name_required")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "firstName", value: "<b>Anna</b>", code: "guest.first_name_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "firstName", value: "Anna1", code: "guest.first_name_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "firstName", value: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"···, code: "guest.first_name_too_long")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "lastName", value: "", code: "guest.last_name_required")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "lastName", value: "Jensen_", code: "guest.last_name_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "lastName", value: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"···, code: "guest.last_name_too_long")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "passportNumber", value: "999999999999999999999", code: "guest.passport_number_too_long")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "passportNumber", value: "AB-123", code: "guest.passport_number_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "phoneNumber", value: "", code: "guest.phone_number_required")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "phoneNumber", value: "+1234567890123456", code: "guest.phone_number_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "phoneNumber", value: "12                                           34567"···, code: "guest.phone_number_too_long")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "phoneNumber", value: "123456", code: "guest.phone_number_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.GuestForm_GuestField_IsAcceptedOrRefusedWithItsCode(field: "phoneNumber", value: "call me", code: "guest.phone_number_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.MoveAndFreeRooms_BeyondTheFiveYears_AreRefused
+failed NFHotel.Api.Tests.BookingInputApiTests.Nights_PublicThirtyAndStaffThirtyOne_AreBookedAndPublicThirtyOneIsRefused
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_ArrivalYesterday_IsRefused
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_BodyAtAndOverTheLimit_IsReadOrRefusedWith413
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "country", value: "", code: "guest.country_required")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "country", value: "Testland", code: "guest.country_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "country", value: "denmark", code: "guest.country_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "email", value: "", code: "guest.email_required")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "email", value: "Anna <anna@example.com>", code: "guest.email_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "email", value: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"···, code: "guest.email_too_long")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "email", value: "anna@example", code: "guest.email_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "email", value: "anna@example.com\r\nBcc: eve@example.com", code: "guest.email_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "firstName", value: " ", code: "guest.first_name_required")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "firstName", value: "<b>Anna</b>", code: "guest.first_name_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "firstName", value: "Anna1", code: "guest.first_name_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "firstName", value: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"···, code: "guest.first_name_too_long")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "lastName", value: "", code: "guest.last_name_required")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "lastName", value: "Jensen_", code: "guest.last_name_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "lastName", value: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"···, code: "guest.last_name_too_long")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "passportNumber", value: "999999999999999999999", code: "guest.passport_number_too_long")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "passportNumber", value: "AB-123", code: "guest.passport_number_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "phoneNumber", value: "", code: "guest.phone_number_required")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "phoneNumber", value: "+1234567890123456", code: "guest.phone_number_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "phoneNumber", value: "12                                           34567"···, code: "guest.phone_number_too_long")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "phoneNumber", value: "123456", code: "guest.phone_number_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_GuestField_IsAcceptedOrRefusedWithItsCode(field: "phoneNumber", value: "call me", code: "guest.phone_number_invalid")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_Party_IsOneToFour(guests: 0, code: "booking.guests_out_of_range")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_Party_IsOneToFour(guests: 5, code: "booking.guests_out_of_range")
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_RoomSizeMissingOrUnknown_IsRefused(size: 3)
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_RoomSizeMissingOrUnknown_IsRefused(size: null)
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_UnknownField_IsRefused(insideTheGuest: False)
+failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_UnknownField_IsRefused(insideTheGuest: True)
+failed NFHotel.Api.Tests.BookingInputApiTests.Refusal_BeforeTheAction_WritesTheSecurityEventWithoutTheRequest
+failed NFHotel.Api.Tests.BookingInputApiTests.Refusal_OfAField_WritesOneSecurityEventWithoutTheValue
+failed NFHotel.Api.Tests.BookingInputApiTests.Searches_HostileStrings_AreTextAndNoFault
+failed NFHotel.Api.Tests.BookingInputApiTests.SignIn_ReferenceOfAThousandCharacters_IsTheLongestThatIsRead(length: 1000, expected: Unauthorized, code: "api.guest_unauthorized")
+failed NFHotel.Api.Tests.BookingInputApiTests.SignIn_ReferenceOfAThousandCharacters_IsTheLongestThatIsRead(length: 1001, expected: BadRequest, code: "api.invalid_request")
+failed NFHotel.Api.Tests.InputRulesTests.IsAccepted_LongTextInANestedRecord_IsRefused
+failed NFHotel.Api.Tests.InputRulesTests.IsAccepted_TextWithoutALengthOfItsOwn_HasAtMostAThousandCharacters(length: 1001, expected: False)
+failed NFHotel.Api.Tests.ValidationRulesTableTests.FlowTypes_WhenInspected_RefuseUnknownFieldsAndBoundTheirLists
+Test run summary: Failed!
+  total: 604
+  failed: 63
+  succeeded: 541
+  skipped: 0
+# dotnet test --project tests/NFHotel.ApiClient.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 122
+  failed: 0
+  succeeded: 122
+  skipped: 0
+# dotnet test --project tests/NFHotel.Web.Tests -c Release --no-build
+failed NFHotel.Web.Tests.BookingAddressTests.Get_WholeNumberOfGuests_FillsTheBoxOnlyFromOneToFour(guests: "2147483647", shown: 1)
+failed NFHotel.Web.Tests.BookingAddressTests.Get_WholeNumberOfGuests_FillsTheBoxOnlyFromOneToFour(guests: "5", shown: 1)
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.DateLimits_WithTheClock_FollowTheRulesOfTheStay
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.Dates_DepartureFiveYearsAheadAndADayLater_AreValidOrShowTheRule
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.Dates_ThirtyAndThirtyOneNights_AreValidOrShowTheRule
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.FindRooms_ThirtyOneNights_DoesNotCallTheService
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.Prefill_BadAddress_KeepsTheSuggestedDates
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.Prefill_StayBeyondTheRules_IsTakenButNotReady
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.Prefill_WholeNumberParty_IsTakenOnlyFromOneToFour(guests: "-1", expected: 2)
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.Prefill_WholeNumberParty_IsTakenOnlyFromOneToFour(guests: "-2147483648", expected: 2)
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.Prefill_WholeNumberParty_IsTakenOnlyFromOneToFour(guests: "0", expected: 2)
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.Prefill_WholeNumberParty_IsTakenOnlyFromOneToFour(guests: "2147483647", expected: 2)
+failed NFHotel.Web.Tests.BookingFlowViewModelTests.Prefill_WholeNumberParty_IsTakenOnlyFromOneToFour(guests: "5", expected: 2)
+failed NFHotel.Web.Tests.BookingFormViewModelTests.DateLimits_WithTheClock_FollowTheRulesOfTheStayForStaff
+failed NFHotel.Web.Tests.BookingListPageTests.Form_NewBooking_FieldsHaveTheLimitsOfTheRules
+failed NFHotel.Web.Tests.BookingPageTests.Dates_OnThePage_OfferTheDaysThatTheRulesAllow
+failed NFHotel.Web.Tests.BookingPageTests.Dates_ThirtyOneNights_AreMarkedInvalid
+failed NFHotel.Web.Tests.BookingPageTests.Details_OnThePage_FieldsHaveTheLengthsAndTheListOfTheRules
+failed NFHotel.Web.Tests.GuestListPageTests.Form_NewGuest_FieldsHaveTheLengthsAndTheListOfTheRules
+failed NFHotel.Web.Tests.GuestPagesTests.MyBooking_SignedInGuest_DateFieldsOfferTheDaysThatTheRulesAllow
+failed NFHotel.Web.Tests.GuestPagesTests.SignInPage_Opened_FieldsHaveTheLengthsOfTheRules
+failed NFHotel.Web.Tests.MyBookingViewModelTests.DateLimits_WithTheClock_FollowTheRulesOfTheStay
+failed NFHotel.Web.Tests.MyBookingViewModelTests.RescheduleAsync_NewDates_AreCheckedByTheRulesOfTheStayFirst(checkIn: "2026-03-09", checkOut: "2026-03-11", code: "booking.start_date_in_past")
+failed NFHotel.Web.Tests.MyBookingViewModelTests.RescheduleAsync_NewDates_AreCheckedByTheRulesOfTheStayFirst(checkIn: "2026-03-20", checkOut: "2026-04-20", code: "booking.stay_too_long")
+failed NFHotel.Web.Tests.MyBookingViewModelTests.RescheduleAsync_NewDates_AreCheckedByTheRulesOfTheStayFirst(checkIn: "2031-03-09", checkOut: "2031-03-11", code: "booking.end_date_too_far_ahead")
+Test run summary: Failed!
+  total: 863
+  failed: 25
+  succeeded: 838
+  skipped: 0
+# done

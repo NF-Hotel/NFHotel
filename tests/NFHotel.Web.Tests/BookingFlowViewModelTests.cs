@@ -451,18 +451,22 @@ public sealed class BookingFlowViewModelTests
         Assert.Equal("3 guests", viewModel.GuestsText);
     }
 
-    /// <summary>Negative: an unreadable or missing date leaves the suggested dates alone; the party is still taken, within its bounds.</summary>
+    /// <summary>
+    /// Negative: an unreadable or missing date leaves the suggested dates alone; a party outside one to four is ignored
+    /// too (MIL-086 decision 2), and a party within it is still taken.
+    /// </summary>
     [Fact]
     public void Prefill_BadAddress_KeepsTheSuggestedDates()
     {
         var viewModel = Create();
 
         Assert.False(viewModel.Prefill("12/03/2026", "2026-03-15", "9"));
-        Assert.False(viewModel.Prefill(null, null, null));
+        Assert.Equal(1, viewModel.Guests);
+        Assert.False(viewModel.Prefill(null, null, "3"));
 
         Assert.Equal(Today.AddDays(1), viewModel.CheckInDate);
         Assert.Equal(Today.AddDays(2), viewModel.CheckOutDate);
-        Assert.Equal(BookingFlowViewModel.MaxGuests, viewModel.Guests);
+        Assert.Equal(3, viewModel.Guests);
     }
 
     /// <summary>Boundary: a past check-in from the address is read but is not valid, so the page stays on the dates.</summary>
@@ -499,23 +503,123 @@ public sealed class BookingFlowViewModelTests
         Assert.Equal(1, viewModel.Guests);
     }
 
-    /// <summary>Boundary: a whole number of the address is kept between one and the most the field offers, the largest and smallest integers too.</summary>
+    /// <summary>
+    /// Boundary (MIL-086 decision 2, BR-C-07): a whole number of the address from one to four is taken; any other whole
+    /// number, the largest and smallest integers too, is ignored and leaves the party that the field had, where MIL-067
+    /// moved it to the nearest bound.
+    /// </summary>
+    /// <param name="guests">The guests of the address.</param>
+    /// <param name="expected">The party afterwards, when the field had two.</param>
     [Theory]
     [InlineData("1", 1)]
-    [InlineData("0", 1)]
-    [InlineData("-1", 1)]
     [InlineData("4", BookingFlowViewModel.MaxGuests)]
-    [InlineData("5", BookingFlowViewModel.MaxGuests)]
-    [InlineData("2147483647", BookingFlowViewModel.MaxGuests)]
-    [InlineData("-2147483648", 1)]
     [InlineData(" 3 ", 3)]
-    public void Prefill_WholeNumberParty_IsKeptWithinItsBounds(string guests, int expected)
+    [InlineData("0", 2)]
+    [InlineData("-1", 2)]
+    [InlineData("5", 2)]
+    [InlineData("2147483647", 2)]
+    [InlineData("-2147483648", 2)]
+    public void Prefill_WholeNumberParty_IsTakenOnlyFromOneToFour(string guests, int expected)
     {
         var viewModel = Create();
+        viewModel.Guests = 2;
 
         viewModel.Prefill(null, null, guests);
 
         Assert.Equal(expected, viewModel.Guests);
+    }
+
+    #endregion
+
+    #region The rules of the stay (MIL-086)
+
+    /// <summary>
+    /// Boundary (BR-N-08): the page holds the five years with the same rule as the API; today is 2026-03-10, so the last
+    /// departure is 2031-03-10, and a day later is shown at the departure with the text of its code.
+    /// </summary>
+    [Fact]
+    public void Dates_DepartureFiveYearsAheadAndADayLater_AreValidOrShowTheRule()
+    {
+        var viewModel = Create();
+
+        viewModel.CheckInDate = new DateOnly(2031, 3, 8);
+        viewModel.CheckOutDate = new DateOnly(2031, 3, 10);
+        var lastDayIsValid = viewModel.HasValidDates;
+        var lastDayError = viewModel.CheckOutError;
+        viewModel.CheckOutDate = new DateOnly(2031, 3, 11);
+
+        Assert.True(lastDayIsValid);
+        Assert.Null(lastDayError);
+        Assert.False(viewModel.HasValidDates);
+        Assert.False(viewModel.CanFindRooms);
+        Assert.Equal(Text(ErrorCodes.Booking.EndDateTooFarAhead), viewModel.CheckOutError);
+    }
+
+    /// <summary>Boundary (BR-C-07): 30 nights are a valid stay on the public site; 31 are shown at the departure with the text of their code.</summary>
+    [Fact]
+    public void Dates_ThirtyAndThirtyOneNights_AreValidOrShowTheRule()
+    {
+        var viewModel = Create();
+
+        viewModel.CheckInDate = new DateOnly(2026, 3, 12);
+        viewModel.CheckOutDate = new DateOnly(2026, 4, 11);
+        var thirtyIsValid = viewModel.HasValidDates;
+        viewModel.CheckOutDate = new DateOnly(2026, 4, 12);
+
+        Assert.True(thirtyIsValid);
+        Assert.False(viewModel.HasValidDates);
+        Assert.Equal(Text(ErrorCodes.Booking.StayTooLong), viewModel.CheckOutError);
+        Assert.Null(viewModel.CheckInError);
+    }
+
+    /// <summary>Negative: rooms are not looked up for a stay that breaks a rule, so the service is not called.</summary>
+    [Fact]
+    public async Task FindRooms_ThirtyOneNights_DoesNotCallTheService()
+    {
+        var viewModel = Create();
+        viewModel.CheckInDate = new DateOnly(2026, 3, 12);
+        viewModel.CheckOutDate = new DateOnly(2026, 4, 12);
+
+        await viewModel.FindRoomsAsync(Token);
+
+        Assert.Equal(BookingFlowStep.Dates, viewModel.CurrentStep);
+        await _bookings.DidNotReceiveWithAnyArgs().GetAvailableRoomsAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<int?>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>
+    /// Boundary: the limits that the date fields offer come from the rules: the arrival from today to the day before
+    /// the last departure, the departure up to five years ahead, and up to 30 nights after a chosen arrival.
+    /// </summary>
+    [Fact]
+    public void DateLimits_WithTheClock_FollowTheRulesOfTheStay()
+    {
+        var viewModel = Create();
+        viewModel.CheckInDate = null;
+
+        var withoutArrival = viewModel.LatestCheckOut;
+        viewModel.CheckInDate = new DateOnly(2026, 3, 12);
+        var afterAnArrival = viewModel.LatestCheckOut;
+        viewModel.CheckInDate = new DateOnly(2031, 3, 1);
+
+        Assert.Equal(Today, viewModel.EarliestCheckIn);
+        Assert.Equal(new DateOnly(2031, 3, 9), viewModel.LatestCheckIn);
+        Assert.Equal(new DateOnly(2031, 3, 10), withoutArrival);
+        Assert.Equal(new DateOnly(2026, 4, 11), afterAnArrival);
+        Assert.Equal(new DateOnly(2031, 3, 10), viewModel.LatestCheckOut);
+    }
+
+    /// <summary>Negative: dates of the address beyond the rules are taken and shown with the rule, and the rooms are not fetched.</summary>
+    [Fact]
+    public void Prefill_StayBeyondTheRules_IsTakenButNotReady()
+    {
+        var viewModel = Create();
+
+        var ready = viewModel.Prefill("2026-03-12", "2026-04-12", "2");
+
+        Assert.False(ready);
+        Assert.Equal(new DateOnly(2026, 4, 12), viewModel.CheckOutDate);
+        Assert.Equal(Text(ErrorCodes.Booking.StayTooLong), viewModel.CheckOutError);
+        Assert.Equal(2, viewModel.Guests);
     }
 
     /// <summary>

@@ -72,18 +72,18 @@ public sealed partial class BookingAddressTests : IClassFixture<WebFactory>
     #region Guests that parse
 
     /// <summary>
-    /// Boundary: a whole number fills the box, kept between one and the most the box offers; the largest integer is a
-    /// number like any other and is kept at the most.
+    /// Boundary (MIL-086 decision 2): a whole number from one to four fills the box; any other whole number, the
+    /// largest integer too, is ignored and leaves the box at its default of one.
     /// </summary>
     [Theory]
     [InlineData("3", 3)]
     [InlineData("1", 1)]
     [InlineData("4", BookingFlowViewModel.MaxGuests)]
-    [InlineData("5", BookingFlowViewModel.MaxGuests)]
+    [InlineData("5", 1)]
     [InlineData("0", 1)]
     [InlineData("-1", 1)]
-    [InlineData("2147483647", BookingFlowViewModel.MaxGuests)]
-    public async Task Get_WholeNumberOfGuests_FillsTheBoxWithinItsBounds(string guests, int shown)
+    [InlineData("2147483647", 1)]
+    public async Task Get_WholeNumberOfGuests_FillsTheBoxOnlyFromOneToFour(string guests, int shown)
     {
         // Arrange
         using var browser = _factory.CreateBrowser();

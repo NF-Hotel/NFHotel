@@ -51,6 +51,15 @@ public static class ErrorCodes
         /// <summary>The period starts before today (BR-44, BR-104, BR-108).</summary>
         public const string StartDateInPast = BookingErrors.StartDateInPast;
 
+        /// <summary>The stay ends more than five years after today (BR-N-08, MIL-086).</summary>
+        public const string EndDateTooFarAhead = BookingErrors.EndDateTooFarAhead;
+
+        /// <summary>A stay booked or moved on the public site has more than 30 nights (BR-C-07, MIL-086).</summary>
+        public const string StayTooLong = BookingErrors.StayTooLong;
+
+        /// <summary>The party of a public booking is not 1 to 4 guests (BR-C-07, MIL-086).</summary>
+        public const string GuestsOutOfRange = BookingErrors.GuestsOutOfRange;
+
         /// <summary>The booking has no room reference (BR-45, BR-105).</summary>
         public const string RoomRequired = BookingErrors.RoomRequired;
 
@@ -193,6 +202,9 @@ public static class ErrorCodes
         /// whether a booking number exists.
         /// </summary>
         public const string GuestUnauthorized = "api.guest_unauthorized";
+
+        /// <summary>The body of the request is larger than the endpoint takes (HTTP 413, MIL-086).</summary>
+        public const string RequestTooLarge = "api.request_too_large";
     }
 
     /// <summary>Codes of the staff sign-in and accounts (ADR-0005).</summary>
@@ -286,11 +298,17 @@ public static class ErrorCodes
         /// <summary>The first name is too long (A-10, BR-N-03).</summary>
         public const string FirstNameTooLong = GuestErrors.FirstNameTooLong;
 
+        /// <summary>The first name holds a character that no name holds (MIL-086).</summary>
+        public const string FirstNameInvalid = GuestErrors.FirstNameInvalid;
+
         /// <summary>Last name is missing (BR-53, BR-92).</summary>
         public const string LastNameRequired = GuestErrors.LastNameRequired;
 
         /// <summary>The last name is too long (A-10, BR-N-03).</summary>
         public const string LastNameTooLong = GuestErrors.LastNameTooLong;
+
+        /// <summary>The last name holds a character that no name holds (MIL-086).</summary>
+        public const string LastNameInvalid = GuestErrors.LastNameInvalid;
 
         /// <summary>Email is missing (BR-93).</summary>
         public const string EmailRequired = GuestErrors.EmailRequired;
@@ -307,14 +325,23 @@ public static class ErrorCodes
         /// <summary>The phone number is too long (A-10, BR-N-03).</summary>
         public const string PhoneNumberTooLong = GuestErrors.PhoneNumberTooLong;
 
+        /// <summary>The phone number is not 7 to 15 digits with an optional leading plus (MIL-086).</summary>
+        public const string PhoneNumberInvalid = GuestErrors.PhoneNumberInvalid;
+
         /// <summary>Country is missing (BR-56, BR-95).</summary>
         public const string CountryRequired = GuestErrors.CountryRequired;
 
         /// <summary>The country is too long (A-10, BR-N-03).</summary>
         public const string CountryTooLong = GuestErrors.CountryTooLong;
 
+        /// <summary>The country is not a name of the list of countries (MIL-086).</summary>
+        public const string CountryInvalid = GuestErrors.CountryInvalid;
+
         /// <summary>The passport number is too long (A-10, BR-N-03).</summary>
         public const string PassportNumberTooLong = GuestErrors.PassportNumberTooLong;
+
+        /// <summary>The passport number holds other characters than ASCII letters and digits (MIL-086).</summary>
+        public const string PassportNumberInvalid = GuestErrors.PassportNumberInvalid;
 
         /// <summary>The guest cannot be deleted, because there are bookings for the guest (BR-N-02).</summary>
         public const string HasBookings = "guest.has_bookings";

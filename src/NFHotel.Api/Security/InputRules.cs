@@ -25,6 +25,12 @@ public static class InputRules
     /// <summary>The latest date that a request may carry: far beyond any booking, price or report.</summary>
     public static readonly DateOnly LatestDate = new(2199, 12, 31);
 
+    /// <summary>
+    /// The most characters that a text may hold when neither its property nor its parameter sets a length of its own
+    /// (MIL-086, ADR-0050 decision 4).
+    /// </summary>
+    public const int DefaultMaxTextLength = 1000;
+
     // The objects of a request are shallow; the limit only guards against a type that refers to itself.
     private const int MaxDepth = 8;
 
@@ -34,6 +40,17 @@ public static class InputRules
     /// <param name="value">The value of an action argument.</param>
     /// <returns><see langword="true"/> when the value meets every rule.</returns>
     public static bool IsAccepted(object? value) => IsAccepted(value, 0);
+
+    /// <summary>Tells whether a bound value meets the rules, with the attributes of the parameter that it binds to.</summary>
+    /// <param name="value">The value of an action argument.</param>
+    /// <param name="declaredOn">The parameter of the action, whose attributes may set the length of a text, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when the value meets every rule.</returns>
+    public static bool IsAccepted(object? value, ICustomAttributeProvider? declaredOn)
+    {
+        // MIL-086 skeleton: the length of a text is not checked yet.
+        _ = declaredOn;
+        return IsAccepted(value, 0);
+    }
 
     /// <summary>Tells whether text holds only characters that the API accepts.</summary>
     /// <param name="text">The text.</param>

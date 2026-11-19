@@ -77,6 +77,18 @@ public sealed class BookingFormViewModel
     /// <summary>Arrival date, inclusive.</summary>
     public DateOnly CheckInDate { get; set; }
 
+    /// <summary>The first arrival that the form offers: today (MIL-086).</summary>
+    public DateOnly EarliestCheckIn => _clock.Today;
+
+    /// <summary>The last arrival that the form offers (MIL-086 skeleton: not set yet).</summary>
+    public DateOnly LatestCheckIn => default;
+
+    /// <summary>The first departure that the form offers (MIL-086 skeleton: not set yet).</summary>
+    public DateOnly EarliestCheckOut => default;
+
+    /// <summary>The last departure that the form offers (MIL-086 skeleton: not set yet).</summary>
+    public DateOnly LatestCheckOut => default;
+
     /// <summary>Departure date, exclusive.</summary>
     public DateOnly CheckOutDate { get; set; }
 

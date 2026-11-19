@@ -24,6 +24,12 @@ public static class Pages
         await field.PressAsync("Tab");
     }
 
+    /// <summary>
+    /// Chooses an option of a list by its value: the change event that Blazor's <c>@bind</c> reads fires when the option
+    /// is chosen.
+    /// </summary>
+    public static async Task SelectAsync(ILocator field, string value) => await field.SelectOptionAsync(value);
+
     /// <summary>The path of the page without the address of the stack and without the query, for example <c>/admin/login</c>.</summary>
     public static string PathOf(IPage page) => new Uri(page.Url).AbsolutePath;
 }
