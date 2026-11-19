@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Added US-001.13, a guest sees, moves and cancels the own booking (MIL-018, UC-010)<br>The Version History cut to its two latest rows, the blank line that split it removed<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | US-001.13: the guest opens the booking with its booking reference in place of its number, and failed attempts are limited per reference and per address (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | US-001.13: the guest opens the booking with its booking reference in place of its number, and failed attempts are limited per reference and per address (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
 
 ---
 
@@ -265,3 +265,4 @@ for US-001.02.
 [MIL-055]: ./milestones/mil-055-room-price-suggestions.md
 [MIL-018]: ./milestones/mil-018-guest-login.md
 [9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

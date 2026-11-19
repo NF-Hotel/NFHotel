@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: code review of tasks 2 to 4 of MIL-085 and of the fixes of its findings; Go-with-conditions: every required check of the pull request green; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: code review of tasks 2 to 4 of MIL-085 and of the fixes of its findings; Go-with-conditions: every required check of the pull request green; mode autonomous, not independent | [e551458] |
 
 ---
 
@@ -255,3 +255,4 @@ second AI read the code for bugs, and each stand-in decision is named in the sum
 [MIL-077]: ../../milestones/mil-077-hostile-input-against-the-api.md
 [MIL-087]: ../../milestones/mil-087-limits-on-what-one-sender-can-ask.md
 [MIL-018]: ../../milestones/mil-018-guest-login.md
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

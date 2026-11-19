@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the documents that MIL-085 amends (task 5); Go; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the documents that MIL-085 amends (task 5); Go; mode autonomous, not independent | [e551458] |
 
 ---
 
@@ -277,3 +277,4 @@ passes for what the amendment changed, after F1; the documents without a checkli
 [RC-388]: ./rc-388-adr-0047.md
 [RC-389]: ./rc-389-uc-010.md
 [RC-390]: ./rc-390-mil-018-amendments.md
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | The actor Guest (S06) and the use case View and Change Own Booking (UC-010, US-001.13) added for MIL-018; a guest's own booking is inside the boundary, making a booking on the website stays outside<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | View and Change Own Booking: the guest signs in with the booking reference in place of the booking number (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | View and Change Own Booking: the guest signs in with the booking reference in place of the booking number (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
 
 ---
 
@@ -157,3 +157,4 @@ may also view the analysis is a question for the Product Owner.
 [UC-009]: ./use-cases/uc-009/uc.md
 [UC-010]: ./use-cases/uc-010/uc.md
 [9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

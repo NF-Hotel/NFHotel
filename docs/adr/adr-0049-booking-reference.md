@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-085, written by the AI before any code<br>Go in RC-416; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [f8cd896] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Decisions 2 and 6 and the consequences after the code review RC-418: a full store keeps every window at its limit and refuses a new key when all are at it; an IPv6 caller counts by its first 64 bits; the time of the answer and the refusal of hostile input as they are<br>Go in RC-419; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Decisions 2 and 6 and the consequences after the code review RC-418: a full store keeps every window at its limit and refuses a new key when all are at it; an IPv6 caller counts by its first 64 bits; the time of the answer and the refusal of hostile input as they are<br>Go in RC-419; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -236,3 +236,4 @@ In detail, numbered as the decisions of [MIL-085]:
 [RC-418]: ../sqa/reviews/rc-418-mil-085-code.md
 [RC-419]: ../sqa/reviews/rc-419-adr-0049-after-the-code-review.md
 [f8cd896]: https://github.com/NF-Hotel/NFHotel/commit/f8cd8968c55bf9989d469393ec470c8df00d27bf
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

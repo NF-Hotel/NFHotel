@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | [ADR-0048], task 1 of MIL-084 (RC-402, Go), and the code and the documents of tasks 2 to 6 (RC-403, Go-with-conditions) on rows of their own, and the downstream of MIL-084; prepared in supervised mode, then accepted by the AI as stand-in for S01 after S01 switched MIL-084 to autonomous mode in chat on 2026-11-19 | [870014d] |
-| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | MIL-085: [ADR-0049] (RC-416, Go; its amendment after the code review RC-419, Go) with the code (RC-418) on a row of its own, and RC-417 on the rows of the documents it reviewed: UC-010, SSD-001, OC-001, UC-001, DM-001, DM-004, DICT-001, US-001, UCD-001 and ADR-0047; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | MIL-085: [ADR-0049] (RC-416, Go; its amendment after the code review RC-419, Go) with the code (RC-418) on a row of its own, and RC-417 on the rows of the documents it reviewed: UC-010, SSD-001, OC-001, UC-001, DM-001, DM-004, DICT-001, US-001, UCD-001 and ADR-0047; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
 
 ---
 
@@ -584,3 +584,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-417]: ./reviews/rc-417-mil-085-documents.md
 [RC-418]: ./reviews/rc-418-mil-085-code.md
 [RC-419]: ./reviews/rc-419-adr-0049-after-the-code-review.md
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

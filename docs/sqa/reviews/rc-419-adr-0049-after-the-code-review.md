@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the second row of ADR-0049 (decisions 2 and 6 and the consequences after the code review RC-418); Go; mode autonomous, not independent | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: delta review of the second row of ADR-0049 (decisions 2 and 6 and the consequences after the code review RC-418); Go; mode autonomous, not independent | [e551458] |
 
 ---
 
@@ -96,3 +96,4 @@ all.
 [MIL-085]: ../../milestones/mil-085-a-booking-reference-that-cannot-be-guessed.md
 [MIL-077]: ../../milestones/mil-077-hostile-input-against-the-api.md
 [MIL-087]: ../../milestones/mil-087-limits-on-what-one-sender-can-ask.md
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

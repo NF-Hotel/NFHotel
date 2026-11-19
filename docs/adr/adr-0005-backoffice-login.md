@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | The current state names ADR-0047: the Guest role and the guest login of MIL-018, with the own-resource check that replaces the open receipt page<br>Go in RC-388; accepted by the AI as stand-in for S01 | [9e72b0e] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The current state names ADR-0049: the guest sign-in counts its failed attempts in limits of its own, apart from the throttle of the staff sign-in (MIL-085)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The current state names ADR-0049: the guest sign-in counts its failed attempts in limits of its own, apart from the throttle of the staff sign-in (MIL-085)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -93,3 +93,4 @@ Quality attributes: security improves (authentication, least privilege, defence 
 [ADR-0049]: ./adr-0049-booking-reference.md
 [RC-417]: ../sqa/reviews/rc-417-mil-085-documents.md
 [9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
+[e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81
