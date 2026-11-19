@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("bedre validering på input felterne og laves så man ikke kan booke mere end 5 år frem", "sikret mod forskellige typer XSS samt SQL injection"); the decisions are the AI's for S01 ("Du skal tage beslutningerne for mig"), and the plan is accepted by the AI as stand-in after RC-411, Go, for a run in autonomous mode ("Når din plan er lavet skal Opus 5.5 lave det hele i automode") | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("bedre validering på input felterne og laves så man ikke kan booke mere end 5 år frem", "sikret mod forskellige typer XSS samt SQL injection"); the decisions are the AI's for S01 ("Du skal tage beslutningerne for mig"), and the plan is accepted by the AI as stand-in after RC-411, Go, for a run in autonomous mode ("Når din plan er lavet skal Opus 5.5 lave det hele i automode") | [9f5c208] |
 
 ---
 
@@ -118,3 +118,4 @@ Read for this plan on 2026-11-19: the Application Security Verification Standard
 [ADR-0004]: ../adr/adr-0004-database-api.md
 [MIL-067]: ./mil-067-bad-input-on-the-web-pages.md
 [MIL-077]: ./mil-077-hostile-input-against-the-api.md
+[9f5c208]: https://github.com/NF-Hotel/NFHotel/commit/9f5c208a73c7fbd268341b25501f518f39ad568e

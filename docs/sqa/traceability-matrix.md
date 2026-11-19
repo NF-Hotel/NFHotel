@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-17 | Proposed | mikemike | AI as stand-in for S01 | [MIL-052] and [ADR-0045] amended to S01's decisions of 2026-11-17 (RC-398, Go), and the gate of MIL-052, No-Go for now on criterion 6 (RC-399) | [7fdb18c] |
-| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The plan of the booking flow: [MIL-085] to [MIL-089] (RC-410 to RC-413 and RC-415, Go), and objective 43 and success criteria 46 to 48 of [BC-001] (RC-414, Go); planned and accepted by the AI as stand-in at S01's word in chat on 2026-11-19 | pending |
+| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The plan of the booking flow: [MIL-085] to [MIL-089] (RC-410 to RC-413 and RC-415, Go), and objective 43 and success criteria 46 to 48 of [BC-001] (RC-414, Go); planned and accepted by the AI as stand-in at S01's word in chat on 2026-11-19 | [9f5c208] |
 
 ---
 
@@ -569,3 +569,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-413]: ./reviews/rc-413-mil-088.md
 [RC-414]: ./reviews/rc-414-bc-001-booking-flow.md
 [RC-415]: ./reviews/rc-415-mil-089.md
+[9f5c208]: https://github.com/NF-Hotel/NFHotel/commit/9f5c208a73c7fbd268341b25501f518f39ad568e

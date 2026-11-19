@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("man skal verificere på sin mail efter hver booking således man ikke kan booke alle rum eller lave booking overbelastning … så hotel konkurrenter f.eks. ikke kan booke alt så der er udsolgt"); the decisions are the AI's for S01 ("Du skal tage beslutningerne for mig"), and the plan is accepted by the AI as stand-in after RC-413, Go, for a run in autonomous mode ("Når din plan er lavet skal Opus 5.5 lave det hele i automode") | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("man skal verificere på sin mail efter hver booking således man ikke kan booke alle rum eller lave booking overbelastning … så hotel konkurrenter f.eks. ikke kan booke alt så der er udsolgt"); the decisions are the AI's for S01 ("Du skal tage beslutningerne for mig"), and the plan is accepted by the AI as stand-in after RC-413, Go, for a run in autonomous mode ("Når din plan er lavet skal Opus 5.5 lave det hele i automode") | [9f5c208] |
 
 ---
 
@@ -126,3 +126,4 @@ Read for this plan on 2026-11-19: the OWASP automated threat OAT-021 ("selection
 [ADR-0024]: ../adr/adr-0024-secrets-as-files.md
 [MIL-018]: ./mil-018-guest-login.md
 [MIL-035]: ./mil-035-secrets-as-files.md
+[9f5c208]: https://github.com/NF-Hotel/NFHotel/commit/9f5c208a73c7fbd268341b25501f518f39ad568e

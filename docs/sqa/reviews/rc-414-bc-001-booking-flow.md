@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go; accepted by the AI as stand-in at S01's word in chat ("Du skal tage beslutningerne for mig") | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go; accepted by the AI as stand-in at S01's word in chat ("Du skal tage beslutningerne for mig") | [9f5c208] |
 
 ---
 
@@ -77,3 +77,4 @@ Go. Criteria 3 and 4 of QC-BC-001 pass, and every Mandatory criterion of QC-LANG
 [MIL-087]: ../../milestones/mil-087-limits-on-what-one-sender-can-ask.md
 [MIL-088]: ../../milestones/mil-088-a-booking-verified-by-email.md
 [RC-332]: ./rc-332-bc-001-products-of-2026-11-11.md
+[9f5c208]: https://github.com/NF-Hotel/NFHotel/commit/9f5c208a73c7fbd268341b25501f518f39ad568e

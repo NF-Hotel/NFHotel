@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-12 | Deprecated | mikemike | AI as stand-in for S01 | Brought in line with the products as they run on 2026-11-11, at S01's request in chat ("Ret det så der er overensstemmelse med det aktuelle", "Indkluder dem alle"): the summary, problem, opportunity, scope, benefits, risks, assumptions, constraints (.NET 10), stakeholders and recommendation<br>Objectives 6, 7, 18 and 28 and success criteria 7, 9, 21, 27, 31 and 32 as they are now<br>Objectives 30 to 40 and success criteria 33 to 43 for the eleven products that had none<br>Objectives 18, 31, 32 and 34 and success criteria 34, 35 and 37 extended, objective 41 and success criterion 44 added (configuration as code), and two lines out of scope (Kubernetes in production, the Proxmox machines as declarative code), for MIL-075 to MIL-078, planned at S01's request in chat on 2026-11-12 ("Skriv 1–4") | [62301c4] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Objective 43 and success criteria 46 to 48 (booking reference, booking input, verification by email with its limits) and one line in scope, for MIL-085 to MIL-088, after a report to S01 that the next and the previous booking number can be worked out; planned and accepted at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig"; RC-414, Go)<br>The numbers 42 (objective) and 45 (success criterion) are kept free for the change of MIL-084, which S01 has accepted and which is not merged yet | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Objective 43 and success criteria 46 to 48 (booking reference, booking input, verification by email with its limits) and one line in scope, for MIL-085 to MIL-088, after a report to S01 that the next and the previous booking number can be worked out; planned and accepted at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig"; RC-414, Go)<br>The numbers 42 (objective) and 45 (success criterion) are kept free for the change of MIL-084, which S01 has accepted and which is not merged yet | [9f5c208] |
 
 ---
 
@@ -339,3 +339,4 @@ Proceed. The platform runs and meets most of its criteria. Continue with what is
 [UCD-001]: ./use-case-diagram.md
 [US-001]: ./user-stories.md
 [62301c4]: https://github.com/NF-Hotel/NFHotel/commit/62301c485e2ba5305b590865c00d02ad24988e59
+[9f5c208]: https://github.com/NF-Hotel/NFHotel/commit/9f5c208a73c7fbd268341b25501f518f39ad568e

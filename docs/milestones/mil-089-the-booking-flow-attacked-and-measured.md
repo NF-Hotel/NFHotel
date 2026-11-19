@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("Kontroller bagefter for sårbarheder og huller samt valider kvaliteten så input og outputtet er robust, stabilt og modstandsdygtigt"); the decisions are the AI's for S01 ("Du skal tage beslutningerne for mig"), and the plan is accepted by the AI as stand-in after RC-415, Go, for a run in autonomous mode ("Når din plan er lavet skal Opus 5.5 lave det hele i automode") | pending |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("Kontroller bagefter for sårbarheder og huller samt valider kvaliteten så input og outputtet er robust, stabilt og modstandsdygtigt"); the decisions are the AI's for S01 ("Du skal tage beslutningerne for mig"), and the plan is accepted by the AI as stand-in after RC-415, Go, for a run in autonomous mode ("Når din plan er lavet skal Opus 5.5 lave det hele i automode") | [9f5c208] |
 
 ---
 
@@ -120,3 +120,4 @@ The standard is the Application Security Verification Standard (ASVS) 5.0 of the
 [MIL-054]: ./mil-054-test-coverage.md
 [MIL-077]: ./mil-077-hostile-input-against-the-api.md
 [SAR-001]: ../sqa/security-audit-2026-11.md
+[9f5c208]: https://github.com/NF-Hotel/NFHotel/commit/9f5c208a73c7fbd268341b25501f518f39ad568e
