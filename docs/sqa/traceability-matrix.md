@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The weekly look of MIL-084 without the front page, and decision 6 of [ADR-0048] with it (RC-405, Go; mode autonomous, not independent) | [2d9c1c8] |
 | 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | MIL-085: [ADR-0049] (RC-416, Go; its amendment after the code review RC-419, Go) with the code (RC-418) on a row of its own, and RC-417 on the rows of the documents it reviewed: UC-010, SSD-001, OC-001, UC-001, DM-001, DM-004, DICT-001, US-001, UCD-001 and ADR-0047; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
+| 2026-11-19 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-084] (RC-404, Go on criteria 1 to 8) and its code deployed with pull request 834; mode autonomous, not independent | [8aedf53] |
 
 ---
 
@@ -182,8 +182,8 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-020] | Milestone (Accepted, Go; plan reviewed in RC-087; tasks 1 to 11 marked done after RC-106 to RC-113 and RC-249) | en | it | [BC-001], [MIL-019], [ADR-0003] | ADR-0014, the code and the deploy files of its tasks 1 to 3 and 5 to 11 (`BenchmarkServiceClient`, the page `/admin/benchmark/start` with its panel of the installed models, `AiDefault`, `BenchmarkRunAnalysis`), [UC-009] | [RC-087], [RC-106], [RC-107], [RC-108], [RC-109], [RC-110], [RC-111], [RC-112], [RC-113], [RC-249] |
 | [MIL-054] | Milestone (Accepted, Go; plan reviewed and accepted by S01 in chat 2026-11-01, RC-258; gate passed 2026-11-14, RC-367: Go, accepted by the AI as stand-in for S01 at S01's word in chat) | en | it | [BC-001], [ADR-0033], MIL-047 | the tests of pull request #435, the coverage floor `scripts/check-coverage-floor.sh` and its test in `ci.yaml`, the coverage scope in `dotnet-coverage.config.xml` and `SonarQube.Analysis.xml` | [RC-258], [RC-260], [RC-367] |
 | The code of `update` in `ops/scripts/deploy-release.sh` for a release older than the shallow checkout of the VM: the fetch of main back to a day before that release, the helpers `fetch_main` and `on_main` with the constants `MAIN_REF` and `DEEPEN_MARGIN_SECONDS`, its three checks in `ops/tests/test-deploy-release.sh`, and the section "Roll back" of the wiki page CI-CD | Shell (reviewed 2026-11-17, Go; not yet deployed) | - | - | [ADR-0018], [MIL-032], [MIL-021] criterion 6 | - | [RC-397] |
-| [MIL-084] | Milestone (Accepted, Go; plan prepared by the AI in supervised mode 2026-11-17 and amended the same day for the standards it rests on; S01 accepted the amended plan in chat 2026-11-18, RC-400; autonomous mode since S01's word in chat 2026-11-19) | en | it | [BC-001], ADR-0028, ADR-0029, [ADR-0037], MIL-040, MIL-041, [MIL-066], [MIL-072], [MIL-078], [DSA-001] | [ADR-0048] (task 1, Accepted, RC-402) with its table of the requirements of RFC 9116 and RFC 8615; the extended `SECURITY.md` (task 2); the code below (tasks 3 to 5) and the wiki pages Public-Access, Incidents, Security-Controls and Workflows (task 6), reviewed in [RC-403] (Go-with-conditions); planned: the deploy and the look from outside (task 7) and the gate (task 8) | [RC-400] |
-| The code of MIL-084: `ops/deploy/nginx/well-known/security.txt`, its location and the redirect of `/security.txt` in `ops/deploy/nginx/templates/public.conf.template`, the mount in `ops/deploy/nginx/docker-compose.yml`; `ops/scripts/check-security-txt.sh` with `ops/tests/test-check-security-txt.sh`, and the checks of `security.txt` in `ops/tests/test-nginx.sh`; the subcommands `look` and `look-report` of `ops/scripts/edge-comparison-steps.sh` with their tests in `ops/tests/test-edge-comparison.sh`; the job `look` of `.github/workflows/edge-comparison.yaml`, and the step and the script test of `.github/workflows/ops-ci.yaml` | Shell, nginx, YAML (reviewed 2026-11-19, Go-with-conditions; the weekly look without the front page reviewed 2026-11-19, Go; not yet deployed) | - | - | [MIL-084] tasks 3 to 5, [ADR-0048] | - | [RC-403], [RC-405] |
+| [MIL-084] | Milestone (Accepted, Go; plan prepared by the AI in supervised mode 2026-11-17 and amended the same day for the standards it rests on; S01 accepted the amended plan in chat 2026-11-18, RC-400; autonomous mode since S01's word in chat 2026-11-19; gate passed 2026-11-19, RC-404 Go) | en | it | [BC-001], ADR-0028, ADR-0029, [ADR-0037], MIL-040, MIL-041, [MIL-066], [MIL-072], [MIL-078], [DSA-001] | [ADR-0048] (task 1, Accepted, RC-402) with its table of the requirements of RFC 9116 and RFC 8615; the extended `SECURITY.md` (task 2); the code below (tasks 3 to 5) and the wiki pages Public-Access, Incidents, Security-Controls and Workflows (task 6), reviewed in [RC-403] (Go-with-conditions), and the weekly look changed after its first run, reviewed in [RC-405] (Go); the deploy, the look from outside and the weekly look run by hand (task 7) and the gate (task 8), reviewed in [RC-404] (Go) | [RC-400], [RC-404] |
+| The code of MIL-084: `ops/deploy/nginx/well-known/security.txt`, its location and the redirect of `/security.txt` in `ops/deploy/nginx/templates/public.conf.template`, the mount in `ops/deploy/nginx/docker-compose.yml`; `ops/scripts/check-security-txt.sh` with `ops/tests/test-check-security-txt.sh`, and the checks of `security.txt` in `ops/tests/test-nginx.sh`; the subcommands `look` and `look-report` of `ops/scripts/edge-comparison-steps.sh` with their tests in `ops/tests/test-edge-comparison.sh`; the job `look` of `.github/workflows/edge-comparison.yaml`, and the step and the script test of `.github/workflows/ops-ci.yaml` | Shell, nginx, YAML (reviewed 2026-11-19, Go-with-conditions; the weekly look without the front page reviewed 2026-11-19, Go; deployed 2026-11-19 at 46b29fb, and the look runs on GitHub from `main`) | - | - | [MIL-084] tasks 3 to 5, [ADR-0048] | - | [RC-403], [RC-405] |
 
 ---
 
@@ -567,6 +567,7 @@ updated whenever an artifact instance is created or reviewed.
 [ADR-0048]: ../adr/adr-0048-where-security-txt-is-served.md
 [RC-402]: ./reviews/rc-402-adr-0048.md
 [RC-403]: ./reviews/rc-403-mil-084-code.md
+[RC-404]: ./reviews/rc-404-mil-084-gate.md
 [RC-405]: ./reviews/rc-405-the-weekly-look-without-the-front-page.md
 [MIL-085]: ../milestones/mil-085-a-booking-reference-that-cannot-be-guessed.md
 [MIL-086]: ../milestones/mil-086-booking-input-checked-by-one-set-of-rules.md
@@ -579,10 +580,10 @@ updated whenever an artifact instance is created or reviewed.
 [RC-413]: ./reviews/rc-413-mil-088.md
 [RC-414]: ./reviews/rc-414-bc-001-booking-flow.md
 [RC-415]: ./reviews/rc-415-mil-089.md
-[2d9c1c8]: https://github.com/NF-Hotel/NFHotel/commit/2d9c1c8c7d201ea0c6b9aaf8cf8ecb6c6dc3c24b
 [ADR-0049]: ../adr/adr-0049-booking-reference.md
 [RC-416]: ./reviews/rc-416-adr-0049.md
 [RC-417]: ./reviews/rc-417-mil-085-documents.md
 [RC-418]: ./reviews/rc-418-mil-085-code.md
 [RC-419]: ./reviews/rc-419-adr-0049-after-the-code-review.md
 [e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81
+[8aedf53]: https://github.com/NF-Hotel/NFHotel/commit/8aedf535a484cf75f27032c1a4da3dc13ae6942d
