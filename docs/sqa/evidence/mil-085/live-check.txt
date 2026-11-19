@@ -1,0 +1,32 @@
+# MIL-085 task 6: the check of criterion 8 on the live site after the deploy of 7fd5bea (NF Hotel CD run
+# 44514175991, 2026-11-19, 11:50:33Z to 11:53:15Z).
+# Run by the planning session in WSL with ops/scripts/check-guest-login.sh of 7fd5bea and the option --cancel, on a
+# booking that it made for the test on /book at 11:54Z at S01's word in chat. The email of the booking was read from a
+# local file into the variable GUEST_EMAIL and never stood on a command line. The site stays in the variable SITE.
+# The output holds no email address.
+run at 2026-11-19T11:55:20Z against $SITE, release 7fd5bea (CD run 44514175991), in WSL
+curl 8.14.1, bash 5.2.37
+==> the guest sign-in on $SITE for booking 25082319-9db9-435f-866f-9f7674f44256
+PASS  the sign-in page answers
+PASS  the sign-in page has its form
+PASS  the sign-in page names no booking number
+PASS  an old address with a booking number goes to the empty sign-in
+PASS  a wrong email is refused on the page
+PASS  the refusal says that the booking was not found
+PASS  a wrong email sets no guest cookie
+PASS  an old booking number with the right email is refused
+PASS  the old number gets the same refusal
+PASS  an old booking number sets no guest cookie
+PASS  the reference and the email sign the guest in
+PASS  the guest cookie is Secure, HttpOnly, SameSite=Lax, for /my-booking, and ends
+PASS  the own booking opens
+PASS  the own booking shows its reference
+PASS  the own booking shows no email
+PASS  the guest cancels the booking
+PASS  the own booking says that it is cancelled
+PASS  the notice of the cancellation is shown
+PASS  the guest signs out
+PASS  the sign-out removes the guest cookie
+PASS  after the sign-out the own booking asks for the sign-in
+==> the guest sign-in works on $SITE
+exit code: 0
