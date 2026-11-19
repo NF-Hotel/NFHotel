@@ -249,16 +249,20 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         Assert.Contains("Your booking is cancelled.", notice, StringComparison.Ordinal);
     }
 
-    /// <summary>Positive: the change form moves the booking of the guest to the new dates; the request names no booking and no room.</summary>
+    /// <summary>
+    /// Positive: the change form moves the booking of the guest to new dates that the rules allow on the clock of the
+    /// hotel; the request names no booking and no room.
+    /// </summary>
     [Fact]
     public async Task Reschedule_SignedInGuest_AsksForTheNewDatesInTheSameRoom()
     {
         // Arrange
         using HttpClient browser = await SignedInGuestAsync();
+        DateOnly today = _factory.Services.GetRequiredService<IClock>().Today;
         string html = await browser.GetStringAsync(GuestSignInRegistration.MyBookingPath, TestContext.Current.CancellationToken);
         Dictionary<string, string> fields = await FormFieldsAsync(browser, "guest-reschedule");
-        fields[WebFactory.InputName(html, "change-check-in")] = "2026-04-20";
-        fields[WebFactory.InputName(html, "change-check-out")] = "2026-04-23";
+        fields[WebFactory.InputName(html, "change-check-in")] = Day(today.AddDays(30));
+        fields[WebFactory.InputName(html, "change-check-out")] = Day(today.AddDays(33));
         _factory.Bookings.ClearReceivedCalls();
 
         // Act
@@ -269,7 +273,7 @@ public sealed class GuestPagesTests : IClassFixture<GuestWebFactory>
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal("/my-booking?done=rescheduled", LocalPath(response));
         await _factory.Bookings.Received(1).RescheduleAsync(
-            new GuestRescheduleRequest(new DateOnly(2026, 4, 20), new DateOnly(2026, 4, 23)),
+            new GuestRescheduleRequest(today.AddDays(30), today.AddDays(33)),
             Arg.Any<CancellationToken>());
     }
 

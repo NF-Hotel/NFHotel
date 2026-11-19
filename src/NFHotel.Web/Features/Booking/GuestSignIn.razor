@@ -40,12 +40,13 @@
                     <FormField Label="Booking reference" For="booking-reference" IsRequired="true"
                                Hint="It is on your confirmation: letters and digits in five groups.">
                         <InputText id="booking-reference" class="field-input pub-reference-input" autocomplete="off"
-                                   spellcheck="false" @bind-Value="Input!.Reference" />
+                                   spellcheck="false" maxlength="@BookingReference.TextLength" @bind-Value="Input!.Reference" />
                     </FormField>
 
                     <FormField Label="Email" For="booking-email" IsRequired="true"
                                Hint="The email you booked with.">
-                        <InputText id="booking-email" type="email" class="field-input" autocomplete="email" @bind-Value="Input!.Email" />
+                        <InputText id="booking-email" type="email" class="field-input" autocomplete="email"
+                                   maxlength="@Guest.MaxEmailLength" @bind-Value="Input!.Email" />
                     </FormField>
                 </div>
 

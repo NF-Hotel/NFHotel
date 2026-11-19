@@ -65,6 +65,8 @@
                             <input id="check-in"
                                    class="field-input numeric"
                                    type="date"
+                                   min="@DateInput.Text(ViewModel.EarliestCheckIn)"
+                                   max="@DateInput.Text(ViewModel.LatestCheckIn)"
                                    disabled="@ViewModel.IsBusy"
                                    aria-invalid="@Invalid(ViewModel.CheckInError)"
                                    @bind="ViewModel.CheckInDate" />
@@ -75,6 +77,8 @@
                             <input id="check-out"
                                    class="field-input numeric"
                                    type="date"
+                                   min="@DateInput.Text(ViewModel.EarliestCheckOut)"
+                                   max="@DateInput.Text(ViewModel.LatestCheckOut)"
                                    disabled="@ViewModel.IsBusy"
                                    aria-invalid="@Invalid(ViewModel.CheckOutError)"
                                    @bind="ViewModel.CheckOutDate" />
@@ -179,6 +183,7 @@
                     <div class="field-row">
                         <FormField Label="First name" For="first-name" IsRequired="true" Error="@ViewModel.GuestErrors.FirstName">
                             <input id="first-name"
+                                   maxlength="@Guest.MaxNameLength"
                                    class="field-input"
                                    type="text"
                                    autocomplete="given-name"
@@ -189,6 +194,7 @@
 
                         <FormField Label="Last name" For="last-name" IsRequired="true" Error="@ViewModel.GuestErrors.LastName">
                             <input id="last-name"
+                                   maxlength="@Guest.MaxNameLength"
                                    class="field-input"
                                    type="text"
                                    autocomplete="family-name"
@@ -202,6 +208,7 @@
                         <FormField Label="Email" For="email" IsRequired="true" Error="@ViewModel.GuestErrors.Email"
                                    Hint="We send the confirmation here.">
                             <input id="email"
+                                   maxlength="@Guest.MaxEmailLength"
                                    class="field-input"
                                    type="email"
                                    autocomplete="email"
@@ -212,6 +219,7 @@
 
                         <FormField Label="Phone" For="phone" IsRequired="true" Error="@ViewModel.GuestErrors.PhoneNumber">
                             <input id="phone"
+                                   maxlength="@Guest.MaxPhoneNumberLength"
                                    class="field-input"
                                    type="tel"
                                    autocomplete="tel"
@@ -223,18 +231,24 @@
 
                     <div class="field-row">
                         <FormField Label="Country" For="country" IsRequired="true" Error="@ViewModel.GuestErrors.Country">
-                            <input id="country"
-                                   class="field-input"
-                                   type="text"
-                                   autocomplete="country-name"
-                                   disabled="@ViewModel.IsBusy"
-                                   aria-invalid="@Invalid(ViewModel.GuestErrors.Country)"
-                                   @bind="ViewModel.Country" />
+                            <select id="country"
+                                    class="field-select"
+                                    autocomplete="country-name"
+                                    disabled="@ViewModel.IsBusy"
+                                    aria-invalid="@Invalid(ViewModel.GuestErrors.Country)"
+                                    @bind="ViewModel.Country">
+                                <option value="">Choose a country</option>
+                                @foreach (var country in Countries.All)
+                                {
+                                    <option value="@country.Name">@country.Name</option>
+                                }
+                            </select>
                         </FormField>
 
                         <FormField Label="Passport number" For="passport" Error="@ViewModel.GuestErrors.PassportNumber"
                                    Hint="Optional. It saves time at check-in.">
                             <input id="passport"
+                                   maxlength="@Guest.MaxPassportNumberLength"
                                    class="field-input"
                                    type="text"
                                    disabled="@ViewModel.IsBusy"

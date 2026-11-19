@@ -12,6 +12,8 @@ using NFHotel.Domain.ValueObjects;
 using NFHotel.Web.Common;
 using NFHotel.Web.Security;
 
+using BookingEntity = NFHotel.Domain.Entities.Booking;
+
 namespace NFHotel.Web.Features.Booking;
 
 /// <summary>
@@ -47,8 +49,11 @@ public sealed class BookingFlowViewModel
     /// <summary>Default stay when the page is opened: one night, tomorrow.</summary>
     private const int DefaultNights = 1;
 
-    /// <summary>The most guests the flow asks about. A bigger party books two rooms, like at the desk.</summary>
-    public const int MaxGuests = 4;
+    /// <summary>
+    /// The most guests the flow asks about: the party of the public site (BR-C-07, MIL-086). A bigger party books two
+    /// rooms, like at the desk.
+    /// </summary>
+    public const int MaxGuests = BookingEntity.MaxPublicGuests;
 
     /// <summary>The format of a date in the address of /book, as the booking box on the front page writes it.</summary>
     private const string QueryDateFormat = "yyyy-MM-dd";
@@ -105,7 +110,7 @@ public sealed class BookingFlowViewModel
     /// <summary>True while a service call is in progress. Buttons are disabled, the page does not jump.</summary>
     public bool IsBusy { get; private set; }
 
-    /// <summary>Errors that do not belong to a single field, already translated to Danish.</summary>
+    /// <summary>Errors that do not belong to a single field, as the texts of the screen.</summary>
     public IReadOnlyList<string> Errors { get; private set; } = NoMessages;
 
     /// <summary>Arrival date, inclusive. <c>null</c> until the user has chosen.</summary>
@@ -128,7 +133,7 @@ public sealed class BookingFlowViewModel
     public int Guests
     {
         get => _party;
-        set => _party = Math.Clamp(value, 1, MaxGuests);
+        set => _party = Math.Clamp(value, BookingEntity.MinPublicGuests, MaxGuests);
     }
 
     /// <summary>The choices of the guests field: 1 to <see cref="MaxGuests"/>.</summary>
@@ -196,24 +201,34 @@ public sealed class BookingFlowViewModel
     // ------------------------------------------------------------------
 
     /// <summary>
-    /// True when both dates are filled in, the arrival is not in the past, and the departure is
-    /// after the arrival. The gate to step 2 (BR-C-04).
+    /// True when both dates are filled in, the arrival is not in the past, the departure is after the arrival, and the
+    /// stay keeps the rules of the public site: a departure within five years and at most 30 nights (BR-C-07, BR-N-08,
+    /// MIL-086). The gate to step 2 (BR-C-04).
     /// </summary>
     public bool HasValidDates =>
         CheckInDate is DateOnly checkIn
         && CheckOutDate is DateOnly checkOut
         && checkIn != default
         && checkIn >= _clock.Today
-        && checkOut > checkIn;
+        && checkOut > checkIn
+        && StayDates.PublicError(checkIn, checkOut, _clock.Today) is null;
 
     /// <summary>The first arrival that the page offers: today (MIL-086).</summary>
     public DateOnly EarliestCheckIn => _clock.Today;
 
-    /// <summary>The last arrival that the page offers (MIL-086 skeleton: not set yet).</summary>
-    public DateOnly LatestCheckIn => default;
+    /// <summary>The last arrival that the page offers: the day before the last departure (MIL-086).</summary>
+    public DateOnly LatestCheckIn => StayDates.LatestArrival(_clock.Today);
 
-    /// <summary>The last departure that the page offers (MIL-086 skeleton: not set yet).</summary>
-    public DateOnly LatestCheckOut => default;
+    /// <summary>The first departure that the page offers: the day after the chosen arrival, or tomorrow (MIL-086).</summary>
+    public DateOnly EarliestCheckOut => (ChosenArrival ?? _clock.Today).AddDays(1);
+
+    /// <summary>
+    /// The last departure that the page offers: five years ahead, and no more than 30 nights after a chosen arrival
+    /// (BR-C-07, BR-N-08, MIL-086).
+    /// </summary>
+    public DateOnly LatestCheckOut => ChosenArrival is DateOnly arrival
+        ? BookingEntity.LatestPublicDeparture(arrival, _clock.Today)
+        : BookingEntity.LatestDeparture(_clock.Today);
 
     /// <summary>The error text at the arrival field, or <c>null</c>.</summary>
     public string? CheckInError => Describe(CheckInErrorCode);
@@ -475,13 +490,13 @@ public sealed class BookingFlowViewModel
     /// <param name="guests">The number of guests as the address spells it, or <c>null</c>.</param>
     /// <returns>
     /// True when both dates were readable and make a valid stay, so the page can fetch the rooms at once.
-    /// A date that is missing or unreadable leaves the suggested dates alone and returns false. A party that is not
-    /// a whole number, or that does not fit an <see cref="int"/>, is ignored; a whole number is taken within its
-    /// bounds. The party is read either way.
+    /// A date that is missing or unreadable leaves the suggested dates alone and returns false; dates that break a
+    /// rule of the stay are taken and shown with the rule. A party that is not a whole number from 1 to
+    /// <see cref="MaxGuests"/> is ignored (BR-C-07, MIL-086). The party is read either way.
     /// </returns>
     public bool Prefill(string? checkIn, string? checkOut, string? guests)
     {
-        if (TryParseQueryGuests(guests, out int party))
+        if (TryParseQueryGuests(guests, out int party) && BookingEntity.CheckPublicParty(party) is null)
         {
             Guests = party;
         }
@@ -661,7 +676,10 @@ public sealed class BookingFlowViewModel
         }
     }
 
-    /// <summary>The error code at the departure field, or <c>null</c>.</summary>
+    /// <summary>
+    /// The error code at the departure field, or <c>null</c>: a departure that is not after the arrival, beyond the five
+    /// years, or more than 30 nights after it (BR-C-07, BR-N-08, MIL-086).
+    /// </summary>
     private string? CheckOutErrorCode
     {
         get
@@ -671,21 +689,35 @@ public sealed class BookingFlowViewModel
                 return HasAttemptedDates ? ErrorCodes.Booking.EndDateRequired : null;
             }
 
-            return CheckInDate is DateOnly checkIn && checkOut <= checkIn
-                ? ErrorCodes.Booking.EndNotAfterStart
-                : null;
+            if (CheckInDate is not DateOnly checkIn)
+            {
+                return null;
+            }
+
+            if (checkOut <= checkIn)
+            {
+                return ErrorCodes.Booking.EndNotAfterStart;
+            }
+
+            // An arrival in the past is shown at the arrival, so the departure shows only the rules that it breaks.
+            string? stayError = StayDates.PublicError(checkIn, checkOut, _clock.Today);
+            return stayError is ErrorCodes.Booking.StartDateInPast ? null : stayError;
         }
     }
 
+    /// <summary>The chosen arrival when the page offers it, from today to <see cref="LatestCheckIn"/>; otherwise <c>null</c>.</summary>
+    private DateOnly? ChosenArrival =>
+        CheckInDate is DateOnly arrival && arrival >= _clock.Today && arrival <= LatestCheckIn ? arrival : null;
+
     /// <summary>
-    /// Translates one error code to Danish through <see cref="ErrorMessages"/>.
+    /// Translates one error code to the text of the screen through <see cref="ErrorMessages"/>.
     /// </summary>
     /// <param name="code">The error code, or <c>null</c>.</param>
-    /// <returns>The Danish text, or <c>null</c>.</returns>
+    /// <returns>The text, or <c>null</c>.</returns>
     /// <remarks>
     /// The date validation deliberately uses the codes of the Application layer rather than its own
     /// texts. Then the client validation says word for word the same as the service would say, and
-    /// there is still only one place with Danish error texts (A-09).
+    /// there is still only one place with the error texts (A-09).
     /// </remarks>
     private static string? Describe(string? code) =>
         code is null ? null : ErrorMessages.Describe(new Error(code));
