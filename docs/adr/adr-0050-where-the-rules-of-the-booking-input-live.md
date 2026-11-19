@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0050 |
-| CrossReference | [MIL-086], [MIL-085], [ADR-0002], [ADR-0004], [ADR-0049], [MIL-067], [MIL-077], [MIL-087], [MIL-088], [UC-001], [UC-010], [BC-001], [RC-420] |
+| CrossReference | [MIL-086], [MIL-085], [ADR-0001], [ADR-0002], [ADR-0004], [ADR-0049], [MIL-008], [MIL-067], [MIL-077], [MIL-087], [MIL-088], [UC-001], [UC-010], [BC-001], [RC-420], [RC-421] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-086, written by the AI before any code<br>Go in RC-420; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [30b3aae] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-086, written by the AI before any code<br>Go in RC-420; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [30b3aae] |
+| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Where the rules live, after the first tests of task 3 met the structure tests of ADR-0001: the format of each guest field is an attribute in Domain/Attributes, the limits of a stay are static members of Booking, the normal form and the countries are value objects, and no Domain/Rules namespace comes back; option F added<br>Go in RC-421; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -72,6 +73,9 @@ Worldwide Application Security Project, OWASP):
   for every endpoint, and a stranger can.
 - The page should tell a guest what is wrong before a round trip, and must not tell it differently from the API.
 - `NFHotel.Domain` references no package; the base class library is allowed there ([ADR-0002]).
+- The domain keeps the folders of the skill ([ADR-0001]): [MIL-008] dissolved the static rule classes of `Domain/Rules`
+  into the entities, the value objects and `Errors`, and the structure tests refuse a namespace or a class whose name
+  ends in `Rules` in the domain.
 - A field has one meaning in the whole flow: the guest fields of the public booking, of the booking form and of the
   guest form of the back office are the same six fields (`GuestFields`).
 - Rules join fields: the dates against the clock of the hotel, the number of nights on the public site only.
@@ -86,16 +90,20 @@ Worldwide Application Security Project, OWASP):
 | A. The rules on the pages only | Lost: the API is called without the page; ASVS 2.2.2 asks for the check on the server |
 | B. A validation library in the application (for example FluentValidation) | Lost: one more package to patch for rules of a few lines each; the entity could not use it without a package in the domain ([ADR-0002] option 4), so the entity and the request would hold the rules twice |
 | C. Data annotations as today, with the pattern made stricter | Lost: a pattern cannot read an address as a parser does, cannot join fields (the dates, the 30 nights) or normalise, and the page would keep its own date checks |
-| D. One implementation per rule in the domain: the field rules as methods of a static class, called by custom attributes on the entity, and the joined rules as methods of a second static class; the API and the pages call the same methods | Chosen |
+| D. One implementation per rule in the domain, with the data it guards: each format of a guest field as a validation attribute of its own, which `Guest` carries, and the rules that join the dates, the clock and the party as static members of `Booking`; the API and the pages call the same members | Chosen |
 | E. A rules service behind a port, injected into the services and the pages | Lost: the rules read nothing and write nothing; an injected service adds wiring and a place to mock a rule away, for no gain over a static method that the tests call directly |
+| F. The rules of option D as two static classes in a folder `Domain/Rules` (the first version of this record) | Lost: [ADR-0001] keeps the domain in the folders of the skill, and [MIL-008] dissolved `Domain/Rules` into the entities, the value objects and `Errors`; the structure tests refuse such a folder and any class of the domain whose name ends in `Rules`. The first tests of task 3 met that refusal |
 
 ## Decision
 
-Each rule of the booking input is written once, in the domain: the field rules of a guest are methods of the static
-class `GuestFieldRules`, which the attributes of `Guest` call, and the rules that join the dates, the clock and the
-party are methods of the static class `StayRules`. The API is the authority and answers the code of each broken
-rule, the pages call the same methods for their early feedback, and the table "Validation rules of the booking flow"
-in `docs/refactor/BusinessRules.md` names every field of the flow with its rule, its code and its method, which a test
+Each rule of the booking input is written once, in the domain, with the data it guards ([ADR-0001], [MIL-008]): the
+format of each guest field is a validation attribute in `Domain/Attributes`, the folder that the skill gives the
+domain's own attributes, which `Guest` carries as [ADR-0002] says and whose static method `Accepts` anyone can call;
+the normal form of a typed text is the value object `TextNormalForm` and the list of countries the value object
+`Countries`; and the rules that join the dates, the clock and the party are static members of `Booking`, beside the
+check of the arrival that it already holds. The API is the authority and answers the code of each broken rule, the
+pages call the same members for their early feedback, and the table "Validation rules of the booking flow" in
+`docs/refactor/BusinessRules.md` names every field of the flow with its rule, its code and its member, which a test
 holds against the request types.
 
 The details, numbered as the decisions of [MIL-086]:
@@ -106,10 +114,13 @@ The details, numbered as the decisions of [MIL-086]:
    `UpdateGuestRequest`, `BookingOverviewQuery`), of the query values of the available rooms and of the guest search,
    and of the two addresses of the booking page (`/book?guests=`, `/book?checkIn=&checkOut=&guests=`, [MIL-067]). Its
    columns: field, type, required, length, characters or values, normalisation, joined rules, code, source, and the
-   method that implements it. A test of the API reads the table and fails when a field of a request type of the flow
+   member that implements it. A test of the API reads the table and fails when a field of a request type of the flow
    has no row, when a row names a field that does not exist, when a text field has no length rule, when a request
    type of the flow lets an unknown field through, and when a list field has no largest size.
-2. **The fields.** The numbers of [MIL-086] stand; this record adds what the code needs to say them exactly.
+2. **The fields.** The numbers of [MIL-086] stand; this record adds what the code needs to say them exactly. Each
+   format is an attribute of `Domain/Attributes` with a static `Accepts`: `PersonNameAttribute` for both names,
+   `EmailFormatAttribute`, `PhoneNumberAttribute`, `CountryNameAttribute` and `PassportNumberAttribute`. An attribute
+   lets a missing value pass, as those of the base class library do, and leaves it to `Required`.
    - First and last name: 1 to 100 characters; letters and marks of any script (Unicode categories L and M), the
      space U+0020, the apostrophes U+0027 and U+2019 (the second is what a phone types), the hyphen-minus and the
      full stop; at least one letter. New codes `guest.first_name_invalid` and `guest.last_name_invalid`.
@@ -134,7 +145,7 @@ The details, numbered as the decisions of [MIL-086]:
    - Passport number: optional; empty after normalisation means none; otherwise 1 to 20 ASCII letters and digits.
      The limit drops from 50 to 20 (`guest.passport_number_too_long`); the column is encrypted text, so no migration
      follows. New code `guest.passport_number_invalid`.
-   - Guests on the public site: 1 to 4. The attribute `Range(1, int.MaxValue)` goes; `StayRules.CheckPublicParty`
+   - Guests on the public site: 1 to 4. The attribute `Range(1, int.MaxValue)` goes; `Booking.CheckPublicParty`
      answers the new code `booking.guests_out_of_range`, so the refusal names the field instead of
      `api.invalid_request`.
    - Room size: a member of `RoomSize`. The binding refuses any other value with `api.invalid_request` ([MIL-077]);
@@ -143,14 +154,14 @@ The details, numbered as the decisions of [MIL-086]:
      length, get the answer of a failed sign-in, as a wrong email does.
 3. **The dates.** The arrival is not before today on the clock of the hotel (`IClock`, unchanged); the departure is
    after the arrival (`DateRange`, unchanged); the departure is at most `today.AddYears(5)`, so a stay booked on
-   29 February may end on 28 February five years later. `StayRules.CheckPeriod` answers `booking.start_date_in_past`
+   29 February may end on 28 February five years later. `Booking.CheckPeriod` answers `booking.start_date_in_past`
    or the new `booking.end_date_too_far_ahead`; `Booking.Create` and `Booking.Reschedule` call it, so the rule holds
    for the public booking, the move by a guest, and the booking and the move by staff. `BookingService` calls it
-   before it saves a new guest. On the public site, the booking and the move by a guest, `StayRules.CheckPublicNights`
+   before it saves a new guest. On the public site, the booking and the move by a guest, `Booking.CheckPublicNights`
    refuses more than 30 nights with the new code `booking.stay_too_long`; staff can book 31 nights and more within
    the five years. The range 1900 to 2199 of `InputRules` stays as the outer bound of any date.
 4. **Normal form and size.**
-   - `GuestFieldRules.Normalize` trims white space at both ends and brings the text to Unicode normal form C. A text
+   - `TextNormalForm.Normalize` trims white space at both ends and brings the text to Unicode normal form C. A text
      with a lone surrogate is left as it is (normalising it would throw), and its rule refuses it. `Guest.Create` and
      `Guest.UpdateDetails` normalise each field before the attributes run, so the stored text is the normalised one.
      The sign-in normalises the email before it compares, and the two searches normalise their text. A password is
@@ -196,7 +207,7 @@ the files that this change edits.
 
 **Positive:**
 
-- One implementation of each rule: the API, the entity and the pages call the same method, and a rule cannot be
+- One implementation of each rule: the API, the entity and the pages call the same member, and a rule cannot be
   stricter on the page than at the API or the other way round.
 - The table is the one place that says what a field accepts, and a test keeps it honest against the request types.
 - A stay can no longer hold a room for decades, a stranger cannot send a party of thousands, and a body of megabytes
@@ -215,6 +226,9 @@ the files that this change edits.
 - The country list must follow ISO 3166-1 by hand; a change of a name or a new code needs a change of the class.
 - `System.Net.Mail` is a framework namespace in the domain, accepted here as [ADR-0002] accepted
   `System.ComponentModel.DataAnnotations`.
+- `Booking` holds the limits of the public site, which staff do not have; each such member says `Public` in its name.
+  In the web application the namespace `NFHotel.Web.Features.Booking` hides the type `Booking`, so the pages name it
+  through an alias.
 - The refusal of an unknown field holds for the flow only; the other endpoints still ignore one.
 - A request over 64 KB to any endpoint but the benchmark intake is refused; a future endpoint that needs more must
   say so with its own limit.
@@ -225,8 +239,11 @@ the files that this change edits.
 ## Affected Artifacts
 
 - [MIL-086] — the milestone that carries the decision
-- [ADR-0002] — stands: the guest rules stay attributes of the entity; the attributes that check a format call
-  `GuestFieldRules`, and the joined rules that an attribute cannot hold live in `StayRules`
+- [ADR-0001] — stands: the domain keeps the folders of the skill; `Domain/Attributes`, which the skill lists, gets its
+  first types, and the structure test lists the folder
+- [ADR-0002] — stands: the guest rules stay attributes of the entity, five of them now the domain's own in
+  `Domain/Attributes`; the joined rules that an attribute cannot hold are static members of `Booking`
+- [MIL-008] — stands: no `Domain/Rules` comes back
 - [ADR-0004] — stands: the API is the authority
 - [ADR-0049] — unchanged: the reference and the email of the sign-in keep its answers
 - [MIL-077] — `InputRules` gets the default length of a text, and the hostile-input tests keep passing
@@ -240,7 +257,9 @@ the files that this change edits.
 
 [MIL-086]: ../milestones/mil-086-booking-input-checked-by-one-set-of-rules.md
 [MIL-085]: ../milestones/mil-085-a-booking-reference-that-cannot-be-guessed.md
+[ADR-0001]: ./adr-0001-clean-architecture-structure.md
 [ADR-0002]: ./adr-0002-validation-attributes-on-entities.md
+[MIL-008]: ../milestones/mil-008-domain-rules-in-entities.md
 [ADR-0004]: ./adr-0004-database-api.md
 [ADR-0049]: ./adr-0049-booking-reference.md
 [MIL-067]: ../milestones/mil-067-bad-input-on-the-web-pages.md
@@ -251,4 +270,5 @@ the files that this change edits.
 [UC-010]: ../use-cases/uc-010/uc.md
 [BC-001]: ../business-case.md
 [RC-420]: ../sqa/reviews/rc-420-adr-0050.md
+[RC-421]: ../sqa/reviews/rc-421-adr-0050-where-the-rules-live.md
 [30b3aae]: https://github.com/NF-Hotel/NFHotel/commit/30b3aaec46795a06f6df4336b23fe7c31cda3ac3
