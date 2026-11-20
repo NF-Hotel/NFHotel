@@ -98,6 +98,7 @@ public sealed class BookingRequestPersistenceTests : IAsyncLifetime
         await AddAsync(Request("anna@example.com", "token-1", Now));
         await using (HotelDbContext context = _fixture.CreateContext())
         {
+            // ! is justified: the request of this mailbox was added just above.
             BookingRequest kept = (await new BookingRequestRepository(context)
                 .FindByEmailKeyAsync(BookingRequestTestData.KeyOf("anna@example.com"), TestContext.Current.CancellationToken))!;
             kept.Renew(NewGuest(), Stay, RoomSize.Double, 2, BookingRequestTestData.HashOf("token-2"), Now.AddMinutes(5));

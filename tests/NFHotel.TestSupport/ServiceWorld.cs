@@ -159,6 +159,7 @@ public abstract class InMemoryRepository<TEntity>
 
 public sealed class InMemoryBookingRepository : InMemoryRepository<Booking>, IBookingRepository
 {
+    // ! is justified: Booking has the property GuestId, which nameof checks.
     private static readonly PropertyInfo GuestIdProperty = typeof(Booking).GetProperty(nameof(Booking.GuestId))!;
 
     /// <summary>

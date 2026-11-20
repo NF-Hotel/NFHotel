@@ -871,6 +871,7 @@ public sealed class BookingFlowViewModel
 
     /// <summary>Builds the booking of the flow: the dates, the room type, the party and the new guest (BR-47).</summary>
     private CreatePublicBookingRequest RequestFor(RoomSize size, GuestFields fields) => new(
+        // ! is justified: both callers build the request only after HasValidDates, which needs both dates.
         CheckInDate!.Value,
         CheckOutDate!.Value,
         size,

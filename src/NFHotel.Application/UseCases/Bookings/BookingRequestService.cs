@@ -129,7 +129,8 @@ public sealed class BookingRequestService : IBookingRequestService
             return Result<BookingRequestReceiptDto>.Failure(check.Errors);
         }
 
-        // The check accepted the guest, so the fields make a guest; the request keeps their normal forms.
+        // ! is justified: the check accepted the guest of the request, so the request holds one and its fields make a
+        // guest; the request keeps their normal forms.
         Guest guest = GuestService.NewGuest(request.NewGuest!).Value;
         DateRange stay = new(request.CheckInDate, request.CheckOutDate);
         string emailKey = VerificationTokens.KeyOfEmail(guest.Email);

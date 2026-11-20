@@ -113,6 +113,7 @@ public sealed class BookingRequestTests
     {
         // Arrange
         Guest guest = NewGuest();
+        // ! is justified: Entity<int> has the property Id, which nameof checks; an id makes the guest a stored one.
         typeof(Entity<int>).GetProperty(nameof(Entity<int>.Id))!.SetValue(guest, 7);
 
         // Act and Assert
