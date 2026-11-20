@@ -1,4 +1,10 @@
+using System.Buffers.Binary;
+using System.Security.Cryptography;
+using System.Text;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage;
 
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
@@ -52,6 +58,73 @@ public sealed class UnitOfWork : IUnitOfWork
         catch (PostgresException exception)
         {
             throw Translate(exception, exception);
+        }
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The lock is a transaction lock of PostgreSQL (<c>pg_advisory_xact_lock</c>) with a key of 64 bits taken from the
+    /// SHA-256 of the name, so every instance of the API takes the same lock, and it is let go at the commit or the
+    /// rollback. The work runs inside the execution strategy of the context: a transient error of the database runs it
+    /// again in a new transaction, and the entities that the failed attempt added or read are let go first, so a retry
+    /// never saves them twice. A commit that fails on the network may have committed, and the retry then runs on what the
+    /// first attempt wrote: a limit counts it and gets stricter, never looser, but a booking may be made once more, in
+    /// the next free room, or answered with no free room. ADR-0052 accepts that rare risk, which every save with the
+    /// retries of EF Core has; no check of the commit is made (RC-436 F4).
+    /// </remarks>
+    public async Task<TResult> RunUnderLockAsync<TResult>(
+        string lockName,
+        Func<CancellationToken, Task<TResult>> work,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(lockName);
+        ArgumentNullException.ThrowIfNull(work);
+
+        long key = LockKeyOf(lockName);
+        HashSet<object> before = TrackedEntities();
+        IExecutionStrategy strategy = _context.Database.CreateExecutionStrategy();
+        bool firstAttempt = true;
+
+        return await strategy.ExecuteAsync(
+            async token =>
+            {
+                if (!firstAttempt)
+                {
+                    ForgetAllBut(before);
+                }
+
+                firstAttempt = false;
+                IDbContextTransaction transaction = await _context.Database
+                    .BeginTransactionAsync(token)
+                    .ConfigureAwait(false);
+                await using (transaction.ConfigureAwait(false))
+                {
+                    await _context.Database
+                        .ExecuteSqlAsync($"SELECT pg_advisory_xact_lock({key})", token)
+                        .ConfigureAwait(false);
+                    TResult result = await work(token).ConfigureAwait(false);
+                    await transaction.CommitAsync(token).ConfigureAwait(false);
+                    return result;
+                }
+            },
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>The key of the lock of a name: the first 64 bits of the SHA-256 of its UTF-8 form.</summary>
+    /// <param name="lockName">The name of the lock.</param>
+    /// <returns>The key, the same in every instance and every start.</returns>
+    internal static long LockKeyOf(string lockName) =>
+        BinaryPrimitives.ReadInt64BigEndian(SHA256.HashData(Encoding.UTF8.GetBytes(lockName)));
+
+    private HashSet<object> TrackedEntities() =>
+        new(_context.ChangeTracker.Entries().Select(entry => entry.Entity), ReferenceEqualityComparer.Instance);
+
+    // Lets go of what an attempt that failed added or read, so the next attempt starts from what the use case had.
+    private void ForgetAllBut(HashSet<object> before)
+    {
+        foreach (EntityEntry entry in _context.ChangeTracker.Entries().Where(entry => !before.Contains(entry.Entity)).ToList())
+        {
+            entry.State = EntityState.Detached;
         }
     }
 

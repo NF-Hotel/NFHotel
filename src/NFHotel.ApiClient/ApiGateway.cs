@@ -11,7 +11,8 @@ namespace NFHotel.ApiClient;
 /// <summary>
 /// Sends one call to the API and turns the answer back into the <see cref="Result"/> that the use case would
 /// have given, so the screens cannot tell the API from the service (ADR-0004). A network failure, a timeout,
-/// a refused token and an unreadable answer each get one error code of <c>ErrorCodes.Api</c>.
+/// a refused token and an unreadable answer each get one error code of <c>ErrorCodes.Api</c>; so does a server error,
+/// except the 503 of a mail that could not go (MIL-088, ADR-0053), which keeps its code.
 /// </summary>
 public sealed class ApiGateway
 {
@@ -131,6 +132,11 @@ public sealed class ApiGateway
         {
             using var response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
+            if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+            {
+                return ServiceUnavailableResult(await read(response, cancellationToken).ConfigureAwait(false), fail);
+            }
+
             if ((int)response.StatusCode >= 500)
             {
                 return fail(ErrorCodes.Api.Unavailable);
@@ -162,6 +168,19 @@ public sealed class ApiGateway
                 || code.StartsWith("staff.", StringComparison.Ordinal))
             ? answer
             : fail(ErrorCodes.Api.Unauthorized);
+    }
+
+    // A 503 is the API, or a proxy in front of it, that is down, unless the API says that the mail of a booking request
+    // could not go: the relay did not take it, or the fuse of the mails of a day held it back (MIL-088, ADR-0053). The page
+    // then tells the guest what to do, which "unavailable" would not. The page of a proxy is no envelope, so it reads as
+    // unavailable.
+    private static TResult ServiceUnavailableResult<TResult>(TResult answer, Func<string, TResult> fail)
+        where TResult : Result
+    {
+        string? code = answer.FirstError?.Code;
+        return code is ErrorCodes.Booking.MailNotSent or ErrorCodes.Booking.MailPaused
+            ? answer
+            : fail(ErrorCodes.Api.Unavailable);
     }
 
     private static async Task<Result<TValue>> ReadValueAsync<TValue>(HttpResponseMessage response, CancellationToken cancellationToken)

@@ -661,6 +661,98 @@ tests:
         alertname: PublicBookingSurge
         exp_alerts: []
 
+  # The mail of the booking flow (MIL-088, ADR-0053 decisions 5 and 6).
+  - name: one mail that the relay did not take fires MailNotSent, which ends 10 minutes later
+    interval: 1m
+    input_series:
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api", kind="mail_not_sent"}
+        values: "0x4 1x30"
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api", kind="mail_fuse_blown"}
+        values: "0x34"
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: MailNotSent
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              host: nf-hotel
+            exp_annotations:
+              summary: "Mails of the booking flow not sent in 10 minutes: 1"
+              description: >-
+                The relay did not take a mail (ADR-0053 decision 5). With the verification by
+                email on, the public booking refuses requests until mails go out again. The
+                events mail_not_sent in the log of the API name the kind of the mail and the
+                reason; follow the wiki page Alerts, section Mail.
+      - eval_time: 10m
+        alertname: MailFuseBlown
+        exp_alerts: []
+      - eval_time: 20m
+        alertname: MailNotSent
+        exp_alerts: []
+
+  - name: a request that the fuse of the mail refused fires MailFuseBlown
+    interval: 1m
+    input_series:
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api", kind="mail_fuse_blown"}
+        values: "0x4 3x30"
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api", kind="limit_refused",
+          limit="email"}
+        values: "0+1x34"
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: MailFuseBlown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              host: nf-hotel
+            exp_annotations:
+              summary: "Booking requests refused by the fuse of the mail in 10 minutes: 3"
+              description: >-
+                The mails of 24 hours reached Smtp__MaxMailsPerDay (400 by default, ADR-0053
+                decision 6), so the public booking refuses new requests until the count falls.
+                Someone may be making the hotel send mail; follow the wiki page Alerts, section
+                Mail.
+      - eval_time: 10m
+        alertname: MailNotSent
+        exp_alerts: []
+
+  - name: two hundred mails in 24 hours fire MailVolumeHigh
+    interval: 1h
+    input_series:
+      - series: 'nfhotel_mails_total{host="nf-hotel", job="nfhotel-api", kind="verification_link"}'
+        values: "0+6x30"
+      - series: 'nfhotel_mails_total{host="nf-hotel", job="nfhotel-api", kind="booking_receipt"}'
+        values: "0+3x30"
+    alert_rule_test:
+      - eval_time: 26h
+        alertname: MailVolumeHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "216 mails sent in 24 hours"
+              description: >-
+                More mails than usual went out (ADR-0053 decision 6). At 400 in 24 hours the fuse
+                pauses the public booking, and Gmail allows the account 500 a day. Follow the wiki
+                page Alerts, section Mail.
+
+  - name: fewer than two hundred mails in 24 hours do not fire MailVolumeHigh
+    interval: 1h
+    input_series:
+      - series: 'nfhotel_mails_total{host="nf-hotel", job="nfhotel-api", kind="verification_link"}'
+        values: "0+5x30"
+      - series: 'nfhotel_mails_total{host="nf-hotel", job="nfhotel-api", kind="booking_receipt"}'
+        values: "0+3x30"
+    alert_rule_test:
+      - eval_time: 26h
+        alertname: MailVolumeHigh
+        exp_alerts: []
+
   # The scan rules (MIL-053).
   - name: open high findings of a tool fire ScanFindingsHigh after 30 minutes
     interval: 5m

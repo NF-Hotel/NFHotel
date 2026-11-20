@@ -73,6 +73,8 @@ updates:
     directories:
       - /ops/deploy/alloy
       - /ops/deploy/cloudflared
+      - /ops/deploy/mail-relay
+      - /ops/deploy/mailpit
       - /ops/deploy/monitoring
       - /ops/deploy/ollama
       - /ops/deploy/postgres
@@ -82,10 +84,11 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
-    # These folders pin 12 images (2026-11-08). With the default limit of five open pull requests,
-    # the update of 2026-11-04 left Prometheus, Alertmanager and the Blackbox exporter versions
-    # behind (MIL-064); the limit is at least the number of images, with room for two more.
-    open-pull-requests-limit: 15
+    # These folders pin 15 images (2026-11-20, with the forwarder of the mail relay and the mail
+    # catcher of MIL-088). With the default limit of five open pull requests, the update of
+    # 2026-11-04 left Prometheus, Alertmanager and the Blackbox exporter versions behind (MIL-064);
+    # the limit is at least the number of images, with room for two more.
+    open-pull-requests-limit: 17
     ignore:
       # A new major of PostgreSQL needs a dump and restore (ADR-0008), not a pull.
       - dependency-name: postgres

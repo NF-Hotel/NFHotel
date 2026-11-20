@@ -144,6 +144,7 @@ No secret reaches a container as an environment variable. You write each secret 
 | `Staff__Token__SigningKey` | `nfhotel-api/nfhotel-api.env` | the API |
 | `Staff__InitialManager__Password` | `nfhotel-api/nfhotel-api.env` | the API, only while no staff account exists |
 | `Encryption__PassportKey` | `nfhotel-api/nfhotel-api.env` | the API only (ADR-0004) |
+| `Smtp__Password` | `nfhotel-api/nfhotel-api.env` | the API only, the app password of the mail relay (ADR-0053); revoked and made again at the relay, not with `openssl` ([Mail Relay](Mail-Relay#revoke-the-app-password)) |
 | `MarketAnalysisService__ApiKey`, `HolidayApi__ApiKey`, `BenchmarkService__Token` | their service's settings | the API or the web application |
 
 The login of `nfhotel_app` (ADR-0011) stays in root's `/etc/nfhotel/secrets/nfhotel-api-database.env`; the deploy passes it to the script, which writes it as the connection string.

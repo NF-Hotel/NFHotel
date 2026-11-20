@@ -159,6 +159,8 @@ declare -A SETTINGS=(
   ["alloy"]="ALLOY_ENV_FILE=alloy.env.example NFHOTEL_JOURNAL_GID=999"
   ["monitoring"]="MONITORING_BIND=127.0.0.1"
   ["backup-target"]="BACKUP_PUBLIC_KEY=test BACKUP_TARGET_BIND=127.0.0.1"
+  ["mail-relay"]="MAIL_RELAY_HOST=smtp.example.com MAIL_RELAY_PORT=465"
+  ["mailpit"]="MAILPIT_TLS_DIR=/tmp/mailpit-tls"
 )
 # The sensitive host paths as the check defines them, read from the check itself.
 eval "$(sed -n '/^readonly SENSITIVE=(/,/)$/p; /^within() {/,/^}$/p; /^is_sensitive() {/,/^}$/p' "$CHECK")"

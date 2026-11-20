@@ -16,9 +16,9 @@ The pages are written in [`docs/wiki/`](https://github.com/NF-Hotel/NFHotel/tree
   containers that run the whole system (development environment).
 - [GPU Passthrough](GPU-Passthrough): give an NVIDIA GPU to the VM on a real Proxmox VE host, so the AI models run on it.
 - [Appendix: Project Documents](Appendix): links to every document under `docs/`.
-- Infrastructure and operations (ADR-0016, in `ops/`): [CI-CD](CI-CD), [Database Preparation](Database-Preparation), [Proxmox Deployment](Proxmox-Deployment), [Host Hardening](Host-Hardening), [Monitoring](Monitoring), [Disaster Recovery](Disaster-Recovery) and [Public Access](Public-Access), and the incident procedure in [Incidents](Incidents).
+- Infrastructure and operations (ADR-0016, in `ops/`): [CI-CD](CI-CD), [Database Preparation](Database-Preparation), [Proxmox Deployment](Proxmox-Deployment), [Host Hardening](Host-Hardening), [Monitoring](Monitoring), [Disaster Recovery](Disaster-Recovery), [Public Access](Public-Access) and [Mail Relay](Mail-Relay) (the mails of the booking flow), and the incident procedure in [Incidents](Incidents).
 - Reference pages (MIL-049): every DevOps and security choice with why and its alternatives, in [Workflows](Workflows), [Containers and Images](Containers-and-Images), [Security Controls](Security-Controls) and [Alerts](Alerts).
-- Networks: how the services call each other and why the Python services are kept on a network that nginx cannot see (target design), in [Network Isolation](Network-Isolation).
+- Networks: how the services call each other, why the Python services are kept on a network that nginx cannot see, and how the mail leaves the VM through a forwarder, in [Network Isolation](Network-Isolation).
 - Back office (MIL-055, MIL-071): how a Manager sets room rates and settings and approves or reverts the price suggestions that the market analysis service makes for the holidays and weeks of the next two months, in [Price Suggestions](Price-Suggestions).
 - Technology choices (MIL-050): why each product was chosen over its alternatives, with what practitioners say, for every DevOps step, the CI/CD pipeline and the backup, in [Technology Choices](Technology-Choices).
 

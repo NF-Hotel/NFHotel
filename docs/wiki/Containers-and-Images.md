@@ -1,6 +1,6 @@
 # Containers and Images
 
-**Decisions:** [ADR-0003](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0003-proxmox-vm-for-services.md), [ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md), [ADR-0024](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0024-secrets-as-files.md), [ADR-0039](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0039-python-services-network.md), [ADR-0042](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0042-only-the-calls-of-alloy-through-the-socket-proxy.md). **Work:** MIL-002, MIL-022, MIL-023, MIL-049, MIL-061, MIL-081. **Why each product:** [Technology Choices](Technology-Choices).
+**Decisions:** [ADR-0003](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0003-proxmox-vm-for-services.md), [ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md), [ADR-0024](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0024-secrets-as-files.md), [ADR-0039](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0039-python-services-network.md), [ADR-0042](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0042-only-the-calls-of-alloy-through-the-socket-proxy.md), [ADR-0053](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0053-mail-from-the-application-through-a-relay.md). **Work:** MIL-002, MIL-022, MIL-023, MIL-049, MIL-061, MIL-081, MIL-088. **Why each product:** [Technology Choices](Technology-Choices).
 
 Every container of NF Hotel: where it runs, what it does, which image it runs and where that image comes from, and how it is locked down. For how to deploy them, see [Proxmox Deployment](Proxmox-Deployment); for their settings files, see [Environment Files](Environment-Files).
 
@@ -10,6 +10,7 @@ Every container of NF Hotel: where it runs, what it does, which image it runs an
 flowchart TB
   subgraph Internet
     CF[Cloudflare]
+    SMTP[SMTP relay]
   end
   subgraph VM["nf-hotel (Proxmox VM, Debian 13)"]
     cloudflared --> nginx
@@ -23,6 +24,7 @@ flowchart TB
     relay[postgres-tailnet relay] --> postgres
     bench --> ollama
     mapi --> ollama
+    api --> mailrelay[mail-relay]
     alloy --- socket[socket-proxy]
   end
   subgraph LXC["Monitoring LXC (same Proxmox node)"]
@@ -36,6 +38,7 @@ flowchart TB
     prune[prune] -->|deletes expired copies| backup
   end
   CF --> cloudflared
+  mailrelay -->|the mails of the API, TLS from the API| SMTP
   alloy -->|metrics, logs over the tailnet| prometheus
   alloy --> loki
   VM -->|nightly encrypted dump over the tailnet| backup
@@ -54,9 +57,10 @@ Every service publishes no host port unless the table says so; the others are re
 | `cloudflared` (`cloudflared`) | Outbound tunnel to Cloudflare; forwards the public host name to nginx (ADR-0028) | `cloudflare/cloudflared:2026.10.7` | Docker Hub | proxy | none |
 | `nginx` (`nginx`) | Reverse proxy and TLS end: HTTPS on the tailnet and the public listener for the tunnel; no route to the Python services (ADR-0039) | `ghcr.io/nf-hotel/nfhotel-nginx`: `nginx:1.29-alpine` with the fixes of its Alpine packages (ADR-0040) | GHCR, built by Release | proxy, api | 80 and 443 (tailnet and LAN, firewalled to 80 and 443 only) |
 | `nfhotel-web` (`nfhotel-web`) | The Blazor web application: guest pages and back office | `ghcr.io/nf-hotel/nfhotel-web` | GHCR (our build) | proxy, api, python | none |
-| `nfhotel-api` (`nfhotel-api`) | NFHotel.Api: the only container that reaches the database (ADR-0004) | `ghcr.io/nf-hotel/nfhotel-api` | GHCR (our build) | api, db, python | none |
+| `nfhotel-api` (`nfhotel-api`) | NFHotel.Api: the only container that reaches the database (ADR-0004) | `ghcr.io/nf-hotel/nfhotel-api` | GHCR (our build) | api, db, python, mail | none |
 | `postgres` (`postgres`) | PostgreSQL 16 (16.16, the build of the tag of 2026-11-12), the production database | `postgres:16-alpine` | Docker Hub | db | none |
 | `relay` (`postgres-tailnet`) | HAProxy in TCP mode: the team's DBeaver access to PostgreSQL (ADR-0034) | `haproxy:3.2-alpine` | Docker Hub | db, published | Port 5432 on the tailnet address of `nf-hotel` only |
+| `mail-relay` (`mail-relay`) | HAProxy in TCP mode: the forwarder of the mails of the API to the SMTP relay of `Smtp__Host` and `Smtp__Port`, which the API cannot reach itself; it passes the TLS of the API on and holds no secret. Started only when `Smtp__Forwarder` is set (ADR-0053, [Mail Relay](Mail-Relay)) | `haproxy:3.2-alpine` | Docker Hub | mail, mail-out | none |
 | `market-analysis-api` (`market-analysis`) | The market analysis service of `NF-Hotel/notebook-market-analysis` | `ghcr.io/nf-hotel/market-analysis` | GHCR (our build) | python, llm | none |
 | `benchmark` (`benchmark`) | The benchmark service of `NF-Hotel/notebook-benchmark`: compares the local AI models | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | python, llm | none |
 | `results-owner` (`benchmark`) | One-shot job before `benchmark`: gives the results volume to the service's user (MIL-045), with no network | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | none | none |
@@ -74,6 +78,8 @@ Every service publishes no host port unless the table says so; the others are re
 | `nfhotel-python` | web, API, market-analysis, benchmark | Calls to and from the Python services; nginx is not on it (ADR-0039) |
 | `nfhotel-db` | API, PostgreSQL, the relay | Only the API and the relay reach the database |
 | `nfhotel-llm` | Ollama, benchmark, market-analysis | Only the AI services reach the model server |
+| `nfhotel-mail` | API, the forwarder of the mail | The mails of the API reach the forwarder, and nothing else; internal, so the API keeps no route out |
+| `nfhotel-mail-out` | the forwarder of the mail | Its way out to the SMTP relay, which no other service shares (ADR-0053) |
 
 A container on `nfhotel-proxy` cannot open the database, because it is not on `nfhotel-db`. This is the network part of ADR-0004 and [ADR-0011](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0011-postgresql-access-for-the-api.md). It cannot open a connection to the Python services either, because it is not on `nfhotel-python` (ADR-0039); why the networks are kept apart is on [Network Isolation](Network-Isolation), and `ops/tests/test-service-networks.sh` keeps this table true on every pull request.
 
@@ -90,6 +96,7 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 | `backup-target` (`backup-target`) | Backup host (legion laptop of S03) | Write-only SSH target of the nightly off-VM copy of the encrypted backup; the key of the VM can neither replace nor delete a file there (ADR-0008) | `nfhotel-backup-target:local`, built there from `debian:13-slim` | built locally | SSH on the host's tailnet address |
 | `prune` (`backup-target`) | Backup host (legion laptop of S03) | Deletes the copies that the retention no longer keeps, at its start and then once a day: daily files after 30 days and weekly files after 12 weeks, by the time in the name, never the newest 14 daily and 8 weekly of each kind (MIL-069); no network, read-only, as `nfhotel-backup` | `nfhotel-backup-target:local`, the same image | built locally | none |
 | `proxmox` (`proxmox`) | CI and a developer machine only | Throwaway Proxmox VE for the Proxmox integration tests (MIL-003) | `dockurr/proxmox:9.2.20` | Docker Hub | `127.0.0.1:18006` |
+| `mailpit` (`mailpit`) | The throwaway stack of the end-to-end tests and the light development mode only, never the VM | The mail catcher: takes the mails of the API through the forwarder `mail-relay`, with TLS from the first byte and a certificate that the stack makes, and shows them on port 8025, where the browser tests read the link of a verification (ADR-0053 decision 7) | `axllent/mailpit:v1.33.1`, as the user 65534 | Docker Hub | none in CI; in the light development mode its web interface on `127.0.0.1:8025` |
 
 ## Where the images come from
 
@@ -149,7 +156,7 @@ A pinned third-party image can keep a finding that its newest build has not fixe
 | `security_opt: [no-new-privileges:true]` | every service, and the daemon default | No privilege gain through setuid binaries | 5.25 |
 | `read_only: true`, with `tmpfs` for what it writes | every service except `backup-target` | An attacker cannot change the program files or leave a tool behind | 5.12 |
 | Memory, CPU and PID limits | every long-running service | A leak or a fork bomb in one container cannot starve the others | 5.10, 5.11, 5.28 |
-| Non-root user | the web, API, market-analysis and benchmark images, Ollama (10001, MIL-082) and Alloy (473); PostgreSQL drops to its own user, and the nginx workers run as `nginx`; `prune` on the backup host runs as `nfhotel-backup`. [Container Escape](Container-Escape) names the containers that still start as root, and why | A process escape starts without root | 4.1 |
+| Non-root user | the web, API, market-analysis and benchmark images, Ollama (10001, MIL-082) and Alloy (473), the two HAProxy relays (`haproxy`) and the mail catcher (65534); PostgreSQL drops to its own user, and the nginx workers run as `nginx`; `prune` on the backup host runs as `nfhotel-backup`. [Container Escape](Container-Escape) names the containers that still start as root, and why | A process escape starts without root | 4.1 |
 | Docker's masked and read-only paths of `/proc` and `/sys` | every service: none sets `systempaths=unconfined`, which the runtime check fails (MIL-082) | A process cannot read the memory or the keys of the kernel, or reboot the host through `/proc/sysrq-trigger` | - |
 | No host port, except the table above | every compose file | Nothing answers that does not need to | 5.7 |
 | The Docker socket in one container, `socket-proxy`, which lets through only the calls of Alloy | `ops/deploy/alloy` | A process that takes over Alloy cannot read the files of a container, export it or write to it through the proxy; the runtime check asks the proxy from inside Alloy at every run (ADR-0042, MIL-080, MIL-081) | 5.31 |

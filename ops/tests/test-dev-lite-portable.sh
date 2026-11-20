@@ -47,8 +47,11 @@ done
   . ops/scripts/lib/stack.sh
   stack_init nfhotel-portable
   stack_write_settings "$W/settings" manager "$(stack_secret 9)" false
-) >"$W/settings.log" 2>&1 && ok "stack_write_settings runs here" || ko "stack_write_settings: $(cat "$W/settings.log")"
-for file in postgres.env nfhotel-api.env nfhotel-web.env nginx.env tls/fullchain.pem tls/privkey.pem; do
+  stack_write_mail_settings "$W/settings" https://localhost:8443 true
+) >"$W/settings.log" 2>&1 && ok "stack_write_settings and stack_write_mail_settings run here" ||
+  ko "stack_write_settings: $(cat "$W/settings.log")"
+for file in postgres.env nfhotel-api.env nfhotel-web.env nginx.env tls/fullchain.pem tls/privkey.pem \
+  mail-tls/fullchain.pem mail-tls/privkey.pem; do
   [[ -s "$W/settings/$file" ]] && ok "it writes $file" || ko "$file is missing"
 done
 if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then
@@ -64,6 +67,32 @@ san="$(openssl x509 -in "$W/settings/tls/fullchain.pem" -noout -text 2>/dev/null
   ko "the certificate names: $san"
 grep -q '^Staff__InitialManager__MustChangePassword=false$' "$W/settings/nfhotel-api.env" &&
   ok "the development Manager need not change the password" || ko "MustChangePassword is not false"
+# The mail of MIL-088: the API pins the certificate of the catcher by the SHA-256 of its DER form, which the tools of
+# this machine compute the same way.
+san="$(openssl x509 -in "$W/settings/mail-tls/fullchain.pem" -noout -text 2>/dev/null | grep -A1 'Subject Alternative Name' | tail -1)"
+[[ "$san" == *"DNS:mailpit"* ]] && ok "the certificate of the mail catcher names mailpit" || ko "the names of the catcher: $san"
+der_hash="$(openssl x509 -in "$W/settings/mail-tls/fullchain.pem" -outform DER 2>/dev/null | openssl dgst -sha256 | sed 's/^.*= *//')"
+thumbprint="$(sed -n 's/^Smtp__CertificateThumbprint=//p' "$W/settings/nfhotel-api.env")"
+[[ "$thumbprint" =~ ^[0-9a-f]{64}$ && "$thumbprint" == "$der_hash" ]] &&
+  ok "Smtp__CertificateThumbprint is the SHA-256 of the certificate of the catcher" || ko "thumbprint '$thumbprint', DER '$der_hash'"
+grep -q '^Smtp__Security=SslOnConnect$' "$W/settings/nfhotel-api.env" &&
+  grep -q '^BookingVerification__SiteAddress=https://localhost:8443$' "$W/settings/nfhotel-api.env" &&
+  [[ "$(grep -c '^Smtp__Password=.' "$W/settings/nfhotel-api.env")" == 1 ]] &&
+  ok "the settings of the mail are written once, with TLS from the first byte" || ko "the settings of the mail"
+before="$(sed -n 's/^Smtp__Password=//p' "$W/settings/nfhotel-api.env")"
+(
+  # shellcheck source=ops/scripts/lib/common.sh
+  . ops/scripts/lib/common.sh
+  # shellcheck source=ops/scripts/lib/stack.sh
+  . ops/scripts/lib/stack.sh
+  stack_init nfhotel-portable
+  stack_write_mail_settings "$W/settings" https://localhost:9443 false
+) >>"$W/settings.log" 2>&1
+[[ "$(sed -n 's/^Smtp__Password=//p' "$W/settings/nfhotel-api.env")" == "$before" ]] &&
+  grep -q '^BookingVerification__Enabled=true$' "$W/settings/nfhotel-api.env" &&
+  grep -q '^BookingVerification__SiteAddress=https://localhost:9443$' "$W/settings/nfhotel-api.env" &&
+  [[ "$(grep -c '^Smtp__Host=' "$W/settings/nfhotel-api.env")" == 1 ]] &&
+  ok "a second run keeps the password and the switch, and follows the site address" || ko "second run of the mail settings"
 
 for service in postgres api web; do
   bash ops/scripts/write-secret-files.sh "$service" --out "$W/settings/$service" --postgres "$W/settings/postgres.env" \

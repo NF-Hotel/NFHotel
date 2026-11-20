@@ -329,21 +329,33 @@ public sealed class GuestService : IGuestService
     /// <returns>Error codes in field order. An empty list means valid.</returns>
     internal static IReadOnlyList<string> ValidateInternal(GuestFields fields)
     {
+        Result<Guest> guest = NewGuest(fields);
+        return guest.IsSuccess ? [] : [.. guest.Errors.Select(error => error.Code)];
+    }
+
+    /// <summary>
+    /// Builds a new guest from the fields through the rules of <see cref="NFHotel.Domain.Entities.Guest"/>, without
+    /// storing it: the one place where the fields become a guest (MIL-088: the public booking and the booking request).
+    /// </summary>
+    /// <param name="fields">The fields.</param>
+    /// <returns>The guest, not stored, or the error codes in field order.</returns>
+    internal static Result<Guest> NewGuest(GuestFields fields)
+    {
+        ArgumentNullException.ThrowIfNull(fields);
+
         try
         {
-            _ = Guest.Create(
+            return Result<Guest>.Success(Guest.Create(
                 fields.FirstName,
                 fields.LastName,
                 fields.Email,
                 fields.PhoneNumber,
                 fields.Country,
-                fields.PassportNumber);
-
-            return [];
+                fields.PassportNumber));
         }
         catch (DomainException exception)
         {
-            return exception.Codes;
+            return Result<Guest>.FromCodes(exception.Codes);
         }
     }
 

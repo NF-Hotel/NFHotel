@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | UC-001 |
-| CrossReference | [UCD-001], [US-001], [SA-001] |
+| CrossReference | [UCD-001], [US-001], [SA-001], [UC-011] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | A stay ends at most five years after today, for hotel staff too, when a booking is made and when it is moved; hotel staff are not held to the 30 nights of the public site; the details of a new guest follow the validation rules of the booking flow (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | [7de27c7] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | A search for free rooms is limited per caller address, and hotel staff may see its refusal; the limits of the public site on booking requests per caller address and on coming bookings per email do not hold for hotel staff (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | A search for free rooms is limited per caller address, and hotel staff may see its refusal; the limits of the public site on booking requests per caller address and on coming bookings per email do not hold for hotel staff (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Rule 1: the coming bookings of the public site are counted per mailbox; hotel staff book without a booking request and without a mail, and a booking request of the website is not a booking and holds no room (MIL-088, UC-011, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
@@ -63,7 +63,7 @@
 
 | Step | Rule |
 | --- | --- |
-| 1 | A new booking is always pending (BR-01); arrival and departure date follow BR-41 to BR-48 of the ledger, and the stay ends at most five years after today (BR-N-08). Hotel staff may book more than 30 nights: that limit holds only on the public site (BR-C-07). The details of a new guest follow the table "Validation rules of the booking flow" of the ledger (MIL-086, ADR-0050). The limits of the public site on booking requests per caller address and on coming bookings per email neither count nor limit a booking by hotel staff (the table "Limits of the booking flow" of the ledger; ADR-0051, decisions 2 and 3) |
+| 1 | A new booking is always pending (BR-01); arrival and departure date follow BR-41 to BR-48 of the ledger, and the stay ends at most five years after today (BR-N-08). Hotel staff may book more than 30 nights: that limit holds only on the public site (BR-C-07). The details of a new guest follow the table "Validation rules of the booking flow" of the ledger (MIL-086, ADR-0050). The limits of the public site on booking requests per caller address and on coming bookings per mailbox neither count nor limit a booking by hotel staff (the table "Limits of the booking flow" of the ledger; ADR-0051, decisions 2 and 3; ADR-0052, decision 6). Hotel staff book at once, without a booking request and without a mail. A booking request of the public site ([UC-011]) is not a booking: the back office does not show it, it holds no room, and a booking by hotel staff may take the last free room of the size that a request asked for (ADR-0052, decisions 1 and 9) |
 | 1a | A search for free rooms, on the public site or in the back office, is limited to 60 in a minute per address of the caller: the address from which the search reached the site, which the caller cannot set. A refused search shows the one text of a refusal by a limit of the booking flow (the table "Limits of the booking flow" of the ledger; ADR-0051, decisions 2 and 4) |
 | 2 | The period is half-open: a guest leaving on a day and a guest arriving on that day do not share the room (BR-19, BR-39, BR-N-07) |
 | 4 | Only a pending booking can be confirmed (BR-02, BR-03, BR-05) |
@@ -83,5 +83,6 @@
 [UCD-001]: ../../use-case-diagram.md
 [US-001]: ../../user-stories.md
 [SA-001]: ../../stakeholder-analysis.md
-[7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81
+[UC-011]: ../uc-011/uc.md
 [a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

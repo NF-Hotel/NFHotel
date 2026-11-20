@@ -29,6 +29,7 @@ public static class BookingFeatureRegistration
         services.AddScoped<BookingFlowViewModel>();
         services.AddScoped<GuestSignInViewModel>();   // the guest sign-in on /booking (MIL-018)
         services.AddScoped<MyBookingViewModel>();     // the guest's own booking on /my-booking (MIL-018)
+        services.AddScoped<BookingVerifyViewModel>(); // the page of the link of a booking request, /booking/verify (MIL-088)
 
         return services;
     }

@@ -65,6 +65,14 @@ public static class ErrorMessages
             [ErrorCodes.Booking.TooManyLookups] = "Too many attempts. Wait fifteen minutes and try again.",
             [ErrorCodes.Booking.TooManyRequests] = "Too many requests in a short time. Please wait a while and try again, or contact the hotel.",
 
+            // The booking verified by email (MIL-088, ADR-0052 and ADR-0053). The limit of the mails sends the guest to the
+            // mail that is already in the mailbox rather than asking for a wait: only the newest link works (decision 6).
+            [ErrorCodes.Booking.TooManyMails] = "We've already emailed you links for this booking. Open the newest email from us and use its link: only that one works.",
+            [ErrorCodes.Booking.MailNotSent] = "We couldn't send the email with your link, so nothing is booked. Please try again later.",
+            [ErrorCodes.Booking.MailPaused] = "Booking requests are paused for now. Please try again later, or call the hotel.",
+            [ErrorCodes.Booking.VerificationLinkInvalid] = "This link doesn't work any more. Ask for the booking again, and we'll email you a new link.",
+            [ErrorCodes.Booking.VerificationRequired] = "The way to book has changed. Please reload the page and try again.",
+
             // ----------------------------------------------------------
             // ROOM
             // ----------------------------------------------------------

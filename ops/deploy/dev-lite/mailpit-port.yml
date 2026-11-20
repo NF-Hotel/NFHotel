@@ -1,0 +1,8 @@
+# Compose override for the light development mode (scripts/dev-lite.sh, MIL-088): the web
+# interface of the mail catcher on the loopback of the developer's machine (default 8025), where
+# the mails of the stack and the links of the verification of a booking are read. The port of
+# SMTP is not published: only the forwarder of the stack sends to the catcher.
+services:
+  mailpit:
+    ports:
+      - "127.0.0.1:${DEV_MAIL_PORT:-8025}:8025"

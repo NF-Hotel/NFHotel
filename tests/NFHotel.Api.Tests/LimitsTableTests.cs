@@ -2,6 +2,7 @@ using System.Globalization;
 
 using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
+using NFHotel.Application.UseCases.Bookings;
 using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Security;
 using NFHotel.TestSupport;
@@ -15,6 +16,9 @@ namespace NFHotel.Api.Tests;
 /// </summary>
 public sealed class LimitsTableTests
 {
+    // The setting cell of a limit whose numbers are constants of the code.
+    private const string NoSetting = "None";
+
     /// <summary>Positive: the table names the limits of the security events, in their order, and no other.</summary>
     [Fact]
     public void Table_Names_AreTheLimitsOfTheSecurityEvents()
@@ -26,7 +30,10 @@ public sealed class LimitsTableTests
         Assert.Equal(LimitNames.All, names);
     }
 
-    /// <summary>Positive: each number of the table is the default of the setting that the row names.</summary>
+    /// <summary>
+    /// Positive: each number of the table is the default of the setting that the row names, and a limit without a setting
+    /// has the number of its constant in the code (ADR-0052 decision 6).
+    /// </summary>
     [Fact]
     public void Table_Numbers_AreTheDefaultsOfTheirSettings()
     {
@@ -36,16 +43,19 @@ public sealed class LimitsTableTests
             [SenderLimitOptions.SectionName] = new SenderLimitOptions(),
             [GuestLookupOptions.SectionName] = new GuestLookupOptions(),
         };
+        Dictionary<(string Limit, string Window), int> constants = new()
+        {
+            [(LimitNames.VerificationMail, "1 hour")] = BookingRequestService.MailsPerHour,
+            [(LimitNames.VerificationMail, "1 day")] = BookingRequestService.MailsPerDay,
+        };
 
         // Act
-        (string Limit, string Setting, int Number)[] rows = [.. LimitsTable.Read().Select(row => (row.Limit, row.Setting, row.Number))];
+        LimitRule[] rows = [.. LimitsTable.Read()];
 
         // Assert
         Assert.All(rows, row =>
         {
-            string[] parts = row.Setting.Split(':');
-            object options = defaults[parts[0]];
-            int value = Assert.IsType<int>(options.GetType().GetProperty(parts[1])?.GetValue(options));
+            int value = row.Setting == NoSetting ? constants[(row.Limit, row.Window)] : DefaultOf(defaults, row.Setting);
             Assert.Equal((row.Limit, row.Setting, row.Number), (row.Limit, row.Setting, value));
         });
     }
@@ -59,33 +69,42 @@ public sealed class LimitsTableTests
         Assert.Equal(10_000, new GuestLookupOptions().MaxTrackedKeys);
     }
 
-    /// <summary>Positive: each window of the table is the window of its limit, and the limit per email has none.</summary>
+    /// <summary>
+    /// Positive: each window of the table is a window of its limit, the limit per email has none, and the limit per mailbox
+    /// has the hour and the day of its two constants.
+    /// </summary>
     [Fact]
     public void Table_Windows_AreTheWindowsOfTheLimits()
     {
         // Arrange
-        Dictionary<string, TimeSpan?> windows = new()
+        Dictionary<string, TimeSpan?[]> windows = new()
         {
-            [LimitNames.Search] = InMemorySenderLimits.SearchWindow,
-            [LimitNames.BookingHour] = InMemorySenderLimits.BookingHourWindow,
-            [LimitNames.BookingDay] = InMemorySenderLimits.BookingDayWindow,
-            [LimitNames.Email] = null,
-            [LimitNames.GuestSignIn] = TimeSpan.FromMinutes(new GuestLookupOptions().WindowMinutes),
+            [LimitNames.Search] = [InMemorySenderLimits.SearchWindow],
+            [LimitNames.BookingHour] = [InMemorySenderLimits.BookingHourWindow],
+            [LimitNames.BookingDay] = [InMemorySenderLimits.BookingDayWindow],
+            [LimitNames.Email] = [null],
+            [LimitNames.GuestSignIn] = [TimeSpan.FromMinutes(new GuestLookupOptions().WindowMinutes)],
+            [LimitNames.VerificationMail] = [TimeSpan.FromHours(1), TimeSpan.FromDays(1)],
         };
 
         // Act
         (string Limit, TimeSpan? Window)[] rows = [.. LimitsTable.Read().Select(row => (row.Limit, WindowOf(row.Window)))];
 
         // Assert
-        Assert.All(rows, row => Assert.Equal((row.Limit, windows[row.Limit]), row));
+        Assert.All(rows, row => Assert.Contains(row.Window, windows[row.Limit]));
     }
 
-    /// <summary>Positive: every refusal of the table is 429 with a code of the API, and only a limit with a window names Retry-After.</summary>
+    /// <summary>
+    /// Positive: every refusal of the table is 429 with a code of the API, and only a limit of the booking requests and the
+    /// searches names Retry-After: the guest sign-in keeps the text of ADR-0049, and the limit per mailbox tells nothing
+    /// about the mailbox of somebody else (ADR-0052 decision 6).
+    /// </summary>
     [Fact]
     public void Table_Refusals_Are429WithACodeOfTheApi()
     {
         // Arrange
-        string[] codes = [ErrorCodes.Booking.TooManyRequests, ErrorCodes.Booking.TooManyLookups];
+        string[] codes = [ErrorCodes.Booking.TooManyRequests, ErrorCodes.Booking.TooManyLookups, ErrorCodes.Booking.TooManyMails];
+        string[] withoutRetryAfter = [LimitNames.GuestSignIn, LimitNames.VerificationMail];
 
         // Act
         LimitRule[] rows = [.. LimitsTable.Read()];
@@ -95,8 +114,16 @@ public sealed class LimitsTableTests
         {
             Assert.StartsWith("429, ", row.Refusal, StringComparison.Ordinal);
             Assert.Contains(row.Refusal.Split('`')[1], codes);
-            Assert.Equal(row.Window != "None" && row.Limit != LimitNames.GuestSignIn, row.Refusal.Contains("Retry-After", StringComparison.Ordinal));
+            Assert.Equal(row.Window != "None" && !withoutRetryAfter.Contains(row.Limit), row.Refusal.Contains("Retry-After", StringComparison.Ordinal));
         });
+    }
+
+    // "SenderLimits:SearchesPerMinute": the default of a property of the options of its section.
+    private static int DefaultOf(Dictionary<string, object> defaults, string setting)
+    {
+        string[] parts = setting.Split(':');
+        object options = defaults[parts[0]];
+        return Assert.IsType<int>(options.GetType().GetProperty(parts[1])?.GetValue(options));
     }
 
     // "1 minute", "15 minutes", "1 hour", "1 day" or "None".

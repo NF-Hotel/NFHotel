@@ -28,7 +28,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 | Plan | GitHub Issues and Milestones, Discord | Jira, Linear, Azure Boards; Slack, Microsoft Teams |
 | Code | Git and GitHub, C# and .NET, Blazor, Bootstrap, Python, PostgreSQL, Entity Framework Core with Npgsql, Ollama | GitLab, Gitea or Forgejo; Java, Node.js; React, Angular; Tailwind; R; MySQL, SQL Server, SQLite; Dapper; llama.cpp, vLLM, a hosted API |
 | Build | GitHub Actions, Docker, GHCR, Microsoft's .NET images, Debian slim and Alpine images | Jenkins, GitLab CI; Podman; Docker Hub; distroless, Chainguard |
-| Test | xUnit, Testcontainers, Playwright, k6, SonarQube Cloud, CodeQL, OWASP ZAP, Trivy | NUnit, MSTest; Selenium, Cypress; JMeter, Locust; Codacy; Semgrep; Burp Suite; Grype, Docker Scout |
+| Test | xUnit, Testcontainers, Playwright, Mailpit, k6, SonarQube Cloud, CodeQL, OWASP ZAP, Trivy | NUnit, MSTest; Selenium, Cypress; MailHog, smtp4dev; JMeter, Locust; Codacy; Semgrep; Burp Suite; Grype, Docker Scout |
 | Release | Dependabot, GitHub artifact attestations and SBOMs, OpenSSF Scorecard | Renovate; cosign with Sigstore directly |
 | Deploy | Docker Compose, Proxmox VE, Debian, nginx, HAProxy, Cloudflare Tunnel, Cloudflare Access, OpenTofu, Tailscale, Let's Encrypt | Kubernetes, k3s, Nomad; VMware ESXi, Hyper-V; Ubuntu Server; Caddy, Traefik; port forwarding, Tailscale Funnel; Authelia; Terraform, Pulumi; WireGuard, OpenVPN, ZeroTier |
 | Operate | pg_dump, age, rsync and rrsync, systemd timers, nftables, unattended-upgrades, secrets as files | pgBackRest, Barman; GPG; restic, Borg; cron; ufw, iptables; Vault, SOPS |
@@ -231,6 +231,16 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 - **Our reason:** not decided in an ADR. Cypress has no .NET API, so Playwright and Selenium were the options in C#.
 - **Choose the alternative when:** the tests must drive a grid of real devices (Selenium Grid).
 
+### Mailpit
+
+- **Used for:** the mail catcher of the throwaway stack of the end-to-end tests and of the light development mode (`axllent/mailpit`, `ops/deploy/mailpit`), never on the VM: it takes the mails of the API through the forwarder `mail-relay`, and the browser tests read the link of a verification from its interface (MIL-088).
+- **Alternatives:** MailHog, smtp4dev, a mailbox at a real provider, a fake of the port `IMailSender` in place of SMTP.
+- **For it:** maintained, one static binary in a small image; it speaks TLS from the first byte with a certificate that the stack makes, so the stacks run `SslOnConnect` as production does, through the same forwarder; it accepts any user name and password, so the stack needs no account; its API lets a test read a mail.
+- **Against it:** one more third-party image to pin and to scan; mostly the work of one maintainer.
+- **What practitioners say:** no Hacker News or Stack Exchange thread about Mailpit was found (searched for MIL-088). Jeff Geerling moved from MailHog to Mailpit in January 2026, because MailHog had gone four years without maintenance, and found Mailpit easier to deploy and faster, with the features of MailHog and more ([Local Email Debugging with Mailpit](https://www.jeffgeerling.com/blog/2026/mailpit-local-email-debugging/)); the README of Mailpit says the same of MailHog ([Mailpit](https://github.com/axllent/mailpit)).
+- **Our reason:** [ADR-0053](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0053-mail-from-the-application-through-a-relay.md) decision 7: the way of production, through the forwarder and with TLS from the first byte, is tested without the internet and without an account.
+- **Choose the alternative when:** a test must prove delivery to a real mailbox (an account at a provider), or a test needs no SMTP at all (a fake of `IMailSender`).
+
 ### k6
 
 - **Used for:** the weekly load test of a throwaway stack (`load-test.yaml`, `grafana/k6`).
@@ -361,7 +371,7 @@ The page follows the eight steps of the DevOps loop (Plan, Code, Build, Test, Re
 
 ### HAProxy
 
-- **Used for:** the relay `postgres-tailnet` (`haproxy:3.2-alpine`) in TCP mode, which gives the team's DBeaver access to PostgreSQL on the tailnet only ([ADR-0034](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0034-team-database-access.md)).
+- **Used for:** the relay `postgres-tailnet` (`haproxy:3.2-alpine`) in TCP mode, which gives the team's DBeaver access to PostgreSQL on the tailnet only ([ADR-0034](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0034-team-database-access.md)), and the forwarder `mail-relay`, the same image in TCP mode, which passes the mails of the API on to the SMTP relay so the API keeps no route out ([ADR-0053](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0053-mail-from-the-application-through-a-relay.md)).
 - **Alternatives:** nginx's `stream` module, socat, publishing the PostgreSQL port directly.
 - **For it:** made for TCP proxying, with health checks and timeouts; a small Alpine image; keeps the database container off a published port.
 - **Against it:** one more product to know besides nginx.
@@ -683,6 +693,7 @@ Every image from outside NF Hotel in the compose files and Dockerfiles, and the 
 | `grafana/loki` | Loki |
 | `grafana/grafana` | Grafana |
 | `dockurr/proxmox` | Proxmox VE |
+| `axllent/mailpit` | Mailpit |
 | `mcr.microsoft.com/dotnet/sdk` | Base images |
 | `mcr.microsoft.com/dotnet/aspnet` | Base images |
 | `python` | Python, Base images |

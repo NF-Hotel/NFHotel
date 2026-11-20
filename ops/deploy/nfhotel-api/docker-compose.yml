@@ -7,7 +7,8 @@
 # (create it once: docker network create --internal nfhotel-api), where the proxy routes only
 # the two mobile routes to it (ADR-0015). It joins nfhotel-db with PostgreSQL; the web service
 # does not. It joins nfhotel-python (ADR-0039) to start market analysis runs and to take the
-# results of the benchmark.
+# results of the benchmark. It joins nfhotel-mail (ADR-0053) to send its mails through the
+# forwarder mail-relay, the only service there; it has no route out of the VM itself.
 name: nfhotel-api
 
 services:
@@ -46,6 +47,7 @@ services:
       - Staff__Token__SigningKey
       - Staff__InitialManager__Password
       - MarketAnalysisService__ApiKey
+      - Smtp__Password
     environment:
       Database__MigrateOnStart: "${NFHOTEL_API_MIGRATE_ON_START:-true}"
       # The metrics go to Alloy on the network nfhotel-api (MIL-034). Without Alloy the export
@@ -71,6 +73,7 @@ services:
     networks:
       - api
       - db
+      - mail
       - python
 
 networks:
@@ -85,6 +88,10 @@ networks:
   # Internal network of the Python services, the market analysis and the benchmark (ADR-0039).
   python:
     name: ${NFHOTEL_PYTHON_NETWORK:-nfhotel-python}
+    external: true
+  # Internal network shared with the forwarder of the mail only (ADR-0053 decision 4).
+  mail:
+    name: ${NFHOTEL_MAIL_NETWORK:-nfhotel-mail}
     external: true
 
 # One file per secret, written by scripts/write-secret-files.sh into NFHOTEL_API_SECRETS.
@@ -101,3 +108,6 @@ secrets:
     file: ${NFHOTEL_API_SECRETS:-secrets}/Staff__InitialManager__Password
   MarketAnalysisService__ApiKey:
     file: ${NFHOTEL_API_SECRETS:-secrets}/MarketAnalysisService__ApiKey
+  # The app password of the mail account (ADR-0053 decision 2).
+  Smtp__Password:
+    file: ${NFHOTEL_API_SECRETS:-secrets}/Smtp__Password

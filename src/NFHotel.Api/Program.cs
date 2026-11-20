@@ -58,6 +58,8 @@ builder.Services.AddSingleton<AddressLoginThrottle>();   // the limit per client
 builder.Services.AddScoped<LoginAddressLimitFilter>();
 builder.Services.AddSingleton<SecurityMetrics>();   // the counter and the events of the booking flow (ADR-0051 decision 6)
 builder.Services.AddSingleton<BookingFlowEvents>();
+builder.Services.AddScoped<IBookingRequestEvents, ApiBookingRequestEvents>();   // the events of the booking request (ADR-0052 decision 10)
+builder.Services.AddHostedService<BookingRequestCleanupWorker>();   // deletes the lapsed requests every 10 minutes (ADR-0052 decision 7)
 
 // Behind the proxy the peer is nginx; the address of the phone is in X-Forwarded-For. Only a peer in the networks of the
 // stack is trusted with the header, and only its last entry counts, the one that nginx added (ADR-0015, ADR-0051
@@ -75,6 +77,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 var app = builder.Build();
+
+// The series of the mails start at 0 once the telemetry runs, so the alerts on them see the first event (MIL-088).
+app.Lifetime.ApplicationStarted.Register(() => app.Services.GetRequiredService<SecurityMetrics>().StartAtZero());
 
 // Every answer, a refusal and a fault included, tells a browser not to guess its type (MIL-077).
 app.UseApiSecurityHeaders();

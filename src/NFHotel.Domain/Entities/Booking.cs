@@ -182,6 +182,41 @@ public sealed class Booking : Entity<int>
     }
 
     /// <summary>
+    /// Creates a new booking with status <see cref="BookingStatus.Pending"/> for a new guest who is stored with it in one
+    /// save (MIL-088, ADR-0052 decision 5): the store sets <see cref="GuestId"/> when it stores the guest, so a booking
+    /// that fails to save leaves no guest behind.
+    /// </summary>
+    /// <param name="period">The booking period. Must start on or after <paramref name="today"/>.</param>
+    /// <param name="roomId">The id of the room. Must be greater than 0.</param>
+    /// <param name="guest">The new guest, not yet stored.</param>
+    /// <param name="today">Today's date in the hotel's time zone.</param>
+    /// <returns>A new, valid booking that is not yet persisted.</returns>
+    /// <exception cref="ArgumentNullException">The guest is missing.</exception>
+    /// <exception cref="ArgumentException">The guest is stored already; use <see cref="Create"/> for a stored guest.</exception>
+    /// <exception cref="DomainException">On a start date in the past (BR-44, BR-104) or a missing room (BR-45, BR-105).</exception>
+    public static Booking CreateForNewGuest(DateRange period, int roomId, Guest guest, DateOnly today)
+    {
+        ArgumentNullException.ThrowIfNull(guest);
+        if (guest.Id != 0)
+        {
+            throw new ArgumentException("The guest is stored already; a stored guest is booked with Create.", nameof(guest));
+        }
+
+        GuardPeriod(period, today);
+        GuardRoomId(roomId);
+
+        return new Booking
+        {
+            Reference = BookingReference.New(),
+            StartDate = period.Start,
+            EndDate = period.End,
+            RoomId = roomId,
+            Guest = guest,
+            Status = BookingStatus.Pending
+        };
+    }
+
+    /// <summary>
     /// Confirms the booking — payment is guaranteed (BR-02, BR-03, BR-05).
     /// Confirmation is not a prerequisite for check-in (B-01).
     /// </summary>

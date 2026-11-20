@@ -1,0 +1,50 @@
+# The forwarder of the mail (MIL-088, ADR-0053 decision 4). HAProxy in mode TCP passes the
+# connections of the API on to the SMTP relay. The API reaches it at mail-relay:1465 on the
+# internal network nfhotel-mail, which only the two join, and only the forwarder joins
+# nfhotel-mail-out, the network with a route out, so the API itself has none. Started by
+# scripts/deploy-services.sh only when Smtp__Forwarder is set in nfhotel-api.env; the stacks
+# of scripts/lib/stack.sh start it in front of the mail catcher (ops/deploy/mailpit).
+name: nfhotel-mail-relay
+
+services:
+  mail-relay:
+    image: haproxy:3.2-alpine@sha256:5893840576071e6217cd52ebdcc14f454c6f7a631056fa6f4e0f40d3cac4215b
+    restart: unless-stopped
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    # Only the host and the port of the relay: deploy-services.sh reads Smtp__Host and Smtp__Port
+    # of nfhotel-api.env and passes the two on. Never env_file here: that file holds every secret
+    # of the API (ADR-0053 decision 4).
+    environment:
+      MAIL_RELAY_HOST: ${MAIL_RELAY_HOST:?set Smtp__Host in nfhotel-api.env}
+      MAIL_RELAY_PORT: ${MAIL_RELAY_PORT:?set Smtp__Port in nfhotel-api.env}
+    # Hardening as the other services (MIL-023 task 2): the image runs as the user haproxy and
+    # binds ports above 1024, so it needs no capability.
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    healthcheck:
+      # The health listener of haproxy.cfg on the loopback: a connection to port 1465 would open
+      # one to the relay as well.
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1:8405/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - mail
+      - mail-out
+
+networks:
+  # Internal: the API and the forwarder only (no route out, no host port).
+  mail:
+    name: ${NFHOTEL_MAIL_NETWORK:-nfhotel-mail}
+    external: true
+  # The way out of the forwarder; no other service joins it.
+  mail-out:
+    name: ${NFHOTEL_MAIL_OUT_NETWORK:-nfhotel-mail-out}
+    external: true

@@ -45,6 +45,30 @@ public static class ErrorCodes
         /// </summary>
         public const string TooManyRequests = "booking.too_many_requests";
 
+        /// <summary>
+        /// Too many verification mails to one email: 3 in an hour or 5 in a day (MIL-088, ADR-0052 decision 6); the API
+        /// answers 429.
+        /// </summary>
+        public const string TooManyMails = "booking.too_many_mails";
+
+        /// <summary>
+        /// The public booking at once is switched off: a booking on the public site is asked for and verified by email
+        /// (MIL-088, ADR-0052 decision 8); the API answers 409.
+        /// </summary>
+        public const string VerificationRequired = "booking.verification_required";
+
+        /// <summary>
+        /// The link of a booking request does not work: the token is unknown, used or lapsed, one answer for the three
+        /// (MIL-088, ADR-0052 decision 3).
+        /// </summary>
+        public const string VerificationLinkInvalid = "booking.verification_link_invalid";
+
+        /// <summary>The relay did not take the mail of a request; nothing was stored (MIL-088, ADR-0053 decision 5). The API answers 503.</summary>
+        public const string MailNotSent = "booking.mail_not_sent";
+
+        /// <summary>The fuse of the mails a day is blown; no request is taken (MIL-088, ADR-0053 decision 6). The API answers 503.</summary>
+        public const string MailPaused = "booking.mail_paused";
+
         /// <summary>The arrival date is not filled in (BR-101).</summary>
         public const string StartDateRequired = DateRange.StartRequired;
 

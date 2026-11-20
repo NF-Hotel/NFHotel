@@ -15,6 +15,8 @@ namespace NFHotel.Api.Controllers;
 /// The booking use cases of staff over HTTP: one endpoint per method of <see cref="IBookingService"/>; no route here
 /// admits a guest token (ADR-0049 decision 3). The public booking answers with the receipt and the guest session of
 /// <see cref="IGuestAccessService"/>, so the guest who has just booked is signed in (MIL-018) without seeing the key.
+/// Since MIL-088 a booking on the public site may instead be asked for and verified by email through
+/// <see cref="IBookingRequestService"/> (ADR-0052): the mode tells the web application which way holds.
 /// </summary>
 [ApiController]
 [Route(ApiRoutes.Bookings)]
@@ -22,16 +24,20 @@ public sealed class BookingsController : ControllerBase
 {
     private readonly IBookingService _bookings;
     private readonly IGuestAccessService _guestAccess;
+    private readonly IBookingRequestService _requests;
 
     /// <summary>Creates the controller.</summary>
     /// <param name="bookings">The booking use cases.</param>
     /// <param name="guestAccess">The public booking that signs its guest in (MIL-018).</param>
-    public BookingsController(IBookingService bookings, IGuestAccessService guestAccess)
+    /// <param name="requests">The booking request and its verification by email (MIL-088).</param>
+    public BookingsController(IBookingService bookings, IGuestAccessService guestAccess, IBookingRequestService requests)
     {
         ArgumentNullException.ThrowIfNull(bookings);
         ArgumentNullException.ThrowIfNull(guestAccess);
+        ArgumentNullException.ThrowIfNull(requests);
         _bookings = bookings;
         _guestAccess = guestAccess;
+        _requests = requests;
     }
 
     /// <summary>Gets one booking, for staff who may see the bookings (MIL-079).</summary>
@@ -93,6 +99,8 @@ public sealed class BookingsController : ControllerBase
 
     /// <summary>
     /// Creates a public booking for a new guest in a free room of the chosen type, and signs the guest in to it (MIL-018).
+    /// With the verification by email on, it answers 409 <c>booking.verification_required</c>, so no caller books
+    /// around the verification (MIL-088, ADR-0052 decision 8).
     /// </summary>
     /// <param name="request">The stay, the room type, the party and the new guest.</param>
     /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
@@ -106,6 +114,48 @@ public sealed class BookingsController : ControllerBase
         this.ToResponse(
             await _guestAccess.BookAsync(request, cancellationToken)
                 .ConfigureAwait(false));
+
+    /// <summary>Tells which way a booking on the public site goes: at once, or asked for and verified by email (MIL-088).</summary>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>The mode of the public booking (ADR-0052 decision 8).</returns>
+    [HttpGet(ApiRoutes.PublicBookingMode)]
+    public async Task<IActionResult> GetPublicBookingModeAsync(CancellationToken cancellationToken) =>
+        this.ToResponse(await _requests.GetModeAsync(cancellationToken).ConfigureAwait(false));
+
+    /// <summary>
+    /// Asks for a booking on the public site (MIL-088, ADR-0052 decision 1): checks it as a public booking is checked,
+    /// stores a request that holds no room and sends the mail with the single-use link. The limits per address count it
+    /// as a booking request; the use case writes the events of the limits per mailbox and of the mail itself.
+    /// </summary>
+    /// <param name="request">The stay, the room type, the party and the new guest.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>
+    /// 202 with the time the link lapses; 429 <c>booking.too_many_mails</c> or <c>booking.too_many_requests</c>; 503
+    /// <c>booking.mail_not_sent</c> or <c>booking.mail_paused</c>; the codes of the public booking; 404 with the
+    /// verification off.
+    /// </returns>
+    [HttpPost(ApiRoutes.PublicBookingRequests)]
+    [SenderLimit(SenderLimitKind.BookingRequest)]
+    public async Task<IActionResult> AskPublicBookingAsync(
+        [FromBody] CreatePublicBookingRequest request,
+        CancellationToken cancellationToken) =>
+        this.ToAcceptedResponse(await _requests.AskAsync(request, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>
+    /// Verifies a booking request with the token of its link (MIL-088, ADR-0052 decision 5): books it in a free room of
+    /// the size and signs the guest in, as a public booking does. The token comes in the body, never in the address.
+    /// </summary>
+    /// <param name="request">The token of the link.</param>
+    /// <param name="cancellationToken">Cancels the call when the client goes away.</param>
+    /// <returns>
+    /// The receipt with the guest session; 422 <c>booking.verification_link_invalid</c> for a link that is unknown, used
+    /// or lapsed; 409 <c>booking.room_type_not_available</c> when the room went; 404 with the verification off.
+    /// </returns>
+    [HttpPost(ApiRoutes.PublicBookingVerify)]
+    public async Task<IActionResult> VerifyPublicBookingAsync(
+        [FromBody] VerifyBookingRequest request,
+        CancellationToken cancellationToken) =>
+        this.ToResponse(await _requests.VerifyAsync(request, cancellationToken).ConfigureAwait(false));
 
     /// <summary>Confirms a booking.</summary>
     /// <param name="id">The booking key.</param>

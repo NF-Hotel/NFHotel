@@ -71,6 +71,18 @@ public sealed class FakeUnitOfWork : IUnitOfWork
     /// <summary>Makes the save with this number (1 is the first since the last reset) fail, as a database error would.</summary>
     public int? FailOnSaveNumber { get; set; }
 
+    /// <summary>Exceptions that the next saves throw, one each, before the saves work again (MIL-088: a lost race).</summary>
+    public Queue<Exception> FailNextSaves { get; } = new();
+
+    /// <summary>The names of the locks that the work under a lock took, in order (MIL-088).</summary>
+    public List<string> Locks { get; } = [];
+
+    /// <summary>
+    /// Decides, for each lock, an error that the work under it ends with before it starts, as a transaction that the
+    /// database still refuses after the retries would (MIL-088, RC-436 F1); <see langword="null"/> runs the work.
+    /// </summary>
+    public Func<string, Exception?> FailUnderLock { get; set; } = _ => null;
+
     /// <summary>Sets the count of saves back to 0.</summary>
     public void ResetSaveCount() => SaveCount = 0;
 
@@ -81,6 +93,11 @@ public sealed class FakeUnitOfWork : IUnitOfWork
             throw FailWith;
         }
 
+        if (FailNextSaves.TryDequeue(out Exception? next))
+        {
+            throw next;
+        }
+
         if (FailOnSaveNumber == SaveCount + 1)
         {
             throw new InvalidOperationException("The database could not save.");
@@ -88,6 +105,23 @@ public sealed class FakeUnitOfWork : IUnitOfWork
 
         SaveCount++;
         return Task.FromResult(1);
+    }
+
+    /// <summary>Runs the work at once: the in-memory world has one caller at a time, so the lock only records its name.</summary>
+    public async Task<TResult> RunUnderLockAsync<TResult>(
+        string lockName,
+        Func<CancellationToken, Task<TResult>> work,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(work);
+
+        Locks.Add(lockName);
+        if (FailUnderLock(lockName) is { } error)
+        {
+            throw error;
+        }
+
+        return await work(cancellationToken).ConfigureAwait(false);
     }
 }
 
@@ -108,7 +142,7 @@ public abstract class InMemoryRepository<TEntity>
     public Task<TEntity?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         Task.FromResult(Items.SingleOrDefault(item => item.Id == id));
 
-    public void Add(TEntity entity)
+    public virtual void Add(TEntity entity)
     {
         IdProperty.SetValue(entity, _nextId++);
         Items.Add(entity);
@@ -125,6 +159,45 @@ public abstract class InMemoryRepository<TEntity>
 
 public sealed class InMemoryBookingRepository : InMemoryRepository<Booking>, IBookingRepository
 {
+    // ! is justified: Booking has the property GuestId, which nameof checks.
+    private static readonly PropertyInfo GuestIdProperty = typeof(Booking).GetProperty(nameof(Booking.GuestId))!;
+
+    /// <summary>
+    /// The guests that a booking with a new guest stores along, as the one save of the database does (MIL-088,
+    /// <see cref="Booking.CreateForNewGuest"/>); without it a new guest is not stored.
+    /// </summary>
+    public InMemoryGuestRepository? GuestStore { get; set; }
+
+    /// <summary>The bookings taken back after a save that failed, in order (MIL-088).</summary>
+    public List<Booking> Discarded { get; } = [];
+
+    /// <summary>Stores the booking, and a new guest that it took along with its key, as the database gives both in one save.</summary>
+    public override void Add(Booking entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        if (entity.Guest is { Id: 0 } guest && GuestStore is not null)
+        {
+            GuestStore.Add(guest);
+            GuestIdProperty.SetValue(entity, guest.Id);
+        }
+
+        base.Add(entity);
+    }
+
+    /// <summary>Takes back a booking that could not be saved, and the new guest it took along.</summary>
+    public void Discard(Booking booking)
+    {
+        ArgumentNullException.ThrowIfNull(booking);
+
+        Discarded.Add(booking);
+        Items.Remove(booking);
+        if (booking.Guest is { } guest && GuestStore is not null)
+        {
+            GuestStore.Items.Remove(guest);
+        }
+    }
+
     public Task<IReadOnlyList<Booking>> GetOverlapCandidatesAsync(
         int roomId,
         DateOnly periodStart,
@@ -180,6 +253,7 @@ public sealed class ServiceWorld
             .Returns(call => Task.FromResult(ReadModelOrNull(call.Arg<Guid>())));
         GuestSignInLimits.TryCount(Arg.Any<Guid?>(), Arg.Any<string>()).Returns(true);
         EmailLimit.ComingPublicBookingsPerEmail.Returns(3);
+        Bookings.GuestStore = Guests;
         ReadSideFromTheRepositories();
         BenchmarkReadSideFromTheRepository();
     }
@@ -302,13 +376,13 @@ public sealed class ServiceWorld
     private static string GuestText(Guest guest) =>
         $"{guest.FirstName} {guest.LastName} {guest.Email} {guest.Country}";
 
-    // The count per email of ADR-0051 decision 3 over the in-memory repositories: the email in its normal form and
-    // without letter case, as the query of the database compares it.
+    // The count per email of ADR-0051 decision 3 over the in-memory repositories, by mailbox since MIL-088 (ADR-0052
+    // decision 6), as the query of the database compares it.
     private int CountComingPublicBookings(string email, DateOnly today)
     {
-        string wanted = TextNormalForm.Normalize(email).ToUpperInvariant();
+        string wanted = Mailbox.NormalFormOf(email);
         HashSet<int> guestIds = Guests.Items
-            .Where(guest => TextNormalForm.Normalize(guest.Email).ToUpperInvariant() == wanted)
+            .Where(guest => Mailbox.NormalFormOf(guest.Email) == wanted)
             .Select(guest => guest.Id)
             .ToHashSet();
 
@@ -407,17 +481,44 @@ public sealed class ServiceWorld
     /// </summary>
     public IPublicBookingEmailLimit EmailLimit { get; } = Substitute.For<IPublicBookingEmailLimit>();
 
+    /// <summary>The setting of the verification by email (MIL-088): off until a test switches it on.</summary>
+    public FakeBookingVerificationSettings Verification { get; } = new();
+
+    /// <summary>The booking requests (MIL-088).</summary>
+    public InMemoryBookingRequestRepository BookingRequests { get; } = new();
+
+    /// <summary>The records of the mails (MIL-088).</summary>
+    public InMemorySentMailRepository SentMails { get; } = new();
+
+    /// <summary>The relay of the mails (MIL-088).</summary>
+    public FakeMailSender Mails { get; } = new();
+
+    /// <summary>The security events of the booking request (MIL-088).</summary>
+    public RecordingBookingRequestEvents RequestEvents { get; } = new();
+
     /// <summary>
     /// Builds the service; <paramref name="prices"/> replaces the real price lookup, for example to make it fail,
-    /// <paramref name="guestCall"/> the signed-in guest, which is otherwise <see cref="GuestCall"/>, and
-    /// <paramref name="emailLimit"/> the limit per email, which is otherwise <see cref="EmailLimit"/>.
+    /// <paramref name="guestCall"/> the signed-in guest, which is otherwise <see cref="GuestCall"/>,
+    /// <paramref name="emailLimit"/> the limit per email, which is otherwise <see cref="EmailLimit"/>, and
+    /// <paramref name="verification"/> the setting of the verification, which is otherwise <see cref="Verification"/>.
     /// </summary>
     public BookingService BookingService(
         IStaffAuthorizationService? authorization = null,
         IPriceChangeService? prices = null,
         IGuestCallContext? guestCall = null,
-        IPublicBookingEmailLimit? emailLimit = null) =>
-        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings, guestCall ?? GuestCall, emailLimit ?? EmailLimit);
+        IPublicBookingEmailLimit? emailLimit = null,
+        IBookingVerificationSettings? verification = null) =>
+        new(Bookings, Rooms, Guests, BookingQueries, RoomQueries, UnitOfWork, Clock, authorization ?? Substitute.For<IStaffAuthorizationService>(), prices ?? PriceChangeService(), BookingMarketDetails, Warnings, guestCall ?? GuestCall, emailLimit ?? EmailLimit, verification ?? Verification);
+
+    /// <summary>
+    /// Builds the booking request over <see cref="BookingService"/> with the in-memory requests, records, relay, setting and
+    /// events of the world (MIL-088); <paramref name="bookings"/> and <paramref name="settings"/> replace them.
+    /// </summary>
+    public BookingRequestService BookingRequestService(IPublicBookingService? bookings = null, IBookingVerificationSettings? settings = null) =>
+        new(bookings ?? BookingService(verification: settings), BookingRequests, SentMails, UnitOfWork, Mails, settings ?? Verification, GuestTokens, RequestEvents, Clock);
+
+    /// <summary>Builds the clean-up of the booking requests and the records of the mails (MIL-088).</summary>
+    public BookingRequestCleanup BookingRequestCleanup() => new(BookingRequests, SentMails, Clock);
 
     /// <summary>Builds the service. A guest reads no guest by its key since MIL-085 (ADR-0049 decision 3).</summary>
     public GuestService GuestService(IStaffAuthorizationService? authorization = null) =>

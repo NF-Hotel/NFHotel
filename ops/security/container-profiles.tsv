@@ -1,8 +1,9 @@
 # The container profiles of NF Hotel (MIL-080), read by ops/scripts/check-container-runtime.sh: one
 # row per compose service under ops/deploy that runs on the VM nf-hotel, in the monitoring LXC
-# nf-monitoring or on the backup host. A container is matched by the folder of its compose file
-# under ops/deploy and its compose service, so the throwaway stack of CI uses the same rows. A
-# running container without a row breaks the rule "profile".
+# nf-monitoring, on the backup host, or only in the stacks of CI and development (the mail catcher).
+# A container is matched by the folder of its compose file under ops/deploy and its compose service,
+# so the throwaway stack of CI uses the same rows. A running container without a row breaks the rule
+# "profile".
 #
 # Tab separated, eight columns, "-" for none:
 #   folder      the folder of the compose file under ops/deploy
@@ -39,6 +40,8 @@ benchmark	benchmark	nonroot	-	ro	-	-	-
 benchmark	results-owner	root	CHOWN,DAC_READ_SEARCH	ro	-	-	-
 cloudflared	cloudflared	nonroot	-	ro	-	-	-
 postgres-tailnet	relay	nonroot	-	ro	-	-	-
+# The forwarder of the mail (MIL-088, ADR-0053): HAProxy as its user haproxy on ports above 1024.
+mail-relay	mail-relay	nonroot	-	ro	-	-	-
 # The one container with the Docker socket (ADR-0020); HAProxy runs as root, the owner of the socket.
 alloy	socket-proxy	root	-	ro	/var/run/docker.sock	-	-
 # Alloy reads the host's metrics and journal through read-only mounts, as 473 without the group of
@@ -52,6 +55,10 @@ monitoring	blackbox	nonroot	-	ro	-	-	-
 monitoring	loki	nonroot	-	ro	-	-	-
 monitoring	grafana	nonroot	-	ro	-	-	-
 monitoring	scan-exporter	10001	-	ro	-	-	-
+
+# The mail catcher of the throwaway stack of CI and the light development mode, never on the VM
+# (MIL-088, ADR-0053 decision 7). Its image has no user; the compose file runs it as nobody (65534).
+mailpit	mailpit	65534	-	ro	-	-	-
 
 # The backup host (MIL-066), checked by hand there. The SSH server keeps root and the default
 # capabilities of Docker to switch to the backup user at each login, and a writable root, where its

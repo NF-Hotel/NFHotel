@@ -75,9 +75,10 @@ Mac has no KVM, and an Apple Silicon Mac cannot start the VM, so on a Mac the ch
 leaves Proxmox VE and the VM out and runs the containers of the deployed shape straight in your Docker:
 
 ```text
-your machine ── Docker ── postgres, api, web, nginx
-      │                                    │
-      └── https://localhost:8443/ ◄────────┘
+your machine ── Docker ── postgres, api, web, nginx, mail-relay, mailpit
+      │                                    │                      │
+      ├── https://localhost:8443/ ◄────────┘                      │
+      └── http://localhost:8025/ (the mails) ◄────────────────────┘
 ```
 
 | Need | macOS | Windows 11 | Linux |
@@ -86,7 +87,7 @@ your machine ── Docker ── postgres, api, web, nginx
 | bash 4 or later | `brew install bash`, then open a new terminal (macOS has bash 3.2) | Git for Windows (Git Bash) | the packages of your distribution |
 | `openssl`, `curl`, `git` | in macOS (`xcode-select --install` for git) | Git for Windows | the packages of your distribution |
 | Memory for Docker | about 3 GiB | about 3 GiB | about 3 GiB |
-| Free port | 8443 | 8443 | 8443 |
+| Free ports | 8443 and 8025 | 8443 and 8025 | 8443 and 8025 |
 
 No `/dev/kvm`, no privileged container. Run:
 
@@ -100,7 +101,7 @@ the end the script prints the three development accounts (`manager`, `receptioni
 
 | Command | What it does |
 | --- | --- |
-| `dev-up.sh --lite` | build the API and the web application from your working tree and start the four services |
+| `dev-up.sh --lite` | build the API and the web application from your working tree and start the six services |
 | `dev-up.sh --lite --seed` | the same, then load `db/seed_dev.sql` (once) |
 | `dev-up.sh --lite --open` | open the site in your browser when it is ready |
 | `dev-up.sh --lite --down` | stop the services; the database and the settings stay |
@@ -112,10 +113,12 @@ the end the script prints the three development accounts (`manager`, `receptioni
 | The API of the mobile app | `https://localhost:8443/mobile-api/`; from the Android emulator `https://10.0.2.2:8443/mobile-api/`, from the iOS simulator `https://localhost:8443/mobile-api/`. The debug build of the mobile app uses this address by default |
 | Settings, secrets and the passwords of the accounts | `ops/.dev-lite/` (git-ignored, readable by you only); the passwords are in `ops/.dev-lite/dev-staff.env` |
 | The database | the volume of the container `nfhotel-dev-postgres-postgres-1` |
+| The mails of the stack | `http://localhost:8025/`, the mail catcher Mailpit: the light mode has the verification of a booking by email on, so a booking on the public pages sends its link here, through the forwarder `mail-relay` as on the VM; no mail leaves your machine (MIL-088) |
 
 Not in the light mode: Ollama, the market analysis and the benchmark service. Their pages say the service is not
 reachable. Use the Proxmox mode for them. Run only one mode at a time: both use port 8443 (`dev-up.sh --down` stops the
-Proxmox mode, `dev-up.sh --lite --down` the light mode), or set `DEV_SITE_PORT`.
+Proxmox mode, `dev-up.sh --lite --down` the light mode), or set `DEV_SITE_PORT`. `DEV_MAIL_PORT` moves the mails from
+8025, for example when MailHog or a Mailpit of your own already uses it.
 
 ## Run from Visual Studio (F5)
 
@@ -256,7 +259,7 @@ and the default AI model for the website and the market analysis are on `/admin/
 | F5 stops with `'Api:BaseUrl' must be an absolute http or https address of the API` | the user secrets are not written | run `dev-up.sh --f5` (or `dev-f5.ps1`) once, then F5 again |
 | Visual Studio: `Could not resolve SDK "Microsoft.NET.Sdk"`, while `dotnet build` in a terminal works | an update of Visual Studio failed halfway and left the .NET host without its SDK resolver (`Microsoft.DotNet.MSBuildSdkResolver`); the installer then fails with error 1714 on a missing cached `dotnet-host-*.msi` | in the Visual Studio Installer, **Repair** Visual Studio. If the repair stops on the missing MSI, download that exact .NET host version from `https://dotnet.microsoft.com/download/dotnet`, point the installer at its MSI, and repair again |
 | After a build, `git status` shows `src/NFHotel.Web/packages.lock.json` changed | your SDK is a newer patch of the band of `global.json`, and it locks another version of the implicit ASP.NET packages | do not commit it: `git checkout -- src/NFHotel.Web/packages.lock.json`. CI restores in locked mode with the SDK of `global.json` and fails on a changed lock file |
-| A port is in use | another program holds 8443 or 8006 | stop it, or set `DEV_SITE_PORT` or `DEV_PVE_PORT` |
+| A port is in use | another program holds 8443 or 8006, or 8025 in the light mode | stop it, or set `DEV_SITE_PORT`, `DEV_PVE_PORT` or `DEV_MAIL_PORT` |
 | The first run stops at `waiting for ssh, cloud-init and Docker` | the VM is still installing Docker | run the script again; it continues |
 | The Start page says the benchmark service is not set up | the service or the model is not ready | run `dev-up.sh benchmark`, then reload the page |
 | `502 Bad Gateway` after a rebuild | nginx has not found the new container | run `dev-up.sh` again; it reloads nginx |

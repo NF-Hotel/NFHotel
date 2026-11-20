@@ -24,13 +24,14 @@ Infrastructure documents (DSA-001, ADR-0007 to ADR-0011, MIL-021 to MIL-024 and 
 | SAMM | OWASP SAMM assessment (no catalog type, proposed upstream) | docs/sqa/samm-baseline.md | 002 |
 | DORA | DORA metrics report (no catalog type, proposed upstream) | docs/sqa/dora/dora-NNN-*.md | 002 |
 | SAR | Security audit report (no catalog type, proposed upstream) | docs/sqa/security-audit-*.md | 002 |
-| ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0052 |
+| ADR | Architecture Decision Record | docs/adr/adr-NNNN-*.md | 0054 |
 | US | User Story | docs/user-stories.md | 002 |
 | UCD | Use Case Diagram | docs/use-case-diagram.md | 002 |
-| UC | Use Case | docs/use-cases/uc-*/uc.md | 011 |
+| UC | Use Case | docs/use-cases/uc-*/uc.md | 012 |
 | DM | Domain Model | docs/domain-model.md, docs/use-cases/uc-*/dm.md | 006 |
-| SSD | System Sequence Diagram | docs/use-cases/uc-*/ssd.md | 002 |
-| OC | Operation Contract | docs/use-cases/uc-*/oc.md | 002 |
+| SSD | System Sequence Diagram | docs/use-cases/uc-*/ssd.md | 003 |
+| OC | Operation Contract | docs/use-cases/uc-*/oc.md | 003 |
+| SD | Sequence Diagram | docs/use-cases/uc-*/sd.md | 002 |
 | DICT | Domain Dictionary | docs/dictionary.md | 002 |
 
 ## Languages

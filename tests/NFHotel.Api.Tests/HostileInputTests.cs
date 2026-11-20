@@ -84,6 +84,8 @@ public sealed class HostileInputTests : IClassFixture<ApiFactory>
     private static readonly Dictionary<string, string> RefusedPlausibleRequests = new(StringComparer.Ordinal)
     {
         ["POST api/auth/login"] = "the plausible user name has no account: 401",
+        ["POST api/bookings/public/requests"] = "the verification by email is off in the test world, so the route of the request answers 404 as a route that is not there (ADR-0052 decision 8); BookingRequestApiTests sends its requests with the verification on",
+        ["POST api/bookings/public/requests/verify"] = "the verification by email is off in the test world, so the route of the verification answers 404 as a route that is not there (ADR-0052 decision 8); BookingRequestApiTests sends its requests with the verification on",
         ["POST api/auth/guest-login"] = "a guest signs in only with the reference and the email of a booking, and the plausible reference is no reference: 401 (MIL-018, ADR-0049)",
         ["POST api/guest/booking/reschedule"] = "a route of the guest refuses the staff token that every request here carries: 403 (ADR-0049 decision 3)",
         ["POST api/price-suggestions/approve"] = "the key names a suggestion of the latest market analysis, and the test world holds none: 404",

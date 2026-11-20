@@ -60,23 +60,53 @@ public sealed class BookingRepository : Repository<Booking, int>, IBookingReposi
 
     /// <inheritdoc />
     /// <remarks>
-    /// The stored email is in its normal form since MIL-086, and the email of the request is brought to it here; ILIKE
-    /// with the wildcards escaped compares the two without letter case and matches the email itself only.
+    /// The limit counts by mailbox (MIL-088, ADR-0052 decision 6): the query reads the emails of the coming public bookings
+    /// whose email ends in the domain of the one asked for (both Gmail domains for a Gmail address), with the wildcards
+    /// escaped, and their mailbox forms are compared here. So it reads at most the coming public bookings of one domain,
+    /// and the bookings made before the mailbox form count at once. An email without a domain, which the rules of the
+    /// guest refuse before this, matches only itself.
     /// </remarks>
     public async Task<int> CountComingPublicBookingsAsync(string email, DateOnly today, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(email);
 
-        string pattern = SqlPattern.Exactly(TextNormalForm.Normalize(email));
+        string mailbox = Mailbox.NormalFormOf(email);
+        IReadOnlyList<string> domains = Mailbox.DomainsOf(email);
+        string first = domains.Count > 0
+            ? "%@" + SqlPattern.Exactly(domains[0])
+            : SqlPattern.Exactly(TextNormalForm.Normalize(email));
+        string last = domains.Count > 0 ? "%@" + SqlPattern.Exactly(domains[^1]) : first;
 
         // Guest is a navigation that the query turns into a join, so it is not null here.
-        return await Context.Bookings.AsNoTracking()
+        List<string> emails = await Context.Bookings.AsNoTracking()
             .Where(booking => booking.MadeOnPublicSite
                 && booking.Status != BookingStatus.Cancelled
                 && booking.EndDate >= today
-                && EF.Functions.ILike(booking.Guest!.Email, pattern, SqlPattern.EscapeCharacter))
-            .CountAsync(cancellationToken)
+                && (EF.Functions.ILike(booking.Guest!.Email, first, SqlPattern.EscapeCharacter)
+                    || EF.Functions.ILike(booking.Guest!.Email, last, SqlPattern.EscapeCharacter)))
+            .Select(booking => booking.Guest!.Email)
+            .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        return emails.Count(stored => string.Equals(Mailbox.NormalFormOf(stored), mailbox, StringComparison.Ordinal));
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// A save that the exclusion constraint refused leaves the booking and the guest of
+    /// <see cref="Booking.CreateForNewGuest"/> as added in the context; both are let go, so the next room is tried
+    /// without them (MIL-088, ADR-0052 decision 5). A guest who was stored before stays as it is.
+    /// </remarks>
+    public void Discard(Booking booking)
+    {
+        ArgumentNullException.ThrowIfNull(booking);
+
+        if (booking.Guest is { } guest && Context.Entry(guest).State == EntityState.Added)
+        {
+            Context.Entry(guest).State = EntityState.Detached;
+        }
+
+        Context.Entry(booking).State = EntityState.Detached;
     }
 
     /// <inheritdoc />

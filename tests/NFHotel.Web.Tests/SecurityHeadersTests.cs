@@ -109,6 +109,7 @@ public sealed partial class SecurityHeadersTests
     [Theory]
     [InlineData("/book")]
     [InlineData("/admin/login")]
+    [InlineData("/booking/verify")]
     public async Task Get_Page_HasNoInlineCode(string path)
     {
         // Arrange

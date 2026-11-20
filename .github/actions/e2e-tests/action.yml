@@ -1,10 +1,12 @@
 # Run the end-to-end tests of NFHotel in a browser against a throwaway stack (MIL-027
 # tasks 1 to 5 of NFHotel, ADR-0012). Called by an NFHotel workflow, pinned by full commit
-# SHA. The stack (nginx with a self-signed certificate, web, API, PostgreSQL) is built
-# from the NFHotel checkout and runs on its own Docker networks with no host port. Before the
-# tests, check-e2e-stack.sh checks the stack and the hardening of each container, and the
-# runtime check reads each container against its profile in ops/security/container-profiles.tsv
-# (MIL-080); the tests run in the Playwright image on that network. Nothing outside the runner
+# SHA. The stack (nginx with a self-signed certificate, web, API, PostgreSQL, and the mail
+# catcher with the forwarder of the mail) is built from the NFHotel checkout and runs on its own
+# Docker networks with no host port. Before the tests, check-e2e-stack.sh checks the stack and
+# the hardening of each container, and the runtime check reads each container against its
+# profile in ops/security/container-profiles.tsv (MIL-080); the tests run in the Playwright image
+# on that network, first with the verification of a booking by email off, then with it on
+# (MIL-088), and each run is followed by the check of the logs. Nothing outside the runner
 # changes; the stack is removed even when a step fails. Needs no secret and no permission beyond
 # contents: read. The results (TRX, a trace per test, a screenshot per failure) are
 # uploaded as the artifact e2e-results. The logic is in scripts/ of this repository.
@@ -49,13 +51,50 @@ runs:
         STACK_DIR: ${{ runner.temp }}/e2e-stack
       run: >-
         bash "$GITHUB_ACTION_PATH/../../../ops/scripts/run-e2e-tests.sh" --app-dir "$APP_PATH"
-        --stack-env "$STACK_DIR/stack.env" --results e2e-results
+        --stack-env "$STACK_DIR/stack.env" --results e2e-results --mode off
 
+    # The API is made again when the verification is turned on, so its log is read now.
     - name: Check the logs for the test guest's personal data
       shell: bash
       run: >-
         bash "$GITHUB_ACTION_PATH/../../../ops/scripts/check-log-privacy.sh"
         ada@example.com +4512345678 Lovelace
+
+    - name: Turn the verification of a booking by email on
+      shell: bash
+      env:
+        STACK_DIR: ${{ runner.temp }}/e2e-stack
+      run: >-
+        bash "$GITHUB_ACTION_PATH/../../../ops/scripts/e2e-stack.sh" verification on
+        --out "$STACK_DIR"
+
+    - name: Run the end-to-end tests of the verification by email
+      shell: bash
+      env:
+        APP_PATH: ${{ inputs.app-path }}
+        STACK_DIR: ${{ runner.temp }}/e2e-stack
+      run: >-
+        bash "$GITHUB_ACTION_PATH/../../../ops/scripts/run-e2e-tests.sh" --app-dir "$APP_PATH"
+        --stack-env "$STACK_DIR/stack.env" --results e2e-results --mode on
+
+    # MIL-088 criterion 6: no personal data, no token that the tests wrote down, no email that a
+    # test of the verification made for itself (e2e-<guid>@example.com) and no link of a
+    # verification in a log of the stack.
+    - name: Check the logs for personal data and the tokens of the verification
+      shell: bash
+      run: |
+        values=(ada@example.com +4512345678 Lovelace "booking/verify#")
+        values+=(--pattern 'e2e-[0-9a-f-]+@example[.]com')
+        tokens=e2e-results/verification-tokens.txt
+        [[ ! -f "$tokens" ]] || values+=(--values-file "$tokens")
+        bash "$GITHUB_ACTION_PATH/../../../ops/scripts/check-log-privacy.sh" "${values[@]}"
+
+    # The tokens are written down only for the check of the logs above; the artifact keeps the
+    # traces and screenshots, not the tokens (MIL-088 criterion 6).
+    - name: Remove the tokens of the verification from the results
+      if: always()
+      shell: bash
+      run: rm -f e2e-results/verification-tokens.txt
 
     - name: Upload the results
       if: always()

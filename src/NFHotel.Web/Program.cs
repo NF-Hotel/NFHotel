@@ -54,7 +54,7 @@ builder.Services.AddScoped<IClientAddressSource, AuthenticationStateClientAddres
 // Each UI area registers its own — so adding a screen touches one file,
 // not the composition root.
 builder.Services.AddHomeFeature();      // the front page: the map of the neighbourhood
-builder.Services.AddBookingFeature();   // the customer's booking flow: /book, the guest sign-in /booking, /my-booking
+builder.Services.AddBookingFeature();   // the customer's booking flow: /book, /booking/verify, the guest sign-in /booking, /my-booking
 builder.Services.AddAdminFeature();     // the staff's back office: /admin/**, behind the sign-in
 
 var app = builder.Build();
@@ -62,6 +62,7 @@ var app = builder.Build();
 // First in the pipeline, so every response gets the browser security headers, redirects and error pages included
 // (MIL-033).
 app.UseSecurityHeaders();
+app.UseVerifyPageHeaders();   // no referrer and no store on the page of the link of a booking request (MIL-088)
 
 if (!app.Environment.IsDevelopment())
 {

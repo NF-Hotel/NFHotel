@@ -1,0 +1,45 @@
+# MIL-088 task 8, the comments of GitHub's code quality on pull request 857 (RC-436 F18), run in the worktree of
+# the build session, 2026-11-20, on this machine (Windows, .NET SDK 10).
+# The two new tests of the clean-up worker first ran on the worker as it was (7dbc737 with the tests added): both
+# passed, so they hold what the worker did. Then the worker got one catch with a filter (0ad9c7e), and each of two
+# mutations of that filter, built and run one at a time, made one of the new tests fail. Then the build of the
+# solution, the tests of the worker and of SmtpMailSender, the whitespace format check and the check of the
+# comment language on the three changed files. Each run lists its failed tests, sorted, and its summary; the
+# durations are removed.
+# Before the change: dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build --filter-class NFHotel.Api.Tests.BookingRequestCleanupWorkerTests
+Test run summary: Passed!
+  total: 5
+  failed: 0
+  succeeded: 5
+  skipped: 0
+# The mutations of the filter, each on the changed worker (only the summary counts are kept):
+## mutation: catch (Exception exception) when (exception is not OperationCanceledException)
+failed NFHotel.Api.Tests.BookingRequestCleanupWorkerTests.RunOnceAsync_CancelledWhileTheApiRuns_DoesNotThrow
+  total: 5
+  failed: 1
+  succeeded: 4
+## mutation: catch (Exception exception) without a filter
+failed NFHotel.Api.Tests.BookingRequestCleanupWorkerTests.RunOnceAsync_ApiStops_ThrowsTheCancellation
+  total: 5
+  failed: 1
+  succeeded: 4
+# After the change: dotnet build NFHotel.sln -c Release -warnaserror -nologo -v:minimal
+    0 Warning(s)
+    0 Error(s)
+# dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build --filter-class NFHotel.Api.Tests.BookingRequestCleanupWorkerTests
+Test run summary: Passed!
+  total: 5
+  failed: 0
+  succeeded: 5
+  skipped: 0
+# dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build --filter-class NFHotel.Infrastructure.Tests.Mail.SmtpMailSenderTests
+Test run summary: Passed!
+  total: 17
+  failed: 0
+  succeeded: 17
+  skipped: 0
+# dotnet format whitespace NFHotel.sln --verify-no-changes --no-restore
+exit 0
+# bash scripts/check-comment-language.sh on BookingRequestCleanupWorker.cs, BookingRequestCleanupWorkerTests.cs and
+# SmtpMailSenderTests.cs
+exit 0

@@ -1,0 +1,61 @@
+# The mail catcher of the stacks (MIL-088, ADR-0053 decision 7). Mailpit takes the mails of the
+# API in the throwaway stack of the end-to-end tests and in the light development mode, never on
+# the VM: scripts/lib/stack.sh starts it, and scripts/deploy-services.sh does not know it. The
+# mail goes from the API through the forwarder of ops/deploy/mail-relay to here, as it goes to the
+# relay in production, with TLS from the first byte and a certificate that the stack makes and the
+# API pins (Smtp__CertificateThumbprint). The browser tests read the mails at
+# http://mailpit:8025 on the proxy network of the stack. No port is published here; the light
+# development mode publishes the web interface on the loopback (ops/deploy/dev-lite). The daily
+# scan of the third-party images (MIL-064) reads this file too.
+name: nfhotel-mailpit
+
+services:
+  mailpit:
+    image: axllent/mailpit:v1.33.1@sha256:aef2aacc11f075ec0fb6874275ee4a421e688e11a96ebb296134d1735c7761ce
+    restart: unless-stopped
+    environment:
+      # SMTP on 1025 with TLS from the first byte (--smtp-require-tls), as the relay of production
+      # takes it on 465 (Smtp__Security=SslOnConnect); STARTTLS is not offered.
+      MP_SMTP_TLS_CERT: /etc/mailpit/tls/fullchain.pem
+      MP_SMTP_TLS_KEY: /etc/mailpit/tls/privkey.pem
+      MP_SMTP_REQUIRE_TLS: "true"
+      # Any user name and password: the stack gives the API a random password of its own.
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_DISABLE_RDNS: "true"
+      MP_DISABLE_VERSION_CHECK: "true"
+      # The web interface answers the name of the tests and, by Mailpit's own default, localhost
+      # and the loopback addresses; another Host header is refused (DNS rebinding).
+      MP_ALLOWED_HOSTS: mailpit:8025
+    volumes:
+      # fullchain.pem and privkey.pem for the host name mailpit, made by
+      # scripts/make-dev-certificate.sh.
+      - ${MAILPIT_TLS_DIR:?set by scripts/lib/stack.sh}:/etc/mailpit/tls:ro
+    # Hardening as the other services (MIL-023 task 2). The image has no user of its own and would
+    # run as root; it needs no capability, and it keeps its database in a file in /tmp.
+    user: "65534:65534"
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 128
+    healthcheck:
+      test: [CMD, /mailpit, readyz]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    networks:
+      - mail-out
+      - proxy
+
+networks:
+  # The forwarder reaches the catcher here, as it reaches the relay in production.
+  mail-out:
+    name: ${NFHOTEL_MAIL_OUT_NETWORK:-nfhotel-mail-out}
+    external: true
+  # The browser tests read the mails from here.
+  proxy:
+    name: ${NFHOTEL_PROXY_NETWORK:-nfhotel-proxy}
+    external: true

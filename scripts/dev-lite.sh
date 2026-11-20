@@ -5,9 +5,12 @@
 # Silicon) as well as on Linux and Windows. Run it as: bash scripts/dev-up.sh --lite
 #
 #   this machine -> Docker -> postgres, api, web, nginx  ->  https://localhost:8443/
+#                             mail-relay, mailpit        ->  http://localhost:8025/ (the mails of the stack)
 #
 # The site is https://localhost:8443/ (a development certificate), and the mobile app reaches the API at
-# https://localhost:8443/mobile-api/ (10.0.2.2:8443 from the Android emulator). Ollama, the market analysis and the
+# https://localhost:8443/mobile-api/ (10.0.2.2:8443 from the Android emulator). The API sends its mails through the
+# forwarder mail-relay to the mail catcher Mailpit, never to a real mailbox (MIL-088, ADR-0053): the verification of a
+# booking by email is on, and the mails with their links are read at http://localhost:8025/. Ollama, the market analysis and the
 # benchmark service are not started; use the Proxmox mode (scripts/dev-up.sh) for them. The settings, the secrets and
 # the development accounts are made once in ops/.dev-lite/ (git-ignored, readable by the owner only) and kept, so the
 # database survives a restart. Each run rebuilds the API and the web application from the working tree.
@@ -19,6 +22,7 @@
 #   --down     stop the stack; the database and the settings stay
 #   --destroy  remove the stack, the database and the settings in ops/.dev-lite/
 # Env:   DEV_SITE_PORT port of the site on this machine (default 8443)
+#        DEV_MAIL_PORT port of the web interface of the mail catcher on this machine (default 8025)
 #        DEV_LITE_NAME prefix of the containers and networks (default nfhotel-dev); DEV_LITE_DIR folder of the settings
 #        (default ops/.dev-lite). A test sets both, so it never touches the developer's own stack.
 # Exit:  0 done; 1 a check, build or start failed; 2 usage error
@@ -39,7 +43,7 @@ ops="$root/ops"
 . "$ops/scripts/lib/stack.sh"
 export MSYS_NO_PATHCONV=1
 
-export DEV_SITE_PORT="${DEV_SITE_PORT:-8443}"
+export DEV_SITE_PORT="${DEV_SITE_PORT:-8443}" DEV_MAIL_PORT="${DEV_MAIL_PORT:-8025}"
 readonly DIR="${DEV_LITE_DIR:-$ops/.dev-lite}"
 readonly SETTINGS="$DIR/settings"
 readonly ACCOUNTS="$DIR/dev-staff.env"
@@ -67,6 +71,7 @@ for arg in "$@"; do
   esac
 done
 [[ "$DEV_SITE_PORT" =~ ^[0-9]+$ ]] || die "DEV_SITE_PORT must be a port number"
+[[ "$DEV_MAIL_PORT" =~ ^[0-9]+$ ]] || die "DEV_MAIL_PORT must be a port number"
 stack_init "${DEV_LITE_NAME:-nfhotel-dev}"
 
 # The value of KEY in a settings file (no shell evaluation).
@@ -132,14 +137,19 @@ preflight() {
     fi
   fi
 
-  # The port is free, unless nginx of an earlier run owns it.
-  if [[ "$(docker inspect -f '{{.State.Running}}' "$STACK_NAME-nginx-nginx-1" 2>/dev/null || true)" == "true" ]]; then
-    report ok "port ${DEV_SITE_PORT} belongs to the running stack"
-  elif (exec 3<>"/dev/tcp/127.0.0.1/${DEV_SITE_PORT}") 2>/dev/null; then
-    report PROBLEM "port ${DEV_SITE_PORT} on this machine is in use (perhaps by the Proxmox mode: bash scripts/dev-up.sh --down); stop what uses it, or set DEV_SITE_PORT"
-  else
-    report ok "port ${DEV_SITE_PORT} is free"
-  fi
+  # port_free <port> <container> <variable> [<hint>]: the port is free, unless the container of an earlier run owns it.
+  port_free() {
+    if [[ "$(docker inspect -f '{{.State.Running}}' "$2" 2>/dev/null || true)" == "true" ]]; then
+      report ok "port $1 belongs to the running stack"
+    elif (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; then
+      report PROBLEM "port $1 on this machine is in use${4:-}; stop what uses it, or set $3"
+    else
+      report ok "port $1 is free"
+    fi
+  }
+  port_free "$DEV_SITE_PORT" "$STACK_NAME-nginx-nginx-1" DEV_SITE_PORT \
+    " (perhaps by the Proxmox mode: bash scripts/dev-up.sh --down)"
+  port_free "$DEV_MAIL_PORT" "$STACK_NAME-mailpit-mailpit-1" DEV_MAIL_PORT
 
   if ((problems > 0)); then
     echo "$problems problem(s). Fix them and run: bash scripts/dev-up.sh --lite --check"
@@ -179,8 +189,13 @@ if [[ ! -f "$SETTINGS/nfhotel-api.env" ]]; then
   )
   stack_write_settings "$SETTINGS" manager "$(value_of "$ACCOUNTS" manager)" false
 fi
+# The mail goes to the catcher, with the verification of a booking by email on; settings kept from before MIL-088 get
+# the settings of the mail here, and the links of the mails follow DEV_SITE_PORT.
+stack_write_mail_settings "$SETTINGS" "https://localhost:${DEV_SITE_PORT}" true
 
-# 2. The stack, with the routes of the mobile app (ADR-0015) and the site on this machine's loopback only.
+# 2. The stack, with the routes of the mobile app (ADR-0015), and the site and the web interface of the mail catcher on
+# this machine's loopback only.
+export STACK_MAILPIT_FILE="$ops/deploy/dev-lite/mailpit-port.yml"
 stack_start "$SETTINGS" "$root" --file "$(stack_native "$ops/deploy/nginx/docker-compose.dev.yml")" \
   --file "$(stack_native "$ops/deploy/dev-lite/nginx-port.yml")"
 
@@ -217,6 +232,7 @@ done
 echo
 echo "Ready: $url (development certificate: accept the browser warning)"
 echo "Mobile app API: ${url}mobile-api/ (from the Android emulator: https://10.0.2.2:${DEV_SITE_PORT}/mobile-api/)"
+echo "Mails of the stack (the verification of a booking): http://localhost:${DEV_MAIL_PORT}/"
 echo
 echo "Back office accounts (development only), sign in at ${url}admin/login:"
 printf '  %-14s %-13s %s\n' "user name" "role" "password"

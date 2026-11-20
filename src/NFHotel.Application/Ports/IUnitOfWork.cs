@@ -16,6 +16,10 @@ namespace NFHotel.Application.Ports;
 /// day a use case writes in two rounds — see <c>BookingService.CreateAsync</c>, which today
 /// is the only one that saves twice, and where the consequence is documented.
 /// </para>
+/// <para>
+/// The one transaction of its own is <see cref="RunUnderLockAsync"/>: a use case that must count and write without another
+/// request counting in between (MIL-088) runs that part under a lock of the database.
+/// </para>
 /// </remarks>
 public interface IUnitOfWork
 {
@@ -35,4 +39,22 @@ public interface IUnitOfWork
     /// Thrown by Infrastructure when the row has been changed by someone else since it was read.
     /// </exception>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs a piece of work in one transaction that first takes a lock of the database by its name, so two pieces of work
+    /// under the same name never run at the same time, in this instance or another (MIL-088, ADR-0052): under
+    /// <c>booking_request</c> a booking request counts its mails, checks the fuse and writes in one go (decision 6),
+    /// and under <c>public_booking</c> a public booking counts the bookings of the mailbox and chooses its room
+    /// (decision 5). The work reads, marks and calls <see cref="SaveChangesAsync"/>; the transaction commits when the
+    /// work returns and rolls back when it throws.
+    /// </summary>
+    /// <typeparam name="TResult">The result of the work.</typeparam>
+    /// <param name="lockName">The name of the lock.</param>
+    /// <param name="work">The work, which gets the cancellation token.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the work.</returns>
+    Task<TResult> RunUnderLockAsync<TResult>(
+        string lockName,
+        Func<CancellationToken, Task<TResult>> work,
+        CancellationToken cancellationToken = default);
 }

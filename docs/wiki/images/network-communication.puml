@@ -38,7 +38,13 @@ node "Docker host (VM)" {
   rectangle "net: nfhotel-llm" as netllm #F5F5F5 {
     component "ollama\nOllama API\n:11434" as ollama
   }
+
+  rectangle "net: nfhotel-mail (internal) + nfhotel-mail-out" as netmail #F5F5F5 {
+    component "mail-relay\nHAProxy TCP\n:1465" as relay
+  }
 }
+
+cloud "SMTP relay\nsmtp.gmail.com:465" as smtp
 
 browser "<color:#E6194B>**1**</color>" -[#E6194B,thickness=2]-> "<color:#E6194B>**1**</color>" cf
 browser "<color:#3CB44B>**2**</color>" -[#3CB44B,thickness=2]-> "<color:#3CB44B>**2**</color>" nginx
@@ -56,6 +62,8 @@ api "<color:#800000>**11**</color>" -right[#800000,thickness=2]-> "<color:#80000
 bench "<color:#555555>**12**</color>" -up[#555555,thickness=2]-> "<color:#555555>**12**</color>" api
 bench "<color:#00A0D0>**13**</color>" -down[#00A0D0,thickness=2]-> "<color:#00A0D0>**13**</color>" ollama
 ma "<color:#FF6F91>**14**</color>" -down[#FF6F91,thickness=2]-> "<color:#FF6F91>**14**</color>" ollama
+api "<color:#E6A000>**15**</color>" -down[#E6A000,thickness=2]-> "<color:#E6A000>**15**</color>" relay
+relay "<color:#3D9970>**16**</color>" -right[#3D9970,thickness=2]-> "<color:#3D9970>**16**</color>" smtp
 
 legend right
   |= # |= From |= To |= Address |= Calls |
@@ -73,11 +81,18 @@ legend right
   | <color:#555555>**12**</color> | benchmark | nfhotel-api | nfhotel-api:8080 | POST /api/benchmark/results |
   | <color:#00A0D0>**13**</color> | benchmark | ollama | ollama:11434 | POST /v1/chat/completions\n/api/pull, /api/delete, /api/version |
   | <color:#FF6F91>**14**</color> | market-analysis | ollama | ollama:11434 | POST /api/chat |
+  | <color:#E6A000>**15**</color> | nfhotel-api | mail-relay | mail-relay:1465 | SMTP, TLS from the first byte |
+  | <color:#3D9970>**16**</color> | mail-relay | SMTP relay | smtp.gmail.com:465 | tcp, passed on |
 endlegend
 
 note bottom of netpy
   nginx has no connection to the Python services.
   nfhotel-web and nfhotel-api are also on nfhotel-python.
   market-analysis does NOT call nfhotel-api.
+end note
+
+note bottom of relay
+  nfhotel-api is also on nfhotel-mail and has no route out.
+  Only mail-relay is on nfhotel-mail-out, the way out.
 end note
 @enduml

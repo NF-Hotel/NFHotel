@@ -20,6 +20,11 @@
 
   <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions" Version="10.0.1" />
+    <!--
+      MIL-088, ADR-0053 decision 1: the SMTP client of the adapter SmtpMailSender. MailKit 5 brings MimeKit.Core
+      and not the cryptographic library BouncyCastle that MailKit 4 brings.
+    -->
+    <PackageReference Include="MailKit" Version="5.0.0" />
 
     <!--
       Explicit and pinned: EFCore.NamingConventions 9.0.0 pulls Relational 9.0.1, while

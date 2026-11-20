@@ -12,6 +12,15 @@ public static class ApiRoutes
     /// <summary>The route for public guest booking creation.</summary>
     public const string PublicBooking = "public";
 
+    /// <summary>The booking request of the public site below <see cref="Bookings"/> (MIL-088, ADR-0052 decision 1).</summary>
+    public const string PublicBookingRequests = "public/requests";
+
+    /// <summary>The verification of a booking request below <see cref="Bookings"/> (MIL-088, ADR-0052 decision 5).</summary>
+    public const string PublicBookingVerify = "public/requests/verify";
+
+    /// <summary>Which way a booking on the public site goes, below <see cref="Bookings"/> (MIL-088, ADR-0052 decision 8).</summary>
+    public const string PublicBookingMode = "public/mode";
+
     /// <summary>
     /// The route of the signed-in guest's own booking (ADR-0049 decision 3): it takes no key, because the guest token names
     /// the booking.

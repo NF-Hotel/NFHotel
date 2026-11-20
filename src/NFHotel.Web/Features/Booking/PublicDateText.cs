@@ -21,6 +21,9 @@ public static class PublicDateText
     /// <summary>Dash between two dates in a period. Not a hyphen.</summary>
     private const string RangeSeparator = " – ";
 
+    /// <summary>The hours and minutes of a time, on the 24-hour clock.</summary>
+    private const string TimePattern = "HH:mm";
+
     /// <summary>Month names in order, written as English spelling prescribes.</summary>
     private static readonly string[] MonthNames =
     [
@@ -48,6 +51,24 @@ public static class PublicDateText
     /// <returns>The English text.</returns>
     public static string Period(DateOnly start, DateOnly end) =>
         string.Concat(Long(start), RangeSeparator, Long(end));
+
+    /// <summary>
+    /// Writes a moment as <c>12:30 UTC on 1 January 2026</c>, such as the time a link lapses (MIL-088).
+    /// </summary>
+    /// <param name="moment">The moment, in any offset.</param>
+    /// <returns>The English text, in UTC.</returns>
+    /// <remarks>
+    /// UTC, as the mail with the link writes it: the web application knows the date of the hotel through its clock, but
+    /// not its time zone, so the page names the zone it writes rather than pass UTC off as the hotel's time.
+    /// </remarks>
+    public static string TimeUtc(DateTimeOffset moment)
+    {
+        DateTime utc = moment.UtcDateTime;
+        return string.Concat(
+            utc.ToString(TimePattern, CultureInfo.InvariantCulture),
+            " UTC on ",
+            Long(DateOnly.FromDateTime(utc)));
+    }
 
     /// <summary>
     /// Writes a number of nights with the correct plural form.

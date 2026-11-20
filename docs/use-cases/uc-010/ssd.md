@@ -4,24 +4,25 @@
 | Key | Value |
 | --- | --- |
 | ID | SSD-001 |
-| CrossReference | [UC-010], [DM-004], [OC-001] |
+| CrossReference | [UC-010], [DM-004], [OC-001], [UC-011], [SSD-002] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 3 of MIL-018, written by the AI<br>Go in RC-389; accepted by the AI as stand-in for S01 | [9e72b0e] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | signIn takes the booking reference in place of the booking number, and the refused sign-in counts per reference and per address (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | signIn takes the booking reference in place of the booking number, and the refused sign-in counts per reference and per address (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Extension 1a now points to the booking on the website of UC-011, whose verifyBooking signs the guest in (MIL-088, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
 ## Source Use Case
 
 [UC-010] View and Change Own Booking: the main success scenario (steps 1 to 8), and the refused sign-in of
-extensions 2a and 2b in a second diagram. The other extensions are out of scope of the diagrams: 1a belongs to the
-booking on the website, which has no use case of its own; 3a to 3c and *a to *c are refusals of a message below,
-listed as exceptions in [OC-001]; 7a changes nothing that the guest sees.
+extensions 2a and 2b in a second diagram. The other extensions are out of scope of the diagrams: in 1a the booking on
+the website of [UC-011] signs the guest in instead of signIn, by its verifyBooking in [SSD-002] or, while the
+verification by email is switched off, by the offer after its bookAtOnce; 3a to 3c and *a to *c are refusals of a
+message below, listed as exceptions in [OC-001]; 7a changes nothing that the guest sees.
 
 ## Diagram
 
@@ -94,7 +95,8 @@ changeDates and cancelBooking name no booking: they act on the booking of the gu
 
 - The `:System` is the NFHotel platform as the guest reaches it: the website and the hotel API behind it.
 - signIn starts the guest's sign-in for one booking; it ends with signOut or two hours after signIn, whichever comes
-  first. changeDates and cancelBooking work only within it. A refused signIn starts nothing.
+  first. changeDates and cancelBooking work only within it. A refused signIn starts nothing. verifyBooking of
+  [SSD-002] starts the same sign-in without signIn (extension 1a).
 - A staff sign-in in the same browser is a separate sign-in: signIn and signOut neither start nor end it.
 
 ---
@@ -102,5 +104,7 @@ changeDates and cancelBooking name no booking: they act on the booking of the gu
 [UC-010]: ./uc.md
 [DM-004]: ../../domain-model.md
 [OC-001]: ./oc.md
-[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
+[UC-011]: ../uc-011/uc.md
+[SSD-002]: ../uc-011/ssd.md
 [e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

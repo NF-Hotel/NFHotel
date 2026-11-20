@@ -1,4 +1,5 @@
 using NFHotel.Application.Dto.Bookings;
+using NFHotel.Application.Dto.Guests;
 using NFHotel.Application.Dto.Pricing;
 using NFHotel.Application.Dto.Rooms;
 using NFHotel.Application.Errors;
@@ -41,6 +42,21 @@ public sealed class BookingService : IBookingService, IPublicBookingService
     /// </summary>
     public const int MaxAvailabilityNights = 62;
 
+    /// <summary>
+    /// The most rooms that one public booking tries when the room it chose goes to a booking by staff at the save
+    /// (MIL-088, ADR-0052 decision 5): the public bookings choose one after the other, so a few tries are enough, and a
+    /// bound on the work of one request.
+    /// </summary>
+    public const int MaxRoomTries = 5;
+
+    /// <summary>
+    /// The name of the lock of the database that every public booking takes before it counts and chooses its room
+    /// (MIL-088, ADR-0052 decision 5): two public bookings never insert into one room at the same time, which under the
+    /// exclusion constraint can make PostgreSQL end one of them as a deadlock, and the limit per mailbox counts the
+    /// booking before it without a race.
+    /// </summary>
+    public const string PublicBookingLock = "public_booking";
+
     /// <summary>All statuses. Used when the overview must also show cancelled ones (BR-13).</summary>
     private static readonly IReadOnlyCollection<BookingStatus> AllStatuses = Enum.GetValues<BookingStatus>();
 
@@ -57,6 +73,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
     private readonly IWarningLog _warnings;
     private readonly IGuestCallContext _guestCall;
     private readonly IPublicBookingEmailLimit _emailLimit;
+    private readonly IBookingVerificationSettings _verification;
 
     /// <summary>
     /// Creates the service.
@@ -77,6 +94,10 @@ public sealed class BookingService : IBookingService, IPublicBookingService
     /// token (<see cref="GuestOwnership"/>).
     /// </param>
     /// <param name="emailLimit">The number of coming public bookings that one email may hold (MIL-087, ADR-0051 decision 3).</param>
+    /// <param name="verification">
+    /// The setting of the verification by email (MIL-088, ADR-0052 decision 8): with it on, the public booking at once is
+    /// refused.
+    /// </param>
     public BookingService(
         IBookingRepository bookingRepository,
         IRoomRepository roomRepository,
@@ -90,7 +111,8 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         IBookingMarketDetailRepository marketDetails,
         IWarningLog warnings,
         IGuestCallContext guestCall,
-        IPublicBookingEmailLimit emailLimit)
+        IPublicBookingEmailLimit emailLimit,
+        IBookingVerificationSettings verification)
     {
         ArgumentNullException.ThrowIfNull(bookingRepository);
         ArgumentNullException.ThrowIfNull(roomRepository);
@@ -105,6 +127,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         ArgumentNullException.ThrowIfNull(warnings);
         ArgumentNullException.ThrowIfNull(guestCall);
         ArgumentNullException.ThrowIfNull(emailLimit);
+        ArgumentNullException.ThrowIfNull(verification);
 
         _bookingRepository = bookingRepository;
         _roomRepository = roomRepository;
@@ -119,6 +142,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         _warnings = warnings;
         _guestCall = guestCall;
         _emailLimit = emailLimit;
+        _verification = verification;
     }
 
     // --------------------------------------------------------
@@ -203,11 +227,26 @@ public sealed class BookingService : IBookingService, IPublicBookingService
     /// <param name="excludeBookingId">The booking being edited, or <c>null</c>.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The rooms that are both bookable and free for the whole period.</returns>
-    public async Task<Result<IReadOnlyList<AvailableRoomDto>>> GetAvailableRoomsAsync(
+    public Task<Result<IReadOnlyList<AvailableRoomDto>>> GetAvailableRoomsAsync(
         DateOnly checkInDate,
         DateOnly checkOutDate,
         int? excludeBookingId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        FindAvailableRoomsAsync(checkInDate, checkOutDate, excludeBookingId, _clock.Today, cancellationToken);
+
+    /// <summary>The free rooms of <see cref="GetAvailableRoomsAsync"/> against a day that the caller read.</summary>
+    /// <param name="checkInDate">Arrival date, inclusive.</param>
+    /// <param name="checkOutDate">Departure date, exclusive.</param>
+    /// <param name="excludeBookingId">The booking being edited, or <c>null</c>.</param>
+    /// <param name="today">The day of the hotel that the stay is checked against.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The rooms that are both bookable and free for the whole period.</returns>
+    private async Task<Result<IReadOnlyList<AvailableRoomDto>>> FindAvailableRoomsAsync(
+        DateOnly checkInDate,
+        DateOnly checkOutDate,
+        int? excludeBookingId,
+        DateOnly today,
+        CancellationToken cancellationToken)
     {
         if (!TryCreatePeriod(checkInDate, checkOutDate, out var period, out var periodError))
         {
@@ -215,7 +254,7 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         }
 
         // BR-C-07 (MIL-086): no search for a stay that could not be booked, before today or beyond five years.
-        if (Booking.CheckPeriod(period, _clock.Today) is { } stayError)
+        if (Booking.CheckPeriod(period, today) is { } stayError)
         {
             return Result<IReadOnlyList<AvailableRoomDto>>.Failure(stayError);
         }
@@ -371,14 +410,15 @@ public sealed class BookingService : IBookingService, IPublicBookingService
             return Result<BookingDetailsDto>.Failure(ErrorCodes.Api.Forbidden);
         }
 
-        // Calls the shared booking creation logic; staff are not under the limit per email (ADR-0051 decision 3).
-        return await CreateBookingInternalAsync(request, madeOnPublicSite: false, cancellationToken)
-            .ConfigureAwait(false);
+        // Staff are not under the limit per email (ADR-0051 decision 3), and their bookings are not marked as public.
+        return await CreateBookingInternalAsync(request, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     /// <remarks>
     /// The guest chooses a room type; the service picks the free room of that type that fits the party most closely.
+    /// With the verification by email on, the booking at once is refused, so no caller books around the verification
+    /// (MIL-088, ADR-0052 decision 8).
     /// </remarks>
     public async Task<Result<BookingDetailsDto>> CreatePublicAsync(
         CreatePublicBookingRequest request,
@@ -386,74 +426,206 @@ public sealed class BookingService : IBookingService, IPublicBookingService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        // Public bookings must use new guest details.
-        if (request.NewGuest is null)
+        if (_verification.Enabled)
         {
-            return Result<BookingDetailsDto>.Failure(
-                ErrorCodes.Booking.GuestSelectionInvalid);
+            return Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.VerificationRequired);
+        }
+
+        return await BookPublicAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> CheckPublicAsync(
+        CreatePublicBookingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        Result<PublicBookingPlan> plan = await PlanPublicAsync(request, cancellationToken).ConfigureAwait(false);
+
+        return plan.IsSuccess ? Result.Success() : Result.Failure(plan.Errors);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<BookingDetailsDto>> BookVerifiedAsync(
+        CreatePublicBookingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await BookPublicAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The checks of a public booking (BR-C-07, ADR-0051 decision 3, ADR-0052 decision 1), in the order that decides which
+    /// code comes back: the guest path, the party, the nights, the stay and a free room of the size, the limit per mailbox,
+    /// and the rules of the guest. Stores nothing.
+    /// </summary>
+    /// <param name="request">The stay, the room type, the party and the new guest.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The plan of the booking, or the broken rules.</returns>
+    private async Task<Result<PublicBookingPlan>> PlanPublicAsync(
+        CreatePublicBookingRequest request,
+        CancellationToken cancellationToken)
+    {
+        // Public bookings must use new guest details.
+        if (request.NewGuest is not { } fields)
+        {
+            return Result<PublicBookingPlan>.Failure(ErrorCodes.Booking.GuestSelectionInvalid);
         }
 
         // BR-C-07 (MIL-086): the limits of the public site, which staff do not have, before anything else runs.
         if (Booking.CheckPublicParty(request.Guests) is { } partyError)
         {
-            return Result<BookingDetailsDto>.Failure(partyError);
+            return Result<PublicBookingPlan>.Failure(partyError);
         }
 
         if (TryCreatePeriod(request.CheckInDate, request.CheckOutDate, out DateRange stay, out _)
             && Booking.CheckPublicNights(stay) is { } nightsError)
         {
-            return Result<BookingDetailsDto>.Failure(nightsError);
+            return Result<PublicBookingPlan>.Failure(nightsError);
         }
 
-        Result<IReadOnlyList<AvailableRoomDto>> available = await GetAvailableRoomsAsync(
+        // One reading of the day for the checks and the booking, so a day that turns in between refuses nothing that the
+        // checks let through.
+        DateOnly today = _clock.Today;
+        Result<IReadOnlyList<AvailableRoomDto>> available = await FindAvailableRoomsAsync(
             request.CheckInDate,
             request.CheckOutDate,
             null,
+            today,
             cancellationToken).ConfigureAwait(false);
 
         if (available.IsFailure)
         {
-            return Result<BookingDetailsDto>.Failure(available.Errors);
+            return Result<PublicBookingPlan>.Failure(available.Errors);
         }
 
-        AvailableRoomDto? room = ChooseRoom(available.Value, request.RoomSize, request.Guests);
+        AvailableRoomDto[] rooms = RoomsInOrder(available.Value, request.RoomSize, request.Guests);
 
-        if (room is null)
+        if (rooms.Length == 0)
         {
-            return Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.RoomTypeNotAvailable);
+            return Result<PublicBookingPlan>.Failure(ErrorCodes.Booking.RoomTypeNotAvailable);
         }
 
-        // The shared booking logic checks the room again, so two guests who get the same last room cannot both
-        // book it: the second one is told the room is taken (BR-19, B-03).
-        CreateBookingRequest booking = new(request.CheckInDate, request.CheckOutDate, room.RoomId, null, request.NewGuest);
+        // ADR-0051 decision 3, by mailbox since MIL-088 (ADR-0052 decision 6): after the rules of the stay and of the
+        // room, so a stay that a rule refuses gets the code of the rule. A missing email is left to the rule of the guest.
+        if (fields.Email is { } email
+            && await _bookingQueries.CountComingPublicBookingsAsync(email, today, cancellationToken).ConfigureAwait(false)
+                >= _emailLimit.ComingPublicBookingsPerEmail)
+        {
+            return Result<PublicBookingPlan>.Failure(ErrorCodes.Booking.TooManyRequests);
+        }
 
-        return await CreateBookingInternalAsync(booking, madeOnPublicSite: true, cancellationToken)
-            .ConfigureAwait(false);
+        Result<Guest> guest = GuestService.NewGuest(fields);
+
+        return guest.IsSuccess
+            ? Result<PublicBookingPlan>.Success(new PublicBookingPlan(stay, today, rooms, fields))
+            : Result<PublicBookingPlan>.Failure(guest.Errors);
     }
 
     /// <summary>
-    /// The free room of the type that sleeps the party with the fewest spare beds, so the bigger rooms stay free for
-    /// bigger parties; the room number breaks a tie, so the choice is the same every time.
+    /// Books a public booking after its checks (MIL-088, ADR-0052 decisions 5 and 8): the new guest and the booking in one
+    /// save, marked as made on the public site (ADR-0051 decision 3), so a booking that fails leaves no guest behind.
+    /// The checks and the save run under <see cref="PublicBookingLock"/>, so the public bookings choose their rooms one
+    /// after the other. When the save still finds the chosen room taken, by a booking of staff that committed in between,
+    /// the booking and its guest are taken back and the next room of the order is tried, up to
+    /// <see cref="MaxRoomTries"/> rooms.
     /// </summary>
-    private static AvailableRoomDto? ChooseRoom(IReadOnlyList<AvailableRoomDto> available, RoomSize size, int guests)
+    /// <param name="request">The stay, the room type, the party and the new guest.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>
+    /// The created booking; <see cref="ErrorCodes.Booking.RoomTypeNotAvailable"/> when every room it tried went to
+    /// another guest; or the broken rules.
+    /// </returns>
+    private Task<Result<BookingDetailsDto>> BookPublicAsync(
+        CreatePublicBookingRequest request,
+        CancellationToken cancellationToken) =>
+        _unitOfWork.RunUnderLockAsync(PublicBookingLock, token => BookPublicUnderLockAsync(request, token), cancellationToken);
+
+    // The work of BookPublicAsync, inside its transaction and under its lock.
+    private async Task<Result<BookingDetailsDto>> BookPublicUnderLockAsync(
+        CreatePublicBookingRequest request,
+        CancellationToken cancellationToken)
+    {
+        Result<PublicBookingPlan> planned = await PlanPublicAsync(request, cancellationToken).ConfigureAwait(false);
+
+        if (planned.IsFailure)
+        {
+            return Result<BookingDetailsDto>.Failure(planned.Errors);
+        }
+
+        PublicBookingPlan plan = planned.Value;
+
+        // MIL-055: every room of the order has the size of the request, so one price serves them all; it is looked up
+        // before the booking is saved and stored after it.
+        decimal? pricePerNight = await FindPricePerNightAsync(plan.Rooms[0].RoomId, plan.Stay.Start, cancellationToken)
+            .ConfigureAwait(false);
+
+        foreach (AvailableRoomDto room in plan.Rooms.Take(MaxRoomTries))
+        {
+            Booking booking;
+
+            try
+            {
+                booking = Booking.CreateForNewGuest(plan.Stay, room.RoomId, GuestService.NewGuest(plan.Guest).Value, plan.Today);
+            }
+            catch (DomainException exception)
+            {
+                return Result<BookingDetailsDto>.Failure(exception.Code);
+            }
+
+            booking.MarkMadeOnPublicSite();
+            _bookingRepository.Add(booking);
+
+            try
+            {
+                await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (BookingOverlapConflictException)
+            {
+                // The race safeguard of the database (B-03): a booking that committed since the check holds this room.
+                _bookingRepository.Discard(booking);
+                continue;
+            }
+
+            Result<BookingDetailsDto> created = await DescribeAsync(booking, cancellationToken).ConfigureAwait(false);
+
+            if (created.IsSuccess && pricePerNight is not null)
+            {
+                await StorePricePerNightAsync(booking.Id, pricePerNight.Value, cancellationToken).ConfigureAwait(false);
+            }
+
+            return created;
+        }
+
+        return Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.RoomTypeNotAvailable);
+    }
+
+    /// <summary>
+    /// The free rooms of the type that sleep the party, those with the fewest spare beds first, so the bigger rooms stay
+    /// free for bigger parties; the room number breaks a tie, so the order is the same every time.
+    /// </summary>
+    private static AvailableRoomDto[] RoomsInOrder(IReadOnlyList<AvailableRoomDto> available, RoomSize size, int guests)
     {
         int party = Math.Max(1, guests);
 
-        return available
-            .Where(room => room.Size == size && room.Capacity >= party)
-            .OrderBy(room => room.Capacity)
-            .ThenBy(room => room.RoomNumber, StringComparer.Ordinal)
-            .ThenBy(room => room.RoomId)
-            .FirstOrDefault();
+        return
+        [
+            .. available
+                .Where(room => room.Size == size && room.Capacity >= party)
+                .OrderBy(room => room.Capacity)
+                .ThenBy(room => room.RoomNumber, StringComparer.Ordinal)
+                .ThenBy(room => room.RoomId),
+        ];
     }
 
     /// <summary>
-    /// Creates a booking using the shared booking rules; a booking made on the public site is under the limit per email
-    /// and is marked, so that the limit counts it (MIL-087, ADR-0051 decision 3).
+    /// Creates a booking by staff with the booking rules; the public site books through <see cref="BookPublicAsync"/>
+    /// (MIL-088).
     /// </summary>
     private async Task<Result<BookingDetailsDto>> CreateBookingInternalAsync(
         CreateBookingRequest request,
-        bool madeOnPublicSite,
         CancellationToken cancellationToken)
     {
         // BR-47: exactly one of the two guest paths. Both and neither are a rule error,
@@ -495,16 +667,6 @@ public sealed class BookingService : IBookingService, IPublicBookingService
             return Result<BookingDetailsDto>.Failure(overlapError);
         }
 
-        // ADR-0051 decision 3: after the rules of the stay and of the room, so a stay that a rule refuses gets the code of
-        // the rule, and before a new guest is saved, so a refused request stores nothing. A missing email is left to the
-        // rule of the guest below.
-        if (madeOnPublicSite && request.NewGuest is { Email: { } email }
-            && await _bookingQueries.CountComingPublicBookingsAsync(email, today, cancellationToken).ConfigureAwait(false)
-                >= _emailLimit.ComingPublicBookingsPerEmail)
-        {
-            return Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.TooManyRequests);
-        }
-
         var guestResult = await ResolveGuestIdAsync(request, cancellationToken).ConfigureAwait(false);
 
         if (guestResult.IsFailure)
@@ -521,11 +683,6 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         catch (DomainException exception)
         {
             return Result<BookingDetailsDto>.Failure(exception.Code);
-        }
-
-        if (madeOnPublicSite)
-        {
-            booking.MarkMadeOnPublicSite();
         }
 
         // MIL-055: the price is looked up before the booking is saved and stored after it; a booking made
@@ -1110,6 +1267,15 @@ public sealed class BookingService : IBookingService, IPublicBookingService
             return Result<BookingDetailsDto>.Failure(ErrorCodes.Booking.ConcurrencyConflict);
         }
 
+        return await DescribeAsync(booking, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Reads the details of a booking that has just been saved, as a projection (A-11).</summary>
+    /// <param name="booking">The booking.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The details of the booking, or <see cref="ErrorCodes.Booking.NotFound"/>.</returns>
+    private async Task<Result<BookingDetailsDto>> DescribeAsync(Booking booking, CancellationToken cancellationToken)
+    {
         var readModel = await _bookingQueries
             .GetReadModelAsync(booking.Id, cancellationToken)
             .ConfigureAwait(false);
@@ -1165,4 +1331,11 @@ public sealed class BookingService : IBookingService, IPublicBookingService
         Func<BookingListItemDto, TKey> keySelector,
         bool ascending) =>
         ascending ? items.OrderBy(keySelector) : items.OrderByDescending(keySelector);
+
+    /// <summary>A public booking that passed its checks: the stay, the day it was checked on, the rooms in order, the guest.</summary>
+    /// <param name="Stay">The stay.</param>
+    /// <param name="Today">The day of the hotel that the checks read.</param>
+    /// <param name="Rooms">The free rooms of the size that sleep the party, in the order of the choice.</param>
+    /// <param name="Guest">The fields of the new guest, which the rules of a guest accepted.</param>
+    private sealed record PublicBookingPlan(DateRange Stay, DateOnly Today, AvailableRoomDto[] Rooms, GuestFields Guest);
 }

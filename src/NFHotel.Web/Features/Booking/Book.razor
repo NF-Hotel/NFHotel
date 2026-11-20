@@ -27,6 +27,10 @@
     The booking box on the front page lands here with ?checkIn=…&checkOut=…&guests=… in the
     address. Valid dates skip straight to the rooms; anything else starts at step 1 as before. The
     viewmodel reads the guests as well, and a value that is not a whole number leaves the field as it is.
+
+    With the verification by email on (MIL-088, ADR-0052), step 4 is the inbox instead of the receipt: the last button
+    asks for the booking, the API mails a link, and the room is booked only on the page of the link, /booking/verify,
+    which signs the guest in and shows the receipt on /my-booking. The page asks the API which way holds when it starts.
 *@
 
 <PageTitle>Book a room — NFHotel</PageTitle>
@@ -49,8 +53,8 @@
                     aria-current="@ViewModel.StepAria(BookingFlowStep.Room)">Room type</li>
                 <li class="@ViewModel.StepClass(BookingFlowStep.Guest)"
                     aria-current="@ViewModel.StepAria(BookingFlowStep.Guest)">Your details</li>
-                <li class="@ViewModel.StepClass(BookingFlowStep.Receipt)"
-                    aria-current="@ViewModel.StepAria(BookingFlowStep.Receipt)">Confirmation</li>
+                <li class="@ViewModel.StepClass(ViewModel.FinalStep)"
+                    aria-current="@ViewModel.StepAria(ViewModel.FinalStep)">@ViewModel.FinalStepText</li>
             </ol>
 
             <ErrorAlert Errors="ViewModel.Errors" />
@@ -206,7 +210,7 @@
 
                     <div class="field-row">
                         <FormField Label="Email" For="email" IsRequired="true" Error="@ViewModel.GuestErrors.Email"
-                                   Hint="We send the confirmation here.">
+                                   Hint="@ViewModel.EmailHint">
                             <input id="email"
                                    maxlength="@Guest.MaxEmailLength"
                                    class="field-input"
@@ -272,6 +276,40 @@
 
                         <button type="button" class="btn btn-ghost" disabled="@ViewModel.IsBusy" @onclick="BackToRooms">
                             Back to rooms
+                        </button>
+                    </div>
+                </section>
+            }
+            else if (ViewModel.CurrentStep == BookingFlowStep.Inbox)
+            {
+                @* Nothing is booked yet: the room is booked only when the guest presses the button on the page of the link
+                   (MIL-088, ADR-0052 decision 3). The page shows no reference, because there is none until then. *@
+                <section class="card card-pad stack" aria-labelledby="step-inbox">
+                    <h2 class="subtitle" id="step-inbox">Check your inbox</h2>
+
+                    <AlertBox Kind="AlertKind.Ok" Message="@ViewModel.InboxText" />
+
+                    @if (ViewModel.Notice is not null)
+                    {
+                        <AlertBox Kind="AlertKind.Info" Message="@ViewModel.Notice" />
+                    }
+
+                    <p>@ViewModel.LinkText</p>
+                    <p class="muted">@ViewModel.SelectionSummary</p>
+                    <p class="muted">
+                        No email after a few minutes? Look in your spam folder, or send it again. If the email address is
+                        wrong, change your details and send the request again.
+                    </p>
+
+                    <div class="row">
+                        <button type="button" class="btn btn-primary" disabled="@(!ViewModel.CanSendAgain)" @onclick="SendAgainAsync">
+                            Send again
+                        </button>
+                        <button type="button" class="btn btn-ghost" disabled="@ViewModel.IsBusy" @onclick="BackToDetails">
+                            Change your details
+                        </button>
+                        <button type="button" class="btn btn-ghost" disabled="@ViewModel.IsBusy" @onclick="StartOver">
+                            Book another stay
                         </button>
                     </div>
                 </section>

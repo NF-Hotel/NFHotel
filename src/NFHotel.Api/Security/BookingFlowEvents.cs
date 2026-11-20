@@ -1,9 +1,12 @@
+using NFHotel.Domain.ValueObjects;
+
 namespace NFHotel.Api.Security;
 
 /// <summary>
 /// Writes the security events of the booking flow (MIL-087, ADR-0051 decision 6): each one once in the log of
 /// <see cref="SecurityEvents.Category"/>, with the address of the caller and a masked email and without another typed
-/// value, and once in the counter of <see cref="SecurityMetrics"/>.
+/// value, and once in the counter of <see cref="SecurityMetrics"/>. The masked email is built only when the log writes
+/// the event; the counter counts it always. Since MIL-088 also the events of the booking request and of its mails.
 /// </summary>
 /// <param name="loggerFactory">The factory of the logger of <see cref="SecurityEvents.Category"/>.</param>
 /// <param name="metrics">The counter of the events.</param>
@@ -25,7 +28,11 @@ public sealed class BookingFlowEvents(ILoggerFactory loggerFactory, SecurityMetr
     /// <param name="email">The email of the booking, unmasked; the event holds it masked.</param>
     public void PublicBookingMade(string? address, string? email)
     {
-        _logger.PublicBookingMade(address ?? SecurityEvents.None, SecurityEvents.MaskEmail(email));
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.PublicBookingMade(address ?? SecurityEvents.None, SecurityEvents.MaskEmail(email));
+        }
+
         _metrics.Count(SecurityEvents.PublicBookingMadeKind, null);
     }
 
@@ -34,7 +41,11 @@ public sealed class BookingFlowEvents(ILoggerFactory loggerFactory, SecurityMetr
     /// <param name="email">The email that was tried, unmasked; the event holds it masked.</param>
     public void GuestLookupFailed(string? address, string? email)
     {
-        _logger.GuestLookupFailed(address ?? SecurityEvents.None, SecurityEvents.MaskEmail(email));
+        if (_logger.IsEnabled(LogLevel.Warning))
+        {
+            _logger.GuestLookupFailed(address ?? SecurityEvents.None, SecurityEvents.MaskEmail(email));
+        }
+
         _metrics.Count(SecurityEvents.GuestLookupFailedKind, null);
     }
 
@@ -46,8 +57,53 @@ public sealed class BookingFlowEvents(ILoggerFactory loggerFactory, SecurityMetr
     {
         ArgumentNullException.ThrowIfNull(limit);
 
-        _logger.LimitRefused(limit, address ?? SecurityEvents.None, SecurityEvents.MaskEmail(email));
+        if (_logger.IsEnabled(LogLevel.Warning))
+        {
+            _logger.LimitRefused(limit, address ?? SecurityEvents.None, SecurityEvents.MaskEmail(email));
+        }
+
         _metrics.Count(SecurityEvents.LimitRefusedKind, limit);
+    }
+
+    /// <summary>Writes the event of a booking request that was stored and whose mail went (MIL-088).</summary>
+    /// <param name="address">The address of the caller.</param>
+    /// <param name="email">The email of the request, unmasked; the event holds it masked.</param>
+    public void BookingRequestMade(string? address, string? email)
+    {
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.BookingRequestMade(address ?? SecurityEvents.None, SecurityEvents.MaskEmail(email));
+        }
+
+        _metrics.Count(SecurityEvents.BookingRequestMadeKind, null);
+    }
+
+    /// <summary>Writes the event of a verification with a link that does not work: unknown, used or lapsed (MIL-088).</summary>
+    /// <param name="address">The address of the caller.</param>
+    public void VerificationFailed(string? address)
+    {
+        _logger.VerificationFailed(address ?? SecurityEvents.None);
+        _metrics.Count(SecurityEvents.VerificationFailedKind, null);
+    }
+
+    /// <summary>Counts a mail that the relay took (MIL-088); no log line, because a mail is no security event.</summary>
+    /// <param name="kind">The kind of the mail.</param>
+    public void MailSent(MailKind kind) => _metrics.CountMail(SecurityEvents.MailNameOf(kind));
+
+    /// <summary>Writes the event of a mail that the relay did not take or that the fuse held back (MIL-088).</summary>
+    /// <param name="kind">The kind of the mail.</param>
+    /// <param name="reason">The reason in a word; any other text is written as <c>other</c>.</param>
+    public void MailNotSent(MailKind kind, string? reason)
+    {
+        _logger.MailNotSent(SecurityEvents.MailNameOf(kind), SecurityEvents.MailReasonOf(reason));
+        _metrics.Count(SecurityEvents.MailNotSentKind, null);
+    }
+
+    /// <summary>Writes the event of a refusal by the fuse of the mails a day (MIL-088).</summary>
+    public void MailFuseBlown()
+    {
+        _logger.MailFuseBlown();
+        _metrics.Count(SecurityEvents.MailFuseBlownKind, null);
     }
 
     #endregion Public methods

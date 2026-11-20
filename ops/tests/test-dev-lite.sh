@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Test the light development mode (scripts/dev-lite.sh, ADR-0035, MIL-056 task 5) as a developer runs it: from a
 # clean start it builds the working tree, the back office and the two routes of the mobile app answer on the
-# loopback of this machine, the other API paths do not, the stack keeps its database over --down, and --destroy
-# removes everything. It uses its own name, folder and port, so a developer's own light stack is never touched.
+# loopback of this machine, the other API paths do not, the mail catcher answers on the loopback with the
+# verification of a booking by email on (MIL-088), the stack keeps its database over --down, and --destroy
+# removes everything. It uses its own name, folder and ports, so a developer's own light stack is never touched.
 #
 # Usage: test-dev-lite.sh
 # Exit:  0 every check passed; 1 a check failed or the stack did not start
@@ -14,7 +15,7 @@ set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 W="$(mktemp -d)"
-export DEV_LITE_NAME=nfhotel-devtest DEV_LITE_DIR="$W/lite" DEV_SITE_PORT=18443
+export DEV_LITE_NAME=nfhotel-devtest DEV_LITE_DIR="$W/lite" DEV_SITE_PORT=18443 DEV_MAIL_PORT=18025
 readonly URL="https://localhost:$DEV_SITE_PORT"
 lite() { bash "$REPO/scripts/dev-lite.sh" "$@"; }
 trap 'lite --destroy >/dev/null 2>&1; rm -rf "$W"' EXIT
@@ -69,8 +70,17 @@ fi
 
 ports="$(docker ps --filter "name=^$DEV_LITE_NAME-" --format '{{.Names}} {{.Ports}}')"
 published="$(grep -c -- '->' <<<"$ports" || true)"
-[[ "$published" == 1 && "$ports" == *"127.0.0.1:$DEV_SITE_PORT->443/tcp"* ]] &&
-  ok "only nginx publishes a port, $DEV_SITE_PORT on the loopback" || ko "published ports: $ports"
+[[ "$published" == 2 && "$ports" == *"127.0.0.1:$DEV_SITE_PORT->443/tcp"* && "$ports" == *"127.0.0.1:$DEV_MAIL_PORT->8025/tcp"* ]] &&
+  ok "only nginx and the mail catcher publish a port, $DEV_SITE_PORT and $DEV_MAIL_PORT on the loopback" ||
+  ko "published ports: $ports"
+# The mail of MIL-088: the catcher answers on the loopback, the forwarder runs, and the API has the verification on.
+[[ "$(curl -s "http://127.0.0.1:$DEV_MAIL_PORT/api/v1/messages" || true)" == '{"total":'* ]] &&
+  ok "the web interface of the mail catcher answers on the loopback" || ko "mail catcher: $(code "http://127.0.0.1:$DEV_MAIL_PORT/")"
+[[ "$(docker inspect -f '{{.State.Health.Status}}' "$DEV_LITE_NAME-mail-relay-mail-relay-1" 2>/dev/null)" == healthy ]] &&
+  ok "the forwarder of the mail runs" || ko "the forwarder of the mail is not healthy"
+grep -q '^BookingVerification__Enabled=true$' "$DEV_LITE_DIR/settings/nfhotel-api.env" &&
+  grep -q '^Smtp__Forwarder=mail-relay:1465$' "$DEV_LITE_DIR/settings/nfhotel-api.env" &&
+  ok "the API sends through the forwarder with the verification by email on" || ko "the settings of the mail"
 privileged="$(docker ps -q --filter "name=^$DEV_LITE_NAME-" | xargs docker inspect -f '{{.HostConfig.Privileged}}' | sort -u)"
 [[ "$privileged" == false ]] && ok "no container is privileged" || ko "privileged: $privileged"
 grep -q 'password' "$W/up.log" || ko "the run did not print the development accounts"

@@ -278,7 +278,7 @@ at the field; the API checks them again and is the authority.
 |---|---|---|---|---|---|---|---|---|---|
 | `CreatePublicBookingRequest.CheckInDate` | date | Yes | n/a | A day that is not before today on the clock of the hotel | No | Before the departure; the stay ends at most five years after today (BR-N-08) and has at most 30 nights (BR-C-07) | `api.invalid_request` when missing, `booking.start_date_in_past` | BR-41, BR-44, MIL-086 decision 3 | `Booking.CheckPeriod` |
 | `CreatePublicBookingRequest.CheckOutDate` | date | Yes | n/a | A day after the arrival and at most five years after today | No | At least one night and at most 30 nights after the arrival | `api.invalid_request` when missing, `date_range.end_not_after_start`, `booking.end_date_too_far_ahead`, `booking.stay_too_long` | BR-42, BR-43, BR-N-08, BR-C-07 | `DateRange`, `Booking.CheckPeriod`, `Booking.CheckPublicNights` |
-| `CreatePublicBookingRequest.RoomSize` | enum `RoomSize` | Yes | n/a | `Single` (0), `Double` (1) or `Suite` (2) | No | A free room of the size that sleeps the party | `api.invalid_request` when missing or not a size, `booking.room_type_not_available` | MIL-018, MIL-077, MIL-086 decision 2 | `InputRules.IsAccepted`, `BookingService.ChooseRoom` |
+| `CreatePublicBookingRequest.RoomSize` | enum `RoomSize` | Yes | n/a | `Single` (0), `Double` (1) or `Suite` (2) | No | A free room of the size that sleeps the party | `api.invalid_request` when missing or not a size, `booking.room_type_not_available` | MIL-018, MIL-077, MIL-086 decision 2 | `InputRules.IsAccepted`, `BookingService.PlanPublicAsync`, `BookingService.RoomsInOrder` |
 | `CreatePublicBookingRequest.Guests` | whole number | Yes | n/a | 1 to 4 | No | The room sleeps the party | `api.invalid_request` when not a whole number, `booking.guests_out_of_range` also when missing | MIL-018, MIL-086 decision 2 | `Booking.CheckPublicParty` |
 | `CreatePublicBookingRequest.NewGuest` | object `GuestFields` | Yes | n/a | The details of the guest; each field has its own row | No | A public booking always stores a new guest, and only when the booking can be made | `booking.guest_selection_invalid` when missing | BR-C-01, BR-47 | `BookingService.CreatePublicAsync` |
 | `GuestFields.FirstName` | text | Yes | 1 to 100 characters | Letters and marks of any script, the space, the apostrophes `'` and `’`, the hyphen-minus and the full stop; at least one letter | Trimmed, normal form C | None | `guest.first_name_required`, `guest.first_name_too_long`, `guest.first_name_invalid` | BR-52, BR-91, BR-N-03, MIL-086 decision 2 | `PersonNameAttribute.Accepts`, `TextNormalForm.Normalize` |
@@ -287,6 +287,7 @@ at the field; the API checks them again and is the authority.
 | `GuestFields.PhoneNumber` | text | Yes | 1 to 50 characters, 7 to 15 digits | An optional `+` first, then the digits 0 to 9 with spaces, hyphens and round brackets between them; after the plus it starts with a digit or `(`, and it ends with a digit or `)` | Trimmed, normal form C | None | `guest.phone_number_required`, `guest.phone_number_too_long`, `guest.phone_number_invalid` | BR-54, BR-94, MIL-086 decision 2, ITU-T E.164 (at most 15 digits) | `PhoneNumberAttribute.Accepts`, `TextNormalForm.Normalize` |
 | `GuestFields.Country` | text | Yes | 1 to 100 characters | One of the 249 English short names of ISO 3166-1 in `Countries`, written exactly as there; the pages offer them as a list | Trimmed, normal form C | None | `guest.country_required`, `guest.country_too_long`, `guest.country_invalid` | BR-56, BR-95, MIL-086 decision 2, ISO 3166-1 | `CountryNameAttribute.Accepts`, `Countries.All` |
 | `GuestFields.PassportNumber` | text | No | 0 to 20 characters | ASCII letters and digits | Trimmed, normal form C; empty means none | None | `guest.passport_number_too_long`, `guest.passport_number_invalid` | BR-57, MIL-086 decision 2 | `PassportNumberAttribute.Accepts`, `TextNormalForm.NormalizeOptional` |
+| `VerifyBookingRequest.Token` | text | Yes | At most 64 characters; a token has 43 | The part of the link after `#`: 43 characters of base64url (`A` to `Z`, `a` to `z`, `0` to `9`, `-` and `_`) | No | Opens only the one open booking request whose stored hash it matches, once and within 30 minutes of the mail; a text of another shape reaches no database | `api.invalid_request` when missing or longer than 64 characters, `booking.verification_link_invalid` when it is no token, unknown, used or lapsed, all with the same answer | MIL-088, ADR-0052 decisions 2 and 3 | `VerifyBookingRequest.MaxTokenLength`, `VerificationTokens.HashOf`, `BookingRequestService.VerifyAsync` |
 | `GuestSignInRequest.Reference` | text | Yes | 36 characters | A booking reference: a version 4 UUID in the usual form of five groups of hexadecimal digits, in any letter case | Trimmed | Opens a booking only together with the email of that booking; failed tries are limited per reference and per caller address | `api.guest_unauthorized` when missing, not a reference, unknown or cancelled, or when the email does not match; `booking.too_many_lookups` | ADR-0049, BR-C-06 | `BookingReference.TryParse` |
 | `GuestSignInRequest.Email` | text | Yes | 1 to 100 characters | The email of the booking | Trimmed, normal form C | Compared without letter case with the email of the booking of the reference | `booking.receipt_email_required` when missing or blank, `api.guest_unauthorized` | ADR-0047, ADR-0049, BR-C-06 | `GuestAccessService.IsSameEmail`, `TextNormalForm.Normalize` |
 | `GuestRescheduleRequest.CheckInDate` | date | Yes | n/a | A day that is not before today | No | Before the departure; the stay ends at most five years after today and has at most 30 nights; the room of the booking is free in the new period | `api.invalid_request` when missing, `booking.start_date_in_past`, `booking.room_not_available` | BR-44, BR-N-08, BR-C-07, MIL-018 | `Booking.CheckPeriod` |
@@ -326,10 +327,11 @@ of `RoomSize`. The field is now required, so the API never chooses a size that t
 
 ## Limits of the booking flow
 
-> Added 2026-11-19 by MIL-087 (ADR-0051). One row per limit on what one sender can ask of the booking flow. A test of
-> the API (`LimitsTableTests`) reads this table and fails when a number or a window differs from the default of its
-> setting, when a setting does not exist, when a name of the first column is not a limit that the API names in its
-> security events, or when a code of the last column is not a code of the API.
+> Added 2026-11-19 by MIL-087 (ADR-0051), with the limit per mailbox of MIL-088 (ADR-0052 decision 6). One row per
+> limit on what one sender can ask of the booking flow. A test of the API (`LimitsTableTests`) reads this table and
+> fails when a number or a window differs from the default of its setting, or from the constant of the code for a limit
+> without a setting, when a setting does not exist, when a name of the first column is not a limit that the API names
+> in its security events, or when a code of the last column is not a code of the API.
 
 Every limit per caller address counts under the address that nginx saw (ADR-0051 decision 4): an IPv4 address as itself,
 an IPv6 address by its first 64 bits. A window opens with the first request that it counts and runs its length; a
@@ -343,17 +345,27 @@ below one, stops the start-up of the API. The count per email is read from the d
 | Limit | Who is counted | What is counted | Window | Number | Setting | Refusal |
 | --- | --- | --- | --- | --- | --- | --- |
 | `search` | A caller address | Searches for free rooms (`GET api/bookings/available-rooms`), by the public site and by staff | 1 minute | 60 | `SenderLimits:SearchesPerMinute` | 429, `booking.too_many_requests`, `Retry-After` |
-| `booking_hour` | A caller address | Public booking requests (`POST api/bookings/public`) that passed the rules of the fields; a request that a rule of the use case refuses with 400 or 422 gets its count back, and one that the limit per email refuses keeps it | 1 hour | 5 | `SenderLimits:BookingRequestsPerHour` | 429, `booking.too_many_requests`, `Retry-After` |
+| `booking_hour` | A caller address | Public booking requests (`POST api/bookings/public`, and `POST api/bookings/public/requests` with the verification by email on; the verification itself is not counted) that passed the rules of the fields; a request that a rule of the use case refuses with 400 or 422 gets its count back, and one that the limit per email refuses keeps it | 1 hour | 5 | `SenderLimits:BookingRequestsPerHour` | 429, `booking.too_many_requests`, `Retry-After` |
 | `booking_day` | A caller address | As `booking_hour` | 1 day | 20 | `SenderLimits:BookingRequestsPerDay` | 429, `booking.too_many_requests`, `Retry-After` |
-| `email` | An email, in its normal form and without letter case | Coming bookings made on the public site: not cancelled, with the departure today or later. Bookings by staff are neither counted nor limited | None | 3 | `SenderLimits:ComingPublicBookingsPerEmail` | 429, `booking.too_many_requests` |
+| `email` | A mailbox, as the rows of `verification_mail` say (ADR-0052 decision 6) | Coming bookings made on the public site: not cancelled, with the departure today or later. A booking request is refused at this limit before any mail goes. Bookings by staff are neither counted nor limited | None | 3 | `SenderLimits:ComingPublicBookingsPerEmail` | 429, `booking.too_many_requests` |
 | `guest_sign_in` | A booking reference | Failed guest sign-ins (ADR-0049 decision 6) | 15 minutes | 5 | `GuestLookup:MaxFailuresPerReference` | 429, `booking.too_many_lookups` |
 | `guest_sign_in` | A caller address | Failed guest sign-ins (ADR-0049 decision 6) | 15 minutes | 20 | `GuestLookup:MaxFailuresPerAddress` | 429, `booking.too_many_lookups` |
+| `verification_mail` | A mailbox: an email in its normal form, without letter case and without a `+` and what follows it in the name, and for Gmail also without the dots of the name, with `googlemail.com` read as `gmail.com` | Mails with a link of the verification sent to the mailbox (`POST api/bookings/public/requests`); a mail that the relay did not take is not counted | 1 hour | 3 | None | 429, `booking.too_many_mails` |
+| `verification_mail` | As the row above | As the row above | 1 day | 5 | None | 429, `booking.too_many_mails` |
 
 **The text of a refusal.** The pages show one text for `booking.too_many_requests`: "Too many requests in a short
 time. Please wait a while and try again, or contact the hotel." It names no number of minutes, because the windows
 differ; `Retry-After` gives the whole seconds until the window that refused has room again. The refusal per email has
 no window and no `Retry-After`. `booking.too_many_lookups` keeps its text of ADR-0049, which names its fifteen minutes.
+The limit per mailbox has no setting: its numbers are those of ADR-0052 decision 6, held in the code as
+`BookingRequestService.MailsPerHour` and `BookingRequestService.MailsPerDay`. Its refusal, `booking.too_many_mails`, has
+no `Retry-After`, so the answer tells a caller nothing about the mailbox of somebody else, and its text sends the guest to
+the newest mail: "We've already emailed you links for this booking. Open the newest email from us and use its link:
+only that one works." The fuse of the relay, 400 mails a day for the whole site (`Smtp:MaxMailsPerDay`, ADR-0053), is no
+limit of one sender and is not in the table: it answers 503 with `booking.mail_paused`.
 
 **The events.** Each refusal by a limit writes the security event `limit_refused` with the name of the first column;
 each booking made on the public site writes `public_booking_made`, and each failed guest sign-in
-`guest_lookup_failed` (ADR-0051 decision 6).
+`guest_lookup_failed` (ADR-0051 decision 6). With the verification by email on, each booking request whose mail went
+writes `booking_request_made`, each refused link `verification_failed`, each mail that the relay did not take
+`mail_not_sent` with the mail and the reason in a word, and the fuse `mail_fuse_blown` (ADR-0053).

@@ -25,5 +25,12 @@ public enum BookingFlowStep
     Guest = 2,
 
     /// <summary>Step 4: the receipt of the created booking (BR-C-05).</summary>
-    Receipt = 3
+    Receipt = 3,
+
+    /// <summary>
+    /// Step 4 when the booking is verified by email (MIL-088, ADR-0052): the mail with the link is on its way, and the
+    /// room is booked only when the button behind the link is pressed. It takes the place of <see cref="Receipt"/>, so the
+    /// flow shows one or the other, never both.
+    /// </summary>
+    Inbox = 4
 }

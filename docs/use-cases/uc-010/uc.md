@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | UC-010 |
-| CrossReference | [UCD-001], [US-001], [SA-001], [UC-001], [UC-004], [MIL-018], [MIL-079], [ADR-0005], [ADR-0047], [SSD-001], [MIL-085], [ADR-0049], [MIL-086], [ADR-0050], [MIL-087], [ADR-0051] |
+| CrossReference | [UCD-001], [US-001], [SA-001], [UC-001], [UC-004], [MIL-018], [MIL-079], [ADR-0005], [ADR-0047], [SSD-001], [MIL-085], [ADR-0049], [MIL-086], [ADR-0050], [MIL-087], [ADR-0051], [UC-011], [MIL-088], [ADR-0052] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | The email of the sign-in is compared in its normal form; new dates of a guest end at most five years after today and have at most 30 nights, and the guest is offered only those days (MIL-086, ADR-0050)<br>Go in RC-423; accepted by the AI as stand-in for S01 in autonomous mode | [7de27c7] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | The failed attempts from one address are counted under the address from which they reached the site, which no caller can set (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | The failed attempts from one address are counted under the address from which they reached the site, which no caller can set (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Extension 1a and its rule: a guest who verifies a booking made on the website through the link in the mail is signed in to it by the verification; the offer after the booking holds while the verification by email is switched off (MIL-088, UC-011, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
@@ -45,8 +45,8 @@
 
 ### Extensions (Alternative / Exception Flows)
 
-- 1a. The guest has just made the booking on the website:
-  1. The system offers to manage the booking at once and signs the guest in to it without asking for the reference and the email (step 2).
+- 1a. The guest has just made the booking on the website ([UC-011]):
+  1. With the verification by email, the system signed the guest in to the booking when the guest verified it, and shows the booking at once (step 2). While the verification by email is switched off, the system offers to manage the booking at once and signs the guest in to it without asking for the reference and the email (step 2).
 - 2a. The reference is unknown or cannot be read, a booking number of the old kind included, the email is not the one of the booking, or the booking is cancelled:
   1. The system says that the reference and the email do not match a booking, in the same words in every case, and signs nobody in. The guest may try again (step 1).
 - 2b. Five attempts for the booking reference have failed within 15 minutes, or twenty attempts from the guest's address:
@@ -73,6 +73,7 @@
 | 1, 2 | A guest signs in with the booking reference and the email of the booking; there is no guest account and no password (ADR-0047, decision 1; ADR-0049, decision 2). The reference is a random universally unique identifier (UUID) of version 4, read in its usual form of 36 characters in any letter case; the email is compared in its normal form (trimmed, Unicode normal form C) and without letter case (ADR-0049, decision 1; MIL-079; ADR-0050, decision 4). Neither may be longer than a booking reference or the email of a booking can be (MIL-086) |
 | 2a, *a | An unknown or unreadable reference, a booking number of the old kind, a wrong email and a cancelled booking get the same refusal in the same words; an ended or invalid sign-in is refused in the same way and shows nothing of the booking (ADR-0047, decisions 3 and 7; ADR-0049, decisions 2 and 5) |
 | 2b | After five failed attempts for one reference within 15 minutes, the next attempt for that reference is refused until the 15 minutes have passed, and after twenty failed attempts from one address within 15 minutes, so is the next attempt from that address; the refusal names no booking (ADR-0049, decision 6). The address is the one from which the attempt reached the site, which no caller can set (ADR-0051, decision 4) |
+| 1a | A guest who has just booked on the website is signed in without giving the booking reference and the email: by the verification of the booking through the link in the mail ([UC-011], step 9), or, while the verification by email is switched off, through the offer right after the booking. Either sign-in lasts two hours, as in step 2 (ADR-0047, decision 2; ADR-0052, decisions 5 and 8) |
 | 2 | A sign-in lasts two hours and is not extended (ADR-0047, decision 2). The booking is shown as its receipt: the reference, the dates, the nights, the room type and the status, and nothing of its guest (ADR-0049, decision 7) |
 | all | The role Guest holds `Bookings.Create`, `Bookings.EditOwn` and `Guests.ViewOwn` and nothing else: the guest sees and changes only the booking signed in to, no request of the guest names a booking after the sign-in, and no passport number is ever shown (ADR-0047, decisions 4 and 5; ADR-0049, decision 3; the Access Control Matrix) |
 | 3, 4 | New dates keep the room and follow the checks of a new booking on the public site: valid dates, a stay that ends at most five years after today and has at most 30 nights (BR-N-08, BR-C-07), and a free room for every night; the booking does not block itself (UC-001, 2 and 5b). The guest is offered only the days that the rules allow, and a move that breaks a rule is refused with the text of the rule (MIL-086, ADR-0050) |
@@ -101,5 +102,8 @@
 [ADR-0050]: ../../adr/adr-0050-where-the-rules-of-the-booking-input-live.md
 [MIL-087]: ../../milestones/mil-087-limits-on-what-one-sender-can-ask.md
 [ADR-0051]: ../../adr/adr-0051-limits-of-the-booking-flow-and-the-caller-address.md
-[7de27c7]: https://github.com/NF-Hotel/NFHotel/commit/7de27c769b753231a5cf2dc8e786c8197b4bda81
+[UC-011]: ../uc-011/uc.md
+[MIL-088]: ../../milestones/mil-088-a-booking-verified-by-email.md
+[ADR-0052]: ../../adr/adr-0052-a-booking-takes-a-room-once-its-email-is-verified.md
 [a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089
