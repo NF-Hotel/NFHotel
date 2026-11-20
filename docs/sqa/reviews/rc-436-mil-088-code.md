@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: code review of tasks 4 to 8 of MIL-088 and of the fixes of its findings; Go-with-conditions: every required check of the pull request green; mode autonomous, not independent | [739a25b] |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | F17 to F19: the comments of CodeQL, GitHub's code quality and SonarCloud on the pull request; F18 corrected (0ad9c7e), F17 and F19 recorded; the verdict stays Go-with-conditions<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | [5861a42] |
+| 2026-11-20 | Deprecated | mikemike | AI as stand-in for S01 | F17 to F19: the comments of CodeQL, GitHub's code quality and SonarCloud on the pull request; F18 corrected (0ad9c7e), F17 and F19 recorded; the verdict stays Go-with-conditions<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | [5861a42] |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | F17 names what each alert of CodeQL holds: 681, as 676 on `main`, is the name of the limit `email`, a constant, and no email<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | pending |
 
 ---
 
@@ -279,17 +279,19 @@
   through the same method. It names both now (733a5b2); a comment only, so the build ran again with no warning, and
   the check of the comment language passes ([RC-435]).
 - **F17, recorded (CodeQL on the pull request, Medium): the masked email in the log.** The query
-  `cs/exposure-of-sensitive-information` raised five alerts on `BookingFlowEvents`, 677 to 681: the events
-  `public_booking_made`, `guest_lookup_failed`, `limit_refused` (two alerts on one line) and `booking_request_made`
-  write the email masked to its first character and its domain, as [ADR-0051] decision 6 says. Four are the alerts
-  673 to 676 of MIL-087 on `main` at new lines: the guard `IsEnabled` of this change, which builds the masked email
-  only when the log writes the event, moved their lines, so GitHub counts them as new and is likely to mark 673 to
-  676 fixed when the branch reaches `main`, although what is logged has not changed. The fifth, 680, is the same
-  pattern in the new event `booking_request_made`. The AI decided as stand-in for S01 not to change what the events
-  log in this pull request: a change, a keyed hash in place of the masked email for one, changes decision 6 of
-  [ADR-0051] and wants its own review, and task 3 of [MIL-089] owns these alerts. No alert is dismissed or closed by
-  hand, by S01's rule of 2026-11-19. The review threads of the five alerts on the pull request say this and are
-  resolved; the alerts stay open.
+  `cs/exposure-of-sensitive-information` raised five alerts on `BookingFlowEvents`, 677 to 681. Four are on the events
+  `public_booking_made`, `guest_lookup_failed`, `limit_refused` and `booking_request_made`, which write the email
+  masked to its first character and its domain, as [ADR-0051] decision 6 says. The fifth, 681, is a second alert on
+  the line of `limit_refused`: the name of the limit `email` (`LimitNames.Email`), a constant that the query reads as
+  private data by its name, and no email. Four of the five are the alerts 673 to 676 of MIL-087 on `main` at new
+  lines: the guard `IsEnabled` of this change, which builds the masked email only when the log writes the event, moved
+  their lines, so GitHub counts them as new and is likely to mark 673 to 676 fixed when the branch reaches `main`,
+  although what is logged has not changed. The one that is new, 680, is the same pattern in the new event
+  `booking_request_made`. The AI decided as stand-in for S01 not to change what the events log in this pull request: a
+  change, a keyed hash in place of the masked email for one, changes decision 6 of [ADR-0051] and wants its own
+  review, and task 3 of [MIL-089] owns these alerts. No alert is dismissed or closed by hand, by S01's rule of
+  2026-11-19. The review threads of the five alerts on the pull request say this and are resolved; the alerts stay
+  open.
 - **F18, corrected after the review (GitHub's code quality on the pull request, Low): two points.** The clean-up
   worker caught every exception after a separate catch that let the stop of the API through (a generic catch
   clause); one catch with a filter now does both. Two new tests hold the behaviour: a cancellation because the API
@@ -343,5 +345,4 @@ a second AI read the code. S01 may challenge any decision of it, F4, F9, F17 and
 [ADR-0047]: ../../adr/adr-0047-guest-login.md
 [MIL-089]: ../../milestones/mil-089-the-booking-flow-attacked-and-measured.md
 [ADR-0051]: ../../adr/adr-0051-limits-of-the-booking-flow-and-the-caller-address.md
-[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089
 [5861a42]: https://github.com/NF-Hotel/NFHotel/commit/5861a42cfcb5908874412a28c1cb63198692926e
