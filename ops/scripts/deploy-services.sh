@@ -7,8 +7,15 @@
 #   postgres   PostgreSQL 16, internal network only, no published port
 #   ollama     model server for analysis and benchmark, network nfhotel-llm, no
 #              published port
+#   mailrelay  (only when Smtp__Forwarder is set in deploy/nfhotel-api/nfhotel-api.env) the forwarder of the
+#              mail (MIL-088, ADR-0053): HAProxy on the internal network nfhotel-mail, which only the api
+#              shares, and on nfhotel-mail-out, its way out to the relay. It has no settings file: it gets
+#              Smtp__Host and Smtp__Port of nfhotel-api.env and nothing else. The deploy refuses, naming the
+#              setting, when Smtp__Forwarder is set without Smtp__Host or Smtp__Port, or when
+#              BookingVerification__Enabled is true without Smtp__Forwarder
 #   api        database API: the only service with the database login and the passport
-#              key; internal networks nfhotel-api, nfhotel-db and nfhotel-python, no published port
+#              key; internal networks nfhotel-api, nfhotel-db, nfhotel-python and nfhotel-mail, no
+#              published port
 #   web        NFHotel web application, the only service the proxy serves publicly; it holds only
 #              an API address and a token; networks nfhotel-proxy, nfhotel-api and nfhotel-python
 #   analysis   market analysis API (NF-Hotel/notebook-market-analysis): the web application and the api call it
@@ -29,10 +36,12 @@
 # Each service reads its git-ignored settings file next to its docker-compose.yml
 # (postgres.env, ollama.env, nfhotel-api.env, nfhotel-web.env, market-analysis.env, benchmark.env, nginx.env);
 # copy the matching *.example file first. The Docker networks are created if missing:
-# nfhotel-proxy, nfhotel-llm, and nfhotel-db, nfhotel-api and nfhotel-python with --internal (no route out).
+# nfhotel-proxy, nfhotel-llm, nfhotel-mail-out, and nfhotel-db, nfhotel-api, nfhotel-python and nfhotel-mail
+# with --internal (no route out).
 #
 # Usage: deploy-services.sh [--no-build] [--pull] [--down] [service...]
-#   service     postgres, ollama, api, web, analysis, benchmark, nginx, tunnel, dbrelay, alloy (default: all)
+#   service     postgres, ollama, mailrelay, api, web, analysis, benchmark, nginx, tunnel, dbrelay, alloy
+#               (default: all)
 #   --no-build  start without rebuilding the images
 #   --pull      git pull the repository (and submodules) before building
 #   --down      stop and remove the named services instead of deploying (volumes,
@@ -48,7 +57,9 @@ db_network="${NFHOTEL_DB_NETWORK:-nfhotel-db}"
 api_network="${NFHOTEL_API_NETWORK:-nfhotel-api}"
 llm_network="${NFHOTEL_LLM_NETWORK:-nfhotel-llm}"
 python_network="${NFHOTEL_PYTHON_NETWORK:-nfhotel-python}"
-order=(postgres ollama api web analysis benchmark nginx tunnel dbrelay alloy)
+mail_network="${NFHOTEL_MAIL_NETWORK:-nfhotel-mail}"
+mail_out_network="${NFHOTEL_MAIL_OUT_NETWORK:-nfhotel-mail-out}"
+order=(postgres ollama mailrelay api web analysis benchmark nginx tunnel dbrelay alloy)
 
 build=1
 pull=0
@@ -73,7 +84,7 @@ for arg in "$@"; do
       usage
       exit 0
       ;;
-    postgres | ollama | api | web | analysis | benchmark | nginx | tunnel | dbrelay | alloy) services+=("$arg") ;;
+    postgres | ollama | mailrelay | api | web | analysis | benchmark | nginx | tunnel | dbrelay | alloy) services+=("$arg") ;;
     *)
       echo "error: unknown argument: $arg" >&2
       usage >&2
@@ -90,6 +101,7 @@ dir_of() {
   case "$1" in
     postgres) echo "$root/deploy/postgres" ;;
     ollama) echo "$root/deploy/ollama" ;;
+    mailrelay) echo "$root/deploy/mail-relay" ;;
     api) echo "$root/deploy/nfhotel-api" ;;
     web) echo "$root/deploy/nfhotel-web" ;;
     analysis) echo "$root/deploy/market-analysis" ;;
@@ -101,6 +113,8 @@ dir_of() {
   esac
 }
 
+# env_of <service>: the settings file of the service in its folder. mailrelay has none:
+# relay_compose gives it the two values it needs.
 env_of() {
   case "$1" in
     postgres) echo "postgres.env" ;;
@@ -114,6 +128,37 @@ env_of() {
     dbrelay) echo "postgres-tailnet.env" ;;
     alloy) echo "alloy.env" ;;
   esac
+}
+
+# setting <file> <key>: the value of key in a settings file, empty when it is not set; the last line
+# with the key wins, as in compose. The file is read line by line, never sourced, and no value of it
+# is printed.
+setting() {
+  local line value=""
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    [[ "${line%%=*}" == "$2" && "$line" == *=* ]] && value="${line#*=}"
+  done <"$1"
+  printf '%s' "$value"
+}
+
+# The forwarder of the mail (ADR-0053 decision 4) runs when Smtp__Forwarder is set in nfhotel-api.env.
+# It gets two values of that file, the host and the port of the relay, which the API checks the
+# certificate of the relay against, so the two cannot disagree; never the file itself, which holds
+# every secret of the API.
+mail_settings="$(dir_of api)/$(env_of api)"
+forwarder="" relay_host="" relay_port="" verification=""
+if [[ -f "$mail_settings" ]]; then
+  forwarder="$(setting "$mail_settings" Smtp__Forwarder)"
+  relay_host="$(setting "$mail_settings" Smtp__Host)"
+  relay_port="$(setting "$mail_settings" Smtp__Port)"
+  verification="$(setting "$mail_settings" BookingVerification__Enabled)"
+fi
+
+# relay_compose <compose arguments...>: compose for the forwarder of the mail, with the host and the
+# port of the relay in its environment and no settings file.
+relay_compose() {
+  (cd "$(dir_of mailrelay)" && MAIL_RELAY_HOST="$relay_host" MAIL_RELAY_PORT="$relay_port" docker compose "$@")
 }
 
 # Run in deploy order, whatever order the arguments came in.
@@ -146,6 +191,12 @@ if ((down)); then
     [[ "$s" == "alloy" && ! -f "$(dir_of alloy)/alloy.env" ]] && continue
     [[ "$s" == "tunnel" && ! -f "$(dir_of tunnel)/cloudflared.env" ]] && continue
     [[ "$s" == "dbrelay" && ! -f "$(dir_of dbrelay)/postgres-tailnet.env" ]] && continue
+    if [[ "$s" == "mailrelay" ]]; then
+      [[ -n "$forwarder" && -n "$relay_host" && -n "$relay_port" ]] || continue
+      echo "==> stopping $s"
+      relay_compose down
+      continue
+    fi
     echo "==> stopping $s"
     (cd "$(dir_of "$s")" && docker compose --env-file "$(env_of "$s")" down)
   done
@@ -218,6 +269,12 @@ if [[ " ${ordered[*]} " == *" dbrelay "* && ! -f "$(dir_of dbrelay)/postgres-tai
   echo "note: $(dir_of dbrelay)/postgres-tailnet.env is missing; the database relay is left out (ADR-0034)"
   dbrelay_skipped=1
 fi
+# The forwarder of the mail is optional: without Smtp__Forwarder the API sends no mail through it (ADR-0053).
+mailrelay_skipped=0
+if [[ " ${ordered[*]} " == *" mailrelay "* && -z "$forwarder" ]]; then
+  echo "note: Smtp__Forwarder is not set in $mail_settings; the forwarder of the mail is left out (ADR-0053)"
+  mailrelay_skipped=1
+fi
 
 # Check every settings file before touching anything.
 for s in "${ordered[@]}"; do
@@ -226,8 +283,34 @@ for s in "${ordered[@]}"; do
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
   [[ "$s" == "dbrelay" ]] && ((dbrelay_skipped)) && continue
+  # The settings of the forwarder are those of the API, checked below.
+  [[ "$s" == "mailrelay" ]] && continue
   [[ -f "$d/$e" ]] || die "$d/$e is missing; copy $e.example to $e and fill it in"
 done
+
+# The settings of the mail (ADR-0053 decision 4): a deploy that could not send refuses and names the
+# setting. The forwarder needs the host and the port of the relay, and the verification of a booking
+# by email (ADR-0052 decision 8) needs the forwarder: the API on its internal networks reaches no
+# relay without it. The values go into the configuration of HAProxy, so they must be a host name and
+# a port. A Smtp__Forwarder other than the forwarder of this deploy only warns.
+if [[ " ${ordered[*]} " == *" api "* || " ${ordered[*]} " == *" mailrelay "* ]] && [[ -f "$mail_settings" ]]; then
+  if [[ -n "$forwarder" ]]; then
+    [[ -n "$relay_host" ]] ||
+      die "Smtp__Forwarder is set in $mail_settings, but Smtp__Host is not: the forwarder needs the host of the relay"
+    [[ -n "$relay_port" ]] ||
+      die "Smtp__Forwarder is set in $mail_settings, but Smtp__Port is not: the forwarder needs the port of the relay"
+    [[ "$relay_host" =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$ ]] || die "Smtp__Host in $mail_settings is not a host name"
+    if [[ ! "$relay_port" =~ ^[0-9]{1,5}$ ]] || ((10#$relay_port < 1 || 10#$relay_port > 65535)); then
+      die "Smtp__Port in $mail_settings is not a port from 1 to 65535"
+    fi
+    [[ "$forwarder" == "mail-relay:1465" ]] ||
+      echo "warning: Smtp__Forwarder in $mail_settings is not mail-relay:1465, where the forwarder of this deploy answers" >&2
+  fi
+  enabled="${verification,,}"
+  if [[ "${enabled//[[:space:]]/}" == true && -z "$forwarder" ]]; then
+    die "BookingVerification__Enabled is true in $mail_settings, but Smtp__Forwarder is not set: the API reaches no mail relay without the forwarder (ADR-0053)"
+  fi
+fi
 
 # No secret goes into the environment of a container (MIL-035, ADR-0024): for PostgreSQL, the
 # API and the web application, scripts/write-secret-files.sh splits the settings into
@@ -287,6 +370,15 @@ if ! docker network inspect "$python_network" >/dev/null 2>&1; then
   echo "==> creating internal network $python_network"
   docker network create --internal "$python_network" >/dev/null
 fi
+# The API joins the network of the mail whether the forwarder runs or not (ADR-0053 decision 4).
+if ! docker network inspect "$mail_network" >/dev/null 2>&1; then
+  echo "==> creating internal network $mail_network"
+  docker network create --internal "$mail_network" >/dev/null
+fi
+if ! docker network inspect "$mail_out_network" >/dev/null 2>&1; then
+  echo "==> creating network $mail_out_network"
+  docker network create "$mail_out_network" >/dev/null
+fi
 
 # The services are separate Compose projects, so Compose cannot order them. Check the order here:
 # web needs a healthy database and API, the proxy needs a running web service. Waits up to 60 seconds,
@@ -311,6 +403,7 @@ for s in "${ordered[@]}"; do
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
   [[ "$s" == "dbrelay" ]] && ((dbrelay_skipped)) && continue
+  [[ "$s" == "mailrelay" ]] && ((mailrelay_skipped)) && continue
   # The analysis image is built from a pinned commit of NF-Hotel/notebook-market-analysis, which
   # needs the internet; a host that cannot reach it leaves the service out, with the reason, and the
   # rest of the deployment goes on. A release (--no-build) always names its digests.
@@ -338,6 +431,8 @@ for s in "${ordered[@]}"; do
   fi
   echo "==> deploying $s"
   args=(--env-file "$e" up -d --remove-orphans)
+  # The forwarder of the mail has no settings file (relay_compose).
+  [[ "$s" == "mailrelay" ]] && args=(up -d --remove-orphans)
   if ((build)) && [[ "$s" =~ ^(api|web|analysis|benchmark|nginx|alloy)$ ]]; then
     args+=(--build)
   fi
@@ -382,6 +477,10 @@ for s in "${ordered[@]}"; do
     fi
     continue
   fi
+  if [[ "$s" == "mailrelay" ]]; then
+    relay_compose "${args[@]}" || die "deploying the forwarder of the mail failed"
+    continue
+  fi
   if [[ "$s" == "alloy" ]]; then
     # The monitoring agent must not take the hotel down: when it does not turn healthy, the
     # deploy warns and goes on, and NoMetricsFromNfHotel alerts (ADR-0020).
@@ -414,7 +513,12 @@ for s in "${ordered[@]}"; do
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
   [[ "$s" == "dbrelay" ]] && ((dbrelay_skipped)) && continue
-  (cd "$(dir_of "$s")" && docker compose --env-file "$(env_of "$s")" ps)
+  [[ "$s" == "mailrelay" ]] && ((mailrelay_skipped)) && continue
+  if [[ "$s" == "mailrelay" ]]; then
+    relay_compose ps
+  else
+    (cd "$(dir_of "$s")" && docker compose --env-file "$(env_of "$s")" ps)
+  fi
 done
 deployed=()
 for s in "${ordered[@]}"; do
@@ -422,6 +526,7 @@ for s in "${ordered[@]}"; do
   [[ "$s" == "alloy" ]] && ((alloy_skipped)) && continue
   [[ "$s" == "tunnel" ]] && ((tunnel_skipped)) && continue
   [[ "$s" == "dbrelay" ]] && ((dbrelay_skipped)) && continue
+  [[ "$s" == "mailrelay" ]] && ((mailrelay_skipped)) && continue
   deployed+=("$s")
 done
-echo "Deployed: ${deployed[*]}$( ((analysis_skipped)) && echo ' (analysis left out: see the warning above)')$( ((alloy_skipped)) && echo ' (alloy left out: no alloy.env)')$( ((tunnel_skipped)) && echo ' (tunnel left out: no cloudflared.env)')$( ((dbrelay_skipped)) && echo ' (dbrelay left out: no postgres-tailnet.env)')"
+echo "Deployed: ${deployed[*]}$( ((analysis_skipped)) && echo ' (analysis left out: see the warning above)')$( ((alloy_skipped)) && echo ' (alloy left out: no alloy.env)')$( ((tunnel_skipped)) && echo ' (tunnel left out: no cloudflared.env)')$( ((dbrelay_skipped)) && echo ' (dbrelay left out: no postgres-tailnet.env)')$( ((mailrelay_skipped)) && echo ' (mailrelay left out: no Smtp__Forwarder)')"

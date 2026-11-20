@@ -1,0 +1,71 @@
+# MIL-088 task 4: the tests of the use case of the request and the verification, written before its code, on a
+# skeleton of that code. Branch mil-088-booking-verified-by-email on the code of main 6f7bb804, with ADR-0052,
+# ADR-0053 and their review records (baaf79ba, 9fb0a0c9), in the worktree of the build session, 2026-11-19T23:01Z, on
+# this machine (Windows, .NET SDK 10).
+# The skeleton gives the names that the tests use and no behaviour: every method of BookingRequestService, which
+# asks and verifies, throws NotImplementedException("MIL-088 task 5"), so the test of the clean-up, which asks
+# first, fails with it too; the five new error codes have their final values and no screen text yet; the check of a
+# public booking returns the guest that it builds; and the public booking of today neither refuses its old route
+# with the verification on nor tries the next room when the save finds its room taken. The entities of the request
+# and of the record of a mail, and the normal form of a mailbox, were already written with their tests, which pass
+# here.
+# Only the projects of the domain and of the application were built (Release), so the two tests of the restored
+# package graph of the API and of the web application could not find that graph and fail for that reason, not for a
+# rule. The tests of the API, of the adapter of the mail, of the database and of the pages were written with their
+# code in tasks 5 to 7 and are in after-tests.txt; the browser tests run in NF Hotel CI on the pull request.
+# Each project lists its failed tests, sorted, and its summary; the durations and the paths are removed.
+# dotnet test --project tests/NFHotel.Domain.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 747
+  failed: 0
+  succeeded: 747
+  skipped: 0
+# dotnet test --project tests/NFHotel.Application.Tests -c Release --no-build
+failed NFHotel.Application.Tests.Architecture.DatabaseIsolationTests.RestoredGraph_OfTheApi_HoldsTheDatabaseCode
+failed NFHotel.Application.Tests.Architecture.DatabaseIsolationTests.RestoredGraph_OfTheWebSide_HoldsNoDatabaseCode
+failed NFHotel.Application.Tests.Architecture.ErrorCodeTextTests.ErrorCodes_EveryConstant_HasATextInErrorMessages
+failed NFHotel.Application.Tests.Architecture.LayeringTests.Services_WhenInspected_DoNotReturnDomainEntities
+failed NFHotel.Application.Tests.Architecture.StructureTests.Entities_EveryConcreteType_DerivesFromEntityOfTKey
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_FourthComingBookingOfTheMailbox_IsRefused
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_FourthMailAfterTheHour_IsSent
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_FourthMailInAnHour_IsRefusedAndKeepsTheThirdRequest
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_FuseReached_IsPausedAndSendsNothing
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_FuseWindowPassed_IsSent
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_LastRoomAskedFor_IsStillOfferedToTheNextGuest
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_LineBreakInTheEmail_IsRefusedBeforeAnyMail
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_Mail_HoldsTheStayAndTheLinkAndNoTypedText
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_NoFreeRoomOfTheSize_IsRefusedAndSendsNothing
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_PartyTooLarge_IsRefusedAndSendsNothing
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_RelayDownForARenewal_LeavesNoRequest
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_RelayDown_TellsTheGuestAndLeavesNothing
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_Request_CountsAndWritesUnderTheLock
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_SecondRequestOfTheMailbox_MakesTheFirstLinkUseless
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_SettingOff_IsNotFoundAndSendsNothing
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_SiteAddressWithAPath_BuildsTheLinkBelowIt
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_SixthMailInADay_IsRefused
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_Token_IsStoredOnlyAsItsHash
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_TwoRequests_GetDifferentTokens
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.AskAsync_ValidRequest_StoresARequestAndSendsOneMail
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.CreatePublicAsync_ChosenRoomLostAtTheSave_BooksTheNextFreeRoom
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.CreatePublicAsync_LastRoomLostAtTheSave_LeavesNoGuest
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.CreatePublicAsync_SettingOn_IsRefusedAndStoresNothing
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.GetModeAsync_Setting_SaysWhetherTheGuestVerifies(enabled: False)
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.GetModeAsync_Setting_SaysWhetherTheGuestVerifies(enabled: True)
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.RunAsync_LapsedRequestsAndOldRecords_AreDeleted
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_ChosenRoomLostAtTheSave_BooksTheNextFreeRoom
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_FiveRoomsLost_StopsAtFive
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_FuseReachedBeforeTheReceipt_KeepsTheBookingAndSendsNoReceipt
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_JustBeforeTheLinkLapses_Books
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_LastRoomLostAtTheSave_LeavesNoGuest
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_MailboxReachedTheLimitSinceTheRequest_IsRefused
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_OpenLink_BooksSignsInAndMailsTheReference
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_OpenLink_StoresTheGuestOfTheRequest
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_ReceiptMailRefused_KeepsTheBooking
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_RoomWentBeforeTheButton_LeavesNothing
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_SettingOff_IsNotFound
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_UsedWrongMalformedOrLapsedLink_GetsTheSameAnswer
+Test run summary: Failed!
+  total: 828
+  failed: 43
+  succeeded: 785
+  skipped: 0

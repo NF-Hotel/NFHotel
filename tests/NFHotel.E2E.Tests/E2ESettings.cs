@@ -26,6 +26,12 @@ public static class E2ESettings
     /// <summary>The address of nginx in the stack, for example <c>https://nginx</c>.</summary>
     public static Uri BaseUrl => new(Required("E2E_BASE_URL").TrimEnd('/') + "/");
 
+    /// <summary>
+    /// The address of the REST API of Mailpit, which catches the mails of the stack with the verification of a booking by
+    /// email on, for example <c>http://mailpit:8025</c> (MIL-088, ADR-0053). Only the tests of that mode read it.
+    /// </summary>
+    public static Uri MailApiUrl => new(Required("E2E_MAIL_API_URL").TrimEnd('/') + "/");
+
     /// <summary>The folder for traces and screenshots (default <c>e2e-results</c> beside the test binaries).</summary>
     public static string ResultsDirectory =>
         Environment.GetEnvironmentVariable("E2E_RESULTS") is { Length: > 0 } folder

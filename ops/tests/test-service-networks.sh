@@ -2,15 +2,17 @@
 # Test of the Docker networks of the services (MIL-061, ADR-0039). Static part: every compose
 # file that scripts/deploy-services.sh deploys puts each service on exactly the networks of the
 # wiki page Network Isolation; only nginx and the database relay publish a host port, nginx the
-# ports 80 and 443 only; the scripts create the python network as an internal network; and
-# nothing under ops/ still carries the internal listener of nginx (8081). Live part: stand-ins
-# named as the services and attached to the networks the compose files give them answer from the
-# python network and not from the proxy network, where nginx stands; the API answers from the api
-# network, the one network nginx and the API share.
+# ports 80 and 443 only; the scripts create the python network and the mail network as internal
+# networks and the way out of the forwarder of the mail with a route out (ADR-0053); and nothing
+# under ops/ still carries the internal listener of nginx (8081). Live part: stand-ins named as
+# the services and attached to the networks the compose files give them answer from the python
+# network and not from the proxy network, where nginx stands; the API answers from the api
+# network, the one network nginx and the API share; the forwarder of the mail answers from the
+# mail network, which only it and the API join, and from no network of nginx or the web.
 #
 # Usage: test-service-networks.sh
 # It starts the containers t-net-* and the networks t-net-proxy, t-net-api, t-net-python,
-# t-net-llm and t-net-db, and removes them at the end.
+# t-net-llm, t-net-db, t-net-mail and t-net-mail-out, and removes them at the end.
 # Exit:  0 every check passed; 1 a check failed
 # Needs: bash 4+, docker with the compose plugin, jq
 
@@ -36,7 +38,8 @@ check() {
 declare -A EXPECTED=(
   ["nginx/nginx"]="api proxy"
   ["nfhotel-web/nfhotel-web"]="api proxy python"
-  ["nfhotel-api/nfhotel-api"]="api db python"
+  ["nfhotel-api/nfhotel-api"]="api db mail python"
+  ["mail-relay/mail-relay"]="mail mail-out"
   ["market-analysis/market-analysis-api"]="llm python"
   ["benchmark/benchmark"]="llm python"
   ["benchmark/results-owner"]=""
@@ -66,8 +69,10 @@ declare -A SETTINGS=(
   ["postgres-tailnet"]="NFHOTEL_TAILNET_IP=100.64.0.1"
   ["cloudflared"]=""
   ["alloy"]="ALLOY_ENV_FILE=alloy.env.example NFHOTEL_JOURNAL_GID=999"
+  ["mail-relay"]="MAIL_RELAY_HOST=smtp.example.com MAIL_RELAY_PORT=465"
 )
-readonly FOLDERS=(nginx nfhotel-web nfhotel-api market-analysis benchmark ollama postgres postgres-tailnet cloudflared alloy)
+readonly FOLDERS=(nginx nfhotel-web nfhotel-api market-analysis benchmark ollama postgres postgres-tailnet cloudflared alloy
+  mail-relay)
 
 # config <folder>: the compose file of the folder as JSON, read with its example settings.
 config() {
@@ -96,10 +101,17 @@ for key in "${!EXPECTED[@]}"; do
   [[ "$seen" == *" $key "* ]] || check "$key is still in a compose file" yes no
 done
 
-echo "== the scripts make the python network as an internal network"
+echo "== the scripts make the python and the mail network as internal networks"
 check "deploy-services.sh creates the python network --internal" 1 \
   "$(grep -cF "docker network create --internal \"\$python_network\"" "$OPS/scripts/deploy-services.sh")"
 check "stack.sh names the python network of a stack" 1 "$(grep -cF "STACK_PYTHON_NET=\"\$1-python\"" "$OPS/scripts/lib/stack.sh")"
+check "deploy-services.sh creates the mail network --internal" 1 \
+  "$(grep -cF "docker network create --internal \"\$mail_network\"" "$OPS/scripts/deploy-services.sh")"
+check "deploy-services.sh creates the way out of the forwarder with a route out" 1 \
+  "$(grep -cF "docker network create \"\$mail_out_network\"" "$OPS/scripts/deploy-services.sh")"
+check "stack.sh names the mail network of a stack" 1 "$(grep -cF "STACK_MAIL_NET=\"\$1-mail\"" "$OPS/scripts/lib/stack.sh")"
+check "stack.sh names the way out of the forwarder of a stack" 1 \
+  "$(grep -cF "STACK_MAIL_OUT_NET=\"\$1-mail-out\"" "$OPS/scripts/lib/stack.sh")"
 
 echo "== nothing under ops/ carries the internal listener of nginx"
 check "no nginx template listens on 8081" "" "$(grep -rl 'listen 8081' "$OPS/deploy/nginx" || true)"
@@ -110,8 +122,8 @@ check "no ANALYSIS_* variable of nginx under ops/" "" \
 
 echo "== the isolation, live, with stand-ins on the networks of the compose files"
 cleanup() {
-  docker rm -f t-net-analysis t-net-benchmark t-net-api >/dev/null 2>&1
-  docker network rm t-net-proxy t-net-api t-net-python t-net-llm t-net-db >/dev/null 2>&1
+  docker rm -f t-net-analysis t-net-benchmark t-net-api t-net-mail-relay >/dev/null 2>&1
+  docker network rm t-net-proxy t-net-api t-net-python t-net-llm t-net-db t-net-mail t-net-mail-out >/dev/null 2>&1
 }
 trap cleanup EXIT
 cleanup
@@ -120,6 +132,8 @@ docker network create --internal t-net-api >/dev/null
 docker network create --internal t-net-python >/dev/null
 docker network create t-net-llm >/dev/null
 docker network create --internal t-net-db >/dev/null
+docker network create --internal t-net-mail >/dev/null
+docker network create t-net-mail-out >/dev/null
 # networks_of <folder> <service>: the network keys of the service, from its compose file.
 networks_of() { jq -r --arg s "$2" '.services[$s].networks // {} | keys | join(" ")' <<<"$(config "$1")" | tr -d '\r'; }
 # standin <container> <service name> <port> <network keys...>: an http-echo that answers as the
@@ -136,6 +150,8 @@ standin t-net-analysis market-analysis-api 8000 $(networks_of market-analysis ma
 standin t-net-benchmark benchmark 8000 $(networks_of benchmark benchmark)
 # shellcheck disable=SC2046
 standin t-net-api nfhotel-api 8080 $(networks_of nfhotel-api nfhotel-api)
+# shellcheck disable=SC2046
+standin t-net-mail-relay mail-relay 1465 $(networks_of mail-relay mail-relay)
 # reach <network key> <url>: the HTTP status a client on that network gets; 000 when the name does
 # not resolve there.
 reach() { docker run --rm --network "t-net-$1" "$CURL" -s -o /dev/null -w '%{http_code}' --max-time 5 "$2" || true; }
@@ -149,6 +165,10 @@ check "the python network reaches the market analysis" 200 "$(reach python http:
 check "the python network reaches the benchmark" 200 "$(reach python http://benchmark:8000/)"
 check "the python network reaches the API (the results of the benchmark)" 200 "$(reach python http://nfhotel-api:8080/)"
 check "the llm network (Ollama) does not reach the API" 000 "$(reach llm http://nfhotel-api:8080/)"
+check "the mail network (the API) reaches the forwarder of the mail" 200 "$(reach mail http://mail-relay:1465/)"
+check "the proxy network (nginx) does not reach the forwarder of the mail" 000 "$(reach proxy http://mail-relay:1465/)"
+check "the api network (the web) does not reach the forwarder of the mail" 000 "$(reach api http://mail-relay:1465/)"
+check "the python network does not reach the forwarder of the mail" 000 "$(reach python http://mail-relay:1465/)"
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))

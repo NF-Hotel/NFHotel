@@ -55,6 +55,8 @@ export NFHOTEL_API_IMAGE="$NAME-api:local" NFHOTEL_WEB_IMAGE="$NAME-web:local" N
 export NFHOTEL_PROXY_NETWORK="$NAME-proxy" NFHOTEL_API_NETWORK="$NAME-api" NFHOTEL_DB_NETWORK="$NAME-db"
 # The python network of the stack (ADR-0039): the compose files of the web application and the API name it.
 export NFHOTEL_PYTHON_NETWORK="$NAME-python"
+# The mail network of the stack (ADR-0053): the compose file of the API names it.
+export NFHOTEL_MAIL_NETWORK="$NAME-mail"
 export POSTGRES_ENV_FILE="$settings/postgres/settings.env" POSTGRES_SECRETS="$settings/postgres"
 export NFHOTEL_API_ENV_FILE="$settings/api/settings.env" NFHOTEL_API_SECRETS="$settings/api"
 export NFHOTEL_WEB_ENV_FILE="$settings/web/settings.env" NFHOTEL_WEB_SECRETS="$settings/web"

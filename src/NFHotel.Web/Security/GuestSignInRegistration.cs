@@ -32,6 +32,13 @@ public static class GuestSignInRegistration
     /// <summary>The name of the form field that carries the ticket of the booking flow.</summary>
     public const string TicketField = "ticket";
 
+    /// <summary>
+    /// The page of the link in the mail of a booking request (MIL-088, ADR-0052 decision 3). Its button books the room,
+    /// signs the guest in like the sign-in does, and opens the guest's own booking. A literal route, so it wins over the
+    /// redirect of <c>/booking/{address}</c>.
+    /// </summary>
+    public const string VerifyPath = "/booking/verify";
+
     #endregion Fields
 
     #region Public methods

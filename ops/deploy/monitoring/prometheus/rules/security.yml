@@ -1,7 +1,7 @@
 # Security alerts from the metrics (MIL-036 task 2). The API counts its answers per route and
 # status (MIL-034), so failed staff sign-ins (401) and refused ones over the rate limit (429)
 # are seen here; the audit table of ADR-0017 keeps who and when. Since MIL-087 it also counts
-# the security events of the booking flow.
+# the security events of the booking flow, and since MIL-088 its mails.
 groups:
   - name: nfhotel-security
     rules:
@@ -49,6 +49,55 @@ groups:
             More bookings than usual came from the public site; one sender may hold rooms with
             many addresses and emails (ADR-0051). Follow the wiki page Alerts, section Booking
             flow.
+
+      # The mail of the booking flow (MIL-088, ADR-0053 decisions 5 and 6): the API counts a mail
+      # that the relay did not take as the event mail_not_sent, a request that the fuse refused as
+      # mail_fuse_blown, and each mail it sent in nfhotel_mails_total with its kind
+      # (verification_link or booking_receipt).
+      - alert: MailNotSent
+        expr: >-
+          sum(increase(nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api",
+          kind="mail_not_sent"}[10m])) > 0
+        labels:
+          severity: critical
+          host: nf-hotel
+        annotations:
+          summary: >-
+            Mails of the booking flow not sent in 10 minutes: {{ printf "%.0f" $value }}
+          description: >-
+            The relay did not take a mail (ADR-0053 decision 5). With the verification by email
+            on, the public booking refuses requests until mails go out again. The events
+            mail_not_sent in the log of the API name the kind of the mail and the reason; follow
+            the wiki page Alerts, section Mail.
+
+      - alert: MailFuseBlown
+        expr: >-
+          sum(increase(nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api",
+          kind="mail_fuse_blown"}[10m])) > 0
+        labels:
+          severity: critical
+          host: nf-hotel
+        annotations:
+          summary: >-
+            Booking requests refused by the fuse of the mail in 10 minutes:
+            {{ printf "%.0f" $value }}
+          description: >-
+            The mails of 24 hours reached Smtp__MaxMailsPerDay (400 by default, ADR-0053 decision
+            6), so the public booking refuses new requests until the count falls. Someone may be
+            making the hotel send mail; follow the wiki page Alerts, section Mail.
+
+      - alert: MailVolumeHigh
+        expr: >-
+          sum(increase(nfhotel_mails_total{host="nf-hotel", job="nfhotel-api"}[24h])) >= 200
+        labels:
+          severity: warning
+          host: nf-hotel
+        annotations:
+          summary: "{{ $value | humanize }} mails sent in 24 hours"
+          description: >-
+            More mails than usual went out (ADR-0053 decision 6). At 400 in 24 hours the fuse
+            pauses the public booking, and Gmail allows the account 500 a day. Follow the wiki
+            page Alerts, section Mail.
 
       # The runtime check of MIL-080 (nfhotel-container-check.timer, every 15 minutes) reports one
       # series for each rule that a running container on nf-hotel breaks.

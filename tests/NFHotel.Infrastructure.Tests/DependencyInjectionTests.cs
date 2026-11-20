@@ -7,6 +7,7 @@ using NFHotel.Application.UseCases.Guests;
 using NFHotel.Application.UseCases.Rooms;
 using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Repositories;
+using NFHotel.TestSupport;
 
 namespace NFHotel.Infrastructure.Tests;
 
@@ -40,6 +41,9 @@ public sealed class DependencyInjectionTests
         ServiceCollection services = new();
         services.AddLogging();
         services.AddSingleton<IClock>(new FixedClock());
+
+        // The API registers the events of the booking request with the address of its caller (MIL-088); the test records them.
+        services.AddScoped<IBookingRequestEvents, RecordingBookingRequestEvents>();
         services.AddInfrastructure(configuration);
         return services.BuildServiceProvider(validateScopes: true);
     }
@@ -74,6 +78,12 @@ public sealed class DependencyInjectionTests
     [InlineData(typeof(ICallerAddress))]
     [InlineData(typeof(ISenderLimits))]
     [InlineData(typeof(IPublicBookingEmailLimit))]
+    [InlineData(typeof(IBookingRequestService))]
+    [InlineData(typeof(IBookingRequestCleanup))]
+    [InlineData(typeof(IBookingRequestRepository))]
+    [InlineData(typeof(ISentMailRepository))]
+    [InlineData(typeof(IMailSender))]
+    [InlineData(typeof(IBookingVerificationSettings))]
     public void GetRequiredService_EveryPortAndService_IsRegistered(Type serviceType)
     {
         using var provider = BuildProvider();

@@ -5,7 +5,9 @@ namespace NFHotel.Api.Security;
 /// <summary>
 /// The counter of the security events of the booking flow (MIL-087, ADR-0051 decision 6): <c>nfhotel.security.events</c>
 /// on the meter <c>NFHotel.Security</c>, with the labels <c>kind</c> and <c>limit</c>. In Prometheus it is
-/// <c>nfhotel_security_events_total</c>.
+/// <c>nfhotel_security_events_total</c>. Beside it the counter of the mails that the relay took,
+/// <c>nfhotel.mails</c> with the label <c>kind</c> (MIL-088, ADR-0053 decision 6), <c>nfhotel_mails_total</c> in
+/// Prometheus: a mail is no security event, but its volume is what the alert <c>MailVolumeHigh</c> watches.
 /// </summary>
 public sealed class SecurityMetrics
 {
@@ -23,7 +25,11 @@ public sealed class SecurityMetrics
     /// <summary>The label with the name of the limit of a refusal.</summary>
     public const string LimitTag = "limit";
 
+    /// <summary>The name of the counter of the mails that the relay took (MIL-088).</summary>
+    public const string MailsCounterName = "nfhotel.mails";
+
     private readonly Counter<long> _events;
+    private readonly Counter<long> _mails;
 
     #endregion Fields
 
@@ -41,6 +47,10 @@ public sealed class SecurityMetrics
             EventsCounterName,
             unit: "{event}",
             description: "The security events of the booking flow, by kind and by the limit of a refusal.");
+        _mails = meter.CreateCounter<long>(
+            MailsCounterName,
+            unit: "{mail}",
+            description: "The mails of the booking flow that the relay took, by kind.");
     }
 
     #endregion Constructors
@@ -62,6 +72,30 @@ public sealed class SecurityMetrics
         }
 
         _events.Add(1, new KeyValuePair<string, object?>(KindTag, kind), new KeyValuePair<string, object?>(LimitTag, limit));
+    }
+
+    /// <summary>Counts one mail that the relay took.</summary>
+    /// <param name="mail">The name of the kind of the mail, from <see cref="SecurityEvents.MailNames"/>.</param>
+    public void CountMail(string mail)
+    {
+        ArgumentNullException.ThrowIfNull(mail);
+
+        _mails.Add(1, new KeyValuePair<string, object?>(KindTag, mail));
+    }
+
+    /// <summary>
+    /// Gives the series of the mails a value of 0 once the telemetry runs (MIL-088, ADR-0053 decisions 5 and 6). A series
+    /// that a counter starts with its first event has no earlier value, so <c>increase</c> in Prometheus does not see
+    /// that event, and the alerts <c>MailNotSent</c> and <c>MailFuseBlown</c> fire on the first one; with the 0 they do.
+    /// </summary>
+    public void StartAtZero()
+    {
+        _events.Add(0, new KeyValuePair<string, object?>(KindTag, SecurityEvents.MailNotSentKind));
+        _events.Add(0, new KeyValuePair<string, object?>(KindTag, SecurityEvents.MailFuseBlownKind));
+        foreach (string mail in SecurityEvents.MailNames)
+        {
+            _mails.Add(0, new KeyValuePair<string, object?>(KindTag, mail));
+        }
     }
 
     #endregion Public methods

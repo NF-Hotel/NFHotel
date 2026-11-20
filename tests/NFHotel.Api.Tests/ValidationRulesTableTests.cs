@@ -22,12 +22,15 @@ namespace NFHotel.Api.Tests;
 /// </summary>
 public sealed partial class ValidationRulesTableTests
 {
-    // The actions of the booking flow: the public booking, the guest sign-in, the move by a guest, the booking form,
-    // the move and the overview of the back office, the guest form, and the queries of the free rooms and of the guest
-    // search. A new action of the flow is added here, and the table then needs its rows.
+    // The actions of the booking flow: the public booking, the booking request and its verification by email, the guest
+    // sign-in, the move by a guest, the booking form, the move and the overview of the back office, the guest form, and
+    // the queries of the free rooms and of the guest search. A new action of the flow is added here, and the table then
+    // needs its rows.
     private static readonly (Type Controller, string Action)[] FlowActions =
     [
         (typeof(BookingsController), nameof(BookingsController.CreatePublicAsync)),
+        (typeof(BookingsController), nameof(BookingsController.AskPublicBookingAsync)),
+        (typeof(BookingsController), nameof(BookingsController.VerifyPublicBookingAsync)),
         (typeof(GuestAuthController), nameof(GuestAuthController.SignInAsync)),
         (typeof(GuestBookingController), nameof(GuestBookingController.RescheduleAsync)),
         (typeof(BookingsController), nameof(BookingsController.CreateAsync)),

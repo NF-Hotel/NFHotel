@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Tests of scripts/check-log-privacy.sh (MIL-036 task 4): clean logs pass; a value in any
 # container's log fails, naming the container but not printing the line; no container fails;
-# and no value is a usage error. A fake stands in for docker.
+# and no value is a usage error. The values of a file (MIL-088), one per line, are checked as
+# well, also one that starts with -, and so are the matches of a pattern, such as the emails
+# that the tests of the verification make for themselves. A fake stands in for docker.
 #
 # Run it in Debian 12 with the repository at /src:
 #   docker run --rm -v "$PWD:/src:ro" debian:12-slim bash /src/tests/test-check-log-privacy.sh
@@ -54,6 +56,32 @@ check ada@example.com Lovelace
 : >"$W/containers"
 check ada@example.com && ko "passed with no container" || ok "a missing stack fails"
 check && ko "accepted no value" || ok "no value is a usage error"
+
+# The tokens of the verification by email come in a file; a token may start with -.
+printf '%s\n' nfhotel-e2e-web-1 nfhotel-e2e-api-1 >"$W/containers"
+echo "info: booking 42 created" >"$W/logs/nfhotel-e2e-api-1"
+printf -- '-tok_en-1\r\n\nsecond-token\n' >"$W/tokens"
+check --values-file "$W/tokens" Lovelace && grep -q "2 containers" "$W/out" &&
+  ok "values of a file that are in no log pass" || ko "file, clean: $(cat "$W/out")"
+echo "warn: link https://nginx/booking/verify#-tok_en-1 sent" >>"$W/logs/nfhotel-e2e-api-1"
+check --values-file "$W/tokens"
+[[ $? == 1 ]] && grep -q "nfhotel-e2e-api-1" "$W/out" && ! grep -q -- "-tok_en-1" "$W/out" &&
+  ok "a value of the file that starts with - is found, and not printed" || ko "file, found: $(cat "$W/out")"
+check --values-file "$W/no-such-file" Lovelace
+[[ $? == 2 ]] && ok "a missing file of values is a usage error" || ko "missing file: $(cat "$W/out")"
+
+# The emails of the tests of the verification by email, one made up for each test
+# (e2e-<guid>@example.com), are found by a pattern; the email masked by the API is not one.
+email_pattern='e2e-[0-9a-f-]+@example[.]com'
+echo "info: booking_request_made from 172.18.0.5 for e***@example.com" >"$W/logs/nfhotel-e2e-api-1"
+check --pattern "$email_pattern" && grep -q "2 containers" "$W/out" &&
+  ok "a pattern alone is enough, and a masked email does not match it" || ko "pattern, clean: $(cat "$W/out")"
+echo "warn: mail to e2e-0f3c5a7e9b1d4f2a8c6e0b4d2f6a8c1e@example.com failed" >>"$W/logs/nfhotel-e2e-web-1"
+check Lovelace --pattern "$email_pattern"
+[[ $? == 1 ]] && grep -q "nfhotel-e2e-web-1" "$W/out" && ! grep -q "0f3c5a7e9b1d" "$W/out" &&
+  ok "an email of a test of the verification is found by the pattern, and not printed" || ko "pattern, found: $(cat "$W/out")"
+check Lovelace --pattern
+[[ $? == 2 ]] && ok "--pattern without a pattern is a usage error" || ko "empty pattern: $(cat "$W/out")"
 
 echo "RESULT: $pass passed, $fail failed"
 ((fail == 0))

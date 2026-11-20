@@ -73,6 +73,7 @@ public sealed class MyBookingViewModelTests
     [Theory]
     [InlineData(MyBookingViewModel.CancelledResult, "Your booking is cancelled.")]
     [InlineData(MyBookingViewModel.RescheduledResult, "Your new dates are saved.")]
+    [InlineData(MyBookingViewModel.BookedResult, "Thank you — your room is booked. Keep the booking reference below; reception will confirm the booking shortly.")]
     [InlineData("<script>", null)]
     [InlineData(null, null)]
     public async Task LoadAsync_ResultInTheAddress_ShowsItsNoticeOnly(string? result, string? notice)

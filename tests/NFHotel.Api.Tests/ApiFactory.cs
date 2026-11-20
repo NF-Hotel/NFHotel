@@ -169,6 +169,23 @@ public class ApiFactory : WebApplicationFactory<Program>
                 provider.GetRequiredService<IGuestSignInLimits>(),
                 provider.GetRequiredService<ICallerAddress>()));
             services.AddScoped<IGuestService>(provider => World.GuestService(provider.GetRequiredService<IStaffAuthorizationService>()));
+
+            // The booking request and its verification (MIL-088) over the world: its requests, records of mails, relay and
+            // setting, which a test switches on, with the real events of the API and the real guest tokens. The clean-up
+            // that the API runs at its start reads the world too, so no test host reaches for a database.
+            services.RemoveAll<IBookingRequestService>();
+            services.AddScoped<IBookingRequestService>(provider => new BookingRequestService(
+                provider.GetRequiredService<BookingService>(),
+                World.BookingRequests,
+                World.SentMails,
+                World.UnitOfWork,
+                World.Mails,
+                World.Verification,
+                provider.GetRequiredService<IGuestTokenIssuer>(),
+                provider.GetRequiredService<IBookingRequestEvents>(),
+                World.Clock));
+            services.RemoveAll<IBookingRequestCleanup>();
+            services.AddScoped<IBookingRequestCleanup>(_ => World.BookingRequestCleanup());
             services.AddSingleton<IRoomService>(_ => World.RoomService());
             services.AddSingleton(_ => World.BenchmarkService());
             services.AddSingleton<IBenchmarkService>(provider => provider.GetRequiredService<BenchmarkService>());

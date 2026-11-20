@@ -82,6 +82,12 @@ public sealed class HotelDbContext : DbContext
     /// <summary>The audit trail of the staff accounts (ADR-0017).</summary>
     public DbSet<StaffAuditEvent> StaffAuditEvents => Set<StaffAuditEvent>();
 
+    /// <summary>The booking requests that wait for their verification (MIL-088, ADR-0052).</summary>
+    public DbSet<BookingRequest> BookingRequests => Set<BookingRequest>();
+
+    /// <summary>The records of the mails that the limits per mailbox and the fuse count (MIL-088, ADR-0052 decision 6).</summary>
+    public DbSet<SentMail> SentMails => Set<SentMail>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -106,9 +112,11 @@ public sealed class HotelDbContext : DbContext
         modelBuilder.ApplyConfiguration(new BookingMarketDetailConfiguration());
         modelBuilder.ApplyConfiguration(new BenchmarkResultConfiguration());
         modelBuilder.ApplyConfiguration(new StaffAuditEventConfiguration());
+        modelBuilder.ApplyConfiguration(new SentMailConfiguration());
 
         // GuestConfiguration is registered explicitly and not via assembly scanning, because it
         // has a dependency: the value converter that encrypts the passport number (B-09).
         modelBuilder.ApplyConfiguration(new GuestConfiguration(_passportEncryptor));
+        modelBuilder.ApplyConfiguration(new BookingRequestConfiguration(_passportEncryptor));
     }
 }

@@ -22,6 +22,8 @@ readonly DB_NETWORK="nfhotel-smoke-db"
 readonly API_NETWORK="nfhotel-smoke-api"
 # The internal network of the Python services (ADR-0039); no Python service runs in this test.
 readonly PYTHON_NETWORK="nfhotel-smoke-python"
+# The internal network of the mail that the API joins (ADR-0053); no forwarder runs in this test.
+readonly MAIL_NETWORK="nfhotel-smoke-mail"
 readonly SMOKE_API_TOKEN="smoke-token-0123456789-smoke-token-0123456789"
 readonly NGINX_PROJECT="nfhotel-smoke-nginx"
 readonly WEB_PROJECT="nfhotel-smoke-web"
@@ -103,7 +105,7 @@ compose_web() {
 compose_api() {
   NFHOTEL_API_ENV_FILE="$TMP_NATIVE/api/settings.env" NFHOTEL_API_SECRETS="$TMP_NATIVE/api" \
     NFHOTEL_API_NETWORK="$API_NETWORK" NFHOTEL_DB_NETWORK="$DB_NETWORK" NFHOTEL_PYTHON_NETWORK="$PYTHON_NETWORK" \
-    docker compose --project-name "$API_PROJECT" \
+    NFHOTEL_MAIL_NETWORK="$MAIL_NETWORK" docker compose --project-name "$API_PROJECT" \
     --file deploy/nfhotel-api/docker-compose.yml "$@"
 }
 
@@ -112,7 +114,7 @@ cleanup() {
     compose_nginx down --volumes --remove-orphans >/dev/null 2>&1 || true
     compose_web down --volumes --remove-orphans >/dev/null 2>&1 || true
     compose_api down --volumes --remove-orphans >/dev/null 2>&1 || true
-    docker network rm "$NETWORK" "$DB_NETWORK" "$API_NETWORK" "$PYTHON_NETWORK" >/dev/null 2>&1 || true
+    docker network rm "$NETWORK" "$DB_NETWORK" "$API_NETWORK" "$PYTHON_NETWORK" "$MAIL_NETWORK" >/dev/null 2>&1 || true
   fi
   [[ -n "$TMP_DIR" ]] && rm -rf "$TMP_DIR"
 }
@@ -190,6 +192,7 @@ main() {
   docker network create --internal "$DB_NETWORK" >/dev/null
   docker network create --internal "$API_NETWORK" >/dev/null
   docker network create --internal "$PYTHON_NETWORK" >/dev/null
+  docker network create --internal "$MAIL_NETWORK" >/dev/null
   echo "Building and starting the database API..."
   compose_api up --detach --build --wait --wait-timeout 180 >/dev/null ||
     die "the database API did not become healthy"

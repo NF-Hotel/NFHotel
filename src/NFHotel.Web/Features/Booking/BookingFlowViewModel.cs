@@ -43,6 +43,11 @@ namespace NFHotel.Web.Features.Booking;
 /// "Today" comes from <see cref="IClock"/> and never from <c>DateTime.Now</c> (A-05), so
 /// the client's date validation uses the same day as the service afterwards.
 /// </para>
+/// <para>
+/// With the verification by email on (MIL-088, ADR-0052 decision 8), the last step asks for the booking instead of
+/// making it: the API mails a link, the flow ends in <see cref="BookingFlowStep.Inbox"/>, and the room is booked only on
+/// the page of the link. The flow asks the API which way holds once, when the page starts (<see cref="LoadModeAsync"/>).
+/// </para>
 /// </remarks>
 public sealed class BookingFlowViewModel
 {
@@ -61,13 +66,18 @@ public sealed class BookingFlowViewModel
     private static readonly IReadOnlyList<string> NoMessages = Array.Empty<string>();
     private static readonly IReadOnlyList<AvailableRoomDto> NoRooms = Array.Empty<AvailableRoomDto>();
 
+    /// <summary>The notice after "Send again": a new request replaces the open one, and its link (ADR-0052 decision 6).</summary>
+    private const string NewLinkNotice = "We've sent you a new link. The link in the earlier email no longer works.";
+
     private readonly IUseCaseRunner<IBookingService> _bookings;
     private readonly IUseCaseRunner<IGuestService> _guests;
     private readonly IUseCaseRunner<IGuestAccessService> _guestAccess;
     private readonly GuestSessionTickets _tickets;
     private readonly IClock _clock;
+    private readonly IUseCaseRunner<IBookingRequestService>? _requests;
 
     private int _party = 1;
+    private bool _isModeLoaded;
 
     /// <summary>
     /// Creates the viewmodel with an empty flow and a suggestion for dates.
@@ -77,12 +87,17 @@ public sealed class BookingFlowViewModel
     /// <param name="guestAccess">Runs the public booking that answers with the guest's session (MIL-018).</param>
     /// <param name="tickets">Keeps that session under a one-time ticket until the guest asks for it (MIL-018).</param>
     /// <param name="clock">Hotellets ur (A-05).</param>
+    /// <param name="requests">
+    /// Runs the booking verified by email (MIL-088, ADR-0052). Without it the flow never asks the mode and books at once,
+    /// as it did before MIL-088.
+    /// </param>
     public BookingFlowViewModel(
         IUseCaseRunner<IBookingService> bookings,
         IUseCaseRunner<IGuestService> guests,
         IUseCaseRunner<IGuestAccessService> guestAccess,
         GuestSessionTickets tickets,
-        IClock clock)
+        IClock clock,
+        IUseCaseRunner<IBookingRequestService>? requests = null)
     {
         ArgumentNullException.ThrowIfNull(bookings);
         ArgumentNullException.ThrowIfNull(guests);
@@ -95,6 +110,7 @@ public sealed class BookingFlowViewModel
         _guestAccess = guestAccess;
         _tickets = tickets;
         _clock = clock;
+        _requests = requests;
 
         CheckInDate = clock.Today.AddDays(1);
         CheckOutDate = clock.Today.AddDays(1 + DefaultNights);
@@ -188,6 +204,25 @@ public sealed class BookingFlowViewModel
     /// button "Manage your booking" posts it, and the answer sets the guest cookie; the token itself stays on the server.
     /// </summary>
     public string? SessionTicket { get; private set; }
+
+    /// <summary>
+    /// True when a booking on the public site is asked for and verified by email (MIL-088, ADR-0052 decision 8). False
+    /// until <see cref="LoadModeAsync"/> has heard otherwise from the API, and when the API could not say.
+    /// </summary>
+    /// <remarks>
+    /// False when the API could not say, because the API holds the rule either way: with the verification on, it refuses a
+    /// booking at once with <c>booking.verification_required</c>, and the page asks the guest to reload it.
+    /// </remarks>
+    public bool IsVerificationRequired { get; private set; }
+
+    /// <summary>The email that the link was sent to, as the guest typed it, or <c>null</c> until the API took a request.</summary>
+    public string? SentTo { get; private set; }
+
+    /// <summary>When the link of the last mail lapses, or <c>null</c> until the API took a request.</summary>
+    public DateTimeOffset? LinkExpiresAt { get; private set; }
+
+    /// <summary>The notice of the inbox step after "Send again", or <c>null</c>.</summary>
+    public string? Notice { get; private set; }
 
     /// <summary>True when the user has tried to move on from the date step at least once.</summary>
     /// <remarks>
@@ -283,6 +318,40 @@ public sealed class BookingFlowViewModel
     /// <summary>True when the booking may be sent.</summary>
     public bool CanSubmit => !IsBusy && HasValidDates && SelectedRoomType is not null;
 
+    /// <summary>True when "Send again" may be pressed: the inbox step shows, and no call is in progress.</summary>
+    public bool CanSendAgain => !IsBusy && CurrentStep == BookingFlowStep.Inbox;
+
+    /// <summary>
+    /// The last step of the flow: the inbox with the verification on, otherwise the receipt (MIL-088, ADR-0052).
+    /// </summary>
+    public BookingFlowStep FinalStep => IsVerificationRequired ? BookingFlowStep.Inbox : BookingFlowStep.Receipt;
+
+    /// <summary>The name of the last step in the step indicator.</summary>
+    public string FinalStepText => IsVerificationRequired ? "Check your inbox" : "Confirmation";
+
+    /// <summary>
+    /// The hint at the email field, which says what the email is used for: the link that books the room with the
+    /// verification on; with it off no mail is sent, and the email finds the booking again with its reference (UC-010).
+    /// </summary>
+    public string EmailHint => IsVerificationRequired
+        ? "We email you a link here. Your room is booked only when you use it."
+        : "With your booking reference, it finds your booking again.";
+
+    /// <summary>The first line of the inbox step: where the mail went. Empty until the API took a request.</summary>
+    public string InboxText => SentTo is null
+        ? string.Empty
+        : $"We've sent an email with a link to {SentTo}.";
+
+    /// <summary>
+    /// What the link does, and until when: it works once, and the room is booked only when the button on its page is
+    /// pressed (ADR-0052 decisions 2 and 3). Empty until the API took a request.
+    /// </summary>
+    /// <remarks>The time is in UTC, as the mail writes it; see <see cref="PublicDateText.TimeUtc"/>.</remarks>
+    public string LinkText => LinkExpiresAt is not DateTimeOffset expiresAt
+        ? string.Empty
+        : "Open the link and press the button on its page: your room is booked only then. "
+            + $"The link works once, until {PublicDateText.TimeUtc(expiresAt)}.";
+
     /// <summary>
     /// The text that stands where a price would otherwise stand. The price model does not exist in Phase 1
     /// (BR-C-05, BR-31), and an empty field would look like a fault rather than a deliberate omission.
@@ -348,6 +417,33 @@ public sealed class BookingFlowViewModel
     // ------------------------------------------------------------------
     // OVERGANGE
     // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Asks the API once which way a booking on the public site goes (MIL-088, ADR-0052 decision 8). A second call does
+    /// nothing, so the flow keeps one mode from its start to its end.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task that completes when the mode is known, or when the API could not say.</returns>
+    /// <remarks>
+    /// An answer that is no answer leaves the flow booking at once: the API refuses that with
+    /// <c>booking.verification_required</c> when the verification is on, and the text of that code asks the guest to reload
+    /// the page, which asks again. Without the runner of the requests the flow books at once, as before MIL-088.
+    /// </remarks>
+    public async Task LoadModeAsync(CancellationToken cancellationToken = default)
+    {
+        if (_requests is null || _isModeLoaded)
+        {
+            return;
+        }
+
+        _isModeLoaded = true;
+
+        Result<PublicBookingModeDto> mode = await _requests
+            .RunAsync((service, token) => service.GetModeAsync(token), cancellationToken)
+            .ConfigureAwait(false);
+
+        IsVerificationRequired = mode.IsSuccess && mode.Value.VerificationRequired;
+    }
 
     /// <summary>
     /// Fetches the free rooms for the chosen dates and goes to step 2 (BR-C-02, BR-C-04).
@@ -530,6 +626,10 @@ public sealed class BookingFlowViewModel
     /// is sent back to step 2 with the message kept. The alternative — an error on a
     /// form whose room no longer exists — is a dead end.
     /// </para>
+    /// <para>
+    /// With the verification on, the same answers are asked for instead (MIL-088, ADR-0052 decision 1), and the flow
+    /// ends in the inbox step: nothing is booked until the button behind the link is pressed.
+    /// </para>
     /// </remarks>
     public async Task SubmitAsync(CancellationToken cancellationToken = default)
     {
@@ -568,12 +668,14 @@ public sealed class BookingFlowViewModel
         GuestErrors = GuestFieldErrors.None;
         Errors = NoMessages;
 
-        CreatePublicBookingRequest request = new(
-            CheckInDate!.Value,
-            CheckOutDate!.Value,
-            size,
-            Guests,
-            fields);
+        CreatePublicBookingRequest request = RequestFor(size, fields);
+
+        if (IsVerificationRequired && _requests is { } requests)
+        {
+            await AskAsync(requests, request, isRepeat: false, cancellationToken).ConfigureAwait(false);
+
+            return;
+        }
 
         Result<PublicBookingDto> result;
 
@@ -600,29 +702,62 @@ public sealed class BookingFlowViewModel
             return;
         }
 
-        GuestErrors = GuestFieldErrors.FromResult(result);
-        Errors = GuestErrors.Other;
+        await ShowRefusalAsync(result, cancellationToken).ConfigureAwait(false);
+    }
 
-        if (!MentionsRoom(result))
+    /// <summary>
+    /// Asks again with the same answers from the inbox step (MIL-088, ADR-0052 decision 6): a new mail with a new link,
+    /// under the same limits, and the link of the earlier mail stops working.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <remarks>
+    /// Dates that are no longer valid, because the day has moved on, send the guest back to step 1 (BR-C-04), like
+    /// <see cref="SubmitAsync"/>. A refusal is shown on the inbox step, except one that names a field or the room, which
+    /// takes the guest to the step that can fix it.
+    /// </remarks>
+    public async Task SendAgainAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanSendAgain || _requests is not { } requests)
         {
             return;
         }
 
-        var messages = Errors;
-
-        SelectedRoomType = null;
-
-        await FindRoomsAsync(cancellationToken).ConfigureAwait(false);
-
-        if (Errors.Count == 0)
+        if (!HasValidDates || SelectedRoomType is not RoomSize size)
         {
-            Errors = messages;
+            HasAttemptedDates = true;
+            Notice = null;
+            CurrentStep = BookingFlowStep.Dates;
+
+            return;
         }
+
+        Errors = NoMessages;
+
+        await AskAsync(requests, RequestFor(size, BuildGuestFields()), isRepeat: true, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Starts a new flow from scratch. Used from the receipt.
+    /// Goes back from the inbox step to the guest details, with everything typed kept, so a mistyped email can be put
+    /// right and asked for again.
     /// </summary>
+    public void BackToDetails()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        Errors = NoMessages;
+        Notice = null;
+        CurrentStep = HasValidDates && SelectedRoomType is not null
+            ? BookingFlowStep.Guest
+            : BookingFlowStep.Dates;
+    }
+
+    /// <summary>
+    /// Starts a new flow from scratch. Used from the receipt and from the inbox step.
+    /// </summary>
+    /// <remarks>The mode of the flow is kept: it is the API's, not the guest's.</remarks>
     public void StartOver()
     {
         if (IsBusy)
@@ -646,6 +781,9 @@ public sealed class BookingFlowViewModel
         GuestErrors = GuestFieldErrors.None;
         Confirmation = null;
         SessionTicket = null;
+        SentTo = null;
+        LinkExpiresAt = null;
+        Notice = null;
         Errors = NoMessages;
         CurrentStep = BookingFlowStep.Dates;
     }
@@ -730,6 +868,109 @@ public sealed class BookingFlowViewModel
         PhoneNumber.Trim(),
         Country.Trim(),
         string.IsNullOrWhiteSpace(PassportNumber) ? null : PassportNumber.Trim());
+
+    /// <summary>Builds the booking of the flow: the dates, the room type, the party and the new guest (BR-47).</summary>
+    private CreatePublicBookingRequest RequestFor(RoomSize size, GuestFields fields) => new(
+        CheckInDate!.Value,
+        CheckOutDate!.Value,
+        size,
+        Guests,
+        fields);
+
+    /// <summary>
+    /// Asks for the booking (MIL-088, ADR-0052 decision 1) and goes to the inbox step when the API took the request; a
+    /// refusal is shown as a refusal of the booking at once is.
+    /// </summary>
+    /// <param name="requests">Runs the booking verified by email.</param>
+    /// <param name="request">The same answers as a booking at once.</param>
+    /// <param name="isRepeat">True for "Send again", whose notice says that the earlier link stopped working.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    private async Task AskAsync(
+        IUseCaseRunner<IBookingRequestService> requests,
+        CreatePublicBookingRequest request,
+        bool isRepeat,
+        CancellationToken cancellationToken)
+    {
+        Result<BookingRequestReceiptDto> result;
+
+        IsBusy = true;
+
+        try
+        {
+            result = await requests
+                .RunAsync((service, token) => service.AskAsync(request, token), cancellationToken)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        if (result.IsSuccess)
+        {
+            SentTo = request.NewGuest?.Email;
+            LinkExpiresAt = result.Value.ExpiresAt;
+            Notice = isRepeat ? NewLinkNotice : null;
+            CurrentStep = BookingFlowStep.Inbox;
+
+            return;
+        }
+
+        Notice = null;
+
+        await ShowRefusalAsync(WithVerificationOff(result), cancellationToken).ConfigureAwait(false);
+
+        // A field that the API refused is shown at its field, which the inbox step does not have.
+        if (CurrentStep == BookingFlowStep.Inbox && HasFieldErrors)
+        {
+            CurrentStep = BookingFlowStep.Guest;
+        }
+    }
+
+    /// <summary>
+    /// Shows a refusal of the booking or of the request: the errors of the fields at the fields and the rest above the
+    /// form. A refusal that names the room drops the choice, fetches the rooms again and keeps the reason.
+    /// </summary>
+    private async Task ShowRefusalAsync(Result result, CancellationToken cancellationToken)
+    {
+        GuestErrors = GuestFieldErrors.FromResult(result);
+        Errors = GuestErrors.Other;
+
+        if (!MentionsRoom(result))
+        {
+            return;
+        }
+
+        var messages = Errors;
+
+        SelectedRoomType = null;
+
+        await FindRoomsAsync(cancellationToken).ConfigureAwait(false);
+
+        if (Errors.Count == 0)
+        {
+            Errors = messages;
+        }
+    }
+
+    /// <summary>
+    /// The API answers a request with <c>booking.not_found</c> when the verification was switched off after the page
+    /// asked the mode (ADR-0052 decision 8). The way to book changed under the page, so the guest gets the text that asks
+    /// for a reload rather than a booking that was not found.
+    /// </summary>
+    private static Result WithVerificationOff(Result result) =>
+        result.Errors.Any(error => error.Code == ErrorCodes.Booking.NotFound)
+            ? Result.Failure(ErrorCodes.Booking.VerificationRequired)
+            : result;
+
+    /// <summary>True when a refusal put an error on a field of the guest form.</summary>
+    private bool HasFieldErrors =>
+        GuestErrors.FirstName is not null
+        || GuestErrors.LastName is not null
+        || GuestErrors.Email is not null
+        || GuestErrors.PhoneNumber is not null
+        || GuestErrors.Country is not null
+        || GuestErrors.PassportNumber is not null;
 
     /// <summary>True if the result is about the room rather than about the guest.</summary>
     private static bool MentionsRoom(Result result)

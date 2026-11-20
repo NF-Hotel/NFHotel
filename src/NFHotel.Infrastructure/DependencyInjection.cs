@@ -16,6 +16,7 @@ using NFHotel.Application.UseCases.Staff;
 using NFHotel.Domain.Repositories;
 using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Logging;
+using NFHotel.Infrastructure.Mail;
 using NFHotel.Infrastructure.Persistence;
 using NFHotel.Infrastructure.Repositories;
 using NFHotel.Infrastructure.Security;
@@ -68,9 +69,12 @@ public static class DependencyInjection
         var staffOptions = ReadStaffOptions(configuration);
         GuestLookupOptions guestLookupOptions = ReadGuestLookupOptions(configuration);
         SenderLimitOptions senderLimitOptions = ReadSenderLimitOptions(configuration);
+        SmtpOptions smtpOptions = MailSettings.ReadSmtp(configuration);
+        BookingVerificationOptions verificationOptions = MailSettings.ReadVerification(configuration, smtpOptions);
 
         AddPersistence(services, connectionString);
         AddSecurity(services, encryptionOptions, staffOptions, guestLookupOptions, senderLimitOptions);
+        AddMail(services, smtpOptions, verificationOptions);
         AddApplicationServices(services);
 
         return services;
@@ -135,6 +139,8 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IBookingRepository, BookingRepository>();
+        services.AddScoped<IBookingRequestRepository, BookingRequestRepository>();
+        services.AddScoped<ISentMailRepository, SentMailRepository>();
         services.AddScoped<IBookingQueries, BookingRepository>();
         services.AddScoped<IRoomRepository, RoomRepository>();
         services.AddScoped<IRoomQueries, RoomRepository>();
@@ -194,6 +200,18 @@ public static class DependencyInjection
     }
 
     /// <summary>
+    /// Registers the settings of the verification and the adapter that sends the mails (MIL-088, ADR-0052 decision 8
+    /// and ADR-0053). The adapter is a singleton: it holds only the settings, and each mail opens a connection of its own.
+    /// </summary>
+    private static void AddMail(IServiceCollection services, SmtpOptions smtpOptions, BookingVerificationOptions verificationOptions)
+    {
+        services.AddSingleton(smtpOptions);
+        services.AddSingleton(verificationOptions);
+        services.AddSingleton<IBookingVerificationSettings, ConfiguredBookingVerificationSettings>();
+        services.AddSingleton<IMailSender, SmtpMailSender>();
+    }
+
+    /// <summary>
     /// Registers the three services of the Application layer.
     /// </summary>
     /// <remarks>
@@ -207,6 +225,10 @@ public static class DependencyInjection
         services.AddScoped<BookingService>();
         services.AddScoped<IBookingService>(provider => provider.GetRequiredService<BookingService>());
         services.AddScoped<IPublicBookingService>(provider => provider.GetRequiredService<BookingService>());
+
+        // MIL-088: the booking request and its verification, and the clean-up that the API runs on a timer.
+        services.AddScoped<IBookingRequestService, BookingRequestService>();
+        services.AddScoped<IBookingRequestCleanup, BookingRequestCleanup>();
         services.AddScoped<IRoomService, RoomService>();
         services.AddScoped<IAiDefaultService, AiDefaultService>();
         services.AddScoped<IRoomRateService, RoomRateService>();

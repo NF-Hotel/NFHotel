@@ -29,6 +29,12 @@ public sealed class MyBookingViewModel
     /// <summary>The word in the address after new dates were saved.</summary>
     public const string RescheduledResult = "rescheduled";
 
+    /// <summary>
+    /// The word in the address after the button behind the link of a booking request booked the room (MIL-088, ADR-0052
+    /// decision 5): the page shows the receipt with the reference, and a reload does not press the button again.
+    /// </summary>
+    public const string BookedResult = "booked";
+
     private static readonly IReadOnlyList<string> NoMessages = Array.Empty<string>();
 
     private readonly IUseCaseRunner<IGuestBookingService> _booking;
@@ -160,6 +166,7 @@ public sealed class MyBookingViewModel
     {
         CancelledResult => "Your booking is cancelled.",
         RescheduledResult => "Your new dates are saved.",
+        BookedResult => "Thank you — your room is booked. Keep the booking reference below; reception will confirm the booking shortly.",
         _ => null,
     };
 

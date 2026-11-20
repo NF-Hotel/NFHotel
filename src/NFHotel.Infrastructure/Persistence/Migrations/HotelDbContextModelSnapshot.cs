@@ -551,6 +551,113 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                     b.ToTable("booking_market_detail", (string)null);
                 });
 
+            modelBuilder.Entity("NFHotel.Domain.Entities.BookingRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("booking_request_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("country");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("EmailKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("email_key");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<int>("Guests")
+                        .HasColumnType("integer")
+                        .HasColumnName("guests");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<string>("PassportNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("passport_number");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("phone_number");
+
+                    b.Property<int>("RoomSize")
+                        .HasColumnType("integer")
+                        .HasColumnName("room_size");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_booking_request");
+
+                    b.HasIndex("EmailKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_booking_request_email_key");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("ix_booking_request_expires_at");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_booking_request_token_hash");
+
+                    b.ToTable("booking_request", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_booking_request_link", "expires_at > created_at");
+
+                            t.HasCheckConstraint("ck_booking_request_period", "end_date > start_date");
+                        });
+                });
+
             modelBuilder.Entity("NFHotel.Domain.Entities.Guest", b =>
                 {
                     b.Property<int>("Id")
@@ -884,6 +991,41 @@ namespace NFHotel.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ux_room_rate_size");
 
                     b.ToTable("room_rate", (string)null);
+                });
+
+            modelBuilder.Entity("NFHotel.Domain.Entities.SentMail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("sent_mail_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("EmailKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("email_key");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sent_mail");
+
+                    b.HasIndex("SentAt")
+                        .HasDatabaseName("ix_sent_mail_sent_at");
+
+                    b.HasIndex("EmailKey", "Kind", "SentAt")
+                        .HasDatabaseName("ix_sent_mail_email_key_kind_sent_at");
+
+                    b.ToTable("sent_mail", (string)null);
                 });
 
             modelBuilder.Entity("NFHotel.Domain.Entities.StaffAuditEvent", b =>

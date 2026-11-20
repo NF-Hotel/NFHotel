@@ -40,4 +40,12 @@ public interface IBookingRepository : IRepository<Booking, int>
         IReadOnlyCollection<BookingStatus> blockingStatuses,
         int? excludeBookingId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Takes back a booking that was added but could not be saved, with the new guest it took
+    /// (<see cref="Booking.CreateForNewGuest"/>), so that a later save in the same scope does not try them again
+    /// (MIL-088, ADR-0052 decision 5: the next free room after a lost race).
+    /// </summary>
+    /// <param name="booking">The booking, as it was added.</param>
+    void Discard(Booking booking);
 }

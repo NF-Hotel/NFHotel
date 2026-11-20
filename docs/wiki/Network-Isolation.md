@@ -2,16 +2,17 @@
 
 **English**
 
-How the NF Hotel services talk to each other, which Docker network each one is on, and why some networks are kept apart from the rest. The diagram and the tables show the design that runs on the VM since MIL-061 ([ADR-0039](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0039-python-services-network.md)): the Python services (market analysis and benchmark) on a network of their own that nginx cannot see. [What changed in MIL-061](#what-changed-in-mil-061) lists the difference from the layout before it.
+How the NF Hotel services talk to each other, which Docker network each one is on, and why some networks are kept apart from the rest. The diagram and the tables show the design that runs on the VM since MIL-061 ([ADR-0039](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0039-python-services-network.md)): the Python services (market analysis and benchmark) on a network of their own that nginx cannot see. [What changed in MIL-061](#what-changed-in-mil-061) lists the difference from the layout before it. Since MIL-088 the API sends its mails through the forwarder `mail-relay` on two networks of their own ([The way of the mail](#the-way-of-the-mail), [ADR-0053](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0053-mail-from-the-application-through-a-relay.md)).
 
 **Contents**
 1. [The picture](#the-picture)
 2. [Who calls whom](#who-calls-whom)
 3. [The networks](#the-networks)
-4. [Why we isolate networks](#why-we-isolate-networks)
-5. [What changed in MIL-061](#what-changed-in-mil-061)
-6. [Rules for a new service](#rules-for-a-new-service)
-7. [Decisions on the open points](#decisions-on-the-open-points)
+4. [The way of the mail](#the-way-of-the-mail)
+5. [Why we isolate networks](#why-we-isolate-networks)
+6. [What changed in MIL-061](#what-changed-in-mil-061)
+7. [Rules for a new service](#rules-for-a-new-service)
+8. [Decisions on the open points](#decisions-on-the-open-points)
 
 ## The picture
 
@@ -39,6 +40,8 @@ A call goes from the service that starts it to the service that answers it. The 
 | 12 | benchmark | `nfhotel-api` | `nfhotel-api:8080` | `POST /api/benchmark/results` |
 | 13 | benchmark | Ollama | `ollama:11434` | `POST /v1/chat/completions`, `/api/pull`, `/api/delete`, `/api/version` |
 | 14 | market analysis | Ollama | `ollama:11434` | `POST /api/chat` |
+| 15 | `nfhotel-api` | `mail-relay` | `mail-relay:1465` (`Smtp__Forwarder`) | SMTP with TLS from the first byte; the TLS runs from the API to the relay |
+| 16 | `mail-relay` | SMTP relay | `Smtp__Host`:`Smtp__Port` (`smtp.gmail.com:465`) | TCP, passed on as it comes |
 
 ## The networks
 
@@ -49,10 +52,23 @@ A call goes from the service that starts it to the service that answers it. The 
 | `nfhotel-python` | `nfhotel-web`, `nfhotel-api`, market analysis, benchmark | Calls to and from the Python services; **nginx is not on it** |
 | `nfhotel-db` | `nfhotel-api`, PostgreSQL, the DBeaver relay | Only the API and the relay reach the database |
 | `nfhotel-llm` | Ollama, market analysis, benchmark | Only the AI services reach the model server |
+| `nfhotel-mail` | `nfhotel-api`, `mail-relay` | The mails of the API to its forwarder; nginx and the web application are not on it |
+| `nfhotel-mail-out` | `mail-relay` | The way out of the forwarder to the SMTP relay; no other service is on it |
 
 The one-shot services `results-owner` of the benchmark (MIL-045) and `models-owner` of Ollama (MIL-082) are on no network (`network_mode: none`): each gives a volume to the user of its service and exits.
 
-`nfhotel-db` and `nfhotel-llm` followed this rule from the start (see [Containers and Images](Containers-and-Images)); `nfhotel-python` applies it to the Python services since MIL-061. The networks `nfhotel-api`, `nfhotel-db` and `nfhotel-python` are internal (`docker network create --internal`): no route out and no host port. `ops/tests/test-service-networks.sh` compares this table with the compose files on every pull request and proves the isolation with stand-ins.
+`nfhotel-db` and `nfhotel-llm` followed this rule from the start (see [Containers and Images](Containers-and-Images)); `nfhotel-python` applies it to the Python services since MIL-061. The networks `nfhotel-api`, `nfhotel-db`, `nfhotel-python` and `nfhotel-mail` are internal (`docker network create --internal`): no route out and no host port. `ops/tests/test-service-networks.sh` compares this table with the compose files on every pull request and proves the isolation with stand-ins.
+
+## The way of the mail
+
+The API sends the mails of the booking flow (the link of a verification and the receipt, [ADR-0052](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0052-a-booking-takes-a-room-once-its-email-is-verified.md)) to an SMTP relay, and it has no route out of the VM ([ADR-0053](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0053-mail-from-the-application-through-a-relay.md) decision 4):
+
+- the forwarder `mail-relay` (HAProxy 3.2 in mode TCP, `ops/deploy/mail-relay`) is the only other service on the internal network `nfhotel-mail`, and the only service on `nfhotel-mail-out`, the network with the route out. The API reaches it at `mail-relay:1465`;
+- it passes the bytes on to `Smtp__Host`:`Smtp__Port` of `nfhotel-api.env` and finds the address of that host again every 10 seconds, on IPv4, because Docker on the VM has no IPv6. It gets those two values and nothing else of the file, which holds every secret of the API;
+- the TLS of the mail runs from the API to the relay through it, so the forwarder sees only encrypted bytes, holds no secret, and the API checks the certificate of the relay against `Smtp__Host` as if it connected itself;
+- `ops/scripts/deploy-services.sh` creates both networks at every deploy and starts the forwarder only when `Smtp__Forwarder` is set; the steps are on [Mail Relay](Mail-Relay).
+
+The throwaway stack of the end-to-end tests and the light development mode (`ops/scripts/lib/stack.sh`) have the same two networks, as `<name>-mail` and `<name>-mail-out`. There the mail catcher `mailpit` (`ops/deploy/mailpit`) stands on `<name>-mail-out` in place of the relay, and on `<name>-proxy`, where the browser tests read the mails at `http://mailpit:8025`; it never runs on the VM.
 
 ## Why we isolate networks
 
@@ -94,6 +110,7 @@ How it was done ([ADR-0039](https://github.com/NF-Hotel/NFHotel/blob/main/docs/a
 3. A service that only answers calls from the .NET applications belongs on `nfhotel-python` (or a network of its own), not on `nfhotel-api` or `nfhotel-proxy`.
 4. Do not publish a host port. If a person needs access, use the tailnet ([Database Access](Database-Access) is the example).
 5. Update the diagram, the call table, [Containers and Images](Containers-and-Images) and the table in `ops/tests/test-service-networks.sh` in the same pull request; the test fails in Ops CI until they agree.
+6. A service that must reach a host outside the VM gets a forwarder of its own, as the mail does, not a network with a route out.
 
 ## Decisions on the open points
 
@@ -103,4 +120,4 @@ The three open points of the first version of this page (2026-11-05) were settle
 - **Ollama for the market analysis.** The running service uses the container `ollama:11434` on `nfhotel-llm`, as `ops/deploy/market-analysis/market-analysis.env.example` sets `OLLAMA_BASE_URL`. The `host.docker.internal` address is the example of the market analysis repository, not of this deploy.
 - **Order of the move.** The services and the nginx change moved in one deploy: the CD run that followed the merge of MIL-061 recreated the market analysis, the benchmark, the web application, the API and nginx.
 
-Related: [Home](Home), [Containers and Images](Containers-and-Images), [Public Access](Public-Access), [Security Controls](Security-Controls).
+Related: [Home](Home), [Containers and Images](Containers-and-Images), [Public Access](Public-Access), [Security Controls](Security-Controls), [Mail Relay](Mail-Relay).

@@ -11,6 +11,7 @@
 - [Incidents](Incidents)
 - [Disaster Recovery](Disaster-Recovery)
 - [Public Access](Public-Access)
+- [Mail Relay](Mail-Relay)
 - [Database Access](Database-Access)
 - [Workflows](Workflows)
 - [Containers and Images](Containers-and-Images)

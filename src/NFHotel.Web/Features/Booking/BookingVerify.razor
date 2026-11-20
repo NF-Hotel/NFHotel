@@ -1,0 +1,83 @@
+@attribute [Route(GuestSignInRegistration.VerifyPath)]
+@using NFHotel.Web.Security
+@inherits NFHotel.Web.Common.CancellableComponentBase
+
+@inject BookingVerifyViewModel ViewModel
+@inject NavigationManager Navigation
+
+@*
+    The page of the link in the mail of a booking request (MIL-088, ADR-0052 decision 3). The link is
+    /booking/verify#<token>: the token stands after the #, which a browser never sends, so no access log holds it.
+
+    A static server-rendered page with one form and one button, with no @@rendermode, like the sign-in: only the answer
+    to a request can set the guest cookie. Opening the link changes nothing: the page renders the form and calls no one,
+    so a mail scanner that opens the link books nothing. The script of the page, a file of the site's own because the
+    Content Security Policy refuses inline code (MIL-033), copies the token from the address into the hidden field, takes
+    it out of the address bar, enables the button and disables it once it is pressed. Only the button sends the token: a
+    POST with the token and the antiforgery token in its body, which the web application passes to the API in the body
+    (ASVS 3.5.3 and 14.2.1). Without script the field stays empty, the button stays disabled, and the page says why.
+
+    The answers of the page carry Referrer-Policy: no-referrer and Cache-Control: no-store (VerifyPageHeaders). A press
+    that books the room signs the guest in as the sign-in does and sends the browser to the guest's own booking, which
+    shows the receipt with the reference; a reload there shows it again and does not press the button again.
+
+    PublicLayout is the default layout (Routes.razor), so there is no @@layout line.
+*@
+
+<PageTitle>Book your room — NFHotel</PageTitle>
+
+<div class="pub-section">
+    <div class="pub-wrap">
+        <div class="pub-booking stack-lg">
+            <PageHeader Title="Book your room"
+                        Subtitle="Press the button to book the room you asked for." />
+
+            <ErrorAlert Errors="ViewModel.Errors" />
+
+            @if (ViewModel.HasFailed)
+            {
+                <p>
+                    <a class="btn btn-primary" href="/book">Go to the booking page</a>
+                </p>
+                <p class="muted">
+                    Already booked? <a href="@GuestSignInRegistration.SignInPath">Find your booking</a> with the booking
+                    reference from our email and the email you booked with.
+                </p>
+            }
+            else
+            {
+                <form method="post" @formname="@FormName" @onsubmit="VerifyAsync" id="booking-verify-form" class="card card-pad stack">
+                    <AntiforgeryToken />
+                    <input type="hidden" id="booking-verify-token" name="@TokenField" />
+
+                    <p>
+                        Your room is booked when you press the button, not before. The link in the email works once.
+                    </p>
+
+                    <noscript>
+                        <div class="alert alert-error">
+                            <p>
+                                This page needs JavaScript to book your room. Turn JavaScript on, then open the link in the
+                                email again.
+                            </p>
+                        </div>
+                    </noscript>
+
+                    @* Shown by the script when the address has no token. The class sets no display, so hidden holds. *@
+                    <div id="booking-verify-missing" class="alert alert-error" role="alert" hidden>
+                        <p>
+                            This address has no link to book with. Open the link in the email again, or ask for the
+                            booking again on the <a href="/book">booking page</a>.
+                        </p>
+                    </div>
+
+                    <div class="row">
+                        <button type="submit" id="booking-verify-button" class="btn btn-primary" disabled>Book the room</button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+<script src="@Assets["js/booking-verify.js"]"></script>

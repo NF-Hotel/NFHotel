@@ -4,7 +4,10 @@
 # office sends a visitor to the login, port 80 redirects to HTTPS, no container of the
 # stack publishes a host port, every container has the hardening of MIL-023 task 2, the API
 # and PostgreSQL are not on the proxy network, nginx is not on the python network while the
-# web application and the API are (ADR-0039), the three test accounts exist, stack.env
+# web application and the API are (ADR-0039), the API and the forwarder of the mail alone share
+# the internal mail network, the forwarder and the mail catcher alone the way out, and the
+# forwarder reaches the catcher with TLS from the first byte only (MIL-088, ADR-0053), the
+# catcher answers on the proxy network as stack.env says, the three test accounts exist, stack.env
 # holds what the API scan needs: the internal network of the API, the API token and the
 # account of the scan (MIL-077), and a guest who signs in with the booking reference and the
 # email reaches the own booking and nothing else (MIL-018, ADR-0047, ADR-0049). Last, the address of
@@ -66,6 +69,30 @@ on_python="$(docker network inspect "$name-python" --format '{{range .Containers
 check "nginx is not on the python network" "" "$(tr ' ' '\n' <<<"$on_python" | grep nginx || true)"
 check "the web application and the API are on the python network" "nfhotel-api nfhotel-web" \
   "$(tr ' ' '\n' <<<"$on_python" | grep -oE 'nfhotel-(api|web)' | sort -u | tr '\n' ' ' | sed 's/ $//')"
+# services_on <network>: the compose services of the containers on the network, sorted.
+services_on() {
+  local id
+  for id in $(docker network inspect "$1" --format '{{range $id, $c := .Containers}}{{$id}} {{end}}' 2>/dev/null); do
+    docker inspect --format '{{index .Config.Labels "com.docker.compose.service"}}' "$id"
+  done | LC_ALL=C sort -u | paste -sd ' ' -
+}
+check "only the API and the forwarder of the mail are on the mail network" "mail-relay nfhotel-api" \
+  "$(services_on "$name-mail")"
+check "the mail network is internal" true "$(docker network inspect "$name-mail" --format '{{.Internal}}' 2>/dev/null || true)"
+check "only the forwarder and the mail catcher are on the way out of the mail" "mail-relay mailpit" \
+  "$(services_on "$name-mail-out")"
+check "the forwarder of the mail is not on the proxy network" "" "$(tr ' ' '\n' <<<"$on_proxy" | grep mail-relay || true)"
+check "stack.env names the web interface of the mail catcher" "http://mailpit:8025" \
+  "$(sed -n 's/^E2E_MAIL_API_URL=//p' "$stack_env")"
+check "the mail catcher answers on the proxy network" 200 "$(get '%{http_code}' http://mailpit:8025/api/v1/messages)"
+# smtp_code <URL>: the first answer of SMTP that a client on the mail network gets, as the API would; 000 for none.
+smtp_code() {
+  MSYS_NO_PATHCONV=1 docker run --rm --network "$name-mail" "$CURL" -sk --max-time 10 -o /dev/null \
+    -w '%{response_code}' "$1" || true
+}
+check "the forwarder reaches the catcher with TLS from the first byte" yes \
+  "$([[ "$(smtp_code smtps://mail-relay:1465)" =~ ^[2-5][0-9][0-9]$ ]] && echo yes)"
+check "plain SMTP through the forwarder gets no answer" 000 "$(smtp_code smtp://mail-relay:1465)"
 for role in MANAGER RECEPTIONIST HOUSEKEEPING; do
   check "stack.env holds the $role account" yes \
     "$(grep -qE "^E2E_${role}_USER=.+" "$stack_env" && grep -qE "^E2E_${role}_PASSWORD=.{32}$" "$stack_env" && echo yes)"

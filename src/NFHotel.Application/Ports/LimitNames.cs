@@ -23,12 +23,15 @@ public static class LimitNames
     /// <summary>The failed guest sign-ins of one reference or one caller address (ADR-0049 decision 6).</summary>
     public const string GuestSignIn = "guest_sign_in";
 
+    /// <summary>The verification mails to one email in an hour and in a day (MIL-088, ADR-0052 decision 6).</summary>
+    public const string VerificationMail = "verification_mail";
+
     #endregion Fields
 
     #region Properties
 
     /// <summary>Every name, in the order of the table.</summary>
-    public static IReadOnlyList<string> All { get; } = [Search, BookingHour, BookingDay, Email, GuestSignIn];
+    public static IReadOnlyList<string> All { get; } = [Search, BookingHour, BookingDay, Email, GuestSignIn, VerificationMail];
 
     #endregion Properties
 }

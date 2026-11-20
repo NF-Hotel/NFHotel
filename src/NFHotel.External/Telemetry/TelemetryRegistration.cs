@@ -25,7 +25,8 @@ public static class TelemetryRegistration
     /// The meters that are sent. ASP.NET Core publishes the request duration on <c>Microsoft.AspNetCore.Hosting</c>,
     /// the unhandled exceptions on <c>Microsoft.AspNetCore.Diagnostics</c> and the connections on
     /// <c>Microsoft.AspNetCore.Server.Kestrel</c>; .NET publishes memory, GC and threads on <c>System.Runtime</c>; the API
-    /// counts the security events of the booking flow on <c>NFHotel.Security</c> (MIL-087).
+    /// counts the security events of the booking flow on <c>NFHotel.Security</c> (MIL-087), and there too the mails that
+    /// the relay took (MIL-088).
     /// </summary>
     public static IReadOnlyList<string> Meters { get; } =
     [

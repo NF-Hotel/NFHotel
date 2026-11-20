@@ -62,6 +62,14 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.1"
         }
       },
+      "MailKit": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "PG6hnsklTzd/iK9A6j03OxDOas9mh8zOBkbPzcsLmFOODE8Hw3HTy7HAKiJvVHXNpKc3/KMVG/4QvOAKCBbGhA==",
+        "dependencies": {
+          "MimeKit.Core": "5.0.0"
+        }
+      },
       "Microsoft.ApplicationInsights": {
         "type": "Transitive",
         "resolved": "2.23.0",
@@ -553,6 +561,11 @@
         "resolved": "5.0.0",
         "contentHash": "dDoKi0PnDz31yAyETfRntsLArTlVAVzUzCIvvEDsDsucrl33Dl8pIJG06ePTJTI3tGpeyHS9Cq7Foc/s4EeKcg=="
       },
+      "MimeKit.Core": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "0RLaVyex/BjUGqiw9xtGwzyCMaBcsu33Rth61bDCeVeQaaQK7tjcy4TA+nHKTqwUdp4OGd+gnhuq2fuR+c20qA=="
+      },
       "Npgsql": {
         "type": "Transitive",
         "resolved": "10.0.3",
@@ -754,6 +767,7 @@
         "type": "Project",
         "dependencies": {
           "EFCore.NamingConventions": "[10.0.1, )",
+          "MailKit": "[5.0.0, )",
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.14, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[10.0.14, )",
           "Microsoft.IdentityModel.JsonWebTokens": "[8.23.0, )",

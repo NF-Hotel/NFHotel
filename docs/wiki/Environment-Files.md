@@ -37,7 +37,7 @@ are secrets. The files live in `ops/` and `ops/deploy/<service>/`, and the setti
 | `ops/pve.env` | Proxmox VE container | local development | yes: root password |
 | `ops/deploy.env` | `deploy.sh` (the VM) | every deploy | no |
 | `ops/deploy/postgres/postgres.env` | PostgreSQL | always | yes: database password |
-| `ops/deploy/nfhotel-api/nfhotel-api.env` | database API | always | yes: four |
+| `ops/deploy/nfhotel-api/nfhotel-api.env` | database API | always | yes: four, and the app password of the mail relay once it is set up |
 | `ops/deploy/nfhotel-web/nfhotel-web.env` | web application | always | yes: two copies, of the analysis key and the benchmark token |
 | `ops/deploy/market-analysis/market-analysis.env` | market analysis | always | yes: API key |
 | `ops/deploy/ollama/ollama.env` | Ollama (AI models) | always | no |
@@ -95,7 +95,15 @@ The database API. It is the only service that holds the database login and the k
 | `Staff__InitialManager__*` | The first Manager, made at start when no staff account exists. The password has at least 12 characters and must be changed at the first sign-in. Delete the password line afterwards |
 | `Database__MigrateOnStart` | Apply the pending migrations when the API starts. The deploy relies on it |
 | `MarketAnalysisService__BaseUrl`, `__ApiKey`, `__TimeoutSeconds`, `__PollIntervalSeconds`, `__RunDeadlineSeconds` | Where the API starts market analysis runs (`market-analysis-api:8000`) and the key it sends as `X-API-Key` (**Secret**, never logged). The timeout (10 seconds, at most 60) is for one call, because the API follows a run by its id and keeps no request open; it asks for the state every `PollIntervalSeconds` (5) and gives up a run after `RunDeadlineSeconds` (3600). An empty address makes the analysis page say the service is not set up |
-| `NFHOTEL_API_NETWORK`, `NFHOTEL_DB_NETWORK`, `NFHOTEL_PYTHON_NETWORK` | Docker networks shared with the web service and nginx, with PostgreSQL, and with the web service and the Python services (ADR-0039) |
+| `Smtp__Host`, `Smtp__Port`, `Smtp__Security` | The SMTP relay of the mails of the booking flow ([ADR-0053](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0053-mail-from-the-application-through-a-relay.md)): `smtp.gmail.com`, `465` and `SslOnConnect` (TLS from the first byte), or port 587 with `StartTls`. Any other value of `Smtp__Security`, `None` included, stops the API at its start. The forwarder `mail-relay` gets the host and the port from this file, and nothing else of it |
+| `Smtp__UserName`, `Smtp__Password` | The account at the relay and its app password. **Secret:** the deploy writes the password into a secret file of the API (ADR-0024); write it as [Mail Relay](Mail-Relay#set-it-up-step-by-step) says, so it reaches no screen and no shell history |
+| `Smtp__FromAddress`, `Smtp__FromName` | The address and the name that the mails come from; the name is `NF Hotel` by default. Gmail sends only from the address of the account, and a reply of a guest lands in its mailbox |
+| `Smtp__Forwarder` | `mail-relay:1465`: the API reaches the relay through the forwarder, because it has no route out ([Network Isolation](Network-Isolation#the-way-of-the-mail)). When it is set, `deploy-services.sh` starts the forwarder before the API, and refuses the deploy when `Smtp__Host` or `Smtp__Port` is missing. Empty: no forwarder, and the API reaches the relay itself |
+| `Smtp__CertificateThumbprint` | Empty in production, where the certificate of the relay is checked against the store of the system. The throwaway stacks set it to the SHA-256 of the certificate of their mail catcher (64 lower-case hex digits over its DER form), the one certificate they trust instead |
+| `Smtp__MaxMailsPerDay` | The fuse: at most this many mails in 24 hours, 400 by default (Gmail allows an account 500 a day). At the fuse the public booking refuses new requests and `MailFuseBlown` fires ([Alerts](Alerts#mail-prometheusrulessecurityyml)) |
+| `BookingVerification__Enabled` | `false` by default: the public booking books at once. `true`: a booking takes a room only once the guest has pressed the button of the link in the mail ([ADR-0052](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0052-a-booking-takes-a-room-once-its-email-is-verified.md)). With `true`, the API refuses to start, and names the setting, when a setting of the relay is missing, and `deploy-services.sh` refuses the deploy without `Smtp__Forwarder` |
+| `BookingVerification__SiteAddress` | The address of the site in the link of the mail, an absolute `https` address: `https://nfhotel.devmatiker.com`. The link never takes the address of the request |
+| `NFHOTEL_API_NETWORK`, `NFHOTEL_DB_NETWORK`, `NFHOTEL_PYTHON_NETWORK`, `NFHOTEL_MAIL_NETWORK` | Docker networks shared with the web service and nginx, with PostgreSQL, with the web service and the Python services (ADR-0039), and with the forwarder of the mail (ADR-0053) |
 
 ### `nfhotel-web/nfhotel-web.env`
 

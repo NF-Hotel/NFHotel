@@ -3,7 +3,9 @@
 # scan run against (MIL-027 tasks 1 and 2 of NFHotel). It runs nginx with a self-signed
 # certificate, the web application and the API built from an NF-Hotel/NFHotel checkout,
 # and an empty PostgreSQL 16, with the compose files of deploy/ in the deployed shape:
-# TLS at nginx, the API and the database on internal networks with no host port.
+# TLS at nginx, the API and the database on internal networks with no host port. The mail of
+# the API goes through the forwarder mail-relay, as on the VM, to the mail catcher Mailpit,
+# whose web interface the tests read at http://mailpit:8025 (MIL-088, ADR-0053 decision 7).
 #
 # Every secret is generated for this run and written only to files under <out>, readable
 # by the owner; nothing is read from a real settings file. As in production (ADR-0024), the
@@ -13,12 +15,17 @@
 # opens https://nginx.
 #
 # Usage: e2e-stack.sh up --app-dir <NFHotel checkout> --out <folder> [--name <prefix>]
+#        e2e-stack.sh verification <on|off> --out <folder> [--name <prefix>]
 #        e2e-stack.sh down [--name <prefix>]
 #   up       build web and api, start the stack, wait for the health checks, and write
 #            <out>/stack.env: E2E_NETWORK, E2E_BASE_URL and the user name and password
-#            of the Manager, Receptionist and Housekeeping test accounts; for the API
-#            scan of the DAST run (MIL-077), E2E_API_NETWORK (the internal network of the
-#            API), E2E_API_TOKEN and the user name and password of its own Manager account
+#            of the Manager, Receptionist and Housekeeping test accounts; E2E_MAIL_API_URL,
+#            the web interface of the mail catcher; for the API scan of the DAST run
+#            (MIL-077), E2E_API_NETWORK (the internal network of the API), E2E_API_TOKEN and
+#            the user name and password of its own Manager account. The verification of a
+#            booking by email (ADR-0052) is off.
+#   verification  turn the verification of a booking by email on or off in the settings of
+#            the stack in <out>, and recreate the API alone, waiting for its health check
 #   down     remove the containers, volumes and networks of the stack
 #   --name   prefix of the compose projects and networks (default nfhotel-e2e)
 # Exit:  0 done; 1 a build, start or check failed; 2 usage error
@@ -35,11 +42,20 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ROLES=(Manager Receptionist Housekeeping)
 
 action="${1:-}"
-[[ "$action" == "up" || "$action" == "down" ]] || {
+[[ "$action" == "up" || "$action" == "down" || "$action" == "verification" ]] || {
   usage >&2
   exit 2
 }
 shift
+mode=""
+if [[ "$action" == "verification" ]]; then
+  mode="${1:-}"
+  [[ "$mode" == "on" || "$mode" == "off" ]] || {
+    usage >&2
+    exit 2
+  }
+  shift
+fi
 name="nfhotel-e2e"
 app_dir=""
 out=""
@@ -72,6 +88,24 @@ if [[ "$action" == "down" ]]; then
   exit 0
 fi
 
+# The browser tests run once with the verification off and once with it on (MIL-088): only the API
+# reads the setting, so only the API is made again, from the image that `up` built.
+if [[ "$action" == "verification" ]]; then
+  [[ -n "$out" && -f "$out/settings/nfhotel-api.env" ]] || die "give --out, the folder of a stack that is up"
+  settings="$(cd "$out/settings" && pwd)"
+  enabled=false
+  [[ "$mode" == "on" ]] && enabled=true
+  stack_set_settings "$settings/nfhotel-api.env" "BookingVerification__Enabled=$enabled"
+  bash "$ROOT/scripts/write-secret-files.sh" api --out "$settings/api" --postgres "$settings/postgres.env" \
+    --api "$settings/nfhotel-api.env" --web "$settings/nfhotel-web.env" >/dev/null ||
+    die "cannot write the settings of the API"
+  stack_env "$settings"
+  echo "==> recreating the API with the verification of a booking by email $mode"
+  stack_compose nfhotel-api up --detach --no-build --force-recreate --wait --wait-timeout 240 >/dev/null ||
+    die "the API did not become healthy with the verification $mode"
+  exit 0
+fi
+
 [[ -n "$app_dir" ]] || die "give --app-dir, an NF-Hotel/NFHotel checkout with Dockerfile and Dockerfile.api"
 [[ -n "$out" ]] || die "give --out, the folder for the settings and stack.env"
 mkdir -p "$out"
@@ -82,6 +116,7 @@ settings="$out/settings"
 stack_down --volumes
 manager_password="$(stack_secret 16)"
 stack_write_settings "$settings" e2e-manager "$manager_password" true
+stack_write_mail_settings "$settings" https://nginx false
 stack_start "$settings" "$app_dir" --file "$(stack_native "$ROOT/deploy/e2e/nginx-no-host-ports.yml")"
 
 # The first Manager comes from the settings above; the other roles are made with the
@@ -110,6 +145,7 @@ umask 077
 {
   echo "E2E_NETWORK=$STACK_PROXY_NET"
   echo "E2E_BASE_URL=https://nginx"
+  echo "E2E_MAIL_API_URL=http://mailpit:8025"
   for role in "${ROLES[@]}"; do
     echo "E2E_${role^^}_USER=${users[$role]}"
     echo "E2E_${role^^}_PASSWORD=${passwords[$role]}"

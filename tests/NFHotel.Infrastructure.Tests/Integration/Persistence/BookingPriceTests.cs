@@ -143,7 +143,8 @@ public sealed class BookingPriceTests : IAsyncLifetime
             new BookingMarketDetailRepository(context),
             new RecordingWarningLog(),
             new FakeGuestCallContext(),
-            new ConfiguredPublicBookingEmailLimit(new SenderLimitOptions()));
+            new ConfiguredPublicBookingEmailLimit(new SenderLimitOptions()),
+            new FakeBookingVerificationSettings());
 
         Result<BookingDetailsDto> result = await service.CreateAsync(new CreateBookingRequest(Arrival, Arrival.AddDays(3), roomId, guestId, null), TestContext.Current.CancellationToken);
 
