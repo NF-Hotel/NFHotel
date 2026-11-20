@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | RC-436 |
-| CrossReference | [MIL-088], [ADR-0052], [ADR-0053], [RC-435], [RC-431], [RC-432], [RC-433], [RC-434], [QC-CS-001], [QC-SH-001], [QC-YML-001], [RC-428], [ADR-0024], [ADR-0037], [ADR-0047], [MIL-089] |
+| CrossReference | [MIL-088], [ADR-0052], [ADR-0053], [RC-435], [RC-431], [RC-432], [RC-433], [RC-434], [QC-CS-001], [QC-SH-001], [QC-YML-001], [RC-428], [ADR-0024], [ADR-0037], [ADR-0047], [MIL-089], [ADR-0051] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version: code review of tasks 4 to 8 of MIL-088 and of the fixes of its findings; Go-with-conditions: every required check of the pull request green; mode autonomous, not independent | [739a25b] |
+| 2026-11-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: code review of tasks 4 to 8 of MIL-088 and of the fixes of its findings; Go-with-conditions: every required check of the pull request green; mode autonomous, not independent | [739a25b] |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | F17 to F19: the comments of CodeQL, GitHub's code quality and SonarCloud on the pull request; F18 corrected (0ad9c7e), F17 and F19 recorded; the verdict stays Go-with-conditions<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | pending |
 
 ---
 
@@ -19,7 +20,7 @@
   `mil-088-booking-verified-by-email`, against `main` at 3b35a3d, which the branch merged in ac53f09: the tests written
   first on a skeleton (their failing run is `docs/sqa/evidence/mil-088/before-tests.txt`), the code of tasks 5 to 7 with
   the lock `public_booking` that the test of criterion 4 called for (7f115a0), and the changes of this review (0ce2e0c,
-  the comments of F14 in 4239529, and the remarks of F16 in 733a5b2). In all, 66 files are new and 73 changed under
+  the comments of F14 in 4239529, the remarks of F16 in 733a5b2, and the fixes of F18 in 0ad9c7e). In all, 66 files are new and 73 changed under
   `src/`, `tests/`, `ops/`, `scripts/` and `.github/`; none is removed.
   - Domain: `BookingRequest` and `SentMail` with their repositories, the value objects `Mailbox` (the normal form of
     an email for the limits) and `MailKind`, and `IBookingRepository.Discard`.
@@ -102,6 +103,8 @@
 | `bash ops/tests/test-wiki-coverage.sh` | 133 passed, 0 failed |
 | `bash scripts/check-comment-language.sh` on every new and changed file, which NF Hotel CI runs | exit 0 |
 | `**/packages.lock.json` | the four lock files of the projects that take MailKit add MailKit and MimeKit.Core 5.0.0 and nothing else; the others are unchanged |
+| The required checks of the pull request on 7dbc737, then the comments on it | 60 passed and 2 skipped (the full scan of DAST and OWASP ZAP, which run after a deploy); CodeQL, GitHub's code quality and SonarCloud commented on the pull request: F17 to F19 |
+| After F18 (0ad9c7e): the build of the solution with warnings as errors, the tests of the clean-up worker and of `SmtpMailSender`, the whitespace format check and the check of the comment language on the three changed files | 0 warnings; 5 and 17 passed; the two new tests of the worker passed on the worker as it was, and each failed when its half of the filter was taken out; exit 0 and exit 0 (`after-pr-comments.txt`) |
 | Not run here | `check-container-runtime.sh` against the containers of the stack (it needs root on Linux), `test-dev-lite.sh` and `test-secret-rotation.sh` (they start the light mode and rotate its secrets), the baseline scan, CodeQL and the coverage floor: NF Hotel CI and NF Hotel Ops CI run them on the pull request |
 
 ## Checklist Results: QC-CS-001
@@ -275,6 +278,29 @@
   `booking_request` of [ADR-0052] decision 6, while the public booking takes the lock `public_booking` of decision 5
   through the same method. It names both now (733a5b2); a comment only, so the build ran again with no warning, and
   the check of the comment language passes ([RC-435]).
+- **F17, recorded (CodeQL on the pull request, Medium): the masked email in the log.** The query
+  `cs/exposure-of-sensitive-information` raised five alerts on `BookingFlowEvents`, 677 to 681: the events
+  `public_booking_made`, `guest_lookup_failed`, `limit_refused` (two alerts on one line) and `booking_request_made`
+  write the email masked to its first character and its domain, as [ADR-0051] decision 6 says. Four are the alerts
+  673 to 676 of MIL-087 on `main` at new lines: the guard `IsEnabled` of this change, which builds the masked email
+  only when the log writes the event, moved their lines, so GitHub counts them as new and is likely to mark 673 to
+  676 fixed when the branch reaches `main`, although what is logged has not changed. The fifth, 680, is the same
+  pattern in the new event `booking_request_made`. The AI decided as stand-in for S01 not to change what the events
+  log in this pull request: a change, a keyed hash in place of the masked email for one, changes decision 6 of
+  [ADR-0051] and wants its own review, and task 3 of [MIL-089] owns these alerts. No alert is dismissed or closed by
+  hand, by S01's rule of 2026-11-19. The review threads of the five alerts on the pull request say this and are
+  resolved; the alerts stay open.
+- **F18, corrected after the review (GitHub's code quality on the pull request, Low): two points.** The clean-up
+  worker caught every exception after a separate catch that let the stop of the API through (a generic catch
+  clause); one catch with a filter now does both. Two new tests hold the behaviour: a cancellation because the API
+  stops is thrown, and a cancellation while the API runs, as a timeout of the database, is logged. They passed on the
+  worker as it was, and each failed when its half of the filter was taken out (`after-pr-comments.txt`). A test of
+  `SmtpMailSender` started a `TcpListener` to find a closed port and did not dispose it; it does now (0ad9c7e).
+- **F19, recorded (SonarCloud on the pull request, Info): four issues kept.** IDE0290, a primary constructor, on
+  `BookingRequestRepository` and `SentMailRepository`: every repository of the project has a classic constructor
+  that calls its base class, and the two follow them. IDE0161, a file-scoped namespace, and CA1861, a constant array
+  as an argument, in the migration `AddBookingRequests`: the code that EF Core generated, as in the earlier
+  migrations, and a migration runs once. The quality gate of SonarCloud passed.
 
 ## Overall Verdict
 
@@ -282,9 +308,10 @@ Go-with-conditions. Every applicable criterion of [QC-CS-001], [QC-SH-001] and [
 and the criteria of [MIL-088] that a test on this machine can hold pass. The conditions: every required check of the
 pull request is green (the browser tests in both modes, the check of the throwaway stack, the coverage floor, the audit
 of the packages, CodeQL and the baseline scan among them). Criterion 10 waits for the relay of task 9, which only S01
-can open, and the gate (task 10) stays open until then. The AI accepted this record as stand-in for S01 in autonomous
+can open, and the gate (task 10) stays open until then. The comments of CodeQL, GitHub's code quality and SonarCloud on
+the pull request are F17 to F19: F18 is corrected, and F17 and F19 leave the verdict as it is. The AI accepted this record as stand-in for S01 in autonomous
 mode, at S01's word in chat on 2026-11-19. The reviewer is not independent: an AI wrote the code and this record, and
-a second AI read the code. S01 may challenge any decision of it, F4, F9 and the lapsed link of criterion 7 above all.
+a second AI read the code. S01 may challenge any decision of it, F4, F9, F17 and the lapsed link of criterion 7 above all.
 
 ## Action Items
 
@@ -295,6 +322,7 @@ a second AI read the code. S01 may challenge any decision of it, F4, F9 and the 
 | The relay of task 9: the app password, the settings of the wiki page Mail-Relay, and the release with them on the VM | S01 | Before the gate |
 | The deploy check and the gate (task 10) | mikemike; the CD run is approved by S01 | After the merge and the relay |
 | Read the route of the verification, which has no limit per sender, against ASVS (N5) | mikemike | With the ASVS review of [MIL-089] |
+| The alerts of CodeQL on the masked email (F17): a change of what the events log, with its own review of decision 6 of [ADR-0051], or the reason each alert stays; a dismissal only at S01's word | mikemike | Task 3 of [MIL-089] |
 
 ---
 
@@ -314,4 +342,5 @@ a second AI read the code. S01 may challenge any decision of it, F4, F9 and the 
 [ADR-0037]: ../../adr/adr-0037-github-actions-hardening-policy.md
 [ADR-0047]: ../../adr/adr-0047-guest-login.md
 [MIL-089]: ../../milestones/mil-089-the-booking-flow-attacked-and-measured.md
+[ADR-0051]: ../../adr/adr-0051-limits-of-the-booking-flow-and-the-caller-address.md
 [739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

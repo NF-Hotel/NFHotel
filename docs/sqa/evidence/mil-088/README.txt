@@ -21,3 +21,9 @@ After the code (MIL-088 tasks 5 to 7) and its code review (RC-436), 2026-11-20:
   the mail network that is internal and the forwarder that reaches the catcher only with TLS from the first byte;
   the browser tests with the verification off (16) and on (3); and the checks of the logs after each run. Criteria
   3, 4, 6, 7 and 8 of MIL-088, before the live site.
+
+After the comments on the pull request, 2026-11-20:
+- after-pr-comments.txt: the two points of GitHub's code quality (F18 of RC-436). The two new tests of the
+  clean-up worker pass on the worker as it was, and each fails on a mutation of the new filter of its catch; after
+  the change (0ad9c7e) the build has no warning, the tests of the worker (5) and of SmtpMailSender (17) pass, and
+  the format check and the check of the comment language pass.
