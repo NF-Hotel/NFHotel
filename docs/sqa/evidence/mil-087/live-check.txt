@@ -1,0 +1,30 @@
+# MIL-087 task 8: the check of criterion 8 on the live site after the deploy of 6f7bb80 (NF Hotel CD run
+# 44624470820, 2026-11-19, job 22:48:07Z to 22:50:57Z).
+# Run by the build session from a workstation: searches for free rooms on /book in Chromium without a window, driven
+# by Playwright 1.62.0 in its container image mcr.microsoft.com/playwright/dotnet:v1.62.0-noble, never on the desktop
+# of the host (framework/process/gui-testing.md). The dates are typed into the fields and each field is left with Tab,
+# as a guest does; the button "Find available rooms" is pressed, and "Back to dates" after each answer. No room type
+# is chosen and the form of the guest is never reached, so nothing was booked and nothing was stored but the event of
+# the refusal. All searches came from one address, the public address of the workstation, which the check does not
+# print. The site stays in the variable PUBLIC and would be shown as <public>. The output holds no personal data.
+# The counter was read from the Prometheus of the monitoring stack through Grafana, before and after the run; the
+# label of the instance is left out.
+
+== the counter of the security events before the run
+read at 2026-11-20T01:00:23Z
+nfhotel_security_events_total{job="nfhotel-api", kind="guest_lookup_failed"} 1
+no series with kind="limit_refused"
+
+== 61 searches from one address within a minute, and one after the minute
+run from 2026-11-20T01:00:32Z in mcr.microsoft.com/playwright/dotnet:v1.62.0-noble, Chromium headless
+the page /book answered 200; the day of the hotel: 2026-11-20
+the dates: arrival 2026-12-30, departure 2027-01-01, 2 nights; the guests field as the page sets it
+searches 1 to 60 each showed the room step ("Choose a room type"); seconds after the first press: 1 at 0.4 s, 10 at 2.2 s, 20 at 5.5 s, 30 at 7.6 s, 40 at 9.5 s, 50 at 11.3 s, 60 at 13.1 s
+search 61, 13.3 s after the first press: refused; the page stays on the dates and shows: "Too many requests in a short time. Please wait a while and try again, or contact the hotel."
+one search 65.9 s after the first press, when the window of a minute is over: room step
+ended at 2026-11-20T01:01:44Z
+
+== the counter of the security events after the run
+read at 2026-11-20T01:01:47Z
+nfhotel_security_events_total{job="nfhotel-api", kind="guest_lookup_failed"} 1
+nfhotel_security_events_total{job="nfhotel-api", kind="limit_refused", limit="search"} 1
