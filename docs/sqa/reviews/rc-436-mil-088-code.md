@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: code review of tasks 4 to 8 of MIL-088 and of the fixes of its findings; Go-with-conditions: every required check of the pull request green; mode autonomous, not independent | [739a25b] |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | F17 to F19: the comments of CodeQL, GitHub's code quality and SonarCloud on the pull request; F18 corrected (0ad9c7e), F17 and F19 recorded; the verdict stays Go-with-conditions<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | F17 to F19: the comments of CodeQL, GitHub's code quality and SonarCloud on the pull request; F18 corrected (0ad9c7e), F17 and F19 recorded; the verdict stays Go-with-conditions<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | [5861a42] |
 
 ---
 
@@ -344,3 +344,4 @@ a second AI read the code. S01 may challenge any decision of it, F4, F9, F17 and
 [MIL-089]: ../../milestones/mil-089-the-booking-flow-attacked-and-measured.md
 [ADR-0051]: ../../adr/adr-0051-limits-of-the-booking-flow-and-the-caller-address.md
 [739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089
+[5861a42]: https://github.com/NF-Hotel/NFHotel/commit/5861a42cfcb5908874412a28c1cb63198692926e
