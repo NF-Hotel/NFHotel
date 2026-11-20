@@ -20,6 +20,9 @@ public sealed class SmtpMailSenderTests
 
     private static readonly OutgoingMail Mail = new("anna@example.com", "Verify your booking at NF Hotel", "Press the button on the page of the link.");
 
+    // The bound of a send in the tests that wait for it to run out, instead of the 15 seconds of production.
+    private static readonly TimeSpan ShortBound = TimeSpan.FromSeconds(3);
+
     #region Sent
 
     /// <summary>
@@ -88,6 +91,26 @@ public sealed class SmtpMailSenderTests
         // Assert
         Assert.Equal(MailSendResult.Success, result);
         Assert.Equal(["smtp.relay.invalid"], relay.TlsHostNames);
+    }
+
+    /// <summary>
+    /// Positive (ADR-0053 decision 1, RC-436 F3): a relay that takes the mail and never answers the quit holds the send no
+    /// longer than its one bound, the quit included, and the mail counts as sent. The test fails at its own time limit
+    /// when the quit waits beyond the bound.
+    /// </summary>
+    [Fact(Timeout = 20_000)]
+    public async Task SendAsync_RelayNeverAnswersTheQuit_IsSentWithinTheBound()
+    {
+        // Arrange
+        await using FakeSmtpRelay relay = new() { SilentAtTheQuit = true };
+        SmtpMailSender sender = new(Options(relay), ShortBound);
+
+        // Act
+        MailSendResult result = await sender.SendAsync(Mail, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(MailSendResult.Success, result);
+        Assert.Single(relay.Mails);
     }
 
     #endregion
@@ -249,6 +272,32 @@ public sealed class SmtpMailSenderTests
         // Act and assert
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sender.SendAsync(Mail, caller.Token));
     }
+
+    /// <summary>
+    /// Negative (ADR-0053 decisions 1 and 5): a relay that takes the connection and never answers is a timeout once the
+    /// bound of the send runs out, in the TLS handshake as well as while the greeting of the relay is awaited.
+    /// </summary>
+    /// <param name="implicitTls">TLS from the first byte, so the bound runs out in the TLS handshake.</param>
+    [Theory(Timeout = 20_000)]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SendAsync_RelayNeverAnswers_IsATimeout(bool implicitTls)
+    {
+        // Arrange
+        await using FakeSmtpRelay relay = new(implicitTls) { Silent = true };
+        SmtpMailSender sender = new(Options(relay, implicitTls ? SmtpSecurity.SslOnConnect : SmtpSecurity.StartTls), ShortBound);
+
+        // Act
+        MailSendResult result = await sender.SendAsync(Mail, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(MailSendResult.Failed(MailFailureReasons.Timeout), result);
+    }
+
+    /// <summary>Negative (ADR-0053 decision 1): a bound of a send that is not positive is refused.</summary>
+    [Fact]
+    public void Constructor_BoundNotPositive_Throws() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => new SmtpMailSender(new SmtpOptions(), TimeSpan.Zero));
 
     #endregion
 

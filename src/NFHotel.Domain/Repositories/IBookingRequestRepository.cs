@@ -9,6 +9,8 @@ namespace NFHotel.Domain.Repositories;
 /// </summary>
 public interface IBookingRequestRepository
 {
+    #region Public methods
+
     /// <summary>Marks a new request for insertion. Does not persist.</summary>
     /// <param name="request">The request.</param>
     void Add(BookingRequest request);
@@ -41,4 +43,6 @@ public interface IBookingRequestRepository
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The number of requests deleted.</returns>
     Task<int> DeleteLapsedAsync(DateTimeOffset now, CancellationToken cancellationToken = default);
+
+    #endregion Public methods
 }

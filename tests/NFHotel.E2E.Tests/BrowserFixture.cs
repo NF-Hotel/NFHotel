@@ -84,7 +84,7 @@ public sealed class BrowserFixture : IAsyncLifetime
         // The check of the stack (check-e2e-stack.sh) makes a Suite of its own before the tests, so the search can offer
         // other room types, or none. The step of the room types holds its list, or the text that none is free, once its
         // button back to the dates is enabled again.
-        var types = page.GetByRole(AriaRole.Region, new() { Name = "Choose a room type" });
+        ILocator types = page.GetByRole(AriaRole.Region, new() { Name = "Choose a room type" });
         await Assertions.Expect(types.GetByRole(AriaRole.Button, new() { Name = "Back to dates" })).ToBeEnabledAsync();
         return await types.GetByRole(AriaRole.Button, new() { Name = "Choose Single room" }).IsVisibleAsync();
     }

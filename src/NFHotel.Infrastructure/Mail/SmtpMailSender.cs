@@ -33,27 +33,44 @@ public sealed class SmtpMailSender : IMailSender
     #region Fields
 
     private readonly SmtpOptions _options;
+    private readonly TimeSpan _sendTimeout;
 
     #endregion Fields
 
     #region Constructors
 
-    /// <summary>Takes the settings of the relay as the start read them.</summary>
+    /// <summary>Takes the settings of the relay as the start read them, with the bound <see cref="SendTimeout"/>.</summary>
     /// <param name="options">The settings of the relay.</param>
     /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
     public SmtpMailSender(SmtpOptions options)
+        : this(options, SendTimeout)
+    {
+    }
+
+    /// <summary>Takes the settings of the relay and another bound of a send: for the tests, which cannot wait that long.</summary>
+    /// <param name="options">The settings of the relay.</param>
+    /// <param name="sendTimeout">The most time that one send may take, from the connection to the end of the session.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="sendTimeout"/> is not positive.</exception>
+    public SmtpMailSender(SmtpOptions options, TimeSpan sendTimeout)
     {
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(sendTimeout, TimeSpan.Zero);
 
         _options = options;
+        _sendTimeout = sendTimeout;
     }
 
     #endregion Constructors
 
     #region Properties
 
-    /// <summary>The most time that one send may take, from the connection to the end of the mail (ADR-0053 decision 1).</summary>
-    public static TimeSpan SendTimeout { get; } = TimeSpan.FromSeconds(30);
+    /// <summary>
+    /// The most time that one send may take, from the connection to the end of the session with the relay, the quit
+    /// included (ADR-0053 decision 1): well below the 30 seconds that the web application waits for the API, so a slow
+    /// relay ends in a result of the send, never in an error page after the booking was made (RC-436 F3).
+    /// </summary>
+    public static TimeSpan SendTimeout { get; } = TimeSpan.FromSeconds(15);
 
     #endregion Properties
 
@@ -80,8 +97,9 @@ public sealed class SmtpMailSender : IMailSender
         string userName = Required(_options.UserName, nameof(SmtpOptions.UserName));
         string password = Required(_options.Password, nameof(SmtpOptions.Password));
 
-        using CancellationTokenSource limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        limit.CancelAfter(SendTimeout);
+        // One bound for the whole session, the quit included; the quit is not the caller's to cancel.
+        using CancellationTokenSource deadline = new(_sendTimeout);
+        using CancellationTokenSource limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
         using SmtpClient client = NewClient();
         bool connected = false;
         try
@@ -96,13 +114,13 @@ public sealed class SmtpMailSender : IMailSender
             // MailKit wraps a cancellation in the TLS handshake in SslHandshakeException; the caller gets its cancellation.
             throw new OperationCanceledException("The caller cancelled the send.", exception, cancellationToken);
         }
-        catch (Exception exception) when (ReasonOf(exception, connected, cancellationToken) is { } reason)
+        catch (Exception exception) when (ReasonOf(exception, connected, cancellationToken, deadline.Token) is { } reason)
         {
             return MailSendResult.Failed(reason);
         }
 
-        // The relay has taken the mail: a quit that fails changes nothing for it.
-        await QuitQuietlyAsync(client).ConfigureAwait(false);
+        // The relay has taken the mail: a quit that fails or runs out of the bound changes nothing for it.
+        await QuitQuietlyAsync(client, deadline.Token).ConfigureAwait(false);
         return MailSendResult.Success;
     }
 
@@ -121,35 +139,37 @@ public sealed class SmtpMailSender : IMailSender
     }
 
     // Maps a failure of a send to its reason in a word; null for a failure that is no result of the relay, which goes on
-    // up: a bug, or a cancellation by the caller.
-    private static string? ReasonOf(Exception exception, bool connected, CancellationToken callerToken) => exception switch
+    // up: a bug, or a cancellation by the caller. Once the bound of the send has run out, a failure is a timeout at
+    // whatever step it came, the TLS handshake included, where MailKit wraps it in SslHandshakeException.
+    private static string? ReasonOf(Exception exception, bool connected, CancellationToken callerToken, CancellationToken deadline) =>
+        exception switch
+        {
+            OperationCanceledException when callerToken.IsCancellationRequested => null,
+            OperationCanceledException or TimeoutException => MailFailureReasons.Timeout,
+            _ when deadline.IsCancellationRequested => MailFailureReasons.Timeout,
+            SslHandshakeException { InnerException: OperationCanceledException or TimeoutException } => MailFailureReasons.Timeout,
+            MailKit.Security.AuthenticationException or SaslException => MailFailureReasons.Authentication,
+            SslHandshakeException or System.Security.Authentication.AuthenticationException => MailFailureReasons.Tls,
+
+            // MailKit refuses a relay that does not offer STARTTLS with NotSupportedException while it connects; later the
+            // same type means that the relay lacks something that the mail needs.
+            NotSupportedException => connected ? MailFailureReasons.Refused : MailFailureReasons.Tls,
+            SmtpCommandException => MailFailureReasons.Refused,
+            SocketException => MailFailureReasons.Connect,
+            IOException => connected ? MailFailureReasons.Other : MailFailureReasons.Connect,
+            ProtocolException or ServiceNotConnectedException or ServiceNotAuthenticatedException => MailFailureReasons.Other,
+            _ => null,
+        };
+
+    // The quit has what is left of the bound of the send.
+    private static async Task QuitQuietlyAsync(SmtpClient client, CancellationToken deadline)
     {
-        OperationCanceledException when callerToken.IsCancellationRequested => null,
-        OperationCanceledException or TimeoutException => MailFailureReasons.Timeout,
-
-        // MailKit wraps the end of the time of the send in the TLS handshake in SslHandshakeException.
-        SslHandshakeException { InnerException: OperationCanceledException } => MailFailureReasons.Timeout,
-        MailKit.Security.AuthenticationException => MailFailureReasons.Authentication,
-        SslHandshakeException or System.Security.Authentication.AuthenticationException => MailFailureReasons.Tls,
-
-        // MailKit refuses a relay that does not offer STARTTLS with NotSupportedException while it connects; later the
-        // same type means that the relay lacks something that the mail needs.
-        NotSupportedException => connected ? MailFailureReasons.Refused : MailFailureReasons.Tls,
-        SmtpCommandException => MailFailureReasons.Refused,
-        SocketException => MailFailureReasons.Connect,
-        IOException => connected ? MailFailureReasons.Other : MailFailureReasons.Connect,
-        ProtocolException or ServiceNotConnectedException or ServiceNotAuthenticatedException => MailFailureReasons.Other,
-        _ => null,
-    };
-
-    private static async Task QuitQuietlyAsync(SmtpClient client)
-    {
-        using CancellationTokenSource limit = new(SendTimeout);
         try
         {
-            await client.DisconnectAsync(quit: true, limit.Token).ConfigureAwait(false);
+            await client.DisconnectAsync(quit: true, deadline).ConfigureAwait(false);
         }
-        catch (Exception exception) when (exception is IOException or SocketException or ProtocolException or OperationCanceledException)
+        catch (Exception exception) when (exception is IOException or SocketException or ProtocolException
+            or OperationCanceledException or TimeoutException)
         {
             // The mail is with the relay; the connection closes when the client is disposed.
         }
@@ -162,9 +182,11 @@ public sealed class SmtpMailSender : IMailSender
 
     private SmtpClient NewClient()
     {
+        // The time limit of MailKit for one step is only a backstop, twice the bound of the send, so the bound always ends
+        // a send first and reads as a timeout.
         SmtpClient client = new()
         {
-            Timeout = (int)SendTimeout.TotalMilliseconds,
+            Timeout = (int)(_sendTimeout * 2).TotalMilliseconds,
             CheckCertificateRevocation = false,
         };
 

@@ -70,6 +70,9 @@ public sealed class FakeSmtpRelay : IAsyncDisposable
     /// <summary>Whether the relay takes the connection and never answers.</summary>
     public bool Silent { get; init; }
 
+    /// <summary>Whether the relay takes the mail and then never answers the quit (RC-436 F3).</summary>
+    public bool SilentAtTheQuit { get; init; }
+
     /// <summary>Every command the relay was sent, in order, with the data of AUTH left out.</summary>
     public ConcurrentQueue<string> Commands { get; } = new();
 
@@ -210,6 +213,10 @@ public sealed class FakeSmtpRelay : IAsyncDisposable
                     Mails.Enqueue(await ReadDataAsync(line, stop));
                     await line.WriteAsync("250 2.0.0 OK queued", stop);
                     break;
+                case "QUIT" when SilentAtTheQuit:
+                    // Holds the connection without a word until the relay stops.
+                    await new TaskCompletionSource().Task.WaitAsync(stop);
+                    return;
                 case "QUIT":
                     await line.WriteAsync("221 2.0.0 Bye", stop);
                     return;

@@ -131,8 +131,12 @@ case "$service" in
       [[ "$password" != *[\;\"\']* ]] || die "the password in $postgres_env has a ; or a quote (use openssl rand -hex 24)"
       values[ConnectionStrings__HotelDatabase]="Host=postgres;Port=5432;Database=$(setting "$postgres_env" POSTGRES_DB);Username=$(setting "$postgres_env" POSTGRES_USER);Password=$password"
     fi
-    for name in Encryption__PassportKey Api__Token Staff__Token__SigningKey Staff__InitialManager__Password MarketAnalysisService__ApiKey Smtp__Password; do
-      values[$name]="$(setting "$api_env" "$name")"
+    # Every other secret of the API comes from its settings file, as SECRETS lists them (RC-436 F9).
+    read -ra api_secrets <<<"${SECRETS[api]}"
+    for name in "${api_secrets[@]}"; do
+      if [[ "$name" != ConnectionStrings__HotelDatabase ]]; then
+        values[$name]="$(setting "$api_env" "$name")"
+      fi
     done
     ;;
   web)

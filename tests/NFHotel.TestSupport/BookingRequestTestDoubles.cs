@@ -96,6 +96,12 @@ public sealed class FakeMailSender : IMailSender
     /// <summary>Decides, for each mail, the reason the relay refuses it; <see langword="null"/> takes it.</summary>
     public Func<OutgoingMail, string?> Refuse { get; set; } = _ => null;
 
+    /// <summary>
+    /// Decides, for each mail, an error that the send ends with instead of a result, as a failure that is no answer of the
+    /// relay would (RC-436 F1); <see langword="null"/> lets <see cref="Refuse"/> decide.
+    /// </summary>
+    public Func<OutgoingMail, Exception?> Throw { get; set; } = _ => null;
+
     #endregion Properties
 
     #region Public methods
@@ -112,6 +118,11 @@ public sealed class FakeMailSender : IMailSender
         lock (_gate)
         {
             Attempts.Add(mail);
+            if (Throw(mail) is { } error)
+            {
+                return Task.FromException<MailSendResult>(error);
+            }
+
             if (Refuse(mail) is { } reason)
             {
                 return Task.FromResult(MailSendResult.Failed(reason));

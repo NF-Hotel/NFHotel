@@ -941,7 +941,7 @@ public sealed class BookingFlowViewModel
             return;
         }
 
-        var messages = Errors;
+        IReadOnlyList<string> messages = Errors;
 
         SelectedRoomType = null;
 

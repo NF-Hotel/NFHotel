@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
 
 using NFHotel.Application.Errors;
@@ -66,8 +67,10 @@ public sealed class UnitOfWork : IUnitOfWork
     /// SHA-256 of the name, so every instance of the API takes the same lock, and it is let go at the commit or the
     /// rollback. The work runs inside the execution strategy of the context: a transient error of the database runs it
     /// again in a new transaction, and the entities that the failed attempt added or read are let go first, so a retry
-    /// never saves them twice. A commit that fails on the network may have committed; the retry then finds what the
-    /// first attempt wrote and counts it, which makes a limit stricter, never looser.
+    /// never saves them twice. A commit that fails on the network may have committed, and the retry then runs on what the
+    /// first attempt wrote: a limit counts it and gets stricter, never looser, but a booking may be made once more, in
+    /// the next free room, or answered with no free room. ADR-0052 accepts that rare risk, which every save with the
+    /// retries of EF Core has; no check of the commit is made (RC-436 F4).
     /// </remarks>
     public async Task<TResult> RunUnderLockAsync<TResult>(
         string lockName,
@@ -119,7 +122,7 @@ public sealed class UnitOfWork : IUnitOfWork
     // Lets go of what an attempt that failed added or read, so the next attempt starts from what the use case had.
     private void ForgetAllBut(HashSet<object> before)
     {
-        foreach (var entry in _context.ChangeTracker.Entries().Where(entry => !before.Contains(entry.Entity)).ToList())
+        foreach (EntityEntry entry in _context.ChangeTracker.Entries().Where(entry => !before.Contains(entry.Entity)).ToList())
         {
             entry.State = EntityState.Detached;
         }

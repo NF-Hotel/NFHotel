@@ -10,6 +10,8 @@ namespace NFHotel.Domain.Repositories;
 /// </summary>
 public interface ISentMailRepository
 {
+    #region Public methods
+
     /// <summary>Marks a record for insertion. Does not persist.</summary>
     /// <param name="mail">The record.</param>
     void Add(SentMail mail);
@@ -37,4 +39,6 @@ public interface ISentMailRepository
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The number of records deleted.</returns>
     Task<int> DeleteOlderThanAsync(DateTimeOffset cutoff, CancellationToken cancellationToken = default);
+
+    #endregion Public methods
 }

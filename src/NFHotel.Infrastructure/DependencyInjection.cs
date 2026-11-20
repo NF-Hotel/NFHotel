@@ -202,13 +202,14 @@ public static class DependencyInjection
     /// <summary>
     /// Registers the settings of the verification and the adapter that sends the mails (MIL-088, ADR-0052 decision 8
     /// and ADR-0053). The adapter is a singleton: it holds only the settings, and each mail opens a connection of its own.
+    /// It is made here with the bound of a send of production (ADR-0053 decision 1); its second constructor is the tests'.
     /// </summary>
     private static void AddMail(IServiceCollection services, SmtpOptions smtpOptions, BookingVerificationOptions verificationOptions)
     {
         services.AddSingleton(smtpOptions);
         services.AddSingleton(verificationOptions);
         services.AddSingleton<IBookingVerificationSettings, ConfiguredBookingVerificationSettings>();
-        services.AddSingleton<IMailSender, SmtpMailSender>();
+        services.AddSingleton<IMailSender>(new SmtpMailSender(smtpOptions));
     }
 
     /// <summary>

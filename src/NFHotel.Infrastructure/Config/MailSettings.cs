@@ -86,7 +86,7 @@ internal static class MailSettings
     #region Private methods
 
     private static string? Text(IConfigurationSection section, string key) =>
-        string.IsNullOrWhiteSpace(section[key]) ? null : section[key]!.Trim();
+        section[key] is { } text && !string.IsNullOrWhiteSpace(text) ? text.Trim() : null;
 
     private static string PathOf(IConfigurationSection section, string key) => $"{section.Path}:{key}";
 

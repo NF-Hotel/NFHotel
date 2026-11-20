@@ -77,6 +77,12 @@ public sealed class FakeUnitOfWork : IUnitOfWork
     /// <summary>The names of the locks that the work under a lock took, in order (MIL-088).</summary>
     public List<string> Locks { get; } = [];
 
+    /// <summary>
+    /// Decides, for each lock, an error that the work under it ends with before it starts, as a transaction that the
+    /// database still refuses after the retries would (MIL-088, RC-436 F1); <see langword="null"/> runs the work.
+    /// </summary>
+    public Func<string, Exception?> FailUnderLock { get; set; } = _ => null;
+
     /// <summary>Sets the count of saves back to 0.</summary>
     public void ResetSaveCount() => SaveCount = 0;
 
@@ -110,6 +116,11 @@ public sealed class FakeUnitOfWork : IUnitOfWork
         ArgumentNullException.ThrowIfNull(work);
 
         Locks.Add(lockName);
+        if (FailUnderLock(lockName) is { } error)
+        {
+            throw error;
+        }
+
         return await work(cancellationToken).ConfigureAwait(false);
     }
 }

@@ -208,7 +208,7 @@ stack_env() {
 # Env:   STACK_MAILPIT_FILE  a compose file that overrides the one of the catcher (the light mode
 #        publishes its web interface on the loopback)
 stack_start() {
-  local settings="$1" app_dir="$2" service native_settings
+  local settings="$1" app_dir="$2" service native_settings mailpit_files=()
   shift 2
   [[ -f "$app_dir/Dockerfile" && -f "$app_dir/Dockerfile.api" ]] ||
     die "$app_dir is not an NF-Hotel/NFHotel checkout with Dockerfile and Dockerfile.api"
@@ -226,8 +226,9 @@ stack_start() {
   stack_compose postgres up --detach --wait --wait-timeout 120 >/dev/null ||
     die "PostgreSQL did not become healthy"
   echo "==> starting the mail catcher and the forwarder of the mail"
-  stack_compose mailpit ${STACK_MAILPIT_FILE:+--file "$(stack_native "$STACK_MAILPIT_FILE")"} \
-    up --detach --wait --wait-timeout 120 >/dev/null || die "the mail catcher did not become healthy"
+  [[ -z "${STACK_MAILPIT_FILE:-}" ]] || mailpit_files=(--file "$(stack_native "$STACK_MAILPIT_FILE")")
+  stack_compose mailpit "${mailpit_files[@]}" up --detach --wait --wait-timeout 120 >/dev/null ||
+    die "the mail catcher did not become healthy"
   stack_compose mail-relay up --detach --wait --wait-timeout 120 >/dev/null ||
     die "the forwarder of the mail did not become healthy"
   echo "==> building and starting the API (migrations at start)"

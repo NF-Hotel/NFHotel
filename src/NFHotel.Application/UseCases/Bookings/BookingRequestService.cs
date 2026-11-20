@@ -212,8 +212,19 @@ public sealed class BookingRequestService : IBookingRequestService
         _events.PublicBookingMade(claimed.Email);
         BookingReceiptDto receipt = BookingReceiptDto.From(booked.Value);
 
-        // The booking stands whatever the second mail does (decision 5), so a guest who leaves the page does not stop it.
-        await SendReceiptAsync(claimed.Email, receipt, CancellationToken.None).ConfigureAwait(false);
+        // The booking stands whatever the second mail does (decision 5), so a guest who leaves the page does not stop it,
+        // and a failure of the mail or of its record after the retries ends as the event of a mail not sent: the guest
+        // gets the receipt on the screen, never an error after the booking was made (RC-436 F1).
+        try
+        {
+            await SendReceiptAsync(claimed.Email, receipt, CancellationToken.None).ConfigureAwait(false);
+        }
+#pragma warning disable CA1031 // The booking is made: whatever fails in its second mail is counted, and the answer stays the receipt.
+        catch (Exception exception) when (exception is not OperationCanceledException)
+#pragma warning restore CA1031
+        {
+            _events.MailNotSent(MailKind.BookingReceipt, MailFailureReasons.Other);
+        }
 
         return Result<PublicBookingDto>.Success(new PublicBookingDto(receipt, session));
     }

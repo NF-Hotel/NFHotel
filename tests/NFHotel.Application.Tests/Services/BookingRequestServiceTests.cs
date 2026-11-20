@@ -723,6 +723,81 @@ public sealed class BookingRequestServiceTests
         Assert.Contains($"mail_not_sent BookingReceipt {MailFailureReasons.Fuse}", world.RequestEvents.Lines);
     }
 
+    /// <summary>
+    /// Negative (ADR-0052 decision 5, RC-436 F1): the send of the second mail ends with an error that is no answer of the
+    /// relay; the booking, the receipt and the session stay, and the event names the receipt.
+    /// </summary>
+    [Fact]
+    public async Task VerifyAsync_SendOfTheReceiptThrows_KeepsTheBookingAndTheReceipt()
+    {
+        // Arrange
+        ServiceWorld world = World();
+        string token = await AskAsync(world);
+        world.Mails.Throw = mail => mail.Subject == "Your booking at NF Hotel" ? new InvalidOperationException("The relay broke.") : null;
+
+        // Act
+        Result<PublicBookingDto> result = await VerifyAsync(world, token);
+
+        // Assert
+        Booking booking = Assert.Single(world.Bookings.Items);
+        Assert.Equal(booking.Reference, result.Value.Receipt.Reference);
+        Assert.Equal([booking.Id], world.GuestTokens.Issued);
+        Assert.Equal($"mail_not_sent BookingReceipt {MailFailureReasons.Other}", world.RequestEvents.Lines[^1]);
+    }
+
+    /// <summary>
+    /// Negative (ADR-0052 decision 5, RC-436 F1): the database refuses the record of the second mail after the retries;
+    /// the booking and the receipt stay, no mail goes, and the event names the receipt.
+    /// </summary>
+    [Fact]
+    public async Task VerifyAsync_RecordOfTheReceiptCannotBeWritten_KeepsTheBookingAndTheReceipt()
+    {
+        // Arrange
+        ServiceWorld world = World();
+        string token = await AskAsync(world);
+        world.UnitOfWork.FailUnderLock = name =>
+            name == BookingRequestService.LockName ? new InvalidOperationException("The database could not save.") : null;
+
+        // Act
+        Result<PublicBookingDto> result = await VerifyAsync(world, token);
+
+        // Assert
+        Booking booking = Assert.Single(world.Bookings.Items);
+        Assert.Equal(booking.Reference, result.Value.Receipt.Reference);
+        Assert.Single(world.Mails.Attempts);
+        Assert.Equal($"mail_not_sent BookingReceipt {MailFailureReasons.Other}", world.RequestEvents.Lines[^1]);
+    }
+
+    /// <summary>
+    /// Negative (ADR-0052 decision 5, RC-436 F1): the relay refuses the second mail and the database refuses the removal
+    /// of its record; the booking and the receipt stay, and the event names the receipt.
+    /// </summary>
+    [Fact]
+    public async Task VerifyAsync_RecordOfARefusedReceiptCannotBeRemoved_KeepsTheBookingAndTheReceipt()
+    {
+        // Arrange
+        ServiceWorld world = World();
+        string token = await AskAsync(world);
+        world.Mails.Refuse = mail =>
+        {
+            if (mail.Subject != "Your booking at NF Hotel")
+            {
+                return null;
+            }
+
+            world.UnitOfWork.FailNextSaves.Enqueue(new InvalidOperationException("The database could not save."));
+            return MailFailureReasons.Refused;
+        };
+
+        // Act
+        Result<PublicBookingDto> result = await VerifyAsync(world, token);
+
+        // Assert
+        Booking booking = Assert.Single(world.Bookings.Items);
+        Assert.Equal(booking.Reference, result.Value.Receipt.Reference);
+        Assert.Equal($"mail_not_sent BookingReceipt {MailFailureReasons.Other}", world.RequestEvents.Lines[^1]);
+    }
+
     #endregion
 
     #region The public booking at once

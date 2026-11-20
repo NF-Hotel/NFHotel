@@ -16,16 +16,26 @@ namespace NFHotel.Domain.Entities;
 /// </remarks>
 public sealed class BookingRequest : Entity<int>
 {
+    #region Fields
+
     /// <summary>The number of characters of a SHA-256 hash written as lower-case hex.</summary>
     public const int HashLength = 64;
 
     // The digits of a hash; a search value, so the check makes no lambda, which would be a class of its own here.
     private static readonly SearchValues<char> LowerHexDigits = SearchValues.Create("0123456789abcdef");
 
+    #endregion Fields
+
+    #region Constructors
+
     /// <summary>For EF Core. Use <see cref="Create"/> in code.</summary>
     private BookingRequest()
     {
     }
+
+    #endregion Constructors
+
+    #region Properties
 
     /// <summary>How long the link of a request works (ADR-0052 decision 2).</summary>
     public static TimeSpan LinkLifetime { get; } = TimeSpan.FromMinutes(30);
@@ -77,6 +87,10 @@ public sealed class BookingRequest : Entity<int>
 
     /// <summary>The asked stay as a value object.</summary>
     public DateRange Period => new(StartDate, EndDate);
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <summary>Tells whether the link still works at a moment.</summary>
     /// <param name="now">The moment.</param>
@@ -142,6 +156,10 @@ public sealed class BookingRequest : Entity<int>
         ExpiresAt = now + LinkLifetime;
     }
 
+    #endregion Public methods
+
+    #region Internal methods
+
     /// <summary>Refuses a value that is not a SHA-256 hash written as 64 lower-case hex digits.</summary>
     /// <param name="hash">The value.</param>
     /// <param name="name">The name of the parameter, for the message.</param>
@@ -153,4 +171,6 @@ public sealed class BookingRequest : Entity<int>
             throw new ArgumentException("The value must be a SHA-256 hash written as 64 lower-case hex digits.", name);
         }
     }
+
+    #endregion Internal methods
 }

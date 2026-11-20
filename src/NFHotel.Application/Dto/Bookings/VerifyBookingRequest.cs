@@ -12,9 +12,13 @@ namespace NFHotel.Application.Dto.Bookings;
 public sealed record VerifyBookingRequest(
     [property: JsonRequired][StringLength(VerifyBookingRequest.MaxTokenLength)] string Token)
 {
+    #region Fields
+
     /// <summary>
     /// The longest token that the API reads: a token has 43 characters, and anything longer is refused before a use case
     /// runs.
     /// </summary>
     public const int MaxTokenLength = 64;
+
+    #endregion Fields
 }

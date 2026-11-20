@@ -177,7 +177,7 @@ public sealed class ApiGateway
     private static TResult ServiceUnavailableResult<TResult>(TResult answer, Func<string, TResult> fail)
         where TResult : Result
     {
-        var code = answer.FirstError?.Code;
+        string? code = answer.FirstError?.Code;
         return code is ErrorCodes.Booking.MailNotSent or ErrorCodes.Booking.MailPaused
             ? answer
             : fail(ErrorCodes.Api.Unavailable);

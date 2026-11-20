@@ -9,10 +9,16 @@ namespace NFHotel.Domain.Entities;
 /// </summary>
 public sealed class SentMail : Entity<int>
 {
+    #region Constructors
+
     /// <summary>For EF Core. Use <see cref="Record"/> in code.</summary>
     private SentMail()
     {
     }
+
+    #endregion Constructors
+
+    #region Properties
 
     /// <summary>The key of the mailbox: the SHA-256 of its mailbox form, as 64 lower-case hex digits.</summary>
     public string EmailKey { get; private set; } = string.Empty;
@@ -22,6 +28,10 @@ public sealed class SentMail : Entity<int>
 
     /// <summary>When the mail was sent.</summary>
     public DateTimeOffset SentAt { get; private set; }
+
+    #endregion Properties
+
+    #region Public methods
 
     /// <summary>Records a mail that is about to be sent.</summary>
     /// <param name="emailKey">The key of the mailbox, as <see cref="BookingRequest.EmailKey"/> has it.</param>
@@ -40,4 +50,6 @@ public sealed class SentMail : Entity<int>
             SentAt = sentAt,
         };
     }
+
+    #endregion Public methods
 }
