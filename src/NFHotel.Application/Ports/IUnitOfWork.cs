@@ -42,9 +42,11 @@ public interface IUnitOfWork
 
     /// <summary>
     /// Runs a piece of work in one transaction that first takes a lock of the database by its name, so two pieces of work
-    /// under the same name never run at the same time, in this instance or another (MIL-088, ADR-0052 decision 6: a
-    /// booking request counts its mails, checks the fuse and writes in one go). The work reads, marks and calls
-    /// <see cref="SaveChangesAsync"/>; the transaction commits when the work returns and rolls back when it throws.
+    /// under the same name never run at the same time, in this instance or another (MIL-088, ADR-0052): under
+    /// <c>booking_request</c> a booking request counts its mails, checks the fuse and writes in one go (decision 6),
+    /// and under <c>public_booking</c> a public booking counts the bookings of the mailbox and chooses its room
+    /// (decision 5). The work reads, marks and calls <see cref="SaveChangesAsync"/>; the transaction commits when the
+    /// work returns and rolls back when it throws.
     /// </summary>
     /// <typeparam name="TResult">The result of the work.</typeparam>
     /// <param name="lockName">The name of the lock.</param>
