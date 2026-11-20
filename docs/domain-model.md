@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | The attribute booking number of Booking renamed booking reference: a booking is named by a random reference, and a guest signs in with it and the email of its Guest (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Added the concept Booking request, which becomes a Booking when the guest verifies it, and the attribute made on the public site of Booking (MIL-088, UC-011, SSD-002, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Added the concept Booking request, which becomes a Booking when the guest verifies it, and the attribute made on the public site of Booking (MIL-088, UC-011, SSD-002, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
@@ -177,3 +177,4 @@ None. No concept is a kind of another concept.
 [SSD-002]: ./use-cases/uc-011/ssd.md
 [RC-036]: ./sqa/reviews/rc-036-domain-model.md
 [e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | A search for free rooms is limited per caller address, and hotel staff may see its refusal; the limits of the public site on booking requests per caller address and on coming bookings per email do not hold for hotel staff (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Rule 1: the coming bookings of the public site are counted per mailbox; hotel staff book without a booking request and without a mail, and a booking request of the website is not a booking and holds no room (MIL-088, UC-011, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Rule 1: the coming bookings of the public site are counted per mailbox; hotel staff book without a booking request and without a mail, and a booking request of the website is not a booking and holds no room (MIL-088, UC-011, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
@@ -85,3 +85,4 @@
 [SA-001]: ../../stakeholder-analysis.md
 [UC-011]: ../uc-011/uc.md
 [a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

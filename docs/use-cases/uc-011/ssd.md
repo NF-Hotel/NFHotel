@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 3 of MIL-088, written by the AI: the system operations of the booking on the website that is asked for, verified by email and then booked (ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 3 of MIL-088, written by the AI: the system operations of the booking on the website that is asked for, verified by email and then booked (ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
@@ -181,3 +181,4 @@ time starts it. The sign-in on offer after bookAtOnce is extension 1a of UC-010,
 [DM-004]: ../../domain-model.md
 [OC-002]: ./oc.md
 [UC-010]: ../uc-010/uc.md
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | CO1 takes the booking reference in place of the booking number and returns the receipt; failed attempts count per reference and per caller address; CO2 and CO3 name no booking, so their refusals of another booking or room are gone (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | SD-001 in the CrossReference: the first Sequence Diagram of the project, which realizes verifyBooking of UC-011 (MIL-088); no contract changed<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | SD-001 in the CrossReference: the first Sequence Diagram of the project, which realizes verifyBooking of UC-011 (MIL-088); no contract changed<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
@@ -107,3 +107,4 @@ Consequences).
 [ADR-0049]: ../../adr/adr-0049-booking-reference.md
 [SD-001]: ../uc-011/sd.md
 [e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

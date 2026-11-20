@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 3 of MIL-088, written by the AI: one contract for each system operation of SSD-002, the booking request, its verification and its clean-up (ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 3 of MIL-088, written by the AI: one contract for each system operation of SSD-002, the booking request, its verification and its clean-up (ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
@@ -227,3 +227,4 @@ room size on the arrival date for the market analysis (MIL-055), which is not a 
 [ADR-0051]: ../../adr/adr-0051-limits-of-the-booking-flow-and-the-caller-address.md
 [ADR-0052]: ../../adr/adr-0052-a-booking-takes-a-room-once-its-email-is-verified.md
 [ADR-0053]: ../../adr/adr-0053-mail-from-the-application-through-a-relay.md
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

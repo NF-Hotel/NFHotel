@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-088, written by the AI before any code<br>Reworked after the review by a second AI: No-Go in RC-431 (the claim before the booking, the limits per mailbox under one lock, the claims narrowed), then Go with conditions in RC-433 (the next free room after a lost race, the count of the bookings by mailbox, googlemail.com, the code of the mail limit), conditions closed; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [baaf79b] |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Decision 5: a third lock of the database, `public_booking`, that every public booking takes before it counts and chooses its room, after the test of criterion 4 found deadlocks of PostgreSQL under 20 verifications at once (MIL-088 task 5); the exclusion constraint now decides the race with a booking by staff<br>Decision 5 and the consequences after the code review RC-436: whatever fails in the second mail ends as the event of a mail not sent, and the rare risk of a commit whose answer is lost on the network<br>Affected Artifacts: UC-011 with SSD-002, OC-002 and SD-001, which task 3 wrote<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Decision 5: a third lock of the database, `public_booking`, that every public booking takes before it counts and chooses its room, after the test of criterion 4 found deadlocks of PostgreSQL under 20 verifications at once (MIL-088 task 5); the exclusion constraint now decides the race with a booking by staff<br>Decision 5 and the consequences after the code review RC-436: whatever fails in the second mail ends as the event of a mail not sent, and the rare risk of a commit whose answer is lost on the network<br>Affected Artifacts: UC-011 with SSD-002, OC-002 and SD-001, which task 3 wrote<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -324,3 +324,4 @@ follow this record too.
 [RC-435]: ../sqa/reviews/rc-435-mil-088-documents.md
 [RC-436]: ../sqa/reviews/rc-436-mil-088-code.md
 [baaf79b]: https://github.com/NF-Hotel/NFHotel/commit/baaf79babbf7d3ff7c52b39b60f1c31def2fdccb
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

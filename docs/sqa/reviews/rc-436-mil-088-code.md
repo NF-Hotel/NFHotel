@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version: code review of tasks 4 to 8 of MIL-088 and of the fixes of its findings; Go-with-conditions: every required check of the pull request green; mode autonomous, not independent | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version: code review of tasks 4 to 8 of MIL-088 and of the fixes of its findings; Go-with-conditions: every required check of the pull request green; mode autonomous, not independent | [739a25b] |
 
 ---
 
@@ -314,3 +314,4 @@ a second AI read the code. S01 may challenge any decision of it, F4, F9 and the 
 [ADR-0037]: ../../adr/adr-0037-github-actions-hardening-policy.md
 [ADR-0047]: ../../adr/adr-0047-guest-login.md
 [MIL-089]: ../../milestones/mil-089-the-booking-flow-attacked-and-measured.md
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

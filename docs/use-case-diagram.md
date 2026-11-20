@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | View and Change Own Booking: the guest signs in with the booking reference in place of the booking number (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | The use case Book a Room and Verify It by Email of the Guest (UC-011, US-001.14) added for MIL-088: a booking on the website is inside the boundary now, verified through a link mailed to its email (ADR-0052, ADR-0053); the diagram laid out again with the fewest crossings<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | The use case Book a Room and Verify It by Email of the Guest (UC-011, US-001.14) added for MIL-088: a booking on the website is inside the boundary now, verified through a link mailed to its email (ADR-0052, ADR-0053); the diagram laid out again with the fewest crossings<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
@@ -172,3 +172,4 @@ which is two goals in a row, not an `<<include>>` or an `<<extend>>`.
 [UC-010]: ./use-cases/uc-010/uc.md
 [UC-011]: ./use-cases/uc-011/uc.md
 [e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

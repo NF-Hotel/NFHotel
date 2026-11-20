@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version, the first Sequence Diagram of the project; task 3 of MIL-088, written by the AI from the code of the branch: verifyBooking through the claim of the request, the booking under the lock `public_booking`, the guest session and the mail with the reference (ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version, the first Sequence Diagram of the project; task 3 of MIL-088, written by the AI from the code of the branch: verifyBooking through the claim of the request, the booking under the lock `public_booking`, the guest session and the mail with the reference (ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
@@ -333,3 +333,4 @@ mails, and `public_booking` orders the counts and the choice of the room of the 
 [ADR-0051]: ../../adr/adr-0051-limits-of-the-booking-flow-and-the-caller-address.md
 [ADR-0052]: ../../adr/adr-0052-a-booking-takes-a-room-once-its-email-is-verified.md
 [ADR-0053]: ../../adr/adr-0053-mail-from-the-application-through-a-relay.md
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

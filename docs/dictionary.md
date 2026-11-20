@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Added Made on the public site (`MadeOnPublicSite`), which the limit per email of the public site counts (MIL-087, ADR-0051)<br>Go in RC-427; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Added Asked at (`CreatedAt`), Booking request (`BookingRequest`), Mailbox (`Mailbox`), Number of guests (`Guests`) and Verify (`Verify`); Made on the public site is counted per mailbox, and a Guest sign-in is also opened by the verification of a booking (MIL-088, UC-011, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Added Asked at (`CreatedAt`), Booking request (`BookingRequest`), Mailbox (`Mailbox`), Number of guests (`Guests`) and Verify (`Verify`); Made on the public site is counted per mailbox, and a Guest sign-in is also opened by the verification of a booking (MIL-088, UC-011, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
@@ -86,3 +86,4 @@ English (en), domain it, as set in the registry.
 [UC-011]: ./use-cases/uc-011/uc.md
 [OC-002]: ./use-cases/uc-011/oc.md
 [a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

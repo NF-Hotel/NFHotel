@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | signIn takes the booking reference in place of the booking number, and the refused sign-in counts per reference and per address (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Extension 1a now points to the booking on the website of UC-011, whose verifyBooking signs the guest in (MIL-088, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Extension 1a now points to the booking on the website of UC-011, whose verifyBooking signs the guest in (MIL-088, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
@@ -107,3 +107,4 @@ changeDates and cancelBooking name no booking: they act on the booking of the gu
 [UC-011]: ../uc-011/uc.md
 [SSD-002]: ../uc-011/ssd.md
 [e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

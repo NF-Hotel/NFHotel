@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-087] (RC-430, Go on criteria 1 to 8) and its code deployed at 6f7bb80; mode autonomous, not independent | [b01aceb] |
-| 2026-11-20 | Proposed | mikemike | AI as stand-in for S01 | The documents and the code of [MIL-088] (tasks 3 to 8): the rows of [UC-011], [SSD-002], [OC-002] and [SD-001], the row of [MIL-088] with what was built, the second versions of [ADR-0052] and [ADR-0053], and RC-435 and RC-436 on the rows of the amended documents; mode autonomous, not independent | pending |
+| 2026-11-20 | Proposed | mikemike | AI as stand-in for S01 | The documents and the code of [MIL-088] (tasks 3 to 8): the rows of [UC-011], [SSD-002], [OC-002] and [SD-001], the row of [MIL-088] with what was built, the second versions of [ADR-0052] and [ADR-0053], and RC-435 and RC-436 on the rows of the amended documents; mode autonomous, not independent | [739a25b] |
 
 ---
 
@@ -622,3 +622,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-425]: ./reviews/rc-425-mil-086-gate.md
 [RC-445]: ./reviews/rc-445-mil-090.md
 [b01aceb]: https://github.com/NF-Hotel/NFHotel/commit/b01acebde72834370ec9d16cbbbf9c8729d38c79
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

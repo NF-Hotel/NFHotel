@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the documents of MIL-088 (task 3, and the ledger and the wiki pages of task 8) and of the second versions of ADR-0052 and ADR-0053; Go; mode autonomous, not independent | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the documents of MIL-088 (task 3, and the ledger and the wiki pages of task 8) and of the second versions of ADR-0052 and ADR-0053; Go; mode autonomous, not independent | [739a25b] |
 
 ---
 
@@ -396,3 +396,4 @@ branch does. The reviewer is not independent.
 [RC-434]: ./rc-434-adr-0053-second-round.md
 [RC-436]: ./rc-436-mil-088-code.md
 [ADR-0051]: ../../adr/adr-0051-limits-of-the-booking-flow-and-the-caller-address.md
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

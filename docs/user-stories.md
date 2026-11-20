@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | US-001.13: the guest opens the booking with its booking reference in place of its number, and failed attempts are limited per reference and per address (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.14, a guest books a room on the website and verifies the booking through a link mailed to its email (MIL-088, UC-011, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.14, a guest books a room on the website and verifies the booking through a link mailed to its email (MIL-088, UC-011, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
 
 ---
 
@@ -285,3 +285,4 @@ for US-001.02.
 [MIL-018]: ./milestones/mil-018-guest-login.md
 [MIL-088]: ./milestones/mil-088-a-booking-verified-by-email.md
 [e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81
+[739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089
