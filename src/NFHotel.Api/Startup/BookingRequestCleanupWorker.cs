@@ -54,14 +54,11 @@ public sealed partial class BookingRequestCleanupWorker : BackgroundService
             (int requests, int mails) = await cleanup.RunAsync(stoppingToken).ConfigureAwait(false);
             LogCleaned(_logger, requests, mails);
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-        {
-            throw;
-        }
 #pragma warning disable CA1031 // A background worker has no caller to throw to: the failure is logged and the next run tries again.
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not OperationCanceledException || !stoppingToken.IsCancellationRequested)
 #pragma warning restore CA1031
         {
+            // The stop of the API fails the filter and ends the worker; any other failure, a timeout too, is logged.
             LogFailed(_logger, exception);
         }
     }

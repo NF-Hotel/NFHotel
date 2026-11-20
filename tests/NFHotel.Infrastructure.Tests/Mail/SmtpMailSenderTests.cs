@@ -212,7 +212,7 @@ public sealed class SmtpMailSenderTests
     public async Task SendAsync_NothingListens_IsAFailureToConnect()
     {
         // Arrange
-        TcpListener closed = new(IPAddress.Loopback, 0);
+        using TcpListener closed = new(IPAddress.Loopback, 0);
         closed.Start();
         int port = ((IPEndPoint)closed.LocalEndpoint).Port;
         closed.Stop();

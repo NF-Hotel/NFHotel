@@ -56,6 +56,43 @@ public sealed class BookingRequestCleanupWorkerTests
         await cleanup.Received(1).RunAsync(Arg.Any<CancellationToken>());
     }
 
+    /// <summary>Negative: a run that is cancelled because the API stops throws the cancellation, so the worker ends.</summary>
+    [Fact]
+    public async Task RunOnceAsync_ApiStops_ThrowsTheCancellation()
+    {
+        // Arrange
+        using CancellationTokenSource stopping = new();
+        await stopping.CancelAsync();
+        IBookingRequestCleanup cleanup = Substitute.For<IBookingRequestCleanup>();
+        cleanup.RunAsync(Arg.Any<CancellationToken>()).ThrowsAsync(new OperationCanceledException(stopping.Token));
+        BookingRequestCleanupWorker worker = Worker(services => services.AddScoped(_ => cleanup));
+
+        // Act
+        Exception? thrown = await Record.ExceptionAsync(() => worker.RunOnceAsync(stopping.Token));
+
+        // Assert
+        Assert.IsAssignableFrom<OperationCanceledException>(thrown);
+    }
+
+    /// <summary>
+    /// Negative: a cancellation that does not come from the stop of the API, as a timeout of the database, is logged like
+    /// any other failure and does not throw, so the next run tries again.
+    /// </summary>
+    [Fact]
+    public async Task RunOnceAsync_CancelledWhileTheApiRuns_DoesNotThrow()
+    {
+        // Arrange
+        IBookingRequestCleanup cleanup = Substitute.For<IBookingRequestCleanup>();
+        cleanup.RunAsync(Arg.Any<CancellationToken>()).ThrowsAsync(new OperationCanceledException("A timeout of the database."));
+        BookingRequestCleanupWorker worker = Worker(services => services.AddScoped(_ => cleanup));
+
+        // Act
+        Exception? thrown = await Record.ExceptionAsync(() => worker.RunOnceAsync(TestContext.Current.CancellationToken));
+
+        // Assert
+        Assert.Null(thrown);
+    }
+
     /// <summary>Positive (ADR-0052 decision 7): the worker runs the clean-up at its start, without waiting ten minutes.</summary>
     [Fact]
     public async Task StartAsync_Start_RunsTheCleanupAtOnce()
