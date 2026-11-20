@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | Deprecated | mikemike | AI as stand-in for S01 | F17 to F19: the comments of CodeQL, GitHub's code quality and SonarCloud on the pull request; F18 corrected (0ad9c7e), F17 and F19 recorded; the verdict stays Go-with-conditions<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | [5861a42] |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | F17 names what each alert of CodeQL holds: 681, as 676 on `main`, is the name of the limit `email`, a constant, and no email<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | pending |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | F17 names what each alert of CodeQL holds: 681, as 676 on `main`, is the name of the limit `email`, a constant, and no email<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | [67c18b5] |
 
 ---
 
@@ -346,3 +346,4 @@ a second AI read the code. S01 may challenge any decision of it, F4, F9, F17 and
 [MIL-089]: ../../milestones/mil-089-the-booking-flow-attacked-and-measured.md
 [ADR-0051]: ../../adr/adr-0051-limits-of-the-booking-flow-and-the-caller-address.md
 [5861a42]: https://github.com/NF-Hotel/NFHotel/commit/5861a42cfcb5908874412a28c1cb63198692926e
+[67c18b5]: https://github.com/NF-Hotel/NFHotel/commit/67c18b5276e592411e13c6b054b3fcb1a1cc05c2
