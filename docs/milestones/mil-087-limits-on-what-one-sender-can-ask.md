@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("således man ikke kan booke alle rum eller lave booking overbelastning", "Sikre også API requests mod hacker angreb"); the decisions are the AI's for S01 ("Du skal tage beslutningerne for mig"), and the plan is accepted by the AI as stand-in after RC-412, Go, for a run in autonomous mode ("Når din plan er lavet skal Opus 5.5 lave det hele i automode") | [9f5c208] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("således man ikke kan booke alle rum eller lave booking overbelastning", "Sikre også API requests mod hacker angreb"); the decisions are the AI's for S01 ("Du skal tage beslutningerne for mig"), and the plan is accepted by the AI as stand-in after RC-412, Go, for a run in autonomous mode ("Når din plan er lavet skal Opus 5.5 lave det hele i automode") | [9f5c208] |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-430 Go on criteria 1 to 8; tasks 1 to 7 in pull request 855 (RC-426 Go, RC-429 Go, RC-427 Go, RC-428 Go-with-conditions with its conditions met); the CD run 44624470820 of 6f7bb80, approved from S01's account at S01's word in chat, deployed it; task 8: on the live site the 61st search for free rooms within a minute from one address is refused with the text of the limits and counted in `nfhotel_security_events_total`, and the throwaway stack refuses the 6th booking request with the numbers of production | pending |
 
 ---
 
