@@ -1,0 +1,37 @@
+# MIL-088 task 8, the code review RC-436 of the code at 7f115a0a: the tests of its points F1 and F3, written
+# after the review and run in the worktree of the build session, 2026-11-20, on this machine (Windows, .NET SDK 10).
+# F1, on the fixed code with the catch around the second mail taken out again: each failure of the second mail
+# after a verification escapes the use case, which the API answers with a 500 after the booking was made.
+# F3, the first run of the new tests of the bound, on the code with the bound of 15 seconds and before the fix of
+# the mapping: a bound that ran out in the TLS handshake read as tls, not as timeout. Then, on the fixed code with
+# the quit given back its own 30 seconds and MailKit its 30 seconds for one step, as before the fix: a relay that
+# never answers the quit holds the send until the test stops at its own limit of 20 seconds.
+# Each run lists its failed tests, sorted, the reason where the runner gives one, and its summary; the durations
+# are removed. After the fixes every test passes (after-tests.txt).
+# F1, the catch taken out: dotnet test --project tests/NFHotel.Application.Tests -c Release --no-build -- --filter-class NFHotel.Application.Tests.Services.BookingRequestServiceTests
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_RecordOfARefusedReceiptCannotBeRemoved_KeepsTheBookingAndTheReceipt
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_RecordOfTheReceiptCannotBeWritten_KeepsTheBookingAndTheReceipt
+failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.VerifyAsync_SendOfTheReceiptThrows_KeepsTheBookingAndTheReceipt
+Test run summary: Failed!
+  total: 41
+  failed: 3
+  succeeded: 38
+  skipped: 0
+# F3, the mapping before its fix: dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build -- --filter-class (the tests of the mail and of the settings)
+failed NFHotel.Infrastructure.Tests.Mail.SmtpMailSenderTests.SendAsync_RelayNeverAnswers_IsATimeout(implicitTls: True)
+Assert.Equal() Failure: Values differ
+Expected: MailSendResult { Sent = False, FailureReason = timeout }
+Actual:   MailSendResult { Sent = False, FailureReason = tls }
+Test run summary: Failed!
+  total: 93
+  failed: 1
+  succeeded: 92
+  skipped: 0
+# F3, the old quit: dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build -- --filter-class NFHotel.Infrastructure.Tests.Mail.SmtpMailSenderTests
+failed (canceled) NFHotel.Infrastructure.Tests.Mail.SmtpMailSenderTests.SendAsync_RelayNeverAnswersTheQuit_IsSentWithinTheBound
+Xunit.MicrosoftTestingPlatform.XunitException: Test execution timed out after 20000 milliseconds
+Test run summary: Failed!
+  total: 17
+  failed: 1
+  succeeded: 16
+  skipped: 0

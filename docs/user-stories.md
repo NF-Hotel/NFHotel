@@ -4,15 +4,15 @@
 | Key | Value |
 | --- | --- |
 | ID | US-001 |
-| CrossReference | [UCD-001], [BC-001], [MIL-002], [MIL-016], [MIL-055], [MIL-018], [SA-001] |
+| CrossReference | [UCD-001], [BC-001], [MIL-002], [MIL-016], [MIL-055], [MIL-018], [MIL-088], [SA-001] |
 | Language | en |
 | Domain | it |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-15 | Deprecated | mikemike | AI as stand-in for S01 | Added US-001.13, a guest sees, moves and cancels the own booking (MIL-018, UC-010)<br>The Version History cut to its two latest rows, the blank line that split it removed<br>Go in RC-390; accepted by the AI as stand-in for S01 | [9e72b0e] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | US-001.13: the guest opens the booking with its booking reference in place of its number, and failed attempts are limited per reference and per address (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | US-001.13: the guest opens the booking with its booking reference in place of its number, and failed attempts are limited per reference and per address (MIL-085, ADR-0049)<br>Go in RC-417; accepted by the AI as stand-in for S01 in autonomous mode | [e551458] |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Added US-001.14, a guest books a room on the website and verifies the booking through a link mailed to its email (MIL-088, UC-011, ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 ---
 
@@ -239,13 +239,32 @@ analysis without anyone starting it by hand.
 | --- | --- | --- | --- | --- |
 | UCD-001 use case "View and Change Own Booking" (UC-010) | does not yet fit one iteration | Small: splits into the sign-in, the own booking, the change of dates and the cancellation ([MIL-018] tasks 2 to 6) | Should | Objective 21 of the Business Case: a guest reaches the own booking without the staff |
 
+### US-001.14 — Book a room and verify it by email
+
+**As** a guest (S06), **I want** to ask for a room on the website and book it with the link that the hotel mails to my email, **so that** I get a room without an account or a call to the hotel, while nobody can book in my email without my mailbox or fill the hotel with bookings that nobody stands behind.
+
+**Acceptance Criteria**
+
+- Given dates, a party of one to four and a room size that is free for every night, when I ask for the booking with my details, then I am told to open the mail and until when its link works; the mail holds the dates, the room size, the number of guests, the link and the time it lapses, and nothing else that I typed; and the room is still offered to the next guest.
+- Given the mail, when I open its link, then nothing is booked until I verify the booking; when I verify within 30 minutes, then the room is booked as pending with a booking reference, I am signed in to the booking and see it, and a second mail carries the booking reference and the dates.
+- Given a link that I have used, that has lapsed or that is not a link of the hotel, when I verify with it, then I am told in the same words every time that the link does not work any more, and nothing is booked.
+- Given the last free room of the size went to another booking after I asked, when I verify, then I am told that the room size is no longer free for my dates, and nothing is booked.
+- Given I ask again with the same email, when the new mail comes, then only its link works; given three mails within the hour or five within the day to my mailbox, when I ask again, then I am told to use the newest mail, and no mail is sent.
+- Given a stranger typed my email, when I do nothing, then nothing is booked, and the request is deleted with its personal data within ten minutes after its link lapsed.
+- Given the mail cannot be sent, or the hotel has sent 400 mails within 24 hours, when I ask, then I am told so, and nothing is kept or booked.
+- Given the verification by email is switched off, when I ask for the booking, then the room is booked at once, as before.
+
+| Traces to | Size | INVEST exceptions | Priority (MoSCoW) | Reason |
+| --- | --- | --- | --- | --- |
+| UCD-001 use case "Book a Room and Verify It by Email" (UC-011) | does not yet fit one iteration | Small: splits into the request with its mail, the verification, the limits of the mails and the clean-up ([MIL-088] tasks 4 to 7) | Must | Objective 43 and success criterion 48 of the Business Case: a booking on the website takes a room only after its email is verified |
+
 ## INVEST Check
 
 - Independent: US-001.01 needs US-001.05; US-001.02 needs US-001.04; US-001.04 and US-001.05 need US-001.03. The order is stated in the Reason column.
 - Negotiable: no implementation is fixed beyond what the user named (Proxmox VM, Docker, nginx, the two repositories).
-- Valuable: each story names the benefit to the owner or to DevOps.
+- Valuable: each story names the benefit to its role: the owner, DevOps, hotel staff or a guest.
 - Estimable: US-001.01, .03, .05, .07 and .08 can be estimated now; .02 and .04 need the hardware question answered; .06 is already built.
-- Small: US-001.04 and US-001.06 are larger than one iteration and are flagged above.
+- Small: US-001.04, US-001.06, US-001.12, US-001.13 and US-001.14 are larger than one iteration and are flagged above.
 - Testable: every story has Given/When/Then criteria.
 
 Stories US-001.06 to US-001.09 describe the hotel back office that exists in `src/`; they were derived from the rule ledger in `docs/refactor/BusinessRules.md` by the AI and are for S01 and S04 to confirm, merge or drop.
@@ -264,5 +283,5 @@ for US-001.02.
 [MIL-016]: ./milestones/mil-016-backoffice-login.md
 [MIL-055]: ./milestones/mil-055-room-price-suggestions.md
 [MIL-018]: ./milestones/mil-018-guest-login.md
-[9e72b0e]: https://github.com/NF-Hotel/NFHotel/commit/9e72b0e99e8765b608373fe29391d33a2a8225ee
+[MIL-088]: ./milestones/mil-088-a-booking-verified-by-email.md
 [e551458]: https://github.com/NF-Hotel/NFHotel/commit/e551458c167261cad75f9ffd2902fb6163a78b81

@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0053 |
-| CrossReference | [MIL-088], [MIL-035], [MIL-027], [MIL-064], [ADR-0004], [ADR-0006], [ADR-0023], [ADR-0024], [ADR-0034], [ADR-0035], [ADR-0047], [ADR-0051], [ADR-0052], [BC-001], [RC-432], [RC-434] |
+| CrossReference | [MIL-088], [MIL-035], [MIL-027], [MIL-064], [ADR-0004], [ADR-0006], [ADR-0023], [ADR-0024], [ADR-0034], [ADR-0035], [ADR-0047], [ADR-0051], [ADR-0052], [BC-001], [RC-432], [RC-434], [RC-435], [RC-436] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 2 of MIL-088, written by the AI before any code<br>Reworked after the review by a second AI: Go with conditions in RC-432 (a network of its own for the forwarder, one source for the address of the relay, the risks of a private mailbox and of the fuse, the claims scoped), then Go with conditions in RC-434 (the forwarder on IPv4 and given only the host and the port, the catcher with TLS from the first byte, the two limits of Gmail), conditions closed; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [baaf79b] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 2 of MIL-088, written by the AI before any code<br>Reworked after the review by a second AI: Go with conditions in RC-432 (a network of its own for the forwarder, one source for the address of the relay, the risks of a private mailbox and of the fuse, the claims scoped), then Go with conditions in RC-434 (the forwarder on IPv4 and given only the host and the port, the catcher with TLS from the first byte, the two limits of Gmail), conditions closed; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [baaf79b] |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Decision 1: one bound of 15 seconds for a send, from the connection to the end of the session with the relay, the quit included, well below the 30 seconds that the web application waits for the API (code review RC-436)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -120,7 +121,9 @@ of [ADR-0052] build the two mails. The adapter `SmtpMailSender` in the infrastru
 2026-11-10, after the cooldown of 7 days of the repository; it brings MimeKit.Core and System.Formats.Asn1, and not
 the cryptographic library BouncyCastle that MailKit 4 brings), pinned in the lock files. A mail is plain text in
 UTF-8, the Unicode encoding of eight-bit units. The adapter refuses an address or a subject with a line break before
-it builds anything (ASVS 1.3.11), and a send that takes more than 30 seconds fails.
+it builds anything (ASVS 1.3.11). A send has one bound of 15 seconds, from the connection to the end of the session
+with the relay, the quit included: well below the 30 seconds that the web application waits for the API, so a slow
+relay ends as a send that failed, never as an error page after the booking was made (code review RC-436).
 
 **2. The settings**, the section `Smtp` of the API:
 
@@ -284,4 +287,6 @@ to the alert rules of the monitoring with their rule tests.
 [BC-001]: ../business-case.md
 [RC-432]: ../sqa/reviews/rc-432-adr-0053.md
 [RC-434]: ../sqa/reviews/rc-434-adr-0053-second-round.md
+[RC-435]: ../sqa/reviews/rc-435-mil-088-documents.md
+[RC-436]: ../sqa/reviews/rc-436-mil-088-code.md
 [baaf79b]: https://github.com/NF-Hotel/NFHotel/commit/baaf79babbf7d3ff7c52b39b60f1c31def2fdccb

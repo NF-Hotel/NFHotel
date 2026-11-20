@@ -1,0 +1,81 @@
+# MIL-088 criteria 3, 4, 6, 7 and 8 on the throwaway stack of ops/scripts/e2e-stack.sh (nginx with a self-signed
+# certificate, the web application, the API, an empty PostgreSQL, the forwarder mail-relay and the mail catcher
+# Mailpit), built from the branch mil-088-booking-verified-by-email at 0ce2e0c. The stack ran from WSL on Docker
+# Desktop on the machine of the build session, 2026-11-20, under the project name t088-e2e; the browser tests ran from
+# Git Bash with ops/scripts/run-e2e-tests.sh in the container of Playwright on the network of the stack, as NF Hotel
+# CI runs them: first with the verification of a booking by email off, then on. After each run the logs of every
+# container of the stack were searched as the end-to-end action searches them: for the test guest's personal data,
+# and after the run with the verification on also for the start of a verification link, for every token that the
+# tests wrote down and for the emails that the tests made for themselves. The stack was removed after the run.
+# The lines of the image builds, of the pull of the image of Playwright and of the creation of the test accounts
+# are left out; nothing here is a secret, and every email is of example.com.
+PASS  the home page answers over TLS
+PASS  the booking page answers over TLS
+PASS  the login page answers over TLS
+PASS  the back office sends a visitor to the login
+PASS  port 80 redirects to HTTPS
+PASS  /t088-e2e-nginx-nginx-1 has the hardening
+PASS  /t088-e2e-nfhotel-web-nfhotel-web-1 has the hardening
+PASS  /t088-e2e-nfhotel-api-nfhotel-api-1 has the hardening
+PASS  /t088-e2e-mail-relay-mail-relay-1 has the hardening
+PASS  /t088-e2e-mailpit-mailpit-1 has the hardening
+PASS  /t088-e2e-postgres-postgres-1 has the hardening
+PASS  no container of the stack publishes a host port
+PASS  the API is not on the proxy network
+PASS  nginx is not on the python network
+PASS  the web application and the API are on the python network
+PASS  only the API and the forwarder of the mail are on the mail network
+PASS  the mail network is internal
+PASS  only the forwarder and the mail catcher are on the way out of the mail
+PASS  the forwarder of the mail is not on the proxy network
+PASS  stack.env names the web interface of the mail catcher
+PASS  the mail catcher answers on the proxy network
+PASS  the forwarder reaches the catcher with TLS from the first byte
+PASS  plain SMTP through the forwarder gets no answer
+PASS  stack.env holds the MANAGER account
+PASS  stack.env holds the RECEPTIONIST account
+PASS  stack.env holds the HOUSEKEEPING account
+PASS  stack.env names the internal network of the API
+PASS  stack.env holds the API token and the account of the API scan
+PASS  the guest smoke test has a Suite of its own
+PASS  the public booking answers two random references
+PASS  the public booking answers no key, guest or email
+PASS  a guest signs in with the reference in upper case and the email in another letter case
+PASS  the guest reads the own booking on the guest route
+PASS  the guest's answer names no key, guest or email
+PASS  the guest is refused the read of a booking on a staff route
+PASS  the guest is refused the cancellation on a staff route
+PASS  the guest is refused a staff endpoint
+PASS  the guest route without a guest token gets 401
+PASS  a wrong email gets 401
+PASS  an old booking number with its email gets 401
+PASS  the old lookup of a receipt is gone
+PASS  20 failed guest sign-ins with forged addresses through nginx are answered, and the 21st is refused
+PASS  the failed staff sign-in through nginx is refused
+PASS  the audit trail names the address that nginx saw
+PASS  no event of the audit trail names a forged address
+PASS  60 searches for free rooms from one address in a minute are answered, and the 61st is refused
+PASS  the refused search names the whole seconds to wait, at most a minute
+PASS  a search from another address is still answered
+PASS  5 public booking requests from one address in an hour are accepted, and the 6th is refused
+PASS  the refused booking request names the whole seconds to wait, at most an hour
+PASS  the log of the API has the event of each public booking with the masked email
+PASS  the log of the API has the event of the refused search with its address
+PASS  the log of the API has the event of the refused booking request with its address and the masked email
+PASS  no log of the stack holds an email or the reference of these checks
+==> the end-to-end stack is as expected
+==> tests with the verification off
+NFHotel.E2E.Tests  Total: 16, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0
+==> the 16 end-to-end tests of mode off passed
+==> logs after the tests with the verification off
+no personal data of the test guest in the logs of 6 containers
+==> verification on
+==> tests with the verification on
+NFHotel.E2E.Tests  Total: 3, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0
+==> the 3 end-to-end tests of mode on passed
+==> logs after the tests with the verification on
+no personal data of the test guest in the logs of 6 containers
+tokens written by the tests: 5
+==> down
+==> removed the stack t088-e2e
+==> exit 0

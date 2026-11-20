@@ -1,0 +1,97 @@
+# MIL-088 tasks 4 to 8: the whole run after the code and the fixes of the code review RC-436, on the branch
+# mil-088-booking-verified-by-email at 4239529, in the worktree of the build session, 2026-11-20, on this machine
+# (Windows, .NET SDK 10). The infrastructure tests ran against PostgreSQL 16 in a container of Testcontainers on
+# Docker Desktop. The browser tests and the check of the throwaway stack are in stack-check.txt; the baseline
+# scan, CodeQL, the coverage floor and the jobs of NF Hotel Ops CI that need root run on the pull request.
+# dotnet build NFHotel.sln -c Release -warnaserror
+    0 Warning(s)
+    0 Error(s)
+# dotnet test --project tests/NFHotel.Domain.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 746
+  failed: 0
+  succeeded: 746
+  skipped: 0
+# dotnet test --project tests/NFHotel.Application.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 831
+  failed: 0
+  succeeded: 831
+  skipped: 0
+# dotnet test --project tests/NFHotel.Api.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 729
+  failed: 0
+  succeeded: 729
+  skipped: 0
+# dotnet test --project tests/NFHotel.ApiClient.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 144
+  failed: 0
+  succeeded: 144
+  skipped: 0
+# dotnet test --project tests/NFHotel.Infrastructure.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 360
+  failed: 0
+  succeeded: 360
+  skipped: 0
+# dotnet test --project tests/NFHotel.Web.Tests -c Release --no-build
+Test run summary: Passed!
+  total: 980
+  failed: 0
+  succeeded: 980
+  skipped: 0
+# dotnet format whitespace NFHotel.sln --verify-no-changes --no-restore
+exit 0
+# bash ops/tests/lint.sh (actionlint, shellcheck, shfmt and yamllint in their pinned containers)
+==> layout (ADR-0016)
+PASS  one copy of the operations, in ops/ (ADR-0016)
+==> actionlint
+==> shellcheck
+==> shfmt
+==> yamllint
+==> all linters are clean
+# bash ops/tests/test-wiki-coverage.sh
+133 passed, 0 failed
+# bash ops/tests/check-monitoring.sh, from WSL (promtool test rules holds the three alerts of the mail)
+PASS  promtool check config
+PASS  promtool test rules
+PASS  amtool check-config
+PASS  loki -verify-config
+PASS  blackbox_exporter --config.check
+PASS  alloy fmt
+PASS  Grafana dashboards are JSON
+# the matrix of the job "Ops script tests" of NF Hotel Ops CI, each test in Debian with ops/ read-only, and the
+# check of the workflows against their policy (ADR-0037) with its self-test
+PASS  test-deploy-release.sh (debian:12-slim) 109 passed, 0 failed
+PASS  test-cd-steps.sh (debian:12-slim) 97 passed, 0 failed
+PASS  test-vm-setup.sh (debian:12-slim) 19 passed, 0 failed
+PASS  test-scan-gate.sh (debian:12-slim) ==> 38 passed, 0 failed
+PASS  test-dast-rules.sh (debian:12-slim) ==> 33 passed, 0 failed
+PASS  test-deploy-services-env.sh (debian:12-slim) 33 passed, 0 failed
+PASS  test-resolve-model-name.sh (debian:12-slim) all 14 checks passed
+PASS  test-switch-vm-checkout.sh (debian:12-slim) 14 passed, 0 failed
+PASS  test-renew-certificate.sh (debian:12-slim) 19 passed, 0 failed
+PASS  test-backup-target.sh (debian:13-slim) 44 passed, 0 failed
+PASS  test-backup-settings.sh (debian:12-slim) 12 passed, 0 failed
+PASS  test-dora-metrics.sh (debian:12-slim) 25 passed, 0 failed
+PASS  test-report-health.sh (debian:12-slim) 11 passed, 0 failed
+PASS  test-scan-running-release.sh (debian:12-slim) 41 passed, 0 failed
+PASS  test-check-log-privacy.sh (debian:12-slim) 10 passed, 0 failed
+PASS  test-publish-wiki.sh (debian:12-slim) 9 passed, 0 failed
+PASS  test-create-monitoring-lxc.sh (debian:12-slim) 15 passed, 0 failed
+PASS  test-write-secret-files.sh (debian:12-slim) 22 passed, 0 failed
+PASS  test-check-secret-env.sh (debian:12-slim) 7 passed, 0 failed
+PASS  test-make-migration-script.sh (debian:12-slim) 9 passed, 0 failed
+PASS  test-remove-desktop.sh (debian:13-slim) 21 passed, 0 failed
+PASS  test-sudo-log.sh (debian:13-slim) 19 passed, 0 failed
+PASS  test-check-container-runtime.sh (debian:13-slim) 119 passed, 0 failed
+PASS  test-backup-read-back.sh (debian:13-slim) 21 passed, 0 failed
+PASS  test-pull-monitoring.sh (debian:13-slim) 25 passed, 0 failed
+PASS  test-edge-comparison.sh (debian:12-slim) 55 passed, 0 failed
+PASS  test-check-security-txt.sh (debian:12-slim) 107 passed, 0 failed
+PASS  workflow policy self-test
+PASS  workflow policy
+# bash scripts/check-comment-language.sh <every new and changed file>, which NF Hotel CI runs
+exit 0

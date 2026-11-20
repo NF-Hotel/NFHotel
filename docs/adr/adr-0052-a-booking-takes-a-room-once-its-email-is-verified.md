@@ -4,12 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0052 |
-| CrossReference | [MIL-088], [MIL-085], [MIL-086], [MIL-087], [MIL-018], [MIL-033], [ADR-0004], [ADR-0047], [ADR-0049], [ADR-0050], [ADR-0051], [ADR-0053], [UC-001], [UC-010], [DM-004], [BC-001], [RC-431], [RC-433] |
+| CrossReference | [MIL-088], [MIL-085], [MIL-086], [MIL-087], [MIL-018], [MIL-033], [ADR-0004], [ADR-0047], [ADR-0049], [ADR-0050], [ADR-0051], [ADR-0053], [UC-001], [UC-010], [DM-004], [UC-011], [SSD-002], [OC-002], [SD-001], [BC-001], [RC-431], [RC-433], [RC-435], [RC-436] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-088, written by the AI before any code<br>Reworked after the review by a second AI: No-Go in RC-431 (the claim before the booking, the limits per mailbox under one lock, the claims narrowed), then Go with conditions in RC-433 (the next free room after a lost race, the count of the bookings by mailbox, googlemail.com, the code of the mail limit), conditions closed; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [baaf79b] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-088, written by the AI before any code<br>Reworked after the review by a second AI: No-Go in RC-431 (the claim before the booking, the limits per mailbox under one lock, the claims narrowed), then Go with conditions in RC-433 (the next free room after a lost race, the count of the bookings by mailbox, googlemail.com, the code of the mail limit), conditions closed; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [baaf79b] |
+| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Decision 5: a third lock of the database, `public_booking`, that every public booking takes before it counts and chooses its room, after the test of criterion 4 found deadlocks of PostgreSQL under 20 verifications at once (MIL-088 task 5); the exclusion constraint now decides the race with a booking by staff<br>Decision 5 and the consequences after the code review RC-436: whatever fails in the second mail ends as the event of a mail not sent, and the rare risk of a commit whose answer is lost on the network<br>Affected Artifacts: UC-011 with SSD-002, OC-002 and SD-001, which task 3 wrote<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -142,22 +143,28 @@ decision 3. Then the API checks the limit of 3 coming public bookings per mailbo
 size, as the public booking chooses one, and in one transaction, one `SaveChanges`, stores the guest and the booking
 `Pending` with its reference ([ADR-0049]) and its mark of the public site ([ADR-0051] decision 3). The booking takes
 the new guest itself, not the key of a stored guest (`Booking.CreateForNewGuest`), so the database gives the guest its
-key in the same save. Two locks of the database decide the races (ASVS 2.3.3 and 2.3.4):
+key in the same save. Three locks of the database decide the races (ASVS 2.3.3 and 2.3.4):
 
 - the delete of the claim decides a link pressed twice at once: one statement finds the row, the other finds none and
   gets the answer of a used link, before any room is chosen;
-- the exclusion constraint `ex_booking_room_period` decides each room. The public booking chooses the same first room
-  for every guest of a size, so when the save finds that room taken by a booking that committed in between, the API
-  takes back the booking and its guest and tries the next free room of the size that sleeps the party, in the order of
-  the choice, up to five rooms in all. Of 20 verifications at once for the last room of a size one commits, and the
-  other 19 are told that the room is gone.
+- the lock `public_booking`, a transaction lock of PostgreSQL that every public booking takes before it counts the
+  limit per mailbox and chooses its room, with the verification on and with it off: the public bookings choose their
+  rooms one after the other, so of 20 verifications at once for the last room of a size one commits, and the other 19
+  find no free room and are told that the room is gone. Without the lock the 20 inserted into the one room at the same
+  time, and the exclusion constraint made PostgreSQL end some of them as a deadlock, which the retries of the
+  connection did not always get past (found by the test of criterion 4 on 2026-11-20);
+- the exclusion constraint `ex_booking_room_period` decides each room against a booking by staff, which takes no
+  lock. When the save finds the chosen room taken by a booking that committed in between, the API takes back the
+  booking and its guest and tries the next free room of the size that sleeps the party, in the order of the choice,
+  up to five rooms in all.
 
 A claimed request is gone whatever follows, so a verification that loses every room it tried keeps nothing: no
 request, no guest, no booking; the guest may ask again for other dates. A transaction that fails stores nothing.
 After the commit the API issues the guest session as after a public booking ([ADR-0047]); the web application signs
 the guest in and shows the receipt with the reference; and a second mail carries the reference and the dates. A
 second mail that fails or that the fuse of [ADR-0053] holds back does not undo the booking: the receipt is on the
-screen, and the guest can find the booking with the reference.
+screen, and the guest can find the booking with the reference. Whatever fails in the second mail, its record in the
+database included, ends as the event of a mail not sent, never as an error in the answer (code review RC-436).
 
 **6. One open request per mailbox, and the mails per mailbox.** The limits per email count by mailbox: the email in
 the normal form of [ADR-0050], without letter case, without a `+` and what follows it before the `@`, and for
@@ -243,6 +250,11 @@ and its counter. The events of the mail are in [ADR-0053].
   rooms of the size, a lost race moves on to the next room, so only the last rooms, or a burst beyond five rooms, are
   lost. A guest whose verification fails for another reason, such as a lost connection to the database, has to ask
   again too, because the claim is gone.
+- A commit whose answer is lost on the network may still have committed, and the retries of the connection then run
+  the booking again: it may book the next free room once more for the same guest, or answer that the room is gone
+  although the booking stands. Every save with the retries of EF Core has that risk; it needs the connection to
+  break at the moment of the commit, staff see the second booking in the list, and no check of the commit is built
+  (code review RC-436).
 - A domain that takes mail for every address before its `@` gives a sender endless mailboxes; the limits per address
   of [ADR-0051] and the alert `PublicBookingSurge` remain the answer to that gap.
 - Someone who knows the email of a guest can replace the open request of that guest, whose link then stops working,
@@ -253,7 +265,8 @@ and its counter. The events of the mail are in [ADR-0053].
 - The page of the link needs script; without it the link cannot verify, and the page says so.
 - The booking flow now depends on a mail relay and on its limits; [ADR-0053] decides what happens when it fails.
 - Every request waits for the one lock while it counts and writes, a few milliseconds; the mail is sent after the
-  lock is released.
+  lock is released. Every public booking, and so every verification, waits for the lock `public_booking` while it
+  counts, chooses and saves, a few milliseconds more.
 - The records of the mails keep a hash of each mailbox for 24 hours: pseudonymous personal data, kept only for the
   limits.
 - The timed job is a new moving part of the API.
@@ -278,10 +291,11 @@ maintainability (one switch, one place that chooses the flow, one set of checks 
 - [DM-004] — the booking request and the record of a mail sent, each with the key of its mailbox; a booking takes its
   new guest in the same save; the bookings of a mailbox are counted from the emails of their guests, with no new
   column.
+- [UC-011] — the use case of the request and its verification (task 3 of [MIL-088]), with its system sequence
+  diagram [SSD-002], its operation contracts [OC-002] and the sequence diagram [SD-001] of the verification.
 
-Task 3 of [MIL-088] writes the use case UC-011 with its system sequence diagram, operation contracts, sequence
-diagram, domain model and class diagram, and task 8 updates the rule ledger `docs/refactor/BusinessRules.md`; they
-cite this record when they exist.
+The class diagram `docs/dcd.md` (task 3 of [MIL-088]) and the rule ledger `docs/refactor/BusinessRules.md` (task 8)
+follow this record too.
 
 ---
 
@@ -300,7 +314,13 @@ cite this record when they exist.
 [UC-001]: ../use-cases/uc-001/uc.md
 [UC-010]: ../use-cases/uc-010/uc.md
 [DM-004]: ../domain-model.md
+[UC-011]: ../use-cases/uc-011/uc.md
+[SSD-002]: ../use-cases/uc-011/ssd.md
+[OC-002]: ../use-cases/uc-011/oc.md
+[SD-001]: ../use-cases/uc-011/sd.md
 [BC-001]: ../business-case.md
 [RC-431]: ../sqa/reviews/rc-431-adr-0052.md
 [RC-433]: ../sqa/reviews/rc-433-adr-0052-second-round.md
+[RC-435]: ../sqa/reviews/rc-435-mil-088-documents.md
+[RC-436]: ../sqa/reviews/rc-436-mil-088-code.md
 [baaf79b]: https://github.com/NF-Hotel/NFHotel/commit/baaf79babbf7d3ff7c52b39b60f1c31def2fdccb
