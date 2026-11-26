@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | Deprecated | mikemike | AI as stand-in for S01 | Decision 5: a third lock of the database, `public_booking`, that every public booking takes before it counts and chooses its room, after the test of criterion 4 found deadlocks of PostgreSQL under 20 verifications at once (MIL-088 task 5); the exclusion constraint now decides the race with a booking by staff<br>Decision 5 and the consequences after the code review RC-436: whatever fails in the second mail ends as the event of a mail not sent, and the rare risk of a commit whose answer is lost on the network<br>Affected Artifacts: UC-011 with SSD-002, OC-002 and SD-001, which task 3 wrote<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
-| 2026-11-21 | Accepted | mikemike | AI as stand-in for S01 | Decision 10: the event `booking_request_made` holds the address and no email, as decision 6 of [ADR-0051] says since MIL-089; the route of the verification has no limit per caller, and why (SAR-002, ASVS 6.6.3)<br>Decision 2: the 30 minutes of the link weighed against the 10 minutes of ASVS 6.5.5 (SAR-002), a stand-in judgement that S01 can overrule (RC-439)<br>After the delta review of RC-439: what a copy of the link pressed in time gives its holder (N7), SAR-002 as a link (N8), one line rewrapped (N9)<br>Go in the delta reviews of RC-439; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-21 | Accepted | mikemike | AI as stand-in for S01 | Decision 10: the event `booking_request_made` holds the address and no email, as decision 6 of [ADR-0051] says since MIL-089; the route of the verification has no limit per caller, and why (SAR-002, ASVS 6.6.3)<br>Decision 2: the 30 minutes of the link weighed against the 10 minutes of ASVS 6.5.5 (SAR-002), a stand-in judgement that S01 can overrule (RC-439)<br>After the delta review of RC-439: what a copy of the link pressed in time gives its holder (N7), SAR-002 as a link (N8), one line rewrapped (N9)<br>Go in the delta reviews of RC-439; accepted by the AI as stand-in for S01 in autonomous mode | [00d609b] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -333,3 +333,4 @@ follow this record too.
 [RC-436]: ../sqa/reviews/rc-436-mil-088-code.md
 [SAR-002]: ../sqa/security-audit-2026-12-booking-flow.md
 [739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089
+[00d609b]: https://github.com/NF-Hotel/NFHotel/commit/00d609b1450afdb2d73df7a8d5dd9b1de2e1c8da

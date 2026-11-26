@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | Proposed | mikemike | AI as stand-in for S01 | The documents and the code of [MIL-088] (tasks 3 to 8): the rows of [UC-011], [SSD-002], [OC-002] and [SD-001], the row of [MIL-088] with what was built, the second versions of [ADR-0052] and [ADR-0053], and RC-435 and RC-436 on the rows of the amended documents; mode autonomous, not independent | [739a25b] |
-| 2026-11-26 | Proposed | mikemike | AI as stand-in for S01 | The documents and the code of [MIL-089] (tasks 1 to 6): the row of [SAR-002], the row of [MIL-089] with what was built, the third version of [ADR-0051] and the row of [ADR-0052], the rows of [OC-002] and [SD-001], and RC-438 to RC-440 and RC-442; mode autonomous, not independent | pending |
+| 2026-11-26 | Proposed | mikemike | AI as stand-in for S01 | The documents and the code of [MIL-089] (tasks 1 to 6): the row of [SAR-002], the row of [MIL-089] with what was built, the third version of [ADR-0051] and the row of [ADR-0052], the rows of [OC-002] and [SD-001], and RC-438 to RC-440 and RC-442; mode autonomous, not independent | [00d609b] |
 
 ---
 
@@ -628,3 +628,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-425]: ./reviews/rc-425-mil-086-gate.md
 [RC-445]: ./reviews/rc-445-mil-090.md
 [739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089
+[00d609b]: https://github.com/NF-Hotel/NFHotel/commit/00d609b1450afdb2d73df7a8d5dd9b1de2e1c8da

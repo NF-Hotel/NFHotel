@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-21 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: review of the code of MIL-089 (tasks 2 to 6); No-Go; mode autonomous, not independent | pending |
-| 2026-11-26 | Accepted | mikemike | AI as stand-in for S01 | Delta review after the fixes: No-Go (D1); round 3 after the fixes of D1 and D2: Go-with-conditions (F5, F6); mode autonomous, not independent<br>Accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-21 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: review of the code of MIL-089 (tasks 2 to 6); No-Go; mode autonomous, not independent | [00d609b] |
+| 2026-11-26 | Accepted | mikemike | AI as stand-in for S01 | Delta review after the fixes: No-Go (D1); round 3 after the fixes of D1 and D2: Go-with-conditions (F5, F6); mode autonomous, not independent<br>Accepted by the AI as stand-in for S01 in autonomous mode | [00d609b] |
 
 ---
 
@@ -727,3 +727,4 @@ items of the first pass that the delta left open stay as it says.
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[00d609b]: https://github.com/NF-Hotel/NFHotel/commit/00d609b1450afdb2d73df7a8d5dd9b1de2e1c8da

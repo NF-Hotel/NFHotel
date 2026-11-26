@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-21 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: review of the documents of MIL-089 (ADR-0051 third version, ADR-0052, the business rules, the wiki pages); No-Go; mode autonomous, not independent | pending |
-| 2026-11-26 | Accepted | mikemike | AI as stand-in for S01 | Delta review after the fixes: Go for ADR-0052, SD-001 and OC-002; No-Go for ADR-0051 (decision 8 is not in its Context, QC-ADR-001 criterion 2) and for the class diagram on its first review (QC-DCD-001 criteria 3, 4, 6 and 7, on content older than MIL-089)<br>Second delta review after the fixes of D12, D13 and N7 to N9 and the line of the evidence notes for C4 of RC-438: Go for ADR-0051, third version; the Go for ADR-0052 holds; the class diagram stays No-Go (D14); the wiki in RC-442; mode autonomous, not independent<br>Accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-21 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: review of the documents of MIL-089 (ADR-0051 third version, ADR-0052, the business rules, the wiki pages); No-Go; mode autonomous, not independent | [00d609b] |
+| 2026-11-26 | Accepted | mikemike | AI as stand-in for S01 | Delta review after the fixes: Go for ADR-0052, SD-001 and OC-002; No-Go for ADR-0051 (decision 8 is not in its Context, QC-ADR-001 criterion 2) and for the class diagram on its first review (QC-DCD-001 criteria 3, 4, 6 and 7, on content older than MIL-089)<br>Second delta review after the fixes of D12, D13 and N7 to N9 and the line of the evidence notes for C4 of RC-438: Go for ADR-0051, third version; the Go for ADR-0052 holds; the class diagram stays No-Go (D14); the wiki in RC-442; mode autonomous, not independent<br>Accepted by the AI as stand-in for S01 in autonomous mode | [00d609b] |
 
 ---
 
@@ -584,3 +584,4 @@ overrule. The reviewer is not independent.
 [RC-417]: ./rc-417-mil-085-documents.md
 [RC-442]: ./rc-442-mil-089-wiki.md
 [RC-438]: ./rc-438-sar-002.md
+[00d609b]: https://github.com/NF-Hotel/NFHotel/commit/00d609b1450afdb2d73df7a8d5dd9b1de2e1c8da

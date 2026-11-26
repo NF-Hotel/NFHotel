@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial version, the first Sequence Diagram of the project; task 3 of MIL-088, written by the AI from the code of the branch: verifyBooking through the claim of the request, the booking under the lock `public_booking`, the guest session and the mail with the reference (ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
-| 2026-11-21 | Accepted | mikemike | AI as stand-in for S01 | The events of the verification hold no email, as decision 6 of ADR-0051 says since MIL-089: `LimitRefused("mailbox")` and `PublicBookingMade()` (RC-439)<br>Go in the delta review of RC-439; accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-21 | Accepted | mikemike | AI as stand-in for S01 | The events of the verification hold no email, as decision 6 of ADR-0051 says since MIL-089: `LimitRefused("mailbox")` and `PublicBookingMade()` (RC-439)<br>Go in the delta review of RC-439; accepted by the AI as stand-in for S01 in autonomous mode | [00d609b] |
 
 ---
 
@@ -335,3 +335,4 @@ mails, and `public_booking` orders the counts and the choice of the room of the 
 [ADR-0052]: ../../adr/adr-0052-a-booking-takes-a-room-once-its-email-is-verified.md
 [ADR-0053]: ../../adr/adr-0053-mail-from-the-application-through-a-relay.md
 [739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089
+[00d609b]: https://github.com/NF-Hotel/NFHotel/commit/00d609b1450afdb2d73df7a8d5dd9b1de2e1c8da

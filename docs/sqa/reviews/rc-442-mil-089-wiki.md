@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the wiki of MIL-089 against QC-WIKI-001; Go-with-conditions<br>Second delta review after the fixes of W1 and W2, the lines of BF-01 and the line of the load test for C4 of RC-438: Go-with-conditions, criterion 14 Pending until the gate; W3 and W4 to correct; mode autonomous, not independent<br>Accepted by the AI as stand-in for S01 in autonomous mode | pending |
+| 2026-11-26 | Accepted | mikemike | AI as stand-in for S01 | Initial version: review of the wiki of MIL-089 against QC-WIKI-001; Go-with-conditions<br>Second delta review after the fixes of W1 and W2, the lines of BF-01 and the line of the load test for C4 of RC-438: Go-with-conditions, criterion 14 Pending until the gate; W3 and W4 to correct; mode autonomous, not independent<br>Accepted by the AI as stand-in for S01 in autonomous mode | [00d609b] |
 
 ---
 
@@ -221,3 +221,4 @@ The first two action items above, W1 and W2, are done.
 [ADR-0051]: ../../adr/adr-0051-limits-of-the-booking-flow-and-the-caller-address.md
 [ADR-0052]: ../../adr/adr-0052-a-booking-takes-a-room-once-its-email-is-verified.md
 [RC-438]: ./rc-438-sar-002.md
+[00d609b]: https://github.com/NF-Hotel/NFHotel/commit/00d609b1450afdb2d73df7a8d5dd9b1de2e1c8da
