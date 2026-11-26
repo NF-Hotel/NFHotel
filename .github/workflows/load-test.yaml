@@ -4,8 +4,8 @@
 # objectives of MIL-034 are broken under that load (95 % within 1 second, fewer than 5 %
 # failed). A burst from one address over the limits must get the refusals of the limits and no
 # answer of the 500 kind. It runs twice on the same stack: with the verification of a booking
-# by email off, as production runs until its relay is set, and on (MIL-088). It never runs
-# against the VM, the tailnet or a public host.
+# by email off, as production ran until 2026-11-22, and on, as production runs since (MIL-088).
+# It never runs against the VM, the tailnet or a public host.
 #
 # Triggers: weekly (Wednesday night), and by hand, for example before a larger release.
 # Secrets: none (the stack makes its own token and accounts); nothing is pushed.
