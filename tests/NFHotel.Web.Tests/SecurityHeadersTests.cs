@@ -76,10 +76,25 @@ public sealed partial class SecurityHeadersTests
         Assert.All(["default-src", "object-src", "base-uri", "form-action", "frame-ancestors"], name => Assert.Contains(name, directives.Keys));
         Assert.Equal("object-src 'none'", directives["object-src"]);
         Assert.Equal("frame-ancestors 'none'", directives["frame-ancestors"]);
+        Assert.Equal("base-uri 'self'", directives["base-uri"]); // not 'none': Blazor needs its base element (SAR-002)
         Assert.DoesNotContain("unsafe-inline", sources, StringComparison.Ordinal);
         Assert.DoesNotContain("unsafe-eval", sources, StringComparison.Ordinal);
         Assert.DoesNotContain("*", sources, StringComparison.Ordinal);
         Assert.DoesNotContain("data:", sources, StringComparison.Ordinal);
+    }
+
+    /// <summary>Positive: the policy sends the address of a page only to this site, and nothing to another.</summary>
+    [Fact]
+    public void ReferrerPolicy_Value_SendsNoAddressToAnotherSite()
+    {
+        // Arrange
+        KeyValuePair<string, string> referrer = SecurityHeaders.All.Single(header => header.Key == "Referrer-Policy");
+
+        // Act
+        string policy = referrer.Value;
+
+        // Assert
+        Assert.Equal("same-origin", policy);
     }
 
     #endregion

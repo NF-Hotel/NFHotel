@@ -26,7 +26,7 @@ public static class TelemetryRegistration
     /// the unhandled exceptions on <c>Microsoft.AspNetCore.Diagnostics</c> and the connections on
     /// <c>Microsoft.AspNetCore.Server.Kestrel</c>; .NET publishes memory, GC and threads on <c>System.Runtime</c>; the API
     /// counts the security events of the booking flow on <c>NFHotel.Security</c> (MIL-087), and there too the mails that
-    /// the relay took (MIL-088).
+    /// the relay took (MIL-088), and the web application counts its refusals of the circuits there (MIL-089).
     /// </summary>
     public static IReadOnlyList<string> Meters { get; } =
     [

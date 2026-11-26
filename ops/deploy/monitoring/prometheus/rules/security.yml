@@ -20,11 +20,12 @@ groups:
             names (ADR-0017); follow the incident procedure (wiki page Incidents).
 
       # The security events of the booking flow (MIL-087, ADR-0051 decision 6): the API counts
-      # each one in nfhotel_security_events_total with its kind, and a refusal with its limit.
+      # each one in nfhotel_security_events_total with its kind, and a refusal with its limit. The
+      # web application counts its refusals of the limit circuits there too (ADR-0051 decision 8).
       - alert: BookingFlowRefusals
         expr: >-
-          sum(increase(nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api",
-          kind="limit_refused"}[10m])) > 20
+          sum(increase(nfhotel_security_events_total{host="nf-hotel",
+          job=~"nfhotel-api|nfhotel-web", kind="limit_refused"}[10m])) > 20
         labels:
           severity: warning
           host: nf-hotel
@@ -33,8 +34,8 @@ groups:
             {{ $value | humanize }} refusals by the limits of the booking flow in 10 minutes
           description: >-
             A sender asks the booking flow for more than its limits allow (ADR-0051). The
-            events limit_refused in the log of the API name the limit and the address; follow
-            the wiki page Alerts, section Booking flow.
+            events limit_refused in the logs of the API and the web application name the limit
+            and the address; follow the wiki page Alerts, section Booking flow.
 
       - alert: PublicBookingSurge
         expr: >-
