@@ -12,8 +12,13 @@ import exec from "k6/execution";
 import { check, sleep } from "k6";
 import { Counter } from "k6/metrics";
 
-const target = __ENV.TARGET || "https://nginx";
-const api = __ENV.API || "http://nfhotel-api:8080";
+// The addresses of nginx and of the API in the stack come from load-test.sh, the one place
+// that names them; without them the test stops before it sends anything.
+const target = __ENV.TARGET;
+const api = __ENV.API;
+if (!target || !api) {
+  throw new Error("TARGET and API must be set, as ops/scripts/load-test.sh sets them");
+}
 // The token of the API and the Manager account of the stack, from a file that load-test.sh
 // mounts read-only; never from the environment or a command line.
 const secrets = JSON.parse(open("/secrets/load.json"));
@@ -133,8 +138,11 @@ export function setup() {
     exec.test.abort(`the Manager of the stack cannot sign in: ${login.status}`);
   }
   const staff = { ...headers(), "X-Staff-Token": login.json("value.token") };
-  // Four hex digits that tell this run apart: in the rooms, the emails and the burst address.
-  const run = Math.floor(Math.random() * 0x10000).toString(16);
+  // Up to four hex digits that tell this run apart: in the rooms, the emails and the burst
+  // address. They come from WebCrypto rather than Math.random, which a scan flags as a weak
+  // generator; nothing secret rests on them.
+  const [high, low] = crypto.getRandomValues(new Uint8Array(2));
+  const run = ((high << 8) | low).toString(16);
   for (let i = 0; i < rooms; i++) {
     const room = http.post(
       `${api}/api/rooms`,
