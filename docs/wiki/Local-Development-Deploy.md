@@ -1,5 +1,7 @@
 # Local Development Deploy
 
+**English**
+
 This page explains how to run the whole NF Hotel deployment on your own machine, so you can see a change working. It is
 the deployment of [ADR-0003](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0003-proxmox-vm-for-services.md)
 in miniature: Proxmox VE runs in a Docker container, a virtual machine (VM) in it runs every service as a Docker

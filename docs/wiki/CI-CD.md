@@ -1,5 +1,7 @@
 # CI/CD
 
+**English**
+
 How a change reaches the NF Hotel server, how a deploy is approved and undone, and how the database is backed up and restored. The decisions behind it are in ADR-0007 and ADR-0008. The assessment and the quality gates are in DSA-001 (`docs/sqa/devsecops-assessment.md`).
 
 ## How a release flows

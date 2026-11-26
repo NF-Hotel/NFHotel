@@ -1,5 +1,7 @@
 # GPU Passthrough
 
+**English**
+
 This page shows how to give an NVIDIA GPU to the NFHotel VM on a Proxmox VE host, so that Ollama (the AI models of the
 market analysis and the benchmark) runs on the GPU instead of the CPU. It follows ADR-0003, where the services run in one
 VM on Proxmox VE.

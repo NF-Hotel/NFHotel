@@ -1,5 +1,7 @@
 # Database Preparation
 
+**English**
+
 How S03 prepares the production PostgreSQL 16 on `nf-hotel` for the NF Hotel API (ADR-0011, MIL-024). Every step keeps the existing data, volumes, users, schemas and migration history. Nothing is restarted, and no second database is created. Every step is checked before and after.
 
 ## Target architecture

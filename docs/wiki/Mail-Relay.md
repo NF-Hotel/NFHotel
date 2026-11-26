@@ -1,5 +1,7 @@
 # Mail Relay
 
+**English**
+
 The API sends two mails of the booking flow: the link that verifies a booking request, and the receipt with the reference once the guest has pressed the button of that link ([ADR-0052](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0052-a-booking-takes-a-room-once-its-email-is-verified.md)). It sends them with SMTP over TLS to a relay, Gmail, through the forwarder `mail-relay` on the VM, because the API itself has no route out of the VM ([ADR-0053](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0053-mail-from-the-application-through-a-relay.md)). This page holds the steps of S01 that set the relay up and switch the verification on (task 9 of MIL-088), and what to do when the mail fails.
 
 **For:** S01, who owns the account of the relay and approves the deploys, and anyone who answers `MailNotSent`, `MailFuseBlown` or `MailVolumeHigh`.

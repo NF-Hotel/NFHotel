@@ -4,13 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0052 |
-| CrossReference | [MIL-088], [MIL-085], [MIL-086], [MIL-087], [MIL-018], [MIL-033], [ADR-0004], [ADR-0047], [ADR-0049], [ADR-0050], [ADR-0051], [ADR-0053], [UC-001], [UC-010], [DM-004], [UC-011], [SSD-002], [OC-002], [SD-001], [BC-001], [RC-431], [RC-433], [RC-435], [RC-436] |
+| CrossReference | [MIL-088], [MIL-085], [MIL-086], [MIL-087], [MIL-018], [MIL-033], [ADR-0004], [ADR-0047], [ADR-0049], [ADR-0050], [ADR-0051], [ADR-0053], [UC-001], [UC-010], [DM-004], [UC-011], [SSD-002], [OC-002], [SD-001], [BC-001], [RC-431], [RC-433], [RC-435], [RC-436], [SAR-002] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-088, written by the AI before any code<br>Reworked after the review by a second AI: No-Go in RC-431 (the claim before the booking, the limits per mailbox under one lock, the claims narrowed), then Go with conditions in RC-433 (the next free room after a lost race, the count of the bookings by mailbox, googlemail.com, the code of the mail limit), conditions closed; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [baaf79b] |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Decision 5: a third lock of the database, `public_booking`, that every public booking takes before it counts and chooses its room, after the test of criterion 4 found deadlocks of PostgreSQL under 20 verifications at once (MIL-088 task 5); the exclusion constraint now decides the race with a booking by staff<br>Decision 5 and the consequences after the code review RC-436: whatever fails in the second mail ends as the event of a mail not sent, and the rare risk of a commit whose answer is lost on the network<br>Affected Artifacts: UC-011 with SSD-002, OC-002 and SD-001, which task 3 wrote<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
+| 2026-11-20 | Deprecated | mikemike | AI as stand-in for S01 | Decision 5: a third lock of the database, `public_booking`, that every public booking takes before it counts and chooses its room, after the test of criterion 4 found deadlocks of PostgreSQL under 20 verifications at once (MIL-088 task 5); the exclusion constraint now decides the race with a booking by staff<br>Decision 5 and the consequences after the code review RC-436: whatever fails in the second mail ends as the event of a mail not sent, and the rare risk of a commit whose answer is lost on the network<br>Affected Artifacts: UC-011 with SSD-002, OC-002 and SD-001, which task 3 wrote<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
+| 2026-11-21 | Accepted | mikemike | AI as stand-in for S01 | Decision 10: the event `booking_request_made` holds the address and no email, as decision 6 of [ADR-0051] says since MIL-089; the route of the verification has no limit per caller, and why (SAR-002, ASVS 6.6.3)<br>Decision 2: the 30 minutes of the link weighed against the 10 minutes of ASVS 6.5.5 (SAR-002), a stand-in judgement that S01 can overrule (RC-439)<br>After the delta review of RC-439: what a copy of the link pressed in time gives its holder (N7), SAR-002 as a link (N8), one line rewrapped (N9)<br>Go in the delta reviews of RC-439; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -118,7 +118,9 @@ Hash Algorithm, 256 bits), under a unique index, so a copy of the database holds
 `<site address>/booking/verify#<token>`: the site address is the setting `BookingVerification:SiteAddress`, never
 the address of the request, and the token stands after `#`, the part of an address that a browser does not send, so
 no access log of nginx, Cloudflare or the web application holds it. The link works once, for 30 minutes from the
-request.
+request. ASVS 5.0 (6.5.5) bounds an out-of-band token to 10 minutes; the link keeps its 30 (weighed in MIL-089,
+[SAR-002], as stand-in for S01, who can overrule it), because a mail can take minutes to arrive or wait in a spam
+folder, while the token has 256 random bits, works once and books only what the guest asked for.
 
 **3. The page with the button.** `/booking/verify` is a static server-rendered page with one button. A script of the
 site's own (a file, no inline code, as the content security policy of [MIL-033] asks) copies the token from the
@@ -219,12 +221,15 @@ and switches the setting on with the next deploy.
 does not show it, and no report counts it.
 
 **10. The security events.** Beside the events of [ADR-0051] decision 6, the API logs and counts a request that was
-made (`booking_request_made`, with the address and the masked email) and a verification with a link that does not
+made (`booking_request_made`, with the address and, since MIL-089, no email) and a verification whose link does not
 work (`verification_failed`, with the address). A refusal of the mails per mailbox is a `limit_refused` event of the
 limit `verification_mail`. A booking made by a verification is the event `public_booking_made` of [ADR-0051], so the
 alert `PublicBookingSurge` counts the bookings in both ways. The use case writes these events through a port of the
 application layer, because only it knows which limit refused and whether a mail went; the API writes them to its log
-and its counter. The events of the mail are in [ADR-0053].
+and its counter. The events of the mail are in [ADR-0053]. The route of the verification has no limit per caller
+(since MIL-089, [SAR-002]): its token has 256 random bits and works once, so guessing cannot succeed, and the requests
+that make links are limited per address and per mailbox ([ADR-0051] decision 2, decision 6 of this record). A failed
+press writes `verification_failed`, which no alert watches.
 
 ## Consequences
 
@@ -261,7 +266,10 @@ and its counter. The events of the mail are in [ADR-0053].
   and can use up its 5 mails of a day; the guest can ask again the next day or call the hotel.
 - A copy of the link can still live outside the server: the history of the browser keeps the address with its `#`,
   and a mail filter that rewrites links (such as Microsoft's Safe Links) carries the whole link in its own address.
-  That the link works once and for 30 minutes limits what such a copy is worth.
+  That the link works once and for 30 minutes limits what such a copy is worth. A copy pressed in time gives its
+  holder, once, what the press gives the guest: the booking that the guest asked for, the receipt with its reference
+  and, as decision 5 says, the guest session of that booking ([ADR-0047]); the 20 minutes beyond the 10 of ASVS 6.5.5
+  widen the time in which that can happen.
 - The page of the link needs script; without it the link cannot verify, and the page says so.
 - The booking flow now depends on a mail relay and on its limits; [ADR-0053] decides what happens when it fails.
 - Every request waits for the one lock while it counts and writes, a few milliseconds; the mail is sent after the
@@ -323,5 +331,5 @@ follow this record too.
 [RC-433]: ../sqa/reviews/rc-433-adr-0052-second-round.md
 [RC-435]: ../sqa/reviews/rc-435-mil-088-documents.md
 [RC-436]: ../sqa/reviews/rc-436-mil-088-code.md
-[baaf79b]: https://github.com/NF-Hotel/NFHotel/commit/baaf79babbf7d3ff7c52b39b60f1c31def2fdccb
+[SAR-002]: ../sqa/security-audit-2026-12-booking-flow.md
 [739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089

@@ -406,10 +406,10 @@ package "Application" #FFF3B0 {
   }
 
   interface IBookingRequestEvents {
-    +requestMade(email)
+    +requestMade()
     +verificationFailed()
-    +publicBookingMade(email)
-    +limitRefused(limit, email)
+    +publicBookingMade()
+    +limitRefused(limit)
     +mailSent(kind)
     +mailNotSent(kind, reason)
     +mailFuseBlown()

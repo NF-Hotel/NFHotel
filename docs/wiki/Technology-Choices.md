@@ -1,5 +1,7 @@
 # Technology Choices
 
+**English**
+
 **Work:** MIL-050. **Related pages:** [Workflows](Workflows), [Containers and Images](Containers-and-Images), [Security Controls](Security-Controls), [Alerts](Alerts).
 
 The other reference pages explain how each product is set up and why that setup was chosen. This page explains why NF Hotel uses the product at all: why PostgreSQL and not MySQL, Docker and not Podman, Grafana and not Kibana. Each entry gives:

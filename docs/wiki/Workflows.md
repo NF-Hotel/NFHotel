@@ -1,5 +1,7 @@
 # Workflows
 
+**English**
+
 **Decisions:** [ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md), [ADR-0016](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0016-one-repository-for-application-and-operations.md), [ADR-0021](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0021-automatic-deploy-when-green.md). **Work:** MIL-021, MIL-022, MIL-027, MIL-036, MIL-049, MIL-077, MIL-078. **Why each product:** [Technology Choices](Technology-Choices).
 
 Every GitHub Actions workflow and composite action of NF Hotel: when it runs, what it checks, what it may do, why it exists and what else could have been used. For how to operate the pipeline (a deploy that does not start, a rollback), see [CI-CD](CI-CD). For the security controls behind the checks, see [Security Controls](Security-Controls).
@@ -149,11 +151,11 @@ The script tests are: `test-deploy-release.sh`, `test-cd-steps.sh`, `test-vm-set
 | --- | --- |
 | **Runs on** | Every Wednesday at 02:40 UTC, and by hand before a large release |
 | **Jobs** | `Load test of a throwaway stack` |
-| **Checks** | k6 opens the public pages and the staff sign-in with 20 virtual guests and fails when the objectives of MIL-034 break under that load: 95 % of the requests within 1 second, fewer than 5 % failed |
-| **Permissions** | `contents: read`; no secret |
-| **Why** | The objectives are measured in production, but a slow change should be found before it reaches the guests, and without loading the VM. |
+| **Checks** | k6 opens the public pages and the staff sign-in with 20 virtual guests, who also search for free rooms and, in one visit of four, book on the API as the web application does, each visit from an address of its own, so no limit of the booking flow refuses them. It fails when the objectives of MIL-034 break under that load: 95 % of the requests within 1 second, fewer than 5 % failed. A burst from one address sends 80 searches and 8 bookings one after the other, from 45 seconds into the run, while the guests book: the 60 searches and the 5 bookings that the limits allow must be answered and the other 23 refused with 429 and the code of the limits, and none may get an answer of the 500 kind, which also shows that the stack runs with the limits of production. The test runs twice on the same stack: with the verification of a booking by email off, as production ran until 2026-11-22, and on, as production runs since (MIL-088, MIL-089) |
+| **Permissions** | `contents: read`; no secret: the token of the API and the Manager account that the stack makes for itself reach k6 in a file that only the user of the runner can read |
+| **Why** | The objectives are measured in production, but a slow change should be found before it reaches the guests, and without loading the VM. The limits of the booking flow count in the memory of the API and in its database under a lock; the burst shows that they hold while other guests book. |
 | **Alternatives** | Not decided in an ADR. JMeter, Locust and Gatling are common alternatives; k6 needs no JVM or Python environment, runs from one Docker image and writes thresholds in the script. |
-| **Decision** | MIL-036 task 3 |
+| **Decision** | MIL-036 task 3; MIL-089 task 4 (the booking flow and the burst) |
 
 ### NF Hotel Scorecard (`scorecard.yaml`)
 

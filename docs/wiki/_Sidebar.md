@@ -1,3 +1,5 @@
+**NF Hotel**
+
 - [Home](Home)
 - [DevOps Lifecycle](DevOps-Lifecycle)
 - [Local Development Deploy](Local-Development-Deploy)
@@ -18,7 +20,12 @@
 - [Container Escape](Container-Escape)
 - [Network Isolation](Network-Isolation)
 - [Security Controls](Security-Controls)
+- [Booking Flow Protection](Booking-Flow-Protection)
 - [Alerts](Alerts)
 - [Price Suggestions](Price-Suggestions)
 - [Technology Choices](Technology-Choices)
 - [Appendix](Appendix)
+
+**Languages**
+
+- English: [Home](Home)

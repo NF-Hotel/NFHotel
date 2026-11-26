@@ -1,5 +1,7 @@
 # Incidents
 
+**English**
+
 This page says what the team does when NF Hotel is down, slow or attacked, how it writes up what happened afterwards, and what the logs may and may not contain.
 
 **For:** anyone in the team (S01) who answers an alert in Discord, and the owner of the Proxmox server (S03) when the node is involved.
@@ -111,6 +113,7 @@ The logs of every container and of the VM's journal go to Loki and are kept 14 d
 | Ids (booking id, room id, staff user id) | A password, a token, a cookie or an `Authorization` header |
 | The type and message of an exception | A request or response body |
 | The client address in the nginx access log | The connection string or any other secret |
+| In the security events of the booking flow (category `NFHotel.Security`): the caller address ([ADR-0051](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0051-limits-of-the-booking-flow-and-the-caller-address.md) decision 6) | An e-mail address in any form, whole, masked or hashed; the booking reference; the token of a verification link; any other field that a guest filled in |
 
 How it is enforced:
 

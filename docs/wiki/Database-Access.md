@@ -1,5 +1,7 @@
 # Database Access
 
+**English**
+
 **Decision:** [ADR-0034](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0034-team-database-access.md). **Work:** MIL-048.
 
 Each member of the team opens the production database from DBeaver with their own login. The port can be reached from the tailnet only. **This is the production database, with real guests:** you can read and change rows, and every change is logged with your name.

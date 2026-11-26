@@ -1,5 +1,7 @@
 # Containers and Images
 
+**English**
+
 **Decisions:** [ADR-0003](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0003-proxmox-vm-for-services.md), [ADR-0007](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0007-cicd-and-supply-chain.md), [ADR-0024](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0024-secrets-as-files.md), [ADR-0039](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0039-python-services-network.md), [ADR-0042](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0042-only-the-calls-of-alloy-through-the-socket-proxy.md), [ADR-0053](https://github.com/NF-Hotel/NFHotel/blob/main/docs/adr/adr-0053-mail-from-the-application-through-a-relay.md). **Work:** MIL-002, MIL-022, MIL-023, MIL-049, MIL-061, MIL-081, MIL-088. **Why each product:** [Technology Choices](Technology-Choices).
 
 Every container of NF Hotel: where it runs, what it does, which image it runs and where that image comes from, and how it is locked down. For how to deploy them, see [Proxmox Deployment](Proxmox-Deployment); for their settings files, see [Environment Files](Environment-Files).

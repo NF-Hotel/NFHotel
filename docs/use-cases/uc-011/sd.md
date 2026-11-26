@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version, the first Sequence Diagram of the project; task 3 of MIL-088, written by the AI from the code of the branch: verifyBooking through the claim of the request, the booking under the lock `public_booking`, the guest session and the mail with the reference (ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
+| 2026-11-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial version, the first Sequence Diagram of the project; task 3 of MIL-088, written by the AI from the code of the branch: verifyBooking through the claim of the request, the booking under the lock `public_booking`, the guest session and the mail with the reference (ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
+| 2026-11-21 | Accepted | mikemike | AI as stand-in for S01 | The events of the verification hold no email, as decision 6 of ADR-0051 says since MIL-089: `LimitRefused("mailbox")` and `PublicBookingMade()` (RC-439)<br>Go in the delta review of RC-439; accepted by the AI as stand-in for S01 in autonomous mode | pending |
 
 ---
 
@@ -98,7 +99,7 @@ else claimed
   deactivate Book
   alt refused: the room went, the limit per mailbox, or a rule of the stay
     opt booking.too_many_requests
-      Svc -> Events : LimitRefused("email", claimed.Email)
+      Svc -> Events : LimitRefused("mailbox")
     end
     Svc --> Ctl : the codes of the refusal
     Ctl --> Page : 409, 429 or 422
@@ -108,7 +109,7 @@ else claimed
     activate Tokens
     Tokens --> Svc : GuestSessionDto (expires two hours from now)
     deactivate Tokens
-    Svc -> Events : PublicBookingMade(claimed.Email)
+    Svc -> Events : PublicBookingMade()
     Svc -> Svc : receipt = BookingReceiptDto.From(details)
     ref over Svc, DB : Send the mail with the reference (third diagram)
     note right of Svc : whatever fails in the mail, its record included,\nends in a catch as MailNotSent(BookingReceipt, "other"):\nthe booking stands, and the answer is the receipt
