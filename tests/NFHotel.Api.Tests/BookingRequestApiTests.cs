@@ -15,7 +15,6 @@ using NFHotel.Application.Errors;
 using NFHotel.Application.Ports;
 using NFHotel.Domain.Entities;
 using NFHotel.Domain.ValueObjects;
-using NFHotel.TestSupport;
 
 namespace NFHotel.Api.Tests;
 
@@ -237,7 +236,8 @@ public sealed class BookingRequestApiTests
 
     /// <summary>
     /// Boundary (criterion 5, ADR-0052 decision 6): the fourth verification mail to one mailbox within an hour is refused
-    /// with 429 and its own code, without <c>Retry-After</c>, and the event names the limit and holds the masked email.
+    /// with 429 and its own code, without <c>Retry-After</c>, and the event names the limit and the address and holds no
+    /// email.
     /// The forms of one Gmail mailbox count as one.
     /// </summary>
     [Fact]
@@ -262,7 +262,7 @@ public sealed class BookingRequestApiTests
         Assert.Equal([ErrorCodes.Booking.TooManyMails], await CodesAsync(refused));
         Assert.Null(refused.Headers.RetryAfter);
         RecordingLoggerProvider.LogEntry entry = Assert.Single(factory.EventsOf(SecurityEvents.LimitRefusedKind));
-        Assert.Equal($"limit_refused {LimitNames.VerificationMail} {Address} a***@gmail.com", entry.Message);
+        Assert.Equal($"limit_refused {LimitNames.VerificationMail} {Address}", entry.Message);
     }
 
     /// <summary>
@@ -295,7 +295,7 @@ public sealed class BookingRequestApiTests
     /// <summary>
     /// Positive (criterion 4, ADR-0052 decision 5): the token of the mail books the request: the answer holds the receipt
     /// with its reference and the guest session, the booking is stored with its guest, a second mail carries the
-    /// reference, and the events of the request and of the booking are written with the masked email.
+    /// reference, and the events of the request and of the booking are written with the address and no email.
     /// </summary>
     [Fact]
     public async Task Verify_TokenOfTheMail_BooksSignsTheGuestInAndSendsTheReceipt()
@@ -319,8 +319,8 @@ public sealed class BookingRequestApiTests
         Assert.Single(factory.World.Guests.Items);
         Assert.Equal(2, factory.World.Mails.Sent.Count);
         Assert.Contains(booking.Reference.ToString(), factory.World.Mails.Sent[^1].Body, StringComparison.Ordinal);
-        Assert.Equal($"booking_request_made {Address} a***@example.com", Assert.Single(factory.EventsOf(SecurityEvents.BookingRequestMadeKind)).Message);
-        Assert.Equal($"public_booking_made {Address} a***@example.com", Assert.Single(factory.EventsOf(SecurityEvents.PublicBookingMadeKind)).Message);
+        Assert.Equal($"booking_request_made {Address}", Assert.Single(factory.EventsOf(SecurityEvents.BookingRequestMadeKind)).Message);
+        Assert.Equal($"public_booking_made {Address}", Assert.Single(factory.EventsOf(SecurityEvents.PublicBookingMadeKind)).Message);
     }
 
     /// <summary>

@@ -70,8 +70,8 @@ public sealed class LimitsTableTests
     }
 
     /// <summary>
-    /// Positive: each window of the table is a window of its limit, the limit per email has none, and the limit per mailbox
-    /// has the hour and the day of its two constants.
+    /// Positive: each window of the table is a window of its limit, the limit <c>mailbox</c> has none, and the limit
+    /// <c>verification_mail</c> has the hour and the day of its two constants.
     /// </summary>
     [Fact]
     public void Table_Windows_AreTheWindowsOfTheLimits()
@@ -82,7 +82,7 @@ public sealed class LimitsTableTests
             [LimitNames.Search] = [InMemorySenderLimits.SearchWindow],
             [LimitNames.BookingHour] = [InMemorySenderLimits.BookingHourWindow],
             [LimitNames.BookingDay] = [InMemorySenderLimits.BookingDayWindow],
-            [LimitNames.Email] = [null],
+            [LimitNames.Mailbox] = [null],
             [LimitNames.GuestSignIn] = [TimeSpan.FromMinutes(new GuestLookupOptions().WindowMinutes)],
             [LimitNames.VerificationMail] = [TimeSpan.FromHours(1), TimeSpan.FromDays(1)],
         };
@@ -96,8 +96,8 @@ public sealed class LimitsTableTests
 
     /// <summary>
     /// Positive: every refusal of the table is 429 with a code of the API, and only a limit of the booking requests and the
-    /// searches names Retry-After: the guest sign-in keeps the text of ADR-0049, and the limit per mailbox tells nothing
-    /// about the mailbox of somebody else (ADR-0052 decision 6).
+    /// searches names Retry-After: the guest sign-in keeps the text of ADR-0049, and the limit <c>verification_mail</c>
+    /// tells nothing about the mailbox of somebody else (ADR-0052 decision 6).
     /// </summary>
     [Fact]
     public void Table_Refusals_Are429WithACodeOfTheApi()

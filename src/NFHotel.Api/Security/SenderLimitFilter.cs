@@ -46,7 +46,7 @@ public sealed class SenderLimitFilter(SenderLimitKind kind, ISenderLimits limits
             : _limits.TryCountBookingRequest(key);
         if (decision is { IsAllowed: false, Limit: { } limit })
         {
-            _events.LimitRefused(limit, address, SecurityEvents.EmailOf(context.ActionArguments.Values));
+            _events.LimitRefused(limit, address);
             context.HttpContext.Response.Headers.RetryAfter = WholeSeconds(decision.RetryAfter);
             context.Result = new ObjectResult(new ApiResponse([ErrorCodes.Booking.TooManyRequests]))
             {

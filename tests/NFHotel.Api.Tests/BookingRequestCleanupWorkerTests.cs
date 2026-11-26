@@ -71,7 +71,7 @@ public sealed class BookingRequestCleanupWorkerTests
         Exception? thrown = await Record.ExceptionAsync(() => worker.RunOnceAsync(stopping.Token));
 
         // Assert
-        Assert.IsAssignableFrom<OperationCanceledException>(thrown);
+        Assert.IsType<OperationCanceledException>(thrown, exactMatch: false);
     }
 
     /// <summary>

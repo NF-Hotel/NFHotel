@@ -7,8 +7,8 @@ namespace NFHotel.Api.Security;
 
 /// <summary>
 /// Writes the security event of the outcome of a step of the booking flow (MIL-087, ADR-0051 decision 6): a booking made
-/// on the public site, a guest sign-in refused for a wrong reference or email, and the refusals of the limit per email
-/// and of the limits of the guest sign-in.
+/// on the public site, a guest sign-in refused for a wrong reference or email, and the refusals of the limit per mailbox
+/// and of the limits of the guest sign-in. It reads no value of the request: each event holds the address of the caller.
 /// </summary>
 /// <param name="step">The step of the action.</param>
 /// <param name="caller">The address of the caller.</param>
@@ -31,8 +31,6 @@ public sealed class BookingFlowEventFilter(BookingFlowStep step, ICallerAddress 
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(next);
 
-        // The email is read before the action runs, from the arguments that the action gets.
-        string? email = SecurityEvents.EmailOf(context.ActionArguments.Values);
         ActionExecutedContext executed = await next().ConfigureAwait(false);
         if (executed is not { Exception: null, Result: IStatusCodeActionResult { StatusCode: { } status } })
         {
@@ -42,16 +40,16 @@ public sealed class BookingFlowEventFilter(BookingFlowStep step, ICallerAddress 
         switch (_step, status)
         {
             case (BookingFlowStep.PublicBooking, StatusCodes.Status200OK):
-                _events.PublicBookingMade(_caller.Address, email);
+                _events.PublicBookingMade(_caller.Address);
                 break;
             case (BookingFlowStep.PublicBooking, StatusCodes.Status429TooManyRequests):
-                _events.LimitRefused(LimitNames.Email, _caller.Address, email);
+                _events.LimitRefused(LimitNames.Mailbox, _caller.Address);
                 break;
             case (BookingFlowStep.GuestSignIn, StatusCodes.Status401Unauthorized):
-                _events.GuestLookupFailed(_caller.Address, email);
+                _events.GuestLookupFailed(_caller.Address);
                 break;
             case (BookingFlowStep.GuestSignIn, StatusCodes.Status429TooManyRequests):
-                _events.LimitRefused(LimitNames.GuestSignIn, _caller.Address, email);
+                _events.LimitRefused(LimitNames.GuestSignIn, _caller.Address);
                 break;
             default:
                 break;

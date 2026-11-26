@@ -114,7 +114,7 @@ public sealed class BookingRequestServiceTests
         Assert.Empty(world.Guests.Items);
         OutgoingMail mail = Assert.Single(world.Mails.Sent);
         Assert.Equal((Email, "Verify your booking at NF Hotel"), (mail.To, mail.Subject));
-        Assert.Equal(["mail_sent VerificationLink", $"request_made {Email}"], world.RequestEvents.Lines);
+        Assert.Equal(["mail_sent VerificationLink", "request_made"], world.RequestEvents.Lines);
     }
 
     /// <summary>Positive (criterion 3): a request holds no room, so the next guest still gets the same last room.</summary>
@@ -258,7 +258,7 @@ public sealed class BookingRequestServiceTests
 
     /// <summary>
     /// Negative (decision 6): a mailbox with three coming public bookings asks for a fourth in another form of its email,
-    /// and is refused by the limit per email with its event.
+    /// and is refused by the limit per mailbox with its event, which holds no email.
     /// </summary>
     [Fact]
     public async Task AskAsync_FourthComingBookingOfTheMailbox_IsRefused()
@@ -278,7 +278,7 @@ public sealed class BookingRequestServiceTests
 
         // Assert
         Assert.Equal([ErrorCodes.Booking.TooManyRequests], Codes(result));
-        Assert.Equal([$"limit_refused {LimitNames.Email} A.nna+4@GoogleMail.com"], world.RequestEvents.Lines);
+        Assert.Equal([$"limit_refused {LimitNames.Mailbox}"], world.RequestEvents.Lines);
         Assert.Empty(world.Mails.Attempts);
     }
 
@@ -330,7 +330,7 @@ public sealed class BookingRequestServiceTests
 
         // Assert
         Assert.Equal([ErrorCodes.Booking.TooManyMails], Codes(fourth));
-        Assert.Contains($"limit_refused {LimitNames.VerificationMail} Anna+again@Example.com", world.RequestEvents.Lines);
+        Assert.Contains($"limit_refused {LimitNames.VerificationMail}", world.RequestEvents.Lines);
         Assert.Equal(3, world.Mails.Sent.Count(mail => mail.Subject.StartsWith("Verify", StringComparison.Ordinal)));
         Assert.True(thirdLink.IsSuccess);
     }
@@ -505,7 +505,7 @@ public sealed class BookingRequestServiceTests
         OutgoingMail receipt = world.Mails.Sent[^1];
         Assert.Equal((Email, "Your booking at NF Hotel"), (receipt.To, receipt.Subject));
         Assert.Contains($"Reference: {booking.Reference}", receipt.Body, StringComparison.Ordinal);
-        Assert.Equal(["mail_sent VerificationLink", $"request_made {Email}", $"public_booking_made {Email}", "mail_sent BookingReceipt"], world.RequestEvents.Lines);
+        Assert.Equal(["mail_sent VerificationLink", "request_made", "public_booking_made", "mail_sent BookingReceipt"], world.RequestEvents.Lines);
     }
 
     /// <summary>Positive (criterion 4): the guest is stored with the answers of the request.</summary>
@@ -839,6 +839,48 @@ public sealed class BookingRequestServiceTests
         Assert.True(result.IsSuccess);
         Assert.Equal(world.Rooms.Items[1].Id, result.Value.Room.RoomId);
         Assert.Single(world.Guests.Items);
+    }
+
+    /// <summary>
+    /// Positive (decision 8, SAR-002 abuse case 6): with the setting off, the public booking counts the bookings of the
+    /// mailbox, chooses its room and saves under the one lock of the public bookings, so two guests who book at the same
+    /// time take their rooms one after the other.
+    /// </summary>
+    [Fact]
+    public async Task CreatePublicAsync_FreeRoom_ChoosesAndSavesUnderThePublicBookingLock()
+    {
+        // Arrange
+        ServiceWorld world = World();
+        world.Verification.Enabled = false;
+
+        // Act
+        Result<BookingDetailsDto> result = await world.BookingService().CreatePublicAsync(Request(world), Token);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Single(world.Bookings.Items);
+        Assert.Equal([BookingService.PublicBookingLock], world.UnitOfWork.Locks);
+        Assert.True(world.UnitOfWork.SaveCount > 0);
+        Assert.Equal(world.UnitOfWork.SaveCount, world.UnitOfWork.SavesUnderLock);
+    }
+
+    /// <summary>
+    /// Negative (decision 8, SAR-002 abuse case 6): when the lock of the public bookings cannot be taken, no room is
+    /// chosen and nothing is saved, so none of that runs before the lock.
+    /// </summary>
+    [Fact]
+    public async Task CreatePublicAsync_LockNotTaken_BooksAndSavesNothing()
+    {
+        // Arrange
+        ServiceWorld world = World();
+        world.Verification.Enabled = false;
+        world.UnitOfWork.FailUnderLock = name =>
+            name == BookingService.PublicBookingLock ? new InvalidOperationException("The database could not take the lock.") : null;
+
+        // Act and assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => world.BookingService().CreatePublicAsync(Request(world), Token));
+        Assert.Empty(world.Bookings.Items);
+        Assert.Equal(0, world.UnitOfWork.SaveCount);
     }
 
     #endregion
