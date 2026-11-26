@@ -52,6 +52,30 @@ public sealed class GuestBookingServiceTests
         Assert.Equal([ErrorCodes.Api.GuestUnauthorized], result.Errors.Select(error => error.Code));
     }
 
+    /// <summary>
+    /// Security (ADR-0047 decision 7, SAR-002 finding 5): a guest token made before the cancellation of its booking reads
+    /// only the receipt, with the status Cancelled.
+    /// </summary>
+    [Fact]
+    public async Task GetAsync_CancelledBooking_ReadsTheReceiptWithTheStatusCancelled()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        Room room = world.AddRoom();
+        Booking own = world.AddBooking(room.Id, world.AddGuest().Id, startOffsetDays: 3, nights: 2);
+        own.Cancel();
+        world.GuestCall.BookingId = own.Id;
+
+        // Act
+        Result<BookingReceiptDto> result = await world.GuestBookingService().GetAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(
+            new BookingReceiptDto(own.Reference, own.StartDate, own.EndDate, 2, room.Size, BookingStatus.Cancelled),
+            result.Value);
+    }
+
     #endregion Read
 
     #region Cancel
@@ -173,6 +197,31 @@ public sealed class GuestBookingServiceTests
         // Assert
         Assert.True(result.IsFailure);
         Assert.Equal(start, own.StartDate);
+    }
+
+    /// <summary>
+    /// Security (ADR-0047 decision 7, SAR-002 finding 5): a guest token made before the cancellation of its booking cannot
+    /// move it; the answer is the code of the booking, not the refusal of a guest, and the dates stay.
+    /// </summary>
+    [Fact]
+    public async Task RescheduleAsync_CancelledBooking_KeepsTheCodeOfTheBookingAndTheDates()
+    {
+        // Arrange
+        ServiceWorld world = new();
+        Booking own = world.AddBooking(world.AddRoom().Id, world.AddGuest().Id, startOffsetDays: 3, nights: 2);
+        own.Cancel();
+        world.GuestCall.BookingId = own.Id;
+        DateOnly start = own.StartDate;
+        DateOnly end = own.EndDate;
+
+        // Act
+        Result<BookingReceiptDto> result = await world.GuestBookingService()
+            .RescheduleAsync(new GuestRescheduleRequest(world.Clock.Today.AddDays(20), world.Clock.Today.AddDays(22)), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(ErrorCodes.Booking.RescheduleNotAllowed, result.FirstError?.Code);
+        Assert.Equal(start, own.StartDate);
+        Assert.Equal(end, own.EndDate);
     }
 
     /// <summary>Negative: the dependencies and the request are required.</summary>
