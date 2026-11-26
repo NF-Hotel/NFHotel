@@ -1,5 +1,7 @@
 # Public Access
 
+**English**
+
 NF Hotel is public at `https://nfhotel.devmatiker.com` through Cloudflare Tunnel: guests book and the mobile app works from anywhere, while no port is open in the home network and the back office sits behind Cloudflare Access.
 
 **For:** S01, who owns the Cloudflare account and the domain, and anyone who answers `PublicSiteDown`.

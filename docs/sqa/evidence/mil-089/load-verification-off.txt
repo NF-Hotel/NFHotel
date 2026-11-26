@@ -1,0 +1,65 @@
+
+
+  █ THRESHOLDS 
+
+    burst_answered
+    ✓ 'count==65' count=65
+
+    burst_refused
+    ✓ 'count==23' count=23
+
+    burst_server_errors
+    ✓ 'count==0' count=0
+
+    burst_unexpected
+    ✓ 'count==0' count=0
+
+    checks
+    ✓ 'rate>0.95' rate=100.00%
+
+    http_req_duration{scenario:guests}
+    ✓ 'p(95)<1000' p(95)=15.31ms
+
+    http_req_failed{scenario:guests}
+    ✓ 'rate<0.05' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 3533    29.128818/s
+    checks_succeeded...: 100.00% 3533 out of 3533
+    checks_failed......: 0.00%   0 out of 3533
+
+    ✓ / answers 200
+    ✓ /book answers 200
+    ✓ /admin/login answers 200
+    ✓ the search answers 200
+    ✓ the booking answers 200
+    ✓ the burst gets an answer or a refusal of a limit
+
+    CUSTOM
+    burst_answered.................: 65     0.535911/s
+    burst_refused..................: 23     0.18963/s
+    burst_server_errors............: 0      0/s
+    burst_unexpected...............: 0      0/s
+
+    HTTP
+    http_req_duration..............: avg=4.56ms min=473.86µs med=3.2ms  max=326.04ms p(90)=5.39ms p(95)=15.29ms
+      { expected_response:true }...: avg=4.56ms min=473.86µs med=3.2ms  max=326.04ms p(90)=5.39ms p(95)=15.29ms
+      { scenario:guests }..........: avg=4.49ms min=853.73µs med=3.23ms max=326.04ms p(90)=5.39ms p(95)=15.31ms
+    http_req_failed................: 0.00%  0 out of 3541
+      { scenario:guests }..........: 0.00%  0 out of 3445
+    http_reqs......................: 3541   29.194776/s
+
+    EXECUTION
+    iteration_duration.............: avg=2.26s  min=299.99ms med=2.01s  max=3.34s    p(90)=3.03s  p(95)=3.03s  
+    iterations.....................: 813    6.703009/s
+    vus............................: 1      min=1         max=20
+    vus_max........................: 21     min=21        max=21
+
+    NETWORK
+    data_received..................: 47 MB  391 kB/s
+    data_sent......................: 748 kB 6.2 kB/s
+
+
+

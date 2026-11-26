@@ -1,5 +1,7 @@
 # Environment Files
 
+**English**
+
 This page explains every `*.env` file of the deployment: what it is for, who reads it, which keys matter and which ones
 are secrets. The files live in `ops/` and `ops/deploy/<service>/`, and the settings of the public edge in
 `ops/infra/cloudflare/`.

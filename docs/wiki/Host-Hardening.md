@@ -1,5 +1,7 @@
 # Host Hardening
 
+**English**
+
 How the NF Hotel VM `nf-hotel` (Debian 13) and its containers are hardened along the selected CIS Benchmark Level 1 items (MIL-023 tasks 1 to 4). The selection, with the status and evidence of each item, is the CIS checklist `docs/sqa/cis-checklist.md` (CIS-001). The host files are in `ops/deploy/host/` and each has a script that is a dry run by default.
 
 Applying any step on the VM is the decision of S01, with S03 for the firewall and the reboots (MIL-023, Ownership). Nothing here runs by itself.

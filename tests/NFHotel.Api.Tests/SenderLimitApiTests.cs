@@ -8,7 +8,6 @@ using System.Text.Json.Nodes;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -23,7 +22,6 @@ using NFHotel.Domain.ValueObjects;
 using NFHotel.External.Telemetry;
 using NFHotel.Infrastructure.Config;
 using NFHotel.Infrastructure.Security;
-using NFHotel.TestSupport;
 
 namespace NFHotel.Api.Tests;
 
@@ -42,6 +40,15 @@ public sealed class SenderLimitApiTests
     private const string StaffSignInPath = "/api/auth/login";
     private const string SecurityCategory = "NFHotel.Security";
     private const string Password = "correct horse battery staple";
+
+    /// <summary>
+    /// The meter of the security events as the telemetry sends it, written out, so a change of a constant of
+    /// <see cref="SecurityMetrics"/> fails here and not only in the alerts (the web application counts on it too).
+    /// </summary>
+    private const string SecurityMeter = "NFHotel.Security";
+
+    /// <summary>The counter of the security events, <c>nfhotel_security_events_total</c> in Prometheus, written out.</summary>
+    private const string EventsCounter = "nfhotel.security.events";
 
     /// <summary>The header in which a test names the peer of the connection, which the in-memory server does not have.</summary>
     private const string PeerHeader = "X-Test-Peer";
@@ -507,11 +514,11 @@ public sealed class SenderLimitApiTests
     #region The security events
 
     /// <summary>
-    /// Security (criterion 6, ADR-0051 decision 6): a booking made on the public site writes one event with the address
-    /// and the email masked to its first character and its domain, and no other value that the guest typed.
+    /// Security (criterion 6, ADR-0051 decision 6 since MIL-089): a booking made on the public site writes one event with
+    /// the address, and no email, whole or masked, and no other value that the guest typed.
     /// </summary>
     [Fact]
-    public async Task Booking_Made_WritesOneEventWithTheAddressAndTheMaskedEmail()
+    public async Task Booking_Made_WritesOneEventWithTheAddressAndNoEmail()
     {
         // Arrange
         await using Factory factory = new();
@@ -526,7 +533,7 @@ public sealed class SenderLimitApiTests
         RecordingLoggerProvider.LogEntry entry = Assert.Single(factory.Logs.Entries, entry => entry.Category == SecurityCategory
             && entry.Message.StartsWith(SecurityEvents.PublicBookingMadeKind, StringComparison.Ordinal));
         Assert.Contains("203.0.113.40", entry.AllText, StringComparison.Ordinal);
-        Assert.Contains("a***@example.com", entry.AllText, StringComparison.Ordinal);
+        Assert.DoesNotContain("@", entry.AllText, StringComparison.Ordinal);
         Assert.DoesNotContain("anna.jensen", entry.AllText, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Jensen", entry.AllText, StringComparison.Ordinal);
         Assert.DoesNotContain("12345678", entry.AllText, StringComparison.Ordinal);
@@ -535,11 +542,11 @@ public sealed class SenderLimitApiTests
     }
 
     /// <summary>
-    /// Security (criterion 6): a guest sign-in with a wrong email writes one event with the masked email that was tried,
-    /// and never the reference.
+    /// Security (criterion 6, ADR-0051 decision 6 since MIL-089): a guest sign-in with a wrong email writes one event with
+    /// the address, and neither the email that was tried nor the reference.
     /// </summary>
     [Fact]
-    public async Task GuestSignIn_WithAWrongEmail_WritesOneEventWithoutTheReference()
+    public async Task GuestSignIn_WithAWrongEmail_WritesOneEventWithoutTheEmailOrTheReference()
     {
         // Arrange
         await using Factory factory = new();
@@ -559,13 +566,13 @@ public sealed class SenderLimitApiTests
         RecordingLoggerProvider.LogEntry entry = Assert.Single(factory.Logs.Entries, entry => entry.Category == SecurityCategory
             && entry.Message.StartsWith(SecurityEvents.GuestLookupFailedKind, StringComparison.Ordinal));
         Assert.Contains("203.0.113.42", entry.AllText, StringComparison.Ordinal);
-        Assert.Contains("e***@example.org", entry.AllText, StringComparison.Ordinal);
+        Assert.DoesNotContain("@", entry.AllText, StringComparison.Ordinal);
         Assert.DoesNotContain(reference, entry.AllText, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
     /// Positive (criterion 6): each refusal by a limit writes one event with the name of its limit: the search, the hour,
-    /// the email and the guest sign-in.
+    /// the mailbox and the guest sign-in.
     /// </summary>
     [Fact]
     public async Task Refusals_OfEveryLimit_WriteOneEventEachWithTheName()
@@ -595,7 +602,7 @@ public sealed class SenderLimitApiTests
             .Where(entry => entry.Category == SecurityCategory && entry.Message.StartsWith(SecurityEvents.LimitRefusedKind, StringComparison.Ordinal))
             .Select(entry => entry.Values.Single(value => value.Key == "Limit").Value?.ToString() ?? string.Empty)
             .ToArray();
-        Assert.Equal([LimitNames.Search, LimitNames.BookingHour, LimitNames.Email, LimitNames.GuestSignIn], limits);
+        Assert.Equal([LimitNames.Search, LimitNames.BookingHour, LimitNames.Mailbox, LimitNames.GuestSignIn], limits);
     }
 
     /// <summary>
@@ -614,7 +621,7 @@ public sealed class SenderLimitApiTests
         {
             InstrumentPublished = (instrument, owner) =>
             {
-                if (instrument.Meter.Scope == meters && instrument.Name == SecurityMetrics.EventsCounterName)
+                if (instrument.Meter.Scope == meters && instrument.Meter.Name == SecurityMeter && instrument.Name == EventsCounter)
                 {
                     owner.EnableMeasurementEvents(instrument);
                 }
@@ -622,15 +629,16 @@ public sealed class SenderLimitApiTests
         };
         listener.SetMeasurementEventCallback<long>((_, value, tags, _) =>
         {
+            // The labels as the alerts read them.
             string kind = string.Empty;
             string limit = string.Empty;
             foreach (KeyValuePair<string, object?> tag in tags)
             {
-                if (tag.Key == SecurityMetrics.KindTag)
+                if (tag.Key == "kind")
                 {
                     kind = tag.Value?.ToString() ?? string.Empty;
                 }
-                else if (tag.Key == SecurityMetrics.LimitTag)
+                else if (tag.Key == "limit")
                 {
                     limit = tag.Value?.ToString() ?? string.Empty;
                 }

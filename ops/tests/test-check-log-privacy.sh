@@ -71,11 +71,11 @@ check --values-file "$W/no-such-file" Lovelace
 [[ $? == 2 ]] && ok "a missing file of values is a usage error" || ko "missing file: $(cat "$W/out")"
 
 # The emails of the tests of the verification by email, one made up for each test
-# (e2e-<guid>@example.com), are found by a pattern; the email masked by the API is not one.
+# (e2e-<guid>@example.com), are found by a pattern; a line without such an email is not.
 email_pattern='e2e-[0-9a-f-]+@example[.]com'
-echo "info: booking_request_made from 172.18.0.5 for e***@example.com" >"$W/logs/nfhotel-e2e-api-1"
+echo "info: booking_request_made 172.18.0.5" >"$W/logs/nfhotel-e2e-api-1"
 check --pattern "$email_pattern" && grep -q "2 containers" "$W/out" &&
-  ok "a pattern alone is enough, and a masked email does not match it" || ko "pattern, clean: $(cat "$W/out")"
+  ok "a pattern alone is enough, and a line without such an email does not match it" || ko "pattern, clean: $(cat "$W/out")"
 echo "warn: mail to e2e-0f3c5a7e9b1d4f2a8c6e0b4d2f6a8c1e@example.com failed" >>"$W/logs/nfhotel-e2e-web-1"
 check Lovelace --pattern "$email_pattern"
 [[ $? == 1 ]] && grep -q "nfhotel-e2e-web-1" "$W/out" && ! grep -q "0f3c5a7e9b1d" "$W/out" &&

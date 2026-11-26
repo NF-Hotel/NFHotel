@@ -1,92 +1,43 @@
+using System.Reflection;
+
+using Microsoft.Extensions.Logging;
+
 using NFHotel.Api.Security;
-using NFHotel.Application.Dto.Bookings;
-using NFHotel.Application.Dto.Guests;
-using NFHotel.Domain.ValueObjects;
 
 namespace NFHotel.Api.Tests;
 
 /// <summary>
-/// The values that a security event of the booking flow holds (MIL-087, ADR-0051 decision 6): an email masked to its
-/// first character and its domain, and the email of a request of the booking flow and of nothing else.
+/// The values that a security event holds (MIL-087; MIL-089, ADR-0051 decision 6): the address of the caller and words of
+/// the code, never an email, whole, masked or hashed, nor another value that a guest typed.
 /// </summary>
 public sealed class SecurityEventValuesTests
 {
-    #region MaskEmail
-
-    /// <summary>Positive: an email keeps its first character and its domain, so an event tells two senders apart.</summary>
-    /// <param name="email">The email as the request has it.</param>
-    /// <param name="expected">The masked email.</param>
-    [Theory]
-    [InlineData("anna@example.com", "a***@example.com")]
-    [InlineData(" Anna@Example.com ", "A***@Example.com")]
-    [InlineData("a@b.dk", "a***@b.dk")]
-    [InlineData("anna+tag@sub.example.co.uk", "a***@sub.example.co.uk")]
-    public void MaskEmail_Email_KeepsTheFirstCharacterAndTheDomain(string email, string expected)
-    {
-        // Act and assert
-        Assert.Equal(expected, SecurityEvents.MaskEmail(email));
-    }
-
     /// <summary>
-    /// Security (ASVS 16.2.5): a value that is no plain email keeps nothing that the caller could use to write into the
-    /// log, such as a line break or a second field, and no value at all is written as <see cref="SecurityEvents.None"/>.
+    /// Security (ADR-0051 decision 6 since MIL-089): no message of the log of the security events has a field for an
+    /// email, so no caller can write one into the log through an event.
     /// </summary>
-    /// <param name="email">The email as the request has it.</param>
-    /// <param name="expected">The masked email.</param>
-    [Theory]
-    [InlineData(null, "-")]
-    [InlineData("", "-")]
-    [InlineData("   ", "-")]
-    [InlineData("anna", "a***")]
-    [InlineData("@example.com", "***")]
-    [InlineData("anna@", "a***")]
-    [InlineData("anna@exa mple.com", "a***")]
-    [InlineData("anna@example.com\r\nkind=limit_refused", "a***")]
-    [InlineData("<anna@example.com", "***@example.com")]
-    public void MaskEmail_NoPlainEmail_KeepsNoTypedText(string? email, string expected)
-    {
-        // Act and assert
-        Assert.Equal(expected, SecurityEvents.MaskEmail(email));
-    }
-
-    #endregion
-
-    #region EmailOf
-
-    /// <summary>Positive: the email of the new guest of a public booking and the email of a guest sign-in are found among the arguments.</summary>
     [Fact]
-    public void EmailOf_RequestsOfTheBookingFlow_IsTheirEmail()
+    public void Events_EveryLogMessage_TakesNoEmail()
     {
         // Arrange
-        CreatePublicBookingRequest booking = new(
-            new DateOnly(2026, 3, 1),
-            new DateOnly(2026, 3, 3),
-            RoomSize.Double,
-            1,
-            new GuestFields("Anna", "Jensen", "anna@example.com", "+4512345678", "Denmark", null));
-        GuestSignInRequest signIn = new("3f2504e0-4f89-41d3-9a0c-0305e82c3301", "eve@example.org");
+        MethodInfo[] events =
+        [
+            .. typeof(SecurityEvents).GetMethods(BindingFlags.Public | BindingFlags.Static)
+                .Where(method => method.GetCustomAttribute<LoggerMessageAttribute>() is not null),
+        ];
 
         // Act
-        string? fromBooking = SecurityEvents.EmailOf([booking, CancellationToken.None]);
-        string? fromSignIn = SecurityEvents.EmailOf([signIn, CancellationToken.None]);
+        string[] withEmail = [.. events.Where(TakesAnEmail).Select(method => method.Name)];
 
         // Assert
-        Assert.Equal("anna@example.com", fromBooking);
-        Assert.Equal("eve@example.org", fromSignIn);
+        Assert.Equal(8, events.Length);
+        Assert.Empty(withEmail);
     }
 
-    /// <summary>Equivalence: a request without a new guest, other arguments and none at all give no email.</summary>
-    [Fact]
-    public void EmailOf_NoEmailAmongTheArguments_IsNull()
-    {
-        // Arrange
-        CreatePublicBookingRequest withoutGuest = new(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 3), RoomSize.Double, 1, null);
-
-        // Act and assert
-        Assert.Null(SecurityEvents.EmailOf([withoutGuest]));
-        Assert.Null(SecurityEvents.EmailOf([new DateOnly(2026, 3, 1), null, "anna@example.com"]));
-        Assert.Null(SecurityEvents.EmailOf([]));
-    }
-
-    #endregion
+    // A message with a field of that name, or a parameter of that name. Every method of the list carries the attribute,
+    // and a parameter of compiled code has a name; a missing one would count as an email, so the test cannot pass on it.
+    private static bool TakesAnEmail(MethodInfo method) =>
+        method.GetCustomAttribute<LoggerMessageAttribute>() is not { } attribute
+        || attribute.Message.Contains("email", StringComparison.OrdinalIgnoreCase)
+        || method.GetParameters().Any(parameter => parameter.Name?.Contains("email", StringComparison.OrdinalIgnoreCase) != false);
 }

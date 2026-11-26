@@ -1,0 +1,83 @@
+Five tests of the abuse cases of SAR-002, each run with its control taken out and then with it in place (MIL-089
+task 2, criterion 2). The first four on main at 3cfe3ab (MIL-085 to MIL-088), 2026-11-20, in a worktree of its own;
+the test of case 6 is new in MIL-089 and was copied into that worktree before its runs. The fifth, case 11, on
+2026-11-21 in the worktree of the branch mil-089-booking-flow-attacked, because its control is new in MIL-089. Each run: the
+control taken out in the source, dotnet build of the test project -c Release -warnaserror, the one test with
+dotnet test --project <project> -c Release --no-build --filter-method <test>; then the source put back, built again
+and the same test run. The addresses are of the documentation ranges or just outside the private ranges of the
+stack, the emails of example.com.
+
+Abuse case 8, a field that the request type does not have
+  Control: JsonUnmappedMemberHandling.Disallow on CreatePublicBookingRequest and GuestFields (MIL-086, ADR-0050).
+  Taken out: the attribute on both records, and the using that only the attribute of GuestFields needed.
+  Test: NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_UnknownField_IsRefused (tests/NFHotel.Api.Tests).
+  Without the control: 2 of 2 failed; a public booking with the field isAdmin, at the top and inside the guest, is booked (200) instead of refused:
+    failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_UnknownField_IsRefused(insideTheGuest: True) (658ms)
+    Assert.Equal() Failure: Values differ
+    Expected: Tuple (BadRequest, "api.invalid_request")
+    Actual:   Tuple (OK, "")
+    failed NFHotel.Api.Tests.BookingInputApiTests.PublicBooking_UnknownField_IsRefused(insideTheGuest: False) (7ms)
+    Assert.Equal() Failure: Values differ
+    Expected: Tuple (BadRequest, "api.invalid_request")
+    Actual:   Tuple (OK, "")
+  With the control: 2 of 2 passed.
+
+Abuse case 7, writing the address of the caller
+  Control: ClientAddresses.IsInStack(peer) in ClientAddressMiddleware: the web application takes X-NFHotel-Client-Address only from nginx, a peer in the networks of the stack (MIL-087, ADR-0051 decision 4).
+  Taken out: the check of the peer, so the header of any peer is taken.
+  Test: NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_PeerOutsideTheStackWithTheHeader_TakesTheConnection (tests/NFHotel.Web.Tests).
+  Without the control: 5 of 5 failed; a peer outside the stack names the address 203.0.113.7 and is counted under it, in each of the five cases:
+    failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_PeerOutsideTheStackWithTheHeader_TakesTheConnection(peer: "2001:db8::4", expected: "2001:db8::4") (50ms)
+    Assert.Equal() Failure: Strings differ
+    Expected: "2001:db8::4"
+    Actual:   "203.0.113.7"
+    failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_PeerOutsideTheStackWithTheHeader_TakesTheConnection(peer: "172.32.0.1", expected: "172.32.0.1") (0ms)
+    Assert.Equal() Failure: Strings differ
+    Expected: "172.32.0.1"
+    Actual:   "203.0.113.7"
+    failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_PeerOutsideTheStackWithTheHeader_TakesTheConnection(peer: "::ffff:198.51.100.4", expected: "198.51.100.4") (1ms)
+    Assert.Equal() Failure: Strings differ
+    Expected: "198.51.100.4"
+    Actual:   "203.0.113.7"
+    failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_PeerOutsideTheStackWithTheHeader_TakesTheConnection(peer: "172.15.255.255", expected: "172.15.255.255") (0ms)
+    Assert.Equal() Failure: Strings differ
+    Expected: "172.15.255.255"
+    Actual:   "203.0.113.7"
+    failed NFHotel.Web.Tests.ClientAddressMiddlewareTests.UseClientAddress_PeerOutsideTheStackWithTheHeader_TakesTheConnection(peer: "198.51.100.4", expected: "198.51.100.4") (0ms)
+    Assert.Equal() Failure: Strings differ
+    Expected: "198.51.100.4"
+    Actual:   "203.0.113.7"
+  With the control: 5 of 5 passed.
+
+Abuse case 2, trying emails against a reference
+  Control: the window per reference of InMemoryGuestSignInLimits: 5 failed tries of one reference in 15 minutes (MIL-085, ADR-0049).
+  Taken out: the window per reference in TryCount, so only the window per caller address (20 tries) is left.
+  Test: NFHotel.Api.Tests.GuestAccessTests.SignIn_SixthTryForOneReference_ReturnsTooManyRequests (tests/NFHotel.Api.Tests).
+  Without the control: 1 of 1 failed; the sixth try with the right email after five wrong ones signs in (200) instead of being refused (429):
+    failed NFHotel.Api.Tests.GuestAccessTests.SignIn_SixthTryForOneReference_ReturnsTooManyRequests (665ms)
+    Assert.Equal() Failure: Values differ
+    Expected: TooManyRequests
+    Actual:   OK
+  With the control: 1 of 1 passed.
+
+Abuse case 6, the race for the last room
+  Control: the lock public_booking of BookingService.BookPublicAsync: the count of the bookings of the mailbox, the choice of the room and the save run under one lock of the database, one public booking after the other (MIL-088, ADR-0052 decisions 5 and 8).
+  Taken out: the lock, so BookPublicAsync runs the same work without taking it.
+  Test: NFHotel.Application.Tests.Services.BookingRequestServiceTests.CreatePublicAsync_FreeRoom_ChoosesAndSavesUnderThePublicBookingLock (tests/NFHotel.Application.Tests).
+  Without the control: 1 of 1 failed; the booking is made with no lock taken:
+    failed NFHotel.Application.Tests.Services.BookingRequestServiceTests.CreatePublicAsync_FreeRoom_ChoosesAndSavesUnderThePublicBookingLock (825ms)
+    Assert.Equal() Failure: Collections differ
+    Expected: ["public_booking"]
+    Actual:   []
+  With the control: 1 of 1 passed.
+
+Abuse case 11, many slow requests
+  Control: app.UseCircuitLimit() in the pipeline of the web application: at most 50 open requests to /_blazor per caller, the next refused with 429 (MIL-089, ADR-0051 decision 8).
+  Taken out: the line app.UseCircuitLimit(); of src/NFHotel.Web/Program.cs.
+  Test: NFHotel.Web.Tests.CircuitLimitTests.WebApplication_CallerAtTheLimit_GetsNoCircuitButThePage (tests/NFHotel.Web.Tests).
+  Without the control: 1 of 1 failed; a caller with 50 open circuits gets the negotiation of one more (200) instead of the refusal (429):
+    failed NFHotel.Web.Tests.CircuitLimitTests.WebApplication_CallerAtTheLimit_GetsNoCircuitButThePage (439ms)
+    Assert.Equal() Failure: Values differ
+    Expected: TooManyRequests
+    Actual:   OK
+  With the control: 1 of 1 passed.

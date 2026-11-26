@@ -9,7 +9,8 @@
 # server of the tailnet still go to the web application (MIL-084, ADR-0048). The public listener refuses a
 # body over 64 kilobytes with 413 while the HTTPS server of the tailnet keeps 1 megabyte, and in the loaded
 # configuration every location waits 60 seconds and only the web socket of the pages, /_blazor on both
-# servers, an hour (MIL-086 decisions 4 and 7). Every proxied location of both listeners, the routes of the API
+# servers, an hour (MIL-086 decisions 4 and 7); the public listener names its client timeouts, the 60 seconds that
+# are the defaults of nginx (SAR-002, abuse case 11). Every proxied location of both listeners, the routes of the API
 # among them, sends the address that nginx saw in X-NFHotel-Client-Address and replaces a value that the caller wrote
 # (MIL-087, ADR-0051 decision 4). Last, the hardened
 # service of deploy/nginx/docker-compose.yml (MIL-023 task 2) starts and turns healthy with a key as
@@ -168,6 +169,10 @@ loaded="$(docker exec t-nginx nginx -T 2>/dev/null)"
 check "the shared proxy settings wait 60 seconds" "proxy_read_timeout 60s; proxy_send_timeout 60s;" \
   "$(awk '/^# configuration file /{file=$4; next} file == "/etc/nginx/snippets/proxy.conf:" && /_timeout/' \
     <<<"$loaded" | paste -sd' ')"
+check "the public listener waits 60 seconds for a slow client" \
+  "client_header_timeout 60s; client_body_timeout 60s; send_timeout 60s;" \
+  "$(awk '/^# configuration file /{file=$4; next} file == "/etc/nginx/conf.d/public.conf:" &&
+    /^[[:space:]]*(client_header_timeout|client_body_timeout|send_timeout) /{$1 = $1; print}' <<<"$loaded" | paste -sd' ')"
 check "only the location of the web socket waits an hour" /etc/nginx/snippets/blazor.conf \
   "$(awk '/^# configuration file /{file=$4} /_timeout 1h;/{print file}' <<<"$loaded" | tr -d ':' | sort -u | paste -sd' ')"
 check "both servers of the web application have the location of the web socket" 2 \

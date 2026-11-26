@@ -1,5 +1,7 @@
 # Monitoring
 
+**English**
+
 The monitoring of NF Hotel tells the team in Discord when the site, a container or a nightly job fails, and keeps 14 days of logs and 30 days of metrics to find out why.
 
 **For:** the people who install, run and change the monitoring (S03), and anyone who answers an alert.

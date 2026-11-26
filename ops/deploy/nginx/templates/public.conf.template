@@ -22,6 +22,14 @@ server {
   # answered 413 here, before it reaches an application. The API has the same limit of its own.
   client_max_body_size 64k;
 
+  # How long a slow client may hold a connection (SAR-002, abuse case 11): its header must arrive within 60 seconds,
+  # its body may pause 60 seconds between two reads, and an answer it does not read is dropped after 60 seconds. These
+  # are the defaults of nginx, named here so that a test holds them; the web application bounds the open circuits of
+  # one caller (ADR-0051 decision 8).
+  client_header_timeout 60s;
+  client_body_timeout 60s;
+  send_timeout 60s;
+
   # The back office (MIL-041, ADR-0029). Cloudflare Access stands in front of /admin, and the first route of the
   # tunnel, path (?i)^/admin, validates its token, so a stranger sees Cloudflare's e-mail page and never the staff
   # sign-in. A request that reaches this listener without the token header (another container on the proxy network,

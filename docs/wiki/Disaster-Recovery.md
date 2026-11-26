@@ -1,5 +1,7 @@
 # Disaster Recovery
 
+**English**
+
 This page rebuilds NF Hotel after its VM `nf-hotel` or its monitoring LXC is lost: from nothing, using the scripts of the repository and the backups on the legion laptop.
 
 **For:** S03 (the owner of the Proxmox node and of the age key) with one member of S01.

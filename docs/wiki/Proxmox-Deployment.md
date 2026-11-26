@@ -1,5 +1,7 @@
 # Proxmox Deployment
 
+**English**
+
 To try this deployment on your own machine, see [Local Development Deploy](https://github.com/NF-Hotel/NFHotel/wiki/Local-Development-Deploy) in NFHotel.
 
 The development environment is one virtual machine (VM) on Proxmox VE. Every service runs as a

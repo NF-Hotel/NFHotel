@@ -179,16 +179,16 @@ public sealed class RecordingBookingRequestEvents : IBookingRequestEvents
     #region Public methods
 
     /// <inheritdoc />
-    public void RequestMade(string email) => Write($"request_made {email}");
+    public void RequestMade() => Write("request_made");
 
     /// <inheritdoc />
     public void VerificationFailed() => Write("verification_failed");
 
     /// <inheritdoc />
-    public void PublicBookingMade(string email) => Write($"public_booking_made {email}");
+    public void PublicBookingMade() => Write("public_booking_made");
 
     /// <inheritdoc />
-    public void LimitRefused(string limit, string email) => Write($"limit_refused {limit} {email}");
+    public void LimitRefused(string limit) => Write($"limit_refused {limit}");
 
     /// <inheritdoc />
     public void MailSent(MailKind kind) => Write($"mail_sent {kind}");

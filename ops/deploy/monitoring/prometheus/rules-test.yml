@@ -605,15 +605,37 @@ tests:
               summary: "30 refusals by the limits of the booking flow in 10 minutes"
               description: >-
                 A sender asks the booking flow for more than its limits allow (ADR-0051). The
-                events limit_refused in the log of the API name the limit and the address; follow
-                the wiki page Alerts, section Booking flow.
+                events limit_refused in the logs of the API and the web application name the limit
+                and the address; follow the wiki page Alerts, section Booking flow.
+
+  # The open circuits of one caller (ADR-0051 decision 8): the web application counts its refusals.
+  - name: refusals of the circuits by the web application fire BookingFlowRefusals
+    interval: 1m
+    input_series:
+      - series: >-
+          nfhotel_security_events_total{host="nf-hotel", job="nfhotel-web", kind="limit_refused",
+          limit="circuits"}
+        values: "0+3x30"
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: BookingFlowRefusals
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              host: nf-hotel
+            exp_annotations:
+              summary: "30 refusals by the limits of the booking flow in 10 minutes"
+              description: >-
+                A sender asks the booking flow for more than its limits allow (ADR-0051). The
+                events limit_refused in the logs of the API and the web application name the limit
+                and the address; follow the wiki page Alerts, section Booking flow.
 
   - name: twenty refusals in 10 minutes and failed lookups alone do not fire BookingFlowRefusals
     interval: 1m
     input_series:
       - series: >-
           nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api", kind="limit_refused",
-          limit="email"}
+          limit="mailbox"}
         values: "0+2x30"
       - series: >-
           nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api",
@@ -700,7 +722,7 @@ tests:
         values: "0x4 3x30"
       - series: >-
           nfhotel_security_events_total{host="nf-hotel", job="nfhotel-api", kind="limit_refused",
-          limit="email"}
+          limit="mailbox"}
         values: "0+1x34"
     alert_rule_test:
       - eval_time: 10m

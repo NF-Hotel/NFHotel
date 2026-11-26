@@ -48,6 +48,9 @@ builder.Services.AddHttpContextAccessor();
 // The address of the browser, from nginx through the user of the request or the circuit to the API (MIL-087, ADR-0051).
 builder.Services.AddScoped<IClientAddressSource, AuthenticationStateClientAddressSource>();
 
+// The open circuits of each caller, one count for the whole application (ADR-0051 decision 8, SAR-002 BF-02).
+builder.Services.AddSingleton<CircuitLimit>();
+
 // ViewModels are Scoped: in Blazor Server a scope is one SignalR circuit, that is, one user's
 // session in one tab. That is exactly the lifetime the state of the screen should have.
 //
@@ -60,9 +63,11 @@ builder.Services.AddAdminFeature();     // the staff's back office: /admin/**, b
 var app = builder.Build();
 
 // First in the pipeline, so every response gets the browser security headers, redirects and error pages included
-// (MIL-033).
+// (MIL-033). A response runs its OnStarting callbacks in the reverse order of their registration: the headers of the
+// page of the link of a booking request (no referrer and no store, MIL-088), registered first, are written last, so
+// they win over the referrer policy of every answer (SAR-002).
+app.UseVerifyPageHeaders();
 app.UseSecurityHeaders();
-app.UseVerifyPageHeaders();   // no referrer and no store on the page of the link of a booking request (MIL-088)
 
 if (!app.Environment.IsDevelopment())
 {
@@ -75,6 +80,7 @@ if (!app.Environment.IsDevelopment())
 // Behind the TLS proxy (Tls:Require): a request that is still HTTP is sent to HTTPS (ADR-0006).
 app.UseHttpsRequirement(requireTls);
 app.UseHttpsRedirection();
+app.UseCircuitLimit();   // at most 50 open circuits per caller, before the sign-in reads its cookie (ADR-0051 decision 8)
 app.UseAuthentication();
 app.UseClientAddress();   // after the authentication, which sets the user that gets the address (MIL-087)
 app.UseAuthorization();

@@ -1,5 +1,7 @@
 # DevOps Lifecycle
 
+**English**
+
 How NF Hotel covers the eight phases of the DevOps lifecycle (Plan, Code, Build, Test, Release, Deploy, Operate, Monitor), with the tools and techniques the project uses and the documents that decide them.
 
 **For:** the team and anyone who wants the whole picture before reading the detailed pages.

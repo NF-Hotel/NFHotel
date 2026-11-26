@@ -14,7 +14,7 @@
 # a caller (MIL-087, ADR-0051): a client that writes the address headers itself is counted and
 # audited under the address that nginx saw; the search for free rooms and the public booking
 # request are refused at the numbers of production; and the log of the API names a public booking
-# and each refusal with its address and a masked email, never the email itself.
+# and each refusal with its address and no email, whole or masked (MIL-089).
 #
 # Usage: check-e2e-stack.sh <stack.env> [<name>]
 # Exit:  0 every check passed; 1 a check failed; 2 usage error
@@ -334,16 +334,18 @@ check "5 public booking requests from one address in an hour are accepted, and t
 check "the refused booking request names the whole seconds to wait, at most an hour" yes \
   "$(within "$(limits_value booking_wait)" 3600)"
 
-# The log of the API (MIL-087, ADR-0051 decision 6): the two public bookings of the guest smoke test and the two
-# refusals of the limits are events with the address and the email masked to its first character and its domain; no
+# The log of the API (MIL-087; ADR-0051 decision 6 since MIL-089): the five public bookings of the limit check and its
+# two refusals are events with the address and without any email; no event of the booking flow holds an email, and no
 # email of these checks and not the reference is in a log of the stack.
 api_log="$(docker logs "$(docker ps --format '{{.Names}}' | grep -m 1 "^$name.*nfhotel-api")" 2>&1 || true)"
-check "the log of the API has the event of each public booking with the masked email" 2 \
-  "$(grep -E 'public_booking_made' <<<"$api_log" | grep -cE '[ab]\*\*\*@example\.com')"
+check "the log of the API has the event of each of the five public bookings from one address" 5 \
+  "$(grep -cE 'public_booking_made 192\.0\.2\.20( |$)' <<<"$api_log")"
 check "the log of the API has the event of the refused search with its address" 1 \
-  "$(grep -cE 'limit_refused search 192\.0\.2\.10 ' <<<"$api_log")"
-check "the log of the API has the event of the refused booking request with its address and the masked email" 1 \
-  "$(grep -cE 'limit_refused booking_hour 192\.0\.2\.20 l\*\*\*@example\.com' <<<"$api_log")"
+  "$(grep -cE 'limit_refused search 192\.0\.2\.10( |$)' <<<"$api_log")"
+check "the log of the API has the event of the refused booking request with its address" 1 \
+  "$(grep -cE 'limit_refused booking_hour 192\.0\.2\.20( |$)' <<<"$api_log")"
+check "no event of the booking flow in the log of the API holds an email" 0 \
+  "$(grep -E 'public_booking_made|guest_lookup_failed|limit_refused|booking_request_made' <<<"$api_log" | grep -c '@')"
 emails=("a-$guest_room@example.com" "b-$guest_room@example.com")
 for n in 1 2 3 4 5 6; do
   emails+=("limit-$n-$guest_room@example.com")

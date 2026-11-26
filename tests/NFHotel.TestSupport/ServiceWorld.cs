@@ -77,6 +77,9 @@ public sealed class FakeUnitOfWork : IUnitOfWork
     /// <summary>The names of the locks that the work under a lock took, in order (MIL-088).</summary>
     public List<string> Locks { get; } = [];
 
+    /// <summary>The saves made by work under a lock, so a test sees that a save ran inside one (SAR-002 abuse case 6).</summary>
+    public int SavesUnderLock { get; private set; }
+
     /// <summary>
     /// Decides, for each lock, an error that the work under it ends with before it starts, as a transaction that the
     /// database still refuses after the retries would (MIL-088, RC-436 F1); <see langword="null"/> runs the work.
@@ -121,7 +124,15 @@ public sealed class FakeUnitOfWork : IUnitOfWork
             throw error;
         }
 
-        return await work(cancellationToken).ConfigureAwait(false);
+        int savesBefore = SaveCount;
+        try
+        {
+            return await work(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            SavesUnderLock += SaveCount - savesBefore;
+        }
     }
 }
 

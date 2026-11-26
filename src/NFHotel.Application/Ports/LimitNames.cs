@@ -17,8 +17,11 @@ public static class LimitNames
     /// <summary>The public booking requests of one caller address in a day.</summary>
     public const string BookingDay = "booking_day";
 
-    /// <summary>The coming bookings made on the public site for one email.</summary>
-    public const string Email = "email";
+    /// <summary>
+    /// The coming bookings made on the public site for one mailbox (ADR-0051 decision 3, by mailbox since ADR-0052
+    /// decision 6). The name says what is counted; it holds no email.
+    /// </summary>
+    public const string Mailbox = "mailbox";
 
     /// <summary>The failed guest sign-ins of one reference or one caller address (ADR-0049 decision 6).</summary>
     public const string GuestSignIn = "guest_sign_in";
@@ -31,7 +34,7 @@ public static class LimitNames
     #region Properties
 
     /// <summary>Every name, in the order of the table.</summary>
-    public static IReadOnlyList<string> All { get; } = [Search, BookingHour, BookingDay, Email, GuestSignIn, VerificationMail];
+    public static IReadOnlyList<string> All { get; } = [Search, BookingHour, BookingDay, Mailbox, GuestSignIn, VerificationMail];
 
     #endregion Properties
 }

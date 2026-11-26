@@ -1,5 +1,7 @@
 # Container Escape
 
+**English**
+
 How NF Hotel keeps a compromised container away from the resources of its Docker host (MIL-082): each path out of a container, the measure that closes it, the evidence that the measure is in force, what is left, and the decision with its owner. A container shares the kernel of its host, so every measure narrows what a process inside can ask of that kernel, of Docker and of the network. The settings of each service are on [Containers and Images](Containers-and-Images) and [Host Hardening](Host-Hardening); the runtime check that proves them at every deploy and every 15 minutes is in [Host Hardening](Host-Hardening#runtime-check-of-the-containers).
 
 ## Where an escape lands

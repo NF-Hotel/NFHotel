@@ -124,8 +124,7 @@ public sealed class BookingRequestService : IBookingRequestService
 
         if (check.IsFailure)
         {
-            // ! is justified: the limit per mailbox counts only when the request holds a guest.
-            WriteEmailLimitEvent(check, () => request.NewGuest!.Email);
+            WriteMailboxLimitEvent(check);
             return Result<BookingRequestReceiptDto>.Failure(check.Errors);
         }
 
@@ -145,7 +144,7 @@ public sealed class BookingRequestService : IBookingRequestService
         {
             if (stored.FirstError?.Code == ErrorCodes.Booking.TooManyMails)
             {
-                _events.LimitRefused(LimitNames.VerificationMail, guest.Email);
+                _events.LimitRefused(LimitNames.VerificationMail);
             }
             else
             {
@@ -172,7 +171,7 @@ public sealed class BookingRequestService : IBookingRequestService
         }
 
         _events.MailSent(MailKind.VerificationLink);
-        _events.RequestMade(guest.Email);
+        _events.RequestMade();
         return Result<BookingRequestReceiptDto>.Success(new BookingRequestReceiptDto(kept.ExpiresAt));
     }
 
@@ -205,12 +204,12 @@ public sealed class BookingRequestService : IBookingRequestService
 
         if (booked.IsFailure)
         {
-            WriteEmailLimitEvent(booked, () => claimed.Email);
+            WriteMailboxLimitEvent(booked);
             return Result<PublicBookingDto>.Failure(booked.Errors);
         }
 
         GuestSessionDto session = _tokens.Issue(booked.Value.BookingId);
-        _events.PublicBookingMade(claimed.Email);
+        _events.PublicBookingMade();
         BookingReceiptDto receipt = BookingReceiptDto.From(booked.Value);
 
         // The booking stands whatever the second mail does (decision 5), so a guest who leaves the page does not stop it,
@@ -342,11 +341,11 @@ public sealed class BookingRequestService : IBookingRequestService
         await _sentMails.CountSinceAsync(now - Day, cancellationToken).ConfigureAwait(false) >= _settings.MaxMailsPerDay;
 
     // The refusal by the limit of coming public bookings per mailbox is a security event (ADR-0051 decision 6).
-    private void WriteEmailLimitEvent(Result result, Func<string> email)
+    private void WriteMailboxLimitEvent(Result result)
     {
         if (result.Errors.Any(error => error.Code == ErrorCodes.Booking.TooManyRequests))
         {
-            _events.LimitRefused(LimitNames.Email, email());
+            _events.LimitRefused(LimitNames.Mailbox);
         }
     }
 

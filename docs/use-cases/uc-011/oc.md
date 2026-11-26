@@ -9,7 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-20 | Accepted | mikemike | AI as stand-in for S01 | Initial version; task 3 of MIL-088, written by the AI: one contract for each system operation of SSD-002, the booking request, its verification and its clean-up (ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
+| 2026-11-20 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 3 of MIL-088, written by the AI: one contract for each system operation of SSD-002, the booking request, its verification and its clean-up (ADR-0052, ADR-0053)<br>Go in RC-435; accepted by the AI as stand-in for S01 in autonomous mode | [739a25b] |
+| 2026-11-21 | Accepted | mikemike | AI as stand-in for S01 | The limit of the coming public bookings per mailbox is named `mailbox`, as the events and the code name it since MIL-089 (decision 6 of ADR-0051, RC-439)<br>Go in the delta review of RC-439; accepted by the AI as stand-in for S01 in autonomous mode | [00d609b] |
 
 ---
 
@@ -95,7 +96,7 @@ decision 8).
   - No free `Room` of `roomSize` sleeps the party: `booking.room_type_not_available`; nothing is created or changed,
     and no mail is sent.
   - 3 coming `Booking`s made on the public site have the `Mailbox` mb: `booking.too_many_requests`, the limit
-    `email`; nothing is created or changed, and no mail is sent.
+    `mailbox`; nothing is created or changed, and no mail is sent.
   - 3 `SentMail`s of the kind `VerificationLink` for mb in the last hour, or 5 in the last day:
     `booking.too_many_mails`, the limit `verification_mail`; nothing is created or changed, so an open
     `BookingRequest` of mb keeps its link.
@@ -161,7 +162,7 @@ an output of the operation, not a change of state.
     at the moment of the save: `booking.room_type_not_available`; r was deleted all the same, and no `Guest` and no
     `Booking` was created.
   - 3 coming `Booking`s made on the public site have the `Mailbox` of r.Email: `booking.too_many_requests`, the limit
-    `email`; r was deleted all the same, and no `Guest` and no `Booking` was created.
+    `mailbox`; r was deleted all the same, and no `Guest` and no `Booking` was created.
   - Two verifications with the same `token` at once: one gets the postconditions, the other
     `booking.verification_link_invalid`. Verifications of other requests for the last free room of a size at once:
     one gets the room, the others `booking.room_type_not_available`.
@@ -228,3 +229,4 @@ room size on the arrival date for the market analysis (MIL-055), which is not a 
 [ADR-0052]: ../../adr/adr-0052-a-booking-takes-a-room-once-its-email-is-verified.md
 [ADR-0053]: ../../adr/adr-0053-mail-from-the-application-through-a-relay.md
 [739a25b]: https://github.com/NF-Hotel/NFHotel/commit/739a25b00890c77fe75ba0bb02fcd64a00548089
+[00d609b]: https://github.com/NF-Hotel/NFHotel/commit/00d609b1450afdb2d73df7a8d5dd9b1de2e1c8da

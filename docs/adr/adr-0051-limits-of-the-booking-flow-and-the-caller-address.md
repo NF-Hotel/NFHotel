@@ -4,13 +4,13 @@
 | Key | Value |
 | --- | --- |
 | ID | ADR-0051 |
-| CrossReference | [MIL-087], [MIL-085], [MIL-086], [ADR-0004], [ADR-0015], [ADR-0017], [ADR-0023], [ADR-0028], [ADR-0047], [ADR-0049], [ADR-0050], [MIL-036], [MIL-088], [UC-001], [UC-010], [BC-001] |
+| CrossReference | [MIL-087], [MIL-085], [MIL-086], [ADR-0004], [ADR-0015], [ADR-0017], [ADR-0023], [ADR-0028], [ADR-0047], [ADR-0049], [ADR-0050], [MIL-036], [MIL-088], [UC-001], [UC-010], [BC-001], [MIL-089], [ADR-0052], [SAR-002] |
 
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; task 1 of MIL-087, written by the AI before any code<br>Go in RC-426; accepted by the AI as stand-in for S01 in autonomous mode, at S01's word in chat on 2026-11-19 ("Du skal tage beslutningerne for mig") | [a3edc6d] |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Second version, after the code review RC-428 of MIL-087: decision 2 says that a refusal by the limit per email keeps the counts per address; decision 4 says what the forwarded headers of the web application do, and that the sign-in limit of the mobile app counts a whole address; decision 5 says what a full store drops for each kind of key, and caps a limit at 100,000; two negative consequences<br>Go in RC-429; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Second version, after the code review RC-428 of MIL-087: decision 2 says that a refusal by the limit per email keeps the counts per address; decision 4 says what the forwarded headers of the web application do, and that the sign-in limit of the mobile app counts a whole address; decision 5 says what a full store drops for each kind of key, and caps a limit at 100,000; two negative consequences<br>Go in RC-429; accepted by the AI as stand-in for S01 in autonomous mode | [a574bf6] |
+| 2026-11-21 | Accepted | mikemike | AI as stand-in for S01 | Third version, in MIL-089: decision 6, the events hold the address and no email, whole, masked or hashed, and the limit per email is named `mailbox`, with its reason and a consequence for the trail of an incident: a stand-in decision that the planning session made as S01 on 2026-11-20, which S01 can overrule, so that the five alerts of CodeQL on the events close through the code<br>Decision 8, at most 50 open circuits per caller in the web application (SAR-002 BF-02): a stand-in decision of the build session, which S01 can overrule; ADR-0052 among the affected artifacts (RC-439)<br>After the delta review of RC-439: the problem, the force, ASVS 15.1.3 and 15.2.2 and the options J and K of decision 8 in the Context; the 51st tab as the test shows it; SAR-002 as a link<br>Go in the second delta review of RC-439; accepted by the AI as stand-in for S01 in autonomous mode | [00d609b] |
 
 Allowed Status values: `Proposed`, `Accepted`, `Rejected`, `Deprecated`, `Superseded by ADR-NNNN`.
 
@@ -23,7 +23,7 @@ restart does to it, how the address of a caller travels from nginx to the API an
 number that the reading of the code changes, and the alternatives with the reason each lost. S01 asked in chat on
 2026-11-19 that nobody can book every room or overload the booking, and that the API is protected against attacks,
 and handed the decisions to the artificial intelligence (AI) that builds the milestone ("Du skal tage beslutningerne
-for mig").
+for mig"). [MIL-089] adds decision 8, for a finding of its security audit ([SAR-002]), under the same words of S01.
 
 **The problem**, as the code after [MIL-086] has it (read on 2026-11-19):
 
@@ -43,6 +43,11 @@ for mig").
   page would share one count.
 - The flow writes no event and counts nothing: no line for a public booking, a failed lookup or a refusal, no counter,
   no alert. The one alert on sign-ins is the one for staff (`StaffSignInFailures`, [MIL-036]).
+- Since MIL-089 (abuse case 11 and finding BF-02 of its security audit, [SAR-002]): the interactive pages, the
+  booking page and the back office, each run in a circuit of Blazor, and nothing counts the circuits of one caller.
+  A circuit holds one request to `/_blazor` open, its web socket, as long as it lives, and holds memory in the one
+  container of the web application, so one caller can open circuits until the site stops, the back office
+  included.
 
 **What the texts say** (ASVS is the Application Security Verification Standard 5.0 of the Open Worldwide Application
 Security Project, OWASP; read for [MIL-087] on 2026-11-19, the pages of Microsoft read again on 2026-11-19):
@@ -52,6 +57,9 @@ Security Project, OWASP; read for [MIL-087] on 2026-11-19, the pages of Microsof
 - ASVS 4.1.3 and 15.3.4: a header that a proxy sets cannot be overridden by the caller, and the address that limits
   use is the one the proxies carry in a field that the application trusts.
 - ASVS V16.3: security events are logged, attempts to get around a limit among them.
+- ASVS 15.1.3 and 15.2.2 (read for [MIL-089] on 2026-11-20): the documentation names the functions that take long or
+  hold many resources, and how a loss of availability through them is prevented, limits of the parallel work per user
+  and for the whole application among the means; the defences are built as documented.
 - OWASP API Security Top 10 2023: API4 (a limit on how often a client may call) and API6 (a flow such as making a
   reservation needs a limit of its own); OWASP automated threat OAT-021, denial of inventory.
 - RFC 6585 section 4: status 429 for too many requests, which may say how long to wait in `Retry-After`
@@ -72,6 +80,9 @@ Security Project, OWASP; read for [MIL-087] on 2026-11-19, the pages of Microsof
   behind one address books a few rooms. The limits must leave them alone and stop a script.
 - The interactive pages send their bookings and searches as messages over one long web socket (`/_blazor`). nginx and
   Cloudflare see the connection, not the messages, so only the web application and the API can count a booking.
+- Every open tab of the booking page or the back office holds a circuit, so the guests and the staff behind one
+  address, the network of the hotel among them, hold several at once; a limit of the circuits must leave them room
+  (since MIL-089).
 - One instance of the API runs ([ADR-0004]). A store outside the API is one more service to run, secure and watch.
 - A rule of input must not use up a count: a guest who mistypes a phone number has not sent a booking request
   ([MIL-086]).
@@ -104,12 +115,19 @@ Security Project, OWASP; read for [MIL-087] on 2026-11-19, the pages of Microsof
   web application carries it in the authentication state of the request or the circuit and passes it to the API
   under the service token, and the API counts per address in the bounded stores of [ADR-0049] and per email in the
   database, logs and counts each event, and alerts. Chosen.
+- **J. A limit of the connections in nginx** (`limit_conn` per address, since MIL-089). Cheap, and in front of the
+  web application, but it counts a whole IPv6 address, not its network of 64 bits, counts the connections of every
+  path, not the circuits, and writes a refusal only to the error log of nginx, with no event and no counter. Lost.
+- **K. A count of the open circuits per caller in the web application** (since MIL-089). The web application counts
+  the open requests to `/_blazor` under the key of the limits of the API, refuses one over the limit before its
+  circuit starts, and writes the event and the counter of the other limits. Chosen for the circuits, beside option I.
 
 ## Decision
 
 The API counts what one caller address and one email ask of the booking flow and refuses what goes over the limits
 of one table with status 429, under the address that nginx saw, which nginx sets, the web application carries and
-only a call with the service token can name (option I). In detail:
+only a call with the service token can name (option I); since MIL-089 the web application also counts the open
+circuits of each caller (option K, decision 8). In detail:
 
 **1. One table holds the limits.** The table "Limits of the booking flow" in `docs/refactor/BusinessRules.md` names,
 for every limit, who is counted, the window, the number, the status and the text of the refusal, and the setting that
@@ -204,8 +222,14 @@ counts; the count per email lives in the database and survives it.
 - Three kinds of event in the category of `SecurityEvents` ([ADR-0050] decision 6): `public_booking_made` (each
   booking made on the public site), `guest_lookup_failed` (each guest sign-in or lookup refused for a wrong reference
   or email) and `limit_refused` (each refusal by a limit of decisions 2 and 3, with the name of the limit). Each has
-  the address and, where the request has one, the email masked to its first character and its domain
-  (`a***@example.com`), and no other typed value.
+  the address and no email: not whole, not masked to its first character and its domain as the first two versions of
+  this record said, and not hashed. No other typed value either. The limit per email of decision 3 has the name
+  `mailbox` in the events and the counter, after what it counts. Why (since MIL-089): the code scan found five alerts
+  on the events that wrote the masked email (CodeQL 677 to 681, `cs/exposure-of-sensitive-information`), and the
+  planning session, deciding as S01 on 2026-11-20, closed them through the code. A masked email still names its
+  domain and its first character, and a hash of an email is found again by hashing the emails of a list, although
+  ASVS 16.2.5 allows either; the address and the time tell the refusals apart well enough for the alerts and an
+  incident.
 - A counter `nfhotel.security.events` on the meter `NFHotel.Security`, with the labels `kind` and `limit`, sent with
   the other metrics ([ADR-0023]); in Prometheus it is `nfhotel_security_events_total`.
 - Two alerts in `ops/deploy/monitoring/prometheus/rules/security.yml`, routed as the other alerts are, each with a
@@ -215,6 +239,23 @@ counts; the count per email lives in the database and survives it.
 **7. No puzzle and no rule at Cloudflare now.** Both need S01 in an account. When an alert of decision 6 shows that a
 sender gets around the limits with many addresses or emails, the next step is a rate limiting rule at Cloudflare for
 the public host name (option B), then Turnstile on the booking page (option C), each in its own milestone.
+
+**8. At most 50 open circuits per caller** (option K, since MIL-089, for finding BF-02 and abuse case 11 of
+[SAR-002]; a stand-in decision of the build session, which S01 can overrule).
+
+- The web application counts the open requests to `/_blazor` per caller, under the key of decision 2, and answers a
+  request over 50 with 429 and no body, so no circuit starts. The negotiation of a circuit counts while it runs, and
+  the web socket until the circuit ends. Every other path is not counted.
+- 50, because a tab of a browser holds one circuit: the guests and the staff behind one address, the network of the
+  hotel among them, keep room. The number is the constant `CircuitLimit.OpenPerCaller` of the code, not a setting; the
+  rule ledger names it below its table of the limits.
+- The counts live in the memory of the web application, with an entry only for a caller with an open request; a
+  restart ends every circuit and clears them.
+- A refusal writes `limit_refused` with the limit `circuits` and the address, in the category and the words of
+  decision 6, and counts in `nfhotel.security.events` of the web application. `BookingFlowRefusals` counts the
+  refusals of the API and of the web application.
+- nginx does not count the circuits (option J). The client timeouts of its public listener stay at the 60 seconds of
+  nginx, named in its configuration so that `ops/tests/test-nginx.sh` holds them.
 
 ## Consequences
 
@@ -227,6 +268,7 @@ the public host name (option B), then Turnstile on the booking page (option C), 
   limit of [ADR-0049] now counts the real caller.
 - The team hears of a flood from an alert, not from a guest.
 - The limits are one table, held by a test, and the counts per address one implementation.
+- One caller cannot hold the web application with circuits: 50 per address, or per network of 64 bits (decision 8).
 
 **Negative:**
 
@@ -238,6 +280,16 @@ the public host name (option B), then Turnstile on the booking page (option C), 
 - Two booking requests for one email at the same moment can both pass the limit per email, and its refusal tells a
   stranger that an email has three coming bookings, nothing more.
 - Bookings made before the deploy do not count per email.
+- The log tells the refusals apart by the address and the time, not by the email (since MIL-089). A refused request
+  is not stored, and the database holds no caller address, so no one can tie a refusal to a mailbox afterwards: staff
+  can only list, in the database, the mailboxes that were at a limit at the time, from the coming public bookings, the
+  open requests and the records of their mails. A log that is read or kept longer than meant holds no part of an
+  email.
+- A sender with many addresses can still open many circuits: an IPv6 network of 56 bits, which many home connections
+  have, holds 256 networks of 64 bits, each with its 50 circuits. The alert sees the refusals, not the circuits that
+  pass; the next step of decision 7 is for that ([SAR-002] BF-02).
+- The 51st open tab of one caller gets its page but no circuit, so the page does not work; once another tab is
+  closed, it gets its circuit when it is loaded again (decision 8).
 - Every request of the web application carries one more identity in its user.
 - A sender with very many addresses can still lock out the guest sign-in for a while: filling the store of references
   with used-up windows takes about 50,000 failed sign-ins in 15 minutes from 2,500 or more addresses (or networks of
@@ -247,8 +299,9 @@ the public host name (option B), then Turnstile on the booking page (option C), 
   refused in 10 minutes.
 - The sign-in limit of the mobile app counts a whole IPv6 address, so a sender with a network of 64 bits gets many
   addresses there; its limit per user name still holds.
-- Quality attributes: security (ASVS 2.1.3, 2.3.2, 2.4.1, 4.1.3, 15.3.4, V16.3) and availability gain; interaction
-  capability loses a little for guests behind a shared address; maintainability gains from one table and one store.
+- Quality attributes: security (ASVS 2.1.3, 2.3.2, 2.4.1, 4.1.3, 15.1.3, 15.2.2, 15.3.4, V16.3) and availability gain;
+  interaction capability loses a little for guests behind a shared address; maintainability gains from one table and
+  one store.
 
 ## Affected Artifacts
 
@@ -268,6 +321,8 @@ the public host name (option B), then Turnstile on the booking page (option C), 
 - [MIL-088] — the verification by email adds its own limits to the table
 - [UC-001] and [UC-010] — the refusals are new steps
 - [BC-001] — objective 43 and success criterion 48
+- [ADR-0052] — decision 10 holds its events to decision 6: the address and no email
+- [MIL-089] — the third version: decision 6 without the email, and decision 8
 
 ---
 
@@ -287,5 +342,8 @@ the public host name (option B), then Turnstile on the booking page (option C), 
 [UC-001]: ../use-cases/uc-001/uc.md
 [UC-010]: ../use-cases/uc-010/uc.md
 [BC-001]: ../business-case.md
-[a3edc6d]: https://github.com/NF-Hotel/NFHotel/commit/a3edc6d282ca80a45a27abe8e894918a545d9772
+[MIL-089]: ../milestones/mil-089-the-booking-flow-attacked-and-measured.md
+[ADR-0052]: ./adr-0052-a-booking-takes-a-room-once-its-email-is-verified.md
+[SAR-002]: ../sqa/security-audit-2026-12-booking-flow.md
 [a574bf6]: https://github.com/NF-Hotel/NFHotel/commit/a574bf6192840701214b20e4827c0748fb00c251
+[00d609b]: https://github.com/NF-Hotel/NFHotel/commit/00d609b1450afdb2d73df7a8d5dd9b1de2e1c8da
