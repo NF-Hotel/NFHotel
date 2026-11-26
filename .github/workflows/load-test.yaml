@@ -1,10 +1,14 @@
-# Load test of NF Hotel against a throwaway stack (MIL-036 task 3): k6 opens the public pages
-# and the staff sign-in page with twenty virtual guests, and fails when the objectives of
-# MIL-034 are broken under that load (95 % within 1 second, fewer than 5 % failed). It never
-# runs against the VM, the tailnet or a public host.
+# Load test of NF Hotel against a throwaway stack (MIL-036 task 3, MIL-089 task 4): k6 opens
+# the public pages and the staff sign-in page with twenty virtual guests, who also search for
+# free rooms and book on the API within the limits of the booking flow, and fails when the
+# objectives of MIL-034 are broken under that load (95 % within 1 second, fewer than 5 %
+# failed). A burst from one address over the limits must get the refusals of the limits and no
+# answer of the 500 kind. It runs twice on the same stack: with the verification of a booking
+# by email off, as production runs until its relay is set, and on (MIL-088). It never runs
+# against the VM, the tailnet or a public host.
 #
 # Triggers: weekly (Wednesday night), and by hand, for example before a larger release.
-# Secrets: none; nothing is pushed.
+# Secrets: none (the stack makes its own token and accounts); nothing is pushed.
 # Verified with actionlint 1.7.7 (ops/tests/lint.sh).
 name: NF Hotel load test
 
@@ -30,20 +34,20 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+      # The stack lives in the temporary folder of the runner, outside the folder that is uploaded;
+      # load-test.sh adds each summary to the page of the job under its title.
       - name: Start the stack
-        env:
-          STACK_DIR: ${{ runner.temp }}/e2e-stack
-        run: bash ops/scripts/e2e-stack.sh up --app-dir . --out "$STACK_DIR"
-      - name: Run the load test
-        env:
-          STACK_DIR: ${{ runner.temp }}/e2e-stack
-        run: |
-          bash ops/scripts/load-test.sh --stack-env "$STACK_DIR/stack.env" --results load-results
-          {
-            echo '```'
-            cat load-results/summary.txt
-            echo '```'
-          } >>"$GITHUB_STEP_SUMMARY"
+        run: bash ops/scripts/e2e-stack.sh up --app-dir . --out "$RUNNER_TEMP/e2e-stack"
+      - name: Run the load test with the verification by email off
+        run: >-
+          bash ops/scripts/load-test.sh --stack-env "$RUNNER_TEMP/e2e-stack/stack.env"
+          --results load-results/verification-off --title "The verification by email off"
+      - name: Turn the verification by email on
+        run: bash ops/scripts/e2e-stack.sh verification on --out "$RUNNER_TEMP/e2e-stack"
+      - name: Run the load test with the verification by email on
+        run: >-
+          bash ops/scripts/load-test.sh --stack-env "$RUNNER_TEMP/e2e-stack/stack.env"
+          --results load-results/verification-on --title "The verification by email on"
       - name: Keep the summary
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
