@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of [MIL-091]: the test is `test-start-target.js`, and the findings of SonarQube Cloud are fixed (RC-451 F8); mode autonomous, not independent | [61cd97b] |
-| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of [MIL-091]: the test is `start-target.test.js` again, its checks run as tests of `node:test`, and the second analysis of SonarQube Cloud is answered (RC-451 F9); mode autonomous, not independent | pending |
+| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of [MIL-091]: the test is `start-target.test.js` again, its checks run as tests of `node:test`, and the second analysis of SonarQube Cloud is answered (RC-451 F9); mode autonomous, not independent | [400486f] |
 
 ---
 
@@ -635,3 +635,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-450]: ./reviews/rc-450-mil-091.md
 [RC-451]: ./reviews/rc-451-mil-091-code.md
 [61cd97b]: https://github.com/NF-Hotel/NFHotel/commit/61cd97b84b8bcbfc214dc3f32cdbf28876b6af6d
+[400486f]: https://github.com/NF-Hotel/NFHotel/commit/400486fc9a614d9b0f3a794e62dc0d3c2b678162
