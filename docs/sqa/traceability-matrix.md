@@ -9,8 +9,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-089] (task 7): its row with the deploy of dcbc88ce, the check on the live site and RC-441, and [SAR-002] Accepted after RC-441; mode autonomous, not independent | [6981cab] |
 | 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-088] (task 10): its row with the deploys of 3cfe3ab5, S01's check on the live site, the corrected wiki page Mail-Relay and RC-437; mode autonomous, not independent | [020d355] |
+| 2026-11-27 | Proposed | mikemike | S01 | The plan of [MIL-091], accepted by S01 in chat on 2026-11-27 (RC-450, Go): its row, and [MIL-091] downstream of [BC-001]; supervised mode | pending |
 
 ---
 
@@ -24,7 +24,7 @@ updated whenever an artifact instance is created or reviewed.
 
 | Artifact Instance | Type | Language | Domain | Upstream (Backward Link) | Downstream (Forward Link) | Last Reviewed (RC-ID) |
 | --- | --- | --- | --- | --- | --- | --- |
-| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-021], [MIL-022], [MIL-023], [UCD-001], [US-001], [MIL-055], [MIL-071], [MIL-073], [MIL-074], [MIL-075], [MIL-076], [MIL-077], [MIL-078], [MIL-084], [MIL-085], [MIL-086], [MIL-087], [MIL-088], [MIL-089], [MIL-090] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044], [RC-088], [RC-332], [RC-401], [RC-414] |
+| [BC-001] | Business Case | en | it | - | [SA-001], [MIL-001], [MIL-002], [MIL-003], [MIL-004], [MIL-005], [MIL-006], [MIL-007], [MIL-008], [MIL-009], [MIL-010], [MIL-021], [MIL-022], [MIL-023], [UCD-001], [US-001], [MIL-055], [MIL-071], [MIL-073], [MIL-074], [MIL-075], [MIL-076], [MIL-077], [MIL-078], [MIL-084], [MIL-085], [MIL-086], [MIL-087], [MIL-088], [MIL-089], [MIL-090], [MIL-091] | [RC-021], [RC-024], [RC-037], [RC-040], [RC-044], [RC-088], [RC-332], [RC-401], [RC-414] |
 | [SA-001] | Stakeholder Analysis | en | it | [BC-001] | - | [RC-009], [RC-026], [RC-390] |
 | [MIL-001] | Milestone | en | it | [BC-001] | - | [RC-003] |
 | [MIL-002] | Milestone | en | it | [BC-001] | - | [RC-006] |
@@ -143,6 +143,7 @@ updated whenever an artifact instance is created or reviewed.
 | [MIL-089] | Milestone (Accepted, Go; plan reviewed in autonomous mode by the AI as stand-in for S01 2026-11-19, RC-415, at S01's word in chat; gate passed 2026-11-27, RC-441 Go) | en | it | [BC-001], ADR-0015, [ADR-0047], MIL-027, [MIL-036], [MIL-054], [MIL-077], [MIL-085], [MIL-086], [MIL-087], [MIL-088], [SAR-001] | [SAR-002] (task 1, RC-438); the tests of the abuse cases with five transcripts of tests that fail without their control, and the fixes of the flow: the security events without an email ([ADR-0051] third version), the limit of the open circuits per caller in the web application with the client timeouts of nginx ([ADR-0051] decision 8, SAR-002 BF-02), `Referrer-Policy: same-origin`, the tests of the lock `public_booking` (task 2); the scans on 3cfe3ab and the rules of the scan renewed to 2026-12-18 (task 3); the load test with the booking flow, with the verification off and on (task 4); the verdicts on findings 3 to 6 with two tests of a guest token after a cancellation (task 5); version 0.3.0 and the wiki page Booking-Flow-Protection, the wiki reviewed in RC-442 (task 6); the code reviewed in RC-440; the deploy at dcbc88ce, the check on the live site and the gate (task 7), reviewed in [RC-441] (Go) | [RC-415], [RC-438], [RC-439], [RC-440], [RC-442], [RC-441] |
 | [SAR-002] | Security audit report (Accepted) | en | it | [MIL-089], [MIL-085], [MIL-086], [MIL-087], [MIL-088], [ADR-0047], [ADR-0049], [ADR-0050], [ADR-0051], [ADR-0052], [ADR-0053], [SAR-001] | the findings BF-01 to BF-12 for S01 as the issues #867 to #878, rated by the OWASP Risk Rating; the tests and the fixes of [MIL-089] | [RC-438], [RC-441] |
 | [MIL-090] | Milestone (Accepted, Go; plan prepared by the AI in supervised mode 2026-11-19 and accepted as it stands by S01 in chat the same day, RC-445) | en | it | [BC-001], ADR-0017, [ADR-0032], [ADR-0040], MIL-027, [MIL-036], [MIL-065], [MIL-066], [MIL-077], [MIL-086], [MIL-087], [MIL-089], [RC-313], [RC-363], [RC-395] | planned: the check of the nine third-party images of issue #840 (CVE-2026-97054) with a new pin or an ignore entry for each, the 41 exceptions of the image scan checked again before they lapse on 2026-12-08, a warning seven days before a lapse, tests that show alerts 647 and 668 of ZAP false, the drawings without comments, a test that finds a new `MarkupString`, Informational alerts as `note` in code scanning, and lines for the rules 10029, 10058, 90027 and 40025 | [RC-445] |
+| [MIL-091] | Milestone (Accepted, Go; plan prepared by the AI in supervised mode 2026-11-27 and accepted as it stands by S01 in chat the same day, RC-450) | en | it | [BC-001], [DSA-001], [ADR-0008], [MIL-069], [MIL-074], [RC-361] | planned: the check of the port of the backup target and one restart in `start-target.js` when nothing listens while the host has its tailnet address, a delay of 5 minutes at sign-in in `register-start-task.ps1`, tests in Node.js in Ops CI, the installation and a drill on the backup host, and the description of `BackupTargetDown` with the wiki pages Disaster-Recovery, Alerts and Containers-and-Images | [RC-450] |
 | The code of MIL-083: steps 2 and 3 of `ops/scripts/create-monitoring-lxc.sh` (Docker's packages from Docker's signed repository, the checkout and `install-patching.sh`) with its test, the floor of `runc` in `ops/scripts/check-container-runtime.sh` with its unit test and the metric `nfhotel_container_runtime_runc_below_floor`, the rule `ContainerRuntimeKnownEscape` with its promtool test, and the wiki pages Container-Escape, Monitoring, Host-Hardening and Alerts | Shell, YAML (reviewed 2026-11-14, Go-with-conditions; the LXC switched by hand 2026-11-14, RC-354; the conditions met at the gate, RC-355) | - | - | [MIL-083] tasks 3 to 6, [ADR-0043], [CIS-001] | - | [RC-354], [RC-355] |
 | [ADR-0040] | ADR (Accepted) | - | - | [MIL-064], [ADR-0007], [ADR-0030], [MIL-022], [MIL-036], [MIL-059] | the patch layer of the proxy in `ops/deploy/nginx/Dockerfile` and its entry in `ops/scripts/build-release-images.sh`, the release references by name in `ops/scripts/cd-steps.sh` and `ops/scripts/deploy-release.sh`, the `docker` entry of `.github/dependabot.yml` (MIL-064 tasks 2 to 7, RC-300) | [RC-299], [RC-300] (the code) |
 | [ADR-0041] | ADR (Accepted) | - | - | [MIL-070], [ADR-0011], [ADR-0024], [MIL-023], [CIS-001] | `as_app` of `ops/scripts/deploy-release.sh`, the second check of `ops/tests/test-sudo-log.sh`, and the sections of the wiki pages Host-Hardening and Database-Preparation (MIL-070 tasks 1 to 3, RC-320) | [RC-320] |
@@ -589,6 +590,7 @@ updated whenever an artifact instance is created or reviewed.
 [MIL-088]: ../milestones/mil-088-a-booking-verified-by-email.md
 [MIL-089]: ../milestones/mil-089-the-booking-flow-attacked-and-measured.md
 [MIL-090]: ../milestones/mil-090-scan-findings-of-19-november.md
+[MIL-091]: ../milestones/mil-091-the-backup-target-answers-on-its-port.md
 [RC-410]: ./reviews/rc-410-mil-085.md
 [RC-411]: ./reviews/rc-411-mil-086.md
 [RC-412]: ./reviews/rc-412-mil-087.md
@@ -629,5 +631,5 @@ updated whenever an artifact instance is created or reviewed.
 [RC-424]: ./reviews/rc-424-mil-086-code.md
 [RC-425]: ./reviews/rc-425-mil-086-gate.md
 [RC-445]: ./reviews/rc-445-mil-090.md
-[6981cab]: https://github.com/NF-Hotel/NFHotel/commit/6981cabab6eac5b43b781c0cc8d0201c06baba55
+[RC-450]: ./reviews/rc-450-mil-091.md
 [020d355]: https://github.com/NF-Hotel/NFHotel/commit/020d355ca071a6b1fa490a51d99ebe05a4cbd8e5
