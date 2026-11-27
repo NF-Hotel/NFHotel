@@ -1,0 +1,57 @@
+# The gate of MIL-088 (RC-437, F2): the commands of steps 5 and 6 of the wiki page Mail-Relay, as the gate changes
+# it, run on 2026-11-27 against a fake env file in WSL (Debian 13, bash 5.2.37) by a script of the build session.
+# The script takes the code blocks out of the page, points the path of the env file at a temporary copy and drops
+# `runuser`, because the test runs as an ordinary user; `curl` is a stub that checks the configuration on its
+# standard input and that the password is in no argument, and sends nothing. The account is hotel@example.invalid,
+# the password is made of letters for this test only and is not printed, and the name of the user of the test is
+# masked.
+# It runs: step 5 with a value that is not 16 small letters and with capitals (both refused, nothing written); with
+# the four groups and a space and a no-break space between them (one line of 16 letters, mode 600); step 5 again
+# (still one line); the check of step 6; and the test mail of step 6 with a recipient that is not an address, then
+# with one that is.
+
+syntax ok: block-1.sh
+syntax ok: block-2.sh
+syntax ok: block-3.sh
+== step 5 with a value that is not 16 small letters
+
+Expected 16 small letters. Nothing was written.
+refused as expected
+lines of the password: 0
+== step 5 with capitals
+
+Expected 16 small letters. Nothing was written.
+refused as expected
+lines of the password: 0
+== step 5 with the four groups, spaces and no-break spaces between them
+
+The app password is written.
+lines of the password: 1; value as expected: yes
+mode of the file: 600
+== step 5 again: still one line
+
+The app password is written.
+lines of the password: 1
+== the check of step 6 (the owner is the user of this test)
+<user of the test> 600
+16
+      1 BookingVerification__Enabled=
+      1 BookingVerification__SiteAddress=
+      1 Smtp__Forwarder=
+      1 Smtp__FromAddress=
+      1 Smtp__FromName=
+      1 Smtp__Host=
+      1 Smtp__Password=
+      1 Smtp__Port=
+      1 Smtp__Security=
+      1 Smtp__UserName=
+== the test mail of step 6, with curl as a stub
+-- a recipient that is not an address
+That does not look like an address.
+refused as expected
+-- a recipient that is an address
+stub: the configuration on standard input is right
+stub: arguments: --silent --show-error --max-time 30 --url smtps://smtp.gmail.com:465 --mail-from hotel@example.invalid --mail-rcpt me@example.invalid --upload-file <message file> --config -
+stub: the message has its subject and CRLF line ends
+The test mail was sent.
+temporary message files left: 0

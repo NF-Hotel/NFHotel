@@ -50,7 +50,7 @@ An account made for the hotel (a new Google account with 2-Step Verification on)
 
 ## Set it up, step by step
 
-**Before you start:** the release of MIL-088 runs on `nf-hotel`, so the API knows the settings and the deploy knows the forwarder. The relay is set up and deployed first with the verification off, so a wrong setting shows while the public site still books as before (Parts A and B); the verification is switched on with a second deploy (Part C).
+**Before you start:** the release of MIL-088 runs on `nf-hotel`, so the API knows the settings and the deploy knows the forwarder. The relay is set up and deployed first with the verification off, so a wrong setting shows while the public site still books as before (Parts A and B); the verification is switched on with a second deploy (Part C). The API uses the app password only when it sends a mail, and with the verification off it sends none, so step 6 tries the account and the password with a test mail from the VM before the first deploy.
 
 ### Part A: the account (S01, in the browser)
 
@@ -59,8 +59,8 @@ An account made for the hotel (a new Google account with 2-Step Verification on)
 
 ### Part B: the relay on `nf-hotel` (S01, over the tailnet)
 
-3. Open a shell on the VM: `tailscale ssh root@nf-hotel`.
-4. Add the settings to the file of the API: `sudo -u nfhotel nano /opt/nfhotel/ops/deploy/nfhotel-api/nfhotel-api.env`, with the address of the account in place of `<address of the account>`, twice:
+3. Open a shell on the VM: `tailscale ssh root@nf-hotel`. You are root there, so the commands of steps 4 to 6 run as the user of the deploy with `runuser`, not `sudo`: then no setting of sudo, such as a log of what is typed, can keep what you type.
+4. Add the settings to the file of the API: `runuser -u nfhotel -- nano /opt/nfhotel/ops/deploy/nfhotel-api/nfhotel-api.env`, with the address of the account in place of `<address of the account>`, twice:
    ```text
    Smtp__Host=smtp.gmail.com
    Smtp__Port=465
@@ -75,17 +75,45 @@ An account made for the hotel (a new Google account with 2-Step Verification on)
    *Why the same address twice:* Gmail sends only from the address of the account. `Smtp__MaxMailsPerDay` stays at its default of 400, under the 500 of Gmail. Leave `Smtp__CertificateThumbprint` out: it is for the mail catcher of the test stacks, and in production the certificate of Gmail is checked against the store of the system.
 5. Write the app password without it reaching the screen, the shell history or the process list. The command asks for it; type or paste the 16 letters and press Enter:
    ```bash
-   sudo -u nfhotel bash -c 'f=/opt/nfhotel/ops/deploy/nfhotel-api/nfhotel-api.env; read -rs -p "App password: " t; echo; umask 077; { grep -v "^Smtp__Password=" "$f"; printf "Smtp__Password=%s\n" "${t// /}"; } >"$f.new" && mv "$f.new" "$f"'
+   runuser -u nfhotel -- bash -c '
+   f=/opt/nfhotel/ops/deploy/nfhotel-api/nfhotel-api.env
+   [[ -f "$f" ]] || { echo "No such file: $f"; exit 1; }
+   read -rs -p "App password: " t; echo
+   nb=$(printf "\302\240"); t="${t//[[:space:]]/}"; t="${t//"$nb"/}"
+   [[ "$t" =~ ^[a-z]{16}$ ]] || { echo "Expected 16 small letters. Nothing was written."; exit 1; }
+   umask 077
+   { grep -v "^Smtp__Password=" "$f"; printf "Smtp__Password=%s\n" "$t"; } >"$f.new" && mv "$f.new" "$f" && echo "The app password is written."
+   '
    ```
-   *Why like this:* as with the token of the tunnel ([Public Access](Public-Access)), `read -s` does not echo, and `printf` is part of the shell, so the password is never a command argument. `${t// /}` drops the spaces between the four groups. Then close the page of Google: it does not show the letters again.
-6. **Deploy:** re-run the latest successful `NF Hotel CD` run in GitHub Actions and approve it. The deploy writes the app password into a secret file of the API (ADR-0024), creates the networks of the mail, starts `mail-relay` before the API, and checks that no secret is in the environment of a container.
-7. **Check the first deploy:** on `nf-hotel`, `sudo docker ps --filter name=mail-relay` shows the forwarder `healthy`, and `https://nfhotel.devmatiker.com/book` opens as before: the verification is still off, so the public site books at once and sends no mail yet.
+   *Why like this:* as with the token of the tunnel ([Public Access](Public-Access)), `read -s` does not echo, and `printf` is part of the shell, so the password is never a command argument. The spaces between the four groups, and the no-break spaces that a copy from the browser can bring, are dropped, and anything but 16 small letters is refused before the file is written. Then close the page of Google: it does not show the letters again. If you use the clipboard history of Windows (Win+V), delete the letters there too.
+6. **Check the file and send a test mail, before any deploy.** First the file, without its values: you see `nfhotel 600`, the length `16`, and the ten names of steps 4 and 5, each with the count 1:
+   ```bash
+   f=/opt/nfhotel/ops/deploy/nfhotel-api/nfhotel-api.env; stat -c "%U %a" "$f"; grep -m1 "^Smtp__Password=" "$f" | cut -d= -f2- | tr -d "\n" | wc -c; grep -o -E "^(Smtp|BookingVerification)__[A-Za-z]+=" "$f" | sort | uniq -c
+   ```
+   Then a mail to an address of your own, sent from the VM to Gmail with the account and the app password of the file, as the API will send it. The command reads the password from the file and hands it to `curl` on its standard input, so it is never a command argument:
+   ```bash
+   runuser -u nfhotel -- bash -c '
+   f=/opt/nfhotel/ops/deploy/nfhotel-api/nfhotel-api.env
+   u=$(grep -m1 "^Smtp__UserName=" "$f" | cut -d= -f2-)
+   read -r -p "Send the test mail to: " to
+   [[ "$to" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]] || { echo "That does not look like an address."; exit 1; }
+   m=$(mktemp)
+   printf "From: NF Hotel <%s>\r\nTo: <%s>\r\nSubject: NF Hotel SMTP test\r\nDate: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=us-ascii\r\n\r\nTest mail from the NF Hotel server.\r\n" "$u" "$to" "$(date -R)" >"$m"
+   { printf "user = \"%s:" "$u"; grep -m1 "^Smtp__Password=" "$f" | cut -d= -f2- | tr -d "\n"; printf "\"\n"; } |
+     curl --silent --show-error --max-time 30 --url "smtps://smtp.gmail.com:465" --mail-from "$u" --mail-rcpt "$to" --upload-file "$m" --config - &&
+     echo "The test mail was sent."
+   rm -f "$m"
+   '
+   ```
+   If it fails, `curl` prints one line without the password, such as `Login denied`: check the address of the account in step 4, or make a new app password and repeat step 5. Nothing in production has changed yet. *Why before the deploy:* without this mail a wrong app password would show only after step 10, when guests wait for their links. The copy of the test mail in **Sent** goes as [The copies in Sent and the bounces](#the-copies-in-sent-and-the-bounces) says.
+7. **Deploy:** re-run the latest successful `NF Hotel CD` run in GitHub Actions and approve it. The deploy writes the app password into a secret file of the API (ADR-0024), creates the networks of the mail, starts `mail-relay` before the API, and checks that no secret is in the environment of a container.
+8. **Check the first deploy:** on `nf-hotel`, `sudo docker ps --filter name=mail-relay` shows the forwarder `healthy`, and `https://nfhotel.devmatiker.com/book` opens as before: the verification is still off, so the public site books at once and sends no mail yet.
 
 ### Part C: the verification on (S01, over the tailnet)
 
-8. In the same file, change `BookingVerification__Enabled=false` to `BookingVerification__Enabled=true`.
-9. **Deploy** again as in step 6. With the setting on, the API refuses to start, and names the setting, when a setting of the relay is missing or `BookingVerification__SiteAddress` is not an absolute `https` address; the deploy then fails its health check and rolls back ([CI-CD](CI-CD)), and the log of the API names the setting.
-10. Check it on the live site, as the next section says.
+9. In the same file, with the command of step 4, change `BookingVerification__Enabled=false` to `BookingVerification__Enabled=true`.
+10. **Deploy** again as in step 7. With the setting on, the API refuses to start, and names the setting, when a setting of the relay is missing or `BookingVerification__SiteAddress` is not an absolute `https` address; the deploy then fails its health check and rolls back ([CI-CD](CI-CD)), and the log of the API names the setting.
+11. Check it on the live site, as the next section says.
 
 ## Check it on the live site
 
@@ -93,7 +121,7 @@ This is the check of criterion 10 of MIL-088. S01 makes the test booking with an
 
 1. On `https://nfhotel.devmatiker.com/book`, ask for a room. The page says that a mail with a link was sent, and the back office shows no new booking: the request takes no room.
 2. Ask again with the same email, or let the page send the mail again. A second mail arrives.
-3. Open the link of the first mail and press the button: the link no longer works.
+3. Within 30 minutes of the first mail, open its link and press the button: the link no longer works, although it has not lapsed yet.
 4. Open the link of the second mail and press the button: the page shows the reference of the booking, the back office shows the booking as `Pending`, and the receipt arrives.
 5. Cancel the test booking in the back office, and delete the copies of the test mails as the next section says.
 
@@ -111,7 +139,7 @@ After the first test mail, and from time to time while the private account sends
 When the app password may have been anywhere but in step 5 (a chat, a screenshot, a file), or when the relay is no longer wanted:
 
 1. On `https://myaccount.google.com/apppasswords`, delete the app password `NF Hotel`. From that moment Gmail refuses the API: each mail fails, `MailNotSent` fires, and while the verification is on the public site takes no booking request.
-2. Either make a new app password and repeat steps 5 and 6 with it, or turn the mail off as the next section says.
+2. Either make a new app password and repeat steps 5 to 7 with it, or turn the mail off as the next section says.
 
 A change of the password of the Google account revokes its app passwords too, with the same effect.
 
@@ -129,7 +157,7 @@ A change of the password of the Google account revokes its app passwords too, wi
 `MailNotSent` in Discord means that the relay did not take a mail in the last 10 minutes. While the verification is on, the guest of that request was told to try again later, so no guest can book on the public site until the mail works again.
 
 1. In Grafana, *Explore*, data source *Loki*, `{host="nf-hotel"} |= "mail_not_sent"` shows the kind of each mail and the reason in a word, never the address.
-2. `auth`: Gmail refused the account; the app password was revoked or the password of the account changed. Make a new app password and repeat steps 5 and 6.
+2. `auth`: Gmail refused the account; the app password was revoked or the password of the account changed. Make a new app password and repeat steps 5 to 7.
 3. `connect` or `timeout`: the forwarder or Gmail could not be reached. On `nf-hotel`, `sudo docker ps --filter name=mail-relay` must show the forwarder `healthy`, and `sudo docker logs --tail 20 nfhotel-mail-relay-mail-relay-1` shows its last connections. No forwarder: check that `Smtp__Forwarder` is set and that the last deploy started it. A network that blocks port 465 out: `Smtp__Port=587` with `Smtp__Security=StartTls` reaches the same relay.
 4. `tls`: the certificate of the relay did not match `Smtp__Host`, or the relay did not speak TLS on that port; compare the three settings with step 4.
 5. `refused`: Gmail refused the sender or the mail, for example while it stops the account after many bounces or over its daily limit. Look in the inbox of the account for a notice from Google.
