@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-26 | Proposed | mikemike | AI as stand-in for S01 | The documents and the code of [MIL-089] (tasks 1 to 6): the row of [SAR-002], the row of [MIL-089] with what was built, the third version of [ADR-0051] and the row of [ADR-0052], the rows of [OC-002] and [SD-001], and RC-438 to RC-440 and RC-442; mode autonomous, not independent | [00d609b] |
-| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-089] (task 7): its row with the deploy of dcbc88ce, the check on the live site and RC-441, and [SAR-002] Accepted after RC-441; mode autonomous, not independent | pending |
+| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-089] (task 7): its row with the deploy of dcbc88ce, the check on the live site and RC-441, and [SAR-002] Accepted after RC-441; mode autonomous, not independent | [6981cab] |
 
 ---
 
@@ -629,3 +629,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-425]: ./reviews/rc-425-mil-086-gate.md
 [RC-445]: ./reviews/rc-445-mil-090.md
 [00d609b]: https://github.com/NF-Hotel/NFHotel/commit/00d609b1450afdb2d73df7a8d5dd9b1de2e1c8da
+[6981cab]: https://github.com/NF-Hotel/NFHotel/commit/6981cabab6eac5b43b781c0cc8d0201c06baba55

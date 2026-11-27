@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-089 after the deploy of dcbc88ce (CD run 45889641080) and the check of criterion 8 on the live site; the conditions of RC-438, RC-440 and RC-442 closed; SAR-002 accepted with one sentence corrected; Go on criteria 1 to 8; mode autonomous, not independent | pending |
+| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-089 after the deploy of dcbc88ce (CD run 45889641080) and the check of criterion 8 on the live site; the conditions of RC-438, RC-440 and RC-442 closed; SAR-002 accepted with one sentence corrected; Go on criteria 1 to 8; mode autonomous, not independent | [6981cab] |
 
 ---
 
@@ -229,3 +229,4 @@ decision is named in the summary of the run.
 [ADR-0014]: ../../adr/adr-0014-default-ai-model.md
 [ADR-0004]: ../../adr/adr-0004-database-api.md
 [MIL-090]: ../../milestones/mil-090-scan-findings-of-19-november.md
+[6981cab]: https://github.com/NF-Hotel/NFHotel/commit/6981cabab6eac5b43b781c0cc8d0201c06baba55

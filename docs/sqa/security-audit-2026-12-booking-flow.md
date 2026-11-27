@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-21 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: the security audit of the booking flow, [MIL-089] task 1 (RC-438)<br>Reworked after the No-Go of RC-438: the scale of severity (the OWASP Risk Rating, a stand-in choice), BF-02 fixed for one address with case 11 and its tests, 3.4.3 open in BF-12 and 15.1.3 in BF-02, 6.5.5 and 6.6.3 on decisions 2 and 10 of [ADR-0052], BF-12 with four observations, four statements corrected<br>After the delta review of RC-438: BF-01 High while the verification was off and Medium since it went on in production on 2026-11-22, cases 4 and 5 live, the connections of nginx in the remaining risks, decision 10 of [ADR-0052] among the actions | [00d609b] |
-| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Accepted at the gate of [MIL-089] (RC-441), with C1, C2 and C4 of RC-438 closed<br>Requirement 3.4.6: the antiforgery of ASP.NET Core writes X-Frame-Options SAMEORIGIN on the answer that sets a new antiforgery cookie, as the check on the live site showed; the verdict is unchanged | pending |
+| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Accepted at the gate of [MIL-089] (RC-441), with C1, C2 and C4 of RC-438 closed<br>Requirement 3.4.6: the antiforgery of ASP.NET Core writes X-Frame-Options SAMEORIGIN on the answer that sets a new antiforgery cookie, as the check on the live site showed; the verdict is unchanged | [6981cab] |
 
 ## 1. Scope and method
 
@@ -579,3 +579,4 @@ Critical; BF-02 was High before its fix in this milestone.
 [#877]: https://github.com/NF-Hotel/NFHotel/issues/877
 [#878]: https://github.com/NF-Hotel/NFHotel/issues/878
 [00d609b]: https://github.com/NF-Hotel/NFHotel/commit/00d609b1450afdb2d73df7a8d5dd9b1de2e1c8da
+[6981cab]: https://github.com/NF-Hotel/NFHotel/commit/6981cabab6eac5b43b781c0cc8d0201c06baba55
