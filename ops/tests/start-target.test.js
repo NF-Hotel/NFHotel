@@ -5,17 +5,21 @@
 // WMI classes MSFT_NetIPAddress and MSFT_NetTCPConnection) and Enumerator. Each case sets what
 // docker compose ends with, which addresses and listeners the host has and what the settings
 // file holds, and checks the result of the script and the order of its commands and checks.
-// The last check reads register-start-task.ps1 for the delay of the run at sign-in.
+// The last check reads register-start-task.ps1 for the delay of the run at sign-in. Each check
+// is a test of the test runner of Node.js (node:test), which reports it.
 //
-// Usage: node test-start-target.js [<start-target.js> [<register-start-task.ps1>]]
+// Usage: node start-target.test.js [<start-target.js> [<register-start-task.ps1>]]
 //   The defaults are the files in ops/deploy/backup-target. Older copies, such as those of
 //   main before MIL-091, show which checks fail without the change.
 // Exit:  0 every check passed; 1 a check failed
-// Needs: Node.js 18 or later; test-start-target.sh runs it in the Node.js image of Ops CI.
+// Needs: Node.js 20 or later (node:test); test-start-target.sh runs it in the Node.js image of
+//   Ops CI.
 "use strict";
 
+const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const { test } = require("node:test");
 const vm = require("node:vm");
 
 const TARGET_FOLDER = path.join(__dirname, "..", "deploy", "backup-target");
@@ -213,22 +217,18 @@ function run(source, state) {
   return { result, steps: steps.join(" "), commands, queries, sleeps, unexpected };
 }
 
-let passed = 0;
-let failed = 0;
+// The runs happen while the file loads, so a check only compares what they recorded; the test
+// runner sets the exit code to 1 when one fails.
 function check(name, isPassed, details) {
-  if (isPassed) {
-    passed += 1;
-    console.log(`PASS  ${name}`);
-  } else {
-    failed += 1;
-    console.log(`FAIL  ${name}\n      ${details}`);
-  }
+  test(name, () => {
+    assert.ok(isPassed, details);
+  });
 }
 
 const source = fs.readFileSync(scriptPath, "utf8");
 const outcomes = [];
 
-function describe(outcome) {
+function describeOutcome(outcome) {
   const unexpected = outcome.unexpected.length ? `; unexpected: ${outcome.unexpected.join(" | ")}` : "";
   return `result ${outcome.result}; steps: ${outcome.steps || "none"}${unexpected}`;
 }
@@ -238,7 +238,7 @@ function expectRun(name, state, result, steps) {
   const outcome = run(source, state);
   outcomes.push(outcome);
   check(name, outcome.result === result && steps.test(outcome.steps) && outcome.unexpected.length === 0,
-    describe(outcome));
+    describeOutcome(outcome));
   return outcome;
 }
 
@@ -323,6 +323,3 @@ check("register-start-task.ps1 delays the run at sign-in by 5 minutes and keeps 
   /\$signInDelay\s*=\s*'PT5M'/.test(registration) && /\$atSignIn\.Delay\s*=\s*\$signInDelay\b/.test(registration) &&
     /-Trigger\s+\$atSignIn,\s*\$hourly\b/.test(registration) && /-RepetitionInterval\s+\$repeatEvery\b/.test(registration),
   "the trigger at sign-in has no Delay of PT5M, or the hourly trigger is missing");
-
-console.log(`${passed} passed, ${failed} failed`);
-process.exitCode = failed === 0 ? 0 : 1;
