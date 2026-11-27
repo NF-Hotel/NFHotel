@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-27 | Proposed | mikemike | S01 | The plan of [MIL-091], accepted by S01 in chat on 2026-11-27 (RC-450, Go): its row, and [MIL-091] downstream of [BC-001]; supervised mode | [3bddcfe] |
-| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The code of [MIL-091] tasks 1 and 2: its row, reviewed in RC-451 (Go-with-conditions); mode autonomous, not independent | pending |
+| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The code of [MIL-091] tasks 1 and 2: its row, reviewed in RC-451 (Go-with-conditions); mode autonomous, not independent | [2ca3753] |
 
 ---
 
@@ -635,3 +635,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-450]: ./reviews/rc-450-mil-091.md
 [RC-451]: ./reviews/rc-451-mil-091-code.md
 [3bddcfe]: https://github.com/NF-Hotel/NFHotel/commit/3bddcfe38ec75df7854ca8ad14a083a4396b17fc
+[2ca3753]: https://github.com/NF-Hotel/NFHotel/commit/2ca3753b978f8cee083c67ae5ed48064197a54bb

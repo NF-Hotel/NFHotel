@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every required check of the pull request and the new script test green | pending |
+| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every required check of the pull request and the new script test green | [2ca3753] |
 
 ---
 
@@ -200,3 +200,4 @@ is not independent.
 [QC-SH-001]: ../../../framework/qc/code/qc-programming-shell.md
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
+[2ca3753]: https://github.com/NF-Hotel/NFHotel/commit/2ca3753b978f8cee083c67ae5ed48064197a54bb
