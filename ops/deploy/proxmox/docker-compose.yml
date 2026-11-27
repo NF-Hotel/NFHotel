@@ -12,7 +12,7 @@ name: nfhotel-pve
 
 services:
   proxmox:
-    image: dockurr/proxmox:9.2.26@sha256:5322ddd707648b002890624ca2affdae602321b11bd3e26cbd16ca0f120ccac6
+    image: dockurr/proxmox:9.2.29@sha256:d83335a0f308042b82ef38593540b9158de7b7e24fb715f7a66e6b36e7573c64
     privileged: true
     environment:
       - PVE_PASSWORD=${PVE_PASSWORD:?set PVE_PASSWORD in pve.env}
