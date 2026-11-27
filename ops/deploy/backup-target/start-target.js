@@ -44,6 +44,7 @@ var PORT_CHECK_PAUSE_MS = 2000;
 var IPV4_ADDRESS = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 var IPV6_ADDRESS = /^[0-9a-f]{0,4}(:[0-9a-f]{0,4}){2,7}$/i;
 var DIGITS = /^\d{1,5}$/;
+var SPACE = /\s/;
 
 var shell = new ActiveXObject("WScript.Shell");
 var files = new ActiveXObject("Scripting.FileSystemObject");
@@ -55,8 +56,18 @@ var compose = "\"" + docker + "\" compose --project-directory \"" + folder +
   "\" --env-file \"" + settingsFile + "\" ";
 var wmi = null;
 
+// The text without the white space at its ends. A loop, because /\s+$/ backtracks over each run
+// of white space inside the text, so its time would grow with the square of the length of a line.
 function trim(text) {
-  return text.replace(/^\s+|\s+$/g, "");
+  var start = 0;
+  var end = text.length;
+  while (start < end && SPACE.test(text.charAt(start))) {
+    start++;
+  }
+  while (end > start && SPACE.test(text.charAt(end - 1))) {
+    end--;
+  }
+  return text.substring(start, end);
 }
 
 // Runs docker compose with the given arguments, hidden, waits for it and tells whether it
@@ -101,13 +112,15 @@ function readSettings() {
   return values;
 }
 
+// Number() reads the digits, which the expressions have already checked, so nothing is left for
+// parseInt to cut off; JScript 5.8 has no Number.parseInt.
 function isAddress(text) {
   var parts = IPV4_ADDRESS.exec(text);
   if (parts === null) {
     return IPV6_ADDRESS.test(text);
   }
   for (var i = 1; i < parts.length; i++) {
-    if (parseInt(parts[i], 10) > HIGHEST_BYTE) {
+    if (Number(parts[i]) > HIGHEST_BYTE) {
       return false;
     }
   }
@@ -115,8 +128,11 @@ function isAddress(text) {
 }
 
 function isPort(text) {
-  var port = parseInt(text, 10);
-  return DIGITS.test(text) && port >= 1 && port <= HIGHEST_PORT;
+  if (!DIGITS.test(text)) {
+    return false;
+  }
+  var port = Number(text);
+  return port >= 1 && port <= HIGHEST_PORT;
 }
 
 // The address and port on which the service publishes its ssh, from backup-target.env, or null

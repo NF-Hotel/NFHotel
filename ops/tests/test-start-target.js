@@ -7,7 +7,7 @@
 // file holds, and checks the result of the script and the order of its commands and checks.
 // The last check reads register-start-task.ps1 for the delay of the run at sign-in.
 //
-// Usage: node start-target.test.js [<start-target.js> [<register-start-task.ps1>]]
+// Usage: node test-start-target.js [<start-target.js> [<register-start-task.ps1>]]
 //   The defaults are the files in ops/deploy/backup-target. Older copies, such as those of
 //   main before MIL-091, show which checks fail without the change.
 // Exit:  0 every check passed; 1 a check failed
@@ -279,6 +279,9 @@ expectRun("a comment after a value and quotes around a value are read as docker 
   RESULT.portAnswers, /^up address port$/);
 expectRun("a quoted value with a comment after it is the text inside the quotes, as docker compose reads it",
   host({ settings: settingsWith({ BACKUP_TARGET_BIND: `'${TAILNET_ADDRESS}' # tailscale ip -4`, BACKUP_TARGET_PORT: "\"2222\" # the default" }) }),
+  RESULT.portAnswers, /^up address port$/);
+expectRun("white space after a value, and a long run of it before a comment, is left out, as docker compose leaves it out",
+  host({ settings: settingsWith({ BACKUP_TARGET_BIND: `${TAILNET_ADDRESS}${" ".repeat(10000)}# tailscale ip -4`, BACKUP_TARGET_PORT: "2222 \t " }) }),
   RESULT.portAnswers, /^up address port$/);
 for (const [name, settings] of [
   ["BACKUP_TARGET_BIND that is not an address", settingsWith({ BACKUP_TARGET_BIND: "tailnet-host" })],
