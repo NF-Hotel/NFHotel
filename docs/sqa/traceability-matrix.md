@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of [MIL-091]: the test is `start-target.test.js` again, its checks run as tests of `node:test`, and the second analysis of SonarQube Cloud is answered (RC-451 F9); mode autonomous, not independent | [400486f] |
-| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of [MIL-091]: `register-start-task.ps1` sets the default of its folder in its body, found at the installation of task 3 (RC-451 F10); mode autonomous, not independent | pending |
+| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of [MIL-091]: `register-start-task.ps1` sets the default of its folder in its body, found at the installation of task 3 (RC-451 F10); mode autonomous, not independent | [189b7c8] |
 
 ---
 
@@ -635,3 +635,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-450]: ./reviews/rc-450-mil-091.md
 [RC-451]: ./reviews/rc-451-mil-091-code.md
 [400486f]: https://github.com/NF-Hotel/NFHotel/commit/400486fc9a614d9b0f3a794e62dc0d3c2b678162
+[189b7c8]: https://github.com/NF-Hotel/NFHotel/commit/189b7c824697399b68127050692f9f195973e132

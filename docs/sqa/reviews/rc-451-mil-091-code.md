@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-27 | Deprecated | mikemike | AI as stand-in for S01 | F9: the second analysis of SonarQube Cloud took the renamed test for production code and failed the quality gate (security rating D); the test is `start-target.test.js` again and its checks run as tests of `node:test`; the verdict stays Go-with-conditions<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | [400486f] |
-| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | F10: `register-start-task.ps1` found no folder when Windows PowerShell 5.1 ran it with `-File`, seen at the installation of task 3; the default is set in the body of the script, with a check of the test more; criterion 2 passes after task 3; the verdict stays Go-with-conditions<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | pending |
+| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | F10: `register-start-task.ps1` found no folder when Windows PowerShell 5.1 ran it with `-File`, seen at the installation of task 3; the default is set in the body of the script, with a check of the test more; criterion 2 passes after task 3; the verdict stays Go-with-conditions<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | [189b7c8] |
 
 ---
 
@@ -237,3 +237,4 @@ passes after task 3; criteria 3 and 4 wait for the drill and the gate. The revie
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [400486f]: https://github.com/NF-Hotel/NFHotel/commit/400486fc9a614d9b0f3a794e62dc0d3c2b678162
+[189b7c8]: https://github.com/NF-Hotel/NFHotel/commit/189b7c824697399b68127050692f9f195973e132
