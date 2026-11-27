@@ -10,11 +10,18 @@
 #   Unregister-ScheduledTask -TaskPath '\NFHotel\' -TaskName 'Backup target up'
 [CmdletBinding()]
 param(
-  # The folder of the backup target, with start-target.js and backup-target.env.
-  [string]$Folder = $PSScriptRoot
+  # The folder of the backup target, with start-target.js and backup-target.env; the folder of
+  # this script when it is not given.
+  [string]$Folder
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Windows PowerShell 5.1 leaves $PSScriptRoot empty in the default value of a parameter of an
+# advanced script that runs with -File, so the default is set here, where it is known.
+if (-not $Folder) {
+  $Folder = $PSScriptRoot
+}
 
 $taskPath = '\NFHotel\'
 $taskName = 'Backup target up'

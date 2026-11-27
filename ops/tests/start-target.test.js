@@ -323,3 +323,13 @@ check("register-start-task.ps1 delays the run at sign-in by 5 minutes and keeps 
   /\$signInDelay\s*=\s*'PT5M'/.test(registration) && /\$atSignIn\.Delay\s*=\s*\$signInDelay\b/.test(registration) &&
     /-Trigger\s+\$atSignIn,\s*\$hourly\b/.test(registration) && /-RepetitionInterval\s+\$repeatEvery\b/.test(registration),
   "the trigger at sign-in has no Delay of PT5M, or the hourly trigger is missing");
+
+// Windows PowerShell 5.1 leaves $PSScriptRoot empty in the default value of a parameter of an
+// advanced script that runs with -File, as the wiki page Disaster-Recovery runs this one, so the
+// folder of the script has to be set in its body.
+const paramStart = registration.search(/\bparam\(/i);
+const paramEnd = paramStart < 0 ? -1 : registration.indexOf("\n)", paramStart);
+const parameters = paramEnd < 0 ? "" : registration.slice(paramStart, paramEnd);
+check("register-start-task.ps1 finds its folder under -File in Windows PowerShell 5.1: the default is set in its body, not in its param block",
+  paramEnd >= 0 && !parameters.includes("$PSScriptRoot") && /\$Folder\s*=\s*\$PSScriptRoot\b/.test(registration.slice(paramEnd)),
+  paramEnd < 0 ? "no param block" : `the param block: ${parameters}`);
