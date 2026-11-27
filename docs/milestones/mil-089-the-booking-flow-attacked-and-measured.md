@@ -11,7 +11,8 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-19 | Accepted | mikemike | AI as stand-in for S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("Kontroller bagefter for sårbarheder og huller samt valider kvaliteten så input og outputtet er robust, stabilt og modstandsdygtigt"); the decisions are the AI's for S01 ("Du skal tage beslutningerne for mig"), and the plan is accepted by the AI as stand-in after RC-415, Go, for a run in autonomous mode ("Når din plan er lavet skal Opus 5.5 lave det hele i automode") | [9f5c208] |
+| 2026-11-19 | Deprecated | mikemike | AI as stand-in for S01 | Initial version: planned at S01's request in chat on 2026-11-19 ("Kontroller bagefter for sårbarheder og huller samt valider kvaliteten så input og outputtet er robust, stabilt og modstandsdygtigt"); the decisions are the AI's for S01 ("Du skal tage beslutningerne for mig"), and the plan is accepted by the AI as stand-in after RC-415, Go, for a run in autonomous mode ("Når din plan er lavet skal Opus 5.5 lave det hele i automode") | [9f5c208] |
+| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-441 Go on criteria 1 to 8; tasks 1 to 6 in pull request 882 (RC-438, RC-439, RC-440 and RC-442, their conditions met at the gate, and SAR-002 Accepted after RC-441); the CD run 45889641080 of dcbc88ce, approved from S01's account, deployed it; task 7: on the live site the checks of MIL-085 to MIL-088 that store nothing pass, the booking pages send their security headers, and the counter shows the refusals | [6981cab] |
 
 ---
 
@@ -121,3 +122,4 @@ The standard is the Application Security Verification Standard (ASVS) 5.0 of the
 [MIL-077]: ./mil-077-hostile-input-against-the-api.md
 [SAR-001]: ../sqa/security-audit-2026-11.md
 [9f5c208]: https://github.com/NF-Hotel/NFHotel/commit/9f5c208a73c7fbd268341b25501f518f39ad568e
+[6981cab]: https://github.com/NF-Hotel/NFHotel/commit/6981cabab6eac5b43b781c0cc8d0201c06baba55

@@ -1,0 +1,178 @@
+# MIL-089 task 7: the check of criterion 8 on the live site after the deploy of dcbc88ce (NF Hotel CD run
+# 45889641080, approved from S01's account; job "Deploy to production" 2026-11-27 03:37:30Z to 03:41:31Z).
+# Run by the build session from a workstation on 2026-11-27 between 04:08 and 04:14 UTC. It repeats the checks of
+# MIL-085 to MIL-087 that store nothing, and the check of MIL-088 that stores nothing, as its setting is on, and it
+# reads the security headers of the booking pages:
+# - part 1, with curl from WSL: the headers of /, /book, /booking and /booking/verify; the guest sign-in of MIL-085
+#   with a made-up reference and a made-up email at example.invalid, then the old booking number FLZ-000001, two
+#   failed tries that set no cookie; the date fields of /book (MIL-086) and the name of its last step; the page of the
+#   link of MIL-088 with a made-up token of the right form, which claims no request and sends no mail;
+# - parts 2 and 3, in Chromium without a window, driven by Playwright 1.62.0 in its container image
+#   mcr.microsoft.com/playwright/dotnet:v1.62.0-noble, never on the desktop of the host
+#   (framework/process/gui-testing.md): the four stays of MIL-086, with the button "Find available rooms" only read,
+#   and the 61 searches of MIL-087 within a minute and one after it, with no room type chosen.
+# Nothing was booked or asked for and no mail was sent. The run left the security events of the two failed sign-ins,
+# of the refused token and of the refused search, and their lines in the log. The site stays in the variable PUBLIC
+# and is shown as <public>; the address of the workstation is not printed, and the output holds no personal data.
+# The counter was read from the Prometheus of the monitoring stack through Grafana before part 1, after part 2 and
+# after part 3; the label of the instance is left out.
+
+== the counter of the security events before the run
+read at 2026-11-27T04:08:42Z
+nfhotel_security_events_total{job="nfhotel-api", kind="mail_fuse_blown"} 0
+nfhotel_security_events_total{job="nfhotel-api", kind="mail_not_sent"} 0
+no series with kind="guest_lookup_failed", kind="verification_failed" or kind="limit_refused"
+
+== part 1, with curl
+run at 2026-11-27T04:09:22Z against $PUBLIC, release dcbc88ce (CD run 45889641080), in WSL
+curl 8.14.1, bash 5.2.37
+
+== the security headers of the booking pages
+GET / answered 200
+  Strict-Transport-Security: max-age=2592000
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: same-origin
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin
+  X-Frame-Options: SAMEORIGIN
+PASS  / answers
+PASS  /: Referrer-Policy (MIL-089)
+PASS  /: the Content Security Policy
+PASS  /: X-Content-Type-Options
+PASS  /: HSTS is sent
+GET /book answered 200
+  Strict-Transport-Security: max-age=2592000
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: same-origin
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin
+  X-Frame-Options: (none)
+PASS  /book answers
+PASS  /book: Referrer-Policy (MIL-089)
+PASS  /book: the Content Security Policy
+PASS  /book: X-Content-Type-Options
+PASS  /book: HSTS is sent
+GET /booking answered 200
+  Strict-Transport-Security: max-age=2592000
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: same-origin
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin
+  X-Frame-Options: (none)
+PASS  /booking answers
+PASS  /booking: Referrer-Policy (MIL-089)
+PASS  /booking: the Content Security Policy
+PASS  /booking: X-Content-Type-Options
+PASS  /booking: HSTS is sent
+GET /booking/verify answered 200
+  Strict-Transport-Security: max-age=2592000
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin
+  X-Frame-Options: (none)
+PASS  /booking/verify answers
+PASS  /booking/verify: Referrer-Policy (MIL-089)
+PASS  /booking/verify: the Content Security Policy
+PASS  /booking/verify: X-Content-Type-Options
+PASS  /booking/verify: HSTS is sent
+
+== MIL-085: the guest sign-in without a booking (two failed tries, nothing stored)
+PASS  the sign-in page answers
+PASS  the sign-in page has its form
+PASS  the sign-in page names no booking number
+PASS  an old address with a booking number goes to the empty sign-in
+PASS  a made-up reference with a made-up email is refused on the page
+PASS  the refusal says that the booking was not found
+PASS  the refusal sets no guest cookie
+PASS  an old booking number is refused
+PASS  the old number gets the same refusal
+PASS  the old number sets no guest cookie
+
+== MIL-086: the date fields of /book, and the last step that the page names
+PASS  /book answers
+#check-in type="date" min="2026-11-27" max="2031-11-26" value="2026-11-28"
+#check-out type="date" min="2026-11-29" max="2026-12-28" value="2026-11-29"
+PASS  the arrival goes up to the day before five years from today (BR-N-08)
+PASS  the departure is at least a night after the arrival
+PASS  the departure is at most 30 nights after the arrival (BR-C-07)
+PASS  the last step is "Check your inbox", which the page names only when the API says that the verification is on
+
+== MIL-088: the page of the link, with a made-up token (nothing claimed, nothing sent)
+PASS  /booking/verify answers
+PASS  the page has its form: the field of the token, and the button disabled until the script fills it
+PASS  the made-up token has the form of a token, 43 characters of base64url
+PASS  the made-up token is refused on the page
+PASS  the refusal is that of a link that does not work
+PASS  the refusal sets no guest cookie
+
+==> every check passed
+ended at 2026-11-27T04:09:25Z
+
+== where X-Frame-Options comes from (read after part 1, not a check of the criterion)
+Only the answer to / carried X-Frame-Options in part 1, and / was the first page of the run. Two GETs of each page
+with an empty cookie jar and then with the jar of the first; the names of the cookies are shown, their values never:
+run at 2026-11-27T04:10:43Z
+GET /booking, empty jar: X-Frame-Options: SAMEORIGIN; cookies set: .AspNetCore.Antiforgery.<suffix>
+GET /booking, the same jar: X-Frame-Options: (none); cookies set: (none)
+GET /book, empty jar: X-Frame-Options: SAMEORIGIN; cookies set: .AspNetCore.Antiforgery.<suffix>
+GET /book, the same jar: X-Frame-Options: (none); cookies set: (none)
+GET /, empty jar: X-Frame-Options: SAMEORIGIN; cookies set: .AspNetCore.Antiforgery.<suffix>
+GET /, the same jar: X-Frame-Options: (none); cookies set: (none)
+So the antiforgery of ASP.NET Core writes X-Frame-Options: SAMEORIGIN on the answer that sets a new antiforgery
+cookie, as it does by default; the application sets no such header of its own. Every answer carries frame-ancestors
+'none', which a browser that knows CSP level 2 obeys, ignoring X-Frame-Options.
+
+== part 2: four stays on /book (MIL-086)
+run from 2026-11-27T04:11:18Z in mcr.microsoft.com/playwright/dotnet:v1.62.0-noble, Chromium headless
+the page /book answered 200; the earliest arrival that it offers, the day of the hotel: 2026-11-27
+ends five years and a day ahead: arrival 2031-11-25, departure 2031-11-28; the text at the field: "The stay must end within five years from today."; the button "Find available rooms" disabled: True
+ends exactly five years ahead (the limit, offered): arrival 2031-11-25, departure 2031-11-27; the text at the field: (none); the button "Find available rooms" disabled: False
+31 nights: arrival 2026-12-09, departure 2027-01-09; the text at the field: "A stay booked here can be at most 30 nights."; the button "Find available rooms" disabled: True
+30 nights (the limit, offered): arrival 2026-12-09, departure 2027-01-08; the text at the field: (none); the button "Find available rooms" disabled: False
+exit code: 0
+ended at 2026-11-27T04:11:30Z
+
+== the counter of the security events after parts 1 and 2
+read at 2026-11-27T04:11:37Z
+nfhotel_security_events_total{job="nfhotel-api", kind="guest_lookup_failed"} 2
+nfhotel_security_events_total{job="nfhotel-api", kind="mail_fuse_blown"} 0
+nfhotel_security_events_total{job="nfhotel-api", kind="mail_not_sent"} 0
+nfhotel_security_events_total{job="nfhotel-api", kind="verification_failed"} 1
+The two failed sign-ins of MIL-085 and the refused token of MIL-088. The page of the link shows the same text whether
+the verification is on or off (BookingVerifyViewModel), but the API counts verification_failed only when it is on:
+with it off, the API answers booking.not_found and writes no event (BookingRequestService.VerifyAsync). So the token
+went the way of a setting that is on.
+
+== part 3: 61 searches from one address within a minute, and one after the minute (MIL-087)
+run from 2026-11-27T04:12:00Z in mcr.microsoft.com/playwright/dotnet:v1.62.0-noble, Chromium headless
+the page /book answered 200; the day of the hotel: 2026-11-27
+the dates: arrival 2027-01-06, departure 2027-01-08, 2 nights; the guests field as the page sets it
+searches 1 to 60 each showed the room step ("Choose a room type"); seconds after the first press: 1 at 0.3 s, 10 at 2 s, 20 at 3.9 s, 30 at 5.7 s, 40 at 7.5 s, 50 at 9.4 s, 60 at 11.2 s
+search 61, 11.4 s after the first press: refused; the page stays on the dates and shows: "Too many requests in a short time. Please wait a while and try again, or contact the hotel."
+one search 65.9 s after the first press, when the window of a minute is over: room step
+exit code: 0
+ended at 2026-11-27T04:13:10Z
+
+== the counter of the security events after part 3
+read at 2026-11-27T04:13:15Z
+nfhotel_security_events_total{job="nfhotel-api", kind="guest_lookup_failed"} 2
+nfhotel_security_events_total{job="nfhotel-api", kind="limit_refused", limit="search"} 1
+nfhotel_security_events_total{job="nfhotel-api", kind="mail_fuse_blown"} 0
+nfhotel_security_events_total{job="nfhotel-api", kind="mail_not_sent"} 0
+nfhotel_security_events_total{job="nfhotel-api", kind="verification_failed"} 1
+At 04:13:22Z no alert of the booking flow (BookingFlowRefusals, PublicBookingSurge, MailNotSent, MailFuseBlown,
+MailVolumeHigh) was pending or firing: the one refusal is far below the more than 20 in 10 minutes at which
+BookingFlowRefusals fires.
