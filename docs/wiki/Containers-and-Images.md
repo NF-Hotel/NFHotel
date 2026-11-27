@@ -56,7 +56,7 @@ Every service publishes no host port unless the table says so; the others are re
 
 | Service (compose folder) | What it does | Image | Registry | Networks | Published port |
 | --- | --- | --- | --- | --- | --- |
-| `cloudflared` (`cloudflared`) | Outbound tunnel to Cloudflare; forwards the public host name to nginx (ADR-0028) | `cloudflare/cloudflared:2026.10.7` | Docker Hub | proxy | none |
+| `cloudflared` (`cloudflared`) | Outbound tunnel to Cloudflare; forwards the public host name to nginx (ADR-0028) | `cloudflare/cloudflared:2026.11.0` | Docker Hub | proxy | none |
 | `nginx` (`nginx`) | Reverse proxy and TLS end: HTTPS on the tailnet and the public listener for the tunnel; no route to the Python services (ADR-0039) | `ghcr.io/nf-hotel/nfhotel-nginx`: `nginx:1.29-alpine` with the fixes of its Alpine packages (ADR-0040) | GHCR, built by Release | proxy, api | 80 and 443 (tailnet and LAN, firewalled to 80 and 443 only) |
 | `nfhotel-web` (`nfhotel-web`) | The Blazor web application: guest pages and back office | `ghcr.io/nf-hotel/nfhotel-web` | GHCR (our build) | proxy, api, python | none |
 | `nfhotel-api` (`nfhotel-api`) | NFHotel.Api: the only container that reaches the database (ADR-0004) | `ghcr.io/nf-hotel/nfhotel-api` | GHCR (our build) | api, db, python, mail | none |
@@ -66,9 +66,9 @@ Every service publishes no host port unless the table says so; the others are re
 | `market-analysis-api` (`market-analysis`) | The market analysis service of `NF-Hotel/notebook-market-analysis` | `ghcr.io/nf-hotel/market-analysis` | GHCR (our build) | python, llm | none |
 | `benchmark` (`benchmark`) | The benchmark service of `NF-Hotel/notebook-benchmark`: compares the local AI models | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | python, llm | none |
 | `results-owner` (`benchmark`) | One-shot job before `benchmark`: gives the results volume to the service's user (MIL-045), with no network | `ghcr.io/nf-hotel/benchmark` | GHCR (our build) | none | none |
-| `ollama` (`ollama`) | Local model server for the benchmark and the market analysis, as the user 10001 (MIL-082) | `ollama/ollama:0.40.15` | Docker Hub | llm | none |
-| `models-owner` (`ollama`) | One-shot job before `ollama`: gives the volume of the models to the user of Ollama (MIL-082), with no network | `ollama/ollama:0.40.15` | Docker Hub | none | none |
-| `alloy` (`alloy`) | Agent that sends the logs and metrics of the VM to the monitoring LXC | `grafana/alloy:v1.21.3` | Docker Hub | internal, egress, apps | none |
+| `ollama` (`ollama`) | Local model server for the benchmark and the market analysis, as the user 10001 (MIL-082) | `ollama/ollama:0.40.16` | Docker Hub | llm | none |
+| `models-owner` (`ollama`) | One-shot job before `ollama`: gives the volume of the models to the user of Ollama (MIL-082), with no network | `ollama/ollama:0.40.16` | Docker Hub | none | none |
+| `alloy` (`alloy`) | Agent that sends the logs and metrics of the VM to the monitoring LXC | `grafana/alloy:v1.22.0` | Docker Hub | internal, egress, apps | none |
 | `socket-proxy` (`alloy`) | Lets Alloy make only the calls of its allowlist to the Docker API: the list of the containers and of the networks, and the inspect and the logs of a container; every other call answers 403 (ADR-0042) | `ghcr.io/nf-hotel/nfhotel-socket-proxy`: `tecnativa/docker-socket-proxy:v0.5.0` with the fixes of its Alpine packages (ADR-0040) and the allowlist (ADR-0042) | GHCR, built by Release | internal | none |
 
 **The Docker networks:**
@@ -90,14 +90,14 @@ A container on `nfhotel-proxy` cannot open the database, because it is not on `n
 | Service (compose folder) | Runs on | What it does | Image | Registry | Published port |
 | --- | --- | --- | --- | --- | --- |
 | `prometheus` (`monitoring`) | Monitoring LXC | Metrics store and alert rules | `prom/prometheus:v3.16.0` | Docker Hub | 9090 on the LXC's tailnet address |
-| `alertmanager` (`monitoring`) | Monitoring LXC | Sends alerts to Discord and the watchdog ping to Healthchecks.io | `prom/alertmanager:v0.34.2` | Docker Hub | none |
+| `alertmanager` (`monitoring`) | Monitoring LXC | Sends alerts to Discord and the watchdog ping to Healthchecks.io | `prom/alertmanager:v0.35.0` | Docker Hub | none |
 | `blackbox` (`monitoring`) | Monitoring LXC | Probes the site over HTTPS, the redirect and the public name | `prom/blackbox-exporter:v0.29.1` | Docker Hub | none |
-| `loki` (`monitoring`) | Monitoring LXC | Log store, kept 14 days; its ruler evaluates the log alert | `grafana/loki:3.7.9` | Docker Hub | 3100 on the LXC's tailnet address |
-| `grafana` (`monitoring`) | Monitoring LXC | Dashboards and log search | `grafana/grafana:13.3.0` | Docker Hub | 3000 on the LXC's tailnet address |
+| `loki` (`monitoring`) | Monitoring LXC | Log store, kept 14 days; its ruler evaluates the log alert | `grafana/loki:3.7.10` | Docker Hub | 3100 on the LXC's tailnet address |
+| `grafana` (`monitoring`) | Monitoring LXC | Dashboards and log search | `grafana/grafana:13.3.1` | Docker Hub | 3000 on the LXC's tailnet address |
 | `scan-exporter` (`monitoring`) | Monitoring LXC | Reads the results of the security scans (GitHub code scanning, the scan workflows, SonarQube Cloud) every 15 minutes for Prometheus (MIL-053); the code is mounted read-only, nothing is built | `python:3.15-slim` | Docker Hub | none |
 | `backup-target` (`backup-target`) | Backup host (legion laptop of S03) | Write-only SSH target of the nightly off-VM copy of the encrypted backup; the key of the VM can neither replace nor delete a file there (ADR-0008) | `nfhotel-backup-target:local`, built there from `debian:13-slim` | built locally | SSH on the host's tailnet address |
 | `prune` (`backup-target`) | Backup host (legion laptop of S03) | Deletes the copies that the retention no longer keeps, at its start and then once a day: daily files after 30 days and weekly files after 12 weeks, by the time in the name, never the newest 14 daily and 8 weekly of each kind (MIL-069); no network, read-only, as `nfhotel-backup` | `nfhotel-backup-target:local`, the same image | built locally | none |
-| `proxmox` (`proxmox`) | CI and a developer machine only | Throwaway Proxmox VE for the Proxmox integration tests (MIL-003) | `dockurr/proxmox:9.2.20` | Docker Hub | `127.0.0.1:18006` |
+| `proxmox` (`proxmox`) | CI and a developer machine only | Throwaway Proxmox VE for the Proxmox integration tests (MIL-003) | `dockurr/proxmox:9.2.26` | Docker Hub | `127.0.0.1:18006` |
 | `mailpit` (`mailpit`) | The throwaway stack of the end-to-end tests and the light development mode only, never the VM | The mail catcher: takes the mails of the API through the forwarder `mail-relay`, with TLS from the first byte and a certificate that the stack makes, and shows them on port 8025, where the browser tests read the link of a verification (ADR-0053 decision 7) | `axllent/mailpit:v1.33.1`, as the user 65534 | Docker Hub | none in CI; in the light development mode its web interface on `127.0.0.1:8025` |
 
 ## Where the images come from
@@ -143,10 +143,10 @@ A pinned third-party image can keep a finding that its newest build has not fixe
 | Image | What is accepted | What the check found |
 | --- | --- | --- |
 | `postgres:16-alpine` | 26 findings of the Go standard library in `gosu` 1.19, built with Go 1.24.6 | Not in the binary: `gosu` has functions of `os`, `syscall` and `github.com/moby/sys/user` only; the entry point runs it once, to start the server as `postgres`, and no build of the tag has a newer `gosu`: the build of 2026-11-12 has the same binary |
-| `ollama/ollama:0.40.15`, `grafana/alloy:v1.21.3` | The HTML parser of `golang.org/x/net` in `ollama` and `alloy`; `apt` 2.8.3 of Ubuntu 24.04 | Not in the binary for the parser; accepted for `apt`, which runs only when an image is built and never in these containers |
-| `cloudflare/cloudflared:2026.10.7` | The HTML parser of `golang.org/x/net` in `cloudflared`; two findings in Debian's `zlib1g` | Not in the binary; not used, because `cloudflared` is a static Go binary that never loads `libz` |
-| `prom/prometheus:v3.16.0`, `prom/alertmanager:v0.34.2`, `prom/blackbox-exporter:v0.29.1`, `grafana/loki:3.7.9` | The HTML parser of `golang.org/x/net` in their binaries | Not in the binary |
-| `grafana/grafana:13.3.0` | Eight findings (seven vulnerabilities) in the `grafana` server and its bundled data source plugins | Accepted or not in the binary: Grafana provisions only the Prometheus and Loki data sources, over plain HTTP inside the monitoring network, and is reached only on the tailnet address of the monitoring LXC after a login; 13.3.0 is the newest release |
+| `ollama/ollama:0.40.16` | The HTML parser of `golang.org/x/net` in `ollama`; `apt` 2.8.3 of Ubuntu 24.04 | Not in the binary for the parser; accepted for `apt`, which runs only when an image is built and never in this container |
+| `cloudflare/cloudflared:2026.11.0` | The HTML parser of `golang.org/x/net` in `cloudflared`; a finding in Debian's `zlib1g` | Not in the binary; not used, because `cloudflared` is a static Go binary that never loads `libz` |
+| `prom/prometheus:v3.16.0`, `prom/alertmanager:v0.35.0`, `prom/blackbox-exporter:v0.29.1` | The HTML parser of `golang.org/x/net` in their binaries | Not in the binary |
+| `grafana/grafana:13.3.1` | Eight findings (seven vulnerabilities) in its bundled data source plugins; its `grafana` server has none of them | Accepted or not in the binary: Grafana provisions only the Prometheus and Loki data sources, over plain HTTP inside the monitoring network, and is reached only on the tailnet address of the monitoring LXC after a login |
 | `python:3.15-slim` (the scan exporter) | `setuptools`, `msgpack` and `urllib3`, vendored inside pip; two findings in Debian's `zlib1g` | Not used: the exporter runs its own module with the standard library and never pip, and its Python calls none of the `gz*` functions of the two zlib findings |
 
 ## How every container is locked down
