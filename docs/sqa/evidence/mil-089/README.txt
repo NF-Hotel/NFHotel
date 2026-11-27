@@ -19,3 +19,14 @@ The tests of the abuse cases without their control (MIL-089 task 2, criterion 2)
   (writing the address of the caller), case 2 (trying emails against a reference) and case 6 (the race for the last
   room, a test that is new in MIL-089). On 2026-11-21, in the worktree of the branch: case 11 (many slow requests,
   the limit of the circuits that is new in MIL-089). Each test failed without its control and passed with it.
+
+The check on the live site after the deploy (MIL-089 task 7, criterion 8), 2026-11-27, after the deploy of dcbc88ce
+(NF Hotel CD run 45889641080):
+- live-check.txt: with curl, the security headers of /, /book, /booking and /booking/verify, the guest sign-in of
+  MIL-085 without a booking (a made-up reference and the old booking number, each refused without a cookie), the
+  date fields of /book and the name of its last step, and the page of the link of MIL-088 with a made-up token,
+  refused; in Chromium in the container of Playwright, the four stays of MIL-086 and the 61 searches of MIL-087
+  within a minute, the 61st refused. Every check passed. Nothing was booked or asked for and no mail was sent; the
+  counter of the security events shows the two failed sign-ins, the one failed verification, which the API counts
+  only with the verification on, and the one refused search. It also shows where the X-Frame-Options of the first
+  answer of a visit comes from: the antiforgery of ASP.NET Core.
