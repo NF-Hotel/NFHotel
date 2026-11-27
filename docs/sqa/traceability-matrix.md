@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-089] (task 7): its row with the deploy of dcbc88ce, the check on the live site and RC-441, and [SAR-002] Accepted after RC-441; mode autonomous, not independent | [6981cab] |
-| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-088] (task 10): its row with the deploys of 3cfe3ab5, S01's check on the live site, the corrected wiki page Mail-Relay and RC-437; mode autonomous, not independent | pending |
+| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-088] (task 10): its row with the deploys of 3cfe3ab5, S01's check on the live site, the corrected wiki page Mail-Relay and RC-437; mode autonomous, not independent | [020d355] |
 
 ---
 
@@ -630,3 +630,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-425]: ./reviews/rc-425-mil-086-gate.md
 [RC-445]: ./reviews/rc-445-mil-090.md
 [6981cab]: https://github.com/NF-Hotel/NFHotel/commit/6981cabab6eac5b43b781c0cc8d0201c06baba55
+[020d355]: https://github.com/NF-Hotel/NFHotel/commit/020d355ca071a6b1fa490a51d99ebe05a4cbd8e5

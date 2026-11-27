@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-088 after the three attempts of CD run 44730514648 at 3cfe3ab5, the relay that S01 set (task 9) and S01's check of criterion 10 on the live site; the conditions of RC-435 and RC-436 closed; the wiki page Mail-Relay corrected; Go on criteria 1 to 10, with one deviation of criterion 10 accepted as stand-in; mode autonomous, not independent | pending |
+| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-088 after the three attempts of CD run 44730514648 at 3cfe3ab5, the relay that S01 set (task 9) and S01's check of criterion 10 on the live site; the conditions of RC-435 and RC-436 closed; the wiki page Mail-Relay corrected; Go on criteria 1 to 10, with one deviation of criterion 10 accepted as stand-in; mode autonomous, not independent | [020d355] |
 
 ---
 
@@ -210,3 +210,4 @@ summary of the run.
 [MIL-089]: ../../milestones/mil-089-the-booking-flow-attacked-and-measured.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [QC-WIKI-001]: ../../../framework/qc/artifacts/qc-wiki.md
+[020d355]: https://github.com/NF-Hotel/NFHotel/commit/020d355ca071a6b1fa490a51d99ebe05a4cbd8e5
