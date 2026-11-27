@@ -1,0 +1,103 @@
+# MIL-088 task 10: the deploy check and the check of criterion 10 on the live site, for the gate (RC-437).
+# Gathered by the build session on 2026-11-27 from three sources, each named where it is used:
+# - GitHub: the run 44730514648 of NF Hotel CD at 3cfe3ab5, the merge of pull request 857, and its three attempts;
+# - the Prometheus of the monitoring stack, read through Grafana on 2026-11-27: the raw counters of each process of the
+#   API, told apart by the label of the instance, which is left out here;
+# - the checks that the main session (the session that plans this work) made on the VM, and the words of S01 in chat,
+#   as the prompt log of the session records them.
+# The AI made no booking and sent no mail: S01 asked for the bookings of the check and pressed their buttons. No email,
+# name, link, token, reference or date of a stay is written here, and no address of the VM or of the tailnet. Times
+# are UTC. A minute in section 4 is that of the first sample that shows the change, read at a step of one minute.
+
+== 1. the deploy of 3cfe3ab5 with the verification off (2026-11-20)
+NF Hotel CD 44730514648, event workflow_run after NF Hotel Release 44694949711, at 3cfe3ab5 (GitHub).
+attempt 1: started 2026-11-20T11:47:57Z; approved by the main session from S01's account at 17:04:42, at S01's word
+  of 2026-11-19 ("du må gerne godkende deploy."); the job "Deploy to production" ran from 17:04:46 to 17:08:03 and
+  passed.
+checked by the main session after it: the migration AddBookingRequests applied (two new tables), every container
+  healthy, the front page, the booking page and security.txt answer 200. The env file of the API held no mail
+  setting yet, so the verification was off and the forwarder mail-relay was not started.
+Prometheus, the process of the API that started then (first sample 17:07:30): nfhotel_security_events_total has
+  kind="public_booking_made" 1 from 17:35:00 to the end of the process on 2026-11-22, and no
+  kind="booking_request_made"; nfhotel_mails_total is 0 for both kinds. So one booking was made on the public site
+  at about 17:34, at once and without a mail, as before this milestone. Nothing else about it was read.
+
+== 2. round 1: the mail settings, the verification still off (2026-11-22)
+S01, as root on the VM, wrote the mail settings and the app password into the env file of the API with
+  runuser -u nfhotel, not sudo, so that no setting of sudo could keep what was typed, with
+  BookingVerification__Enabled=false; checked the file without its values; and sent a test mail with curl from the VM,
+  which took the password from the file on its standard input. The test mail arrived at 10:05.
+S01 in chat at 10:07: "Du må nu fortsætte med trin 5 efter den aftalte plan: kør den angivne CD-kørsel igen,
+  gennemfør den nødvendige godkendelse, og kontrollér Docker-secret, miljøvariabler, mail-relay og /book."
+checked by the main session before the approval, read only (10:09): one line Smtp__Password; the verification false;
+  each of the ten mail settings once; the env file owned by the user of the deploy, mode 600; no deploy running;
+  every check of 3cfe3ab5 green; no other run of CD open.
+attempt 2 (GitHub): started 10:10:19; approved by the main session from S01's account at 10:11:04, with a comment that
+  names pull request 857 and S01's word; the job "Deploy to production" ran from 10:11:08 to 10:13:40 and passed:
+  every service deployed, mail-relay among them, the 12 containers passed the container check, and
+  check-secret-env.sh passed for each container.
+checked by the main session after it (10:14), without reading the value: the folder secrets/ has mode 700, and the
+  file Smtp__Password 16 bytes and mode 444, both owned by the user of the deploy; it is mounted read-only at
+  /run/secrets/Smtp__Password, 16 bytes, readable by the user app of the API; the environment of the API has no
+  Smtp__Password and no name with pass, secret, token or key, and has the nine other mail settings and
+  BookingVerification__Enabled=false; mail-relay is healthy, has only MAIL_RELAY_HOST and MAIL_RELAY_PORT in its
+  environment and only its haproxy.cfg mounted, and is on the networks nfhotel-mail and nfhotel-mail-out; /book
+  answers 200.
+
+== 3. round 2: the verification on (2026-11-22)
+S01 set BookingVerification__Enabled=true with runuser -u nfhotel and wrote "done" in chat at 10:18, with the output
+  of the command: BookingVerification__Enabled=true.
+checked by the main session before the approval, read only (10:19): as in round 1, with the verification true.
+attempt 3 (GitHub): started 10:19:18; approved by the main session from S01's account at 10:19:35, with the comment
+  "Approved on S01's word in chat, 22 Nov 2026: re-run of the MIL-088 deploy (PR #857), round 2:
+  BookingVerification__Enabled=true after the test mail and round 1."; the job "Deploy to production" ran from
+  10:19:39 to 10:22:30 and passed: the 12 containers passed the container check, and check-secret-env.sh passed.
+checked by the main session after it (10:22): the API started at 10:22:10 with the verification on and is healthy, so
+  it took every mail setting at its start (with the verification on it refuses to start when one is missing); the
+  secret as in round 1; mail-relay healthy and not recreated, with no connection yet; /book answers 200 from outside.
+
+== 4. the counters of the API from 2026-11-22 10:22:10 to the deploy of MIL-089 (Prometheus)
+One process, from 10:22:10 on 2026-11-22 (first sample 10:23:00) to the deploy of dcbc88ce on 2026-11-27, 03:37 to
+03:41, which started a new one. Its label of the instance does not change in that time: the run 45374815906 of NF
+Hotel CD that S01 started by hand on 2026-11-24 at 10:26 (workflow_dispatch, at 3cfe3ab5) did not restart the API.
+requests = kind="booking_request_made", bookings = kind="public_booking_made" and refused links =
+kind="verification_failed" of nfhotel_security_events_total:
+2026-11-22 10:29  request 1                      requests 1, bookings 0, refused links 0
+2026-11-22 10:31  booking 1                      requests 1, bookings 1, refused links 0
+2026-11-24 12:55  request 2                      requests 2, bookings 1, refused links 0
+2026-11-24 12:59  booking 2                      requests 2, bookings 2, refused links 0
+2026-11-24 16:46  request 3                      requests 3, bookings 2, refused links 0
+2026-11-24 17:07  request 4                      requests 4, bookings 2, refused links 0
+2026-11-24 18:16  request 5 and a refused link   requests 5, bookings 2, refused links 1
+2026-11-24 18:17  booking 3                      requests 5, bookings 3, refused links 1
+nfhotel_mails_total rose with them, one link mail for each request and one receipt for each booking:
+  kind="verification_link" 1 at 10:29 and kind="booking_receipt" 1 at 10:31 on 2026-11-22; on 2026-11-24, by the
+  hourly samples, link mails 2 by 13:00, 3 by 17:00, 4 by 18:00 and 5 by 19:00, and receipts 2 by 13:00 and 3 by
+  19:00.
+from 2026-11-24 18:17 to 2026-11-27 03:40 nothing changed: requests 5, bookings 3, refused links 1, link mails 5,
+  receipts 3. kind="mail_not_sent" and kind="mail_fuse_blown" were 0 throughout.
+ALERTS, from 2026-11-22 08:40 to 2026-11-27 03:40: no alert of the mail (MailNotSent, MailFuseBlown, MailVolumeHigh)
+  and no alert of the booking flow (BookingFlowRefusals, PublicBookingSurge) was pending or firing.
+
+== 5. the check of criterion 10: "Check it on the live site" of the wiki page Mail-Relay
+2026-11-22: S01 asked for a booking on the public site and pressed the button of the link in the mail that came to
+  S01's mailbox; S01 wrote "det virker" in chat at 10:43:54. The counters: the request and its link mail at 10:29, the
+  booking and its receipt at 10:31.
+2026-11-24, the evening: S01 answered "Ja, min test" in chat on 2026-11-26 at 10:15 to the question
+  "Var anmodningerne 24. november kl. 17–20 din test af live-tjekket?" (17 to 20 Danish time is 16 to 19 UTC). So
+  requests 3 to 5, the refused link and booking 3 were S01's run of the check. The refused link and request 5 fall in
+  the same minute, and booking 3 at 18:17 came with the link of request 5, the only link still open then. The link
+  that was refused was that of request 3 (16:46) or of request 4 (17:07): either had passed its 30 minutes by 18:15.
+  The refusal is the one answer that an unknown, a used and a lapsed link get, so it does not tell which rule refused
+  it.
+the bookings, read by the main session on 2026-11-26 at 10:09 in the database, read only, their status and dates
+  and nothing about the guest: the three newest bookings made on the public site, as many as the counter of section 4
+  counts since 2026-11-22, are all Pending; the stay of each ended on or before 2026-11-27.
+step 5 of the check, the cancellation of the test bookings and the deletion of the copies of the test mails: not done.
+  S01 wrote in chat on 2026-11-27 at 04:12, to the question whether the three test bookings were cancelled now or
+  would stay: "De må gerne blive stående, jeg sletter dem måske senere. Ingen betydning". No AI session cancels,
+  deletes or uses them.
+
+== 6. after the deploy of MIL-089 (2026-11-27)
+The verification is still on after the deploy of dcbc88ce: the check of MIL-089 counted kind="verification_failed"
+for a made-up token, which the API counts only when the verification is on (docs/sqa/evidence/mil-089/live-check.txt).

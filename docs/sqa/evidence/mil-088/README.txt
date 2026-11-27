@@ -1,5 +1,6 @@
-The public address is in none of these files, and neither is any personal data: the emails are of example.com, every
-mail went to the mail catcher of the throwaway stack, and no token of a verification link is written down here.
+The public address is in none of these files, and neither is any personal data. In the files of the throwaway stack
+the emails are of example.com and every mail went to the mail catcher; live-check.txt, from the live site, names no
+email, name, link, token or reference. No token of a verification link is written down here.
 
 Before the code, on the branch with the decision records and the tests (MIL-088 tasks 1, 2 and 4), 2026-11-19:
 - before-tests.txt: the tests of the use case of the request and the verification on a skeleton with the names and
@@ -27,3 +28,12 @@ After the comments on the pull request, 2026-11-20:
   clean-up worker pass on the worker as it was, and each fails on a mutation of the new filter of its catch; after
   the change (0ad9c7e) the build has no warning, the tests of the worker (5) and of SmtpMailSender (17) pass, and
   the format check and the check of the comment language pass.
+
+At the gate (MIL-088 task 10), 2026-11-27:
+- live-check.txt: the deploy of 3cfe3ab5 with the verification off on 2026-11-20; the two rounds of 2026-11-22 in
+  which S01 set the relay and switched the verification on, each deployed by a run of CD that the main session
+  approved on S01's word; the counters of the API from then to the deploy of MIL-089; and the check of criterion 10
+  that S01 made on the live site, with S01's words. The facts from GitHub and Prometheus were read by the build
+  session; those from the VM are the checks of the main session, as the prompt log of the session records them.
+- mail-relay-steps.txt: the commands of steps 5 and 6 of the wiki page Mail-Relay, as the gate changes it (F2 of
+  RC-437), run against a fake env file in WSL with curl as a stub that sends nothing.
