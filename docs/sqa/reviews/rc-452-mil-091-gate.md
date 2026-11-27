@@ -9,7 +9,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-091 after the installation (16:06 UTC) and the drill (19:09 to 20:10 UTC) on the backup host, with Prometheus read at the gate; the conditions of RC-451 met for pull request 891, and its F10 in the gate pull request; Go on criteria 1 to 5; F6 for S01: the quality gate of SonarQube Cloud on main is red on a test that MIL-091 does not touch, so CD deploys nothing until it is fixed; mode autonomous, not independent | pending |
+| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Initial version: the gate of MIL-091 after the installation (16:06 UTC) and the drill (19:09 to 20:10 UTC) on the backup host, with Prometheus read at the gate; the conditions of RC-451 met for pull request 891, and its F10 in the gate pull request; Go on criteria 1 to 5; F6 for S01: the quality gate of SonarQube Cloud on main is red on a test that MIL-091 does not touch, so CD deploys nothing until it is fixed; mode autonomous, not independent | [1ae46d6] |
 
 ---
 
@@ -187,3 +187,4 @@ reviewer is not independent, and each stand-in decision is named in the summary 
 [BC-001]: ../../business-case.md
 [QC-MIL-001]: ../../../framework/qc/artifacts/qc-milestones-gateways.md
 [RC-361]: ./rc-361-mil-074-code.md
+[1ae46d6]: https://github.com/NF-Hotel/NFHotel/commit/1ae46d6eadd27b65d9db50cffd7ddd6a16d82884

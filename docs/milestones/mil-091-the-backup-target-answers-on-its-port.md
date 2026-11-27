@@ -12,7 +12,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-27 | Deprecated | mikemike | S01 | Initial version: no copy reached the backup target from 2026-11-21 to 2026-11-27, because its service ran without its published port and nothing on the backup host mended that; planned at S01's request in chat on 2026-11-27 ("Ja, planlæg det"), after S01's restart of the service the same day; supervised mode; accepted as it stands by S01 in chat on 2026-11-27 ("Ja, accepter") after RC-450, Go | [3bddcfe] |
-| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-452 Go on criteria 1 to 5; tasks 1 and 2 in pull request 891 (RC-451, its conditions met at the gate), and its fix F10 of `register-start-task.ps1` in the gate pull request; task 3 on the backup host on S01's yes in chat: the installation at 16:06 UTC, and the drill from 19:09 to 20:10 UTC with S01 at the keyboard; task 4: in Prometheus the newest copy off the VM minutes old, and `BackupTargetDown` and `OffVmCopyStale` silent; mode autonomous since S01's word in chat at 11:36 UTC, not independent | pending |
+| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | Gate passed: RC-452 Go on criteria 1 to 5; tasks 1 and 2 in pull request 891 (RC-451, its conditions met at the gate), and its fix F10 of `register-start-task.ps1` in the gate pull request; task 3 on the backup host on S01's yes in chat: the installation at 16:06 UTC, and the drill from 19:09 to 20:10 UTC with S01 at the keyboard; task 4: in Prometheus the newest copy off the VM minutes old, and `BackupTargetDown` and `OffVmCopyStale` silent; mode autonomous since S01's word in chat at 11:36 UTC, not independent | [1ae46d6] |
 
 ---
 
@@ -93,3 +93,4 @@ Order: the review of this document (QC-MIL-001 and QC-LANG-001) and S01's accept
 [MIL-074]: ./mil-074-the-off-vm-copy-within-its-time.md
 [RC-361]: ../sqa/reviews/rc-361-mil-074-code.md
 [3bddcfe]: https://github.com/NF-Hotel/NFHotel/commit/3bddcfe38ec75df7854ca8ad14a083a4396b17fc
+[1ae46d6]: https://github.com/NF-Hotel/NFHotel/commit/1ae46d6eadd27b65d9db50cffd7ddd6a16d82884

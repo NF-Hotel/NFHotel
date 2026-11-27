@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The row of the code of [MIL-091]: `register-start-task.ps1` sets the default of its folder in its body, found at the installation of task 3 (RC-451 F10); mode autonomous, not independent | [189b7c8] |
-| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-091] (task 4): its row Accepted with RC-452 Go, with what was built, the installation and the drill of task 3, and the row of its code with the conditions of RC-451 met; mode autonomous, not independent | pending |
+| 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-091] (task 4): its row Accepted with RC-452 Go, with what was built, the installation and the drill of task 3, and the row of its code with the conditions of RC-451 met; mode autonomous, not independent | [1ae46d6] |
 
 ---
 
@@ -636,3 +636,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-451]: ./reviews/rc-451-mil-091-code.md
 [RC-452]: ./reviews/rc-452-mil-091-gate.md
 [189b7c8]: https://github.com/NF-Hotel/NFHotel/commit/189b7c824697399b68127050692f9f195973e132
+[1ae46d6]: https://github.com/NF-Hotel/NFHotel/commit/1ae46d6eadd27b65d9db50cffd7ddd6a16d82884
