@@ -101,11 +101,14 @@ jobs:
           - test-pull-monitoring.sh
           - test-edge-comparison.sh
           - test-check-security-txt.sh
+          - test-start-target.sh
         # Debian 13: the rrsync of the backup target has -no-overwrite (MIL-066 task 1),
         # remove-desktop.sh is for the VM, which runs Debian 13 (MIL-068), test-sudo-log.sh
         # checks the log of the sudo of the VM (MIL-070), the runtime check runs on the VM
         # (MIL-080), and so does the backup, whose tee and timeout the read-back uses (MIL-076);
         # the pull deploy runs on the monitoring LXC, which runs Debian 13 too (MIL-051).
+        # Node.js 26, a long-term support line, on Debian 13: start-target.js of the backup host
+        # runs there with stand-ins for Windows Script Host (MIL-091).
         include:
           - test: test-backup-target.sh
             image: debian:13-slim
@@ -119,6 +122,8 @@ jobs:
             image: debian:13-slim
           - test: test-pull-monitoring.sh
             image: debian:13-slim
+          - test: test-start-target.sh
+            image: node:26-trixie-slim
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
