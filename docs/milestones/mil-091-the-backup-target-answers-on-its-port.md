@@ -11,7 +11,7 @@
 ## Version History
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-27 | Accepted | mikemike | S01 | Initial version: no copy reached the backup target from 2026-11-21 to 2026-11-27, because its service ran without its published port and nothing on the backup host mended that; planned at S01's request in chat on 2026-11-27 ("Ja, planlæg det"), after S01's restart of the service the same day; supervised mode; accepted as it stands by S01 in chat on 2026-11-27 ("Ja, accepter") after RC-450, Go | pending |
+| 2026-11-27 | Accepted | mikemike | S01 | Initial version: no copy reached the backup target from 2026-11-21 to 2026-11-27, because its service ran without its published port and nothing on the backup host mended that; planned at S01's request in chat on 2026-11-27 ("Ja, planlæg det"), after S01's restart of the service the same day; supervised mode; accepted as it stands by S01 in chat on 2026-11-27 ("Ja, accepter") after RC-450, Go | [3bddcfe] |
 
 ---
 
@@ -91,3 +91,4 @@ Order: the review of this document (QC-MIL-001 and QC-LANG-001) and S01's accept
 [MIL-069]: ./mil-069-retention-on-the-backup-target.md
 [MIL-074]: ./mil-074-the-off-vm-copy-within-its-time.md
 [RC-361]: ../sqa/reviews/rc-361-mil-074-code.md
+[3bddcfe]: https://github.com/NF-Hotel/NFHotel/commit/3bddcfe38ec75df7854ca8ad14a083a4396b17fc

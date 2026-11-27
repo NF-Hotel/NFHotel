@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-27 | Proposed | mikemike | AI as stand-in for S01 | The gate of [MIL-088] (task 10): its row with the deploys of 3cfe3ab5, S01's check on the live site, the corrected wiki page Mail-Relay and RC-437; mode autonomous, not independent | [020d355] |
-| 2026-11-27 | Proposed | mikemike | S01 | The plan of [MIL-091], accepted by S01 in chat on 2026-11-27 (RC-450, Go): its row, and [MIL-091] downstream of [BC-001]; supervised mode | pending |
+| 2026-11-27 | Proposed | mikemike | S01 | The plan of [MIL-091], accepted by S01 in chat on 2026-11-27 (RC-450, Go): its row, and [MIL-091] downstream of [BC-001]; supervised mode | [3bddcfe] |
 
 ---
 
@@ -633,3 +633,4 @@ updated whenever an artifact instance is created or reviewed.
 [RC-445]: ./reviews/rc-445-mil-090.md
 [RC-450]: ./reviews/rc-450-mil-091.md
 [020d355]: https://github.com/NF-Hotel/NFHotel/commit/020d355ca071a6b1fa490a51d99ebe05a4cbd8e5
+[3bddcfe]: https://github.com/NF-Hotel/NFHotel/commit/3bddcfe38ec75df7854ca8ad14a083a4396b17fc
