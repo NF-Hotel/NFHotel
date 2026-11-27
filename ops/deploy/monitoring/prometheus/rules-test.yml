@@ -134,8 +134,11 @@ tests:
             exp_annotations:
               summary: "The backup host is on, but no copy has reached its target for over 2 hours"
               description: >-
-                Docker Desktop or the backup target on the backup host is down. Start them (wiki
-                page Disaster-Recovery); the next hourly copy sends what the target lacks.
+                Docker Desktop or the backup target on the backup host is down, or the target runs
+                without its published port, as after a start before the host had its tailnet
+                address. The scheduled task restarts a target without its port within the hour;
+                otherwise start Docker Desktop or restart the service backup-target (wiki page
+                Disaster-Recovery). The next hourly copy sends what the target lacks.
 
   - name: a backup host that has not answered since the last copy keeps BackupTargetDown silent
     interval: 1h

@@ -119,7 +119,9 @@ groups:
 
       # The hourly copy reports backup_host_seen after a copy, and after a failed copy when the
       # backup host answers a Tailscale ping (MIL-074). A host that is off answers nothing, so it
-      # raises nothing new; a host that is on while its target refuses the copy raises this.
+      # raises nothing new; a host that is on while its target refuses the copy raises this. So
+      # does a target that runs without its published port, which the scheduled task of the
+      # backup host restarts within the hour (MIL-091).
       - alert: BackupTargetDown
         expr: >-
           nfhotel_task_last_success_timestamp_seconds{host="nf-hotel", task="backup_host_seen"}
@@ -131,8 +133,11 @@ groups:
         annotations:
           summary: "The backup host is on, but no copy has reached its target for over 2 hours"
           description: >-
-            Docker Desktop or the backup target on the backup host is down. Start them (wiki page
-            Disaster-Recovery); the next hourly copy sends what the target lacks.
+            Docker Desktop or the backup target on the backup host is down, or the target runs
+            without its published port, as after a start before the host had its tailnet address.
+            The scheduled task restarts a target without its port within the hour; otherwise start
+            Docker Desktop or restart the service backup-target (wiki page Disaster-Recovery). The
+            next hourly copy sends what the target lacks.
 
       # The backup reads its dump back while it is made (MIL-076) and gives backup_check the time
       # of the backup when pg_restore read the dump to its end, or 0 while no dump has been read
