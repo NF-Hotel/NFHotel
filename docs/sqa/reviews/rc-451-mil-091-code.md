@@ -10,7 +10,7 @@
 | Date | Status | Author | Reviewer | Change | Commit |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-27 | Deprecated | mikemike | AI as stand-in for S01 | Initial version; mode autonomous, not independent; Go-with-conditions: every required check of the pull request and the new script test green | [2ca3753] |
-| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | F8: the four findings of SonarQube Cloud on the pull request, fixed in the code; the test renamed `test-start-target.js`, with one case more; the verdict stays Go-with-conditions<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | pending |
+| 2026-11-27 | Accepted | mikemike | AI as stand-in for S01 | F8: the four findings of SonarQube Cloud on the pull request, fixed in the code; the test renamed `test-start-target.js`, with one case more; the verdict stays Go-with-conditions<br>Accepted by the AI as stand-in for S01 in autonomous mode; mode autonomous, not independent | [61cd97b] |
 
 ---
 
@@ -212,3 +212,4 @@ task 3 and the gate. The reviewer is not independent.
 [QC-YML-001]: ../../../framework/qc/code/qc-yaml.md
 [QC-WF-001]: ../../../framework/qc/code/qc-workflow.md
 [2ca3753]: https://github.com/NF-Hotel/NFHotel/commit/2ca3753b978f8cee083c67ae5ed48064197a54bb
+[61cd97b]: https://github.com/NF-Hotel/NFHotel/commit/61cd97b84b8bcbfc214dc3f32cdbf28876b6af6d
